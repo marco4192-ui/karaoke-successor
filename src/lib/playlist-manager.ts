@@ -1,5 +1,6 @@
 import { Playlist, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
 import { StorageKeys, getItem, getJson, setJson, removeItem } from '@/lib/storage';
+import { t } from '@/lib/i18n/translations';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 // Re-export types for convenience
@@ -49,7 +50,9 @@ function getDefaultPlaylists(): Playlist[] {
     {
       id: SYSTEM_PLAYLISTS.FAVORITES,
       name: '⭐ Favorites',
+      nameKey: 'library.playlists.favorites',
       description: 'Your favorite songs',
+      descriptionKey: 'library.playlists.favoritesDesc',
       songIds: [],
       createdAt: now,
       updatedAt: now,
@@ -58,7 +61,9 @@ function getDefaultPlaylists(): Playlist[] {
     {
       id: SYSTEM_PLAYLISTS.RECENTLY_PLAYED,
       name: '🕐 Recently Played',
+      nameKey: 'library.playlists.recentlyPlayed',
       description: 'Songs you played recently',
+      descriptionKey: 'library.playlists.recentlyPlayedDesc',
       songIds: [],
       createdAt: now,
       updatedAt: now,
@@ -67,7 +72,9 @@ function getDefaultPlaylists(): Playlist[] {
     {
       id: SYSTEM_PLAYLISTS.MOST_PLAYED,
       name: '🔥 Most Played',
+      nameKey: 'library.playlists.mostPlayed',
       description: 'Your most played songs',
+      descriptionKey: 'library.playlists.mostPlayedDesc',
       songIds: [],
       createdAt: now,
       updatedAt: now,
@@ -86,7 +93,7 @@ export function createPlaylist(name: string, description?: string): Playlist {
   const playlists = getPlaylists();
   
   if (playlists.length >= DEFAULT_PLAYLIST_SETTINGS.maxPlaylists) {
-    throw new Error(`Maximum number of playlists (${DEFAULT_PLAYLIST_SETTINGS.maxPlaylists}) reached`);
+    throw new Error(t('library.playlists.maxPlaylistsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxPlaylists)));
   }
   
   const now = Date.now();
@@ -155,7 +162,7 @@ export function addSongToPlaylist(playlistId: string, songId: string): boolean {
   if (!playlist) return false;
   
   if (playlist.songIds.length >= DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist) {
-    throw new Error(`Maximum songs per playlist (${DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist}) reached`);
+    throw new Error(t('library.playlists.maxSongsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist)));
   }
   
   // Don't add duplicates

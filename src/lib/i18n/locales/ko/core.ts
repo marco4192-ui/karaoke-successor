@@ -13,7 +13,8 @@ export const coreTranslations = {
     mobile: '모바일',
     achievements: '업적',
     daily: '일일',
-    settings: '설정'
+    settings: '설정',
+    editor: '에디터'
   },
 
   home: {
@@ -73,7 +74,11 @@ export const coreTranslations = {
     search: '검색',
     filter: '필터',
     sort: '정렬',
-    refresh: '새로고침'
+    refresh: '새로고침',
+    avatarAlt: '아바타',
+    qrCodeAlt: 'QR 코드',
+    unknownError: '알 수 없는 오류',
+    player: '플레이어',
   },
 
   dialogs: {
@@ -285,9 +290,76 @@ export const coreTranslations = {
     noExclusion: '제외 없음',
   },
 
+  jukeboxA11y: {
+    songProgress: '노래 진행 상황',
+    unmute: '음소거 해제',
+    mute: '음소거',
+    volume: '볼륨',
+    shuffle: '셔플',
+    repeat: '반복'
+  },
+
   errorBoundary: {
     title: '문제가 발생했습니다',
     description: '예상치 못한 오류가 발생했습니다. 페이지를 새로고침해 보세요.',
     tryAgain: '다시 시도',
+  },
+
+  fullscreen: {
+    exitF12: '전체화면 종료 (F12)',
+    toggleF12: '전체화면 전환 (F12)',
+    exitEsc: '전체화면 종료 (ESC)',
+    enter: '전체화면'
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: '독일',
+    austria: '오스트리아',
+    switzerland: '스위스',
+    unitedStates: '미국',
+    unitedKingdom: '영국',
+    france: '프랑스',
+    italy: '이탈리아',
+    spain: '스페인',
+    netherlands: '네덜란드',
+    poland: '폴란드',
+    japan: '일본',
+    southKorea: '한국',
+    australia: '호주',
+    canada: '캐나다',
+    brazil: '브라질',
+    mexico: '멕시코',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: '첫 걸음', description: '첫 번째 일일 챌린지 완료' },
+      weekWarrior: { name: '위크 워리어', description: '7일 스트릭 유지' },
+      fortnightFighter: { name: '포트나이트 파이터', description: '14일 스트릭 유지' },
+      monthlyMaster: { name: '먼슬리 마스터', description: '30일 스트릭 유지' },
+      podiumFinish: { name: '표석', description: '일일 챌린지 top 3 진입' },
+      dailyChampion: { name: '일일 챔피언', description: '일일 챌린지 우승' },
+      dedicatedSinger: { name: '헌신 가수', description: '30개 일일 챌린지 완료' },
+      legendaryStatus: { name: '전설 스테이터스', description: '총 10,000 XP 달성' },
+      centuryChampion: { name: '세추리 챔피언', description: '100일 스트릭 유지' },
+      yearlyLegend: { name: '연간 전설', description: '365일 스트릭 유지' },
+    },
+    quests: {
+      dailyDouble: { name: '일일 더블', description: '오늘 2개 일일 챌린지 완료' },
+      perfectTen: { name: '퍼펙트 텐', description: '총 퍼펙트 노트 10개 히트' },
+      challengeExplorer: { name: '챌린지 탐험가', description: '5가지 다른 챌린지 모드 플레이' },
+      songbird: { name: '송버드', description: '총 10곡 완료' },
+      weeklyWarrior: { name: '위클리 워리어', description: '3개 주간 챌린지 완료' },
+    },
+    streakMilestones: {
+      weekWarrior: '위크 워리어',
+      fortnightFighter: '포트나이트 파이터',
+      monthlyMaster: '먼슬리 마스터',
+      biMonthlyBoss: '바이먼슬리 보스',
+      centuryChampion: '세추리 챔피언',
+      yearlyLegend: '연간 전설',
+    },
   },
 };

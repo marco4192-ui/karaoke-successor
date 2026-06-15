@@ -210,7 +210,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, tags: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="tag1, tag2, tag3"
+            placeholder={t('editor.metadataTab.tagsPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
           <p className="text-xs text-slate-500">{t('editor.metadataTab.commaSeparatedTags')}</p>

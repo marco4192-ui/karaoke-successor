@@ -6,6 +6,7 @@
 import type { Song, Difficulty } from '@/types/game';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { shuffleArray } from '@/lib/utils';
+import { t } from '@/lib/i18n/translations';
 import type { GameSetupResult, InputMode, SongSelectionOption } from '@/components/game/unified-party-setup.types';
 
 // ─── Frequency Label Converter ───────────────────────────────────────────────
@@ -58,7 +59,7 @@ export function buildGameSetupResult(params: {
       color: p.color,
       playerType: p.playerType ?? 'microphone',
       micId: p.micId ?? 'default',
-      micName: p.micName ?? `Mic ${i + 1}`,
+      micName: p.micName ?? t('partyHelpers.defaultMicName').replace('{n}', String(i + 1)),
     })),
     settings: {
       difficulty,

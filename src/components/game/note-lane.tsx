@@ -105,7 +105,7 @@ const NoteBlock = React.memo(function NoteBlock({ data, noteShape, windowHeight 
   
   return (
     <div
-      className={`absolute ${noteShape.baseClass} ${
+      className={`absolute ${noteShape.baseClass} transition-all duration-75 ${
         data.isPast
           ? 'opacity-30'
           : data.isActive
@@ -235,7 +235,6 @@ export const NoteLane = React.memo(function NoteLane({
   missingWordsIndices,
   hardcoreMissingWords,
 }: NoteLaneProps) {
-  const { t } = useTranslation();
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
   // Load note shape style - PRIORITIZE localStorage setting, fallback to theme
@@ -379,7 +378,7 @@ export const NoteLane = React.memo(function NoteLane({
       {/* Blind indicator shown when notes are hidden */}
       {isBlindSection && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="text-6xl animate-pulse select-none" aria-label={t('noteLane.blindAriaLabel')}>
+          <div className="text-6xl animate-pulse select-none" aria-label="Blind section - sing by feel!">
             🙈
           </div>
         </div>

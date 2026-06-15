@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Zoeken',
     filter: 'Filter',
     sort: 'Sorteren',
-    refresh: 'Vernieuwen'
+    refresh: 'Vernieuwen',
+    player: 'Speler',
   },
 
   dialogs: {
@@ -289,5 +290,56 @@ export const coreTranslations = {
     title: 'Er is iets misgegaan',
     description: 'Er is een onverwachte fout opgetreden. Probeer de pagina opnieuw te laden.',
     tryAgain: 'Opnieuw proberen',
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'Duitsland',
+    austria: 'Oostenrijk',
+    switzerland: 'Zwitserland',
+    unitedStates: 'Verenigde Staten',
+    unitedKingdom: 'Verenigd Koninkrijk',
+    france: 'Frankrijk',
+    italy: 'Italië',
+    spain: 'Spanje',
+    netherlands: 'Nederland',
+    poland: 'Polen',
+    japan: 'Japan',
+    southKorea: 'Zuid-Korea',
+    australia: 'Australië',
+    canada: 'Canada',
+    brazil: 'Brazilië',
+    mexico: 'Mexico',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'Eerste stappen', description: 'Voltooi je eerste dagelijkse uitdaging' },
+      weekWarrior: { name: 'Weekkrijger', description: 'Behoud een reeks van 7 dagen' },
+      fortnightFighter: { name: 'Tweeweekse vechter', description: 'Behoud een reeks van 14 dagen' },
+      monthlyMaster: { name: 'Maandelijks meester', description: 'Behoud een reeks van 30 dagen' },
+      podiumFinish: { name: 'Podiumplaats', description: 'Eindig in de top 3 van een dagelijkse uitdaging' },
+      dailyChampion: { name: 'Dagkampioen', description: 'Win een dagelijkse uitdaging' },
+      dedicatedSinger: { name: 'Toegewijde zanger', description: 'Voltooi 30 dagelijkse uitdagingen' },
+      legendaryStatus: { name: 'Legendarische status', description: 'Bereik 10.000 XP totaal' },
+      centuryChampion: { name: 'Eeuwkampioen', description: 'Behoud een reeks van 100 dagen' },
+      yearlyLegend: { name: 'Jaarlegende', description: 'Behoud een reeks van 365 dagen' },
+    },
+    quests: {
+      dailyDouble: { name: 'Dagelijkse dubbel', description: 'Voltooi 2 dagelijkse uitdagingen vandaag' },
+      perfectTen: { name: 'Perfecte tien', description: 'Raak 10 perfecte noten totaal' },
+      challengeExplorer: { name: 'Uitdaging-verkenner', description: 'Speel 5 verschillende uitdagingsmodi' },
+      songbird: { name: 'Zangvogel', description: 'Voltooi 10 nummers totaal' },
+      weeklyWarrior: { name: 'Weekkrijger', description: 'Voltooi 3 wekelijkse uitdagingen' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Weekkrijger',
+      fortnightFighter: 'Tweeweekse vechter',
+      monthlyMaster: 'Maandelijks meester',
+      biMonthlyBoss: 'Tweemaandelijks baas',
+      centuryChampion: 'Eeuwkampioen',
+      yearlyLegend: 'Jaarlegende',
+    },
   },
 };

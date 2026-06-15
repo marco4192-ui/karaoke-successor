@@ -1,21 +1,43 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
 import { useFocusTrap } from '@/hooks/use-roving-focus';
+import { StorageKeys, getItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
-import { useActiveMics } from '@/hooks/use-active-mics';
 
 // ===================== MIC SELECTOR (Single mode) =====================
+function useSavedMics() {
+  const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
+
+
+  useEffect(() => {
+    try {
+      const saved = getItem(StorageKeys.MULTI_MIC_CONFIG);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
+        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
+          id: m.id,
+          customName: m.customName,
+          deviceName: m.deviceName,
+        })));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  return savedMics;
+}
+
 function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (_id: string | undefined) => void }) {
   const { t } = useTranslation();
-  const activeMics = useActiveMics();
+  const savedMics = useSavedMics();
 
-  if (activeMics.length === 0) return null;
+  if (savedMics.length === 0) return null;
 
   return (
     <div>
@@ -26,7 +48,7 @@ function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (_id
         className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
       >
         <option value="">{t('songStart.automatic')}</option>
-        {activeMics.map(mic => (
+        {savedMics.map(mic => (
           <option key={mic.id} value={mic.id}>
             {mic.customName || mic.deviceName}
           </option>
@@ -51,9 +73,9 @@ function DualMicSelector({
   p1Label?: string; p2Label?: string;
 }) {
   const { t } = useTranslation();
-  const activeMics = useActiveMics();
+  const savedMics = useSavedMics();
 
-  if (activeMics.length === 0) return null;
+  if (savedMics.length === 0) return null;
 
   const p1Profile = profiles.find(p => p.id === p1Id);
   const p2Profile = profiles.find(p => p.id === p2Id);
@@ -82,7 +104,7 @@ function DualMicSelector({
             className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option value="">{t('songStart.automatic')}</option>
-            {activeMics.map(mic => (
+            {savedMics.map(mic => (
               <option key={mic.id} value={mic.id}>
                 {mic.customName || mic.deviceName}
               </option>
@@ -109,7 +131,7 @@ function DualMicSelector({
             className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option value="">{t('songStart.automatic')}</option>
-            {activeMics.map(mic => (
+            {savedMics.map(mic => (
               <option key={mic.id} value={mic.id}>
                 {mic.customName || mic.deviceName}
               </option>
@@ -197,7 +219,7 @@ export function SongStartModal({
       const partnerId = startOptions.players[1] || undefined;
       const partnerProfile = partnerId ? profiles.find(p => p.id === partnerId) : undefined;
 
-      addToQueue(selectedSong, selectedPlayerId, selectedProfile?.name || 'Player', {
+      addToQueue(selectedSong, selectedPlayerId, selectedProfile?.name || t('common.player'), {
         partnerId,
         partnerName: partnerProfile?.name,
         gameMode: startOptions.mode === 'duel' ? 'duel' 

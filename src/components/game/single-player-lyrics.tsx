@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback, useEffect, memo } from 'react';
+import { useMemo, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { LyricLine, type GameMode } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 import { NoteDisplayStyle } from '@/lib/game/note-utils';
@@ -96,15 +96,10 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   }, []);
 
   // Measure first note position relative to container when the current line changes.
-  // DO-NOT-CHANGE: Deferred measurement via useEffect + requestAnimationFrame.
-  // Previous useLayoutEffect blocked the browser paint for 12-15ms per line change
-  // (2× getBoundingClientRect forced sync reflow + setState triggered 2nd render).
-  // Deferring to rAF lets the browser paint the new lyrics FIRST, then measures
-  // in the next frame. The flying pointer uses its fallback position for one frame,
-  // which is imperceptible but eliminates the line-change stutter entirely.
-
-  useEffect(() => {
-    const rafId = requestAnimationFrame(() => {
+  // Uses useLayoutEffect to measure BEFORE the browser paints — this prevents the
+  // pointer from flashing to the center (50% fallback) for even a single frame.
+  useLayoutEffect(() => {
+    const measure = () => {
       const container = containerRef.current;
       const noteEl = firstNoteNodeRef.current;
       if (!container || !noteEl) {
@@ -123,27 +118,17 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
       // X position of first note's left edge as percentage of container width
       const relativeX = ((noteRect.left - containerRect.left) / containerRect.width) * 100;
       setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
-    });
-    return () => cancelAnimationFrame(rafId);
-  }, [currentLine]);
-
-  // Stable resize handler — registered once, not on every line change
-  useEffect(() => {
-    const measure = () => {
-      const container = containerRef.current;
-      const noteEl = firstNoteNodeRef.current;
-      if (!container || !noteEl) return;
-      const containerRect = container.getBoundingClientRect();
-      const noteRect = noteEl.getBoundingClientRect();
-      if (containerRect.width === 0) return;
-      const relativeX = ((noteRect.left - containerRect.left) / containerRect.width) * 100;
-      setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
     };
+
+    // Measure immediately (DOM is already committed in useLayoutEffect)
+    measure();
+
+    // Also re-measure on resize
     window.addEventListener('resize', measure);
     return () => {
       window.removeEventListener('resize', measure);
     };
-  }, []);
+  }, [currentLine]);
 
   // ── IMPORTANT: All hooks MUST be called before the early return below. ──
   // Moving any hook after `if (!currentLine) return null` violates the

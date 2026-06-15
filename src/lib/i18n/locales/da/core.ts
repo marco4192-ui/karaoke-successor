@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Søg',
     filter: 'Filter',
     sort: 'Sortér',
-    refresh: 'Opdater'
+    refresh: 'Opdater',
+    player: 'Spiller',
   },
 
   dialogs: {
@@ -290,4 +291,101 @@ export const coreTranslations = {
     description: 'Der opstod en uventet fejl. Prøv at genindlæse siden.',
     tryAgain: 'Prøv igen',
   },
+
+  // --- Countries ---
+  countries: {
+  "germany": "Tyskland",
+  "austria": "Østrig",
+  "switzerland": "Schweiz",
+  "unitedStates": "USA",
+  "unitedKingdom": "Storbritannien",
+  "france": "Frankrig",
+  "italy": "Italien",
+  "spain": "Spanien",
+  "netherlands": "Holland",
+  "poland": "Polen",
+  "japan": "Japan",
+  "southKorea": "Sydkorea",
+  "australia": "Australien",
+  "canada": "Canada",
+  "brazil": "Brasilien",
+  "mexico": "Mexico"
+},
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+  "badges": {
+    "firstChallenge": {
+      "name": "Første skridt",
+      "description": "Gennemfør din første daglige udfordring"
+    },
+    "weekWarrior": {
+      "name": "Ugekæmper",
+      "description": "Oprethold en 7-dages streak"
+    },
+    "fortnightFighter": {
+      "name": "Fjorten-dagskæmper",
+      "description": "Oprethold en 14-dages streak"
+    },
+    "monthlyMaster": {
+      "name": "Månedsmester",
+      "description": "Oprethold en 30-dages streak"
+    },
+    "podiumFinish": {
+      "name": "Podiumplacering",
+      "description": "Placer dig i top 3"
+    },
+    "dailyChampion": {
+      "name": "Dagens mester",
+      "description": "Vind en daglig udfordring"
+    },
+    "dedicatedSinger": {
+      "name": "Dedikeret sanger",
+      "description": "Gennemfør 30 daglige udfordringer"
+    },
+    "legendaryStatus": {
+      "name": "Legendarisk status",
+      "description": "Nå 10.000 XP totalt"
+    },
+    "centuryChampion": {
+      "name": "Århundrede-mester",
+      "description": "Oprethold en 100-dages streak"
+    },
+    "yearlyLegend": {
+      "name": "Årslegend",
+      "description": "Oprethold en 365-dages streak"
+    }
+  },
+  "quests": {
+    "dailyDouble": {
+      "name": "Daglig dobbelt",
+      "description": "Gennemfør 2 daglige udfordringer"
+    },
+    "perfectTen": {
+      "name": "Perfekte ti",
+      "description": "Træf 10 perfekte toner"
+    },
+    "challengeExplorer": {
+      "name": "Udfordrings-udforsker",
+      "description": "Spil 5 forskellige tilstande"
+    },
+    "songbird": {
+      "name": "Fugl",
+      "description": "Gennemfør 10 sange"
+    },
+    "weeklyWarrior": {
+      "name": "Ugekæmper",
+      "description": "Gennemfør 3 ugentlige udfordringer"
+    }
+  },
+  "streakMilestones": {
+    "weekWarrior": "Ugekæmper",
+    "fortnightFighter": "Fjorten-dagskæmper",
+    "monthlyMaster": "Månedsmester",
+    "biMonthlyBoss": "To-månedsboss",
+    "centuryChampion": "Århundrede-mester",
+    "yearlyLegend": "Årslegend"
+  }
+},
+
 };

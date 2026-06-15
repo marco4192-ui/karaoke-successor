@@ -176,9 +176,7 @@ export const mobileTranslations = {
     part1: 'Part 1',
     part2: 'Part 2',
     done: 'Done',
-    step: 'Step {n}',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Added to Jukebox',
+    step: 'Step {n}'
   },
 
   mobileNav: {
@@ -381,7 +379,6 @@ export const mobileTranslations = {
     bestResult: 'Your best attempt today',
     quests: '📋 Quests',
     claimReward: 'Claim Reward',
-    dayMon: 'Mon', dayTue: 'Tue', dayWed: 'Wed', dayThu: 'Thu', dayFri: 'Fri', daySat: 'Sat', daySun: 'Sun',
     challengeMixer: '🔧 Challenge Mixer',
     challengeMixerDesc: 'Combine modifiers to create your own custom challenge!',
     coop: '🤝 Co-op',
@@ -438,12 +435,6 @@ export const mobileTranslations = {
     currentSinger: 'Now singing',
     score: 'Score',
     noPlayers: 'No players yet',
-    medalGold: 'Gold',
-    medalSilver: 'Silver',
-    medalBronze: 'Bronze',
-    trendUp: 'Up',
-    trendDown: 'Down',
-    trendSame: 'Same',
   },
 
   mobileErrorBoundary: {
@@ -500,6 +491,13 @@ export const mobileTranslations = {
     scanHint: 'Scan the QR code on the main screen to connect',
     letsGo: 'Let\'s Go!',
   },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    host: 'Host',
+  },
 
   mobilePreview: {
     preview: 'Preview',
@@ -523,15 +521,17 @@ export const mobileTranslations = {
     cameraUnavailable: 'Camera not available',
     retake: 'Retake',
     noResults: 'No results to show',
-    cameraDeniedHelp: 'Please allow camera access in your browser settings and try again.',
-    cameraUnsupportedHelp: 'Your device doesn\'t support camera access.',
-    startingCamera: 'Starting camera...',
-    ariaClose: 'Close',
-    selfieAlt: 'Selfie with score',
   },
 
-  mobilePitchVisualizer: {
-    startSinging: 'Start singing...',
-    ariaPitchHistory: 'Pitch history visualization',
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: 'First Steps', description: 'Sing your first song' },
+    risingStar: { title: 'Rising Star', description: 'Sing 10 songs' },
+    veteran: { title: 'Veteran', description: 'Sing 50 songs' },
+    perfectionist: { title: 'Perfectionist', description: 'Get a perfect score (95%+)' },
+    flawless: { title: 'Flawless', description: 'Get 5 perfect scores' },
+    scoreMaster: { title: 'Score Master', description: 'Reach 10,000 total points' },
+    playlistBuilder: { title: 'Playlist Builder', description: 'Queue 5 songs' },
+    genreExplorer: { title: 'Genre Explorer', description: 'Sing songs from 3 genres' },
   },
 };

@@ -71,7 +71,7 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
         
         {/* Level/Rank */}
         <div className="text-xs text-white/50 mb-1">
-          {rank?.icon} Lv.{level?.level || 1}
+          {rank?.icon} {t('playerProgression.lv').replace('{n}', String(level?.level || 1))}
         </div>
 
         {/* Connection marker — below level display instead of overlaying avatar */}

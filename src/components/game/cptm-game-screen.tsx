@@ -84,7 +84,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             Pass-the-Mic
           </h2>
           <p className="text-white/40 text-sm mb-8 text-center">
-            {t('passTheMic.everyoneSingsOnTheirPhone') || 'Everyone sings from their own device!'}
+            {t('passTheMic.everyoneSingsOnTheirPhone')}
           </p>
 
           {/* First Player Card */}
@@ -107,7 +107,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
               )}
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-white/40 uppercase tracking-wider mb-1">
-                  {t('passTheMic.startingWith') || 'Starting with'}
+                  {t('passTheMic.startingWith')}
                 </div>
                 <div className="text-xl font-bold truncate" style={{ color: firstPlayer.color }}>
                   {firstPlayer.name}
@@ -123,7 +123,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           {!g.mediaLoaded && (
             <div className="flex items-center gap-2 text-white/40 text-sm mb-4">
               <div className="w-4 h-4 border-2 border-white/30 border-t-cyan-400 rounded-full animate-spin" />
-              {t('gameScreen.loadingMedia') || 'Loading media...'}
+              {t('gameScreen.loadingMedia')}
             </div>
           )}
 
@@ -134,8 +134,8 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             className="w-full py-4 text-lg bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {g.mediaLoaded
-              ? (t('passTheMic.startSinging') || 'Start Singing!')
-              : (t('gameScreen.loading') || 'Loading...')}
+              ? t('passTheMic.startSinging')
+              : t('gameScreen.loading')}
           </Button>
         </div>
       </div>
@@ -325,7 +325,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             onClick={g.handleEndSong}
             className="text-white/40 hover:text-white/70 hover:bg-white/10 text-xs px-3 py-1.5"
           >
-            {t('passTheMic.endEarly') || 'End Early'}
+            {t('passTheMic.endEarly')}
           </Button>
         </div>
       )}

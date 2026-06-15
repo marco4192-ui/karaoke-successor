@@ -2,6 +2,10 @@
 // Auto-split from monolithic locale file
 
 export const partyTranslations = {
+  partyHelpers: {
+    defaultMicName: 'Mic {n}',
+  },
+
   party: {
     title: 'Party Games',
     subtitle: 'Choose a game mode for your party!',
@@ -29,7 +33,8 @@ export const partyTranslations = {
     rateMySongTitle: 'Rate my Song',
     rateMySongDesc: 'Sing a song and let your friends rate your performance! No scoring — just pure fun. Solo, Duel, or Duet mode.',
     onlineMultiplayerTitle: 'Online Multiplayer',
-    onlineMultiplayerDesc: 'Play against friends or find opponents online! Create rooms, join matches, and compete globally!'
+    onlineMultiplayerDesc: 'Play against friends or find opponents online! Create rooms, join matches, and compete globally!',
+    newBadge: 'NEW',
   },
 
   partySetup: {
@@ -54,7 +59,6 @@ export const partyTranslations = {
     mic2: 'Microphone 2',
     mic: 'Microphone {n}',
     songTooShortCptm: 'Song too short for Companion Pass-the-Mic.',
-    defaultMicName: 'Default',
   },
 
   partyGameScreens: {
@@ -133,7 +137,10 @@ export const partyTranslations = {
     handOverMic: 'Pass the mic on :)',
     cumulative: 'Total: {n}',
     roundsPlayed: '{n} rounds played',
-    medleyLabel: '🎵 Medley — {n} Songs'
+    medleyLabel: '🎵 Medley — {n} Songs',
+    micIssueTitle: 'Microphone Issue',
+    micIssueDesc: 'Could not initialize pitch detection. Scoring will be disabled for this round. Check your microphone permissions and try again.',
+    medleySongTitle: 'Medley ({n} Songs)',
   },
 
   matchAbort: {
@@ -145,6 +152,17 @@ export const partyTranslations = {
     selectWinnerDesc: 'Who won this match?',
     asWinner: 'As Winner',
     back: '← Back'
+  },
+
+  tournament: {
+    score: 'Score: {n}',
+    accuracy: 'Accuracy: {n}%',
+    vs: 'VS',
+    type: 'Tournament Type',
+    tiebreak: 'Tiebreak Mode',
+    dynamicDifficulty: 'Dynamic Difficulty',
+    songSelection: 'Song Selection Mode',
+    seeding: 'Seeding Mode',
   },
 
   competitiveWords: {
@@ -265,7 +283,6 @@ export const partyTranslations = {
     eliminationOrder: 'Elimination Order',
     noLyrics: 'No lyrics',
     player: 'Player {n}',
-    playerFallback: 'Player',
     // #2 Song Voting
     voteTitle: '🗳️ Vote for the Next Song!',
     voteSubtitle: 'All players choose which song to sing',
@@ -283,11 +300,7 @@ export const partyTranslations = {
     noRepeatCount: 'Remember last {n} songs',
     // #4 Grand Finale
     grandFinale: 'THE FINAL TWO',
-    grandFinaleSubtitle: 'The Final Two',
     grandFinaleLabel: 'Grand Finale Format',
-    versus: 'VERSUS',
-    vsText: 'VS',
-    eliminatedLabel: 'Eliminated',
     grandFinaleRound: 'Final Round {n}',
     bestOf: 'Best of {n}',
     firstTo: 'First to {n}',
@@ -428,6 +441,9 @@ export const partyTranslations = {
     clickSongToPlay: 'Click on a song to start playing!',
     // Song too short (CPTM)
     songTooShortCptm: 'Song too short for Companion Pass-the-Mic.',
+    errorMaxPlayers: 'Maximum {n} players allowed',
+    errorMinPlayers: 'Minimum {n} players required',
+    companionBadge: 'Companion',
   },
 
   // Extended descriptions for game modes
@@ -446,9 +462,11 @@ export const partyTranslations = {
 
   // Game mode setting labels (where needed in unified setup)
   modeSettings: {
-    // Companion Pass the Mic
+    // Companion Sing-Along
+    minTurnDuration: 'Min Turn Duration',
+    maxTurnDuration: 'Max Turn Duration',
     blinkWarning: 'Blink Warning',
-    blinkWarningDesc: 'Seconds before segment change',
+    blinkWarningDesc: 'Warning time before switch',
     // Medley
     playMode: 'Play Mode',
     playModeDesc: 'FFA, Team or Elimination',
@@ -457,9 +475,69 @@ export const partyTranslations = {
     elimination: '💀 Elimination (2-4 Players)',
     teamSize: 'Team Size',
     teamSizeDesc: 'For team mode',
+    '1v1Snippets': '1v1 (5 Snippets)',
+    '2v2Snippets': '2v2 (4 Snippets)',
     snippetDuration: 'Snippet Duration',
     transitionTime: 'Transition Time',
     transitionTimeDesc: 'Time between snippets',
+    // Tournament
+    bracketSize: 'Bracket Size',
+    bracket2: '2 — Duel',
+    bracket4: '4 Players',
+    bracket8: '8 Players',
+    bracket16: '16 Players',
+    bracket32: '32 Players',
+    shortMode: 'Short Mode',
+    shortModeDesc: 'Each match lasts only 60 seconds',
+    singleElimination: 'Single Elimination',
+    doubleElimination: 'Double Elimination',
+    coinFlip: 'Coin Flip',
+    accuracy: 'Accuracy',
+    maxCombo: 'Max Combo',
+    goldenMic: 'Golden Mic',
+    random: 'Random',
+    vote: 'Vote',
+    byStrength: 'By Strength',
+    // Battle Royale
+    roundDuration: 'Round Duration',
+    finalRoundDuration: 'Final Round Duration',
+    medleyMode: 'Medley Mode',
+    medleyModeDesc: 'Multiple song snippets per round',
+    normalFinal: 'Normal Final',
+    bestOf3: 'Best of 3',
+    bestOf5: 'Best of 5',
+    bountySystem: 'Bounty System',
+    bountySystemDesc: 'Score multiplier for hunting the leader',
+    bountyMultiplier: 'Bounty Multiplier',
+    escalatingDifficulty: 'Escalating Difficulty',
+    escalatingDifficultyDesc: 'Difficulty increases every 3 rounds',
+    shrinkingTimer: 'Shrinking Timer',
+    shrinkingTimerDesc: 'Rounds get shorter over time',
+    noRepeatProtection: 'No-Repeat Protection',
+    noRepeatProtectionDesc: 'Prevent recently played songs',
+    // Blind
+    blindLight: 'Light (15%)',
+    blindNormal: 'Normal (30%)',
+    blindHard: 'Hard (60%)',
+    blindInsane: 'Insane (90%)',
+    hardcoreMode: 'Hardcore Mode',
+    hardcoreModeDesc: 'Text hidden when notes visible, and vice versa',
+    escalating: 'Escalating',
+    escalatingDesc: 'Frequency increases each round',
+    '1Round': '1 Round',
+    bestOf7: 'Best of 7',
+    // Missing Words
+    mwLight: 'Light (15%)',
+    mwNormal: 'Normal (30%)',
+    mwHard: 'Hard (60%)',
+    mwInsane: 'Insane (90%)',
+    mwWords: 'Words',
+    mwPassages: 'Passages',
+    mwBoth: 'Both',
+    mwHardcoreMode: 'Hardcore Mode',
+    mwHardcoreModeDesc: 'Hidden words stay hidden until song ends',
+    mwEscalating: 'Escalating',
+    mwEscalatingDesc: 'Frequency increases each round',
     // Rate My Song
     duration: 'Duration',
     short60s: 'Short (60s)',
@@ -475,5 +553,19 @@ export const partyTranslations = {
     challengesDesc: 'Random challenges before each round',
     betting: 'Betting',
     bettingDesc: 'Audience can predict',
+  },
+
+  // Game mode titles and descriptions
+  gameModes: {
+    'passTheMic': { title: 'Pass the Mic', description: 'Take turns singing parts of a song!' },
+    'companionSingalong': { title: 'Companion Sing-A-Long', description: 'Your phone randomly lights up — sing when it blinks!' },
+    'companionPassTheMic': { title: 'Companion Pass the Mic', description: 'Sing segments via your phone — blink warns you before your turn!' },
+    'medley': { title: 'Medley Contest', description: 'FFA or Team mode — sing random song snippets!' },
+    'tournament': { title: 'Tournament Mode', description: 'Single elimination bracket — Sudden Death!' },
+    'battleRoyale': { title: 'Battle Royale', description: 'All sing together — lowest score eliminated each round! Up to 24 players (4 mic + 20 companion)' },
+    'duel': { title: 'Duel Mode', description: 'Two players compete head-to-head!' },
+    'blind': { title: 'Blind Karaoke', description: 'Musical passages go blind! Solo, Co-op, or Competitive.' },
+    'missingWords': { title: 'Missing Words', description: 'Words or passages disappear! Solo, Co-op, or Competitive.' },
+    'rateMySong': { title: 'Rate my Song', description: 'Sing a song and let friends rate your performance!' },
   },
 };

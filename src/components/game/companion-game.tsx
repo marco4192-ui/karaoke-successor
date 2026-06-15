@@ -590,7 +590,7 @@ export function CompanionGameView({
 
           {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 text-center">
-            {t('companion.singAlongTitle') || 'Companion Sing-A-Long'}
+            {t('companion.singAlongTitle')}
           </h1>
           <p className="text-white/40 text-sm mb-8 text-center">
             {effectiveSong.title} — {effectiveSong.artist}
@@ -639,7 +639,7 @@ export function CompanionGameView({
           {!mediaLoaded && (
             <div className="flex items-center gap-2 text-white/40 text-sm mb-4">
               <div className="w-4 h-4 border-2 border-white/30 border-t-emerald-400 rounded-full animate-spin" />
-              {t('gameScreen.loadingMedia') || 'Loading media...'}
+              {t('gameScreen.loadingMedia')}
             </div>
           )}
 
@@ -650,8 +650,8 @@ export function CompanionGameView({
             className="w-full py-4 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mediaLoaded
-              ? (t('companion.startSinging') || 'Start Singing!')
-              : (t('gameScreen.loading') || 'Loading...')}
+              ? t('companion.startSinging')
+              : t('gameScreen.loading')}
           </Button>
         </div>
       </div>
@@ -874,7 +874,7 @@ export function CompanionGameView({
           <div className="text-center animate-pulse">
             <div className="text-6xl font-black text-amber-400 mb-2">{switchCountdown}</div>
             <div className="text-xl font-bold text-white">
-              {t('companion.switching') || 'Switching...'}
+              {t('companion.switching')}
             </div>
             <div className="text-white/60 mt-2">
               {playersRef.current[nextPlayerIndexRef.current]?.name}

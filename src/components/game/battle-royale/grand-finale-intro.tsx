@@ -111,7 +111,7 @@ export function GrandFinaleIntro({
         {phase === 'intro' && (
           <div className="animate-fade-in">
             <p className="text-lg tracking-[0.5em] text-amber-400/70 uppercase mb-4 animate-pulse">
-              {t('battleRoyale.grandFinaleSubtitle')}
+              The Final Two
             </p>
             <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 mb-4">
               {t('battleRoyale.grandFinale')}
@@ -129,7 +129,7 @@ export function GrandFinaleIntro({
             style={{ animation: 'vsZoomIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
           >
             <span className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-red-500 drop-shadow-[0_0_30px_rgba(245,158,11,0.6)]">
-              {t('battleRoyale.versus')}
+              VERSUS
             </span>
           </div>
         )}
@@ -171,7 +171,7 @@ export function GrandFinaleIntro({
               className="text-5xl md:text-7xl font-black text-red-500"
               style={{ animation: 'vsBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
             >
-              {t('battleRoyale.vsText')}
+              VS
             </div>
 
             {/* Player 2 */}

@@ -376,19 +376,13 @@ export default function KaraokeZERO() {
   useAutoFocus(mainRef, screen);
 
   // ── Hydration guard for Tauri ──
-  // Renders a structural skeleton matching the main app layout (NavBar + content)
-  // to prevent CLS when the app hydrates and the real NavBar + content appear.
   if (!isMounted) {
     return (
       <div
-        className="h-screen overflow-hidden flex flex-col w-full"
+        className="h-screen w-full"
         style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
         suppressHydrationWarning
-      >
-        {/* Skeleton NavBar — reserves vertical space to prevent CLS */}
-        <nav className="h-14 flex-shrink-0 bg-black/30 backdrop-blur-sm border-b border-white/5" aria-hidden="true" />
-        <main className="flex-1 min-h-0" />
-      </div>
+      />
     );
   }
 
@@ -459,7 +453,7 @@ export default function KaraokeZERO() {
               if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 // Always generate initial segments (may be time-based if lyrics lack notes)
-                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics, song.bpm);
+                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
                 party.setPassTheMicSegments(segments);
                 // Ensure URLs AND lyrics (with notes) are ready BEFORE navigating to PTM screen.
                 // Always re-generate segments after lyrics load so score-based splitting is used.
@@ -478,7 +472,7 @@ export default function KaraokeZERO() {
                       } catch { /* non-critical */ }
                     }
                     // Always regenerate segments with the best available lyrics for score-based splitting
-                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics, songWithUrls.bpm);
+                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
                     party.setPassTheMicSegments(scoreSegments);
                     party.setPassTheMicSong(songWithUrls);
                   } catch {
@@ -544,7 +538,7 @@ export default function KaraokeZERO() {
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
               // Generate initial segments (may be time-based if lyrics lack notes)
-              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics, song.bpm);
+              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
               party.setPassTheMicSegments(segments);
               // Async: load lyrics with notes for score-based segment splitting
               (async () => {
@@ -561,7 +555,7 @@ export default function KaraokeZERO() {
                     } catch { /* non-critical */ }
                   }
                   const finalSong = await ensureSongUrls(songWithLyrics);
-                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics, finalSong.bpm);
+                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics);
                   party.setPassTheMicSegments(scoreSegments);
                   party.setPassTheMicSong(finalSong);
                   setSong(finalSong);
@@ -631,7 +625,7 @@ export default function KaraokeZERO() {
               <div className="text-4xl mb-2">🏆</div>
               <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
               <p className="text-sm text-white/50 mt-1">
-                {match.player1?.name}{' ' + t('matchAbort.vs') + ' '}{match.player2?.name}
+                {match.player1?.name} vs {match.player2?.name}
               </p>
             </div>
             <div className="space-y-3">

@@ -2,6 +2,33 @@
 // Auto-split from monolithic locale file
 
 export const gameTranslations = {
+  share: {
+    points: 'POINTS',
+    accuracy: 'Accuracy',
+    maxCombo: 'Max Combo',
+    rating: 'Rating',
+    playerLabel: 'Player: {name}',
+    shareTitle: 'Karaoke ZERO Score',
+    mode: 'Mode',
+    difficulty: 'Difficulty',
+    scoredPoints: 'I just scored {score} points on "{title}" by {artist}!',
+    callToAction: 'Play {branding} and try to beat my score!',
+  },
+
+  scoreEvents: {
+    perfect: 'PERFECT',
+    great: 'GREAT',
+    good: 'GOOD',
+    okay: 'OKAY',
+    miss: 'MISS',
+  },
+
+  difficulty: {
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+  },
+
   game: {
     back: 'Back',
     sync: 'Sync',
@@ -43,9 +70,7 @@ export const gameTranslations = {
     echo: 'Echo: {n}%',
     presets: 'Presets',
     adPlaying: 'Ad playing',
-    gamePaused: 'Game Paused',
-    reverbAriaLabel: 'Reverb',
-    echoAriaLabel: 'Echo',
+    gamePaused: 'Game Paused'
   },
 
   gameEnhancements: {
@@ -67,27 +92,13 @@ export const gameTranslations = {
 
   noteLane: {
     singHere: 'SING HERE',
-    blindAriaLabel: 'Blind section - sing by feel!',
-  },
-
-  noteHighway: {
-    blindLabel: 'BLIND',
-  },
-
-  micIndicator: {
-    singsWithMic: '{mic} — {name} is singing',
-    sings: '{name} is singing',
-    micActive: 'Microphone active',
-    playerPrefix: 'P{n}:',
-    companionPlayers: 'Companion Players',
   },
 
   practicePanel: {
     title: 'Practice Mode',
     enable: 'Enable Practice Mode',
     pitchGuide: 'Pitch Guide',
-    autoPlayNotes: 'Auto-Play Notes',
-    playbackSpeed: 'Playback Speed: {n}%',
+    autoPlayNotes: 'Auto-Play Notes'
   },
 
   mic: {
@@ -233,11 +244,7 @@ export const gameTranslations = {
     noAll: 'No highscores yet. Be the first to sing!',
     accuracyLabel: '{n}% accuracy',
     maxComboLabel: '{n}x max combo',
-    totalPoints: 'total points',
-    cannotConnect: 'Cannot connect to leaderboard server. Please check your internet connection.',
-    loadFailed: 'Failed to load global leaderboard',
-    serverError500: 'Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.',
-    networkError: 'Network error. Please check your internet connection.',
+    totalPoints: 'total points'
   },
 
   keyboardShortcuts: {
@@ -300,6 +307,9 @@ export const gameTranslations = {
     networkError: 'Network error',
   },
 
+  paused: 'PAUSED',
+  go: 'GO!',
+
   common: {
     unknown: 'Unknown',
     unknownArtist: 'Unknown Artist',
@@ -309,5 +319,108 @@ export const gameTranslations = {
   page: {
     loading: 'Loading Karaoke ZERO...',
     reload: 'Reload',
+  },
+
+  // --- Achievements (i18n keys for src/lib/game/achievements.ts) ---
+  achievements: {
+    firstNote: { name: 'First Note', description: 'Hit your first note' },
+    perfectTen: { name: 'Perfect Ten', description: 'Get 10 Perfect hits in a single song' },
+    comboMaster: { name: 'Combo Master', description: 'Achieve a 50 note combo' },
+    comboKing: { name: 'Combo King', description: 'Achieve a 100 note combo', rewardTitle: 'Combo King' },
+    comboLegend: { name: 'Combo Legend', description: 'Achieve a 200 note combo', rewardTitle: 'Combo Legend' },
+    perfectSong: { name: 'Perfect Song', description: 'Get 99.5%+ accuracy on a song', rewardTitle: 'Perfectionist' },
+    pitchPerfect: { name: 'Pitch Perfect', description: 'Get over 90% accuracy' },
+    risingStar: { name: 'Rising Star', description: 'Score over 8,000 points' },
+    scoreMaster: { name: 'Score Master', description: 'Score over 9,000 points' },
+    flawless: { name: 'Flawless', description: 'Score over 9,500 points', rewardTitle: 'Flawless' },
+    goldenCollector: { name: 'Golden Collector', description: 'Hit 10 golden notes' },
+    goldenMaster: { name: 'Golden Master', description: 'Hit 50 golden notes', rewardTitle: 'Golden Voice' },
+    firstSong: { name: 'First Steps', description: 'Complete your first song' },
+    tenSongs: { name: 'Karaoke Enthusiast', description: 'Complete 10 songs' },
+    fiftySongs: { name: 'Karaoke Regular', description: 'Complete 50 songs' },
+    hundredSongs: { name: 'Karaoke Legend', description: 'Complete 100 songs', rewardTitle: 'Karaoke Legend' },
+    fiveGames: { name: 'Getting Started', description: 'Play 5 games' },
+    twentyGames: { name: 'Dedicated Singer', description: 'Play 20 games' },
+    partyTime: { name: 'Party Time!', description: 'Play a party game mode' },
+    duelChampion: { name: 'Duel Champion', description: 'Win a duel match' },
+    passTheMic: { name: 'Pass the Mic!', description: 'Play Pass the Mic mode' },
+    showerSinger: { name: 'Shower Singer', description: 'Score less than 20% on a song', rewardTitle: 'Shower Singer' },
+    comebackKing: { name: 'Comeback King', description: 'Get a combo of 50+ after missing 10 notes' },
+    speedDemon: { name: 'Speed Demon', description: 'Complete a song at 1.5x speed' },
+    blindMaster: { name: 'Blind Master', description: 'Complete a song in Blind Karaoke mode', rewardTitle: 'Blind Master' },
+  },
+
+  // --- Ranks ---
+  ranks: {
+    beginner: { name: 'Beginner', titles: { newcomer: 'Newcomer' } },
+    novice: { name: 'Novice', titles: { risingStar: 'Rising Star' } },
+    apprentice: { name: 'Apprentice', titles: { melodyMaker: 'Melody Maker' } },
+    singer: { name: 'Singer', titles: { voiceInTraining: 'Voice in Training' } },
+    performer: { name: 'Performer', titles: { stagePresence: 'Stage Presence' } },
+    artist: { name: 'Artist', titles: { artisticSoul: 'Artistic Soul' } },
+    star: { name: 'Star', titles: { shiningStar: 'Shining Star' } },
+    superstar: { name: 'Superstar', titles: { crowdFavorite: 'Crowd Favorite' } },
+    legend: { name: 'Legend', titles: { legendaryVoice: 'Legendary Voice' } },
+    icon: { name: 'Icon', titles: { musicalIcon: 'Musical Icon' } },
+    mythic: { name: 'Mythic', titles: { mythicSinger: 'Mythic Singer' } },
+    divine: { name: 'Divine', titles: { divineVoice: 'Divine Voice' } },
+  },
+
+  // --- Challenge Modes ---
+  challenges: {
+    blindAudition: { name: 'Blind Audition', description: 'Sing without seeing the lyrics - memory test!' },
+    freeFlight: { name: 'Free Flight', description: 'No pitch guide - sing by ear!' },
+    speedDemon: { name: 'Speed Demon', description: '1.5x speed - think fast!' },
+    perfectionist: { name: 'Perfectionist', description: 'Only perfect notes count!' },
+    goldenHunter: { name: 'Golden Hunter', description: 'Only golden notes give points - catch them all!' },
+    memoryLane: { name: 'Memory Lane', description: 'Missing words challenge - fill in the blanks!' },
+    pitchShift: { name: 'Pitch Shift', description: 'Song is transposed - adapt your voice!' },
+    halfSpeed: { name: 'Slow Motion', description: '0.75x speed - perfect for practice!' },
+    blindMaster: { name: 'Blind Master', description: 'No lyrics AND no pitch guide - true blind singing!' },
+    ultimateChallenge: { name: 'Ultimate Challenge', description: 'All modifiers combined - for the brave!' },
+  },
+
+  // --- Challenge Modifiers ---
+  modifiers: {
+    noLyrics: { label: 'No Lyrics', description: 'Lyrics are hidden', shortDescription: 'No lyrics' },
+    noPitchGuide: { label: 'No Pitch Guide', description: 'Pitch guide is hidden', shortDescription: 'No pitch guide' },
+    doubleSpeed: { label: 'Speed Boost', description: 'Song plays faster', shortDescription: '1.25x speed' },
+    halfSpeed: { label: 'Slow Motion', description: 'Song plays slower' },
+    perfectOnly: { label: 'Perfectionist', description: 'Only perfect notes count' },
+    goldenOnly: { label: 'Golden Hunter', description: 'Only golden notes count' },
+    missingWords: { label: 'Missing Words', description: 'Some words are hidden' },
+    blind: { label: 'Blind', description: 'No lyrics and no pitch guide' },
+    pitchShift: { description: 'Pitch shifted by 3 semitones' },
+  },
+
+  // --- Ranking Titles ---
+  rankingTitles: {
+    showerSingingSensation: 'Shower Singing Sensation',
+    karaokeRoyalty: 'Karaoke Royalty',
+    vocalVirtuoso: 'Vocal Virtuoso',
+    micDropMaster: 'Mic Drop Master',
+    diamondVoice: 'Diamond Voice',
+    broadwayWannabe: 'Broadway Wannabe',
+    noteNailer: 'Note Nailer',
+    pitchyParrot: 'Pitchy Parrot',
+    circusSinger: 'Circus Singer',
+    humbleHummer: 'Humble Hummer',
+    underConstruction: 'Under Construction',
+    bathroomBaritone: 'Bathroom Baritone',
+    phantomPhony: 'Phantom Phony',
+    duckTapeSinger: 'Duck Tape Singer',
+    tunelessTroubadour: 'Tuneless Troubadour',
+    vocalTornado: 'Vocal Tornado (Disaster)',
+    toneDeafTitan: 'Tone Deaf Titan',
+    clownCarCrooner: 'Clown Car Crooner',
+    toneZombie: 'Tone Zombie',
+    whisperingWimp: 'Whispering Wimp',
+    silentScream: 'Silent Scream',
+  },
+
+  // --- Battle Royale (new keys) ---
+  battleRoyale: {
+    bounty: 'BOUNTY',
+    micError: 'Mic',
   },
 };

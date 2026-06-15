@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: 'Noten:',
       lines: 'Regels:',
       file: 'Bestand:',
+      player1: 'Speler 1',
+      player2: 'Speler 2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Naam speler 1',
       duetPlayer2: '#P2: (Duet Speler 2)',
       duetPlayer2Placeholder: 'Naam speler 2',
+      tagsPlaceholder: 'tag1, tag2, tag3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: 'Suggesties ({count})',
       acceptAll: 'Alles accepteren',
       aiTip: 'Tip: AI-suggesties zijn slechts hulpmiddelen. Controleer alle wijzigingen voordat je opslaat.',
+      failed: 'Mislukt',
+      networkError: 'Netwerkfout',
     },
 
     // Timeline
@@ -608,3 +613,4 @@ export const libraryTranslations = {
     dropFailed: 'Sleepen mislukt: {error}',
   },
 };
+

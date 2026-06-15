@@ -390,9 +390,9 @@ export function PlayingView({
                     <span className="text-5xl">✕</span>
                   </div>
                   <p className="text-red-400 font-bold text-lg">
-                    {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || t('battleRoyale.playerFallback')}
+                    {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || 'Player'}
                   </p>
-                  <p className="text-white/50 text-sm mt-1">{t('battleRoyale.eliminatedLabel')}</p>
+                  <p className="text-white/50 text-sm mt-1">Eliminated</p>
                 </div>
               </div>
             );
@@ -433,7 +433,7 @@ export function PlayingView({
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
           <div className="text-center animate-in fade-in duration-300">
             <div className="text-8xl mb-4">⏸</div>
-            <h2 className="text-3xl font-bold text-white/90">PAUSED</h2>
+            <h2 className="text-3xl font-bold text-white/90">{t('game.paused')}</h2>
           </div>
         </div>
       )}
@@ -448,7 +448,7 @@ export function PlayingView({
             className="text-8xl font-black text-white drop-shadow-2xl"
             style={{ animation: 'countdownPop 0.3s ease-out' }}
           >
-            {game.isGrandFinale ? 'LOS!' : 'GO!'}
+            {t('game.go')}
           </div>
         </div>
       )}
@@ -656,7 +656,7 @@ export function PlayingView({
 
                     {/* #6 Bounty multiplier indicator */}
                     {isBounty && !eliminated && (
-                      <span className="text-[8px] text-amber-400">🎯 BOUNTY</span>
+                      <span className="text-[8px] text-amber-400">{t('battleRoyale.bounty')}</span>
                     )}
                     {!isBounty && !eliminated && bountyPlayerId && (
                       <span className="text-[8px] text-amber-400/60">×{bountyMultiplier}</span>
@@ -673,7 +673,7 @@ export function PlayingView({
                     {!eliminated && player.playerType === 'microphone' && activeMicPlayers.length >= 2 && (() => {
                       const pp = playerPitchMap.get(player.id);
                       const hasError = multiPitchErrors.has(player.id);
-                      if (hasError) return <span className="text-[8px] text-red-400">⚠ Mic</span>;
+                      if (hasError) return <span className="text-[8px] text-red-400">{t('battleRoyale.micError')}</span>;
                       if (pp && pp.isSinging && pp.note != null) return <span className="text-[8px] text-green-400">🎤●</span>;
                       if (pp && pp.volume > 0.01) return <span className="text-[8px] text-yellow-400">🎤○</span>;
                       return <span className="text-[8px] text-white/20">🎤</span>;

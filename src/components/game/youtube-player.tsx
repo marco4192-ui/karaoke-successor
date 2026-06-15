@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
-import { useTranslation } from '@/lib/i18n/translations';
 export { isYouTubeUrl } from '@/lib/url-utils';
 
 // Extract YouTube video ID from various URL formats
@@ -47,6 +46,15 @@ interface YouTubePlayerProps {
 // Global player counter for unique IDs
 let playerCounter = 0;
 
+// YouTube error codes mapped to user-friendly messages
+const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
+  2: 'Der Anfrage-Parameter enthält einen ungültigen Wert.',
+  5: 'Ein HTML5-spezifischer Fehler ist aufgetreten.',
+  100: 'Das Video wurde nicht gefunden. Möglicherweise wurde es gelöscht oder als privat markiert.',
+  101: 'Das Video kann nicht eingebettet werden.',
+  150: 'Das Video kann nicht eingebettet werden.',
+};
+
 export function YouTubePlayer({ 
   videoId, 
   videoGap = 0,
@@ -60,7 +68,6 @@ export function YouTubePlayer({
   startTime = 0,
   interactive = false
 }: YouTubePlayerProps) {
-  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
@@ -274,14 +281,7 @@ export function YouTubePlayer({
           },
           onError: (event) => {
             const errorCode = event.data as number;
-            const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
-              2: t('youtube.errorInvalidParam'),
-              5: t('youtube.errorHtml5'),
-              100: t('youtube.errorVideoNotFound'),
-              101: t('youtube.errorEmbed'),
-              150: t('youtube.errorEmbed'),
-            };
-            const message = YOUTUBE_ERROR_MESSAGES[errorCode] || t('youtube.errorUnknown').replace('{n}', String(errorCode));
+            const message = YOUTUBE_ERROR_MESSAGES[errorCode] || `Unbekannter YouTube-Fehler (Code: ${errorCode})`;
             // eslint-disable-next-line no-console
             console.error('[YouTube] Player error:', message);
             onErrorRef.current?.(errorCode);

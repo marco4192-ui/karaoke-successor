@@ -362,7 +362,7 @@ export const medleyTournamentTranslations = {
     performances: 'Wystąpienia',
     avgRating: 'Śr. ocena',
     bestRating: 'Najlepsza ocena',
-    achievements: 'Osiągnięcia',
+    achievementsLabel: 'Osiągnięcia',
     newAchievement: 'Nowe osiągnięcie!',
     songSuggestions: 'Podobne piosenki',
     trend: 'Trend',

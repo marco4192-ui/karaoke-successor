@@ -147,6 +147,8 @@ export const medleyTournamentTranslations = {
     surprise: 'サプライズ',
     shareResult: '結果を共有',
     shareText: 'Music Karaoke App',
+    shareWinner: '勝者: {name} ({score} {pts})',
+    shareBestCombo: 'ベストコンボ: {n}x',
     copied: 'クリップボードにコピー！',
     flopComment: '次は頑張ろう...',
     // Team Bonuses
@@ -164,6 +166,9 @@ export const medleyTournamentTranslations = {
     teamBonusBreakdown: 'チームボーナス内訳',
     // Additional
     savedToLeaderboard: 'リーダーボードに保存！',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'スニペット',
+    localMicShort: 'ローカル',
     ofSong: '曲目: {title}',
     comboOnSong: '曲: {title}',
   },
@@ -363,7 +368,7 @@ export const medleyTournamentTranslations = {
     performances: 'パフォーマンス',
     avgRating: '平均評価',
     bestRating: '最高評価',
-    achievements: '実績',
+    achievementsLabel: '実績',
     newAchievement: '新実績！',
     songSuggestions: '似ている曲',
     trend: 'トレンド',
@@ -388,5 +393,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: '信じられないパフォーマンス！',
     genreStats: 'ジャンル統計',
     wallOfFame: '名誉の壁',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'アクセントで歌う', description: '曲全体でベストな偽アクセントを使う' },
+      silentMinute: { title: 'サイレント分', description: '途中で10秒歌うのをやめ、パフォーマンスを続ける' },
+      danceBreak: { title: 'ダンスブレイク', description: '曲の中で最低3つのダンスムーブをする' },
+      phoneSinger: { title: '電話シンガー', description: 'スマホでTikTokを撮ってるみたいに歌う' },
+      supermarketStyle: { title: 'スーパーマーケット風', description: '買い物しながら気軽に歌ってるみたいにパフォーマンス' },
+      tempoSwitch: { title: 'テンポチェンジ', description: 'ゆっくり始めて、真ん中で超高速、またゆっくり' },
+      smirkMode: { title: 'ニヤニヤモード', description: 'ずっと自信たっぷりのニヤニヤ顔を維持' },
+      airGuitarSolo: { title: 'エアギターソロ', description: 'インスト部分でエアギターソロを披露' },
+      micDrop: { title: 'マイクドロップ', description: '曲の最後にドラマチックなマイクドロップのポーズで終わる' },
+      divaMode: { title: 'ディーバモード', description: '最大のドラマ、手のジェスチャー、ヘアフリップで歌う' },
+      whisperStart: { title: 'ウィスパースタート', description: '最初の15秒をささやきで始め、その後全開力で' },
+      operaStyle: { title: 'オペラ風', description: 'オペラ歌手のように超ドラマチックに歌う' },
+      discoFever: { title: 'ディスコフィーバー', description: 'サビごとにディスコのダンスステップを追加' },
+      emotionalRollercoaster: { title: 'エモーショナルローラーコースター', description: '泣きと笑いの表情を切り替える' },
+      countryTwist: { title: 'カントリーツイスト', description: 'カントリーアクセントとイーハーゲスチャーを追加' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'ファーストパフォーマンス', description: '1回パフォーマンスを完了' },
+      goldenVoice: { name: 'ゴールデンボイス', description: '9.0以上の評価を獲得' },
+      crowdFavorite: { name: '観客のお気に入り', description: '計10人以上の異なる観客から評価される' },
+      allRounder: { name: '万能選手', description: '5つ以上のジャンルでパフォーマンス' },
+      perfectionist: { name: '完璧主義者', description: '9.5以上の評価を獲得' },
+      stageAnimal: { name: 'ステージアニマル', description: '20回以上パフォーマンス' },
+      centurion: { name: 'センチュリオン', description: '合計100回以上の観客評価を受信' },
+      comebackKid: { name: 'カムバックキッド', description: '最低評価から最高評価まで3ポイント以上改善' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: '新人',
+      openMic: 'オープンマイク',
+      regular: 'レギュラー',
+      star: 'スター',
+      superstar: 'スーパースター',
+      legend: 'レジェンド',
+    },
+
+    awards: '賞',
   },
 };

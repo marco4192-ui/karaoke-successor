@@ -137,6 +137,8 @@ export const medleyTournamentTranslations = {
     surprise: '惊喜',
     shareResult: '分享结果',
     shareText: '音乐卡拉OK应用',
+    shareWinner: '获胜者: {name} ({score} {pts})',
+    shareBestCombo: '最佳连击: {n}x',
     copied: '已复制到剪贴板！',
     flopComment: '下次好运...',
     teamBonuses: '团队加成',
@@ -152,6 +154,9 @@ export const medleyTournamentTranslations = {
     mvpOfMatch: '本场MVP',
     teamBonusBreakdown: '团队加成明细',
     savedToLeaderboard: '已保存到排行榜！',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: '片段',
+    localMicShort: '本地',
     ofSong: '来自: {title}',
     comboOnSong: '在: {title}',
   },
@@ -344,7 +349,7 @@ export const medleyTournamentTranslations = {
     performances: '表演次数',
     avgRating: '平均评分',
     bestRating: '最高评分',
-    achievements: '成就',
+    achievementsLabel: '成就',
     newAchievement: '新成就！',
     songSuggestions: '相似歌曲',
     trend: '趋势',
@@ -369,5 +374,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: '不可思议的表演！',
     genreStats: '风格统计',
     wallOfFame: '荣誉墙',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: '口音演唱', description: '整首歌都用你最好的假口音' },
+      silentMinute: { title: '沉默时刻', description: '中间停止演唱10秒，继续表演' },
+      danceBreak: { title: '舞蹈休息', description: '歌曲中至少做3个舞蹈动作' },
+      phoneSinger: { title: '手机歌手', description: '像拍TikTok那样用手机演唱' },
+      supermarketStyle: { title: '超市风格', description: '像在超市随意哼唱那样表演' },
+      tempoSwitch: { title: '节拍切换', description: '慢速开始，中间超快，再慢速' },
+      smirkMode: { title: '坏笑模式', description: '全程保持自信的坏笑' },
+      airGuitarSolo: { title: '空气吉他独奏', description: '在器乐部分弹空气吉他' },
+      micDrop: { title: '麦克风掉落', description: '以戏剧性的麦克风掉落姿势结束' },
+      divaMode: { title: '天后模式', description: '最大戏剧性、手势和甩头' },
+      whisperStart: { title: '耳语开始', description: '前15秒耳语，然后全力演唱' },
+      operaStyle: { title: '歌剧风格', description: '像歌剧演唱家那样夸张演唱' },
+      discoFever: { title: '迪斯科热', description: '每段副歌加迪斯科舞步' },
+      emotionalRollercoaster: { title: '情感过山车', description: '在哭泣和欢笑表情间切换' },
+      countryTwist: { title: '乡村风', description: '加乡村口音和耶哈手势' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: '首场演出', description: '完成1次演出' },
+      goldenVoice: { name: '黄金之声', description: '获得 >= 9.0 的评分' },
+      crowdFavorite: { name: '观众最爱', description: '累计获得10+个不同观众评分' },
+      allRounder: { name: '多面手', description: '在5+个不同流派中演出' },
+      perfectionist: { name: '完美主义者', description: '获得 >= 9.5 的评分' },
+      stageAnimal: { name: '舞台动物', description: '20+ 次演出' },
+      centurion: { name: '百夫长', description: '累计获得 100+ 个观众评分' },
+      comebackKid: { name: '逆袭少年', description: '评分从最低到最高提升3+分' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: '新人',
+      openMic: '开放麦克风',
+      regular: '常客',
+      star: '明星',
+      superstar: '超级明星',
+      legend: '传说',
+    },
+
+    awards: '奖项',
   },
 };

@@ -194,6 +194,16 @@ export const mutableState = {
     gameMode: 'duel' | 'duet';
     timestamp: number;
   }>,
+
+  // F4: In-game chat messages between companion and host
+  chatMessages: [] as Array<{
+    id: string;
+    from: string;
+    fromName: string;
+    text: string;
+    timestamp: number;
+    isHost: boolean;
+  }>,
 };
 
 export function generateConnectionCode(): string {
@@ -364,4 +374,6 @@ export function resetAllState() {
   mutableState.tournamentCrowdVotes = [];
   // Clear pending duel requests
   mutableState.pendingDuelRequests = [];
+  // Clear chat messages
+  mutableState.chatMessages = [];
 }

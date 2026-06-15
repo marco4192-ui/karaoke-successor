@@ -7,6 +7,7 @@ import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
+import { useTranslation } from '@/lib/i18n/translations';
 import { nativePickFolder } from '@/lib/native-fs';
 
 interface ScanProgress {
@@ -44,6 +45,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
   const [folderSaveComplete, setFolderSaveComplete] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
+
+  const { t } = useTranslation();
 
   // Refs for setTimeout cleanup
   const scanProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,7 +87,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Perform folder scan and import songs
   const performFolderScan = useCallback(async (folderPath: string) => {
     setIsScanning(true);
-    setScanProgress({ stage: 'scanning', message: 'Scanning folder...', count: 0 });
+    setScanProgress({ stage: 'scanning', message: t('library.scanProgress.scanning'), count: 0 });
 
     // CRITICAL: Acquire scan lock to prevent loadCustomSongsFromStorage race condition
     const scanLock = acquireScanLock();
@@ -97,7 +100,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       const { scanSongsFolderTauri, isTauri: checkTauri } = await import('@/lib/tauri-file-storage');
 
       if (!checkTauri()) {
-        safeAlert('Folder scanning is only available in the desktop app.');
+        safeAlert(t('library.scanProgress.folderScanningDesktopOnly'));
         setIsScanning(false);
         return;
       }
@@ -115,7 +118,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
       setScanProgress({
         stage: 'importing',
-        message: `Found ${result.songs.length} songs, importing...`,
+        message: t('library.scanProgress.foundSongs').replace('{n}', String(result.songs.length)),
         count: result.songs.length
       });
 
@@ -243,7 +246,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
             setScanProgress({
               stage: 'importing',
-              message: `Importing ${imported}/${result.songs.length}...`,
+              message: t('library.scanProgress.importing').replace('{current}', String(imported)).replace('{total}', String(result.songs.length)),
               count: imported
             });
           } catch (e) {
@@ -262,9 +265,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
         let additionalImported = 0;
         for (const extraFolder of additionalFolders) {
           try {
+            const sourceName = extraFolder.split(/[/\\]/).pop() || extraFolder;
             setScanProgress({
               stage: 'scanning',
-              message: `Scanning additional source: ${extraFolder.split(/[/\\]/).pop() || extraFolder}...`,
+              message: t('library.scanProgress.scanningAdditional').replace('{source}', sourceName),
               count: imported + additionalImported,
             });
             const extraResult = await scanSongsFolderTauri(normalizeFilePath(extraFolder));
@@ -340,14 +344,14 @@ export function useFolderScanner(): UseFolderScannerReturn {
         const totalImported = imported + additionalImported;
         setScanProgress({
           stage: 'complete',
-          message: `Successfully imported ${totalImported} songs!` +
+          message: t('library.scanProgress.importSuccess').replace('{n}', String(totalImported)) +
             (additionalImported > 0 ? ` (${additionalImported} from additional sources)` : ''),
           count: totalImported
         });
       } else {
         setScanProgress({
           stage: 'complete',
-          message: 'No songs found in the selected folder.',
+          message: t('library.scanProgress.noSongsFound'),
           count: 0
         });
       }
@@ -360,9 +364,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Folder scan failed:', error);
+      const errMsg = error instanceof Error ? error.message : 'Unknown error';
       setScanProgress({
         stage: 'error',
-        message: `Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: t('library.scanProgress.scanFailed').replace('{error}', errMsg),
         count: 0
       });
     } finally {
@@ -381,7 +386,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Save songs folder and reload library
   const handleSaveFolder = useCallback(async () => {
     if (!songsFolder.trim()) {
-      safeAlert('Please enter a folder path first.');
+      safeAlert(t('library.scanProgress.pleaseEnterPath'));
       return;
     }
 
@@ -393,11 +398,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Browse folder using native Tauri command (bypasses ACL restrictions)
   const handleBrowseFolder = useCallback(async () => {
     if (!isTauri()) {
-      safeAlert(
-        'Folder picker is only available in the desktop app.\n\n' +
-        'Please use the desktop app (Tauri) to browse for folders.\n\n' +
-        'If you are running the desktop app, there may be an issue with Tauri detection.'
-      );
+      safeAlert(t('library.scanProgress.folderPickerDesktopOnly'));
       return;
     }
 
@@ -416,17 +417,13 @@ export function useFolderScanner(): UseFolderScannerReturn {
       // eslint-disable-next-line no-console
       console.error('[Settings] Error in handleBrowseFolder:', e);
       const errorMessage = e instanceof Error ? e.message : String(e);
-      safeAlert(
-        'Could not open folder picker.\n\n' +
-        'Error: ' + errorMessage + '\n\n' +
-        'Please enter the path manually in the input field and click "Scan".'
-      );
+      safeAlert(t('library.scanProgress.couldNotOpenPicker').replace('{error}', errorMessage));
     }
   }, [performFolderScan]);
 
   // Reset library without deleting highscores
   const handleResetLibrary = useCallback(async () => {
-    if (!(await safeConfirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.'))) {
+    if (!(await safeConfirm(t('library.scanProgress.confirmResetLibrary')))) {
       return;
     }
 
@@ -481,11 +478,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
   // Clear all data including highscores
   const handleClearAllData = useCallback(async () => {
-    if (!(await safeConfirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.'))) {
+    if (!(await safeConfirm(t('library.scanProgress.confirmClearAllData')))) {
       return;
     }
 
-    const confirmation = await safePrompt('Type "DELETE" to confirm complete data reset:');
+    const confirmation = await safePrompt(t('library.scanProgress.typeDeleteConfirm'));
     if (confirmation !== 'DELETE') {
       return;
     }

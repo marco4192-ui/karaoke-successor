@@ -404,6 +404,8 @@ export const libraryTranslations = {
       notes: '音符：',
       lines: '行数：',
       file: '文件：',
+      player1: '玩家 1',
+      player2: '玩家 2',
     },
 
     metadataTab: {
@@ -421,6 +423,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: '玩家1名称',
       duetPlayer2: '#P2：（二重唱玩家2）',
       duetPlayer2Placeholder: '玩家2名称',
+      tagsPlaceholder: '标签1, 标签2, 标签3',
     },
 
     lyricsTab: {
@@ -545,6 +548,8 @@ export const libraryTranslations = {
       suggestions: '建议（{count}）',
       acceptAll: '全部接受',
       aiTip: '提示：AI建议仅供参考。保存前请检查所有更改。',
+      failed: '失败',
+      networkError: '网络错误',
     },
 
     timeline: {

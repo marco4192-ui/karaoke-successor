@@ -313,7 +313,7 @@ export function LyricLineDisplay({
           <span key={noteId} style={{ display: 'inline' }}>
             <span
               ref={isFirstSingableNote ? firstNoteRef : undefined}
-              className={`${fontClass} ${finalTextClass} ${isMissingWord && (!isSung || hardcoreMissingWords) ? 'tracking-wider' : ''}`}
+              className={`${fontClass} ${finalTextClass} transition-all duration-100 ${isMissingWord && (!isSung || hardcoreMissingWords) ? 'tracking-wider' : ''}`}
               style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
             >
               {renderedLyric}

@@ -255,4 +255,310 @@ export const gameTranslations = {
     failedToLoad: 'Nie udało się załadować aplikacji kompana',
     retry: 'Spróbuj ponownie',
   },
+
+  // --- Achievements ---
+  achievements: {
+  "firstNote": {
+    "name": "Pierwsza nuta",
+    "description": "Traf w pierwszą nutę"
+  },
+  "perfectTen": {
+    "name": "Idealna dziesiątka",
+    "description": "Uzyskaj 10 trafień Idealnych w jednym utworze"
+  },
+  "comboMaster": {
+    "name": "Mistrz combo",
+    "description": "Osiągnij combo z 50 nut"
+  },
+  "comboKing": {
+    "name": "Król combo",
+    "description": "Osiągnij combo z 100 nut",
+    "rewardTitle": "Król combo"
+  },
+  "comboLegend": {
+    "name": "Legenda combo",
+    "description": "Osiągnij combo z 200 nut",
+    "rewardTitle": "Legenda combo"
+  },
+  "perfectSong": {
+    "name": "Idealny utwór",
+    "description": "Uzyskaj dokładność 99,5%+",
+    "rewardTitle": "Perfekcjonista"
+  },
+  "pitchPerfect": {
+    "name": "Czysty głos",
+    "description": "Uzyskaj dokładność powyżej 90%"
+  },
+  "risingStar": {
+    "name": "Gwiazda na scenie",
+    "description": "Zdobądź ponad 8000 punktów"
+  },
+  "scoreMaster": {
+    "name": "Mistrz punktów",
+    "description": "Zdobądź ponad 9000 punktów"
+  },
+  "flawless": {
+    "name": "Bezbłędny",
+    "description": "Zdobądź ponad 9500 punktów",
+    "rewardTitle": "Bezbłędny"
+  },
+  "goldenCollector": {
+    "name": "Złoty kolekcjoner",
+    "description": "Traf w 10 złotych nut"
+  },
+  "goldenMaster": {
+    "name": "Złoty mistrz",
+    "description": "Traf w 50 złotych nut",
+    "rewardTitle": "Złoty głos"
+  },
+  "firstSong": {
+    "name": "Pierwsze kroki",
+    "description": "Ukończ swój pierwszy utwór"
+  },
+  "tenSongs": {
+    "name": "Fanka karaoke",
+    "description": "Ukończ 10 utworów"
+  },
+  "fiftySongs": {
+    "name": "Regularny bywalec",
+    "description": "Ukończ 50 utworów"
+  },
+  "hundredSongs": {
+    "name": "Legenda karaoke",
+    "description": "Ukończ 100 utworów",
+    "rewardTitle": "Legenda karaoke"
+  },
+  "fiveGames": {
+    "name": "Rozpoczęcie",
+    "description": "Zagraj 5 gier"
+  },
+  "twentyGames": {
+    "name": "Oddany piosenkarz",
+    "description": "Zagraj 20 gier"
+  },
+  "partyTime": {
+    "name": "Czas imprezy!",
+    "description": "Zagraj w trybie imprezowym"
+  },
+  "duelChampion": {
+    "name": "Mistrz pojedynków",
+    "description": "Wygraj pojedynek"
+  },
+  "passTheMic": {
+    "name": "Przekaż mikrofon!",
+    "description": "Zagraj w trybie Przekaż Mikrofon"
+  },
+  "showerSinger": {
+    "name": "Śpiewak pod prysznicem",
+    "description": "Zdobądź mniej niż 20%",
+    "rewardTitle": "Śpiewak pod prysznicem"
+  },
+  "comebackKing": {
+    "name": "Król powrotów",
+    "description": "Osiągnij combo 50+ po 10 pudłach"
+  },
+  "speedDemon": {
+    "name": "Demon prędkości",
+    "description": "Ukończ utwór na prędkości 1,5x"
+  },
+  "blindMaster": {
+    "name": "Mistrz ślepych",
+    "description": "Ukończ utwór w trybie ślepego karaoke",
+    "rewardTitle": "Mistrz ślepych"
+  }
+},
+
+  // --- Ranks ---
+  ranks: {
+  "beginner": {
+    "name": "Początkujący",
+    "titles": {
+      "newcomer": "Nowicjusz"
+    }
+  },
+  "novice": {
+    "name": "Nowicjusz",
+    "titles": {
+      "risingStar": "Gwiazda na scenie"
+    }
+  },
+  "apprentice": {
+    "name": "Uczniak",
+    "titles": {
+      "melodyMaker": "Twórca melodii"
+    }
+  },
+  "singer": {
+    "name": "Piosenkarz",
+    "titles": {
+      "voiceInTraining": "Głos w treningu"
+    }
+  },
+  "performer": {
+    "name": "Wokalista",
+    "titles": {
+      "stagePresence": "Obecność sceniczna"
+    }
+  },
+  "artist": {
+    "name": "Artysta",
+    "titles": {
+      "artisticSoul": "Artystyczna dusza"
+    }
+  },
+  "star": {
+    "name": "Gwiazda",
+    "titles": {
+      "shiningStar": "Lśniąca gwiazda"
+    }
+  },
+  "superstar": {
+    "name": "Superstar",
+    "titles": {
+      "crowdFavorite": "Faworyt publiczności"
+    }
+  },
+  "legend": {
+    "name": "Legenda",
+    "titles": {
+      "legendaryVoice": "Legendarny głos"
+    }
+  },
+  "icon": {
+    "name": "Ikona",
+    "titles": {
+      "musicalIcon": "Muzyczna ikona"
+    }
+  },
+  "mythic": {
+    "name": "Mityczny",
+    "titles": {
+      "mythicSinger": "Mityczny piosenkarz"
+    }
+  },
+  "divine": {
+    "name": "Boski",
+    "titles": {
+      "divineVoice": "Boski głos"
+    }
+  }
+},
+
+  // --- Challenge Modes ---
+  challenges: {
+  "blindAudition": {
+    "name": "Ślepe przesłuchanie",
+    "description": "Śpiewaj bez tekstu — test pamięci!"
+  },
+  "freeFlight": {
+    "name": "Wolny lot",
+    "description": "Bez prowadzenia tonu — śpiewaj na słuch!"
+  },
+  "speedDemon": {
+    "name": "Demon prędkości",
+    "description": "Prędkość 1,5x — myśl szybko!"
+  },
+  "perfectionist": {
+    "name": "Perfekcjonista",
+    "description": "Liczą się tylko idealne nuty!"
+  },
+  "goldenHunter": {
+    "name": "Złoty łowca",
+    "description": "Tylko złote nuty dają punkty — złap je wszystkie!"
+  },
+  "memoryLane": {
+    "name": "Aleja wspomnień",
+    "description": "Brakujące słowa — uzupełnij luki!"
+  },
+  "pitchShift": {
+    "name": "Przesunięcie tonu",
+    "description": "Utwór jest transponowany — dostosuj głos!"
+  },
+  "halfSpeed": {
+    "name": "Zwolnione tempo",
+    "description": "Prędkość 0,75x — idealne do ćwiczeń!"
+  },
+  "blindMaster": {
+    "name": "Mistrz ślepych",
+    "description": "Bez tekstu i bez prowadzenia — prawdziwie ślepe śpiewanie!"
+  },
+  "ultimateChallenge": {
+    "name": "Ostateczne wyzwanie",
+    "description": "Wszystkie modyfikatory połączone — dla odważnych!"
+  }
+},
+
+  // --- Challenge Modifiers ---
+  modifiers: {
+  "noLyrics": {
+    "label": "Bez tekstu",
+    "description": "Tekst utworu jest ukryty",
+    "shortDescription": "Bez tekstu"
+  },
+  "noPitchGuide": {
+    "label": "Bez prowadzenia",
+    "description": "Prowadzenie tonu jest ukryte",
+    "shortDescription": "Bez prowadzenia"
+  },
+  "doubleSpeed": {
+    "label": "Przyspieszenie",
+    "description": "Utwór gra szybciej",
+    "shortDescription": "Prędkość 1,25x"
+  },
+  "halfSpeed": {
+    "label": "Zwolnienie",
+    "description": "Utwór gra wolniej"
+  },
+  "perfectOnly": {
+    "label": "Perfekcjonista",
+    "description": "Liczą się tylko idealne nuty"
+  },
+  "goldenOnly": {
+    "label": "Złoty łowca",
+    "description": "Liczą się tylko złote nuty"
+  },
+  "missingWords": {
+    "label": "Brakujące słowa",
+    "description": "Niektóre słowa są ukryte"
+  },
+  "blind": {
+    "label": "Ślepy",
+    "description": "Bez tekstu i bez prowadzenia tonu"
+  },
+  "pitchShift": {
+    "description": "Ton przesunięty o 3 półtony"
+  }
+},
+
+  // --- Ranking Titles ---
+  rankingTitles: {
+  "showerSingingSensation": "Sensacja prysznicowa",
+  "karaokeRoyalty": "Królowstwo karaoke",
+  "vocalVirtuoso": "Wirtuoz wokalu",
+  "micDropMaster": "Mistrz rzucania mikrofonem",
+  "diamondVoice": "Diamentowy głos",
+  "broadwayWannabe": "Broadwayjski marzyciel",
+  "noteNailer": "Pogromca nut",
+  "pitchyParrot": "Fałszywa papuga",
+  "circusSinger": "Cyrkowy śpiewak",
+  "humbleHummer": "Skromny mruczek",
+  "underConstruction": "W budowie",
+  "bathroomBaritone": "Łazienkowy baryton",
+  "phantomPhony": "Fantomowy fałszewa",
+  "duckTapeSinger": "Taśmowy śpiewak",
+  "tunelessTroubadour": "Beztrocki troubadur",
+  "vocalTornado": "Wokalne tornado (Katastrofa)",
+  "toneDeafTitan": "Głuchy na dźwięki tytan",
+  "clownCarCrooner": "Śpiewak z wozu kłownów",
+  "toneZombie": "Zombie tonu",
+  "whisperingWimp": "Szeptający tchórz",
+  "silentScream": "Cichy krzyk"
+},
+
+  // --- Battle Royale (new keys) ---
+  battleRoyale: {
+  "bounty": "NAGRODA",
+  "micError": "Mikrofon"
+},
+
 };

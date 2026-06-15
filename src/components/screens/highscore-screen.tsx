@@ -28,7 +28,7 @@ export function HighscoreScreen() {
         leaderboardService.testConnection()
           .then(isConnected => {
             if (!isConnected) {
-              throw new Error(t('highscoreScreen.cannotConnect'));
+              throw new Error('Cannot connect to leaderboard server. Please check your internet connection.');
             }
             return leaderboardService.getGlobalLeaderboard(50);
           })
@@ -55,11 +55,11 @@ export function HighscoreScreen() {
             setGlobalLeaderboard(entries);
           })
           .catch(err => {
-            const errorMsg = err.message || t('highscoreScreen.loadFailed');
+            const errorMsg = err.message || 'Failed to load global leaderboard';
             if (errorMsg.includes('HTTP 500') || errorMsg.includes('500')) {
-              setGlobalError(t('highscoreScreen.serverError500'));
+              setGlobalError('Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.');
             } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-              setGlobalError(t('highscoreScreen.networkError'));
+              setGlobalError('Network error. Please check your internet connection.');
             } else {
               setGlobalError(errorMsg);
             }
@@ -144,7 +144,7 @@ export function HighscoreScreen() {
               {RANKING_TITLES.slice(0, 10).map((rank) => (
                 <div key={rank.minScore} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                   <span>{rank.emoji}</span>
-                  <span className="truncate">{rank.title.split(' ').slice(1).join(' ')}</span>
+                  <span className="truncate">{t(`rankingTitles.${rank.minScore}`)}</span>
                 </div>
               ))}
             </div>

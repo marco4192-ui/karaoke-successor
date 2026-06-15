@@ -2,6 +2,10 @@
 // Auto-split from monolithic locale file
 
 export const coreTranslations = {
+  core: {
+    branding: 'Karaoke ZERO',
+  },
+
   nav: {
     library: 'Bibliothek',
     import: 'Import',
@@ -13,7 +17,8 @@ export const coreTranslations = {
     mobile: 'Mobil',
     achievements: 'Erfolge',
     daily: 'Täglich',
-    settings: 'Einstellungen'
+    settings: 'Einstellungen',
+    editor: 'Editor'
   },
 
   home: {
@@ -26,7 +31,8 @@ export const coreTranslations = {
     partyGames: 'Party-Spiele',
     difficultyLevels: 'Schwierigkeitsstufen',
     selectProfile: 'Wähle dein Profil',
-    createNew: 'Neu erstellen'
+    createNew: 'Neu erstellen',
+    qrCodeAlt: 'QR-Code'
   },
 
   homeScreen: {
@@ -74,7 +80,11 @@ export const coreTranslations = {
     filter: 'Filter',
     sort: 'Sortieren',
     refresh: 'Aktualisieren',
-    exitFullscreen: 'Vollbild beenden'
+    exitFullscreen: 'Vollbild beenden',
+    avatarAlt: 'Avatar',
+    qrCodeAlt: 'QR-Code',
+    unknownError: 'Unbekannter Fehler',
+    player: 'Spieler',
   },
 
   dialogs: {
@@ -298,9 +308,74 @@ export const coreTranslations = {
     ariaRepeat: 'Wiederholung',
   },
 
+  jukeboxA11y: {
+    songProgress: 'Songfortschritt',
+    unmute: 'Stumm aus',
+    mute: 'Stumm',
+    volume: 'Lautstärke',
+    shuffle: 'Zufallswiedergabe',
+    repeat: 'Wiederholung'
+  },
+
   errorBoundary: {
     title: 'Etwas ist schiefgelaufen',
     description: 'Ein unerwarteter Fehler ist aufgetreten. Versuche, die Seite neu zu laden.',
     tryAgain: 'Erneut versuchen',
+  },
+
+  fullscreen: {
+    exitF12: 'Vollbild beenden (F12)',
+    toggleF12: 'Vollbild umschalten (F12)',
+    exitEsc: 'Vollbild beenden (ESC)',
+    enter: 'Vollbild'
+  },
+
+  countries: {
+    germany: 'Deutschland',
+    austria: 'Österreich',
+    switzerland: 'Schweiz',
+    unitedStates: 'Vereinigte Staaten',
+    unitedKingdom: 'Vereinigtes Königreich',
+    france: 'Frankreich',
+    italy: 'Italien',
+    spain: 'Spanien',
+    netherlands: 'Niederlande',
+    poland: 'Polen',
+    japan: 'Japan',
+    southKorea: 'Südkorea',
+    australia: 'Australien',
+    canada: 'Kanada',
+    brazil: 'Brasilien',
+    mexico: 'Mexiko',
+  },
+
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'Erste Schritte', description: 'Schließe deine erste Daily Challenge ab' },
+      weekWarrior: { name: 'Wochen-Krieger', description: 'Halte eine 7-Tage-Streak' },
+      fortnightFighter: { name: 'Zweiwochen-Kämpfer', description: 'Halte eine 14-Tage-Streak' },
+      monthlyMaster: { name: 'Monats-Meister', description: 'Halte eine 30-Tage-Streak' },
+      podiumFinish: { name: 'Podiumsplatz', description: 'Beende eine Daily Challenge unter den Top 3' },
+      dailyChampion: { name: 'Tages-Champion', description: 'Gewinne eine Daily Challenge' },
+      dedicatedSinger: { name: 'Hingebungsvoller Sänger', description: 'Schließe 30 Daily Challenges ab' },
+      legendaryStatus: { name: 'Legendärer Status', description: 'Erreiche 10.000 Gesamt-XP' },
+      centuryChampion: { name: 'Jahrhundert-Champion', description: 'Halte eine 100-Tage-Streak' },
+      yearlyLegend: { name: 'Jahres-Legende', description: 'Halte eine 365-Tage-Streak' },
+    },
+    quests: {
+      dailyDouble: { name: 'Tägliches Doppel', description: 'Schließe heute 2 Daily Challenges ab' },
+      perfectTen: { name: 'Perfekte Zehn', description: 'Erziele insgesamt 10 perfekte Noten' },
+      challengeExplorer: { name: 'Challenge-Entdecker', description: 'Spiele 5 verschiedene Challenge-Modi' },
+      songbird: { name: 'Nachtigall', description: 'Beende insgesamt 10 Lieder' },
+      weeklyWarrior: { name: 'Wochen-Krieger', description: 'Schließe 3 Wochen-Challenges ab' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Wochen-Krieger',
+      fortnightFighter: 'Zweiwochen-Kämpfer',
+      monthlyMaster: 'Monats-Meister',
+      biMonthlyBoss: 'Zwei-Monate-Boss',
+      centuryChampion: 'Jahrhundert-Champion',
+      yearlyLegend: 'Jahres-Legende',
+    },
   },
 };

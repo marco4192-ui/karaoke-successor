@@ -13,7 +13,8 @@ export const coreTranslations = {
     mobile: 'Móvil',
     achievements: 'Logros',
     daily: 'Diario',
-    settings: 'Ajustes'
+    settings: 'Ajustes',
+    editor: 'Editor'
   },
 
   home: {
@@ -73,7 +74,11 @@ export const coreTranslations = {
     search: 'Buscar',
     filter: 'Filtrar',
     sort: 'Ordenar',
-    refresh: 'Actualizar'
+    refresh: 'Actualizar',
+    avatarAlt: 'Avatar',
+    qrCodeAlt: 'Código QR',
+    unknownError: 'Error desconocido',
+    player: 'Jugador',
   },
 
   dialogs: {
@@ -285,9 +290,76 @@ export const coreTranslations = {
     noExclusion: 'sin exclusión',
   },
 
+  jukeboxA11y: {
+    songProgress: 'Progreso de canción',
+    unmute: 'Activar sonido',
+    mute: 'Silenciar',
+    volume: 'Volumen',
+    shuffle: 'Aleatorio',
+    repeat: 'Repetir'
+  },
+
   errorBoundary: {
     title: 'Algo salió mal',
     description: 'Ocurrió un error inesperado. Intenta recargar la página.',
     tryAgain: 'Intentar de nuevo',
+  },
+
+  fullscreen: {
+    exitF12: 'Salir de pantalla completa (F12)',
+    toggleF12: 'Alternar pantalla completa (F12)',
+    exitEsc: 'Salir de pantalla completa (ESC)',
+    enter: 'Pantalla completa'
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'Alemania',
+    austria: 'Austria',
+    switzerland: 'Suiza',
+    unitedStates: 'Estados Unidos',
+    unitedKingdom: 'Reino Unido',
+    france: 'Francia',
+    italy: 'Italia',
+    spain: 'España',
+    netherlands: 'Países Bajos',
+    poland: 'Polonia',
+    japan: 'Japón',
+    southKorea: 'Corea del Sur',
+    australia: 'Australia',
+    canada: 'Canadá',
+    brazil: 'Brasil',
+    mexico: 'México',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'Primeros Pasos', description: 'Completa tu primer desafío diario' },
+      weekWarrior: { name: 'Guerrero Semanal', description: 'Mantén una racha de 7 días' },
+      fortnightFighter: { name: 'Luchador Quincenal', description: 'Mantén una racha de 14 días' },
+      monthlyMaster: { name: 'Maestro Mensual', description: 'Mantén una racha de 30 días' },
+      podiumFinish: { name: 'Llegada al Podio', description: 'Termina en el top 3 de un desafío diario' },
+      dailyChampion: { name: 'Campeón Diario', description: 'Gana un desafío diario' },
+      dedicatedSinger: { name: 'Cantante Dedicado', description: 'Completa 30 desafíos diarios' },
+      legendaryStatus: { name: 'Estado Legendario', description: 'Alcanza 10,000 XP totales' },
+      centuryChampion: { name: 'Campeón del Siglo', description: 'Mantén una racha de 100 días' },
+      yearlyLegend: { name: 'Leyenda Anual', description: 'Mantén una racha de 365 días' },
+    },
+    quests: {
+      dailyDouble: { name: 'Doble Diario', description: 'Completa 2 desafíos diarios hoy' },
+      perfectTen: { name: 'Diez Perfectos', description: 'Acierta 10 notas perfectas en total' },
+      challengeExplorer: { name: 'Explorador de Retos', description: 'Juega 5 modos de reto diferentes' },
+      songbird: { name: 'Pájaro Cantor', description: 'Completa 10 canciones en total' },
+      weeklyWarrior: { name: 'Guerrero Semanal', description: 'Completa 3 desafíos semanales' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Guerrero Semanal',
+      fortnightFighter: 'Luchador Quincenal',
+      monthlyMaster: 'Maestro Mensual',
+      biMonthlyBoss: 'Jefe Bimensual',
+      centuryChampion: 'Campeón del Siglo',
+      yearlyLegend: 'Leyenda Anual',
+    },
   },
 };

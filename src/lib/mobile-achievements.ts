@@ -1,6 +1,8 @@
 // Mobile Companion Achievements — track and display user milestones
 
 import { getJson, setJson, getItem, setItem, StorageKeys } from '@/lib/storage';
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,7 +23,9 @@ export interface UserStats {
 export interface Achievement {
   id: string;
   title: string;
+  titleKey: string;
   description: string;
+  descriptionKey: string;
   icon: string; // emoji
   condition: (stats: UserStats) => boolean;
   /** Returns 0–1 indicating progress towards this achievement */
@@ -66,7 +70,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first_song',
     title: 'First Steps',
+    titleKey: 'mobile.achievements.firstSong.title',
     description: 'Sing your first song',
+    descriptionKey: 'mobile.achievements.firstSong.description',
     icon: '🎤',
     condition: (s) => s.songsSung >= 1,
     progress: (s) => Math.min(s.songsSung / 1, 1),
@@ -74,7 +80,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'ten_songs',
     title: 'Rising Star',
+    titleKey: 'mobile.achievements.risingStar.title',
     description: 'Sing 10 songs',
+    descriptionKey: 'mobile.achievements.risingStar.description',
     icon: '⭐',
     condition: (s) => s.songsSung >= 10,
     progress: (s) => Math.min(s.songsSung / 10, 1),
@@ -82,7 +90,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'fifty_songs',
     title: 'Veteran',
+    titleKey: 'mobile.achievements.veteran.title',
     description: 'Sing 50 songs',
+    descriptionKey: 'mobile.achievements.veteran.description',
     icon: '🏆',
     condition: (s) => s.songsSung >= 50,
     progress: (s) => Math.min(s.songsSung / 50, 1),
@@ -90,7 +100,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'perfect_score',
     title: 'Perfectionist',
+    titleKey: 'mobile.achievements.perfectionist.title',
     description: 'Get a perfect score (95%+)',
+    descriptionKey: 'mobile.achievements.perfectionist.description',
     icon: '💎',
     condition: (s) => s.perfectScores >= 1,
     progress: (s) => Math.min(s.perfectScores / 1, 1),
@@ -98,7 +110,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'five_perfect',
     title: 'Flawless',
+    titleKey: 'mobile.achievements.flawless.title',
     description: 'Get 5 perfect scores',
+    descriptionKey: 'mobile.achievements.flawless.description',
     icon: '✨',
     condition: (s) => s.perfectScores >= 5,
     progress: (s) => Math.min(s.perfectScores / 5, 1),
@@ -106,7 +120,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'high_score',
     title: 'Score Master',
+    titleKey: 'mobile.achievements.scoreMaster.title',
     description: 'Reach 10,000 total points',
+    descriptionKey: 'mobile.achievements.scoreMaster.description',
     icon: '🔥',
     condition: (s) => s.totalScore >= 10000,
     progress: (s) => Math.min(s.totalScore / 10000, 1),
@@ -114,7 +130,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'queue_5',
     title: 'Playlist Builder',
+    titleKey: 'mobile.achievements.playlistBuilder.title',
     description: 'Queue 5 songs',
+    descriptionKey: 'mobile.achievements.playlistBuilder.description',
     icon: '📋',
     condition: (s) => s.songsQueued >= 5,
     progress: (s) => Math.min(s.songsQueued / 5, 1),
@@ -122,12 +140,29 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'genre_3',
     title: 'Genre Explorer',
+    titleKey: 'mobile.achievements.genreExplorer.title',
     description: 'Sing songs from 3 genres',
+    descriptionKey: 'mobile.achievements.genreExplorer.description',
     icon: '🌍',
     condition: (s) => s.differentGenres >= 3,
     progress: (s) => Math.min(s.differentGenres / 3, 1),
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Localization helper
+// ---------------------------------------------------------------------------
+
+/** Get a localized copy of a mobile achievement. */
+export function getLocalizedMobileAchievement(
+  ach: Achievement,
+  language?: Language,
+): { title: string; description: string } {
+  return {
+    title: t(ach.titleKey, language),
+    description: t(ach.descriptionKey, language),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Persistence helpers

@@ -454,4 +454,9 @@ export const partyTranslations = {
     betting: 'Apostas',
     bettingDesc: 'A plateia pode prever',
   },
+
+  tournament: {
+    score: 'Pontuação: {n}',
+    accuracy: 'Precisão: {n}%',
+  },
 };

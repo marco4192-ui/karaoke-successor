@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Hae',
     filter: 'Suodata',
     sort: 'Lajittele',
-    refresh: 'Päivitä'
+    refresh: 'Päivitä',
+    player: 'Pelaaja',
   },
 
   dialogs: {
@@ -290,4 +291,101 @@ export const coreTranslations = {
     description: 'Tapahtui odottamaton virhe. Kokeile ladata sivu uudelleen.',
     tryAgain: 'Yritä uudelleen',
   },
+
+  // --- Countries ---
+  countries: {
+  "germany": "Saksa",
+  "austria": "Itävalta",
+  "switzerland": "Sveitsi",
+  "unitedStates": "Yhdysvallat",
+  "unitedKingdom": "Iso-Britannia",
+  "france": "Ranska",
+  "italy": "Italia",
+  "spain": "Espanja",
+  "netherlands": "Alankomaat",
+  "poland": "Puola",
+  "japan": "Japani",
+  "southKorea": "Etelä-Korea",
+  "australia": "Australia",
+  "canada": "Kanada",
+  "brazil": "Brasilia",
+  "mexico": "Meksiko"
+},
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+  "badges": {
+    "firstChallenge": {
+      "name": "Ensimmäiset askeleet",
+      "description": "Suorita ensimmäinen päivittäishaaste"
+    },
+    "weekWarrior": {
+      "name": "Viikkosoturi",
+      "description": "Ylläpidä 7 päivän putki"
+    },
+    "fortnightFighter": {
+      "name": "Kaksiviikko-soturi",
+      "description": "Ylläpidä 14 päivän putki"
+    },
+    "monthlyMaster": {
+      "name": "Kuukausmestari",
+      "description": "Ylläpidä 30 päivän putki"
+    },
+    "podiumFinish": {
+      "name": "Podiumsija",
+      "description": "Sijoitu top 3 päivittäishaasteessa"
+    },
+    "dailyChampion": {
+      "name": "Päivämestari",
+      "description": "Voita päivittäishaaste"
+    },
+    "dedicatedSinger": {
+      "name": "Omistautunut laulaja",
+      "description": "Suorita 30 päivittäishaastetta"
+    },
+    "legendaryStatus": {
+      "name": "Legendaarinen status",
+      "description": "Saa 10 000 XP yhteensä"
+    },
+    "centuryChampion": {
+      "name": "Satakunninen mestari",
+      "description": "Ylläpidä 100 päivän putki"
+    },
+    "yearlyLegend": {
+      "name": "Vuosilegenda",
+      "description": "Ylläpidä 365 päivän putki"
+    }
+  },
+  "quests": {
+    "dailyDouble": {
+      "name": "Päivittäis-kaksoiskappale",
+      "description": "Suorita 2 päivittäishaastetta"
+    },
+    "perfectTen": {
+      "name": "Täydellinen kymmenen",
+      "description": "Osu 10 täydellistä nuottia"
+    },
+    "challengeExplorer": {
+      "name": "Haasteiden tutkija",
+      "description": "Pelaa 5 eri haastetilaa"
+    },
+    "songbird": {
+      "name": "Laululintu",
+      "description": "Suorita 10 kappaletta"
+    },
+    "weeklyWarrior": {
+      "name": "Viikkosoturi",
+      "description": "Suorita 3 viikko-haastetta"
+    }
+  },
+  "streakMilestones": {
+    "weekWarrior": "Viikkosoturi",
+    "fortnightFighter": "Kaksiviikko-soturi",
+    "monthlyMaster": "Kuukausmestari",
+    "biMonthlyBoss": "Kahdenkuukaus-bossi",
+    "centuryChampion": "Satakunninen mestari",
+    "yearlyLegend": "Vuosilegenda"
+  }
+},
+
 };

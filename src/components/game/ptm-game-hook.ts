@@ -12,13 +12,11 @@ import { useGameSettings } from '@/hooks/use-game-settings';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { toast } from '@/hooks/use-toast';
+import { t as tFn } from '@/lib/i18n/translations';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 import type { PtmPlayer, PtmSegment, PassTheMicSettings, GamePhase } from '@/components/game/ptm-types';
 import { DEFAULT_SETTINGS } from '@/components/game/ptm-types';
-
-/** Maximum points per segment — matches the constant in use-ptm-scoring.ts */
-const PTM_MAX_SEGMENT_POINTS = 2000;
 
 // Sub-hooks
 import { buildPlayerSchedule, type PtmScheduleEntry } from './ptm-schedule';
@@ -270,16 +268,6 @@ export function usePtmGameLogic({
     currentTimeRef,
   });
 
-  // ── Compute per-segment points per tick for PTM normalized scoring ──
-  // Each segment is worth PTM_MAX_SEGMENT_POINTS max. Points per tick
-  // = maxPoints / totalTicks. Falls back to 0 (legacy scoring) when
-  // totalTicks is not available (e.g. no BPM in song data).
-  const segmentPointsPerTick = useMemo(() => {
-    const seg = initialSegments[currentSegmentIndex];
-    if (!seg || !seg.totalTicks || seg.totalTicks <= 0) return 0;
-    return PTM_MAX_SEGMENT_POINTS / seg.totalTicks;
-  }, [initialSegments, currentSegmentIndex]);
-
   // ── Scoring (sub-hook) ──
   usePtmScoring({
     phase,
@@ -289,7 +277,7 @@ export function usePtmGameLogic({
     currentTime,
     difficulty: safeSettings.difficulty,
     currentPlayerIndex,
-    segmentPointsPerTick,
+    scoringMeta,
     playersRef,
     forceRender,
   });
@@ -405,7 +393,7 @@ export function usePtmGameLogic({
   // ── Record round results ──
   const recordRound = useCallback(() => {
     const round: PassTheMicRoundResult = {
-      songTitle: isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : (effectiveSong?.title || song.title),
+      songTitle: isMedleyMode ? tFn('passTheMic.medleySongTitle').replace('{n}', String(ptmMedleySnippets.length)) : (effectiveSong?.title || song.title),
       songArtist: isMedleyMode ? '' : (effectiveSong?.artist || song.artist),
       playedAt: Date.now(),
       playerScores: {},
@@ -592,8 +580,8 @@ export function usePtmGameLogic({
       // eslint-disable-next-line no-console
       console.error('[PTM] Pitch detector initialization failed after retry. Scoring will be disabled.');
       toast({
-        title: 'Microphone Issue',
-        description: 'Could not initialize pitch detection. Scoring will be disabled for this round. Check your microphone permissions and try again.',
+        title: tFn('passTheMic.micIssueTitle'),
+        description: tFn('passTheMic.micIssueDesc'),
         variant: 'destructive',
       });
     } else {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { safeAlert } from '@/lib/safe-dialog';
+import { t as tFn } from '@/lib/i18n/translations';
 import type { Song } from '@/types/game';
 import type { PtmSegment } from '@/components/game/ptm-types';
 
@@ -75,7 +76,7 @@ export function useQueueNextSong(onPlayAgain: () => void) {
     }
 
     if (!fullSong) {
-      safeAlert(`Song "${nextQueueItem.songTitle}" not found in local library`);
+      safeAlert(tFn('queueScreen.songNotFound').replace('{song}', nextQueueItem.songTitle));
       // Mark as completed so it doesn't block the queue
       try {
         await fetch('/api/mobile', {
@@ -104,7 +105,7 @@ export function useQueueNextSong(onPlayAgain: () => void) {
     if (!hasMedia) {
       // eslint-disable-next-line no-console
       console.warn('[ResultsScreen] No playable media for song:', fullSong.title, '- skipping');
-      safeAlert(`No media found for "${fullSong.title}" — skipping`);
+      safeAlert(tFn('queueScreen.noMediaSkip').replace('{song}', fullSong.title));
       try {
         await fetch('/api/mobile', {
           method: 'POST',
@@ -145,7 +146,6 @@ export function useQueueNextSong(onPlayAgain: () => void) {
           startTime: i * segmentDuration * 1000,
           endTime: Math.min((i + 1) * segmentDuration * 1000, fullSong.duration),
           playerId: null,
-          totalTicks: 0,
         });
       }
       party.setPassTheMicSegments(segments);

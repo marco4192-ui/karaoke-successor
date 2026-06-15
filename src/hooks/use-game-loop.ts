@@ -681,12 +681,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       if (currentPitch) {
         const pitchNow = performance.now();
-        // Throttle volume update to ~5fps (200ms). A visual volume meter does not
-        // need 60fps updates — 5fps is smooth enough for a bar indicator.
-        // Volume is a local useState; each call re-renders the entire game-screen
-        // tree (~18 components), so reducing from 60fps to 5fps eliminates ~55
-        // unnecessary re-renders per second during gameplay.
-        if (pitchNow - lastVolumeUpdateRef.current >= 200) {
+        // Throttle volume update to ~60fps (16ms) for responsive volume meter.
+        // Volume is a local useState (not Zustand), so this doesn't cause
+        // extra re-renders of other components.
+        if (pitchNow - lastVolumeUpdateRef.current >= 16) {
           setVolume(currentPitch.volume);
           lastVolumeUpdateRef.current = pitchNow;
         }

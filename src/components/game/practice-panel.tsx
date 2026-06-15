@@ -51,7 +51,7 @@ export function PracticePanel({
             </label>
             <div>
               <span className="text-xs text-white/60">
-                {t('practicePanel.playbackSpeed').replace('{n}', String(Math.round(practiceMode.playbackRate * 100)))}
+                Playback Speed: {Math.round(practiceMode.playbackRate * 100)}%
               </span>
               <input
                 type="range"

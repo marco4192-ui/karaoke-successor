@@ -145,6 +145,8 @@ export const medleyTournamentTranslations = {
     surprise: 'Sorpresa',
     shareResult: 'Condividi Risultato',
     shareText: 'App Karaoke Musicale',
+    shareWinner: 'Vincitore: {name} ({score} {pts})',
+    shareBestCombo: 'Miglior Combo: {n}x',
     copied: 'Copiato negli appunti!',
     flopComment: 'Meglio la prossima volta...',
     // Feature #18: Team Bonuses
@@ -167,6 +169,9 @@ export const medleyTournamentTranslations = {
     comboOnSong: 'su: {title}',
     back: '← Indietro',
     availablePlayers: 'Giocatori Disponibili:',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'Brani',
+    localMicShort: 'Locale',
   },
 
   tournament: {
@@ -364,7 +369,7 @@ export const medleyTournamentTranslations = {
     performances: 'Esibizioni',
     avgRating: 'Valutazione Media',
     bestRating: 'Miglior Valutazione',
-    achievements: 'Obiettivi',
+    achievementsLabel: 'Obiettivi',
     newAchievement: 'Nuovo Obiettivo!',
     songSuggestions: 'Canzoni Simili',
     trend: 'Tendenza',
@@ -389,5 +394,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'ESIBIZIONE INCREDIBILE!',
     genreStats: 'Statistiche per Genere',
     wallOfFame: 'Wall of Fame',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Canta con Accento', description: 'Metti il tuo miglior finto accento per tutta la canzone' },
+      silentMinute: { title: 'Minuto di Silenzio', description: 'Smetti di cantare per 10 secondi nel mezzo, continua ad esibirti' },
+      danceBreak: { title: 'Pausa Danza', description: 'Fai almeno 3 mosse di danza durante la canzone' },
+      phoneSinger: { title: 'Cantante da Telefono', description: 'Canta come se stessi registrando un TikTok col telefono' },
+      supermarketStyle: { title: 'Stile Supermercato', description: 'Esegui come se cantassi casualmente facendo la spesa' },
+      tempoSwitch: { title: 'Cambio di Tempo', description: 'Inizia lento, super veloce nel mezzo, lento di nuovo' },
+      smirkMode: { title: 'Modo Sorriso', description: 'Mantieni un sorriso sicuro in viso TUTTO il tempo' },
+      airGuitarSolo: { title: 'Solo di Chitarra Aria', description: 'Fai un assolo di chitarra aria durante qualsiasi parte strumentale' },
+      micDrop: { title: 'Mic Drop', description: 'Chiudi la canzone con una posa drammatica di mic drop' },
+      divaMode: { title: 'Modo Diva', description: 'Canta con massimo dramma, gesti delle mani e gesti coi capelli' },
+      whisperStart: { title: 'Inizio Sussurrato', description: 'Inizia i primi 15 secondi sussurrando, poi a tutta potenza' },
+      operaStyle: { title: 'Stile Opera', description: 'Canta in modo sovradrammatico come un cantante d\'opera' },
+      discoFever: { title: 'Febbre Disco', description: 'Aggiungi passi di danza disco in ogni ritornello' },
+      emotionalRollercoaster: { title: 'Montagne Russe Emozionali', description: 'Alterna tra espressioni di pianto e riso' },
+      countryTwist: { title: 'Giro Country', description: 'Aggiungi un accento country e gesti yee-haw' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'Prima Performance', description: 'Completa 1 performance' },
+      goldenVoice: { name: 'Voce Dorata', description: 'Ottieni un voto >= 9.0' },
+      crowdFavorite: { name: 'Preferito dal Pubblico', description: 'Ricevi voti da 10+ membri del pubblico diversi in totale' },
+      allRounder: { name: 'Tuttofare', description: 'Esegui in 5+ generi diversi' },
+      perfectionist: { name: 'Perfezionista', description: 'Ottieni un voto >= 9.5' },
+      stageAnimal: { name: 'Animale da Palco', description: '20+ performance' },
+      centurion: { name: 'Centurione', description: '100+ voti del pubblico ricevuti in totale' },
+      comebackKid: { name: 'Ragazzo del Ritorno', description: 'Il voto migliora di 3+ punti dal peggiore al migliore' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Novellino',
+      openMic: 'Micro Aperto',
+      regular: 'Regolare',
+      star: 'Stella',
+      superstar: 'Superstar',
+      legend: 'Leggenda',
+    },
+
+    awards: 'Premi',
   },
 };

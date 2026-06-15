@@ -1,5 +1,7 @@
 // Level Calculations, XP Thresholds, Ranks, and Challenge Definitions
 
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
 import type { GameMode } from '@/types/game';
 
 // ===================== NAMED CONSTANTS =====================
@@ -43,27 +45,37 @@ export const LEVEL_TIER_4_MAX = 100;
 export interface Rank {
   id: string;
   name: string;
+  nameKey: string;
   icon: string;
   minXP: number;
   maxXP: number;
   color: string;
-  titles: string[]; // Unlockable titles at this rank
+  titles: string[]; // English fallback titles
+  titleKeys: string[]; // i18n keys for titles
 }
 
 export const RANKS: Rank[] = [
-  { id: 'beginner', name: 'Beginner', icon: '🎵', minXP: 0, maxXP: 499, color: '#9CA3AF', titles: ['Newcomer'] },
-  { id: 'novice', name: 'Novice', icon: '🎤', minXP: 500, maxXP: 1499, color: '#6B7280', titles: ['Rising Star'] },
-  { id: 'apprentice', name: 'Apprentice', icon: '🌟', minXP: 1500, maxXP: 2999, color: '#22C55E', titles: ['Melody Maker'] },
-  { id: 'singer', name: 'Singer', icon: '💫', minXP: 3000, maxXP: 4999, color: '#14B8A6', titles: ['Voice in Training'] },
-  { id: 'performer', name: 'Performer', icon: '✨', minXP: 5000, maxXP: 7999, color: '#3B82F6', titles: ['Stage Presence'] },
-  { id: 'artist', name: 'Artist', icon: '🎭', minXP: 8000, maxXP: 11999, color: '#8B5CF6', titles: ['Artistic Soul'] },
-  { id: 'star', name: 'Star', icon: '⭐', minXP: 12000, maxXP: 17999, color: '#EC4899', titles: ['Shining Star'] },
-  { id: 'superstar', name: 'Superstar', icon: '🌟', minXP: 18000, maxXP: 24999, color: '#F59E0B', titles: ['Crowd Favorite'] },
-  { id: 'legend', name: 'Legend', icon: '👑', minXP: 25000, maxXP: 49999, color: '#EF4444', titles: ['Legendary Voice'] },
-  { id: 'icon', name: 'Icon', icon: '💎', minXP: 50000, maxXP: 99999, color: '#F97316', titles: ['Musical Icon'] },
-  { id: 'mythic', name: 'Mythic', icon: '🔮', minXP: 100000, maxXP: 199999, color: '#A855F7', titles: ['Mythic Singer'] },
-  { id: 'divine', name: 'Divine', icon: '🌟', minXP: 200000, maxXP: Infinity, color: '#FFD700', titles: ['Divine Voice'] },
+  { id: 'beginner', name: 'Beginner', nameKey: 'ranks.beginner.name', icon: '🎵', minXP: 0, maxXP: 499, color: '#9CA3AF', titles: ['Newcomer'], titleKeys: ['ranks.beginner.titles.newcomer'] },
+  { id: 'novice', name: 'Novice', nameKey: 'ranks.novice.name', icon: '🎤', minXP: 500, maxXP: 1499, color: '#6B7280', titles: ['Rising Star'], titleKeys: ['ranks.novice.titles.risingStar'] },
+  { id: 'apprentice', name: 'Apprentice', nameKey: 'ranks.apprentice.name', icon: '🌟', minXP: 1500, maxXP: 2999, color: '#22C55E', titles: ['Melody Maker'], titleKeys: ['ranks.apprentice.titles.melodyMaker'] },
+  { id: 'singer', name: 'Singer', nameKey: 'ranks.singer.name', icon: '💫', minXP: 3000, maxXP: 4999, color: '#14B8A6', titles: ['Voice in Training'], titleKeys: ['ranks.singer.titles.voiceInTraining'] },
+  { id: 'performer', name: 'Performer', nameKey: 'ranks.performer.name', icon: '✨', minXP: 5000, maxXP: 7999, color: '#3B82F6', titles: ['Stage Presence'], titleKeys: ['ranks.performer.titles.stagePresence'] },
+  { id: 'artist', name: 'Artist', nameKey: 'ranks.artist.name', icon: '🎭', minXP: 8000, maxXP: 11999, color: '#8B5CF6', titles: ['Artistic Soul'], titleKeys: ['ranks.artist.titles.artisticSoul'] },
+  { id: 'star', name: 'Star', nameKey: 'ranks.star.name', icon: '⭐', minXP: 12000, maxXP: 17999, color: '#EC4899', titles: ['Shining Star'], titleKeys: ['ranks.star.titles.shiningStar'] },
+  { id: 'superstar', name: 'Superstar', nameKey: 'ranks.superstar.name', icon: '🌟', minXP: 18000, maxXP: 24999, color: '#F59E0B', titles: ['Crowd Favorite'], titleKeys: ['ranks.superstar.titles.crowdFavorite'] },
+  { id: 'legend', name: 'Legend', nameKey: 'ranks.legend.name', icon: '👑', minXP: 25000, maxXP: 49999, color: '#EF4444', titles: ['Legendary Voice'], titleKeys: ['ranks.legend.titles.legendaryVoice'] },
+  { id: 'icon', name: 'Icon', nameKey: 'ranks.icon.name', icon: '💎', minXP: 50000, maxXP: 99999, color: '#F97316', titles: ['Musical Icon'], titleKeys: ['ranks.icon.titles.musicalIcon'] },
+  { id: 'mythic', name: 'Mythic', nameKey: 'ranks.mythic.name', icon: '🔮', minXP: 100000, maxXP: 199999, color: '#A855F7', titles: ['Mythic Singer'], titleKeys: ['ranks.mythic.titles.mythicSinger'] },
+  { id: 'divine', name: 'Divine', nameKey: 'ranks.divine.name', icon: '🌟', minXP: 200000, maxXP: Infinity, color: '#FFD700', titles: ['Divine Voice'], titleKeys: ['ranks.divine.titles.divineVoice'] },
 ];
+
+/** Get a localized rank object with translated name and titles. */
+export function getLocalizedRank(rank: Rank, language?: Language): { name: string; titles: string[] } {
+  return {
+    name: t(rank.nameKey, language),
+    titles: rank.titleKeys.map(key => t(key, language)),
+  };
+}
 
 // ===================== CHALLENGE MODES =====================
 
@@ -71,12 +83,15 @@ export interface ChallengeModifier {
   type: 'no_lyrics' | 'no_pitch_guide' | 'double_speed' | 'half_speed' | 'pitch_shift' | 'blind' | 'missing_words' | 'golden_only' | 'perfect_only';
   value?: number;
   description: string;
+  descriptionKey?: string;
 }
 
 export interface ChallengeMode {
   id: string;
   name: string;
+  nameKey: string;
   description: string;
+  descriptionKey: string;
   icon: string;
   difficulty: 'easy' | 'medium' | 'hard' | 'extreme';
   modifiers: ChallengeModifier[];
@@ -94,86 +109,104 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
   {
     id: 'blind-audition',
     name: 'Blind Audition',
+    nameKey: 'challenges.blindAudition.name',
     description: 'Sing without seeing the lyrics - memory test!',
+    descriptionKey: 'challenges.blindAudition.description',
     icon: '🙈',
     difficulty: 'medium',
-    modifiers: [{ type: 'no_lyrics', description: 'Lyrics are hidden' }],
+    modifiers: [{ type: 'no_lyrics', description: 'Lyrics are hidden', descriptionKey: 'modifiers.noLyrics.description' }],
     xpReward: 200,
   },
   {
     id: 'no-guide',
     name: 'Free Flight',
+    nameKey: 'challenges.freeFlight.name',
     description: 'No pitch guide - sing by ear!',
+    descriptionKey: 'challenges.freeFlight.description',
     icon: '✈️',
     difficulty: 'hard',
-    modifiers: [{ type: 'no_pitch_guide', description: 'Pitch guide is hidden' }],
+    modifiers: [{ type: 'no_pitch_guide', description: 'Pitch guide is hidden', descriptionKey: 'modifiers.noPitchGuide.description' }],
     xpReward: 300,
   },
   {
     id: 'speed-demon',
     name: 'Speed Demon',
+    nameKey: 'challenges.speedDemon.name',
     description: '1.5x speed - think fast!',
+    descriptionKey: 'challenges.speedDemon.description',
     icon: '⚡',
     difficulty: 'hard',
-    modifiers: [{ type: 'double_speed', value: 1.5, description: 'Song plays at 1.5x speed' }],
+    modifiers: [{ type: 'double_speed', value: 1.5, description: 'Song plays at 1.5x speed', descriptionKey: 'modifiers.doubleSpeed.description' }],
     xpReward: 350,
     timeLimit: 180,
   },
   {
     id: 'perfectionist',
     name: 'Perfectionist',
+    nameKey: 'challenges.perfectionist.name',
     description: 'Only perfect notes count!',
+    descriptionKey: 'challenges.perfectionist.description',
     icon: '💎',
     difficulty: 'extreme',
-    modifiers: [{ type: 'perfect_only', description: 'Only perfect hits give points' }],
+    modifiers: [{ type: 'perfect_only', description: 'Only perfect hits give points', descriptionKey: 'modifiers.perfectOnly.description' }],
     xpReward: 500,
     requirements: [{ type: 'min_level', value: 10 }],
   },
   {
     id: 'golden-hunter',
     name: 'Golden Hunter',
+    nameKey: 'challenges.goldenHunter.name',
     description: 'Only golden notes give points - catch them all!',
+    descriptionKey: 'challenges.goldenHunter.description',
     icon: '🌟',
     difficulty: 'hard',
-    modifiers: [{ type: 'golden_only', description: 'Only golden notes count' }],
+    modifiers: [{ type: 'golden_only', description: 'Only golden notes count', descriptionKey: 'modifiers.goldenOnly.description' }],
     xpReward: 400,
   },
   {
     id: 'memory-lane',
     name: 'Memory Lane',
+    nameKey: 'challenges.memoryLane.name',
     description: 'Missing words challenge - fill in the blanks!',
+    descriptionKey: 'challenges.memoryLane.description',
     icon: '🧩',
     difficulty: 'medium',
-    modifiers: [{ type: 'missing_words', value: 20, description: '20% of words are hidden' }],
+    modifiers: [{ type: 'missing_words', value: 20, description: '20% of words are hidden', descriptionKey: 'modifiers.missingWords.description' }],
     xpReward: 250,
   },
   {
     id: 'pitch-shift',
     name: 'Pitch Shift',
+    nameKey: 'challenges.pitchShift.name',
     description: 'Song is transposed - adapt your voice!',
+    descriptionKey: 'challenges.pitchShift.description',
     icon: '🎚️',
     difficulty: 'hard',
-    modifiers: [{ type: 'pitch_shift', value: 3, description: 'Pitch shifted by 3 semitones' }],
+    modifiers: [{ type: 'pitch_shift', value: 3, description: 'Pitch shifted by 3 semitones', descriptionKey: 'modifiers.pitchShift.description' }],
     xpReward: 300,
   },
   {
     id: 'half-speed',
     name: 'Slow Motion',
+    nameKey: 'challenges.halfSpeed.name',
     description: '0.75x speed — perfect for practice!',
+    descriptionKey: 'challenges.halfSpeed.description',
     icon: '🐌',
     difficulty: 'easy',
-    modifiers: [{ type: 'half_speed', value: 0.75, description: 'Song plays at 0.75x speed' }],
+    modifiers: [{ type: 'half_speed', value: 0.75, description: 'Song plays at 0.75x speed', descriptionKey: 'modifiers.halfSpeed.description' }],
     xpReward: 100,
   },
   {
     id: 'blind-master',
     name: 'Blind Master',
+    nameKey: 'challenges.blindMaster.name',
     description: 'No lyrics AND no pitch guide — true blind singing!',
+    descriptionKey: 'challenges.blindMaster.description',
     icon: '🕶️',
     difficulty: 'extreme',
     modifiers: [
-      { type: 'no_lyrics', description: 'Lyrics are hidden' },
-      { type: 'no_pitch_guide', description: 'Pitch guide is hidden' },
+      { type: 'no_lyrics', description: 'Lyrics are hidden', descriptionKey: 'modifiers.noLyrics.description' },
+      { type: 'no_pitch_guide', description: 'Pitch guide is hidden', descriptionKey: 'modifiers.noPitchGuide.description' },
     ],
     xpReward: 600,
     requirements: [{ type: 'min_level', value: 15 }],
@@ -181,19 +214,35 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
   {
     id: 'ultimate',
     name: 'Ultimate Challenge',
+    nameKey: 'challenges.ultimateChallenge.name',
     description: 'All modifiers combined - for the brave!',
+    descriptionKey: 'challenges.ultimateChallenge.description',
     icon: '🔥',
     difficulty: 'extreme',
     modifiers: [
-      { type: 'no_lyrics', description: 'No lyrics' },
-      { type: 'no_pitch_guide', description: 'No pitch guide' },
-      { type: 'double_speed', value: 1.25, description: '1.25x speed' },
+      { type: 'no_lyrics', description: 'No lyrics', descriptionKey: 'modifiers.noLyrics.shortDescription' },
+      { type: 'no_pitch_guide', description: 'No pitch guide', descriptionKey: 'modifiers.noPitchGuide.shortDescription' },
+      { type: 'double_speed', value: 1.25, description: '1.25x speed', descriptionKey: 'modifiers.doubleSpeed.shortDescription' },
     ],
     xpReward: 1000,
     timeLimit: 180,
     requirements: [{ type: 'min_level', value: 25 }],
   },
 ];
+
+/** Get a localized challenge mode with translated name, description, and modifier descriptions. */
+export function getLocalizedChallengeMode(mode: ChallengeMode, language?: Language): Omit<ChallengeMode, 'modifiers'> & { modifiers: Array<{ type: string; value?: number; description: string }> } {
+  return {
+    ...mode,
+    name: t(mode.nameKey, language),
+    description: t(mode.descriptionKey, language),
+    modifiers: mode.modifiers.map(m => ({
+      type: m.type,
+      value: m.value,
+      description: m.descriptionKey ? t(m.descriptionKey, language) : m.description,
+    })),
+  };
+}
 
 // ===================== CHALLENGE MIXER =====================
 
@@ -221,7 +270,9 @@ export function createCustomChallenge(config: CustomChallengeConfig): ChallengeM
   return {
     id: `custom-${Date.now()}`,
     name: config.name,
+    nameKey: '',
     description: config.modifiers.map(m => m.description).join(', '),
+    descriptionKey: '',
     icon: '🔧',
     difficulty: config.difficulty,
     modifiers: config.modifiers,
@@ -230,16 +281,24 @@ export function createCustomChallenge(config: CustomChallengeConfig): ChallengeM
   };
 }
 
-export const AVAILABLE_MODIFIERS: Array<{ type: ChallengeModifier['type']; label: string; description: string; defaultValue?: number; difficulty: 'easy' | 'medium' | 'hard' | 'extreme' }> = [
-  { type: 'no_lyrics', label: 'No Lyrics', description: 'Lyrics are hidden', difficulty: 'medium' },
-  { type: 'no_pitch_guide', label: 'No Pitch Guide', description: 'Pitch guide is hidden', difficulty: 'hard' },
-  { type: 'double_speed', label: 'Speed Boost', description: 'Song plays faster', defaultValue: 1.5, difficulty: 'hard' },
-  { type: 'half_speed', label: 'Slow Motion', description: 'Song plays slower', defaultValue: 0.75, difficulty: 'easy' },
-  { type: 'perfect_only', label: 'Perfectionist', description: 'Only perfect notes count', difficulty: 'extreme' },
-  { type: 'golden_only', label: 'Golden Hunter', description: 'Only golden notes count', difficulty: 'hard' },
-  { type: 'missing_words', label: 'Missing Words', description: 'Some words are hidden', defaultValue: 20, difficulty: 'medium' },
-  { type: 'blind', label: 'Blind', description: 'No lyrics and no pitch guide', difficulty: 'hard' },
+export const AVAILABLE_MODIFIERS: Array<{ type: ChallengeModifier['type']; label: string; labelKey: string; description: string; descriptionKey: string; defaultValue?: number; difficulty: 'easy' | 'medium' | 'hard' | 'extreme' }> = [
+  { type: 'no_lyrics', label: 'No Lyrics', labelKey: 'modifiers.noLyrics.label', description: 'Lyrics are hidden', descriptionKey: 'modifiers.noLyrics.description', difficulty: 'medium' },
+  { type: 'no_pitch_guide', label: 'No Pitch Guide', labelKey: 'modifiers.noPitchGuide.label', description: 'Pitch guide is hidden', descriptionKey: 'modifiers.noPitchGuide.description', difficulty: 'hard' },
+  { type: 'double_speed', label: 'Speed Boost', labelKey: 'modifiers.doubleSpeed.label', description: 'Song plays faster', descriptionKey: 'modifiers.doubleSpeed.description', defaultValue: 1.5, difficulty: 'hard' },
+  { type: 'half_speed', label: 'Slow Motion', labelKey: 'modifiers.halfSpeed.label', description: 'Song plays slower', descriptionKey: 'modifiers.halfSpeed.description', defaultValue: 0.75, difficulty: 'easy' },
+  { type: 'perfect_only', label: 'Perfectionist', labelKey: 'modifiers.perfectOnly.label', description: 'Only perfect notes count', descriptionKey: 'modifiers.perfectOnly.description', difficulty: 'extreme' },
+  { type: 'golden_only', label: 'Golden Hunter', labelKey: 'modifiers.goldenOnly.label', description: 'Only golden notes count', descriptionKey: 'modifiers.goldenOnly.description', difficulty: 'hard' },
+  { type: 'missing_words', label: 'Missing Words', labelKey: 'modifiers.missingWords.label', description: 'Some words are hidden', descriptionKey: 'modifiers.missingWords.description', defaultValue: 20, difficulty: 'medium' },
+  { type: 'blind', label: 'Blind', labelKey: 'modifiers.blind.label', description: 'No lyrics and no pitch guide', descriptionKey: 'modifiers.blind.description', difficulty: 'hard' },
 ];
+
+/** Get a localized modifier with translated label and description. */
+export function getLocalizedModifier(modifier: typeof AVAILABLE_MODIFIERS[number], language?: Language): { label: string; description: string } {
+  return {
+    label: t(modifier.labelKey, language),
+    description: t(modifier.descriptionKey, language),
+  };
+}
 
 /**
  * Map challenge mode IDs to the corresponding built-in GameMode strings.

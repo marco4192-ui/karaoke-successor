@@ -553,6 +553,8 @@ export const libraryTranslations = {
       suggestions: 'Forslag ({count})',
       acceptAll: 'Godta alle',
       aiTip: 'Tips: AI-forslag er alltid bare hjelpemidler. Sjekk alle endringer før lagring.',
+      failed: 'Mislyktes',
+      networkError: 'Nettverksfeil',
     },
 
     // Timeline

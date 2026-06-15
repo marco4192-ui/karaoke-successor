@@ -147,6 +147,8 @@ export const medleyTournamentTranslations = {
     surprise: 'Verrassing',
     shareResult: 'Resultaat delen',
     shareText: 'Muziek Karaoke App',
+    shareWinner: 'Winnaar: {name} ({score} {pts})',
+    shareBestCombo: 'Beste Combo: {n}x',
     copied: 'Gekopieerd naar klembord!',
     flopComment: 'Volgende keer beter...',
     // Feature #18: Team Bonuses
@@ -167,6 +169,9 @@ export const medleyTournamentTranslations = {
     // Feature #17: Additional
     ofSong: 'uit: {title}',
     comboOnSong: 'op: {title}',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'Fragmenten',
+    localMicShort: 'Lokaal',
   },
 
   tournament: {
@@ -364,7 +369,7 @@ export const medleyTournamentTranslations = {
     performances: 'Optredens',
     avgRating: 'Gem. beoordeling',
     bestRating: 'Beste beoordeling',
-    achievements: 'Prestaties',
+    achievementsLabel: 'Prestaties',
     newAchievement: 'Nieuwe prestatie!',
     songSuggestions: 'Vergelijkbare nummers',
     trend: 'Trend',
@@ -389,5 +394,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'INCREDIBEL OPTREDEN!',
     genreStats: 'Genrestatistieken',
     wallOfFame: 'Wall of Fame',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Zing met een accent', description: 'Zet je beste nepaccent op voor het hele nummer' },
+      silentMinute: { title: 'Stille minuut', description: 'Stop 10 seconden met zingen, maar blijf optreden' },
+      danceBreak: { title: 'Danspauze', description: 'Maak minstens 3 dansbewegingen tijdens het nummer' },
+      phoneSinger: { title: 'Telefoonzanger', description: 'Zing alsof je een TikTok opneemt met je telefoon' },
+      supermarketStyle: { title: 'Supermarktstijl', description: 'Treed op alsof je casual zingt tijdens het boodschappen doen' },
+      tempoSwitch: { title: 'Tempowissel', description: 'Begin langzaam, ga heel snel in het midden, weer langzaam' },
+      smirkMode: { title: 'Grijnsmodus', description: 'Houd een zelfverzekerde grijns op je gezicht de HELE tijd' },
+      airGuitarSolo: { title: 'Luchtgitaarsolo', description: 'Speel een luchtgitaarsolo tijdens een instrumentaal deel' },
+      micDrop: { title: 'Mic-drop', description: 'Eindig het nummer met een dramatische mic-drop pose' },
+      divaMode: { title: 'Divamodus', description: 'Zing met maximale drama, handgebaren en haarflips' },
+      whisperStart: { title: 'Fluisterstart', description: 'Fluister de eerste 15 seconden, ga dan voluit' },
+      operaStyle: { title: 'Operastijl', description: 'Zing zo overdramatisch als een operazanger' },
+      discoFever: { title: 'Disco-koorts', description: 'Voeg discodansbewegingen toe bij elk refrein' },
+      emotionalRollercoaster: { title: 'Emotionele achtbaan', description: 'Wissel tussen huilende en lachende uitdrukkingen' },
+      countryTwist: { title: 'Countrydraai', description: 'Voeg een countryaccent toe en jee-haw gebaren' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'Eerste optreden', description: 'Voltooi 1 optreden' },
+      goldenVoice: { name: 'Gouden stem', description: 'Krijg een beoordeling >= 9,0' },
+      crowdFavorite: { name: 'Publieksfavoriet', description: 'Word beoordeeld door 10+ verschillende publieksleden' },
+      allRounder: { name: 'Allrounder', description: 'Treed op in 5+ verschillende genres' },
+      perfectionist: { name: 'Perfectionist', description: 'Krijg een beoordeling >= 9,5' },
+      stageAnimal: { name: 'Podiumbeest', description: '20+ optredens' },
+      centurion: { name: 'Centurion', description: 'Ontvang 100+ publieksbeoordelingen' },
+      comebackKid: { name: 'Comebackkid', description: 'Beoordeling verbetert met 3+ punten van slechtst naar best' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Nieuwkomer',
+      openMic: 'Open Mic',
+      regular: 'Reguliere',
+      star: 'Ster',
+      superstar: 'Superster',
+      legend: 'Legende',
+    },
+
+    awards: 'Prijzen',
   },
 };

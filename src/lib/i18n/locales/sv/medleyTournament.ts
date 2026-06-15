@@ -363,7 +363,7 @@ export const medleyTournamentTranslations = {
     performances: 'Framträdanden',
     avgRating: 'Snittbetyg',
     bestRating: 'Bästa Betyg',
-    achievements: 'Prestationer',
+    achievementsLabel: 'Prestationer',
     newAchievement: 'Ny Prestation!',
     songSuggestions: 'Liknande Låtar',
     trend: 'Trend',

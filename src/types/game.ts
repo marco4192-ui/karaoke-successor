@@ -1,5 +1,8 @@
 // Core game types for Karaoke ZERO
 
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
+
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export type GameMode = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'companion-pass-the-mic' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online' | 'rate-my-song';
@@ -369,33 +372,50 @@ export interface HighscoreEntry {
 }
 
 // Funny ranking titles based on score percentage
-export const RANKING_TITLES = [
-  { minScore: 100, title: '🎤 Shower Singing Sensation', emoji: '🚿' },
-  { minScore: 95, title: '👑 Karaoke Royalty', emoji: '👑' },
-  { minScore: 90, title: '🌟 Vocal Virtuoso', emoji: '🌟' },
-  { minScore: 85, title: '🔥 Mic Drop Master', emoji: '🎤' },
-  { minScore: 80, title: '💎 Diamond Voice', emoji: '💎' },
-  { minScore: 75, title: '🎭 Broadway Wannabe', emoji: '🎭' },
-  { minScore: 70, title: '🎵 Note Nailer', emoji: '🎵' },
-  { minScore: 65, title: '🦜 Pitchy Parrot', emoji: '🦜' },
-  { minScore: 60, title: '🎪 Circus Singer', emoji: '🎪' },
-  { minScore: 55, title: '🤷 Humble Hummer', emoji: '🤷' },
-  { minScore: 50, title: '🚧 Under Construction', emoji: '🚧' },
-  { minScore: 45, title: '😜 Bathroom Baritone', emoji: '😜' },
-  { minScore: 40, title: '👻 Phantom Phony', emoji: '👻' },
-  { minScore: 35, title: '🦆 Duck Tape Singer', emoji: '🦆' },
-  { minScore: 30, title: '🥴 Tuneless Troubadour', emoji: '🥴' },
-  { minScore: 25, title: '🌪️ Vocal Tornado (Disaster)', emoji: '🌪️' },
-  { minScore: 20, title: '🫣 Tone Deaf Titan', emoji: '🫣' },
-  { minScore: 15, title: '🤡 Clown Car Crooner', emoji: '🤡' },
-  { minScore: 10, title: '🧟 Tone Zombie', emoji: '🧟' },
-  { minScore: 5, title: '💀 Whispering Wimp', emoji: '💀' },
-  { minScore: 0, title: '🔇 Silent Scream', emoji: '🔇' },
+export interface RankingTitleEntry {
+  minScore: number;
+  title: string;
+  titleKey: string;
+  emoji: string;
+}
+
+export const RANKING_TITLES: RankingTitleEntry[] = [
+  { minScore: 100, title: '🎤 Shower Singing Sensation', titleKey: 'rankingTitles.showerSingingSensation', emoji: '🚿' },
+  { minScore: 95, title: '👑 Karaoke Royalty', titleKey: 'rankingTitles.karaokeRoyalty', emoji: '👑' },
+  { minScore: 90, title: '🌟 Vocal Virtuoso', titleKey: 'rankingTitles.vocalVirtuoso', emoji: '🌟' },
+  { minScore: 85, title: '🔥 Mic Drop Master', titleKey: 'rankingTitles.micDropMaster', emoji: '🎤' },
+  { minScore: 80, title: '💎 Diamond Voice', titleKey: 'rankingTitles.diamondVoice', emoji: '💎' },
+  { minScore: 75, title: '🎭 Broadway Wannabe', titleKey: 'rankingTitles.broadwayWannabe', emoji: '🎭' },
+  { minScore: 70, title: '🎵 Note Nailer', titleKey: 'rankingTitles.noteNailer', emoji: '🎵' },
+  { minScore: 65, title: '🦜 Pitchy Parrot', titleKey: 'rankingTitles.pitchyParrot', emoji: '🦜' },
+  { minScore: 60, title: '🎪 Circus Singer', titleKey: 'rankingTitles.circusSinger', emoji: '🎪' },
+  { minScore: 55, title: '🤷 Humble Hummer', titleKey: 'rankingTitles.humbleHummer', emoji: '🤷' },
+  { minScore: 50, title: '🚧 Under Construction', titleKey: 'rankingTitles.underConstruction', emoji: '🚧' },
+  { minScore: 45, title: '😜 Bathroom Baritone', titleKey: 'rankingTitles.bathroomBaritone', emoji: '😜' },
+  { minScore: 40, title: '👻 Phantom Phony', titleKey: 'rankingTitles.phantomPhony', emoji: '👻' },
+  { minScore: 35, title: '🦆 Duck Tape Singer', titleKey: 'rankingTitles.duckTapeSinger', emoji: '🦆' },
+  { minScore: 30, title: '🥴 Tuneless Troubadour', titleKey: 'rankingTitles.tunelessTroubadour', emoji: '🥴' },
+  { minScore: 25, title: '🌪️ Vocal Tornado (Disaster)', titleKey: 'rankingTitles.vocalTornado', emoji: '🌪️' },
+  { minScore: 20, title: '🫣 Tone Deaf Titan', titleKey: 'rankingTitles.toneDeafTitan', emoji: '🫣' },
+  { minScore: 15, title: '🤡 Clown Car Crooner', titleKey: 'rankingTitles.clownCarCrooner', emoji: '🤡' },
+  { minScore: 10, title: '🧟 Tone Zombie', titleKey: 'rankingTitles.toneZombie', emoji: '🧟' },
+  { minScore: 5, title: '💀 Whispering Wimp', titleKey: 'rankingTitles.whisperingWimp', emoji: '💀' },
+  { minScore: 0, title: '🔇 Silent Scream', titleKey: 'rankingTitles.silentScream', emoji: '🔇' },
 ];
 
-export function getRankTitle(accuracy: number): { title: string; emoji: string } {
+export function getRankTitle(accuracy: number): { title: string; titleKey: string; emoji: string } {
   return RANKING_TITLES.find(rank => accuracy >= rank.minScore)
-    ?? { title: '🔇 Silent Scream', emoji: '🔇' };
+    ?? { title: '🔇 Silent Scream', titleKey: 'rankingTitles.silentScream', emoji: '🔇' };
+}
+
+/** Get a localized ranking title for a given accuracy. */
+export function getLocalizedRankTitle(accuracy: number, language?: Language): { title: string; emoji: string } {
+  const entry = RANKING_TITLES.find(rank => accuracy >= rank.minScore)
+    ?? { title: '🔇 Silent Scream', titleKey: 'rankingTitles.silentScream', emoji: '🔇' };
+  return {
+    title: t(entry.titleKey, language),
+    emoji: entry.emoji,
+  };
 }
 
 // Global highscore leaderboard (stored per song and globally)
@@ -410,6 +430,8 @@ export interface Playlist {
   createdAt: number;
   updatedAt: number;
   isSystem?: boolean;  // For built-in playlists like "Favorites", "Recently Played"
+  nameKey?: string;  // i18n key for system playlist name (used by UI)
+  descriptionKey?: string;  // i18n key for system playlist description (used by UI)
   tags?: string[];  // User-defined tags for organization
   totalDuration?: number;  // Total duration in ms (calculated)
   playCount?: number;  // How many times this playlist has been played

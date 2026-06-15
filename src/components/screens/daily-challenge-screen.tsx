@@ -177,7 +177,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           {playerStats.weeklyProgress && playerStats.weeklyProgress.length === 7 && (
             <div className="mt-4">
               <div className="flex justify-between gap-1">
-                {[t('dailyChallengeScreen.dayMon'), t('dailyChallengeScreen.dayTue'), t('dailyChallengeScreen.dayWed'), t('dailyChallengeScreen.dayThu'), t('dailyChallengeScreen.dayFri'), t('dailyChallengeScreen.daySat'), t('dailyChallengeScreen.daySun')].map((day, idx) => (
+                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
                   <div key={day} className="text-center">
                     <div className="text-xs text-white/40 mb-1">{day}</div>
                     <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center text-xs ${
@@ -444,7 +444,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg mb-4">{weekly.description}</p>
+              <p className="text-lg mb-4">{t(`dailyChallenge.weekly.${weekly.id}.description`)}</p>
               <div className="flex items-center justify-between text-sm text-white/60">
                 <span>{t('dailyChallengeScreen.target')}: {weekly.target}</span>
                 <span>{t('dailyChallengeScreen.resetsIn')} {weeklyReset.days}d {weeklyReset.hours}h</span>
@@ -474,6 +474,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                 extendedStats.songsCompleted,
                 extendedStats.unlockedTitles,
                 extendedStats.totalXP,
+                t,
               );
               const locked = requirementStatus !== null;
               const isSelected = selectedMode?.id === mode.id;
@@ -509,8 +510,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       <div className="absolute top-2 right-2 text-lg" title={requirementStatus || ''}>🔒</div>
                     )}
                     <div className="text-3xl mb-2">{mode.icon}</div>
-                    <h4 className="font-bold text-white mb-1">{mode.name}</h4>
-                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{mode.description}</p>
+                    <h4 className="font-bold text-white mb-1">{t(`challenges.${mode.id}.name`)}</h4>
+                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{t(`challenges.${mode.id}.description`)}</p>
                     {locked && requirementStatus && (
                       <p className="text-xs text-red-400 mb-2">{requirementStatus}</p>
                     )}
@@ -534,7 +535,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           {selectedMode && modeSongChoices.length > 0 && (
             <div className="mb-4">
               <label className="text-sm text-white/60 mb-2 block">
-                {selectedMode.icon} {selectedMode.name} — {t('dailyChallengeScreen.selectSong')}
+                {selectedMode.icon} {t(`challenges.${selectedMode.id}.name`)} — {t('dailyChallengeScreen.selectSong')}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {modeSongChoices.map((song, idx) => (
@@ -687,8 +688,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     className="p-4 bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border border-amber-500/20 rounded-lg text-center"
                   >
                     <div className="text-3xl mb-2">{badge.icon}</div>
-                    <div className="font-medium text-amber-400">{badge.name}</div>
-                    <div className="text-xs text-white/60 mt-1">{badge.description}</div>
+                    <div className="font-medium text-amber-400">{t(`dailyBadges.${badge.id}.name`)}</div>
+                    <div className="text-xs text-white/60 mt-1">{t(`dailyBadges.${badge.id}.description`)}</div>
                     <div className="text-xs text-white/40 mt-2">
                       {new Date(badge.unlockedAt).toLocaleDateString()}
                     </div>
@@ -709,8 +710,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       className="p-4 bg-white/5 border border-white/10 rounded-lg text-center grayscale"
                     >
                       <div className="text-3xl mb-2">{badge.icon}</div>
-                      <div className="font-medium">{badge.name}</div>
-                      <div className="text-xs text-white/60 mt-1">{badge.description}</div>
+                      <div className="font-medium">{t(`dailyBadges.${badge.id}.name`)}</div>
+                      <div className="text-xs text-white/60 mt-1">{t(`dailyBadges.${badge.id}.description`)}</div>
                     </div>
                   ))}
               </div>
@@ -727,11 +728,11 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span>{quest.icon}</span>
-                          <span className="font-medium text-sm">{quest.name}</span>
+                          <span className="font-medium text-sm">{t(`dailyQuests.${quest.id}.name`)}</span>
                         </div>
                         <span className="text-xs text-cyan-400">+{quest.reward.xp} XP</span>
                       </div>
-                      <div className="text-xs text-white/50 mb-2">{quest.description}</div>
+                      <div className="text-xs text-white/50 mb-2">{t(`dailyQuests.${quest.id}.description`)}</div>
                       <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className={`h-full ${quest.completed ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`} style={{ width: `${pct}%` }} />
                       </div>

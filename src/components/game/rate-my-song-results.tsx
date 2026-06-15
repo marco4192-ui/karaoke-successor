@@ -121,8 +121,7 @@ export function RateMySongResultsScreen({
   const topRating = result.ratings.length > 0
     ? Math.max(...result.ratings.map(r => r.rating))
     : 5;
-  const lang = language === 'de' ? 'de' : 'en';
-  const aiComment = useMemo(() => getAICriticComment(topRating, lang), [topRating, lang]);
+  const aiComment = useMemo(() => getAICriticComment(topRating, language), [topRating, language]);
 
   // ── Animated Score Counter ──
   useEffect(() => {
@@ -200,8 +199,8 @@ export function RateMySongResultsScreen({
   };
 
   // Helper to get localized achievement text
-  const achName = (a: Achievement) => language === 'de' ? a.nameDe : a.nameEn;
-  const achDesc = (a: Achievement) => language === 'de' ? a.descriptionDe : a.descriptionEn;
+  const achName = (a: Achievement) => t(`rateMySong.achievements.${a.id}.name`);
+  const achDesc = (a: Achievement) => t(`rateMySong.achievements.${a.id}.description`);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
@@ -278,7 +277,7 @@ export function RateMySongResultsScreen({
                     <div className="font-medium">{r.playerName}</div>
                     {rankResult && (
                       <div className="text-xs text-gray-400 mt-0.5">
-                        {rankResult.rank} · {t('rateMySong.performances')}: {stats?.totalPerformances || 0} · {t('rateMySong.avgRating')}: {avgRating.toFixed(1)}
+                        {t(`rateMySong.ranks.${rankResult.rank}`)} · {t('rateMySong.performances')}: {stats?.totalPerformances || 0} · {t('rateMySong.avgRating')}: {avgRating.toFixed(1)}
                       </div>
                     )}
                     {/* Challenge result */}
@@ -298,8 +297,8 @@ export function RateMySongResultsScreen({
                 {rankResult && rankResult.progress < 1 && (
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-[10px] text-gray-500 mb-0.5">
-                      <span>{rankResult.rank}</span>
-                      <span>{rankResult.nextRank}</span>
+                      <span>{t(`rateMySong.ranks.${rankResult.rank}`)}</span>
+                      <span>{rankResult.nextRank ? t(`rateMySong.ranks.${rankResult.nextRank}`) : ''}</span>
                     </div>
                     <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
                       <div
@@ -659,7 +658,7 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
 
         {/* Awards */}
         <div className="mb-6 text-left">
-          <h3 className="text-lg font-semibold mb-3">🏆 Awards</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('rateMySong.awards')}</h3>
           <div className="space-y-2">
             {/* Best Performance */}
             {bestSinglePerformance && (

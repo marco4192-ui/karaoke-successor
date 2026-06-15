@@ -130,7 +130,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
             <CardContent className="pt-6">
               {game.isNew && (
                 <div className="absolute top-2 right-2 bg-white/90 text-black text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                  ✨ NEW
+                  ✨ {t('party.newBadge')}
                 </div>
               )}
               <div className="text-5xl mb-4">{game.icon}</div>

@@ -2,6 +2,33 @@
 // Auto-split from monolithic locale file
 
 export const gameTranslations = {
+  share: {
+    points: 'PUNKTE',
+    accuracy: 'Genauigkeit',
+    maxCombo: 'Beste Combo',
+    rating: 'Bewertung',
+    playerLabel: 'Spieler: {name}',
+    shareTitle: 'Karaoke ZERO Ergebnis',
+    mode: 'Modus',
+    difficulty: 'Schwierigkeit',
+    scoredPoints: 'Ich habe gerade {score} Punkte bei "{title}" von {artist} erreicht!',
+    callToAction: 'Spiele {branding} und versuche meinen Score zu schlagen!',
+  },
+
+  scoreEvents: {
+    perfect: 'PERFEKT',
+    great: 'GUT',
+    good: 'GUT',
+    okay: 'OKAY',
+    miss: 'VERFEHLT'
+  },
+
+  difficulty: {
+    easy: 'Leicht',
+    medium: 'Mittel',
+    hard: 'Schwer'
+  },
+
   game: {
     back: 'Zurück',
     sync: 'Sync',
@@ -43,9 +70,7 @@ export const gameTranslations = {
     echo: 'Echo: {n}%',
     presets: 'Presets',
     adPlaying: 'Werbung läuft',
-    gamePaused: 'Spiel pausiert',
-    reverbAriaLabel: 'Hall',
-    echoAriaLabel: 'Echo'
+    gamePaused: 'Spiel pausiert'
   },
 
   gameEnhancements: {
@@ -67,27 +92,13 @@ export const gameTranslations = {
 
   noteLane: {
     singHere: 'SING HIER',
-    blindAriaLabel: 'Blinder Abschnitt — singe nach Gefühl!',
-  },
-
-  noteHighway: {
-    blindLabel: 'BLIND',
-  },
-
-  micIndicator: {
-    singsWithMic: '{mic} — {name} singt',
-    sings: '{name} singt',
-    micActive: 'Mikrofon aktiv',
-    playerPrefix: 'S{n}:',
-    companionPlayers: 'Companion-Spieler',
   },
 
   practicePanel: {
     title: 'Übungsmodus',
     enable: 'Übungsmodus aktivieren',
     pitchGuide: 'Tonhöhenführung',
-    autoPlayNotes: 'Noten automatisch abspielen',
-    playbackSpeed: 'Wiedergabegeschwindigkeit: {n}%'
+    autoPlayNotes: 'Noten automatisch abspielen'
   },
 
   mic: {
@@ -233,11 +244,7 @@ export const gameTranslations = {
     noAll: 'Noch keine Highscores. Sei der Erste, der singt!',
     accuracyLabel: '{n}% Genauigkeit',
     maxComboLabel: '{n}x beste Combo',
-    totalPoints: 'Gesamtpunkte',
-    cannotConnect: 'Verbindung zum Leaderboard-Server fehlgeschlagen. Bitte Internetverbindung prüfen.',
-    loadFailed: 'Globales Leaderboard konnte nicht geladen werden',
-    serverError500: 'Serverfehler (HTTP 500). Der Leaderboard-Dienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.',
-    networkError: 'Netzwerkfehler. Bitte Internetverbindung prüfen.'
+    totalPoints: 'Gesamtpunkte'
   },
 
   keyboardShortcuts: {
@@ -300,6 +307,9 @@ export const gameTranslations = {
     networkError: 'Netzwerkfehler',
   },
 
+  paused: 'PAUSIERT',
+  go: 'LOS!',
+
   common: {
     unknown: 'Unbekannt',
     unknownArtist: 'Unbekannter Künstler',
@@ -309,5 +319,102 @@ export const gameTranslations = {
   page: {
     loading: 'Karaoke ZERO wird geladen...',
     reload: 'Neu laden',
+  },
+
+  achievements: {
+    firstNote: { name: 'Erster Ton', description: 'Triff deinen ersten Ton' },
+    perfectTen: { name: 'Perfekte Zehn', description: 'Erreiche 10 perfekte Treffer in einem Lied' },
+    comboMaster: { name: 'Combo-Meister', description: 'Erreiche eine 50er-Kombo' },
+    comboKing: { name: 'Combo-König', description: 'Erreiche eine 100er-Kombo', rewardTitle: 'Combo-König' },
+    comboLegend: { name: 'Combo-Legende', description: 'Erreiche eine 200er-Kombo', rewardTitle: 'Combo-Legende' },
+    perfectSong: { name: 'Perfektes Lied', description: 'Erreiche 99,5%+ Genauigkeit bei einem Lied', rewardTitle: 'Perfektionist' },
+    pitchPerfect: { name: 'Pitch-Perfekt', description: 'Erreiche über 90% Genauigkeit' },
+    risingStar: { name: 'Aufsteigender Stern', description: 'Erreiche über 8.000 Punkte' },
+    scoreMaster: { name: 'Punkte-Meister', description: 'Erreiche über 9.000 Punkte' },
+    flawless: { name: 'Makellos', description: 'Erreiche über 9.500 Punkte', rewardTitle: 'Makellos' },
+    goldenCollector: { name: 'Gold-Sammler', description: 'Triff 10 goldene Noten' },
+    goldenMaster: { name: 'Gold-Meister', description: 'Triff 50 goldene Noten', rewardTitle: 'Goldene Stimme' },
+    firstSong: { name: 'Erste Schritte', description: 'Beende dein erstes Lied' },
+    tenSongs: { name: 'Karaoke-Enthusiast', description: 'Beende 10 Lieder' },
+    fiftySongs: { name: 'Karaoke-Stammgast', description: 'Beende 50 Lieder' },
+    hundredSongs: { name: 'Karaoke-Legende', description: 'Beende 100 Lieder', rewardTitle: 'Karaoke-Legende' },
+    fiveGames: { name: 'Anfänger', description: 'Spiele 5 Spiele' },
+    twentyGames: { name: 'Hingebungsvoller Sänger', description: 'Spiele 20 Spiele' },
+    partyTime: { name: 'Partyzeit!', description: 'Spiele einen Partymodus' },
+    duelChampion: { name: 'Duell-Champion', description: 'Gewinne ein Duell' },
+    passTheMic: { name: 'Reich das Mikro!', description: 'Spiele Reich-das-Mikro-Modus' },
+    showerSinger: { name: 'Duschsänger', description: 'Erreiche weniger als 20% bei einem Lied', rewardTitle: 'Duschsänger' },
+    comebackKing: { name: 'Comeback-König', description: 'Erreiche eine 50er-Kombo nach 10 Fehlern' },
+    speedDemon: { name: 'Geschwindigkeitsdämon', description: 'Beende ein Lied mit 1,5-facher Geschwindigkeit' },
+    blindMaster: { name: 'Blind-Meister', description: 'Beende ein Lied im Blind-Karaoke-Modus', rewardTitle: 'Blind-Meister' },
+  },
+
+  ranks: {
+    beginner: { name: 'Anfänger', titles: { newcomer: 'Neuling' } },
+    novice: { name: 'Novize', titles: { risingStar: 'Aufsteigender Stern' } },
+    apprentice: { name: 'Lehrling', titles: { melodyMaker: 'Melodiemacher' } },
+    singer: { name: 'Sänger', titles: { voiceInTraining: 'Stimme im Training' } },
+    performer: { name: 'Performer', titles: { stagePresence: 'Bühnenpräsenz' } },
+    artist: { name: 'Künstler', titles: { artisticSoul: 'Künstlerische Seele' } },
+    star: { name: 'Stern', titles: { shiningStar: 'Leuchtstern' } },
+    superstar: { name: 'Superstar', titles: { crowdFavorite: 'Publikumsliebling' } },
+    legend: { name: 'Legende', titles: { legendaryVoice: 'Legendäre Stimme' } },
+    icon: { name: 'Ikone', titles: { musicalIcon: 'Musik-Ikone' } },
+    mythic: { name: 'Mythisch', titles: { mythicSinger: 'Mythischer Sänger' } },
+    divine: { name: 'Göttlich', titles: { divineVoice: 'Göttliche Stimme' } },
+  },
+
+  challenges: {
+    blindAudition: { name: 'Blindes Vorsingen', description: 'Singe ohne die Texte zu sehen - Gedächtnistest!' },
+    freeFlight: { name: 'Freier Flug', description: 'Kein Tonleiter-Guide - singe nach Gehör!' },
+    speedDemon: { name: 'Geschwindigkeitsdämon', description: '1,5-fache Geschwindigkeit - schnell denken!' },
+    perfectionist: { name: 'Perfektionist', description: 'Nur perfekte Noten zählen!' },
+    goldenHunter: { name: 'Gold-Jäger', description: 'Nur goldene Noten geben Punkte - schnapp sie alle!' },
+    memoryLane: { name: 'Erinnerungsfahrt', description: 'Fehlende-Wörter-Challenge - fülle die Lücken!' },
+    pitchShift: { name: 'Ton-Verschiebung', description: 'Das Lied ist transponiert - passe deine Stimme an!' },
+    halfSpeed: { name: 'Zeitlupe', description: '0,75-fache Geschwindigkeit - perfekt zum Üben!' },
+    blindMaster: { name: 'Blind-Meister', description: 'Keine Texte UND kein Tonleiter-Guide - echtes Blind-Singen!' },
+    ultimateChallenge: { name: 'Ultimative Herausforderung', description: 'Alle Modifikatoren kombiniert - für die Mutigen!' },
+  },
+
+  modifiers: {
+    noLyrics: { label: 'Keine Texte', description: 'Texte sind versteckt', shortDescription: 'Keine Texte' },
+    noPitchGuide: { label: 'Kein Tonleiter-Guide', description: 'Tonleiter-Guide ist versteckt', shortDescription: 'Kein Tonleiter-Guide' },
+    doubleSpeed: { label: 'Geschwindigkeits-Boost', description: 'Lied spielt schneller', shortDescription: '1,25-fache Geschwindigkeit' },
+    halfSpeed: { label: 'Zeitlupe', description: 'Lied spielt langsamer' },
+    perfectOnly: { label: 'Perfektionist', description: 'Nur perfekte Treffer zählen' },
+    goldenOnly: { label: 'Gold-Jäger', description: 'Nur goldene Noten zählen' },
+    missingWords: { label: 'Fehlende Wörter', description: 'Einige Wörter sind versteckt' },
+    blind: { label: 'Blind', description: 'Keine Texte und kein Tonleiter-Guide' },
+    pitchShift: { description: 'Tonhöhe um 3 Halbtöne verschoben' },
+  },
+
+  rankingTitles: {
+    showerSingingSensation: 'Dusch-Gesangs-Sensation',
+    karaokeRoyalty: 'Karaoke-Königtum',
+    vocalVirtuoso: 'Virtuose der Stimme',
+    micDropMaster: 'Mic-Drop-Meister',
+    diamondVoice: 'Diamant-Stimme',
+    broadwayWannabe: 'Broadway-Wannabes',
+    noteNailer: 'Noten-Treffer',
+    pitchyParrot: 'Unsauberer Papagei',
+    circusSinger: 'Zirkus-Sänger',
+    humbleHummer: 'Bescheidener Brummsänger',
+    underConstruction: 'In Arbeit',
+    bathroomBaritone: 'Badezimmer-Bariton',
+    phantomPhony: 'Phantom-Schwindler',
+    duckTapeSinger: 'Ducktape-Sänger',
+    tunelessTroubadour: 'Tonloser Troubadour',
+    vocalTornado: 'Stimm-Tornado (Katastrophe)',
+    toneDeafTitan: 'Taub-Ton-Titan',
+    clownCarCrooner: 'Clownauto-Sänger',
+    toneZombie: 'Ton-Zombie',
+    whisperingWimp: 'Flüsternder Waschlappen',
+    silentScream: 'Stiller Schrei',
+  },
+
+  battleRoyale: {
+    bounty: 'KOPFGELD',
+    micError: 'Mikro',
   },
 };

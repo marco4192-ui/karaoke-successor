@@ -255,4 +255,310 @@ export const gameTranslations = {
     failedToLoad: 'Misslyckades att ladda companion-app',
     retry: 'Försök Igen',
   },
+
+  // --- Achievements ---
+  achievements: {
+  "firstNote": {
+    "name": "Första tonen",
+    "description": "Träffa din första ton"
+  },
+  "perfectTen": {
+    "name": "Perfekta tian",
+    "description": "Få 10 Perfecta träffar i en enda låt"
+  },
+  "comboMaster": {
+    "name": "Combo-mästare",
+    "description": "Nå en combo på 50 toner"
+  },
+  "comboKing": {
+    "name": "Combo-kung",
+    "description": "Nå en combo på 100 toner",
+    "rewardTitle": "Combo-kung"
+  },
+  "comboLegend": {
+    "name": "Combo-legend",
+    "description": "Nå en combo på 200 toner",
+    "rewardTitle": "Combo-legend"
+  },
+  "perfectSong": {
+    "name": "Perfekt låt",
+    "description": "Nå 99,5%+ träffsäkerhet",
+    "rewardTitle": "Perfektionist"
+  },
+  "pitchPerfect": {
+    "name": "Röstskål",
+    "description": "Nå över 90% träffsäkerhet"
+  },
+  "risingStar": {
+    "name": "Stjärnskott",
+    "description": "Få över 8 000 poäng"
+  },
+  "scoreMaster": {
+    "name": "Poängmästare",
+    "description": "Få över 9 000 poäng"
+  },
+  "flawless": {
+    "name": "Fläckfri",
+    "description": "Få över 9 500 poäng",
+    "rewardTitle": "Fläckfri"
+  },
+  "goldenCollector": {
+    "name": "Guldsamlare",
+    "description": "Träffa 10 gyllene toner"
+  },
+  "goldenMaster": {
+    "name": "Guldmästare",
+    "description": "Träffa 50 gyllene toner",
+    "rewardTitle": "Gyllene röst"
+  },
+  "firstSong": {
+    "name": "Första stegen",
+    "description": "Avsluta din första låt"
+  },
+  "tenSongs": {
+    "name": "Karaoke-entusiast",
+    "description": "Avsluta 10 låtar"
+  },
+  "fiftySongs": {
+    "name": "Vanlig karaokesångare",
+    "description": "Avsluta 50 låtar"
+  },
+  "hundredSongs": {
+    "name": "Karaoke-legend",
+    "description": "Avsluta 100 låtar",
+    "rewardTitle": "Karaoke-legend"
+  },
+  "fiveGames": {
+    "name": "Igångsättning",
+    "description": "Spela 5 spel"
+  },
+  "twentyGames": {
+    "name": "Dedikerad sångare",
+    "description": "Spela 20 spel"
+  },
+  "partyTime": {
+    "name": "Festtid!",
+    "description": "Spela ett festläge"
+  },
+  "duelChampion": {
+    "name": "Duelmästare",
+    "description": "Vinn en duell"
+  },
+  "passTheMic": {
+    "name": "Ge micken vidare!",
+    "description": "Spela läget Ge micken vidare"
+  },
+  "showerSinger": {
+    "name": "Duschsångare",
+    "description": "Få under 20% på en låt",
+    "rewardTitle": "Duschsångare"
+  },
+  "comebackKing": {
+    "name": "Comeback-kung",
+    "description": "Få en combo på 50+ efter 10 missar"
+  },
+  "speedDemon": {
+    "name": "Hastighetsdemon",
+    "description": "Avsluta en låt på 1,5x hastighet"
+  },
+  "blindMaster": {
+    "name": "Blind mästare",
+    "description": "Avsluta en låt i Blint läge",
+    "rewardTitle": "Blind mästare"
+  }
+},
+
+  // --- Ranks ---
+  ranks: {
+  "beginner": {
+    "name": "Nybörjare",
+    "titles": {
+      "newcomer": "Nykommare"
+    }
+  },
+  "novice": {
+    "name": "Lärling",
+    "titles": {
+      "risingStar": "Stjärnskott"
+    }
+  },
+  "apprentice": {
+    "name": "Gesäll",
+    "titles": {
+      "melodyMaker": "Melodiskapare"
+    }
+  },
+  "singer": {
+    "name": "Sångare",
+    "titles": {
+      "voiceInTraining": "Röst i träning"
+    }
+  },
+  "performer": {
+    "name": "Underhållare",
+    "titles": {
+      "stagePresence": "Scen-närvaro"
+    }
+  },
+  "artist": {
+    "name": "Artist",
+    "titles": {
+      "artisticSoul": "Konstnärlig själ"
+    }
+  },
+  "star": {
+    "name": "Stjärna",
+    "titles": {
+      "shiningStar": "Strålande stjärna"
+    }
+  },
+  "superstar": {
+    "name": "Superstjärna",
+    "titles": {
+      "crowdFavorite": "Publikfavorit"
+    }
+  },
+  "legend": {
+    "name": "Legend",
+    "titles": {
+      "legendaryVoice": "Legendarisk röst"
+    }
+  },
+  "icon": {
+    "name": "Ikon",
+    "titles": {
+      "musicalIcon": "Musikalisk ikon"
+    }
+  },
+  "mythic": {
+    "name": "Mytisk",
+    "titles": {
+      "mythicSinger": "Mytisk sångare"
+    }
+  },
+  "divine": {
+    "name": "Gudomlig",
+    "titles": {
+      "divineVoice": "Gudomlig röst"
+    }
+  }
+},
+
+  // --- Challenge Modes ---
+  challenges: {
+  "blindAudition": {
+    "name": "Blind provsjoning",
+    "description": "Sjung utan att se texten — minnestest!"
+  },
+  "freeFlight": {
+    "name": "Fri flykt",
+    "description": "Ingen tonledning — sjung på gehör!"
+  },
+  "speedDemon": {
+    "name": "Hastighetsdemon",
+    "description": "1,5x hastighet — tänk snabbt!"
+  },
+  "perfectionist": {
+    "name": "Perfektionist",
+    "description": "Bara perfekta toner räknas!"
+  },
+  "goldenHunter": {
+    "name": "Guldjägare",
+    "description": "Bara gyllene toner ger poäng — fånga alla!"
+  },
+  "memoryLane": {
+    "name": "Minneslane",
+    "description": "Saknade ord — fyll i luckorna!"
+  },
+  "pitchShift": {
+    "name": "Tonförskjutning",
+    "description": "Låten är transponerad — anpassa rösten!"
+  },
+  "halfSpeed": {
+    "name": "Slow motion",
+    "description": "0,75x hastighet — perfekt för övning!"
+  },
+  "blindMaster": {
+    "name": "Blind mästare",
+    "description": "Varken text eller tonledning — riktigt blind sjungande!"
+  },
+  "ultimateChallenge": {
+    "name": "Ultimat utmaning",
+    "description": "Alla modifierare kombinerade — för de modiga!"
+  }
+},
+
+  // --- Challenge Modifiers ---
+  modifiers: {
+  "noLyrics": {
+    "label": "Ingen text",
+    "description": "Texten är dold",
+    "shortDescription": "Ingen text"
+  },
+  "noPitchGuide": {
+    "label": "Ingen tonledning",
+    "description": "Tonledningen är dold",
+    "shortDescription": "Ingen tonledning"
+  },
+  "doubleSpeed": {
+    "label": "Hastighetsboost",
+    "description": "Låten spelar snabbare",
+    "shortDescription": "1,25x hastighet"
+  },
+  "halfSpeed": {
+    "label": "Slow motion",
+    "description": "Låten spelar långsammare"
+  },
+  "perfectOnly": {
+    "label": "Perfektionist",
+    "description": "Bara perfekta toner räknas"
+  },
+  "goldenOnly": {
+    "label": "Guldjägare",
+    "description": "Bara gyllene toner räknas"
+  },
+  "missingWords": {
+    "label": "Saknade ord",
+    "description": "Vissa ord är dolda"
+  },
+  "blind": {
+    "label": "Blind",
+    "description": "Ingen text och ingen tonledning"
+  },
+  "pitchShift": {
+    "description": "Tonhöjd förskjuten med 3 halvtoner"
+  }
+},
+
+  // --- Ranking Titles ---
+  rankingTitles: {
+  "showerSingingSensation": "Duschsångs-sensation",
+  "karaokeRoyalty": "Karaoke-kungahus",
+  "vocalVirtuoso": "Röstarvirtuos",
+  "micDropMaster": "Mickdroppsmästare",
+  "diamondVoice": "Diamantröst",
+  "broadwayWannabe": "Broadway-wannabe",
+  "noteNailer": "Nätmästare",
+  "pitchyParrot": "Skrävig papegoja",
+  "circusSinger": "Cirkussångare",
+  "humbleHummer": "Blygsam nynnare",
+  "underConstruction": "Under byggnation",
+  "bathroomBaritone": "Badrumsbariton",
+  "phantomPhony": "Fantom-bluffare",
+  "duckTapeSinger": "Silvertejpssångare",
+  "tunelessTroubadour": "Tonlös trubadur",
+  "vocalTornado": "Vokal tornado (Katastrof)",
+  "toneDeafTitan": "Tondöv titan",
+  "clownCarCrooner": "Clownbils-kroonare",
+  "toneZombie": "Ton-zombie",
+  "whisperingWimp": "Viskande fegis",
+  "silentScream": "Tyst skrik"
+},
+
+  // --- Battle Royale (new keys) ---
+  battleRoyale: {
+  "bounty": "HUVUDJAG",
+  "micError": "Mikrofon"
+},
+
 };

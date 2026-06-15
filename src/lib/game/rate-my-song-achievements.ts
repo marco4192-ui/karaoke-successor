@@ -5,6 +5,8 @@
  * Uses `import type` for `RateMySongPlayerStats` to avoid circular runtime dependency.
  */
 
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
 import type { RateMySongPlayerStats } from './rate-my-song-stats';
 
 // ── Types ──
@@ -12,10 +14,10 @@ import type { RateMySongPlayerStats } from './rate-my-song-stats';
 export interface Achievement {
   id: string;
   icon: string;
-  nameEn: string;
-  nameDe: string;
-  descriptionEn: string;
-  descriptionDe: string;
+  name: string;
+  nameKey: string;
+  description: string;
+  descriptionKey: string;
   condition: (stats: RateMySongPlayerStats) => boolean;
 }
 
@@ -25,78 +27,89 @@ export const RATE_MY_SONG_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first_performance',
     icon: '🎤',
-    nameEn: 'First Performance',
-    nameDe: 'Erster Auftritt',
-    descriptionEn: 'Complete 1 performance',
-    descriptionDe: 'Schließe 1 Auftritt ab',
+    name: 'First Performance',
+    nameKey: 'rateMySong.achievements.firstPerformance.name',
+    description: 'Complete 1 performance',
+    descriptionKey: 'rateMySong.achievements.firstPerformance.description',
     condition: (s) => s.totalPerformances >= 1,
   },
   {
     id: 'golden_voice',
     icon: '🌟',
-    nameEn: 'Golden Voice',
-    nameDe: 'Goldene Stimme',
-    descriptionEn: 'Get a rating >= 9.0',
-    descriptionDe: 'Erhalte eine Bewertung >= 9.0',
+    name: 'Golden Voice',
+    nameKey: 'rateMySong.achievements.goldenVoice.name',
+    description: 'Get a rating >= 9.0',
+    descriptionKey: 'rateMySong.achievements.goldenVoice.description',
     condition: (s) => s.bestRating >= 9.0,
   },
   {
     id: 'crowd_favorite',
     icon: '❤️',
-    nameEn: 'Crowd Favorite',
-    nameDe: 'Publikumsliebling',
-    descriptionEn: 'Get rated by 10+ different audience members total',
-    descriptionDe: 'Werde von insgesamt 10+ verschiedenen Publikumsmitgliedern bewertet',
+    name: 'Crowd Favorite',
+    nameKey: 'rateMySong.achievements.crowdFavorite.name',
+    description: 'Get rated by 10+ different audience members total',
+    descriptionKey: 'rateMySong.achievements.crowdFavorite.description',
     condition: (s) => s.totalAudienceRatings >= 10,
   },
   {
     id: 'versatile',
     icon: '🎭',
-    nameEn: 'All-Rounder',
-    nameDe: 'Allrounder',
-    descriptionEn: 'Perform in 5+ different genres',
-    descriptionDe: 'Trage in 5+ verschiedenen Genres auf',
+    name: 'All-Rounder',
+    nameKey: 'rateMySong.achievements.allRounder.name',
+    description: 'Perform in 5+ different genres',
+    descriptionKey: 'rateMySong.achievements.allRounder.description',
     condition: (s) => Object.keys(s.genresPerformed).length >= 5,
   },
   {
     id: 'perfectionist',
     icon: '💎',
-    nameEn: 'Perfectionist',
-    nameDe: 'Perfektionist',
-    descriptionEn: 'Get a rating >= 9.5',
-    descriptionDe: 'Erhalte eine Bewertung >= 9.5',
+    name: 'Perfectionist',
+    nameKey: 'rateMySong.achievements.perfectionist.name',
+    description: 'Get a rating >= 9.5',
+    descriptionKey: 'rateMySong.achievements.perfectionist.description',
     condition: (s) => s.bestRating >= 9.5,
   },
   {
     id: 'stage_animal',
     icon: '🔥',
-    nameEn: 'Stage Animal',
-    nameDe: 'Bühnentier',
-    descriptionEn: '20+ performances',
-    descriptionDe: '20+ Auftritte',
+    name: 'Stage Animal',
+    nameKey: 'rateMySong.achievements.stageAnimal.name',
+    description: '20+ performances',
+    descriptionKey: 'rateMySong.achievements.stageAnimal.description',
     condition: (s) => s.totalPerformances >= 20,
   },
   {
     id: 'centurion',
     icon: '💯',
-    nameEn: 'Centurion',
-    nameDe: 'Hundertfüßler',
-    descriptionEn: '100+ total audience ratings received',
-    descriptionDe: 'Erhalte 100+ Publikumsbewertungen insgesamt',
+    name: 'Centurion',
+    nameKey: 'rateMySong.achievements.centurion.name',
+    description: '100+ total audience ratings received',
+    descriptionKey: 'rateMySong.achievements.centurion.description',
     condition: (s) => s.totalAudienceRatings >= 100,
   },
   {
     id: 'comeback_kid',
     icon: '🔄',
-    nameEn: 'Comeback Kid',
-    nameDe: 'Comeback Kid',
-    descriptionEn: 'Rating improves by 3+ points from worst to best',
-    descriptionDe: 'Bewertung verbessert sich um 3+ Punkte vom Schlechtesten zum Besten',
+    name: 'Comeback Kid',
+    nameKey: 'rateMySong.achievements.comebackKid.name',
+    description: 'Rating improves by 3+ points from worst to best',
+    descriptionKey: 'rateMySong.achievements.comebackKid.description',
     condition: (s) => (s.bestRating - s.worstRating) >= 3 && s.totalPerformances >= 2,
   },
 ];
 
 // ── Helpers ──
+
+/** Get a localized copy of a Rate My Song achievement. */
+export function getLocalizedRateMySongAchievement(
+  ach: Achievement,
+  language?: Language,
+): { name: string; description: string } {
+  return {
+    name: t(ach.nameKey, language),
+    description: t(ach.descriptionKey, language),
+  };
+}
 
 /** Check which achievements a player has earned. Returns IDs of newly earned achievements. */
 export function checkRateMySongAchievements(stats: RateMySongPlayerStats): string[] {

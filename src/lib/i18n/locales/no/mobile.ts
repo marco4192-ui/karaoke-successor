@@ -158,9 +158,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Sang lagt til i køen!',
     playAgainError: 'Kunne ikke legge til sang i køen.',
     swipeToDelete: 'Sveip for å slette',
-    reorderHint: 'Hold nede og dra for å endre rekkefølge',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Lagt til i Jukebox',
+    reorderHint: 'Hold nede og dra for å endre rekkefølge'
   },
 
   mobileNav: {
@@ -474,6 +472,13 @@ export const mobileTranslations = {
     scanHint: 'Skann QR-koden på hovedskjermen',
     letsGo: 'Kjør på!',
   },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Skriv en melding...',
+    send: 'Send',
+    noMessages: 'Ingen meldinger ennå',
+    host: 'Vert',
+  },
 
   mobilePreview: {
     preview: 'Forhåndslytt',
@@ -497,4 +502,41 @@ export const mobileTranslations = {
     retake: 'Ta på nytt',
     noResults: 'Ingen resultater å vise',
   },
+
+  // --- Mobile Achievements ---
+  achievements: {
+  "firstSong": {
+    "title": "Første skritt",
+    "description": "Syng din første sang"
+  },
+  "risingStar": {
+    "title": "Stjerneskudd",
+    "description": "Syng 10 sanger"
+  },
+  "veteran": {
+    "title": "Veteran",
+    "description": "Syng 50 sanger"
+  },
+  "perfectionist": {
+    "title": "Perfeksjonist",
+    "description": "Få et perfekt resultat (95%+)"
+  },
+  "flawless": {
+    "title": "Feilfri",
+    "description": "Få 5 perfekte resultater"
+  },
+  "scoreMaster": {
+    "title": "Poengmester",
+    "description": "Nå 10 000 poeng totalt"
+  },
+  "playlistBuilder": {
+    "title": "Spillelistebygger",
+    "description": "Legg 5 sanger i kø"
+  },
+  "genreExplorer": {
+    "title": "Sjanger-utforsker",
+    "description": "Syng sanger fra 3 sjangre"
+  }
+},
+
 };

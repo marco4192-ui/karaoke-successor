@@ -1,24 +1,14 @@
-/**
- * Sub-hook: scoring RAF loop for Companion Pass-the-Mic mode.
- * Uses a per-segment fixed pool (PTM_MAX_SEGMENT_POINTS = 2000) so every
- * segment is worth the same maximum regardless of note count or golden notes.
- * Gold notes are displayed visually but carry no scoring bonus.
- * The accuracy^0.6 power curve is kept for a forgiving feel.
- */
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
 import type { Song } from '@/types/game';
 import type { Difficulty } from '@/types/game';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { evaluateTick, scaleAccuracy } from '@/lib/game/scoring';
+import { calculateScoringMetadata } from '@/lib/game/scoring';
 import type { CptmPlayer } from './cptm-types';
 import type { CompanionPitchEntry } from './cptm-companion-polling';
 
 // ===================== CONSTANTS =====================
-
-/** Maximum points per segment — every segment is normalized to this value. */
-const PTM_MAX_SEGMENT_POINTS = 2000;
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
@@ -34,8 +24,7 @@ export interface CptmScoringParams {
   notesSource: Song | null;
   currentTime: number;
   difficulty: Difficulty;
-  /** Points per tick for the current segment (PTM_MAX_SEGMENT_POINTS / segmentTotalTicks). 0 means use fallback. */
-  segmentPointsPerTick: number;
+  scoringMeta: ReturnType<typeof calculateScoringMetadata> | null;
   forceRender: () => void;
 }
 
@@ -56,12 +45,14 @@ export function useCptmScoring(params: CptmScoringParams): void {
     notesSource,
     currentTime,
     difficulty,
-    segmentPointsPerTick,
+    scoringMeta,
     forceRender,
   } = params;
 
   const lastEvalTimeRef = useRef(0);
 
+  // Read currentTime from a ref inside the callback to avoid recreating
+  // the RAF loop ~40 times/sec (currentTime changes every frame).
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
@@ -81,7 +72,7 @@ export function useCptmScoring(params: CptmScoringParams): void {
     // truthy and incorrectly skip scoring even when note is present.
     const pitchResult = {
       note: cachedPitch.note,
-      rawNote: cachedPitch.note,
+      rawNote: cachedPitch.note, // Companion pitch is not stabilized
       frequency: cachedPitch.frequency ?? null,
       clarity: cachedPitch.clarity,
       volume: cachedPitch.volume,
@@ -98,33 +89,12 @@ export function useCptmScoring(params: CptmScoringParams): void {
 
     const note = pitchResult.note;
     if (note == null) return;
-
+    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
     const p = playersRef.current[currentPlayerIndex];
     const idx = currentPlayerIndex;
 
-    let hit: boolean;
-    let points: number;
-
-    if (segmentPointsPerTick > 0) {
-      // CPTM per-segment scoring: fixed pool, no gold bonus, accuracy curve
-      const result = evaluateTick(note, activeNote.pitch, difficulty);
-      hit = result.isHit;
-      if (hit) {
-        const scaledAccuracy = scaleAccuracy(result.accuracy);
-        const tickPts = segmentPointsPerTick * scaledAccuracy;
-        points = Math.max(1, Math.round(tickPts));
-      } else {
-        points = 0;
-      }
-    } else {
-      // Fallback: use legacy party scoring (no segment data available)
-      const tick = evaluateAndScoreTick(note, activeNote, difficulty, null);
-      hit = tick.hit;
-      points = tick.points;
-    }
-
-    if (hit) {
-      p.score += points;
+    if (tick.hit) {
+      p.score += tick.points;
       p.notesHit++;
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
@@ -135,7 +105,7 @@ export function useCptmScoring(params: CptmScoringParams): void {
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [notesSource, difficulty, currentPlayerIndex, segmentPointsPerTick, forceRender, playersRef, companionPitchCacheRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, companionPitchCacheRef]);
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;

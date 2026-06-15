@@ -1,9 +1,6 @@
 /**
  * Sub-hook: scoring RAF loop for Pass-the-Mic mode.
- * Uses a per-segment fixed pool (PTM_MAX_SEGMENT_POINTS) so every segment
- * is worth the same maximum regardless of note count or golden notes.
- * Gold notes are displayed visually but carry no scoring bonus.
- * The accuracy^0.6 power curve is kept for a forgiving feel.
+ * Evaluates pitch accuracy on each animation frame and updates player scores.
  */
 'use client';
 
@@ -11,10 +8,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Song, PitchDetectionResult, Difficulty } from '@/types/game';
 import type { PtmPlayer } from './ptm-types';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { evaluateTick, scaleAccuracy } from '@/lib/game/scoring';
-
-/** Maximum points per segment — every segment is normalized to this value. */
-const PTM_MAX_SEGMENT_POINTS = 2000;
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 export const SCORING_THROTTLE_MS = 250;
@@ -27,8 +20,7 @@ interface UsePtmScoringOptions {
   currentTime: number;
   difficulty: Difficulty;
   currentPlayerIndex: number;
-  /** Points per tick for the current segment (PTM_MAX_SEGMENT_POINTS / segmentTotalTicks). 0 means use fallback. */
-  segmentPointsPerTick: number;
+  scoringMeta: ReturnType<typeof import('@/lib/game/scoring').calculateScoringMetadata> | null;
   playersRef: React.RefObject<PtmPlayer[]>;
   forceRender: () => void;
 }
@@ -41,16 +33,22 @@ export function usePtmScoring({
   currentTime,
   difficulty,
   currentPlayerIndex,
-  segmentPointsPerTick,
+  scoringMeta,
   playersRef,
   forceRender,
 }: UsePtmScoringOptions): void {
   const lastEvalTimeRef = useRef(0);
 
   // Separate throttle counters for different log messages.
+  // Previously a single ref was shared between null-pitch and skip-pitch
+  // paths; the reset on line "noPitchLogCooldownRef.current = 0" (executed
+  // every frame when pitchResult is non-null) clobbered the skip-pitch
+  // throttle, causing the shouldSkipPitch log to fire ~60x/sec.
   const noPitchLogCooldownRef = useRef(0);
   const skipPitchLogCooldownRef = useRef(0);
 
+  // Read currentTime from a ref inside the callback to avoid recreating
+  // the RAF loop ~40 times/sec (currentTime changes every frame).
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
@@ -58,6 +56,7 @@ export function usePtmScoring({
     const time = currentTimeRef.current;
 
     if (!pitchResult) {
+      // Log at most once per sustained null streak
       noPitchLogCooldownRef.current++;
       if (noPitchLogCooldownRef.current <= 1) {
         // eslint-disable-next-line no-console
@@ -68,6 +67,7 @@ export function usePtmScoring({
     noPitchLogCooldownRef.current = 0;
 
     if (shouldSkipPitch(pitchResult, difficulty)) {
+      // Log the skip reason (throttled: only once per sustained skip streak)
       if (skipPitchLogCooldownRef.current <= 0) {
         // eslint-disable-next-line no-console
         console.warn('[PTM-Scoring] shouldSkipPitch=true:',
@@ -90,34 +90,13 @@ export function usePtmScoring({
 
     const note = pitchResult.note;
     if (note == null) return;
-
+    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
     const p = playersRef.current?.[currentPlayerIndex];
     if (!p) return;
     const idx = currentPlayerIndex;
 
-    let hit: boolean;
-    let points: number;
-
-    if (segmentPointsPerTick > 0) {
-      // PTM per-segment scoring: fixed pool, no gold bonus, accuracy curve
-      const result = evaluateTick(note, activeNote.pitch, difficulty);
-      hit = result.isHit;
-      if (hit) {
-        const scaledAccuracy = scaleAccuracy(result.accuracy);
-        const tickPts = segmentPointsPerTick * scaledAccuracy;
-        points = Math.max(1, Math.round(tickPts));
-      } else {
-        points = 0;
-      }
-    } else {
-      // Fallback: use legacy party scoring (no segment data available)
-      const tick = evaluateAndScoreTick(note, activeNote, difficulty, null);
-      hit = tick.hit;
-      points = tick.points;
-    }
-
-    if (hit) {
-      p.score += points;
+    if (tick.hit) {
+      p.score += tick.points;
       p.notesHit++;
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
@@ -128,15 +107,15 @@ export function usePtmScoring({
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, segmentPointsPerTick, forceRender, playersRef]);
+  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
 
-  // Reset log cooldowns when scoring restarts
+  // Reset log cooldowns when scoring restarts (e.g., phase or isPlaying changes)
   useEffect(() => {
     noPitchLogCooldownRef.current = 0;
     skipPitchLogCooldownRef.current = 0;
   }, [phase, isPlaying]);
 
-  // Game loop: score during playing
+  // ── Game loop: score during playing ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;
     let rafId: number;

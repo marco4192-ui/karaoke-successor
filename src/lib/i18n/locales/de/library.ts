@@ -2,6 +2,16 @@
 // Auto-split from monolithic locale file
 
 export const libraryTranslations = {
+  ai: {
+    metadataEnrich: {
+      serverError: 'Serverfehler ({status})',
+      networkError: 'KI-Dienst nicht erreichbar',
+    },
+    lyricsAssistant: {
+      analyzeFailed: 'Lyrics-Analyse fehlgeschlagen',
+    },
+  },
+
   library: {
     title: 'Musikbibliothek',
     songsAvailable: 'Songs verfügbar',
@@ -27,7 +37,30 @@ export const libraryTranslations = {
     groupTitle: 'Titel',
     groupGenre: 'Genre',
     groupLanguage: 'Sprache',
-    groupFolder: 'Ordner'
+    groupFolder: 'Ordner',
+    songSelection: 'Song-Auswahl',
+
+    scanProgress: {
+      scanning: 'Ordner wird gescannt...',
+      folderScanningDesktopOnly: 'Ordner-Scan ist nur in der Desktop-App verfügbar.',
+      foundSongs: '{n} Songs gefunden, importiere...',
+      importing: 'Importiere {current}/{total}...',
+      scanningAdditional: 'Zusätzliche Quelle wird gescannt: {source}...',
+      importSuccess: '{n} Songs erfolgreich importiert!',
+      noSongsFound: 'Keine Songs im ausgewählten Ordner gefunden.',
+      scanFailed: 'Scan fehlgeschlagen: {error}',
+      pleaseEnterPath: 'Bitte gib zuerst einen Ordnerpfad ein.',
+      folderPickerDesktopOnly: 'Ordnerauswahl ist nur in der Desktop-App verfügbar.',
+      couldNotOpenPicker: 'Ordnerauswahl konnte nicht geöffnet werden.',
+      confirmResetLibrary: 'Möchtest du die Song-Bibliothek wirklich zurücksetzen? Alle importierten Songs werden entfernt.',
+      confirmClearAllData: 'WARNUNG: Dies löscht ALLE Daten inklusive Songs, Profile, Highscores und Einstellungen. Dies kann nicht rückgängig gemacht werden!',
+      typeDeleteConfirm: 'Tippe "DELETE" ein, um den kompletten Daten-Reset zu bestätigen:',
+    },
+  },
+
+  queueScreen: {
+    songNotFound: 'Song "{song}" nicht in lokaler Bibliothek gefunden',
+    noMediaSkip: 'Kein Medium für "{song}" gefunden — wird übersprungen',
   },
 
   libraryFilters: {
@@ -53,6 +86,17 @@ export const libraryTranslations = {
     groupLanguage: 'Sprache',
     groupFolder: 'Ordner',
     all: 'Alle'
+  },
+
+  playlists: {
+    favorites: '⭐ Favoriten',
+    favoritesDesc: 'Deine Lieblings-Songs',
+    recentlyPlayed: '🕐 Zuletzt gespielt',
+    recentlyPlayedDesc: 'Songs die du kürzlich gespielt hast',
+    mostPlayed: '🔥 Meistgespielt',
+    mostPlayedDesc: 'Deine meistgespielten Songs',
+    maxPlaylistsReached: 'Maximale Anzahl an Playlists ({n}) erreicht',
+    maxSongsReached: 'Maximale Songs pro Playlist ({n}) erreicht',
   },
 
   libraryPlaylist: {
@@ -413,6 +457,8 @@ export const libraryTranslations = {
       notes: 'Noten:',
       lines: 'Zeilen:',
       file: 'Datei:',
+      player1: 'Spieler 1',
+      player2: 'Spieler 2',
     },
 
     // Metadaten-Tab
@@ -431,6 +477,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Spieler 1 Name',
       duetPlayer2: '#P2: (Duett Spieler 2)',
       duetPlayer2Placeholder: 'Spieler 2 Name',
+      tagsPlaceholder: 'Schlagwort1, Schlagwort2, Schlagwort3',
     },
 
     // Lyrics-Tab
@@ -560,6 +607,8 @@ export const libraryTranslations = {
       suggestions: 'Vorschläge ({count})',
       acceptAll: 'Alle übernehmen',
       aiTip: 'Tipp: KI-Vorschläge sind immer nur Hilfestellungen. Überprüfe alle Änderungen vor dem Speichern.',
+      failed: 'Fehlgeschlagen',
+      networkError: 'Netzwerkfehler',
     },
 
     // Timeline

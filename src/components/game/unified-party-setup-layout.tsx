@@ -102,8 +102,8 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
         <Card className={`bg-gradient-to-br ${config.color} border-0`}>
           <CardContent className="pt-6">
             <div className="text-6xl mb-4">{config.icon}</div>
-            <h2 className="text-2xl font-bold text-white mb-2">{config.title}</h2>
-            <p className="text-white/80 mb-4">{config.description}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">{config.titleKey ? t(config.titleKey) : config.title}</h2>
+            <p className="text-white/80 mb-4">{config.descriptionKey ? t(config.descriptionKey) : config.description}</p>
             <div className="bg-black/20 rounded-lg p-4 space-y-2">
               <h3 className="font-bold text-white/90 mb-2">🎮 {t('unifiedSetup.howItWorks')}</h3>
               {extendedDesc.map((desc, i) => (
@@ -113,7 +113,7 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
             <div className="mt-4 flex gap-2">
               <Badge className="bg-white/20 text-white">{config.minPlayers}-{config.maxPlayers} {t('unifiedSetup.playerCountLabel')}</Badge>
               {config.supportsCompanionApp && (
-                <Badge className="bg-purple-500/30 text-purple-200">📱 Companion</Badge>
+                <Badge className="bg-purple-500/30 text-purple-200">📱 {t('unifiedSetup.companionBadge')}</Badge>
               )}
             </div>
           </CardContent>
@@ -126,6 +126,7 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
 // ===================== MOBILE GAME HEADER =====================
 
 export function MobileGameHeader({ config }: { config: PartyGameConfig }) {
+  const { t } = useTranslation();
   return (
     <div className="lg:hidden mb-6">
       <Card className={`bg-gradient-to-br ${config.color} border-0`}>
@@ -133,8 +134,8 @@ export function MobileGameHeader({ config }: { config: PartyGameConfig }) {
           <div className="flex items-center gap-4">
             <div className="text-5xl">{config.icon}</div>
             <div>
-              <h3 className="font-bold text-lg text-white">{config.title}</h3>
-              <p className="text-white/80 text-sm">{config.description}</p>
+              <h3 className="font-bold text-lg text-white">{config.titleKey ? t(config.titleKey) : config.title}</h3>
+              <p className="text-white/80 text-sm">{config.descriptionKey ? t(config.descriptionKey) : config.description}</p>
             </div>
           </div>
         </CardContent>

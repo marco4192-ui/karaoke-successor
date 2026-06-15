@@ -2,6 +2,10 @@
 // Auto-split from monolithic locale file
 
 export const coreTranslations = {
+  core: {
+    branding: 'Karaoke ZERO',
+  },
+
   nav: {
     library: 'Library',
     import: 'Import',
@@ -13,7 +17,8 @@ export const coreTranslations = {
     mobile: 'Mobile',
     achievements: 'Achievements',
     daily: 'Daily',
-    settings: 'Settings'
+    settings: 'Settings',
+    editor: 'Editor'
   },
 
   home: {
@@ -26,7 +31,8 @@ export const coreTranslations = {
     partyGames: 'Party Games',
     difficultyLevels: 'Difficulty Levels',
     selectProfile: 'Select Your Profile',
-    createNew: 'Create New'
+    createNew: 'Create New',
+    qrCodeAlt: 'QR Code',
   },
 
   homeScreen: {
@@ -73,7 +79,11 @@ export const coreTranslations = {
     search: 'Search',
     filter: 'Filter',
     sort: 'Sort',
-    refresh: 'Refresh'
+    refresh: 'Refresh',
+    avatarAlt: 'Avatar',
+    qrCodeAlt: 'QR Code',
+    unknownError: 'Unknown error',
+    player: 'Player',
   },
 
   dialogs: {
@@ -286,9 +296,76 @@ export const coreTranslations = {
     noExclusion: 'no exclusion',
   },
 
+  jukeboxA11y: {
+    songProgress: 'Song progress',
+    unmute: 'Unmute',
+    mute: 'Mute',
+    volume: 'Volume',
+    shuffle: 'Shuffle',
+    repeat: 'Repeat',
+  },
+
+  fullscreen: {
+    exitF12: 'Exit Fullscreen (F12)',
+    toggleF12: 'Toggle Fullscreen (F12)',
+    exitEsc: 'Exit Fullscreen (ESC)',
+    enter: 'Enter Fullscreen',
+  },
+
   errorBoundary: {
     title: 'Something went wrong',
     description: 'An unexpected error occurred. Try reloading the page.',
     tryAgain: 'Try Again',
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'Germany',
+    austria: 'Austria',
+    switzerland: 'Switzerland',
+    unitedStates: 'United States',
+    unitedKingdom: 'United Kingdom',
+    france: 'France',
+    italy: 'Italy',
+    spain: 'Spain',
+    netherlands: 'Netherlands',
+    poland: 'Poland',
+    japan: 'Japan',
+    southKorea: 'South Korea',
+    australia: 'Australia',
+    canada: 'Canada',
+    brazil: 'Brazil',
+    mexico: 'Mexico',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'First Steps', description: 'Complete your first daily challenge' },
+      weekWarrior: { name: 'Week Warrior', description: 'Maintain a 7-day streak' },
+      fortnightFighter: { name: 'Fortnight Fighter', description: 'Maintain a 14-day streak' },
+      monthlyMaster: { name: 'Monthly Master', description: 'Maintain a 30-day streak' },
+      podiumFinish: { name: 'Podium Finish', description: 'Finish in top 3 of a daily challenge' },
+      dailyChampion: { name: 'Daily Champion', description: 'Win a daily challenge' },
+      dedicatedSinger: { name: 'Dedicated Singer', description: 'Complete 30 daily challenges' },
+      legendaryStatus: { name: 'Legendary Status', description: 'Reach 10,000 total XP' },
+      centuryChampion: { name: 'Century Champion', description: 'Maintain a 100-day streak' },
+      yearlyLegend: { name: 'Yearly Legend', description: 'Maintain a 365-day streak' },
+    },
+    quests: {
+      dailyDouble: { name: 'Daily Double', description: 'Complete 2 daily challenges today' },
+      perfectTen: { name: 'Perfect Ten', description: 'Hit 10 perfect notes total' },
+      challengeExplorer: { name: 'Challenge Explorer', description: 'Play 5 different challenge modes' },
+      songbird: { name: 'Songbird', description: 'Complete 10 songs total' },
+      weeklyWarrior: { name: 'Weekly Warrior', description: 'Complete 3 weekly challenges' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Week Warrior',
+      fortnightFighter: 'Fortnight Fighter',
+      monthlyMaster: 'Monthly Master',
+      biMonthlyBoss: 'Bi-Monthly Boss',
+      centuryChampion: 'Century Champion',
+      yearlyLegend: 'Yearly Legend',
+    },
   },
 };

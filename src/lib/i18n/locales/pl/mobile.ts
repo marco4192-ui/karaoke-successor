@@ -157,9 +157,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Piosenka dodana do kolejki!',
     playAgainError: 'Nie udało się dodać piosenki do kolejki.',
     swipeToDelete: 'Przesuń, aby usunąć',
-    reorderHint: 'Przytrzymaj i przeciągnij, aby zmienić kolejność',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Dodano do Jukebox',
+    reorderHint: 'Przytrzymaj i przeciągnij, aby zmienić kolejność'
   },
 
   mobileNav: {
@@ -473,6 +471,13 @@ export const mobileTranslations = {
     scanHint: 'Zeskanuj kod QR na głównym ekranie',
     letsGo: 'Zaczynamy!',
   },
+  mobileChat: {
+    title: 'Czat',
+    placeholder: 'Wpisz wiadomość...',
+    send: 'Wyślij',
+    noMessages: 'Brak wiadomości',
+    host: 'Host',
+  },
 
   mobilePreview: {
     preview: 'Podgląd',
@@ -496,4 +501,41 @@ export const mobileTranslations = {
     retake: 'Zrób ponownie',
     noResults: 'Brak wyników do wyświetlenia',
   },
+
+  // --- Mobile Achievements ---
+  achievements: {
+  "firstSong": {
+    "title": "Pierwsze kroki",
+    "description": "Zaśpiewaj swój pierwszy utwór"
+  },
+  "risingStar": {
+    "title": "Gwiazda na scenie",
+    "description": "Zaśpiewaj 10 utworów"
+  },
+  "veteran": {
+    "title": "Weteran",
+    "description": "Zaśpiewaj 50 utworów"
+  },
+  "perfectionist": {
+    "title": "Perfekcjonista",
+    "description": "Uzyskaj idealny wynik (95%+)"
+  },
+  "flawless": {
+    "title": "Bezbłędny",
+    "description": "Uzyskaj 5 idealnych wyników"
+  },
+  "scoreMaster": {
+    "title": "Mistrz punktów",
+    "description": "Zdobądź 10 000 punktów łącznie"
+  },
+  "playlistBuilder": {
+    "title": "Budowniczy playlisty",
+    "description": "Dodaj 5 utworów do kolejki"
+  },
+  "genreExplorer": {
+    "title": "Odkrywca gatunków",
+    "description": "Zaśpiewaj utwory z 3 gatunków"
+  }
+},
+
 };

@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Поиск',
     filter: 'Фильтр',
     sort: 'Сортировать',
-    refresh: 'Обновить'
+    refresh: 'Обновить',
+    player: 'Игрок',
   },
 
   dialogs: {
@@ -289,5 +290,56 @@ export const coreTranslations = {
     title: 'Что-то пошло не так',
     description: 'Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.',
     tryAgain: 'Попробовать снова',
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'Германия',
+    austria: 'Австрия',
+    switzerland: 'Швейцария',
+    unitedStates: 'США',
+    unitedKingdom: 'Великобритания',
+    france: 'Франция',
+    italy: 'Италия',
+    spain: 'Испания',
+    netherlands: 'Нидерланды',
+    poland: 'Польша',
+    japan: 'Япония',
+    southKorea: 'Южная Корея',
+    australia: 'Австралия',
+    canada: 'Канада',
+    brazil: 'Бразилия',
+    mexico: 'Мексика',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'Первые шаги', description: 'Выполните свой первый ежедневный вызов' },
+      weekWarrior: { name: 'Воин недели', description: 'Поддерживайте серию 7 дней' },
+      fortnightFighter: { name: 'Боец двухнедельки', description: 'Поддерживайте серию 14 дней' },
+      monthlyMaster: { name: 'Месячный мастер', description: 'Поддерживайте серию 30 дней' },
+      podiumFinish: { name: 'Призовое место', description: 'Займите топ-3 в ежедневном вызове' },
+      dailyChampion: { name: 'Чемпион дня', description: 'Выиграйте ежедневный вызов' },
+      dedicatedSinger: { name: 'Преданный певец', description: 'Выполните 30 ежедневных вызовов' },
+      legendaryStatus: { name: 'Легендарный статус', description: 'Наберите 10 000 XP суммарно' },
+      centuryChampion: { name: 'Столетний чемпион', description: 'Поддерживайте серию 100 дней' },
+      yearlyLegend: { name: 'Годовой легенда', description: 'Поддерживайте серию 365 дней' },
+    },
+    quests: {
+      dailyDouble: { name: 'Двойной дневной', description: 'Выполните 2 ежедневных вызова за день' },
+      perfectTen: { name: 'Идеальная десятка', description: 'Попадите в 10 идеальных нот суммарно' },
+      challengeExplorer: { name: 'Исследователь вызовов', description: 'Сыграйте в 5 различных режимах вызовов' },
+      songbird: { name: 'Птичка-певунья', description: 'Выполните 10 песен суммарно' },
+      weeklyWarrior: { name: 'Воин недели', description: 'Выполните 3 еженедельных вызова' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Воин недели',
+      fortnightFighter: 'Боец двухнедельки',
+      monthlyMaster: 'Месячный мастер',
+      biMonthlyBoss: 'Босс двух месяцев',
+      centuryChampion: 'Столетний чемпион',
+      yearlyLegend: 'Годовой легенда',
+    },
   },
 };

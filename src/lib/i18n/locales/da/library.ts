@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: 'Noder:',
       lines: 'Linjer:',
       file: 'Fil:',
+      player1: 'Spiller 1',
+      player2: 'Spiller 2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Spiller 1-navn',
       duetPlayer2: '#P2: (Duet-spiller 2)',
       duetPlayer2Placeholder: 'Spiller 2-navn',
+      tagsPlaceholder: 'tag1, tag2, tag3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: 'Forslag ({count})',
       acceptAll: 'Acceptér alle',
       aiTip: 'Tip: AI-forslag er altid kun hjælpemidler. Tjek alle ændringer inden gemning.',
+      failed: 'Mislykkedes',
+      networkError: 'Netværksfejl',
     },
 
     // Timeline

@@ -462,4 +462,9 @@ export const partyTranslations = {
     betting: 'Scommessa',
     bettingDesc: 'Il pubblico può pronosticare',
   },
+
+  tournament: {
+    score: 'Punteggio: {n}',
+    accuracy: 'Precisione: {n}%',
+  },
 };

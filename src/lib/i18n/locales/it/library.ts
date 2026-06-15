@@ -404,6 +404,8 @@ export const libraryTranslations = {
       notes: 'Note:',
       lines: 'Righe:',
       file: 'File:',
+      player1: 'Giocatore 1',
+      player2: 'Giocatore 2',
     },
 
     metadataTab: {
@@ -421,6 +423,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Nome Giocatore 1',
       duetPlayer2: '#P2: (Duetto Giocatore 2)',
       duetPlayer2Placeholder: 'Nome Giocatore 2',
+      tagsPlaceholder: 'tag1, tag2, tag3',
     },
 
     lyricsTab: {
@@ -545,6 +548,8 @@ export const libraryTranslations = {
       suggestions: 'Suggerimenti ({count})',
       acceptAll: 'Accetta Tutto',
       aiTip: 'Suggerimento: i suggerimenti dell\'IA sono solo un aiuto. Verifica tutte le modifiche prima di salvare.',
+      failed: 'Fallito',
+      networkError: 'Errore di rete',
     },
 
     timeline: {

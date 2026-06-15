@@ -59,7 +59,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
               className="w-20 h-20 rounded-full bg-white/10 border-2 border-dashed border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors overflow-hidden"
             >
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                <img src={avatarUrl} alt={t('profile.avatar')} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-white/40 text-xs text-center">{t('profile.uploadPhoto')}</span>
               )}

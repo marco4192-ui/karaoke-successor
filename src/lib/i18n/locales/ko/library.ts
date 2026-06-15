@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: '노트:',
       lines: '줄:',
       file: '파일:',
+      player1: '플레이어 1',
+      player2: '플레이어 2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: '플레이어 1 이름',
       duetPlayer2: '#P2: (듀엣 플레이어 2)',
       duetPlayer2Placeholder: '플레이어 2 이름',
+      tagsPlaceholder: '태그1, 태그2, 태그3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: '제안 ({count})',
       acceptAll: '모두 수락',
       aiTip: '팁: AI 제안은 항상 보조 수단입니다. 저장 전에 모든 변경 사항을 확인하세요.',
+      failed: '실패',
+      networkError: '네트워크 오류',
     },
 
     // Timeline

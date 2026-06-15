@@ -1154,7 +1154,7 @@ function DEMatchCard({
         )}
       </div>
 
-      <div className="text-center text-white/30 text-[9px] my-0.5">VS</div>
+      <div className="text-center text-white/30 text-[9px] my-0.5">{t('tournament.vs')}</div>
 
       {/* Player 2 */}
       <div className={`flex items-center gap-1 p-0.5 rounded text-xs ${match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''}`}>

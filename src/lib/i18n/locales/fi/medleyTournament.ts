@@ -363,7 +363,7 @@ export const medleyTournamentTranslations = {
     performances: 'Suoritukset',
     avgRating: 'Kesk. arvio',
     bestRating: 'Paras arvio',
-    achievements: 'Saavutukset',
+    achievementsLabel: 'Saavutukset',
     newAchievement: 'Uusi saavutus!',
     songSuggestions: 'Samankaltaiset kappaleet',
     trend: 'Trendi',

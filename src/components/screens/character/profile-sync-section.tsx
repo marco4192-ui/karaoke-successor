@@ -91,7 +91,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
         setMessage({ type: 'success', text: t('profileSync.syncSuccess') });
         setInputCode('');
       } else {
-        throw new Error('Profile not found');
+        throw new Error(t('profileSync.profileNotFound'));
       }
     } catch (error: unknown) {
       // eslint-disable-next-line no-console

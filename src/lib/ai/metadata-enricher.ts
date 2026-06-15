@@ -1,6 +1,8 @@
 // AI Metadata Enrichment Client
 // Provides functions to suggest missing genre/language and harmonize existing values.
 
+import { t } from '@/lib/i18n/translations';
+
 export interface MetadataSuggestion {
   songId: string;
   field: 'genre' | 'language';
@@ -35,7 +37,7 @@ export async function enrichSongMetadata(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return { success: false, error: errorData.error || `Server-Fehler (${response.status})` };
+      return { success: false, error: errorData.error || t('ai.metadataEnrich.serverError').replace('{status}', String(response.status)) };
     }
 
     const data: EnrichResponse = await response.json();
@@ -43,6 +45,6 @@ export async function enrichSongMetadata(
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[MetadataEnrich] Request failed:', error);
-    return { success: false, error: 'Netzwerkfehler — konnte AI-Dienst nicht erreichen' };
+    return { success: false, error: t('ai.metadataEnrich.networkError') };
   }
 }

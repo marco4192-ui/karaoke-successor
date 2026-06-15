@@ -8,6 +8,8 @@
 import { StorageKeys, getJson, setJson } from '@/lib/storage';
 import { getTodayString } from './rate-my-song-ranking-core';
 import { checkRateMySongAchievements } from './rate-my-song-achievements';
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
 
 // ── Storage ──
 
@@ -141,6 +143,21 @@ export function addAudienceRatingToStats(playerId: string, count: number = 1): v
 // ══════════════════════════════════════════════════════════════════════════
 
 export type RateMySongRank = 'Newcomer' | 'OpenMic' | 'Regular' | 'Star' | 'Superstar' | 'Legend';
+
+/** i18n keys for each rank, parallel to the RateMySongRank union. */
+const RANK_DISPLAY_KEYS: Record<RateMySongRank, string> = {
+  'Newcomer': 'rateMySong.ranks.newcomer',
+  'OpenMic': 'rateMySong.ranks.openMic',
+  'Regular': 'rateMySong.ranks.regular',
+  'Star': 'rateMySong.ranks.star',
+  'Superstar': 'rateMySong.ranks.superstar',
+  'Legend': 'rateMySong.ranks.legend',
+};
+
+/** Get the localized display name for a Rate My Song rank. */
+export function getLocalizedRateMySongRank(rank: RateMySongRank, language?: Language): string {
+  return t(RANK_DISPLAY_KEYS[rank], language);
+}
 
 export interface RankResult {
   rank: RateMySongRank;

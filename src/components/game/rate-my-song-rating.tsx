@@ -189,10 +189,10 @@ export function RateMySongRatingScreen({
 
   // Get localized challenge title/description
   const challengeTitle = currentChallenge
-    ? (language === 'de' ? currentChallenge.titleDe : currentChallenge.titleEn)
+    ? t(`rateMySong.challenges.${currentChallenge.id}.title`)
     : '';
   const challengeDesc = currentChallenge
-    ? (language === 'de' ? currentChallenge.descriptionDe : currentChallenge.descriptionEn)
+    ? t(`rateMySong.challenges.${currentChallenge.id}.description`)
     : '';
 
   return (

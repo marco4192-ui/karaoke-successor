@@ -137,6 +137,8 @@ export const medleyTournamentTranslations = {
     surprise: '서프라이즈',
     shareResult: '결과 공유',
     shareText: 'Music Karaoke App',
+    shareWinner: '승자: {name} ({score} {pts})',
+    shareBestCombo: '베스트 콤보: {n}x',
     copied: '클립보드에 복사되었습니다!',
     flopComment: '다음에는 더 잘해보세요...',
     teamBonuses: '팀 보너스',
@@ -152,6 +154,9 @@ export const medleyTournamentTranslations = {
     mvpOfMatch: '이 매치의 MVP',
     teamBonusBreakdown: '팀 보너스 내역',
     savedToLeaderboard: '리더보드에 저장되었습니다!',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: '스니펫',
+    localMicShort: '로컬',
     ofSong: '곡: {title}',
     comboOnSong: '곡: {title}',
   },
@@ -344,7 +349,7 @@ export const medleyTournamentTranslations = {
     performances: '공연',
     avgRating: '평균 평가',
     bestRating: '최고 평가',
-    achievements: '업적',
+    achievementsLabel: '업적',
     newAchievement: '새 업적!',
     songSuggestions: '비슷한 곡',
     trend: '트렌드',
@@ -369,5 +374,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: '놀라운 퍼포먼스!',
     genreStats: '장르 통계',
     wallOfFame: '명예의 벽',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: '억센으로 부르기', description: '곡 전체에서 최고의 가짜 억센을 써 보세요' },
+      silentMinute: { title: '침묵의 시간', description: '중간에 10초 동안 노래를 멈추고 계속 퍼포먼스' },
+      danceBreak: { title: '댄스 브터', description: '곡 중에 최소 3개의 댄스 무브를 하세요' },
+      phoneSinger: { title: '폰 가수', description: '스마트폰으로 틱톡을 찍는 것처럼 노래하세요' },
+      supermarketStyle: { title: '마트 스타일', description: '장보를 보면서 캐주얼하게 노래하는 것처럼 퍼포먼스' },
+      tempoSwitch: { title: '템포 스위치', description: '느리게 시작, 중간에 초고속, 다시 느리게' },
+      smirkMode: { title: '느긋 모드', description: '전체 시간 자신감 있는 느긋을 유지하세요' },
+      airGuitarSolo: { title: '에어 기타 솔로', description: '기악 부분에서 에어 기타 솔로를 연주하세요' },
+      micDrop: { title: '마이크 드롭', description: '드라마틱한 마이크 드롭 포즈로 곡을 마무리' },
+      divaMode: { title: '디바 모드', description: '최대의 드라마, 손제스처, 헤어 플립으로 노래' },
+      whisperStart: { title: '속삭이는 시작', description: '처음 15초를 속삭이로, 그 후 풀파워' },
+      operaStyle: { title: '오페라 스타일', description: '오페라 가수처럼 극도로 드라마틱하게 노래' },
+      discoFever: { title: '디스코 피버', description: '후렙마다 디스코 댄스 스텝을 추가' },
+      emotionalRollercoaster: { title: '감정 롤러코스터', description: '울음과 웃음 표정을 번갈아 보세요' },
+      countryTwist: { title: '컨트리 트위스트', description: '컨트리 억센과 이이-하우 제스처를 추가' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: '첫 퍼포먼스', description: '1회 퍼포먼스 완료' },
+      goldenVoice: { name: '골든 보이스', description: '9.0 이상의 평가 획득' },
+      crowdFavorite: { name: '관객의 인기', description: '총 10명 이상의 다른 관객으로부터 평가' },
+      allRounder: { name: '올라운더', description: '5개 이상의 장르에서 퍼포먼스' },
+      perfectionist: { name: '완벽주의자', description: '9.5 이상의 평가 획득' },
+      stageAnimal: { name: '스테이지 애니멀', description: '20회 이상 퍼포먼스' },
+      centurion: { name: '센추리온', description: '총 100개 이상의 관객 평가 수신' },
+      comebackKid: { name: '컴백 키드', description: '최저 평가에서 최고 평가까지 3+ 포인트 향상' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: '신입',
+      openMic: '오픈마이크',
+      regular: '레귤러',
+      star: '스타',
+      superstar: '슈퍼스타',
+      legend: '전설',
+    },
+
+    awards: '상',
   },
 };

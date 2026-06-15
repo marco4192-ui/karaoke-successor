@@ -255,4 +255,310 @@ export const gameTranslations = {
     failedToLoad: 'Kunne ikke laste companion-app',
     retry: 'Prøv igjen',
   },
+
+  // --- Achievements ---
+  achievements: {
+  "firstNote": {
+    "name": "Første tone",
+    "description": "Treff din første tone"
+  },
+  "perfectTen": {
+    "name": "Perfekte ti",
+    "description": "Få 10 Perfecte treff i én sang"
+  },
+  "comboMaster": {
+    "name": "Combo-mester",
+    "description": "Få en combo på 50 toner"
+  },
+  "comboKing": {
+    "name": "Combo-konge",
+    "description": "Få en combo på 100 toner",
+    "rewardTitle": "Combo-konge"
+  },
+  "comboLegend": {
+    "name": "Combo-legend",
+    "description": "Få en combo på 200 toner",
+    "rewardTitle": "Combo-legend"
+  },
+  "perfectSong": {
+    "name": "Perfekt sang",
+    "description": "Få 99,5%+ nøyaktighet",
+    "rewardTitle": "Perfeksjonist"
+  },
+  "pitchPerfect": {
+    "name": "Stemmeskår",
+    "description": "Få over 90% nøyaktighet"
+  },
+  "risingStar": {
+    "name": "Stjerneskudd",
+    "description": "Få over 8 000 poeng"
+  },
+  "scoreMaster": {
+    "name": "Poengmester",
+    "description": "Få over 9 000 poeng"
+  },
+  "flawless": {
+    "name": "Feilfri",
+    "description": "Få over 9 500 poeng",
+    "rewardTitle": "Feilfri"
+  },
+  "goldenCollector": {
+    "name": "Gullsamler",
+    "description": "Treff 10 gylne toner"
+  },
+  "goldenMaster": {
+    "name": "Gullmester",
+    "description": "Treff 50 gylne toner",
+    "rewardTitle": "Gyllen stemme"
+  },
+  "firstSong": {
+    "name": "Første skritt",
+    "description": "Fullfør din første sang"
+  },
+  "tenSongs": {
+    "name": "Karaoke-entusiast",
+    "description": "Fullfør 10 sanger"
+  },
+  "fiftySongs": {
+    "name": "Vanlig karaoke-sanger",
+    "description": "Fullfør 50 sanger"
+  },
+  "hundredSongs": {
+    "name": "Karaoke-legend",
+    "description": "Fullfør 100 sanger",
+    "rewardTitle": "Karaoke-legend"
+  },
+  "fiveGames": {
+    "name": "Oppstart",
+    "description": "Spill 5 spill"
+  },
+  "twentyGames": {
+    "name": "Dedikert sanger",
+    "description": "Spill 20 spill"
+  },
+  "partyTime": {
+    "name": "Festtid!",
+    "description": "Spill en festmodus"
+  },
+  "duelChampion": {
+    "name": "Duelmester",
+    "description": "Vinn en duell"
+  },
+  "passTheMic": {
+    "name": "Gi mikrofonen videre!",
+    "description": "Spill moduset Gi mikrofonen videre"
+  },
+  "showerSinger": {
+    "name": "Dusjsanger",
+    "description": "Få under 20% på en sang",
+    "rewardTitle": "Dusjsanger"
+  },
+  "comebackKing": {
+    "name": "Comeback-konge",
+    "description": "Få en combo på 50+ etter 10 bom"
+  },
+  "speedDemon": {
+    "name": "Fartsdjevel",
+    "description": "Fullfør en sang på 1,5x hastighet"
+  },
+  "blindMaster": {
+    "name": "Blind mester",
+    "description": "Fullfør en sang i Blind-modus",
+    "rewardTitle": "Blind mester"
+  }
+},
+
+  // --- Ranks ---
+  ranks: {
+  "beginner": {
+    "name": "Nybegynner",
+    "titles": {
+      "newcomer": "Nykommer"
+    }
+  },
+  "novice": {
+    "name": "Lærling",
+    "titles": {
+      "risingStar": "Stjerneskudd"
+    }
+  },
+  "apprentice": {
+    "name": "Svenn",
+    "titles": {
+      "melodyMaker": "Melodimaker"
+    }
+  },
+  "singer": {
+    "name": "Sanger",
+    "titles": {
+      "voiceInTraining": "Stemme i trening"
+    }
+  },
+  "performer": {
+    "name": "Utøver",
+    "titles": {
+      "stagePresence": "Scenenærver"
+    }
+  },
+  "artist": {
+    "name": "Artist",
+    "titles": {
+      "artisticSoul": "Kunstnerisk sjel"
+    }
+  },
+  "star": {
+    "name": "Stjerne",
+    "titles": {
+      "shiningStar": "Skinnende stjerne"
+    }
+  },
+  "superstar": {
+    "name": "Superstjerne",
+    "titles": {
+      "crowdFavorite": "Publikumsfavoritt"
+    }
+  },
+  "legend": {
+    "name": "Legende",
+    "titles": {
+      "legendaryVoice": "Legendarisk stemme"
+    }
+  },
+  "icon": {
+    "name": "Ikon",
+    "titles": {
+      "musicalIcon": "Musikalsk ikon"
+    }
+  },
+  "mythic": {
+    "name": "Mytisk",
+    "titles": {
+      "mythicSinger": "Mytisk sanger"
+    }
+  },
+  "divine": {
+    "name": "Guddommelig",
+    "titles": {
+      "divineVoice": "Guddommelig stemme"
+    }
+  }
+},
+
+  // --- Challenge Modes ---
+  challenges: {
+  "blindAudition": {
+    "name": "Blind prøvesang",
+    "description": "Syng uten å se teksten — hukommelsestest!"
+  },
+  "freeFlight": {
+    "name": "Fri flukt",
+    "description": "Ingen toneveiledning — syng på gehør!"
+  },
+  "speedDemon": {
+    "name": "Fartsdjevel",
+    "description": "1,5x hastighet — tenk fort!"
+  },
+  "perfectionist": {
+    "name": "Perfeksjonist",
+    "description": "Kun perfekte toner teller!"
+  },
+  "goldenHunter": {
+    "name": "Gulljeger",
+    "description": "Kun gylne toner gir poeng — fang alle!"
+  },
+  "memoryLane": {
+    "name": "Minnelane",
+    "description": "Manglende ord — fyll inn blankene!"
+  },
+  "pitchShift": {
+    "name": "Toneskifte",
+    "description": "Sangen er transponert — tilpass stemmen!"
+  },
+  "halfSpeed": {
+    "name": "Slow motion",
+    "description": "0,75x hastighet — perfekt for øvelse!"
+  },
+  "blindMaster": {
+    "name": "Blind mester",
+    "description": "Ingen tekst og ingen toneveiledning — ekte blind sang!"
+  },
+  "ultimateChallenge": {
+    "name": "Ultimat utfordring",
+    "description": "Alle modifikatorer kombinert — for de modige!"
+  }
+},
+
+  // --- Challenge Modifiers ---
+  modifiers: {
+  "noLyrics": {
+    "label": "Ingen tekst",
+    "description": "Teksten er skjult",
+    "shortDescription": "Ingen tekst"
+  },
+  "noPitchGuide": {
+    "label": "Ingen toneveiledning",
+    "description": "Toneveiledningen er skjult",
+    "shortDescription": "Ingen toneveiledning"
+  },
+  "doubleSpeed": {
+    "label": "Fartsboost",
+    "description": "Sangen spiller raskere",
+    "shortDescription": "1,25x hastighet"
+  },
+  "halfSpeed": {
+    "label": "Slow motion",
+    "description": "Sangen spiller saktere"
+  },
+  "perfectOnly": {
+    "label": "Perfeksjonist",
+    "description": "Kun perfekte toner teller"
+  },
+  "goldenOnly": {
+    "label": "Gulljeger",
+    "description": "Kun gylne toner teller"
+  },
+  "missingWords": {
+    "label": "Manglende ord",
+    "description": "Noen ord er skjulte"
+  },
+  "blind": {
+    "label": "Blind",
+    "description": "Ingen tekst og ingen toneveiledning"
+  },
+  "pitchShift": {
+    "description": "Tonehøyde skiftet med 3 halvtoner"
+  }
+},
+
+  // --- Ranking Titles ---
+  rankingTitles: {
+  "showerSingingSensation": "Dusjsangs-sensasjon",
+  "karaokeRoyalty": "Karaoke-kongehus",
+  "vocalVirtuoso": "Stemmevirtuos",
+  "micDropMaster": "Mikrofon-droppmester",
+  "diamondVoice": "Diamantstemme",
+  "broadwayWannabe": "Broadway-wannabe",
+  "noteNailer": "Toneknekker",
+  "pitchyParrot": "Tonefalsk papegøye",
+  "circusSinger": "Sirkussanger",
+  "humbleHummer": "Beskjeden nynner",
+  "underConstruction": "Under bygging",
+  "bathroomBaritone": "Baderomsbariton",
+  "phantomPhony": "Fantom-blarer",
+  "duckTapeSinger": "Ductape-sanger",
+  "tunelessTroubadour": "Tonløs trubadur",
+  "vocalTornado": "Vokal tornado (Katastrofe)",
+  "toneDeafTitan": "Tonedøv titan",
+  "clownCarCrooner": "Clownbil-krooner",
+  "toneZombie": "Tone-zombie",
+  "whisperingWimp": "Hviskende pyse",
+  "silentScream": "Stille skrik"
+},
+
+  // --- Battle Royale (new keys) ---
+  battleRoyale: {
+  "bounty": "DUSØR",
+  "micError": "Mikrofon"
+},
+
 };

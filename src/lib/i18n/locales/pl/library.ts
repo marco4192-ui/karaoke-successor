@@ -553,6 +553,8 @@ export const libraryTranslations = {
       suggestions: 'Sugestie ({count})',
       acceptAll: 'Akceptuj wszystko',
       aiTip: 'Wskazówka: Sugestie AI są zawsze tylko pomocą. Sprawdź wszystkie zmiany przed zapisaniem.',
+      failed: 'Niepowodzenie',
+      networkError: 'Błąd sieci',
     },
 
     // Timeline

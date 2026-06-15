@@ -11,6 +11,8 @@
 import { getRankForXP } from './player-progression';
 import { PERFECT_ACCURACY } from './progression-levels';
 import { StorageKeys, getItem, getJson, setJson } from '@/lib/storage';
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
 
 // ---------------------------------------------------------------------------
 // Interfaces — Daily Challenge
@@ -52,8 +54,10 @@ interface PlayerDailyStats {
 interface DailyBadge {
   id: string;
   name: string;
+  nameKey: string;
   icon: string;
   description: string;
+  descriptionKey: string;
   unlockedAt: number;
 }
 
@@ -104,7 +108,9 @@ export interface WeeklyChallengeData {
 export interface QuestDefinition {
   id: string;
   name: string;
+  nameKey: string;
   description: string;
+  descriptionKey: string;
   icon: string;
   target: number;
   reward: { xp: number; badgeId?: string };
@@ -148,12 +154,12 @@ export const XP_REWARDS = {
   /** (#3) XP subtracted when a streak breaks (min 0 XP earned). */
   STREAK_BREAK_PENALTY: 25,
   STREAK_MILESTONES: {
-    7: { xp: 200, badge: 'Week Warrior' },
-    14: { xp: 500, badge: 'Fortnight Fighter' },
-    30: { xp: 1000, badge: 'Monthly Master' },
-    60: { xp: 2500, badge: 'Bi-Monthly Boss' },
-    100: { xp: 5000, badge: 'Century Champion' },
-    365: { xp: 50000, badge: 'Yearly Legend' },
+    7: { xp: 200, badge: 'Week Warrior', badgeKey: 'dailyChallenge.streakMilestones.weekWarrior' },
+    14: { xp: 500, badge: 'Fortnight Fighter', badgeKey: 'dailyChallenge.streakMilestones.fortnightFighter' },
+    30: { xp: 1000, badge: 'Monthly Master', badgeKey: 'dailyChallenge.streakMilestones.monthlyMaster' },
+    60: { xp: 2500, badge: 'Bi-Monthly Boss', badgeKey: 'dailyChallenge.streakMilestones.biMonthlyBoss' },
+    100: { xp: 5000, badge: 'Century Champion', badgeKey: 'dailyChallenge.streakMilestones.centuryChampion' },
+    365: { xp: 50000, badge: 'Yearly Legend', badgeKey: 'dailyChallenge.streakMilestones.yearlyLegend' },
   },
 } as const;
 
@@ -165,62 +171,82 @@ export const DAILY_BADGES: Record<string, Omit<DailyBadge, 'unlockedAt'>> = {
   'first-challenge': {
     id: 'first-challenge',
     name: 'First Steps',
+    nameKey: 'dailyChallenge.badges.firstChallenge.name',
     icon: '🌟',
     description: 'Complete your first daily challenge',
+    descriptionKey: 'dailyChallenge.badges.firstChallenge.description',
   },
   'week-warrior': {
     id: 'week-warrior',
     name: 'Week Warrior',
+    nameKey: 'dailyChallenge.badges.weekWarrior.name',
     icon: '🏆',
     description: 'Maintain a 7-day streak',
+    descriptionKey: 'dailyChallenge.badges.weekWarrior.description',
   },
   'fortnight-fighter': {
     id: 'fortnight-fighter',
     name: 'Fortnight Fighter',
+    nameKey: 'dailyChallenge.badges.fortnightFighter.name',
     icon: '⚔️',
     description: 'Maintain a 14-day streak',
+    descriptionKey: 'dailyChallenge.badges.fortnightFighter.description',
   },
   'monthly-master': {
     id: 'monthly-master',
     name: 'Monthly Master',
+    nameKey: 'dailyChallenge.badges.monthlyMaster.name',
     icon: '👑',
     description: 'Maintain a 30-day streak',
+    descriptionKey: 'dailyChallenge.badges.monthlyMaster.description',
   },
   'top-3': {
     id: 'top-3',
     name: 'Podium Finish',
+    nameKey: 'dailyChallenge.badges.podiumFinish.name',
     icon: '🥇',
     description: 'Finish in top 3 of a daily challenge',
+    descriptionKey: 'dailyChallenge.badges.podiumFinish.description',
   },
   'champion': {
     id: 'champion',
     name: 'Daily Champion',
+    nameKey: 'dailyChallenge.badges.dailyChampion.name',
     icon: '🏅',
     description: 'Win a daily challenge',
+    descriptionKey: 'dailyChallenge.badges.dailyChampion.description',
   },
   'dedicated': {
     id: 'dedicated',
     name: 'Dedicated Singer',
+    nameKey: 'dailyChallenge.badges.dedicatedSinger.name',
     icon: '🎤',
     description: 'Complete 30 daily challenges',
+    descriptionKey: 'dailyChallenge.badges.dedicatedSinger.description',
   },
   'legendary': {
     id: 'legendary',
     name: 'Legendary Status',
+    nameKey: 'dailyChallenge.badges.legendaryStatus.name',
     icon: '⭐',
     description: 'Reach 10,000 total XP',
+    descriptionKey: 'dailyChallenge.badges.legendaryStatus.description',
   },
   'century-champion': {
     id: 'century-champion',
     name: 'Century Champion',
+    nameKey: 'dailyChallenge.badges.centuryChampion.name',
     icon: '💎',
     description: 'Maintain a 100-day streak',
+    descriptionKey: 'dailyChallenge.badges.centuryChampion.description',
   },
   'yearly-legend': {
     id: 'yearly-legend',
     name: 'Yearly Legend',
+    nameKey: 'dailyChallenge.badges.yearlyLegend.name',
     icon: '🌟',
     description: 'Maintain a 365-day streak',
+    descriptionKey: 'dailyChallenge.badges.yearlyLegend.description',
   },
 };
 
@@ -229,7 +255,9 @@ export const DAILY_QUESTS: QuestDefinition[] = [
   {
     id: 'daily-double',
     name: 'Daily Double',
+    nameKey: 'dailyChallenge.quests.dailyDouble.name',
     description: 'Complete 2 daily challenges today',
+    descriptionKey: 'dailyChallenge.quests.dailyDouble.description',
     icon: '🎯',
     target: 2,
     reward: { xp: 150 },
@@ -238,7 +266,9 @@ export const DAILY_QUESTS: QuestDefinition[] = [
   {
     id: 'perfect-10',
     name: 'Perfect Ten',
+    nameKey: 'dailyChallenge.quests.perfectTen.name',
     description: 'Hit 10 perfect notes total',
+    descriptionKey: 'dailyChallenge.quests.perfectTen.description',
     icon: '💎',
     target: 10,
     reward: { xp: 200 },
@@ -247,7 +277,9 @@ export const DAILY_QUESTS: QuestDefinition[] = [
   {
     id: 'challenge-explorer',
     name: 'Challenge Explorer',
+    nameKey: 'dailyChallenge.quests.challengeExplorer.name',
     description: 'Play 5 different challenge modes',
+    descriptionKey: 'dailyChallenge.quests.challengeExplorer.description',
     icon: '🗺️',
     target: 5,
     reward: { xp: 300, badgeId: 'explorer' },
@@ -256,7 +288,9 @@ export const DAILY_QUESTS: QuestDefinition[] = [
   {
     id: 'songbird',
     name: 'Songbird',
+    nameKey: 'dailyChallenge.quests.songbird.name',
     description: 'Complete 10 songs total',
+    descriptionKey: 'dailyChallenge.quests.songbird.description',
     icon: '🐦',
     target: 10,
     reward: { xp: 250, badgeId: 'songbird' },
@@ -265,13 +299,40 @@ export const DAILY_QUESTS: QuestDefinition[] = [
   {
     id: 'weekly-warrior',
     name: 'Weekly Warrior',
+    nameKey: 'dailyChallenge.quests.weeklyWarrior.name',
     description: 'Complete 3 weekly challenges',
+    descriptionKey: 'dailyChallenge.quests.weeklyWarrior.description',
     icon: '⚔️',
     target: 3,
     reward: { xp: 500, badgeId: 'weekly-warrior' },
     checkProgress: 'weeklyCompleted',
   },
 ];
+
+// ===================== LOCALIZATION HELPERS =====================
+
+/** Get a localized daily badge. */
+export function getLocalizedDailyBadge(badge: Omit<DailyBadge, 'unlockedAt'>, language?: Language): { name: string; description: string } {
+  return {
+    name: t(badge.nameKey, language),
+    description: t(badge.descriptionKey, language),
+  };
+}
+
+/** Get a localized daily quest. */
+export function getLocalizedDailyQuest(quest: QuestDefinition, language?: Language): { name: string; description: string } {
+  return {
+    name: t(quest.nameKey, language),
+    description: t(quest.descriptionKey, language),
+  };
+}
+
+/** Get a localized streak milestone badge name. */
+export function getLocalizedStreakMilestone(streakDays: number, language?: Language): string {
+  const milestone = (XP_REWARDS.STREAK_MILESTONES as Record<number, { xp: number; badge: string; badgeKey?: string }>)[streakDays];
+  if (!milestone) return '';
+  return milestone.badgeKey ? t(milestone.badgeKey, language) : milestone.badge;
+}
 
 // ---------------------------------------------------------------------------
 // Storage keys
@@ -613,8 +674,10 @@ export function submitChallengeResult(
         const newBadge: DailyBadge = {
           id: badgeId,
           name: milestone.badge,
+          nameKey: milestone.badgeKey ?? `dailyChallenge.streakMilestones.${badgeId}`,
           icon: stats.currentStreak >= 365 ? '🌟' : stats.currentStreak >= 100 ? '💎' : '🏆',
           description: `Maintained a ${stats.currentStreak}-day streak`,
+          descriptionKey: `dailyChallenge.streakMilestones.${badgeId}.description`,
           unlockedAt: Date.now(),
         };
         stats.badges.push(newBadge);

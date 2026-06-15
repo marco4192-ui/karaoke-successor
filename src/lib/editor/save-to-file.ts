@@ -7,7 +7,6 @@ import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
 import { StorageKeys, getString } from '@/lib/storage';
 
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
-import { t } from '@/lib/i18n/translations';
 
 // Characters that are invalid in file paths on Windows
 const INVALID_PATH_CHARS = /[<>:"/\\|?*]/g;
@@ -32,7 +31,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     if (!songsFolder) {
       return { 
         success: false, 
-        message: t('editor.noSongsFolder') 
+        message: 'Kein Songs-Ordner konfiguriert. Bitte erst einen Ordner scannen.' 
       };
     }
     
@@ -55,20 +54,20 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       console.warn('[SaveToFile] No path info available, asking user...');
       const { nativePickFileSave } = await import('@/lib/native-fs');
       const userPath = await nativePickFileSave(
-        t('editor.saveDialogTitle'),
-        t('editor.saveDialogFilter'),
+        'Save TXT file',
+        'UltraStar TXT',
         ['txt']
       );
       
       if (!userPath) {
-        return { success: false, message: t('editor.saveCancelled') };
+        return { success: false, message: 'Speichern abgebrochen' };
       }
       
       filePath = userPath;
     }
     
     if (!filePath) {
-      return { success: false, message: t('editor.noFilePath') };
+      return { success: false, message: 'Kein Dateipfad ermittelt' };
     }
     
     // Verify the file exists before writing (using native command)
@@ -87,14 +86,14 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     const { nativeWriteFileText } = await import('@/lib/native-fs');
     await nativeWriteFileText(filePath, txtContent);
     
-    return { success: true, message: t('editor.fileSaved'), path: filePath };
+    return { success: true, message: 'Datei gespeichert!', path: filePath };
     
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[SaveToFile] Error saving song:', error);
     return {
       success: false,
-      message: t('editor.saveError').replace('{error}', error instanceof Error ? error.message : t('common.unknown')),
+      message: `Fehler beim Speichern: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
     };
   }
 }

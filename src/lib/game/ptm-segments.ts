@@ -1,18 +1,9 @@
-// PTM segment generation — hybrid time-based segmentation with gap detection.
-//
-// When lyrics with scored notes are available, the algorithm:
-//   1. Identifies the singing range (first → last scored note, skipping freestyle).
-//   2. Determines segment count based on singing duration (~40 s per segment),
-//      rounded to a multiple of player count and capped at 5 full rounds.
-//   3. Places forced breakpoints at the midpoints of large gaps (>10 s) between
-//      consecutive scored notes, because players naturally pause there.
-//   4. Distributes the remaining breakpoints along a timeline of lyric-line ends,
-//      preferring line-ends with larger following gaps via an effective-distance
-//      formula that penalises cutting mid-phrase.
-//   5. Builds, merges (short <5 s), and splits (long >90 s) segments.
-//   6. Computes totalTicks per segment when a BPM is provided.
-//
+// PTM segment generation — shared utility for Pass the Mic game mode.
+// When lyrics are available, segments are score-based (equal points per segment).
+// Segment count is determined by the singing duration (first note to last note),
+// NOT total song duration, so intros/outros without notes don't waste segments.
 // When lyrics are unavailable, falls back to equal time-based segments.
+// Natural break points (gaps between lines) are preferred for segment boundaries.
 
 import type { LyricLine, Note } from '@/types/game';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
@@ -26,258 +17,200 @@ export function generatePtmSegments(
   playerCount: number,
   _settingsSegmentDuration?: number,
   lyrics?: LyricLine[],
-  bpm?: number,
 ): PassTheMicSegment[] {
-  // Short song guard (< 60 s) — not enough for meaningful gameplay
+  // Exclude very short songs (< 60s) — not enough for meaningful gameplay
   if (songDurationMs < 60000) {
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
-  // When lyrics with notes are available, use hybrid time-gap segmentation
+  // When lyrics with notes are available, use score-based segmentation
   if (lyrics && lyrics.length > 0) {
     const notes = lyrics.flatMap(line => line.notes);
     if (notes.length > 0) {
-      return generateHybridTimeGapSegments(songDurationMs, playerCount, lyrics, notes, bpm);
+      return generateScoreBasedSegments(songDurationMs, playerCount, lyrics, notes);
     }
   }
 
-  // Fallback: time-based segmentation
+  // Fallback: time-based segmentation (original logic)
   return generateTimeBasedSegments(songDurationMs, playerCount);
 }
 
 // ───────────────────────────────────────────────────────────
-// Hybrid time-based segmentation with gap detection
+// Score-based segmentation
 // ───────────────────────────────────────────────────────────
 
-function generateHybridTimeGapSegments(
+/**
+ * Build segments where each segment has approximately equal scoring potential.
+ * Break points are placed at natural line gaps (between lyric lines).
+ * Segment count is based on singing duration (first note → last note),
+ * so intros/outros without notes don't waste segments.
+ */
+function generateScoreBasedSegments(
   songDurationMs: number,
   playerCount: number,
   lyrics: LyricLine[],
   notes: Note[],
-  bpm?: number,
 ): PassTheMicSegment[] {
-  // ── Step 1: Find singing range (skip freestyle notes) ──
+  // Find the actual singing range (first note start to last note end)
   let firstNoteTime = Infinity;
   let lastNoteEnd = 0;
   for (const note of notes) {
-    if (note.isBonus) continue;
     if (note.startTime < firstNoteTime) firstNoteTime = note.startTime;
     const noteEnd = note.startTime + (note.duration || 0);
     if (noteEnd > lastNoteEnd) lastNoteEnd = noteEnd;
   }
 
-  // If no scored notes were found, fall back to time-based
-  if (firstNoteTime === Infinity || lastNoteEnd === 0) {
-    return generateTimeBasedSegments(songDurationMs, playerCount);
-  }
-
   const singingDurationMs = lastNoteEnd - firstNoteTime;
-
-  // If less than 30 s of actual singing, use a single segment
+  // If less than 30s of actual singing, use a single segment
   if (singingDurationMs < 30000) {
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
-  // ── Step 2: Calculate segment count ──
-  const targetSegDurMs = 40000; // ~40 s of singing per segment
+  // Calculate segment count based on SINGING duration, not total song duration.
+  // This ensures segments are only placed where there are notes.
+  // Target: ~30s of singing per segment, capped at 5 rounds per player.
+  const targetSegDurMs = 30000;
   let segCount = Math.max(playerCount, Math.ceil(singingDurationMs / targetSegDurMs));
   segCount = Math.ceil(segCount / playerCount) * playerCount; // Round to multiple of player count
   segCount = Math.min(segCount, playerCount * 5); // Cap at 5 rounds
 
   if (segCount < playerCount) {
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
-  // ── Step 3: Find forced breakpoints at large gaps (>10 s) ──
-  const scoredNotes = notes.filter(n => !n.isBonus).sort((a, b) => a.startTime - b.startTime);
-  const fixedBreakTimes: number[] = [];
+  // Build cumulative score timeline at line boundaries
+  const lineBreaks = buildScoreTimeline(lyrics, notes);
 
-  for (let i = 0; i < scoredNotes.length - 1; i++) {
-    const currentEnd = scoredNotes[i].startTime + (scoredNotes[i].duration || 0);
-    const nextStart = scoredNotes[i + 1].startTime;
-    const gap = nextStart - currentEnd;
-    if (gap > 10000) {
-      const midpoint = Math.round((currentEnd + nextStart) / 2);
-      // Ensure the fixed breakpoint falls within the singing range
-      if (midpoint > firstNoteTime && midpoint < lastNoteEnd) {
-        fixedBreakTimes.push(midpoint);
-      }
-    }
-  }
-  fixedBreakTimes.sort((a, b) => a - b);
-
-  // ── Step 4: Distribute remaining breakpoints by time ──
-  const idealDuration = singingDurationMs / segCount;
-
-  // Build timeline of candidate break points at line-ends
-  const lineEndCandidates: Array<{ time: number; gapAfter: number }> = [];
-  for (let i = 0; i < lyrics.length; i++) {
-    const line = lyrics[i];
-    // Only consider lines that end within the singing range
-    if (line.endTime < firstNoteTime) continue;
-    const gapAfter = i < lyrics.length - 1
-      ? Math.max(0, lyrics[i + 1].startTime - line.endTime)
-      : 0;
-    lineEndCandidates.push({ time: line.endTime, gapAfter });
+  if (lineBreaks.length < segCount) {
+    // Not enough break points — fall back to time-based
+    return generateTimeBasedSegments(songDurationMs, playerCount);
   }
 
-  // Determine how many boundaries we need (segCount - 1 interior boundaries)
-  const neededBoundaries = segCount - 1;
-
-  // Collect all break times (fixed + to-be-determined)
-  const allBreakTimes: number[] = [];
-
-  // For each segment boundary position, check if a fixed breakpoint already covers it
-  const usedFixedIndices = new Set<number>();
-
-  for (let seg = 1; seg <= neededBoundaries; seg++) {
-    const targetTime = firstNoteTime + seg * idealDuration;
-
-    // Check if a fixed breakpoint is nearby (within ±25% of ideal duration)
-    const tolerance = idealDuration * 0.25;
-    let matchedFixedIdx = -1;
-    for (let fi = 0; fi < fixedBreakTimes.length; fi++) {
-      if (usedFixedIndices.has(fi)) continue;
-      if (Math.abs(fixedBreakTimes[fi] - targetTime) <= tolerance) {
-        matchedFixedIdx = fi;
-        break;
-      }
-    }
-
-    if (matchedFixedIdx >= 0) {
-      allBreakTimes.push(fixedBreakTimes[matchedFixedIdx]);
-      usedFixedIndices.add(matchedFixedIdx);
-    } else {
-      // Find the line-end closest to the target time using effective distance
-      const minTime = seg > 1 ? allBreakTimes[allBreakTimes.length - 1] + 5000 : firstNoteTime;
-      let bestIdx = -1;
-      let bestEffectiveDist = Infinity;
-
-      for (let ci = 0; ci < lineEndCandidates.length; ci++) {
-        const cand = lineEndCandidates[ci];
-        // Must be after minimum time and not too early
-        if (cand.time <= minTime) continue;
-        const absDist = Math.abs(cand.time - targetTime);
-        const effectiveDist = absDist / (1 + cand.gapAfter / 2000);
-        if (effectiveDist < bestEffectiveDist) {
-          bestEffectiveDist = effectiveDist;
-          bestIdx = ci;
-        }
-      }
-
-      if (bestIdx >= 0) {
-        allBreakTimes.push(lineEndCandidates[bestIdx].time);
-      } else {
-        // Safety: place at ideal time position
-        allBreakTimes.push(Math.round(targetTime));
-      }
-    }
+  const totalScore = lineBreaks[lineBreaks.length - 1].cumulativeScore;
+  if (totalScore <= 0) {
+    return generateTimeBasedSegments(songDurationMs, playerCount);
   }
 
-  // Insert any remaining fixed breakpoints that weren't used
-  for (let fi = 0; fi < fixedBreakTimes.length; fi++) {
-    if (!usedFixedIndices.has(fi)) {
-      allBreakTimes.push(fixedBreakTimes[fi]);
-    }
+  const targetScorePerSegment = totalScore / segCount;
+
+  // Pick break points that are closest to the target cumulative score
+  // Start at song beginning (or slightly before first note for context)
+  const adjustedStart = Math.max(0, firstNoteTime - 1000);
+  const breakTimes: number[] = [Math.round(adjustedStart)];
+  for (let seg = 1; seg < segCount; seg++) {
+    const targetCumScore = seg * targetScorePerSegment;
+    breakTimes.push(findBestBreakpoint(lineBreaks, targetCumScore, breakTimes[breakTimes.length - 1]));
   }
+  breakTimes.push(Math.min(Math.round(songDurationMs), Math.round(lastNoteEnd + 1000))); // End shortly after last note
 
-  // Sort all break times
-  allBreakTimes.sort((a, b) => a - b);
-
-  // ── Step 5: Build segments ──
-  const segmentStart = Math.max(0, firstNoteTime - 1000);
-  const segmentEnd = Math.min(songDurationMs, lastNoteEnd + 1000);
-
-  const rawBreaks = [Math.round(segmentStart), ...allBreakTimes, Math.round(segmentEnd)];
-
-  // De-duplicate breaks that are too close together (< 2 s)
-  const dedupedBreaks: number[] = [rawBreaks[0]];
-  for (let i = 1; i < rawBreaks.length; i++) {
-    if (rawBreaks[i] - dedupedBreaks[dedupedBreaks.length - 1] >= 2000) {
-      dedupedBreaks.push(rawBreaks[i]);
-    }
-  }
-
+  // Build segments from break times
   const segments: PassTheMicSegment[] = [];
-  for (let i = 0; i < dedupedBreaks.length - 1; i++) {
-    const start = dedupedBreaks[i];
-    const end = dedupedBreaks[i + 1];
-
-    // Merge segments shorter than 5 s into the previous
+  for (let i = 0; i < breakTimes.length - 1; i++) {
+    const start = breakTimes[i];
+    const end = breakTimes[i + 1];
+    // Skip segments shorter than 5s (e.g., tiny tail at the end)
     if (end - start < 5000) {
+      // Merge into previous segment
       if (segments.length > 0) {
         segments[segments.length - 1].endTime = end;
-      } else {
-        // If it's the first segment, keep it (will be merged forward)
-        segments.push({ startTime: start, endTime: end, playerId: null, totalTicks: 0 });
       }
       continue;
     }
-
-    // Split segments longer than 90 s at the best internal line-end (largest gap)
-    if (end - start > 90000) {
-      const splitTime = findBestInternalSplit(lyrics, start, end);
-      segments.push({ startTime: start, endTime: splitTime, playerId: null, totalTicks: 0 });
-      segments.push({ startTime: splitTime, endTime: end, playerId: null, totalTicks: 0 });
-    } else {
-      segments.push({ startTime: start, endTime: end, playerId: null, totalTicks: 0 });
-    }
-  }
-
-  // ── Step 6: Compute totalTicks per segment ──
-  if (bpm && bpm > 0) {
-    const beatDuration = 15000 / bpm;
-    for (const seg of segments) {
-      let ticks = 0;
-      for (const note of notes) {
-        if (note.isBonus) continue;
-        const noteEnd = note.startTime + (note.duration || 0);
-        // Note overlaps this segment (may straddle boundaries)
-        if (note.startTime < seg.endTime && noteEnd > seg.startTime) {
-          ticks += Math.max(1, Math.round((note.duration || 0) / beatDuration));
-        }
-      }
-      seg.totalTicks = ticks;
-    }
+    segments.push({ startTime: start, endTime: end, playerId: null });
   }
 
   return segments.length > 0
     ? segments
-    : [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    : [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
 }
 
 /**
- * For an oversized segment, find the best line-end inside it to split at.
- * Prefers the line-end with the largest gap after it (most natural pause).
+ * Build an array of candidate break points at the END of each lyric line.
+ * Each entry records the time (ms) and the cumulative score up to that point.
+ *
+ * Scoring model: each note represents one scoring opportunity.
+ * Golden notes are worth 5× a normal note because they award more points per tick.
+ * Longer notes do NOT get extra weight — the goal is equal NOTES per segment,
+ * so every player gets roughly the same number of singing opportunities.
  */
-function findBestInternalSplit(lyrics: LyricLine[], segStart: number, segEnd: number): number {
-  const midpoint = (segStart + segEnd) / 2;
-  let bestTime = midpoint;
-  let bestGap = 0;
+function buildScoreTimeline(
+  lyrics: LyricLine[],
+  notes: Note[],
+): Array<{ time: number; cumulativeScore: number; gapAfter: number }> {
+  const GOLDEN_WEIGHT = 5;
+  const NORMAL_WEIGHT = 1;
+
+  // Build note score map for quick lookup by ID
+  const noteScoreMap = new Map<string, number>();
+  for (const note of notes) {
+    const weight = note.isGolden ? GOLDEN_WEIGHT : NORMAL_WEIGHT;
+    noteScoreMap.set(note.id, weight);
+  }
+
+  const timeline: Array<{ time: number; cumulativeScore: number; gapAfter: number }> = [];
+  let cumulative = 0;
 
   for (let i = 0; i < lyrics.length; i++) {
     const line = lyrics[i];
-    // Line-end must be within the segment (with some margin from edges)
-    if (line.endTime <= segStart + 5000) continue;
-    if (line.endTime >= segEnd - 5000) continue;
+    // Add score for all notes in this line
+    for (const note of line.notes) {
+      cumulative += noteScoreMap.get(note.id) ?? 0;
+    }
 
+    // Calculate gap after this line (to the start of the next line, or song end)
     const gapAfter = i < lyrics.length - 1
       ? Math.max(0, lyrics[i + 1].startTime - line.endTime)
-      : 0;
+      : 0; // Last line has no gap (song ends)
 
-    // Prefer the largest gap, but also prefer positions near the midpoint
-    // Score: gap * proximity bonus (higher near midpoint)
-    const distFromMid = Math.abs(line.endTime - midpoint);
-    const proximityBonus = 1 - (distFromMid / ((segEnd - segStart) / 2));
-    const score = gapAfter * Math.max(0.1, proximityBonus);
+    timeline.push({
+      time: Math.round(line.endTime),
+      cumulativeScore: cumulative,
+      gapAfter,
+    });
+  }
 
-    if (score > bestGap) {
-      bestGap = score;
-      bestTime = line.endTime;
+  return timeline;
+}
+
+/**
+ * Find the line break that is closest to the target cumulative score,
+ * preferring breaks with larger gaps (more natural transition points).
+ * Also ensures the break is after the previous segment's start.
+ *
+ * Safety: if no valid entry is found after minTime, picks the last entry.
+ */
+function findBestBreakpoint(
+  timeline: Array<{ time: number; cumulativeScore: number; gapAfter: number }>,
+  targetScore: number,
+  minTime: number,
+): number {
+  let bestIdx = -1;
+  let bestDistance = Infinity;
+
+  for (let i = 0; i < timeline.length; i++) {
+    const entry = timeline[i];
+    // Skip entries that are before or at the minimum time (no overlap)
+    if (entry.time <= minTime) continue;
+
+    const dist = Math.abs(entry.cumulativeScore - targetScore);
+    // Prefer breaks with larger gaps when scores are equidistant
+    // Use gap as tiebreaker: effective distance = score distance / (1 + gapWeight)
+    const gapBonus = entry.gapAfter / 2000; // 2s gap = 1.0 bonus
+    const effectiveDist = dist / (1 + gapBonus);
+
+    if (effectiveDist < bestDistance) {
+      bestDistance = effectiveDist;
+      bestIdx = i;
     }
   }
 
-  return Math.round(bestTime);
+  // Safety: if no entry found after minTime, use the last timeline entry
+  // but guarantee forward progress past minTime
+  if (bestIdx < 0) {
+    return Math.max(minTime + 1000, timeline[timeline.length - 1].time);
+  }
+
+  return timeline[bestIdx].time;
 }
 
 // ───────────────────────────────────────────────────────────
@@ -289,7 +222,7 @@ function generateTimeBasedSegments(
   playerCount: number,
 ): PassTheMicSegment[] {
   if (songDurationMs < 60000) {
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
   const rawDurSec = Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
@@ -302,7 +235,7 @@ function generateTimeBasedSegments(
   const adjustedDurMs = songDurationMs / segCount;
 
   if (adjustedDurMs < 20000) {
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null, totalTicks: 0 }];
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
   const segments: PassTheMicSegment[] = [];
@@ -311,8 +244,9 @@ function generateTimeBasedSegments(
       startTime: Math.round(i * adjustedDurMs),
       endTime: Math.round((i + 1) * adjustedDurMs),
       playerId: null,
-      totalTicks: 0,
     });
   }
   return segments;
 }
+
+

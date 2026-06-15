@@ -24,11 +24,11 @@ interface QueueItemCardProps {
 function getGameModeBadge(mode?: 'single' | 'duel' | 'duet', t?: (key: string) => string) {
   switch (mode) {
     case 'duel':
-      return <Badge className="bg-red-500 text-xs">{t?.('queueScreen.duel') ?? 'Duel'}</Badge>;
+      return <Badge className="bg-red-500 text-xs">{t?.('queueScreen.duel') ?? ''}</Badge>;
     case 'duet':
-      return <Badge className="bg-pink-500 text-xs">{t?.('queueScreen.duet') ?? 'Duet'}</Badge>;
+      return <Badge className="bg-pink-500 text-xs">{t?.('queueScreen.duet') ?? ''}</Badge>;
     default:
-      return <Badge className="bg-cyan-500 text-xs">{t?.('queueScreen.single') ?? 'Single'}</Badge>;
+      return <Badge className="bg-cyan-500 text-xs">{t?.('queueScreen.single') ?? ''}</Badge>;
   }
 }
 
@@ -108,7 +108,7 @@ export function QueueItemCard({
             <h3 className="font-semibold truncate">{item.song.title}</h3>
             {item.isFromCompanion && (
               <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400">
-                {t('queueScreen.companion')}
+                📱 Companion
               </Badge>
             )}
           </div>

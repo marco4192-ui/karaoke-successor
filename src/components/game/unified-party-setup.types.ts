@@ -24,6 +24,10 @@ export interface PartyGameConfig {
   title: string;
   icon: string;
   description: string;
+  /** i18n key for translated title */
+  titleKey?: string;
+  /** i18n key for translated description */
+  descriptionKey?: string;
   /** i18n key for extended description lookup: t(`extendedDesc.${extendedDescriptionKey}`) */
   extendedDescriptionKey: string;
   color: string;

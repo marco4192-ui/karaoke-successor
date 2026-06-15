@@ -179,7 +179,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             {localIP ? (
               <div className="flex items-center gap-4">
                 <div className="bg-white rounded-lg p-2 flex-shrink-0">
-                  {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
+                  {qrCodeSrc ? <img src={qrCodeSrc} alt={t('home.qrCodeAlt')} className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
                 </div>
                 <div className="text-xs text-white/50 space-y-1">
                   <p>{t('homeScreen.wifiStep1')}</p>

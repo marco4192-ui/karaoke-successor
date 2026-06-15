@@ -13,7 +13,8 @@ export const coreTranslations = {
     mobile: 'モバイル',
     achievements: '実績',
     daily: 'デイリー',
-    settings: '設定'
+    settings: '設定',
+    editor: 'エディター'
   },
 
   home: {
@@ -73,7 +74,11 @@ export const coreTranslations = {
     search: '検索',
     filter: 'フィルター',
     sort: '並べ替え',
-    refresh: '更新'
+    refresh: '更新',
+    avatarAlt: 'アバター',
+    qrCodeAlt: 'QRコード',
+    unknownError: '不明なエラー',
+    player: 'プレイヤー',
   },
 
   dialogs: {
@@ -285,9 +290,76 @@ export const coreTranslations = {
     noExclusion: '除外なし',
   },
 
+  jukeboxA11y: {
+    songProgress: '曲の進行状況',
+    unmute: 'ミュート解除',
+    mute: 'ミュート',
+    volume: '音量',
+    shuffle: 'シャッフル',
+    repeat: 'リピート'
+  },
+
   errorBoundary: {
     title: '予期しないエラーが発生しました',
     description: '予期せぬエラーが発生しました。ページを再読み込みしてください。',
     tryAgain: '再試行',
+  },
+
+  fullscreen: {
+    exitF12: '全画面終了 (F12)',
+    toggleF12: '全画面切替 (F12)',
+    exitEsc: '全画面終了 (ESC)',
+    enter: '全画面'
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'ドイツ',
+    austria: 'オーストリア',
+    switzerland: 'スイス',
+    unitedStates: 'アメリカ',
+    unitedKingdom: 'イギリス',
+    france: 'フランス',
+    italy: 'イタリア',
+    spain: 'スペイン',
+    netherlands: 'オランダ',
+    poland: 'ポーランド',
+    japan: '日本',
+    southKorea: '韓国',
+    australia: 'オーストラリア',
+    canada: 'カナダ',
+    brazil: 'ブラジル',
+    mexico: 'メキシコ',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'ファーストステップ', description: '初めてのデイリーチャレンジを完了' },
+      weekWarrior: { name: 'ウィークウォリアー', description: '7日間のストリークを維持' },
+      fortnightFighter: { name: 'フォートナイトファイター', description: '14日間のストリークを維持' },
+      monthlyMaster: { name: 'マンスリーマスター', description: '30日間のストリークを維持' },
+      podiumFinish: { name: '表彰台', description: 'デイリーチャレンジでトップ3に入る' },
+      dailyChampion: { name: 'デイリーチャンピオン', description: 'デイリーチャレンジで優勝' },
+      dedicatedSinger: { name: '熱心な歌手', description: '30のデイリーチャレンジを完了' },
+      legendaryStatus: { name: '伝説のステータス', description: '合計10,000 XPに到達' },
+      centuryChampion: { name: 'センチュリーチャンピオン', description: '100日間のストリークを維持' },
+      yearlyLegend: { name: '年間レジェンド', description: '365日間のストリークを維持' },
+    },
+    quests: {
+      dailyDouble: { name: 'デイリーダブル', description: '今日2つのデイリーチャレンジを完了' },
+      perfectTen: { name: 'パーフェクトテン', description: '合計10回パーフェクトノートをヒット' },
+      challengeExplorer: { name: 'チャレンジエクスプローラー', description: '5つの異なるチャレンジモードをプレイ' },
+      songbird: { name: 'ソングバード', description: '合計10曲を完了' },
+      weeklyWarrior: { name: 'ウィークリーウォーリアー', description: '3つのウィークリーチャレンジを完了' },
+    },
+    streakMilestones: {
+      weekWarrior: 'ウィークウォリアー',
+      fortnightFighter: 'フォートナイトファイター',
+      monthlyMaster: 'マンスリーマスター',
+      biMonthlyBoss: 'バイマンスリーボス',
+      centuryChampion: 'センチュリーチャンピオン',
+      yearlyLegend: '年間レジェンド',
+    },
   },
 };

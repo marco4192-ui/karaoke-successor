@@ -792,6 +792,73 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
       }
 
+      // F4: Companion sends a chat message
+      case 'chat': {
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        const chatPayload = payload as { text: string };
+        const chatClient = mobileClients.get(clientId);
+        if (!chatClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+
+        const chatText = typeof chatPayload.text === 'string' ? chatPayload.text.trim() : '';
+        if (!chatText || chatText.length > 200) {
+          return Response.json({ success: false, message: 'Message must be 1-200 characters' }, { status: 400 });
+        }
+
+        const chatMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: chatClient.profile?.name || chatClient.name,
+          text: chatText,
+          timestamp: Date.now(),
+          isHost: false,
+        };
+
+        mutableState.chatMessages.push(chatMsg);
+
+        // Keep max 100 messages (FIFO)
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        // Update activity
+        chatClient.lastActivity = Date.now();
+        mobileClients.set(clientId, chatClient);
+
+        return Response.json({ success: true, message: 'Message sent' });
+      }
+
+      // F4: Host sends a chat message (authenticated)
+      case 'chat_host': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const hostChatPayload = payload as { text: string; fromName?: string };
+        const hostChatText = typeof hostChatPayload.text === 'string' ? hostChatPayload.text.trim() : '';
+        if (!hostChatText || hostChatText.length > 200) {
+          return Response.json({ success: false, message: 'Message must be 1-200 characters' }, { status: 400 });
+        }
+
+        const hostChatMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: 'host',
+          fromName: hostChatPayload.fromName || 'Host',
+          text: hostChatText,
+          timestamp: Date.now(),
+          isHost: true,
+        };
+
+        mutableState.chatMessages.push(hostChatMsg);
+
+        // Keep max 100 messages (FIFO)
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        return Response.json({ success: true, message: 'Host message sent' });
+      }
+
       // #10 Tournament crowd vote — companion spectators vote on match results
       case 'tournament_crowd_vote': {
         const votePayload = payload as { matchId: string; playerSide: 1 | 2 };

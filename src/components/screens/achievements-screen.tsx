@@ -96,9 +96,9 @@ export function AchievementsScreen() {
                   </span>
                 </div>
                 <h3 className="font-semibold text-sm text-center" style={{ color: isUnlocked ? rarityColor : 'inherit' }}>
-                  {achievement.name}
+                  {t(`achievements.${achievement.id}.name`)}
                 </h3>
-                <p className="text-xs text-white/60 text-center mt-1">{achievement.description}</p>
+                <p className="text-xs text-white/60 text-center mt-1">{t(`achievements.${achievement.id}.description`)}</p>
                 {isUnlocked && achievement.reward && (
                   <div className="mt-2 text-center text-xs text-yellow-400">
                     {t('achievementsScreen.plusXp').replace('{n}', (achievement.reward?.xp || 0).toString())}

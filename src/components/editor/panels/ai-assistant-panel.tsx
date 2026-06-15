@@ -357,7 +357,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
             <h4 className="text-xs font-semibold text-orange-400">{t('editor.aiAssistant.generatedCover')}</h4>
             <img 
               src={`data:image/png;base64,${generatedCover}`} 
-              alt="Generated cover"
+              alt={t('editor.aiAssistant.generatedCover')}
               className="w-full rounded-lg border border-white/10"
             />
             <div className="flex gap-2">

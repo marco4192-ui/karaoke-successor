@@ -157,9 +157,7 @@ export const mobileTranslations = {
     playAgainSuccess: '歌曲已添加到队列！',
     playAgainError: '无法将歌曲添加到队列。',
     swipeToDelete: '滑动删除',
-    reorderHint: '长按并拖动以重新排序',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: '已添加到点播',
+    reorderHint: '长按并拖动以重新排序'
   },
 
   mobileNav: {
@@ -473,6 +471,13 @@ export const mobileTranslations = {
     scanHint: '扫描主屏幕上的二维码进行连接',
     letsGo: '开始吧！',
   },
+  mobileChat: {
+    title: '聊天',
+    placeholder: '输入消息...',
+    send: '发送',
+    noMessages: '暂无消息',
+    host: '主机',
+  },
 
   mobilePreview: {
     preview: '预览',
@@ -495,5 +500,17 @@ export const mobileTranslations = {
     cameraUnavailable: '摄像头不可用',
     retake: '重拍',
     noResults: '没有可显示的结果',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: '第一步', description: '唱你的第一首歌' },
+    risingStar: { title: '新星', description: '唱10首歌' },
+    veteran: { title: '老兵', description: '唱50首歌' },
+    perfectionist: { title: '完美主义者', description: '获得完美评分 (95%+)' },
+    flawless: { title: '完美无瑕', description: '获得5次完美评分' },
+    scoreMaster: { title: '得分大师', description: '总计达到10,000分' },
+    playlistBuilder: { title: '播放列表构建者', description: '添加5首歌到队列' },
+    genreExplorer: { title: '流派探索者', description: '演唱3个流派的歌曲' },
   },
 };

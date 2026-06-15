@@ -13,7 +13,8 @@ export const coreTranslations = {
     mobile: 'Mobile',
     achievements: 'Conquistas',
     daily: 'Diário',
-    settings: 'Configurações'
+    settings: 'Configurações',
+    editor: 'Editor'
   },
 
   home: {
@@ -73,7 +74,11 @@ export const coreTranslations = {
     search: 'Buscar',
     filter: 'Filtrar',
     sort: 'Ordenar',
-    refresh: 'Atualizar'
+    refresh: 'Atualizar',
+    avatarAlt: 'Avatar',
+    qrCodeAlt: 'Código QR',
+    unknownError: 'Erro desconhecido',
+    player: 'Jogador',
   },
 
   dialogs: {
@@ -285,9 +290,76 @@ export const coreTranslations = {
     noExclusion: 'sem exclusão',
   },
 
+  jukeboxA11y: {
+    songProgress: 'Progresso da música',
+    unmute: 'Ativar som',
+    mute: 'Silenciar',
+    volume: 'Volume',
+    shuffle: 'Aleatório',
+    repeat: 'Repetir'
+  },
+
   errorBoundary: {
     title: 'Algo deu errado',
     description: 'Ocorreu um erro inesperado. Tente recarregar a página.',
     tryAgain: 'Tentar Novamente',
+  },
+
+  fullscreen: {
+    exitF12: 'Sair da tela cheia (F12)',
+    toggleF12: 'Alternar tela cheia (F12)',
+    exitEsc: 'Sair da tela cheia (ESC)',
+    enter: 'Tela cheia'
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: 'Alemanha',
+    austria: 'Áustria',
+    switzerland: 'Suíça',
+    unitedStates: 'Estados Unidos',
+    unitedKingdom: 'Reino Unido',
+    france: 'França',
+    italy: 'Itália',
+    spain: 'Espanha',
+    netherlands: 'Países Baixos',
+    poland: 'Polônia',
+    japan: 'Japão',
+    southKorea: 'Coreia do Sul',
+    australia: 'Austrália',
+    canada: 'Canadá',
+    brazil: 'Brasil',
+    mexico: 'México',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: 'Primeiros Passos', description: 'Complete seu primeiro desafio diário' },
+      weekWarrior: { name: 'Guerreiro Semanal', description: 'Mantenha uma sequência de 7 dias' },
+      fortnightFighter: { name: 'Lutador Quinzenal', description: 'Mantenha uma sequência de 14 dias' },
+      monthlyMaster: { name: 'Mestre Mensal', description: 'Mantenha uma sequência de 30 dias' },
+      podiumFinish: { name: 'Chegada ao Pódio', description: 'Terminar no top 3 de um desafio diário' },
+      dailyChampion: { name: 'Campeão Diário', description: 'Vença um desafio diário' },
+      dedicatedSinger: { name: 'Cantor Dedicado', description: 'Complete 30 desafios diários' },
+      legendaryStatus: { name: 'Status Lendário', description: 'Alcance 10.000 XP totais' },
+      centuryChampion: { name: 'Campeão do Século', description: 'Mantenha uma sequência de 100 dias' },
+      yearlyLegend: { name: 'Lenda Anual', description: 'Mantenha uma sequência de 365 dias' },
+    },
+    quests: {
+      dailyDouble: { name: 'Duplo Diário', description: 'Complete 2 desafios diários hoje' },
+      perfectTen: { name: 'Dez Perfeitos', description: 'Acerte 10 notas perfeitas no total' },
+      challengeExplorer: { name: 'Explorador de Desafios', description: 'Jogue 5 modos de desafio diferentes' },
+      songbird: { name: 'Pássaro Cantor', description: 'Complete 10 músicas no total' },
+      weeklyWarrior: { name: 'Guerreiro Semanal', description: 'Complete 3 desafios semanais' },
+    },
+    streakMilestones: {
+      weekWarrior: 'Guerreiro Semanal',
+      fortnightFighter: 'Lutador Quinzenal',
+      monthlyMaster: 'Mestre Mensal',
+      biMonthlyBoss: 'Chefe Bimestral',
+      centuryChampion: 'Campeão do Século',
+      yearlyLegend: 'Lenda Anual',
+    },
   },
 };

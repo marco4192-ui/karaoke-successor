@@ -32,7 +32,6 @@ interface SongsViewProps {
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (_song: MobileSong) => void;
-  onAddToJukebox: (_song: MobileSong) => void;
   onLoadPartners: () => void;
   onLoadOpponents: () => void;
   onRefresh: () => Promise<void>;
@@ -69,7 +68,6 @@ export function MobileSongsView({
   onSelectGameMode,
   onSelectPartner,
   onAddToQueue,
-  onAddToJukebox,
   onLoadPartners,
   onLoadOpponents,
   onRefresh,
@@ -93,7 +91,6 @@ export function MobileSongsView({
 
   // Queue wizard step state: 0 = mode+difficulty, 1 = overview/mic, 2 = opponent, 3 = feedback
   const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | 3>(0);
-  const [addedToJukebox, setAddedToJukebox] = useState(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset wizard when song options change
@@ -102,11 +99,6 @@ export function MobileSongsView({
       setWizardStep(0);
     }
   }, [showSongOptions]);
-
-  // Reset addedToJukebox when song options change
-  useEffect(() => {
-    setAddedToJukebox(false);
-  }, [showSongOptions?.id]);
 
   // Auto-dismiss feedback after 2s
   useEffect(() => {
@@ -220,7 +212,6 @@ export function MobileSongsView({
   // Helper to close wizard
   const closeWizard = useCallback(() => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
-    setAddedToJukebox(false);
     setWizardStep(0);
     onShowSongOptions(null);
     onSelectPartner(null);
@@ -299,10 +290,8 @@ export function MobileSongsView({
             {wizardStep === 3 && (
               <div className="p-6 text-center">
                 <div className="text-4xl mb-2">✓</div>
-                <p className="text-white font-bold text-sm">
-                  {addedToJukebox ? t('mobileViews.addedToJukebox') : t('mobileViews.songAddedToQueue')}
-                </p>
-                {!addedToJukebox && addedQueuePosition > 0 && (
+                <p className="text-white font-bold text-sm">{t('mobileViews.songAddedToQueue')}</p>
+                {addedQueuePosition > 0 && (
                   <p className="text-white/50 text-xs mt-1">{t('mobileViews.positionInQueue').replace('{n}', String(addedQueuePosition))}</p>
                 )}
               </div>
@@ -322,45 +311,29 @@ export function MobileSongsView({
                   {/* Game Mode */}
                   <div>
                     <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">{t('mobileViews.gameMode')}</label>
-                    <div className="mt-1.5">
-                    <div className={`grid gap-1.5 ${showSongOptions.isDuet ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                      {(['single', 'duel', ...(showSongOptions.isDuet ? ['duet' as const] : [])] as const).map((mode) => {
-                        type GameMode = 'single' | 'duel' | 'duet';
-                        const m = mode as GameMode;
-                        const icons: Record<GameMode, string> = { single: '🎤', duel: '⚔️', duet: '🎭' };
-                        const labels: Record<GameMode, string> = { single: 'mobileViews.gameModeSingle', duel: 'mobileViews.gameModeDuel', duet: 'mobileViews.gameModeDuet' };
-                        const isActive = selectedGameMode === m;
+                    <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                      {(['single', 'duel', 'duet'] as const).map((mode) => {
+                        const icons = { single: '🎤', duel: '⚔️', duet: '🎭' };
+                        const labels = { single: 'mobileViews.gameModeSingle', duel: 'mobileViews.gameModeDuel', duet: 'mobileViews.gameModeDuet' };
+                        const isActive = selectedGameMode === mode;
                         return (
                           <button
-                            key={m}
-                            onClick={() => onSelectGameMode(m)}
+                            key={mode}
+                            onClick={() => onSelectGameMode(mode)}
                             className={`px-2 py-2 rounded-lg text-center transition-all text-xs ${
                               isActive
-                                ? m === 'single' ? 'bg-cyan-500/30 text-white border border-cyan-500/50'
-                                  : m === 'duel' ? 'bg-red-500/30 text-white border border-red-500/50'
+                                ? mode === 'single' ? 'bg-cyan-500/30 text-white border border-cyan-500/50'
+                                  : mode === 'duel' ? 'bg-red-500/30 text-white border border-red-500/50'
                                   : 'bg-pink-500/30 text-white border border-pink-500/50'
                                 : 'bg-white/5 text-white/60 hover:bg-white/10 border border-transparent'
                             }`}
                           >
-                            <span className="text-lg block mb-0.5">{icons[m]}</span>
-                            <span className="text-[10px]">{t(labels[m])}</span>
+                            <span className="text-lg block mb-0.5">{icons[mode]}</span>
+                            <span className="text-[10px]">{t(labels[mode])}</span>
                           </button>
                         );
                       })}
-                      {/* Jukebox button */}
-                      <button
-                        onClick={() => {
-                          onAddToJukebox(showSongOptions);
-                          setAddedToJukebox(true);
-                          setWizardStep(3);
-                        }}
-                        className="px-2 py-2 rounded-lg text-center transition-all text-xs bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
-                      >
-                        <span className="text-lg block mb-0.5">📻</span>
-                        <span className="text-[10px]">{t('mobileViews.jukeboxBtn')}</span>
-                      </button>
                     </div>
-                  </div>
                   </div>
 
                   {/* Difficulty */}
@@ -735,21 +708,13 @@ export function MobileSongsView({
               </button>
               
               {/* Cover */}
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0 relative">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">
                 {song.coverImage ? (
                   <img src={song.coverImage} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    {song.isDuet ? (
-                      <span className="text-lg">🎭</span>
-                    ) : (
-                      <MusicIcon className="w-5 h-5 text-white/30" />
-                    )}
+                    <MusicIcon className="w-5 h-5 text-white/30" />
                   </div>
-                )}
-                {/* Duet badge overlay for songs with cover */}
-                {song.isDuet && song.coverImage && (
-                  <div className="absolute bottom-0 right-0 bg-pink-500/90 rounded-tl text-[8px] px-1 leading-tight font-bold">🎭</div>
                 )}
               </div>
               

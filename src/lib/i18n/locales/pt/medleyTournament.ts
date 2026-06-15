@@ -145,6 +145,8 @@ export const medleyTournamentTranslations = {
     surprise: 'Surpresa',
     shareResult: 'Compartilhar Resultado',
     shareText: 'App de Karaokê Musical',
+    shareWinner: 'Vencedor: {name} ({score} {pts})',
+    shareBestCombo: 'Melhor Combo: {n}x',
     copied: 'Copiado para a área de transferência!',
     flopComment: 'Mais sorte da próxima vez...',
     // Feature #18: Team Bonuses
@@ -166,6 +168,9 @@ export const medleyTournamentTranslations = {
     ofSong: 'de: {title}',
     comboOnSong: 'em: {title}',
     back: '← Voltar',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'Trechos',
+    localMicShort: 'Local',
     availablePlayers: 'Jogadores Disponíveis:',
   },
 
@@ -363,7 +368,7 @@ export const medleyTournamentTranslations = {
     performances: 'Performances',
     avgRating: 'Avaliação Média',
     bestRating: 'Melhor Avaliação',
-    achievements: 'Conquistas',
+    achievementsLabel: 'Conquistas',
     newAchievement: 'Nova Conquista!',
     songSuggestions: 'Músicas Similares',
     trend: 'Tendência',
@@ -388,5 +393,50 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'PERFORMANCE INCRÍVEL!',
     genreStats: 'Estatísticas por Gênero',
     wallOfFame: 'Muro da Fama',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Cantar com Sotaque', description: 'Coloque seu melhor sotaque falso durante toda a música' },
+      silentMinute: { title: 'Minuto de Silêncio', description: 'Pare de cantar por 10 segundos no meio, continue se apresentando' },
+      danceBreak: { title: 'Pausa para Dança', description: 'Faça pelo menos 3 movimentos de dança durante a música' },
+      phoneSinger: { title: 'Cantor de Telefone', description: 'Cante como se estivesse gravando um TikTok com seu telefone' },
+      supermarketStyle: { title: 'Estilo Supermercado', description: 'Apresente como se estivesse cantando casualmente fazendo compras' },
+      tempoSwitch: { title: 'Mudança de Tempo', description: 'Comece devagar, super rápido no meio, devagar de novo' },
+      smirkMode: { title: 'Modo Sorriso', description: 'Mantenha um sorriso confiante no rosto TODO o tempo' },
+      airGuitarSolo: { title: 'Solo de Guitarra Imaginária', description: 'Faça um solo de guitarra imaginária durante qualquer parte instrumental' },
+      micDrop: { title: 'Mic Drop', description: 'Termine a música com uma pose dramática de mic drop' },
+      divaMode: { title: 'Modo Diva', description: 'Cante com máximo drama, gestos com as mãos e balanço de cabelo' },
+      whisperStart: { title: 'Início Sussurrado', description: 'Comece os primeiros 15 segundos sussurrando, depois com toda força' },
+      operaStyle: { title: 'Estilo Ópera', description: 'Cante de forma tão dramática quanto um cantor de ópera' },
+      discoFever: { title: 'Febre Disco', description: 'Adicione passos de dança disco em cada refrão' },
+      emotionalRollercoaster: { title: 'Montanha-Russa Emocional', description: 'Alterne entre expressões de choro e riso' },
+      countryTwist: { title: 'Virada Country', description: 'Adicione um sotaque country e gestos de yee-haw' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'Primeira Apresentação', description: 'Complete 1 apresentação' },
+      goldenVoice: { name: 'Voz Dourada', description: 'Obtenha uma nota >= 9.0' },
+      crowdFavorite: { name: 'Favorito do Público', description: 'Receba notas de 10+ membros da audiência diferentes no total' },
+      allRounder: { name: 'Versátil', description: 'Apresente em 5+ gêneros diferentes' },
+      perfectionist: { name: 'Perfeccionista', description: 'Obtenha uma nota >= 9.5' },
+      stageAnimal: { name: 'Animal de Palco', description: '20+ apresentações' },
+      centurion: { name: 'Centurião', description: '100+ notas da audiência recebidas no total' },
+      comebackKid: { name: 'Criança da Virada', description: 'A nota melhora em 3+ pontos da pior para a melhor' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Novato',
+      openMic: 'Micro Aberto',
+      regular: 'Regular',
+      star: 'Estrela',
+      superstar: 'Superstar',
+      legend: 'Lenda',
+    },
+
+    awards: 'Prêmios',
   },
+
 };

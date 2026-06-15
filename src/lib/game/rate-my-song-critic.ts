@@ -4,6 +4,8 @@
  * Funny + snarky bilingual critic commentary based on rating score.
  */
 
+import { t as tFn, type Language } from '@/lib/i18n/translations';
+
 // ── Types ──
 
 interface CommentBucket {
@@ -164,20 +166,25 @@ const CRITIC_COMMENTS: CommentBucket[] = [
  * Generate a snarky AI critic comment based on rating.
  * Comments are shuffled randomly so the same score doesn't always produce the same text.
  */
-export function getAICriticComment(rating: number, lang: 'en' | 'de'): string {
+export function getAICriticComment(rating: number, language: Language): string {
   const clamped = Math.max(1.0, Math.min(10.0, rating));
 
-  // Find the matching bucket
-  const bucket = CRITIC_COMMENTS.find(b => clamped >= b.min && clamped <= b.max);
+  const bucketIdx = CRITIC_COMMENTS.findIndex(b => clamped >= b.min && clamped <= b.max);
 
-  if (!bucket) {
-    // Fallback (should never happen)
-    return lang === 'en'
-      ? "I have no words. Literally no words."
-      : "Ich habe keine Worte. Wirklich keine Worte.";
+  if (bucketIdx >= 0) {
+    // Try i18n first (3 random variants per bucket)
+    const commentIdx = Math.floor(Math.random() * 3);
+    const i18nKey = `rateMySong.critic.bucket${bucketIdx}.comment${commentIdx + 1}`;
+    const translated = tFn(i18nKey, language);
+    if (translated !== i18nKey) return translated;
   }
 
-  const comments = lang === 'en' ? bucket.en : bucket.de;
+  // Fallback: use hardcoded arrays for en/de
+  const bucket = CRITIC_COMMENTS.find(b => clamped >= b.min && clamped <= b.max);
+  if (!bucket) {
+    return tFn('rateMySong.critic.fallback', language);
+  }
+  const comments = language === 'de' ? bucket.de : bucket.en;
   const idx = Math.floor(Math.random() * comments.length);
   return comments[idx];
 }

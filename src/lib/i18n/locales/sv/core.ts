@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Sök',
     filter: 'Filtrera',
     sort: 'Sortera',
-    refresh: 'Uppdatera'
+    refresh: 'Uppdatera',
+    player: 'Spelare',
   },
 
   dialogs: {
@@ -290,4 +291,101 @@ export const coreTranslations = {
     description: 'Ett oväntat fel uppstod. Försök ladda om sidan.',
     tryAgain: 'Försök Igen',
   },
+
+  // --- Countries ---
+  countries: {
+  "germany": "Tyskland",
+  "austria": "Österrike",
+  "switzerland": "Schweiz",
+  "unitedStates": "USA",
+  "unitedKingdom": "Storbritannien",
+  "france": "Frankrike",
+  "italy": "Italien",
+  "spain": "Spanien",
+  "netherlands": "Nederländerna",
+  "poland": "Polen",
+  "japan": "Japan",
+  "southKorea": "Sydkorea",
+  "australia": "Australien",
+  "canada": "Kanada",
+  "brazil": "Brasilien",
+  "mexico": "Mexiko"
+},
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+  "badges": {
+    "firstChallenge": {
+      "name": "Första stegen",
+      "description": "Genomför din första dagliga utmaning"
+    },
+    "weekWarrior": {
+      "name": "Veckokrigare",
+      "description": "Håll en 7-dagars svit"
+    },
+    "fortnightFighter": {
+      "name": "Fjortondagskrigare",
+      "description": "Håll en 14-dagars svit"
+    },
+    "monthlyMaster": {
+      "name": "Månadsmästare",
+      "description": "Håll en 30-dagars svit"
+    },
+    "podiumFinish": {
+      "name": "Podiumplacering",
+      "description": "Placera topp 3 i daglig utmaning"
+    },
+    "dailyChampion": {
+      "name": "Dagens mästare",
+      "description": "Vinn en daglig utmaning"
+    },
+    "dedicatedSinger": {
+      "name": "Dedikerad sångare",
+      "description": "Genomför 30 dagliga utmaningar"
+    },
+    "legendaryStatus": {
+      "name": "Legendarisk status",
+      "description": "Nå 10 000 XP totalt"
+    },
+    "centuryChampion": {
+      "name": "Århundrade-mästare",
+      "description": "Håll en 100-dagars svit"
+    },
+    "yearlyLegend": {
+      "name": "Årslegend",
+      "description": "Håll en 365-dagars svit"
+    }
+  },
+  "quests": {
+    "dailyDouble": {
+      "name": "Daglig dubbel",
+      "description": "Genomför 2 dagliga utmaningar"
+    },
+    "perfectTen": {
+      "name": "Perfekta tian",
+      "description": "Träffa 10 perfekta toner"
+    },
+    "challengeExplorer": {
+      "name": "Utmaningsutforskare",
+      "description": "Spela 5 utmaningslägen"
+    },
+    "songbird": {
+      "name": "Fågel",
+      "description": "Genomför 10 låtar"
+    },
+    "weeklyWarrior": {
+      "name": "Veckokrigare",
+      "description": "Genomför 3 veckoutmaningar"
+    }
+  },
+  "streakMilestones": {
+    "weekWarrior": "Veckokrigare",
+    "fortnightFighter": "Fjortondagskrigare",
+    "monthlyMaster": "Månadsmästare",
+    "biMonthlyBoss": "Tvåmånadsboss",
+    "centuryChampion": "Århundrade-mästare",
+    "yearlyLegend": "Årslegend"
+  }
+},
+
 };

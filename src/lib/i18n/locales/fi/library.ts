@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: 'Nuotit:',
       lines: 'Rivit:',
       file: 'Tiedosto:',
+      player1: 'Pelaaja 1',
+      player2: 'Pelaaja 2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Pelaajan 1 nimi',
       duetPlayer2: '#P2: (Duetto Pelaaja 2)',
       duetPlayer2Placeholder: 'Pelaajan 2 nimi',
+      tagsPlaceholder: 'tägi1, tägi2, tägi3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: 'Ehdotukset ({count})',
       acceptAll: 'Hyväksy kaikki',
       aiTip: 'Vihje: AI-ehdotukset ovat aina vain apuvälineitä. Tarkista kaikki muutokset ennen tallennusta.',
+      failed: 'Epäonnistui',
+      networkError: 'Verkkovirhe',
     },
 
     // Timeline

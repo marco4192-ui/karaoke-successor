@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: '音符:',
       lines: '行:',
       file: 'ファイル:',
+      player1: 'プレイヤー1',
+      player2: 'プレイヤー2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'プレイヤー1名',
       duetPlayer2: '#P2: (デュエットプレイヤー2)',
       duetPlayer2Placeholder: 'プレイヤー2名',
+      tagsPlaceholder: 'タグ1, タグ2, タグ3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: '提案 ({count})',
       acceptAll: 'すべて承認',
       aiTip: 'ヒント: AIの提案はあくまで補助です。保存前にすべての変更を確認してください。',
+      failed: '失敗',
+      networkError: 'ネットワークエラー',
     },
 
     // Timeline

@@ -64,10 +64,10 @@ export function AiHarmonizeCard({
           (s: HarmonizeSuggestion) => s.suggestedGenre || s.suggestedLanguage
         ));
       } else {
-        setError(data.error || 'Failed');
+        setError(data.error || t('editor.aiAssistant.failed'));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Network error');
+      setError(e instanceof Error ? e.message : t('editor.aiAssistant.networkError'));
     } finally {
       setIsLoading(false);
     }

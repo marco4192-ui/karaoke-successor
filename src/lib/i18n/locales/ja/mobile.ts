@@ -158,9 +158,7 @@ export const mobileTranslations = {
     playAgainSuccess: '曲がキューに追加されました！',
     playAgainError: '曲をキューに追加できませんでした。',
     swipeToDelete: 'スワイプして削除',
-    reorderHint: '長押ししてドラッグで並び替え',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'ジュークボックスに追加',
+    reorderHint: '長押ししてドラッグで並び替え'
   },
 
   mobileNav: {
@@ -474,6 +472,13 @@ export const mobileTranslations = {
     scanHint: 'メイン画面のQRコードをスキャンして接続',
     letsGo: 'スタート！',
   },
+  mobileChat: {
+    title: 'チャット',
+    placeholder: 'メッセージを入力...',
+    send: '送信',
+    noMessages: 'メッセージはまだありません',
+    host: 'ホスト',
+  },
 
   mobilePreview: {
     preview: 'プレビュー',
@@ -496,5 +501,17 @@ export const mobileTranslations = {
     cameraUnavailable: 'カメラは利用できません',
     retake: '撮り直す',
     noResults: '表示する結果がありません',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: 'ファーストステップ', description: '最初の曲を歌う' },
+    risingStar: { title: '新星', description: '10曲歌う' },
+    veteran: { title: 'ベテラン', description: '50曲歌う' },
+    perfectionist: { title: '完璧主義者', description: 'パーフェクトスコア（95%+）を取得' },
+    flawless: { title: 'フローレス', description: 'パーフェクトスコアを5回取得' },
+    scoreMaster: { title: 'スコアマスター', description: '合計10,000ポイントに到達' },
+    playlistBuilder: { title: 'プレイリストビルダー', description: '5曲をキューに入れる' },
+    genreExplorer: { title: 'ジャンルエクスプローラー', description: '3つのジャンルから曲を歌う' },
   },
 };

@@ -157,9 +157,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Kappale lisätty jonoon!',
     playAgainError: 'Kappaletta ei voitu lisätä jonoon.',
     swipeToDelete: 'Pyyhki poistaaksesi',
-    reorderHint: 'Paina pitkään ja vedä uudelleenjärjestääksesi',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Lisätty Jukeboxiin',
+    reorderHint: 'Paina pitkään ja vedä uudelleenjärjestääksesi'
   },
 
   mobileNav: {
@@ -473,6 +471,13 @@ export const mobileTranslations = {
     scanHint: 'Skannaa QR-koodi pääruudulta',
     letsGo: 'Mennään!',
   },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Kirjoita viesti...',
+    send: 'Lähetä',
+    noMessages: 'Ei vielä viestejä',
+    host: 'Isäntä',
+  },
 
   mobilePreview: {
     preview: 'Esikuuntelu',
@@ -496,4 +501,41 @@ export const mobileTranslations = {
     retake: 'Ota uudelleen',
     noResults: 'Ei näytettäviä tuloksia',
   },
+
+  // --- Mobile Achievements ---
+  achievements: {
+  "firstSong": {
+    "title": "Ensimmäiset askeleet",
+    "description": "Laula ensimmäinen kappaleesi"
+  },
+  "risingStar": {
+    "title": "Nouseva tähti",
+    "description": "Laula 10 kappaletta"
+  },
+  "veteran": {
+    "title": "Veteraani",
+    "description": "Laula 50 kappaletta"
+  },
+  "perfectionist": {
+    "title": "Perfektionisti",
+    "description": "Saa täydellisen tuloksen (95%+)"
+  },
+  "flawless": {
+    "title": "Virheetön",
+    "description": "Saa 5 täydellistä tulosta"
+  },
+  "scoreMaster": {
+    "title": "Pistemestari",
+    "description": "Saa 10 000 pistettä yhteensä"
+  },
+  "playlistBuilder": {
+    "title": "Soittolistan rakentaja",
+    "description": "Lisää 5 kappaletta jonoon"
+  },
+  "genreExplorer": {
+    "title": "Genre-ekkija",
+    "description": "Laula kappaletta 3 genrestä"
+  }
+},
+
 };

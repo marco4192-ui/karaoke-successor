@@ -320,7 +320,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
                   onChange={(e) => {
                     onSongChange(prev => ({
                       ...prev,
-                      duetPlayerNames: [e.target.value, prev.duetPlayerNames?.[1] || 'Player 2']
+                      duetPlayerNames: [e.target.value, prev.duetPlayerNames?.[1] || t('editor.songInfoTab.player2')]
                     }));
                     onSetUnsavedChanges();
                   }}
@@ -334,7 +334,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
                   onChange={(e) => {
                     onSongChange(prev => ({
                       ...prev,
-                      duetPlayerNames: [prev.duetPlayerNames?.[0] || 'Player 1', e.target.value]
+                      duetPlayerNames: [prev.duetPlayerNames?.[0] || t('editor.songInfoTab.player1'), e.target.value]
                     }));
                     onSetUnsavedChanges();
                   }}

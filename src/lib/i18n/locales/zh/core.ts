@@ -13,7 +13,8 @@ export const coreTranslations = {
     mobile: '移动端',
     achievements: '成就',
     daily: '每日',
-    settings: '设置'
+    settings: '设置',
+    editor: '编辑器'
   },
 
   home: {
@@ -73,7 +74,11 @@ export const coreTranslations = {
     search: '搜索',
     filter: '筛选',
     sort: '排序',
-    refresh: '刷新'
+    refresh: '刷新',
+    avatarAlt: '头像',
+    qrCodeAlt: '二维码',
+    unknownError: '未知错误',
+    player: '玩家',
   },
 
   dialogs: {
@@ -285,9 +290,76 @@ export const coreTranslations = {
     noExclusion: '不排除',
   },
 
+  jukeboxA11y: {
+    songProgress: '歌曲进度',
+    unmute: '取消静音',
+    mute: '静音',
+    volume: '音量',
+    shuffle: '随机播放',
+    repeat: '循环'
+  },
+
   errorBoundary: {
     title: '出了点问题',
     description: '发生了意外错误。请尝试刷新页面。',
     tryAgain: '重试',
+  },
+
+  fullscreen: {
+    exitF12: '退出全屏 (F12)',
+    toggleF12: '切换全屏 (F12)',
+    exitEsc: '退出全屏 (ESC)',
+    enter: '全屏',
+  },
+
+  // --- Countries ---
+  countries: {
+    germany: '德国',
+    austria: '奥地利',
+    switzerland: '瑞士',
+    unitedStates: '美国',
+    unitedKingdom: '英国',
+    france: '法国',
+    italy: '意大利',
+    spain: '西班牙',
+    netherlands: '荷兰',
+    poland: '波兰',
+    japan: '日本',
+    southKorea: '韩国',
+    australia: '澳大利亚',
+    canada: '加拿大',
+    brazil: '巴西',
+    mexico: '墨西哥',
+  },
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+    badges: {
+      firstChallenge: { name: '第一步', description: '完成你的第一个每日挑战' },
+      weekWarrior: { name: '周斗士', description: '保持7天连胜' },
+      fortnightFighter: { name: '双周战士', description: '保持14天连胜' },
+      monthlyMaster: { name: '月度大师', description: '保持30天连胜' },
+      podiumFinish: { name: '领奖台', description: '每日挑战进入前三' },
+      dailyChampion: { name: '每日冠军', description: '赢得每日挑战' },
+      dedicatedSinger: { name: '专注歌手', description: '完成30个每日挑战' },
+      legendaryStatus: { name: '传奇状态', description: '累计达到10,000 XP' },
+      centuryChampion: { name: '世纪冠军', description: '保持100天连胜' },
+      yearlyLegend: { name: '年度传奇', description: '保持365天连胜' },
+    },
+    quests: {
+      dailyDouble: { name: '每日双倍', description: '今天完成2个每日挑战' },
+      perfectTen: { name: '完美十分', description: '累计击中10个完美音符' },
+      challengeExplorer: { name: '挑战探索者', description: '游玩5种不同挑战模式' },
+      songbird: { name: '百灵鸟', description: '累计完成10首歌' },
+      weeklyWarrior: { name: '周斗士', description: '完成3个每周挑战' },
+    },
+    streakMilestones: {
+      weekWarrior: '周斗士',
+      fortnightFighter: '双周战士',
+      monthlyMaster: '月度大师',
+      biMonthlyBoss: '双月Boss',
+      centuryChampion: '世纪冠军',
+      yearlyLegend: '年度传奇',
+    },
   },
 };

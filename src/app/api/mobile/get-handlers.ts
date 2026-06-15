@@ -406,6 +406,13 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         count: mutableState.songLibrary.length,
       });
 
+    // F4: Get chat messages (last 50)
+    case 'getchat':
+      return Response.json({
+        success: true,
+        messages: mutableState.chatMessages.slice(-50),
+      });
+
     // #10 Get tournament crowd votes for spectator UI
     case 'get_crowd_votes':
       return Response.json({

@@ -66,12 +66,12 @@ export function MobileAchievements({ stats }: MobileAchievementsProps) {
                   isUnlocked ? 'text-white' : 'text-white/40'
                 }`}
               >
-                {achievement.title}
+                {t(`mobileAchievements.${achievement.id}.title`)}
               </p>
 
               {/* Description */}
               <p className="text-[9px] text-white/30 leading-tight mb-1.5 hidden">
-                {achievement.description}
+                {t(`mobileAchievements.${achievement.id}.description`)}
               </p>
 
               {/* Progress bar (only for partially complete achievements) */}

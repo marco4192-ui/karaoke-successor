@@ -1,6 +1,8 @@
 // AI Service: Lyrics Assistant
 // Provides suggestions for lyrics improvement
 
+import { t } from '@/lib/i18n/translations';
+
 export interface LyricSuggestion {
   lineIndex: number;
   original: string;
@@ -49,7 +51,7 @@ export async function analyzeLyrics(
     });
 
     if (!response.ok) {
-      let error = 'Failed to analyze lyrics';
+      let error = t('ai.lyricsAssistant.analyzeFailed');
       try {
         const errorData = await response.json();
         error = errorData.error || error;
@@ -71,7 +73,7 @@ export async function analyzeLyrics(
   } catch (error) {
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error instanceof Error ? error.message : t('common.unknownError') 
     };
   }
 }

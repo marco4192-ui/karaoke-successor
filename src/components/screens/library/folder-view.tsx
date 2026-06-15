@@ -82,12 +82,10 @@ export function FolderView({
   const isLanguageGroup = groupBy === 'language';
   const isGenreGroup = groupBy === 'genre';
 
-  // DO-NOT-CHANGE: Viewport-based height measurement for Tauri webview scrollability.
-  // Measures the element's own position relative to the viewport (window.innerHeight - top)
-  // and applies it explicitly so that overflow-y-auto works reliably in Tauri webviews,
-  // where the flex min-h-0 chain can silently fail to constrain height.
-  // This approach is more robust than reading parent.clientHeight, which can be
-  // incorrect when the parent has overflow-y-auto (nested scroll container interference).
+  // DO-NOT-CHANGE: ResizeObserver scrollability pattern.
+  // Measures the parent's constrained height (from the flex chain) and applies it
+  // explicitly to this container so that overflow-y-auto works reliably in Tauri
+  // webviews, where the flex min-h-0 chain can silently fail to constrain height.
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
 
@@ -96,30 +94,27 @@ export function FolderView({
     if (!el) return;
 
     const measure = () => {
-      const top = el.getBoundingClientRect().top;
-      const available = window.innerHeight - top;
-      if (available > 50) {
-        setContainerHeight(available);
+      const parent = el.parentElement;
+      if (parent && parent.clientHeight > 0) {
+        setContainerHeight(parent.clientHeight);
       }
     };
 
     measure();
 
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    window.addEventListener('resize', measure);
+    if (el.parentElement) {
+      observer.observe(el.parentElement);
+    }
 
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className={`pr-1 ${containerHeight > 0 ? 'overflow-y-auto' : ''}`}
-      style={{ height: containerHeight > 0 ? `${containerHeight}px` : undefined }}
+      className="pr-1 overflow-y-auto"
+      style={{ height: containerHeight > 0 ? `${containerHeight}px` : undefined, minHeight: '200px' }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 pb-4">
       {getSortedFolderKeys(groupedSongs, groupBy).map((folderKey) => {

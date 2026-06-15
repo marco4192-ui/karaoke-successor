@@ -158,9 +158,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Música adicionada à fila!',
     playAgainError: 'Não foi possível adicionar a música à fila.',
     swipeToDelete: 'Deslize para excluir',
-    reorderHint: 'Mantenha pressionado e arraste para reordenar',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Adicionado ao Jukebox',
+    reorderHint: 'Mantenha pressionado e arraste para reordenar'
   },
 
   mobileNav: {
@@ -474,6 +472,13 @@ export const mobileTranslations = {
     scanHint: 'Escaneie o código QR na tela principal',
     letsGo: 'Vamos!',
   },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Digite uma mensagem...',
+    send: 'Enviar',
+    noMessages: 'Nenhuma mensagem ainda',
+    host: 'Anfitrião',
+  },
 
   mobilePreview: {
     preview: 'Pré-visualização',
@@ -496,5 +501,17 @@ export const mobileTranslations = {
     cameraUnavailable: 'Câmara não disponível',
     retake: 'Tirar novamente',
     noResults: 'Sem resultados para mostrar',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: 'Primeiros Passos', description: 'Cante sua primeira música' },
+    risingStar: { title: 'Estrela Nascente', description: 'Cante 10 músicas' },
+    veteran: { title: 'Veterano', description: 'Cante 50 músicas' },
+    perfectionist: { title: 'Perfeccionista', description: 'Obtenha uma pontuação perfeita (95%+)' },
+    flawless: { title: 'Impecável', description: 'Obtenha 5 pontuações perfeitas' },
+    scoreMaster: { title: 'Mestre da Pontuação', description: 'Alcance 10.000 pontos no total' },
+    playlistBuilder: { title: 'Construtor de Playlist', description: 'Adicione 5 músicas à fila' },
+    genreExplorer: { title: 'Explorador de Gêneros', description: 'Cante músicas de 3 gêneros' },
   },
 };

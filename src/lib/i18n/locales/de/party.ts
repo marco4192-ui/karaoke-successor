@@ -2,6 +2,10 @@
 // Auto-split from monolithic locale file
 
 export const partyTranslations = {
+  partyHelpers: {
+    defaultMicName: 'Mikrofon {n}',
+  },
+
   party: {
     title: 'Party-Spiele',
     subtitle: 'Wähle einen Spielmodus für deine Party!',
@@ -29,7 +33,8 @@ export const partyTranslations = {
     rateMySongTitle: 'Rate my Song',
     rateMySongDesc: 'Singe einen Song und lass deine Freunde deine Leistung bewerten! Solo, Duell oder Duett-Modus.',
     onlineMultiplayerTitle: 'Online Multiplayer',
-    onlineMultiplayerDesc: 'Spiele gegen Freunde oder finde Gegner online! Erstelle Räume, trete Matches bei und trete global an!'
+    onlineMultiplayerDesc: 'Spiele gegen Freunde oder finde Gegner online! Erstelle Räume, trete Matches bei und trete global an!',
+    newBadge: 'NEU'
   },
 
   partySetup: {
@@ -54,7 +59,6 @@ export const partyTranslations = {
     mic2: 'Mikrofon 2',
     mic: 'Mikrofon {n}',
     songTooShortCptm: 'Song zu kurz für Companion Pass-the-Mic.',
-    defaultMicName: 'Standard',
   },
 
   partyGameScreens: {
@@ -133,7 +137,10 @@ export const partyTranslations = {
     handOverMic: 'Gib das Mikro weiter an :)',
     cumulative: 'Gesamt: {n}',
     roundsPlayed: '{n} Runden gespielt',
-    medleyLabel: '🎵 Medley — {n} Lieder'
+    medleyLabel: '🎵 Medley — {n} Lieder',
+    micIssueTitle: 'Mikrofon-Problem',
+    micIssueDesc: 'Pitch-Erkennung konnte nicht initialisiert werden. Die Wertung wird für diese Runde deaktiviert. Überprüfe deine Mikrofon-Berechtigungen und versuche es erneut.',
+    medleySongTitle: 'Medley ({n} Songs)'
   },
 
   matchAbort: {
@@ -265,7 +272,6 @@ export const partyTranslations = {
     eliminationOrder: 'Eliminierungs-Reihenfolge',
     noLyrics: 'Keine Lyrics',
     player: 'Spieler {n}',
-    playerFallback: 'Spieler',
     // #2 Song Voting
     voteTitle: '🗳️ Stimmt für den nächsten Song!',
     voteSubtitle: 'Alle Spieler wählen, welcher Song gesungen wird',
@@ -283,10 +289,6 @@ export const partyTranslations = {
     noRepeatCount: 'Letzte {n} Songs merken',
     // #4 Grand Finale
     grandFinale: 'DIE LETZTEN ZWEI',
-    grandFinaleSubtitle: 'Die letzten Zwei',
-    versus: 'GEGEN',
-    vsText: 'VS',
-    eliminatedLabel: 'Eliminiert',
     grandFinaleLabel: 'Grand-Finale-Format',
     grandFinaleRound: 'Finalrunde {n}',
     bestOf: 'Best of {n}',
@@ -424,6 +426,9 @@ export const partyTranslations = {
     clickSongToPlay: 'Klicke auf einen Song, um zu starten!',
     // Song too short (CPTM)
     songTooShortCptm: 'Song zu kurz für Companion Pass-the-Mic.',
+    errorMaxPlayers: 'Maximal {n} Spieler erlaubt',
+    errorMinPlayers: 'Mindestens {n} Spieler erforderlich',
+    companionBadge: 'Companion',
   },
 
   // Extended descriptions for game modes
@@ -438,6 +443,20 @@ export const partyTranslations = {
     blind: ['🙈 Ganze musikalische Passagen verschwinden (Strophe/Refrain/Bridge)', '🧠 Singe aus dem Gedächtnis ohne Noten-Hilfe', '🆘 Erste Strophe immer sichtbar als Orientierungshilfe', '🔥 HARDCORE: Wenn Noten sichtbar → Text versteckt (und umgekehrt)', '📈 Steigende Schwierigkeit: Häufigkeit wächst pro Runde', '👥 Solo, Kooperativ oder Kompetitiv (2–4 Spieler)', '🏆 Swiss-System Pairing für faire Runden'],
     missingWords: ['📝 Wörter oder ganze Textpassagen verschwinden', '🎤 Die erste Strophe bleibt immer sichtbar als Anhaltspunkt', '🎯 3 Versteck-Modi: Wörter, Passagen oder Beides', '🔥 Hardcore: Versteckte Wörter bleiben bis zum Ende verborgen', '📈 Steigende Schwierigkeit: Häufigkeit wächst pro Runde', '⭐ Erweiterte Bonusse: Streak, Perfect, Comeback', '👥 Solo, Kooperativ oder Kompetitiv (2–4 Spieler)', '🏆 Swiss-System Pairing für faire Runden'],
     rateMySong: ['🎤 Singe einen Song deiner Wahl', '⭐ 4 Bewertungskategorien mit gewichtetem Gesamtergebnis', '🎯 Challenges & Tipps für extra Spaß', '🏆 Ränge, Achievements & Hall of Fame', '📊 Multi-Round-Serien mit Gesamtwertung'],
+  },
+
+  // Game mode titles and descriptions
+  gameModes: {
+    'passTheMic': { title: 'Pass the Mic', description: 'Wechsle dich beim Singen ab!' },
+    'companionSingalong': { title: 'Companion Sing-A-Long', description: 'Dein Handy leuchtet zufällig auf — sing wenn es blinkt!' },
+    'companionPassTheMic': { title: 'Companion Pass the Mic', description: 'Sing Segmente über dein Handy — Blinken warnt vor deinem Einsatz!' },
+    'medley': { title: 'Medley Contest', description: 'FFA oder Team-Modus — singe zufällige Song-Snippets!' },
+    'tournament': { title: 'Turnier-Modus', description: 'Einfache Elimination — Sudden Death!' },
+    'battleRoyale': { title: 'Battle Royale', description: 'Alle singen zusammen — der schlechteste Score scheidet jede Runde aus! Bis zu 24 Spieler (4 Mikrofon + 20 Companion)' },
+    'duel': { title: 'Duell-Modus', description: 'Zwei Spieler treten gegeneinander an!' },
+    'blind': { title: 'Blind Karaoke', description: 'Musikalische Passagen werden blind! Solo, Kooperativ oder Kompetitiv.' },
+    'missingWords': { title: 'Missing Words', description: 'Wörter oder Passagen verschwinden! Solo, Kooperativ oder Kompetitiv.' },
+    'rateMySong': { title: 'Rate my Song', description: 'Singe einen Song und lass Freunde deine Leistung bewerten!' },
   },
 
   // Game mode setting labels (where needed in unified setup)
@@ -471,5 +490,80 @@ export const partyTranslations = {
     challengesDesc: 'Zufällige Challenges vor jeder Runde',
     betting: 'Tippen',
     bettingDesc: 'Publikum kann vorhersagen',
+    // Companion Sing-Along
+    minTurnDuration: 'Min. Runden-Dauer',
+    maxTurnDuration: 'Max. Runden-Dauer',
+    // Medley
+    '1v1Snippets': '1v1 (5 Snippets)',
+    '2v2Snippets': '2v2 (4 Snippets)',
+    // Tournament
+    bracketSize: 'Bracket-Größe',
+    bracket2: '2 — Duell',
+    bracket4: '4 Spieler',
+    bracket8: '8 Spieler',
+    bracket16: '16 Spieler',
+    bracket32: '32 Spieler',
+    shortMode: 'Kurz-Modus',
+    shortModeDesc: 'Jedes Match dauert nur 60 Sekunden',
+    singleElimination: 'Einfache Elimination',
+    doubleElimination: 'Doppelte Elimination',
+    coinFlip: 'Münzwurf',
+    accuracy: 'Genauigkeit',
+    maxCombo: 'Max. Combo',
+    goldenMic: 'Golden Mic',
+    random: 'Zufällig',
+    vote: 'Abstimmung',
+    byStrength: 'Nach Stärke',
+    // Battle Royale
+    roundDuration: 'Runden-Dauer',
+    finalRoundDuration: 'Finalrunden-Dauer',
+    medleyMode: 'Medley-Modus',
+    medleyModeDesc: 'Mehrere Song-Snippets pro Runde',
+    normalFinal: 'Normal',
+    bestOf3: 'Best of 3',
+    bestOf5: 'Best of 5',
+    bountySystem: 'Kopfgeld-System',
+    bountySystemDesc: 'Score-Multiplikator für die Jagd auf den Führenden',
+    bountyMultiplier: 'Kopfgeld-Multiplikator',
+    escalatingDifficulty: 'Steigende Schwierigkeit',
+    escalatingDifficultyDesc: 'Schwierigkeit steigt alle 3 Runden',
+    shrinkingTimer: 'Schrumpfender Timer',
+    shrinkingTimerDesc: 'Runden werden über Zeit kürzer',
+    noRepeatProtection: 'No-Repeat-Schutz',
+    noRepeatProtectionDesc: 'Kürzlich gespielte Songs verhindern',
+    // Blind
+    blindLight: 'Leicht (15%)',
+    blindNormal: 'Normal (30%)',
+    blindHard: 'Schwer (60%)',
+    blindInsane: 'Wahnsinn (90%)',
+    hardcoreMode: 'Hardcore-Modus',
+    hardcoreModeDesc: 'Text versteckt wenn Noten sichtbar, und umgekehrt',
+    escalating: 'Steigernd',
+    escalatingDesc: 'Häufigkeit erhöht sich jede Runde',
+    '1Round': '1 Runde',
+    bestOf7: 'Best of 7',
+    // Missing Words
+    mwLight: 'Leicht (15%)',
+    mwNormal: 'Normal (30%)',
+    mwHard: 'Schwer (60%)',
+    mwInsane: 'Wahnsinn (90%)',
+    mwWords: 'Wörter',
+    mwPassages: 'Passagen',
+    mwBoth: 'Beides',
+    mwHardcoreMode: 'Hardcore-Modus',
+    mwHardcoreModeDesc: 'Versteckte Wörter bleiben bis zum Ende des Liedes verborgen',
+    mwEscalating: 'Steigernd',
+    mwEscalatingDesc: 'Häufigkeit erhöht sich jede Runde',
+  },
+
+  tournament: {
+    score: 'Punkte: {n}',
+    accuracy: 'Genauigkeit: {n}',
+    vs: 'GEGEN',
+    type: 'Turnier-Typ',
+    tiebreak: 'Tiebreak-Regel',
+    dynamicDifficulty: 'Dynamische Schwierigkeit',
+    songSelection: 'Song-Auswahl',
+    seeding: 'Setzung',
   },
 };

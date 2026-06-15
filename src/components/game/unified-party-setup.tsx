@@ -79,8 +79,8 @@ export function UnifiedPartySetup({
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={onBack} className="text-white/60 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none" data-testid="party-setup-back-button">{t('unifiedSetup.back')}</Button>
           <div>
-            <h1 className="text-3xl font-bold">{config.icon} {config.title}</h1>
-            <p className="text-white/60">{config.description}</p>
+            <h1 className="text-3xl font-bold">{config.icon} {config.titleKey ? t(config.titleKey) : config.title}</h1>
+            <p className="text-white/60">{config.descriptionKey ? t(config.descriptionKey) : config.description}</p>
           </div>
         </div>
 

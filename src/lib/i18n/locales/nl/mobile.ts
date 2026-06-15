@@ -158,9 +158,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Nummer toegevoegd aan de wachtrij!',
     playAgainError: 'Kon nummer niet toevoegen aan de wachtrij.',
     swipeToDelete: 'Veeg om te verwijderen',
-    reorderHint: 'Lang indrukken en slepen om te herschikken',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Toegevoegd aan Jukebox',
+    reorderHint: 'Lang indrukken en slepen om te herschikken'
   },
 
   mobileNav: {
@@ -474,6 +472,13 @@ export const mobileTranslations = {
     scanHint: 'Scan de QR-code op het hoofdscherm',
     letsGo: 'Let\'s Go!',
   },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Typ een bericht...',
+    send: 'Verstuur',
+    noMessages: 'Nog geen berichten',
+    host: 'Host',
+  },
 
   mobilePreview: {
     preview: 'Voorbeeld',
@@ -496,5 +501,17 @@ export const mobileTranslations = {
     cameraUnavailable: 'Camera niet beschikbaar',
     retake: 'Opnieuw',
     noResults: 'Geen resultaten om te tonen',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: 'Eerste stappen', description: 'Zing je eerste nummer' },
+    risingStar: { title: 'Rijzende ster', description: 'Zing 10 nummers' },
+    veteran: { title: 'Veteraan', description: 'Zing 50 nummers' },
+    perfectionist: { title: 'Perfectionist', description: 'Behaal een perfecte score (95%+)' },
+    flawless: { title: 'Flawless', description: 'Behaal 5 perfecte scores' },
+    scoreMaster: { title: 'Scoremeester', description: 'Bereik 10.000 punten totaal' },
+    playlistBuilder: { title: 'Afspeellijstbouwer', description: 'Zet 5 nummers in de wachtrij' },
+    genreExplorer: { title: 'Genre-verkenner', description: 'Zing nummers uit 3 genres' },
   },
 };

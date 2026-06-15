@@ -85,8 +85,8 @@ export const medleyTournamentTranslations = {
     great: 'Great!',
     good: 'Good',
     miss: 'Miss!',
-    combo: '{combo}x COMBO!',
-    megaCombo: '{combo}x MEGA COMBO!',
+    combo: 'COMBO',
+    megaCombo: 'MEGA COMBO!',
     scoreBreakdown: 'Score Breakdown',
     basePoints: 'Base Points',
     comboBonus: 'Combo Bonus',
@@ -371,7 +371,7 @@ export const medleyTournamentTranslations = {
     performances: 'Performances',
     avgRating: 'Avg. Rating',
     bestRating: 'Best Rating',
-    achievements: 'Achievements',
+    achievementsLabel: 'Achievements',
     newAchievement: 'New Achievement!',
     songSuggestions: 'Similar Songs',
     trend: 'Trend',
@@ -396,5 +396,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'INCREDIBLE PERFORMANCE!',
     genreStats: 'Genre Statistics',
     wallOfFame: 'Wall of Fame',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Sing with an Accent', description: 'Put on your best fake accent for the entire song' },
+      silentMinute: { title: 'Silent Minute', description: 'Stop singing for 10 seconds in the middle, keep performing' },
+      danceBreak: { title: 'Dance Break', description: 'Do at least 3 dance moves during the song' },
+      phoneSinger: { title: 'Phone Singer', description: "Sing like you're recording a TikTok with your phone" },
+      supermarketStyle: { title: 'Supermarket Style', description: "Perform as if you're casually singing while grocery shopping" },
+      tempoSwitch: { title: 'Tempo Switch', description: 'Start slow, go super fast in the middle, slow again' },
+      smirkMode: { title: 'Smirk Mode', description: 'Keep a confident smirk on your face the ENTIRE time' },
+      airGuitarSolo: { title: 'Air Guitar Solo', description: 'Do an air guitar solo during any instrumental part' },
+      micDrop: { title: 'Mic Drop', description: 'End the song with a dramatic mic drop pose' },
+      divaMode: { title: 'Diva Mode', description: 'Sing with maximum drama, hand gestures, and hair flips' },
+      whisperStart: { title: 'Whisper Start', description: 'Start the first 15 seconds whispering, then go full power' },
+      operaStyle: { title: 'Opera Style', description: 'Sing as overdramatically as an opera singer' },
+      discoFever: { title: 'Disco Fever', description: 'Add disco dance moves at every chorus' },
+      emotionalRollercoaster: { title: 'Emotional Rollercoaster', description: 'Switch between crying and laughing expressions' },
+      countryTwist: { title: 'Country Twist', description: 'Add a country accent and yee-haw gestures' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'First Performance', description: 'Complete 1 performance' },
+      goldenVoice: { name: 'Golden Voice', description: 'Get a rating >= 9.0' },
+      crowdFavorite: { name: 'Crowd Favorite', description: 'Get rated by 10+ different audience members total' },
+      allRounder: { name: 'All-Rounder', description: 'Perform in 5+ different genres' },
+      perfectionist: { name: 'Perfectionist', description: 'Get a rating >= 9.5' },
+      stageAnimal: { name: 'Stage Animal', description: '20+ performances' },
+      centurion: { name: 'Centurion', description: '100+ total audience ratings received' },
+      comebackKid: { name: 'Comeback Kid', description: 'Rating improves by 3+ points from worst to best' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Newcomer',
+      openMic: 'Open Mic',
+      regular: 'Regular',
+      star: 'Star',
+      superstar: 'Superstar',
+      legend: 'Legend',
+    },
+
+    awards: 'Awards',
   },
 };

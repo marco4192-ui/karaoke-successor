@@ -27,51 +27,21 @@ interface UseGlobalRemoteControlProps {
 
 /**
  * Move focus between interactive elements on the main app, simulating
- * arrow-key navigation. When the active element is an input/textarea/select,
- * ArrowDown blurs it first so focus can move to the results grid.
- * Also dispatches a keyboard event on the active element so that components
- * with their own keyboard handlers (e.g. useRovingFocus for grids) can respond.
+ * arrow-key navigation similar to Windows File Explorer.
  */
 function dispatchDirectionalKey(key: string) {
-  const active = document.activeElement as HTMLElement;
-
-  // Blur inputs/textareas/selects on ArrowDown/Up so focus moves to results.
-  // This is critical for the companion's "focus_search" → type → ArrowDown
-  // workflow: the search input loses focus and the next focusable element
-  // (a song card or queue item) receives focus.
-  if (
-    (key === 'ArrowDown' || key === 'ArrowUp') &&
-    active &&
-    (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')
-  ) {
-    active.blur();
-  }
-
-  // Dispatch a keyboard event on the (formerly) active element so that
-  // components with their own keyboard handlers (like useRovingFocus grids)
-  // can handle the arrow key. They call preventDefault() to signal handling.
-  const activeForEvent = document.activeElement as HTMLElement;
-  if (activeForEvent) {
-    const evt = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-    activeForEvent.dispatchEvent(evt);
-    // If the component handled it (preventDefault), we're done.
-    if (evt.defaultPrevented) return;
-  }
-
-  // Generic fallback: find next/prev focusable element.
-  // NOTE: We include ALL elements with tabindex (even -1) because
-  // useRovingFocus sets non-focused grid items to tabindex=-1.
-  const focusableSelector = 'button:not([disabled]), [role="button"], input:not([disabled]), select:not([disabled]), a:not([disabled]), [tabindex]';
+  const focusableSelector = 'button:not([disabled]), [role="button"], input, select, a, [tabindex]:not([tabindex="-1"])';
   const focusable = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector))
     .filter(el => {
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return false;
+      // Only consider elements visible in the current viewport
       return rect.top < window.innerHeight && rect.bottom > 0 && rect.left < window.innerWidth && rect.right > 0;
     });
 
   if (focusable.length === 0) return;
-  const currentActive = document.activeElement as HTMLElement;
-  const currentIndex = focusable.indexOf(currentActive);
+  const active = document.activeElement as HTMLElement;
+  const currentIndex = focusable.indexOf(active);
 
   if (key === 'ArrowDown' || key === 'ArrowUp') {
     let nextIndex: number;
@@ -88,7 +58,7 @@ function dispatchDirectionalKey(key: string) {
     if (currentIndex === -1) {
       focusable[0]?.focus();
     } else {
-      const activeRect = currentActive.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
       const activeCenterY = activeRect.top + activeRect.height / 2;
       let bestIndex = -1;
       let bestDist = Infinity;
@@ -106,6 +76,7 @@ function dispatchDirectionalKey(key: string) {
         }
       });
       if (bestIndex === -1) {
+        // Fallback: move to next/previous
         const nextIndex = key === 'ArrowRight'
           ? (currentIndex + 1) % focusable.length
           : (currentIndex - 1 + focusable.length) % focusable.length;
@@ -117,11 +88,14 @@ function dispatchDirectionalKey(key: string) {
       }
     }
   } else if (key === 'Enter') {
-    if (currentActive && (currentActive.tagName === 'BUTTON' || currentActive.getAttribute('role') === 'button' || currentActive.tagName === 'A' || currentActive.tagName === 'INPUT')) {
-      if (currentActive.tagName === 'BUTTON' || currentActive.getAttribute('role') === 'button' || currentActive.tagName === 'A') {
-        currentActive.click();
+    // Activate the currently focused element
+    if (active && (active.tagName === 'BUTTON' || active.getAttribute('role') === 'button' || active.tagName === 'A' || active.tagName === 'INPUT')) {
+      if (active.tagName === 'BUTTON' || active.getAttribute('role') === 'button' || active.tagName === 'A') {
+        active.click();
       }
+      // For inputs, focus is already on them
     } else if (focusable.length > 0) {
+      // If nothing focused, focus the first element
       focusable[0]?.focus();
     }
   }

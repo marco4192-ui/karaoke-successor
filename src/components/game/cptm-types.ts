@@ -25,8 +25,6 @@ export interface CptmSegment {
   startTime: number;
   endTime: number;
   playerId: string | null;
-  /** Total scoring ticks in this segment (used for PTM per-segment normalization). */
-  totalTicks: number;
 }
 
 export interface CptmSettings {

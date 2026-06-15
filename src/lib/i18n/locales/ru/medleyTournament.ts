@@ -147,6 +147,8 @@ export const medleyTournamentTranslations = {
     surprise: 'Сюрприз',
     shareResult: 'Поделиться результатом',
     shareText: 'Музыкальное караоке-приложение',
+    shareWinner: 'Победитель: {name} ({score} {pts})',
+    shareBestCombo: 'Лучшая комбо: {n}x',
     copied: 'Скопировано в буфер обмена!',
     flopComment: 'Удачи в следующий раз...',
     // Feature #18: Team Bonuses
@@ -167,6 +169,9 @@ export const medleyTournamentTranslations = {
     // Feature #17: Additional
     ofSong: 'из: {title}',
     comboOnSong: 'на: {title}',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'Фрагменты',
+    localMicShort: 'Локальный',
   },
 
   tournament: {
@@ -364,7 +369,7 @@ export const medleyTournamentTranslations = {
     performances: 'Выступления',
     avgRating: 'Ср. оценка',
     bestRating: 'Лучшая оценка',
-    achievements: 'Достижения',
+    achievementsLabel: 'Достижения',
     newAchievement: 'Новое достижение!',
     songSuggestions: 'Похожие песни',
     trend: 'Тренд',
@@ -389,5 +394,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'НЕВЕРОЯТНОЕ ВЫСТУПЛЕНИЕ!',
     genreStats: 'Статистика по жанрам',
     wallOfFame: 'Стена славы',
+    scoreLabel: 'Счёт: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Спойте с акцентом', description: 'Используйте лучший фальшивый акцент на всю песню' },
+      silentMinute: { title: 'Тихая минута', description: 'Перестаньте петь на 10 секунд в середине, но продолжайте выступать' },
+      danceBreak: { title: 'Танцевальный перерыв', description: 'Сделайте хотя бы 3 танцевальных движения во время песни' },
+      phoneSinger: { title: 'Певец с телефона', description: 'Пойте так, будто снимаете TikTok на телефон' },
+      supermarketStyle: { title: 'Стиль супермаркета', description: 'Выступайте так, будто поёте в магазине за покупками' },
+      tempoSwitch: { title: 'Смена темпа', description: 'Начните медленно, затем очень быстро в середине, снова медленно' },
+      smirkMode: { title: 'Режим ухмылки', description: 'Держите уверенную ухмылку на лице ВСЁ время' },
+      airGuitarSolo: { title: 'Соло на воображаемой гитаре', description: 'Сыграйте соло на воображаемой гитаре во время инструментальной части' },
+      micDrop: { title: 'Бросок микрофона', description: 'Завершите песню драматичным броском микрофона' },
+      divaMode: { title: 'Режим дивы', description: 'Пойте с максимальной драмой, жестами и взмахами волос' },
+      whisperStart: { title: 'Шёпот в начале', description: 'Начните первые 15 секунд шёпотом, затем на полную мощность' },
+      operaStyle: { title: 'Оперный стиль', description: 'Пойте максимально театрально, как оперный певец' },
+      discoFever: { title: 'Диско-лихорадка', description: 'Добавьте танцевальные движения диско в каждом припеве' },
+      emotionalRollercoaster: { title: 'Эмоциональные качели', description: 'Чередуйте выражения плача и смеха' },
+      countryTwist: { title: 'Кантри-перчёж', description: 'Добавьте кантри-акцент и жесты «и-хау»' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'Первое выступление', description: 'Выполните 1 выступление' },
+      goldenVoice: { name: 'Золотой голос', description: 'Получите оценку >= 9.0' },
+      crowdFavorite: { name: 'Любимец публики', description: 'Получите оценки от 10+ различных зрителей' },
+      allRounder: { name: 'Универсал', description: 'Выступите в 5+ различных жанрах' },
+      perfectionist: { name: 'Перфекционист', description: 'Получите оценку >= 9.5' },
+      stageAnimal: { name: 'Сценический зверь', description: '20+ выступлений' },
+      centurion: { name: 'Центурион', description: 'Получите 100+ оценок от зрителей' },
+      comebackKid: { name: 'Король камбэка', description: 'Улучшение оценки на 3+ пункта от худшей к лучшей' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Новичок',
+      openMic: 'Открытый микрофон',
+      regular: 'Постоянный',
+      star: 'Звезда',
+      superstar: 'Суперзвезда',
+      legend: 'Легенда',
+    },
+
+    awards: 'Награды',
   },
 };

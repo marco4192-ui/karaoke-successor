@@ -2,6 +2,16 @@
 // Auto-split from monolithic locale file
 
 export const libraryTranslations = {
+  ai: {
+    metadataEnrich: {
+      serverError: 'Server error ({status})',
+      networkError: 'Could not reach AI service',
+    },
+    lyricsAssistant: {
+      analyzeFailed: 'Failed to analyze lyrics',
+    },
+  },
+
   library: {
     title: 'Music Library',
     songsAvailable: 'songs available',
@@ -27,7 +37,30 @@ export const libraryTranslations = {
     groupTitle: 'Title',
     groupGenre: 'Genre',
     groupLanguage: 'Language',
-    groupFolder: 'Folder'
+    groupFolder: 'Folder',
+    songSelection: 'Song selection',
+
+    scanProgress: {
+      scanning: 'Scanning folder...',
+      folderScanningDesktopOnly: 'Folder scanning is only available in the desktop app.',
+      foundSongs: 'Found {n} songs, importing...',
+      importing: 'Importing {current}/{total}...',
+      scanningAdditional: 'Scanning additional source: {source}...',
+      importSuccess: 'Successfully imported {n} songs!',
+      noSongsFound: 'No songs found in the selected folder.',
+      scanFailed: 'Scan failed: {error}',
+      pleaseEnterPath: 'Please enter a folder path first.',
+      folderPickerDesktopOnly: 'Folder picker is only available in the desktop app.',
+      couldNotOpenPicker: 'Could not open folder picker.',
+      confirmResetLibrary: 'Are you sure you want to reset the song library? This will remove all imported songs.',
+      confirmClearAllData: 'WARNING: This will delete ALL data including songs, profiles, highscores, and settings. This cannot be undone!',
+      typeDeleteConfirm: 'Type "DELETE" to confirm complete data reset:',
+    },
+  },
+
+  queueScreen: {
+    songNotFound: 'Song "{song}" not found in local library',
+    noMediaSkip: 'No media found for "{song}" — skipping',
   },
 
   libraryFilters: {
@@ -53,6 +86,17 @@ export const libraryTranslations = {
     groupLanguage: 'Language',
     groupFolder: 'Folder',
     all: 'All'
+  },
+
+  playlists: {
+    favorites: '⭐ Favorites',
+    favoritesDesc: 'Your favorite songs',
+    recentlyPlayed: '🕐 Recently Played',
+    recentlyPlayedDesc: 'Songs you played recently',
+    mostPlayed: '🔥 Most Played',
+    mostPlayedDesc: 'Your most played songs',
+    maxPlaylistsReached: 'Maximum number of playlists ({n}) reached',
+    maxSongsReached: 'Maximum songs per playlist ({n}) reached',
   },
 
   libraryPlaylist: {
@@ -108,7 +152,6 @@ export const libraryTranslations = {
   },
 
   songCard: {
-    duet: 'Duet',
     viral: 'Viral',
     video: 'Video'
   },
@@ -414,6 +457,8 @@ export const libraryTranslations = {
       notes: 'Notes:',
       lines: 'Lines:',
       file: 'File:',
+      player1: 'Player 1',
+      player2: 'Player 2',
     },
 
     // Metadata tab
@@ -432,6 +477,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Player 1 Name',
       duetPlayer2: '#P2: (Duet Player 2)',
       duetPlayer2Placeholder: 'Player 2 Name',
+      tagsPlaceholder: 'tag1, tag2, tag3',
     },
 
     // Lyrics tab
@@ -561,6 +607,8 @@ export const libraryTranslations = {
       suggestions: 'Suggestions ({count})',
       acceptAll: 'Accept All',
       aiTip: 'Tip: AI suggestions are always just aids. Check all changes before saving.',
+      failed: 'Failed',
+      networkError: 'Network error',
     },
 
     // Timeline

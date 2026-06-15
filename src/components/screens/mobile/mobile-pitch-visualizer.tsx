@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { useTranslation } from '@/lib/i18n/translations';
 import type { PitchData } from './mobile-types';
 
 interface MobilePitchVisualizerProps {
@@ -58,7 +57,6 @@ function getGlowColor(cents: number): string {
 }
 
 export function MobilePitchVisualizer({ pitchHistory, isListening }: MobilePitchVisualizerProps) {
-  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -200,7 +198,7 @@ export function MobilePitchVisualizer({ pitchHistory, isListening }: MobilePitch
         ctx.font = '13px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(t('mobilePitchVisualizer.startSinging'), width / 2, midY - 14);
+        ctx.fillText('Start singing...', width / 2, midY - 14);
 
         // Small microphone icon hint
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
@@ -262,7 +260,7 @@ export function MobilePitchVisualizer({ pitchHistory, isListening }: MobilePitch
       className="w-full h-40 mt-4"
       style={{ touchAction: 'none' }}
       role="img"
-      aria-label={t('mobilePitchVisualizer.ariaPitchHistory')}
+      aria-label="Pitch history visualization"
     >
       <canvas
         ref={canvasRef}

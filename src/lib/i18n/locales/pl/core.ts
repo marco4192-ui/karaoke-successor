@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Szukaj',
     filter: 'Filtr',
     sort: 'Sortuj',
-    refresh: 'Odśwież'
+    refresh: 'Odśwież',
+    player: 'Gracz',
   },
 
   dialogs: {
@@ -290,4 +291,101 @@ export const coreTranslations = {
     description: 'Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.',
     tryAgain: 'Spróbuj ponownie',
   },
+
+  // --- Countries ---
+  countries: {
+  "germany": "Niemcy",
+  "austria": "Austria",
+  "switzerland": "Szwajcaria",
+  "unitedStates": "Stany Zjednoczone",
+  "unitedKingdom": "Wielka Brytania",
+  "france": "Francja",
+  "italy": "Włochy",
+  "spain": "Hiszpania",
+  "netherlands": "Holandia",
+  "poland": "Polska",
+  "japan": "Japonia",
+  "southKorea": "Korea Południowa",
+  "australia": "Australia",
+  "canada": "Kanada",
+  "brazil": "Brazylia",
+  "mexico": "Meksyk"
+},
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+  "badges": {
+    "firstChallenge": {
+      "name": "Pierwsze kroki",
+      "description": "Ukończ swoje pierwsze codzienne wyzwanie"
+    },
+    "weekWarrior": {
+      "name": "Wojownik tygodnia",
+      "description": "Utrzymaj serię 7 dni"
+    },
+    "fortnightFighter": {
+      "name": "Bojownik dwóch tygodni",
+      "description": "Utrzymaj serię 14 dni"
+    },
+    "monthlyMaster": {
+      "name": "Mistrz miesiąca",
+      "description": "Utrzymaj serię 30 dni"
+    },
+    "podiumFinish": {
+      "name": "Miejsce na podium",
+      "description": "Zajmij miejsce w top 3"
+    },
+    "dailyChampion": {
+      "name": "Dzienny mistrz",
+      "description": "Wygraj codzienne wyzwanie"
+    },
+    "dedicatedSinger": {
+      "name": "Oddany piosenkarz",
+      "description": "Ukończ 30 codziennych wyzwań"
+    },
+    "legendaryStatus": {
+      "name": "Legendarny status",
+      "description": "Zdobądź 10 000 XP łącznie"
+    },
+    "centuryChampion": {
+      "name": "Stuletni mistrz",
+      "description": "Utrzymaj serię 100 dni"
+    },
+    "yearlyLegend": {
+      "name": "Roczna legenda",
+      "description": "Utrzymaj serię 365 dni"
+    }
+  },
+  "quests": {
+    "dailyDouble": {
+      "name": "Podwójny dzienny",
+      "description": "Ukończ 2 codzienne wyzwania"
+    },
+    "perfectTen": {
+      "name": "Idealna dziesiątka",
+      "description": "Traf w 10 idealnych nut"
+    },
+    "challengeExplorer": {
+      "name": "Odkrywca wyzwań",
+      "description": "Zagraj w 5 trybów wyzwań"
+    },
+    "songbird": {
+      "name": "Śpiewający ptak",
+      "description": "Ukończ 10 utworów"
+    },
+    "weeklyWarrior": {
+      "name": "Wojownik tygodnia",
+      "description": "Ukończ 3 tygodniowe wyzwania"
+    }
+  },
+  "streakMilestones": {
+    "weekWarrior": "Wojownik tygodnia",
+    "fortnightFighter": "Bojownik dwóch tygodni",
+    "monthlyMaster": "Mistrz miesiąca",
+    "biMonthlyBoss": "Boss dwóch miesięcy",
+    "centuryChampion": "Stuletni mistrz",
+    "yearlyLegend": "Roczna legenda"
+  }
+},
+
 };

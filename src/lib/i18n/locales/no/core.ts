@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Søk',
     filter: 'Filter',
     sort: 'Sorter',
-    refresh: 'Oppdater'
+    refresh: 'Oppdater',
+    player: 'Spiller',
   },
 
   dialogs: {
@@ -290,4 +291,101 @@ export const coreTranslations = {
     description: 'En uventet feil oppstod. Prøv å laste inn siden på nytt.',
     tryAgain: 'Prøv igjen',
   },
+
+  // --- Countries ---
+  countries: {
+  "germany": "Tyskland",
+  "austria": "Østerrike",
+  "switzerland": "Sveits",
+  "unitedStates": "USA",
+  "unitedKingdom": "Storbritannia",
+  "france": "Frankrike",
+  "italy": "Italia",
+  "spain": "Spania",
+  "netherlands": "Nederland",
+  "poland": "Polen",
+  "japan": "Japan",
+  "southKorea": "Sør-Korea",
+  "australia": "Australia",
+  "canada": "Canada",
+  "brazil": "Brasil",
+  "mexico": "Mexico"
+},
+
+  // --- Daily Challenge (new keys) ---
+  dailyChallenge: {
+  "badges": {
+    "firstChallenge": {
+      "name": "Første skritt",
+      "description": "Gjennomfør din første daglige utfordring"
+    },
+    "weekWarrior": {
+      "name": "Ukekriger",
+      "description": "Hold en 7-dagers rekke"
+    },
+    "fortnightFighter": {
+      "name": "Fjorten-dagerskriger",
+      "description": "Hold en 14-dagers rekke"
+    },
+    "monthlyMaster": {
+      "name": "Månedsmester",
+      "description": "Hold en 30-dagers rekke"
+    },
+    "podiumFinish": {
+      "name": "Plassering",
+      "description": "Topp 3 i daglig utfordring"
+    },
+    "dailyChampion": {
+      "name": "Dagens mester",
+      "description": "Vinn en daglig utfordring"
+    },
+    "dedicatedSinger": {
+      "name": "Dedikert sanger",
+      "description": "Gjennomfør 30 daglige utfordringer"
+    },
+    "legendaryStatus": {
+      "name": "Legendarisk status",
+      "description": "Nå 10 000 XP totalt"
+    },
+    "centuryChampion": {
+      "name": "Århundre-mester",
+      "description": "Hold en 100-dagers rekke"
+    },
+    "yearlyLegend": {
+      "name": "Årslegend",
+      "description": "Hold en 365-dagers rekke"
+    }
+  },
+  "quests": {
+    "dailyDouble": {
+      "name": "Daglig dobbel",
+      "description": "Gjennomfør 2 daglige utfordringer"
+    },
+    "perfectTen": {
+      "name": "Perfekte ti",
+      "description": "Treff 10 perfekte toner"
+    },
+    "challengeExplorer": {
+      "name": "Utforsker",
+      "description": "Spill 5 utfordringsmodi"
+    },
+    "songbird": {
+      "name": "Fugl",
+      "description": "Gjennomfør 10 sanger"
+    },
+    "weeklyWarrior": {
+      "name": "Ukekriger",
+      "description": "Gjennomfør 3 ukentlig utfordringer"
+    }
+  },
+  "streakMilestones": {
+    "weekWarrior": "Ukekriger",
+    "fortnightFighter": "Fjorten-dagerskriger",
+    "monthlyMaster": "Månedsmester",
+    "biMonthlyBoss": "To-månedsboss",
+    "centuryChampion": "Århundre-mester",
+    "yearlyLegend": "Årslegend"
+  }
+},
+
 };

@@ -406,6 +406,8 @@ export const libraryTranslations = {
       notes: 'Ноты:',
       lines: 'Строки:',
       file: 'Файл:',
+      player1: 'Игрок 1',
+      player2: 'Игрок 2',
     },
 
     // Metadata tab
@@ -424,6 +426,7 @@ export const libraryTranslations = {
       duetPlayer1Placeholder: 'Имя игрока 1',
       duetPlayer2: '#P2: (Игрок дуэта 2)',
       duetPlayer2Placeholder: 'Имя игрока 2',
+      tagsPlaceholder: 'тег1, тег2, тег3',
     },
 
     // Lyrics tab
@@ -553,6 +556,8 @@ export const libraryTranslations = {
       suggestions: 'Предложения ({count})',
       acceptAll: 'Принять все',
       aiTip: 'Подсказка: Предложения ИИ — это лишь подсказка. Проверьте все изменения перед сохранением.',
+      failed: 'Ошибка',
+      networkError: 'Сетевая ошибка',
     },
 
     // Timeline

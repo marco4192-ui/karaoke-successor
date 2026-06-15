@@ -147,6 +147,8 @@ export const medleyTournamentTranslations = {
     surprise: 'Surprise',
     shareResult: 'Partager le Résultat',
     shareText: 'Music Karaoke App',
+    shareWinner: 'Gagnant : {name} ({score} {pts})',
+    shareBestCombo: 'Meilleur Combo : {n}x',
     copied: 'Copié dans le presse-papiers !',
     flopComment: 'Meilleure chance la prochaine fois...',
     // Feature #18: Team Bonuses
@@ -167,6 +169,9 @@ export const medleyTournamentTranslations = {
     // Feature #17: Additional
     ofSong: 'de : {title}',
     comboOnSong: 'sur : {title}',
+    mysteryTitle: '🎰 ???',
+    snippetsShort: 'Extraits',
+    localMicShort: 'Local',
   },
 
   tournament: {
@@ -364,7 +369,7 @@ export const medleyTournamentTranslations = {
     performances: 'Performances',
     avgRating: 'Note Moy.',
     bestRating: 'Meilleure Note',
-    achievements: 'Succès',
+    achievementsLabel: 'Succès',
     newAchievement: 'Nouveau Succès !',
     songSuggestions: 'Chansons Similaires',
     trend: 'Tendance',
@@ -389,5 +394,49 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'PERFORMANCE INCROYABLE !',
     genreStats: 'Statistiques par Genre',
     wallOfFame: 'Mur de la Gloire',
+    scoreLabel: 'Score: {n}',
+
+    // Challenge i18n (camelCase keys)
+    challenges: {
+      accent: { title: 'Chanter avec un Accent', description: 'Mettez votre meilleur faux accent pendant toute la chanson' },
+      silentMinute: { title: 'Minute de Silence', description: 'Arrêtez de chanter pendant 10 secondes au milieu, continuez de performer' },
+      danceBreak: { title: 'Pause Danse', description: 'Faites au moins 3 mouvements de danse pendant la chanson' },
+      phoneSinger: { title: 'Chanteur de Téléphone', description: 'Chantez comme si vous filmiez un TikTok avec votre téléphone' },
+      supermarketStyle: { title: 'Style Supermarché', description: 'Performez comme si vous chantiez distraitement en faisant les courses' },
+      tempoSwitch: { title: 'Changement de Tempo', description: 'Commencez lentement, très vite au milieu, lentement à nouveau' },
+      smirkMode: { title: 'Mode Sourire', description: 'Gardez un sourire confiant sur votre visage TOUT le temps' },
+      airGuitarSolo: { title: 'Solo de Guitare Air', description: 'Faites un solo de guitare air pendant toute partie instrumentale' },
+      micDrop: { title: 'Mic Drop', description: 'Terminez la chanson avec une pose dramatique de mic drop' },
+      divaMode: { title: 'Mode Diva', description: 'Chantez avec un maximum de dramaturgie, gestes des mains et coupes de cheveux' },
+      whisperStart: { title: 'Début Chuchoté', description: 'Commencez les 15 premières secondes en chuchotant, puis à fond' },
+      operaStyle: { title: 'Style Opéra', description: 'Chantez aussi dramatiquement qu\'un chanteur d\'opéra' },
+      discoFever: { title: 'Fièvre Disco', description: 'Ajoutez des pas de danse disco à chaque refrain' },
+      emotionalRollercoaster: { title: 'Montagnes Russes Émotionnelles', description: 'Alternez entre expressions de pleurs et de rires' },
+      countryTwist: { title: 'Tournure Country', description: 'Ajoutez un accent country et des gestes yee-haw' },
+    },
+
+    // Achievement i18n (camelCase keys)
+    achievements: {
+      firstPerformance: { name: 'Première Performance', description: 'Complétez 1 performance' },
+      goldenVoice: { name: 'Voix Dorée', description: 'Obtenez une note >= 9.0' },
+      crowdFavorite: { name: 'Favori du Public', description: 'Soyez noté par 10+ membres du public différents au total' },
+      allRounder: { name: 'Polyvalent', description: 'Performez dans 5+ genres différents' },
+      perfectionist: { name: 'Perfectionniste', description: 'Obtenez une note >= 9.5' },
+      stageAnimal: { name: 'Bête de Scène', description: '20+ performances' },
+      centurion: { name: 'Centurion', description: '100+ notes du public reçues au total' },
+      comebackKid: { name: 'L\'Enfant du Retour', description: 'La note s\'améliore de 3+ points de la pire à la meilleure' },
+    },
+
+    // Rank names (camelCase keys)
+    ranks: {
+      newcomer: 'Nouveau',
+      openMic: 'Micro Ouvert',
+      regular: 'Régulier',
+      star: 'Étoile',
+      superstar: 'Superstar',
+      legend: 'Légende',
+    },
+
+    awards: 'Prix',
   },
 };

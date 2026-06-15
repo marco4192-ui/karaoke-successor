@@ -255,15 +255,6 @@ export function useMedleyGame({
     autoStart: false,
   });
 
-  // DO-NOT-CHANGE: useMultiPitchDetector returns a new object on every render
-  // (plain object literal).  If a useEffect depends on `multiPitch` directly,
-  // any internal state change (setIsInitialized, setErrors, …) triggers the
-  // cleanup which — in the countdown case — clears the countdown interval and
-  // freezes the game.  A ref gives us a stable handle for cleanup without
-  // re-firing the effect on every pitch-state change.
-  const multiPitchRef = useRef(multiPitch);
-  multiPitchRef.current = multiPitch;
-
   // ── Scoring metadata ──
   const scoringMetaRef = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
   // Per-player last evaluation time for throttling
@@ -968,11 +959,10 @@ export function useMedleyGame({
   // ── Cleanup ──
   useEffect(() => {
     return () => {
-      multiPitchRef.current.stop();
+      multiPitch.stop();
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [multiPitch]);
 
   // ── Helpers ──
   const snippetProgress = currentSnippet

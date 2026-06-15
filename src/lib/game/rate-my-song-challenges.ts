@@ -4,15 +4,18 @@
  * Fun challenge definitions for karaoke performances.
  */
 
+import type { Language } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/translations';
+
 // ── Types ──
 
 export interface RateMySongChallenge {
   id: string;
   icon: string;
-  titleEn: string;
-  titleDe: string;
-  descriptionEn: string;
-  descriptionDe: string;
+  title: string;
+  titleKey: string;
+  description: string;
+  descriptionKey: string;
 }
 
 // ── Definitions ──
@@ -21,124 +24,137 @@ export const RATE_MY_SONG_CHALLENGES: RateMySongChallenge[] = [
   {
     id: 'accent',
     icon: '🎭',
-    titleEn: 'Sing with an Accent',
-    titleDe: 'Singe mit Akzent',
-    descriptionEn: 'Put on your best fake accent for the entire song',
-    descriptionDe: 'Leg deinen besten Fake-Akzent für das gesamte Lied auf',
+    title: 'Sing with an Accent',
+    titleKey: 'rateMySong.challenges.accent.title',
+    description: 'Put on your best fake accent for the entire song',
+    descriptionKey: 'rateMySong.challenges.accent.description',
   },
   {
     id: 'silent_minute',
     icon: '🔇',
-    titleEn: 'Silent Minute',
-    titleDe: 'Stille Minute',
-    descriptionEn: 'Stop singing for 10 seconds in the middle, keep performing',
-    descriptionDe: 'Hör auf zu singen für 10 Sekunden in der Mitte, perform weiter',
+    title: 'Silent Minute',
+    titleKey: 'rateMySong.challenges.silentMinute.title',
+    description: 'Stop singing for 10 seconds in the middle, keep performing',
+    descriptionKey: 'rateMySong.challenges.silentMinute.description',
   },
   {
     id: 'dance_break',
     icon: '💃',
-    titleEn: 'Dance Break',
-    titleDe: 'Tanzpause',
-    descriptionEn: 'Do at least 3 dance moves during the song',
-    descriptionDe: 'Mach mindestens 3 Tanzmoves während des Liedes',
+    title: 'Dance Break',
+    titleKey: 'rateMySong.challenges.danceBreak.title',
+    description: 'Do at least 3 dance moves during the song',
+    descriptionKey: 'rateMySong.challenges.danceBreak.description',
   },
   {
     id: 'phone_singer',
     icon: '📱',
-    titleEn: 'Phone Singer',
-    titleDe: 'Handy-Sänger',
-    descriptionEn: 'Sing like you\'re recording a TikTok with your phone',
-    descriptionDe: 'Sing, als würdest du ein TikTok mit dem Handy aufnehmen',
+    title: 'Phone Singer',
+    titleKey: 'rateMySong.challenges.phoneSinger.title',
+    description: 'Sing like you\'re recording a TikTok with your phone',
+    descriptionKey: 'rateMySong.challenges.phoneSinger.description',
   },
   {
     id: 'supermarket',
     icon: '🎪',
-    titleEn: 'Supermarket Style',
-    titleDe: 'Supermarkt-Stil',
-    descriptionEn: 'Perform as if you\'re casually singing while grocery shopping',
-    descriptionDe: 'Perform, als würdest du beim Einkaufen ganz entspannt singen',
+    title: 'Supermarket Style',
+    titleKey: 'rateMySong.challenges.supermarketStyle.title',
+    description: 'Perform as if you\'re casually singing while grocery shopping',
+    descriptionKey: 'rateMySong.challenges.supermarketStyle.description',
   },
   {
     id: 'tempo_switch',
     icon: '🔄',
-    titleEn: 'Tempo Switch',
-    titleDe: 'Tempo-Wechsel',
-    descriptionEn: 'Start slow, go super fast in the middle, slow again',
-    descriptionDe: 'Starte langsam, werd in der Mitte super schnell, wieder langsam',
+    title: 'Tempo Switch',
+    titleKey: 'rateMySong.challenges.tempoSwitch.title',
+    description: 'Start slow, go super fast in the middle, slow again',
+    descriptionKey: 'rateMySong.challenges.tempoSwitch.description',
   },
   {
     id: 'smirk_mode',
     icon: '😏',
-    titleEn: 'Smirk Mode',
-    titleDe: 'Schmunzel-Modus',
-    descriptionEn: 'Keep a confident smirk on your face the ENTIRE time',
-    descriptionDe: 'Behalte ein selbstbewusstes Schmunzeln die GANZE Zeit im Gesicht',
+    title: 'Smirk Mode',
+    titleKey: 'rateMySong.challenges.smirkMode.title',
+    description: 'Keep a confident smirk on your face the ENTIRE time',
+    descriptionKey: 'rateMySong.challenges.smirkMode.description',
   },
   {
     id: 'air_guitar',
     icon: '🎸',
-    titleEn: 'Air Guitar Solo',
-    titleDe: 'Air-Guitar-Solo',
-    descriptionEn: 'Do an air guitar solo during any instrumental part',
-    descriptionDe: 'Mach ein Air-Guitar-Solo bei jedem instrumentalen Teil',
+    title: 'Air Guitar Solo',
+    titleKey: 'rateMySong.challenges.airGuitarSolo.title',
+    description: 'Do an air guitar solo during any instrumental part',
+    descriptionKey: 'rateMySong.challenges.airGuitarSolo.description',
   },
   {
     id: 'mic_drop',
     icon: '🎤',
-    titleEn: 'Mic Drop',
-    titleDe: 'Mic-Drop',
-    descriptionEn: 'End the song with a dramatic mic drop pose',
-    descriptionDe: 'Beende das Lied mit einer dramatischen Mic-Drop-Pose',
+    title: 'Mic Drop',
+    titleKey: 'rateMySong.challenges.micDrop.title',
+    description: 'End the song with a dramatic mic drop pose',
+    descriptionKey: 'rateMySong.challenges.micDrop.description',
   },
   {
     id: 'diva_mode',
     icon: '👑',
-    titleEn: 'Diva Mode',
-    titleDe: 'Diva-Modus',
-    descriptionEn: 'Sing with maximum drama, hand gestures, and hair flips',
-    descriptionDe: 'Sing mit maximalem Drama, Handgesten und Haare-Schwenken',
+    title: 'Diva Mode',
+    titleKey: 'rateMySong.challenges.divaMode.title',
+    description: 'Sing with maximum drama, hand gestures, and hair flips',
+    descriptionKey: 'rateMySong.challenges.divaMode.description',
   },
   {
     id: 'whisper_start',
     icon: '🤫',
-    titleEn: 'Whisper Start',
-    titleDe: 'Flüster-Start',
-    descriptionEn: 'Start the first 15 seconds whispering, then go full power',
-    descriptionDe: 'Flüstere die ersten 15 Sekunden, dann gib Vollgas',
+    title: 'Whisper Start',
+    titleKey: 'rateMySong.challenges.whisperStart.title',
+    description: 'Start the first 15 seconds whispering, then go full power',
+    descriptionKey: 'rateMySong.challenges.whisperStart.description',
   },
   {
     id: 'opera_style',
     icon: '🎭',
-    titleEn: 'Opera Style',
-    titleDe: 'Oper-Stil',
-    descriptionEn: 'Sing as overdramatically as an opera singer',
-    descriptionDe: 'Sing so übertrieben wie ein Opernsänger',
+    title: 'Opera Style',
+    titleKey: 'rateMySong.challenges.operaStyle.title',
+    description: 'Sing as overdramatically as an opera singer',
+    descriptionKey: 'rateMySong.challenges.operaStyle.description',
   },
   {
     id: 'disco_fever',
     icon: '🕺',
-    titleEn: 'Disco Fever',
-    titleDe: 'Disco-Fieber',
-    descriptionEn: 'Add disco dance moves at every chorus',
-    descriptionDe: 'Mach Disco-Tanzmoves bei jedem Refrain',
+    title: 'Disco Fever',
+    titleKey: 'rateMySong.challenges.discoFever.title',
+    description: 'Add disco dance moves at every chorus',
+    descriptionKey: 'rateMySong.challenges.discoFever.description',
   },
   {
     id: 'emotional_rollercoaster',
     icon: '😢',
-    titleEn: 'Emotional Rollercoaster',
-    titleDe: 'Emotionale Achterbahn',
-    descriptionEn: 'Switch between crying and laughing expressions',
-    descriptionDe: 'Wechsle zwischen weinenden und lachenden Gesichtsausdrücken',
+    title: 'Emotional Rollercoaster',
+    titleKey: 'rateMySong.challenges.emotionalRollercoaster.title',
+    description: 'Switch between crying and laughing expressions',
+    descriptionKey: 'rateMySong.challenges.emotionalRollercoaster.description',
   },
   {
     id: 'country_twist',
     icon: '🤠',
-    titleEn: 'Country Twist',
-    titleDe: 'Country-Twist',
-    descriptionEn: 'Add a country accent and yee-haw gestures',
-    descriptionDe: 'Leg einen Country-Akzent und Yeehaw-Gesten hinzu',
+    title: 'Country Twist',
+    titleKey: 'rateMySong.challenges.countryTwist.title',
+    description: 'Add a country accent and yee-haw gestures',
+    descriptionKey: 'rateMySong.challenges.countryTwist.description',
   },
 ];
+
+// ── Helpers ──
+
+/** Get a localized copy of a Rate My Song challenge card. */
+export function getLocalizedRateMySongChallenge(
+  challenge: RateMySongChallenge,
+  language?: Language,
+): { title: string; description: string } {
+  return {
+    title: t(challenge.titleKey, language),
+    description: t(challenge.descriptionKey, language),
+  };
+}
 
 // ── Public API ──
 

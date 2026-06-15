@@ -1,5 +1,6 @@
 // Share Results Feature - Export score cards to social media
 import { HighscoreEntry } from '@/types/game';
+import { t } from '@/lib/i18n/translations';
 
 interface ShareableScoreCard {
   playerName: string;
@@ -33,16 +34,18 @@ export function createShareableCard(entry: HighscoreEntry): ShareableScoreCard {
 
 // Generate shareable text
 function generateShareText(card: ShareableScoreCard): string {
-  return `🎤 I just scored ${card.score.toLocaleString()} points on "${card.songTitle}" by ${card.artist}!
-
-${card.rankTitle}
-📊 Accuracy: ${card.accuracy.toFixed(1)}%
-🔥 Max Combo: ${card.maxCombo}x
-⭐ Rating: ${card.rating.toUpperCase()}
-🎮 Mode: ${card.gameMode.toUpperCase()}
-💬 Difficulty: ${card.difficulty.toUpperCase()}
-
-Play Karaoke ZERO and try to beat my score!`;
+  return [
+    `🎤 ${t('game.share.scoredPoints').replace('{score}', card.score.toLocaleString()).replace('{title}', card.songTitle).replace('{artist}', card.artist)}`,
+    '',
+    card.rankTitle,
+    `📊 ${t('game.share.accuracy')}: ${card.accuracy.toFixed(1)}%`,
+    `🔥 ${t('game.share.maxCombo')}: ${card.maxCombo}x`,
+    `⭐ ${t('game.share.rating')}: ${card.rating.toUpperCase()}`,
+    `🎮 ${t('game.share.mode')}: ${card.gameMode.toUpperCase()}`,
+    `💬 ${t('game.share.difficulty')}: ${card.difficulty.toUpperCase()}`,
+    '',
+    t('game.share.callToAction').replace('{branding}', t('core.branding')),
+  ].join('\n');
 }
 
 // Generate shareable image (returns canvas)
@@ -76,7 +79,7 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillStyle = '#00ffff';
   ctx.font = 'bold 32px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Karaoke ZERO', 300, 50);
+  ctx.fillText(t('core.branding'), 300, 50);
   
   // Song info
   ctx.fillStyle = '#ffffff';
@@ -97,13 +100,13 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillText(card.score.toLocaleString(), 300, 240);
   ctx.font = '16px Inter, sans-serif';
   ctx.fillStyle = '#8888aa';
-  ctx.fillText('POINTS', 300, 265);
+  ctx.fillText(t('game.share.points'), 300, 265);
   
   // Stats row
   const stats = [
-    { label: 'Accuracy', value: `${card.accuracy.toFixed(1)}%` },
-    { label: 'Max Combo', value: `${card.maxCombo}x` },
-    { label: 'Rating', value: card.rating.toUpperCase() },
+    { label: t('game.share.accuracy'), value: `${card.accuracy.toFixed(1)}%` },
+    { label: t('game.share.maxCombo'), value: `${card.maxCombo}x` },
+    { label: t('game.share.rating'), value: card.rating.toUpperCase() },
   ];
   
   stats.forEach((stat, i) => {
@@ -121,7 +124,7 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillStyle = '#ff00ff';
   ctx.font = '18px Inter, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(`Player: ${card.playerName}`, 20, 380);
+  ctx.fillText(t('game.share.playerLabel').replace('{name}', card.playerName), 20, 380);
   
   // Date
   const date = new Date(card.playedAt).toLocaleDateString();
@@ -183,7 +186,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     const file = new File([blob], 'score-card.png', { type: 'image/png' });
     
     await navigator.share({
-      title: 'Karaoke ZERO Score',
+      title: t('game.share.shareTitle'),
       text,
       files: [file],
     });
@@ -192,7 +195,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     // Fallback to text only
     try {
       await navigator.share({
-        title: 'Karaoke ZERO Score',
+        title: t('game.share.shareTitle'),
         text,
       });
       return true;

@@ -210,7 +210,7 @@ export function getNoteDisplayStyleClasses(
           ? 'linear-gradient(90deg, #ec4899, #f472b6)'
           : bgColor;
       return {
-        additionalClasses: 'transition-[box-shadow,background,filter] duration-50 ease-linear',
+        additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
           background: finalBg,
           boxShadow: `0 0 12px ${borderColor}, inset 0 2px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3)`,
@@ -239,7 +239,7 @@ export function getNoteDisplayStyleClasses(
         ? ', inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3)'
         : '';
       return {
-        additionalClasses: 'transition-[box-shadow,filter] duration-50 ease-linear',
+        additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
           boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}${emptyShadow}`,
           filter: `brightness(${0.5 + accuracy * 0.5}) drop-shadow(0 2px 3px rgba(0,0,0,0.35))`,

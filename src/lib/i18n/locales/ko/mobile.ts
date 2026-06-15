@@ -157,9 +157,7 @@ export const mobileTranslations = {
     playAgainSuccess: '곡이 대기열에 추가되었습니다!',
     playAgainError: '곡을 대기열에 추가할 수 없습니다.',
     swipeToDelete: '삭제하려면 스와이프',
-    reorderHint: '길게 누른 후 드래그하여 순서 변경',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: '주크박스에 추가됨',
+    reorderHint: '길게 누른 후 드래그하여 순서 변경'
   },
 
   mobileNav: {
@@ -473,6 +471,13 @@ export const mobileTranslations = {
     scanHint: '메인 화면의 QR 코드를 스캔하여 연결',
     letsGo: '시작!',
   },
+  mobileChat: {
+    title: '채팅',
+    placeholder: '메시지를 입력하세요...',
+    send: '보내기',
+    noMessages: '아직 메시지가 없습니다',
+    host: '호스트',
+  },
 
   mobilePreview: {
     preview: '미리듣기',
@@ -495,5 +500,17 @@ export const mobileTranslations = {
     cameraUnavailable: '카메라를 사용할 수 없습니다',
     retake: '다시 찍기',
     noResults: '표시할 결과가 없습니다',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: '첫 걸음', description: '첫 번째 곡을 부르세요' },
+    risingStar: { title: '새롭별', description: '10곡 부르세요' },
+    veteran: { title: '베테랑', description: '50곡 부르세요' },
+    perfectionist: { title: '완벽주의자', description: '퍼펙트 스코어(95%+)를 획득' },
+    flawless: { title: '플로리스', description: '퍼펙트 스코어 5회 획득' },
+    scoreMaster: { title: '스코어 마스터', description: '총 10,000점 도달' },
+    playlistBuilder: { title: '플레이리스트 빌더', description: '5곡을 대기열에 추가' },
+    genreExplorer: { title: '장르 탐험가', description: '3개 장르의 곡을 부르세요' },
   },
 };

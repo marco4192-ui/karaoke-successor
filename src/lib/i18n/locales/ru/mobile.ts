@@ -157,9 +157,7 @@ export const mobileTranslations = {
     playAgainSuccess: 'Песня добавлена в очередь!',
     playAgainError: 'Не удалось добавить песню в очередь.',
     swipeToDelete: 'Свайп для удаления',
-    reorderHint: 'Удерживайте и перетаскивайте для изменения порядка',
-    jukeboxBtn: 'Jukebox',
-    addedToJukebox: 'Добавлено в Jukebox',
+    reorderHint: 'Удерживайте и перетаскивайте для изменения порядка'
   },
 
   mobileNav: {
@@ -473,6 +471,13 @@ export const mobileTranslations = {
     scanHint: 'Отсканируйте QR-код на главном экране',
     letsGo: 'Поехали!',
   },
+  mobileChat: {
+    title: 'Чат',
+    placeholder: 'Введите сообщение...',
+    send: 'Отправить',
+    noMessages: 'Пока нет сообщений',
+    host: 'Хост',
+  },
 
   mobilePreview: {
     preview: 'Предпрослушивание',
@@ -495,5 +500,17 @@ export const mobileTranslations = {
     cameraUnavailable: 'Камера недоступна',
     retake: 'Переснять',
     noResults: 'Нет результатов для отображения',
+  },
+
+  // --- Mobile Achievements ---
+  achievements: {
+    firstSong: { title: 'Первые шаги', description: 'Спойте свою первую песню' },
+    risingStar: { title: 'Восходящая звезда', description: 'Спойте 10 песен' },
+    veteran: { title: 'Ветеран', description: 'Спойте 50 песен' },
+    perfectionist: { title: 'Перфекционист', description: 'Получите идеальный результат (95%+)' },
+    flawless: { title: 'Безупречность', description: 'Получите 5 идеальных результатов' },
+    scoreMaster: { title: 'Мастер очков', description: 'Наберите 10 000 очков суммарно' },
+    playlistBuilder: { title: 'Создатель плейлистов', description: 'Добавьте 5 песен в очередь' },
+    genreExplorer: { title: 'Исследователь жанров', description: 'Спойте песни из 3 жанров' },
   },
 };

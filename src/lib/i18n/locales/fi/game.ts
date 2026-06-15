@@ -255,4 +255,310 @@ export const gameTranslations = {
     failedToLoad: 'Companion-sovelluksen lataus epäonnistui',
     retry: 'Yritä uudelleen',
   },
+
+  // --- Achievements ---
+  achievements: {
+  "firstNote": {
+    "name": "Ensimmäinen nuotti",
+    "description": "Osu ensimmäisen nuotin"
+  },
+  "perfectTen": {
+    "name": "Täydellinen kymmenen",
+    "description": "Saa 10 Täydellistä osumaa yhteen kappaleeseen"
+  },
+  "comboMaster": {
+    "name": "Kombo-mestari",
+    "description": "Saa 50 nuotin komboa"
+  },
+  "comboKing": {
+    "name": "Kombo-kuningas",
+    "description": "Saa 100 nuotin komboa",
+    "rewardTitle": "Kombo-kuningas"
+  },
+  "comboLegend": {
+    "name": "Kombo-legenda",
+    "description": "Saa 200 nuotin komboa",
+    "rewardTitle": "Kombo-legenda"
+  },
+  "perfectSong": {
+    "name": "Täydellinen kappale",
+    "description": "Saa 99,5%+ tarkkuuden",
+    "rewardTitle": "Perfektionisti"
+  },
+  "pitchPerfect": {
+    "name": "Äänenlahjainen",
+    "description": "Saa yli 90% tarkkuuden"
+  },
+  "risingStar": {
+    "name": "Nouseva tähti",
+    "description": "Saa yli 8 000 pistettä"
+  },
+  "scoreMaster": {
+    "name": "Pistemestari",
+    "description": "Saa yli 9 000 pistettä"
+  },
+  "flawless": {
+    "name": "Virheetön",
+    "description": "Saa yli 9 500 pistettä",
+    "rewardTitle": "Virheetön"
+  },
+  "goldenCollector": {
+    "name": "Kultakerääjä",
+    "description": "Osu 10 kultaista nuotista"
+  },
+  "goldenMaster": {
+    "name": "Kultamestari",
+    "description": "Osu 50 kultaista nuotista",
+    "rewardTitle": "Kultainen ääni"
+  },
+  "firstSong": {
+    "name": "Ensimmäiset askeleet",
+    "description": "Suorita ensimmäinen kappaleesi"
+  },
+  "tenSongs": {
+    "name": "Karaoke-harrastaja",
+    "description": "Suorita 10 kappaletta"
+  },
+  "fiftySongs": {
+    "name": "Säännöllinen karaoke-laulaja",
+    "description": "Suorita 50 kappaletta"
+  },
+  "hundredSongs": {
+    "name": "Karaoke-legenda",
+    "description": "Suorita 100 kappaletta",
+    "rewardTitle": "Karaoke-legenda"
+  },
+  "fiveGames": {
+    "name": "Alkun alku",
+    "description": "Pelaa 5 peliä"
+  },
+  "twentyGames": {
+    "name": "Omistautunut laulaja",
+    "description": "Pelaa 20 peliä"
+  },
+  "partyTime": {
+    "name": "Juhlat!",
+    "description": "Pelaa juhlatilaa"
+  },
+  "duelChampion": {
+    "name": "Kaksintaistel-mestari",
+    "description": "Voita kaksintaistel"
+  },
+  "passTheMic": {
+    "name": "Siirrä mikrofoni!",
+    "description": "Pelaa Siirrä mikrofoni -tilaa"
+  },
+  "showerSinger": {
+    "name": "Suihkulaulaja",
+    "description": "Saa alle 20% kappaleesta",
+    "rewardTitle": "Suihkulaulaja"
+  },
+  "comebackKing": {
+    "name": "Paluukuningas",
+    "description": "Saa 50+ komboa 10 hutiön jälkeen"
+  },
+  "speedDemon": {
+    "name": "Vauhtidemoni",
+    "description": "Suorita kappale 1,5x nopeudella"
+  },
+  "blindMaster": {
+    "name": "Sokkomestari",
+    "description": "Suorita kappale Sokko-tilassa",
+    "rewardTitle": "Sokkomestari"
+  }
+},
+
+  // --- Ranks ---
+  ranks: {
+  "beginner": {
+    "name": "Aloittelija",
+    "titles": {
+      "newcomer": "Tulokas"
+    }
+  },
+  "novice": {
+    "name": "Oppilas",
+    "titles": {
+      "risingStar": "Nouseva tähti"
+    }
+  },
+  "apprentice": {
+    "name": "Kisälli",
+    "titles": {
+      "melodyMaker": "Melodiantekijä"
+    }
+  },
+  "singer": {
+    "name": "Laulaja",
+    "titles": {
+      "voiceInTraining": "Ääni harjoitteluksessa"
+    }
+  },
+  "performer": {
+    "name": "Esittäjä",
+    "titles": {
+      "stagePresence": "Lavallaolo"
+    }
+  },
+  "artist": {
+    "name": "Taiteilija",
+    "titles": {
+      "artisticSoul": "Taiteellinen sielu"
+    }
+  },
+  "star": {
+    "name": "Tähti",
+    "titles": {
+      "shiningStar": "Säteilevä tähti"
+    }
+  },
+  "superstar": {
+    "name": "Supertähti",
+    "titles": {
+      "crowdFavorite": "Yleisön suosikki"
+    }
+  },
+  "legend": {
+    "name": "Legenda",
+    "titles": {
+      "legendaryVoice": "Legendaarinen ääni"
+    }
+  },
+  "icon": {
+    "name": "Ikoni",
+    "titles": {
+      "musicalIcon": "Musiikillinen ikoni"
+    }
+  },
+  "mythic": {
+    "name": "Myyttinen",
+    "titles": {
+      "mythicSinger": "Myyttinen laulaja"
+    }
+  },
+  "divine": {
+    "name": "Jumalallinen",
+    "titles": {
+      "divineVoice": "Jumalallinen ääni"
+    }
+  }
+},
+
+  // --- Challenge Modes ---
+  challenges: {
+  "blindAudition": {
+    "name": "Sokko-koe",
+    "description": "Laula ilman sanoja — muistitesti!"
+  },
+  "freeFlight": {
+    "name": "Vapaa lento",
+    "description": "Ei äänenopastusta — laula kuulolla!"
+  },
+  "speedDemon": {
+    "name": "Vauhtidemoni",
+    "description": "1,5x nopeus — nopea nopeasti!"
+  },
+  "perfectionist": {
+    "name": "Perfektionisti",
+    "description": "Vain täydelliset nuotit laskevat!"
+  },
+  "goldenHunter": {
+    "name": "Kultajahtaja",
+    "description": "Vain kultaiset nuotit antavat pisteitä — nappaa ne kaikki!"
+  },
+  "memoryLane": {
+    "name": "Muistilane",
+    "description": "Puuttuvat sanat — täytä aukot!"
+  },
+  "pitchShift": {
+    "name": "Äänenmuunnos",
+    "description": "Kappale on transponoitu — mukauta ääntäsi!"
+  },
+  "halfSpeed": {
+    "name": "Hidasliike",
+    "description": "0,75x nopeus — täydellinen harjoitukseen!"
+  },
+  "blindMaster": {
+    "name": "Sokkomestari",
+    "description": "Ei sanoja eikä äänenopastusta — aito sokkolaulu!"
+  },
+  "ultimateChallenge": {
+    "name": "Lopullinen haaste",
+    "description": "Kaikki muuttujat yhdistettynä — rohkeille!"
+  }
+},
+
+  // --- Challenge Modifiers ---
+  modifiers: {
+  "noLyrics": {
+    "label": "Ei sanoja",
+    "description": "Sanat on piilotettu",
+    "shortDescription": "Ei sanoja"
+  },
+  "noPitchGuide": {
+    "label": "Ei äänenopastusta",
+    "description": "Äänenopastus on piilotettu",
+    "shortDescription": "Ei äänenopastusta"
+  },
+  "doubleSpeed": {
+    "label": "Vauhtibuusti",
+    "description": "Kappale soi nopeammin",
+    "shortDescription": "1,25x nopeus"
+  },
+  "halfSpeed": {
+    "label": "Hidasliike",
+    "description": "Kappale soi hitaammin"
+  },
+  "perfectOnly": {
+    "label": "Perfektionisti",
+    "description": "Vain täydelliset nuotit laskevat"
+  },
+  "goldenOnly": {
+    "label": "Kultajahtaja",
+    "description": "Vain kultaiset nuotit laskevat"
+  },
+  "missingWords": {
+    "label": "Puuttuvat sanat",
+    "description": "Jotkin sanat on piilotettu"
+  },
+  "blind": {
+    "label": "Sokko",
+    "description": "Ei sanoja eikä äänenopastusta"
+  },
+  "pitchShift": {
+    "description": "Äänenkorkeus siirretty 3 puolisävelaskelta"
+  }
+},
+
+  // --- Ranking Titles ---
+  rankingTitles: {
+  "showerSingingSensation": "Suihkulaulu-sensaatio",
+  "karaokeRoyalty": "Karaoke-kuninkaallitus",
+  "vocalVirtuoso": "Äänivirtuoosi",
+  "micDropMaster": "Mikrofonin pudottamismestari",
+  "diamondVoice": "Timanttinen ääni",
+  "broadwayWannabe": "Broadway-haaveilija",
+  "noteNailer": "Nuotitarkkaaja",
+  "pitchyParrot": "Sävelvänäläinen papukaija",
+  "circusSinger": "Sirkuslaulaja",
+  "humbleHummer": "Humble hyminnkri",
+  "underConstruction": "Rakenteilla",
+  "bathroomBaritone": "Kylpyhuoneen baritoni",
+  "phantomPhony": "Aavikkohuija",
+  "duckTapeSinger": "Teippi-Singaaja",
+  "tunelessTroubadour": "Säveetön troubaduuri",
+  "vocalTornado": "Vokaalinen tornado (Katastrofi)",
+  "toneDeafTitan": "Säveetön titaani",
+  "clownCarCrooner": "Klovniautokrooner",
+  "toneZombie": "Sävelzombi",
+  "whisperingWimp": "Kuiskava pelkuri",
+  "silentScream": "Hiljainen huuto"
+},
+
+  // --- Battle Royale (new keys) ---
+  battleRoyale: {
+  "bounty": "PÄÄPALKO",
+  "micError": "Mikrofoni"
+},
+
 };

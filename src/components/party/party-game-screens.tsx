@@ -576,7 +576,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setCompanionSettings(null);
             setScreen('home');
           }}
-          onNavigate={setScreen}
         />
       )}
 
@@ -875,10 +874,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 border border-purple-500/30 rounded-2xl p-8 max-w-md text-center animate-fade-in">
             <div className="text-5xl mb-4">{party.rateMySongCurrentChallenge.icon}</div>
             <h2 className="text-xl font-bold text-white mb-2">
-              {language === 'de' ? party.rateMySongCurrentChallenge.titleDe : party.rateMySongCurrentChallenge.titleEn}
+              {t(`rateMySong.challenges.${party.rateMySongCurrentChallenge.id}.title`)}
             </h2>
             <p className="text-white/70 text-sm mb-6">
-              {language === 'de' ? party.rateMySongCurrentChallenge.descriptionDe : party.rateMySongCurrentChallenge.descriptionEn}
+              {t(`rateMySong.challenges.${party.rateMySongCurrentChallenge.id}.description`)}
             </p>
             <p className="text-amber-400 text-xs mb-4">{t('rateMySong.bonusPointsIfMastered')}</p>
             <button

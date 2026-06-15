@@ -142,7 +142,7 @@ export function SongCard({
         <div className="absolute top-2 right-2 flex gap-1">
           {isDuetSong(song) && (
             <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg">
-              <span className="text-sm">🎭</span>{t('songCard.duet')}
+              <span className="text-sm">🎭</span>Duet
             </div>
           )}
           {isViralHit && (
