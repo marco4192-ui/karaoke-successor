@@ -5,6 +5,7 @@ import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, G
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
+import { t } from '@/lib/i18n/locales';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
