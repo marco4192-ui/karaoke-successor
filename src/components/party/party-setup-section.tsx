@@ -34,7 +34,7 @@ function toPassTheMicSettings(
     segmentDuration: s.segmentDuration ?? 30,
     difficulty: s.difficulty ?? 'medium',
     micId: s.micId ?? 'default',
-    micName: s.micName ?? t?.('partySetup.defaultMicName') ?? '',
+    micName: s.micName ?? 'Mic',
     randomSwitches: s.randomSwitches,
     sharedMicId: s.sharedMicId ?? null,
     sharedMicName: s.sharedMicName ?? null,
