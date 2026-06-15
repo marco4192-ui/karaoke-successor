@@ -444,7 +444,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg mb-4">{t(`dailyChallenge.weekly.${weekly.id}.description`)}</p>
+              <p className="text-lg mb-4">{weekly.description}</p>
               <div className="flex items-center justify-between text-sm text-white/60">
                 <span>{t('dailyChallengeScreen.target')}: {weekly.target}</span>
                 <span>{t('dailyChallengeScreen.resetsIn')} {weeklyReset.days}d {weeklyReset.hours}h</span>
