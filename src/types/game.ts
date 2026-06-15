@@ -1,7 +1,6 @@
 // Core game types for Karaoke ZERO
 
-import type { Language } from '@/lib/i18n/locales';
-import { t } from '@/lib/i18n/translations';
+import { t, type Language } from '@/lib/i18n/locales';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 

@@ -107,3 +107,16 @@ export function getTranslations(): Record<Language, Record<string, string>> {
   }
   return _cached;
 }
+
+// Standalone translate function (safe for server-side / non-React usage)
+export function t(key: string, language: Language = 'en'): string {
+  const translations = getTranslations();
+  const langTranslations = translations[language];
+  if (langTranslations && langTranslations[key]) {
+    return langTranslations[key];
+  }
+  if (translations.en[key]) {
+    return translations.en[key];
+  }
+  return key;
+}

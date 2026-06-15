@@ -1,3 +1,5 @@
+'use client';
+
 // i18n hook for Karaoke ZERO
 // Translation DATA lives in ./locales/index.ts to keep this module small.
 // All translations are accessed via getTranslations() (lazy function call),
@@ -10,11 +12,12 @@ import {
   ALL_LANGUAGES,
   getTranslations,
   createNestedObject,
+  t,
 } from '@/lib/i18n/locales';
 
-// Re-export types and constants for consumers
+// Re-export types, constants, and t() for consumers
 export type { Language };
-export { ALL_LANGUAGES };
+export { ALL_LANGUAGES, t };
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
   en: 'English',
@@ -53,19 +56,6 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
   da: '🇩🇰',
   fi: '🇫🇮',
 };
-
-// Standalone translate function (for non-hook usage, e.g. tests)
-export function t(key: string, language: Language = 'en'): string {
-  const translations = getTranslations();
-  const langTranslations = translations[language];
-  if (langTranslations && langTranslations[key]) {
-    return langTranslations[key];
-  }
-  if (translations.en[key]) {
-    return translations.en[key];
-  }
-  return key;
-}
 
 // Convenience export: get the flat translations map (for tests)
 export { getTranslations as translations };
