@@ -65,3 +65,17 @@ portable-node/node.exe
 # Skills directory
 /skills/src-tauri/target/
 repo
+
+# Z-AI agent artifacts (NEVER commit these)
+xa[a-z]*
+xb[a-z]*
+xc[a-z]*
+tool-results/
+worklog.md
+worklog/
+agent-ctx/
+.accesslog
+.stats
+.zscripts/
+download/
+upload/
