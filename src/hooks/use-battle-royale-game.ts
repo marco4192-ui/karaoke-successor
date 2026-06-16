@@ -157,6 +157,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   multiPitchRef.current = multiPitch;
 
   // ── Game State ─────────────────────────────────────────────────────
+  const mountedRef = useRef(true);
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
