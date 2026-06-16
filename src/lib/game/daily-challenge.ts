@@ -1298,8 +1298,10 @@ export function claimQuestReward(questId: string): { xp: number; badge?: DailyBa
     badge = {
       id: quest.reward.badgeId,
       name: quest.name,
+      nameKey: quest.nameKey,
       icon: quest.icon,
       description: `Completed quest: ${quest.name}`,
+      descriptionKey: quest.descriptionKey,
       unlockedAt: Date.now(),
     };
 
