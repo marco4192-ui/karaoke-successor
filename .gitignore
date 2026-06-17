@@ -62,8 +62,8 @@ portable-node/node.exe
 !src-tauri/bundled/node/.gitkeep
 !src-tauri/bundled/native/.gitkeep
 
-# Skills directory
-/skills/src-tauri/target/
+# Skills directory (Z-AI agent artifacts)
+/skills/
 repo
 
 # Z-AI agent artifacts (NEVER commit these)
