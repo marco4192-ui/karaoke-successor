@@ -281,6 +281,34 @@ export class PitchDetector {
     }
   }
 
+  /**
+   * Initialize using a pre-created AnalyserNode from a shared AudioContext.
+   * Used by PitchDetectorManager when multiple players share the same microphone:
+   * instead of creating a new AudioContext per player (which fails in Tauri/WebKit),
+   * we reuse the same AudioContext and only create a new AnalyserNode per player.
+   * @param analyser - A connected AnalyserNode from the shared AudioContext.
+   * @param audioContext - The shared AudioContext (used for sampleRate in detect()).
+   * @param stream - The shared MediaStream (stored for getMediaStream() compatibility).
+   */
+  initializeWithSharedAnalyser(analyser: AnalyserNode, audioContext: AudioContext, stream: MediaStream): boolean {
+    try {
+      this.analyser = analyser;
+      this.audioContext = audioContext;
+      this.mediaStream = stream;
+      this.ownsStream = false;
+
+      this.buffer = new Float32Array(this.analyser.fftSize);
+      this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
+      this.yinBuffer = new Float32Array(Math.floor(this.analyser.fftSize / 2));
+
+      return true;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to initialize pitch detector with shared analyser:', error);
+      return false;
+    }
+  }
+
   start(callback: (_result: PitchDetectionResult) => void): void {
     if (!this.analyser || !this.buffer) {
       // eslint-disable-next-line no-console

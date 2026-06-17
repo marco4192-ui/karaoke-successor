@@ -14,7 +14,6 @@ import { PauseButton } from '@/components/game/hud/pause-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
 import { PtmPlayerRanking } from '@/components/game/ptm-player-ranking';
-import { PtmHudPlayerScore } from '@/components/game/ptm-hud-player-score';
 import { useCptmGameLogic } from '@/components/game/cptm-game-hook';
 import type { PtmPlayer } from '@/components/game/ptm-types';
 
@@ -61,9 +60,6 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
   // ── Map current players for PtM UI components ──
   const ptmPlayers = toPtmPlayers(g.players);
-  const ptmCurrentPlayer = g.currentPlayer
-    ? toPtmPlayers([g.currentPlayer])[0]
-    : undefined;
 
   // ===================== INTRO PHASE =====================
   if (g.phase === 'intro') {
@@ -281,22 +277,22 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
       {/* ═══════ HUD OVERLAYS ═══════ */}
 
-      {/* Player score (top center) */}
-      {g.phase === 'playing' && (
-        <PtmHudPlayerScore
-          players={ptmPlayers}
-          currentPlayer={ptmCurrentPlayer}
-        />
-      )}
-
-      {/* Controls — Pause (top-left) + Fullscreen (top-right) */}
+      {/* Controls — Pause (top-left) + End Song (top-left, after pause) + Fullscreen (top-right) */}
       {g.phase === 'playing' && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className="absolute top-4 left-4 z-20 pointer-events-auto">
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
             <PauseButton
               isPlaying={g.isPlaying}
-              onTogglePause={g.togglePause}
+              onTogglePause={g.showPauseDialog}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={g.handleEndSong}
+              className="text-white/40 hover:text-white/70 hover:bg-white/10 text-xs px-3 py-1.5"
+            >
+              {t('cptm.endSongEarly')}
+            </Button>
           </div>
           <div className="absolute top-4 right-4 z-20 pointer-events-auto">
             <FullscreenButton />
@@ -304,31 +300,17 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
         </div>
       )}
 
-      {/* Player Ranking — vertical left side, sorted by score */}
+      {/* Player Ranking — vertical left side, sorted by score (no active-player highlight for CPTM) */}
       {g.phase === 'playing' && (
         <PtmPlayerRanking
           players={ptmPlayers}
-          currentPlayerIndex={g.currentPlayerIndex}
+          currentPlayerIndex={-1}
         />
       )}
 
       {/* Progress Bar (bottom) */}
       <GameProgressBar currentTime={g.currentTime} duration={g.displayDuration} />
       <TimeDisplay currentTime={g.currentTime} duration={g.displayDuration} />
-
-      {/* End Early Button (bottom-right, above progress) */}
-      {g.phase === 'playing' && (
-        <div className="absolute bottom-14 right-4 z-20">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={g.handleEndSong}
-            className="text-white/40 hover:text-white/70 hover:bg-white/10 text-xs px-3 py-1.5"
-          >
-            {t('passTheMic.endEarly')}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

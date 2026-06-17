@@ -74,6 +74,8 @@ interface CptmGameHookReturn {
   // Callbacks
   startGame: () => Promise<void>;
   togglePause: () => void;
+  showPauseDialog: () => void;
+  requestEndSongEarly: () => void;
   handleEndSong: () => void;
   handleMediaEnded: () => void;
   handleContinue: () => void;
@@ -98,6 +100,7 @@ export function useCptmGameLogic({
   // ── Party store selectors ──
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
   const cptmSeriesHistory = usePartyStore(s => s.cptmSeriesHistory);
   const setCptmSeriesHistory = usePartyStore(s => s.setCptmSeriesHistory);
   const setCptmPlayers = usePartyStore(s => s.setCptmPlayers);
@@ -215,15 +218,43 @@ export function useCptmGameLogic({
   }, [isPlaying, phase, setIsSongPlaying]);
 
   // ── Pause / Resume sync ──
+  // Mirrors the PTM pattern from ptm-hud-controls.tsx:
+  // When pauseDialogAction is set (by ESC or PauseButton), pause audio + game loop.
+  // When it's cleared (Resume clicked in SongPauseDialog), resume everything.
+  const prevPauseDialogActionRef = useRef(pauseDialogAction);
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
-      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
-      else if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
-    } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
-      if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
-      else if (videoRef.current && videoRef.current.paused) videoRef.current.play().catch(() => {});
+    const prev = prevPauseDialogActionRef.current;
+    prevPauseDialogActionRef.current = pauseDialogAction;
+
+    if (prev === 'song-pause' && pauseDialogAction === null && phase === 'playing') {
+      // Dialog dismissed (Resume clicked) — resume playback
+      audioRef.current?.play().catch(() => {});
+      videoRef.current?.play().catch(() => {});
+      setIsPlaying(true);
+      setIsSongPlaying(true);
+    } else if (pauseDialogAction === 'song-end-early') {
+      // Abort clicked in pause dialog for CPTM — end song with evaluation
+      setPauseDialogAction(null);
+      if (!roundRecordedRef.current) {
+        roundRecordedRef.current = true;
+        audioRef.current?.pause();
+        videoRef.current?.pause();
+        setIsPlaying(false);
+        setIsSongPlaying(false);
+        recordRound();
+        setPhase('song-results');
+        sendCompanionTurnSignal(null, null, null, false);
+      }
+    } else if (pauseDialogAction === 'song-pause' && isPlaying) {
+      // Pause triggered (button click or Escape) — pause everything
+      audioRef.current?.pause();
+      videoRef.current?.pause();
+      setIsPlaying(false);
+      setIsSongPlaying(false);
+      lastIsSongPlayingRef.current = false;
     }
-  }, [pauseDialogAction, isPlaying, phase, audioRef, videoRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pauseDialogAction, isPlaying, phase, setIsSongPlaying]);
 
   // ── Safety: load lyrics if effectiveSong has no lyrics ──
   useEffect(() => {
@@ -473,6 +504,31 @@ export function useCptmGameLogic({
     }
   }, [isPlaying, phase, audioRef, videoRef, setIsSongPlaying]);
 
+  // ── Show pause dialog (routes through party store like PTM) ──
+  const showPauseDialog = useCallback(() => {
+    if (isPlaying) {
+      setPauseDialogAction('song-pause');
+    } else if (phase === 'playing') {
+      setPauseDialogAction(null);
+    }
+  }, [isPlaying, phase, setPauseDialogAction]);
+
+  // ── Request end song early — closes pause dialog, triggers evaluation ──
+  const requestEndSongEarly = useCallback(() => {
+    setPauseDialogAction(null);
+    // Small delay to let the dialog close before transitioning
+    setTimeout(() => {
+      if (roundRecordedRef.current) return;
+      roundRecordedRef.current = true;
+      audioRef.current?.pause();
+      videoRef.current?.pause();
+      setIsPlaying(false);
+      recordRound();
+      setPhase('song-results');
+      sendCompanionTurnSignal(null, null, null, false);
+    }, 100);
+  }, [recordRound, audioRef, videoRef, setIsPlaying, setPhase, setPauseDialogAction]);
+
   // ── Round-recorded guard to prevent double recordRound() ──
   const roundRecordedRef = useRef(false);
 
@@ -540,6 +596,8 @@ export function useCptmGameLogic({
     // Callbacks
     startGame,
     togglePause,
+    showPauseDialog,
+    requestEndSongEarly,
     handleEndSong,
     handleMediaEnded,
     handleContinue,

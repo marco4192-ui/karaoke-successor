@@ -59,7 +59,7 @@ export default function KaraokeZERO() {
   );
 
   // ── Pause / Leave dialog state (driven by party store) ──
-  type DialogAction = null | 'song-pause' | 'party-leave';
+  type DialogAction = null | 'song-pause' | 'party-leave' | 'song-end-early';
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
 
   // ── Ctrl-Q: flag to auto-play first queue item ──
@@ -139,6 +139,17 @@ export default function KaraokeZERO() {
       resetGame();
       setGameMode('standard');
       setScreen('library');
+      return;
+    }
+
+    // ── CPTM abort: end song with evaluation instead of killing the series ──
+    // The "Abort" button in the pause dialog should end the current song,
+    // show the evaluation, and let the player continue to the next song.
+    if (isPartyModeActive && party.selectedGameMode === 'companion-pass-the-mic') {
+      // Signal CPTM to end the song early — the hook's pauseDialogAction
+      // effect will detect this and transition to song-results.
+      // We use a special action value that the CPTM hook can react to.
+      party.setPauseDialogAction('song-end-early');
       return;
     }
 

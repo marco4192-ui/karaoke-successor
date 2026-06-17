@@ -89,7 +89,7 @@ export function useTranslation() {
     window.dispatchEvent(new CustomEvent('languageChange', { detail: newLang }));
   }, []);
 
-  // Cross-tab synchronization
+  // Cross-tab synchronization + same-tab language change broadcast
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'karaoke-language' && e.newValue) {
@@ -97,8 +97,18 @@ export function useTranslation() {
         setLanguageState(newLang);
       }
     };
+    // Listen for same-tab language changes dispatched by setLanguage()
+    // so ALL components using useTranslation() update immediately
+    const handleLanguageChange = (e: Event) => {
+      const newLang = (e as CustomEvent).detail as Language;
+      if (newLang) setLanguageState(newLang);
+    };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('languageChange', handleLanguageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('languageChange', handleLanguageChange);
+    };
   }, []);
 
   const translate = useCallback((key: string): string => {
