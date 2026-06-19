@@ -125,6 +125,16 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     try {
       // Get or create manager
       const manager = getPitchDetectorManager();
+
+      // DO-NOT-CHANGE: Always clean the singleton before reuse. When the hook
+      // unmounts, managerRef is nulled but the singleton retains stale streams/
+      // AudioContexts from the previous session. Without this cleanup, the next
+      // initialize() call finds stale device state and enters the shared-mic
+      // path with dead AudioContexts, causing all players to fail.
+      if (manager.getPlayerIds().length > 0) {
+        try { await manager.destroy(); } catch { /* best-effort cleanup */ }
+      }
+
       managerRef.current = manager;
 
       // Set callbacks
@@ -346,15 +356,18 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
   }, []);
 
   /**
-   * Cleanup on unmount
+   * Cleanup on unmount — fully destroy the singleton so the next
+   * initialize() call starts with a clean slate. The old approach of only
+   * calling stop() left stale streams/AudioContexts in the singleton, causing
+   * subsequent games to fail (see initialize() guard above).
    */
   useEffect(() => {
     return () => {
       if (managerRef.current) {
-        // Only stop — do NOT destroy the singleton.
-        // Destroying would break any other consumer of getPitchDetectorManager()
-        // (e.g., navigating away and back would leave a dead singleton).
         managerRef.current.stop();
+        // Fire-and-forget async destroy — synchronous cleanup is not possible
+        // in React unmount, but initialize() also guards against stale state.
+        managerRef.current.destroy().catch(() => {});
         managerRef.current = null;
         isInitializedRef.current = false;
       }

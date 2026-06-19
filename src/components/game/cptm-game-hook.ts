@@ -415,7 +415,7 @@ export function useCptmGameLogic({
     };
   }, [setIsSongPlaying]);
 
-  // ── Start game (countdown → playing) ──
+  // ── Start game (no countdown for CPTM — straight to playing) ──
   const startGame = async () => {
     // Guard: ensure lyrics are available before starting
     const songToCheck = notesSource || effectiveSong;
@@ -433,60 +433,46 @@ export function useCptmGameLogic({
       } catch { /* non-critical */ }
     }
 
-    setPhase('countdown');
-    setCountdown(3);
+    // DO-NOT-CHANGE: CPTM skips the countdown phase entirely — players are
+    // signaled via companion apps and switch seamlessly without a visible 3-2-1.
+    setPhase('playing');
+    setIsPlaying(true);
+    setCurrentTime(0);
 
-    // No microphone needed for CPtM — pitch comes from companion apps
+    // Send "YOUR TURN" to the first player's companion
+    const firstPlayer = playersRef.current[currentPlayerIndexRef.current];
+    if (firstPlayer) {
+      sendCompanionTurnSignal(firstPlayer.id, null, null, true);
+    }
 
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          countdownIntervalRef.current = null;
-          setPhase('playing');
-          setIsPlaying(true);
-          setCurrentTime(0);
-
-          // Send "YOUR TURN" to the first player's companion
-          const firstPlayer = playersRef.current[currentPlayerIndexRef.current];
-          if (firstPlayer) {
-            sendCompanionTurnSignal(firstPlayer.id, null, null, true);
-          }
-
-          requestAnimationFrame(() => {
-            if (audioRef.current) {
-              audioRef.current.currentTime = 0;
-              audioRef.current.play().catch(() => {});
-              if (videoRef.current && videoRef.current !== audioRef.current && videoRef.current.paused) {
-                videoRef.current.currentTime = 0;
-                videoRef.current.play().catch(() => {});
-              }
-            } else if (videoRef.current) {
-              videoRef.current.currentTime = 0;
-              videoRef.current.play().catch(() => {});
-            } else {
-              // Media element not ready yet — retry shortly
-              // eslint-disable-next-line no-console
-              console.warn('[CPTM] No media element available at game start, retrying...');
-              countdownRetryRef.current = setTimeout(() => {
-                countdownRetryRef.current = null;
-                if (unmountGuardRef.current) return;
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                  audioRef.current.play().catch(() => {});
-                } else if (videoRef.current) {
-                  videoRef.current.currentTime = 0;
-                  videoRef.current.play().catch(() => {});
-                }
-              }, 300);
-            }
-          });
-          return 0;
+    requestAnimationFrame(() => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+        if (videoRef.current && videoRef.current !== audioRef.current && videoRef.current.paused) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play().catch(() => {});
         }
-        return prev - 1;
-      });
-    }, 1000);
-    countdownIntervalRef.current = interval;
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+      } else {
+        // Media element not ready yet — retry shortly
+        // eslint-disable-next-line no-console
+        console.warn('[CPTM] No media element available at game start, retrying...');
+        countdownRetryRef.current = setTimeout(() => {
+          countdownRetryRef.current = null;
+          if (unmountGuardRef.current) return;
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => {});
+          } else if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+            videoRef.current.play().catch(() => {});
+          }
+        }, 300);
+      }
+    });
   };
 
   // ── Toggle pause/resume ──

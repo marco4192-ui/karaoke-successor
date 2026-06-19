@@ -7,7 +7,6 @@ import { NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { GameBackground } from '@/components/game/game-background';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
-import { GameCountdown } from '@/components/game/game-countdown';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { PauseButton } from '@/components/game/hud/pause-button';
@@ -63,7 +62,6 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
   // ===================== INTRO PHASE =====================
   if (g.phase === 'intro') {
-    const firstPlayer = g.players[g.currentPlayerIndex];
     return (
       <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-zinc-900 via-black to-zinc-900 px-4">
         <div className="flex flex-col items-center max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
@@ -83,37 +81,15 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             {t('passTheMic.everyoneSingsOnTheirPhone')}
           </p>
 
-          {/* First Player Card */}
-          {firstPlayer && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-full mb-8 flex items-center gap-4">
-              {firstPlayer.avatar ? (
-                <img
-                  src={firstPlayer.avatar}
-                  alt={firstPlayer.name}
-                  className="w-16 h-16 rounded-full object-cover border-2"
-                  style={{ borderColor: firstPlayer.color }}
-                />
-              ) : (
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white border-2"
-                  style={{ backgroundColor: firstPlayer.color, borderColor: firstPlayer.color }}
-                >
-                  {firstPlayer.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-white/40 uppercase tracking-wider mb-1">
-                  {t('passTheMic.startingWith')}
-                </div>
-                <div className="text-xl font-bold truncate" style={{ color: firstPlayer.color }}>
-                  {firstPlayer.name}
-                </div>
-              </div>
-              <div className="text-xs text-white/30">
+          {/* Player count indicator (no individual player names in CPTM) */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-full mb-8 flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🎤</span>
+              <span className="text-lg font-medium text-white/60">
                 {g.players.length} {t('passTheMic.players') || 'players'}
-              </div>
+              </span>
             </div>
-          )}
+          </div>
 
           {/* Media loaded indicator */}
           {!g.mediaLoaded && (
@@ -238,10 +214,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
         {/* Dark Overlay for visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
 
-        {/* Countdown */}
-        {g.phase === 'countdown' && (
-          <GameCountdown countdown={g.countdown} />
-        )}
+        {/* DO-NOT-CHANGE: CPTM has no countdown overlay — players switch seamlessly via companion signals */}
 
         {/* Note Highway — single lane with current player color */}
         {g.phase === 'playing' && g.allNotes.length > 0 && (
@@ -255,7 +228,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             notePerformance={undefined}
             singLinePosition={20}
             noteWindow={NOTE_WINDOW}
-            playerColor={g.currentPlayer?.color || PLAYER_COLORS[0]}
+            playerColor={PLAYER_COLORS[0]}
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
@@ -267,7 +240,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           <SinglePlayerLyrics
             sortedLines={g.sortedLines}
             currentTime={g.currentTime}
-            playerColor={g.currentPlayer?.color || PLAYER_COLORS[0]}
+            playerColor={PLAYER_COLORS[0]}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
             gameMode="companion-pass-the-mic"
