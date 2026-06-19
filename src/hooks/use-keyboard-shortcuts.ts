@@ -121,9 +121,16 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
     label: 'Esc',
     action: () => {
       // 1. In-game, pause dialog open → resume (close dialog)
+      //    For party modes (PTM, CPTM, Medley), just close the dialog —
+      //    the mode-specific hook's pauseDialogAction effect handles resume.
+      //    For standard game, also call resumeGame().
       if (cb.isPaused && cb.isSongPlaying) {
-        cb.resumeGame();
-        cb.setPauseDialog(null);
+        if (cb.isPartyModeActive) {
+          cb.setPauseDialog(null);
+        } else {
+          cb.resumeGame();
+          cb.setPauseDialog(null);
+        }
         return;
       }
       // 2. In-game → pause
@@ -158,8 +165,12 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
     label: 'Enter',
     action: () => {
       if (cb.isPaused && cb.isSongPlaying) {
-        cb.resumeGame();
-        cb.setPauseDialog(null);
+        if (cb.isPartyModeActive) {
+          cb.setPauseDialog(null);
+        } else {
+          cb.resumeGame();
+          cb.setPauseDialog(null);
+        }
       }
     },
   });

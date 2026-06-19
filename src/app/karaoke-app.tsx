@@ -88,9 +88,16 @@ export default function KaraokeZERO() {
   }, [party.setPauseDialogAction, party]);
 
   const handleResumeGame = useCallback(() => {
-    closeDialog();
-    resumeGame();
-  }, [closeDialog, resumeGame]);
+    // For party modes (PTM, CPTM, Medley, BR), just close the dialog —
+    // the mode-specific hook's pauseDialogAction effect handles resume.
+    // For standard game, also call resumeGame() to unpause the game store.
+    if (isPartyModeActive) {
+      closeDialog();
+    } else {
+      closeDialog();
+      resumeGame();
+    }
+  }, [closeDialog, resumeGame, isPartyModeActive]);
 
   const handleSongAbort = useCallback(() => {
     closeDialog();
@@ -232,7 +239,10 @@ export default function KaraokeZERO() {
   }, [closeDialog]);
 
   // ── Global keyboard shortcuts ──
-  const isPaused = activeDialog === 'song-pause';
+  // Read pause state directly from the store (not from local activeDialog
+  // state which lags one render behind due to useEffect syncing) so that
+  // ESC/Enter handlers see the correct state immediately.
+  const isPaused = party.pauseDialogAction === 'song-pause';
   const isSongPlaying = screen === 'game' || party.isSongPlaying;
 
   useGlobalKeyboardShortcuts({

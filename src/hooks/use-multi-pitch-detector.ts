@@ -143,10 +143,38 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
       // Add all players (read from ref to avoid stale closure)
       const playersList = playersRef.current;
-      const initPromises = playersList.map(async (playerConfig) => {
-        try {
-          if (playerConfig.type === 'local') {
-            // Normalize deviceId: treat empty string same as undefined (use default mic)
+
+      // CRITICAL: Players sharing the same microphone device MUST be
+      // initialized SEQUENTIALLY, not in parallel. The first player on a
+      // device calls getUserMedia() + creates the AudioContext. Subsequent
+      // players on the same device reuse the shared AudioContext and only
+      // create their own AnalyserNode. If they run in parallel via
+      // Promise.all(), the second player checks deviceStreamMap BEFORE
+      // the first player's async getUserMedia() completes, so it also
+      // tries getUserMedia() → multiple AudioContexts → Tauri/WebKit failure.
+      const results: boolean[] = [];
+
+      // Group local players by device key
+      const deviceKey = (deviceId?: string) => deviceId || '__default__';
+      const deviceGroups = new Map<string, typeof playersList>();
+      const mobilePlayers: typeof playersList = [];
+      const processedPlayerIds = new Set<string>();
+
+      for (const p of playersList) {
+        if (p.type === 'mobile' && p.mobileClientId) {
+          mobilePlayers.push(p);
+        } else if (p.type === 'local') {
+          const key = deviceKey(p.deviceId || undefined);
+          if (!deviceGroups.has(key)) deviceGroups.set(key, []);
+          deviceGroups.get(key)!.push(p);
+        }
+      }
+
+      // Initialize each device group sequentially (first player opens device,
+      // remaining players share the AudioContext)
+      for (const [, groupPlayers] of deviceGroups) {
+        for (const playerConfig of groupPlayers) {
+          try {
             const deviceId = playerConfig.deviceId || undefined;
             const success = await manager.addLocalPlayer(playerConfig.playerId, deviceId, playerConfig.stereoChannel);
             if (!success) {
@@ -156,23 +184,26 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
                 return newMap;
               });
             }
-            return success;
-          } else if (playerConfig.type === 'mobile' && playerConfig.mobileClientId) {
-            manager.addMobilePlayer(playerConfig.playerId, playerConfig.mobileClientId);
-            return true;
+            results.push(success);
+            processedPlayerIds.add(playerConfig.playerId);
+          } catch (error) {
+            setErrors(prev => {
+              const newMap = new Map(prev);
+              newMap.set(playerConfig.playerId, error instanceof Error ? error.message : 'Unknown error');
+              return newMap;
+            });
+            results.push(false);
+            processedPlayerIds.add(playerConfig.playerId);
           }
-          return false;
-        } catch (error) {
-          setErrors(prev => {
-            const newMap = new Map(prev);
-            newMap.set(playerConfig.playerId, error instanceof Error ? error.message : 'Unknown error');
-            return newMap;
-          });
-          return false;
         }
-      });
+      }
 
-      const results = await Promise.all(initPromises);
+      // Mobile players are non-blocking (no device contention)
+      for (const playerConfig of mobilePlayers) {
+        manager.addMobilePlayer(playerConfig.playerId, playerConfig.mobileClientId!);
+        results.push(true);
+      }
+
       const allSuccess = results.every(r => r);
 
       if (allSuccess || results.some(r => r)) {
