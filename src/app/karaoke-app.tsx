@@ -160,6 +160,22 @@ export default function KaraokeZERO() {
       return;
     }
 
+    // ── Medley Contest abort: clear medley state, return to party setup ──
+    // The dedicated medley game uses screen === 'medley-game' (not 'game'),
+    // so the standard medley abort guard above (line 129, screen === 'game')
+    // never matches. Without this guard, ESC→Abort falls through to the
+    // PartyTerminator which nukes ALL party state.
+    if (screen === 'medley-game') {
+      party.setMedleyPlayers([]);
+      party.setMedleySongs([]);
+      party.setMedleySettings(null);
+      party.setMedleyMatches([]);
+      party.setMedleySeriesHistory([]);
+      party.setIsSongPlaying(false);
+      setScreen('party');
+      return;
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     // ULTIMATE PARTY-MODE TERMINATOR
     // All remaining cases get a full nuclear reset of party state.
