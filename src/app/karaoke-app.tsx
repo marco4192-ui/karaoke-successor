@@ -100,6 +100,12 @@ export default function KaraokeZERO() {
   }, [closeDialog, resumeGame, isPartyModeActive]);
 
   const handleSongAbort = useCallback(() => {
+    // DO-NOT-CHANGE: Diagnostic logging for PartyTerminator debugging.
+    // This helps identify which code path triggers the nuclear reset.
+    // eslint-disable-next-line no-console
+    console.log('[handleSongAbort] screen=%s, isPartyModeActive=%s, gameMode=%s, selectedGameMode=%s, isTournamentMatch=%s',
+      screen, isPartyModeActive, gameState.gameMode, party.selectedGameMode, isTournamentMatch);
+
     closeDialog();
 
     // ── Tournament match abort: needs bracket + aborted flag for the match-abort dialog ──
@@ -165,7 +171,7 @@ export default function KaraokeZERO() {
     // so the standard medley abort guard above (line 129, screen === 'game')
     // never matches. Without this guard, ESC→Abort falls through to the
     // PartyTerminator which nukes ALL party state.
-    if (screen === 'medley-game') {
+    if (screen === 'medley-game' || screen === 'medley') {
       party.setMedleyPlayers([]);
       party.setMedleySongs([]);
       party.setMedleySettings(null);
@@ -186,11 +192,29 @@ export default function KaraokeZERO() {
     // votingSongs, medleyPlayers, etc. to leak into the Library
     // and other non-party screens.
     // ═══════════════════════════════════════════════════════════════════
+    // DO-NOT-CHANGE: Safety guard — if the selectedGameMode is 'medley-contest'
+    // or 'companion-pass-the-mic', this abort likely came from a stale
+    // song-start (e.g. media load failure in a GameScreen that was
+    // briefly rendered during medley/CPTM navigation). Do targeted
+    // cleanup instead of nuking everything.
+    const mode = party.selectedGameMode;
+    if (mode === 'medley-contest' || mode === 'companion-pass-the-mic' || mode === 'companion-singalong') {
+      // eslint-disable-next-line no-console
+      console.warn('[handleSongAbort] PARTY TERMINATOR BLOCKED — selectedGameMode=%s, screen=%s. Doing targeted cleanup instead.', mode, screen);
+      party.setIsSongPlaying(false);
+      resetGame();
+      setGameMode('standard');
+      setScreen('party');
+      return;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log('[handleSongAbort] PARTY TERMINATOR — full reset. screen=%s, selectedGameMode=%s', screen, party.selectedGameMode);
     party.resetPartyState();
     resetGame();
     setGameMode('standard');
     setScreen('party');
-  }, [closeDialog, screen, isTournamentMatch, isPartyModeActive, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
+  }, [closeDialog, screen, isTournamentMatch, isPartyModeActive, party, party.selectedGameMode, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {
     closeDialog();
