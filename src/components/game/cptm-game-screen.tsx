@@ -72,13 +72,13 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
           {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 text-center">
-            Companion
+            {t('companionSingalong.introTitle')}
           </h1>
           <h2 className="text-2xl sm:text-3xl font-bold text-cyan-400 mb-1 text-center">
-            Pass-the-Mic
+            {t('companionSingalong.introSubtitle')}
           </h2>
           <p className="text-white/40 text-sm mb-8 text-center">
-            {t('passTheMic.everyoneSingsOnTheirPhone')}
+            {t('companionSingalong.introDescription')}
           </p>
 
           {/* Player count indicator (no individual player names in CPTM) */}
@@ -86,7 +86,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             <div className="flex items-center gap-2">
               <span className="text-2xl">🎤</span>
               <span className="text-lg font-medium text-white/60">
-                {g.players.length} {t('passTheMic.players') || 'players'}
+                {g.players.length} {t('passTheMic.players')}
               </span>
             </div>
           </div>
@@ -95,7 +95,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           {!g.mediaLoaded && (
             <div className="flex items-center gap-2 text-white/40 text-sm mb-4">
               <div className="w-4 h-4 border-2 border-white/30 border-t-cyan-400 rounded-full animate-spin" />
-              {t('gameScreen.loadingMedia')}
+              {t('gameScreen.loadingMedia') || t('gameScreen.loading')}
             </div>
           )}
 
@@ -264,7 +264,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
               onClick={g.handleEndSong}
               className="text-white/40 hover:text-white/70 hover:bg-white/10 text-xs px-3 py-1.5"
             >
-              {t('cptm.endSongEarly')}
+              {t('game.endSong')}
             </Button>
           </div>
           <div className="absolute top-4 right-4 z-20 pointer-events-auto">

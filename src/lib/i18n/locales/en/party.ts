@@ -58,7 +58,7 @@ export const partyTranslations = {
     mic1: 'Microphone 1',
     mic2: 'Microphone 2',
     mic: 'Microphone {n}',
-    songTooShortCptm: 'Song too short for Companion Pass-the-Mic.',
+    songTooShortCptm: 'Song too short for Companion Sing-A-Long.',
   },
 
   partyGameScreens: {
@@ -122,6 +122,12 @@ export const partyTranslations = {
     micIssueTitle: 'Microphone Issue',
     micIssueDesc: 'Could not initialize pitch detection. Scoring will be disabled for this round. Check your microphone permissions and try again.',
     medleySongTitle: 'Medley ({n} Songs)',
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Everyone sings through their phone — when it lights up, it\'s your turn!',
   },
 
   matchAbort: {
@@ -421,7 +427,7 @@ export const partyTranslations = {
     chooseSong: '🎵 Choose a Song!',
     clickSongToPlay: 'Click on a song to start playing!',
     // Song too short (CPTM)
-    songTooShortCptm: 'Song too short for Companion Pass-the-Mic.',
+    songTooShortCptm: 'Song too short for Companion Sing-A-Long.',
     errorMaxPlayers: 'Maximum {n} players allowed',
     errorMinPlayers: 'Minimum {n} players required',
     companionBadge: 'Companion',

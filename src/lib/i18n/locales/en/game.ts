@@ -61,7 +61,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'This video cannot be embedded (Vevo/embedding restriction)',
     youtubeErrorInvalid: 'Invalid YouTube parameter',
     youtubeErrorHtml5: 'HTML5 error in YouTube player',
-    youtubeErrorCode: 'YouTube error (Code: {n})'
+    youtubeErrorCode: 'YouTube error (Code: {n})',
+    loadingMedia: 'Loading media...',
   },
 
   gameHud: {

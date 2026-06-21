@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'この動画は埋め込みできません（Vevo/埋め込み制限）',
     youtubeErrorInvalid: '無効なYouTubeパラメータ',
     youtubeErrorHtml5: 'YouTubeプレイヤーのHTML5エラー',
-    youtubeErrorCode: 'YouTubeエラー（コード: {n}）'
+    youtubeErrorCode: 'YouTubeエラー（コード: {n}）',
+    loadingMedia: 'メディアを読み込み中...'
   },
 
   gameHud: {

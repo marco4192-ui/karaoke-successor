@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: 'Microfono 1',
     mic2: 'Microfono 2',
     mic: 'Microfono {n}',
-    songTooShortCptm: 'Canzone troppo corta per Companion Passa il Microfono.',
+    songTooShortCptm: 'Canzone troppo corta per Companion Sing-A-Long.',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: 'Totale: {n}',
     roundsPlayed: '{n} turni giocati',
     medleyLabel: '🎵 Medley — {n} Canzoni'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Tutti cantano dal telefono — quando si illumina, tocca a te!',
   },
 
   matchAbort: {
@@ -394,7 +400,7 @@ export const partyTranslations = {
     chooseSong: '🎵 Scegli una Canzone!',
     clickSongToPlay: 'Clicca su una canzone per iniziare a giocare!',
     // Song too short (CPTM)
-    songTooShortCptm: 'Canzone troppo corta per Companion Passa il Microfono.',
+    songTooShortCptm: 'Canzone troppo corta per Companion Sing-A-Long.',
   },
 
   // Extended descriptions for game modes
@@ -412,7 +418,7 @@ export const partyTranslations = {
 
   // Game mode setting labels (where needed in unified setup)
   modeSettings: {
-    // Companion Pass the Mic
+    // Companion Sing-A-Long
     blinkWarning: 'Avviso Lampeggio',
     blinkWarningDesc: 'Secondi prima del cambio di segmento',
     // Medley

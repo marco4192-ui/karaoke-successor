@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'Tätä videota ei voida upottaa (Vevo/rajoitus)',
     youtubeErrorInvalid: 'Virheellinen YouTube-parametri',
     youtubeErrorHtml5: 'HTML5-virhe YouTube-soittimessa',
-    youtubeErrorCode: 'YouTube-virhe (Koodi: {n})'
+    youtubeErrorCode: 'YouTube-virhe (Koodi: {n})',
+    loadingMedia: 'Ladataan mediaa...'
   },
 
   gameHud: {

@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: 'Mikrofon 1',
     mic2: 'Mikrofon 2',
     mic: 'Mikrofon {n}',
-    songTooShortCptm: 'Sangen er for kort for Companion Pass-the-Mic.',
+    songTooShortCptm: 'Sangen er for kort for Companion Sing-A-Long.',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: 'Totalt: {n}',
     roundsPlayed: '{n} runder spilt',
     medleyLabel: '🎵 Medley — {n} sanger'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Alle synger via telefonen — når den lyser, er det din tur!',
   },
 
   matchAbort: {
@@ -389,7 +395,7 @@ export const partyTranslations = {
     off: 'Av',
     chooseSong: '🎵 Velg en sang!',
     clickSongToPlay: 'Klikk på en sang for å starte!',
-    songTooShortCptm: 'Sangen er for kort for Companion Pass-the-Mic.',
+    songTooShortCptm: 'Sangen er for kort for Companion Sing-A-Long.',
   },
 
   // Extended descriptions for game modes

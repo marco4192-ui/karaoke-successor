@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'Nie można osadzić tego wideo (restrykcja Vevo/osadzania)',
     youtubeErrorInvalid: 'Nieprawidłowy parametr YouTube',
     youtubeErrorHtml5: 'Błąd HTML5 w odtwarzaczu YouTube',
-    youtubeErrorCode: 'Błąd YouTube (Kod: {n})'
+    youtubeErrorCode: 'Błąd YouTube (Kod: {n})',
+    loadingMedia: 'Ładowanie mediów...'
   },
 
   gameHud: {

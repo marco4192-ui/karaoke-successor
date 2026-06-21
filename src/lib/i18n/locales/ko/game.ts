@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: '이 동영상을 임베드할 수 없습니다 (Vevo/임베딩 제한)',
     youtubeErrorInvalid: '잘못된 YouTube 매개변수',
     youtubeErrorHtml5: 'YouTube 플레이어 HTML5 오류',
-    youtubeErrorCode: 'YouTube 오류 (코드: {n})'
+    youtubeErrorCode: 'YouTube 오류 (코드: {n})',
+    loadingMedia: '미디어 로딩 중...'
   },
 
   gameHud: {

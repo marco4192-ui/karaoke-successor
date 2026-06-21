@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: 'Микрофон 1',
     mic2: 'Микрофон 2',
     mic: 'Микрофон {n}',
-    songTooShortCptm: 'Песня слишком короткая для Companion Pass-the-Mic.'
+    songTooShortCptm: 'Песня слишком короткая для Companion Sing-A-Long.'
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: 'Итого: {n}',
     roundsPlayed: 'Сыграно {n} раундов',
     medleyLabel: '🎵 Медли — {n} песен'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Все поют через телефон — когда он загорится, ваша очередь!',
   },
 
   matchAbort: {
@@ -379,7 +385,7 @@ export const partyTranslations = {
     off: 'Выкл',
     chooseSong: '🎵 Выберите песню!',
     clickSongToPlay: 'Нажмите на песню, чтобы начать!',
-    songTooShortCptm: 'Песня слишком короткая для Companion Pass-the-Mic.',
+    songTooShortCptm: 'Песня слишком короткая для Companion Sing-A-Long.',
   },
 
   extendedDesc: {

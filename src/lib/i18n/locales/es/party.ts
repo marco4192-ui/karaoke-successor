@@ -115,6 +115,12 @@ export const partyTranslations = {
     medleyLabel: '🎵 Popurrí — {n} Canciones'
   },
 
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: '¡Todos cantan desde su teléfono — cuando se ilumine, es tu turno!',
+  },
+
   matchAbort: {
     title: 'Partida Abortada',
     setWinner: '🏆 Establecer Ganador Manualmente',
@@ -352,7 +358,7 @@ export const partyTranslations = {
     off: 'Desactivado',
     chooseSong: '🎵 ¡Elige una Canción!',
     clickSongToPlay: '¡Haz clic en una canción para empezar a jugar!',
-    songTooShortCptm: 'Canción demasiado corta para Companion Pass-the-Mic.',
+    songTooShortCptm: 'Canción demasiado corta para Companion Sing-A-Long.',
   },
 
   extendedDesc: {

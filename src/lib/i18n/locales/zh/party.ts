@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: '麦克风 1',
     mic2: '麦克风 2',
     mic: '麦克风 {n}',
-    songTooShortCptm: '歌曲太短，无法用于Companion传麦克风。',
+    songTooShortCptm: '歌曲太短，无法用于 Companion Sing-A-Long。',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: '合计: {n}',
     roundsPlayed: '已进行{n}轮',
     medleyLabel: '🎵 混唱 — {n}首'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: '所有人通过手机唱歌 — 当手机亮起时，轮到你了！',
   },
 
   matchAbort: {
@@ -379,7 +385,7 @@ export const partyTranslations = {
     off: '关',
     chooseSong: '🎵 选一首歌！',
     clickSongToPlay: '点击歌曲开始演唱！',
-    songTooShortCptm: '歌曲太短，无法用于Companion传麦克风。',
+    songTooShortCptm: '歌曲太短，无法用于 Companion Sing-A-Long。',
   },
 
   extendedDesc: {

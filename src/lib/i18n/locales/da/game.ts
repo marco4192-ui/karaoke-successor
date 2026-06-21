@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'Denne video kan ikke indlejres (Vevo/indlejringsrestriktion)',
     youtubeErrorInvalid: 'Ugyldig YouTube-parameter',
     youtubeErrorHtml5: 'HTML5-fejl i YouTube-afspiller',
-    youtubeErrorCode: 'YouTube-fejl (Kode: {n})'
+    youtubeErrorCode: 'YouTube-fejl (Kode: {n})',
+    loadingMedia: 'Indlæser medie...'
   },
 
   gameHud: {

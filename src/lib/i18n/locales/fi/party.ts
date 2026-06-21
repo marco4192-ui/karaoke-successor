@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: 'Mikrofoni 1',
     mic2: 'Mikrofoni 2',
     mic: 'Mikrofoni {n}',
-    songTooShortCptm: 'Kappale liian lyhyt Companion Mikrofonin siirto -peliin.',
+    songTooShortCptm: 'Kappale liian lyhyt Companion Sing-A-Longiin.',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: 'Yhteensä: {n}',
     roundsPlayed: '{n} kierrosta pelattu',
     medleyLabel: '🎵 Medley — {n} kappaletta'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Kaikki laulavat puhelimellaan — kun se valaistuu, on sinun vuorosi!',
   },
 
   matchAbort: {
@@ -380,7 +386,7 @@ export const partyTranslations = {
     off: 'Pois',
     chooseSong: '🎵 Valitse kappale!',
     clickSongToPlay: 'Napsauta kappaletta aloittaaksesi pelaamisen!',
-    songTooShortCptm: 'Kappale liian lyhyt Companion Mikrofonin siirto -peliin.',
+    songTooShortCptm: 'Kappale liian lyhyt Companion Sing-A-Longiin.',
   },
 
   // Extended descriptions for game modes

@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: '마이크 1',
     mic2: '마이크 2',
     mic: '마이크 {n}',
-    songTooShortCptm: 'Companion Pass-the-Mic에 곡이 너무 짧습니다.',
+    songTooShortCptm: 'Companion Sing-A-Long에 곡이 너무 짧습니다.',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: '합계: {n}',
     roundsPlayed: '{n}라운드 플레이됨',
     medleyLabel: '🎵 메들리 — {n}곡'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: '모든 플레이어가 휴대폰으로 노래합니다 — 화면이 켜지면 당신 차례!',
   },
 
   matchAbort: {
@@ -321,7 +327,7 @@ export const partyTranslations = {
     companionConnectedBadge: '연결됨',
     companionNotAssignable: '이 플레이어는 이미 컴패니언 앱으로 연결되어 있습니다',
     companionCodeLabel: '코드: {code}',
-    songTooShortCptm: 'Companion Pass-the-Mic에 곡이 너무 짧습니다.',
+    songTooShortCptm: 'Companion Sing-A-Long에 곡이 너무 짧습니다.',
   },
 
   unifiedSetup: {
@@ -380,7 +386,7 @@ export const partyTranslations = {
     off: '끄기',
     chooseSong: '🎵 곡을 선택하세요!',
     clickSongToPlay: '곡을 클릭하여 재생을 시작하세요!',
-    songTooShortCptm: 'Companion Pass-the-Mic에 곡이 너무 짧습니다.',
+    songTooShortCptm: 'Companion Sing-A-Long에 곡이 너무 짧습니다.',
   },
 
   extendedDesc: {

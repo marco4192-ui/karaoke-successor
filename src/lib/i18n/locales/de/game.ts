@@ -61,7 +61,8 @@ export const gameTranslations = {
     youtubeErrorInvalid: 'Ungültiger YouTube-Parameter',
     youtubeErrorHtml5: 'HTML5-Fehler beim YouTube-Player',
     youtubeErrorCode: 'YouTube-Fehler (Code: {n})',
-    noSongLoaded: 'Kein Lied geladen'
+    noSongLoaded: 'Kein Lied geladen',
+    loadingMedia: 'Medien werden geladen...'
   },
 
   gameHud: {

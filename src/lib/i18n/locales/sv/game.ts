@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'Denna video kan inte bäddas in (Vevo/bäddningsrestriktion)',
     youtubeErrorInvalid: 'Ogiltig YouTube-parameter',
     youtubeErrorHtml5: 'HTML5-fel i YouTube-spelare',
-    youtubeErrorCode: 'YouTube-fel (Kod: {n})'
+    youtubeErrorCode: 'YouTube-fel (Kod: {n})',
+    loadingMedia: 'Laddar media...'
   },
 
   gameHud: {

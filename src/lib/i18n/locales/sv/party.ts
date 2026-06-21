@@ -115,6 +115,12 @@ export const partyTranslations = {
     medleyLabel: '🎵 Medley — {n} Låtar'
   },
 
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: 'Alla sjunger via telefonen — när den lyser, är det din tur!',
+  },
+
   matchAbort: {
     title: 'Match Avbruten',
     setWinner: '🏆 Sätt Vinnare Manuellt',
@@ -296,7 +302,7 @@ export const partyTranslations = {
     chooseSong: '🎵 Välj en Låt!',
     clickSongToPlay: 'Klicka på en låt för att börja spela!',
     // Song too short (CPTM)
-    songTooShortCptm: 'Låten för kort för Companion Pass-the-Mic.',
+    songTooShortCptm: 'Låten för kort för Companion Sing-A-Long.',
   },
 
   // Extended descriptions for game modes
@@ -314,7 +320,7 @@ export const partyTranslations = {
 
   // Game mode setting labels (where needed in unified setup)
   modeSettings: {
-    // Companion Pass the Mic
+    // Companion Sing-A-Long
     blinkWarning: 'Blinkvarning',
     blinkWarningDesc: 'Sekunder innan segmentbyte',
     // Medley

@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: 'Este video no se puede incrustar (restricción Vevo/incrustación)',
     youtubeErrorInvalid: 'Parámetro de YouTube inválido',
     youtubeErrorHtml5: 'Error HTML5 en el reproductor de YouTube',
-    youtubeErrorCode: 'Error de YouTube (Código: {n})'
+    youtubeErrorCode: 'Error de YouTube (Código: {n})',
+    loadingMedia: 'Cargando medio...'
   },
 
   gameHud: {

@@ -192,13 +192,13 @@ export default function KaraokeZERO() {
     // votingSongs, medleyPlayers, etc. to leak into the Library
     // and other non-party screens.
     // ═══════════════════════════════════════════════════════════════════
-    // DO-NOT-CHANGE: Safety guard — if the selectedGameMode is 'medley-contest'
+    // DO-NOT-CHANGE: Safety guard — if the selectedGameMode is 'medley'
     // or 'companion-singalong', this abort likely came from a stale
     // song-start (e.g. media load failure in a GameScreen that was
     // briefly rendered during medley/CPTM navigation). Do targeted
     // cleanup instead of nuking everything.
     const mode = party.selectedGameMode as string;
-    if (mode === 'medley-contest' || mode === 'companion-singalong') {
+    if (mode === 'medley' || mode === 'companion-singalong') {
       // eslint-disable-next-line no-console
       console.warn('[handleSongAbort] PARTY TERMINATOR BLOCKED — selectedGameMode=%s, screen=%s. Doing targeted cleanup instead.', mode, screen);
       party.setIsSongPlaying(false);

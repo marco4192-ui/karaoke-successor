@@ -34,7 +34,8 @@ export const gameTranslations = {
     youtubeErrorVevo: '此视频无法嵌入（Vevo/嵌入限制）',
     youtubeErrorInvalid: '无效的YouTube参数',
     youtubeErrorHtml5: 'YouTube播放器HTML5错误',
-    youtubeErrorCode: 'YouTube错误（代码: {n}）'
+    youtubeErrorCode: 'YouTube错误（代码: {n}）',
+    loadingMedia: '正在加载媒体...'
   },
 
   gameHud: {

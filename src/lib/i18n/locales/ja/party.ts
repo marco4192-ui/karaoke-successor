@@ -53,7 +53,7 @@ export const partyTranslations = {
     mic1: 'マイク1',
     mic2: 'マイク2',
     mic: 'マイク{n}',
-    songTooShortCptm: 'Companion Pass-the-Micには曲が短すぎます。',
+    songTooShortCptm: 'Companion Sing-A-Longには曲が短すぎます。',
   },
 
   partyGameScreens: {
@@ -114,6 +114,12 @@ export const partyTranslations = {
     cumulative: '合計: {n}',
     roundsPlayed: '{n} ラウンドプレイ済み',
     medleyLabel: '🎵 メドレー — {n} 曲'
+  },
+
+  companionSingalong: {
+    introTitle: 'Companion',
+    introSubtitle: 'Sing-A-Long',
+    introDescription: '全員がスマホで歌います — 光ったらあなたの番！',
   },
 
   matchAbort: {
@@ -380,7 +386,7 @@ export const partyTranslations = {
     off: 'オフ',
     chooseSong: '🎵 曲を選択！',
     clickSongToPlay: '曲をクリックして再生開始！',
-    songTooShortCptm: 'Companion Pass-the-Micには曲が短すぎます。',
+    songTooShortCptm: 'Companion Sing-A-Longには曲が短すぎます。',
   },
 
   // Extended descriptions for game modes
