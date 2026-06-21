@@ -69,25 +69,6 @@ export const partyTranslations = {
     error: 'Fejl'
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Alle synger gennem deres telefon – din telefon blinker inden din tur!',
-    back: '← Tilbage',
-    howItWorks: '🎮 Sådan fungerer det',
-    howItWorks1: 'Hver spiller forbinder via Companion-appen',
-    howItWorks2: 'Sangen deles i rimeligt fordelte segmenter',
-    howItWorks3: 'Din telefon blinker inden din tur!',
-    howItWorks4: '"DIN TUR!" vises på skærmen',
-    howItWorks5: 'Point baseret på tone-nøjagtighed',
-    startPlayer: 'STARTSPILLER',
-    playersAndRounds: '{n} spillere',
-    round: 'Runde {n}',
-    startSinging: '🎤 Start med at synge!',
-    getReady: 'Gør klar...',
-    noSong: 'Ingen sang indlæst',
-    endSongEarly: 'Afslut sang tidligt',
-  },
-
   passTheMic: {
     title: 'Giv mikrofonen videre',
     back: '← Tilbage',
@@ -415,7 +396,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 Sangen deles i segmenter', '🔄 Sangeren skifter efter hvert segment', '🏆 Holdscoren opgøres til sidst'],
     companionSingalong: ['📱 Alle spillere holder deres telefon klar', '⚡ Når din telefon lyser op, er det din tur!', '🎤 Ingen ved, hvem der er næst', '🏆 Saml point til dit hold'],
-    companionPassTheMic: ['📱 Hver spiller synger gennem sin egen telefon', '🎵 Sangen deles i rimeligt fordelte segmenter', '⚡ Din telefon blinker 3 sekunder inden din tur', '🎤 "DIN TUR!" vises på skærmen', '🏆 Point baseret på tone-nøjagtighed', '🔄 Flere runder med samlet rangorden'],
     medley: ['👥 FFA: 4 spillere synger samtidigt, individuelt bedømt', '⚔️ Hold: 1v1 eller 2v2 — hold konkurrerer i dueller', '🎵 Tilfældige sanguddrag — ingen forhåndsvisning, alt er overraskelse!', '🏆 Point summeres over alle uddrag, ekstra runde muligt'],
     tournament: ['🏆 K.O.-system: Taberen elimineres', '⚔️ 1-mod-1 kampe', '🎯 Kort tilstand: Kun 60 sekunder pr. kamp', '👑 Den sidste vinder er mesteren!'],
     battleRoyale: ['🎤 Op til 4 spillere med mikrofon på enheden', '📱 Op til 20 flere spillere via Companion-app', '📉 Spilleren med laveste score elimineres', '🔄 Ny sang hver runde (eller ved afstemning)', '🎯 Bounty-system: Jag føderen!', '🏆 Grand Finale: Bedst-af-3 eller Bedst-af-5 for de sidste 2', '👑 Sidste sanger vinder!'],

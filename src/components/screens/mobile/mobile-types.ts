@@ -67,7 +67,6 @@ export interface GameState {
   songEnded: boolean;
   queueLength: number;
   isAdPlaying: boolean;
-  gameMode: 'standard' | 'pass-the-mic' | 'companion-singalong' | 'companion-pass-the-mic' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online' | 'rate-my-song' | null;
   singalongTurn: SingalongTurn | null;
   cptmTurn: SingalongTurn | null;
   // #10 Tournament match ID for spectator voting

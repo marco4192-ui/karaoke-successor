@@ -192,25 +192,6 @@ export const partyTranslations = {
     comebackShort: 'Comeback',
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Iedereen zingt via de telefoon — je telefoon knippert voor jouw beurt!',
-    back: '← Terug',
-    howItWorks: '🎮 Hoe het werkt',
-    howItWorks1: 'Elke speler verbindt via de Companion App',
-    howItWorks2: 'Het nummer wordt verdeeld in eerlijk verdeelde segmenten',
-    howItWorks3: 'Je telefoon knippert voordat je aan de beurt bent!',
-    howItWorks4: '"JOUW BEURT!" verschijnt op het scherm',
-    howItWorks5: 'Punten op basis van toonnauwkeurigheid',
-    startPlayer: 'STARTENDE SPELER',
-    playersAndRounds: '{n} Spelers',
-    round: 'Ronde {n}',
-    startSinging: '🎤 Begin met zingen!',
-    getReady: 'Maak je klaar...',
-    noSong: 'Geen nummer geladen',
-    endSongEarly: 'Nummer vroegtijdig beëindigen',
-  },
-
   battleRoyale: {
     setupTitle: '👑 Battle Royale',
     setupSubtitle: 'Iedereen zingt samen — de laagste score valt elke ronde af!',
@@ -420,7 +401,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 Het nummer wordt verdeeld in segmenten', '🔄 De zanger wisselt na elk segment', '🏆 De teamscore wordt aan het einde opgeteld'],
     companionSingalong: ['📱 Alle spelers houden hun telefoon klaar', '⚡ Als je telefoon oplicht, ben je aan de beurt!', '🎤 Niemand weet wie er volgende is', '🏆 Verzamel punten voor je team'],
-    companionPassTheMic: ['📱 Elke speler zingt via zijn eigen telefoon', '🎵 Het nummer wordt verdeeld in eerlijk verdeelde segmenten', '⚡ Je telefoon knippert 3 seconden voordat je aan de beurt bent', '🎤 "JOUW BEURT!" verschijnt op het scherm', '🏆 Punten op basis van toonnauwkeurigheid', '🔄 Meerdere rondes met algemeen klassement'],
     medley: ['👥 FFA: 4 spelers zingen tegelijk, individueel beoordeeld', '⚔️ Team: 1v1 of 2v2 — teams strijden in duels', '🎵 Willekeurige nummerfragmenten — geen voorbeeld, alles een verrassing!', '🏆 Punten opgeteld over alle fragmenten, tweede ronde mogelijk'],
     tournament: ['🏆 K.O.-systeem: Verliezer wordt geëlimineerd', '⚔️ 1-tegen-1 wedstrijden', '🎯 Korte modus: Slechts 60 seconden per wedstrijd', '👑 De laatste winnaar is de Kampioen!'],
     battleRoyale: ['🎤 Tot 4 spelers met microfoon op het apparaat', '📱 Tot 20 extra spelers via Companion App', '📉 De speler met de laagste score wordt geëlimineerd', '🔄 Nieuw nummer elke ronde (of via stemming)', '🎯 Bountysysteem: Jaag op de leider!', '🏆 Grand Finale: Best-of-3 of Best-of-5 voor de laatste 2', '👑 De laatste zanger wint!'],

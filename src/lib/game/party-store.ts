@@ -17,8 +17,6 @@ import type {
 import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
 import type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/ptm-game-screen';
 import type { PassTheMicSettings } from '@/components/game/ptm-game-screen';
-import type { CompanionPlayer, CompanionRoundResult } from '@/components/game/companion-singalong-screen';
-import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult } from '@/components/game/cptm-types';
 import type { RateMySongSettings, RateMySongRating } from '@/components/game/rate-my-song-screen';
 import type { RateMySongChallenge } from '@/lib/game/rate-my-song-ranking';
@@ -78,18 +76,7 @@ export interface PartyStore {
   ptmMedleySnippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>;
   setPtmMedleySnippets: (_snippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>) => void;
 
-  // Companion Sing-A-Long
-  companionPlayers: CompanionPlayer[];
-  setCompanionPlayers: (_players: CompanionPlayer[]) => void;
-  companionSong: Song | null;
-  setCompanionSong: (_song: Song | null) => void;
-  companionSettings: CompanionSingAlongSettings | null;
-  setCompanionSettings: (_settings: CompanionSingAlongSettings | null) => void;
-  // Series history: accumulated scores across multiple Companion Sing-A-Long songs
-  companionSeriesHistory: CompanionRoundResult[];
-  setCompanionSeriesHistory: (_history: CompanionRoundResult[]) => void;
-
-  // Companion Pass-the-Mic
+  // Companion Sing-A-Long (powered by CPTM segment-based engine)
   cptmPlayers: CptmPlayer[];
   setCptmPlayers: (_players: CptmPlayer[]) => void;
   cptmSong: Song | null;
@@ -205,17 +192,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
   ptmMedleySnippets: [] as Array<{ song: Song; startTime: number; endTime: number; duration: number }>,
   setPtmMedleySnippets: (ptmMedleySnippets) => set({ ptmMedleySnippets }),
 
-  // Companion Sing-A-Long
-  companionPlayers: [],
-  setCompanionPlayers: (companionPlayers) => set({ companionPlayers }),
-  companionSong: null,
-  setCompanionSong: (companionSong) => set({ companionSong }),
-  companionSettings: null,
-  setCompanionSettings: (companionSettings) => set({ companionSettings }),
-  companionSeriesHistory: [] as CompanionRoundResult[],
-  setCompanionSeriesHistory: (companionSeriesHistory) => set({ companionSeriesHistory }),
-
-  // Companion Pass-the-Mic
+  // Companion Sing-A-Long (powered by CPTM segment-based engine)
   cptmPlayers: [],
   setCptmPlayers: (cptmPlayers) => set({ cptmPlayers }),
   cptmSong: null,
@@ -305,10 +282,6 @@ export const usePartyStore = create<PartyStore>((set) => ({
     passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
     ptmMedleySnippets: [],
     ptmSongSelection: null,
-    companionPlayers: [],
-    companionSong: null,
-    companionSettings: null,
-    companionSeriesHistory: [] as CompanionRoundResult[],
     cptmPlayers: [],
     cptmSong: null,
     cptmSegments: [],

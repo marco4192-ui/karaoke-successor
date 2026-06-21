@@ -34,7 +34,6 @@ export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: Hom
     ? {
         standard: '🎤 Single', duel: '⚔️ Duel', duet: '🎭 Duet',
         'pass-the-mic': '🎤 Pass the Mic', 'companion-singalong': '📱 Sing-Along',
-        'companion-pass-the-mic': '🎤 C-PTM', medley: '🎵 Medley',
         'missing-words': '📝 Missing Words', blind: '🙈 Blind Karaoke',
         tournament: '🏆 Tournament', 'battle-royale': '👑 Battle Royale',
         'rate-my-song': '⭐ Rate My Song', online: '🌐 Online',

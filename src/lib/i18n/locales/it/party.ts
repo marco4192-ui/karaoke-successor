@@ -69,25 +69,6 @@ export const partyTranslations = {
     error: 'Errore'
   },
 
-  cptm: {
-    title: 'Companion Passa il Microfono',
-    subtitle: 'Tutti cantano attraverso il telefono — il tuo telefono lampeggia prima del tuo turno!',
-    back: '← Indietro',
-    howItWorks: '🎮 Come Funziona',
-    howItWorks1: 'Ogni giocatore si connette tramite l\'App Compagna',
-    howItWorks2: 'La canzone è divisa in segmenti distribuiti equamente',
-    howItWorks3: 'Il tuo telefono lampeggia prima del tuo turno!',
-    howItWorks4: '"IL TUO TURNO!" appare sul display',
-    howItWorks5: 'Punti basati sulla precisione del tono',
-    startPlayer: 'GIOCATORE INIZIALE',
-    playersAndRounds: '{n} Giocatori',
-    round: 'Turno {n}',
-    startSinging: '🎤 Inizia a Cantare!',
-    getReady: 'Preparati...',
-    noSong: 'Nessuna canzone caricata',
-    endSongEarly: 'Termina canzone in anticipo',
-  },
-
   passTheMic: {
     title: 'Passa il Microfono',
     back: '← Indietro',
@@ -420,7 +401,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 La canzone è divisa in segmenti', '🔄 Il cantante cambia dopo ogni segmento', '🏆 Il punteggio della squadra viene totalizzato alla fine'],
     companionSingalong: ['📱 Tutti i giocatori tengono il telefono pronto', '⚡ Quando il tuo telefono si illumina, è il tuo turno!', '🎤 Nessuno sa chi è il prossimo', '🏆 Raccogli punti per la tua squadra'],
-    companionPassTheMic: ['📱 Ogni giocatore canta attraverso il proprio telefono', '🎵 La canzone è divisa in segmenti equamente distribuiti', '⚡ Il tuo telefono lampeggia 3 secondi prima del tuo turno', '🎤 \"IL TUO TURNO!\" appare sul display', '🏆 Punti basati sulla precisione del tono', '🔄 Più turni con classifica generale'],
     medley: ['👥 FFA: 4 giocatori cantano simultaneamente, valutati individualmente', '⚔️ Squadra: 1v1 o 2v2 — le squadre competono in duelli', '🎵 Frammenti di canzoni casuali — nessuna anteprima, solo sorprese!', '🏆 Punti sommati tra tutti i frammenti, possibile secondo turno'],
     tournament: ['🏆 Sistema K.O.: Il perdente viene eliminato', '⚔️ Partite 1-contro-1', '🎯 Modalità Breve: Solo 60 secondi per partita', "👑 L'ultimo vincitore è il Campione!"],
     battleRoyale: ['🎤 Fino a 4 giocatori con microfono sul dispositivo', '📱 Fino a 20 giocatori in più tramite App Compagna', '📉 Il giocatore con il punteggio più basso viene eliminato', '🔄 Nuova canzone ogni turno (o per voto)', '🎯 Sistema Bounty: Caccia al leader!', '🏆 Gran Finale: Miglior-di-3 o Miglior-di-5 per gli ultimi 2', "👑 L'ultimo cantante vince!"],

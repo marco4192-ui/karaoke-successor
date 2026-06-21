@@ -69,25 +69,6 @@ export const partyTranslations = {
     error: 'Erro'
   },
 
-  cptm: {
-    title: 'Pass the Mic via Companion',
-    subtitle: 'Todos cantam pelo celular — seu celular pisca antes da sua vez!',
-    back: '← Voltar',
-    howItWorks: '🎮 Como Funciona',
-    howItWorks1: 'Cada jogador conecta pelo App Companheiro',
-    howItWorks2: 'A música é dividida em segmentos distribuídos igualmente',
-    howItWorks3: 'Seu celular pisca antes da sua vez!',
-    howItWorks4: '"SUA VEZ!" aparece na tela',
-    howItWorks5: 'Pontuação baseada na precisão do tom',
-    startPlayer: 'JOGADOR INICIANTE',
-    playersAndRounds: '{n} Jogadores',
-    round: 'Rodada {n}',
-    startSinging: '🎤 Começar a Cantar!',
-    getReady: 'Prepare-se...',
-    noSong: 'Nenhuma música carregada',
-    endSongEarly: 'Encerrar música antecipadamente',
-  },
-
   passTheMic: {
     title: 'Passe o Microfone',
     back: '← Voltar',
@@ -415,7 +396,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 A música é dividida em segmentos', '🔄 O cantor muda após cada segmento', '🏆 A pontuação da equipe é totalizada ao final'],
     companionSingalong: ['📱 Todos os jogadores mantêm o celular pronto', '⚡ Quando seu celular acende, é sua vez!', '🎤 Ninguém sabe quem é o próximo', '🏆 Colete pontos para sua equipe'],
-    companionPassTheMic: ['📱 Cada jogador canta pelo próprio celular', '🎵 A música é dividida em segmentos distribuídos igualmente', '⚡ Seu celular pisca 3 segundos antes da sua vez', '🎤 "SUA VEZ!" aparece na tela', '🏆 Pontuação baseada na precisão do tom', '🔄 Múltiplas rodadas com classificação geral'],
     medley: ['👥 FFA: 4 jogadores cantam simultaneamente, avaliados individualmente', '⚔️ Equipe: 1v1 ou 2v2 — equipes competem em duelos', '🎵 Trechos aleatórios — sem prévia, toda surpresa!', '🏆 Pontuação somada em todos os trechos, possível segunda rodada'],
     tournament: ['🏆 Sistema K.O.: O perdedor é eliminado', '⚔️ Partidas 1 contra 1', '🎯 Modo Curto: Apenas 60 segundos por partida', '👑 O último vencedor é o Campeão!'],
     battleRoyale: ['🎤 Até 4 jogadores com microfone no dispositivo', '📱 Até 20 jogadores via App Companheiro', '📉 O jogador com menor pontuação é eliminado', '🔄 Nova música a cada rodada (ou por votação)', '🎯 Sistema de Bounty: Cace o líder!', '🏆 Grande Final: Melhor de 3 ou Melhor de 5 para os últimos 2', '👑 O último cantor vence!'],

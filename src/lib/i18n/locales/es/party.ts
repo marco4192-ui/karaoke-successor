@@ -296,25 +296,6 @@ export const partyTranslations = {
     advancedSettings: 'Ajustes Avanzados',
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Todos cantan desde su teléfono — ¡tu teléfono parpadea antes de tu turno!',
-    back: '← Atrás',
-    howItWorks: '🎮 Cómo Funciona',
-    howItWorks1: 'Cada jugador se conecta vía la App Compañera',
-    howItWorks2: 'La canción se divide en segmentos distribuidos equitativamente',
-    howItWorks3: '¡Tu teléfono parpadea 3 segundos antes de tu turno!',
-    howItWorks4: '¡"TU TURNO!" aparece en la pantalla',
-    howItWorks5: 'Puntos basados en precisión de tono',
-    startPlayer: 'JUGADOR INICIAL',
-    playersAndRounds: '{n} Jugadores',
-    round: 'Ronda {n}',
-    startSinging: '🎤 ¡Empieza a Cantar!',
-    getReady: 'Prepárate...',
-    noSong: 'No hay canción cargada',
-    endSongEarly: 'Terminar canción antes de tiempo',
-  },
-
   unifiedSetup: {
     back: '← Atrás',
     songSelected: 'Canción Seleccionada',
@@ -377,7 +358,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 La canción se divide en segmentos', '🔄 El cantante cambia después de cada segmento', '🏆 La puntuación del equipo se suma al final'],
     companionSingalong: ['📱 Todos los jugadores tienen su teléfono listo', '⚡ ¡Cuando tu teléfono se ilumina, es tu turno!', '🎤 Nadie sabe quién sigue', '🏆 Acumula puntos para tu equipo'],
-    companionPassTheMic: ['📱 Cada jugador canta desde su propio teléfono', '🎵 La canción se divide en segmentos distribuidos equitativamente', '⚡ Tu teléfono parpadea 3 segundos antes de tu turno', '🎤 ¡"TU TURNO!" aparece en la pantalla', '🏆 Puntos basados en la precisión de tono', '🔄 Múltiples rondas con clasificación general'],
     medley: ['👥 FFA: 4 jugadores cantan simultáneamente, evaluados individualmente', '⚔️ Equipo: 1v1 o 2v2 — los equipos compiten en duelos', '🎵 Fragmentos aleatorios de canciones — sin vista previa, ¡toda sorpresa!', '🏆 Puntos sumados entre todos los fragmentos, posible segunda ronda'],
     tournament: ['🏆 Sistema K.O.: El perdedor queda eliminado', '⚔️ Partidas 1 contra 1', '🎯 Modo Corto: Solo 60 segundos por partida', '👑 ¡El último ganador es el Campeón!'],
     battleRoyale: ['🎤 Hasta 4 jugadores con micrófono en el dispositivo', '📱 Hasta 20 jugadores más vía App Compañera', '📉 El jugador con la puntuación más baja es eliminado', '🔄 Nueva canción cada ronda (o por votación)', '🎯 Sistema de Recompensa: ¡Caza al líder!', '🏆 Gran Final: Mejor de 3 o Mejor de 5 para los últimos 2', '👑 ¡El último cantante gana!'],

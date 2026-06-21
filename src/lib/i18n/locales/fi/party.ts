@@ -69,25 +69,6 @@ export const partyTranslations = {
     error: 'Virhe'
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Kaikki laulavat puhelimellaan — puhelimesi vilkkuu ennen vuoroasi!',
-    back: '← Takaisin',
-    howItWorks: '🎮 Näin se toimii',
-    howItWorks1: 'Jokainen pelaaja yhdistää Companion-sovelluksen kautta',
-    howItWorks2: 'Kappale jaetaan tasaisesti jakautuviin segmentteihin',
-    howItWorks3: 'Puhelimesi vilkkuu ennen vuoroasi!',
-    howItWorks4: '"SINUN VUOROSI!" näkyy näytöllä',
-    howItWorks5: 'Pisteet sävelkorkeuden tarkkuuden perusteella',
-    startPlayer: 'ALKAVA PELAAJA',
-    playersAndRounds: '{n} pelaajaa',
-    round: 'Kierros {n}',
-    startSinging: '🎤 Aloita laulaminen!',
-    getReady: 'Valmistaudu...',
-    noSong: 'Kappaletta ei ladattuna',
-    endSongEarly: 'Lopeta kappale ennenaikaisesti',
-  },
-
   passTheMic: {
     title: 'Mikrofonin siirto',
     back: '← Takaisin',
@@ -406,7 +387,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 Kappale jaetaan segmentteihin', '🔄 Laulaja vaihtuu jokaisen segmentin jälkeen', '🏆 Joukkuepisteet lasketaan lopuksi'],
     companionSingalong: ['📱 Kaikkien pelaajien pitää pitää puhelimensa valmiina', '⚡ Kun puhelimesi syttyy, on sinun vuorosi!', '🎤 Kukaan ei tiedä kuka on seuraava', '🏆 Kerää pisteitä joukkueellesi'],
-    companionPassTheMic: ['📱 Jokainen pelaaja laulaa omalla puhelimellaan', '🎵 Kappale jaetaan tasaisesti jakautuviin segmentteihin', '⚡ Puhelimesi vilkkuu 3 sekuntia ennen vuoroasi', '🎤 "SINUN VUOROSI!" näkyy näytöllä', '🏆 Pisteet sävelkorkeuden tarkkuuden perusteella', '🔄 Useita kierroksia kokonaissijoituksella'],
     medley: ['👥 FFA: 4 pelaajaa laulavat samanaikaisesti, yksilöllinen arviointi', '⚔️ Joukkue: 1v1 tai 2v2 — joukkueet kilpailevat kaksinkamppailuissa', '🎵 Satunnaisia kappalepätkiä — ei esikatselua, kaikki yllätyksiä!', '🏆 Pisteet lasketaan yhteen kaikista pätkistä, toinen kierros mahdollinen'],
     tournament: ['🏆 K.O.-järjestelmä: Häviäjä eliminoidaan', '⚔️ 1 vastaan 1 -ottelut', '🎯 Lyhyt tila: Vain 60 sekuntia ottelua kohden', '👑 Viimeinen voittaja on mestari!'],
     battleRoyale: ['🎤 Jopa 4 pelaajaa mikrofonilla laitteella', '📱 Jopa 20 pelaajaa lisää Companion-sovelluksen kautta', '📉 Pelaaja, jolla on alimmat pisteet, eliminoidaan', '🔄 Uusi kappale joka kierros (tai äänestyksellä)', '🎯 Bounty-järjestelmä: Metsästät johtajaa!', '🏆 Finaali: Paras 3:sta tai 5:stä kahdelle viimeiselle', '👑 Viimeinen laulaja voittaa!'],

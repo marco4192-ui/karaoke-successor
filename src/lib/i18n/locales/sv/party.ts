@@ -234,25 +234,6 @@ export const partyTranslations = {
     countdownDesc: 'Sekunder tills omgången börjar',
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Alla sjunger genom sin telefon — din telefon blinkar innan din tur!',
-    back: '← Tillbaka',
-    howItWorks: '🎮 Så fungerar det',
-    howItWorks1: 'Varje spelare ansluter via Companion App',
-    howItWorks2: 'Låten delas in i rättvist fördelade segment',
-    howItWorks3: 'Din telefon blinkar innan din tur!',
-    howItWorks4: '"DIN TUR!" visas på skärmen',
-    howItWorks5: 'Poäng baserat på tonhöjdsnoggrannhet',
-    startPlayer: 'STARTANDE SPELARE',
-    playersAndRounds: '{n} Spelare',
-    round: 'Omgång {n}',
-    startSinging: '🎤 Börja Sjunga!',
-    getReady: 'Gör dig redo...',
-    noSong: 'Ingen låt inladdad',
-    endSongEarly: 'Avsluta låten tidigt',
-  },
-
   // Unified party setup
   unifiedSetup: {
     back: '← Tillbaka',
@@ -322,7 +303,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 Låten delas in i segment', '🔄 Sångaren byts efter varje segment', '🏆 Lagpoängen sammanställs i slutet'],
     companionSingalong: ['📱 Alla spelare håller sin telefon redo', '⚡ När din telefon lyser är det din tur!', '🎤 Ingen vet vem som är näst', '🏆 Samla poäng för ditt lag'],
-    companionPassTheMic: ['📱 Varje spelare sjunger genom sin egen telefon', '🎵 Låten delas in i rättvist fördelade segment', '⚡ Din telefon blinkar 3 sekunder innan din tur', '🎤 "DIN TUR!" visas på skärmen', '🏆 Poäng baserat på tonhöjdsnoggrannhet', '🔄 Flera omgångar med total ranking'],
     medley: ['👥 FFA: 4 spelare sjunger samtidigt, individuellt betygsatta', '⚔️ Lag: 1v1 eller 2v2 — lag tävlar i dueller', '🎵 Slumpmässiga låtutdrag — ingen förhandsvisning, alla överraskningar!', '🏆 Poäng summeras över alla utdrag, andra omgång möjlig'],
     tournament: ['🏆 K.O.-system: Förloraren elimineras', '⚔️ 1-mot-1 Matcher', '🎯 Kortläge: Bara 60 sekunder per match', '👑 Sista vinnaren blir Mästare!'],
     battleRoyale: ['🎤 Upp till 4 spelare med mikrofon på enheten', '📱 Upp till 20 fler spelare via Companion App', '📉 Spelaren med lägst poäng elimineras', '🔄 Ny låt varje omgång (eller genom röstning)', '🎯 Bounty System: Jaga ledaren!', '🏆 Grand Finale: Best-of-3 eller Best-of-5 för de sista 2', '👑 Sista sångaren vinner!'],

@@ -69,25 +69,6 @@ export const partyTranslations = {
     error: '错误'
   },
 
-  cptm: {
-    title: 'Companion 传麦克风',
-    subtitle: '每个人都通过手机演唱——轮到你之前手机会闪烁！',
-    back: '← 返回',
-    howItWorks: '🎮 工作原理',
-    howItWorks1: '每位玩家通过伴侣应用连接',
-    howItWorks2: '歌曲被分为公平分配的片段',
-    howItWorks3: '轮到你之前手机会闪烁！',
-    howItWorks4: '屏幕上显示"轮到你了！"',
-    howItWorks5: '根据音高准确度得分',
-    startPlayer: '起始玩家',
-    playersAndRounds: '{n}名玩家',
-    round: '第{n}轮',
-    startSinging: '🎤 开始演唱！',
-    getReady: '准备...',
-    noSong: '没有加载歌曲',
-    endSongEarly: '提前结束歌曲',
-  },
-
   passTheMic: {
     title: '传麦克风',
     back: '← 返回',
@@ -404,7 +385,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 歌曲被分为多个片段', '🔄 每个片段后更换歌手', '🏆 最后统计队伍得分'],
     companionSingalong: ['📱 所有玩家准备好手机', '⚡ 手机亮起时轮到你！', '🎤 没人知道下一个是谁', '🏆 为你的队伍收集积分'],
-    companionPassTheMic: ['📱 每位玩家通过自己的手机演唱', '🎵 歌曲被公平分配为多个片段', '⚡ 轮到你之前手机闪烁3秒', '🎤 屏幕显示"轮到你了！"', '🏆 根据音高准确度得分', '🔄 多轮比赛，综合排名'],
     medley: ['👥 FFA：4名玩家同时演唱，分别评分', '⚔️ 队伍：1v1或2v2——队伍进行对决', '🎵 随机歌曲片段——没有预览，全是惊喜！', '🏆 所有片段得分相加，可能有第二轮'],
     tournament: ['🏆 K.O.系统：输者淘汰', '⚔️ 1对1比赛', '🎯 短模式：每场仅60秒', '👑 最后的赢家是冠军！'],
     battleRoyale: ['🎤 最多4名玩家使用设备麦克风', '📱 最多20名玩家通过伴侣应用', '📉 最低分的玩家被淘汰', '🔄 每轮新歌（或投票选择）', '🎯 赏金系统：追猎领先者！', '🏆 大决战：最后两人Best-of-3或Best-of-5', '👑 最后的歌手获胜！'],

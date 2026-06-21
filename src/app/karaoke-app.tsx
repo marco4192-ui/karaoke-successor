@@ -158,7 +158,7 @@ export default function KaraokeZERO() {
     // ── CPTM abort: end song with evaluation instead of killing the series ──
     // The "Abort" button in the pause dialog should end the current song,
     // show the evaluation, and let the player continue to the next song.
-    if (isPartyModeActive && party.selectedGameMode === 'companion-pass-the-mic') {
+    if (isPartyModeActive && party.selectedGameMode === 'companion-singalong') {
       // Signal CPTM to end the song early — the hook's pauseDialogAction
       // effect will detect this and transition to song-results.
       // We use a special action value that the CPTM hook can react to.
@@ -193,12 +193,12 @@ export default function KaraokeZERO() {
     // and other non-party screens.
     // ═══════════════════════════════════════════════════════════════════
     // DO-NOT-CHANGE: Safety guard — if the selectedGameMode is 'medley-contest'
-    // or 'companion-pass-the-mic', this abort likely came from a stale
+    // or 'companion-singalong', this abort likely came from a stale
     // song-start (e.g. media load failure in a GameScreen that was
     // briefly rendered during medley/CPTM navigation). Do targeted
     // cleanup instead of nuking everything.
-    const mode = party.selectedGameMode;
-    if (mode === 'medley-contest' || mode === 'companion-pass-the-mic' || mode === 'companion-singalong') {
+    const mode = party.selectedGameMode as string;
+    if (mode === 'medley-contest' || mode === 'companion-singalong') {
       // eslint-disable-next-line no-console
       console.warn('[handleSongAbort] PARTY TERMINATOR BLOCKED — selectedGameMode=%s, screen=%s. Doing targeted cleanup instead.', mode, screen);
       party.setIsSongPlaying(false);
@@ -542,7 +542,7 @@ export default function KaraokeZERO() {
                   setScreen('pass-the-mic-game');
                 })();
               } else if (currentMode === 'companion-singalong') {
-                party.setCompanionSong(song);
+                party.setCptmSong(song);
                 party.setLibrarySelectedSong(song);
                 setScreen('party-setup');
               } else if (currentMode === 'rate-my-song' && party.rateMySongSettings) {
@@ -629,10 +629,14 @@ export default function KaraokeZERO() {
               return;
             }
 
-            if (activeMode === 'companion-singalong' && party.companionPlayers?.length > 0) {
-              party.setCompanionSong(song);
-              setSong(song);
-              setScreen('companion-singalong-game');
+            if (activeMode === 'companion-singalong' && party.cptmPlayers?.length > 0) {
+              const segments = generatePtmSegments(song.duration, party.cptmPlayers.length || 2, undefined, song.lyrics);
+              if (segments.length > 0) {
+                party.setCptmSong(song);
+                party.setCptmSegments(segments);
+                setSong(song);
+                setScreen('companion-singalong-game');
+              }
               return;
             }
 

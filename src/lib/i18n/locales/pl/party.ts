@@ -324,25 +324,6 @@ export const partyTranslations = {
   },
 
   // Companion Pass the Mic
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Wszyscy śpiewają przez telefon — Twój telefon miga przed Twoją kolejnością!',
-    back: '← Wróć',
-    howItWorks: '🎮 Jak to działa',
-    howItWorks1: 'Każdy gracz łączy się przez aplikację kompana',
-    howItWorks2: 'Piosenka jest podzielona na sprawiedliwie rozdzielone segmenty',
-    howItWorks3: 'Twój telefon miga 3 sekundy przed Twoją kolejką!',
-    howItWorks4: '„TWÓJ RUCH!" pojawia się na ekranie',
-    howItWorks5: 'Punkty na podstawie celności wysokości dźwięku',
-    startPlayer: 'ROZPOCZYNAJĄCY GRACZ',
-    playersAndRounds: '{n} graczy',
-    round: 'Runda {n}',
-    startSinging: '🎤 Zacznij śpiewać!',
-    getReady: 'Przygotuj się...',
-    noSong: 'Nie załadowano piosenki',
-    endSongEarly: 'Zakończ piosenkę wcześniej',
-  },
-
   // Unified party setup
   unifiedSetup: {
     back: '← Wróć',
@@ -407,7 +388,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 Piosenka jest podzielona na segmenty', '🔄 Śpiewak zmienia się po każdym segmencie', '🏆 Wynik drużyny jest podsumowywany na końcu'],
     companionSingalong: ['📱 Wszyscy gracze trzymają telefon gotowy', '⚡ Kiedy Twój telefon się świeci, to Twoja kolej!', '🎤 Nikt nie wie, kto jest następny', '🏆 Zbieraj punkty dla swojej drużyny'],
-    companionPassTheMic: ['📱 Każdy gracz śpiewa przez swój telefon', '🎵 Piosenka jest podzielona na sprawiedliwie rozdzielone segmenty', '⚡ Twój telefon miga 3 sekundy przed Twoją kolejką', '🎤 „TWÓJ RUCH!" pojawia się na ekranie', '🏆 Punkty na podstawie celności wysokości dźwięku', '🔄 Wiele rund z ogólnym rankingiem'],
     medley: ['👥 FFA: 4 graczy śpiewa jednocześnie, indywidualna ocena', '⚔️ Drużyna: 1v1 lub 2v2 — drużyny rywalizują w duelach', '🎵 Losowe fragmenty piosenek — bez podglądu, pełna niespodzianka!', '🏆 Punkty sumowane ze wszystkich fragmentów, możliwa druga runda'],
     tournament: ['🏆 System K.O.: Przegrany jest eliminowany', '⚔️ Mecz 1 na 1', '🎯 Tryb krótki: Tylko 60 sekund na mecz', '👑 Ostatni zwycięzca zostaje Mistrzem!'],
     battleRoyale: ['🎤 Do 4 graczy z mikrofonem na urządzeniu', '📱 Do 20 dodatkowych graczy przez aplikację kompana', '📉 Gracz z najniższym wynikiem jest eliminowany', '🔄 Nowa piosenka każdej rundy (lub przez głosowanie)', '🎯 System nagród: Poluj na lidera!', '🏆 Wielki Finał: Najlepszy z 3 lub 5 dla ostatniej dwójki', '👑 Ostatni śpiewający wygrywa!'],

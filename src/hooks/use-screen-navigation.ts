@@ -36,7 +36,6 @@ function computePartyModeActive(party: PartyStore): boolean {
     party.tournamentBracket ||
     party.battleRoyaleGame ||
     (party.passTheMicPlayers && party.passTheMicPlayers.length > 0) ||
-    (party.companionPlayers && party.companionPlayers.length > 0) ||
     (party.cptmPlayers && party.cptmPlayers.length > 0) ||
     (party.medleyPlayers && party.medleyPlayers.length > 0 && party.medleySongs && party.medleySongs.length > 0) ||
     party.competitiveGame ||

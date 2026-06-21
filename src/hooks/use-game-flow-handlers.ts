@@ -235,7 +235,8 @@ export function useGameFlowHandlers(
         party.setPassTheMicSong(null);
         party.setPassTheMicSegments([]);
       } else {
-        party.setCompanionSong(null);
+        party.setCptmSong(null);
+        party.setCptmSegments([]);
       }
       actions.resetGame();
       setScreen('party-setup');

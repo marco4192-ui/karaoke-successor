@@ -74,25 +74,6 @@ export const partyTranslations = {
     error: 'Error'
   },
 
-  cptm: {
-    title: 'Companion Pass the Mic',
-    subtitle: 'Everyone sings through their phone — your phone blinks before your turn!',
-    back: '← Back',
-    howItWorks: '🎮 How It Works',
-    howItWorks1: 'Every player connects via the Companion App',
-    howItWorks2: 'The song is divided into fairly distributed segments',
-    howItWorks3: 'Your phone blinks before your turn!',
-    howItWorks4: '"YOUR TURN!" appears on the display',
-    howItWorks5: 'Points based on pitch accuracy',
-    startPlayer: 'STARTING PLAYER',
-    playersAndRounds: '{n} Players',
-    round: 'Round {n}',
-    startSinging: '🎤 Start Singing!',
-    getReady: 'Get ready...',
-    noSong: 'No song loaded',
-    endSongEarly: 'End song early',
-  },
-
   passTheMic: {
     title: 'Pass the Mic',
     back: '← Back',
@@ -450,7 +431,6 @@ export const partyTranslations = {
   extendedDesc: {
     passTheMic: ['🎵 The song is divided into segments', '🔄 The singer changes after each segment', '🏆 The team score is tallied at the end'],
     companionSingalong: ['📱 All players keep their phone ready', '⚡ When your phone lights up, it\'s your turn!', '🎤 Nobody knows who\'s next', '🏆 Collect points for your team'],
-    companionPassTheMic: ['📱 Each player sings through their own phone', '🎵 The song is divided into fairly distributed segments', '⚡ Your phone blinks 3 seconds before your turn', '🎤 "YOUR TURN!" appears on the display', '🏆 Points based on pitch accuracy', '🔄 Multiple rounds with overall ranking'],
     medley: ['👥 FFA: 4 players sing simultaneously, individually rated', '⚔️ Team: 1v1 or 2v2 — teams compete in duels', '🎵 Random song snippets — no preview, all surprise!', '🏆 Points summed across all snippets, second round possible'],
     tournament: ['🏆 K.O. System: Loser is eliminated', '⚔️ 1-on-1 Matches', '🎯 Short Mode: Only 60 seconds per match', '👑 The last winner is the Champion!'],
     battleRoyale: ['🎤 Up to 4 players with microphone on the device', '📱 Up to 20 more players via Companion App', '📉 The player with the lowest score is eliminated', '🔄 New song each round (or by vote)', '🎯 Bounty System: Hunt the leader!', '🏆 Grand Finale: Best-of-3 or Best-of-5 for the last 2', '👑 The last singer wins!'],
@@ -559,7 +539,6 @@ export const partyTranslations = {
   gameModes: {
     'passTheMic': { title: 'Pass the Mic', description: 'Take turns singing parts of a song!' },
     'companionSingalong': { title: 'Companion Sing-A-Long', description: 'Your phone randomly lights up — sing when it blinks!' },
-    'companionPassTheMic': { title: 'Companion Pass the Mic', description: 'Sing segments via your phone — blink warns you before your turn!' },
     'medley': { title: 'Medley Contest', description: 'FFA or Team mode — sing random song snippets!' },
     'tournament': { title: 'Tournament Mode', description: 'Single elimination bracket — Sudden Death!' },
     'battleRoyale': { title: 'Battle Royale', description: 'All sing together — lowest score eliminated each round! Up to 24 players (4 mic + 20 companion)' },

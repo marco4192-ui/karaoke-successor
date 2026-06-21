@@ -22,7 +22,6 @@ export type Screen =
   | 'pass-the-mic-game'
   | 'companion-singalong'
   | 'companion-singalong-game'
-  | 'companion-pass-the-mic-game'
   | 'medley'
   | 'medley-game'
   | 'editor'
@@ -46,7 +45,6 @@ export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
   'pass-the-mic-game',
   'battle-royale-game',
   'companion-singalong-game',
-  'companion-pass-the-mic-game',
   'medley-game',
   'missing-words-game',
   'blind-game',

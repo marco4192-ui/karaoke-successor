@@ -243,7 +243,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             playerColor={PLAYER_COLORS[0]}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
-            gameMode="companion-pass-the-mic"
+            gameMode="companion-singalong"
           />
         )}
       </div>

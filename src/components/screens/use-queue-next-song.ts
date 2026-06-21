@@ -155,8 +155,8 @@ export function useQueueNextSong(onPlayAgain: () => void) {
       return;
     }
 
-    if (currentMode === 'companion-singalong' && party.companionPlayers?.length > 0) {
-      party.setCompanionSong(fullSong);
+    if (currentMode === 'companion-singalong' && party.cptmPlayers?.length > 0) {
+      party.setCptmSong(fullSong);
       setSong(fullSong);
       onPlayAgain();
       return;

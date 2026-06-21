@@ -12,7 +12,6 @@ import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen }
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
-import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
@@ -550,37 +549,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Companion Sing-A-Long Setup Screen */}
-      {screen === 'companion-singalong' && (
-        <CompanionSingAlongSetupScreen
-          profiles={profiles}
-          onSelectSong={(players, settings) => {
-            party.setCompanionPlayers(players);
-            party.setCompanionSettings(settings);
-            setGameMode('companion-singalong');
-            setScreen('library');
-          }}
-          onBack={() => setScreen('party')}
-        />
-      )}
-
-      {/* Companion Sing-A-Long Game Screen */}
-      {screen === 'companion-singalong-game' && party.companionSong && party.companionSettings && (
-        <CompanionGameView
-          players={party.companionPlayers}
-          song={party.companionSong}
-          settings={party.companionSettings}
-          onEndGame={() => {
-            party.setCompanionPlayers([]);
-            party.setCompanionSong(null);
-            party.setCompanionSettings(null);
-            setScreen('home');
-          }}
-        />
-      )}
-
-      {/* Companion Pass-the-Mic Game Screen */}
-      {screen === 'companion-pass-the-mic-game' && party.cptmSong && party.cptmSegments.length > 0 && (
+      {/* Companion Sing-A-Long Game Screen (powered by CPTM segment engine) */}
+      {screen === 'companion-singalong-game' && party.cptmSong && party.cptmSegments.length > 0 && (
         <CptmGameScreen
           players={party.cptmPlayers}
           song={party.cptmSong}
@@ -617,19 +587,19 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   party.setCptmSegments(action.result.segments);
                   party.setCptmSong(action.result.song);
                   party.setIsSongPlaying(false);
-                  setScreen('companion-pass-the-mic-game');
+                  setScreen('companion-singalong-game');
                 } else if (action.mode === 'medley') {
                   party.setPtmMedleySnippets(action.result.medleySnippets);
                   party.setCptmSegments(action.result.segments);
                   party.setCptmSong(action.result.song);
                   party.setIsSongPlaying(false);
-                  setScreen('companion-pass-the-mic-game');
+                  setScreen('companion-singalong-game');
                 } else {
                   setScreen('library');
                 }
               } catch (err) {
                 // eslint-disable-next-line no-console
-                console.error('[CPtM] Failed to prepare next song:', err);
+                console.error('[CompanionSingAlong] Failed to prepare next song:', err);
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
               }

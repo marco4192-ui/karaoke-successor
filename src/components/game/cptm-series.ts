@@ -89,7 +89,7 @@ export function useCptmSeries(params: CptmSeriesParams): CptmSeriesReturn {
     setCptmPlayers(resetPlayers);
     setCptmSegments([]);
     setCptmSong(null);
-    setGameMode('companion-pass-the-mic');
+    setGameMode('companion-singalong');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     // Clear all companion turn signals

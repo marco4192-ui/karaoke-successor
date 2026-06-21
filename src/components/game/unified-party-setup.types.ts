@@ -127,15 +127,8 @@ export interface PassTheMicSettings extends BaseModeSettings {
   sharedMicName?: string | null;
 }
 
-/** Companion Sing-Along */
+/** Companion Sing-Along (powered by CPTM segment engine) */
 export interface CompanionSingAlongSettings extends BaseModeSettings {
-  minTurnDuration?: number;
-  maxTurnDuration?: number;
-  blinkWarning?: number;
-}
-
-/** Companion Pass-the-Mic */
-export interface CompanionPassTheMicSettings extends BaseModeSettings {
   minTurnDuration?: number;
   maxTurnDuration?: number;
   blinkWarning?: number;
@@ -240,8 +233,7 @@ export type GameModeSettings =
   | DuelModeSettings
   | StandardModeSettings
   | DuetModeSettings
-  | OnlineModeSettings
-  | CompanionPassTheMicSettings;
+  | OnlineModeSettings;
 
 /** Discriminated union: maps each GameMode to its typed settings */
 export interface GameModeSettingsMap {
@@ -257,7 +249,7 @@ export interface GameModeSettingsMap {
   'duel': DuelModeSettings;
   'duet': DuetModeSettings;
   'online': OnlineModeSettings;
-  'companion-pass-the-mic': CompanionPassTheMicSettings;
+
 }
 
 // ===================== GAME SETUP RESULT =====================

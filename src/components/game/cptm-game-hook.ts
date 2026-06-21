@@ -206,7 +206,7 @@ export function useCptmGameLogic({
   const companionPitchCacheRef = useCompanionPitchPolling(phase, isPlaying);
 
   // ── Mobile game sync ──
-  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'companion-pass-the-mic', phase === 'song-results' || phase === 'series-results');
+  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'companion-singalong', phase === 'song-results' || phase === 'series-results');
 
   // ── Song playing status for Escape handler ──
   useEffect(() => {
