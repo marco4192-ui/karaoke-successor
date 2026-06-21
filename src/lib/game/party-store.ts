@@ -148,7 +148,7 @@ export interface PartyStore {
   resetPartyState: () => void;
 }
 
-export const usePartyStore = create<PartyStore>((set) => ({
+export const usePartyStore = create<PartyStore>((set, get) => ({
   // Tournament
   tournamentBracket: null,
   setTournamentBracket: (tournamentBracket) => set({ tournamentBracket }),
@@ -262,6 +262,24 @@ export const usePartyStore = create<PartyStore>((set) => ({
   // Reset all party state — "Ultimate Party-Mode Terminator"
   // Logs every invocation for debugging stale-state issues.
   resetPartyState: () => {
+    // DO-NOT-CHANGE: Safety net — if a medley or CPTM game is actively in
+    // progress (songs loaded, settings present), block the nuclear reset.
+    // This catches any code path we haven't individually guarded in
+    // karaoke-app.tsx handleSongAbort. The caller should do targeted
+    // cleanup instead of nuking all party state mid-game.
+    const state = get();
+    if (
+      (state.selectedGameMode === 'medley' && state.medleySongs.length > 0 && state.medleySettings) ||
+      (state.selectedGameMode === 'companion-singalong' && state.cptmSong && state.cptmSettings)
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn('[PartyTerminator] BLOCKED — medley or CPTM game is active. selectedGameMode=%s, medleySongs=%d, cptmSong=%s',
+        state.selectedGameMode, state.medleySongs.length, !!state.cptmSong);
+      // eslint-disable-next-line no-console
+      console.trace('[PartyTerminator] Blocked call stack:');
+      return;
+    }
+
     // eslint-disable-next-line no-console
     console.log('[PartyTerminator] resetPartyState() called — clearing ALL party state');
     // DO-NOT-CHANGE: Diagnostic stack trace to identify the caller.

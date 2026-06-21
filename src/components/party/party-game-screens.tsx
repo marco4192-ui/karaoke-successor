@@ -634,7 +634,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       )}
 
       {/* Medley Contest Game Screen — dedicated screen with multi-pitch detection */}
-      {screen === 'medley-game' && party.medleySongs.length > 0 && party.medleySettings && (
+      {screen === 'medley-game' && party.medleySongs.length > 0 && party.medleySettings ? (
         <MedleyGameScreen
           players={party.medleyPlayers}
           songs={party.medleySongs}
@@ -676,9 +676,15 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setScreen('home');
           }}
         />
+      ) : (
+        // DO-NOT-CHANGE: Diagnostic — log when medley render condition fails
+        (() => {
+          // eslint-disable-next-line no-console
+          console.warn('[party-game-screens] MedleyGameScreen SKIPPED — songs=%d, settings=%s, selectedGameMode=%s',
+            party.medleySongs.length, !!party.medleySettings, party.selectedGameMode);
+          return null;
+        })()
       )}
-
-{/* Missing Words Competitive Setup */}
       {screen === 'missing-words' && (
         <CompetitiveSetupScreen
           profiles={profiles}

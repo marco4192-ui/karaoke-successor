@@ -9,6 +9,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
 import { useMedleyGame, type MedleyGameScreenProps } from './medley-game-hook';
 import { PlayerIntroCard } from './medley-game-components';
 import { MedleyPlayingUI } from './medley-game-playing';
@@ -19,6 +20,18 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 export function MedleyGameScreen(props: MedleyGameScreenProps) {
   const { t } = useTranslation();
+
+  // DO-NOT-CHANGE: Diagnostic mount/unmount logging for Medley Contest debugging.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[MedleyGameScreen] MOUNTED — songs=%d, settings=%s, matchups=%d, players=%d',
+      props.songs.length, !!props.settings, props.matchups.length, props.players.length);
+    return () => {
+      // eslint-disable-next-line no-console
+      console.log('[MedleyGameScreen] UNMOUNTED — phase was still active');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     players: initialPlayers,
     songs: medleySongs,
