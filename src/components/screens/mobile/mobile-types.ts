@@ -67,6 +67,7 @@ export interface GameState {
   songEnded: boolean;
   queueLength: number;
   isAdPlaying: boolean;
+  gameMode: string | null;
   singalongTurn: SingalongTurn | null;
   cptmTurn: SingalongTurn | null;
   // #10 Tournament match ID for spectator voting
