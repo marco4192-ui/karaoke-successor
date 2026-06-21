@@ -264,6 +264,9 @@ export const usePartyStore = create<PartyStore>((set) => ({
   resetPartyState: () => {
     // eslint-disable-next-line no-console
     console.log('[PartyTerminator] resetPartyState() called — clearing ALL party state');
+    // DO-NOT-CHANGE: Diagnostic stack trace to identify the caller.
+    // eslint-disable-next-line no-console
+    console.trace('[PartyTerminator] Call stack:');
     set({
     tournamentBracket: null,
     tournamentSongDuration: 60,
