@@ -957,12 +957,19 @@ export function useMedleyGame({
   }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
 
   // ── Cleanup ──
+  // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).
+  // useMultiPitchDetector returns a new object every render, so [multiPitch]
+  // caused the cleanup to fire on every re-render, which cleared the
+  // countdown interval mid-countdown (killing the game start).
+  // Both multiPitch.stop() and countdownIntervalRef read from refs internally,
+  // so the stale closure over the initial multiPitch is safe.
   useEffect(() => {
     return () => {
       multiPitch.stop();
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
-  }, [multiPitch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Helpers ──
   const snippetProgress = currentSnippet

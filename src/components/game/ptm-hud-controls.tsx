@@ -16,6 +16,8 @@ interface PtmHudControlsProps {
   isPlaying: boolean;
   /** Legacy toggle — NOT used for the PauseButton anymore. Kept for backward compat. */
   onTogglePause: () => void;
+  /** Ref to active webcam streams (for cleanup on unmount). */
+  activeWebcamStreamsRef?: React.RefObject<MediaStream[]>;
 }
 
 /**
