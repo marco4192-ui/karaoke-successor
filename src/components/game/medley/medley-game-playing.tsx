@@ -10,11 +10,13 @@
  * Feature #15: Voice modifiers — modifier reveal animation, badge
  * Feature #16: Mystery mode — hidden song info, reveal
  * Feature #18: Team bonuses — synergy flash, comeback boost indicator
+ *
+ * Layout: absolute positioned overlays on top of GameBackground (fullscreen).
+ * Player ranking on the left (like PTM), song info + lyrics + notes centered.
  */
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import type { Note, LyricLine, Difficulty } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';
 import { PitchIndicator } from './medley-game-components';
@@ -104,11 +106,14 @@ export function MedleyPlayingUI({
 
   const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
 
+  // Sort players by score for ranking display
+  const rankedPlayers = [...playersDisplay].sort((a, b) => b.score - a.score);
+
   return (
-    <>
+    <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
       {/* Feature #15: Modifier Reveal Overlay */}
       {modifierJustRevealed && activeModifier !== 'none' && modDef && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 animate-pulse">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 animate-pulse pointer-events-none">
           <div className="text-center">
             <div className="text-6xl mb-3">{modDef.icon}</div>
             <div className="text-4xl font-bold text-white">{modDef.id.toUpperCase()}!</div>
@@ -138,7 +143,7 @@ export function MedleyPlayingUI({
 
       {/* Feature #16: Mystery Reveal */}
       {mysteryReveal && mysteryRevealSong && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 pointer-events-none">
           <div className="text-center">
             <div className="text-6xl mb-4">🎵</div>
             <div className="text-2xl text-white/60 mb-2">{t('medley.songReveal')}</div>
@@ -153,45 +158,98 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* Top bar: badge + progress + controls */}
-      <div className="flex-shrink-0 p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
-            <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
-            {!isTeam && !isEliminationMode && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
-            )}
-            {isEliminationMode && (
-              <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5">
-                {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
-              </Badge>
-            )}
-            {/* Feature #9: Dynamic difficulty badge */}
-            {currentDynamicDifficulty && (
-              <DifficultyBadge difficulty={currentDynamicDifficulty} />
-            )}
-            {/* Feature #15: Active modifier badge */}
-            {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
-              <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
-                {modDef.icon} {modDef.id}
-              </Badge>
-            )}
-            {/* Feature #16: Mystery mode badge */}
-            {isMysteryMode && !mysteryReveal && (
-              <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5">🎰</Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2 pointer-events-auto">
-            {isTeam && currentMatchup && (
-              <div className="flex items-center gap-2 text-sm">
-                <span style={{ color: currentMatchup.playerA.color }}>{currentMatchup.playerA.name}</span>
-                <span className="text-white/40">{t('medley.vs')}</span>
-                <span style={{ color: currentMatchup.playerB.color }}>{currentMatchup.playerB.name}</span>
+      {/* ═══════ LEFT SIDE: Player Ranking (like PTM) ═══════ */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
+        <div className="flex flex-col gap-1.5">
+          {rankedPlayers.map((player, rank) => {
+            const isActive = activePlayers.some(ap => ap.id === player.id);
+            return (
+              <div
+                key={player.id}
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-white/15 border border-white/20'
+                    : player.isEliminated
+                      ? 'bg-black/20 border border-white/5 opacity-30'
+                      : 'bg-black/40 border border-white/5'
+                }`}
+                style={isActive ? { borderColor: `${player.color}50` } : {}}
+              >
+                {/* Rank number */}
+                <span className={`text-[10px] font-bold w-4 text-center ${
+                  rank === 0 ? 'text-yellow-400' : 'text-white/30'
+                }`}>
+                  {rank + 1}
+                </span>
+                {/* Avatar */}
+                {player.avatar ? (
+                  <img
+                    src={player.avatar}
+                    alt={player.name}
+                    className={`w-7 h-7 rounded-full object-cover ${isActive ? 'border-2' : 'border border-white/20'}`}
+                    style={isActive ? { borderColor: player.color } : {}}
+                  />
+                ) : (
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isActive ? 'border-2' : 'border border-white/20'}`}
+                    style={{ backgroundColor: `${player.color}80`, borderColor: isActive ? player.color : undefined }}
+                  >
+                    {player.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex flex-col min-w-0">
+                  <span className={`text-xs font-medium truncate max-w-[80px] ${isActive ? 'text-white' : 'text-white/50'}`}>
+                    {player.name ?? ''}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-[10px] ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
+                      {String(player.score ?? 0).toLocaleString()} pts
+                    </span>
+                    {/* Feature #5: Combo display for active player */}
+                    {isActive && (player.combo ?? 0) >= 3 && (
+                      <span className="text-[10px] text-amber-400 font-medium">
+                        {String(player.combo)}x
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Feature #10: Eliminated badge */}
+                {player.isEliminated && (
+                  <span className="text-xs text-red-400 font-bold ml-auto">💀</span>
+                )}
               </div>
-            )}
-            <FullscreenButton />
-          </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ═══════ TOP BAR: badges + progress ═══════ */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
+          <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
+          {!isTeam && !isEliminationMode && (
+            <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
+          )}
+          {isEliminationMode && (
+            <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5">
+              {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
+            </Badge>
+          )}
+          {/* Feature #9: Dynamic difficulty badge */}
+          {currentDynamicDifficulty && (
+            <DifficultyBadge difficulty={currentDynamicDifficulty} />
+          )}
+          {/* Feature #15: Active modifier badge */}
+          {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
+            <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
+              {modDef.icon} {modDef.id}
+            </Badge>
+          )}
+          {/* Feature #16: Mystery mode badge */}
+          {isMysteryMode && !mysteryReveal && (
+            <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5">🎰</Badge>
+          )}
         </div>
 
         {/* Feature #18: Team scores during gameplay */}
@@ -207,32 +265,11 @@ export function MedleyPlayingUI({
           </div>
         )}
 
-        {/* Per-player live scores + combo */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {[...playersDisplay].sort((a, b) => b.score - a.score).map((p) => (
-            <div key={p.id} className={`flex items-center gap-1.5 ${p.isEliminated ? 'opacity-30' : ''}`}>
-              {p.avatar ? (
-                <img src={p.avatar} alt={p.name} className="w-5 h-5 rounded-full object-cover border border-white/20" />
-              ) : (
-                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: p.color }}>
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xs font-medium" style={{ color: p.color }}>{p.name}: {p.score}</span>
-              {/* Feature #5: Combo display */}
-              {!p.isEliminated && <ComboDisplay combo={p.combo} />}
-              {/* Feature #10: Eliminated badge */}
-              {p.isEliminated && (
-                <span className="text-xs text-red-400 font-bold">💀</span>
-              )}
-            </div>
-          ))}
-        </div>
-        <Progress value={totalProgress} className="h-1.5 bg-white/10" />
+        <Progress value={totalProgress} className="h-1.5 bg-white/10 w-64" />
       </div>
 
-      {/* Main game area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
+      {/* ═══════ CENTER: Song info + timer + lyrics + notes ═══════ */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pl-44 min-h-0">
         {/* Song info + timer */}
         <div className="text-center mb-2">
           {isMysteryMode && !mysteryReveal ? (
@@ -272,30 +309,19 @@ export function MedleyPlayingUI({
 
         {/* Feature #5: Floating scoring popups */}
         <ScoringPopups events={lastScoringEvents} players={playersDisplay} />
-
-        {/* Per-player pitch indicators */}
-        <div className="flex gap-6 items-center justify-center mt-2">
-          {activePlayers.map(p => (
-            <PitchIndicator
-              key={p.id}
-              player={p}
-              pitch={multiPitch.getPlayerPitch(p.id)}
-            />
-          ))}
-        </div>
       </div>
 
-      {/* Snippet timer */}
-      <div className="flex-shrink-0 px-3 pb-3">
+      {/* ═══════ BOTTOM BAR: snippet progress + quit ═══════ */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-72 pointer-events-none">
         <Progress value={snippetProgress} className="h-2 bg-white/10" />
         <div className="flex justify-between text-xs text-white/40 mt-1">
           <span>{t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
-          <button onClick={handleEndEarly} aria-label={t('medley.quit')} className="text-red-400/60 hover:text-red-400 transition-colors">
+          <button onClick={handleEndEarly} aria-label={t('medley.quit')} className="text-red-400/60 hover:text-red-400 transition-colors pointer-events-auto">
             {t('medley.quit')}
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -430,31 +456,6 @@ function MiniNoteHighway({
         />
       ))}
     </div>
-  );
-}
-
-// ===================== FEATURE #5: COMBO DISPLAY =====================
-
-function ComboDisplay({ combo }: { combo: number }) {
-  if (combo < 3) return null;
-
-  if (combo >= 10) {
-    return (
-      <span className="text-xs font-bold text-red-400 animate-pulse"
-        style={{ textShadow: '0 0 8px rgba(248, 113, 113, 0.6)' }}>
-        {combo}x MEGA COMBO!
-      </span>
-    );
-  }
-  if (combo >= 5) {
-    return (
-      <span className="text-xs font-bold text-orange-400 animate-pulse">
-        {combo}x COMBO!
-      </span>
-    );
-  }
-  return (
-    <span className="text-xs text-yellow-400">{combo}x</span>
   );
 }
 

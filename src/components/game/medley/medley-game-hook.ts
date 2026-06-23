@@ -25,7 +25,8 @@ import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { useTranslation } from '@/lib/i18n/translations';
-import type { Note, LyricLine, PitchDetectionResult, Difficulty } from '@/types/game';
+import { useGameSettings } from '@/hooks/use-game-settings';
+import type { Note, LyricLine, PitchDetectionResult, Difficulty, Song } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
@@ -69,10 +70,12 @@ interface MedleyGameState {
 
   // Audio
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   audioUrl: string | null;
   audioError: string | null;
   currentTimeMs: number;
   isPlaying: boolean;
+  restoredSong: Song | null;
 
   // Players (display copy)
   playersDisplay: MedleyPlayer[];
@@ -124,6 +127,10 @@ interface MedleyGameState {
   // Team
   isTeam: boolean;
 
+  // Display settings (from useGameSettings)
+  showBackgroundVideo: boolean;
+  useAnimatedBackground: boolean;
+
   // Actions
   handleStart: () => Promise<void>;
   handleEndEarly: () => void;
@@ -164,12 +171,17 @@ export function useMedleyGame({
   const currentSnippetRef = useRef(currentSnippet);
   currentSnippetRef.current = currentSnippet;
 
-  // ── Audio ──
+  // ── Audio / Video ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
+
+  // ── Game settings (display preferences) ──
+  const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();
 
   // ── Players (mutable ref for performance) ──
   const initialMappedPlayers = useMemo(
@@ -282,8 +294,14 @@ export function useMedleyGame({
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+      if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
     } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
-      if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(() => {});
+      }
+      if (videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
     }
   }, [pauseDialogAction, isPlaying, phase]);
 
@@ -339,7 +357,7 @@ export function useMedleyGame({
     }
   }, [currentSnippetIdx, phase]);
 
-  // ── Prepare snippet audio + notes ──
+  // ── Prepare snippet audio + notes + video ──
   useEffect(() => {
     if (!currentSnippet) return;
     let cancelled = false;
@@ -351,6 +369,9 @@ export function useMedleyGame({
       try {
         const prepared = await ensureSongUrls(currentSnippet.song);
         if (cancelled) return;
+
+        // Store fully restored song for GameBackground usage
+        setRestoredSong(prepared);
 
         if (prepared.audioUrl) {
           setAudioUrl(prepared.audioUrl);
@@ -393,12 +414,33 @@ export function useMedleyGame({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnippet?.song.id, currentSnippetIdx]);
 
-  // ── Audio element ──
+  // ── Auto-play audio when URL becomes ready during 'playing' phase ──
+  // In Tauri, ensureSongUrls may resolve AFTER the countdown finishes.
+  // Without this effect, the audio element has no src when play() is first called.
   useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.src = audioUrl;
-      audioRef.current.load();
-    }
+    if (!audioUrl || !audioRef.current || !isPlaying || phase !== 'playing' || !currentSnippet) return;
+    const audio = audioRef.current;
+    // Only auto-play if audio is not already playing (avoid interrupting)
+    if (!audio.paused) return;
+    audio.currentTime = currentSnippet.startTime / 1000;
+    audio.play().catch(e => {
+      // eslint-disable-next-line no-console
+      console.warn('[Medley] Auto-play on URL ready failed:', e);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioUrl]);
+
+  // ── Audio element: set src and wait for canplay ──
+  const audioReadyRef = useRef(false);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+    audioReadyRef.current = false;
+    const onCanPlay = () => { audioReadyRef.current = true; };
+    audio.addEventListener('canplay', onCanPlay);
+    audio.src = audioUrl;
+    audio.load();
+    return () => { audio.removeEventListener('canplay', onCanPlay); };
   }, [audioUrl]);
 
   useEffect(() => {
@@ -619,8 +661,19 @@ export function useMedleyGame({
   // ── Audio stall fallback timer ──
   // If audio fails to play or stalls (paused but phase=playing), auto-advance
   // after a short grace period so the game doesn't hang forever.
+  // Also handles pause/resume: when paused, the interval is cleared;
+  // when resumed (isPlaying flips back to true), a new interval is created.
+  const isPausedRef = useRef(false);
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
+    if (pauseDialogAction === 'song-pause') {
+      isPausedRef.current = true;
+      return;
+    }
+    isPausedRef.current = false;
+  }, [pauseDialogAction]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !currentSnippet || isPausedRef.current) return;
 
     const snippet = currentSnippet;
     const snippetDuration = snippet.endTime - snippet.startTime;
@@ -632,6 +685,7 @@ export function useMedleyGame({
     let fallbackStartTime = 0;
 
     const checkStall = () => {
+      if (isPausedRef.current) return; // Don't detect stall while paused
       const audio = audioRef.current;
       if (audio && !audio.paused) return; // Audio is playing fine
       if (!stallDetected) {
@@ -654,6 +708,7 @@ export function useMedleyGame({
         const startOffset = Date.now() - fallbackStartTime;
         const startMs = currentTimeMs + startOffset;
         fallbackTimer = setInterval(() => {
+          if (isPausedRef.current) return; // Freeze fallback while paused
           const elapsed = Date.now() - fallbackStartTime + startOffset;
           const time = startMs + elapsed;
           setCurrentTimeMs(time);
@@ -699,13 +754,15 @@ export function useMedleyGame({
       if (fallbackInterval) clearInterval(fallbackInterval);
       if (fallbackTimer) clearInterval(fallbackTimer);
     };
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length]);
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction]);
 
   // ── Game loop ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
 
     const loop = setInterval(() => {
+      // Don't advance while paused
+      if (isPausedRef.current) return;
       const audio = audioRef.current;
       if (!audio || audio.paused) return;
 
@@ -956,13 +1013,11 @@ export function useMedleyGame({
     }
   }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
 
-  // ── Cleanup ──
+  // ── Cleanup on unmount ──
   // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).
   // useMultiPitchDetector returns a new object every render, so [multiPitch]
   // caused the cleanup to fire on every re-render, which cleared the
   // countdown interval mid-countdown (killing the game start).
-  // Both multiPitch.stop() and countdownIntervalRef read from refs internally,
-  // so the stale closure over the initial multiPitch is safe.
   useEffect(() => {
     return () => {
       multiPitch.stop();
@@ -1004,10 +1059,14 @@ export function useMedleyGame({
     snippetNotes,
     snippetLyrics,
     audioRef,
+    videoRef,
     audioUrl,
     audioError,
     currentTimeMs,
     isPlaying,
+    restoredSong,
+    showBackgroundVideo,
+    useAnimatedBackground,
     playersDisplay: ___playersDisplay,
     snippetProgress,
     totalProgress,
