@@ -31,6 +31,7 @@ interface MedleyPlayingProps {
   currentSnippetIdx: number;
   snippetCount: number;
   snippetNotes: Note[];
+  snippetLyrics: LyricLine[];
   currentLyricLine: LyricLine | null;
   currentTimeMs: number;
   playersDisplay: MedleyPlayer[];
@@ -67,6 +68,7 @@ export function MedleyPlayingUI({
   currentSnippetIdx,
   snippetCount,
   snippetNotes,
+  snippetLyrics,
   currentLyricLine,
   currentTimeMs,
   playersDisplay,
@@ -288,10 +290,27 @@ export function MedleyPlayingUI({
           </div>
         </div>
 
-        {/* Lyrics */}
+        {/* Lyrics — current line large + next line faded (PTM-like) */}
         {currentLyricLine && (
-          <div className="bg-black/30 rounded-xl px-8 py-3 mb-2 max-w-lg">
-            <div className="text-center text-xl font-bold text-white">{currentLyricLine.text}</div>
+          <div className="text-center mb-2 max-w-2xl">
+            {(() => {
+              const curIdx = snippetLyrics.indexOf(currentLyricLine);
+              const nextLine = curIdx >= 0 && curIdx + 1 < snippetLyrics.length
+                ? snippetLyrics[curIdx + 1]
+                : null;
+              return (
+                <>
+                  <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg leading-tight">
+                    {currentLyricLine.text}
+                  </div>
+                  {nextLine && (
+                    <div className="text-lg text-white/30 mt-1 transition-opacity">
+                      {nextLine.text}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 

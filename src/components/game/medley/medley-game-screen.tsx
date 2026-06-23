@@ -197,6 +197,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             currentSnippetIdx={currentSnippetIdx}
             snippetCount={medleySongs.length}
             snippetNotes={snippetNotes}
+            snippetLyrics={state.snippetLyrics}
             currentLyricLine={currentLyricLine}
             currentTimeMs={state.currentTimeMs}
             playersDisplay={playersDisplay}
