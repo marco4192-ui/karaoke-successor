@@ -162,8 +162,11 @@ export function useMedleyGame({
 
   // ── Phase ──
   const [phase, setPhase] = useState<MedleyGamePhase>('intro');
+  const phaseRef = useRef<MedleyGamePhase>('intro');
   const [countdown, setCountdown] = useState(3);
   const [transitionCount, setTransitionCount] = useState(3);
+  // Keep phaseRef in sync (used in async callbacks to avoid stale closures)
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   // ── Current snippet ──
   const [currentSnippetIdx, setCurrentSnippetIdx] = useState(0);
@@ -179,6 +182,10 @@ export function useMedleyGame({
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [restoredSong, setRestoredSong] = useState<Song | null>(null);
+  // Track whether audio media is loaded and ready to play (set by prepare effect)
+  const mediaReadyRef = useRef(false);
+  // Flag: play was requested but audio wasn't ready yet (set by play trigger, consumed by canplay handler)
+  const playWhenReadyRef = useRef(false);
 
   // ── Game settings (display preferences) ──
   const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();
@@ -296,14 +303,18 @@ export function useMedleyGame({
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
       if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
     } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
-      if (audioRef.current && audioRef.current.paused) {
+      // Resume: seek to correct position and play
+      if (audioRef.current && currentSnippet) {
+        // eslint-disable-next-line no-console
+        console.log('[Medley] Resuming playback');
+        audioRef.current.currentTime = (currentSnippet.startTime + currentTimeMs) / 1000;
         audioRef.current.play().catch(() => {});
       }
       if (videoRef.current && videoRef.current.paused) {
         videoRef.current.play().catch(() => {});
       }
     }
-  }, [pauseDialogAction, isPlaying, phase]);
+  }, [pauseDialogAction, isPlaying, phase, currentSnippet, currentTimeMs]);
 
   // ── Feature #9: Apply dynamic difficulty when snippet changes ──
   useEffect(() => {
@@ -332,11 +343,14 @@ export function useMedleyGame({
   }, [currentSnippetIdx, phase, settings.modifiersEnabled]);
 
   // ── Feature #15: Apply playback rate when modifier changes ──
+  // Only updates the rate on an already-playing audio element (does NOT call play/load)
   useEffect(() => {
     if (!audioRef.current) return;
     const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
     if (modDef) {
       audioRef.current.playbackRate = modDef.playbackRate;
+    } else {
+      audioRef.current.playbackRate = 1.0;
     }
   }, [activeModifier]);
 
@@ -358,6 +372,8 @@ export function useMedleyGame({
   }, [currentSnippetIdx, phase]);
 
   // ── Prepare snippet audio + notes + video ──
+  // Loads audio directly (sets src + waits for canplay) to avoid race condition
+  // where a separate effect's load() call aborts a pending play().
   useEffect(() => {
     if (!currentSnippet) return;
     let cancelled = false;
@@ -365,6 +381,7 @@ export function useMedleyGame({
     const prepare = async () => {
       setAudioUrl(null);
       setAudioError(null);
+      mediaReadyRef.current = false;
 
       try {
         const prepared = await ensureSongUrls(currentSnippet.song);
@@ -373,13 +390,7 @@ export function useMedleyGame({
         // Store fully restored song for GameBackground usage
         setRestoredSong(prepared);
 
-        if (prepared.audioUrl) {
-          setAudioUrl(prepared.audioUrl);
-        } else {
-          setAudioError(t('medley.noAudioAvailable'));
-        }
-
-        // Extract notes within snippet range
+        // Extract notes within snippet range (does NOT depend on audio loading)
         const notes: Note[] = [];
         const lyrics: LyricLine[] = [];
         if (prepared.lyrics) {
@@ -404,6 +415,54 @@ export function useMedleyGame({
         } else {
           scoringMetaRef.current = null;
         }
+
+        // Diagnostic: log notes/lyrics count
+        // eslint-disable-next-line no-console
+        console.log(`[Medley] Prepared snippet: notes=${notes.length}, lyrics=${lyrics.length}, audioUrl=${prepared.audioUrl ? 'yes' : 'no'}`);
+
+        // Load audio directly here (not in a separate effect!)
+        // A separate effect calling load() would race with play() and cause
+        // "play() was interrupted by a call to pause()" errors.
+        if (prepared.audioUrl) {
+          setAudioUrl(prepared.audioUrl);
+          const audio = audioRef.current;
+          if (audio) {
+            audio.src = prepared.audioUrl;
+            // Wait for audio to be loadable
+            await new Promise<void>((resolve) => {
+              if (cancelled) { resolve(); return; }
+              if (audio.readyState >= 3) { resolve(); return; }
+              const onReady = () => {
+                audio.removeEventListener('canplay', onReady);
+                audio.removeEventListener('error', onError);
+                resolve();
+              };
+              const onError = () => {
+                audio.removeEventListener('canplay', onReady);
+                audio.removeEventListener('error', onError);
+                resolve();
+              };
+              audio.addEventListener('canplay', onReady);
+              audio.addEventListener('error', onError);
+              audio.load();
+            });
+            if (cancelled) return;
+            mediaReadyRef.current = true;
+            // eslint-disable-next-line no-console
+            console.log('[Medley] Audio media ready');
+            // If play was already requested (countdown finished before load), play now
+            if (playWhenReadyRef.current && phaseRef.current === 'playing') {
+              audio.currentTime = currentSnippet.startTime / 1000;
+              audio.play().catch(e => {
+                // eslint-disable-next-line no-console
+                console.warn('[Medley] Delayed play after load failed:', e);
+              });
+              playWhenReadyRef.current = false;
+            }
+          }
+        } else {
+          setAudioError(t('medley.noAudioAvailable'));
+        }
       } catch {
         if (!cancelled) setAudioError(t('medley.audioLoadFailed'));
       }
@@ -414,42 +473,40 @@ export function useMedleyGame({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnippet?.song.id, currentSnippetIdx]);
 
-  // ── Auto-play audio when URL becomes ready during 'playing' phase ──
-  // In Tauri, ensureSongUrls may resolve AFTER the countdown finishes.
-  // Without this effect, the audio element has no src when play() is first called.
+  // ── Play audio when entering 'playing' phase ──
+  // Centralized: ALL play attempts go through this effect.
+  // Handles first snippet (countdown→playing) and subsequent snippets (transition→playing).
+  // Uses mediaReadyRef to avoid calling play() on an unloaded audio element.
+  const lastPlayPhaseRef = useRef<string>('');
   useEffect(() => {
-    if (!audioUrl || !audioRef.current || !isPlaying || phase !== 'playing' || !currentSnippet) return;
-    const audio = audioRef.current;
-    // Only auto-play if audio is not already playing (avoid interrupting)
-    if (!audio.paused) return;
-    audio.currentTime = currentSnippet.startTime / 1000;
-    audio.play().catch(e => {
-      // eslint-disable-next-line no-console
-      console.warn('[Medley] Auto-play on URL ready failed:', e);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audioUrl]);
+    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
+    // Avoid re-triggering on unrelated re-renders (e.g. score updates)
+    if (lastPlayPhaseRef.current === `${currentSnippetIdx}-${phase}`) return;
+    lastPlayPhaseRef.current = `${currentSnippetIdx}-${phase}`;
 
-  // ── Audio element: set src and wait for canplay ──
-  const audioReadyRef = useRef(false);
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !audioUrl) return;
-    audioReadyRef.current = false;
-    const onCanPlay = () => { audioReadyRef.current = true; };
-    audio.addEventListener('canplay', onCanPlay);
-    audio.src = audioUrl;
-    audio.load();
-    return () => { audio.removeEventListener('canplay', onCanPlay); };
-  }, [audioUrl]);
-
-  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onErr = () => { setAudioError(t('medley.audioLoadFailed')); };
-    audio.addEventListener('error', onErr);
-    return () => { audio.removeEventListener('error', onErr); };
-  }, [audioUrl]);
+
+    if (!mediaReadyRef.current) {
+      // Audio not loaded yet — set flag to play when canplay fires
+      playWhenReadyRef.current = true;
+      // eslint-disable-next-line no-console
+      console.log('[Medley] Play requested but media not ready, will retry after load');
+      return;
+    }
+
+    if (!audio.paused) return; // Already playing
+
+    audio.currentTime = currentSnippet.startTime / 1000;
+    // Apply active voice modifier playback rate
+    const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
+    if (modDef) audio.playbackRate = modDef.playbackRate;
+    audio.play().catch(e => {
+      // eslint-disable-next-line no-console
+      console.warn('[Medley] Play on phase enter failed:', e);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isPlaying, currentSnippetIdx]);
 
   // ── Get current lyric line ──
   const currentLyricLine = useMemo(() => {
@@ -659,10 +716,9 @@ export function useMedleyGame({
   }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, multiPitch]);
 
   // ── Audio stall fallback timer ──
-  // If audio fails to play or stalls (paused but phase=playing), auto-advance
-  // after a short grace period so the game doesn't hang forever.
-  // Also handles pause/resume: when paused, the interval is cleared;
-  // when resumed (isPlaying flips back to true), a new interval is created.
+  // If audio fails to play or stalls, auto-advance after a grace period.
+  // Uses a long grace period (8s) to avoid false positives during loading.
+  // Also freezes during pause (isPausedRef).
   const isPausedRef = useRef(false);
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
@@ -677,49 +733,38 @@ export function useMedleyGame({
 
     const snippet = currentSnippet;
     const snippetDuration = snippet.endTime - snippet.startTime;
-    // Grace period: 3 seconds for audio to start, then fall back to timer
-    const STALL_GRACE_MS = 3000;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
     let stallDetected = false;
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
-    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
-    let fallbackStartTime = 0;
+    let stallCheckCount = 0;
+    const STALL_CHECK_LIMIT = 16; // 16 × 500ms = 8 seconds grace period
 
-    const checkStall = () => {
-      if (isPausedRef.current) return; // Don't detect stall while paused
+    const checkInterval = setInterval(() => {
+      if (isPausedRef.current) return;
       const audio = audioRef.current;
-      if (audio && !audio.paused) return; // Audio is playing fine
-      if (!stallDetected) {
-        stallDetected = true;
-        fallbackStartTime = Date.now();
-        // eslint-disable-next-line no-console
-        console.warn('[Medley] Audio stalled, starting fallback timer');
+      // Audio is playing fine — no stall
+      if (audio && !audio.paused) {
+        stallCheckCount = 0;
+        return;
       }
-    };
-
-    // Check periodically if audio is stalled
-    fallbackInterval = setInterval(() => {
-      checkStall();
-      if (stallDetected && fallbackInterval) {
-        clearInterval(fallbackInterval);
-        fallbackInterval = null;
-        // Start fallback timer that advances currentTimeMs
+      stallCheckCount++;
+      if (stallCheckCount >= STALL_CHECK_LIMIT && !stallDetected) {
+        stallDetected = true;
+        const fallbackStartTime = Date.now();
+        const startMs = currentTimeMs;
         // eslint-disable-next-line no-console
         console.warn('[Medley] Running in fallback mode (no audio)');
-        const startOffset = Date.now() - fallbackStartTime;
-        const startMs = currentTimeMs + startOffset;
+        clearInterval(checkInterval);
         fallbackTimer = setInterval(() => {
-          if (isPausedRef.current) return; // Freeze fallback while paused
-          const elapsed = Date.now() - fallbackStartTime + startOffset;
+          if (isPausedRef.current) return;
+          const elapsed = Date.now() - fallbackStartTime;
           const time = startMs + elapsed;
           setCurrentTimeMs(time);
 
-          // Check snippet end in fallback mode
           if (time >= snippetDuration) {
             if (fallbackTimer) clearInterval(fallbackTimer);
             fallbackTimer = null;
             setIsPlaying(false);
 
-            // Post-snippet processing (same as normal game loop end path)
             const activeIds = getActivePlayerIds();
             activeIds.forEach(id => {
               const p = playersRef.current.find(p => p.id === id);
@@ -739,7 +784,6 @@ export function useMedleyGame({
             }
             forceRender();
 
-            // Move to next snippet or round-results
             if (currentSnippetIdx < medleySongs.length - 1) {
               setPhase('transition');
             } else {
@@ -751,7 +795,7 @@ export function useMedleyGame({
     }, 500);
 
     return () => {
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      clearInterval(checkInterval);
       if (fallbackTimer) clearInterval(fallbackTimer);
     };
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction]);
@@ -871,6 +915,9 @@ export function useMedleyGame({
           const nextIdx = currentSnippetIdx + 1;
           setCurrentSnippetIdx(nextIdx);
           setPhase('playing');
+          setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
+          setCurrentTimeMs(0);
+          lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
           // Feature #18: Pre-check comeback boost before the last snippet starts
           preCheckComeback(nextIdx);
           return transitionTime;
@@ -893,11 +940,10 @@ export function useMedleyGame({
     setFinalFaceOff(false);
     setCurrentTimeMs(0);
 
-    // IMPORTANT: Start the countdown interval BEFORE awaiting pitch initialization.
-    // multiPitch.initialize() may block indefinitely (e.g. no mic permission, getUserMedia hangs).
-    // If we await first, the countdown never begins and the UI freezes on "countdown" phase.
-    // By starting the interval synchronously here, the countdown runs truly in parallel
-    // with pitch init, ensuring the game proceeds even if audio setup fails.
+    // Start the countdown interval — when it hits 0, set phase to 'playing'.
+    // The centralized "play on phase" effect handles audio.play() to avoid
+    // race conditions with load(). The stall fallback timer handles the
+    // case where audio never loads.
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -906,15 +952,7 @@ export function useMedleyGame({
           setPhase('playing');
           setIsPlaying(true);
           setCurrentTimeMs(0);
-          // Attempt to play audio — may fail if URL not ready yet
-          // The stall fallback timer will handle the case where audio never starts
-          if (audioRef.current && currentSnippetRef.current) {
-            audioRef.current.currentTime = currentSnippetRef.current.startTime / 1000;
-            audioRef.current.play().catch(e => {
-              // eslint-disable-next-line no-console
-              console.warn('[Medley] Play failed, fallback timer will advance:', e);
-            });
-          }
+          lastPlayPhaseRef.current = ''; // Reset so the play effect fires
           return 0;
         }
         return prev - 1;
