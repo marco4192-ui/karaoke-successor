@@ -47,7 +47,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
   const {
     phase, countdown, transitionCount,
     currentSnippet, currentSnippetIdx, snippetNotes,
-    audioRef, videoRef, audioError,
+    audioRef, videoRef, fallbackVideoRef, audioError,
     playersDisplay, multiPitch,
     snippetProgress, totalProgress, currentMatchup, currentLyricLine,
     isTeam,
@@ -134,7 +134,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
-      {/* Audio Element */}
+      {/* Audio Element — always present for the hook to attach to */}
       <audio
         ref={audioRef}
         className="hidden"
@@ -142,18 +142,16 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         onError={() => { /* error handled via state */ }}
       />
 
-      {/* Hidden Video Element for embedded audio fallback (when no separate audio) */}
-      {restoredSong && !restoredSong.audioUrl && restoredSong.videoBackground && (
-        <video
-          key={`medley-video-${restoredSong.id}`}
-          ref={videoRef}
-          src={restoredSong.videoBackground}
-          className="hidden"
-          muted={false}
-          playsInline
-          preload="auto"
-        />
-      )}
+      {/* Video Element — audio fallback, NOT shared with GameBackground */}
+      <video
+        key={`medley-fallback-video-${restoredSong?.id ?? currentSnippet?.song.id ?? 'none'}`}
+        ref={fallbackVideoRef}
+        src={restoredSong?.videoBackground ?? undefined}
+        className="hidden"
+        muted={false}
+        playsInline
+        preload="auto"
+      />
 
       {/* Game Area - Full Screen */}
       <div className="absolute inset-0 overflow-hidden">
