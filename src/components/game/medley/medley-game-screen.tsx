@@ -180,13 +180,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         {/* Dark overlay for better text/note visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-[5]" />
 
-        {/* ── COUNTDOWN ── */}
-        {phase === 'countdown' && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-            <div className="text-8xl font-bold text-purple-400 animate-pulse">{countdown}</div>
-            <p className="text-white/60 mt-4">{t('medley.getReady')}</p>
-          </div>
-        )}
+        {/* ── COUNTDOWN (removed — song starts directly) ── */}
 
         {/* ── PLAYING ── */}
         {phase === 'playing' && currentSnippet && (

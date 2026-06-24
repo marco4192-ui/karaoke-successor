@@ -405,7 +405,12 @@ export function useMedleyGame({
         // Extract notes within snippet range (does NOT depend on audio loading)
         const notes: Note[] = [];
         const lyrics: LyricLine[] = [];
-        if (prepared.lyrics) {
+        // eslint-disable-next-line no-console
+        console.log(`[Medley] DIAG: lyrics exists=${!!prepared.lyrics}, count=${prepared.lyrics?.length ?? -1}, snippet=${currentSnippet.startTime}-${currentSnippet.endTime}ms, songId=${prepared.id}`);
+        if (prepared.lyrics && prepared.lyrics.length > 0) {
+          // Log first/last lyric times for debugging
+          // eslint-disable-next-line no-console
+          console.log(`[Medley] DIAG: first lyric start=${prepared.lyrics[0].startTime}ms, last lyric start=${prepared.lyrics[prepared.lyrics.length - 1].startTime}ms, notes in first line=${prepared.lyrics[0].notes?.length ?? 0}`);
           for (const line of prepared.lyrics) {
             const lineNotes = line.notes.filter(
               n => n.startTime < currentSnippet.endTime && (n.startTime + n.duration) > currentSnippet.startTime,
