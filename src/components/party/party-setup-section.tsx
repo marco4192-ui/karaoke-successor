@@ -19,6 +19,7 @@ import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
+import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
 import type { CptmSettings } from '@/components/game/cptm-types';
 
 interface PartySetupSectionProps {
@@ -33,7 +34,7 @@ function toPassTheMicSettings(
     segmentDuration: s.segmentDuration ?? 30,
     difficulty: s.difficulty ?? 'medium',
     micId: s.micId ?? 'default',
-    micName: s.micName ?? 'Mic',
+    micName: s.micName ?? 'Standard',
     randomSwitches: s.randomSwitches,
     sharedMicId: s.sharedMicId ?? null,
     sharedMicName: s.sharedMicName ?? null,
@@ -41,7 +42,15 @@ function toPassTheMicSettings(
   };
 }
 
-// Companion Sing-A-Long now uses CPTM segment-based engine.
+function toCompanionSettings(
+  s: GameModeSettingsMap['companion-singalong']): CompanionSingAlongSettings {
+  return {
+    difficulty: s.difficulty ?? 'medium',
+    minTurnDuration: s.minTurnDuration ?? 15,
+    maxTurnDuration: s.maxTurnDuration ?? 45,
+    blinkWarning: s.blinkWarning ?? 3,
+  };
+}
 
 // ===================== HELPER: Pick a random song =====================
 function pickRandomSong(songs: Song[]): Song | null {
@@ -94,11 +103,15 @@ function toPassTheMicPlayers(players: { id: string; name: string; avatar?: strin
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
 }
 
+function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
+  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, turnCount: 0 }));
+}
+
 function toCptmPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0 }));
 }
 
-function toCptmSettings(s: GameModeSettingsMap['companion-singalong']): CptmSettings {
+function toCptmSettings(s: GameModeSettingsMap['companion-pass-the-mic']): CptmSettings {
   return {
     difficulty: s.difficulty ?? 'medium',
     blinkWarning: s.blinkWarning ?? 3,
@@ -149,15 +162,24 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setIsSongPlaying(false);
               setScreen('pass-the-mic-game');
             } else if (mode === 'companion-singalong') {
-              // Companion Sing-A-Long — uses CPTM segment-based engine
+              // Set up companion sing-along with pre-selected song
+              const compPlayers = party.companionPlayers;
+              const compSettings = toCompanionSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong'] ?? { difficulty: 'medium' });
+              party.setCompanionSettings(compSettings);
+              party.setCompanionSong(song);
+              if (compPlayers.length > 0) {
+                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              }
+              setScreen('companion-singalong-game');
+              return;
+            } else if (mode === 'companion-pass-the-mic') {
               const cptmPlayers = party.cptmPlayers;
               const segments = generatePtmSegments(song.duration, cptmPlayers.length || 2, undefined, song.lyrics);
               if (segments.length > 0) {
                 party.setCptmSegments(segments);
                 party.setCptmSong(song);
-                party.setCptmSettings(toCptmSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong'] ?? { difficulty: 'medium' }));
                 party.setIsSongPlaying(false);
-                setScreen('companion-singalong-game');
+                setScreen('companion-pass-the-mic-game');
               } else {
                 toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
                 return;
@@ -332,8 +354,34 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const snippetCount = s.snippetCount || 5;
                 const snippetDuration = s.snippetDuration || 30;
                 const medleySongList = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
+
+                // Pre-restore URLs AND lyrics for all snippet songs (needed for
+                // Tauri file:// paths and IndexedDB-stored lyrics) — same as PTM medley.
+                const preparedSnippets = await Promise.all(
+                  medleySongList.map(async snippet => {
+                    try {
+                      let prepared = await ensureSongUrls(snippet.song);
+
+                      // Also load lyrics if not present (storedTxt / relativeTxtPath)
+                      if (!prepared.lyrics || prepared.lyrics.length === 0) {
+                        try {
+                          const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+                          const lyrics = await loadSongLyrics(prepared);
+                          if (lyrics.length > 0) {
+                            prepared = { ...prepared, lyrics };
+                          }
+                        } catch { /* non-critical */ }
+                      }
+
+                      return { ...snippet, song: prepared };
+                    } catch {
+                      return snippet;
+                    }
+                  })
+                );
+
                 party.setMedleyPlayers(toMedleyPlayers(result.players));
-                party.setMedleySongs(medleySongList);
+                party.setMedleySongs(preparedSnippets);
                 // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
                 party.setMedleySettings(result.settings as unknown as MedleySettingsType);
                 party.setMedleySeriesHistory([]);
@@ -459,8 +507,29 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
-              // ── Companion Sing-A-Long (CPTM engine): random song + score-based segments ──
+              // ── Companion Sing-A-Long: random song → game view ──
               case 'companion-singalong': {
+                const randomSong = pickRandomSong(filteredSongs);
+                if (randomSong) {
+                  const compPlayers = toCompanionPlayers(result.players);
+                  party.setCompanionPlayers(compPlayers);
+                  party.setCompanionSong(randomSong);
+                  party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+                  // Reset game and add first player as the active singer
+                  resetGame();
+                  setPlayers([]);
+                  if (compPlayers.length > 0) {
+                    addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+                  }
+                  setSong(randomSong);
+                  // Use companion sing-along game screen
+                  setScreen('companion-singalong-game');
+                }
+                break;
+              }
+
+              // ── Companion Pass-the-Mic: random song + score-based segments → CPtM game screen ──
+              case 'companion-pass-the-mic': {
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   let songWithUrls = randomSong;
@@ -487,10 +556,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setCptmPlayers(cptmPlayers);
                   party.setCptmSegments(segments);
                   party.setCptmSong(songWithUrls);
-                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
                   party.setCptmSongSelection(result.songSelection || 'random');
                   party.setIsSongPlaying(false);
-                  setScreen('companion-singalong-game');
+                  setScreen('companion-pass-the-mic-game');
                 }
                 break;
               }
@@ -612,8 +681,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 sharedMicName: (result.settings as GameModeSettingsMap['pass-the-mic']).sharedMicName || null,
               }));
             } else if (party.selectedGameMode === 'companion-singalong') {
+              party.setCompanionPlayers(toCompanionPlayers(result.players));
+              party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
               party.setCptmPlayers(toCptmPlayers(result.players));
-              party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+              party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
               party.setCptmSongSelection(result.songSelection || 'random');
             } else if (party.selectedGameMode === 'rate-my-song') {
               const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
@@ -702,15 +774,23 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Use dedicated PTM game screen
               setScreen('pass-the-mic-game');
             } else if (party.selectedGameMode === 'companion-singalong') {
+              const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
+              party.setCompanionPlayers(compPlayers);
+              party.setCompanionSong(songWithUrls);
+              party.setCompanionSettings(toCompanionSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
+              if (compPlayers.length > 0) {
+                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              }
+              setScreen('companion-singalong-game');
+            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
               const cptmPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
               const segments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, undefined, songWithUrls.lyrics);
               if (segments.length > 0) {
                 party.setCptmPlayers(cptmPlayers);
                 party.setCptmSegments(segments);
                 party.setCptmSong(songWithUrls);
-                party.setCptmSettings(toCptmSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
                 party.setIsSongPlaying(false);
-                setScreen('companion-singalong-game');
+                setScreen('companion-pass-the-mic-game');
               } else {
                 toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortGeneric'), variant: 'destructive' });
               }

@@ -189,6 +189,8 @@ export function useMedleyGame({
   const [restoredSong, setRestoredSong] = useState<Song | null>(null);
   // Track whether audio media is loaded and ready to play (set by prepare effect)
   const mediaReadyRef = useRef(false);
+  // State mirror so the play effect re-fires when media becomes ready
+  const [mediaReady, setMediaReady] = useState(false);
   // Flag: play was requested but audio wasn't ready yet (set by play trigger, consumed by canplay handler)
   const playWhenReadyRef = useRef(false);
 
@@ -394,24 +396,38 @@ export function useMedleyGame({
       setAudioUrl(null);
       setAudioError(null);
       mediaReadyRef.current = false;
+      setMediaReady(false);
 
       try {
         const prepared = await ensureSongUrls(currentSnippet.song);
         if (cancelled) return;
 
+        // Safety net: load lyrics if not present (same as PTM medley setup).
+        // In Tauri, lyrics are stored separately in IndexedDB / .txt files.
+        let preparedWithLyrics = prepared;
+        if (!preparedWithLyrics.lyrics || preparedWithLyrics.lyrics.length === 0) {
+          try {
+            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+            const lyrics = await loadSongLyrics(preparedWithLyrics);
+            if (lyrics.length > 0) {
+              preparedWithLyrics = { ...preparedWithLyrics, lyrics };
+            }
+          } catch { /* non-critical */ }
+        }
+
         // Store fully restored song for GameBackground usage
-        setRestoredSong(prepared);
+        setRestoredSong(preparedWithLyrics);
 
         // Extract notes within snippet range (does NOT depend on audio loading)
         const notes: Note[] = [];
         const lyrics: LyricLine[] = [];
         // eslint-disable-next-line no-console
-        console.log(`[Medley] DIAG: lyrics exists=${!!prepared.lyrics}, count=${prepared.lyrics?.length ?? -1}, snippet=${currentSnippet.startTime}-${currentSnippet.endTime}ms, songId=${prepared.id}`);
-        if (prepared.lyrics && prepared.lyrics.length > 0) {
+        console.log(`[Medley] DIAG: lyrics exists=${!!preparedWithLyrics.lyrics}, count=${preparedWithLyrics.lyrics?.length ?? -1}, snippet=${currentSnippet.startTime}-${currentSnippet.endTime}ms, songId=${preparedWithLyrics.id}`);
+        if (preparedWithLyrics.lyrics && preparedWithLyrics.lyrics.length > 0) {
           // Log first/last lyric times for debugging
           // eslint-disable-next-line no-console
-          console.log(`[Medley] DIAG: first lyric start=${prepared.lyrics[0].startTime}ms, last lyric start=${prepared.lyrics[prepared.lyrics.length - 1].startTime}ms, notes in first line=${prepared.lyrics[0].notes?.length ?? 0}`);
-          for (const line of prepared.lyrics) {
+          console.log(`[Medley] DIAG: first lyric start=${preparedWithLyrics.lyrics[0].startTime}ms, last lyric start=${preparedWithLyrics.lyrics[preparedWithLyrics.lyrics.length - 1].startTime}ms, notes in first line=${preparedWithLyrics.lyrics[0].notes?.length ?? 0}`);
+          for (const line of preparedWithLyrics.lyrics) {
             const lineNotes = line.notes.filter(
               n => n.startTime < currentSnippet.endTime && (n.startTime + n.duration) > currentSnippet.startTime,
             );
@@ -465,6 +481,7 @@ export function useMedleyGame({
             });
             if (cancelled) return;
             mediaReadyRef.current = true;
+            setMediaReady(true);
             // eslint-disable-next-line no-console
             console.log('[Medley] Audio media ready');
             // If play was already requested (countdown finished before load), play now
@@ -506,6 +523,7 @@ export function useMedleyGame({
             });
             if (cancelled) return;
             mediaReadyRef.current = true;
+            setMediaReady(true);
             // eslint-disable-next-line no-console
             console.log('[Medley] Video fallback media ready');
             // If play was already requested, play now
@@ -533,17 +551,17 @@ export function useMedleyGame({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnippet?.song.id, currentSnippetIdx]);
 
-  // ── Play audio when entering 'playing' phase ──
+  // ── Play audio when entering 'playing' phase OR when media becomes ready ──
   // Centralized: ALL initial play attempts go through this effect.
-  // Handles first snippet (countdown→playing) and subsequent snippets (transition→playing).
-  // Uses mediaReadyRef to avoid calling play() on an unloaded audio element.
+  // Fires on: phase/isPlaying change (user triggered) AND mediaReady change (load completed).
   // Supports both audio element and video element as audio source (fallback).
   const lastPlayPhaseRef = useRef<string>('');
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
-    // Avoid re-triggering on unrelated re-renders (e.g. score updates)
-    if (lastPlayPhaseRef.current === `${currentSnippetIdx}-${phase}`) return;
-    lastPlayPhaseRef.current = `${currentSnippetIdx}-${phase}`;
+    // De-duplicate: only play once per (snippet, phase, mediaReady) combination
+    const dedupKey = `${currentSnippetIdx}-${phase}-${mediaReady}`;
+    if (lastPlayPhaseRef.current === dedupKey) return;
+    lastPlayPhaseRef.current = dedupKey;
 
     // Determine primary media element: audio if ready, else video fallback
     const audio = audioRef.current;
@@ -561,6 +579,8 @@ export function useMedleyGame({
 
     if (!media.paused) return; // Already playing
 
+    // eslint-disable-next-line no-console
+    console.log('[Medley] Playing media for snippet', currentSnippetIdx);
     media.currentTime = currentSnippet.startTime / 1000;
     // Apply active voice modifier playback rate
     const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
@@ -570,7 +590,7 @@ export function useMedleyGame({
       console.warn('[Medley] Play on phase enter failed:', e);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippetIdx]);
+  }, [phase, isPlaying, currentSnippetIdx, mediaReady]);
 
   // ── Get current lyric line ──
   const currentLyricLine = useMemo(() => {
@@ -1010,33 +1030,10 @@ export function useMedleyGame({
   // ── Start game ──
   const handleStart = useCallback(async () => {
     if (medleySongs.length === 0) return;
-    setPhase('countdown');
-    setCountdown(3);
     setFinalFaceOff(false);
     setCurrentTimeMs(0);
 
-    // Start the countdown interval — when it hits 0, set phase to 'playing'.
-    // The centralized "play on phase" effect handles audio.play() to avoid
-    // race conditions with load(). The stall fallback timer handles the
-    // case where audio never loads.
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          countdownIntervalRef.current = null;
-          setPhase('playing');
-          setIsPlaying(true);
-          setCurrentTimeMs(0);
-          lastPlayPhaseRef.current = ''; // Reset so the play effect fires
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    countdownIntervalRef.current = interval;
-
-    // Initialize multi-pitch detection IN PARALLEL with countdown (non-blocking).
-    // Even if this fails or hangs, the countdown above is already ticking.
+    // Initialize multi-pitch detection (non-blocking).
     try {
       const ok = await multiPitch.initialize();
       if (ok) multiPitch.start();
@@ -1044,6 +1041,12 @@ export function useMedleyGame({
       // eslint-disable-next-line no-console
       console.warn('[Medley] Multi-pitch init failed:', e);
     }
+
+    // Start playing immediately (no countdown phase)
+    setPhase('playing');
+    setIsPlaying(true);
+    setCurrentTimeMs(0);
+    lastPlayPhaseRef.current = ''; // Reset so the play effect fires
   }, [multiPitch]);
 
   // ── Feature #18: Compute MVP (delegates to pure function) ──

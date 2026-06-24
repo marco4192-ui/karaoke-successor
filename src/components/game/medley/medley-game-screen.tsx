@@ -220,11 +220,9 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           />
         )}
 
-        {/* ── TRANSITION (pulse) ── */}
+        {/* ── TRANSITION ── */}
         {phase === 'transition' && currentSnippet && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center animate-pulse">
-            <div className="text-5xl mb-4">🔄</div>
-            <div className="text-3xl font-bold text-pink-400 mb-2">{transitionCount}</div>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
             <p className="text-white/60 mb-4">{t('medley.nextSnippet')}</p>
 
             {/* Feature #16: Mystery reveal during transition (show previous song) */}
