@@ -177,18 +177,6 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               }
               setScreen('companion-singalong-game');
               return;
-            } else if (mode === 'companion-pass-the-mic') {
-              const cptmPlayers = party.cptmPlayers;
-              const segments = generatePtmSegments(song.duration, cptmPlayers.length || 2, undefined, song.lyrics);
-              if (segments.length > 0) {
-                party.setCptmSegments(segments);
-                party.setCptmSong(song);
-                party.setIsSongPlaying(false);
-                setScreen('companion-pass-the-mic-game');
-              } else {
-                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
-                return;
-              }
             } else {
               // Standard/duel mode: add all players from setup result
               const result = party.unifiedSetupResult;
@@ -533,42 +521,6 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
-              // ── Companion Pass-the-Mic: random song + score-based segments → CPtM game screen ──
-              case 'companion-pass-the-mic': {
-                const randomSong = pickRandomSong(filteredSongs);
-                if (randomSong) {
-                  let songWithUrls = randomSong;
-                  try {
-                    songWithUrls = await ensureSongUrls(randomSong);
-                    if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
-                      try {
-                        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-                        const lyrics = await loadSongLyrics(songWithUrls);
-                        if (lyrics.length > 0) {
-                          songWithUrls = { ...songWithUrls, lyrics };
-                        }
-                      } catch { /* non-critical */ }
-                    }
-                  } catch { /* non-critical */ }
-
-                  const playerCount = result.players.length || 2;
-                  const segments = generatePtmSegments(songWithUrls.duration, playerCount, undefined, songWithUrls.lyrics);
-                  if (segments.length === 0) {
-                    toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
-                    break;
-                  }
-                  const cptmPlayers = toCptmPlayers(result.players);
-                  party.setCptmPlayers(cptmPlayers);
-                  party.setCptmSegments(segments);
-                  party.setCptmSong(songWithUrls);
-                  party.setCptmSettings(toCptmSettings(result.settings));
-                  party.setCptmSongSelection(result.songSelection || 'random');
-                  party.setIsSongPlaying(false);
-                  setScreen('companion-pass-the-mic-game');
-                }
-                break;
-              }
-
               // ── Missing Words / Blind: create competitive game → competitive game view ──
               case 'missing-words':
               case 'blind': {
@@ -688,10 +640,6 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             } else if (party.selectedGameMode === 'companion-singalong') {
               party.setCptmPlayers(toCptmPlayers(result.players));
               party.setCptmSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
-            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
-              party.setCptmPlayers(toCptmPlayers(result.players));
-              party.setCptmSettings(toCptmSettings(result.settings));
-              party.setCptmSongSelection(result.songSelection || 'random');
             } else if (party.selectedGameMode === 'rate-my-song') {
               const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
               const duration = rateSettings.duration || 'normal';
@@ -787,18 +735,6 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
               }
               setScreen('companion-singalong-game');
-            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
-              const cptmPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
-              const segments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, undefined, songWithUrls.lyrics);
-              if (segments.length > 0) {
-                party.setCptmPlayers(cptmPlayers);
-                party.setCptmSegments(segments);
-                party.setCptmSong(songWithUrls);
-                party.setIsSongPlaying(false);
-                setScreen('companion-pass-the-mic-game');
-              } else {
-                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortGeneric'), variant: 'destructive' });
-              }
             } else if (party.selectedGameMode === 'duel' || party.selectedGameMode === 'duet') {
               // Duel/Duet: add both players from setup result
               const setupPlayers = party.unifiedSetupResult?.players || [];
