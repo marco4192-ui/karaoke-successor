@@ -504,7 +504,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'companion-singalong': {
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
-                  const compPlayers = toCompanionPlayers(result.players);
+                  const compPlayers = toCptmPlayers(result.players);
                   party.setCptmPlayers(compPlayers);
                   party.setCptmSong(randomSong);
                   party.setCptmSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
@@ -727,7 +727,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Use dedicated PTM game screen
               setScreen('pass-the-mic-game');
             } else if (party.selectedGameMode === 'companion-singalong') {
-              const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
+              const compPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
               party.setCptmPlayers(compPlayers);
               party.setCptmSong(songWithUrls);
               party.setCptmSettings(toCompanionSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
