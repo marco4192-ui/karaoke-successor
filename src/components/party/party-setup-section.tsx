@@ -115,7 +115,7 @@ function toCptmPlayers(players: { id: string; name: string; avatar?: string; col
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0 }));
 }
 
-function toCptmSettings(s: GameModeSettingsMap['companion-pass-the-mic']): CptmSettings {
+function toCptmSettings(s: { difficulty?: string; blinkWarning?: number }): CptmSettings {
   return {
     difficulty: s.difficulty ?? 'medium',
     blinkWarning: s.blinkWarning ?? 3,
@@ -560,7 +560,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setCptmPlayers(cptmPlayers);
                   party.setCptmSegments(segments);
                   party.setCptmSong(songWithUrls);
-                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
+                  party.setCptmSettings(toCptmSettings(result.settings));
                   party.setCptmSongSelection(result.songSelection || 'random');
                   party.setIsSongPlaying(false);
                   setScreen('companion-pass-the-mic-game');
@@ -689,7 +689,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
             } else if (party.selectedGameMode === 'companion-pass-the-mic') {
               party.setCptmPlayers(toCptmPlayers(result.players));
-              party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
+              party.setCptmSettings(toCptmSettings(result.settings));
               party.setCptmSongSelection(result.songSelection || 'random');
             } else if (party.selectedGameMode === 'rate-my-song') {
               const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
