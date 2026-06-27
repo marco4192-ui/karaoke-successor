@@ -19,7 +19,7 @@ import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
-import type { CompanionSingAlongSettings } from '@/components/game/companion-types';
+import type { CompanionSingAlongSettings } from '@/components/game/unified-party-setup.types';
 import type { CptmSettings } from '@/components/game/cptm-types';
 
 interface PartySetupSectionProps {
