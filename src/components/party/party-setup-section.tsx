@@ -46,6 +46,10 @@ function toCompanionSettings(
   s: GameModeSettingsMap['companion-singalong']): CompanionSingAlongSettings {
   return {
     difficulty: s.difficulty ?? 'medium',
+    filterGenre: s.filterGenre ?? '',
+    filterLanguage: s.filterLanguage ?? '',
+    filterCombined: s.filterCombined ?? false,
+    filterReleaseYear: s.filterReleaseYear ?? '',
     minTurnDuration: s.minTurnDuration ?? 15,
     maxTurnDuration: s.maxTurnDuration ?? 45,
     blinkWarning: s.blinkWarning ?? 3,
