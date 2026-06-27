@@ -10,6 +10,7 @@ import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
 import type { GameModeSettingsMap, PassTheMicSettings as PassTheMicModeSettings } from '@/components/game/unified-party-setup.types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
+import type { Difficulty } from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
@@ -117,7 +118,7 @@ function toCptmPlayers(players: { id: string; name: string; avatar?: string; col
 
 function toCptmSettings(s: { difficulty?: string; blinkWarning?: number }): CptmSettings {
   return {
-    difficulty: s.difficulty ?? 'medium',
+    difficulty: (s.difficulty ?? 'medium') as Difficulty,
     blinkWarning: s.blinkWarning ?? 3,
   };
 }
