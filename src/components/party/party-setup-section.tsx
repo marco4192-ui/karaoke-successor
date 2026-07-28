@@ -17,10 +17,8 @@ import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-roya
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
-import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
-import type { CompanionSingAlongSettings } from '@/components/game/unified-party-setup.types';
 import type { CptmSettings } from '@/components/game/cptm-types';
 
 interface PartySetupSectionProps {
@@ -42,21 +40,6 @@ function toPassTheMicSettings(
     ...overrides,
   };
 }
-
-function toCompanionSettings(
-  s: GameModeSettingsMap['companion-singalong']): CompanionSingAlongSettings {
-  return {
-    difficulty: s.difficulty ?? 'medium',
-    filterGenre: s.filterGenre ?? '',
-    filterLanguage: s.filterLanguage ?? '',
-    filterCombined: s.filterCombined ?? false,
-    filterReleaseYear: s.filterReleaseYear ?? '',
-    minTurnDuration: s.minTurnDuration ?? 15,
-    maxTurnDuration: s.maxTurnDuration ?? 45,
-    blinkWarning: s.blinkWarning ?? 3,
-  };
-}
-
 // ===================== HELPER: Pick a random song =====================
 function pickRandomSong(songs: Song[]): Song | null {
   if (songs.length === 0) return null;
@@ -108,17 +91,13 @@ function toPassTheMicPlayers(players: { id: string; name: string; avatar?: strin
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
 }
 
-function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, turnCount: 0 }));
-}
-
 function toCptmPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0 }));
 }
 
-function toCptmSettings(s: { difficulty?: string; blinkWarning?: number }): CptmSettings {
+function toCptmSettings(s: { difficulty?: Difficulty; blinkWarning?: number }): CptmSettings {
   return {
-    difficulty: (s.difficulty ?? 'medium') as Difficulty,
+    difficulty: s.difficulty ?? 'medium',
     blinkWarning: s.blinkWarning ?? 3,
   };
 }
@@ -167,13 +146,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setIsSongPlaying(false);
               setScreen('pass-the-mic-game');
             } else if (mode === 'companion-singalong') {
-              // Set up companion sing-along with pre-selected song
-              const compPlayers = party.cptmPlayers;
-              const compSettings = toCompanionSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong'] ?? { difficulty: 'medium' });
-              party.setCptmSettings(compSettings);
+              const cptmPlayers = party.cptmPlayers;
+              const cptmSettings = toCptmSettings((party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']) ?? { difficulty: 'medium' });
+              party.setCptmSettings(cptmSettings);
               party.setCptmSong(song);
-              if (compPlayers.length > 0) {
-                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              if (cptmPlayers.length > 0) {
+                addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
               }
               setScreen('companion-singalong-game');
               return;
@@ -504,18 +482,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'companion-singalong': {
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
-                  const compPlayers = toCptmPlayers(result.players);
-                  party.setCptmPlayers(compPlayers);
+                  const cptmPlayers = toCptmPlayers(result.players);
+                  party.setCptmPlayers(cptmPlayers);
                   party.setCptmSong(randomSong);
-                  party.setCptmSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
-                  // Reset game and add first player as the active singer
+                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
                   resetGame();
                   setPlayers([]);
-                  if (compPlayers.length > 0) {
-                    addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+                  if (cptmPlayers.length > 0) {
+                    addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
                   }
                   setSong(randomSong);
-                  // Use companion sing-along game screen
                   setScreen('companion-singalong-game');
                 }
                 break;
@@ -639,7 +615,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               }));
             } else if (party.selectedGameMode === 'companion-singalong') {
               party.setCptmPlayers(toCptmPlayers(result.players));
-              party.setCptmSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+              party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
             } else if (party.selectedGameMode === 'rate-my-song') {
               const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
               const duration = rateSettings.duration || 'normal';
@@ -727,12 +703,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Use dedicated PTM game screen
               setScreen('pass-the-mic-game');
             } else if (party.selectedGameMode === 'companion-singalong') {
-              const compPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
-              party.setCptmPlayers(compPlayers);
+              const cptmPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
+              party.setCptmPlayers(cptmPlayers);
               party.setCptmSong(songWithUrls);
-              party.setCptmSettings(toCompanionSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
-              if (compPlayers.length > 0) {
-                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              party.setCptmSettings(toCptmSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
+              if (cptmPlayers.length > 0) {
+                addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
               }
               setScreen('companion-singalong-game');
             } else if (party.selectedGameMode === 'duel' || party.selectedGameMode === 'duet') {
