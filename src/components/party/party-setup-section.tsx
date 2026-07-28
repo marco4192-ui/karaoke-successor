@@ -108,9 +108,6 @@ function toPassTheMicPlayers(players: { id: string; name: string; avatar?: strin
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
 }
 
-function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, turnCount: 0 }));
-}
 
 function toCptmPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0 }));

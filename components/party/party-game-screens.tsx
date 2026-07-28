@@ -274,9 +274,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setScreen(targetScreen as Screen);
             }
           }}
-          onPause={() => {
-            party.setPauseDialogAction('song-pause');
-          }}
         />
       )}
 
@@ -383,8 +380,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <CompanionSingAlongSetupScreen
           profiles={profiles}
           onSelectSong={(players, settings) => {
-            party.setCompanionPlayers(players);
-            party.setCompanionSettings(settings);
+            party.setCptmPlayers(players as any);
+            party.setCptmSettings(settings as any);
             setGameMode('companion-singalong');
             setScreen('library');
           }}
@@ -393,15 +390,15 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       )}
 
       {/* Companion Sing-A-Long Game Screen */}
-      {screen === 'companion-singalong-game' && party.companionSong && party.companionSettings && (
+      {screen === 'companion-singalong-game' && party.cptmSong && party.cptmSettings && (
         <CompanionGameView
-          players={party.companionPlayers}
-          song={party.companionSong}
-          settings={party.companionSettings}
+          players={party.cptmPlayers}
+          song={party.cptmSong}
+          settings={party.cptmSettings}
           onEndGame={() => {
-            party.setCompanionPlayers([]);
-            party.setCompanionSong(null);
-            party.setCompanionSettings(null);
+            party.setCptmPlayers([]);
+            party.setCptmSong(null);
+            party.setCptmSettings(null);
             setScreen('home');
           }}
         />

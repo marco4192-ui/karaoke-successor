@@ -114,9 +114,9 @@ export default function KaraokeSuccessor() {
           party.setPassTheMicSong(null);
           party.setPassTheMicSegments([]);
         } else {
-          party.setCompanionPlayers([]);
-          party.setCompanionSong(null);
-          party.setCompanionSettings(null);
+          party.setCptmPlayers([]);
+          party.setCptmSong(null);
+          party.setCptmSettings(null);
         }
         resetGame();
         setScreen('party-setup');
@@ -143,10 +143,10 @@ export default function KaraokeSuccessor() {
       setScreen('party-setup');
       return;
     }
-    if (party.companionPlayers.length > 0) {
-      party.setCompanionPlayers([]);
-      party.setCompanionSong(null);
-      party.setCompanionSettings(null);
+    if (party.cptmPlayers.length > 0) {
+      party.setCptmPlayers([]);
+      party.setCptmSong(null);
+      party.setCptmSettings(null);
       resetGame();
       setGameMode('standard');
       setScreen('party');
@@ -334,7 +334,7 @@ export default function KaraokeSuccessor() {
                   setScreen('pass-the-mic-game');
                 })();
               } else if (currentMode === 'companion-singalong') {
-                party.setCompanionSong(song);
+                party.setCptmSong(song);
                 party.setLibrarySelectedSong(song);
                 setScreen('party-setup');
               } else if (currentMode === 'rate-my-song' && party.rateMySongSettings) {
@@ -397,8 +397,8 @@ export default function KaraokeSuccessor() {
               return;
             }
 
-            if (activeMode === 'companion-singalong' && party.companionPlayers?.length > 0) {
-              party.setCompanionSong(song);
+            if (activeMode === 'companion-singalong' && party.cptmPlayers?.length > 0) {
+              party.setCptmSong(song);
               setSong(song);
               setScreen('companion-singalong-game');
               return;

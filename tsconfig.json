@@ -41,6 +41,11 @@
     "skills",
     "scripts",
     "portable-node",
-    "src-tauri/bundled"
+    "src-tauri/bundled",
+    "karaoke-successor",
+    "app",
+    "components",
+    "hooks",
+    "lib"
   ]
 }
