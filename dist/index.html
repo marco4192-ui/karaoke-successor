@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karaoke Successor - Loading...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2d1b4e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container { text-align: center; padding: 40px; max-width: 500px; }
+    .logo { font-size: 72px; margin-bottom: 16px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes fade { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(0, 255, 255, 0.2);
+      border-top-color: #00ffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 24px auto;
+    }
+    h1 {
+      font-size: 2rem;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .status { color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+    .hint { color: rgba(255,255,255,0.5); font-size: 12px; }
+    .hidden { display: none !important; }
+    .error {
+      background: rgba(255, 100, 100, 0.1);
+      border: 1px solid rgba(255, 100, 100, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+    }
+    .error-title { color: #ff6b6b; margin-bottom: 8px; }
+    .error-content { font-size: 14px; color: rgba(255,255,255,0.8); text-align: left; }
+    .error-content code {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 16px;
+      text-decoration: none;
+    }
+    .btn:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🎤</div>
+    <h1>Karaoke Successor</h1>
+    <div id="loading">
+      <div class="spinner"></div>
+      <p class="status" id="status">Starting server...</p>
+      <p class="hint">This may take a few seconds</p>
+    </div>
+    <div id="error" class="error hidden">
+      <p class="error-title">⚠️ Could not start server</p>
+      <div class="error-content">
+        <p style="margin-bottom:8px">The app couldn't start automatically. To run manually:</p>
+        <ol style="margin-left:20px; line-height:1.8">
+          <li>Install <a href="https://bun.sh" target="_blank" style="color:#00ffff">Bun</a> or Node.js 18+</li>
+          <li>Open terminal in the app folder</li>
+          <li>Run: <code>bun install && bun run dev</code></li>
+          <li>Click the button below</li>
+        </ol>
+        <a href="http://localhost:3000" class="btn" id="openBtn">Open App</a>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let attempts = 0;
+    const maxAttempts = 30; // 15 seconds
+    
+    function checkServer() {
+      fetch('http://localhost:3000', { method: 'HEAD', mode: 'no-cors' })
+        .then(() => {
+          window.location.href = 'http://localhost:3000';
+        })
+        .catch(() => {
+          attempts++;
+          if (attempts < maxAttempts) {
+            document.getElementById('status').textContent = 
+              'Starting server... (' + Math.floor(attempts/2) + 's)';
+            setTimeout(checkServer, 500);
+          } else {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+          }
+        });
+    }
+    
+    setTimeout(checkServer, 1000);
+    
+    // Keep checking even after error shown
+    document.getElementById('openBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = 'http://localhost:3000';
+    });
+  </script>
+</body>
+</html>
