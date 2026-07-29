@@ -212,6 +212,11 @@ const NoteBlock = React.memo(function NoteBlock({
         height: `${noteHeight}px`,
         transform: 'translateY(-50%) translateZ(0)',
         willChange: 'left, top, width, opacity',
+        // Smooth glow fade-in/out when note becomes active/inactive.
+        // Smooth opacity fade-out when note passes the sing line.
+        // Only opacity & box-shadow are transitioned — left/top/width are
+        // updated every frame by the game loop and must NOT be delayed.
+        transition: 'opacity 400ms ease-out, box-shadow 200ms ease-out',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
@@ -258,6 +263,9 @@ const PitchIndicator = React.memo(function PitchIndicator({
         transform: 'translateY(-50%) translateZ(0)',
         // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
         willChange: 'top',
+        // Smooth glide between pitch positions — 50ms is short enough to feel
+        // instant but smooths out frame-to-frame jitter from the EMA output.
+        transition: 'top 50ms linear',
         background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
         boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
         outline: '2px solid',
