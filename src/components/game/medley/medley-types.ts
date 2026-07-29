@@ -239,7 +239,6 @@ interface MedleyPlayerRoundScore {
 
 export type MedleyGamePhase =
   | 'intro'         // Show players, mic info, "Start" button
-  | 'countdown'     // 3-2-1 countdown
   | 'playing'       // Active snippet playback
   | 'transition'    // 3s pulse before next snippet
   | 'round-results' // After last snippet: show round results

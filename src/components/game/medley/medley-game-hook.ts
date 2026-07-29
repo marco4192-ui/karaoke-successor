@@ -59,7 +59,6 @@ export interface MedleyGameScreenProps {
 interface MedleyGameState {
   // Phase
   phase: MedleyGamePhase;
-  countdown: number;
   transitionCount: number;
 
   // Current snippet
@@ -165,7 +164,6 @@ export function useMedleyGame({
   // ── Phase ──
   const [phase, setPhase] = useState<MedleyGamePhase>('intro');
   const phaseRef = useRef<MedleyGamePhase>('intro');
-  const [countdown, setCountdown] = useState(3);
   const [transitionCount, setTransitionCount] = useState(3);
   // Keep phaseRef in sync (used in async callbacks to avoid stale closures)
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -197,6 +195,8 @@ export function useMedleyGame({
   const isPreparingRef = useRef(false);
   // Ref to the fallback timer so the game loop can cancel it when audio starts
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Effective snippet range (may differ from currentSnippet after repositioning)
+  const effectiveSnippetRef = useRef<{ startTime: number; endTime: number } | null>(null);
 
   // ── Game settings (display preferences) ──
   const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();
@@ -423,18 +423,48 @@ export function useMedleyGame({
         // Store fully restored song for GameBackground usage
         setRestoredSong(preparedWithLyrics);
 
-        // Extract notes within snippet range (does NOT depend on audio loading)
+        // Determine effective snippet range — may need repositioning if lyrics
+        // were empty when generateMedleySnippets ran (it fell back to 10s).
+        // Now that lyrics are loaded, check overlap and reposition if needed.
+        let snippetStart = currentSnippet.startTime;
+        let snippetEnd = currentSnippet.endTime;
+        if (preparedWithLyrics.lyrics && preparedWithLyrics.lyrics.length > 0) {
+          const hasOverlap = preparedWithLyrics.lyrics.some(line =>
+            line.notes.some(n =>
+              n.startTime < snippetEnd && (n.startTime + n.duration) > snippetStart,
+            ),
+          );
+          if (!hasOverlap) {
+            // Reposition snippet to where the lyrics actually are
+            const allNotes = preparedWithLyrics.lyrics.flatMap(l => l.notes);
+            if (allNotes.length > 0) {
+              const snippetMs = currentSnippet.duration;
+              const firstNote = allNotes[0].startTime;
+              const lastNote = allNotes[allNotes.length - 1].startTime;
+              const noteRangeEnd = lastNote + 5000;
+              const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
+              let bestStart = firstNote;
+              let bestCount = 0;
+              for (let t = Math.max(firstNote, 10000); t <= maxStart; t += 2000) {
+                const count = allNotes.filter(n => n.startTime >= t && n.startTime <= t + snippetMs).length;
+                if (count > bestCount) { bestCount = count; bestStart = t; }
+              }
+              snippetStart = bestStart;
+              snippetEnd = Math.min(bestStart + snippetMs, preparedWithLyrics.duration);
+              // eslint-disable-next-line no-console
+              console.log(`[Medley] Repositioned snippet from ${currentSnippet.startTime}-${currentSnippet.endTime} to ${snippetStart}-${snippetEnd}ms (lyrics had no overlap)`);
+            }
+          }
+        }
+        effectiveSnippetRef.current = { startTime: snippetStart, endTime: snippetEnd };
+
+        // Extract notes within effective snippet range
         const notes: Note[] = [];
         const lyrics: LyricLine[] = [];
-        // eslint-disable-next-line no-console
-        console.log(`[Medley] DIAG: lyrics exists=${!!preparedWithLyrics.lyrics}, count=${preparedWithLyrics.lyrics?.length ?? -1}, snippet=${currentSnippet.startTime}-${currentSnippet.endTime}ms, songId=${preparedWithLyrics.id}`);
         if (preparedWithLyrics.lyrics && preparedWithLyrics.lyrics.length > 0) {
-          // Log first/last lyric times for debugging
-          // eslint-disable-next-line no-console
-          console.log(`[Medley] DIAG: first lyric start=${preparedWithLyrics.lyrics[0].startTime}ms, last lyric start=${preparedWithLyrics.lyrics[preparedWithLyrics.lyrics.length - 1].startTime}ms, notes in first line=${preparedWithLyrics.lyrics[0].notes?.length ?? 0}`);
           for (const line of preparedWithLyrics.lyrics) {
             const lineNotes = line.notes.filter(
-              n => n.startTime < currentSnippet.endTime && (n.startTime + n.duration) > currentSnippet.startTime,
+              n => n.startTime < snippetEnd && (n.startTime + n.duration) > snippetStart,
             );
             if (lineNotes.length > 0) {
               notes.push(...lineNotes);
@@ -454,9 +484,8 @@ export function useMedleyGame({
           scoringMetaRef.current = null;
         }
 
-        // Diagnostic: log notes/lyrics count
         // eslint-disable-next-line no-console
-        console.log(`[Medley] Prepared snippet: notes=${notes.length}, lyrics=${lyrics.length}, audioUrl=${prepared.audioUrl ? 'yes' : 'no'}`);
+        console.log(`[Medley] Prepared snippet: notes=${notes.length}, lyrics=${lyrics.length}, audioUrl=${prepared.audioUrl ? 'yes' : 'no'}, range=${snippetStart}-${snippetEnd}ms`);
 
         // Load audio (or video-as-audio fallback) directly here.
         // A separate effect calling load() would race with play() and cause
@@ -489,9 +518,9 @@ export function useMedleyGame({
             setMediaReady(true);
             // eslint-disable-next-line no-console
             console.log('[Medley] Audio media ready');
-            // If play was already requested (countdown finished before load), play now
+            // If play was already requested (phase is playing), play now
             if (playWhenReadyRef.current && phaseRef.current === 'playing') {
-              audio.currentTime = currentSnippet.startTime / 1000;
+              audio.currentTime = snippetStart / 1000;
               audio.play().catch(e => {
                 // eslint-disable-next-line no-console
                 console.warn('[Medley] Delayed play after load failed:', e);
@@ -531,9 +560,9 @@ export function useMedleyGame({
             setMediaReady(true);
             // eslint-disable-next-line no-console
             console.log('[Medley] Video fallback media ready');
-            // If play was already requested, play now
+            // If play was already requested (phase is playing), play now
             if (playWhenReadyRef.current && phaseRef.current === 'playing') {
-              video.currentTime = currentSnippet.startTime / 1000;
+              video.currentTime = snippetStart / 1000;
               video.play().catch(e => {
                 // eslint-disable-next-line no-console
                 console.warn('[Medley] Delayed video play after load failed:', e);
@@ -584,9 +613,14 @@ export function useMedleyGame({
 
     if (!media.paused) return; // Already playing
 
+    // Cancel fallback timer — real media is about to play
+    cancelFallbackTimer();
+    playingMediaRef.current = media;
+
     // eslint-disable-next-line no-console
     console.log('[Medley] Playing media for snippet', currentSnippetIdx);
-    media.currentTime = currentSnippet.startTime / 1000;
+    const effectiveStart = effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
+    media.currentTime = effectiveStart / 1000;
     // Apply active voice modifier playback rate
     const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
     if (modDef) media.playbackRate = modDef.playbackRate;
@@ -823,8 +857,10 @@ export function useMedleyGame({
     // Don't start stall detection while audio is still being prepared
     if (isPreparingRef.current) return;
 
-    const snippet = currentSnippet;
-    const snippetDuration = snippet.endTime - snippet.startTime;
+    const effective = effectiveSnippetRef.current;
+    const effectiveStart = effective?.startTime ?? currentSnippet.startTime;
+    const effectiveEnd = effective?.endTime ?? currentSnippet.endTime;
+    const snippetDuration = effectiveEnd - effectiveStart;
     let stallDetected = false;
     let stallCheckCount = 0;
     const STALL_CHECK_LIMIT = 16; // 16 × 500ms = 8 seconds grace period
@@ -913,11 +949,20 @@ export function useMedleyGame({
         songTimeMs = fallbackVideo.currentTime * 1000;
       }
       if (songTimeMs === null) return;
-      const snippetTime = songTimeMs - currentSnippet.startTime;
+
+      // Cancel fallback timer now that real media is driving time
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
+
+      const effectiveStart = effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
+      const effectiveEnd = effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
+      const snippetTime = songTimeMs - effectiveStart;
       setCurrentTimeMs(snippetTime);
 
       // Check snippet end
-      if (songTimeMs >= currentSnippet.endTime) {
+      if (songTimeMs >= effectiveEnd) {
         // Stop whichever media is playing
         if (audio && !audio.paused) audio.pause();
         if (fallbackVideoRef.current && !fallbackVideoRef.current.paused) fallbackVideoRef.current.pause();
@@ -981,7 +1026,7 @@ export function useMedleyGame({
       }
 
       // Score ALL active players individually using their own pitch
-      const absTime = currentSnippet.startTime + snippetTime;
+      const absTime = effectiveStart + snippetTime;
       const activeIds = getActivePlayerIds();
       for (const pid of activeIds) {
         const playerPitch = multiPitch.getPlayerPitch(pid);
@@ -1033,8 +1078,17 @@ export function useMedleyGame({
     return () => clearInterval(interval);
   }, [phase, currentSnippetIdx, preCheckComeback]);
 
-  // ── Countdown interval ref for cleanup on unmount ──
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ── Ref to track the currently playing media (audio or fallback video)
+  // so we can cancel the fallback timer when real media starts.
+  const playingMediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
+
+  // ── Helper: cancel fallback timer ──
+  const cancelFallbackTimer = useCallback(() => {
+    if (fallbackTimerRef.current) {
+      clearInterval(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+  }, []);
 
   // ── Start game ──
   const handleStart = useCallback(async () => {
@@ -1052,11 +1106,13 @@ export function useMedleyGame({
     }
 
     // Start playing immediately (no countdown phase)
+    cancelFallbackTimer();
+    effectiveSnippetRef.current = null;
     setPhase('playing');
     setIsPlaying(true);
     setCurrentTimeMs(0);
     lastPlayPhaseRef.current = ''; // Reset so the play effect fires
-  }, [multiPitch]);
+  }, [multiPitch, cancelFallbackTimer]);
 
   // ── Feature #18: Compute MVP (delegates to pure function) ──
   const computeMVPHook = useCallback(() => {
@@ -1109,6 +1165,7 @@ export function useMedleyGame({
     if (fallbackVideoRef.current) {
       fallbackVideoRef.current.pause();
     }
+    cancelFallbackTimer();
     setIsPlaying(false);
     setIsSongPlaying(false);
     // NOTE: Do NOT call multiPitch.stop() here. Pitch detection must remain
@@ -1139,7 +1196,7 @@ export function useMedleyGame({
     } else {
       setPhase('round-results');
     }
-  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
+  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender, cancelFallbackTimer]);
 
   // ── Cleanup on unmount ──
   // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).
@@ -1149,7 +1206,7 @@ export function useMedleyGame({
   useEffect(() => {
     return () => {
       multiPitch.stop();
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      cancelFallbackTimer();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1180,7 +1237,6 @@ export function useMedleyGame({
 
   return {
     phase,
-    countdown,
     transitionCount,
     currentSnippet,
     currentSnippetIdx,
