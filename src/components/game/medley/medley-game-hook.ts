@@ -193,6 +193,10 @@ export function useMedleyGame({
   const [mediaReady, setMediaReady] = useState(false);
   // Flag: play was requested but audio wasn't ready yet (set by play trigger, consumed by canplay handler)
   const playWhenReadyRef = useRef(false);
+  // Flag: prepare effect is actively loading audio/lyrics — suppress stall fallback
+  const isPreparingRef = useRef(false);
+  // Ref to the fallback timer so the game loop can cancel it when audio starts
+  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Game settings (display preferences) ──
   const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();
@@ -397,6 +401,7 @@ export function useMedleyGame({
       setAudioError(null);
       mediaReadyRef.current = false;
       setMediaReady(false);
+      isPreparingRef.current = true;
 
       try {
         const prepared = await ensureSongUrls(currentSnippet.song);
@@ -546,8 +551,8 @@ export function useMedleyGame({
       }
     };
 
-    prepare();
-    return () => { cancelled = true; };
+    prepare().finally(() => { if (!cancelled) isPreparingRef.current = false; });
+    return () => { cancelled = true; isPreparingRef.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnippet?.song.id, currentSnippetIdx]);
 
@@ -803,6 +808,7 @@ export function useMedleyGame({
   // If audio fails to play or stalls, auto-advance after a grace period.
   // Uses a long grace period (8s) to avoid false positives during loading.
   // Also freezes during pause (isPausedRef).
+  // Suppressed while isPreparingRef is true (audio still loading).
   const isPausedRef = useRef(false);
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
@@ -814,16 +820,19 @@ export function useMedleyGame({
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSnippet || isPausedRef.current) return;
+    // Don't start stall detection while audio is still being prepared
+    if (isPreparingRef.current) return;
 
     const snippet = currentSnippet;
     const snippetDuration = snippet.endTime - snippet.startTime;
-    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
     let stallDetected = false;
     let stallCheckCount = 0;
     const STALL_CHECK_LIMIT = 16; // 16 × 500ms = 8 seconds grace period
 
     const checkInterval = setInterval(() => {
       if (isPausedRef.current) return;
+      // Don't trigger fallback while still preparing
+      if (isPreparingRef.current) { stallCheckCount = 0; return; }
       const audio = audioRef.current;
       const fallbackVideo = fallbackVideoRef.current;
       // Audio or video is playing fine — no stall
@@ -840,15 +849,15 @@ export function useMedleyGame({
         // eslint-disable-next-line no-console
         console.warn('[Medley] Running in fallback mode (no audio)');
         clearInterval(checkInterval);
-        fallbackTimer = setInterval(() => {
+        fallbackTimerRef.current = setInterval(() => {
           if (isPausedRef.current) return;
           const elapsed = Date.now() - fallbackStartTime;
           const time = startMs + elapsed;
           setCurrentTimeMs(time);
 
           if (time >= snippetDuration) {
-            if (fallbackTimer) clearInterval(fallbackTimer);
-            fallbackTimer = null;
+            if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
+            fallbackTimerRef.current = null;
             setIsPlaying(false);
 
             const activeIds = getActivePlayerIds();
@@ -882,7 +891,7 @@ export function useMedleyGame({
 
     return () => {
       clearInterval(checkInterval);
-      if (fallbackTimer) clearInterval(fallbackTimer);
+      if (fallbackTimerRef.current) { clearInterval(fallbackTimerRef.current); fallbackTimerRef.current = null; }
     };
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction]);
 

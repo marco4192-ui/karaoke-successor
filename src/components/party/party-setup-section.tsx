@@ -346,7 +346,38 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                         } catch { /* non-critical */ }
                       }
 
-                      return { ...snippet, song: prepared };
+                      // Re-position snippet if no notes overlap with the snippet range.
+                      // generateMedleySnippets may have positioned the snippet at a fallback
+                      // (e.g. 10s) because lyrics were empty during generation, but the
+                      // now-loaded lyrics have notes at completely different times.
+                      let adjustedSnippet = snippet;
+                      if (prepared.lyrics && prepared.lyrics.length > 0) {
+                        const hasOverlap = prepared.lyrics.some(line =>
+                          line.notes.some(n =>
+                            n.startTime < snippet.endTime && (n.startTime + n.duration) > snippet.startTime,
+                          ),
+                        );
+                        if (!hasOverlap) {
+                          const allNotes = prepared.lyrics.flatMap(l => l.notes);
+                          if (allNotes.length > 0) {
+                            const snippetMs = snippet.duration;
+                            const firstNote = allNotes[0].startTime;
+                            const lastNote = allNotes[allNotes.length - 1].startTime;
+                            const noteRangeEnd = lastNote + 5000;
+                            const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
+                            let bestStart = firstNote;
+                            let bestCount = 0;
+                            for (let t = Math.max(firstNote, 10000); t <= maxStart; t += 2000) {
+                              const count = allNotes.filter(n => n.startTime >= t && n.startTime <= t + snippetMs).length;
+                              if (count > bestCount) { bestCount = count; bestStart = t; }
+                            }
+                            const newEnd = Math.min(bestStart + snippetMs, prepared.duration);
+                            adjustedSnippet = { ...snippet, startTime: bestStart, endTime: newEnd, duration: newEnd - bestStart };
+                          }
+                        }
+                      }
+
+                      return { ...adjustedSnippet, song: prepared };
                     } catch {
                       return snippet;
                     }
