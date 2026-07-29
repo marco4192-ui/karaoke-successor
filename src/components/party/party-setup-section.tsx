@@ -150,6 +150,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               const cptmSettings = toCptmSettings((party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']) ?? { difficulty: 'medium' });
               party.setCptmSettings(cptmSettings);
               party.setCptmSong(song);
+              const cptmSegments = generatePassTheMicSegments(song, cptmPlayers.length || 2);
+              party.setCptmSegments(cptmSegments);
               if (cptmPlayers.length > 0) {
                 addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
               }
@@ -486,6 +488,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setCptmPlayers(cptmPlayers);
                   party.setCptmSong(randomSong);
                   party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+                  const cptmSegments = generatePassTheMicSegments(randomSong, cptmPlayers.length || 2);
+                  party.setCptmSegments(cptmSegments);
                   resetGame();
                   setPlayers([]);
                   if (cptmPlayers.length > 0) {
@@ -707,6 +711,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setCptmPlayers(cptmPlayers);
               party.setCptmSong(songWithUrls);
               party.setCptmSettings(toCptmSettings(party.unifiedSetupResult?.settings as GameModeSettingsMap['companion-singalong']));
+              const cptmSegments = generatePassTheMicSegments(songWithUrls, cptmPlayers.length || 2);
+              party.setCptmSegments(cptmSegments);
               if (cptmPlayers.length > 0) {
                 addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
               }
