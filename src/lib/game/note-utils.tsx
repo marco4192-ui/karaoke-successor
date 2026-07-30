@@ -543,7 +543,7 @@ export function calculatePitchStats(
 }
 
 // Game display constants — defined once, outside any component
-export const SING_LINE_POSITION = 25; // percentage from left (like UltraStar/Vocaluxe)
+export const SING_LINE_POSITION = 20; // percentage from left (like UltraStar/Vocaluxe)
 export const NOTE_WINDOW = 4000; // Fixed 4 second window for upcoming notes
 export const VISIBLE_TOP = 8; // percentage from top (padding for header)
 const VISIBLE_BOTTOM = 85; // percentage from bottom (padding for lyrics)
