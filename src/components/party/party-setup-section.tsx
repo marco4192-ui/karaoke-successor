@@ -7,7 +7,8 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { useTranslation } from '@/lib/i18n/translations';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
-import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
+import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType, SnippetMatchup } from '@/components/game/medley/medley-types';
+import { generateTeamMatchups } from '@/components/game/medley/medley-types';
 import type { GameModeSettingsMap, PassTheMicSettings as PassTheMicModeSettings } from '@/components/game/unified-party-setup.types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import type { Difficulty } from '@/types/game';
@@ -384,7 +385,26 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   })
                 );
 
-                party.setMedleyPlayers(toMedleyPlayers(result.players));
+                // Spieler konvertieren und in Team-Modus Teams zuweisen
+                const medleyPlayers = toMedleyPlayers(result.players);
+                const medleySettings = result.settings as GameModeSettingsMap['medley'];
+                const playMode = medleySettings?.playMode || 'ffa';
+
+                if (playMode === 'team') {
+                  // Spieler gleichmäßig auf Team A (0) und Team B (1) aufteilen
+                  const half = Math.ceil(medleyPlayers.length / 2);
+                  medleyPlayers.forEach((p, i) => {
+                    p.team = i < half ? 0 : 1;
+                  });
+                  const teamA = medleyPlayers.filter(p => p.team === 0);
+                  const teamB = medleyPlayers.filter(p => p.team === 1);
+                  const matchups: SnippetMatchup[] = generateTeamMatchups(teamA, teamB);
+                  party.setMedleyMatches(matchups);
+                } else {
+                  party.setMedleyMatches([]);
+                }
+
+                party.setMedleyPlayers(medleyPlayers);
                 party.setMedleySongs(preparedSnippets);
                 // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
                 party.setMedleySettings(result.settings as unknown as MedleySettingsType);

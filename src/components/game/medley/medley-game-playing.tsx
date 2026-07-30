@@ -271,7 +271,7 @@ export function MedleyPlayingUI({
       </div>
 
       {/* ═══════ CENTER: Song info + timer + lyrics + notes ═══════ */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pl-44 min-h-0">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pl-36 pb-20 pt-16">
         {/* Song info + timer */}
         <div className="text-center mb-2">
           {isMysteryMode && !mysteryReveal ? (
@@ -292,7 +292,7 @@ export function MedleyPlayingUI({
 
         {/* Lyrics — current line large + next line faded (PTM-like) */}
         {currentLyricLine && (
-          <div className="text-center mb-2 max-w-2xl">
+          <div className="text-center mb-4 max-w-4xl">
             {(() => {
               const curIdx = snippetLyrics.indexOf(currentLyricLine);
               const nextLine = curIdx >= 0 && curIdx + 1 < snippetLyrics.length
@@ -361,9 +361,9 @@ function MiniNoteHighway({
   activePlayers: MedleyPlayer[];
   multiPitch: ReturnType<typeof useMultiPitchDetector>;
 }) {
-  const HIGHWAY_HEIGHT = 160;
-  const LOOKAHEAD_MS = 5000;
-  const LOOKBEHIND_MS = 1000;
+  const HIGHWAY_HEIGHT = 280;
+  const LOOKAHEAD_MS = 6000;
+  const LOOKBEHIND_MS = 1500;
 
   const absoluteTime = snippetStartTime + currentTimeMs;
 
@@ -406,7 +406,7 @@ function MiniNoteHighway({
 
   return (
     <div
-      className="w-full max-w-2xl bg-black/30 rounded-lg border border-white/10 overflow-hidden relative mb-2"
+      className="w-full max-w-5xl bg-black/30 rounded-lg border border-white/10 overflow-hidden relative mb-2"
       style={{ height: `${HIGHWAY_HEIGHT}px` }}
     >
       {lanePitches.map((lp, i) => {
@@ -446,7 +446,7 @@ function MiniNoteHighway({
               left: `${x * 100}%`,
               top: `${y}%`,
               width: `${width}%`,
-              height: '8px',
+              height: '10px',
               marginTop: '-4px',
               backgroundColor: bg,
               boxShadow: isActive ? `0 0 6px ${bg}` : 'none',

@@ -71,6 +71,25 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
   if (phase === 'intro') {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6">
+        {/* Audio- und Video-Elemente IMMER rendern, damit der Hook sie auf dem Mount findet.
+           Bei Phase 'intro' existiert das Element sonst nicht → audioRef.current === null → kein Laden möglich. */}
+        <audio
+          ref={audioRef}
+          className="hidden"
+          preload="auto"
+          onError={() => { /* error handled via state */ }}
+        />
+
+        <video
+          key={`medley-fallback-video-${restoredSong?.id ?? currentSnippet?.song.id ?? 'none'}`}
+          ref={fallbackVideoRef}
+          src={restoredSong?.videoBackground ?? undefined}
+          className="hidden"
+          muted={false}
+          playsInline
+          preload="auto"
+        />
+
         <div className="text-5xl mb-6">🎵</div>
         <h2 className="text-3xl font-bold mb-2">{t('medley.gameTitle')}</h2>
         <p className="text-white/60 mb-6">
