@@ -207,6 +207,8 @@ export function useMedleyGame({
     [initialPlayers],
   );
   const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
+  // Feste Punkte pro Note: 10.000 Punkte pro Snippet, unabhängig von Schwierigkeit
+  const pointsPerNoteRef = useRef(10);
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
@@ -285,6 +287,11 @@ export function useMedleyGame({
     autoStart: false,
   });
 
+  // Ref für multiPitch — useMultiPitchDetector gibt bei jedem Render ein neues Objekt zurück.
+  // Wird in Effekts/Callbacks verwendet, um unnötige Neustarts zu vermeiden.
+  const multiPitchRef = useRef(multiPitch);
+  multiPitchRef.current = multiPitch;
+
   // ── Scoring metadata ──
   const scoringMetaRef = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
   // Per-player last evaluation time for throttling
@@ -339,11 +346,11 @@ export function useMedleyGame({
     if (settings.dynamicDifficulty && phase === 'playing') {
       const diff = getDynamicDifficulty(currentSnippetIdx, medleySongs.length);
       setCurrentDynamicDifficulty(diff);
-      multiPitch.setDifficulty(diff);
+      multiPitchRef.current.setDifficulty(diff);
     } else if (!settings.dynamicDifficulty) {
       setCurrentDynamicDifficulty(null);
     }
-  }, [currentSnippetIdx, settings.dynamicDifficulty, medleySongs.length, phase, multiPitch]);
+  }, [currentSnippetIdx, settings.dynamicDifficulty, medleySongs.length, phase]);
 
   // ── Feature #15: Pick modifier when snippet changes ──
   useEffect(() => {
@@ -474,6 +481,10 @@ export function useMedleyGame({
         }
         notes.sort((a, b) => a.startTime - b.startTime);
         setSnippetNotes(notes);
+        // Feste 10.000 Punkte pro Snippet — jeder Hit gibt gleich viel
+        if (notes.length > 0) {
+          pointsPerNoteRef.current = Math.round(10000 / notes.length);
+        }
         setSnippetLyrics(lyrics);
 
         // Compute scoring metadata
@@ -803,8 +814,9 @@ export function useMedleyGame({
     const p = playersRef.current[pIdx];
 
     if (tick.hit) {
-      // Feature #18: Apply comeback multiplier for underdog team players
-      let points = tick.points;
+      // Feste 10.000 Punkte pro Snippet — unabhängig vom Schwierigkeitsgrad.
+      // Der Schwierigkeitsgrad ist nur ein informativer Marker.
+      let points = pointsPerNoteRef.current;
       if (comebackActiveTeamIdRef.current !== null && p.team === comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
@@ -836,7 +848,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, multiPitch]);
+  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length]);
 
   // ── Audio stall fallback timer ──
   // If audio fails to play or stalls, auto-advance after a grace period.
@@ -1029,7 +1041,7 @@ export function useMedleyGame({
       const absTime = effectiveStart + snippetTime;
       const activeIds = getActivePlayerIds();
       for (const pid of activeIds) {
-        const playerPitch = multiPitch.getPlayerPitch(pid);
+        const playerPitch = multiPitchRef.current.getPlayerPitch(pid);
         scorePlayer(pid, playerPitch, absTime);
       }
 
@@ -1049,7 +1061,7 @@ export function useMedleyGame({
 
     return () => clearInterval(loop);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, multiPitch, forceRender, isEliminationMode, eliminateLowestScorer, buildSnippetHighlight, checkSynergy, finalizeComeback, settings.mysteryMode, medleySongs.length, syncTeamBonusResult]);
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, eliminateLowestScorer, buildSnippetHighlight, checkSynergy, finalizeComeback, settings.mysteryMode, medleySongs.length, syncTeamBonusResult]);
 
   // ── Transition: pulse then next snippet ──
   useEffect(() => {
