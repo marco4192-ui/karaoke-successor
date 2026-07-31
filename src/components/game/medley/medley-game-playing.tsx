@@ -396,11 +396,13 @@ function MiniNoteHighway({
 
   const playerPitchOverlays = activePlayers.map(p => {
     const pitchData = multiPitch.getPlayerPitch(p.id);
-    if (!pitchData?.isSinging || pitchData.note == null) return null;
+    // rawNote für visuelle Anzeige verwenden (lag-frei, ohne Stabilizer-Verzögerung)
+    const displayNote = pitchData?.rawNote ?? pitchData?.note;
+    if (!pitchData?.isSinging || displayNote == null) return null;
     return {
       playerId: p.id,
       color: p.color,
-      y: pitchToY(pitchData.note),
+      y: pitchToY(displayNote),
     };
   }).filter(Boolean) as Array<{ playerId: string; color: string; y: number }>;
 

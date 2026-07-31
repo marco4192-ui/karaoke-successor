@@ -207,8 +207,11 @@ export function useMedleyGame({
     [initialPlayers],
   );
   const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
-  // Feste Punkte pro Note: 10.000 Punkte pro Snippet, unabhängig von Schwierigkeit
-  const pointsPerNoteRef = useRef(10);
+  // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
+  // Der Schwierigkeitsgrad ist nur ein informativer Marker.
+  const POINTS_PER_NOTE = 10000;
+  // Pro Spieler merken, welche Noten bereits gewertet wurden (verhindert Mehrfachbewertung)
+  const scoredNoteStartsRef = useRef<Record<string, Set<number>>>({});
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
@@ -481,10 +484,8 @@ export function useMedleyGame({
         }
         notes.sort((a, b) => a.startTime - b.startTime);
         setSnippetNotes(notes);
-        // Feste 10.000 Punkte pro Snippet — jeder Hit gibt gleich viel
-        if (notes.length > 0) {
-          pointsPerNoteRef.current = Math.round(10000 / notes.length);
-        }
+        // Reset der bereits gewerteten Noten bei Snippet-Wechsel
+        scoredNoteStartsRef.current = {};
         setSnippetLyrics(lyrics);
 
         // Compute scoring metadata
@@ -801,10 +802,12 @@ export function useMedleyGame({
     const activeNote = findActiveNoteFlat(snippetNotes, absTime);
     if (!activeNote) return;
 
-    // Throttle: evaluate every ~250ms per player
-    const lastEval = lastEvalTimeRef.current[playerId] || 0;
-    if (absTime - lastEval < 250) return;
-    lastEvalTimeRef.current[playerId] = absTime;
+    // Pro Note nur einmal werten (verhindert Punkte-Inflation bei langen Noten)
+    if (!scoredNoteStartsRef.current[playerId]) {
+      scoredNoteStartsRef.current[playerId] = new Set();
+    }
+    const noteKey = Math.round(activeNote.startTime);
+    if (scoredNoteStartsRef.current[playerId].has(noteKey)) return;
 
     if (pitch.note == null) return;
 
@@ -814,9 +817,10 @@ export function useMedleyGame({
     const p = playersRef.current[pIdx];
 
     if (tick.hit) {
-      // Feste 10.000 Punkte pro Snippet — unabhängig vom Schwierigkeitsgrad.
+      // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
       // Der Schwierigkeitsgrad ist nur ein informativer Marker.
-      let points = pointsPerNoteRef.current;
+      let points = POINTS_PER_NOTE;
+      scoredNoteStartsRef.current[playerId].add(noteKey);
       if (comebackActiveTeamIdRef.current !== null && p.team === comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
@@ -848,7 +852,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length]);
+  }, [snippetNotes, currentSnippet]);
 
   // ── Audio stall fallback timer ──
   // If audio fails to play or stalls, auto-advance after a grace period.
@@ -1047,7 +1051,7 @@ export function useMedleyGame({
 
       // Feature #5: Push scoring events to UI state (throttled to ~100ms)
       const now = Date.now();
-      if (now - lastScoringUiUpdateRef.current > 100 && scoringEventsRef.current.length > 0) {
+      if (now - lastScoringUiUpdateRef.current > 80 && scoringEventsRef.current.length > 0) {
         lastScoringUiUpdateRef.current = now;
         setLastScoringEvents([...scoringEventsRef.current]);
         // Keep events for 1.5 seconds, then discard
@@ -1057,7 +1061,7 @@ export function useMedleyGame({
 
       // Keep display state in sync with ref mutations for live score updates
       forceRender();
-    }, 80);
+    }, 50);
 
     return () => clearInterval(loop);
   // eslint-disable-next-line react-hooks/exhaustive-deps
