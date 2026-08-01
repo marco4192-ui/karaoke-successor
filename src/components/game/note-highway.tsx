@@ -263,9 +263,11 @@ const PitchIndicator = React.memo(function PitchIndicator({
         transform: 'translateY(-50%) translateZ(0)',
         // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
         willChange: 'top',
-        // Smooth glide between pitch positions — 50ms is short enough to feel
-        // instant but smooths out frame-to-frame jitter from the EMA output.
-        transition: 'top 50ms linear',
+        // Reduced from 50ms to 20ms — the EMA smoothing in useSmoothedPitch
+        // already handles jitter; the CSS transition only needs to hide
+        // sub-frame rounding jumps.  50ms added perceptible lag on note
+        // transitions that made the indicator feel disconnected.
+        transition: 'top 20ms linear',
         background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
         boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
         outline: '2px solid',

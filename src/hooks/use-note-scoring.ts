@@ -150,8 +150,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     ) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
-      // Vocal detection: skip scoring if input is classified as humming/noise
-      if (pitch.isSinging === false) return;
+      // Vocal detection (isSinging) removed from scoring gate — see P1
+      // checkNoteHits comment for rationale.
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
@@ -232,8 +232,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
-      // Vocal detection: skip scoring if input is classified as humming/noise
-      if (pitch.isSinging === false) return;
+      // Vocal detection (isSinging) removed from scoring gate — the
+      // VocalDetector misclassified sustained karaoke notes (low pitch
+      // variance, low onset rate) as "humming", blocking ticks and
+      // destroying combos.  Pitch tolerance + volume threshold already
+      // filter noise; humming on-pitch is valid karaoke play.
 
       // Use playersRef to avoid stale closure — always get the latest player state
       const activePlayer = playersRef.current[0];

@@ -107,7 +107,9 @@ export function shouldSkipPitch(
   const diffSettings = DIFFICULTY_SETTINGS[difficulty];
   if (!diffSettings) return true;
   if (pitch.volume < diffSettings.volumeThreshold) return true;
-  if (pitch.isSinging === false) return true; // humming / noise detected
+  // Vocal detection (isSinging) removed from scoring gate — the VocalDetector
+  // misclassified sustained karaoke notes as "humming", blocking scoring.
+  // Pitch tolerance + volume threshold already filter noise.
   return false;
 }
 

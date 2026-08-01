@@ -106,14 +106,12 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // for maximum responsiveness. Scoring continues to use the stabilized
   // `note` for accuracy — this only affects the visual pitch indicator.
   //
-  // α=0.80 (was 0.55): Much lighter EMA smoothing for near-real-time tracking.
-  //   The old 0.55 combined with PitchStabilizer created 65-150ms lag on
+  // α=0.90 (was 0.80): Near-instant tracking for visual pitch indicator.
+  //   The old 0.80 combined with PitchStabilizer created 65-150ms lag on
   //   note transitions, making the indicator feel disconnected from the voice.
-  //   0.80 lets the indicator follow the singer within 1-2 frames (~16-33ms).
-  // deadZone=0.08 (was 0.15): Tighter dead zone so even small pitch movements
-  //   register visually. The old 0.15ST threshold swallowed quick melodic
-  //   ornaments and vibrato, making the indicator feel "stuck".
-  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
+  //   0.90 lets the indicator follow the singer within 1 frame (~16ms).
+  // deadZone=0.08: Tight enough that even small pitch movements register.
+  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.90, 0.08);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;

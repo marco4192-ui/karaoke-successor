@@ -98,7 +98,13 @@ export function runScoringPass(
           ticksEvaluated: 0,
           isGolden: note.isGolden,
           isBlindNote: blindState?.isBlindSection ?? false,
-          lastEvaluatedTime: currentTime,
+          // DO-NOT-CHANGE: Subtract one tick interval so the first tick is
+          // evaluated immediately on the next frame.  Without this, notes
+          // shorter than beatDuration never get a tick evaluated (the
+          // interval never elapses before the note ends), causing them to
+          // always be counted as missed — a major source of artificially
+          // low scores on songs with short / rhythmic notes.
+          lastEvaluatedTime: currentTime - beatDurationMs,
           isComplete: false,
           wasPerfect: false,
           accumulatedPoints: 0,

@@ -33,10 +33,17 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
   activeChallenge,
   timeRemaining,
 }: GameScoreDisplayProps) {
+  const DIFFICULTY_LABELS: Record<string, string> = {
+    easy: 'Einfach',
+    medium: 'Mittel',
+    hard: 'Schwer',
+  };
+  const label = DIFFICULTY_LABELS[difficulty] ?? difficulty.toUpperCase();
+
   return (
     <div className="flex items-center gap-3">
       <Badge variant="outline" className="border-white/20 text-white/80">
-        {difficulty.toUpperCase()}
+        {label}
       </Badge>
 
       {/* Active Challenge Mode Indicator */}
