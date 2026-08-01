@@ -1,9 +1,9 @@
 /**
  * Medley Contest — Core Game Logic Hook
  *
- * Composes sub-modules for scoring, team bonuses, elimination, and
- * highlights.  This hook owns all React state, effects, and the game
- * loop; pure computations are delegated to focused modules.
+ * Composes focused sub-hooks for audio, features, team bonuses,
+ * and elimination.  This hook owns the game loop, phase management,
+ * player scoring, and action handlers.
  *
  * Batch 1 additions:
  * - `lastScoringEvents` array for floating +points popups
@@ -21,25 +21,23 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useGameSettings } from '@/hooks/use-game-settings';
-import type { Note, LyricLine, PitchDetectionResult, Difficulty, Song } from '@/types/game';
+import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
   MedleyGamePhase, MedleyRoundResult, MedleyScoringEvent,
   VoiceModifier, MedleyHighlight, TeamBonusResult,
 } from './medley-types';
-import { VOICE_MODIFIERS } from './medley-types';
+import { getDynamicDifficulty } from './medley-scoring';
 
-// ── Sub-module imports ──
-import { getDynamicDifficulty, pickRandomModifier } from './medley-scoring';
-import { computeSynergy, computeComebackPreCheck, computeComebackFinalize, computeMVP as computeMVPPure } from './medley-team-bonuses';
-import { computeElimination } from './medley-elimination';
-import { buildSnippetHighlight as buildHighlightPure } from './medley-highlights';
+// ── Sub-hook imports ──
+import { useMedleyAudio } from './hooks/use-medley-audio';
+import { useMedleyFeatures } from './hooks/use-medley-features';
+import { useMedleyTeamBonuses } from './hooks/use-medley-team-bonuses';
+import { useMedleyElimination } from './hooks/use-medley-elimination';
 
 // ===================== PROPS =====================
 
@@ -174,29 +172,9 @@ export function useMedleyGame({
   const currentSnippetRef = useRef(currentSnippet);
   currentSnippetRef.current = currentSnippet;
 
-  // ── Audio / Video ──
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  // Separate ref for video-as-audio fallback — NOT shared with GameBackground
-  // which would overwrite videoRef.current with its own visual <video> element.
-  const fallbackVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioError, setAudioError] = useState<string | null>(null);
+  // ── Time (owned by main hook — driven by game loop / fallback timer) ──
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
-  // Track whether audio media is loaded and ready to play (set by prepare effect)
-  const mediaReadyRef = useRef(false);
-  // State mirror so the play effect re-fires when media becomes ready
-  const [mediaReady, setMediaReady] = useState(false);
-  // Flag: play was requested but audio wasn't ready yet (set by play trigger, consumed by canplay handler)
-  const playWhenReadyRef = useRef(false);
-  // Flag: prepare effect is actively loading audio/lyrics — suppress stall fallback
-  const isPreparingRef = useRef(false);
-  // Ref to the fallback timer so the game loop can cancel it when audio starts
-  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Effective snippet range (may differ from currentSnippet after repositioning)
-  const effectiveSnippetRef = useRef<{ startTime: number; endTime: number } | null>(null);
 
   // ── Game settings (display preferences) ──
   const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();
@@ -210,14 +188,8 @@ export function useMedleyGame({
   // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
   // Der Schwierigkeitsgrad ist nur ein informativer Marker.
   const POINTS_PER_NOTE = 10000;
-  // Pro Spieler merken, welche Noten bereits gewertet wurden (verhindert Mehrfachbewertung)
-  const scoredNoteStartsRef = useRef<Record<string, Set<number>>>({});
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
-
-  // ── Snippet notes (for lyrics display) ──
-  const [snippetNotes, setSnippetNotes] = useState<Note[]>([]);
-  const [snippetLyrics, setSnippetLyrics] = useState<LyricLine[]>([]);
 
   // ── Feature #5: Scoring events for UI feedback ──
   const [lastScoringEvents, setLastScoringEvents] = useState<MedleyScoringEvent[]>([]);
@@ -225,53 +197,8 @@ export function useMedleyGame({
   // Throttle UI update for scoring events to ~100ms
   const lastScoringUiUpdateRef = useRef(0);
 
-  // ── Feature #9: Dynamic difficulty ──
-  const [currentDynamicDifficulty, setCurrentDynamicDifficulty] = useState<Difficulty | null>(null);
-
-  // ── Feature #10: Elimination ──
-  const [eliminationOrder, setEliminationOrder] = useState<string[]>([]);
-  const eliminationOrderRef = useRef<string[]>([]);
-  const [finalFaceOff, setFinalFaceOff] = useState(false);
-
-  // ── Feature #15: Voice modifier ──
-  const [activeModifier, setActiveModifier] = useState<VoiceModifier>('none');
-  const [modifierJustRevealed, setModifierJustRevealed] = useState(false);
-
-  // ── Feature #16: Mystery mode ──
-  const [mysteryReveal, setMysteryReveal] = useState(false);
-  const [mysteryRevealSong, setMysteryRevealSong] = useState<MedleySong | null>(null);
-
-  // ── Feature #17: Highlights ──
-  const highlightsRef = useRef<MedleyHighlight[]>([]);
-  const [highlights, setHighlights] = useState<MedleyHighlight[]>([]);
-  // Track per-snippet scores for highlights
-  const snippetScoreSnapshotsRef = useRef<Record<string, { score: number; combo: number }>>({});
-
-  // ── Feature #18: Team bonuses ──
-  const [synergyTriggered, setSynergyTriggered] = useState(false);
-  const [comebackTriggered, setComebackTriggered] = useState(false);
-  const [comebackTeamId, setComebackTeamId] = useState<number | null>(null);
-  const [comebackActiveTeamIdState, setComebackActiveTeamIdState] = useState<number | null>(null);
-  /** Ref for comeback team — used in game loop scoring to avoid stale closures & game loop restarts */
-  const comebackActiveTeamIdRef = useRef<number | null>(null);
-  const [teamBonusResultState, setTeamBonusResultState] = useState<TeamBonusResult>({
-    synergyPoints: {},
-    comebackTeamId: null,
-    comebackMultiplier: 1,
-    mvpPlayerId: null,
-    teamBonusTotal: {},
-  });
-  const teamBonusResultRef = useRef<TeamBonusResult>({
-    synergyPoints: {},
-    comebackTeamId: null,
-    comebackMultiplier: 1,
-    mvpPlayerId: null,
-    teamBonusTotal: {},
-  });
-  /** Helper to sync teamBonusResult ref to state for UI */
-  const syncTeamBonusResult = useCallback(() => {
-    setTeamBonusResultState({ ...teamBonusResultRef.current });
-  }, []);
+  // Per-player last evaluation time for throttling
+  const lastEvalTimeRef = useRef<Record<string, number>>({});
 
   // ── Multi-pitch detection (one detector per player) ──
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
@@ -296,11 +223,6 @@ export function useMedleyGame({
   const multiPitchRef = useRef(multiPitch);
   multiPitchRef.current = multiPitch;
 
-  // ── Scoring metadata ──
-  const scoringMetaRef = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
-  // Per-player last evaluation time for throttling
-  const lastEvalTimeRef = useRef<Record<string, number>>({});
-
   // ── Song playing status (ref-guarded to prevent React #185) ──
   const lastIsSongPlayingRef = useRef(false);
   useEffect(() => {
@@ -319,344 +241,55 @@ export function useMedleyGame({
     };
   }, [setIsSongPlaying]);
 
-  // ── Pause / Resume sync ──
-  // Only reacts to explicit pause dialog toggles (user clicks pause/resume).
-  // Does NOT interfere with the centralized "play on phase" effect.
-  // Uses mediaReadyRef to avoid calling pause()/play() on an unloaded element.
-  const wasPausedByDialogRef = useRef(false);
-  useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
-      wasPausedByDialogRef.current = true;
-      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
-      if (fallbackVideoRef.current && !fallbackVideoRef.current.paused) fallbackVideoRef.current.pause();
-    } else if (pauseDialogAction === null && wasPausedByDialogRef.current) {
-      wasPausedByDialogRef.current = false;
-      // Only resume if we were the ones who paused (not the play-on-phase effect)
-      if (phase !== 'playing') return;
-      if (audioRef.current && mediaReadyRef.current && currentSnippet) {
-        // eslint-disable-next-line no-console
-        console.log('[Medley] Resuming playback after user pause');
-        audioRef.current.currentTime = (currentSnippet.startTime + currentTimeMs) / 1000;
-        audioRef.current.play().catch(() => {});
-      } else if (fallbackVideoRef.current && fallbackVideoRef.current.paused && fallbackVideoRef.current.readyState >= 2) {
-        fallbackVideoRef.current.currentTime = (currentSnippet.startTime + currentTimeMs) / 1000;
-        fallbackVideoRef.current.play().catch(() => {});
-      }
-    }
-  }, [pauseDialogAction, phase, currentSnippet, currentTimeMs]);
+  // ── Callback to set difficulty on the pitch detector (used by features hook) ──
+  const setDifficultyOnDetector = useCallback((diff: Difficulty) => {
+    multiPitchRef.current.setDifficulty(diff);
+  }, []);
 
-  // ── Feature #9: Apply dynamic difficulty when snippet changes ──
-  useEffect(() => {
-    if (settings.dynamicDifficulty && phase === 'playing') {
-      const diff = getDynamicDifficulty(currentSnippetIdx, medleySongs.length);
-      setCurrentDynamicDifficulty(diff);
-      multiPitchRef.current.setDifficulty(diff);
-    } else if (!settings.dynamicDifficulty) {
-      setCurrentDynamicDifficulty(null);
-    }
-  }, [currentSnippetIdx, settings.dynamicDifficulty, medleySongs.length, phase]);
+  // ==================== COMPOSE SUB-HOOKS ====================
+  // Features hook is called first so activeModifier is available for audio.
 
-  // ── Feature #15: Pick modifier when snippet changes ──
-  useEffect(() => {
-    if (phase === 'playing' && settings.modifiersEnabled) {
-      const mod = pickRandomModifier();
-      setActiveModifier(mod);
-      setModifierJustRevealed(true);
-      // Hide modifier reveal after 2 seconds
-      const timer = setTimeout(() => setModifierJustRevealed(false), 2000);
-      return () => clearTimeout(timer);
-    } else {
-      setActiveModifier('none');
-      setModifierJustRevealed(false);
-    }
-  }, [currentSnippetIdx, phase, settings.modifiersEnabled]);
+  const features = useMedleyFeatures({
+    phase,
+    currentSnippetIdx,
+    totalSnippets: medleySongs.length,
+    settings,
+    medleySongs,
+    playersRef,
+    isEliminationMode,
+    isTeam,
+    matchups,
+    setDifficultyOnDetector,
+  });
 
-  // ── Feature #15: Apply playback rate when modifier changes ──
-  // Only updates the rate on an already-playing audio element (does NOT call play/load)
-  useEffect(() => {
-    if (!audioRef.current) return;
-    const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
-    if (modDef) {
-      audioRef.current.playbackRate = modDef.playbackRate;
-    } else {
-      audioRef.current.playbackRate = 1.0;
-    }
-  }, [activeModifier]);
+  const audio = useMedleyAudio({
+    currentSnippet,
+    currentSnippetIdx,
+    phase,
+    phaseRef,
+    isPlaying,
+    activeModifier: features.activeModifier,
+    pauseDialogAction,
+    currentTimeMs,
+  });
 
-  // ── Feature #16: Reset mystery reveal when snippet changes ──
-  useEffect(() => {
-    setMysteryReveal(false);
-    setMysteryRevealSong(null);
-  }, [currentSnippetIdx]);
+  const teamBonuses = useMedleyTeamBonuses({
+    isTeam,
+    teamBonusesEnabled: settings.teamBonusesEnabled,
+    currentSnippetIdx,
+    totalSnippets: medleySongs.length,
+    matchups,
+    playersRef,
+    snippetScoreSnapshotsRef: features.snippetScoreSnapshotsRef,
+  });
 
-  // ── Snapshot scores at snippet start for highlights ──
-  useEffect(() => {
-    if (phase === 'playing') {
-      const snapshot: Record<string, { score: number; combo: number }> = {};
-      for (const p of playersRef.current) {
-        snapshot[p.id] = { score: p.score, combo: p.combo };
-      }
-      snippetScoreSnapshotsRef.current = snapshot;
-    }
-  }, [currentSnippetIdx, phase]);
+  const elimination = useMedleyElimination({
+    isEliminationMode,
+    playersRef,
+    forceRender,
+  });
 
-  // ── Prepare snippet audio + notes + video ──
-  // Loads audio directly (sets src + waits for canplay) to avoid race condition
-  // where a separate effect's load() call aborts a pending play().
-  useEffect(() => {
-    if (!currentSnippet) return;
-    let cancelled = false;
-
-    const prepare = async () => {
-      setAudioUrl(null);
-      setAudioError(null);
-      mediaReadyRef.current = false;
-      setMediaReady(false);
-      isPreparingRef.current = true;
-
-      try {
-        const prepared = await ensureSongUrls(currentSnippet.song);
-        if (cancelled) return;
-
-        // Safety net: load lyrics if not present (same as PTM medley setup).
-        // In Tauri, lyrics are stored separately in IndexedDB / .txt files.
-        let preparedWithLyrics = prepared;
-        if (!preparedWithLyrics.lyrics || preparedWithLyrics.lyrics.length === 0) {
-          try {
-            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-            const lyrics = await loadSongLyrics(preparedWithLyrics);
-            if (lyrics.length > 0) {
-              preparedWithLyrics = { ...preparedWithLyrics, lyrics };
-            }
-          } catch { /* non-critical */ }
-        }
-
-        // Store fully restored song for GameBackground usage
-        setRestoredSong(preparedWithLyrics);
-
-        // Determine effective snippet range — may need repositioning if lyrics
-        // were empty when generateMedleySnippets ran (it fell back to 10s).
-        // Now that lyrics are loaded, check overlap and reposition if needed.
-        let snippetStart = currentSnippet.startTime;
-        let snippetEnd = currentSnippet.endTime;
-        if (preparedWithLyrics.lyrics && preparedWithLyrics.lyrics.length > 0) {
-          const hasOverlap = preparedWithLyrics.lyrics.some(line =>
-            line.notes.some(n =>
-              n.startTime < snippetEnd && (n.startTime + n.duration) > snippetStart,
-            ),
-          );
-          if (!hasOverlap) {
-            // Reposition snippet to where the lyrics actually are
-            const allNotes = preparedWithLyrics.lyrics.flatMap(l => l.notes);
-            if (allNotes.length > 0) {
-              const snippetMs = currentSnippet.duration;
-              const firstNote = allNotes[0].startTime;
-              const lastNote = allNotes[allNotes.length - 1].startTime;
-              const noteRangeEnd = lastNote + 5000;
-              const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
-              let bestStart = firstNote;
-              let bestCount = 0;
-              for (let t = Math.max(firstNote, 10000); t <= maxStart; t += 2000) {
-                const count = allNotes.filter(n => n.startTime >= t && n.startTime <= t + snippetMs).length;
-                if (count > bestCount) { bestCount = count; bestStart = t; }
-              }
-              snippetStart = bestStart;
-              snippetEnd = Math.min(bestStart + snippetMs, preparedWithLyrics.duration);
-              // eslint-disable-next-line no-console
-              console.log(`[Medley] Repositioned snippet from ${currentSnippet.startTime}-${currentSnippet.endTime} to ${snippetStart}-${snippetEnd}ms (lyrics had no overlap)`);
-            }
-          }
-        }
-        effectiveSnippetRef.current = { startTime: snippetStart, endTime: snippetEnd };
-
-        // Extract notes within effective snippet range
-        const notes: Note[] = [];
-        const lyrics: LyricLine[] = [];
-        if (preparedWithLyrics.lyrics && preparedWithLyrics.lyrics.length > 0) {
-          for (const line of preparedWithLyrics.lyrics) {
-            const lineNotes = line.notes.filter(
-              n => n.startTime < snippetEnd && (n.startTime + n.duration) > snippetStart,
-            );
-            if (lineNotes.length > 0) {
-              notes.push(...lineNotes);
-              lyrics.push(line);
-            }
-          }
-        }
-        notes.sort((a, b) => a.startTime - b.startTime);
-        setSnippetNotes(notes);
-        // Reset der bereits gewerteten Noten bei Snippet-Wechsel
-        scoredNoteStartsRef.current = {};
-        setSnippetLyrics(lyrics);
-
-        // Compute scoring metadata
-        if (notes.length > 0 && prepared.bpm) {
-          const beatDuration = 15000 / prepared.bpm;
-          scoringMetaRef.current = calculateScoringMetadata(notes, beatDuration);
-        } else {
-          scoringMetaRef.current = null;
-        }
-
-        // eslint-disable-next-line no-console
-        console.log(`[Medley] Prepared snippet: notes=${notes.length}, lyrics=${lyrics.length}, audioUrl=${prepared.audioUrl ? 'yes' : 'no'}, range=${snippetStart}-${snippetEnd}ms`);
-
-        // Load audio (or video-as-audio fallback) directly here.
-        // A separate effect calling load() would race with play() and cause
-        // "play() was interrupted by a call to pause()" errors.
-        if (prepared.audioUrl) {
-          setAudioUrl(prepared.audioUrl);
-          const audio = audioRef.current;
-          if (audio) {
-            audio.src = prepared.audioUrl;
-            // Wait for audio to be loadable
-            await new Promise<void>((resolve) => {
-              if (cancelled) { resolve(); return; }
-              if (audio.readyState >= 3) { resolve(); return; }
-              const onReady = () => {
-                audio.removeEventListener('canplay', onReady);
-                audio.removeEventListener('error', onError);
-                resolve();
-              };
-              const onError = () => {
-                audio.removeEventListener('canplay', onReady);
-                audio.removeEventListener('error', onError);
-                resolve();
-              };
-              audio.addEventListener('canplay', onReady);
-              audio.addEventListener('error', onError);
-              audio.load();
-            });
-            if (cancelled) return;
-            mediaReadyRef.current = true;
-            setMediaReady(true);
-            // eslint-disable-next-line no-console
-            console.log('[Medley] Audio media ready');
-            // If play was already requested (phase is playing), play now
-            if (playWhenReadyRef.current && phaseRef.current === 'playing') {
-              audio.currentTime = snippetStart / 1000;
-              audio.play().catch(e => {
-                // eslint-disable-next-line no-console
-                console.warn('[Medley] Delayed play after load failed:', e);
-              });
-              playWhenReadyRef.current = false;
-            }
-          }
-        } else if (prepared.videoBackground) {
-          // No separate audio file — use video element as audio source
-          // eslint-disable-next-line no-console
-          console.log('[Medley] No audioUrl, using video as audio fallback');
-          const video = fallbackVideoRef.current;
-          if (video) {
-            // Ensure video src is set
-            if (!video.src || video.src !== prepared.videoBackground) {
-              video.src = prepared.videoBackground;
-            }
-            await new Promise<void>((resolve) => {
-              if (cancelled) { resolve(); return; }
-              if (video.readyState >= 3) { resolve(); return; }
-              const onReady = () => {
-                video.removeEventListener('canplay', onReady);
-                video.removeEventListener('error', onError);
-                resolve();
-              };
-              const onError = () => {
-                video.removeEventListener('canplay', onReady);
-                video.removeEventListener('error', onError);
-                resolve();
-              };
-              video.addEventListener('canplay', onReady);
-              video.addEventListener('error', onError);
-              video.load();
-            });
-            if (cancelled) return;
-            mediaReadyRef.current = true;
-            setMediaReady(true);
-            // eslint-disable-next-line no-console
-            console.log('[Medley] Video fallback media ready');
-            // If play was already requested (phase is playing), play now
-            if (playWhenReadyRef.current && phaseRef.current === 'playing') {
-              video.currentTime = snippetStart / 1000;
-              video.play().catch(e => {
-                // eslint-disable-next-line no-console
-                console.warn('[Medley] Delayed video play after load failed:', e);
-              });
-              playWhenReadyRef.current = false;
-            }
-          } else {
-            setAudioError(t('medley.noAudioAvailable'));
-          }
-        } else {
-          setAudioError(t('medley.noAudioAvailable'));
-        }
-      } catch {
-        if (!cancelled) setAudioError(t('medley.audioLoadFailed'));
-      }
-    };
-
-    prepare().finally(() => { if (!cancelled) isPreparingRef.current = false; });
-    return () => { cancelled = true; isPreparingRef.current = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSnippet?.song.id, currentSnippetIdx]);
-
-  // ── Play audio when entering 'playing' phase OR when media becomes ready ──
-  // Centralized: ALL initial play attempts go through this effect.
-  // Fires on: phase/isPlaying change (user triggered) AND mediaReady change (load completed).
-  // Supports both audio element and video element as audio source (fallback).
-  const lastPlayPhaseRef = useRef<string>('');
-  useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
-    // De-duplicate: only play once per (snippet, phase, mediaReady) combination
-    const dedupKey = `${currentSnippetIdx}-${phase}-${mediaReady}`;
-    if (lastPlayPhaseRef.current === dedupKey) return;
-    lastPlayPhaseRef.current = dedupKey;
-
-    // Determine primary media element: audio if ready, else video fallback
-    const audio = audioRef.current;
-    const fallbackVideo = fallbackVideoRef.current;
-    const useVideoAsAudio = !audio?.src && fallbackVideo?.src && fallbackVideo?.readyState >= 2;
-    const media = (audio && mediaReadyRef.current) ? audio : (useVideoAsAudio ? fallbackVideo : null);
-
-    if (!media) {
-      // Neither audio nor video ready — set flag to play when canplay fires
-      playWhenReadyRef.current = true;
-      // eslint-disable-next-line no-console
-      console.log('[Medley] Play requested but no media ready, will retry after load');
-      return;
-    }
-
-    if (!media.paused) return; // Already playing
-
-    // Cancel fallback timer — real media is about to play
-    cancelFallbackTimer();
-    playingMediaRef.current = media;
-
-    // eslint-disable-next-line no-console
-    console.log('[Medley] Playing media for snippet', currentSnippetIdx);
-    const effectiveStart = effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
-    media.currentTime = effectiveStart / 1000;
-    // Apply active voice modifier playback rate
-    const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
-    if (modDef) media.playbackRate = modDef.playbackRate;
-    media.play().catch(e => {
-      // eslint-disable-next-line no-console
-      console.warn('[Medley] Play on phase enter failed:', e);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippetIdx, mediaReady]);
-
-  // ── Get current lyric line ──
-  const currentLyricLine = useMemo(() => {
-    if (!snippetLyrics.length || !currentSnippet) return null;
-    const absoluteTime = currentSnippet.startTime + currentTimeMs;
-    for (let i = 0; i < snippetLyrics.length; i++) {
-      const line = snippetLyrics[i];
-      const nextLine = snippetLyrics[i + 1];
-      if (absoluteTime >= line.startTime && (!nextLine || absoluteTime < nextLine.startTime)) {
-        return line;
-      }
-    }
-    return null;
-  }, [currentTimeMs, snippetLyrics, currentSnippet]);
+  // ==================== SCORING ====================
 
   // ── Get active players for current snippet ──
   const getActivePlayerIds = useCallback((): string[] => {
@@ -674,114 +307,6 @@ export function useMedleyGame({
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
 
-  // ── Feature #18: Check for team synergy (delegates to pure function) ──
-  const checkSynergy = useCallback(() => {
-    const result = computeSynergy({
-      isTeam,
-      teamBonusesEnabled: settings.teamBonusesEnabled,
-      snippetIdx: currentSnippetIdx,
-      matchups,
-      players: playersRef.current,
-      currentBonusResult: teamBonusResultRef.current,
-    });
-    if (!result) return;
-
-    // Apply synergy results to refs
-    for (const [teamId, pts] of Object.entries(result.synergyPoints)) {
-      teamBonusResultRef.current.synergyPoints[teamId] = pts;
-      teamBonusResultRef.current.teamBonusTotal[teamId] = (teamBonusResultRef.current.teamBonusTotal[teamId] || 0) + 300;
-    }
-    for (const bonus of result.playerBonuses) {
-      const p = playersRef.current.find(p => p.id === bonus.playerId);
-      if (p) p.score += bonus.points;
-    }
-    setSynergyTriggered(true);
-    setTimeout(() => setSynergyTriggered(false), 2000);
-  }, [isTeam, settings.teamBonusesEnabled, currentSnippetIdx, matchups]);
-
-  // ── Feature #18: Pre-check comeback boost BEFORE the last snippet starts ──
-  const preCheckComeback = useCallback((snippetIdx: number) => {
-    const result = computeComebackPreCheck({
-      isTeam,
-      teamBonusesEnabled: settings.teamBonusesEnabled,
-      snippetIdx,
-      totalSnippets: medleySongs.length,
-      players: playersRef.current,
-    });
-    if (!result) {
-      comebackActiveTeamIdRef.current = null;
-      setComebackActiveTeamIdState(null);
-      return;
-    }
-
-    teamBonusResultRef.current.comebackTeamId = result.teamId;
-    teamBonusResultRef.current.comebackMultiplier = result.multiplier;
-    comebackActiveTeamIdRef.current = result.underdogTeam;
-    setComebackActiveTeamIdState(result.underdogTeam);
-    setComebackTriggered(true);
-    setComebackTeamId(result.underdogTeam);
-    setTimeout(() => { setComebackTriggered(false); setComebackTeamId(null); }, 3000);
-  }, [isTeam, settings.teamBonusesEnabled, medleySongs.length]);
-
-  // ── Feature #18: Calculate comeback bonus AFTER the last snippet ends ──
-  const finalizeComeback = useCallback(() => {
-    const bonus = computeComebackFinalize({
-      isTeam,
-      teamBonusesEnabled: settings.teamBonusesEnabled,
-      comebackTeamId: teamBonusResultRef.current.comebackTeamId,
-      players: playersRef.current,
-      snippetScoreSnapshots: snippetScoreSnapshotsRef.current,
-    });
-    if (bonus > 0 && teamBonusResultRef.current.comebackTeamId) {
-      const teamId = teamBonusResultRef.current.comebackTeamId;
-      const currentBonus = teamBonusResultRef.current.teamBonusTotal[teamId] || 0;
-      teamBonusResultRef.current.teamBonusTotal[teamId] = currentBonus + bonus;
-    }
-    comebackActiveTeamIdRef.current = null;
-    setComebackActiveTeamIdState(null);
-  }, [isTeam, settings.teamBonusesEnabled]);
-
-  // ── Feature #17: Build highlight for a snippet that just ended (delegates to pure function) ──
-  const buildSnippetHighlight = useCallback((snippetIdx: number) => {
-    const song = medleySongs[snippetIdx];
-    if (!song) return;
-
-    const highlight = buildHighlightPure({
-      snippetIdx,
-      song,
-      players: playersRef.current,
-      isEliminationMode,
-      isTeam,
-      matchups,
-      snippetScoreSnapshots: snippetScoreSnapshotsRef.current,
-    });
-    highlightsRef.current.push(highlight);
-    setHighlights([...highlightsRef.current]);
-  }, [isEliminationMode, isTeam, matchups, medleySongs]);
-
-  // ── Feature #10: Eliminate lowest scorer (delegates to pure function) ──
-  const eliminateLowestScorer = useCallback(() => {
-    const result = computeElimination({
-      isEliminationMode,
-      players: playersRef.current,
-    });
-    if (!result.toEliminateId) return;
-
-    const pIdx = playersRef.current.findIndex(p => p.id === result.toEliminateId);
-    if (pIdx !== -1) {
-      playersRef.current[pIdx] = { ...playersRef.current[pIdx], isEliminated: true };
-      eliminationOrderRef.current = [...eliminationOrderRef.current, result.toEliminateId];
-      setEliminationOrder([...eliminationOrderRef.current]);
-    }
-
-    forceRender();
-
-    // Check if only 2 remain — trigger final face-off flag
-    if (result.remainingCount === 2) {
-      setFinalFaceOff(true);
-    }
-  }, [isEliminationMode, forceRender]);
-
   // ── Score a single player based on THEIR pitch result ──
   const scorePlayer = useCallback((
     playerId: string,
@@ -798,21 +323,21 @@ export function useMedleyGame({
       ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
       : settings.difficulty;
     if (shouldSkipPitch(pitch, effectiveDiff)) return;
-    if (!scoringMetaRef.current || !currentSnippet) return;
+    if (!audio.scoringMetaRef.current || !currentSnippet) return;
 
-    const activeNote = findActiveNoteFlat(snippetNotes, absTime);
+    const activeNote = findActiveNoteFlat(audio.snippetNotes, absTime);
     if (!activeNote) return;
 
     // Pro Note nur einmal werten (verhindert Punkte-Inflation bei langen Noten)
-    if (!scoredNoteStartsRef.current[playerId]) {
-      scoredNoteStartsRef.current[playerId] = new Set();
+    if (!audio.scoredNoteStartsRef.current[playerId]) {
+      audio.scoredNoteStartsRef.current[playerId] = new Set();
     }
     const noteKey = Math.round(activeNote.startTime);
-    if (scoredNoteStartsRef.current[playerId].has(noteKey)) return;
+    if (audio.scoredNoteStartsRef.current[playerId].has(noteKey)) return;
 
     if (pitch.note == null) return;
 
-    const tick = evaluateAndScoreTick(pitch.note, activeNote, effectiveDiff, scoringMetaRef.current);
+    const tick = evaluateAndScoreTick(pitch.note, activeNote, effectiveDiff, audio.scoringMetaRef.current);
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];
@@ -821,8 +346,8 @@ export function useMedleyGame({
       // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
       // Der Schwierigkeitsgrad ist nur ein informativer Marker.
       let points = POINTS_PER_NOTE;
-      scoredNoteStartsRef.current[playerId].add(noteKey);
-      if (comebackActiveTeamIdRef.current !== null && p.team === comebackActiveTeamIdRef.current) {
+      audio.scoredNoteStartsRef.current[playerId].add(noteKey);
+      if (teamBonuses.comebackActiveTeamIdRef.current !== null && p.team === teamBonuses.comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
       p.score += points;
@@ -853,28 +378,21 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [snippetNotes, currentSnippet]);
+  }, [audio.snippetNotes, audio.scoringMetaRef, audio.scoredNoteStartsRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
+
+  // ==================== GAME LOOP ====================
 
   // ── Audio stall fallback timer ──
   // If audio fails to play or stalls, auto-advance after a grace period.
   // Uses a long grace period (8s) to avoid false positives during loading.
   // Also freezes during pause (isPausedRef).
   // Suppressed while isPreparingRef is true (audio still loading).
-  const isPausedRef = useRef(false);
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
-      isPausedRef.current = true;
-      return;
-    }
-    isPausedRef.current = false;
-  }, [pauseDialogAction]);
-
-  useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSnippet || isPausedRef.current) return;
+    if (phase !== 'playing' || !isPlaying || !currentSnippet || audio.isPausedRef.current) return;
     // Don't start stall detection while audio is still being prepared
-    if (isPreparingRef.current) return;
+    if (audio.isPreparingRef.current) return;
 
-    const effective = effectiveSnippetRef.current;
+    const effective = audio.effectiveSnippetRef.current;
     const effectiveStart = effective?.startTime ?? currentSnippet.startTime;
     const effectiveEnd = effective?.endTime ?? currentSnippet.endTime;
     const snippetDuration = effectiveEnd - effectiveStart;
@@ -883,13 +401,13 @@ export function useMedleyGame({
     const STALL_CHECK_LIMIT = 16; // 16 × 500ms = 8 seconds grace period
 
     const checkInterval = setInterval(() => {
-      if (isPausedRef.current) return;
+      if (audio.isPausedRef.current) return;
       // Don't trigger fallback while still preparing
-      if (isPreparingRef.current) { stallCheckCount = 0; return; }
-      const audio = audioRef.current;
-      const fallbackVideo = fallbackVideoRef.current;
+      if (audio.isPreparingRef.current) { stallCheckCount = 0; return; }
+      const audioEl = audio.audioRef.current;
+      const fallbackVideo = audio.fallbackVideoRef.current;
       // Audio or video is playing fine — no stall
-      const anyMediaPlaying = (audio && !audio.paused) || (fallbackVideo && !fallbackVideo.paused);
+      const anyMediaPlaying = (audioEl && !audioEl.paused) || (fallbackVideo && !fallbackVideo.paused);
       if (anyMediaPlaying) {
         stallCheckCount = 0;
         return;
@@ -902,15 +420,15 @@ export function useMedleyGame({
         // eslint-disable-next-line no-console
         console.warn('[Medley] Running in fallback mode (no audio)');
         clearInterval(checkInterval);
-        fallbackTimerRef.current = setInterval(() => {
-          if (isPausedRef.current) return;
+        audio.fallbackTimerRef.current = setInterval(() => {
+          if (audio.isPausedRef.current) return;
           const elapsed = Date.now() - fallbackStartTime;
           const time = startMs + elapsed;
           setCurrentTimeMs(time);
 
           if (time >= snippetDuration) {
-            if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
-            fallbackTimerRef.current = null;
+            if (audio.fallbackTimerRef.current) clearInterval(audio.fallbackTimerRef.current);
+            audio.fallbackTimerRef.current = null;
             setIsPlaying(false);
 
             const activeIds = getActivePlayerIds();
@@ -918,12 +436,12 @@ export function useMedleyGame({
               const p = playersRef.current.find(p => p.id === id);
               if (p) p.snippetsSung++;
             });
-            buildSnippetHighlight(currentSnippetIdx);
-            checkSynergy();
-            finalizeComeback();
-            syncTeamBonusResult();
+            features.buildSnippetHighlight(currentSnippetIdx);
+            teamBonuses.checkSynergy();
+            teamBonuses.finalizeComeback();
+            teamBonuses.syncTeamBonusResult();
             if (isEliminationMode) {
-              eliminateLowestScorer();
+              elimination.eliminateLowestScorer();
               const remainingAfterElim = playersRef.current.filter(p => !p.isEliminated);
               if (remainingAfterElim.length <= 1) {
                 setPhase('round-results');
@@ -944,7 +462,7 @@ export function useMedleyGame({
 
     return () => {
       clearInterval(checkInterval);
-      if (fallbackTimerRef.current) { clearInterval(fallbackTimerRef.current); fallbackTimerRef.current = null; }
+      if (audio.fallbackTimerRef.current) { clearInterval(audio.fallbackTimerRef.current); audio.fallbackTimerRef.current = null; }
     };
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction]);
 
@@ -954,36 +472,36 @@ export function useMedleyGame({
 
     const loop = setInterval(() => {
       // Don't advance while paused
-      if (isPausedRef.current) return;
+      if (audio.isPausedRef.current) return;
 
       // Read time from whichever media element is actually playing (like PTM)
-      const audio = audioRef.current;
-      const fallbackVideo = fallbackVideoRef.current;
+      const audioEl = audio.audioRef.current;
+      const fallbackVideo = audio.fallbackVideoRef.current;
       let songTimeMs: number | null = null;
-      if (audio && !audio.paused && audio.readyState >= 2) {
-        songTimeMs = audio.currentTime * 1000;
+      if (audioEl && !audioEl.paused && audioEl.readyState >= 2) {
+        songTimeMs = audioEl.currentTime * 1000;
       } else if (fallbackVideo && !fallbackVideo.paused && fallbackVideo.readyState >= 2) {
         songTimeMs = fallbackVideo.currentTime * 1000;
       }
       if (songTimeMs === null) return;
 
       // Cancel fallback timer now that real media is driving time
-      if (fallbackTimerRef.current) {
-        clearInterval(fallbackTimerRef.current);
-        fallbackTimerRef.current = null;
+      if (audio.fallbackTimerRef.current) {
+        clearInterval(audio.fallbackTimerRef.current);
+        audio.fallbackTimerRef.current = null;
       }
 
-      const effectiveStart = effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
-      const effectiveEnd = effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
+      const effectiveStart = audio.effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
+      const effectiveEnd = audio.effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
       const snippetTime = songTimeMs - effectiveStart;
       setCurrentTimeMs(snippetTime);
 
       // Check snippet end
       if (songTimeMs >= effectiveEnd) {
         // Stop whichever media is playing
-        if (audio && !audio.paused) audio.pause();
-        if (fallbackVideoRef.current && !fallbackVideoRef.current.paused) fallbackVideoRef.current.pause();
-        if (audio) audio.playbackRate = 1.0; // Reset playback rate
+        if (audioEl && !audioEl.paused) audioEl.pause();
+        if (audio.fallbackVideoRef.current && !audio.fallbackVideoRef.current.paused) audio.fallbackVideoRef.current.pause();
+        if (audioEl) audioEl.playbackRate = 1.0; // Reset playback rate
         setIsPlaying(false);
 
         // Count snippet as sung for active players
@@ -994,20 +512,20 @@ export function useMedleyGame({
         });
 
         // Feature #17: Build highlight for this snippet
-        buildSnippetHighlight(currentSnippetIdx);
+        features.buildSnippetHighlight(currentSnippetIdx);
 
         // Feature #18: Check team synergy at snippet end
-        checkSynergy();
+        teamBonuses.checkSynergy();
         // Feature #18: Finalize comeback bonus (if active on last snippet)
-        finalizeComeback();
+        teamBonuses.finalizeComeback();
         // Sync team bonus result to state for UI
-        syncTeamBonusResult();
+        teamBonuses.syncTeamBonusResult();
 
         forceRender();
 
         // Feature #10: Elimination — eliminate lowest scorer after snippet
         if (isEliminationMode) {
-          eliminateLowestScorer();
+          elimination.eliminateLowestScorer();
           // Feature #10: If only 1 player remains, end game immediately
           const remainingAfterElim = playersRef.current.filter(p => !p.isEliminated);
           if (remainingAfterElim.length <= 1) {
@@ -1018,12 +536,12 @@ export function useMedleyGame({
 
         // Feature #16: Mystery mode — show reveal
         if (settings.mysteryMode) {
-          setMysteryReveal(true);
-          setMysteryRevealSong(currentSnippet);
+          features.setMysteryReveal(true);
+          features.setMysteryRevealSong(currentSnippet);
           // After 2 seconds, continue to transition/round-results
           setTimeout(() => {
-            setMysteryReveal(false);
-            setMysteryRevealSong(null);
+            features.setMysteryReveal(false);
+            features.setMysteryRevealSong(null);
             if (currentSnippetIdx < medleySongs.length - 1) {
               setPhase('transition');
             } else {
@@ -1066,7 +584,7 @@ export function useMedleyGame({
 
     return () => clearInterval(loop);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, eliminateLowestScorer, buildSnippetHighlight, checkSynergy, finalizeComeback, settings.mysteryMode, medleySongs.length, syncTeamBonusResult]);
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult]);
 
   // ── Transition: pulse then next snippet ──
   useEffect(() => {
@@ -1083,9 +601,9 @@ export function useMedleyGame({
           setPhase('playing');
           setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
           setCurrentTimeMs(0);
-          lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
+          audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
           // Feature #18: Pre-check comeback boost before the last snippet starts
-          preCheckComeback(nextIdx);
+          teamBonuses.preCheckComeback(nextIdx);
           return transitionTime;
         }
         return prev - 1;
@@ -1093,24 +611,14 @@ export function useMedleyGame({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [phase, currentSnippetIdx, preCheckComeback]);
+  }, [phase, currentSnippetIdx, teamBonuses.preCheckComeback]);
 
-  // ── Ref to track the currently playing media (audio or fallback video)
-  // so we can cancel the fallback timer when real media starts.
-  const playingMediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
-
-  // ── Helper: cancel fallback timer ──
-  const cancelFallbackTimer = useCallback(() => {
-    if (fallbackTimerRef.current) {
-      clearInterval(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-  }, []);
+  // ==================== ACTIONS ====================
 
   // ── Start game ──
   const handleStart = useCallback(async () => {
     if (medleySongs.length === 0) return;
-    setFinalFaceOff(false);
+    elimination.resetFinalFaceOff();
     setCurrentTimeMs(0);
 
     // Initialize multi-pitch detection (non-blocking).
@@ -1123,27 +631,20 @@ export function useMedleyGame({
     }
 
     // Start playing immediately (no countdown phase)
-    cancelFallbackTimer();
-    effectiveSnippetRef.current = null;
+    audio.cancelFallbackTimer();
+    audio.effectiveSnippetRef.current = null;
     setPhase('playing');
     setIsPlaying(true);
     setCurrentTimeMs(0);
-    lastPlayPhaseRef.current = ''; // Reset so the play effect fires
-  }, [multiPitch, cancelFallbackTimer]);
-
-  // ── Feature #18: Compute MVP (delegates to pure function) ──
-  const computeMVPHook = useCallback(() => {
-    if (!isTeam || !settings.teamBonusesEnabled) return;
-    const mvpId = computeMVPPure(playersRef.current);
-    if (mvpId) teamBonusResultRef.current.mvpPlayerId = mvpId;
-  }, [isTeam, settings.teamBonusesEnabled]);
+    audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires
+  }, [multiPitch, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef]);
 
   // ── Round complete ──
   const handleRoundComplete = useCallback(() => {
     // Final sync of team bonus result before recording
-    syncTeamBonusResult();
-    computeMVPHook();
-    syncTeamBonusResult(); // Sync again after MVP is computed
+    teamBonuses.syncTeamBonusResult();
+    teamBonuses.computeMVP();
+    teamBonuses.syncTeamBonusResult(); // Sync again after MVP is computed
 
     const roundResult: MedleyRoundResult = {
       playedAt: Date.now(),
@@ -1156,9 +657,9 @@ export function useMedleyGame({
             teamB: playersRef.current.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0),
           }
         : undefined,
-      eliminationOrder: isEliminationMode ? [...eliminationOrderRef.current] : undefined,
-      snippetHighlights: highlightsRef.current.length > 0 ? [...highlightsRef.current] : undefined,
-      teamBonusResult: isTeam && settings.teamBonusesEnabled ? { ...teamBonusResultRef.current } : undefined,
+      eliminationOrder: isEliminationMode ? [...elimination.eliminationOrderRef.current] : undefined,
+      snippetHighlights: features.highlightsRef.current.length > 0 ? [...features.highlightsRef.current] : undefined,
+      teamBonusResult: isTeam && settings.teamBonusesEnabled ? { ...teamBonuses.teamBonusResultRef.current } : undefined,
     };
     for (const p of playersRef.current) {
       roundResult.playerScores[p.id] = {
@@ -1171,18 +672,18 @@ export function useMedleyGame({
     }
 
     onRoundComplete(roundResult, [...playersRef.current]);
-  }, [medleySongs.length, isTeam, isEliminationMode, onRoundComplete, settings.playMode, settings.teamBonusesEnabled, computeMVPHook, syncTeamBonusResult]);
+  }, [medleySongs.length, isTeam, isEliminationMode, onRoundComplete, settings.playMode, settings.teamBonusesEnabled, teamBonuses.computeMVP, teamBonuses.syncTeamBonusResult, teamBonuses.teamBonusResultRef, elimination.eliminationOrderRef, features.highlightsRef]);
 
   // ── End song early ──
   const handleEndEarly = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.playbackRate = 1.0; // Reset playback rate
+    if (audio.audioRef.current) {
+      audio.audioRef.current.pause();
+      audio.audioRef.current.playbackRate = 1.0; // Reset playback rate
     }
-    if (fallbackVideoRef.current) {
-      fallbackVideoRef.current.pause();
+    if (audio.fallbackVideoRef.current) {
+      audio.fallbackVideoRef.current.pause();
     }
-    cancelFallbackTimer();
+    audio.cancelFallbackTimer();
     setIsPlaying(false);
     setIsSongPlaying(false);
     // NOTE: Do NOT call multiPitch.stop() here. Pitch detection must remain
@@ -1197,14 +698,14 @@ export function useMedleyGame({
     });
 
     // Feature #17: Build highlight for this snippet
-    buildSnippetHighlight(currentSnippetIdx);
+    features.buildSnippetHighlight(currentSnippetIdx);
 
     // Feature #18: Check team synergy at snippet end
-    checkSynergy();
+    teamBonuses.checkSynergy();
     // Feature #18: Finalize comeback bonus (if active on last snippet)
-    finalizeComeback();
+    teamBonuses.finalizeComeback();
     // Sync team bonus result to state for UI
-    syncTeamBonusResult();
+    teamBonuses.syncTeamBonusResult();
 
     forceRender();
 
@@ -1213,7 +714,7 @@ export function useMedleyGame({
     } else {
       setPhase('round-results');
     }
-  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender, cancelFallbackTimer]);
+  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, teamBonuses.syncTeamBonusResult, setIsSongPlaying, forceRender, audio.cancelFallbackTimer, audio.audioRef, audio.fallbackVideoRef]);
 
   // ── Cleanup on unmount ──
   // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).
@@ -1223,7 +724,7 @@ export function useMedleyGame({
   useEffect(() => {
     return () => {
       multiPitch.stop();
-      cancelFallbackTimer();
+      audio.cancelFallbackTimer();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1235,6 +736,20 @@ export function useMedleyGame({
   const totalProgress = medleySongs.length > 0
     ? ((currentSnippetIdx + 1) / medleySongs.length) * 100
     : 0;
+
+  // ── Get current lyric line ──
+  const currentLyricLine = useMemo(() => {
+    if (!audio.snippetLyrics.length || !currentSnippet) return null;
+    const absoluteTime = currentSnippet.startTime + currentTimeMs;
+    for (let i = 0; i < audio.snippetLyrics.length; i++) {
+      const line = audio.snippetLyrics[i];
+      const nextLine = audio.snippetLyrics[i + 1];
+      if (absoluteTime >= line.startTime && (!nextLine || absoluteTime < nextLine.startTime)) {
+        return line;
+      }
+    }
+    return null;
+  }, [currentTimeMs, audio.snippetLyrics, currentSnippet]);
 
   // Current matchup (team mode)
   const currentMatchup = isTeam && currentSnippetIdx < matchups.length
@@ -1257,16 +772,16 @@ export function useMedleyGame({
     transitionCount,
     currentSnippet,
     currentSnippetIdx,
-    snippetNotes,
-    snippetLyrics,
-    audioRef,
-    videoRef,
-    fallbackVideoRef,
-    audioUrl,
-    audioError,
+    snippetNotes: audio.snippetNotes,
+    snippetLyrics: audio.snippetLyrics,
+    audioRef: audio.audioRef,
+    videoRef: audio.videoRef,
+    fallbackVideoRef: audio.fallbackVideoRef,
+    audioUrl: audio.audioUrl,
+    audioError: audio.audioError,
     currentTimeMs,
     isPlaying,
-    restoredSong,
+    restoredSong: audio.restoredSong,
     showBackgroundVideo,
     useAnimatedBackground,
     playersDisplay: ___playersDisplay,
@@ -1275,28 +790,28 @@ export function useMedleyGame({
     currentMatchup,
     currentLyricLine,
     lastScoringEvents,
-    currentDynamicDifficulty,
+    currentDynamicDifficulty: features.currentDynamicDifficulty,
     // Feature #10
     isEliminationMode,
-    eliminationOrder,
+    eliminationOrder: elimination.eliminationOrder,
     activePlayerCount,
     totalPlayerCount,
-    finalFaceOff,
+    finalFaceOff: elimination.finalFaceOff,
     // Feature #15
-    activeModifier,
-    modifierJustRevealed,
+    activeModifier: features.activeModifier,
+    modifierJustRevealed: features.modifierJustRevealed,
     // Feature #16
     isMysteryMode: settings.mysteryMode,
-    mysteryReveal,
-    mysteryRevealSong,
+    mysteryReveal: features.mysteryReveal,
+    mysteryRevealSong: features.mysteryRevealSong,
     // Feature #17
-    highlights,
+    highlights: features.highlights,
     // Feature #18
-    synergyTriggered,
-    comebackTriggered,
-    comebackTeamId,
-    comebackActiveTeamId: comebackActiveTeamIdState,
-    teamBonusResult: teamBonusResultState,
+    synergyTriggered: teamBonuses.synergyTriggered,
+    comebackTriggered: teamBonuses.comebackTriggered,
+    comebackTeamId: teamBonuses.comebackTeamId,
+    comebackActiveTeamId: teamBonuses.comebackActiveTeamId,
+    teamBonusResult: teamBonuses.teamBonusResult,
     // Core
     multiPitch,
     isTeam,

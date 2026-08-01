@@ -3,24 +3,18 @@
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
-import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { useTranslation } from '@/lib/i18n/translations';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
-import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType, SnippetMatchup } from '@/components/game/medley/medley-types';
-import { generateTeamMatchups } from '@/components/game/medley/medley-types';
 import type { GameModeSettingsMap, PassTheMicSettings as PassTheMicModeSettings } from '@/components/game/unified-party-setup.types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import type { Difficulty } from '@/types/game';
 import type { Screen } from '@/types/screens';
-import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
-import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
-import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
-import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
 import type { CptmSettings } from '@/components/game/cptm-types';
+import { dispatchStartGame } from './party-start-handlers';
 
 interface PartySetupSectionProps {
   screen: Screen;
@@ -41,12 +35,6 @@ function toPassTheMicSettings(
     ...overrides,
   };
 }
-// ===================== HELPER: Pick a random song =====================
-function pickRandomSong(songs: Song[]): Song | null {
-  if (songs.length === 0) return null;
-  return songs[Math.floor(Math.random() * songs.length)];
-}
-
 // ===================== HELPER: Generate pass-the-mic segments =====================
 // Auto segment duration: 20-60s, at least 2 segments per player, equal segments per player
 function generatePassTheMicSegments(song: Song, playerCount: number, explicitDuration?: number): PassTheMicSegment[] {
@@ -83,11 +71,7 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
 }
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
-// ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
-function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0, isEliminated: false }));
-}
-
+// ===================== HELPER: Convert SelectedPlayer to PassTheMic/Companion player =====================
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
 }
@@ -205,452 +189,22 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               });
             }
 
-            switch (mode) {
-              // ── Tournament: create bracket → bracket view ──
-              case 'tournament': {
-                const s = result.settings as GameModeSettingsMap['tournament'];
-                const rawMaxPlayers = s.maxPlayers || 8;
-                const shortMode = s.shortMode !== false;
-                const tournamentPlayers: TournamentPlayer[] = result.players.map((p, i) => ({
-                  id: p.id,
-                  name: p.name,
-                  avatar: p.avatar,
-                  color: p.color,
-                  eliminated: false,
-                  lossCount: 0,
-                  seed: i + 1,
-                }));
-                // Clamp to nearest valid tournament size: 2, 4, 8, 16, or 32
-                const validSizes = [2, 4, 8, 16, 32] as const;
-                const maxPlayers = validSizes.reduce((prev, curr) =>
-                  Math.abs(curr - rawMaxPlayers) < Math.abs(prev - rawMaxPlayers) ? curr : prev
-                );
-                const settings: TournamentSettings = {
-                  maxPlayers,
-                  songDuration: shortMode ? 60 : 180,
-                  randomSongs: true,
-                  difficulty: result.difficulty,
-                  tournamentType: s.tournamentType ?? 'single',
-                  tiebreakMode: s.tiebreakMode ?? 'accuracy',
-                  dynamicDifficulty: s.dynamicDifficulty ?? false,
-                  songSelectionMode: s.songSelectionMode ?? 'random',
-                  seedingMode: s.seedingMode ?? 'random',
-                  filterGenre: s.filterGenre || 'all',
-                  filterLanguage: s.filterLanguage || 'all',
-                };
-                // Validate player count before creating tournament
-                const playerCount = tournamentPlayers.length;
-                if (playerCount < 2) {
-                  toast({
-                    title: t('partySetup.tournamentError'),
-                    description: t('partySetup.minPlayersRequired').replace('{n}', String(playerCount)),
-                    variant: 'destructive',
-                  });
-                  break;
-                }
-                if (playerCount > maxPlayers) {
-                  toast({
-                    title: t('partySetup.tournamentError'),
-                    description: t('partySetup.tournamentMaxPlayers').replace(/\{n\}/g, String(maxPlayers)),
-                    variant: 'destructive',
-                  });
-                  break;
-                }
-                try {
-                  const bracket = createTournament(tournamentPlayers, settings);
-                  party.setTournamentBracket(bracket);
-                  party.setTournamentSongDuration(settings.songDuration);
-                  setScreen('tournament-game');
-                } catch (err) {
-                  toast({
-                    title: t('partySetup.tournamentError'),
-                    description: err instanceof Error ? err.message : t('partySetup.tournamentCreateError'),
-                    variant: 'destructive',
-                  });
-                }
-                break;
-              }
-
-              // ── Battle Royale: create game object → game view ──
-              case 'battle-royale': {
-                const s = result.settings as GameModeSettingsMap['battle-royale'];
-                // Battle Royale allows max 4 microphone players + 20 companion players.
-                // The unified setup marks all players as 'microphone', so we need to
-                // auto-convert excess players (>4) to 'companion' type.
-                const MIC_LIMIT = 4;
-                const mappedPlayers = result.players.map((p, i) => ({
-                  id: p.id,
-                  name: p.name,
-                  avatar: p.avatar,
-                  color: p.color,
-                  playerType: p.playerType === 'companion' ? 'companion' as const : (i < MIC_LIMIT ? 'microphone' as const : 'companion' as const),
-                }));
-
-                const brSettings: BattleRoyaleSettings = {
-                  roundDuration: s.roundDuration ?? 60,
-                  finalRoundDuration: s.finalRoundDuration ?? 120,
-                  randomSongs: true,
-                  medleyMode: s.medleyMode ?? false,
-                  medleySnippets: 3,
-                  difficulty: result.difficulty,
-                  eliminationAnimation: true,
-                  songSelection: (s.songSelection as 'random' | 'vote') ?? 'random',
-                  noRepeatProtection: s.noRepeatProtection ?? true,
-                  noRepeatCount: 10,
-                  grandFinaleBestOf: (s.grandFinaleBestOf as 1 | 3 | 5) ?? 1,
-                  bountyEnabled: s.bountyEnabled ?? true,
-                  bountyMultiplier: s.bountyMultiplier ?? 1.5,
-                  escalatingDifficulty: s.escalatingDifficulty ?? false,
-                  shrinkingTimer: s.shrinkingTimer ?? false,
-                  shrinkFactor: s.shrinkFactor ?? 5,
-                  minRoundDuration: s.minRoundDuration ?? 30,
-                  noteShapeStyle: (s.noteShapeStyle as 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle') ?? 'rounded',
-                  noteDisplayStyle: (s.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'trail-effect' | 'retro-bars' | 'particle-fade') ?? 'classic',
-                  showNoteHighway: s.showNoteHighway ?? true,
-                  showVideoBackground: s.showVideoBackground ?? true,
-                  countdownDuration: s.countdownDuration ?? 3,
-                };
-                try {
-                  const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));
-                  party.setBattleRoyaleGame(game);
-                  setScreen('battle-royale-game');
-                } catch (err) {
-                  // eslint-disable-next-line no-console
-                  console.error('[PartySetup] Failed to create battle royale:', err);
-                  toast({ title: t('partySetup.battleRoyaleStartError').replace('{error}', err instanceof Error ? err.message : String(err)) });
-                }
-                break;
-              }
-
-              // ── Medley: create song list → medley game view ──
-              case 'medley': {
-                const s = result.settings as GameModeSettingsMap['medley'];
-                const snippetCount = s.snippetCount || 5;
-                const snippetDuration = s.snippetDuration || 30;
-                const medleySongList = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
-
-                // Pre-restore URLs AND lyrics for all snippet songs (needed for
-                // Tauri file:// paths and IndexedDB-stored lyrics) — same as PTM medley.
-                const preparedSnippets = await Promise.all(
-                  medleySongList.map(async snippet => {
-                    try {
-                      let prepared = await ensureSongUrls(snippet.song);
-
-                      // Also load lyrics if not present (storedTxt / relativeTxtPath)
-                      if (!prepared.lyrics || prepared.lyrics.length === 0) {
-                        try {
-                          const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-                          const lyrics = await loadSongLyrics(prepared);
-                          if (lyrics.length > 0) {
-                            prepared = { ...prepared, lyrics };
-                          }
-                        } catch { /* non-critical */ }
-                      }
-
-                      // Re-position snippet if no notes overlap with the snippet range.
-                      // generateMedleySnippets may have positioned the snippet at a fallback
-                      // (e.g. 10s) because lyrics were empty during generation, but the
-                      // now-loaded lyrics have notes at completely different times.
-                      let adjustedSnippet = snippet;
-                      if (prepared.lyrics && prepared.lyrics.length > 0) {
-                        const hasOverlap = prepared.lyrics.some(line =>
-                          line.notes.some(n =>
-                            n.startTime < snippet.endTime && (n.startTime + n.duration) > snippet.startTime,
-                          ),
-                        );
-                        if (!hasOverlap) {
-                          const allNotes = prepared.lyrics.flatMap(l => l.notes);
-                          if (allNotes.length > 0) {
-                            const snippetMs = snippet.duration;
-                            const firstNote = allNotes[0].startTime;
-                            const lastNote = allNotes[allNotes.length - 1].startTime;
-                            const noteRangeEnd = lastNote + 5000;
-                            const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
-                            let bestStart = firstNote;
-                            let bestCount = 0;
-                            for (let t = Math.max(firstNote, 10000); t <= maxStart; t += 2000) {
-                              const count = allNotes.filter(n => n.startTime >= t && n.startTime <= t + snippetMs).length;
-                              if (count > bestCount) { bestCount = count; bestStart = t; }
-                            }
-                            const newEnd = Math.min(bestStart + snippetMs, prepared.duration);
-                            adjustedSnippet = { ...snippet, startTime: bestStart, endTime: newEnd, duration: newEnd - bestStart };
-                          }
-                        }
-                      }
-
-                      return { ...adjustedSnippet, song: prepared };
-                    } catch {
-                      return snippet;
-                    }
-                  })
-                );
-
-                // Spieler konvertieren und in Team-Modus Teams zuweisen
-                const medleyPlayers = toMedleyPlayers(result.players);
-                const medleySettings = result.settings as GameModeSettingsMap['medley'];
-                const playMode = medleySettings?.playMode || 'ffa';
-
-                if (playMode === 'team') {
-                  // Spieler gleichmäßig auf Team A (0) und Team B (1) aufteilen
-                  const half = Math.ceil(medleyPlayers.length / 2);
-                  medleyPlayers.forEach((p, i) => {
-                    p.team = i < half ? 0 : 1;
-                  });
-                  const teamA = medleyPlayers.filter(p => p.team === 0);
-                  const teamB = medleyPlayers.filter(p => p.team === 1);
-                  const matchups: SnippetMatchup[] = generateTeamMatchups(teamA, teamB);
-                  party.setMedleyMatches(matchups);
-                } else {
-                  party.setMedleyMatches([]);
-                }
-
-                party.setMedleyPlayers(medleyPlayers);
-                party.setMedleySongs(preparedSnippets);
-                // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
-                party.setMedleySettings(result.settings as unknown as MedleySettingsType);
-                party.setMedleySeriesHistory([]);
-                // Reset isSongPlaying BEFORE navigating to prevent React #185
-                // (MedleyGameScreen's useEffect would otherwise trigger during mount cycle)
-                party.setIsSongPlaying(false);
-                setScreen('medley-game');
-                break;
-              }
-
-              // ── Pass the Mic: song selection (random, medley, or library-picked) ──
-              case 'pass-the-mic': {
-                const s = result.settings as GameModeSettingsMap['pass-the-mic'];
-                // Store song selection mode so handleContinue knows how to pick the next song
-                party.setPtmSongSelection(result.songSelection || 'random');
-                // When songSelection is 'medley', delegate to the medley game flow
-                // instead of playing a single random song.
-                // Construct proper MedleySettings from PTM context.
-                if (result.songSelection === 'medley') {
-                  const snippetDuration = 30; // fixed 30s per snippet
-                  const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
-                  const medleySnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
-
-                  // Pre-restore URLs AND lyrics for all snippet songs (needed for
-                  // Tauri file:// paths and IndexedDB-stored lyrics)
-                  const preparedSnippets = await Promise.all(
-                    medleySnippets.map(async snippet => {
-                      try {
-                        let prepared = await ensureSongUrls(snippet.song);
-
-                        // Also load lyrics if not present (storedTxt / relativeTxtPath)
-                        if (!prepared.lyrics || prepared.lyrics.length === 0) {
-                          try {
-                            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-                            const lyrics = await loadSongLyrics(prepared);
-                            if (lyrics.length > 0) {
-                              prepared = { ...prepared, lyrics };
-                            }
-                          } catch { /* non-critical */ }
-                        }
-
-                        return { ...snippet, song: prepared };
-                      } catch {
-                        return snippet;
-                      }
-                    })
-                  );
-
-                  // Store snippets in party store
-                  party.setPtmMedleySnippets(preparedSnippets);
-
-                  // Use first snippet's song as the initial song (with trimmed start/end)
-                  const firstSnippet = preparedSnippets[0];
-                  const firstSong: Song = {
-                    ...firstSnippet.song,
-                    start: firstSnippet.startTime,
-                    end: firstSnippet.endTime,
-                  };
-
-                  // Generate segments: one per snippet
-                  const segments: PassTheMicSegment[] = preparedSnippets.map(snippet => ({
-                    startTime: snippet.startTime,
-                    endTime: snippet.endTime,
-                    playerId: null,
-                  }));
-
-                  const ptmPlayers = toPassTheMicPlayers(result.players);
-                  party.setPassTheMicPlayers(ptmPlayers);
-                  party.setPassTheMicSegments(segments);
-                  party.setPassTheMicSong(firstSong);
-                  party.setPassTheMicSettings(toPassTheMicSettings(s, {
-                    segmentDuration: snippetDuration,
-                    sharedMicId: s.sharedMicId || null,
-                    sharedMicName: s.sharedMicName || null,
-                  }));
-                  // Prevent React #185
-                  party.setIsSongPlaying(false);
-                  setScreen('pass-the-mic-game');
-                  break;
-                }
-
-                // Default: single random song with segment-based pass-the-mic
-                const randomSong = pickRandomSong(filteredSongs);
-                if (randomSong) {
-                  // Pre-restore URLs for the random song (needed for Tauri file:// paths)
-                  let songWithUrls = randomSong;
-                  try {
-                    songWithUrls = await ensureSongUrls(randomSong);
-                    // Also load lyrics so the PTM note highway and lyrics display work
-                    if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
-                      try {
-                        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-                        const lyrics = await loadSongLyrics(songWithUrls);
-                        if (lyrics.length > 0) {
-                          songWithUrls = { ...songWithUrls, lyrics };
-                        }
-                      } catch { /* non-critical */ }
-                    }
-                  } catch { /* non-critical — game view has its own URL restoration */ }
-
-                  const playerCount = result.players.length || 2;
-                  const segments = generatePassTheMicSegments(songWithUrls, playerCount, s.segmentDuration);
-                  if (segments.length === 0) {
-                    toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortRetry'), variant: 'destructive' });
-                    break;
-                  }
-                  const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
-                  const settingsWithMic = {
-                    ...s,
-                    segmentDuration: Math.round(segDur / 1000),
-                    sharedMicId: s.sharedMicId || null,
-                    sharedMicName: s.sharedMicName || null,
-                  };
-                  const ptmPlayers = toPassTheMicPlayers(result.players);
-                  party.setPassTheMicPlayers(ptmPlayers);
-                  party.setPassTheMicSegments(segments);
-                  party.setPassTheMicSong(songWithUrls);
-                  party.setPassTheMicSettings(toPassTheMicSettings(settingsWithMic));
-                  party.setIsSongPlaying(false);
-                  // Use dedicated PTM game screen (not main game screen)
-                  setScreen('pass-the-mic-game');
-                }
-                break;
-              }
-
-              // ── Companion Sing-A-Long: random song → game view ──
-              case 'companion-singalong': {
-                const randomSong = pickRandomSong(filteredSongs);
-                if (randomSong) {
-                  const cptmPlayers = toCptmPlayers(result.players);
-                  party.setCptmPlayers(cptmPlayers);
-                  party.setCptmSong(randomSong);
-                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
-                  const cptmSegments = generatePassTheMicSegments(randomSong, cptmPlayers.length || 2);
-                  party.setCptmSegments(cptmSegments);
-                  resetGame();
-                  setPlayers([]);
-                  if (cptmPlayers.length > 0) {
-                    addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
-                  }
-                  setSong(randomSong);
-                  setScreen('companion-singalong-game');
-                }
-                break;
-              }
-
-              // ── Missing Words / Blind: create competitive game → competitive game view ──
-              case 'missing-words':
-              case 'blind': {
-                const s = result.settings as GameModeSettingsMap['missing-words'] & GameModeSettingsMap['blind'];
-                const modeType = mode as CompetitiveModeType;
-                const freqSetting = s.missingWordFrequency || s.blindFrequency || 'normal';
-                const mwFreqMap: Record<string, number> = { light: 0.15, easy: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
-                const blindFreqMap: Record<string, number> = { light: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
-                const compSettings: CompetitiveSettings = {
-                  difficulty: result.difficulty,
-                  modeType,
-                  playMode: 'competitive',
-                  bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
-                  missingWordFrequency: modeType === 'missing-words'
-                    ? (mwFreqMap[freqSetting] ?? 0.30)
-                    : 0.30,
-                  blindFrequency: modeType === 'blind'
-                    ? (blindFreqMap[freqSetting] ?? 0.30)
-                    : 0.30,
-                  hardcore: !!(s.hardcore),
-                  hardcoreMissingWords: !!(s.hardcoreMissingWords),
-                  missingWordsGranularity: (s.granularity as 'word' | 'passage' | 'both') || 'passage',
-                  escalating: !!(s.escalating),
-                  songSelection: 'smart',
-                };
-                const compGame = createCompetitiveGame(
-                  result.players.map(p => p.id),
-                  result.players.map(p => p.name),
-                  result.players.map(p => p.avatar),
-                  compSettings,
-                );
-                party.setCompetitiveGame(compGame);
-                const modeScreen = modeType === 'missing-words' ? 'missing-words-game' : 'blind-game';
-                setScreen(modeScreen as Screen);
-                break;
-              }
-
-              // ── Rate my Song: pick song → set up state → game screen ──
-              case 'rate-my-song': {
-                const s = result.settings as GameModeSettingsMap['rate-my-song'];
-                const randomSong = pickRandomSong(filteredSongs);
-                if (!randomSong) break;
-                const duration = s.duration || 'normal';
-                const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: randomSong.id };
-                const playerIds = result.players.map(p => p.id);
-                party.setRateMySongSettings(rateSettings);
-                party.setRateMySongPlayerIds(playerIds);
-                party.setUnifiedSetupResult(result);
-                // Set up the game
-                resetGame();
-                setGameMode(mode);
-                setPlayers([]);
-                result.players.forEach((p, _i) => {
-                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
-                });
-                if (duration === 'short') {
-                  setSong({ ...randomSong, start: randomSong.start, end: Math.min((randomSong.start || 0) + 60000, randomSong.end || randomSong.duration) });
-                } else {
-                  setSong(randomSong);
-                }
-                setScreen('game');
-                break;
-              }
-
-              // ── Duel: pick random song, add both players, go to game ──
-              case 'duel': {
-                const randomSong = pickRandomSong(filteredSongs);
-                if (!randomSong) break;
-                resetGame();
-                setPlayers([]);
-                setGameMode('duel');
-                setSong(randomSong);
-                result.players.forEach((p) => {
-                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
-                });
-                party.setUnifiedSetupResult(result);
-                setScreen('game');
-                break;
-              }
-
-              // ── Duet: same as duel ──
-              case 'duet': {
-                const randomSong = pickRandomSong(filteredSongs);
-                if (!randomSong) break;
-                resetGame();
-                setPlayers([]);
-                setGameMode('duet');
-                setSong(randomSong);
-                result.players.forEach((p) => {
-                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
-                });
-                party.setUnifiedSetupResult(result);
-                setScreen('game');
-                break;
-              }
-
-              // ── Other modes: go to library for song selection ──
-              default:
-                setScreen('library');
+            if (mode) {
+              await dispatchStartGame({
+                result,
+                mode,
+                party,
+                setGameMode,
+                setDifficulty,
+                setSong,
+                resetGame,
+                addPlayer,
+                setPlayers,
+                setScreen,
+                toast,
+                t,
+                filteredSongs,
+              });
             }
           }}
           onSelectLibrary={(result) => {
