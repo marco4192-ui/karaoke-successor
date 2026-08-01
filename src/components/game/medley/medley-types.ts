@@ -24,6 +24,8 @@ export interface MedleyPlayer {
   micName?: string;
   /** Companion mobile client ID (mobile only) */
   mobileClientId?: string;
+  /** Stereo channel index for stereo-split microphones (0=left, 1=right) */
+  stereoChannel?: number;
   // Scoring — accumulated across all snippets
   score: number;
   notesHit: number;

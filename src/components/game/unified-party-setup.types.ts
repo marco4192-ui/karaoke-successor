@@ -101,6 +101,8 @@ export interface SelectedPlayer {
   companionCode?: string;
   /** Whether the companion is currently connected */
   isConnected?: boolean;
+  /** Stereo channel index for stereo-split microphones (0=left, 1=right) */
+  stereoChannel?: number;
 }
 
 // ===================== TYPED GAME MODE SETTINGS =====================

@@ -20,6 +20,7 @@ export interface BattleRoyalePlayer extends TournamentPlayer {
   eliminationRound: number | null;
   playerType: PlayerType;
   microphoneId?: string;
+  stereoChannel?: number;
   connectionCode?: string;
   lastPing?: number;
 }

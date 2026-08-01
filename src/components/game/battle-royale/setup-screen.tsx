@@ -203,18 +203,35 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       color: string;
       playerType: PlayerType;
       microphoneId?: string;
+      stereoChannel?: number;
       connectionCode?: string;
     }> = [];
 
     micPlayers.forEach((id) => {
       const profile = profiles.find(p => p.id === id);
+      const micDeviceId = playerMicDevices[id];
+      // Resolve stereo channel from saved mic config
+      let stereoChannel: number | undefined;
+      if (micDeviceId) {
+        try {
+          const micConfigStr = localStorage.getItem('karaoke-multi-mic-config');
+          if (micConfigStr) {
+            const parsed = JSON.parse(micConfigStr);
+            const micEntry = (parsed.assignedMics || []).find((m: { deviceId?: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }) => m.deviceId === micDeviceId);
+            if (micEntry?.config?.stereoSplitMode) {
+              stereoChannel = micEntry.config.stereoChannel === 'right' ? 1 : 0;
+            }
+          }
+        } catch { /* ignore */ }
+      }
       players.push({
         id,
         name: profile?.name || 'Unknown',
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[players.length % PLAYER_COLORS.length],
         playerType: 'microphone',
-        microphoneId: playerMicDevices[id] || undefined,
+        microphoneId: micDeviceId || undefined,
+        stereoChannel,
       });
     });
 

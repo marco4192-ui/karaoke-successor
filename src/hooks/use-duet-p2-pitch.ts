@@ -78,7 +78,11 @@ export function useDuetP2Pitch({
     let destroyed = false;
     const detector = new PitchDetector();
 
-    detector.initialize(p2Mic.deviceId).then((success) => {
+    // Resolve stereo channel from mic config
+    const p2StereoChannel = p2Mic.config?.stereoSplitMode
+      ? (p2Mic.config.stereoChannel === 'right' ? 1 : 0)
+      : undefined;
+    detector.initialize(p2Mic.deviceId, p2StereoChannel).then((success) => {
       if (!success || destroyed) {
         detector.destroy();
         return;

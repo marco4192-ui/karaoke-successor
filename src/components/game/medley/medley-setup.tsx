@@ -299,10 +299,10 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
     // Load mic preferences from localStorage (same as unified-party-setup)
     let micPreferences: Record<string, string> = {};
-    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
+    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }> = [];
     try {
       micPreferences = getJsonOptional<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES) || {};
-      const micConfig = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
+      const micConfig = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }> }>(StorageKeys.MULTI_MIC_CONFIG);
       if (micConfig) savedMics = micConfig.assignedMics || [];
     } catch { /* ignore */ }
 
@@ -315,9 +315,10 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       // Resolve mic assignment for local players
       let resolvedMicId: string | undefined;
       let resolvedMicName: string | undefined;
+      let assignedMic: typeof savedMics[number] | null | undefined = null;
       if (inputType === 'local') {
         const micEntry = Object.entries(micPreferences).find(([, pid]) => pid === id);
-        const assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
+        assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
         if (assignedMic) {
           resolvedMicId = assignedMic.deviceId;
           resolvedMicName = assignedMic.customName || assignedMic.deviceName;
@@ -331,6 +332,12 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         }
       }
 
+      // Resolve stereo channel from saved mic config
+      const micSource = assignedMic || (resolvedMicId ? savedMics.find(m => m.deviceId === resolvedMicId) : null) || (inputType === 'local' ? savedMics[i] : null);
+      const stereoChannel = micSource?.config?.stereoSplitMode
+        ? (micSource.config.stereoChannel === 'right' ? 1 : 0)
+        : undefined;
+
       return {
         id,
         name: profile?.name || 'Unknown',
@@ -341,6 +348,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         micId: resolvedMicId,
         micName: resolvedMicName,
         mobileClientId: inputType === 'mobile' ? playerMobileClientIds[id] : undefined,
+        stereoChannel,
         score: 0,
         notesHit: 0,
         notesMissed: 0,

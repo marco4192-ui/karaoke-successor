@@ -280,6 +280,7 @@ export function useMedleyGame({
       type: p.inputType,
       deviceId: p.micId,
       mobileClientId: p.mobileClientId,
+      stereoChannel: p.stereoChannel,
     })),
     [initialPlayers],
   );

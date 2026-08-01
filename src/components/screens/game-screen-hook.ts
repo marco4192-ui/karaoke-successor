@@ -31,6 +31,7 @@ import { useMediaSession } from '@/hooks/use-media-session';
 import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
+import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { enterFullscreen } from '@/hooks/use-app-effects';
@@ -99,7 +100,39 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const escalating = usePartyStore(s =>
     s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.escalating
   );
-  const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { pitchResult, initialize: initializePitch, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+
+  // ── Resolve P1 microphone deviceId + stereoChannel from party setup ──
+  // When the game is launched via the unified party setup, the first player's
+  // mic assignment (micId = mic-manager internal ID) and stereoChannel are
+  // available in unifiedSetupResult.players[0]. We resolve the browser deviceId
+  // from the mic manager so the pitch detector opens the correct device.
+  const p1MicRef = useRef<{ deviceId?: string; stereoChannel?: number } | null>(null);
+  useEffect(() => {
+    const setupResult = usePartyStore.getState().unifiedSetupResult;
+    const p1 = setupResult?.players?.[0];
+    if (!p1 || p1.playerType !== 'microphone' || !p1.micId) {
+      p1MicRef.current = null;
+      return;
+    }
+    // Look up the mic manager's internal ID → browser deviceId
+    try {
+      const micManager = getMultiMicrophoneManager();
+      const assigned = micManager.getAssignedMicrophones().find(m => m.id === p1.micId);
+      p1MicRef.current = {
+        deviceId: assigned?.deviceId,
+        stereoChannel: p1.stereoChannel,
+      };
+    } catch {
+      p1MicRef.current = { deviceId: undefined, stereoChannel: p1.stereoChannel };
+    }
+  }, []);
+
+  // Wrap initialize to inject P1's deviceId and stereoChannel
+  const initialize = useCallback(async () => {
+    const mic = p1MicRef.current;
+    return initializePitch(mic?.deviceId, mic?.stereoChannel);
+  }, [initializePitch]);
 
   // Smoothed pitch for visual display (prevents flickering/jitter).
   // Uses rawNote (un-stabilized) instead of the stabilized `note` field

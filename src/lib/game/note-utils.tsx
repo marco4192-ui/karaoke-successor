@@ -565,7 +565,18 @@ export function getVisibleNotes(
 ): Array<Note & { lineIndex: number; line: LyricLine }> {
   if (!notes || notes.length === 0) return [];
 
-  const windowStart = currentTime - 1000;
+  // Binary search look-behind: must be large enough to include notes whose
+  // START is far in the past but whose BODY (duration) still extends on-screen.
+  // A note's right-edge position is: singLinePos + (noteEnd - t) / noteWindow * 100.
+  // We keep notes until their right edge passes the -30% render cull, which
+  // requires noteEnd > t - 2000.  For a note with duration D, startTime > t - 2000 - D.
+  // We use 20 s as a safe upper bound so the binary search never skips a visible note.
+  // The actual data filtering happens in the loop below (filterWindowStart).
+  const searchWindowStart = currentTime - 20000;
+
+  // Data filter: notes are removed 2 s after their end, which places their
+  // right edge at approximately -30 % (the render cull in NoteBlock).
+  const filterWindowStart = currentTime - 2000;
   const windowEnd = currentTime + noteWindow;
   const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
@@ -575,7 +586,7 @@ export function getVisibleNotes(
 
   while (startIdx <= endIdx) {
     const midIdx = Math.floor((startIdx + endIdx) / 2);
-    if (notes[midIdx].startTime < windowStart) {
+    if (notes[midIdx].startTime < searchWindowStart) {
       startIdx = midIdx + 1;
     } else {
       endIdx = midIdx - 1;
@@ -588,7 +599,7 @@ export function getVisibleNotes(
     const noteEnd = note.startTime + note.duration;
 
     if (note.startTime > windowEnd) break;
-    if (noteEnd >= windowStart) {
+    if (noteEnd >= filterWindowStart) {
       result.push(note);
     }
   }
