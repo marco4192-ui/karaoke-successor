@@ -102,7 +102,7 @@ export function PlayerGrid({
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium truncate">{profile.name}</span>
-                    {isSelected && (
+                    {isSelected && !config.sharedMic && (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] opacity-70">
                           {isCompanionPlayer ? '📱' : '🎤'}
