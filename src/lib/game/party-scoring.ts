@@ -13,17 +13,8 @@ import type { Note, LyricLine, Difficulty } from '@/types/game';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
 import {
   evaluateTick,
-  calculateTickPoints,
   ScoringMetadata,
 } from './scoring';
-
-// ===================== CONSTANTS =====================
-
-/** Multiplier for converting accuracy (0-1) to fallback tick points when no BPM metadata is available. */
-const FALLBACK_TICK_MULTIPLIER = 10;
-
-/** Maximum points per tick in fallback mode — prevents score inflation on long songs. */
-const FALLBACK_MAX_TICK_PTS = 3;
 
 // ===================== TYPES =====================
 
@@ -134,23 +125,10 @@ export function evaluateAndScoreTick(
     return { hit: false, points: 0, accuracy: result.accuracy, displayType: result.displayType };
   }
 
-  let tickPts: number;
-  if (scoringMeta) {
-    tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick);
-  } else {
-    // Fallback when no scoring metadata is available (e.g. missing BPM).
-    // Scale accuracy to 0-3 point range without a floor so that poor
-    // accuracy (below ~0.05) correctly awards 0 points instead of
-    // inflating scores on long songs with many ticks.
-    tickPts = result.accuracy * FALLBACK_TICK_MULTIPLIER;
+  if (!scoringMeta) {
+    return { hit: true, points: 0, accuracy: result.accuracy, displayType: result.displayType };
   }
 
-  // When scoringMetadata is available: round and enforce minimum of 1 point per hit
-  // In fallback mode (no BPM metadata): enforce minimum 1 point per hit and cap at 3
-  // This prevents edge-of-tolerance hits from awarding 0 points.
-  const points = scoringMeta
-    ? Math.max(1, Math.round(tickPts))
-    : Math.max(1, Math.min(Math.round(tickPts), FALLBACK_MAX_TICK_PTS));
-
+  const points = Math.max(1, Math.round(result.accuracy * scoringMeta.pointsPerTick));
   return { hit: true, points, accuracy: result.accuracy, displayType: result.displayType };
 }

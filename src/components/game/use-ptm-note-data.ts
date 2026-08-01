@@ -45,7 +45,7 @@ export function usePtmNoteData({ notesSource, currentTime }: UsePtmNoteDataOptio
 
     const bd = notesSource.bpm ? 15000 / notesSource.bpm : 500;
     const ps = calculatePitchStats(notes);
-    const meta = calculateScoringMetadata(notes, bd);
+    const meta = calculateScoringMetadata(notes, bd, 'medium', 2000);
 
     return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta };
   }, [notesSource]);

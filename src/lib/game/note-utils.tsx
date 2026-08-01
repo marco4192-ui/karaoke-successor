@@ -574,9 +574,11 @@ export function getVisibleNotes(
   // The actual data filtering happens in the loop below (filterWindowStart).
   const searchWindowStart = currentTime - 20000;
 
-  // Data filter: notes are removed 2 s after their end, which places their
-  // right edge at approximately -30 % (the render cull in NoteBlock).
-  const filterWindowStart = currentTime - 2000;
+  // Data filter: notes are removed 5 s after their end, which places their
+  // right edge well past the left screen edge. 5 s post-end ensures even
+  // very long ballad notes (which may extend far left of the sing line)
+  // are fully visible until they exit the screen.
+  const filterWindowStart = currentTime - 5000;
   const windowEnd = currentTime + noteWindow;
   const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 

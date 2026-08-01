@@ -310,7 +310,7 @@ export function useCptmGameLogic({
     notes.sort((a, b) => a.startTime - b.startTime);
 
     const bd = notesSource.bpm ? 15000 / notesSource.bpm : 500;
-    const meta = calculateScoringMetadata(notes, bd);
+    const meta = calculateScoringMetadata(notes, bd, 'medium', 2000);
 
     return { allNotes: notes, sortedLines: lines, scoringMeta: meta };
   }, [notesSource]);

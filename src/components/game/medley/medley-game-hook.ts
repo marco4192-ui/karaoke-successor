@@ -185,9 +185,6 @@ export function useMedleyGame({
     [initialPlayers],
   );
   const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
-  // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
-  // Der Schwierigkeitsgrad ist nur ein informativer Marker.
-  const POINTS_PER_NOTE = 10000;
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
@@ -325,15 +322,13 @@ export function useMedleyGame({
     if (shouldSkipPitch(pitch, effectiveDiff)) return;
     if (!audio.scoringMetaRef.current || !currentSnippet) return;
 
+    // Throttle scoring to one tick per beat duration (per player)
+    const lastEval = lastEvalTimeRef.current[playerId] ?? 0;
+    if (absTime - lastEval < audio.beatDurationRef.current) return;
+    lastEvalTimeRef.current[playerId] = absTime;
+
     const activeNote = findActiveNoteFlat(audio.snippetNotes, absTime);
     if (!activeNote) return;
-
-    // Pro Note nur einmal werten (verhindert Punkte-Inflation bei langen Noten)
-    if (!audio.scoredNoteStartsRef.current[playerId]) {
-      audio.scoredNoteStartsRef.current[playerId] = new Set();
-    }
-    const noteKey = Math.round(activeNote.startTime);
-    if (audio.scoredNoteStartsRef.current[playerId].has(noteKey)) return;
 
     if (pitch.note == null) return;
 
@@ -343,10 +338,7 @@ export function useMedleyGame({
     const p = playersRef.current[pIdx];
 
     if (tick.hit) {
-      // Feste 10.000 Punkte pro Note-Hit — unabhängig vom Schwierigkeitsgrad.
-      // Der Schwierigkeitsgrad ist nur ein informativer Marker.
-      let points = POINTS_PER_NOTE;
-      audio.scoredNoteStartsRef.current[playerId].add(noteKey);
+      let points = tick.points;
       if (teamBonuses.comebackActiveTeamIdRef.current !== null && p.team === teamBonuses.comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
@@ -378,7 +370,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [audio.snippetNotes, audio.scoringMetaRef, audio.scoredNoteStartsRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
+  }, [audio.snippetNotes, audio.scoringMetaRef, audio.beatDurationRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
 
   // ==================== GAME LOOP ====================
 

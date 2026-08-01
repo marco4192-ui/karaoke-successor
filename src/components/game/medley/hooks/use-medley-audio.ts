@@ -29,7 +29,8 @@ export interface UseMedleyAudioReturn {
   fallbackVideoRef: React.RefObject<HTMLVideoElement | null>;
   // Shared refs (read by game loop / fallback timer in main hook)
   scoringMetaRef: React.MutableRefObject<ReturnType<typeof calculateScoringMetadata> | null>;
-  scoredNoteStartsRef: React.MutableRefObject<Record<string, Set<number>>>;
+  /** Beat duration (ms) used for the current snippet's scoring metadata. */
+  beatDurationRef: React.MutableRefObject<number>;
   effectiveSnippetRef: React.MutableRefObject<{ startTime: number; endTime: number } | null>;
   isPausedRef: React.MutableRefObject<boolean>;
   fallbackTimerRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>;
@@ -108,8 +109,7 @@ export function useMedleyAudio({
 
   // ── Scoring metadata ──
   const scoringMetaRef = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
-  // Pro Spieler merken, welche Noten bereits gewertet wurden (verhindert Mehrfachbewertung)
-  const scoredNoteStartsRef = useRef<Record<string, Set<number>>>({});
+  const beatDurationRef = useRef(500);
 
   // De-dup key for the play effect
   const lastPlayPhaseRef = useRef<string>('');
@@ -233,13 +233,12 @@ export function useMedleyAudio({
         }
         notes.sort((a, b) => a.startTime - b.startTime);
         setSnippetNotes(notes);
-        // Reset der bereits gewerteten Noten bei Snippet-Wechsel
-        scoredNoteStartsRef.current = {};
         setSnippetLyrics(lyrics);
 
         // Compute scoring metadata
         if (notes.length > 0 && prepared.bpm) {
           const beatDuration = 15000 / prepared.bpm;
+          beatDurationRef.current = beatDuration;
           scoringMetaRef.current = calculateScoringMetadata(notes, beatDuration);
         } else {
           scoringMetaRef.current = null;
@@ -408,7 +407,7 @@ export function useMedleyAudio({
     videoRef,
     fallbackVideoRef,
     scoringMetaRef,
-    scoredNoteStartsRef,
+    beatDurationRef,
     effectiveSnippetRef,
     isPausedRef,
     fallbackTimerRef,

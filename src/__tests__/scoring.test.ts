@@ -11,60 +11,25 @@ import {
   ACCURACY_CURVE_EXPONENT,
 } from '@/lib/game/scoring';
 
-describe('Scoring system', () => {
+describe('Scoring system (simplified: flat per-tick)', () => {
   describe('scaleAccuracy()', () => {
-    it('returns 0 for zero or negative accuracy', () => {
+    it('returns accuracy unchanged (no-op in simplified scoring)', () => {
       expect(scaleAccuracy(0)).toBe(0);
-      expect(scaleAccuracy(-0.5)).toBe(0);
-    });
-
-    it('returns 1 for accuracy >= 1', () => {
+      expect(scaleAccuracy(0.5)).toBe(0.5);
       expect(scaleAccuracy(1.0)).toBe(1);
-      expect(scaleAccuracy(1.5)).toBe(1);
-    });
-
-    it('boosts low accuracy values (concave curve)', () => {
-      // accuracy=0.1 -> ~0.25 (boosted), not 0.1
-      const scaled = scaleAccuracy(0.1);
-      expect(scaled).toBeGreaterThan(0.2);
-      expect(scaled).toBeLessThan(0.3);
-    });
-
-    it('barely changes high accuracy values', () => {
-      // accuracy=0.9 -> ~0.94 (slight boost)
-      const scaled = scaleAccuracy(0.9);
-      expect(scaled).toBeGreaterThan(0.9);
-      expect(scaled).toBeLessThan(1.0);
-    });
-
-    it('follows the power curve formula', () => {
-      expect(scaleAccuracy(0.5)).toBeCloseTo(Math.pow(0.5, ACCURACY_CURVE_EXPONENT), 4);
     });
   });
 
   describe('getComboFactor()', () => {
-    it('returns 1.0 for combo=0 (no bonus)', () => {
-      expect(getComboFactor(0, 2.0)).toBe(1.0);
-    });
-
-    it('returns full multiplier at combo=50', () => {
-      expect(getComboFactor(50, 2.0)).toBe(2.0);
-      expect(getComboFactor(100, 2.0)).toBe(2.0); // capped
-    });
-
-    it('ramps linearly from 1.0 to multiplier', () => {
-      const f25 = getComboFactor(25, 2.0);
-      expect(f25).toBeCloseTo(1.5, 2); // halfway = 1.5
-    });
-
-    it('respects different difficulty multipliers', () => {
-      expect(getComboFactor(50, 1.5)).toBe(1.5); // Easy
-      expect(getComboFactor(50, 2.5)).toBe(2.5); // Hard
+    it('always returns 1 (no combo in simplified scoring)', () => {
+      expect(getComboFactor(0, 2.0)).toBe(1);
+      expect(getComboFactor(50, 2.0)).toBe(1);
+      expect(getComboFactor(100, 2.5)).toBe(1);
     });
   });
 
   describe('calculateScoringMetadata()', () => {
-    it('computes correct metadata for simple notes', () => {
+    it('computes correct metadata for simple notes with default maxPoints=10000', () => {
       const notes = [
         { duration: 500, isGolden: false },
         { duration: 500, isGolden: false },
@@ -76,12 +41,12 @@ describe('Scoring system', () => {
       expect(result.totalNoteTicks).toBe(12);
       expect(result.goldenNoteTicks).toBe(0);
       expect(result.normalNoteTicks).toBe(12);
-      expect(result.pointsPerTick).toBeGreaterThan(0);
-      expect(result.comboMultiplier).toBe(2.0); // medium
+      expect(result.pointsPerTick).toBeCloseTo(10000 / 12, 4);
+      expect(result.comboMultiplier).toBe(1); // always 1
       expect(result.totalNotes).toBe(3);
     });
 
-    it('handles golden notes correctly', () => {
+    it('handles golden notes correctly (golden ticks tracked but not weighted)', () => {
       const notes = [
         { duration: 500, isGolden: true },
         { duration: 500, isGolden: false },
@@ -92,6 +57,7 @@ describe('Scoring system', () => {
       expect(result.goldenNoteTicks).toBe(4);
       expect(result.normalNoteTicks).toBe(4);
       expect(result.totalNoteTicks).toBe(8);
+      expect(result.pointsPerTick).toBeCloseTo(10000 / 8, 4);
     });
 
     it('handles empty notes array', () => {
@@ -116,18 +82,6 @@ describe('Scoring system', () => {
       expect(result.normalNoteTicks).toBe(0);
     });
 
-    it('perfectScoreBase reflects raw weight (2x normal, 10x golden)', () => {
-      const notes = [
-        { duration: 1000, isGolden: false }, // 4 ticks normal
-        { duration: 1000, isGolden: true },  // 4 ticks golden
-      ];
-      const beatDuration = 250;
-      const result = calculateScoringMetadata(notes, beatDuration);
-
-      // perfectScoreBase = (4 * 2) + (4 * 10) = 48
-      expect(result.perfectScoreBase).toBe(48);
-    });
-
     it('minimum tick is 1 even for very short durations', () => {
       const notes = [{ duration: 1, isGolden: false }];
       const beatDuration = 5000;
@@ -135,19 +89,16 @@ describe('Scoring system', () => {
       expect(result.totalNoteTicks).toBe(1);
     });
 
-    it('sets combo multiplier based on difficulty', () => {
-      const notes = [{ duration: 500, isGolden: false }];
-      const meta = calculateScoringMetadata(notes, 125, 'easy');
-      expect(meta.comboMultiplier).toBe(1.5);
+    it('supports custom maxPoints', () => {
+      const notes = [
+        { duration: 500, isGolden: false },
+        { duration: 500, isGolden: false },
+      ];
+      const beatDuration = 125;
+      const result = calculateScoringMetadata(notes, beatDuration, 'medium', 2000);
 
-      const metaH = calculateScoringMetadata(notes, 125, 'hard');
-      expect(metaH.comboMultiplier).toBe(2.5);
-    });
-
-    it('defaults to medium difficulty', () => {
-      const notes = [{ duration: 500, isGolden: false }];
-      const meta = calculateScoringMetadata(notes, 125);
-      expect(meta.comboMultiplier).toBe(2.0);
+      expect(result.totalNoteTicks).toBe(8);
+      expect(result.pointsPerTick).toBeCloseTo(2000 / 8, 4);
     });
   });
 
@@ -160,78 +111,50 @@ describe('Scoring system', () => {
       expect(calculateTickPoints(-0.5, false, 10)).toBe(0);
     });
 
-    it('returns correct points for normal note with full accuracy', () => {
+    it('returns accuracy * pointsPerTick for full accuracy', () => {
       const pointsPerTick = 100;
-      const expected = pointsPerTick * scaleAccuracy(1.0) * 2;
-      expect(calculateTickPoints(1.0, false, pointsPerTick)).toBe(expected);
+      expect(calculateTickPoints(1.0, false, pointsPerTick)).toBe(100);
     });
 
-    it('returns correct points for golden note with full accuracy', () => {
+    it('ignores golden note flag (no golden multiplier)', () => {
       const pointsPerTick = 100;
-      const expected = pointsPerTick * scaleAccuracy(1.0) * 10;
-      expect(calculateTickPoints(1.0, true, pointsPerTick)).toBe(expected);
+      expect(calculateTickPoints(1.0, false, pointsPerTick)).toBe(100);
+      expect(calculateTickPoints(1.0, true, pointsPerTick)).toBe(100);
     });
 
-    it('applies power curve: low accuracy gives more than linear', () => {
-      const pointsPerTick = 100;
-      const fullPoints = calculateTickPoints(1.0, false, pointsPerTick);
-      const lowAccPoints = calculateTickPoints(0.1, false, pointsPerTick);
-      // Linear would give 10% of full. Power curve gives ~25%.
-      expect(lowAccPoints).toBeGreaterThan(fullPoints * 0.2);
-      expect(lowAccPoints).toBeLessThan(fullPoints * 0.3);
+    it('returns min 1 point per hit', () => {
+      // Very small accuracy * small pointsPerTick
+      const points = calculateTickPoints(0.01, false, 0.5);
+      expect(points).toBe(1);
     });
 
-    it('golden note multiplier is 5x the normal note multiplier', () => {
-      const pointsPerTick = 50;
-      const normalPoints = calculateTickPoints(1.0, false, pointsPerTick);
-      const goldenPoints = calculateTickPoints(1.0, true, pointsPerTick);
-      expect(goldenPoints).toBe(normalPoints * 5);
+    it('no power curve — linear accuracy mapping', () => {
+      const pointsPerTick = 1000;
+      expect(calculateTickPoints(0.5, false, pointsPerTick)).toBe(500);
+      expect(calculateTickPoints(0.1, false, pointsPerTick)).toBe(100);
     });
   });
 
   describe('calculateNoteCompletionBonus()', () => {
-    it('returns positive bonus for a normal note', () => {
+    it('always returns 0 (no completion bonus in simplified scoring)', () => {
       const meta = calculateScoringMetadata(
         [{ duration: 500, isGolden: false }],
         125,
         'medium',
       );
-      const bonus = calculateNoteCompletionBonus({ totalTicks: 4, isGolden: false }, meta);
-      expect(bonus).toBeGreaterThan(0);
-    });
-
-    it('golden note bonus is 5x normal note bonus', () => {
-      const meta = calculateScoringMetadata(
-        [{ duration: 500, isGolden: false }],
-        125,
-        'medium',
-      );
-      const normalBonus = calculateNoteCompletionBonus({ totalTicks: 4, isGolden: false }, meta);
-      const goldenBonus = calculateNoteCompletionBonus({ totalTicks: 4, isGolden: true }, meta);
-      expect(goldenBonus).toBe(normalBonus * 5);
+      expect(calculateNoteCompletionBonus({ totalTicks: 4, isGolden: false }, meta)).toBe(0);
+      expect(calculateNoteCompletionBonus({ totalTicks: 4, isGolden: true }, meta)).toBe(0);
     });
   });
 
   describe('calculateNoteConsolation()', () => {
-    it('returns positive consolation for attempted but missed note', () => {
+    it('always returns 0 (no consolation in simplified scoring)', () => {
       const meta = calculateScoringMetadata(
         [{ duration: 500, isGolden: false }],
         125,
         'medium',
       );
-      const consolation = calculateNoteConsolation({ totalTicks: 4, isGolden: false }, meta);
-      expect(consolation).toBeGreaterThanOrEqual(1);
-    });
-
-    it('consolation is less than the note max points', () => {
-      const meta = calculateScoringMetadata(
-        [{ duration: 500, isGolden: false }],
-        125,
-        'medium',
-      );
-      const consolation = calculateNoteConsolation({ totalTicks: 4, isGolden: false }, meta);
-      const noteMax = 4 * meta.pointsPerTick * 2; // 4 ticks * ppt * normal weight
-      expect(consolation).toBeLessThan(noteMax);
+      expect(calculateNoteConsolation({ totalTicks: 4, isGolden: false }, meta)).toBe(0);
     });
   });
 
@@ -281,25 +204,18 @@ describe('Scoring system', () => {
       expect(MAX_POINTS_PER_SONG).toBe(10000);
     });
 
-    it('perfect game (tick points + combo + completion) sums to MAX_POINTS_PER_SONG', () => {
+    it('perfect game sums to MAX_POINTS_PER_SONG (flat per-tick, no combo)', () => {
       const notes = Array.from({ length: 10 }, () => ({ duration: 500, isGolden: false }));
       const beatDuration = 125;
       const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
 
       let total = 0;
-      let combo = 0;
       for (let i = 0; i < meta.totalNoteTicks; i++) {
-        combo++;
-        const comboFactor = getComboFactor(combo, meta.comboMultiplier);
         const tickPts = calculateTickPoints(1.0, false, meta.pointsPerTick);
-        total += Math.max(1, Math.round(tickPts * comboFactor));
+        total += tickPts;
       }
-      // Add completion bonus for all notes
-      for (const note of notes) {
-        const ticksInNote = Math.max(1, Math.round(note.duration / beatDuration));
-        total += calculateNoteCompletionBonus({ totalTicks: ticksInNote, isGolden: note.isGolden }, meta);
-      }
-      // Should be very close to 10000 (rounding + Math.max(1,...) may cause ±few points)
+      // Each tick at accuracy 1.0 = Math.max(1, Math.round(1.0 * pointsPerTick))
+      // Sum should be very close to 10000 (rounding ±few points)
       expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, -1);
     });
 
@@ -309,40 +225,8 @@ describe('Scoring system', () => {
       const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
 
       let total = 0;
-      let combo = 0;
       for (let i = 0; i < meta.totalNoteTicks; i++) {
-        combo++;
-        const comboFactor = getComboFactor(combo, meta.comboMultiplier);
-        const tickPts = calculateTickPoints(1.0, true, meta.pointsPerTick);
-        total += Math.max(1, Math.round(tickPts * comboFactor));
-      }
-      for (const note of notes) {
-        const ticksInNote = Math.max(1, Math.round(note.duration / beatDuration));
-        total += calculateNoteCompletionBonus({ totalTicks: ticksInNote, isGolden: true }, meta);
-      }
-      expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, -1);
-    });
-
-    it('perfect game on mixed notes sums to MAX_POINTS_PER_SONG', () => {
-      const notes = [
-        { duration: 500, isGolden: false },
-        { duration: 500, isGolden: true },
-        { duration: 500, isGolden: false },
-      ];
-      const beatDuration = 125;
-      const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
-
-      let total = 0;
-      let combo = 0;
-      for (const note of notes) {
-        const ticksInNote = Math.max(1, Math.round(note.duration / beatDuration));
-        for (let i = 0; i < ticksInNote; i++) {
-          combo++;
-          const comboFactor = getComboFactor(combo, meta.comboMultiplier);
-          const tickPts = calculateTickPoints(1.0, note.isGolden, meta.pointsPerTick);
-          total += Math.max(1, Math.round(tickPts * comboFactor));
-        }
-        total += calculateNoteCompletionBonus({ totalTicks: ticksInNote, isGolden: note.isGolden }, meta);
+        total += calculateTickPoints(1.0, true, meta.pointsPerTick);
       }
       expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, -1);
     });
@@ -353,22 +237,13 @@ describe('Scoring system', () => {
       const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
 
       let total = 0;
-      let combo = 0;
       for (let i = 0; i < meta.totalNoteTicks; i++) {
-        // Simulate 50% accuracy (alternate hit/miss)
         if (i % 2 === 0) {
-          combo++;
-          const comboFactor = getComboFactor(combo, meta.comboMultiplier);
-          const tickPts = calculateTickPoints(0.7, false, meta.pointsPerTick); // 70% accuracy
-          total += Math.max(1, Math.round(tickPts * comboFactor));
-        } else {
-          combo = 0; // miss resets combo
-          // Missed notes get consolation
-          total += calculateNoteConsolation({ totalTicks: 1, isGolden: false }, meta);
+          total += calculateTickPoints(0.7, false, meta.pointsPerTick);
         }
+        // Misses score 0 — no consolation
       }
-      // With 50% hit rate at 70% accuracy, should be well below 10000
-      expect(total).toBeLessThan(MAX_POINTS_PER_SONG * 0.7);
+      expect(total).toBeLessThan(MAX_POINTS_PER_SONG * 0.5);
     });
   });
 });

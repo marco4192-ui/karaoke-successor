@@ -10,13 +10,9 @@ import { Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
-  calculateNoteCompletionBonus,
-  calculateNoteConsolation,
-  getComboFactor,
   NoteProgress,
   ScoringMetadata,
 } from '@/lib/game/scoring';
-import { calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 import type { ScoreEvent, ScoringPassResult } from '@/lib/game/scoring-types';
 
 // ---------------------------------------------------------------------------
@@ -144,12 +140,8 @@ export function runScoringPass(
           if (tickPoints > 0) {
             const newCombo = comboRef.current + 1;
 
-            // Apply combo multiplier (ramps from 1.0 to comboMultiplier over 50 hits)
-            const comboFactor = getComboFactor(newCombo, scoringMeta.comboMultiplier);
-            const finalPoints = Math.max(1, Math.round(tickPoints * comboFactor));
-
-            scoreDelta += finalPoints;
-            noteProgress.accumulatedPoints += finalPoints;
+            scoreDelta += tickPoints;
+            noteProgress.accumulatedPoints += tickPoints;
             comboUpdate = newCombo;
             maxComboUpdate = Math.max(maxComboRef.current, newCombo);
             comboRef.current = newCombo;
@@ -183,69 +175,13 @@ export function runScoringPass(
         if (progress.ticksHit >= progress.totalTicks) {
           progress.wasPerfect = true;
           perfectNotesDelta++;
-
-          // Completion bonus: all ticks hit -> extra 15% of note's max points
-          const completionBonus = calculateNoteCompletionBonus(
-            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
-            scoringMeta,
-          );
-          if (completionBonus > 0) {
-            scoreDelta += completionBonus;
-            progress.accumulatedPoints += completionBonus;
-          }
         }
         // Track golden notes hit (note was golden and at least one tick hit)
         if (progress.isGolden && progress.ticksHit > 0) {
           goldenNotesDelta++;
         }
 
-        // Consolation: note was attempted but every tick missed -> 10% of max points
-        if (progress.ticksHit === 0 && progress.ticksEvaluated > 0) {
-          const consolation = calculateNoteConsolation(
-            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
-            scoringMeta,
-          );
-          if (consolation > 0) {
-            scoreDelta += consolation;
-            progress.accumulatedPoints += consolation;
-          }
-        }
 
-        // Blind karaoke bonus: correctly sung hidden notes give extra points
-        if (progress.isBlindNote && blindState) {
-          if (progress.ticksHit > 0) {
-            // Note was hit — calculate blind bonus
-            const isPerfect = progress.wasPerfect;
-            const bonusResult = calculateBlindBonus(
-              isPerfect,
-              blindState.blindStreakRef.current,
-              blindState.blindLastWasMissRef.current,
-            );
-
-            if (bonusResult.total > 0) {
-              blindBonusDelta += bonusResult.total;
-              scoreDelta += bonusResult.total;
-              progress.accumulatedPoints += bonusResult.total;
-              hasUpdates = true;
-
-              // Emit a separate blind bonus score event for visual feedback
-              pendingEvents.push({
-                displayType: isPerfect ? 'Perfect' : 'Great',
-                points: bonusResult.total,
-                time: noteEnd,
-                isBlindBonus: true,
-              });
-            }
-
-            // Update blind streak tracking
-            blindState.blindStreakRef.current++;
-            blindState.blindLastWasMissRef.current = false;
-          } else if (progress.ticksEvaluated > 0) {
-            // Blind note was missed — reset streak, mark for comeback
-            blindState.blindStreakRef.current = 0;
-            blindState.blindLastWasMissRef.current = true;
-          }
-        }
 
         // Determine aggregated displayType based on hit ratio across all ticks
         const hitRatio = progress.ticksEvaluated > 0

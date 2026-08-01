@@ -3,23 +3,40 @@ import type { GameModeSettingsMap } from '@/components/game/unified-party-setup.
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { CptmSettings } from '@/components/game/cptm-types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export async function startCompanionSingalong(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, resetGame, addPlayer, setPlayers, setSong, filteredSongs } = ctx;
   const randomSong = pickRandomSong(filteredSongs);
   if (randomSong) {
+    // Pre-restore URLs for the random song (needed for Tauri file:// paths)
+    // and load lyrics so the note highway and lyrics display work
+    let songWithUrls = randomSong;
+    try {
+      songWithUrls = await ensureSongUrls(randomSong);
+      if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+        try {
+          const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+          const lyrics = await loadSongLyrics(songWithUrls);
+          if (lyrics.length > 0) {
+            songWithUrls = { ...songWithUrls, lyrics };
+          }
+        } catch { /* non-critical */ }
+      }
+    } catch { /* non-critical — game view has its own URL restoration */ }
+
     const cptmPlayers = toCptmPlayers(result.players);
     party.setCptmPlayers(cptmPlayers);
-    party.setCptmSong(randomSong);
+    party.setCptmSong(songWithUrls);
     party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-singalong']));
-    const cptmSegments = generatePassTheMicSegments(randomSong, cptmPlayers.length || 2);
+    const cptmSegments = generatePassTheMicSegments(songWithUrls, cptmPlayers.length || 2);
     party.setCptmSegments(cptmSegments);
     resetGame();
     setPlayers([]);
     if (cptmPlayers.length > 0) {
       addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
     }
-    setSong(randomSong);
+    setSong(songWithUrls);
     setScreen('companion-singalong-game');
   }
 }
