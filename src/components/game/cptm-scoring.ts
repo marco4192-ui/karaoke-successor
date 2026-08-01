@@ -1,17 +1,37 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
-import type { Song } from '@/types/game';
-import type { Difficulty } from '@/types/game';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
+import type { Song, Note, LyricLine, Difficulty } from '@/types/game';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { calculateScoringMetadata } from '@/lib/game/scoring';
-import type { CptmPlayer } from './cptm-types';
+import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
+import type { CptmPlayer, CptmSegment } from './cptm-types';
 import type { CompanionPitchEntry } from './cptm-companion-polling';
 
 // ===================== CONSTANTS =====================
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
+
+/** Max points per player in CPTM mode */
+const CPTM_MAX_POINTS = 2000;
+
+// ===================== HELPERS =====================
+
+/** Extract notes overlapping a time range from a flat notes array. */
+function getNotesInRange(
+  allNotes: Array<{ startTime: number; duration: number }>,
+  startTime: number,
+  endTime: number,
+): Array<{ duration: number; isGolden: boolean }> {
+  const result: Array<{ duration: number; isGolden: boolean }> = [];
+  for (const note of allNotes) {
+    const noteEnd = note.startTime + note.duration;
+    if (note.startTime < endTime && noteEnd > startTime) {
+      result.push({ duration: note.duration, isGolden: (note as Note).isGolden ?? false });
+    }
+  }
+  return result;
+}
 
 // ===================== HOOK PARAMS =====================
 
@@ -24,7 +44,14 @@ export interface CptmScoringParams {
   notesSource: Song | null;
   currentTime: number;
   difficulty: Difficulty;
-  scoringMeta: ReturnType<typeof calculateScoringMetadata> | null;
+  /** All notes from the song (for segment-scoped scoring) */
+  allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  /** Current segments */
+  segments: CptmSegment[];
+  /** Current segment index */
+  currentSegmentIndex: number;
+  /** BPM for beat duration */
+  bpm: number | null;
   forceRender: () => void;
 }
 
@@ -33,7 +60,10 @@ export interface CptmScoringParams {
 /**
  * Runs a scoring RAF loop that evaluates the current player's pitch
  * (from the companion pitch cache) against active notes.
- * Pure side-effect hook — no return value.
+ *
+ * CPTM scoring: each player can earn max 2,000 points, distributed across
+ * the ticks in THEIR segments. The scoring metadata (pointsPerTick) is
+ * computed from the notes within the current segment only.
  */
 export function useCptmScoring(params: CptmScoringParams): void {
   const {
@@ -45,7 +75,10 @@ export function useCptmScoring(params: CptmScoringParams): void {
     notesSource,
     currentTime,
     difficulty,
-    scoringMeta,
+    allNotes,
+    segments,
+    currentSegmentIndex,
+    bpm,
     forceRender,
   } = params;
 
@@ -55,6 +88,16 @@ export function useCptmScoring(params: CptmScoringParams): void {
   // the RAF loop ~40 times/sec (currentTime changes every frame).
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
+
+  // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
+  const scoringMeta = useMemo((): ScoringMetadata | null => {
+    const segment = segments[currentSegmentIndex];
+    if (!segment || allNotes.length === 0) return null;
+    const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
+    if (segmentNotes.length === 0) return null;
+    const beatDuration = bpm ? 15000 / bpm : 500;
+    return calculateScoringMetadata(segmentNotes, beatDuration, 'medium', CPTM_MAX_POINTS);
+  }, [segments, currentSegmentIndex, allNotes, bpm]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;

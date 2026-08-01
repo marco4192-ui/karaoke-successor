@@ -21,7 +21,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
+import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick, createMedleyNoteScoringState, evaluateMedleyNoteScore, finalizeAllMedleyNotes, MEDLEY_POINTS_PER_NOTE, type MedleyNoteScoringState } from '@/lib/game/party-scoring';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
@@ -197,6 +197,17 @@ export function useMedleyGame({
   // Per-player last evaluation time for throttling
   const lastEvalTimeRef = useRef<Record<string, number>>({});
 
+  // Per-player note-based scoring state for Medley (10,000 pts per note)
+  const medleyNoteScoringStatesRef = useRef<Map<string, MedleyNoteScoringState>>(new Map());
+
+  // Reset note scoring states when snippet changes
+  useEffect(() => {
+    medleyNoteScoringStatesRef.current.clear();
+    for (const p of playersRef.current) {
+      medleyNoteScoringStatesRef.current.set(p.id, createMedleyNoteScoringState());
+    }
+  }, [currentSnippetIdx]);
+
   // ── Multi-pitch detection (one detector per player) ──
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
     initialPlayers.map(p => ({
@@ -304,7 +315,32 @@ export function useMedleyGame({
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
 
-  // ── Score a single player based on THEIR pitch result ──
+  // ── Finalize pending note scores for all active players (call at snippet end) ──
+  const finalizeSnippetScores = useCallback((activeIds: string[]) => {
+    for (const pid of activeIds) {
+      const noteState = medleyNoteScoringStatesRef.current.get(pid);
+      if (!noteState) continue;
+      const pendingPoints = finalizeAllMedleyNotes(noteState);
+      if (pendingPoints > 0) {
+        const pIdx = playersRef.current.findIndex(p => p.id === pid);
+        if (pIdx !== -1) {
+          const p = playersRef.current[pIdx];
+          p.score += pendingPoints;
+          p.notesHit += noteState.awardedNoteStartTimes.size;
+          playersRef.current[pIdx] = { ...p };
+          scoringEventsRef.current.push({
+            playerId: pid,
+            points: pendingPoints,
+            hit: true,
+            golden: false,
+            timestamp: Date.now(),
+          });
+        }
+      }
+    }
+  }, []);
+
+  // ── Score a single player based on THEIR pitch result (note-based: 10,000 pts/note) ──
   const scorePlayer = useCallback((
     playerId: string,
     pitch: PitchDetectionResult | null,
@@ -320,46 +356,62 @@ export function useMedleyGame({
       ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
       : settings.difficulty;
     if (shouldSkipPitch(pitch, effectiveDiff)) return;
-    if (!audio.scoringMetaRef.current || !currentSnippet) return;
+    if (!currentSnippet) return;
+    if (pitch.note == null) return;
 
     // Throttle scoring to one tick per beat duration (per player)
     const lastEval = lastEvalTimeRef.current[playerId] ?? 0;
     if (absTime - lastEval < audio.beatDurationRef.current) return;
     lastEvalTimeRef.current[playerId] = absTime;
 
-    const activeNote = findActiveNoteFlat(audio.snippetNotes, absTime);
-    if (!activeNote) return;
+    // Get or create per-player note scoring state
+    let noteState = medleyNoteScoringStatesRef.current.get(playerId);
+    if (!noteState) {
+      noteState = createMedleyNoteScoringState();
+      medleyNoteScoringStatesRef.current.set(playerId, noteState);
+    }
 
-    if (pitch.note == null) return;
-
-    const tick = evaluateAndScoreTick(pitch.note, activeNote, effectiveDiff, audio.scoringMetaRef.current);
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];
 
-    if (tick.hit) {
-      let points = tick.points;
+    // Note-based scoring: accumulate accuracy samples per note
+    const result = evaluateMedleyNoteScore(
+      pitch.note, absTime, audio.snippetNotes, effectiveDiff, noteState,
+    );
+
+    // Check if any notes were completed (points > 0 means notes finalized)
+    // This happens automatically when a new note starts (previous note gets finalized)
+    const completedPoints = finalizeAllMedleyNotes(noteState);
+    if (completedPoints > 0) {
+      const prevAwardedCount = noteState.awardedNoteStartTimes.size;
+      // Points were just awarded for completed notes
+      let points = completedPoints;
       if (teamBonuses.comebackActiveTeamIdRef.current !== null && p.team === teamBonuses.comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
       p.score += points;
-      p.notesHit++;
+      // Count newly awarded notes
+      const notesJustCompleted = noteState.awardedNoteStartTimes.size;
+      p.notesHit += notesJustCompleted;
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
 
-      // Feature #5: Record scoring event
       scoringEventsRef.current.push({
         playerId,
         points,
         hit: true,
-        golden: activeNote.isGolden,
+        golden: false,
         timestamp: Date.now(),
       });
+    } else if (result.hit) {
+      // Still accumulating — just update combo for display
+      p.combo++;
+      if (p.combo > p.maxCombo) p.maxCombo = p.combo;
     } else {
       p.combo = 0;
       p.notesMissed++;
 
-      // Feature #5: Record miss event
       scoringEventsRef.current.push({
         playerId,
         points: -10,
@@ -370,7 +422,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [audio.snippetNotes, audio.scoringMetaRef, audio.beatDurationRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
+  }, [audio.snippetNotes, audio.beatDurationRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
 
   // ==================== GAME LOOP ====================
 
@@ -424,6 +476,9 @@ export function useMedleyGame({
             setIsPlaying(false);
 
             const activeIds = getActivePlayerIds();
+            // Finalize pending note scores before transitioning
+            finalizeSnippetScores(activeIds);
+
             activeIds.forEach(id => {
               const p = playersRef.current.find(p => p.id === id);
               if (p) p.snippetsSung++;
@@ -456,7 +511,7 @@ export function useMedleyGame({
       clearInterval(checkInterval);
       if (audio.fallbackTimerRef.current) { clearInterval(audio.fallbackTimerRef.current); audio.fallbackTimerRef.current = null; }
     };
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction]);
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction, finalizeSnippetScores]);
 
   // ── Game loop ──
   useEffect(() => {
@@ -490,6 +545,10 @@ export function useMedleyGame({
 
       // Check snippet end
       if (songTimeMs >= effectiveEnd) {
+        // Finalize pending note scores for active players before transitioning
+        const activeIds = getActivePlayerIds();
+        finalizeSnippetScores(activeIds);
+
         // Stop whichever media is playing
         if (audioEl && !audioEl.paused) audioEl.pause();
         if (audio.fallbackVideoRef.current && !audio.fallbackVideoRef.current.paused) audio.fallbackVideoRef.current.pause();
@@ -497,7 +556,6 @@ export function useMedleyGame({
         setIsPlaying(false);
 
         // Count snippet as sung for active players
-        const activeIds = getActivePlayerIds();
         activeIds.forEach(id => {
           const p = playersRef.current.find(p => p.id === id);
           if (p) p.snippetsSung++;
@@ -576,7 +634,7 @@ export function useMedleyGame({
 
     return () => clearInterval(loop);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult]);
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult, finalizeSnippetScores]);
 
   // ── Transition: pulse then next snippet ──
   useEffect(() => {
@@ -684,6 +742,8 @@ export function useMedleyGame({
 
     // Count snippet as sung for active players
     const activeIds = getActivePlayerIds();
+    // Finalize pending note scores for active players before transitioning
+    finalizeSnippetScores(activeIds);
     activeIds.forEach(id => {
       const p = playersRef.current.find(p => p.id === id);
       if (p) p.snippetsSung++;
@@ -706,7 +766,7 @@ export function useMedleyGame({
     } else {
       setPhase('round-results');
     }
-  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, teamBonuses.syncTeamBonusResult, setIsSongPlaying, forceRender, audio.cancelFallbackTimer, audio.audioRef, audio.fallbackVideoRef]);
+  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, finalizeSnippetScores, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, teamBonuses.syncTeamBonusResult, setIsSongPlaying, forceRender, audio.cancelFallbackTimer, audio.audioRef, audio.fallbackVideoRef]);
 
   // ── Cleanup on unmount ──
   // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).

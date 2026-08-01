@@ -7,6 +7,10 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export async function startCompanionSingalong(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, resetGame, addPlayer, setPlayers, setSong, filteredSongs } = ctx;
+
+  // Store the user's preferred song selection mode for series "next song" navigation
+  party.setCptmSongSelection(result.songSelection || 'random');
+
   const randomSong = pickRandomSong(filteredSongs);
   if (randomSong) {
     // Pre-restore URLs for the random song (needed for Tauri file:// paths)
@@ -37,6 +41,7 @@ export async function startCompanionSingalong(ctx: StartHandlerContext): Promise
       addPlayer({ id: cptmPlayers[0].id, name: cptmPlayers[0].name, color: cptmPlayers[0].color, avatar: cptmPlayers[0].avatar });
     }
     setSong(songWithUrls);
+    party.setIsSongPlaying(false);
     setScreen('companion-singalong-game');
   }
 }

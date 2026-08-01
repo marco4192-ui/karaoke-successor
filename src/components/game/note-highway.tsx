@@ -157,8 +157,12 @@ const NoteBlock = React.memo(function NoteBlock({
   const noteWidthPercent = Math.round(((note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra)) * 100) / 100;
   const noteHeight = 24;
 
-  // Skip notes that are too far off-screen
-  if (x > 120 || x < -30) return null;
+  // Skip notes that are too far off-screen.
+  // DO-NOT-CHANGE: Cull based on the RIGHT edge (x + width), not the left edge.
+  // Long ballad notes have their left edge far off-screen while their body
+  // is still actively passing the sing line. Only cull when the entire note
+  // (right edge) has exited the left screen boundary.
+  if (x > 120 || x + noteWidthPercent < -30) return null;
 
   // Determine note styling based on type and player color
   const getBackgroundStyle = (): React.CSSProperties => {

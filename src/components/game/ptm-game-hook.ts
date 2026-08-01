@@ -277,7 +277,10 @@ export function usePtmGameLogic({
     currentTime,
     difficulty: safeSettings.difficulty,
     currentPlayerIndex,
-    scoringMeta,
+    segments: initialSegments,
+    currentSegmentIndex,
+    allNotes,
+    bpm: notesSource?.bpm ?? null,
     playersRef,
     forceRender,
   });
