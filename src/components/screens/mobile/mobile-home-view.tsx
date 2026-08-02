@@ -91,7 +91,7 @@ export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: Hom
           <span className="text-sm">{t('mobileViews.songs')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('queue')}
+          onClick={() => onNavigate('mirror')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📋</span>
@@ -115,7 +115,7 @@ export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: Hom
           <span className="text-sm">{t('mobileViews.profile')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('jukebox')}
+          onClick={() => onNavigate('mirror')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📻</span>

@@ -19,7 +19,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
     onNavigate(view);
   };
 
-  // Mirror tab is active for 'mirror' view AND legacy companion views shown inside mirror
+  // Mirror tab is active for 'mirror' view
   const isMirrorActive = currentView === 'mirror';
 
   return (
@@ -32,7 +32,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
       style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
     >
       <div className="flex justify-around py-2">
-        {/* ===== MIRROR TAB ===== */}
+        {/* ===== MIRROR TAB — auto-follows desktop ===== */}
         <button 
           onClick={() => handleTabSwitch('mirror')}
           role="tab"
@@ -44,7 +44,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.mirror') || 'Mirror'}</span>
         </button>
 
-        {/* ===== SING TAB ===== */}
+        {/* ===== SING TAB — mic / pitch detection ===== */}
         <button 
           onClick={() => handleTabSwitch('mic')}
           role="tab"
@@ -56,7 +56,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.sing')}</span>
         </button>
 
-        {/* ===== SONGS TAB (always accessible, no lock needed) ===== */}
+        {/* ===== SONGS TAB — always accessible, no lock needed ===== */}
         <button 
           onClick={() => handleTabSwitch('songs')}
           role="tab"
@@ -66,18 +66,6 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
         >
           <span className="text-xl">🎵</span>
           <span className="text-xs mt-1">{t('mobileNav.songs')}</span>
-        </button>
-
-        {/* ===== QUEUE TAB (always accessible, no lock needed) ===== */}
-        <button 
-          onClick={() => handleTabSwitch('queue')}
-          role="tab"
-          aria-selected={currentView === 'queue'}
-          aria-label={t('mobileNav.queue') || 'Queue'}
-          className={`flex flex-col items-center p-2 ${currentView === 'queue' ? 'text-cyan-400' : 'text-white/40'}`}
-        >
-          <span className="text-xl">📋</span>
-          <span className="text-xs mt-1">{t('mobileNav.queue') || 'Queue'}</span>
         </button>
 
         {/* ===== PROFILE TAB ===== */}

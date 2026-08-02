@@ -17,6 +17,8 @@ interface MirrorHomeLiteProps {
   remoteLockedBy: string | null;
   onAcquireRemote: () => void;
   onReleaseRemote: () => void;
+  /** Send a navigation command to the desktop (for screen mirroring) */
+  onSendDesktopCommand: (screen: string) => void;
 }
 
 // ===================== Hilfsfunktionen =====================
@@ -40,6 +42,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
     remoteLockedBy,
     onAcquireRemote,
     onReleaseRemote,
+    onSendDesktopCommand,
   }) {
     const { t } = useTranslation();
 
@@ -172,7 +175,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
         <div className="grid grid-cols-3 gap-2.5">
           {/* Queue count */}
           <button
-            onClick={() => handleNavigate('queue')}
+            onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
             className={
               'flex flex-col items-center gap-1 rounded-xl p-3 ' +
               'bg-white/5 border border-white/10 active:scale-95 transition-transform'
@@ -227,7 +230,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
                 {t('mobile.mirrorQueue') || 'Als Nächstes'}
               </h3>
               <button
-                onClick={() => handleNavigate('queue')}
+                onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
                 className="text-xs font-medium text-cyan-400/80 active:opacity-70 transition-opacity"
               >
                 Alle anzeigen →
@@ -238,7 +241,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               {previewQueue.map((item, idx) => (
                 <button
                   key={item.id}
-                  onClick={() => handleNavigate('queue')}
+                  onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
                   className={
                     'flex items-center gap-3 rounded-xl p-3 text-left ' +
                     'bg-white/5 border border-white/10 ' +
@@ -282,12 +285,12 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
           <ActionButton
             icon="📋"
             label={t('mobile.mirrorQueue') || 'Warteschlange'}
-            onPress={() => handleNavigate('queue')}
+            onPress={() => { haptic(); onSendDesktopCommand('queue'); }}
           />
           <ActionButton
             icon="📻"
             label={t('mobile.mirrorJukebox') || 'Jukebox'}
-            onPress={() => handleNavigate('jukebox')}
+            onPress={() => { haptic(); onSendDesktopCommand('jukebox'); }}
           />
         </div>
       </div>

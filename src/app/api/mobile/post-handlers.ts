@@ -618,8 +618,16 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const commandClient = mobileClients.get(clientId);
         if (!commandClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
-        // Must have the lock to send commands
-        if (mutableState.remoteControlState.lockedBy !== clientId) {
+        // Navigation-only commands (screen switches) are allowed without lock
+        // so all companions can trigger desktop screen changes for mirroring.
+        const NAVIGATION_COMMANDS = new Set([
+          'home', 'library', 'queue', 'settings', 'highscores', 'achievements',
+          'dailyChallenge', 'party', 'jukebox', 'profile',
+        ]);
+        const isNavigationOnly = NAVIGATION_COMMANDS.has(commandPayload.command);
+
+        // Non-navigation commands require the lock
+        if (!isNavigationOnly && mutableState.remoteControlState.lockedBy !== clientId) {
           return Response.json({ 
             success: false, 
             message: 'You must acquire remote control first',

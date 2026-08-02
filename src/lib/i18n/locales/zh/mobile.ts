@@ -161,11 +161,11 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: '首页',
+    mirror: '镜像',
     sing: '演唱',
     songs: '歌曲',
-    remote: '遥控',
-    profile: '档案'
+    queue: '队列',
+    profile: '个人资料'
   },
 
   companion: {

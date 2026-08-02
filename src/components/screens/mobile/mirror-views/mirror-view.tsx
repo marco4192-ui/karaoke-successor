@@ -90,6 +90,9 @@ export interface MirrorViewProps {
   remoteLockedBy: string | null;
   onAcquireRemote: () => void;
   onReleaseRemote: () => void;
+
+  // Desktop-Mirroring: sendet einen Navigations-Command an den Desktop
+  onSendDesktopCommand: (screen: string) => void;
 }
 
 // ===================== Hauptkomponente =====================
@@ -147,6 +150,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
   remoteLockedBy,
   onAcquireRemote,
   onReleaseRemote,
+  onSendDesktopCommand,
 }) {
   // Gemeinsame Navigations- und Status-Props
   const navBase = { onNavigate, gameState };
@@ -158,6 +162,9 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     onAcquireRemote,
     onReleaseRemote,
   };
+
+  // Desktop-Mirroring Props
+  const desktopMirrorBase = { onSendDesktopCommand };
 
   switch (mirrorScreenId) {
     // ---------- Startseite ----------
@@ -171,6 +178,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             clientId={clientId}
             profileName={profileName}
             {...remoteBase}
+            {...desktopMirrorBase}
           />
         </div>
       );
@@ -330,6 +338,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             clientId={clientId}
             profileName={profileName}
             {...remoteBase}
+            {...desktopMirrorBase}
           />
         </div>
       );

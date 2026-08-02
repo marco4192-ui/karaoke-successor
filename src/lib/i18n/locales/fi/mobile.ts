@@ -161,10 +161,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'Koti',
+    mirror: 'Peili',
     sing: 'Laula',
     songs: 'Kappaleet',
-    remote: 'Etäohjaus',
+    queue: 'Jono',
     profile: 'Profiili'
   },
 

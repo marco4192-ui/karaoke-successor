@@ -162,10 +162,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'Hjem',
+    mirror: 'Speil',
     sing: 'Syng',
     songs: 'Sanger',
-    remote: 'Fjernkontroll',
+    queue: 'Kø',
     profile: 'Profil'
   },
 

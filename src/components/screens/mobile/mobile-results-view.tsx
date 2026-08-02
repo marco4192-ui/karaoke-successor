@@ -138,7 +138,7 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
               {t('mobileViews.home')}
             </Button>
             <Button 
-              onClick={() => onNavigate('queue')}
+              onClick={() => onNavigate('mirror')}
               variant="outline"
               className="flex-1 border-white/20"
             >

@@ -4,16 +4,12 @@
 export type { MobileProfile, GameResults } from '@/app/api/mobile/mobile-types';
 
 export type MobileView =
-  // Mirror views — auto-switch based on desktop screen
+  // Mirror view — auto-switch based on desktop screen
   | 'mirror'
   // Companion-own views (no desktop equivalent)
   | 'songs'
   | 'mic'
-  | 'profile'
-  // Legacy views still accessible from within mirror views
-  | 'queue'
-  | 'results'
-  | 'jukebox';
+  | 'profile';
 
 /**
  * Maps a desktop Screen name to the mobile mirror behaviour.

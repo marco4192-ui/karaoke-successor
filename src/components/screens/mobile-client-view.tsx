@@ -19,9 +19,6 @@ import { MirrorView } from './mobile/mirror-views/mirror-view';
 import {
   MobileMicView,
   MobileSongsView,
-  MobileQueueView,
-  MobileResultsView,
-  MobileJukeboxView,
   MobileProfileCreateView,
   MobileProfileEditView,
   MobileBottomNav,
@@ -196,8 +193,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     data.setSelectedPartner(null);
 
     await data.addToQueue(song);
-    // Navigate to queue view after adding
-    setCurrentView('queue'); // queue is a companion-own view, always accessible
+    // Navigate to mirror (queue lite view) after adding
+    setCurrentView('mirror');
   }, [data]);
 
   // Disconnect from server and reset local state
@@ -220,7 +217,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
   }, []);
-  // Load songs lazily when entering songs view or mirror-library
+  // Effect for lazy loading songs
   useEffect(() => {
     if ((currentView === 'songs' || currentView === 'mirror') && data.songs.length === 0) {
       queueMicrotask(() => data.loadSongs());
@@ -317,10 +314,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- data.loadQueue is stable; isConnected is the actual trigger
   }, [isConnected, data.loadQueue]);
 
-  useEffect(() => {
-    if (currentView === 'jukebox') queueMicrotask(() => data.loadJukeboxWishlist());
-  }, [currentView, data.loadJukeboxWishlist, data]);
-
   // ===================== REMOTE LOCK STATE =====================
   const [remoteLock, setRemoteLock] = useState<{
     isLocked: boolean;
@@ -372,6 +365,21 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       setRemoteLock({ isLocked: false, lockedByMe: false, lockedByName: null });
     } catch { /* ignore */ }
   }, [clientId]);
+
+  // ===================== DESKTOP MIRRORING =====================
+  // Send a navigation command to the desktop so it mirrors the companion's action
+  const handleSendDesktopCommand = useCallback((screen: string) => {
+    if (!clientId || !profile) return;
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'remote_command',
+        clientId,
+        payload: { command: screen },
+      }),
+    }).catch(() => { /* ignore */ });
+  }, [clientId, profile]);
 
   // ===================== COMPUTED MIRROR ID =====================
   const mirrorScreenId = useMemo(
@@ -481,6 +489,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               remoteLockedBy={remoteLock.isLocked && !remoteLock.lockedByMe ? remoteLock.lockedByName : null}
               onAcquireRemote={handleAcquireRemote}
               onReleaseRemote={handleReleaseRemote}
+              onSendDesktopCommand={handleSendDesktopCommand}
             />
           )}
           {/* ====== COMPANION-OWN VIEWS (no desktop mirror) ====== */}
@@ -508,9 +517,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               addedQueuePosition={data.addedQueuePosition}
             />
           )}
-          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onReorderQueue={data.reorderQueue} onNavigate={setCurrentView} clientId={clientId} />}
-          {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} onPlayAgain={handlePlayAgain} />}
-          {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} onRemoveFromWishlist={data.removeFromJukeboxWishlist} onRefresh={data.loadJukeboxWishlist} />}
           {currentView === 'profile' && (
             <MobileProfileEditView
               profile={profile} profileName={profileName} onProfileNameChange={setProfileName}

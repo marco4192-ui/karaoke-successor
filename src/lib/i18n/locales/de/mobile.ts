@@ -180,10 +180,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'Startseite',
+    mirror: 'Spiegel',
     sing: 'Singen',
     songs: 'Songs',
-    remote: 'Fernbedienung',
+    queue: 'Warteschlange',
     profile: 'Profil'
   },
 

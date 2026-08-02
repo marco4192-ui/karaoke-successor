@@ -162,11 +162,11 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'ホーム',
-    sing: '歌う',
+    mirror: 'ミラー',
+    sing: '歌唱',
     songs: '曲',
-    remote: 'リモコン',
-    profile: 'プロファイル'
+    queue: 'キュー',
+    profile: 'プロフィール'
   },
 
   companion: {

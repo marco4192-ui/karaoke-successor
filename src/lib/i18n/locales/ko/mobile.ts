@@ -161,10 +161,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: '홈',
-    sing: '부르기',
-    songs: '곡',
-    remote: '리모컨',
+    mirror: '미러',
+    sing: '노래',
+    songs: '노래 목록',
+    queue: '대기열',
     profile: '프로필'
   },
 

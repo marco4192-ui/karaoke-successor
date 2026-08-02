@@ -161,10 +161,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'Главная',
+    mirror: 'Зеркало',
     sing: 'Петь',
     songs: 'Песни',
-    remote: 'Дистанционное',
+    queue: 'Очередь',
     profile: 'Профиль'
   },
 

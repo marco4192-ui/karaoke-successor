@@ -162,10 +162,10 @@ export const mobileTranslations = {
   },
 
   mobileNav: {
-    home: 'Home',
+    mirror: 'Specchio',
     sing: 'Canta',
     songs: 'Canzoni',
-    remote: 'Remoto',
+    queue: 'Coda',
     profile: 'Profilo'
   },
 
