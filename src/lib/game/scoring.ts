@@ -6,6 +6,13 @@ import {
 // ===================== SCORING CONSTANTS =====================
 export const MAX_POINTS_PER_SONG = 10000;
 
+/** Fraction of max points allocated to tick-based scoring (normal notes). */
+const TICK_POOL_FRACTION = 0.70;
+/** Fraction of max points allocated to golden note bonus pool. */
+const GOLDEN_POOL_FRACTION = 0.10;
+/** Fraction of max points allocated to combo progress bar. */
+const COMBO_POOL_FRACTION = 0.20;
+
 // ===================== SCORING ENHANCEMENT CONSTANTS =====================
 
 /**
@@ -29,19 +36,49 @@ export interface NoteProgress {
   accumulatedPoints: number;
 }
 
+/**
+ * Mutable combo scoring state (persists across scoring passes).
+ * Tracks note-based combo (consecutive completed notes) and the
+ * combo progress bar toward `comboPoolMaxPoints`.
+ */
+export interface ComboScoringState {
+  /** Current consecutive notes completed (for multiplier lookup). */
+  comboNotes: number;
+  /** Maximum consecutive notes completed. */
+  maxComboNotes: number;
+  /** Sum of combo multipliers earned so far. */
+  earnedProgress: number;
+  /** Last computed combo score (for delta calculation). */
+  lastComboScore: number;
+}
+
+/** Create a fresh ComboScoringState. */
+export function createComboScoringState(): ComboScoringState {
+  return { comboNotes: 0, maxComboNotes: 0, earnedProgress: 0, lastComboScore: 0 };
+}
+
 export interface ScoringMetadata {
   totalNoteTicks: number;
   goldenNoteTicks: number;
   normalNoteTicks: number;
-  perfectScoreBase: number;
-  /** Base points per tick for normal notes. */
-  pointsPerTick: number;
-  /** Points per tick for golden notes (2× normal). */
-  goldenPointsPerTick: number;
-  /** Number of individual notes (not ticks) in this song. */
   totalNotes: number;
-  /** Always 1 — no combo multiplier in simplified scoring. */
-  comboMultiplier: number;
+
+  /** Points per tick for normal notes (from tick pool). */
+  pointsPerTick: number;
+  /** Points per tick for golden notes (tick pool base + golden bonus pool). */
+  goldenPointsPerTick: number;
+
+  /** Whether the full scoring split (tick/golden/combo) is active. */
+  isFullScoring: boolean;
+
+  /** Maximum combo bonus points (2,000 for full scoring, 0 for party modes). */
+  comboPoolMaxPoints: number;
+  /**
+   * Pre-calculated max combo progress for perfect play.
+   * Sum of all combo multipliers if every note is completed in sequence.
+   * Used to normalize the combo progress bar.
+   */
+  maxComboProgress: number;
 }
 
 interface TickEvaluation {
@@ -52,15 +89,6 @@ interface TickEvaluation {
 
 // ===================== ACCURACY SCALING =====================
 
-/**
- * Apply a power-curve transformation to accuracy.
- * Exponent < 1 (e.g. 0.6) makes the curve concave, meaning:
- * - Low accuracy values are boosted (e.g. 0.1 -> 0.25)
- * - High accuracy values are barely changed (e.g. 0.9 -> 0.94)
- * - Perfect accuracy (1.0) stays at 1.0
- *
- * This makes scoring more forgiving for beginners without affecting perfect play.
- */
 /** @deprecated No-op in simplified scoring — returns accuracy unchanged. Kept for backward compat. */
 export function scaleAccuracy(accuracy: number): number {
   return accuracy;
@@ -82,18 +110,56 @@ export function getComboFactor(_combo: number, _comboMultiplier: number): number
  * Maximum difference is 6 semitones (half an octave).
  */
 function getRelativePitchDiff(sungNote: number, targetNote: number): number {
-  // Use continuous MIDI values instead of quantized pitch classes.
-  // This gives sub-semitone precision (e.g., 0.3 semitones off instead of 0 or 1).
   let diff = Math.abs(sungNote - targetNote) % 12;
   if (diff > 6) diff = 12 - diff;
   return diff;
 }
 
+// ===================== COMBO SYSTEM =====================
+
+/**
+ * Calculate the combo multiplier based on consecutive completed notes.
+ * Increases by 0.25× every 5 notes, from 1× (0–4) to 2× (20+).
+ */
+export function calculateComboMultiplier(comboNotes: number): number {
+  if (comboNotes < 5) return 1;
+  if (comboNotes < 10) return 1.25;
+  if (comboNotes < 15) return 1.5;
+  if (comboNotes < 20) return 1.75;
+  return 2;
+}
+
+/**
+ * Determine whether a note counts as "completed" for combo purposes.
+ * The tolerance varies by difficulty:
+ * - Easy: up to 2 missed ticks allowed
+ * - Medium: up to 1 missed tick allowed
+ * - Hard: every tick must be hit
+ */
+export function isNoteCompleteForCombo(
+  ticksHit: number,
+  totalTicks: number,
+  difficulty: Difficulty,
+): boolean {
+  const missed = totalTicks - ticksHit;
+  if (difficulty === 'easy') return missed <= 2;
+  if (difficulty === 'medium') return missed <= 1;
+  return missed <= 0; // hard
+}
+
 // ===================== SCORING METADATA =====================
+
 /**
  * Calculate scoring metadata for duration-based scoring.
- * Pre-computes the point distribution for a song, normalized so that
- * a perfect game (all ticks hit with accuracy=1.0) yields exactly `maxPoints`.
+ *
+ * **Full scoring mode** (maxPoints = 10,000):
+ * - 70% tick pool (shared across all notes)
+ * - 10% golden bonus pool (extra for golden notes, redistributed to ticks if none)
+ * - 20% combo progress bar
+ *
+ * **Party/simple mode** (maxPoints ≠ 10,000):
+ * - All points in tick pool with golden 2× weighting (old behavior)
+ * - No combo scoring
  */
 export function calculateScoringMetadata(
   notes: Array<{ duration: number; isGolden: boolean }>,
@@ -104,7 +170,6 @@ export function calculateScoringMetadata(
   let totalNoteTicks = 0;
   let goldenNoteTicks = 0;
   const totalNotes = notes.length;
-
   const safeBeatDuration = beatDuration > 0 ? beatDuration : 500;
 
   for (const note of notes) {
@@ -112,10 +177,41 @@ export function calculateScoringMetadata(
     totalNoteTicks += ticksInNote;
     if (note.isGolden) goldenNoteTicks += ticksInNote;
   }
-
   const normalNoteTicks = totalNoteTicks - goldenNoteTicks;
 
-  // Golden note ticks count double — effective total = normal + 2 × golden
+  const isFullScoring = maxPoints === MAX_POINTS_PER_SONG;
+
+  if (isFullScoring) {
+    // Full scoring: 70% tick pool + 10% golden pool + 20% combo pool
+    const hasGoldenNotes = goldenNoteTicks > 0;
+    const tickPoolMax = hasGoldenNotes ? maxPoints * TICK_POOL_FRACTION : maxPoints * (TICK_POOL_FRACTION + GOLDEN_POOL_FRACTION);
+    const goldenPoolMax = hasGoldenNotes ? maxPoints * GOLDEN_POOL_FRACTION : 0;
+    const comboPoolMax = maxPoints * COMBO_POOL_FRACTION;
+
+    const pointsPerTick = totalNoteTicks > 0 ? tickPoolMax / totalNoteTicks : 1;
+    const goldenBonusPerTick = goldenNoteTicks > 0 ? goldenPoolMax / goldenNoteTicks : 0;
+    const goldenPointsPerTick = pointsPerTick + goldenBonusPerTick;
+
+    // Pre-calculate max combo progress (sum of multipliers for perfect play)
+    let maxComboProgress = 0;
+    for (let i = 1; i <= totalNotes; i++) {
+      maxComboProgress += calculateComboMultiplier(i);
+    }
+
+    return {
+      totalNoteTicks,
+      goldenNoteTicks,
+      normalNoteTicks,
+      totalNotes,
+      pointsPerTick,
+      goldenPointsPerTick,
+      isFullScoring,
+      comboPoolMaxPoints: comboPoolMax,
+      maxComboProgress,
+    };
+  }
+
+  // Party/simple mode: all points in tick pool, golden 2×
   const effectiveTotalTicks = normalNoteTicks + goldenNoteTicks * 2;
   const basePointsPerTick = effectiveTotalTicks > 0 ? maxPoints / effectiveTotalTicks : 1;
 
@@ -123,25 +219,25 @@ export function calculateScoringMetadata(
     totalNoteTicks,
     goldenNoteTicks,
     normalNoteTicks,
-    perfectScoreBase: effectiveTotalTicks,
+    totalNotes,
     pointsPerTick: basePointsPerTick,
     goldenPointsPerTick: basePointsPerTick * 2,
-    totalNotes,
-    comboMultiplier: 1,
+    isFullScoring: false,
+    comboPoolMaxPoints: 0,
+    maxComboProgress: 0,
   };
 }
 
 // ===================== TICK-BASED SCORING =====================
+
 /**
  * Evaluate a single tick during note playback.
- * Used for duration-based scoring where notes are evaluated continuously.
  */
 export function evaluateTick(
   sungNote: number,
   targetNote: number,
   difficulty: Difficulty
 ): TickEvaluation {
-  // Guard against NaN/Infinity pitch values — treat as a miss
   if (!Number.isFinite(sungNote)) {
     return { accuracy: 0, isHit: false, displayType: 'Miss' };
   }
@@ -154,16 +250,10 @@ export function evaluateTick(
     return { accuracy: 0, isHit: false, displayType: 'Miss' };
   }
 
-  // Normalize accuracy to 0-1 range within the tolerance window.
-  // Uses (effectiveTolerance) as denominator so that being exactly on-pitch
-  // yields accuracy=1.0 and being at the edge of tolerance yields accuracy=0.
   const accuracy = effectiveTolerance > 0
     ? 1 - (relativeDiff / effectiveTolerance)
     : (relativeDiff === 0 ? 1 : 0);
 
-  // Use difficulty-specific evaluation thresholds.
-  // On Easy: being in-tolerance is already an achievement, so thresholds are relaxed.
-  // On Hard: precision matters, thresholds are tighter.
   const thresholds = {
     perfect: settings.perfectThreshold ?? 0.95,
     great: settings.greatThreshold ?? 0.8,
@@ -181,9 +271,10 @@ export function evaluateTick(
   return { accuracy, isHit: true, displayType };
 }
 
-/** Calculate points for a single tick.
- *  Each tick hit: points = accuracy * pointsPerTick, minimum 1 point.
- *  The caller is responsible for passing the correct pointsPerTick value
+/**
+ * Calculate points for a single tick.
+ *  Points = accuracy * pointsPerTick, minimum 1 point.
+ *  The caller passes the correct pointsPerTick value
  *  (use goldenPointsPerTick for golden notes when available).
  */
 export function calculateTickPoints(
@@ -195,9 +286,9 @@ export function calculateTickPoints(
   return Math.max(1, Math.round(accuracy * pointsPerTick));
 }
 
-// ===================== NOTE COMPLETION BONUS =====================
+// ===================== DEPRECATED (kept for backward compat) =====================
 
-/** @deprecated No completion bonus in simplified scoring. Returns 0. Kept for backward compat. */
+/** @deprecated */
 export function calculateNoteCompletionBonus(
   _note: { totalTicks: number; isGolden: boolean },
   _scoringMeta: ScoringMetadata,
@@ -205,9 +296,7 @@ export function calculateNoteCompletionBonus(
   return 0;
 }
 
-// ===================== CONSOLATION POINTS =====================
-
-/** @deprecated No consolation points in simplified scoring. Returns 0. Kept for backward compat. */
+/** @deprecated */
 export function calculateNoteConsolation(
   _note: { totalTicks: number; isGolden: boolean },
   _scoringMeta: ScoringMetadata,
@@ -217,11 +306,7 @@ export function calculateNoteConsolation(
 
 /**
  * Estimate the number of "perfect" notes from overall hit count and rating.
- * Used as a fallback when per-note quality data is unavailable (e.g. tournament
- * results built without the main game loop's tick-by-tick tracking).
- *
- * The ratio reflects how many of the hit notes were likely rated "Perfect"
- * (accuracy > 95%) given the overall rating band.
+ * Used as a fallback when per-note quality data is unavailable.
  */
 export function estimatePerfectNotes(notesHit: number, rating: string): number {
   if (notesHit <= 0) return 0;

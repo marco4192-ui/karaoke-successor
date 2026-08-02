@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DIFFICULTY_SETTINGS, Note, LyricLine, Player } from '@/types/game';
-import { NoteProgress, ScoringMetadata } from '@/lib/game/scoring';
+import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState } from '@/lib/game/scoring';
 import { runScoringPass, BlindScoringState } from '@/lib/game/run-scoring-pass';
 import {
   MAX_SAMPLES_PER_NOTE,
@@ -61,19 +61,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
 
 
-  // Ref for P1 combo to avoid stale closure when batched updates delay React re-render.
-  // Without this, two ticks firing before a re-render both read the same old combo value.
-  const p1ComboRef = useRef(0);
-  const p1MaxComboRef = useRef(0);
-  // P1 perfect notes count — incremented when all ticks of a note are hit.
-  // Ref for 60fps reads in checkNoteHits; synced to state on note-complete flush so
-  // useGameLoop's generateResults() reads the correct value at song end.
+  // P1 combo scoring state (note-based combo + progress bar)
+  const p1ComboStateRef = useRef<ComboScoringState>(createComboScoringState());
+  // P1 perfect notes count
   const p1PerfectNotesCountRef = useRef(0);
   const [p1PerfectNotesCount, setP1PerfectNotesCount] = useState(0);
 
-  // Ref for P2 combo — same pattern as P1, prevents stale closure in batched updates
-  const p2ComboRef = useRef(0);
-  const p2MaxComboRef = useRef(0);
+  // P2 combo scoring state
+  const p2ComboStateRef = useRef<ComboScoringState>(createComboScoringState());
 
   // Blind karaoke tracking refs (P1)
   const p1BlindStreakRef = useRef(0);
@@ -114,8 +109,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p2NotePerformanceRef.current = new Map();
     lastP2NotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
-    p1ComboRef.current = 0;
-    p1MaxComboRef.current = 0;
+    p1ComboStateRef.current = createComboScoringState();
     p1PerfectNotesCountRef.current = 0;
     setP1PerfectNotesCount(0);
     setP2DetectedPitch(null);
@@ -123,8 +117,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p2NoteProgressRef.current.clear();
     lastProcessedNoteRef.current = 0;
     lastProcessedNoteP2Ref.current = 0;
-    p2ComboRef.current = 0;
-    p2MaxComboRef.current = 0;
+    p2ComboStateRef.current = createComboScoringState();
     // Reset blind tracking
     p1BlindStreakRef.current = 0;
     p1BlindLastWasMissRef.current = false;
@@ -155,16 +148,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
-      // Player-specific refs: currently only P1 (index 0) and P2 (index 1) are supported.
-      // P3/P4 would need their own combo refs — this is a latent limitation.
-      const comboRef = _playerIndex === 1 ? p2ComboRef : p1ComboRef;
-      const maxComboRef = _playerIndex === 1 ? p2MaxComboRef : p1MaxComboRef;
+      const comboState = _playerIndex === 1 ? p2ComboStateRef.current : p1ComboStateRef.current;
       const searchStartRef = _playerIndex === 1 ? lastProcessedNoteP2Ref : lastProcessedNoteRef;
 
       const result = runScoringPass(
         currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
         noteProgressMap.current, searchStartRef, noteIdPrefix,
-        hasPerfectOnly, hasGoldenOnly, comboRef, maxComboRef, blindState,
+        hasPerfectOnly, hasGoldenOnly, comboState, blindState,
       );
 
       // Record performance samples for visual display modes (same pattern as P1)
@@ -263,7 +253,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       const result = runScoringPass(
         currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
         noteProgressRef.current, lastProcessedNoteRef, 'note',
-        hasPerfectOnly, hasGoldenOnly, p1ComboRef, p1MaxComboRef, blindState,
+        hasPerfectOnly, hasGoldenOnly, p1ComboStateRef.current, blindState,
       );
 
       // P1-specific: record note performance samples for visual display modes
