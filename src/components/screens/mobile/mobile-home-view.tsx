@@ -101,7 +101,7 @@ export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: Hom
           )}
         </button>
         <button 
-          onClick={() => onNavigate('remote')}
+          onClick={() => onNavigate('mirror')}
           className="bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl p-4 text-center hover:from-purple-500/30 hover:to-cyan-500/30 transition-colors border border-purple-500/30"
         >
           <span className="text-3xl mb-2 block">🎮</span>

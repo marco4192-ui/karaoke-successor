@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
@@ -8,13 +8,15 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileView, MobileProfile } from './mobile/mobile-types';
+import { screenToMirrorId } from './mobile/mobile-types';
 import { MobileChat } from './mobile/mobile-chat';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
+// Mirror view
+import { MirrorView } from './mobile/mirror-views/mirror-view';
+
 // View components
-import { RemoteControlView } from './mobile/remote-control-view';
 import {
-  MobileHomeView,
   MobileMicView,
   MobileSongsView,
   MobileQueueView,
@@ -42,7 +44,7 @@ interface MobileClientViewProps {
 
 export function MobileClientView({ profileId }: MobileClientViewProps) {
   const { t } = useTranslation();
-  const [currentView, setCurrentView] = useState<MobileView>('home');
+  const [currentView, setCurrentView] = useState<MobileView>('mirror');
   const [profile, setProfile] = useState<MobileProfile | null>(null);
   const [profileName, setProfileName] = useState('');
   const [profileColor, setProfileColor] = useState('#06B6D4');
@@ -140,7 +142,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setProfile(newProfile);
     setJson(StorageKeys.MOBILE_PROFILE, newProfile);
     syncProfile(newProfile);
-    setCurrentView('home');
+    setCurrentView('mirror');
   }, [profileName, avatarPreview, profileColor, syncProfile]);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,7 +197,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
     await data.addToQueue(song);
     // Navigate to queue view after adding
-    setCurrentView('queue');
+    setCurrentView('queue'); // queue is a companion-own view, always accessible
   }, [data]);
 
   // Disconnect from server and reset local state
@@ -206,7 +208,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setProfileColor('#06B6D4');
     setAvatarPreview(null);
     removeItem(StorageKeys.MOBILE_PROFILE);
-    setCurrentView('home');
+    setCurrentView('mirror');
     // Re-connect after a short delay to allow fresh profile creation
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     reconnectTimerRef.current = setTimeout(() => connect(), 500);
@@ -218,8 +220,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
   }, []);
+  // Load songs lazily when entering songs view or mirror-library
   useEffect(() => {
-    if (currentView === 'songs' && data.songs.length === 0) queueMicrotask(() => data.loadSongs());
+    if ((currentView === 'songs' || currentView === 'mirror') && data.songs.length === 0) {
+      queueMicrotask(() => data.loadSongs());
+    }
   }, [currentView, data.songs.length, data.loadSongs, data]);
 
   // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
@@ -316,6 +321,64 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (currentView === 'jukebox') queueMicrotask(() => data.loadJukeboxWishlist());
   }, [currentView, data.loadJukeboxWishlist, data]);
 
+  // ===================== REMOTE LOCK STATE =====================
+  const [remoteLock, setRemoteLock] = useState<{
+    isLocked: boolean;
+    lockedByMe: boolean;
+    lockedByName: string | null;
+  }>({ isLocked: false, lockedByMe: false, lockedByName: null });
+
+  // Poll remote lock status (reuse existing endpoint)
+  const isMountedRef2 = useRef(true);
+  useEffect(() => {
+    if (!isConnected || !clientId) return;
+    const pollLock = async () => {
+      try {
+        const res = await fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (d.success && isMountedRef2.current) {
+          setRemoteLock({
+            isLocked: !!d.remoteControl?.lockedBy,
+            lockedByMe: !!d.remoteControl?.iHaveControl,
+            lockedByName: d.remoteControl?.lockedByName || null,
+          });
+        }
+      } catch { /* ignore */ }
+    };
+    pollLock();
+    const iv = setInterval(pollLock, 3000);
+    return () => { clearInterval(iv); isMountedRef2.current = false; };
+  }, [isConnected, clientId]);
+
+  const handleAcquireRemote = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      await fetch('/api/mobile', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'remote_acquire', clientId }),
+      });
+      setRemoteLock({ isLocked: true, lockedByMe: true, lockedByName: profile?.name || null });
+    } catch { /* ignore */ }
+  }, [clientId, profile?.name]);
+
+  const handleReleaseRemote = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      await fetch('/api/mobile', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'remote_release', clientId }),
+      });
+      setRemoteLock({ isLocked: false, lockedByMe: false, lockedByName: null });
+    } catch { /* ignore */ }
+  }, [clientId]);
+
+  // ===================== COMPUTED MIRROR ID =====================
+  const mirrorScreenId = useMemo(
+    () => screenToMirrorId(gameState.currentScreen),
+    [gameState.currentScreen],
+  );
+
   // ===================== RENDER =====================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
@@ -326,8 +389,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       <div className="sticky top-0 z-20 bg-black/30 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            {profile && currentView !== 'home' && (
-              <button onClick={() => setCurrentView('home')} className="text-white/60 hover:text-white">{t('mobileClient.back')}</button>
+            {profile && currentView !== 'mirror' && (
+              <button onClick={() => setCurrentView('mirror')} className="text-white/60 hover:text-white">{t('mobileClient.back')}</button>
             )}
             <h1 className="text-lg font-bold">{t('app.title')}</h1>
           </div>
@@ -368,7 +431,59 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
+          {/* ====== MIRROR VIEW — auto-follows desktop ====== */}
+          {currentView === 'mirror' && (
+            <MirrorView
+              mirrorScreenId={mirrorScreenId}
+              gameState={gameState}
+              clientId={clientId}
+              profileName={profile?.name || ''}
+              queue={data.queue}
+              slotsRemaining={data.slotsRemaining}
+              onRemoveFromQueue={data.removeFromQueue}
+              onReorderQueue={data.reorderQueue}
+              songSearch={data.songSearch}
+              onSongSearchChange={data.setSongSearch}
+              songsLoading={data.songsLoading}
+              songsError={data.songsError}
+              songs={data.songs}
+              filteredSongs={data.filteredSongs}
+              showSongOptions={data.showSongOptions}
+              selectedGameMode={data.selectedGameMode}
+              selectedPartner={data.selectedPartner}
+              availablePartners={data.availablePartners}
+              opponents={data.opponents}
+              availableProfiles={data.availableProfiles}
+              onShowSongOptions={data.setShowSongOptions}
+              onSelectGameMode={data.setSelectedGameMode}
+              onSelectPartner={data.setSelectedPartner}
+              onAddToQueue={data.addToQueue}
+              onLoadPartners={data.loadAvailablePartners}
+              onLoadOpponents={data.loadOpponents}
+              onRefreshSongs={data.loadSongs}
+              formatDuration={data.formatDuration}
+              difficulty={data.difficulty}
+              onDifficultyChange={data.setDifficulty}
+              playerMicSource={data.playerMicSource}
+              onPlayerMicSourceChange={data.setPlayerMicSource}
+              partnerMicSource={data.partnerMicSource}
+              onPartnerMicSourceChange={data.setPartnerMicSource}
+              duetPartsSwapped={data.duetPartsSwapped}
+              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+              addedQueuePosition={data.addedQueuePosition}
+              jukeboxWishlist={data.jukeboxWishlist}
+              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
+              onRefreshJukebox={data.loadJukeboxWishlist}
+              gameResults={data.gameResults}
+              onNavigate={setCurrentView}
+              onOpenChat={() => setShowChat(true)}
+              isRemoteLocked={remoteLock.isLocked && !remoteLock.lockedByMe}
+              remoteLockedBy={remoteLock.isLocked && !remoteLock.lockedByMe ? remoteLock.lockedByName : null}
+              onAcquireRemote={handleAcquireRemote}
+              onReleaseRemote={handleReleaseRemote}
+            />
+          )}
+          {/* ====== COMPANION-OWN VIEWS (no desktop mirror) ====== */}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
               isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone}
@@ -396,7 +511,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onReorderQueue={data.reorderQueue} onNavigate={setCurrentView} clientId={clientId} />}
           {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} onPlayAgain={handlePlayAgain} />}
           {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} onRemoveFromWishlist={data.removeFromJukeboxWishlist} onRefresh={data.loadJukeboxWishlist} />}
-          {currentView === 'remote' && <RemoteControlView clientId={clientId} onBack={() => setCurrentView('home')} />}
           {currentView === 'profile' && (
             <MobileProfileEditView
               profile={profile} profileName={profileName} onProfileNameChange={setProfileName}

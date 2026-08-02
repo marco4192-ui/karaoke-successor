@@ -131,7 +131,7 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
           {/* Quick Actions */}
           <div className="flex gap-2">
             <Button 
-              onClick={() => onNavigate('home')}
+              onClick={() => onNavigate('mirror')}
               variant="outline"
               className="flex-1 border-white/20"
             >
@@ -152,7 +152,7 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
           <p>{t('mobileViews.noRecentResults')}</p>
           <p className="text-sm mt-2">{t('mobileViews.singForResults')}</p>
           <Button 
-            onClick={() => onNavigate('home')}
+            onClick={() => onNavigate('mirror')}
             variant="outline"
             className="mt-4 border-white/20"
           >

@@ -19,23 +19,32 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
     onNavigate(view);
   };
 
+  // Mirror tab is active for 'mirror' view AND legacy companion views shown inside mirror
+  const isMirrorActive = currentView === 'mirror';
+
   return (
     <nav
       role="tablist"
-      className={`fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t ${currentView === 'results' || currentView === 'jukebox' ? 'border-t-cyan-400/60 shadow-[0_-2px_12px_rgba(34,211,238,0.15)]' : 'border-white/10'}`}
+      className={
+        'fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t ' +
+        (isMirrorActive ? 'border-cyan-400/60 shadow-[0_-2px_12px_rgba(34,211,238,0.15)]' : 'border-white/10')
+      }
       style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
     >
       <div className="flex justify-around py-2">
+        {/* ===== MIRROR TAB ===== */}
         <button 
-          onClick={() => handleTabSwitch('home')}
+          onClick={() => handleTabSwitch('mirror')}
           role="tab"
-          aria-selected={currentView === 'home'}
-          aria-label={t('mobileNav.home')}
-          className={`flex flex-col items-center p-2 ${currentView === 'home' ? 'text-cyan-400' : 'text-white/40'}`}
+          aria-selected={isMirrorActive}
+          aria-label={t('mobileNav.mirror') || 'Mirror'}
+          className={`flex flex-col items-center p-2 ${isMirrorActive ? 'text-cyan-400' : 'text-white/40'}`}
         >
-          <span className="text-xl">🏠</span>
-          <span className="text-xs mt-1">{t('mobileNav.home')}</span>
+          <span className="text-xl">📱</span>
+          <span className="text-xs mt-1">{t('mobileNav.mirror') || 'Mirror'}</span>
         </button>
+
+        {/* ===== SING TAB ===== */}
         <button 
           onClick={() => handleTabSwitch('mic')}
           role="tab"
@@ -46,6 +55,8 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xl">🎤</span>
           <span className="text-xs mt-1">{t('mobileNav.sing')}</span>
         </button>
+
+        {/* ===== SONGS TAB (always accessible, no lock needed) ===== */}
         <button 
           onClick={() => handleTabSwitch('songs')}
           role="tab"
@@ -56,16 +67,20 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xl">🎵</span>
           <span className="text-xs mt-1">{t('mobileNav.songs')}</span>
         </button>
+
+        {/* ===== QUEUE TAB (always accessible, no lock needed) ===== */}
         <button 
-          onClick={() => handleTabSwitch('remote')}
+          onClick={() => handleTabSwitch('queue')}
           role="tab"
-          aria-selected={currentView === 'remote'}
-          aria-label={t('mobileNav.remote')}
-          className={`flex flex-col items-center p-2 ${currentView === 'remote' ? 'text-cyan-400' : 'text-white/40'}`}
+          aria-selected={currentView === 'queue'}
+          aria-label={t('mobileNav.queue') || 'Queue'}
+          className={`flex flex-col items-center p-2 ${currentView === 'queue' ? 'text-cyan-400' : 'text-white/40'}`}
         >
-          <span className="text-xl">🎮</span>
-          <span className="text-xs mt-1">{t('mobileNav.remote')}</span>
+          <span className="text-xl">📋</span>
+          <span className="text-xs mt-1">{t('mobileNav.queue') || 'Queue'}</span>
         </button>
+
+        {/* ===== PROFILE TAB ===== */}
         <button 
           onClick={() => handleTabSwitch('profile')}
           role="tab"
