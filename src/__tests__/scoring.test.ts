@@ -46,7 +46,7 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       expect(result.totalNotes).toBe(3);
     });
 
-    it('handles golden notes correctly (golden ticks tracked but not weighted)', () => {
+    it('handles golden notes correctly with 2× weighting', () => {
       const notes = [
         { duration: 500, isGolden: true },
         { duration: 500, isGolden: false },
@@ -54,10 +54,13 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       const beatDuration = 125;
       const result = calculateScoringMetadata(notes, beatDuration);
 
+      // 4 golden ticks + 4 normal ticks
+      // Effective total = 4 + 2*4 = 12
       expect(result.goldenNoteTicks).toBe(4);
       expect(result.normalNoteTicks).toBe(4);
       expect(result.totalNoteTicks).toBe(8);
-      expect(result.pointsPerTick).toBeCloseTo(10000 / 8, 4);
+      expect(result.pointsPerTick).toBeCloseTo(10000 / 12, 4);
+      expect(result.goldenPointsPerTick).toBeCloseTo(10000 / 12 * 2, 4);
     });
 
     it('handles empty notes array', () => {
@@ -67,6 +70,7 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       expect(result.normalNoteTicks).toBe(0);
       expect(result.perfectScoreBase).toBe(0);
       expect(result.pointsPerTick).toBe(1);
+      expect(result.goldenPointsPerTick).toBe(2);
     });
 
     it('handles all golden notes', () => {
@@ -77,9 +81,13 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       const beatDuration = 250;
       const result = calculateScoringMetadata(notes, beatDuration);
 
+      // 8 golden ticks, 0 normal ticks
+      // Effective total = 0 + 2*8 = 16
       expect(result.totalNoteTicks).toBe(8);
       expect(result.goldenNoteTicks).toBe(8);
       expect(result.normalNoteTicks).toBe(0);
+      expect(result.pointsPerTick).toBeCloseTo(10000 / 16, 4);
+      expect(result.goldenPointsPerTick).toBeCloseTo(10000 / 16 * 2, 4);
     });
 
     it('minimum tick is 1 even for very short durations', () => {
@@ -97,6 +105,7 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       const beatDuration = 125;
       const result = calculateScoringMetadata(notes, beatDuration, 'medium', 2000);
 
+      // All normal notes — effective total = 8
       expect(result.totalNoteTicks).toBe(8);
       expect(result.pointsPerTick).toBeCloseTo(2000 / 8, 4);
     });
@@ -116,10 +125,11 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       expect(calculateTickPoints(1.0, false, pointsPerTick)).toBe(100);
     });
 
-    it('ignores golden note flag (no golden multiplier)', () => {
+    it('applies 2× weighting via goldenPointsPerTick (caller responsibility)', () => {
       const pointsPerTick = 100;
+      const goldenPointsPerTick = 200;
       expect(calculateTickPoints(1.0, false, pointsPerTick)).toBe(100);
-      expect(calculateTickPoints(1.0, true, pointsPerTick)).toBe(100);
+      expect(calculateTickPoints(1.0, true, goldenPointsPerTick)).toBe(200);
     });
 
     it('returns min 1 point per hit', () => {
@@ -224,9 +234,12 @@ describe('Scoring system (simplified: flat per-tick)', () => {
       const beatDuration = 125;
       const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
 
+      // All golden: effective total = 2 * totalNoteTicks
+      // goldenPointsPerTick = 2 * (10000 / effectiveTotal)
+      // Each golden tick uses goldenPointsPerTick → sum = totalNoteTicks * goldenPointsPerTick = 10000
       let total = 0;
       for (let i = 0; i < meta.totalNoteTicks; i++) {
-        total += calculateTickPoints(1.0, true, meta.pointsPerTick);
+        total += calculateTickPoints(1.0, true, meta.goldenPointsPerTick);
       }
       expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, -1);
     });
@@ -244,6 +257,35 @@ describe('Scoring system (simplified: flat per-tick)', () => {
         // Misses score 0 — no consolation
       }
       expect(total).toBeLessThan(MAX_POINTS_PER_SONG * 0.5);
+    });
+
+    it('mixed golden + normal notes sum to MAX_POINTS_PER_SONG on perfect play', () => {
+      // 3 normal notes + 2 golden notes, each 500ms, beatDuration=125ms → 4 ticks each
+      const notes = [
+        { duration: 500, isGolden: false },
+        { duration: 500, isGolden: true },
+        { duration: 500, isGolden: false },
+        { duration: 500, isGolden: true },
+        { duration: 500, isGolden: false },
+      ];
+      const beatDuration = 125;
+      const meta = calculateScoringMetadata(notes, beatDuration, 'medium');
+
+      // 12 normal + 8 golden = 20 total ticks
+      // effective = 12 + 2*8 = 28
+      expect(meta.normalNoteTicks).toBe(12);
+      expect(meta.goldenNoteTicks).toBe(8);
+      expect(meta.totalNoteTicks).toBe(20);
+
+      let total = 0;
+      // Simulate: first 12 ticks are normal, next 8 are golden
+      for (let i = 0; i < 12; i++) {
+        total += calculateTickPoints(1.0, false, meta.pointsPerTick);
+      }
+      for (let i = 0; i < 8; i++) {
+        total += calculateTickPoints(1.0, true, meta.goldenPointsPerTick);
+      }
+      expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, -1);
     });
   });
 });

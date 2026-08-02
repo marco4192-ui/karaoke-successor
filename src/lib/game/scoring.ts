@@ -34,7 +34,10 @@ export interface ScoringMetadata {
   goldenNoteTicks: number;
   normalNoteTicks: number;
   perfectScoreBase: number;
+  /** Base points per tick for normal notes. */
   pointsPerTick: number;
+  /** Points per tick for golden notes (2× normal). */
+  goldenPointsPerTick: number;
   /** Number of individual notes (not ticks) in this song. */
   totalNotes: number;
   /** Always 1 — no combo multiplier in simplified scoring. */
@@ -111,9 +114,21 @@ export function calculateScoringMetadata(
   }
 
   const normalNoteTicks = totalNoteTicks - goldenNoteTicks;
-  const pointsPerTick = totalNoteTicks > 0 ? maxPoints / totalNoteTicks : 1;
 
-  return { totalNoteTicks, goldenNoteTicks, normalNoteTicks, perfectScoreBase: totalNoteTicks, pointsPerTick, totalNotes, comboMultiplier: 1 };
+  // Golden note ticks count double — effective total = normal + 2 × golden
+  const effectiveTotalTicks = normalNoteTicks + goldenNoteTicks * 2;
+  const basePointsPerTick = effectiveTotalTicks > 0 ? maxPoints / effectiveTotalTicks : 1;
+
+  return {
+    totalNoteTicks,
+    goldenNoteTicks,
+    normalNoteTicks,
+    perfectScoreBase: effectiveTotalTicks,
+    pointsPerTick: basePointsPerTick,
+    goldenPointsPerTick: basePointsPerTick * 2,
+    totalNotes,
+    comboMultiplier: 1,
+  };
 }
 
 // ===================== TICK-BASED SCORING =====================
@@ -168,6 +183,8 @@ export function evaluateTick(
 
 /** Calculate points for a single tick.
  *  Each tick hit: points = accuracy * pointsPerTick, minimum 1 point.
+ *  The caller is responsible for passing the correct pointsPerTick value
+ *  (use goldenPointsPerTick for golden notes when available).
  */
 export function calculateTickPoints(
   accuracy: number,

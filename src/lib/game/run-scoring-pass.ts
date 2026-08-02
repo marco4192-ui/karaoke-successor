@@ -126,7 +126,11 @@ export function runScoringPass(
         if (tickResult.isHit) {
           noteProgress.ticksHit++;
 
-          let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+          // Use golden multiplier when available, fall back to base pointsPerTick
+          const ppt = note.isGolden && scoringMeta.goldenPointsPerTick
+            ? scoringMeta.goldenPointsPerTick
+            : scoringMeta.pointsPerTick;
+          let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, ppt);
 
           // Challenge modifier: perfect_only — only "Perfect" hits score
           if (hasPerfectOnly && tickResult.displayType !== 'Perfect') {

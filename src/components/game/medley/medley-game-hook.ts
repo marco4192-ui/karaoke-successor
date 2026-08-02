@@ -21,7 +21,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick, createMedleyNoteScoringState, evaluateMedleyNoteScore, finalizeAllMedleyNotes, MEDLEY_POINTS_PER_NOTE, type MedleyNoteScoringState } from '@/lib/game/party-scoring';
+import { shouldSkipPitch, createMedleyTickScoringState, evaluateMedleyTick, type MedleyTickScoringState } from '@/lib/game/party-scoring';
+import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
@@ -194,18 +195,21 @@ export function useMedleyGame({
   // Throttle UI update for scoring events to ~100ms
   const lastScoringUiUpdateRef = useRef(0);
 
-  // Per-player last evaluation time for throttling
-  const lastEvalTimeRef = useRef<Record<string, number>>({});
+  // Per-player tick-based scoring state for Medley (10,000 total points)
+  const medleyTickScoringStatesRef = useRef<Map<string, MedleyTickScoringState>>(new Map());
 
-  // Per-player note-based scoring state for Medley (10,000 pts per note)
-  const medleyNoteScoringStatesRef = useRef<Map<string, MedleyNoteScoringState>>(new Map());
+  // Tick-based scoring metadata for current snippet (10,000 max points)
+  // Lazily computed on first scorePlayer call per snippet.
+  const snippetScoringMetaRef = useRef<ScoringMetadata | null>(null);
+  const lastSnippetIdxForMetaRef = useRef<number>(-1);
 
-  // Reset note scoring states when snippet changes
+  // Reset tick scoring states when snippet changes
   useEffect(() => {
-    medleyNoteScoringStatesRef.current.clear();
+    medleyTickScoringStatesRef.current.clear();
     for (const p of playersRef.current) {
-      medleyNoteScoringStatesRef.current.set(p.id, createMedleyNoteScoringState());
+      medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
     }
+    snippetScoringMetaRef.current = null;
   }, [currentSnippetIdx]);
 
   // ── Multi-pitch detection (one detector per player) ──
@@ -315,32 +319,13 @@ export function useMedleyGame({
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
 
-  // ── Finalize pending note scores for all active players (call at snippet end) ──
-  const finalizeSnippetScores = useCallback((activeIds: string[]) => {
-    for (const pid of activeIds) {
-      const noteState = medleyNoteScoringStatesRef.current.get(pid);
-      if (!noteState) continue;
-      const pendingPoints = finalizeAllMedleyNotes(noteState);
-      if (pendingPoints > 0) {
-        const pIdx = playersRef.current.findIndex(p => p.id === pid);
-        if (pIdx !== -1) {
-          const p = playersRef.current[pIdx];
-          p.score += pendingPoints;
-          p.notesHit += noteState.awardedNoteStartTimes.size;
-          playersRef.current[pIdx] = { ...p };
-          scoringEventsRef.current.push({
-            playerId: pid,
-            points: pendingPoints,
-            hit: true,
-            golden: false,
-            timestamp: Date.now(),
-          });
-        }
-      }
-    }
+  // ── Finalize is no longer needed with tick-based scoring (points are awarded per tick). ──
+  // Kept as a no-op for backward compat with callers.
+  const finalizeSnippetScores = useCallback((_activeIds: string[]) => {
+    // Tick-based scoring awards points immediately — nothing to finalize at snippet end.
   }, []);
 
-  // ── Score a single player based on THEIR pitch result (note-based: 10,000 pts/note) ──
+  // ── Score a single player based on THEIR pitch result (tick-based: 10,000 total points) ──
   const scorePlayer = useCallback((
     playerId: string,
     pitch: PitchDetectionResult | null,
@@ -359,43 +344,45 @@ export function useMedleyGame({
     if (!currentSnippet) return;
     if (pitch.note == null) return;
 
-    // Throttle scoring to one tick per beat duration (per player)
-    const lastEval = lastEvalTimeRef.current[playerId] ?? 0;
-    if (absTime - lastEval < audio.beatDurationRef.current) return;
-    lastEvalTimeRef.current[playerId] = absTime;
-
-    // Get or create per-player note scoring state
-    let noteState = medleyNoteScoringStatesRef.current.get(playerId);
-    if (!noteState) {
-      noteState = createMedleyNoteScoringState();
-      medleyNoteScoringStatesRef.current.set(playerId, noteState);
+    // Get or create per-player tick scoring state
+    let tickState = medleyTickScoringStatesRef.current.get(playerId);
+    if (!tickState) {
+      tickState = createMedleyTickScoringState();
+      medleyTickScoringStatesRef.current.set(playerId, tickState);
     }
 
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];
 
-    // Note-based scoring: accumulate accuracy samples per note
-    const result = evaluateMedleyNoteScore(
-      pitch.note, absTime, audio.snippetNotes, effectiveDiff, noteState,
+    // Lazy-compute scoring metadata for this snippet (only once per snippet change)
+    if (lastSnippetIdxForMetaRef.current !== currentSnippetIdx && audio.snippetNotes.length > 0) {
+      const beatDuration = audio.beatDurationRef.current || 500;
+      const notesForMeta = audio.snippetNotes.map(n => ({
+        duration: n.duration,
+        isGolden: n.isGolden ?? false,
+      }));
+      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, beatDuration, 'medium', 10000);
+      lastSnippetIdxForMetaRef.current = currentSnippetIdx;
+    }
+
+    // Tick-based scoring: evaluate pitch against active note
+    const beatDuration = audio.beatDurationRef.current || 500;
+    const result = evaluateMedleyTick(
+      pitch.note, absTime, audio.snippetNotes, effectiveDiff, beatDuration, tickState, snippetScoringMetaRef.current,
     );
 
-    // Check if any notes were completed (points > 0 means notes finalized)
-    // This happens automatically when a new note starts (previous note gets finalized)
-    const completedPoints = finalizeAllMedleyNotes(noteState);
-    if (completedPoints > 0) {
-      const prevAwardedCount = noteState.awardedNoteStartTimes.size;
-      // Points were just awarded for completed notes
-      let points = completedPoints;
+    if (result.points > 0) {
+      let points = result.points;
       if (teamBonuses.comebackActiveTeamIdRef.current !== null && p.team === teamBonuses.comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
       p.score += points;
-      // Count newly awarded notes
-      const notesJustCompleted = noteState.awardedNoteStartTimes.size;
-      p.notesHit += notesJustCompleted;
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+
+      // Count a note as "hit" when ticks are hit (using ticksHit as proxy)
+      p.notesHit = tickState.ticksHit;
 
       scoringEventsRef.current.push({
         playerId,
@@ -405,7 +392,7 @@ export function useMedleyGame({
         timestamp: Date.now(),
       });
     } else if (result.hit) {
-      // Still accumulating — just update combo for display
+      // Tick evaluated but no points (shouldn't happen with valid scoringMeta, but handle gracefully)
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
     } else {
