@@ -1,5 +1,5 @@
 // Barrel file for PL translations
-// Auto-generated — imports domain sub-files and merges them
+// Uses deepMerge to combine domain sub-files without losing overlapping keys
 
 import { coreTranslations } from './core';
 import { libraryTranslations } from './library';
@@ -9,14 +9,15 @@ import { partyTranslations } from './party';
 import { medleyTournamentTranslations } from './medleyTournament';
 import { profileTranslations } from './profile';
 import { mobileTranslations } from './mobile';
+import { deepMerge } from '../deep-merge';
 
-export const plTranslations = {
-  ...coreTranslations,
-  ...libraryTranslations,
-  ...gameTranslations,
-  ...settingsTranslations,
-  ...partyTranslations,
-  ...medleyTournamentTranslations,
-  ...profileTranslations,
-  ...mobileTranslations,
-};
+export const plTranslations = [
+  coreTranslations,
+  libraryTranslations,
+  gameTranslations,
+  settingsTranslations,
+  partyTranslations,
+  medleyTournamentTranslations,
+  profileTranslations,
+  mobileTranslations,
+].reduce(deepMerge, {} as Record<string, unknown>);
