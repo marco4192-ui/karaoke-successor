@@ -698,8 +698,6 @@ export function PlayingView({
             visibleNotes={visibleNotes}
             currentTime={currentTime}
             pitchStats={pitchStats ?? { minPitch: 48, maxPitch: 72, pitchRange: 24 }}
-            noteShapeStyle={game.settings.noteShapeStyle}
-            noteDisplayStyle={game.settings.noteDisplayStyle}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             visibleTop={VISIBLE_TOP}
@@ -735,7 +733,6 @@ export function PlayingView({
                   line={currentLyricLine}
                   currentTime={currentTime}
                   playerColor="#22d3ee"
-                  noteDisplayStyle={game.settings.noteDisplayStyle || 'classic'}
                   notePerformance={notePerformance}
                   lyricsSize="small"
                 />

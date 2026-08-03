@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { LyricLine, type GameMode } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
-import { NoteDisplayStyle } from '@/lib/game/note-utils';
+
 
 // ===================== TYPES =====================
 
@@ -15,7 +15,7 @@ export interface SinglePlayerLyricsProps {
   /** Player color for styling */
   playerColor?: string;
   /** Note display style from settings */
-  noteDisplayStyle?: NoteDisplayStyle;
+  noteDisplayStyle?: string;
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */

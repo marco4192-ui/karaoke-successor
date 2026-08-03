@@ -170,8 +170,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
             visibleNotes={g.visibleNotes}
             currentTime={g.currentTime}
             pitchStats={g.pitchStats}
-            noteShapeStyle={g.noteShapeStyle}
-            noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
             singLinePosition={20}
             noteWindow={NOTE_WINDOW}
@@ -188,7 +186,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
             sortedLines={g.sortedLines}
             currentTime={g.currentTime}
             playerColor={g.currentPlayer?.color || PLAYER_COLORS[0]}
-            noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
             gameMode="pass-the-mic"
           />

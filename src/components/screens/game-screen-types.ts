@@ -95,8 +95,6 @@ export interface GameScreenHookReturn {
   showBackgroundVideo: boolean;
   showPitchGuide: boolean;
   useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   hasChallengeNoPitchGuide: boolean;
   activeChallenge: typeof CHALLENGE_MODES[0] | null;
   challengePitchShift: number;

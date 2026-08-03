@@ -3,20 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { LyricLine } from '@/types/game';
 import { StorageKeys, getString } from '@/lib/storage';
-import type { NoteDisplayStyle } from '@/lib/game/note-utils';
 import type { GameMode } from '@/types/game';
 
 // Re-export canonical GameMode type so all consumers use the same union.
 export type GameModeType = GameMode;
 
-// Re-export canonical NoteDisplayStyle so all consumers use the same type.
-export type { NoteDisplayStyle as NoteDisplayStyleType };
+
 
 interface LyricLineDisplayProps {
   line: LyricLine;
   currentTime: number;
   playerColor: string;
-  noteDisplayStyle?: NoteDisplayStyle;
+  noteDisplayStyle?: string;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   gameMode?: GameModeType;
   missingWordsIndices?: number[];
@@ -229,43 +227,7 @@ export function LyricLineDisplay({
         let finalShadowStyle = { ...shadowStyle };
         let fillClipStyle: React.CSSProperties = {};
 
-        // Note: noteDisplayStyle only applies to SUNG notes (past notes)
-        // This shows performance feedback after the note was sung
-        if (noteDisplayStyle === 'fill-level' && isSung) {
-          // Fill-level mode: Show how much of the note was hit correctly
-          const fillLevel = getNoteFillLevel(noteId);
-          if (fillLevel < 1) {
-            fillClipStyle = {
-              background: `linear-gradient(90deg, ${playerColor} ${fillLevel * 100}%, rgba(255,255,255,0.3) ${fillLevel * 100}%)`,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-            };
-          }
-        } else if (noteDisplayStyle === 'color-feedback' && isSung) {
-          // Color-feedback mode: Color based on accuracy (green=perfect, cyan=great, blue=good, orange=ok, red=miss)
-          const samples = notePerformance.get(noteId) || [];
-          if (samples.length > 0) {
-            const avgAccuracy = samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
-            if (avgAccuracy > 0.9) finalTextClass = 'text-green-400';
-            else if (avgAccuracy > 0.7) finalTextClass = 'text-cyan-400';
-            else if (avgAccuracy > 0.5) finalTextClass = 'text-blue-400';
-            else if (avgAccuracy > 0.3) finalTextClass = 'text-orange-400';
-            else finalTextClass = 'text-red-400';
-          }
-        } else if (noteDisplayStyle === 'glow-intensity' && isSung) {
-          // Glow-intensity mode: Glow intensity based on accuracy
-          const samples = notePerformance.get(noteId) || [];
-          if (samples.length > 0) {
-            const avgAccuracy = samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
-            const intensity = avgAccuracy * 50;
-            const glowColor = avgAccuracy > 0.7 ? '34, 197, 94' : avgAccuracy > 0.4 ? '34, 211, 238' : '239, 68, 68';
-            finalShadowStyle = {
-              ...shadowStyle,
-              textShadow: `0 0 ${intensity}px rgba(${glowColor}, ${avgAccuracy}), 0 0 ${intensity * 2}px rgba(${glowColor}, ${avgAccuracy * 0.5})`,
-            };
-          }
-        }
+
 
         // Render the lyric text exactly as stored (spaces preserved by whiteSpace: 'pre-wrap')
         // Handle hyphenated syllables: if lyric ends with hyphen, it's a syllable break

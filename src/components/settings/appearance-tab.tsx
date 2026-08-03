@@ -13,10 +13,6 @@ interface AppearanceTabProps {
   setUseAnimatedBg: (_value: boolean) => void;
   currentThemeId: string;
   handleThemeChange: (_theme: Theme) => void;
-  noteDisplayStyle: string;
-  setNoteDisplayStyle: (_value: string) => void;
-  noteShapeStyle: string;
-  setNoteShapeStyle: (_value: string) => void;
   lyricsStyle: string;
   setLyricsStyle: (_value: string) => void;
   lyricsSize: string;
@@ -34,10 +30,6 @@ export function AppearanceTab({
   setUseAnimatedBg,
   currentThemeId,
   handleThemeChange,
-  noteDisplayStyle,
-  setNoteDisplayStyle,
-  noteShapeStyle,
-  setNoteShapeStyle,
   lyricsStyle,
   setLyricsStyle,
   lyricsSize,
@@ -194,69 +186,6 @@ export function AppearanceTab({
             </div>
           </div>
 
-          {/* Note Display Style */}
-          <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
-            <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteDisplay')} {isLowPerf && <span>({tx('settingsGraphicSound.lowPerfNote')})</span>}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'classic', name: tx('settingsGraphicSound.noteStyleClassic'), icon: '➡️', desc: tx('settingsGraphicSound.noteStyleUltraStar') },
-                { id: 'fill-level', name: tx('settingsGraphicSound.noteStyleFill'), icon: '📊', desc: tx('settingsGraphicSound.noteStyleGaps') },
-                { id: 'color-feedback', name: tx('settingsGraphicSound.noteStyleColor'), icon: '🎨', desc: tx('settingsGraphicSound.noteStyleColorDesc') },
-                { id: 'glow-intensity', name: tx('settingsGraphicSound.noteStyleGlow'), icon: '✨', desc: tx('settingsGraphicSound.noteStyleGlowDesc') },
-                { id: 'hit-fill', name: tx('settingsGraphicSound.noteStyleHitFill'), icon: '🥊', desc: tx('settingsGraphicSound.noteStyleHitFillDesc') },
-                { id: 'trail-effect', name: tx('settingsGraphicSound.noteStyleTrail'), icon: '🌌', desc: tx('settingsGraphicSound.noteStyleTrailDesc') },
-                { id: 'retro-bars', name: tx('settingsGraphicSound.noteStyleRetroBars'), icon: '🕹️', desc: tx('settingsGraphicSound.noteStyleRetroBarsDesc') },
-                { id: 'particle-fade', name: tx('settingsGraphicSound.noteStyleParticleFade'), icon: '💫', desc: tx('settingsGraphicSound.noteStyleParticleFadeDesc') },
-              ].map((style) => (
-                <button
-                  key={style.id}
-                  type="button"
-                  onClick={() => { setNoteDisplayStyle(style.id); saveSetting(StorageKeys.NOTE_STYLE, style.id); }}
-                  className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
-                    noteDisplayStyle === style.id
-                      ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
-                  }`}
-                >
-                  <span className="text-lg">{style.icon}</span>
-                  <span className="font-medium">{style.name}</span>
-                  <span className="text-xs theme-adaptive-text-secondary">{style.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Note Shape Style */}
-          <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
-            <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteShape')}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'rounded', name: tx('settingsGraphicSound.shapeRounded'), icon: '🔵', desc: tx('settingsGraphicSound.shapeRectangle') },
-                { id: 'sharp', name: tx('settingsGraphicSound.shapeAngular'), icon: '🔷', desc: tx('settingsGraphicSound.shapeAngularDesc') },
-                { id: 'pill', name: tx('settingsGraphicSound.shapePill'), icon: '💊', desc: tx('settingsGraphicSound.shapePillDesc') },
-                { id: 'music-note', name: tx('settingsGraphicSound.shapeMusicNote'), icon: '♪', desc: tx('settingsGraphicSound.shapeMusicNoteDesc') },
-                { id: 'star', name: tx('settingsGraphicSound.shapeStar'), icon: '⭐', desc: tx('settingsGraphicSound.shapeStarDesc') },
-                { id: 'circle', name: tx('settingsGraphicSound.shapeCircle'), icon: '⭕', desc: tx('settingsGraphicSound.shapeCircleDesc') },
-                { id: 'hexagon', name: tx('settingsGraphicSound.shapeHexagon'), icon: '⬡', desc: tx('settingsGraphicSound.shapeHexagonDesc') },
-                { id: 'triangle', name: tx('settingsGraphicSound.shapeTriangle'), icon: '◀', desc: tx('settingsGraphicSound.shapeTriangleDesc') },
-              ].map((shape) => (
-                <button
-                  key={shape.id}
-                  type="button"
-                  onClick={() => { setNoteShapeStyle(shape.id); saveSetting(StorageKeys.NOTE_SHAPE, shape.id); }}
-                  className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
-                    noteShapeStyle === shape.id
-                      ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
-                  }`}
-                >
-                  <span className="text-lg">{shape.icon}</span>
-                  <span className="font-medium">{shape.name}</span>
-                  <span className="text-xs theme-adaptive-text-secondary">{shape.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </CardContent>
       </Card>
 

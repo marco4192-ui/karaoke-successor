@@ -203,8 +203,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showBackgroundVideo,
     showPitchGuide,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     performanceMode,
   } = useGameSettings();
 
@@ -639,8 +637,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showBackgroundVideo,
     showPitchGuide,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     hasChallengeNoPitchGuide,
     activeChallenge,
     challengeTimeLimit,

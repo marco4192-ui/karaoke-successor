@@ -63,8 +63,6 @@ interface CptmGameHookReturn {
   // Settings
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   safeSettings: CptmSettings;
 
   // Series
@@ -132,8 +130,6 @@ export function useCptmGameLogic({
   const {
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
   } = useGameSettings();
 
   // ── Playback state ──
@@ -571,8 +567,6 @@ export function useCptmGameLogic({
     // Settings
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     safeSettings,
 
     // Series

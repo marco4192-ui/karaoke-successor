@@ -80,8 +80,6 @@ interface PtmGameHookReturn {
   // Settings
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   safeSettings: PassTheMicSettings;
 
   // Transition
@@ -150,8 +148,6 @@ export function usePtmGameLogic({
   const {
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
   } = useGameSettings();
 
   // ── YouTube handling ──
@@ -751,8 +747,6 @@ export function usePtmGameLogic({
     // Settings
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     safeSettings,
 
     // Transition

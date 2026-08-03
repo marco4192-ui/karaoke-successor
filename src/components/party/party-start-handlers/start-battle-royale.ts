@@ -8,7 +8,7 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     songSelection?: string; noRepeatProtection?: boolean; grandFinaleBestOf?: 1 | 3 | 5;
     bountyEnabled?: boolean; bountyMultiplier?: number; escalatingDifficulty?: boolean;
     shrinkingTimer?: boolean; shrinkFactor?: number; minRoundDuration?: number;
-    noteShapeStyle?: string; noteDisplayStyle?: string; showNoteHighway?: boolean;
+    showNoteHighway?: boolean;
     showVideoBackground?: boolean; countdownDuration?: number;
   };
   // Battle Royale allows max 4 microphone players + 20 companion players.
@@ -41,8 +41,6 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     shrinkingTimer: s.shrinkingTimer ?? false,
     shrinkFactor: s.shrinkFactor ?? 5,
     minRoundDuration: s.minRoundDuration ?? 30,
-    noteShapeStyle: (s.noteShapeStyle as 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle') ?? 'rounded',
-    noteDisplayStyle: (s.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'trail-effect' | 'retro-bars' | 'particle-fade') ?? 'classic',
     showNoteHighway: s.showNoteHighway ?? true,
     showVideoBackground: s.showVideoBackground ?? true,
     countdownDuration: s.countdownDuration ?? 3,

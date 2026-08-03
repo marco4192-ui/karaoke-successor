@@ -217,8 +217,6 @@ export function MedleyPlayingUI({
             visibleNotes={visibleNotes}
             currentTime={absoluteTime}
             pitchStats={pitchStats}
-            noteShapeStyle="rounded"
-            noteDisplayStyle="classic"
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             playerColor="#a855f7"
