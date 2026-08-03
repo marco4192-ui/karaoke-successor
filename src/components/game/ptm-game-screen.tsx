@@ -170,7 +170,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
             visibleNotes={g.visibleNotes}
             currentTime={g.currentTime}
             pitchStats={g.pitchStats}
-            detectedPitch={g.smoothedPitch}
             noteShapeStyle={g.noteShapeStyle}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}

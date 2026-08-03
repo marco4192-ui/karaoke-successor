@@ -31,10 +31,6 @@ export interface DuetNoteHighwayProps {
   p2PitchStats: PitchStats;
   /** Current game time in milliseconds */
   currentTime: number;
-  /** P1 detected pitch (MIDI note number) */
-  p1DetectedPitch: number | null;
-  /** P2 detected pitch (MIDI note number) */
-  p2DetectedPitch: number | null;
   /** P1 score and stats */
   p1State: Player;
   /** P2 score and stats */
@@ -52,9 +48,9 @@ export interface DuetNoteHighwayProps {
   /** Time window for note display (milliseconds) */
   noteWindow?: number;
   /** P1 note performance for visual display (fill-level, color-feedback, etc.) */
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
   /** P2 note performance — separate map so P1 hits don't bleed into P2's highway */
-  p2NotePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  p2NotePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
   /** Game mode */
   gameMode?: GameMode;
   /** Missing words indices for missing-words mode */
@@ -184,7 +180,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   currentTime: number;
   playerColor: string;
   noteDisplayStyle?: NoteDisplayStyle;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
   gameMode?: GameMode;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
@@ -295,8 +291,6 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
   p1PitchStats,
   p2PitchStats,
   currentTime,
-  p1DetectedPitch,
-  p2DetectedPitch,
   p1State,
   p2State,
   noteShapeStyle,
@@ -324,7 +318,6 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
           visibleNotes={p1VisibleNotes}
           currentTime={currentTime}
           pitchStats={p1PitchStats}
-          detectedPitch={p1DetectedPitch}
           noteShapeStyle={noteShapeStyle}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
@@ -363,7 +356,6 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
           visibleNotes={p2VisibleNotes}
           currentTime={currentTime}
           pitchStats={p2PitchStats}
-          detectedPitch={p2DetectedPitch}
           noteShapeStyle={noteShapeStyle}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={p2NotePerformance}

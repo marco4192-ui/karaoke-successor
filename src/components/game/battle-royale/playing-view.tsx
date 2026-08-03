@@ -87,13 +87,12 @@ interface PlayingViewProps {
   // New props
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  detectedPitch: number | null;
   songProgress: number;
   countdown: number;
   // Multi-pitch detection
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
   eliminationPhase?: null | 'eliminating' | 'survivor-flash';
 }
 
@@ -116,7 +115,6 @@ export function PlayingView({
   bountyMultiplier,
   pitchStats,
   visibleNotes,
-  detectedPitch,
   songProgress,
   countdown,
   playerPitchMap,
@@ -700,7 +698,6 @@ export function PlayingView({
             visibleNotes={visibleNotes}
             currentTime={currentTime}
             pitchStats={pitchStats ?? { minPitch: 48, maxPitch: 72, pitchRange: 24 }}
-            detectedPitch={detectedPitch}
             noteShapeStyle={game.settings.noteShapeStyle}
             noteDisplayStyle={game.settings.noteDisplayStyle}
             singLinePosition={SING_LINE_POSITION}

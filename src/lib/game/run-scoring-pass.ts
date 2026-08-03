@@ -68,6 +68,7 @@ export function runScoringPass(
   let activeNoteIsGolden = false;
   let lastTickAccuracy = 0;
   let lastTickHit = false;
+  let lastTickSungPitch = detectedNote;
 
   // Clamp index to array bounds
   if (searchStartRef.current >= notesToCheck.length) {
@@ -124,6 +125,7 @@ export function runScoringPass(
         activeNoteIsGolden = note.isGolden;
         lastTickAccuracy = tickResult.accuracy;
         lastTickHit = tickResult.isHit;
+        lastTickSungPitch = detectedNote;
 
         if (tickResult.isHit) {
           noteProgress.ticksHit++;
@@ -247,5 +249,6 @@ export function runScoringPass(
     activeNoteIsGolden,
     lastTickAccuracy,
     lastTickHit,
+    lastTickSungPitch,
   };
 }

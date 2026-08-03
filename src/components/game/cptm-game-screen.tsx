@@ -222,7 +222,6 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             visibleNotes={g.visibleNotes}
             currentTime={g.currentTime}
             pitchStats={{ minPitch: 40, maxPitch: 80, pitchRange: 40 }}
-            detectedPitch={null}
             noteShapeStyle={g.noteShapeStyle}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}

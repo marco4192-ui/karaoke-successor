@@ -322,12 +322,16 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         )}
       </div>
 
-      {/* HUD Controls (top-right) — only during playing */}
+      {/* HUD Controls — PauseButton top-left, FullscreenButton top-right (PTM layout) */}
       {phase === 'playing' && (
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
-          <PauseButton isPlaying={isPlaying} onTogglePause={handleTogglePause} />
-          <FullscreenButton />
-        </div>
+        <>
+          <div className="absolute top-4 left-4 z-30 pointer-events-auto">
+            <PauseButton isPlaying={isPlaying} onTogglePause={handleTogglePause} />
+          </div>
+          <div className="absolute top-4 right-4 z-30 pointer-events-auto">
+            <FullscreenButton />
+          </div>
+        </>
       )}
 
       {/* ── ROUND RESULTS ── */}

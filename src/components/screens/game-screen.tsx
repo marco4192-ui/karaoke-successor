@@ -230,8 +230,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             p1PitchStats={g.p1PitchStats}
             p2PitchStats={g.p2PitchStats}
             currentTime={g.gameState.currentTime}
-            p1DetectedPitch={g.smoothedPitch}
-            p2DetectedPitch={g.p2DetectedPitch}
             p1State={g.gameState.players[0]}
             p2State={g.p2State}
             p2Player={g.gameState.players[1]}
@@ -256,7 +254,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             visibleNotes={g.visibleNotes}
             currentTime={g.gameState.currentTime}
             pitchStats={g.pitchStats}
-            detectedPitch={g.smoothedPitch}
             noteShapeStyle={g.noteShapeStyle}
             noteDisplayStyle={g.noteDisplayStyle as NoteDisplayStyle}
             notePerformance={g.notePerformance}

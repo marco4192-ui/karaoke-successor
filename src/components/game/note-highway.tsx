@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
-import { MicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== HELPERS =====================
@@ -30,8 +29,6 @@ export interface NoteHighwayProps {
   currentTime: number;
   /** Pitch statistics for vertical positioning */
   pitchStats: PitchStats;
-  /** Currently detected pitch (MIDI note number) */
-  detectedPitch: number | null;
   /** Note shape style from settings */
   noteShapeStyle: NoteShapeStyle;
   /** Note display style from settings */
@@ -138,7 +135,7 @@ const NoteBlock = React.memo(function NoteBlock({
   noteWidthExtra?: number;
   playerColor?: string;
   noteDisplayStyle?: NoteDisplayStyle;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -203,7 +200,12 @@ const NoteBlock = React.memo(function NoteBlock({
     accuracy,
     note.isGolden || false,
     note.isBonus || false,
-    notePerfSamples
+    notePerfSamples,
+    // Additional params for tick-fill-singstar deviation dots
+    note.pitch,
+    pitchStats,
+    visibleTop,
+    visibleRange,
   );
 
   return (
@@ -229,56 +231,6 @@ const NoteBlock = React.memo(function NoteBlock({
       }}
     >
       {displayStyle.overlayElement}
-    </div>
-  );
-});
-
-/**
- * Pitch indicator showing singer's current pitch
- */
-const PitchIndicator = React.memo(function PitchIndicator({
-  detectedPitch,
-  pitchStats,
-  singLinePosition,
-  visibleTop,
-  visibleRange,
-  playerColor = '#22d3d3ee',
-}: {
-  detectedPitch: number | null;
-  pitchStats: PitchStats;
-  singLinePosition: number;
-  visibleTop: number;
-  visibleRange: number;
-  playerColor?: string;
-}) {
-  if (detectedPitch === null) return null;
-
-  const pr = pitchStats.pitchRange || 1;
-  // DO-NOT-CHANGE: Round pitchY to 2 decimal places for same sub-pixel
-  // stability reason as NoteBlock positions (see NoteBlock comment).
-  const pitchY = Math.round((visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
-
-  return (
-    <div
-      className="absolute z-30 w-8 h-8 rounded-full shadow-lg flex items-center justify-center"
-      style={{
-        left: `${singLinePosition - 1.5}%`,
-        top: `${pitchY}%`,
-        transform: 'translateY(-50%) translateZ(0)',
-        // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
-        willChange: 'top',
-        // Reduced from 50ms to 20ms — the EMA smoothing in useSmoothedPitch
-        // already handles jitter; the CSS transition only needs to hide
-        // sub-frame rounding jumps.  50ms added perceptible lag on note
-        // transitions that made the indicator feel disconnected.
-        transition: 'top 20ms linear',
-        background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
-        boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
-        outline: '2px solid',
-        outlineColor: withAlpha(playerColor, 0.5),
-      }}
-    >
-      <MicIcon className="w-4 h-4 text-white" />
     </div>
   );
 });
@@ -313,7 +265,6 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleNotes,
   currentTime,
   pitchStats,
-  detectedPitch,
   noteShapeStyle,
   noteDisplayStyle = 'classic',
   notePerformance,
@@ -370,15 +321,6 @@ export const NoteHighway = React.memo(function NoteHighway({
       );
       })}
 
-      {/* Pitch indicator — hidden in blind sections */}
-      {!isBlindSection && <PitchIndicator
-        detectedPitch={detectedPitch}
-        pitchStats={pitchStats}
-        singLinePosition={singLinePosition}
-        visibleTop={visibleTop}
-        visibleRange={visibleRange}
-        playerColor={effectiveColor}
-      />}
       {/* Blind indicator — subtle pulse when in blind section */}
       {isBlindSection && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
