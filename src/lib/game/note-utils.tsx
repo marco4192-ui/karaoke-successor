@@ -5,7 +5,7 @@ import { Note, LyricLine } from '@/types/game';
 export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
 
 // Note display style type
-export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'trail-effect' | 'retro-bars' | 'particle-fade';
+export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'tick-fill-singstar' | 'trail-effect' | 'retro-bars' | 'particle-fade';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -134,7 +134,11 @@ export function getNoteDisplayStyleClasses(
   accuracy: number = 1, // 0-1, how accurate the player is
   isGolden: boolean = false,
   isBonus: boolean = false,
-  performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean }>
+  performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>,
+  targetPitch?: number,
+  pitchStats?: PitchStats,
+  visibleTop?: number,
+  visibleRange?: number,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -429,6 +433,177 @@ export function getNoteDisplayStyleClasses(
             ))}
           </div>
         ) : null
+      };
+    }
+
+    case 'tick-fill-singstar': {
+      // Singstar-style tick fill: Each visual tick is a segment that fills
+      // when hit (color-coded by accuracy) or stays empty when missed.
+      // Missed ticks with a recorded sungPitch show a small indicator dot
+      // offset vertically to show WHERE the singer actually was.
+      //
+      // With high-rate visual sampling (~50ms intervals), we now get
+      // 8-20 samples per typical note, giving smooth real-time filling.
+      const samples = performanceSamples || [];
+
+      // Segment count based on note duration (50ms per tick), clamped to
+      // a readable range. This ensures consistent segment density across
+      // different note lengths, independent of how many samples have arrived.
+      // NOTE_DURATION is NOT directly available here, so we derive it from
+      // the number of 50ms-interval samples. With the new visual sampler,
+      // samples arrive at ~50ms intervals, so samples.length * 50 ≈ duration.
+      // We use the larger of: actual sample count, or a minimum based on
+      // a reasonable assumption (4 segments minimum for any visible note).
+      const segmentCount = Math.max(4, Math.min(24, samples.length));
+
+      const hitColorPerfect = isGolden ? '#fbbf24' : isBonus ? '#f472b6' : '#34d399';
+      const hitColorGreat = isGolden ? '#f59e0b' : isBonus ? '#ec4899' : '#22d3ee';
+      const hitColorGood = isGolden ? '#d97706' : isBonus ? '#db2777' : '#3b82f6';
+      const hitColorOkay = isGolden ? '#92400e' : isBonus ? '#9d174d' : '#6366f1';
+      const missColor = 'rgba(255, 255, 255, 0.05)';
+      const missBorder = 'rgba(255, 255, 255, 0.10)';
+
+      // Map samples to segments: distribute samples evenly across segments.
+      // With high-rate sampling, we often have more samples than segments.
+      // Each segment aggregates the samples that fall within its time slice.
+      const segData: Array<{
+        hit: boolean;
+        accuracy: number;
+        displayType: string;
+        sungPitch: number | null;
+      }> = [];
+      for (let i = 0; i < segmentCount; i++) {
+        // Calculate which samples belong to this segment
+        const segStart = (i / segmentCount) * samples.length;
+        const segEnd = ((i + 1) / segmentCount) * samples.length;
+        const segSamples = samples.slice(Math.floor(segStart), Math.ceil(segEnd));
+
+        if (segSamples.length === 0) {
+          segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: null });
+          continue;
+        }
+
+        // Aggregate: if ANY sample in this segment was a hit, the segment shows as hit.
+        // Use the best accuracy in the segment for the color.
+        // For missed segments, record the last sung pitch for deviation dots.
+        const bestHit = segSamples.reduce((best, s) => s.hit && s.accuracy > best.accuracy ? s : best, segSamples[0]);
+        const anyHit = segSamples.some(s => s.hit);
+        const lastSung = segSamples[segSamples.length - 1];
+
+        if (anyHit) {
+          let dt: string = 'Okay';
+          if (bestHit.accuracy > 0.95) dt = 'Perfect';
+          else if (bestHit.accuracy > 0.8) dt = 'Great';
+          else if (bestHit.accuracy > 0.6) dt = 'Good';
+          segData.push({ hit: true, accuracy: bestHit.accuracy, displayType: dt, sungPitch: null });
+        } else {
+          segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: lastSung.sungPitch ?? null });
+        }
+      }
+
+      const hitRatio = segData.filter(s => s.hit).length / segData.length;
+      const hasHits = hitRatio > 0;
+
+      // Calculate deviation dots for missed segments that have a recorded sung pitch.
+      // These dots appear OUTSIDE the note at the actual pitch height the singer
+      // produced, showing how far off they were.
+      const deviationDots: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
+      if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
+        const pr = pitchStats.pitchRange || 1;
+        for (let si = 0; si < segData.length; si++) {
+          const seg = segData[si];
+          if (!seg.hit && seg.sungPitch !== null) {
+            // Octave-wrapped difference (same as evaluateTick uses)
+            let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
+            if (rawDiff > 6) rawDiff = 12 - rawDiff;
+            // Convert semitone diff to pixel offset.
+            // Each semitone spans (visibleRange / pr) percent of the container.
+            const pxPerSemitone = (visibleRange / pr) * 0.5; // 0.5 = scale down for subtlety
+            const yDiff = (seg.sungPitch > targetPitch ? -1 : 1) * rawDiff * pxPerSemitone;
+            // Clamp to prevent extreme offsets
+            const clampedY = Math.max(-32, Math.min(32, yDiff));
+            // Color: red if far off (>2 st), orange if moderate (>1 st), yellow if close
+            const color = rawDiff > 2
+              ? 'rgba(239, 68, 68, 0.85)'
+              : rawDiff > 1
+                ? 'rgba(249, 115, 22, 0.8)'
+                : 'rgba(234, 179, 8, 0.75)';
+            deviationDots.push({ segmentIndex: si, yOffset: clampedY, color });
+          }
+        }
+      }
+
+      // Compute glow based on overall hit ratio
+      const glowColor = isGolden ? 'rgba(251, 191, 36,' : isBonus ? 'rgba(236, 72, 153,' : 'rgba(34, 211, 238,';
+
+      return {
+        additionalClasses: 'overflow-visible',
+        inlineStyle: {
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.12)',
+          border: '1.5px solid rgba(255, 255, 255, 0.16)',
+          boxShadow: hasHits
+            ? `0 0 ${4 + hitRatio * 10}px ${glowColor}${hitRatio * 0.35}), inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18)`
+            : 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
+        },
+        overlayElement: (
+          <>
+            {/* Tick segments */}
+            <div className="absolute inset-y-0 left-0 right-0 flex" style={{ gap: '1px', padding: '2px 3px' }}>
+              {segData.map((seg, idx) => {
+                let bgColor: string;
+                if (!seg.hit) {
+                  bgColor = missColor;
+                } else {
+                  switch (seg.displayType) {
+                    case 'Perfect': bgColor = hitColorPerfect; break;
+                    case 'Great': bgColor = hitColorGreat; break;
+                    case 'Good': bgColor = hitColorGood; break;
+                    default: bgColor = hitColorOkay;
+                  }
+                }
+                const borderCol = seg.hit ? 'transparent' : missBorder;
+                return (
+                  <div
+                    key={idx}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      backgroundColor: bgColor,
+                      border: `1px solid ${borderCol}`,
+                      transition: 'background-color 40ms linear, border-color 40ms linear',
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {/* Deviation dots for missed ticks — shows where the singer actually was */}
+            {deviationDots.length > 0 && (
+              <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
+                {deviationDots.map((dot) => {
+                  const segWidth = 100 / segData.length;
+                  const centerX = segWidth * dot.segmentIndex + segWidth / 2;
+                  return (
+                    <div
+                      key={`dot-${dot.segmentIndex}`}
+                      className="absolute rounded-full"
+                      style={{
+                        left: `${centerX}%`,
+                        top: '50%',
+                        width: '5px',
+                        height: '5px',
+                        transform: `translate(-50%, calc(-50% + ${dot.yOffset}px))`,
+                        backgroundColor: dot.color,
+                        boxShadow: `0 0 3px ${dot.color}`,
+                        opacity: 0.85,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ),
       };
     }
 

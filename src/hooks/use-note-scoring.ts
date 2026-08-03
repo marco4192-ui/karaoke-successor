@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DIFFICULTY_SETTINGS, Note, LyricLine, Player } from '@/types/game';
-import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState } from '@/lib/game/scoring';
+import { DIFFICULTY_SETTINGS, Note, LyricLine, Player, PitchDetectionResult } from '@/types/game';
+import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState, evaluateTick } from '@/lib/game/scoring';
 import { runScoringPass, BlindScoringState } from '@/lib/game/run-scoring-pass';
 import {
   MAX_SAMPLES_PER_NOTE,
@@ -99,6 +99,175 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
+  // ── Visual-only high-rate tick sampling for Singstar-style display ──
+  // This runs every frame from the game loop (unlike beat-based scoring)
+  // and records BOTH hits and misses for smooth real-time note filling.
+  // Samples are throttled to ~50ms intervals to match typical visual tick
+  // granularity without excessive memory use.
+  const lastVisualSampleTimeRef = useRef(0);
+  // Vibrato filter: track the last sung pitch to suppress tiny fluctuations
+  // (typical vibrato is ±0.5-1 semitone at 5-8 Hz). We ignore deviations
+  // smaller than VIBRATO_THRESHOLD from the last *accepted* sample.
+  const lastVisualSungPitchRef = useRef<number | null>(null);
+  const VISUAL_SAMPLE_INTERVAL = 50; // ms between visual samples
+  const VIBRATO_THRESHOLD = 0.5; // semitones — suppress smaller deviations
+
+  // Timing data ref for visual sampling (avoids stale closure)
+  const timingDataRef = useRef(timingData);
+  useEffect(() => { timingDataRef.current = timingData; }, [timingData]);
+
+  /**
+   * High-rate visual tick sampler for Singstar-style note filling.
+   * Called EVERY frame from the game loop — even when no pitch is detected.
+   * Records a miss sample for the active note so the display shows gaps.
+   *
+   * This is SEPARATE from scoring (which uses beat-based ticks).
+   * Only writes to notePerformanceRef — no score/combo/state changes.
+   */
+  const sampleVisualTicks = useCallback(
+    (currentTime: number, pitch: PitchDetectionResult | null) => {
+      const now = performance.now();
+      if (now - lastVisualSampleTimeRef.current < VISUAL_SAMPLE_INTERVAL) return;
+      lastVisualSampleTimeRef.current = now;
+
+      const td = timingDataRef.current;
+      if (!td) return;
+
+      const notesToCheck = isDuetMode && td.p1Notes ? td.p1Notes : td.allNotes;
+      if (!notesToCheck || notesToCheck.length === 0) return;
+
+      // Find the currently active note (note that contains currentTime)
+      const startIdx = Math.max(0, lastProcessedNoteRef.current - 1);
+      let activeNote: (typeof notesToCheck)[0] | null = null;
+      let activeNoteId: string | null = null;
+
+      for (let i = startIdx; i < notesToCheck.length; i++) {
+        const note = notesToCheck[i];
+        const noteEnd = note.startTime + note.duration;
+        if (currentTime >= note.startTime && currentTime <= noteEnd) {
+          activeNote = note;
+          activeNoteId = note.id || `note-${note.startTime}`;
+          break;
+        }
+        if (note.startTime > currentTime) break; // Notes are sorted by startTime
+      }
+
+      if (!activeNote || !activeNoteId) return;
+
+      // Determine sung pitch and evaluate
+      const sungPitch = pitch?.note ?? null;
+      const hasPitch = sungPitch !== null && pitch !== null && pitch.frequency !== null;
+
+      let accuracy = 0;
+      let hit = false;
+
+      if (hasPitch) {
+        // Vibrato filter: if the sung pitch is very close to the last accepted
+        // pitch (within VIBRATO_THRESHOLD semitones), reuse the last result.
+        // This prevents rapid hit/miss flickering during vibrato.
+        if (lastVisualSungPitchRef.current !== null) {
+          const vibratoDelta = Math.abs(sungPitch - lastVisualSungPitchRef.current);
+          // Use octave-wrapped difference (same pitch class = 0 diff)
+          let wrappedDelta = vibratoDelta % 12;
+          if (wrappedDelta > 6) wrappedDelta = 12 - wrappedDelta;
+          if (wrappedDelta < VIBRATO_THRESHOLD) {
+            // Vibrato — skip this sample entirely to avoid jitter
+            return;
+          }
+        }
+        lastVisualSungPitchRef.current = sungPitch;
+
+        const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+        accuracy = tick.accuracy;
+        hit = tick.isHit;
+      } else {
+        // No pitch detected — record as miss with null sungPitch
+        lastVisualSungPitchRef.current = null;
+      }
+
+      // Record sample
+      const perfRef = notePerformanceRef.current;
+      let samples = perfRef.get(activeNoteId);
+      if (!samples) {
+        samples = [];
+        perfRef.set(activeNoteId, samples);
+      }
+      samples.push({ time: currentTime, accuracy, hit, sungPitch });
+      if (samples.length > MAX_SAMPLES_PER_NOTE) {
+        samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
+        perfRef.set(activeNoteId, samples);
+      }
+
+      // Throttled state sync (same 16ms throttle as scoring)
+      if (now - lastNotePerfSyncRef.current >= 16) {
+        lastNotePerfSyncRef.current = now;
+        setNotePerformance(notePerformanceRef.current);
+      }
+    },
+    [difficulty, isDuetMode, setNotePerformance]
+  );
+
+  // P2 visual tick sampler (duet mode)
+  const sampleP2VisualTicks = useCallback(
+    (currentTime: number, pitch: PitchDetectionResult | null) => {
+      if (!isDuetMode) return;
+
+      const now = performance.now();
+      if (now - lastP2NotePerfSyncRef.current < VISUAL_SAMPLE_INTERVAL) return;
+      // We reuse a simple time-based throttle for P2 visual samples
+      // (lastP2NotePerfSyncRef is normally for state sync, but serves double duty here)
+
+      const td = timingDataRef.current;
+      if (!td || !td.p2Notes || td.p2Notes.length === 0) return;
+
+      // Find active P2 note
+      let activeNote: (typeof td.p2Notes)[0] | null = null;
+      let activeNoteId: string | null = null;
+      for (let i = 0; i < td.p2Notes.length; i++) {
+        const note = td.p2Notes[i];
+        const noteEnd = note.startTime + note.duration;
+        if (currentTime >= note.startTime && currentTime <= noteEnd) {
+          activeNote = note;
+          activeNoteId = note.id || `p2-note-${note.startTime}`;
+          break;
+        }
+        if (note.startTime > currentTime) break;
+      }
+
+      if (!activeNote || !activeNoteId) return;
+
+      const sungPitch = pitch?.note ?? null;
+      const hasPitch = sungPitch !== null && pitch !== null && pitch.frequency !== null;
+
+      let accuracy = 0;
+      let hit = false;
+      if (hasPitch) {
+        const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+        accuracy = tick.accuracy;
+        hit = tick.isHit;
+      }
+
+      const perfRef = p2NotePerformanceRef.current;
+      let samples = perfRef.get(activeNoteId);
+      if (!samples) {
+        samples = [];
+        perfRef.set(activeNoteId, samples);
+      }
+      samples.push({ time: currentTime, accuracy, hit, sungPitch });
+      if (samples.length > MAX_SAMPLES_PER_NOTE) {
+        samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
+        perfRef.set(activeNoteId, samples);
+      }
+
+      const syncNow = performance.now();
+      if (syncNow - lastP2NotePerfSyncRef.current >= 16) {
+        lastP2NotePerfSyncRef.current = syncNow;
+        setP2NotePerformance(p2NotePerformanceRef.current);
+      }
+    },
+    [difficulty, isDuetMode, setP2NotePerformance]
+  );
+
   // Reset scoring state
   const resetScoring = useCallback(() => {
     setScoreEvents([]);
@@ -123,6 +292,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p1BlindLastWasMissRef.current = false;
     p2BlindStreakRef.current = 0;
     p2BlindLastWasMissRef.current = false;
+    // Reset visual sampling
+    lastVisualSampleTimeRef.current = 0;
+    lastVisualSungPitchRef.current = null;
   }, []);
 
   // Generic function to check note hits for any player (P2, P3, P4)
@@ -165,7 +337,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           samples = [];
           perfRef.current.set(result.activeNoteId, samples);
         }
-        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit });
+        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit, sungPitch: result.lastTickSungPitch });
         if (samples.length > MAX_SAMPLES_PER_NOTE) {
           samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
           perfRef.current.set(result.activeNoteId, samples);
@@ -265,7 +437,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           samples = [];
           perfRef.set(result.activeNoteId, samples);
         }
-        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit });
+        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit, sungPitch: result.lastTickSungPitch });
         if (samples.length > MAX_SAMPLES_PER_NOTE) {
           samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
           perfRef.set(result.activeNoteId, samples);
@@ -383,6 +555,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setP2DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     resetScoring,
   };
 }

@@ -341,6 +341,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setP2DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     resetScoring,
     p1PerfectNotesCount,
   } = useNoteScoring({
@@ -490,6 +492,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     resetScoring,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     difficulty: gameState.difficulty,
     gameMode: gameState.gameMode,
     timingOffset: 0,
