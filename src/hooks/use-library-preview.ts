@@ -12,6 +12,9 @@ export function useLibraryPreview() {
   const previewVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   // Track the active Audio object for proper cleanup
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Generation counter to detect stale/cancelled preview operations.
+  // Incremented on every stop so async callbacks can bail out.
+  const previewGenerationRef = useRef(0);
 
   /** Safely dispose of an Audio element (remove src, release resources) */
   const disposeAudio = useCallback((audio: HTMLAudioElement) => {
@@ -34,8 +37,11 @@ export function useLibraryPreview() {
     return 30;
   }, []);
 
-  /** Stop all active preview media */
+  /** Stop all active preview media and invalidate any pending async operations */
   const stopAllMedia = useCallback(() => {
+    // Invalidate any in-flight preview operations so their async callbacks bail out
+    previewGenerationRef.current++;
+
     // Clean up the tracked audio object
     if (activeAudioRef.current) {
       disposeAudio(activeAudioRef.current);
@@ -62,7 +68,14 @@ export function useLibraryPreview() {
       clearTimeout(previewTimeoutRef.current);
     }
 
+    // Capture the current generation so we can detect if this preview
+    // was cancelled while the 500ms delay or async URL restoration runs.
+    const generation = ++previewGenerationRef.current;
+
     previewTimeoutRef.current = setTimeout(async () => {
+      // Bail out if preview was cancelled during the 500ms delay
+      if (generation !== previewGenerationRef.current) return;
+
       // Dispose previous audio to free resources
       if (activeAudioRef.current) {
         disposeAudio(activeAudioRef.current);
@@ -77,6 +90,9 @@ export function useLibraryPreview() {
         } catch { /* use original song */ }
       }
 
+      // Bail out if preview was cancelled during async URL restoration
+      if (generation !== previewGenerationRef.current) return;
+
       const startTime = getPreviewStartTime(songToPlay);
       const duration = getPreviewDuration(songToPlay);
 
@@ -89,25 +105,23 @@ export function useLibraryPreview() {
 
         let hasStartedPlayback = false;
 
-        audio.addEventListener('loadedmetadata', () => {
+        const tryPlay = () => {
+          // Guard: only play if this audio is still the active one and
+          // the preview hasn't been cancelled in the meantime.
+          if (audio !== activeAudioRef.current) {
+            disposeAudio(audio);
+            return;
+          }
           if (hasStartedPlayback) return;
           hasStartedPlayback = true;
           if (startTime > 0 && audio.duration >= startTime) {
             audio.currentTime = startTime;
           }
           audio.play().catch(() => {});
-        }, { once: true });
+        };
 
-        audio.addEventListener('canplaythrough', () => {
-          if (hasStartedPlayback) return;
-          hasStartedPlayback = true;
-          if (audio.paused) {
-            if (startTime > 0 && audio.duration >= startTime) {
-              audio.currentTime = startTime;
-            }
-            audio.play().catch(() => {});
-          }
-        }, { once: true });
+        audio.addEventListener('loadedmetadata', tryPlay, { once: true });
+        audio.addEventListener('canplaythrough', tryPlay, { once: true });
 
         setPreviewAudio(audio);
       }
@@ -122,6 +136,7 @@ export function useLibraryPreview() {
           }
 
           videoEl.addEventListener('loadedmetadata', () => {
+            if (generation !== previewGenerationRef.current) return;
             if (startTime > 0 && videoEl.duration >= startTime) {
               videoEl.currentTime = startTime;
             }
@@ -136,6 +151,9 @@ export function useLibraryPreview() {
           }
         }
       }
+
+      // One last cancellation check before committing state updates
+      if (generation !== previewGenerationRef.current) return;
 
       setPreviewSong(songToPlay);
 
@@ -162,6 +180,8 @@ export function useLibraryPreview() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Invalidate any in-flight async preview operations
+      previewGenerationRef.current++;
       if (previewTimeoutRef.current) {
         clearTimeout(previewTimeoutRef.current);
       }

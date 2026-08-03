@@ -35,6 +35,7 @@ import { groupSongs, getGroupDisplayName } from './library/utils';
 import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
+import { useDebouncedValue } from '@/hooks/use-debounce';
 
 export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEditor }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; onNavigateToEditor?: () => void; }) {
   const { t } = useTranslation();
@@ -71,11 +72,27 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   // Viral charts hook — fetches trending songs from Apple Music, Deezer, iTunes
   const viralCharts = useViralCharts();
   
-  // Settings state with localStorage persistence
-  const [settings, setSettings] = useState<LibrarySettings>({
+  // Default filter settings (used as fallback and for the debounced baseline).
+  const defaultSettings: LibrarySettings = {
     sortBy: 'title', sortOrder: 'asc', filterDifficulty: 'all',
     filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterDuet: false, filterViral: false,
+  };
+
+  // Settings state with localStorage persistence.
+  // Read from localStorage in the initializer to avoid a flash of unfiltered content on mount.
+  const [settings, setSettings] = useState<LibrarySettings>(() => {
+    try {
+      const saved = getItem(StorageKeys.LIBRARY_SETTINGS);
+      if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+    } catch { /* ignore malformed stored settings */ }
+    return defaultSettings;
   });
+
+  // Debounce the settings used for filtering so that clicking special filters
+  // (Duet, Viral, genre, language, year) doesn't cause the song grid to jump
+  // erratically. The filter buttons respond instantly in the UI; the song list
+  // settles after ~800 ms.
+  const debouncedSettings = useDebouncedValue(settings, 800);
   const [startOptions, setStartOptions] = useState<StartOptions>(() => {
     const isPartyMode = initialGameMode && initialGameMode !== 'standard' && initialGameMode !== 'duel' && initialGameMode !== 'duet';
     return {
@@ -149,11 +166,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
     }
   }, [storeDifficulty]);
 
-  useEffect(() => {
-    const saved = getItem(StorageKeys.LIBRARY_SETTINGS);
-    if (saved) try { setSettings(prev => ({ ...prev, ...JSON.parse(saved) })); } catch { /* ignore malformed stored settings */ }
-  }, []);
-  
+  // Persist settings to localStorage (initial values already loaded in the state initializer above)
   useEffect(() => { setJson(StorageKeys.LIBRARY_SETTINGS, settings); }, [settings]);
   
   useEffect(() => {
@@ -169,7 +182,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
 
   // --- Computed values ---
   const { filteredSongs, availableGenres, availableLanguages, availableYears } = useLibraryFilters({
-    loadedSongs, searchQuery, settings, startMode: startOptions.mode,
+    loadedSongs, searchQuery, settings: debouncedSettings, startMode: startOptions.mode,
     viralSongIds: viralCharts.viralSongIds,
   });
   
