@@ -34,6 +34,13 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [needsPlayerSelection, setNeedsPlayerSelection] = useState<string[]>([]);
 
+  // Listen for remote companion queue clear
+  useEffect(() => {
+    const handleRemoteClear = () => { clearQueue(); };
+    window.addEventListener('remote-queue-clear', handleRemoteClear);
+    return () => window.removeEventListener('remote-queue-clear', handleRemoteClear);
+  }, [clearQueue]);
+
   // Load songs library
   useEffect(() => {
     const loadSongs = async () => {

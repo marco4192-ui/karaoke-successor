@@ -54,6 +54,18 @@ export function CharacterScreen() {
   const displayedProfileId = selectedProfileId || activeProfileId;
   const displayedProfile = profiles.find(p => p.id === displayedProfileId);
 
+  // Listen for remote companion profile toggle
+  useEffect(() => {
+    const handleRemoteToggle = (e: Event) => {
+      const { profileId, isActive } = (e as CustomEvent).detail;
+      if (profileId) {
+        updateProfile(profileId, { isActive });
+      }
+    };
+    window.addEventListener('remote-profile-toggle', handleRemoteToggle);
+    return () => window.removeEventListener('remote-profile-toggle', handleRemoteToggle);
+  }, [updateProfile]);
+
   const handleCreate = (
     name: string, avatarUrl: string,
     country: string, privacy: { showOnLeaderboard: boolean; showPhoto: boolean; showCountry: boolean },

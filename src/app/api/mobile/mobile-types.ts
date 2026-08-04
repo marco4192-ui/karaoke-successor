@@ -133,4 +133,5 @@ export interface HostProfile {
   avatar?: string;
   color: string;
   createdAt: number;
+  isActive?: boolean;
 }

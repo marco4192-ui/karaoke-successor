@@ -10,6 +10,7 @@ export interface OpponentProfile {
   avatar?: string;
   color: string;
   connectionCode: string;
+  isActive?: boolean;
 }
 
 interface UseMobileDataOptions {

@@ -463,6 +463,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         avatar: hp.avatar,
         color: hp.color,
         connectionCode: '',
+        isActive: hp.isActive ?? true,
       }));
 
       return Response.json({

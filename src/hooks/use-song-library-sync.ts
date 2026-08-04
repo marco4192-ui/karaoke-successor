@@ -81,6 +81,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       avatar: p.avatar,
       color: p.color,
       createdAt: p.createdAt,
+      isActive: p.isActive ?? true,
     }));
     // Also keep localStorage for any legacy use
     try {

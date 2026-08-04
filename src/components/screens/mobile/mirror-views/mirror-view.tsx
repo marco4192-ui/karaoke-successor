@@ -27,6 +27,7 @@ import { MirrorResultsLite } from './mirror-results-lite';
 import { MirrorJukeboxLite } from './mirror-jukebox-lite';
 import { MirrorAchievementsLite } from './mirror-achievements-lite';
 import { MirrorSetupWaiting } from './mirror-setup-waiting';
+import { MirrorProfileLite } from './mirror-profile-lite';
 
 // ===================== Props-Schnittstelle =====================
 
@@ -232,6 +233,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             onRemoveFromQueue={onRemoveFromQueue}
             onReorderQueue={onReorderQueue}
             {...navBase}
+            {...desktopMirrorBase}
           />
         </div>
       );
@@ -302,6 +304,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             onRemoveFromJukebox={onRemoveFromJukebox}
             onRefreshJukebox={onRefreshJukebox}
             {...navBase}
+            {...desktopMirrorBase}
           />
         </div>
       );
@@ -311,6 +314,19 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
       return (
         <div className="min-h-[calc(100vh-7rem)]">
           <MirrorAchievementsLite {...navBase} />
+        </div>
+      );
+
+    // ---------- Profile-Verwaltung ----------
+    case 'profile':
+      return (
+        <div className="min-h-[calc(100vh-7rem)]">
+          <MirrorProfileLite
+            gameState={gameState}
+            onNavigate={onNavigate}
+            availableProfiles={availableProfiles}
+            {...desktopMirrorBase}
+          />
         </div>
       );
 

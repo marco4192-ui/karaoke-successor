@@ -761,6 +761,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             avatar?: string;
             color: string;
             createdAt: number;
+            isActive?: boolean;
           }>;
           if (Array.isArray(profilesPayload)) {
             mutableState.hostProfiles = profilesPayload;

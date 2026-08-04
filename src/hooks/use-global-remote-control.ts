@@ -349,11 +349,30 @@ export function useGlobalRemoteControl({
         break;
 
       // --- Settings tab navigation from companion accordion ---
+      // --- Profile toggle, queue clear, jukebox clear ---
       default: {
         // Check for settings_tab:<tabId> pattern
         if (cmd.type.startsWith('settings_tab:')) {
           const tabId = cmd.type.slice('settings_tab:'.length);
           window.dispatchEvent(new CustomEvent('remote-settings-tab', { detail: { tab: tabId } }));
+          break;
+        }
+        // Check for profile_toggle:<id>:<0|1> pattern
+        if (cmd.type.startsWith('profile_toggle:')) {
+          const parts = cmd.type.slice('profile_toggle:'.length).split(':');
+          if (parts.length === 2) {
+            window.dispatchEvent(new CustomEvent('remote-profile-toggle', { detail: { profileId: parts[0], isActive: parts[1] === '1' } }));
+          }
+          break;
+        }
+        // Check for clear_queue
+        if (cmd.type === 'clear_queue') {
+          window.dispatchEvent(new CustomEvent('remote-queue-clear', { detail: {} }));
+          break;
+        }
+        // Check for jukebox_clear
+        if (cmd.type === 'jukebox_clear') {
+          window.dispatchEvent(new CustomEvent('remote-jukebox-clear', { detail: {} }));
           break;
         }
       }

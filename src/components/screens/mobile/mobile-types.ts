@@ -28,7 +28,8 @@ export type MirrorScreenId =
   | 'jukebox'
   | 'results'
   | 'party-setup'
-  | 'setup-waiting';  // tournament, medley, blind, etc. setup screens
+  | 'setup-waiting'
+  | 'profile';  // character/profile management
 
 /** Maps desktop Screen → MirrorScreenId */
 export function screenToMirrorId(desktopScreen: string | undefined): MirrorScreenId {
@@ -51,7 +52,7 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     results: 'results',
     party: 'party',
     'party-setup': 'party',
-    profile: 'home',          // profile has no mobile mirror
+    profile: 'profile',        // companion can manage profiles
     import: 'library',       // import redirects to library
     mobile: 'home',          // mobile management screen → home
     editor: 'home',          // editor has no mobile equivalent
