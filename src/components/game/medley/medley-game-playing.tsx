@@ -367,7 +367,7 @@ export function MedleyPlayingUI({
       {/* ═══════ BOTTOM: Lyrics (like SinglePlayerLyrics) ═══════ */}
       {currentLyricLine && (
         <div className="absolute bottom-0 left-0 right-0 z-20">
-          <div className="bg-gradient-to-t from-black/80 to-transparent px-6 pb-4 pt-8">
+          <div className="bg-gradient-to-t from-black/80 to-transparent px-6 pb-10 pt-8">
             {/* Current lyric line */}
             <div className="font-bold text-center drop-shadow-lg text-2xl md:text-3xl text-white leading-tight">
               {currentLyricLine.text}
