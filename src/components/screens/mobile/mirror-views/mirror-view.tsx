@@ -253,7 +253,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     case 'settings':
       return (
         <div className="min-h-[calc(100vh-7rem)]">
-          <MirrorSettingsLite {...navBase} />
+          <MirrorSettingsLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
 
@@ -288,6 +288,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
           <MirrorResultsLite
             gameResults={gameResults}
             onNavigate={onNavigate}
+            {...desktopMirrorBase}
           />
         </div>
       );

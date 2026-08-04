@@ -75,6 +75,18 @@ function SettingsScreen() {
   // Active tab
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
 
+  // Listen for remote companion settings tab navigation
+  useEffect(() => {
+    const handleRemoteTab = (e: Event) => {
+      const { tab } = (e as CustomEvent).detail;
+      if (tab && ['general','gameplay','appearance','graphicsound','microphone','mobile','webcam','library','viral','about'].includes(tab)) {
+        setActiveTab(tab as SettingsTab);
+      }
+    };
+    window.addEventListener('remote-settings-tab', handleRemoteTab);
+    return () => window.removeEventListener('remote-settings-tab', handleRemoteTab);
+  }, []);
+
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
     const keys = key.split('.');

@@ -201,6 +201,16 @@ export function useGlobalRemoteControl({
         navigateToScreen('highscores');
         break;
 
+      case 'scores':
+        // On the results screen, open the highscore modal
+        window.dispatchEvent(new CustomEvent('remote-results-action', { detail: { action: 'scores' } }));
+        break;
+
+      case 'play_again':
+        // On the results screen, trigger play again
+        window.dispatchEvent(new CustomEvent('remote-results-action', { detail: { action: 'play_again' } }));
+        break;
+
       case 'achievements':
         navigateToScreen('achievements');
         break;
@@ -338,7 +348,15 @@ export function useGlobalRemoteControl({
         }, 300);
         break;
 
-      default:
+      // --- Settings tab navigation from companion accordion ---
+      default: {
+        // Check for settings_tab:<tabId> pattern
+        if (cmd.type.startsWith('settings_tab:')) {
+          const tabId = cmd.type.slice('settings_tab:'.length);
+          window.dispatchEvent(new CustomEvent('remote-settings-tab', { detail: { tab: tabId } }));
+          break;
+        }
+      }
     }
   }, [navigateToScreen]);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { GameResults, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -9,13 +9,31 @@ import { useTranslation } from '@/lib/i18n/translations';
 interface MirrorResultsLiteProps {
   gameResults: GameResults | null;
   onNavigate: (v: MobileView) => void;
+  /** Sendet einen Navigations-/Aktions-Command an den Desktop */
+  onSendDesktopCommand: (command: string) => void;
+}
+
+// ===================== Hilfsfunktionen =====================
+
+function haptic() {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
 }
 
 // ===================== Component =====================
 
 export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
-  function MirrorResultsLite({ gameResults }) {
+  function MirrorResultsLite({ gameResults, onSendDesktopCommand }) {
     const { t } = useTranslation();
+
+    const handleCommand = useCallback(
+      (cmd: string) => {
+        haptic();
+        onSendDesktopCommand(cmd);
+      },
+      [onSendDesktopCommand],
+    );
 
     if (!gameResults) {
       return (
@@ -80,6 +98,48 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
               {t('mobile.mirrorRating') || 'Rating'}
             </span>
           </div>
+        </div>
+
+        {/* ── Action Buttons ── */}
+        <div className="flex flex-col gap-2 mt-2">
+          {/* Highscores (Trophy) */}
+          <button
+            onClick={() => handleCommand('scores')}
+            className={
+              'w-full flex items-center justify-center gap-2 rounded-xl p-4 ' +
+              'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 ' +
+              'font-semibold active:scale-[0.97] transition-transform'
+            }
+          >
+            <span>🏆</span>
+            <span className="text-sm">{t('resultsScreen.scores') || 'Scores'}</span>
+          </button>
+
+          {/* Play Again */}
+          <button
+            onClick={() => handleCommand('play_again')}
+            className={
+              'w-full flex items-center justify-center gap-2 rounded-xl p-4 ' +
+              'bg-gradient-to-r from-cyan-500/25 to-purple-500/25 border border-cyan-400/30 text-white ' +
+              'font-semibold active:scale-[0.97] transition-transform'
+            }
+          >
+            <span>🔄</span>
+            <span className="text-sm">{t('results.playAgain') || 'Nochmal spielen'}</span>
+          </button>
+
+          {/* Back to Home */}
+          <button
+            onClick={() => handleCommand('home')}
+            className={
+              'w-full flex items-center justify-center gap-2 rounded-xl p-4 ' +
+              'bg-white/5 border border-white/20 text-white/80 ' +
+              'font-medium active:scale-[0.97] transition-transform'
+            }
+          >
+            <span>🏠</span>
+            <span className="text-sm">{t('results.backToHome') || 'Zurück'}</span>
+          </button>
         </div>
       </div>
     );
