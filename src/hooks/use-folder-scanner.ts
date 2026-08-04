@@ -30,6 +30,8 @@ interface UseFolderScannerReturn {
   handleBrowseFolder: () => Promise<void>;
   handleResetLibrary: () => Promise<void>;
   handleClearAllData: () => Promise<void>;
+  executeResetLibrary: () => Promise<void>;
+  executeClearAllData: () => Promise<void>;
   initializeFromStorage: () => void;
 }
 
@@ -421,20 +423,14 @@ export function useFolderScanner(): UseFolderScannerReturn {
     }
   }, [performFolderScan]);
 
-  // Reset library without deleting highscores
-  const handleResetLibrary = useCallback(async () => {
-    if (!(await safeConfirm(t('library.scanProgress.confirmResetLibrary')))) {
-      return;
-    }
-
+  /** Execute the actual library reset — no confirmation dialog. */
+  const executeResetLibrary = useCallback(async () => {
     setIsResetting(true);
     setResetComplete(false);
 
     try {
-      // Step 1: Clear in-memory caches and localStorage synchronously
       clearCustomSongs();
 
-      // Step 2: Clear additional localStorage keys (e.g. karaoke-songs-folder)
       const allKeys = Object.keys(localStorage);
       for (const key of allKeys) {
         if (key.startsWith('karaoke-songs') || key.startsWith('imported-song-') || key === 'karaoke-library') {
@@ -442,11 +438,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
         }
       }
 
-      // Step 3: Fully invalidate all in-memory caches (customSongsCache + songCache)
       clearSongCache();
 
-      // Step 4: AWAIT IndexedDB clear — previously this was fire-and-forget inside
-      // clearCustomSongs(), causing songs to reappear after page reload.
       try {
         await clearCustomSongsFromDB();
       } catch (e) {
@@ -454,7 +447,6 @@ export function useFolderScanner(): UseFolderScannerReturn {
         console.warn('[Settings] Failed to clear custom songs from IndexedDB:', e);
       }
 
-      // Step 5: Clear library cache in IndexedDB (karaoke-successor-cache)
       try {
         const { clearCache: clearLibraryCache } = await import('@/lib/game/library-cache');
         await clearLibraryCache();
@@ -476,6 +468,27 @@ export function useFolderScanner(): UseFolderScannerReturn {
     }
   }, []);
 
+  /** Execute the actual clear-all — no confirmation dialog. */
+  const executeClearAllData = useCallback(async () => {
+    setIsResetting(true);
+    try {
+      clearAll();
+      window.location.reload();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to clear data:', error);
+      setIsResetting(false);
+    }
+  }, []);
+
+  // Reset library without deleting highscores
+  const handleResetLibrary = useCallback(async () => {
+    if (!(await safeConfirm(t('library.scanProgress.confirmResetLibrary')))) {
+      return;
+    }
+    await executeResetLibrary();
+  }, [executeResetLibrary]);
+
   // Clear all data including highscores
   const handleClearAllData = useCallback(async () => {
     if (!(await safeConfirm(t('library.scanProgress.confirmClearAllData')))) {
@@ -486,18 +499,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
     if (confirmation !== 'DELETE') {
       return;
     }
-
-    setIsResetting(true);
-
-    try {
-      clearAll();
-      window.location.reload();
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to clear data:', error);
-      setIsResetting(false);
-    }
-  }, []);
+    await executeClearAllData();
+  }, [executeClearAllData]);
 
   return {
     songsFolder,
@@ -513,6 +516,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
     handleBrowseFolder,
     handleResetLibrary,
     handleClearAllData,
+    executeResetLibrary,
+    executeClearAllData,
     initializeFromStorage,
   };
 }

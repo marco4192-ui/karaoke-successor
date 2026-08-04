@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +12,14 @@ import { StorageKeys, getJsonOptional, setJson, setItem } from '@/lib/storage';
 import { getAllSongs } from '@/lib/game/song-library';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { nativePickFolder } from '@/lib/native-fs';
-import { safeAlert, safePrompt } from '@/lib/safe-dialog';
+import { safePrompt } from '@/lib/safe-dialog';
+
+// ── Inline confirm/prompt dialog (bypasses Tauri's broken window.confirm) ──
+
+type DialogState =
+  | { kind: 'closed' }
+  | { kind: 'confirm'; message: string; onConfirm: () => void }
+  | { kind: 'prompt'; message: string; placeholder: string; onSubmit: (value: string) => void };
 
 interface LibraryTabProps {
   songsFolder: string;
@@ -28,6 +35,8 @@ interface LibraryTabProps {
   handleBrowseFolder: () => Promise<void>;
   handleResetLibrary: () => Promise<void>;
   handleClearAllData: () => Promise<void>;
+  executeResetLibrary: () => Promise<void>;
+  executeClearAllData: () => Promise<void>;
   isResetting: boolean;
   resetComplete: boolean;
   folderSaveComplete: boolean;
@@ -44,12 +53,39 @@ export function LibraryTab({
   handleBrowseFolder,
   handleResetLibrary,
   handleClearAllData,
+  executeResetLibrary,
+  executeClearAllData,
   isResetting,
   resetComplete,
   folderSaveComplete,
   tx,
 }: LibraryTabProps) {
   const { t } = useTranslation();
+
+  // ── Inline dialog state ──
+  const [dialog, setDialog] = useState<DialogState>({ kind: 'closed' });
+  const [promptValue, setPromptValue] = useState('');
+  const promptInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the prompt input when the prompt dialog opens
+  useEffect(() => {
+    if (dialog.kind === 'prompt') {
+      setPromptValue('');
+      // Delay focus slightly so the DOM is ready
+      const timer = setTimeout(() => promptInputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [dialog]);
+
+  // Close dialog on Escape
+  useEffect(() => {
+    if (dialog.kind === 'closed') return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDialog({ kind: 'closed' });
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [dialog]);
 
   // ── Additional library sources ──
   const [additionalFolders, setAdditionalFolders] = useState<string[]>([]);
@@ -70,7 +106,7 @@ export function LibraryTab({
     if (path && path.trim()) {
       const normalized = normalizeFilePath(path.trim());
       if (normalized === songsFolder || additionalFolders.includes(normalized)) {
-        safeAlert(t('settingsLibrary.folderAlreadyExists'));
+        setDialog({ kind: 'confirm', message: t('settingsLibrary.folderAlreadyExists'), onConfirm: () => setDialog({ kind: 'closed' }) });
         return;
       }
       saveAdditionalFolders([...additionalFolders, normalized]);
@@ -79,7 +115,7 @@ export function LibraryTab({
 
   const handleBrowseAdditionalFolder = useCallback(async () => {
     if (!isTauri()) {
-      safeAlert(t('settingsLibrary.folderPickerDesktopOnly'));
+      setDialog({ kind: 'confirm', message: t('settingsLibrary.folderPickerDesktopOnly'), onConfirm: () => setDialog({ kind: 'closed' }) });
       return;
     }
     try {
@@ -87,7 +123,7 @@ export function LibraryTab({
       if (selected) {
         const normalized = normalizeFilePath(selected);
         if (normalized === songsFolder || additionalFolders.includes(normalized)) {
-          safeAlert(t('settingsLibrary.folderAlreadyExists'));
+          setDialog({ kind: 'confirm', message: t('settingsLibrary.folderAlreadyExists'), onConfirm: () => setDialog({ kind: 'closed' }) });
           return;
         }
         saveAdditionalFolders([...additionalFolders, normalized]);
@@ -102,6 +138,46 @@ export function LibraryTab({
     const updated = additionalFolders.filter((_, i) => i !== index);
     saveAdditionalFolders(updated);
   }, [additionalFolders, saveAdditionalFolders]);
+
+  // ── Custom dialog handlers for danger zone buttons ──
+  const onResetLibraryClick = useCallback(() => {
+    setDialog({
+      kind: 'confirm',
+      message: t('library.scanProgress.confirmResetLibrary'),
+      onConfirm: () => {
+        setDialog({ kind: 'closed' });
+        executeResetLibrary();
+      },
+    });
+  }, [t, executeResetLibrary]);
+
+  const onClearAllDataClick = useCallback(() => {
+    setDialog({
+      kind: 'confirm',
+      message: t('library.scanProgress.confirmClearAllData'),
+      onConfirm: () => {
+        setDialog({
+          kind: 'prompt',
+          message: t('library.scanProgress.typeDeleteConfirm'),
+          placeholder: 'DELETE',
+          onSubmit: (value) => {
+            if (value === 'DELETE') {
+              setDialog({ kind: 'closed' });
+              executeClearAllData();
+            } else {
+              setDialog({ kind: 'closed' });
+            }
+          },
+        });
+      },
+    });
+  }, [t, executeClearAllData]);
+
+  const onPromptSubmit = useCallback(() => {
+    if (dialog.kind === 'prompt') {
+      dialog.onSubmit(promptValue);
+    }
+  }, [dialog, promptValue]);
 
   return (
     <div className="space-y-6">
@@ -304,7 +380,7 @@ export function LibraryTab({
       {/* Viral Charts */}
       <ViralChartsSettings />
 
-      {/* Reset Library */}
+      {/* Reset Library — Danger Zone */}
       <Card className="bg-white/5 border-white/10 border-red-500/30">
         <CardHeader>
           <CardTitle className="text-red-400 flex items-center gap-2">
@@ -333,7 +409,7 @@ export function LibraryTab({
             </div>
             <Button
               variant="outline"
-              onClick={handleResetLibrary}
+              onClick={onResetLibraryClick}
               disabled={isResetting}
               className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
             >
@@ -353,7 +429,7 @@ export function LibraryTab({
             </div>
             <Button
               variant="outline"
-              onClick={handleClearAllData}
+              onClick={onClearAllDataClick}
               disabled={isResetting}
               className="border-red-500/50 text-red-400 hover:bg-red-500/10"
             >
@@ -363,6 +439,70 @@ export function LibraryTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Inline Confirm / Prompt Dialog ── */}
+      {dialog.kind !== 'closed' && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setDialog({ kind: 'closed' })}
+        >
+          <div
+            className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {dialog.kind === 'confirm' && (
+              <>
+                <p className="text-white text-sm mb-6 leading-relaxed">{dialog.message}</p>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDialog({ kind: 'closed' })}
+                    className="border-white/20 text-white/70 hover:bg-white/10"
+                  >
+                    {t('settingsLibrary.dialogCancel')}
+                  </Button>
+                  <Button
+                    onClick={dialog.onConfirm}
+                    className="bg-red-500 hover:bg-red-400 text-white"
+                  >
+                    {t('settingsLibrary.dialogConfirm')}
+                  </Button>
+                </div>
+              </>
+            )}
+            {dialog.kind === 'prompt' && (
+              <>
+                <p className="text-white text-sm mb-4 leading-relaxed">{dialog.message}</p>
+                <Input
+                  ref={promptInputRef}
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') onPromptSubmit(); }}
+                  placeholder={dialog.placeholder}
+                  className="bg-white/10 border-white/20 text-white mb-4"
+                  autoComplete="off"
+                />
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDialog({ kind: 'closed' })}
+                    className="border-white/20 text-white/70 hover:bg-white/10"
+                  >
+                    {t('settingsLibrary.dialogCancel')}
+                  </Button>
+                  <Button
+                    onClick={onPromptSubmit}
+                    disabled={promptValue !== 'DELETE'}
+                    className="bg-red-500 hover:bg-red-400 text-white"
+                  >
+                    {t('settingsLibrary.dialogConfirm')}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

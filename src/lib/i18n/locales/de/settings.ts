@@ -398,6 +398,8 @@ export const settingsTranslations = {
     folderAlreadyExists: 'Dieser Ordner ist bereits in deiner Bibliothek.',
     enterFolderPath: 'Ordnerpfad eingeben:',
     folderPickerDesktopOnly: 'Die Ordnerauswahl ist nur in der Desktop-App verfügbar.',
+    dialogCancel: 'Abbrechen',
+    dialogConfirm: 'Bestätigen',
   },
 
   settingsCompanion: {

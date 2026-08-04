@@ -288,6 +288,8 @@ function SettingsScreen() {
           handleBrowseFolder={folderScanner.handleBrowseFolder}
           handleResetLibrary={folderScanner.handleResetLibrary}
           handleClearAllData={folderScanner.handleClearAllData}
+          executeResetLibrary={folderScanner.executeResetLibrary}
+          executeClearAllData={folderScanner.executeClearAllData}
           isResetting={folderScanner.isResetting}
           resetComplete={folderScanner.resetComplete}
           folderSaveComplete={folderScanner.folderSaveComplete}
