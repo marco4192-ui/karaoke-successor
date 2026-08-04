@@ -119,7 +119,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               'bg-white/5 border border-white/10'
             }
           >
-            <p className="text-sm text-white/40">{t('mobile.mirrorQueueEmpty') || 'Kein Song aktiv'}</p>
+            <p className="text-sm text-white/40">{t('mobile.mirrorNoSong')}</p>
           </div>
         )}
 
@@ -134,7 +134,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               'active:scale-[0.97] transition-transform'
             }
           >
-            {t('mobile.mirrorAcquireRemote') || 'Steuerung übernehmen'}
+            {t('mobile.mirrorAcquireRemote')}
           </button>
         ) : remoteLockedBy ? (
           /* Jemand hat die Steuerung */
@@ -145,7 +145,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
             }
           >
             <span className="text-sm text-white/60">
-              {t('mobile.mirrorRemoteActive') || 'Steuerung aktiv'}
+              {t('mobile.mirrorRemoteActive')}
             </span>
             <button
               onClick={handleReleaseRemote}
@@ -154,7 +154,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
                 'bg-white/10 text-white/70 active:scale-95 transition-transform'
               }
             >
-              Freigeben
+              {t('mobile.mirrorReleaseControl')}
             </button>
           </div>
         ) : (
@@ -166,7 +166,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
             }
           >
             <span className="text-sm text-white/40">
-              {t('mobile.mirrorRemoteLockedBy') || `Steuerung von ${remoteLockedBy}`}
+              {t('mobile.mirrorRemoteLockedBy').replace('{name}', remoteLockedBy || '')}
             </span>
           </div>
         )}
@@ -186,7 +186,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               {queue.length}
             </span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorQueue') || 'Warteschlange'}
+              {t('mobile.mirrorQueue')}
             </span>
           </button>
 
@@ -202,7 +202,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               {gameState.gameMode || '–'}
             </span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorGameMode') || 'Spielmodus'}
+              {t('mobile.mirrorGameMode')}
             </span>
           </div>
 
@@ -215,9 +215,9 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
             }
           >
             <span className="text-lg leading-none">💬</span>
-            <span className="text-xs font-semibold text-white">Chat</span>
+            <span className="text-xs font-semibold text-white">{t('mobile.mirrorChat')}</span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorChat') || 'Chat'}
+              {t('mobile.mirrorChat')}
             </span>
           </button>
         </div>
@@ -227,13 +227,13 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
           <div>
             <div className="mb-2 flex items-center justify-between px-1">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
-                {t('mobile.mirrorQueue') || 'Als Nächstes'}
+                {t('mobileViews.upNext')}
               </h3>
               <button
                 onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
                 className="text-xs font-medium text-cyan-400/80 active:opacity-70 transition-opacity"
               >
-                Alle anzeigen →
+                {t('mobile.mirrorShowAll')} →
               </button>
             </div>
 
@@ -274,22 +274,22 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
         <div className="grid grid-cols-2 gap-3">
           <ActionButton
             icon="🎤"
-            label={t('mobile.mirrorSing') || 'Singen'}
+            label={t('mobile.mirrorSing')}
             onPress={() => handleNavigate('mic')}
           />
           <ActionButton
             icon="🎵"
-            label={t('mobile.mirrorSongs') || 'Lieder'}
+            label={t('mobile.mirrorSongs')}
             onPress={() => handleNavigate('songs')}
           />
           <ActionButton
             icon="📋"
-            label={t('mobile.mirrorQueue') || 'Warteschlange'}
+            label={t('mobile.mirrorQueue')}
             onPress={() => { haptic(); onSendDesktopCommand('queue'); }}
           />
           <ActionButton
             icon="📻"
-            label={t('mobile.mirrorJukebox') || 'Jukebox'}
+            label={t('mobile.mirrorJukebox')}
             onPress={() => { haptic(); onSendDesktopCommand('jukebox'); }}
           />
         </div>

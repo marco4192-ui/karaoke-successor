@@ -22,10 +22,10 @@ export const MirrorDailyLite = React.memo<MirrorDailyLiteProps>(
         <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
           <span className="text-4xl">📅</span>
           <h2 className="text-lg font-semibold text-white">
-            {t('mobile.mirrorDailyChallenge') || 'Daily Challenge'}
+            {t('mobile.mirrorDailyChallenge')}
           </h2>
           <p className="text-sm text-white/40">
-            {t('mobile.mirrorComingSoon') || 'Daily challenges will be available here soon.'}
+            {t('mobile.mirrorComingSoon')}
           </p>
         </div>
       </div>

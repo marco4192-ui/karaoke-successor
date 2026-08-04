@@ -45,11 +45,11 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">
-            {t('mobile.mirrorJukebox') || 'Jukebox'}
+            {t('mobile.mirrorJukebox')}
           </h2>
           {jukeboxWishlist.length > 0 && (
             <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/60">
-              {jukeboxWishlist.length} {jukeboxWishlist.length === 1 ? 'Song' : 'Songs'}
+              {jukeboxWishlist.length} {jukeboxWishlist.length === 1 ? t('mobile.mirrorSong') : t('mobile.mirrorSongsplural')}
             </span>
           )}
         </div>
@@ -65,7 +65,7 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
             }
           >
             <span>{'📻'}</span>
-            <span>{'Jukebox starten'}</span>
+            <span>{t('mobile.mirrorJukeboxStart')}</span>
           </button>
           {jukeboxWishlist.length > 0 && (
             <button
@@ -86,10 +86,10 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-3xl">{'📻'}</span>
             <p className="text-sm text-white/40">
-              {t('mobile.mirrorJukeboxEmpty') || 'Jukebox-Wunschliste ist leer'}
+              {t('mobile.mirrorJukeboxEmpty')}
             </p>
             <p className="text-xs text-white/25">
-              {t('mobile.mirrorJukeboxEmptyHint') || 'Songs werden hier erscheinen, wenn sie vom Desktop hinzugefügt werden'}
+              {t('mobile.mirrorJukeboxEmptyHint')}
             </p>
           </div>
         )}

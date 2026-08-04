@@ -20,19 +20,19 @@ interface AccordionItem {
   icon: string;
   labelKey: string;
   fallback: string;
-  description: string;
+  descriptionKey: string;
 }
 
 const SETTINGS_SECTIONS: AccordionItem[] = [
-  { id: 'general',      icon: '⚙️',  labelKey: 'settings.tabGeneral',        fallback: 'Allgemein',       description: 'Sprache, Schwierigkeit, Tonhöhenanzeige' },
-  { id: 'gameplay',     icon: '🎮',  labelKey: 'settingsTabs.gameplay',    fallback: 'Spielverhalten',  description: 'Scoring-Optionen, Timings, Hilfen' },
-  { id: 'appearance',   icon: '🎨',  labelKey: 'settingsTabs.appearance',  fallback: 'Erscheinungsbild', description: 'Theme, Lyrics-Stil, Hintergrund' },
-  { id: 'graphicsound',icon: '🔊',  labelKey: 'settingsTabs.graphicSound',fallback: 'Grafik & Ton',    description: 'Lautstärke, Mikrofon, YouTube' },
-  { id: 'microphone',   icon: '🎤',  labelKey: 'settingsTabs.microphone',  fallback: 'Mikrofon',       description: 'Eingang, Empfindlichkeit, Presets' },
-  { id: 'mobile',       icon: '📱',  labelKey: 'settingsTabs.mobileCompanion', fallback: 'Companion',    description: 'Verbundene Geräte, Fernsteuerung' },
-  { id: 'webcam',       icon: '📷',  labelKey: 'settingsTabs.webcam',      fallback: 'Webcam',         description: 'Hintergrund-Kamera-Einstellungen' },
-  { id: 'library',      icon: '📁',  labelKey: 'settings.tabLibrary',     fallback: 'Bibliothek',      description: 'Song-Ordner, Scannen, Zurücksetzen' },
-  { id: 'about',        icon: 'ℹ️',  labelKey: 'settings.tabAbout',       fallback: 'Über',           description: 'Version, Credits, Lizenzen' },
+  { id: 'general',      icon: '⚙️',  labelKey: 'settings.tabGeneral',        fallback: 'General',        descriptionKey: 'mobile.mirrorSettingsDescGeneral' },
+  { id: 'gameplay',     icon: '🎮',  labelKey: 'settingsTabs.gameplay',    fallback: 'Gameplay',       descriptionKey: 'mobile.mirrorSettingsDescGameplay' },
+  { id: 'appearance',   icon: '🎨',  labelKey: 'settingsTabs.appearance',  fallback: 'Appearance',     descriptionKey: 'mobile.mirrorSettingsDescAppearance' },
+  { id: 'graphicsound',icon: '🔊',  labelKey: 'settingsTabs.graphicSound',fallback: 'Graphics & Sound', descriptionKey: 'mobile.mirrorSettingsDescGraphicSound' },
+  { id: 'microphone',   icon: '🎤',  labelKey: 'settingsTabs.microphone',  fallback: 'Microphone',     descriptionKey: 'mobile.mirrorSettingsDescMicrophone' },
+  { id: 'mobile',       icon: '📱',  labelKey: 'settingsTabs.mobileCompanion', fallback: 'Companion',   descriptionKey: 'mobile.mirrorSettingsDescMobile' },
+  { id: 'webcam',       icon: '📷',  labelKey: 'settingsTabs.webcam',      fallback: 'Webcam',        descriptionKey: 'mobile.mirrorSettingsDescWebcam' },
+  { id: 'library',      icon: '📁',  labelKey: 'settings.tabLibrary',     fallback: 'Library',        descriptionKey: 'mobile.mirrorSettingsDescLibrary' },
+  { id: 'about',        icon: 'ℹ️',  labelKey: 'settings.tabAbout',       fallback: 'About',          descriptionKey: 'mobile.mirrorSettingsDescAbout' },
 ];
 
 // ===================== Hilfsfunktionen =====================
@@ -73,10 +73,10 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
         <div className="flex flex-col items-center gap-2 py-4">
           <span className="text-3xl">⚙️</span>
           <h2 className="text-lg font-semibold text-white">
-            {t('mobile.mirrorSettings') || 'Einstellungen'}
+            {t('mobile.mirrorSettings')}
           </h2>
           <p className="text-xs text-white/40 text-center">
-            Wähle eine Kategorie, um sie auf dem Desktop zu öffnen
+            {t('mobile.mirrorSettingsDesc')}
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
                         : t(section.labelKey)}
                     </p>
                     {isOpen && (
-                      <p className="text-[11px] text-white/40 mt-0.5">{section.description}</p>
+                      <p className="text-[11px] text-white/40 mt-0.5">{t(section.descriptionKey)}</p>
                     )}
                   </div>
                   <span
@@ -134,7 +134,7 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
                         'active:scale-[0.97] transition-transform'
                       }
                     >
-                      Auf Desktop öffnen
+                      {t('mobile.mirrorOpenOnDesktop')}
                     </button>
                   </div>
                 )}

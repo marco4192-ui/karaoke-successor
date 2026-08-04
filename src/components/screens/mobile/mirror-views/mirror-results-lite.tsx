@@ -41,10 +41,10 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-4xl">📊</span>
             <h2 className="text-lg font-semibold text-white">
-              {t('mobile.mirrorResults') || 'Results'}
+              {t('mobile.mirrorResults')}
             </h2>
             <p className="text-sm text-white/40">
-              {t('mobile.mirrorNoResults') || 'No results yet. Play a song first!'}
+              {t('mobile.mirrorNoResults')}
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
         {/* Song info */}
         <div className="flex flex-col items-center gap-2 rounded-xl bg-white/5 border border-white/10 p-6">
           <p className="text-xs font-medium uppercase tracking-wider text-white/40">
-            {t('mobile.mirrorLastPlayed') || 'Last Played'}
+            {t('mobile.mirrorLastPlayed')}
           </p>
           <p className="text-lg font-bold text-white">{gameResults.songTitle}</p>
           <p className="text-sm text-white/60">{gameResults.songArtist}</p>
@@ -68,7 +68,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
             {gameResults.score.toLocaleString()}
           </p>
           <p className="text-sm text-white/60">
-            {t('mobile.mirrorPoints') || 'points'}
+            {t('mobile.mirrorPoints')}
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
               {Math.round(gameResults.accuracy * 100)}%
             </span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorAccuracy') || 'Accuracy'}
+              {t('mobile.mirrorAccuracy')}
             </span>
           </div>
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-3">
@@ -87,7 +87,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
               {gameResults.maxCombo}x
             </span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorMaxCombo') || 'Max Combo'}
+              {t('mobile.mirrorMaxCombo')}
             </span>
           </div>
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-3">
@@ -95,7 +95,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
               {gameResults.rating}
             </span>
             <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorRating') || 'Rating'}
+              {t('mobile.mirrorRating')}
             </span>
           </div>
         </div>
@@ -112,7 +112,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
             }
           >
             <span>🏆</span>
-            <span className="text-sm">{t('resultsScreen.scores') || 'Scores'}</span>
+            <span className="text-sm">{t('resultsScreen.scores')}</span>
           </button>
 
           {/* Play Again */}
@@ -125,7 +125,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
             }
           >
             <span>🔄</span>
-            <span className="text-sm">{t('results.playAgain') || 'Nochmal spielen'}</span>
+            <span className="text-sm">{t('results.playAgain')}</span>
           </button>
 
           {/* Back to Home */}
@@ -138,7 +138,7 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
             }
           >
             <span>🏠</span>
-            <span className="text-sm">{t('results.backToHome') || 'Zurück'}</span>
+            <span className="text-sm">{t('results.backToHome')}</span>
           </button>
         </div>
       </div>

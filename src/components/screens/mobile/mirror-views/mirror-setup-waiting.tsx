@@ -31,11 +31,10 @@ export const MirrorSetupWaiting = React.memo<MirrorSetupWaitingProps>(
           {/* Message */}
           <div className="flex flex-col items-center gap-2">
             <h2 className="text-lg font-semibold text-white">
-              {t('mobile.mirrorSetupWaiting') || 'Setting Up...'}
+              {t('mobile.mirrorSetupWaiting')}
             </h2>
             <p className="max-w-[250px] text-center text-sm text-white/40">
-              {t('mobile.mirrorSetupWaitingDesc') ||
-                'The desktop is configuring the next game. Please wait.'}
+              {t('mobile.mirrorSetupWaitingDesc')}
             </p>
           </div>
 

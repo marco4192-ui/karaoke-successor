@@ -48,8 +48,8 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium uppercase tracking-wider text-white/40">
                   {gameState.isPlaying
-                    ? (t('mobile.mirrorNowPlaying') || 'Now Playing')
-                    : (t('mobile.mirrorPaused') || 'Paused')}
+                    ? t('mobile.mirrorNowPlaying')
+                    : t('mobile.mirrorPaused')}
                 </p>
                 <p className="mt-1 truncate text-xl font-bold leading-tight text-white">
                   {gameState.currentSong.title}
@@ -75,7 +75,7 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         ) : (
           <div className="flex items-center justify-center rounded-xl bg-white/5 border border-white/10 p-8">
             <p className="text-sm text-white/40">
-              {t('mobile.mirrorNoSong') || 'No song playing'}
+              {t('mobile.mirrorNoSong')}
             </p>
           </div>
         )}
@@ -84,10 +84,10 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 p-6">
           <span className="text-3xl">🎤</span>
           <p className="text-sm font-medium text-white/60">
-            {t('mobile.mirrorScoreComingSoon') || 'Live scoring coming soon'}
+            {t('mobile.mirrorScoreComingSoon')}
           </p>
           <p className="text-xs text-white/30">
-            {t('mobile.mirrorScoreHint') || 'Your score will appear here during the song'}
+            {t('mobile.mirrorScoreHint')}
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         {gameState.companionScores && gameState.companionScores.length > 0 && (
           <div className="flex flex-col gap-2 rounded-xl bg-white/5 border border-white/10 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
-              {t('mobile.mirrorLiveScores') || 'Live Scores'}
+              {t('mobile.mirrorLiveScores')}
             </p>
             {gameState.companionScores.map((entry) => (
               <div key={entry.profileId} className="flex items-center justify-between">

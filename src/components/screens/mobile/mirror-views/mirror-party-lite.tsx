@@ -22,10 +22,10 @@ export const MirrorPartyLite = React.memo<MirrorPartyLiteProps>(
         <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
           <span className="text-4xl">🎉</span>
           <h2 className="text-lg font-semibold text-white">
-            {t('mobile.mirrorPartyMode') || 'Party Mode'}
+            {t('mobile.mirrorPartyMode')}
           </h2>
           <p className="text-sm text-white/40">
-            {t('mobile.mirrorComingSoon') || 'Party mode features will be available here soon.'}
+            {t('mobile.mirrorComingSoon')}
           </p>
         </div>
       </div>

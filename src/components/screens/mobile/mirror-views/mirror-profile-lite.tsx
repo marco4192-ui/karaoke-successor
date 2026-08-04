@@ -53,10 +53,10 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-4xl">{'👤'}</span>
             <h2 className="text-lg font-semibold text-white">
-              {t('characterScreen.title') || 'Profile'}
+              {t('characterScreen.title')}
             </h2>
             <p className="text-sm text-white/40">
-              Keine Profile auf dem Desktop vorhanden
+              {t('mobile.mirrorProfileNoProfiles')}
             </p>
           </div>
         </div>
@@ -71,10 +71,10 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
         <div className="flex flex-col items-center gap-2 py-4">
           <span className="text-3xl">{'👤'}</span>
           <h2 className="text-lg font-semibold text-white">
-            {t('characterScreen.title') || 'Profile'}
+            {t('characterScreen.title')}
           </h2>
           <p className="text-xs text-white/40 text-center">
-            {activeCount} von {availableProfiles.length} aktiv
+            {t('mobile.mirrorProfileActiveCount').replace('{active}', String(activeCount)).replace('{total}', String(availableProfiles.length))}
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
                     'text-[11px] ' +
                     (isActive ? 'text-green-400/70' : 'text-white/20')
                   }>
-                    {isActive ? 'Aktiv' : 'Inaktiv'}
+                    {isActive ? t('mobile.mirrorProfileActive') : t('mobile.mirrorProfileInactive')}
                   </p>
                 </div>
 
@@ -146,7 +146,7 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
 
         {/* Hinweis */}
         <p className="text-center text-[11px] text-white/25 px-4">
-          Aenderungen werden sofort auf dem Desktop uebernommen
+          {t('mobile.mirrorProfileSyncNote')}
         </p>
       </div>
     );

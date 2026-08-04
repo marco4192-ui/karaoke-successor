@@ -76,7 +76,7 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">
-            {t('mobile.mirrorQueue') || 'Queue'}
+            {t('mobile.mirrorQueue')}
           </h2>
           <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/60">
             {activeItems.length} / {activeItems.length + slotsRemaining}
@@ -88,8 +88,8 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
           <div className="flex items-center gap-2 rounded-lg bg-cyan-500/10 px-3 py-2 border border-cyan-400/20">
             <span className="text-xs text-cyan-300">
               {slotsRemaining === 1
-                ? (t('mobile.queueSlotRemaining') || '1 slot remaining')
-                : (t('mobile.queueSlotsRemaining') || `${slotsRemaining} slots remaining`)}
+                ? t('mobile.queueSlotRemaining')
+                : t('mobile.queueSlotsRemaining').replace('{n}', String(slotsRemaining))}
             </span>
           </div>
         )}
@@ -106,7 +106,7 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
             }
           >
             <span>{'▶'}</span>
-            <span>{t('queueScreen.playNextSong') || 'Nächstes Lied'}</span>
+            <span>{t('queueScreen.playNextSong')}</span>
           </button>
           <button
             onClick={() => handleCommand('clear_queue')}
@@ -126,10 +126,10 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-3xl">{'📋'}</span>
             <p className="text-sm text-white/40">
-              {t('mobile.mirrorQueueEmpty') || 'Queue is empty'}
+              {t('mobile.mirrorQueueEmpty')}
             </p>
             <p className="text-xs text-white/25">
-              {t('mobile.mirrorQueueEmptyHint') || 'Add songs from the library to get started'}
+              {t('mobile.mirrorQueueEmptyHint')}
             </p>
           </div>
         )}
