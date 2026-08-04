@@ -134,6 +134,12 @@ const NoteBlock = React.memo(function NoteBlock({
     ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
     : [];
 
+  // Singstar-style fill fraction: how much of the note the singline
+  // has already passed.  0 = not started, 1 = fully passed.
+  const fillFraction = note.duration > 0
+    ? Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration))
+    : 1;
+
   const displayStyle = getNoteDisplayStyleClasses(
     'tick-fill-singstar',
     accuracy,
@@ -144,6 +150,9 @@ const NoteBlock = React.memo(function NoteBlock({
     pitchStats,
     visibleTop,
     visibleRange,
+    fillFraction,
+    note.startTime,
+    note.duration,
   );
 
   const glowColor = withAlpha(playerColor, 0.8);

@@ -22,54 +22,93 @@ export function getNoteDisplayStyleClasses(
   pitchStats?: PitchStats,
   visibleTop?: number,
   visibleRange?: number,
+  /** 0-1: fraction of the note the singline has passed (left-to-right fill) */
+  fillFraction: number = 1,
+  /** Note start time in ms (for time-based segment mapping) */
+  noteStartTime?: number,
+  /** Note duration in ms (for time-based segment mapping) */
+  noteDuration?: number,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
   overlayElement: React.ReactNode | null;
 } {
-  // Singstar-style tick fill: Each visual tick is a segment that fills
-  // when hit (color-coded by accuracy) or stays empty when missed.
-  // Missed ticks with a recorded sungPitch show a small indicator dot
-  // offset vertically to show WHERE the singer actually was.
+  // Singstar-style tick fill: The note fills from LEFT to RIGHT like a
+  // progress bar as the singline passes over it. Only the portion the
+  // singline has already passed shows hit/miss colours; the rest remains
+  // as a dim "unreached" track. This prevents the confusing "rolling"
+  // effect where segments appeared to shift as new samples arrived.
   //
-  // With high-rate visual sampling (~50ms intervals), we now get
-  // 8-20 samples per typical note, giving smooth real-time filling.
+  // Time-based segment mapping: each segment covers a fixed time slice
+  // of the note (~50 ms). Adding new samples for later time slices no
+  // longer shifts earlier segments, eliminating flicker.
+  //
+  // Missed ticks create a GAP in the note bar, and a pale "ghost bar"
+  // appears at the actual sung pitch (above or below) so the singer
+  // sees where they are vs. where they need to be.
+
   const samples = performanceSamples || [];
+  const clampedFill = Math.max(0, Math.min(1, fillFraction));
 
-  // Segment count based on note duration (50ms per tick), clamped to
-  // a readable range.
-  const segmentCount = Math.max(4, Math.min(24, samples.length));
+  // Segment count: one per ~50 ms of note duration, clamped 4-24
+  const segCount = noteDuration
+    ? Math.max(4, Math.min(24, Math.round(noteDuration / 50)))
+    : Math.max(4, Math.min(24, samples.length));
 
-  const hitColorPerfect = isGolden ? '#fbbf24' : isBonus ? '#f472b6' : '#34d399';
-  const hitColorGreat = isGolden ? '#f59e0b' : isBonus ? '#ec4899' : '#22d3ee';
-  const hitColorGood = isGolden ? '#d97706' : isBonus ? '#db2777' : '#3b82f6';
-  const hitColorOkay = isGolden ? '#92400e' : isBonus ? '#9d174d' : '#6366f1';
-  const missColor = 'rgba(255, 255, 255, 0.05)';
-  const missBorder = 'rgba(255, 255, 255, 0.10)';
+  // How many segments the singline has fully passed
+  const reachedFloat = clampedFill * segCount;
+  const reachedCount = Math.floor(reachedFloat);
+  const partialFill = reachedFloat - reachedCount;
 
-  // Map samples to segments: distribute samples evenly across segments.
+  // ── Colour palette ──────────────────────────────────────────────
+  const hitColors = {
+    Perfect: isGolden ? '#fbbf24' : isBonus ? '#f472b6' : '#34d399',
+    Great:   isGolden ? '#f59e0b' : isBonus ? '#ec4899' : '#22d3ee',
+    Good:    isGolden ? '#d97706' : isBonus ? '#db2777' : '#3b82f6',
+    Okay:    isGolden ? '#92400e' : isBonus ? '#9d174d' : '#6366f1',
+  };
+  const missGap       = 'rgba(255, 255, 255, 0.02)';
+  const missGapBorder = 'rgba(255, 255, 255, 0.05)';
+  const unreachedBg   = 'rgba(255, 255, 255, 0.06)';
+  const unreachedBdr  = 'rgba(255, 255, 255, 0.12)';
+
+  // ── Time-based segment → sample mapping ────────────────────────
+  const segDur = (noteDuration ?? 0) / segCount;
+  const nStart = noteStartTime ?? 0;
+
   const segData: Array<{
     hit: boolean;
     accuracy: number;
     displayType: string;
     sungPitch: number | null;
   }> = [];
-  for (let i = 0; i < segmentCount; i++) {
-    const segStart = (i / segmentCount) * samples.length;
-    const segEnd = ((i + 1) / segmentCount) * samples.length;
-    const segSamples = samples.slice(Math.floor(segStart), Math.ceil(segEnd));
+
+  for (let i = 0; i < segCount; i++) {
+    const segStart = nStart + i * segDur;
+    const segEnd   = segStart + segDur;
+
+    // Filter samples that fall into this segment's time window
+    const segSamples = noteDuration !== undefined && noteDuration > 0
+      ? samples.filter(s => s.time >= segStart && s.time < segEnd)
+      : samples.slice(
+          Math.floor((i / segCount) * samples.length),
+          Math.ceil(((i + 1) / segCount) * samples.length),
+        );
 
     if (segSamples.length === 0) {
       segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: null });
       continue;
     }
 
-    const bestHit = segSamples.reduce((best, s) => s.hit && s.accuracy > best.accuracy ? s : best, segSamples[0]);
-    const anyHit = segSamples.some(s => s.hit);
+    const bestHit = segSamples.reduce(
+      (best, s) => (s.hit && s.accuracy > best.accuracy ? s : best),
+      segSamples[0],
+    );
+    const anyHit  = segSamples.some(s => s.hit);
     const lastSung = segSamples[segSamples.length - 1];
 
     if (anyHit) {
-      let dt: string = 'Okay';
+      let dt = 'Okay';
       if (bestHit.accuracy > 0.95) dt = 'Perfect';
       else if (bestHit.accuracy > 0.8) dt = 'Great';
       else if (bestHit.accuracy > 0.6) dt = 'Good';
@@ -79,38 +118,44 @@ export function getNoteDisplayStyleClasses(
     }
   }
 
-  const hitRatio = segData.filter(s => s.hit).length / segData.length;
+  // ── Hit ratio (only reached segments) ──────────────────────────
+  const reachedSegs = segData.slice(0, reachedCount);
+  const hitRatio = reachedSegs.length > 0
+    ? reachedSegs.filter(s => s.hit).length / reachedSegs.length
+    : 0;
   const hasHits = hitRatio > 0;
 
-  // Calculate deviation dots for missed segments that have a recorded sung pitch.
-  const deviationDots: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
+  // ── Ghost bars for missed segments within the reached area ─────
+  const ghostBars: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
   if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
     const pr = pitchStats.pitchRange || 1;
-    for (let si = 0; si < segData.length; si++) {
+    for (let si = 0; si < Math.min(reachedCount, segData.length); si++) {
       const seg = segData[si];
       if (!seg.hit && seg.sungPitch !== null) {
         let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
         if (rawDiff > 6) rawDiff = 12 - rawDiff;
-        const pxPerSemitone = (visibleRange / pr) * 0.5;
-        const yDiff = (seg.sungPitch > targetPitch ? -1 : 1) * rawDiff * pxPerSemitone;
-        const clampedY = Math.max(-32, Math.min(32, yDiff));
+        const pxPerSemitone = (visibleRange / pr) * 0.6;
+        const direction = seg.sungPitch > targetPitch ? -1 : 1;
+        const yDiff = direction * rawDiff * pxPerSemitone;
+        const clampedY = Math.max(-48, Math.min(48, yDiff));
         const color = rawDiff > 2
-          ? 'rgba(239, 68, 68, 0.85)'
+          ? 'rgba(239, 68, 68, 0.50)'
           : rawDiff > 1
-            ? 'rgba(249, 115, 22, 0.8)'
-            : 'rgba(234, 179, 8, 0.75)';
-        deviationDots.push({ segmentIndex: si, yOffset: clampedY, color });
+            ? 'rgba(249, 115, 22, 0.45)'
+            : 'rgba(234, 179, 8, 0.40)';
+        ghostBars.push({ segmentIndex: si, yOffset: clampedY, color });
       }
     }
   }
 
   const glowColor = isGolden ? 'rgba(251, 191, 36,' : isBonus ? 'rgba(236, 72, 153,' : 'rgba(34, 211, 238,';
 
+  // ── Render ──────────────────────────────────────────────────────
   return {
     additionalClasses: 'overflow-visible',
     inlineStyle: {
       backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
-      backgroundColor: 'rgba(100, 130, 160, 0.12)',
+      backgroundColor: 'rgba(100, 130, 160, 0.08)',
       border: '1.5px solid rgba(255, 255, 255, 0.16)',
       boxShadow: hasHits
         ? `0 0 ${4 + hitRatio * 10}px ${glowColor}${hitRatio * 0.35}), inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18)`
@@ -119,21 +164,35 @@ export function getNoteDisplayStyleClasses(
     },
     overlayElement: (
       <>
-        {/* Tick segments */}
+        {/* Segments: unreached (dim) → reached+hit (coloured) / reached+miss (gap) */}
         <div className="absolute inset-y-0 left-0 right-0 flex" style={{ gap: '1px', padding: '2px 3px' }}>
           {segData.map((seg, idx) => {
+            const isUnreached  = idx > reachedCount;
+            const isAtFront    = idx === reachedCount;
+
             let bgColor: string;
-            if (!seg.hit) {
-              bgColor = missColor;
+            let borderCol: string;
+            let clipPath: string | undefined;
+
+            if (isUnreached) {
+              bgColor   = unreachedBg;
+              borderCol = unreachedBdr;
+            } else if (seg.hit) {
+              bgColor   = hitColors[seg.displayType as keyof typeof hitColors] || hitColors.Okay;
+              borderCol = 'transparent';
             } else {
-              switch (seg.displayType) {
-                case 'Perfect': bgColor = hitColorPerfect; break;
-                case 'Great': bgColor = hitColorGreat; break;
-                case 'Good': bgColor = hitColorGood; break;
-                default: bgColor = hitColorOkay;
-              }
+              bgColor   = missGap;
+              borderCol = missGapBorder;
             }
-            const borderCol = seg.hit ? 'transparent' : missBorder;
+
+            // The segment exactly at the fill front may be partially visible
+            if (isAtFront && partialFill > 0 && partialFill < 1) {
+              clipPath = `inset(0 ${(1 - partialFill) * 100}% 0 0)`;
+            } else if (isAtFront && partialFill <= 0) {
+              bgColor   = unreachedBg;
+              borderCol = unreachedBdr;
+            }
+
             return (
               <div
                 key={idx}
@@ -141,31 +200,34 @@ export function getNoteDisplayStyleClasses(
                 style={{
                   backgroundColor: bgColor,
                   border: `1px solid ${borderCol}`,
-                  transition: 'background-color 40ms linear, border-color 40ms linear',
+                  clipPath,
+                  transition: 'background-color 60ms linear',
                 }}
               />
             );
           })}
         </div>
-        {/* Deviation dots for missed ticks */}
-        {deviationDots.length > 0 && (
-          <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
-            {deviationDots.map((dot) => {
-              const segWidth = 100 / segData.length;
-              const centerX = segWidth * dot.segmentIndex + segWidth / 2;
+
+        {/* Ghost bars: missed notes shown at sung pitch, paler */}
+        {ghostBars.length > 0 && (
+          <div className="absolute pointer-events-none" style={{ inset: 0, overflow: 'visible' }}>
+            {ghostBars.map((bar) => {
+              const segW    = 100 / segData.length;
+              const barLeft = segW * bar.segmentIndex + segW * 0.1;
+              const barW    = segW * 0.8;
               return (
                 <div
-                  key={`dot-${dot.segmentIndex}`}
-                  className="absolute rounded-full"
+                  key={`ghost-${bar.segmentIndex}`}
+                  className="absolute rounded-sm"
                   style={{
-                    left: `${centerX}%`,
+                    left: `${barLeft}%`,
                     top: '50%',
-                    width: '5px',
-                    height: '5px',
-                    transform: `translate(-50%, calc(-50% + ${dot.yOffset}px))`,
-                    backgroundColor: dot.color,
-                    boxShadow: `0 0 3px ${dot.color}`,
-                    opacity: 0.85,
+                    width: `${barW}%`,
+                    height: '14px',
+                    transform: `translateY(-50%) translateY(${bar.yOffset}px)`,
+                    backgroundColor: bar.color,
+                    opacity: 0.8,
+                    boxShadow: `0 0 6px ${bar.color}`,
                   }}
                 />
               );
