@@ -681,6 +681,19 @@ pub fn run() {
             app.manage(db::DbState::new(db_path)?);
             println!("SQLite database initialized at: {:?}", app.state::<db::DbState>().db_path);
 
+            // ── Splash screen: immediately show branded loading page ──
+            // In dev mode the initial load of localhost:3000 fails because
+            // the Next.js server hasn't started yet, causing a WebView2
+            // error page.  We navigate to the splash HTML from frontendDist
+            // (dist/index.html) so the user sees a branded loading screen
+            // instead of the browser's "can't connect" error.
+            // In production mode the window already loads from frontendDist,
+            // so this is a no-op (same page).
+            #[cfg(debug_assertions)]
+            if let Some(window) = app.handle().get_webview_window("main") {
+                let _ = window.eval("if(location.href!=='https://tauri.localhost/')location.href='https://tauri.localhost/'");
+            }
+
             // Get the main window and open DevTools (debug builds only)
             #[cfg(debug_assertions)]
             if let Some(window) = app.handle().get_webview_window("main") {
