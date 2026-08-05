@@ -28,6 +28,8 @@ export function getNoteDisplayStyleClasses(
   noteStartTime?: number,
   /** Note duration in ms (for time-based segment mapping) */
   noteDuration?: number,
+  /** Container height in px (for exact ghost-bar pitch positioning) */
+  containerHeight?: number,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -60,17 +62,17 @@ export function getNoteDisplayStyleClasses(
   const reachedCount = Math.floor(reachedFloat);
   const partialFill = reachedFloat - reachedCount;
 
-  // ── Colour palette ──────────────────────────────────────────────
+  // ── Colour palette (high-saturation for visibility over video) ──
   const hitColors = {
-    Perfect: isGolden ? '#fbbf24' : isBonus ? '#f472b6' : '#34d399',
-    Great:   isGolden ? '#f59e0b' : isBonus ? '#ec4899' : '#22d3ee',
-    Good:    isGolden ? '#d97706' : isBonus ? '#db2777' : '#3b82f6',
-    Okay:    isGolden ? '#92400e' : isBonus ? '#9d174d' : '#6366f1',
+    Perfect: isGolden ? '#fde047' : isBonus ? '#fb7185' : '#4ade80',
+    Great:   isGolden ? '#facc15' : isBonus ? '#f472b6' : '#22d3ee',
+    Good:    isGolden ? '#eab308' : isBonus ? '#ec4899' : '#60a5fa',
+    Okay:    isGolden ? '#a16207' : isBonus ? '#be185d' : '#818cf8',
   };
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
-  const unreachedBg   = 'rgba(255, 255, 255, 0.06)';
-  const unreachedBdr  = 'rgba(255, 255, 255, 0.12)';
+  const unreachedBg   = 'rgba(255, 255, 255, 0.08)';
+  const unreachedBdr  = 'rgba(255, 255, 255, 0.14)';
 
   // ── Time-based segment → sample mapping ────────────────────────
   const segDur = (noteDuration ?? 0) / segCount;
@@ -126,24 +128,33 @@ export function getNoteDisplayStyleClasses(
   const hasHits = hitRatio > 0;
 
   // ── Ghost bars for missed segments within the reached area ─────
+  // Positioned at the EXACT sung pitch using the same pitch-to-Y
+  // formula as NoteBlock, so the singer sees precisely where they are.
   const ghostBars: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
   if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
     const pr = pitchStats.pitchRange || 1;
+    const cH = containerHeight || 800;
+
+    // Pre-compute target pitch Y position (percent of container)
+    const targetY = visibleTop + visibleRange - ((targetPitch - pitchStats.minPitch) / pr) * visibleRange;
+
     for (let si = 0; si < Math.min(reachedCount, segData.length); si++) {
       const seg = segData[si];
       if (!seg.hit && seg.sungPitch !== null) {
+        // Compute the exact Y position of the sung pitch
+        const sungY = visibleTop + visibleRange - ((seg.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
+        // Convert percent difference to pixel offset relative to the note center
+        const yOffset = ((sungY - targetY) / 100) * cH;
+
+        // Colour by distance: close = warm yellow, far = bright red
         let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
         if (rawDiff > 6) rawDiff = 12 - rawDiff;
-        const pxPerSemitone = (visibleRange / pr) * 0.6;
-        const direction = seg.sungPitch > targetPitch ? -1 : 1;
-        const yDiff = direction * rawDiff * pxPerSemitone;
-        const clampedY = Math.max(-48, Math.min(48, yDiff));
         const color = rawDiff > 2
-          ? 'rgba(239, 68, 68, 0.50)'
+          ? 'rgba(255, 60, 60, 0.65)'
           : rawDiff > 1
-            ? 'rgba(249, 115, 22, 0.45)'
-            : 'rgba(234, 179, 8, 0.40)';
-        ghostBars.push({ segmentIndex: si, yOffset: clampedY, color });
+            ? 'rgba(255, 140, 30, 0.60)'
+            : 'rgba(255, 220, 50, 0.55)';
+        ghostBars.push({ segmentIndex: si, yOffset, color });
       }
     }
   }
@@ -158,7 +169,7 @@ export function getNoteDisplayStyleClasses(
       backgroundColor: 'rgba(100, 130, 160, 0.08)',
       border: '1.5px solid rgba(255, 255, 255, 0.16)',
       boxShadow: hasHits
-        ? `0 0 ${4 + hitRatio * 10}px ${glowColor}${hitRatio * 0.35}), inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18)`
+        ? `0 0 ${6 + hitRatio * 14}px ${glowColor}${hitRatio * 0.5}), 0 0 ${2 + hitRatio * 6}px ${glowColor}${hitRatio * 0.3}), inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.18)`
         : 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
       filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
     },
@@ -223,11 +234,11 @@ export function getNoteDisplayStyleClasses(
                     left: `${barLeft}%`,
                     top: '50%',
                     width: `${barW}%`,
-                    height: '14px',
+                    height: '18px',
                     transform: `translateY(-50%) translateY(${bar.yOffset}px)`,
                     backgroundColor: bar.color,
-                    opacity: 0.8,
-                    boxShadow: `0 0 6px ${bar.color}`,
+                    opacity: 0.9,
+                    boxShadow: `0 0 8px ${bar.color}`,
                   }}
                 />
               );

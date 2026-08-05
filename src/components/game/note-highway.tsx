@@ -153,6 +153,7 @@ const NoteBlock = React.memo(function NoteBlock({
     fillFraction,
     note.startTime,
     note.duration,
+    typeof window !== 'undefined' ? window.innerHeight : 800,
   );
 
   const glowColor = withAlpha(playerColor, 0.8);

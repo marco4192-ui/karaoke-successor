@@ -687,11 +687,10 @@ pub fn run() {
             // error page.  We navigate to the splash HTML from frontendDist
             // (dist/index.html) so the user sees a branded loading screen
             // instead of the browser's "can't connect" error.
-            // In production mode the window already loads from frontendDist,
-            // so this is a no-op (same page).
-            #[cfg(debug_assertions)]
+            // Must use native navigate() — eval() requires a loaded page
+            // context which doesn't exist yet at setup time.
             if let Some(window) = app.handle().get_webview_window("main") {
-                let _ = window.eval("if(location.href!=='https://tauri.localhost/')location.href='https://tauri.localhost/'");
+                let _ = window.navigate(tauri::Url::parse("https://tauri.localhost/").unwrap());
             }
 
             // Get the main window and open DevTools (debug builds only)
@@ -704,7 +703,7 @@ pub fn run() {
             if check_server_running() {
                 println!("Server already running on port 3000");
                 if let Some(window) = app.handle().get_webview_window("main") {
-                    let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                    let _ = window.navigate(tauri::Url::parse("http://localhost:3000").unwrap());
                     // Re-open DevTools after navigation (debug builds only; redirect may close them)
                     #[cfg(debug_assertions)]
                     let _ = window.open_devtools();
@@ -840,7 +839,7 @@ pub fn run() {
                             println!("Server is ready after {} attempts!", i);
                             
                             if let Some(window) = handle.get_webview_window("main") {
-                                let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                                let _ = window.navigate(tauri::Url::parse("http://localhost:3000").unwrap());
                                 // Re-open DevTools after navigation (debug builds only)
                                 #[cfg(debug_assertions)]
                                 let _ = window.open_devtools();
