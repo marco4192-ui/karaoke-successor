@@ -17,13 +17,12 @@ interface MirrorHomeLiteProps {
   remoteLockedBy: string | null;
   onAcquireRemote: () => void;
   onReleaseRemote: () => void;
-  /** Send a navigation command to the desktop (for screen mirroring) */
+  /** Send a navigation command to the desktop */
   onSendDesktopCommand: (screen: string) => void;
 }
 
 // ===================== Hilfsfunktionen =====================
 
-/** Triggert haptisches Feedback, falls die Vibration API verfügbar ist. */
 function haptic() {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     navigator.vibrate(10);
@@ -54,6 +53,14 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
       [onNavigate],
     );
 
+    const handleDesktopNav = useCallback(
+      (screen: string) => {
+        haptic();
+        onSendDesktopCommand(screen);
+      },
+      [onSendDesktopCommand],
+    );
+
     const handleAcquireRemote = useCallback(() => {
       haptic();
       onAcquireRemote();
@@ -77,11 +84,8 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               'border border-cyan-400/20'
             }
           >
-            {/* Subtle glow overlay */}
             <div className="pointer-events-none absolute -inset-4 rounded-xl bg-gradient-to-br from-cyan-400/5 to-purple-500/5 blur-xl" />
-
             <div className="relative flex items-start gap-3">
-              {/* Pulsing dot when playing */}
               {gameState.isPlaying && (
                 <span className="mt-1.5 flex h-2.5 w-2.5 shrink-0">
                   <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-cyan-400 opacity-75" />
@@ -99,7 +103,6 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
                   {gameState.currentSong.artist}
                 </p>
               </div>
-              {/* Game mode badge */}
               {gameState.gameMode && (
                 <span
                   className={
@@ -123,13 +126,12 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
           </div>
         )}
 
-        {/* ===== 2. Remote Control Lock Banner ===== */}
+        {/* ===== 2. Remote Control Lock ===== */}
         {!isRemoteLocked ? (
-          /* Niemand hat die Steuerung – großen Button anzeigen */
           <button
             onClick={handleAcquireRemote}
             className={
-              'w-full rounded-xl p-3.5 text-center font-semibold ' +
+              'w-full rounded-xl p-3 text-center text-sm font-semibold ' +
               'bg-cyan-500/15 border border-cyan-400/30 text-cyan-400 ' +
               'active:scale-[0.97] transition-transform'
             }
@@ -137,10 +139,9 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
             {t('mobile.mirrorAcquireRemote')}
           </button>
         ) : remoteLockedBy ? (
-          /* Jemand hat die Steuerung */
           <div
             className={
-              'flex items-center justify-between rounded-xl p-3.5 ' +
+              'flex items-center justify-between rounded-xl p-3 ' +
               'bg-white/5 border border-white/10'
             }
           >
@@ -158,10 +159,9 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
             </button>
           </div>
         ) : (
-          /* Jemand anderes hat die Steuerung */
           <div
             className={
-              'flex items-center justify-center rounded-xl p-3.5 ' +
+              'flex items-center justify-center rounded-xl p-3 ' +
               'bg-white/5 border border-white/10'
             }
           >
@@ -171,77 +171,25 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
           </div>
         )}
 
-        {/* ===== 3. Quick Stats Row ===== */}
-        <div className="grid grid-cols-3 gap-2.5">
-          {/* Queue count */}
-          <button
-            onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
-            className={
-              'flex flex-col items-center gap-1 rounded-xl p-3 ' +
-              'bg-white/5 border border-white/10 active:scale-95 transition-transform'
-            }
-          >
-            <span className="text-lg leading-none">📋</span>
-            <span className="text-xs font-semibold tabular-nums text-white">
-              {queue.length}
-            </span>
-            <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorQueue')}
-            </span>
-          </button>
-
-          {/* Game mode */}
-          <div
-            className={
-              'flex flex-col items-center gap-1 rounded-xl p-3 ' +
-              'bg-white/5 border border-white/10'
-            }
-          >
-            <span className="text-lg leading-none">🎮</span>
-            <span className="text-xs font-semibold text-white">
-              {gameState.gameMode || '–'}
-            </span>
-            <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorGameMode')}
-            </span>
-          </div>
-
-          {/* Chat */}
-          <button
-            onClick={onOpenChat}
-            className={
-              'flex flex-col items-center gap-1 rounded-xl p-3 ' +
-              'bg-white/5 border border-white/10 active:scale-95 transition-transform'
-            }
-          >
-            <span className="text-lg leading-none">💬</span>
-            <span className="text-xs font-semibold text-white">{t('mobile.mirrorChat')}</span>
-            <span className="text-[10px] text-white/40">
-              {t('mobile.mirrorChat')}
-            </span>
-          </button>
-        </div>
-
-        {/* ===== 4. Queue Preview ===== */}
+        {/* ===== 3. Queue Preview ===== */}
         {previewQueue.length > 0 && (
           <div>
             <div className="mb-2 flex items-center justify-between px-1">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
-                {t('mobileViews.upNext')}
+                {t('mobileViews.upNext')} ({queue.filter(q => q.status !== 'completed').length})
               </h3>
               <button
-                onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
+                onClick={() => handleDesktopNav('queue')}
                 className="text-xs font-medium text-cyan-400/80 active:opacity-70 transition-opacity"
               >
                 {t('mobile.mirrorShowAll')} →
               </button>
             </div>
-
             <div className="flex flex-col gap-2">
               {previewQueue.map((item, idx) => (
                 <button
                   key={item.id}
-                  onClick={() => { haptic(); onSendDesktopCommand('queue'); }}
+                  onClick={() => handleDesktopNav('queue')}
                   className={
                     'flex items-center gap-3 rounded-xl p-3 text-left ' +
                     'bg-white/5 border border-white/10 ' +
@@ -252,12 +200,8 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
                     {idx + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {item.songTitle}
-                    </p>
-                    <p className="truncate text-xs text-white/40">
-                      {item.songArtist}
-                    </p>
+                    <p className="truncate text-sm font-medium text-white">{item.songTitle}</p>
+                    <p className="truncate text-xs text-white/40">{item.songArtist}</p>
                   </div>
                   {item.gameMode && (
                     <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase text-purple-300/80 bg-purple-500/20">
@@ -270,58 +214,125 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
           </div>
         )}
 
-        {/* ===== 5. Action Grid ===== */}
-        <div className="grid grid-cols-2 gap-3">
-          <ActionButton
-            icon="🎤"
-            label={t('mobile.mirrorSing')}
-            onPress={() => handleNavigate('mic')}
-          />
-          <ActionButton
+        {/* ===== 4. Navigation Grid – Alle Menüpunkte ===== */}
+        <div className="grid grid-cols-3 gap-2.5">
+          <NavButton
             icon="🎵"
             label={t('mobile.mirrorSongs')}
-            onPress={() => handleNavigate('songs')}
+            color="cyan"
+            onPress={() => handleDesktopNav('library')}
           />
-          <ActionButton
+          <NavButton
+            icon="🎉"
+            label={t('mobile.mirrorPartyMode')}
+            color="pink"
+            onPress={() => handleDesktopNav('party')}
+          />
+          <NavButton
             icon="📋"
             label={t('mobile.mirrorQueue')}
-            onPress={() => { haptic(); onSendDesktopCommand('queue'); }}
+            color="purple"
+            onPress={() => handleDesktopNav('queue')}
           />
-          <ActionButton
+          <NavButton
+            icon="🏆"
+            label={t('mobile.mirrorHighscores')}
+            color="yellow"
+            onPress={() => handleDesktopNav('highscores')}
+          />
+          <NavButton
+            icon="📅"
+            label={t('mobile.mirrorDailyChallenge')}
+            color="orange"
+            onPress={() => handleDesktopNav('dailyChallenge')}
+          />
+          <NavButton
+            icon="🏅"
+            label={t('mobile.mirrorAchievements')}
+            color="green"
+            onPress={() => handleDesktopNav('achievements')}
+          />
+          <NavButton
             icon="📻"
             label={t('mobile.mirrorJukebox')}
-            onPress={() => { haptic(); onSendDesktopCommand('jukebox'); }}
+            color="teal"
+            onPress={() => handleDesktopNav('jukebox')}
           />
+          <NavButton
+            icon="⚙️"
+            label={t('mobile.mirrorSettings')}
+            color="gray"
+            onPress={() => handleDesktopNav('settings')}
+          />
+          <NavButton
+            icon="👤"
+            label={t('mobile.mirrorProfile')}
+            color="indigo"
+            onPress={() => handleDesktopNav('profile')}
+          />
+        </div>
+
+        {/* ===== 5. Companion-Exklusiv ===== */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            onClick={() => handleNavigate('mic')}
+            className={
+              'flex items-center justify-center gap-2 rounded-xl p-3.5 ' +
+              'bg-emerald-500/10 border border-emerald-400/20 active:scale-95 transition-transform'
+            }
+          >
+            <span className="text-lg">🎤</span>
+            <span className="text-sm font-medium text-emerald-400">{t('mobile.mirrorSing')}</span>
+          </button>
+          <button
+            onClick={onOpenChat}
+            className={
+              'flex items-center justify-center gap-2 rounded-xl p-3.5 ' +
+              'bg-white/5 border border-white/10 active:scale-95 transition-transform'
+            }
+          >
+            <span className="text-lg">💬</span>
+            <span className="text-sm font-medium text-white/70">{t('mobile.mirrorChat')}</span>
+          </button>
         </div>
       </div>
     );
   },
 );
 
-// ===================== Action Button Sub-Komponente =====================
+// ===================== Nav Button Sub-Komponente =====================
 
-interface ActionButtonProps {
+const COLOR_MAP: Record<string, string> = {
+  cyan:   'bg-cyan-500/10 border-cyan-400/20 text-cyan-400',
+  pink:   'bg-pink-500/10 border-pink-400/20 text-pink-400',
+  purple: 'bg-purple-500/10 border-purple-400/20 text-purple-400',
+  yellow: 'bg-yellow-500/10 border-yellow-400/20 text-yellow-400',
+  orange: 'bg-orange-500/10 border-orange-400/20 text-orange-400',
+  green:  'bg-green-500/10 border-green-400/20 text-green-400',
+  teal:   'bg-teal-500/10 border-teal-400/20 text-teal-400',
+  gray:   'bg-white/5 border-white/10 text-white/70',
+  indigo: 'bg-indigo-500/10 border-indigo-400/20 text-indigo-400',
+};
+
+interface NavButtonProps {
   icon: string;
   label: string;
+  color: string;
   onPress: () => void;
 }
 
-const ActionButton = React.memo<ActionButtonProps>(function ActionButton({
-  icon,
-  label,
-  onPress,
-}) {
+const NavButton = React.memo<NavButtonProps>(function NavButton({ icon, label, color, onPress }) {
   return (
     <button
       onClick={onPress}
       className={
-        'flex flex-col items-center justify-center gap-2 rounded-xl p-4 ' +
-        'bg-white/5 border border-white/10 ' +
-        'active:scale-95 transition-transform'
+        'flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' +
+        'border active:scale-95 transition-transform ' +
+        (COLOR_MAP[color] || COLOR_MAP.gray)
       }
     >
-      <span className="text-2xl leading-none">{icon}</span>
-      <span className="text-xs font-medium text-white/80">{label}</span>
+      <span className="text-xl leading-none">{icon}</span>
+      <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
     </button>
   );
 });

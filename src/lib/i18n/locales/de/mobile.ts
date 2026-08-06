@@ -95,6 +95,13 @@ export const mobileTranslations = {
     mirrorProfileActive: 'Aktiv',
     mirrorProfileInactive: 'Inaktiv',
     mirrorProfileSyncNote: 'Änderungen werden sofort auf dem Desktop übernommen',
+    mirrorProfile: 'Profile',
+    mirrorHome: 'Start',
+    mirrorRestart: 'Neustart',
+    mirrorPause: 'Pause',
+    mirrorPlay: 'Play',
+    mirrorSkip: 'Überspringen',
+    mirrorFullscreen: 'Vollbild',
   },
 
   mobileClient: {

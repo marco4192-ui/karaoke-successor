@@ -247,6 +247,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             clientId={clientId}
             profileName={profileName}
             onNavigate={onNavigate}
+            {...desktopMirrorBase}
           />
         </div>
       );
@@ -263,7 +264,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     case 'highscores':
       return (
         <div className="min-h-[calc(100vh-7rem)]">
-          <MirrorHighscoresLite {...navBase} />
+          <MirrorHighscoresLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
 
@@ -271,7 +272,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     case 'dailyChallenge':
       return (
         <div className="min-h-[calc(100vh-7rem)]">
-          <MirrorDailyLite {...navBase} />
+          <MirrorDailyLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
 
@@ -279,7 +280,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     case 'party':
       return (
         <div className="min-h-[calc(100vh-7rem)]">
-          <MirrorPartyLite {...navBase} />
+          <MirrorPartyLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
 
@@ -313,7 +314,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     case 'achievements':
       return (
         <div className="min-h-[calc(100vh-7rem)]">
-          <MirrorAchievementsLite {...navBase} />
+          <MirrorAchievementsLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
 
