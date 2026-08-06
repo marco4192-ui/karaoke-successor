@@ -62,14 +62,22 @@ export function getNoteDisplayStyleClasses(
   const reachedCount = Math.floor(reachedFloat);
   const partialFill = reachedFloat - reachedCount;
 
-  // ── Colour palette (high-saturation / neon for visibility over video) ──
-  // Chosen to punch through bright video backgrounds: full saturation,
-  // high luminance edges, strong glow.
+  // ── Colour palette (maximum saturation neon for visibility over video) ──
+  // These are intentionally oversaturated / glowing so they punch through
+  // bright video backgrounds.  Each colour is at or near 100% saturation.
   const hitColors = {
-    Perfect: isGolden ? '#FFD700' : isBonus ? '#FF1493' : '#00FF7F',
-    Great:   isGolden ? '#FFC107' : isBonus ? '#FF69B4' : '#00E5FF',
-    Good:    isGolden ? '#FF9800' : isBonus ? '#FF007F' : '#2979FF',
-    Okay:    isGolden ? '#E65100' : isBonus ? '#C51162' : '#7C4DFF',
+    Perfect: isGolden ? '#FFE100' : isBonus ? '#FF0066' : '#00FF66',
+    Great:   isGolden ? '#FFB800' : isBonus ? '#FF3399' : '#00DDFF',
+    Good:    isGolden ? '#FF8C00' : isBonus ? '#FF0055' : '#0066FF',
+    Okay:    isGolden ? '#CC5500' : isBonus ? '#AA0044' : '#6600FF',
+  };
+
+  // Per-segment glow colour (matches hit colour with strong opacity)
+  const hitGlows = {
+    Perfect: isGolden ? '0 0 10px #FFE100, 0 0 20px rgba(255,225,0,.5)' : isBonus ? '0 0 10px #FF0066, 0 0 20px rgba(255,0,102,.5)' : '0 0 10px #00FF66, 0 0 20px rgba(0,255,102,.5)',
+    Great:   isGolden ? '0 0 8px #FFB800, 0 0 16px rgba(255,184,0,.4)' : isBonus ? '0 0 8px #FF3399, 0 0 16px rgba(255,51,153,.4)' : '0 0 8px #00DDFF, 0 0 16px rgba(0,221,255,.4)',
+    Good:    isGolden ? '0 0 6px #FF8C00, 0 0 12px rgba(255,140,0,.35)' : isBonus ? '0 0 6px #FF0055, 0 0 12px rgba(255,0,85,.35)' : '0 0 6px #0066FF, 0 0 12px rgba(0,102,255,.35)',
+    Okay:    isGolden ? '0 0 4px #CC5500' : isBonus ? '0 0 4px #AA0044' : '0 0 4px #6600FF',
   };
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
@@ -186,6 +194,7 @@ export function getNoteDisplayStyleClasses(
             let bgColor: string;
             let borderCol: string;
             let clipPath: string | undefined;
+            let segGlow: string | undefined;
 
             if (isUnreached) {
               bgColor   = unreachedBg;
@@ -193,6 +202,7 @@ export function getNoteDisplayStyleClasses(
             } else if (seg.hit) {
               bgColor   = hitColors[seg.displayType as keyof typeof hitColors] || hitColors.Okay;
               borderCol = 'transparent';
+              segGlow   = hitGlows[seg.displayType as keyof typeof hitGlows];
             } else {
               bgColor   = missGap;
               borderCol = missGapBorder;
@@ -204,6 +214,7 @@ export function getNoteDisplayStyleClasses(
             } else if (isAtFront && partialFill <= 0) {
               bgColor   = unreachedBg;
               borderCol = unreachedBdr;
+              segGlow   = undefined;
             }
 
             return (
@@ -214,7 +225,8 @@ export function getNoteDisplayStyleClasses(
                   backgroundColor: bgColor,
                   border: `1px solid ${borderCol}`,
                   clipPath,
-                  transition: 'background-color 60ms linear',
+                  boxShadow: segGlow,
+                  transition: 'background-color 60ms linear, box-shadow 60ms linear',
                 }}
               />
             );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { StorageKeys, getBool } from '@/lib/storage';
+import { StorageKeys, getBool, getString } from '@/lib/storage';
 
 type PerformanceMode = 'full' | 'low';
 
@@ -33,7 +33,7 @@ export function useGameSettings(): GameSettings & {
     () => getBool(StorageKeys.ANIMATED_BG, false)
   );
   const [performanceMode, setPerformanceMode] = useState<PerformanceMode>(() => {
-    return parsePerformanceMode(getBool(StorageKeys.PERFORMANCE_MODE) ? 'low' : null) || 'full';
+    return parsePerformanceMode(getString(StorageKeys.PERFORMANCE_MODE)) || 'full';
   });
 
   useEffect(() => {
@@ -41,6 +41,7 @@ export function useGameSettings(): GameSettings & {
     setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
     setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
     setUseAnimatedBackground(getBool(StorageKeys.ANIMATED_BG, false));
+    setPerformanceMode(parsePerformanceMode(getString(StorageKeys.PERFORMANCE_MODE)) || 'full');
 
     const handleSettingsChange = () => {
       setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
