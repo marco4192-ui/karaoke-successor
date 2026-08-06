@@ -684,13 +684,16 @@ pub fn run() {
             // ── Splash screen: immediately show branded loading page ──
             // In dev mode the initial load of localhost:3000 fails because
             // the Next.js server hasn't started yet, causing a WebView2
-            // error page.  We navigate to the splash HTML from frontendDist
-            // (dist/index.html) so the user sees a branded loading screen
-            // instead of the browser's "can't connect" error.
-            // Must use native navigate() — eval() requires a loaded page
-            // context which doesn't exist yet at setup time.
+            // error page.  We use a data: URI with the splash HTML so the
+            // user sees a branded loading screen instead of the browser's
+            // "can't connect" error.  A tauri.localhost URL does NOT work
+            // in dev mode because Tauri v2 does not serve frontendDist assets
+            // when a devUrl is configured.
             if let Some(window) = app.handle().get_webview_window("main") {
-                let _ = window.navigate(tauri::Url::parse("https://tauri.localhost/").unwrap());
+                let splash_html = r#"<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0d0d2b 100%);display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#fff}.c{text-align:center}.i{font-size:4.5rem;margin-bottom:1.25rem;animation:f 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,45,149,.4))}.t{font-size:2.2rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;background:linear-gradient(135deg,#ff2d95 0%,#ff6b9d 50%,#c850c0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2.5rem}.b{width:220px;height:3px;background:rgba(255,255,255,.08);border-radius:3px;margin:0 auto 1.5rem;overflow:hidden;position:relative}.f{position:absolute;left:0;top:0;height:100%;width:35%;background:linear-gradient(90deg,transparent,#ff2d95,#c850c0,transparent);border-radius:3px;animation:s 1.6s ease-in-out infinite}.h{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25)}@keyframes f{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes s{0%{left:-35%}100%{left:100%}}</style></head><body><div class="c"><div class="i">&#x1F3A4;</div><div class="t">Karaoke ZERO</div><div class="b"><div class="f"></div></div><div class="h">wird gestartet...</div></div></body></html>"#;
+                let encoded = urlencoding::encode(splash_html);
+                let data_url = format!("data:text/html;charset=utf-8,{}", encoded);
+                let _ = window.navigate(tauri::Url::parse(&data_url).unwrap());
             }
 
             // Get the main window and open DevTools (debug builds only)

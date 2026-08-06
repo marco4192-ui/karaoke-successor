@@ -44,6 +44,9 @@ tokio = { version = "1", features = ["rt", "macros"] }
 # HTTP client for fetching chart data (Apple Music RSS, Deezer API)
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
+# URL encoding for splash screen data: URI
+urlencoding = "2"
+
 # SQLite for local offline storage
 rusqlite = { version = "0.31", features = ["bundled"] }
 

@@ -62,12 +62,14 @@ export function getNoteDisplayStyleClasses(
   const reachedCount = Math.floor(reachedFloat);
   const partialFill = reachedFloat - reachedCount;
 
-  // ── Colour palette (high-saturation for visibility over video) ──
+  // ── Colour palette (high-saturation / neon for visibility over video) ──
+  // Chosen to punch through bright video backgrounds: full saturation,
+  // high luminance edges, strong glow.
   const hitColors = {
-    Perfect: isGolden ? '#fde047' : isBonus ? '#fb7185' : '#4ade80',
-    Great:   isGolden ? '#facc15' : isBonus ? '#f472b6' : '#22d3ee',
-    Good:    isGolden ? '#eab308' : isBonus ? '#ec4899' : '#60a5fa',
-    Okay:    isGolden ? '#a16207' : isBonus ? '#be185d' : '#818cf8',
+    Perfect: isGolden ? '#FFD700' : isBonus ? '#FF1493' : '#00FF7F',
+    Great:   isGolden ? '#FFC107' : isBonus ? '#FF69B4' : '#00E5FF',
+    Good:    isGolden ? '#FF9800' : isBonus ? '#FF007F' : '#2979FF',
+    Okay:    isGolden ? '#E65100' : isBonus ? '#C51162' : '#7C4DFF',
   };
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
@@ -146,20 +148,20 @@ export function getNoteDisplayStyleClasses(
         // Convert percent difference to pixel offset relative to the note center
         const yOffset = ((sungY - targetY) / 100) * cH;
 
-        // Colour by distance: close = warm yellow, far = bright red
+        // Colour by distance: close = bright yellow, far = vivid red
         let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
         if (rawDiff > 6) rawDiff = 12 - rawDiff;
         const color = rawDiff > 2
-          ? 'rgba(255, 60, 60, 0.65)'
+          ? 'rgba(255, 30, 30, 0.85)'
           : rawDiff > 1
-            ? 'rgba(255, 140, 30, 0.60)'
-            : 'rgba(255, 220, 50, 0.55)';
+            ? 'rgba(255, 120, 0, 0.80)'
+            : 'rgba(255, 230, 0, 0.75)';
         ghostBars.push({ segmentIndex: si, yOffset, color });
       }
     }
   }
 
-  const glowColor = isGolden ? 'rgba(251, 191, 36,' : isBonus ? 'rgba(236, 72, 153,' : 'rgba(34, 211, 238,';
+  const glowColor = isGolden ? 'rgba(255, 193, 7,' : isBonus ? 'rgba(255, 20, 147,' : 'rgba(0, 229, 255,';
 
   // ── Render ──────────────────────────────────────────────────────
   return {
