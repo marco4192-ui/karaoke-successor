@@ -78,42 +78,17 @@ async function collectAllFiles(
   return files;
 }
 
-// Process a single folder and create a song if valid
-async function processFolder(
+// Process a single TXT file from a folder and create a song if valid.
+// Shared audio/video/cover files from the folder are passed in.
+async function processTxtFile(
+  txtFile: { path: string; name: string },
   folderPath: string,
-  files: Map<string, { path: string; name: string }>,
+  audioFile: { path: string; name: string } | null,
+  videoFile: { path: string; name: string } | null,
+  coverFile: { path: string; name: string } | null,
   baseFolder: string
 ): Promise<TauriScannedSong | null> {
-  // Find TXT, audio, video, cover files
-  let txtFile: { path: string; name: string } | null = null;
-  let audioFile: { path: string; name: string } | null = null;
-  let videoFile: { path: string; name: string } | null = null;
-  let coverFile: { path: string; name: string } | null = null;
-  
-  for (const [name, file] of files) {
-    const ext = '.' + name.split('.').pop()?.toLowerCase();
-    
-    if (TXT_EXTENSIONS.includes(ext)) {
-      txtFile = file;
-    } else if (AUDIO_EXTENSIONS.includes(ext)) {
-      audioFile = file;
-    } else if (VIDEO_EXTENSIONS.includes(ext)) {
-      videoFile = file;
-    } else if (COVER_EXTENSIONS.includes(ext)) {
-      const isPriorityCover = COVER_PATTERNS.some(p => p.test(name));
-      if (!coverFile || isPriorityCover) {
-        coverFile = file;
-      }
-    }
-  }
-  
-  // Must have at least TXT and audio/video
-  if (!txtFile || (!audioFile && !videoFile)) {
-    return null;
-  }
-  
   // Read TXT content using native command (bypass ACL)
-  // Normalize base folder separators to construct correct full path
   let txtContent: string | null = null;
   try {
     const normalizedBase = normalizeFilePath(baseFolder);
@@ -123,11 +98,11 @@ async function processFolder(
     console.debug('[tauri-file-storage]: failed to read TXT content', error);
     return null;
   }
-  
+
   if (!txtContent) {
     return null;
   }
-  
+
   // Parse metadata from TXT
   const normalizedContent = normalizeTxtContent(txtContent);
   const lines = normalizedContent.split('\n');
@@ -174,156 +149,75 @@ async function processFolder(
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Basic info
-    if (trimmed.startsWith('#TITLE:')) {
-      title = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#ARTIST:')) {
-      artist = trimmed.substring(8).trim();
-    } else if (trimmed.startsWith('#BPM:')) {
-      bpm = parseFloat(trimmed.substring(5).replace(',', '.')) || 120;
-    } else if (trimmed.startsWith('#GAP:')) {
-      gap = parseInt(trimmed.substring(5)) || 0;
-    } else if (trimmed.startsWith('#GENRE:')) {
-      genre = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#LANGUAGE:')) {
-      language = trimmed.substring(10).trim();
-    } else if (trimmed.startsWith('#YEAR:')) {
-      year = parseInt(trimmed.substring(6)) || undefined;
-    }
-
-    // File references
-    else if (trimmed.startsWith('#MP3:')) {
-      txtMp3File = trimmed.substring(5).trim();
-    } else if (trimmed.startsWith('#AUDIO:')) {
-      // Alternative to #MP3:
-      txtMp3File = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#VIDEO:')) {
-      txtVideoFile = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#COVER:')) {
-      txtCoverFile = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#BACKGROUND:')) {
-      txtBackgroundFile = trimmed.substring(12).trim();
-    }
-
-    // Time control
-    else if (trimmed.startsWith('#START:')) {
-      start = parseInt(trimmed.substring(7)) || undefined;
-    } else if (trimmed.startsWith('#END:')) {
-      const endVal = parseInt(trimmed.substring(5));
-      end = endVal > 0 ? endVal : undefined;
-    } else if (trimmed.startsWith('#VIDEOGAP:')) {
-      videoGap = parseFloat(trimmed.substring(10).replace(',', '.')) || undefined;
-    } else if (trimmed.startsWith('#VIDEOSTART:')) {
-      videoStart = parseFloat(trimmed.substring(12).replace(',', '.')) || undefined;
-    }
-
-    // Preview
-    else if (trimmed.startsWith('#PREVIEWSTART:')) {
-      previewStart = parseFloat(trimmed.substring(14)) || undefined;
-    } else if (trimmed.startsWith('#PREVIEWDURATION:')) {
-      previewDuration = parseFloat(trimmed.substring(17)) || undefined;
-    }
-
-    // Medley
-    else if (trimmed.startsWith('#MEDLEYSTARTBEAT:')) {
-      medleyStartBeat = parseInt(trimmed.substring(17)) || undefined;
-    } else if (trimmed.startsWith('#MEDLEYENDBEAT:')) {
-      medleyEndBeat = parseInt(trimmed.substring(15)) || undefined;
-    }
-
-    // Additional metadata
-    else if (trimmed.startsWith('#CREATOR:')) {
-      creator = trimmed.substring(9).trim();
-    } else if (trimmed.startsWith('#VERSION:')) {
-      version = trimmed.substring(9).trim();
-    } else if (trimmed.startsWith('#EDITION:')) {
-      edition = trimmed.substring(9).trim();
-    } else if (trimmed.startsWith('#TAGS:')) {
-      tags = trimmed.substring(6).trim();
-    }
-
-    // Duet player names
-    else if (trimmed.startsWith('#P1:')) {
-      p1Name = trimmed.substring(4).trim();
-    } else if (trimmed.startsWith('#P2:')) {
-      p2Name = trimmed.substring(4).trim();
-    }
+    if (trimmed.startsWith('#TITLE:')) title = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#ARTIST:')) artist = trimmed.substring(8).trim();
+    else if (trimmed.startsWith('#BPM:')) bpm = parseFloat(trimmed.substring(5).replace(',', '.')) || 120;
+    else if (trimmed.startsWith('#GAP:')) gap = parseInt(trimmed.substring(5)) || 0;
+    else if (trimmed.startsWith('#GENRE:')) genre = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#LANGUAGE:')) language = trimmed.substring(10).trim();
+    else if (trimmed.startsWith('#YEAR:')) year = parseInt(trimmed.substring(6)) || undefined;
+    else if (trimmed.startsWith('#MP3:')) txtMp3File = trimmed.substring(5).trim();
+    else if (trimmed.startsWith('#AUDIO:')) txtMp3File = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#VIDEO:')) txtVideoFile = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#COVER:')) txtCoverFile = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#BACKGROUND:')) txtBackgroundFile = trimmed.substring(12).trim();
+    else if (trimmed.startsWith('#START:')) start = parseInt(trimmed.substring(7)) || undefined;
+    else if (trimmed.startsWith('#END:')) { const v = parseInt(trimmed.substring(5)); end = v > 0 ? v : undefined; }
+    else if (trimmed.startsWith('#VIDEOGAP:')) videoGap = parseFloat(trimmed.substring(10).replace(',', '.')) || undefined;
+    else if (trimmed.startsWith('#VIDEOSTART:')) videoStart = parseFloat(trimmed.substring(12).replace(',', '.')) || undefined;
+    else if (trimmed.startsWith('#PREVIEWSTART:')) previewStart = parseFloat(trimmed.substring(14)) || undefined;
+    else if (trimmed.startsWith('#PREVIEWDURATION:')) previewDuration = parseFloat(trimmed.substring(17)) || undefined;
+    else if (trimmed.startsWith('#MEDLEYSTARTBEAT:')) medleyStartBeat = parseInt(trimmed.substring(17)) || undefined;
+    else if (trimmed.startsWith('#MEDLEYENDBEAT:')) medleyEndBeat = parseInt(trimmed.substring(15)) || undefined;
+    else if (trimmed.startsWith('#CREATOR:')) creator = trimmed.substring(9).trim();
+    else if (trimmed.startsWith('#VERSION:')) version = trimmed.substring(9).trim();
+    else if (trimmed.startsWith('#EDITION:')) edition = trimmed.substring(9).trim();
+    else if (trimmed.startsWith('#TAGS:')) tags = trimmed.substring(6).trim();
+    else if (trimmed.startsWith('#P1:')) p1Name = trimmed.substring(4).trim();
+    else if (trimmed.startsWith('#P2:')) p2Name = trimmed.substring(4).trim();
   }
 
-  // CRITICAL FIX: Use file paths from TXT headers as primary source
-  // The TXT file specifies the exact files to use - we should honor that
-  // The txtFile.path is relative to baseFolder, so we need to construct paths for referenced files
-  
-  // Get the folder containing the TXT file (relative to baseFolder)
-  // Normalize to forward slashes first for consistent handling
   const normalizedTxtPath = normalizeFilePath(txtFile.path);
   const txtDir = normalizedTxtPath.includes('/') ? normalizedTxtPath.substring(0, normalizedTxtPath.lastIndexOf('/')) : '';
-  
-  // Helper to resolve file reference from TXT header
+
   const resolveTxtReference = (refFile: string | undefined, fallbackFile: { path: string } | null): string | undefined => {
     if (refFile) {
-      // If the reference is a URL (http/https), it cannot be resolved as a
-      // filesystem path — skip resolution so it doesn't get baked into
-      // relativeVideoPath / relativeAudioPath (which would create invalid
-      // paths like baseFolder + "/https://...").
-      if (refFile.startsWith('http://') || refFile.startsWith('https://')) {
-
-        return undefined;
-      }
-      // Reference from TXT - combine with TXT directory
-      // The reference is typically just a filename, relative to the TXT file location
-      const resolvedPath = txtDir ? normalizeFilePath(`${txtDir}/${refFile}`) : normalizeFilePath(refFile);
-
-      return resolvedPath;
+      if (refFile.startsWith('http://') || refFile.startsWith('https://')) return undefined;
+      return txtDir ? normalizeFilePath(`${txtDir}/${refFile}`) : normalizeFilePath(refFile);
     }
-    // Fallback to scanned file
     return fallbackFile?.path ? normalizeFilePath(fallbackFile.path) : undefined;
   };
 
-  // Determine audio and video paths
-  // IMPORTANT: In UltraStar format, #MP3: can point to .mp4 files (video with embedded audio)
   let finalAudioPath: string | undefined;
   let finalVideoPath: string | undefined;
   let hasEmbeddedAudio = false;
-  
-  // If #MP3: points to a video file, treat it as video with embedded audio
+
   if (txtMp3File) {
     const mp3Ext = '.' + txtMp3File.split('.').pop()?.toLowerCase();
     if (VIDEO_EXTENSIONS.includes(mp3Ext)) {
-      // #MP3: points to a video file - this is the video with embedded audio
       finalVideoPath = resolveTxtReference(txtMp3File, videoFile);
       hasEmbeddedAudio = true;
-
     } else {
-      // #MP3: points to an audio file
       finalAudioPath = resolveTxtReference(txtMp3File, audioFile);
     }
   } else {
-    // No #MP3: in TXT, use scanned audio file
     finalAudioPath = audioFile?.path;
   }
 
-  // If #VIDEO: is set, it overrides the video path (but #MP3: as video takes precedence for audio)
-  // Skip URLs — they belong in videoBackground, not relativeVideoPath.
   if (txtVideoFile && !hasEmbeddedAudio && !txtVideoFile.startsWith('http://') && !txtVideoFile.startsWith('https://')) {
     finalVideoPath = resolveTxtReference(txtVideoFile, videoFile);
   } else if (!finalVideoPath) {
     finalVideoPath = videoFile?.path;
   }
 
-  // Resolve cover and background paths
   const finalCoverPath = resolveTxtReference(txtCoverFile, coverFile);
   const finalBackgroundPath = resolveTxtReference(txtBackgroundFile, null);
 
-  // Determine if this is a duet
   const isDuet = !!(p1Name || p2Name);
   const duetPlayerNames: [string, string] | undefined = isDuet
     ? [p1Name || 'Player 1', p2Name || 'Player 2']
     : undefined;
 
-
-
-  // Parse lyrics from TXT content
   const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
 
   return {
@@ -336,39 +230,57 @@ async function processFolder(
     relativeVideoPath: finalVideoPath,
     relativeCoverPath: finalCoverPath,
     relativeBackgroundPath: finalBackgroundPath,
-    bpm,
-    gap,
-    genre,
-    language,
-    year,
-    previewStart,
-    previewDuration,
-    lyrics,
-    // Additional metadata
-    creator,
-    version,
-    edition,
-    tags,
-    // Time control
-    start,
-    end,
-    videoGap,
-    videoStart,
-    // Medley
-    medleyStartBeat,
-    medleyEndBeat,
-    // Raw TXT metadata file references (for editor display)
+    bpm, gap, genre, language, year, previewStart, previewDuration, lyrics,
+    creator, version, edition, tags,
+    start, end, videoGap, videoStart,
+    medleyStartBeat, medleyEndBeat,
     mp3File: txtMp3File,
     coverFile: txtCoverFile,
     backgroundFile: txtBackgroundFile,
-    // videoFile: store all values including URLs (needed for videoBackground in import)
     videoFile: txtVideoFile || undefined,
-    // Duet
-    isDuet,
-    duetPlayerNames,
-    // Media flags
-    hasEmbeddedAudio,
+    isDuet, duetPlayerNames, hasEmbeddedAudio,
   };
+}
+
+// Process a folder: collect ALL txt files, audio/video/cover (shared),
+// and produce one TauriScannedSong per .txt file.
+async function processFolder(
+  folderPath: string,
+  files: Map<string, { path: string; name: string }>,
+  baseFolder: string
+): Promise<TauriScannedSong[]> {
+  // Collect shared media files (audio, video, cover — same for all .txt in folder)
+  let audioFile: { path: string; name: string } | null = null;
+  let videoFile: { path: string; name: string } | null = null;
+  let coverFile: { path: string; name: string } | null = null;
+  const txtFiles: { path: string; name: string }[] = [];
+
+  for (const [name, file] of files) {
+    const ext = '.' + name.split('.').pop()?.toLowerCase();
+    if (TXT_EXTENSIONS.includes(ext)) {
+      txtFiles.push(file);
+    } else if (AUDIO_EXTENSIONS.includes(ext)) {
+      audioFile = file;
+    } else if (VIDEO_EXTENSIONS.includes(ext)) {
+      videoFile = file;
+    } else if (COVER_EXTENSIONS.includes(ext)) {
+      const isPriorityCover = COVER_PATTERNS.some(p => p.test(name));
+      if (!coverFile || isPriorityCover) coverFile = file;
+    }
+  }
+
+  // Must have at least one TXT and audio/video
+  if (txtFiles.length === 0 || (!audioFile && !videoFile)) {
+    return [];
+  }
+
+  // Process each .txt file as a separate song sharing the same media
+  const results: TauriScannedSong[] = [];
+  for (const txt of txtFiles) {
+    const song = await processTxtFile(txt, folderPath, audioFile, videoFile, coverFile, baseFolder);
+    if (song) results.push(song);
+  }
+  return results;
 }
 
 // Parse lyrics (notes) from UltraStar TXT content
@@ -470,10 +382,8 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
     // CRITICAL: Pass the absolute baseSongsFolder, NOT the relative songFolder from the map!
     // This is essential for getSongMediaUrl to construct correct absolute paths later
     for (const [songFolder, files] of folderMap) {
-      const song = await processFolder(songFolder, files, baseSongsFolder);
-      if (song) {
-        result.songs.push(song);
-      }
+      const songs = await processFolder(songFolder, files, baseSongsFolder);
+      result.songs.push(...songs);
     }
     
 

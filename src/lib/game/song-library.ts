@@ -206,10 +206,11 @@ export async function addSong(song: Song): Promise<void> {
 
   const customSongs = getCustomSongs();
 
-  // Check for duplicates
+  // Check for duplicates — include relativeTxtPath so two .txt files
+  // in the same folder (e.g. Single vs Duet) are both kept.
   const exists = customSongs.some(s =>
     s.id === song.id ||
-    (s.title === song.title && s.artist === song.artist)
+    (s.title === song.title && s.artist === song.artist && s.relativeTxtPath === song.relativeTxtPath)
   );
 
   if (!exists) {
@@ -233,18 +234,19 @@ export async function addSongs(songs: Song[]): Promise<void> {
   const customSongs = getCustomSongs();
   let added = false;
 
-  // Build lookup sets for O(1) duplicate detection instead of O(n) per song
+  // Build lookup sets for O(1) duplicate detection instead of O(n) per song.
+  // Include relativeTxtPath so two .txt files in the same folder are both kept.
   const existingIds = new Set(customSongs.map(s => s.id));
-  const existingTitles = new Set(customSongs.map(s => `${s.title}||${s.artist}`));
+  const existingTitles = new Set(customSongs.map(s => `${s.title}||${s.artist}||${s.relativeTxtPath || ''}`));
 
   for (const song of songs) {
-    const isDuplicate = existingIds.has(song.id) || existingTitles.has(`${song.title}||${song.artist}`);
+    const isDuplicate = existingIds.has(song.id) || existingTitles.has(`${song.title}||${song.artist}||${song.relativeTxtPath || ''}`);
 
     if (!isDuplicate) {
       const newId = song.id || crypto.randomUUID();
       customSongs.push({ ...song, id: newId });
       existingIds.add(newId);
-      existingTitles.add(`${song.title}||${song.artist}`);
+      existingTitles.add(`${song.title}||${song.artist}||${song.relativeTxtPath || ''}`);
       added = true;
     }
   }
