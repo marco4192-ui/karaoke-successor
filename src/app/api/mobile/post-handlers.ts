@@ -618,22 +618,15 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const commandClient = mobileClients.get(clientId);
         if (!commandClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
-        // Navigation-only commands (screen switches) are allowed without lock
-        // so all companions can trigger desktop screen changes for mirroring.
-        const NAVIGATION_COMMANDS = new Set([
-          'home', 'library', 'queue', 'settings', 'highscores', 'achievements',
-          'dailyChallenge', 'party', 'jukebox', 'profile',
-        ]);
-        const isNavigationOnly = NAVIGATION_COMMANDS.has(commandPayload.command);
-
-        // Non-navigation commands require the lock
-        if (!isNavigationOnly && mutableState.remoteControlState.lockedBy !== clientId) {
-          return Response.json({ 
-            success: false, 
-            message: 'You must acquire remote control first',
-            isLocked: mutableState.remoteControlState.lockedBy !== null,
-            lockedBy: mutableState.remoteControlState.lockedByName,
-          }, { status: 403 });
+        // All companion-sent commands are allowed without explicit lock acquire.
+        // The companion is a trusted device on the local network (QR-scanned).
+        // Auto-acquire the lock if nobody holds it, so playback commands work.
+        if (!mutableState.remoteControlState.lockedBy) {
+          mutableState.remoteControlState.lockedBy = clientId;
+          mutableState.remoteControlState.lockedByName = commandClient.profile?.name || commandClient.name;
+          mutableState.remoteControlState.lockedAt = Date.now();
+          commandClient.hasRemoteControl = true;
+          mobileClients.set(clientId, commandClient);
         }
         
         // Add command to pending queue for main app to pick up

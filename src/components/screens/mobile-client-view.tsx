@@ -7,8 +7,8 @@ import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
-import type { MobileView, MobileProfile } from './mobile/mobile-types';
-import { screenToMirrorId } from './mobile/mobile-types';
+import type { MobileProfile } from './mobile/mobile-types';
+import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
 import { MobileChat } from './mobile/mobile-chat';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
@@ -17,8 +17,6 @@ import { MirrorView } from './mobile/mirror-views/mirror-view';
 
 // View components
 import {
-  MobileMicView,
-  MobileSongsView,
   MobileProfileCreateView,
   MobileProfileEditView,
   MobileBottomNav,
@@ -35,23 +33,24 @@ import { useMobileData } from '@/hooks/use-mobile-data';
 
 // ===================== MOBILE CLIENT VIEW =====================
 interface MobileClientViewProps {
-  /** Optional host profile ID passed via ?profile= in the QR URL */
   profileId?: string;
 }
 
 export function MobileClientView({ profileId }: MobileClientViewProps) {
   const { t } = useTranslation();
-  const [currentView, setCurrentView] = useState<MobileView>('mirror');
   const [profile, setProfile] = useState<MobileProfile | null>(null);
   const [profileName, setProfileName] = useState('');
   const [profileColor, setProfileColor] = useState('#06B6D4');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // #10 Tournament spectator vote state
-  const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const [showChat, setShowChat] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Aktiver Desktop-Screen (wird vom Footer gesteuert)
+  const [activeDesktopScreen, setActiveDesktopScreen] = useState<string>('home');
 
   // Connection
   const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
@@ -68,7 +67,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   });
 
   // Data (songs, queue, jukebox, results, partners)
-  const data = useMobileData({ clientId, profile, onNavigateToProfile: () => setCurrentView('profile') });
+  const data = useMobileData({ clientId, profile, onNavigateToProfile: () => setShowProfile(true) });
 
   // Stop mic when game stops or song ends
   useEffect(() => {
@@ -80,21 +79,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     return () => { stopMicrophone(); cleanup(); };
   }, [stopMicrophone, cleanup]);
 
-  // Persist clientId to localStorage for IP-based reconnection hints
+  // Persist clientId to localStorage
   useEffect(() => {
-    if (clientId) {
-      setItem(StorageKeys.CLIENT_ID, clientId);
-    }
+    if (clientId) setItem(StorageKeys.CLIENT_ID, clientId);
   }, [clientId]);
 
-  // When a profileId is provided via QR, auto-adopt the matching host profile
-  // once the connection is established. This takes priority over any
-  // localStorage-restored profile (the user explicitly chose this character).
+  // Auto-adopt host profile from QR ?profile= param
   const autoAdoptDoneRef = useRef(false);
   useEffect(() => {
     if (!profileId || !isConnected || !clientId || autoAdoptDoneRef.current) return;
     autoAdoptDoneRef.current = true;
-    // Fetch host profiles and auto-select the matching one
     fetch('/api/mobile?action=hostprofiles&clientId=' + clientId)
       .then(r => r.json())
       .then(d => {
@@ -102,18 +96,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         const match = d.profiles.find((p: { id: string }) => p.id === profileId);
         if (match) {
           const hostProfile: import('./mobile/mobile-types').MobileProfile = {
-            id: match.id,
-            name: match.name,
+            id: match.id, name: match.name,
             avatar: match.avatar || undefined,
-            color: match.color,
-            createdAt: match.createdAt || Date.now(),
+            color: match.color, createdAt: match.createdAt || Date.now(),
           };
-          setProfile(hostProfile);
-          setProfileName(hostProfile.name);
-          setProfileColor(hostProfile.color);
-          setAvatarPreview(hostProfile.avatar || null);
-          setJson(StorageKeys.MOBILE_PROFILE, hostProfile);
-          syncProfile(hostProfile);
+          setProfile(hostProfile); setProfileName(hostProfile.name);
+          setProfileColor(hostProfile.color); setAvatarPreview(hostProfile.avatar || null);
+          setJson(StorageKeys.MOBILE_PROFILE, hostProfile); syncProfile(hostProfile);
         }
       })
       .catch(() => { console.warn('Failed to auto-adopt profile'); });
@@ -123,23 +112,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
     if (!profileName.trim()) return;
     const newProfile: MobileProfile = hostProfile
-      ? {
-          // CRITICAL FIX: Use the host profile's original ID so the companion
-          // and main program recognize it as the same character/entity
-          id: hostProfile.id,
-          name: hostProfile.name,
-          avatar: hostProfile.avatar || avatarPreview || undefined,
-          color: hostProfile.color,
-          createdAt: hostProfile.createdAt || Date.now(),
-        }
-      : {
-          id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now(),
-        };
-    setProfile(newProfile);
-    setJson(StorageKeys.MOBILE_PROFILE, newProfile);
-    syncProfile(newProfile);
-    setCurrentView('mirror');
+      ? { id: hostProfile.id, name: hostProfile.name, avatar: hostProfile.avatar || avatarPreview || undefined, color: hostProfile.color, createdAt: hostProfile.createdAt || Date.now() }
+      : { id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now() };
+    setProfile(newProfile); setJson(StorageKeys.MOBILE_PROFILE, newProfile); syncProfile(newProfile);
+    setShowProfile(false);
   }, [profileName, avatarPreview, profileColor, syncProfile]);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,166 +129,95 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const handleSaveProfile = useCallback(() => {
     if (!profile) return;
     const updated = { ...profile, name: profileName, color: profileColor, avatar: avatarPreview || undefined };
-    setProfile(updated);
-    setJson(StorageKeys.MOBILE_PROFILE, updated);
-    syncProfile(updated);
+    setProfile(updated); setJson(StorageKeys.MOBILE_PROFILE, updated); syncProfile(updated);
+    setShowProfile(false);
   }, [profile, profileName, profileColor, avatarPreview, syncProfile]);
 
-  // Switch to a host character from the main app (preserves host profile ID)
   const handleSwitchToHostProfile = useCallback((hostProfile: MobileProfile) => {
-    const switchedProfile: MobileProfile = {
-      id: hostProfile.id,
-      name: hostProfile.name,
-      avatar: hostProfile.avatar || undefined,
-      color: hostProfile.color,
-      createdAt: hostProfile.createdAt || Date.now(),
-    };
-    setProfile(switchedProfile);
-    setProfileName(switchedProfile.name);
-    setProfileColor(switchedProfile.color);
-    setAvatarPreview(switchedProfile.avatar || null);
-    setJson(StorageKeys.MOBILE_PROFILE, switchedProfile);
-    syncProfile(switchedProfile);
+    const switchedProfile: MobileProfile = { id: hostProfile.id, name: hostProfile.name, avatar: hostProfile.avatar || undefined, color: hostProfile.color, createdAt: hostProfile.createdAt || Date.now() };
+    setProfile(switchedProfile); setProfileName(switchedProfile.name); setProfileColor(switchedProfile.color);
+    setAvatarPreview(switchedProfile.avatar || null); setJson(StorageKeys.MOBILE_PROFILE, switchedProfile); syncProfile(switchedProfile);
+    setShowProfile(false);
   }, [syncProfile]);
 
-  // Play Again: re-queue the last played song
-  const handlePlayAgain = useCallback(async () => {
-    const results = data.gameResults;
-    if (!results || !results.songId) return;
-
-    // Build a MobileSong-like object from game results
-    const song: import('./mobile/mobile-types').MobileSong = {
-      id: results.songId,
-      title: results.songTitle,
-      artist: results.songArtist,
-      duration: 0,
-    };
-
-    // Default to single mode for play again (user can change before it plays)
-    data.setSelectedGameMode('single');
-    data.setSelectedPartner(null);
-
-    await data.addToQueue(song);
-    // Navigate to mirror (queue lite view) after adding
-    setCurrentView('mirror');
-  }, [data]);
-
-  // Disconnect from server and reset local state
   const handleDisconnect = useCallback(async () => {
     await disconnect();
-    setProfile(null);
-    setProfileName('');
-    setProfileColor('#06B6D4');
-    setAvatarPreview(null);
-    removeItem(StorageKeys.MOBILE_PROFILE);
-    setCurrentView('mirror');
-    // Re-connect after a short delay to allow fresh profile creation
+    setProfile(null); setProfileName(''); setProfileColor('#06B6D4'); setAvatarPreview(null);
+    removeItem(StorageKeys.MOBILE_PROFILE); removeItem(StorageKeys.CLIENT_ID);
+    setActiveDesktopScreen('home');
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     reconnectTimerRef.current = setTimeout(() => connect(), 500);
   }, [disconnect, connect]);
 
   // Effects for lazy loading
   useEffect(() => {
-    return () => {
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-    };
-  }, []);
-  // Effect for lazy loading songs
-  useEffect(() => {
-    if ((currentView === 'songs' || currentView === 'mirror') && data.songs.length === 0) {
-      queueMicrotask(() => data.loadSongs());
-    }
-  }, [currentView, data.songs.length, data.loadSongs, data]);
-
-  // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Enter key: activate the currently focused element (buttons, links)
-      if (e.key === 'Enter') {
-        const active = document.activeElement as HTMLElement;
-        if (active && (active.tagName === 'BUTTON' || active.getAttribute('role') === 'button' || active.tagName === 'A')) {
-          e.preventDefault();
-          active.click();
-          return;
-        }
-      }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        const focusableSelector = 'button:not([disabled]), [role="button"], input, [tabindex]:not([tabindex="-1"])';
-        const focusable = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector))
-          .filter(el => {
-            // Only consider elements visible and inside the main content area
-            const rect = el.getBoundingClientRect();
-            if (rect.width === 0 || rect.height === 0) return false;
-            return rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
-          });
-
-        if (focusable.length === 0) return;
-        const active = document.activeElement as HTMLElement;
-        const currentIndex = focusable.indexOf(active);
-
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-          let nextIndex: number;
-          if (currentIndex === -1) {
-            nextIndex = e.key === 'ArrowDown' ? 0 : focusable.length - 1;
-          } else if (e.key === 'ArrowDown') {
-            nextIndex = (currentIndex + 1) % focusable.length;
-          } else {
-            nextIndex = (currentIndex - 1 + focusable.length) % focusable.length;
-          }
-          focusable[nextIndex]?.focus();
-          focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-          // For grid layouts: move to the nearest element in the horizontal direction
-          if (currentIndex === -1) {
-            focusable[0]?.focus();
-          } else {
-            const activeRect = active.getBoundingClientRect();
-            const activeCenterY = activeRect.top + activeRect.height / 2;
-            let bestIndex = -1;
-            let bestDist = Infinity;
-            focusable.forEach((el, i) => {
-              if (i === currentIndex) return;
-              const rect = el.getBoundingClientRect();
-              const centerY = rect.top + rect.height / 2;
-              const horizontalDist = e.key === 'ArrowRight'
-                ? (rect.left - activeRect.right)
-                : (activeRect.left - rect.right);
-              // Only consider elements that are roughly on the same row (within 50px vertical distance)
-              const verticalDist = Math.abs(centerY - activeCenterY);
-              if (horizontalDist > 0 && horizontalDist < bestDist && verticalDist < 80) {
-                bestDist = horizontalDist;
-                bestIndex = i;
-              }
-            });
-            if (bestIndex === -1) {
-              // Fallback: just move to next/previous element
-              const nextIndex = e.key === 'ArrowRight'
-                ? (currentIndex + 1) % focusable.length
-                : (currentIndex - 1 + focusable.length) % focusable.length;
-              focusable[nextIndex]?.focus();
-              focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else {
-              focusable[bestIndex]?.focus();
-              focusable[bestIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => { if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current); };
   }, []);
 
   useEffect(() => {
     if (isConnected) {
       queueMicrotask(() => data.loadQueue());
+      queueMicrotask(() => data.loadSongs());
       const interval = setInterval(() => data.loadQueue(), 5000);
       return () => clearInterval(interval);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- data.loadQueue is stable; isConnected is the actual trigger
-  }, [isConnected, data.loadQueue]);
+  }, [isConnected, data.loadQueue, data.loadSongs]);
+
+  // ===================== SING BUTTON =====================
+  const handleToggleSing = useCallback(() => {
+    if (isListening) {
+      stopMicrophone();
+    } else {
+      startMicrophone();
+    }
+  }, [isListening, startMicrophone, stopMicrophone]);
+
+  // Auto-Sing: Wenn man aktiver Spieler im aktuellen Spiel ist, Mikrofon automatisch starten
+  const autoSingDoneRef = useRef(false);
+  useEffect(() => {
+    if (!profile || !gameState.isPlaying || !isConnected) {
+      autoSingDoneRef.current = false;
+      return;
+    }
+    // Prüfe ob dieser Companion-Player der aktive Spieler ist
+    const isMyTurn =
+      gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null ||
+      gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null;
+    if (isMyTurn && !isListening && !autoSingDoneRef.current) {
+      autoSingDoneRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+      setTimeout(() => startMicrophone(), 500);
+    }
+    if (!isMyTurn) autoSingDoneRef.current = false;
+  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, isListening, isConnected, startMicrophone]);
+
+  // ===================== DESKTOP MIRRORING =====================
+  const handleSendDesktopCommand = useCallback((screen: string) => {
+    if (!clientId || !profile) return;
+    fetch('/api/mobile', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'remote_command', clientId, payload: { command: screen } }),
+    }).catch(() => { /* ignore */ });
+  }, [clientId, profile]);
+
+  // Footer-Navigation: sendet Command an Desktop + setzt lokalen State für sofortiges Feedback
+  const handleFooterNavigate = useCallback((screen: string) => {
+    setActiveDesktopScreen(screen);
+    handleSendDesktopCommand(screen);
+  }, [handleSendDesktopCommand]);
+
+  // ===================== COMPUTED MIRROR ID =====================
+  // Nutze den lokalen activeDesktopScreen wenn gesetzt, sonst den vom Desktop gemeldeten
+  const mirrorScreenId = useMemo((): MirrorScreenId => {
+    // Folge immer dem Desktop-Screen (gameState.currentScreen)
+    // Der lokale State wird nur für den aktiven Footer-Tab verwendet
+    return screenToMirrorId(gameState.currentScreen);
+  }, [gameState.currentScreen]);
+
+  // Aktiver Footer-Tab: mappe mirrorScreenId zurück auf Desktop-Screen-Namen
+  const activeFooterScreen = useMemo(() => {
+    return gameState.currentScreen || 'home';
+  }, [gameState.currentScreen]);
 
   // ===================== REMOTE LOCK STATE =====================
   const [remoteLock, setRemoteLock] = useState<{
@@ -321,7 +226,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     lockedByName: string | null;
   }>({ isLocked: false, lockedByMe: false, lockedByName: null });
 
-  // Poll remote lock status (reuse existing endpoint)
   const isMountedRef2 = useRef(true);
   useEffect(() => {
     if (!isConnected || !clientId) return;
@@ -366,63 +270,82 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     } catch { /* ignore */ }
   }, [clientId]);
 
-  // ===================== DESKTOP MIRRORING =====================
-  // Send a navigation command to the desktop so it mirrors the companion's action
-  const handleSendDesktopCommand = useCallback((screen: string) => {
-    if (!clientId || !profile) return;
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'remote_command',
-        clientId,
-        payload: { command: screen },
-      }),
-    }).catch(() => { /* ignore */ });
-  }, [clientId, profile]);
-
-  // ===================== COMPUTED MIRROR ID =====================
-  const mirrorScreenId = useMemo(
-    () => screenToMirrorId(gameState.currentScreen),
-    [gameState.currentScreen],
-  );
-
   // ===================== RENDER =====================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
       <MobileOfflineIndicator />
       <MobileErrorBoundary>
 
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-black/30 backdrop-blur-xl border-b border-white/10">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            {profile && currentView !== 'mirror' && (
-              <button onClick={() => setCurrentView('mirror')} className="text-white/60 hover:text-white">{t('mobileClient.back')}</button>
-            )}
-            <h1 className="text-lg font-bold">{t('app.title')}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {connectionCode && <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 font-mono">{connectionCode}</Badge>}
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            {isConnected && profile && (
+      {/* ====== HEADER ====== */}
+      {isConnected && profile && (
+        <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
+          <div className="flex items-center justify-between px-3 py-2.5">
+            {/* Links: Profil-Button */}
+            <button
+              onClick={() => setShowProfile(true)}
+              className="flex items-center gap-2 active:opacity-70 transition-opacity"
+            >
+              <div
+                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white"
+                style={{ backgroundColor: profile.color }}
+              >
+                {profile.avatar
+                  ? <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+                  : profile.name[0]?.toUpperCase() || '?'}
+              </div>
+              <span className="text-sm font-medium text-white/80 max-w-[100px] truncate">{profile.name}</span>
+            </button>
+
+            {/* Mitte: SING Button */}
+            <button
+              onClick={handleToggleSing}
+              className={
+                'flex items-center gap-1.5 px-5 py-2 rounded-full font-bold text-sm transition-all active:scale-95 ' +
+                (isListening
+                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 animate-pulse'
+                  : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-purple-500/30')
+              }
+            >
+              <span className="text-base">{isListening ? '⏹' : '🎤'}</span>
+              <span>{isListening ? (t('mobile.mirrorPause') || 'Stop') : (t('mobile.mirrorSing') || 'SING')}</span>
+            </button>
+
+            {/* Rechts: Verbindung-Info + Abmelden */}
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              {connectionCode && (
+                <span className="text-[10px] font-mono text-white/30">{connectionCode}</span>
+              )}
               <button
                 onClick={handleDisconnect}
-                className="text-white/40 hover:text-red-400 text-xs transition-colors"
+                className="text-white/30 hover:text-red-400 text-lg leading-none transition-colors p-1"
                 title={t('mobileClient.disconnect')}
               >
                 ✕
               </button>
-            )}
-            {profile && (
-              <button onClick={() => setCurrentView('profile')} className="w-8 h-8 rounded-full overflow-hidden" style={{ backgroundColor: profile.color }}>
-                {profile.avatar ? <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" /> : <span className="text-sm font-bold">{profile.name[0]}</span>}
-              </button>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
 
+          {/* Mic-Status-Leiste wenn aktiv */}
+          {isListening && (
+            <div className="px-3 pb-2 flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-75"
+                  style={{ width: `${Math.min(100, Math.max(0, currentPitch.volume * 100))}%` }}
+                />
+              </div>
+              {currentPitch.note !== null && (
+                <span className="text-xs font-mono text-cyan-400">
+                  {(() => { const n = Math.round(currentPitch.note); const n2 = n % 12; const o = Math.floor(n / 12) - 1; const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; return `${names[n2 < 0 ? n2 + 12 : n2]}${o}`; })()}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ====== MAIN CONTENT ====== */}
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center p-8">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mb-4" />
@@ -437,109 +360,94 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           avatarPreview={avatarPreview} profileColors={PROFILE_COLORS}
           fileInputRef={fileInputRef} onCreateProfile={handleCreateProfile} onPhotoUpload={handlePhotoUpload}
         />
-      ) : (
+      ) : showProfile ? (
         <div className="pb-20">
-          {/* ====== MIRROR VIEW — auto-follows desktop ====== */}
-          {currentView === 'mirror' && (
-            <MirrorView
-              mirrorScreenId={mirrorScreenId}
-              gameState={gameState}
-              clientId={clientId}
-              profileName={profile?.name || ''}
-              queue={data.queue}
-              slotsRemaining={data.slotsRemaining}
-              onRemoveFromQueue={data.removeFromQueue}
-              onReorderQueue={data.reorderQueue}
-              songSearch={data.songSearch}
-              onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading}
-              songsError={data.songsError}
-              songs={data.songs}
-              filteredSongs={data.filteredSongs}
-              showSongOptions={data.showSongOptions}
-              selectedGameMode={data.selectedGameMode}
-              selectedPartner={data.selectedPartner}
-              availablePartners={data.availablePartners}
-              opponents={data.opponents}
-              availableProfiles={data.availableProfiles}
-              onShowSongOptions={data.setShowSongOptions}
-              onSelectGameMode={data.setSelectedGameMode}
-              onSelectPartner={data.setSelectedPartner}
-              onAddToQueue={data.addToQueue}
-              onLoadPartners={data.loadAvailablePartners}
-              onLoadOpponents={data.loadOpponents}
-              onRefreshSongs={data.loadSongs}
-              formatDuration={data.formatDuration}
-              difficulty={data.difficulty}
-              onDifficultyChange={data.setDifficulty}
-              playerMicSource={data.playerMicSource}
-              onPlayerMicSourceChange={data.setPlayerMicSource}
-              partnerMicSource={data.partnerMicSource}
-              onPartnerMicSourceChange={data.setPartnerMicSource}
-              duetPartsSwapped={data.duetPartsSwapped}
-              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
-              addedQueuePosition={data.addedQueuePosition}
-              jukeboxWishlist={data.jukeboxWishlist}
-              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
-              onRefreshJukebox={data.loadJukeboxWishlist}
-              gameResults={data.gameResults}
-              onNavigate={setCurrentView}
-              onOpenChat={() => setShowChat(true)}
-              isRemoteLocked={remoteLock.isLocked && !remoteLock.lockedByMe}
-              remoteLockedBy={remoteLock.isLocked && !remoteLock.lockedByMe ? remoteLock.lockedByName : null}
-              onAcquireRemote={handleAcquireRemote}
-              onReleaseRemote={handleReleaseRemote}
-              onSendDesktopCommand={handleSendDesktopCommand}
-            />
-          )}
-          {/* ====== COMPANION-OWN VIEWS (no desktop mirror) ====== */}
-          {currentView === 'mic' && (
-            <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
-              isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone}
-              getPitchHistory={getPitchHistory} />
-          )}
-          {currentView === 'songs' && (
-            <MobileSongsView
-              songSearch={data.songSearch} onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading} songsError={data.songsError} songs={data.songs} filteredSongs={data.filteredSongs}
-              showSongOptions={data.showSongOptions} selectedGameMode={data.selectedGameMode}
-              selectedPartner={data.selectedPartner} availablePartners={data.availablePartners}
-              opponents={data.opponents} availableProfiles={data.availableProfiles}
-              onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
-              onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
-              onLoadPartners={data.loadAvailablePartners} onLoadOpponents={data.loadOpponents}
-              onRefresh={data.loadSongs}
-              formatDuration={data.formatDuration}
-              difficulty={data.difficulty} onDifficultyChange={data.setDifficulty}
-              playerMicSource={data.playerMicSource} onPlayerMicSourceChange={data.setPlayerMicSource}
-              partnerMicSource={data.partnerMicSource} onPartnerMicSourceChange={data.setPartnerMicSource}
-              duetPartsSwapped={data.duetPartsSwapped} onDuetPartsSwappedChange={data.setDuetPartsSwapped}
-              addedQueuePosition={data.addedQueuePosition}
-            />
-          )}
-          {currentView === 'profile' && (
-            <MobileProfileEditView
-              profile={profile} profileName={profileName} onProfileNameChange={setProfileName}
-              profileColor={profileColor} onProfileColorChange={setProfileColor}
-              avatarPreview={avatarPreview} connectionCode={connectionCode}
-              profileColors={PROFILE_COLORS} fileInputRef={fileInputRef}
-              onSave={handleSaveProfile} onPhotoUpload={handlePhotoUpload}
-              onSwitchToHostProfile={handleSwitchToHostProfile}
-            />
-          )}
+          <MobileProfileEditView
+            profile={profile} profileName={profileName} onProfileNameChange={setProfileName}
+            profileColor={profileColor} onProfileColorChange={setProfileColor}
+            avatarPreview={avatarPreview} connectionCode={connectionCode}
+            profileColors={PROFILE_COLORS} fileInputRef={fileInputRef}
+            onSave={handleSaveProfile} onPhotoUpload={handlePhotoUpload}
+            onSwitchToHostProfile={handleSwitchToHostProfile}
+          />
+          <div className="sticky bottom-16 left-0 right-0 px-4 py-2 bg-gradient-to-t from-black/80 to-transparent">
+            <button
+              onClick={() => setShowProfile(false)}
+              className="w-full py-3 rounded-xl bg-white/10 border border-white/20 text-white/70 font-medium active:scale-[0.98] transition-transform"
+            >
+              {t('companion.backToParty') || '← Zurück'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="pb-16">
+          {/* Immer die MirrorView (Lite-Version des Desktops) */}
+          <MirrorView
+            mirrorScreenId={mirrorScreenId}
+            gameState={gameState}
+            clientId={clientId}
+            profileName={profile?.name || ''}
+            queue={data.queue}
+            slotsRemaining={data.slotsRemaining}
+            onRemoveFromQueue={data.removeFromQueue}
+            onReorderQueue={data.reorderQueue}
+            songSearch={data.songSearch}
+            onSongSearchChange={data.setSongSearch}
+            songsLoading={data.songsLoading}
+            songsError={data.songsError}
+            songs={data.songs}
+            filteredSongs={data.filteredSongs}
+            showSongOptions={data.showSongOptions}
+            selectedGameMode={data.selectedGameMode}
+            selectedPartner={data.selectedPartner}
+            availablePartners={data.availablePartners}
+            opponents={data.opponents}
+            availableProfiles={data.availableProfiles}
+            onShowSongOptions={data.setShowSongOptions}
+            onSelectGameMode={data.setSelectedGameMode}
+            onSelectPartner={data.setSelectedPartner}
+            onAddToQueue={data.addToQueue}
+            onLoadPartners={data.loadAvailablePartners}
+            onLoadOpponents={data.loadOpponents}
+            onRefreshSongs={data.loadSongs}
+            formatDuration={data.formatDuration}
+            difficulty={data.difficulty}
+            onDifficultyChange={data.setDifficulty}
+            playerMicSource={data.playerMicSource}
+            onPlayerMicSourceChange={data.setPlayerMicSource}
+            partnerMicSource={data.partnerMicSource}
+            onPartnerMicSourceChange={data.setPartnerMicSource}
+            duetPartsSwapped={data.duetPartsSwapped}
+            onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+            addedQueuePosition={data.addedQueuePosition}
+            jukeboxWishlist={data.jukeboxWishlist}
+            onRemoveFromJukebox={data.removeFromJukeboxWishlist}
+            onRefreshJukebox={data.loadJukeboxWishlist}
+            gameResults={data.gameResults}
+            onNavigate={() => {}}
+            onOpenChat={() => setShowChat(true)}
+            isRemoteLocked={remoteLock.isLocked && !remoteLock.lockedByMe}
+            remoteLockedBy={remoteLock.isLocked && !remoteLock.lockedByMe ? remoteLock.lockedByName : null}
+            onAcquireRemote={handleAcquireRemote}
+            onReleaseRemote={handleReleaseRemote}
+            onSendDesktopCommand={handleSendDesktopCommand}
+          />
         </div>
       )}
 
-      {isConnected && profile && <MobileBottomNav currentView={currentView} onNavigate={setCurrentView} />}
+      {/* ====== FOOTER: Horiz. scrollbar Navigation ====== */}
+      {isConnected && profile && !showProfile && (
+        <MobileBottomNav activeScreen={activeFooterScreen} onNavigate={handleFooterNavigate} />
+      )}
 
-      {/* F4: Chat overlay */}
+      {/* ====== CHAT OVERLAY ====== */}
       {showChat && clientId && (
         <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
           <MobileChat clientId={clientId} onClose={() => setShowChat(false)} />
         </div>
       )}
 
-      {/* ── Companion Sing-A-Long overlay ── */}
+      {/* ====== SINGALONG OVERLAY ====== */}
       {isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && (
         <SingalongOverlay
           isMyTurn={gameState.singalongTurn.countdown === null}
@@ -547,23 +455,18 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       )}
 
-      {/* ── Companion Pass-the-Mic overlay: blink warning + YOUR TURN ── */}
+      {/* ====== CPTM OVERLAY ====== */}
       {isConnected && profile && gameState.cptmTurn?.isActive && (
         (gameState.cptmTurn.countdown !== null && gameState.cptmTurn.nextProfileId === profile.id) ? (
-          // Blink warning: player's phone blinks before their turn (decent, pulsing)
-          <CptmBlinkOverlay
-            countdown={gameState.cptmTurn.countdown}
-            playerColor={profile.color}
-          />
+          <CptmBlinkOverlay countdown={gameState.cptmTurn.countdown} playerColor={profile.color} />
         ) : (gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ? (
-          // Active turn: "YOUR TURN!" display
           <CptmYourTurnOverlay playerName={profile.name} playerColor={profile.color} />
         ) : null
       )}
 
-      {/* #10 Tournament Spectator Vote Overlay — show when a duel is in progress */}
+      {/* ====== TOURNAMENT VOTE OVERLAY ====== */}
       {isConnected && profile && gameState.isPlaying && gameState.gameMode === 'duel' && gameState.tournamentMatchId && !votedMatchIds.has(gameState.tournamentMatchId) && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 shadow-2xl">
+        <div className="fixed bottom-16 left-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 shadow-2xl">
           <div className="text-center mb-3">
             <span className="text-2xl">❤️</span>
             <p className="text-sm font-bold text-white mt-1">{t('mobile.tournamentVoteTitle')}</p>
@@ -576,8 +479,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 if (!clientId || !gameState.tournamentMatchId) return;
                 setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
                 fetch('/api/mobile', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 1 }, clientId }),
                 }).catch(() => { console.warn('Failed to cast tournament vote for P1'); });
               }}
@@ -590,8 +492,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 if (!clientId || !gameState.tournamentMatchId) return;
                 setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
                 fetch('/api/mobile', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 2 }, clientId }),
                 }).catch(() => { console.warn('Failed to cast tournament vote for P2'); });
               }}
@@ -607,31 +508,24 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 }
 
 // ===================== SINGALONG OVERLAY =====================
-interface SingalongOverlayProps {
-  isMyTurn: boolean;
-  countdown: number | null;
-}
+interface SingalongOverlayProps { isMyTurn: boolean; countdown: number | null; }
 
 function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
   const { t } = useTranslation();
   const [flashVisible, setFlashVisible] = useState(false);
 
-  // Flash briefly when countdown changes (new turn)
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
-      // Flash the screen
       queueMicrotask(() => setFlashVisible(true));
       const flashTimer = setTimeout(() => setFlashVisible(false), 300);
       return () => clearTimeout(flashTimer);
     } else if (countdown === null && isMyTurn) {
-      // Brief flash when becoming the active singer
       queueMicrotask(() => setFlashVisible(true));
       const flashTimer = setTimeout(() => setFlashVisible(false), 500);
       return () => clearTimeout(flashTimer);
     }
   }, [countdown, isMyTurn]);
 
-  // Countdown phase: show big numbers 3, 2, 1
   if (countdown !== null && countdown > 0) {
     return (
       <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-100 ${flashVisible ? 'bg-emerald-500' : 'bg-emerald-900/95'}`}>
@@ -643,7 +537,6 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
     );
   }
 
-  // Active singing phase
   if (isMyTurn) {
     return (
       <div className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-all duration-300 ${flashVisible ? 'bg-emerald-500/40' : 'bg-transparent'}`}>
@@ -660,87 +553,41 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
 }
 
 // ===================== CPTM BLINK OVERLAY =====================
-// Decent pulsing blink effect on the phone before the player's turn
-interface CptmBlinkOverlayProps {
-  countdown: number | null;
-  playerColor: string;
-}
+interface CptmBlinkOverlayProps { countdown: number | null; playerColor: string; }
 
 function CptmBlinkOverlay({ countdown, playerColor }: CptmBlinkOverlayProps) {
   const { t } = useTranslation();
-  // The blink intensity increases as countdown decreases (3→2→1)
   const intensity = countdown === 3 ? 0.15 : countdown === 2 ? 0.3 : 0.5;
-
   if (countdown === null || countdown <= 0) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-      style={{ backgroundColor: playerColor, opacity: intensity }}
-    >
-      {/* Subtle pulsing animation that gets faster as countdown decreases */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundColor: playerColor,
-          animation: `cptm-blink ${countdown === 3 ? 2 : countdown === 2 ? 1 : 0.5}s ease-in-out infinite alternate`,
-        }}
-      />
-      {/* Countdown number (small, decent) */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ backgroundColor: playerColor, opacity: intensity }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: playerColor, animation: `cptm-blink ${countdown === 3 ? 2 : countdown === 2 ? 1 : 0.5}s ease-in-out infinite alternate` }} />
       <div className="relative z-10 text-center">
         <div className="text-8xl font-bold text-white/90 animate-pulse">{countdown}</div>
         <div className="text-lg font-medium text-white/70 mt-2">{t('mobileCompanion.getReady')}</div>
       </div>
-
-      {/* Inject keyframe animation */}
-      <style>{`
-        @keyframes cptm-blink {
-          0% { opacity: 0; }
-          100% { opacity: ${Math.min(intensity * 2.5, 0.8)}; }
-        }
-      `}</style>
+      <style>{`@keyframes cptm-blink { 0% { opacity: 0; } 100% { opacity: ${Math.min(intensity * 2.5, 0.8)}; } }`}</style>
     </div>
   );
 }
 
 // ===================== CPTM YOUR TURN OVERLAY =====================
-// Bold "YOUR TURN!" display when the player's segment starts
-interface CptmYourTurnOverlayProps {
-  playerName: string;
-  playerColor: string;
-}
+interface CptmYourTurnOverlayProps { playerName: string; playerColor: string; }
 
 function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayProps) {
   const { t } = useTranslation();
   const [show, setShow] = useState(false);
-
-  // Brief flash-in animation
-  useEffect(() => {
-    queueMicrotask(() => setShow(true));
-  }, []);
-
+  useEffect(() => { queueMicrotask(() => setShow(true)); }, []);
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm">
-      {/* Background glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at center, ${playerColor}40, transparent 70%)`,
-        }}
-      />
-
-      {/* YOUR TURN text */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${playerColor}40, transparent 70%)` }} />
       <div className="relative z-10 text-center animate-[scale-in_0.3s_ease-out]">
         <div className="text-sm font-bold text-white/60 uppercase tracking-[0.3em] mb-2">{t('mobileCompanion.yourTurn')}</div>
-        <div className="text-5xl font-bold text-white" style={{ textShadow: `0 0 30px ${playerColor}` }}>
-          {playerName}
-        </div>
-        <div
-          className="mt-4 mx-auto h-1.5 rounded-full"
-          style={{ width: '120px', backgroundColor: playerColor }}
-        />
+        <div className="text-5xl font-bold text-white" style={{ textShadow: `0 0 30px ${playerColor}` }}>{playerName}</div>
+        <div className="mt-4 mx-auto h-1.5 rounded-full" style={{ width: '120px', backgroundColor: playerColor }} />
       </div>
     </div>
   );

@@ -101,7 +101,6 @@ export interface MirrorViewProps {
 /**
  * Mirror-View-Container – schaltet automatisch zwischen den
  * Lite-Ansichten um, basierend auf dem aktuellen Desktop-Bildschirm.
- * Bildschirmwechsel finden alle 1–2 s statt, daher React.memo.
  */
 export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
   mirrorScreenId,
@@ -125,8 +124,8 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
   opponents,
   availableProfiles,
   onShowSongOptions,
-  onSelectGameMode,
-  onSelectPartner,
+ onSelectGameMode,
+ onSelectPartner,
   onAddToQueue,
   onLoadPartners,
   onLoadOpponents,
@@ -153,33 +152,20 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
   onReleaseRemote,
   onSendDesktopCommand,
 }) {
-  // Gemeinsame Navigations- und Status-Props
   const navBase = { onNavigate, gameState };
-
-  // Gemeinsame Fernsteuerungs-Props
-  const remoteBase = {
-    isRemoteLocked,
-    remoteLockedBy,
-    onAcquireRemote,
-    onReleaseRemote,
-  };
-
-  // Desktop-Mirroring Props
+  const remoteBase = { isRemoteLocked, remoteLockedBy, onAcquireRemote, onReleaseRemote };
   const desktopMirrorBase = { onSendDesktopCommand };
 
   switch (mirrorScreenId) {
     // ---------- Startseite ----------
     case 'home':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorHomeLite
-            {...navBase}
+            gameState={gameState}
             queue={queue}
             onOpenChat={onOpenChat}
-            clientId={clientId}
-            profileName={profileName}
-            {...remoteBase}
-            {...desktopMirrorBase}
+            onSendDesktopCommand={onSendDesktopCommand}
           />
         </div>
       );
@@ -187,7 +173,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Bibliothek / Liedsuche ----------
     case 'library':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorLibraryLite
             songSearch={songSearch}
             onSongSearchChange={onSongSearchChange}
@@ -226,7 +212,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Warteschlange ----------
     case 'queue':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorQueueLite
             queue={queue}
             slotsRemaining={slotsRemaining}
@@ -241,7 +227,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Aktives Spiel ----------
     case 'game':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorGameLite
             gameState={gameState}
             clientId={clientId}
@@ -255,7 +241,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Einstellungen ----------
     case 'settings':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorSettingsLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
@@ -263,7 +249,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Bestenliste ----------
     case 'highscores':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorHighscoresLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
@@ -271,7 +257,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Tagesherausforderung ----------
     case 'dailyChallenge':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorDailyLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
@@ -279,7 +265,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Party-Modus ----------
     case 'party':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorPartyLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
@@ -287,7 +273,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Spielergebnisse ----------
     case 'results':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorResultsLite
             gameResults={gameResults}
             onNavigate={onNavigate}
@@ -299,7 +285,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Jukebox ----------
     case 'jukebox':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorJukeboxLite
             jukeboxWishlist={jukeboxWishlist}
             onRemoveFromJukebox={onRemoveFromJukebox}
@@ -313,7 +299,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Erfolge ----------
     case 'achievements':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorAchievementsLite {...navBase} {...desktopMirrorBase} />
         </div>
       );
@@ -321,7 +307,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Profile-Verwaltung ----------
     case 'profile':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorProfileLite
             gameState={gameState}
             onNavigate={onNavigate}
@@ -331,11 +317,11 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
         </div>
       );
 
-    // ---------- Wartebildschirm (Turnier-/Medley-Einrichtung) ----------
+    // ---------- Wartebildschirm ----------
     case 'party-setup':
     case 'setup-waiting':
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorSetupWaiting
             gameState={gameState}
             clientId={clientId}
@@ -348,15 +334,12 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
     // ---------- Fallback: Startseite ----------
     default:
       return (
-        <div className="min-h-[calc(100vh-7rem)]">
+        <div className="min-h-[calc(100vh-8rem)]">
           <MirrorHomeLite
-            {...navBase}
+            gameState={gameState}
             queue={queue}
             onOpenChat={onOpenChat}
-            clientId={clientId}
-            profileName={profileName}
-            {...remoteBase}
-            {...desktopMirrorBase}
+            onSendDesktopCommand={onSendDesktopCommand}
           />
         </div>
       );
