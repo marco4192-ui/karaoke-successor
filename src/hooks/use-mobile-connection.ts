@@ -23,6 +23,8 @@ interface RawGameState {
   cptmTurn?: GameState['cptmTurn'];
   tournamentMatchId?: string | null;
   companionScores?: GameState['companionScores'];
+  currentScreen?: string;
+  partyGameMode?: string | null;
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -37,6 +39,8 @@ function parseGameState(raw: RawGameState): GameState {
     cptmTurn: raw.cptmTurn ?? null,
     tournamentMatchId: raw.tournamentMatchId ?? null,
     companionScores: raw.companionScores ?? null,
+    currentScreen: raw.currentScreen,
+    partyGameMode: raw.partyGameMode ?? null,
   };
 }
 
@@ -51,6 +55,8 @@ const INITIAL_GAME_STATE: GameState = {
   cptmTurn: null,
   tournamentMatchId: null,
   companionScores: null,
+  currentScreen: undefined,
+  partyGameMode: null,
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

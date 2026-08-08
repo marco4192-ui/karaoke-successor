@@ -28,6 +28,8 @@ import { MirrorJukeboxLite } from './mirror-jukebox-lite';
 import { MirrorAchievementsLite } from './mirror-achievements-lite';
 import { MirrorSetupWaiting } from './mirror-setup-waiting';
 import { MirrorProfileLite } from './mirror-profile-lite';
+import { MirrorPartySetupLite } from './mirror-party-setup-lite';
+import { MirrorSongVotingLite } from './mirror-song-voting-lite';
 
 // ===================== Props-Schnittstelle =====================
 
@@ -204,7 +206,9 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             duetPartsSwapped={duetPartsSwapped}
             onDuetPartsSwappedChange={onDuetPartsSwappedChange}
             addedQueuePosition={addedQueuePosition}
+            onOpenChat={onOpenChat}
             {...navBase}
+            {...desktopMirrorBase}
           />
         </div>
       );
@@ -317,8 +321,31 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
         </div>
       );
 
-    // ---------- Wartebildschirm ----------
+    // ---------- Party-Mode-Setup ----------
     case 'party-setup':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <MirrorPartySetupLite
+            gameState={gameState}
+            onNavigate={onNavigate}
+            {...desktopMirrorBase}
+          />
+        </div>
+      );
+
+    // ---------- Song-Abstimmung ----------
+    case 'song-voting':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <MirrorSongVotingLite
+            gameState={gameState}
+            onNavigate={onNavigate}
+            {...desktopMirrorBase}
+          />
+        </div>
+      );
+
+    // ---------- Wartebildschirm ----------
     case 'setup-waiting':
       return (
         <div className="min-h-[calc(100vh-8rem)]">

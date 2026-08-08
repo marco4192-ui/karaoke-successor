@@ -149,6 +149,7 @@ export const mutableState = {
     tournamentMatchId: null,
     companionScores: null,
     currentScreen: undefined,
+    partyGameMode: null,
   } as MobileGameState,
 
   // Queue for song requests from mobile clients
@@ -373,6 +374,7 @@ export function resetAllState() {
     tournamentMatchId: null,
     companionScores: null,
     currentScreen: undefined,
+    partyGameMode: null,
   };
   // Reset remote control state
   mutableState.remoteControlState = {

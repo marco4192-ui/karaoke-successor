@@ -375,6 +375,17 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-jukebox-clear', { detail: {} }));
           break;
         }
+        // Check for party_difficulty:<level> pattern
+        if (cmd.type.startsWith('party_difficulty:')) {
+          const level = cmd.type.slice('party_difficulty:'.length);
+          window.dispatchEvent(new CustomEvent('remote-party-difficulty', { detail: { difficulty: level } }));
+          break;
+        }
+        // Check for party_start
+        if (cmd.type === 'party_start') {
+          window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
+          break;
+        }
       }
     }
   }, [navigateToScreen]);

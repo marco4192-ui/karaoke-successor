@@ -236,6 +236,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     handleSendDesktopCommand(screen);
   }, [handleSendDesktopCommand]);
 
+  // ===================== DESKTOP SCREEN SYNC =====================
+  // Wenn der Desktop in einen Sub-Screen navigiert (z.B. party-setup),
+  // soll der lokale State aktualisiert werden damit die Companion-Mirror-View
+  // korrekt mitwechselt.
+  useEffect(() => {
+    if (gameState.currentScreen && gameState.currentScreen !== activeDesktopScreen) {
+      setActiveDesktopScreen(gameState.currentScreen);
+    }
+  }, [gameState.currentScreen, activeDesktopScreen]);
+
   // ===================== COMPUTED MIRROR ID =====================
   // Nutze den lokalen activeDesktopScreen (sofortiges Feedback beim Footer-Tap),
   // falle zurueck auf den vom Desktop gemeldeten Screen

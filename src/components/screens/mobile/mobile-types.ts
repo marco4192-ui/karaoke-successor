@@ -28,6 +28,7 @@ export type MirrorScreenId =
   | 'jukebox'
   | 'results'
   | 'party-setup'
+  | 'song-voting'
   | 'setup-waiting'
   | 'profile';  // character/profile management
 
@@ -51,13 +52,13 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     jukebox: 'jukebox',
     results: 'results',
     party: 'party',
-    'party-setup': 'party',
+    'party-setup': 'party-setup',
     profile: 'profile',        // companion can manage profiles
     import: 'library',       // import redirects to library
     mobile: 'home',          // mobile management screen → home
     editor: 'home',          // editor has no mobile equivalent
     online: 'home',          // online → home for now
-    'song-voting': 'home',
+    'song-voting': 'song-voting',
   };
 
   if (desktopScreen in directMap) return directMap[desktopScreen];
@@ -137,6 +138,8 @@ export interface GameState {
   companionScores: CompanionScoreEntry[] | null;
   // Current screen name from the desktop app
   currentScreen?: string;
+  // Party setup: which game mode is being configured
+  partyGameMode?: string | null;
 }
 
 export interface PitchData {

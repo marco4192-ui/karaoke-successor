@@ -104,6 +104,8 @@ export interface MobileGameState {
   companionScores: CompanionScoreEntry[] | null;
   // Current screen name from the desktop app
   currentScreen?: string;
+  // Party setup: which game mode is being configured
+  partyGameMode?: string | null;
 }
 
 export interface GameResults {

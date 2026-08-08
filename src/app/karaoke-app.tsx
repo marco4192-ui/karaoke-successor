@@ -369,6 +369,33 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-party-mode', handleRemotePartyMode);
   }, [party, setScreen]);
 
+  // ── Handle remote party-difficulty events from companion ──
+  useEffect(() => {
+    const handleRemotePartyDifficulty = (e: Event) => {
+      const { difficulty } = (e as CustomEvent).detail || {};
+      if (!difficulty) return;
+      // Dispatch event that UnifiedPartySetup can listen to
+      window.dispatchEvent(new CustomEvent('party-set-difficulty', { detail: { difficulty } }));
+    };
+    window.addEventListener('remote-party-difficulty', handleRemotePartyDifficulty);
+    return () => window.removeEventListener('remote-party-difficulty', handleRemotePartyDifficulty);
+  }, []);
+
+  // ── Handle remote party-start events from companion ──
+  useEffect(() => {
+    const handleRemotePartyStart = () => {
+      // Click the first visible "Start" or "Spiel starten" button in the DOM
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button'));
+      const startBtn = buttons.find(b => {
+        const text = b.textContent?.toLowerCase() || '';
+        return text.includes('start') || text.includes('spiel starten');
+      });
+      startBtn?.click();
+    };
+    window.addEventListener('remote-party-start', handleRemotePartyStart);
+    return () => window.removeEventListener('remote-party-start', handleRemotePartyStart);
+  }, []);
+
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
     const handleRemoteRandomSong = (e: Event) => {
@@ -425,6 +452,7 @@ export default function KaraokeZERO() {
             payload: {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
+              partyGameMode: screen === 'party-setup' ? (party.selectedGameMode || null) : null,
             },
           }),
         });

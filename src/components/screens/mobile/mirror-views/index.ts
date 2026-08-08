@@ -12,3 +12,5 @@ export { MirrorJukeboxLite } from './mirror-jukebox-lite';
 export { MirrorAchievementsLite } from './mirror-achievements-lite';
 export { MirrorSetupWaiting } from './mirror-setup-waiting';
 export { MirrorProfileLite } from './mirror-profile-lite';
+export { MirrorPartySetupLite } from './mirror-party-setup-lite';
+export { MirrorSongVotingLite } from './mirror-song-voting-lite';

@@ -33,11 +33,6 @@ interface DesktopChatPanelProps {
   onClose: () => void;
 }
 
-/**
- * Desktop Chat Panel — slide-in panel from the right side.
- * Shows all chat messages with challenge accept buttons.
- * Includes a player dropdown so the host can send as any active player.
- */
 export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,6 +40,8 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const [sending, setSending] = useState(false);
   const [players, setPlayers] = useState<ChatPlayer[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
+  const [challengeMode, setChallengeMode] = useState<'duel' | 'duet' | null>(null);
+  const [challengeSending, setChallengeSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +118,41 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }, [handleSend]);
+
+  // Herausfordern: sendet eine Challenge-Chat-Nachricht
+  const handleChallenge = useCallback(async () => {
+    if (!selectedPlayerId || !challengeMode || challengeSending) return;
+    const player = players.find((p) => p.id === selectedPlayerId);
+    if (!player) return;
+    setChallengeSending(true);
+    try {
+      const res = await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'chat_host_challenge',
+          payload: {
+            fromName: player.name,
+            songId: '',
+            songTitle: (t('desktopChat.challengeSong') || 'Herausforderung'),
+            songArtist: challengeMode === 'duel'
+              ? (t('gameMode.duel') || 'Duell')
+              : (t('gameMode.duet') || 'Duett'),
+            gameMode: challengeMode,
+          },
+        }),
+      });
+      if (res.ok) {
+        // Modus zuruecksetzen nach erfolgreichem Senden
+        setChallengeMode(null);
+        fetchMessages();
+      }
+    } catch { /* ignore */ }
+    finally { setChallengeSending(false); }
+  }, [selectedPlayerId, challengeMode, challengeSending, players, fetchMessages, t]);
+
+  // Button ist aktiv: 1 Player gewaehlt + 1 Modus gewaehlt
+  const isChallengeActive = selectedPlayerId && challengeMode && !challengeSending;
 
   const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -222,6 +254,34 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
             </div>
             {selectedPlayerId && colorDot(players.find((p) => p.id === selectedPlayerId)?.color || '')}
           </div>
+
+          {/* Herausfordern: Modus-Auswahl + Button */}
+          {selectedPlayerId && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setChallengeMode(challengeMode === 'duel' ? null : 'duel')}
+                className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-all ' +
+                  (challengeMode === 'duel'
+                    ? 'bg-red-500/25 border border-red-400/40 text-red-400'
+                    : 'bg-white/5 border border-white/10 text-white/50')}
+              >{'\u2694\uFE0F'} {(t('gameMode.duel') || 'Duell')}</button>
+              <button
+                onClick={() => setChallengeMode(challengeMode === 'duet' ? null : 'duet')}
+                className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-all ' +
+                  (challengeMode === 'duet'
+                    ? 'bg-pink-500/25 border border-pink-400/40 text-pink-400'
+                    : 'bg-white/5 border border-white/10 text-white/50')}
+              >{'\u{1F3AD}'} {(t('gameMode.duet') || 'Duett')}</button>
+              <button
+                onClick={handleChallenge}
+                disabled={!isChallengeActive}
+                className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold active:scale-95 transition-all ' +
+                  (isChallengeActive
+                    ? 'bg-gradient-to-r from-amber-500/80 to-orange-500/80 border border-amber-400/50 text-white'
+                    : 'bg-white/5 border border-white/10 text-white/20 cursor-not-allowed')}
+              >{'\u2694\uFE0F'} {(t('desktopChat.challenge') || 'Herausfordern')}</button>
+            </div>
+          )}
 
           {/* Nachricht + Senden */}
           <div className="flex gap-2">
