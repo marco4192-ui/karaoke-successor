@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileSong, GameMode } from '../mobile-types';
 
@@ -63,6 +63,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     onSongSearchChange,
     songsLoading,
     songsError,
+    songs,
     filteredSongs,
     showSongOptions,
     selectedGameMode,
@@ -164,6 +165,33 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       onSongSearchChange('');
     }, [onSongSearchChange]);
 
+    // ---- Genre / Language Filter ----
+    const [genreFilter, setGenreFilter] = useState('');
+    const [langFilter, setLangFilter] = useState('');
+
+    const uniqueGenres = useMemo(() => {
+      const set = new Set<string>();
+      songs.forEach((s) => { if (s.genre) set.add(s.genre); });
+      return [...set].sort();
+    }, [songs]);
+
+    const uniqueLangs = useMemo(() => {
+      const set = new Set<string>();
+      songs.forEach((s) => { if (s.language) set.add(s.language); });
+      return [...set].sort();
+    }, [songs]);
+
+    // Zusätzlicher Client-seitiger Filter auf Basis der bereits gesuchten Liste
+    const displaySongs = useMemo(() => {
+      let list = filteredSongs;
+      if (genreFilter) list = list.filter((s) => s.genre === genreFilter);
+      if (langFilter) list = list.filter((s) => s.language === langFilter);
+      return list;
+    }, [filteredSongs, genreFilter, langFilter]);
+
+    const hasActiveFilter = genreFilter || langFilter;
+    const clearFilters = useCallback(() => { setGenreFilter(''); setLangFilter(''); }, []);
+
     // ---- render helpers ----
 
     const badge = (label: string, hue: string) => (
@@ -203,6 +231,42 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
               </button>
             )}
           </div>
+          {/* Genre / Language Filter */}
+          {(uniqueGenres.length > 0 || uniqueLangs.length > 0) && (
+            <div className="flex items-center gap-2 mt-2 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {uniqueGenres.length > 0 && (
+                <select
+                  value={genreFilter}
+                  onChange={(e) => setGenreFilter(e.target.value)}
+                  className="shrink-0 appearance-none rounded-lg bg-white/5 border border-white/10 px-2.5 py-1 pr-6 text-[11px] text-white/70 focus:outline-none focus:border-white/20 transition-colors"
+                >
+                  <option value="">Alle Genres</option>
+                  {uniqueGenres.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              )}
+              {uniqueLangs.length > 0 && (
+                <select
+                  value={langFilter}
+                  onChange={(e) => setLangFilter(e.target.value)}
+                  className="shrink-0 appearance-none rounded-lg bg-white/5 border border-white/10 px-2.5 py-1 pr-6 text-[11px] text-white/70 focus:outline-none focus:border-white/20 transition-colors"
+                >
+                  <option value="">Alle Sprachen</option>
+                  {uniqueLangs.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              )}
+              {hasActiveFilter && (
+                <button
+                  onClick={clearFilters}
+                  className="shrink-0 rounded-lg bg-red-500/15 border border-red-500/30 px-2 py-1 text-[11px] text-red-400 active:scale-95 transition-transform"
+                >
+                  ✕ Filter
+                </button>
+              )}
+              <span className="shrink-0 text-[10px] text-white/25 ml-auto">
+                {displaySongs.length} / {songs.length}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ===== Error Banner ===== */}
@@ -224,7 +288,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
             <span className="text-xs text-white/50">{t('common.loading') || 'Laden...'}</span>
           </div>
-        ) : filteredSongs.length === 0 ? (
+        ) : displaySongs.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
             <span className="text-2xl">\uD83C\uDFB5</span>
             <p className="text-sm text-white/40">{t('mobileViews.noSongsFound') || 'Keine Lieder gefunden'}</p>
@@ -238,56 +302,33 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
             )}
           </div>
         ) : (
-          <div ref={listRef} className="flex flex-col gap-2 overflow-y-auto px-4 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {filteredSongs.map((song) => (
+          <div ref={listRef} className="flex flex-col overflow-y-auto px-4 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {displaySongs.map((song) => (
               <button
                 key={song.id || `${song.title}-${song.artist}`}
                 onClick={() => handleSongTap(song)}
-                className="flex items-center gap-3 rounded-xl bg-white/5 p-2.5 text-left active:scale-[0.98] transition-transform"
+                className="flex items-center gap-2.5 border-b border-white/5 py-2 text-left active:bg-white/5 transition-colors"
               >
-                {/* Cover */}
-                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50">
-                  {song.coverImage ? (
-                    <img
-                      src={song.coverImage}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <svg className="h-4 w-4 text-white/25" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6Z" /></svg>
-                    </div>
-                  )}
-                </div>
-
                 {/* Info */}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold leading-tight text-white">
+                  <p className="truncate text-[13px] font-medium leading-tight text-white">
                     {song.title || t('common.unknown') || 'Unbekannt'}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-white/40">
+                  <p className="mt-0.5 truncate text-[11px] text-white/40">
                     {song.artist || t('common.unknown') || 'Unbekannt'}
                   </p>
-                  {/* Badges row */}
-                  {(song.genre || song.language) && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {song.genre && badge(song.genre, 'bg-white/10 text-white/50')}
-                      {song.language && badge(song.language, 'bg-cyan-500/15 text-cyan-400/70')}
-                    </div>
-                  )}
                 </div>
 
                 {/* Actions: Challenge + Duration */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); haptic(); handleChallenge(song); }}
-                    className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-2 py-1 text-[10px] font-bold text-amber-400 active:scale-90 transition-transform whitespace-nowrap"
+                    className="rounded-md bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-400 active:scale-90 transition-transform whitespace-nowrap"
                     title={t('songChallenge.challengeBtn') || 'Herausfordern'}
                   >
                     ⚔️
                   </button>
-                  <span className="text-[11px] tabular-nums text-white/30">
+                  <span className="text-[10px] tabular-nums text-white/25">
                     {song.duration > 0 ? formatDuration(song.duration) : '--:--'}
                   </span>
                 </div>

@@ -237,17 +237,17 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [handleSendDesktopCommand]);
 
   // ===================== COMPUTED MIRROR ID =====================
-  // Nutze den lokalen activeDesktopScreen wenn gesetzt, sonst den vom Desktop gemeldeten
+  // Nutze den lokalen activeDesktopScreen (sofortiges Feedback beim Footer-Tap),
+  // falle zurueck auf den vom Desktop gemeldeten Screen
   const mirrorScreenId = useMemo((): MirrorScreenId => {
-    // Folge immer dem Desktop-Screen (gameState.currentScreen)
-    // Der lokale State wird nur für den aktiven Footer-Tab verwendet
-    return screenToMirrorId(gameState.currentScreen);
-  }, [gameState.currentScreen]);
+    const screen = activeDesktopScreen || gameState.currentScreen;
+    return screenToMirrorId(screen);
+  }, [activeDesktopScreen, gameState.currentScreen]);
 
-  // Aktiver Footer-Tab: mappe mirrorScreenId zurück auf Desktop-Screen-Namen
+  // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {
-    return gameState.currentScreen || 'home';
-  }, [gameState.currentScreen]);
+    return activeDesktopScreen || gameState.currentScreen || 'home';
+  }, [activeDesktopScreen, gameState.currentScreen]);
 
   // ===================== REMOTE LOCK STATE =====================
   const [remoteLock, setRemoteLock] = useState<{

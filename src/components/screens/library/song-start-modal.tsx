@@ -230,6 +230,29 @@ export function SongStartModal({
     setShowSongModal(false);
   };
 
+  // Herausfordern: sendet Challenge an den Chat
+  const handleChallenge = () => {
+    const selectedPlayerId = startOptions.players[0];
+    if (!selectedPlayerId) return;
+    const selectedProfile = profiles.find(p => p.id === selectedPlayerId);
+    const playerName = selectedProfile?.name || 'Host';
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'chat_host_challenge',
+        payload: {
+          fromName: playerName,
+          songId: selectedSong.id,
+          songTitle: selectedSong.title,
+          songArtist: selectedSong.artist,
+          gameMode: startOptions.mode === 'duet' ? 'duet' : 'duel',
+        },
+      }),
+    }).catch(() => { /* ignore */ });
+    setShowSongModal(false);
+  };
+
   // Determine which player sections are visible to decide if player area needs scrolling
   const activeProfiles = profiles.filter(p => p.isActive !== false);
   const needsPlayerScroll = activeProfiles.length > 6;
@@ -655,6 +678,26 @@ export function SongStartModal({
             </svg>
             {t('songStart.playlist')}
           </Button>
+          {/* Herausfordern-Button: aktiv bei duel/duet mit genau 1 Spieler */}
+          {!startOptions.partyMode && (startOptions.mode === 'duel' || startOptions.mode === 'duet') && (
+            <Button
+              variant="outline"
+              onClick={handleChallenge}
+              disabled={startOptions.players.length !== 1}
+              className={`h-10 px-3 ${
+                startOptions.players.length === 1
+                  ? 'border-amber-500/60 text-amber-400 hover:bg-amber-500/15'
+                  : 'border-white/10 text-white/30 cursor-not-allowed'
+              }`}
+              title={startOptions.players.length !== 1
+                ? (startOptions.mode === 'duel' && startOptions.players.length === 2
+                  ? 'Beide Spieler gewählt — direktes Duell'
+                  : 'Wähle zuerst einen Spieler')
+                : 'Herausforderung an den Chat senden'}
+            >
+              <span className="mr-1.5">⚔️</span> {t('songChallenge.challengeBtn') || 'Herausfordern'}
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={() => setShowSongModal(false)}

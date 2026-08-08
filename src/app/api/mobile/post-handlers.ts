@@ -861,6 +861,41 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Host message sent' });
       }
 
+      // Desktop-Host Herausforderung: erstellt Chat-Nachricht mit Challenge-Button
+      case 'chat_host_challenge': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const chPayload = payload as { fromName: string; songId: string; songTitle: string; songArtist: string; gameMode: 'duel' | 'duet' };
+        if (!chPayload.songTitle || !chPayload.songArtist || !chPayload.fromName) {
+          return Response.json({ success: false, message: 'Missing data' }, { status: 400 });
+        }
+        const modeLabel = chPayload.gameMode === 'duet' ? 'Duett-Partner' : 'Gegner';
+        const chMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: 'host',
+          fromName: chPayload.fromName,
+          text: `${chPayload.fromName} sucht einen ${modeLabel} für "${chPayload.songTitle}" von ${chPayload.songArtist}!`,
+          timestamp: Date.now(),
+          isHost: true,
+          challenge: {
+            songId: chPayload.songId,
+            songTitle: chPayload.songTitle,
+            songArtist: chPayload.songArtist,
+            challengerClientId: 'host',
+            challengerName: chPayload.fromName,
+            accepted: false,
+            acceptedBy: null,
+            acceptedByName: null,
+          },
+        };
+        mutableState.chatMessages.push(chMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+        return Response.json({ success: true, message: 'Challenge sent' });
+      }
+
       // #10 Tournament crowd vote — companion spectators vote on match results
       case 'tournament_crowd_vote': {
         const votePayload = payload as { matchId: string; playerSide: 1 | 2 };
