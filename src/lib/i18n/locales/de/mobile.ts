@@ -124,6 +124,9 @@ export const mobileTranslations = {
     send: 'Senden',
     noMessages: 'Noch keine Nachrichten',
     host: 'Host',
+    sendAs: 'Senden als',
+    noPlayers: 'Keine Player',
+    waitingForOpponent: 'Warte auf Gegner...',
   },
 
   mobileClient: {

@@ -22,6 +22,13 @@ interface ChatMessage {
   };
 }
 
+interface ChatPlayer {
+  id: string;
+  name: string;
+  color: string;
+  isHost: boolean;
+}
+
 interface DesktopChatPanelProps {
   onClose: () => void;
 }
@@ -29,16 +36,19 @@ interface DesktopChatPanelProps {
 /**
  * Desktop Chat Panel — slide-in panel from the right side.
  * Shows all chat messages with challenge accept buttons.
+ * Includes a player dropdown so the host can send as any active player.
  */
 export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [players, setPlayers] = useState<ChatPlayer[]>([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Nachrichten abrufen
   const fetchMessages = useCallback(async () => {
     try {
       const res = await fetch('/api/mobile?action=getchat&clientId=desktop');
@@ -49,11 +59,35 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
     } catch { /* ignore */ }
   }, []);
 
+  // Aktive Player für Dropdown abrufen
+  const fetchPlayers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/mobile?action=getchatplayers');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.players)) {
+          setPlayers(data.players);
+          // Automatisch ersten Player wählen wenn keiner gewählt
+          setSelectedPlayerId((prev) => {
+            if (!prev && data.players.length > 0) return data.players[0].id;
+            // Prüfen ob der gewählte Player noch existiert
+            if (prev && !data.players.some((p: ChatPlayer) => p.id === prev)) {
+              return data.players.length > 0 ? data.players[0].id : '';
+            }
+            return prev;
+          });
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     fetchMessages();
-    const iv = setInterval(fetchMessages, 3000);
-    return () => clearInterval(iv);
-  }, [fetchMessages]);
+    fetchPlayers();
+    const ivMsg = setInterval(fetchMessages, 3000);
+    const ivPl = setInterval(fetchPlayers, 5000);
+    return () => { clearInterval(ivMsg); clearInterval(ivPl); };
+  }, [fetchMessages, fetchPlayers]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,6 +97,9 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
     inputRef.current?.focus();
   }, []);
 
+  // Name des gewählten Players ermitteln
+  const selectedPlayerName = players.find((p) => p.id === selectedPlayerId)?.name || 'Host';
+
   const handleSend = useCallback(async () => {
     const trimmed = inputText.trim();
     if (!trimmed || sending) return;
@@ -71,23 +108,29 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
       const res = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'chat_host', payload: { text: trimmed, fromName: 'Host' } }),
+        body: JSON.stringify({
+          type: 'chat_host',
+          payload: { text: trimmed, fromName: selectedPlayerName },
+        }),
       });
       if (res.ok) { setInputText(''); fetchMessages(); }
     } catch { /* ignore */ }
     finally { setSending(false); inputRef.current?.focus(); }
-  }, [inputText, sending, fetchMessages]);
-
-  const handleAcceptChallenge = useCallback(async (messageId: string) => {
-    // Desktop-Host kann Challenges nicht als Spieler annehmen
-    // Der Button dient nur zur Info — Companion-Nutzer nehmen an
-  }, []);
+  }, [inputText, sending, fetchMessages, selectedPlayerName]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }, [handleSend]);
 
   const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Farb-Punkt für den Player im Dropdown
+  const colorDot = (color: string) => (
+    <span
+      className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+      style={{ backgroundColor: color || '#888' }}
+    />
+  );
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end">
@@ -140,7 +183,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
                         ✅ {(t('songChallenge.acceptedBy') || 'Angenommen von')} {msg.challenge.acceptedByName}
                       </p>
                     ) : (
-                      <p className="text-xs text-white/40">⏳ Warte auf Gegner...</p>
+                      <p className="text-xs text-white/40">⏳ {(t('desktopChat.waitingForOpponent') || 'Warte auf Gegner...')}</p>
                     )}
                   </div>
                 )}
@@ -150,8 +193,37 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-4 py-3 border-t border-white/10 bg-black/20">
+        {/* Input mit Player-Dropdown */}
+        <div className="px-4 py-3 border-t border-white/10 bg-black/20 space-y-2">
+          {/* Player-Dropdown */}
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-white/40 shrink-0">
+              {(t('desktopChat.sendAs') || 'Senden als')}
+            </label>
+            <div className="relative flex-1">
+              <select
+                value={selectedPlayerId}
+                onChange={(e) => setSelectedPlayerId(e.target.value)}
+                className="w-full appearance-none bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 pr-7 text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors cursor-pointer"
+              >
+                {players.length === 0 && (
+                  <option value="">{(t('desktopChat.noPlayers') || 'Keine Player')}</option>
+                )}
+                {players.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.isHost ? '🖥️ ' : '📱 '}{p.name}
+                  </option>
+                ))}
+              </select>
+              {/* Custom dropdown arrow */}
+              <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+            {selectedPlayerId && colorDot(players.find((p) => p.id === selectedPlayerId)?.color || '')}
+          </div>
+
+          {/* Nachricht + Senden */}
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -165,7 +237,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
             />
             <button
               onClick={handleSend}
-              disabled={!inputText.trim() || sending}
+              disabled={!inputText.trim() || sending || !selectedPlayerId}
               className="px-4 py-2 rounded-full bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               {(t('desktopChat.send') || 'Senden')}

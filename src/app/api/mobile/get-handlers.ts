@@ -413,6 +413,36 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         messages: mutableState.chatMessages.slice(-50),
       });
 
+    // Desktop-Chat: Liste aller aktiven Player für Dropdown
+    case 'getchatplayers': {
+      const players: Array<{ id: string; name: string; color: string; isHost: boolean }> = [];
+      // Verbundene Companions mit Profil
+      mobileClients.forEach((client) => {
+        if (client.profile) {
+          players.push({
+            id: client.profile.id,
+            name: client.profile.name,
+            color: client.profile.color,
+            isHost: false,
+          });
+        }
+      });
+      // Host-Profile aus der Haupt-App
+      mutableState.hostProfiles.forEach((hp) => {
+        // Nur hinzufügen wenn nicht bereits von einem Companion beansprucht
+        const alreadyListed = players.some((p) => p.id === hp.id);
+        if (!alreadyListed) {
+          players.push({
+            id: hp.id,
+            name: hp.name,
+            color: hp.color,
+            isHost: true,
+          });
+        }
+      });
+      return Response.json({ success: true, players });
+    }
+
     // #10 Get tournament crowd votes for spectator UI
     case 'get_crowd_votes':
       return Response.json({
