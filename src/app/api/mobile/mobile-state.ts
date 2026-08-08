@@ -196,6 +196,7 @@ export const mutableState = {
   }>,
 
   // F4: In-game chat messages between companion and host
+  // challenge field: when set, this message is a song challenge with accept button
   chatMessages: [] as Array<{
     id: string;
     from: string;
@@ -203,6 +204,16 @@ export const mutableState = {
     text: string;
     timestamp: number;
     isHost: boolean;
+    challenge?: {
+      songId: string;
+      songTitle: string;
+      songArtist: string;
+      challengerClientId: string;
+      challengerName: string;
+      accepted: boolean;
+      acceptedBy: string | null;
+      acceptedByName: string | null;
+    };
   }>,
 };
 

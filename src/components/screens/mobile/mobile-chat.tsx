@@ -10,6 +10,16 @@ interface ChatMessage {
   text: string;
   timestamp: number;
   isHost: boolean;
+  challenge?: {
+    songId: string;
+    songTitle: string;
+    songArtist: string;
+    challengerClientId: string;
+    challengerName: string;
+    accepted: boolean;
+    acceptedBy: string | null;
+    acceptedByName: string | null;
+  };
 }
 
 interface MobileChatProps {
@@ -22,6 +32,7 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -73,7 +84,6 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
       });
       if (res.ok) {
         setInputText('');
-        // Immediately refetch to show the new message
         fetchMessages();
       }
     } catch {
@@ -83,6 +93,24 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
       inputRef.current?.focus();
     }
   }, [inputText, sending, clientId, fetchMessages]);
+
+  const handleAcceptChallenge = useCallback(async (messageId: string) => {
+    if (acceptingId) return;
+    setAcceptingId(messageId);
+    try {
+      await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'accept_challenge',
+          clientId,
+          payload: { messageId },
+        }),
+      });
+      fetchMessages();
+    } catch { /* ignore */ }
+    setAcceptingId(null);
+  }, [clientId, acceptingId, fetchMessages]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -119,7 +147,7 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
           </div>
         )}
         {messages.map((msg) => {
-          const isMine = !msg.isHost;
+          const isMine = !msg.isHost && msg.from === clientId;
           return (
             <div
               key={msg.id}
@@ -132,13 +160,40 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                 <span className="text-white/20 text-xs">{formatTime(msg.timestamp)}</span>
               </div>
               <div
-                className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+                className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
                   isMine
                     ? 'bg-purple-500/30 text-white rounded-br-md'
                     : 'bg-white/10 text-white/90 rounded-bl-md'
                 }`}
               >
-                {msg.text}
+                <p className="leading-snug">{msg.text}</p>
+
+                {/* Challenge card inside message */}
+                {msg.challenge && (
+                  <div className="mt-2 rounded-lg bg-white/5 border border-white/10 p-2.5">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-base">⚔️</span>
+                      <span className="text-xs font-semibold text-amber-400">
+                        {msg.challenge.songTitle} — {msg.challenge.songArtist}
+                      </span>
+                    </div>
+                    {msg.challenge.accepted ? (
+                      <p className="text-xs text-green-400">
+                        ✅ {(t('songChallenge.acceptedBy') || 'Angenommen von')} {msg.challenge.acceptedByName}
+                      </p>
+                    ) : msg.challenge.challengerClientId !== clientId ? (
+                      <button
+                        onClick={() => handleAcceptChallenge(msg.id)}
+                        disabled={!!acceptingId}
+                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50"
+                      >
+                        {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
+                      </button>
+                    ) : (
+                      <p className="text-xs text-white/40">⏳ Warte auf Gegner...</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );

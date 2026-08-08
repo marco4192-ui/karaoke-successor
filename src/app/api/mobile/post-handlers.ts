@@ -890,6 +890,140 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Vote recorded' });
       }
 
+      // Song Challenge: post a challenge message to chat
+      case 'song_challenge': {
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        const chPayload = payload as { songId: string; songTitle: string; songArtist: string };
+        const chClient = mobileClients.get(clientId);
+        if (!chClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        if (!chPayload.songTitle || !chPayload.songArtist) {
+          return Response.json({ success: false, message: 'Missing song info' }, { status: 400 });
+        }
+
+        const chName = chClient.profile?.name || chClient.name;
+        const chMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: chName,
+          text: `${chName} sucht einen Gegner für "${chPayload.songTitle}" von ${chPayload.songArtist}!`,
+          timestamp: Date.now(),
+          isHost: false,
+          challenge: {
+            songId: chPayload.songId,
+            songTitle: chPayload.songTitle,
+            songArtist: chPayload.songArtist,
+            challengerClientId: clientId,
+            challengerName: chName,
+            accepted: false,
+            acceptedBy: null,
+            acceptedByName: null,
+          },
+        };
+
+        mutableState.chatMessages.push(chMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+        chClient.lastActivity = Date.now();
+        mobileClients.set(clientId, chClient);
+
+        return Response.json({ success: true, message: 'Challenge sent' });
+      }
+
+      // Accept Challenge: creates a duel queue entry with challenger + acceptor
+      case 'accept_challenge': {
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        const acPayload = payload as { messageId: string };
+        const acClient = mobileClients.get(clientId);
+        if (!acClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        if (!acPayload.messageId) {
+          return Response.json({ success: false, message: 'Missing messageId' }, { status: 400 });
+        }
+
+        // Find the challenge message
+        const chMsgIdx = mutableState.chatMessages.findIndex(
+          (m) => m.id === acPayload.messageId && m.challenge && !m.challenge.accepted
+        );
+        if (chMsgIdx === -1) {
+          return Response.json({ success: false, message: 'Challenge not found or already accepted' }, { status: 400 });
+        }
+
+        const chMsgData = mutableState.chatMessages[chMsgIdx];
+        if (!chMsgData.challenge) {
+          return Response.json({ success: false, message: 'Invalid challenge' }, { status: 400 });
+        }
+
+        // Don't accept own challenge
+        if (chMsgData.challenge.challengerClientId === clientId) {
+          return Response.json({ success: false, message: 'Cannot accept your own challenge' }, { status: 400 });
+        }
+
+        const acceptorName = acClient.profile?.name || acClient.name;
+
+        // Mark challenge as accepted
+        chMsgData.challenge.accepted = true;
+        chMsgData.challenge.acceptedBy = clientId;
+        chMsgData.challenge.acceptedByName = acceptorName;
+        mutableState.chatMessages[chMsgIdx] = chMsgData;
+
+        // Find challenger client for queue entry
+        const challengerClient = mobileClients.get(chMsgData.challenge.challengerClientId);
+
+        // Create TWO duel queue entries (one for each player, same song)
+        // The first entry (challenger) carries the partner info
+        const baseQueueItem = {
+          songId: chMsgData.challenge.songId,
+          songTitle: chMsgData.challenge.songTitle,
+          songArtist: chMsgData.challenge.songArtist,
+          gameMode: 'duel' as const,
+          difficulty: 'normal' as const,
+          status: 'pending' as const,
+          addedAt: Date.now(),
+        };
+
+        // Queue entry from challenger side
+        const challengerQueueItem: QueueItem = {
+          ...baseQueueItem,
+          id: `queue-challenge-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          addedBy: chMsgData.challenge.challengerName,
+          companionCode: challengerClient?.connectionCode || '',
+          partnerId: acClient.profile?.id || clientId,
+          partnerName: acceptorName,
+        };
+
+        // Queue entry from acceptor side
+        const acceptorQueueItem: QueueItem = {
+          ...baseQueueItem,
+          id: `queue-accept-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          addedBy: acceptorName,
+          companionCode: acClient.connectionCode,
+          partnerId: challengerClient?.profile?.id || chMsgData.challenge.challengerClientId,
+          partnerName: chMsgData.challenge.challengerName,
+        };
+
+        mutableState.songQueue.push(challengerQueueItem, acceptorQueueItem);
+
+        // Post acceptance message to chat
+        const acceptMsg = {
+          id: `chat-${Date.now()}-accept-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: acceptorName,
+          text: `${acceptorName} hat die Herausforderung von ${chMsgData.challenge.challengerName} angenommen! Song wird der Queue hinzugefügt.`,
+          timestamp: Date.now(),
+          isHost: false,
+        };
+        mutableState.chatMessages.push(acceptMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        return Response.json({ success: true, message: 'Challenge accepted, song queued!' });
+      }
+
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }

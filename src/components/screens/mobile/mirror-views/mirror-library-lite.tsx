@@ -92,6 +92,18 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     const listRef = useRef<HTMLDivElement>(null);
     const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Song-Challenge an Chat senden
+    const handleChallenge = useCallback((song: MobileSong) => {
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'song_challenge',
+          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist },
+        }),
+      }).catch(() => { /* ignore */ });
+    }, []);
+
     const [step, setStep] = useState<WizardStep>(0);
     const isBattleMode = selectedGameMode === 'duel' || selectedGameMode === 'duet';
 
@@ -266,10 +278,19 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                   )}
                 </div>
 
-                {/* Duration */}
-                <span className="shrink-0 text-[11px] tabular-nums text-white/30">
-                  {song.duration > 0 ? formatDuration(song.duration) : '--:--'}
-                </span>
+                {/* Actions: Challenge + Duration */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); haptic(); handleChallenge(song); }}
+                    className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-2 py-1 text-[10px] font-bold text-amber-400 active:scale-90 transition-transform whitespace-nowrap"
+                    title={t('songChallenge.challengeBtn') || 'Herausfordern'}
+                  >
+                    ⚔️
+                  </button>
+                  <span className="text-[11px] tabular-nums text-white/30">
+                    {song.duration > 0 ? formatDuration(song.duration) : '--:--'}
+                  </span>
+                </div>
               </button>
             ))}
           </div>

@@ -109,6 +109,23 @@ export const mobileTranslations = {
     newMessage: 'Neue Nachricht',
   },
 
+  songChallenge: {
+    challengeBtn: 'Herausfordern',
+    acceptBtn: 'Herausforderung annehmen',
+    accepted: 'Angenommen',
+    acceptedBy: 'Angenommen von {name}',
+    challengeText: '{name} sucht einen Gegner für "{song}" von {artist}!',
+    acceptedText: '{name} hat die Herausforderung von {challenger} angenommen!',
+  },
+
+  desktopChat: {
+    title: 'Chat',
+    placeholder: 'Nachricht eingeben...',
+    send: 'Senden',
+    noMessages: 'Noch keine Nachrichten',
+    host: 'Host',
+  },
+
   mobileClient: {
     back: '← Zurück',
     connecting: 'Verbindung zum Server...',

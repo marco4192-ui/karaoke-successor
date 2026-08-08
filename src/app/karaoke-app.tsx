@@ -40,6 +40,7 @@ import { PartySetupSection } from '@/components/party/party-setup-section';
 import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { DesktopChatNotification } from '@/components/ui/desktop-chat-notification';
+import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -68,6 +69,9 @@ export default function KaraokeZERO() {
 
   // ── Tournament manual winner overlay ──
   const [showTournamentWinnerOverlay, setShowTournamentWinnerOverlay] = useState(false);
+
+  // ── Desktop chat panel ──
+  const [showChatPanel, setShowChatPanel] = useState(false);
 
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
@@ -486,6 +490,7 @@ export default function KaraokeZERO() {
           isMounted={isMounted}
           isFullscreen={isFullscreen}
           toggleFullscreen={toggleFullscreen}
+          onToggleChat={() => setShowChatPanel((v) => !v)}
         />
       )}
 
@@ -738,6 +743,9 @@ export default function KaraokeZERO() {
         </div>
         );
       })()}
+
+      {/* Desktop Chat Panel */}
+      {showChatPanel && <DesktopChatPanel onClose={() => setShowChatPanel(false)} />}
 
       {/* Desktop Chat Notification Overlay */}
       <DesktopChatNotification />

@@ -13,10 +13,11 @@ interface NavBarProps {
   isMounted: boolean;
   isFullscreen: boolean;
   toggleFullscreen: () => void;
+  onToggleChat?: () => void;
 }
 
 // ===================== NAVIGATION BAR =====================
-export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen }: NavBarProps) {
+export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen, onToggleChat }: NavBarProps) {
   const { t } = useTranslation();
   return (
     <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#ff2d95]/20">
@@ -62,6 +63,15 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
           <NavButton active={screen === 'settings'} onClick={() => setScreen('settings')}>
             <SettingsIcon className="w-5 h-5" /> {t('nav.settings')}
           </NavButton>
+          {/* Chat Button */}
+          {onToggleChat && (
+            <NavButton active={false} onClick={onToggleChat}>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {(t('desktopChat.title') || 'Chat')}
+            </NavButton>
+          )}
           {/* Fullscreen Toggle Button */}
           <button
             onClick={toggleFullscreen}
