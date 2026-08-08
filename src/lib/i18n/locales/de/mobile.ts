@@ -102,6 +102,11 @@ export const mobileTranslations = {
     mirrorPlay: 'Play',
     mirrorSkip: 'Überspringen',
     mirrorFullscreen: 'Vollbild',
+    mirrorChatNew: 'Chat',
+  },
+
+  chatNotification: {
+    newMessage: 'Neue Nachricht',
   },
 
   mobileClient: {

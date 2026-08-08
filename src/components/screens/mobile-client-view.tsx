@@ -10,6 +10,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile/mobile-types';
 import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
 import { MobileChat } from './mobile/mobile-chat';
+import { ChatNotificationPopup } from './mobile/mobile-chat-notification';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
 // Mirror view
@@ -44,6 +45,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showChat, setShowChat] = useState(false);
+  const [chatPopupMessage, setChatPopupMessage] = useState<{ fromName: string; text: string; isHost: boolean } | null>(null);
+  const chatMessageCountRef = useRef(0);
   const [showProfile, setShowProfile] = useState(false);
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,6 +71,33 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // Data (songs, queue, jukebox, results, partners)
   const data = useMobileData({ clientId, profile, onNavigateToProfile: () => setShowProfile(true) });
+
+  // ===================== CHAT NOTIFICATION POLLING =====================
+  useEffect(() => {
+    if (!isConnected || !clientId || showChat) return;
+    const pollChat = async () => {
+      try {
+        const res = await fetch(`/api/mobile?action=getchat&clientId=${encodeURIComponent(clientId)}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (d.success && Array.isArray(d.messages)) {
+          const msgs = d.messages as Array<{ id: string; fromName: string; text: string; isHost: boolean; timestamp: number }>;
+          // Zeige Popup nur für neue Nachrichten von anderen
+          if (msgs.length > chatMessageCountRef.current && msgs.length > 0) {
+            const latest = msgs[msgs.length - 1];
+            // Nicht anzeigen wenn die eigene Nachricht die letzte ist
+            if (latest.fromName !== profile?.name) {
+              setChatPopupMessage({ fromName: latest.fromName, text: latest.text, isHost: latest.isHost });
+            }
+          }
+          chatMessageCountRef.current = msgs.length;
+        }
+      } catch { /* ignore */ }
+    };
+    pollChat();
+    const iv = setInterval(pollChat, 4000);
+    return () => clearInterval(iv);
+  }, [isConnected, clientId, showChat, profile?.name]);
 
   // Stop mic when game stops or song ends
   useEffect(() => {
@@ -310,8 +340,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               <span>{isListening ? (t('mobile.mirrorPause') || 'Stop') : (t('mobile.mirrorSing') || 'SING')}</span>
             </button>
 
-            {/* Rechts: Verbindung-Info + Abmelden */}
+            {/* Rechts: Chat-Button, Verbindung-Info + Abmelden */}
             <div className="flex items-center gap-2">
+              {/* Chat-Button im Header */}
+              <button
+                onClick={() => setShowChat(true)}
+                className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/10 active:scale-90 transition-transform"
+                title={t('mobile.mirrorChat')}
+              >
+                <span className="text-sm leading-none">💬</span>
+              </button>
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
               {connectionCode && (
                 <span className="text-[10px] font-mono text-white/30">{connectionCode}</span>
@@ -340,6 +378,34 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                   {(() => { const n = Math.round(currentPitch.note); const n2 = n % 12; const o = Math.floor(n / 12) - 1; const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; return `${names[n2 < 0 ? n2 + 12 : n2]}${o}`; })()}
                 </span>
               )}
+            </div>
+          )}
+
+          {/* Now-Playing Ticker direkt unter dem Header */}
+          {gameState.currentSong && !showChat && (
+            <div className="relative overflow-hidden border-t border-white/5 bg-black/30">
+              <div className="flex items-center h-7 px-3 min-w-0">
+                {gameState.isPlaying ? (
+                  <span className="shrink-0 mr-2 flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-1.5 w-1.5 animate-ping rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  </span>
+                ) : (
+                  <span className="shrink-0 mr-2 text-white/30 text-[10px]">⏸</span>
+                )}
+                <div className="overflow-hidden flex-1">
+                  <div
+                    className="whitespace-nowrap animate-[marquee_12s_linear_infinite]"
+                  >
+                    <span className="text-xs text-white/60">
+                      {gameState.currentSong.title} — {gameState.currentSong.artist}
+                    </span>
+                    {gameState.gameMode && (
+                      <span className="ml-2 text-[10px] text-purple-300/60 uppercase tracking-wider">{gameState.gameMode}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -445,6 +511,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
           <MobileChat clientId={clientId} onClose={() => setShowChat(false)} />
         </div>
+      )}
+
+      {/* ====== CHAT NOTIFICATION POPUP ====== */}
+      {chatPopupMessage && !showChat && (
+        <ChatNotificationPopup message={chatPopupMessage} onDismiss={() => setChatPopupMessage(null)} />
       )}
 
       {/* ====== SINGALONG OVERLAY ====== */}

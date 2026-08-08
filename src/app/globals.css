@@ -628,3 +628,9 @@
 .animate-typewriter-cursor {
   animation: typewriter-cursor 0.8s step-end infinite;
 }
+
+/* Marquee ticker for now-playing band */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}

@@ -39,6 +39,7 @@ import { NavBar, FullscreenToggleButton } from '@/components/home/navbar';
 import { PartySetupSection } from '@/components/party/party-setup-section';
 import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
+import { DesktopChatNotification } from '@/components/ui/desktop-chat-notification';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -737,6 +738,9 @@ export default function KaraokeZERO() {
         </div>
         );
       })()}
+
+      {/* Desktop Chat Notification Overlay */}
+      <DesktopChatNotification />
 
       {/* Party Mode Leave Warning */}
       {activeDialog === 'party-leave' && (
