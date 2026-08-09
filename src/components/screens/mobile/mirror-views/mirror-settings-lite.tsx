@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -19,18 +19,111 @@ interface SettingsSection {
   icon: string;
   labelKey: string;
   fallback: string;
+  descKey: string;
+  descFallback: string;
 }
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: 'general',      icon: '⚙️',  labelKey: 'settings.tabGeneral',        fallback: 'General' },
-  { id: 'gameplay',     icon: '🎮',  labelKey: 'settingsTabs.gameplay',    fallback: 'Gameplay' },
-  { id: 'appearance',   icon: '🎨',  labelKey: 'settingsTabs.appearance',  fallback: 'Appearance' },
-  { id: 'graphicsound',icon: '🔊',  labelKey: 'settingsTabs.graphicSound',fallback: 'Graphics & Sound' },
-  { id: 'microphone',   icon: '🎤',  labelKey: 'settingsTabs.microphone',  fallback: 'Microphone' },
-  { id: 'mobile',       icon: '📱',  labelKey: 'settingsTabs.mobileCompanion', fallback: 'Companion' },
-  { id: 'webcam',       icon: '📷',  labelKey: 'settingsTabs.webcam',      fallback: 'Webcam' },
-  { id: 'library',      icon: '📁',  labelKey: 'settings.tabLibrary',     fallback: 'Library' },
-  { id: 'about',        icon: 'ℹ️',  labelKey: 'settings.tabAbout',       fallback: 'About' },
+  { id: 'general',      icon: '\u2699\uFE0F',  labelKey: 'settings.tabGeneral',        fallback: 'General',      descKey: 'mobile.mirrorSettingsDescGeneral',    descFallback: 'Sprache, Schwierigkeit, Tonh\u00F6henanzeige' },
+  { id: 'gameplay',     icon: '\u{1F3AE}',  labelKey: 'settingsTabs.gameplay',    fallback: 'Gameplay',     descKey: 'mobile.mirrorSettingsDescGameplay',   descFallback: 'Scoring-Optionen, Timings, Hilfen' },
+  { id: 'appearance',   icon: '\u{1F3A8}',  labelKey: 'settingsTabs.appearance',  fallback: 'Appearance',   descKey: 'mobile.mirrorSettingsDescAppearance', descFallback: 'Theme, Lyrics-Stil, Hintergrund' },
+  { id: 'graphicsound',icon: '\u{1F50A}',  labelKey: 'settingsTabs.graphicSound',fallback: 'Graphics & Sound', descKey: 'mobile.mirrorSettingsDescGraphicSound', descFallback: 'Lautst\u00E4rke, Mikrofon, YouTube' },
+  { id: 'microphone',   icon: '\u{1F3A4}',  labelKey: 'settingsTabs.microphone',  fallback: 'Microphone',   descKey: 'mobile.mirrorSettingsDescMicrophone', descFallback: 'Eingang, Empfindlichkeit, Presets' },
+  { id: 'mobile',       icon: '\u{1F4F1}',  labelKey: 'settingsTabs.mobileCompanion', fallback: 'Companion',   descKey: 'mobile.mirrorSettingsDescMobile',     descFallback: 'Verbundene Ger\u00E4te, Fernsteuerung' },
+  { id: 'webcam',       icon: '\u{1F4F7}',  labelKey: 'settingsTabs.webcam',      fallback: 'Webcam',       descKey: 'mobile.mirrorSettingsDescWebcam',     descFallback: 'Hintergrund-Kamera-Einstellungen' },
+  { id: 'library',      icon: '\u{1F4C1}',  labelKey: 'settings.tabLibrary',     fallback: 'Library',      descKey: 'mobile.mirrorSettingsDescLibrary',    descFallback: 'Song-Ordner, Scannen, Zur\u00FCcksetzen' },
+  { id: 'about',        icon: '\u2139\uFE0F',  labelKey: 'settings.tabAbout',       fallback: 'About',        descKey: 'mobile.mirrorSettingsDescAbout',      descFallback: 'Version, Credits, Lizenzen' },
+];
+
+// ===================== Lokale Storage-Keys =====================
+
+const SK = {
+  DIFFICULTY: 'karaoke-default-difficulty',
+  SHOW_PITCH_GUIDE: 'karaoke-show-pitch-guide',
+  SHOW_SCORE: 'karaoke-show-score',
+  SHOW_PARTICLES: 'karaoke-show-particles',
+  SHOW_COMBO: 'karaoke-show-combo',
+  REPLAY_ENABLED: 'karaoke-replay-enabled',
+  AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
+  BG_VIDEO: 'karaoke-bg-video',
+  ANIMATED_BG: 'karaoke-animated-bg',
+  PERFORMANCE_MODE: 'karaoke-performance-mode',
+  LYRICS_STYLE: 'karaoke-lyrics-style',
+  LYRICS_SIZE: 'karaoke-lyrics-size',
+  THEME: 'karaoke-theme',
+  MASTER_VOLUME: 'karaoke-master-volume',
+  PREVIEW_VOLUME: 'karaoke-preview-volume',
+  MIC_SENSITIVITY: 'karaoke-mic-sensitivity',
+  YOUTUBE_QUALITY: 'karaoke-youtube-quality',
+  LANGUAGE: 'karaoke-language',
+} as const;
+
+// ===================== Defaults =====================
+
+const DEFAULTS: Record<string, string | boolean | number> = {
+  [SK.DIFFICULTY]: 'medium',
+  [SK.SHOW_PITCH_GUIDE]: true,
+  [SK.SHOW_SCORE]: true,
+  [SK.SHOW_PARTICLES]: true,
+  [SK.SHOW_COMBO]: true,
+  [SK.REPLAY_ENABLED]: true,
+  [SK.AUTO_FULLSCREEN]: false,
+  [SK.BG_VIDEO]: true,
+  [SK.ANIMATED_BG]: false,
+  [SK.PERFORMANCE_MODE]: 'full',
+  [SK.LYRICS_STYLE]: 'classic',
+  [SK.LYRICS_SIZE]: 'medium',
+  [SK.THEME]: 'neon-nights',
+  [SK.MASTER_VOLUME]: 100,
+  [SK.PREVIEW_VOLUME]: 30,
+  [SK.MIC_SENSITIVITY]: 50,
+  [SK.YOUTUBE_QUALITY]: 'default',
+  [SK.LANGUAGE]: 'de',
+};
+
+// ===================== Optionen-Listen =====================
+
+const LANGUAGES = [
+  { value: 'de', label: 'Deutsch' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Espa\u00F1ol' },
+  { value: 'fr', label: 'Fran\u00E7ais' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ja', label: '\u65E5\u672C\u8A9E' },
+  { value: 'ko', label: '\uD55C\uAD6D\uC5B4' },
+  { value: 'pt', label: 'Portugu\u00EAs' },
+  { value: 'ru', label: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439' },
+  { value: 'zh', label: '\u4E2D\u6587' },
+];
+
+const LYRICS_STYLES = [
+  { value: 'classic', label: 'Classic' },
+  { value: 'concert', label: 'Concert' },
+  { value: 'retro', label: 'Retro' },
+  { value: 'neon', label: 'Neon' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'ocean', label: 'Ocean' },
+  { value: 'fire', label: 'Fire' },
+  { value: 'disco', label: 'Disco' },
+  { value: 'synthwave', label: 'Synthwave' },
+];
+
+const THEMES = [
+  { value: 'neon-nights', label: 'Neon Nights', color: '#00ffff' },
+  { value: 'retro-arcade', label: 'Retro Arcade', color: '#ff6600' },
+  { value: 'sunset-vibes', label: 'Sunset Vibes', color: '#ff4488' },
+  { value: 'ocean-deep', label: 'Ocean Deep', color: '#0088ff' },
+  { value: 'galaxy-pop', label: 'Galaxy Pop', color: '#aa44ff' },
+  { value: 'minimal-light', label: 'Minimal Light', color: '#888888' },
+];
+
+const YT_QUALITY = [
+  { value: 'default', label: 'Auto' },
+  { value: 'hd1080', label: '1080p' },
+  { value: 'hd720', label: '720p' },
+  { value: 'large', label: '480p' },
+  { value: 'medium', label: '360p' },
 ];
 
 // ===================== Hilfsfunktionen =====================
@@ -41,40 +134,475 @@ function haptic() {
   }
 }
 
-// ===================== Component =====================
+function tOr(t: (_key: string) => string, key: string, fallback: string): string {
+  return t(key) === key ? fallback : t(key);
+}
+
+// ===================== Wiederverwendbare UI-Bausteine =====================
+
+/** Mobile Toggle Switch */
+function Toggle({ value, onToggle }: { value: boolean; onToggle: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => { haptic(); onToggle(!value); }}
+      className={'relative w-11 h-6 rounded-full shrink-0 transition-colors ' + (value ? 'bg-cyan-500' : 'bg-white/20')}
+    >
+      <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow ' + (value ? 'left-[22px]' : 'left-0.5')} />
+    </button>
+  );
+}
+
+/** Mobile Dropdown */
+function Dropdown({ options, value, onChange }: {
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => { haptic(); onChange(e.target.value); }}
+      className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '16px',
+      }}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value} className="bg-[#1a1a2e] text-white">
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Tappable Number Buttons (mobile-freundlich statt Slider) */
+function TappableNumber({ value, min, max, step, unit, onChange }: {
+  value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
+}) {
+  const steps = [];
+  for (let v = min; v <= max; v += step) steps.push(v);
+  return (
+    <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+      {steps.map((s) => (
+        <button
+          key={s}
+          onClick={() => { haptic(); onChange(s); }}
+          className={'shrink-0 rounded-lg px-3 py-2 text-xs font-semibold active:scale-95 transition-all border ' +
+            (value === s
+              ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400'
+              : 'bg-white/5 border-white/10 text-white/50')}
+        >{s}{unit || ''}</button>
+      ))}
+    </div>
+  );
+}
+
+/** Toggle-Zeile */
+function SettingToggle({ label, description, value, onToggle }: {
+  label: string; description?: string; value: boolean; onToggle: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-3">
+      <div className="min-w-0 mr-3">
+        <span className="text-sm font-medium text-white">{label}</span>
+        {description && <p className="text-[11px] text-white/30 mt-0.5">{description}</p>}
+      </div>
+      <Toggle value={value} onToggle={onToggle} />
+    </div>
+  );
+}
+
+/** Desktop-Only Hinweis */
+function DesktopOnlyHint({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-6 text-center">
+      <span className="text-2xl">{'\u{1F5A5}\uFE0F'}</span>
+      <p className="text-sm text-white/40">{text}</p>
+      <p className="text-xs text-white/25">{'Auf Desktop \u00F6ffnen'}</p>
+    </div>
+  );
+}
+
+// ===================== Sub-View: General =====================
+
+function GeneralSettings({ settings, sendSetting, t }: {
+  settings: Record<string, string | boolean | number>;
+  sendSetting: (key: string, val: string) => void;
+  t: (_key: string) => string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Sprache */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'settings.language', 'Sprache')}</span>
+        <div className="mt-2">
+          <Dropdown
+            options={LANGUAGES}
+            value={String(settings[SK.LANGUAGE] || 'de')}
+            onChange={(v) => sendSetting(SK.LANGUAGE, v)}
+          />
+        </div>
+      </div>
+
+      {/* Schwierigkeit */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'settings.defaultDifficulty', 'Standard-Schwierigkeit')}</span>
+        <div className="flex gap-2 mt-2">
+          {(['easy', 'medium', 'hard'] as const).map((d) => {
+            const isActive = String(settings[SK.DIFFICULTY]) === d;
+            const labels: Record<string, string> = { easy: tOr(t, 'difficulty.easy', 'Leicht'), medium: tOr(t, 'difficulty.medium', 'Normal'), hard: tOr(t, 'difficulty.hard', 'Schwer') };
+            const colors: Record<string, string> = { easy: 'bg-green-500/25 border-green-400/40 text-green-400', medium: 'bg-amber-500/25 border-amber-400/40 text-amber-400', hard: 'bg-red-500/25 border-red-400/40 text-red-400' };
+            return (
+              <button
+                key={d}
+                onClick={() => sendSetting(SK.DIFFICULTY, d)}
+                className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
+                  (isActive ? colors[d] : 'bg-white/5 border-white/10 text-white/50')}
+              >{labels[d]}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tonhoehenanzeige */}
+      <SettingToggle
+        label={tOr(t, 'settings.showPitchGuide', 'Tonh\u00F6henanzeige')}
+        description={tOr(t, 'settings.showPitchGuideDesc', 'Hilfestellung beim Singen')}
+        value={!!settings[SK.SHOW_PITCH_GUIDE]}
+        onToggle={(v) => sendSetting(SK.SHOW_PITCH_GUIDE, String(v))}
+      />
+    </div>
+  );
+}
+
+// ===================== Sub-View: Gameplay =====================
+
+function GameplaySettings({ settings, sendSetting, t }: {
+  settings: Record<string, string | boolean | number>;
+  sendSetting: (key: string, val: string) => void;
+  t: (_key: string) => string;
+}) {
+  const items = [
+    { key: SK.SHOW_SCORE, label: tOr(t, 'gameplay.showScore', 'Punkte-Anzeige'), desc: tOr(t, 'gameplay.showScoreDesc', 'Punkte w\u00E4hrend des Singens anzeigen') },
+    { key: SK.SHOW_PARTICLES, label: tOr(t, 'gameplay.showParticles', 'Partikel-Effekte'), desc: tOr(t, 'gameplay.showParticlesDesc', 'Visuelle Effekte bei guten Noten') },
+    { key: SK.SHOW_COMBO, label: tOr(t, 'gameplay.showCombo', 'Combo-Anzeige'), desc: tOr(t, 'gameplay.showComboDesc', 'Combo-Z\u00E4hler anzeigen') },
+    { key: SK.REPLAY_ENABLED, label: tOr(t, 'gameplay.replayEnabled', 'Replay'), desc: tOr(t, 'gameplay.replayEnabledDesc', 'Song nach Ende automatisch wiederholen') },
+    { key: SK.AUTO_FULLSCREEN, label: tOr(t, 'gameplay.autoFullscreen', 'Auto-Vollbild'), desc: tOr(t, 'gameplay.autoFullscreenDesc', 'Beim Singen automatisch Vollbild aktivieren') },
+  ];
+  return (
+    <div className="flex flex-col gap-2.5">
+      {items.map((item) => (
+        <SettingToggle
+          key={item.key}
+          label={item.label}
+          description={item.desc}
+          value={!!settings[item.key]}
+          onToggle={(v) => sendSetting(item.key, String(v))}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ===================== Sub-View: Appearance =====================
+
+function AppearanceSettings({ settings, sendSetting, t }: {
+  settings: Record<string, string | boolean | number>;
+  sendSetting: (key: string, val: string) => void;
+  t: (_key: string) => string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Performance-Modus */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.performanceMode', 'Performance-Modus')}</span>
+        <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.performanceModeDesc', 'Reduzierte Animationen f\u00FCr schw\u00E4chere Ger\u00E4te')}</p>
+        <div className="flex gap-2 mt-2">
+          {(['full', 'low'] as const).map((m) => {
+            const isActive = String(settings[SK.PERFORMANCE_MODE]) === m;
+            const labels: Record<string, string> = { full: 'Voll', low: 'Reduziert' };
+            return (
+              <button
+                key={m}
+                onClick={() => sendSetting(SK.PERFORMANCE_MODE, m)}
+                className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
+                  (isActive ? 'bg-purple-500/25 border-purple-400/40 text-purple-400' : 'bg-white/5 border-white/10 text-white/50')}
+              >{labels[m]}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hintergrund-Video */}
+      <SettingToggle
+        label={tOr(t, 'appearance.bgVideo', 'Hintergrund-Video')}
+        value={!!settings[SK.BG_VIDEO]}
+        onToggle={(v) => sendSetting(SK.BG_VIDEO, String(v))}
+      />
+
+      {/* Animierte Hintergrund */}
+      <SettingToggle
+        label={tOr(t, 'appearance.animatedBg', 'Animierter Hintergrund')}
+        value={!!settings[SK.ANIMATED_BG]}
+        onToggle={(v) => sendSetting(SK.ANIMATED_BG, String(v))}
+      />
+
+      {/* Farbschema (Theme) */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.colorTheme', 'Farbschema')}</span>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {THEMES.map((th) => {
+            const isActive = String(settings[SK.THEME]) === th.value;
+            return (
+              <button
+                key={th.value}
+                onClick={() => sendSetting(SK.THEME, th.value)}
+                className={'flex items-center gap-2 rounded-lg px-3 py-2.5 text-left active:scale-95 transition-all border ' +
+                  (isActive ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5')}
+              >
+                <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: th.color, border: isActive ? '2px solid white' : '2px solid transparent' }} />
+                <span className="text-xs font-medium text-white">{th.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Lyrics-Stil */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsStyle', 'Lyrics-Stil')}</span>
+        <div className="mt-2">
+          <Dropdown
+            options={LYRICS_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+            value={String(settings[SK.LYRICS_STYLE] || 'classic')}
+            onChange={(v) => sendSetting(SK.LYRICS_STYLE, v)}
+          />
+        </div>
+      </div>
+
+      {/* Lyrics-Groesse */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsSize', 'Lyrics-Gr\u00F6\u00DFe')}</span>
+        <div className="flex gap-2 mt-2">
+          {(['small', 'medium', 'large'] as const).map((s) => {
+            const isActive = String(settings[SK.LYRICS_SIZE]) === s;
+            const labels: Record<string, string> = { small: 'Klein', medium: 'Normal', large: 'Gro\u00DF' };
+            return (
+              <button
+                key={s}
+                onClick={() => sendSetting(SK.LYRICS_SIZE, s)}
+                className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
+                  (isActive ? 'bg-pink-500/25 border-pink-400/40 text-pink-400' : 'bg-white/5 border-white/10 text-white/50')}
+              >{labels[s]}</button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================== Sub-View: Graphics & Sound =====================
+
+function GraphicSoundSettings({ settings, sendSetting, t }: {
+  settings: Record<string, string | boolean | number>;
+  sendSetting: (key: string, val: string) => void;
+  t: (_key: string) => string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Master-Lautstaerke */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.masterVolume', 'Master-Lautst\u00E4rke')}</span>
+          <span className="text-xs font-mono text-cyan-400">{settings[SK.MASTER_VOLUME]}%</span>
+        </div>
+        <TappableNumber
+          value={Number(settings[SK.MASTER_VOLUME]) || 100}
+          min={0} max={100} step={10} unit="%"
+          onChange={(v) => sendSetting(SK.MASTER_VOLUME, String(v))}
+        />
+      </div>
+
+      {/* Preview-Lautstaerke */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.previewVolume', 'Preview-Lautst\u00E4rke')}</span>
+          <span className="text-xs font-mono text-cyan-400">{settings[SK.PREVIEW_VOLUME]}%</span>
+        </div>
+        <TappableNumber
+          value={Number(settings[SK.PREVIEW_VOLUME]) || 30}
+          min={0} max={100} step={10} unit="%"
+          onChange={(v) => sendSetting(SK.PREVIEW_VOLUME, String(v))}
+        />
+      </div>
+
+      {/* Mikrofon-Empfindlichkeit */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.micSensitivity', 'Mikrofon-Empfindlichkeit')}</span>
+          <span className="text-xs font-mono text-cyan-400">{settings[SK.MIC_SENSITIVITY]}%</span>
+        </div>
+        <TappableNumber
+          value={Number(settings[SK.MIC_SENSITIVITY]) || 50}
+          min={0} max={100} step={5} unit="%"
+          onChange={(v) => sendSetting(SK.MIC_SENSITIVITY, String(v))}
+        />
+      </div>
+
+      {/* YouTube-Qualitaet */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.youtubeQuality', 'YouTube-Qualit\u00E4t')}</span>
+        <div className="mt-2">
+          <Dropdown
+            options={YT_QUALITY}
+            value={String(settings[SK.YOUTUBE_QUALITY] || 'default')}
+            onChange={(v) => sendSetting(SK.YOUTUBE_QUALITY, v)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================== Sub-View: About =====================
+
+function AboutSettings({ t }: { t: (_key: string) => string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-center">
+        <span className="text-3xl">{'\u{1F3B6}'}</span>
+        <h3 className="text-lg font-bold text-white mt-2">Karaoke ZERO</h3>
+        <p className="text-xs text-white/30 mt-1">{tOr(t, 'about.version', 'Version')} 1.0.0</p>
+      </div>
+      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+        <p className="text-xs text-white/40 leading-relaxed">
+          {tOr(t, 'about.description', 'Ein modernes Karaoke-Erlebnis mit Begleitung, Scoring und Party-Modi.')}
+        </p>
+      </div>
+      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+        <p className="text-[10px] text-white/20">Built with Next.js + Tauri + Web Audio API</p>
+      </div>
+    </div>
+  );
+}
+
+// ===================== Hauptkomponente =====================
 
 export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
   function MirrorSettingsLite({ onSendDesktopCommand }) {
     const { t } = useTranslation();
+    const [activeSection, setActiveSection] = useState<string | null>(null);
 
-    const handleSelect = useCallback(
-      (id: string) => {
-        haptic();
-        onSendDesktopCommand(`settings_tab:${id}`);
-      },
-      [onSendDesktopCommand],
-    );
+    // Lokaler Einstellungs-State (startet mit Desktop-Defaults)
+    const [settings, setSettings] = useState<Record<string, string | boolean | number>>(() => ({ ...DEFAULTS }));
 
+    // Einstellung senden + lokal aktualisieren
+    const sendSetting = useCallback((key: string, value: string) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
+      onSendDesktopCommand(`settings_set:${encodeURIComponent(key)}:${encodeURIComponent(value)}`);
+    }, [onSendDesktopCommand]);
+
+    // Zurueck zur Liste
+    const handleBack = useCallback(() => {
+      haptic();
+      setActiveSection(null);
+    }, []);
+
+    // Sektion oeffnen
+    const handleOpen = useCallback((id: string) => {
+      haptic();
+      setActiveSection(id);
+      // Auch Desktop-Tab wechseln
+      onSendDesktopCommand(`settings_tab:${id}`);
+    }, [onSendDesktopCommand]);
+
+    // -------- Sub-View: eine bestimmte Sektion --------
+    if (activeSection) {
+      const sectionInfo = SETTINGS_SECTIONS.find((s) => s.id === activeSection);
+      const sectionLabel = sectionInfo ? tOr(t, sectionInfo.labelKey, sectionInfo.fallback) : '';
+      const sectionIcon = sectionInfo?.icon || '';
+
+      // Desktop-only Sektionen
+      if (['microphone', 'mobile', 'webcam', 'library'].includes(activeSection)) {
+        const descKey = sectionInfo?.descKey || '';
+        const descFallback = sectionInfo?.descFallback || '';
+        return (
+          <div className="flex flex-col gap-3 px-4 pb-8">
+            {/* Header mit Zurueck */}
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={handleBack}
+                className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm text-white/60 active:scale-95 transition-transform"
+              >{'\u2190'}</button>
+              <span className="text-lg">{sectionIcon}</span>
+              <h2 className="text-lg font-semibold text-white">{sectionLabel}</h2>
+            </div>
+            <DesktopOnlyHint text={tOr(t, descKey, descFallback)} />
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col gap-3 px-4 pb-8">
+          {/* Header mit Zurueck */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={handleBack}
+              className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm text-white/60 active:scale-95 transition-transform"
+            >{'\u2190'}</button>
+            <span className="text-lg">{sectionIcon}</span>
+            <h2 className="text-lg font-semibold text-white">{sectionLabel}</h2>
+          </div>
+
+          {/* Sub-View Inhalt */}
+          {activeSection === 'general' && (
+            <GeneralSettings settings={settings} sendSetting={sendSetting} t={t} />
+          )}
+          {activeSection === 'gameplay' && (
+            <GameplaySettings settings={settings} sendSetting={sendSetting} t={t} />
+          )}
+          {activeSection === 'appearance' && (
+            <AppearanceSettings settings={settings} sendSetting={sendSetting} t={t} />
+          )}
+          {activeSection === 'graphicsound' && (
+            <GraphicSoundSettings settings={settings} sendSetting={sendSetting} t={t} />
+          )}
+          {activeSection === 'about' && (
+            <AboutSettings t={t} />
+          )}
+        </div>
+      );
+    }
+
+    // -------- Hauptansicht: Sektions-Liste --------
     return (
       <div className="flex flex-col gap-3 px-4 pb-8">
         {/* Header */}
         <div className="flex items-center gap-2 py-2">
-          <span className="text-2xl">⚙️</span>
+          <span className="text-2xl">\u2699\uFE0F</span>
           <h2 className="text-lg font-semibold text-white">
             {t('mobile.mirrorSettings')}
           </h2>
         </div>
 
-        {/* Settings-Buttons als flache Liste */}
+        {/* Settings-Buttons mit Beschreibung */}
         <div className="flex flex-col gap-2">
           {SETTINGS_SECTIONS.map((section) => {
             const label = t(section.labelKey) === section.labelKey
               ? section.fallback
               : t(section.labelKey);
+            const desc = t(section.descKey) === section.descKey
+              ? section.descFallback
+              : t(section.descKey);
+            const isDesktopOnly = ['microphone', 'mobile', 'webcam', 'library'].includes(section.id);
             return (
               <button
                 key={section.id}
-                onClick={() => handleSelect(section.id)}
+                onClick={() => handleOpen(section.id)}
                 className={
                   'flex items-center gap-3 rounded-xl px-4 py-3.5 text-left ' +
                   'bg-white/5 border border-white/10 ' +
@@ -82,8 +610,16 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
                 }
               >
                 <span className="text-lg leading-none shrink-0">{section.icon}</span>
-                <span className="text-sm font-medium text-white">{label}</span>
-                <span className="ml-auto text-white/30 text-xs">→</span>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-white block">{label}</span>
+                  <span className="text-[11px] text-white/30 block mt-0.5">{desc}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isDesktopOnly && (
+                    <span className="text-[9px] font-medium bg-white/10 text-white/30 px-1.5 py-0.5 rounded-full">DESKTOP</span>
+                  )}
+                  <span className="text-white/30 text-xs">{'\u2192'}</span>
+                </div>
               </button>
             );
           })}

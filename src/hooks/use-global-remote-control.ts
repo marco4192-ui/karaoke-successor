@@ -375,6 +375,18 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-jukebox-clear', { detail: {} }));
           break;
         }
+        // Check for party_apply_config:<json> pattern
+        if (cmd.type.startsWith('party_apply_config:')) {
+          const jsonStr = cmd.type.slice('party_apply_config:'.length);
+          try {
+            const config = JSON.parse(decodeURIComponent(jsonStr));
+            window.dispatchEvent(new CustomEvent('remote-party-apply-config', { detail: config }));
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('[GlobalRemoteControl] Failed to parse party_apply_config:', e);
+          }
+          break;
+        }
         // Check for party_difficulty:<level> pattern
         if (cmd.type.startsWith('party_difficulty:')) {
           const level = cmd.type.slice('party_difficulty:'.length);
@@ -384,6 +396,34 @@ export function useGlobalRemoteControl({
         // Check for party_start
         if (cmd.type === 'party_start') {
           window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
+          break;
+        }
+        // Check for settings_set:<url-encoded key>:<url-encoded value> pattern
+        // Companion App: aendert eine Einstellung direkt im Desktop-LocalStorage
+        if (cmd.type.startsWith('settings_set:')) {
+          try {
+            const rest = cmd.type.slice('settings_set:'.length);
+            const colonIdx = rest.lastIndexOf(':');
+            if (colonIdx > 0) {
+              const rawKey = decodeURIComponent(rest.slice(0, colonIdx));
+              const rawVal = decodeURIComponent(rest.slice(colonIdx + 1));
+              localStorage.setItem(rawKey, rawVal);
+              window.dispatchEvent(new CustomEvent('settingsChange', {
+                detail: { companionSetting: true, key: rawKey, value: rawVal },
+              }));
+              // Theme-Aenderung: auch themeChange-Event ausloesen
+              if (rawKey === 'karaoke-theme') {
+                window.dispatchEvent(new CustomEvent('themeChange', { detail: rawVal }));
+              }
+              // Sprache: Seite neu laden fuer i18n
+              if (rawKey === 'karaoke-language') {
+                window.location.reload();
+              }
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('[GlobalRemoteControl] Failed to process settings_set:', e);
+          }
           break;
         }
       }
