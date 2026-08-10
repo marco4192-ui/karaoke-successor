@@ -27,7 +27,7 @@ function haptic() {
 // ===================== Component =====================
 
 export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
-  function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSendDesktopCommand }) {
+  function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSendDesktopCommand, gameState }) {
     const { t } = useTranslation();
 
     const handleRemove = useCallback(
@@ -39,6 +39,19 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
       (cmd: string) => { haptic(); onSendDesktopCommand(cmd); },
       [onSendDesktopCommand],
     );
+
+    // DO-NOT-CHANGE: Jukebox starten - wenn Playlist leer, wird auf dem
+    // Desktop Random-Musik aus der gesamten Bibliothek abgespielt.
+    // Sendet 'jukebox' (navigiert zum Jukebox-Screen) und dann 'jukebox_play'
+    // (startet die Wiedergabe, bei leerer Wishlist = Random-Modus).
+    const handleJukeboxStart = useCallback(() => {
+      haptic();
+      onSendDesktopCommand('jukebox');
+      // Kurze Verzoegerung damit die Navigation abgeschlossen ist
+      setTimeout(() => {
+        onSendDesktopCommand('jukebox_play');
+      }, 300);
+    }, [onSendDesktopCommand]);
 
     return (
       <div className="flex flex-col gap-4 px-4 pb-8">
@@ -57,7 +70,7 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
         {/* Action Buttons */}
         <div className="flex gap-2">
           <button
-            onClick={() => handleCommand('jukebox')}
+            onClick={handleJukeboxStart}
             className={
               'flex-1 flex items-center justify-center gap-2 rounded-xl p-3 text-sm font-semibold ' +
               'bg-gradient-to-r from-cyan-500/25 to-purple-500/25 border border-cyan-400/30 text-white ' +
@@ -66,6 +79,9 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
           >
             <span>{'📻'}</span>
             <span>{t('mobile.mirrorJukeboxStart')}</span>
+            {jukeboxWishlist.length === 0 && (
+              <span className="text-xs text-white/40 font-normal ml-1">(Random)</span>
+            )}
           </button>
           {jukeboxWishlist.length > 0 && (
             <button

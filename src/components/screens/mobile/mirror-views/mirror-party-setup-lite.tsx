@@ -369,6 +369,8 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
     const [songSelection, setSongSelection] = useState<string>('random');
     const [inputMode, setInputMode] = useState<InputMode>('microphone');
     const [error, setError] = useState<string | null>(null);
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+    const [configSent, setConfigSent] = useState(false);
 
     // Initiale Settings aus Config setzen
     React.useEffect(() => {
@@ -423,33 +425,51 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
       setDifficulty(d);
     }, []);
 
-    // Zurueck
+    // DO-NOT-CHANGE: Zurueck mit Leave-Bestaetigungs-Popup (wie Desktop-App)
     const handleBack = useCallback(() => {
       haptic();
+      setShowLeaveDialog(true);
+    }, []);
+
+    const handleLeaveConfirm = useCallback(() => {
+      setShowLeaveDialog(false);
       onSendDesktopCommand('party');
     }, [onSendDesktopCommand]);
 
-    // Spiel starten: komplette Config an Desktop senden
-    const handleStart = useCallback(() => {
+    const handleLeaveCancel = useCallback(() => {
+      haptic();
+      setShowLeaveDialog(false);
+    }, []);
+
+    // DO-NOT-CHANGE: Config an Desktop senden (mit songSelection).
+    // Der Desktop wendet die Config an und triggert automatisch
+    // die Songauswahl (random=sofort, library=navigiert, vote=Abstimmung).
+    const sendConfig = useCallback((targetSongSelection: string) => {
       if (!modeInfo) return;
       if (selectedPlayers.length < modeInfo.minPlayers) {
-        setError(`Min. ${modeInfo.minPlayers} Spieler erforderlich`);
+        setError(`Min. ${modeInfo.minPlayers} ${t('party.players') || 'Spieler'} erforderlich`);
         return;
       }
       haptic();
-
-      // Komplette Config als JSON senden
+      setConfigSent(true);
+      setError(null);
       const config = JSON.stringify({
         mode: modeKey,
         players: selectedPlayers,
         difficulty,
         settings,
         inputMode,
-        songSelection,
+        songSelection: targetSongSelection,
       });
-      // Sende als URL-kodierten Command
       onSendDesktopCommand(`party_apply_config:${config}`);
-    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, songSelection, onSendDesktopCommand]);
+    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, t, onSendDesktopCommand]);
+
+    // Song-Auswahl-Klick: sendet Config mit der gewaehlten Songauswahl-Option
+    const handleSongSelectClick = useCallback((opt: string) => {
+      haptic();
+      setSongSelection(opt);
+      sendConfig(opt);
+    }, [sendConfig]);
 
     // -------- Loading State --------
     if (!modeInfo) {
@@ -671,12 +691,16 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
               if (!cfg) return null;
               const isActive = songSelection === opt;
               const optLabel = tOr(t, cfg.labelKey, cfg.fallback);
+              const enabled = canStart;
               return (
                 <button
                   key={opt}
-                  onClick={() => { haptic(); setSongSelection(opt); }}
+                  onClick={() => handleSongSelectClick(opt)}
+                  disabled={!enabled}
                   className={'flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-semibold active:scale-95 transition-all border ' +
-                    (isActive ? 'bg-purple-500/25 border-purple-400/40 text-purple-400' : 'bg-white/5 border-white/10 text-white/50')}
+                    (enabled
+                      ? (isActive ? 'bg-purple-500/25 border-purple-400/40 text-purple-400' : 'bg-white/5 border-white/10 text-white/50')
+                      : 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed')}
                 >
                   <span>{cfg.icon}</span>
                   <span>{optLabel}</span>
@@ -686,24 +710,65 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
           </div>
         </div>
 
-        {/* -------- ZUSAMMENFASSUNG -------- */}
-        <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/50">{selectedPlayers.length} {t('party.players') || 'Spieler'}</span>
-            <span className="text-white/50">{tOr(t, DIFFICULTIES.find((d) => d.id === difficulty)?.labelKey || '', difficulty === 'easy' ? 'Leicht' : difficulty === 'medium' ? 'Normal' : 'Schwer')}</span>
+        {/* -------- INFOLEISTE (wie Desktop, grau wenn nicht bereit, farbig wenn bereit) -------- */}
+        <div
+          className={'rounded-xl border px-4 py-3 transition-all ' +
+            (canStart
+              ? `bg-gradient-to-r ${modeInfo.color} border-0 shadow-lg`
+              : 'bg-white/5 border-white/10 opacity-60')}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={'text-sm font-bold ' + (canStart ? 'text-white' : 'text-white/50')}>
+                {canStart
+                  ? (t('unifiedSetup.readyToPlay') || 'Bereit zum Spielen!')
+                  : (t('partySetup.players') || 'Spieler auswaehlen')}
+              </p>
+              {!canStart && (
+                <p className="text-xs text-white/30 mt-0.5">
+                  {`Mindestens ${modeInfo.minPlayers} ${t('party.players') || 'Spieler'}`}
+                </p>
+              )}
+              {canStart && (
+                <p className="text-xs text-white/70 mt-0.5">
+                  {selectedPlayers.length} {t('party.players') || 'Spieler'}{' \u2022 '}{tOr(t, DIFFICULTIES.find((d) => d.id === difficulty)?.labelKey || '', difficulty === 'easy' ? 'Leicht' : difficulty === 'medium' ? 'Normal' : 'Schwer')}
+                  {configSent ? ' \u2022 ' + (t('mobile.mirrorChallengeSent') || 'Gesendet!') : ''}
+                </p>
+              )}
+            </div>
+            {canStart && (
+              <span className="text-2xl">{'\u2705'}</span>
+            )}
           </div>
         </div>
-
-        {/* -------- START-BUTTON -------- */}
-        <button
-          onClick={handleStart}
-          disabled={!canStart}
-          className={'w-full rounded-xl p-4 text-center text-base font-bold active:scale-[0.97] transition-all bg-gradient-to-r ' +
-            modeInfo.color + ' text-white shadow-lg ' +
-            (canStart ? '' : 'opacity-40 cursor-not-allowed')}
-        >
-          {t('partySetup.startGame') || 'Spiel starten'} {'\u25B6'}
-        </button>
+        {/* -------- LEAVE-BESTAETIGUNGS-POPUP -------- */}
+        {showLeaveDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleLeaveCancel}>
+            <div className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="text-center mb-5">
+                <div className="text-4xl mb-2">{'\u26A0\uFE0F'}</div>
+                <h2 className="text-lg font-bold text-white">{t('dialogs.partyLeaveTitle') || 'Party-Modus verlassen?'}</h2>
+                <p className="text-sm text-white/50 mt-2">
+                  {t('dialogs.partyLeaveDesc') || 'Du bist dabei, den Party-Modus zu verlassen.'}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleLeaveCancel}
+                  className="flex-1 py-3 rounded-xl font-medium bg-white/10 text-white active:bg-white/20 transition-all text-sm"
+                >
+                  {t('dialogs.back') || 'Zurueck'}
+                </button>
+                <button
+                  onClick={handleLeaveConfirm}
+                  className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
+                >
+                  {t('dialogs.endParty') || 'Verlassen'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   },

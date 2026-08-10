@@ -375,6 +375,13 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-jukebox-clear', { detail: {} }));
           break;
         }
+        // DO-NOT-CHANGE: Jukebox Play von Companion App - startet Wiedergabe
+        // (bei leerer Wishlist = Random-Musik aus der Bibliothek).
+        // Nutzt das bestehende 'jukebox:start' Event aus use-jukebox.ts.
+        if (cmd.type === 'jukebox_play') {
+          window.dispatchEvent(new CustomEvent('jukebox:start'));
+          break;
+        }
         // Check for party_apply_config:<json> pattern
         if (cmd.type.startsWith('party_apply_config:')) {
           const jsonStr = cmd.type.slice('party_apply_config:'.length);

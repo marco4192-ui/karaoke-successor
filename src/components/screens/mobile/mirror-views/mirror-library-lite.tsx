@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileSong, GameMode, GameState, MobileView } from '../mobile-types';
 
@@ -57,6 +57,26 @@ function formatDurationSec(ms: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
+// DO-NOT-CHANGE: Duett-Erkennung basiert auf Titel/Kuenstler-Keywords,
+// da MobileSong kein isDuet-Feld hat. Erweiterte Pattern fuer bessere Trefferquote.
+function isLikelyDuet(song: MobileSong): boolean {
+  const combined = `${song.title} ${song.artist}`.toLowerCase();
+  return (
+    combined.includes('duet') ||
+    combined.includes('duett') ||
+    combined.includes(' & ') ||
+    combined.includes(' feat ') ||
+    combined.includes('feat. ') ||
+    combined.includes(' vs ') ||
+    combined.includes(' x ') ||
+    combined.includes('(feat') ||
+    combined.includes('featuring') ||
+    combined.includes(' and ') ||
+    /\bft\.?\b/.test(combined) ||
+    combined.includes(' mit ')
+  );
+}
+
 // ===================== Component =====================
 
 export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
@@ -71,18 +91,28 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     onRefreshSongs,
     selectedGameMode,
     onSelectGameMode,
+    onSelectPartner,
+    availablePartners,
+    opponents,
+    onDifficultyChange,
     onOpenChat,
+    onSendDesktopCommand,
+    gameState,
   }) {
     const { t } = useTranslation();
     const searchRef = useRef<HTMLInputElement>(null);
     const [genreFilter, setGenreFilter] = useState('all');
     const [languageFilter, setLanguageFilter] = useState('all');
-    const [addingId, setAddingId] = useState<string | null>(null);
-    const [challengingId, setChallengingId] = useState<string | null>(null);
-    const [challengeSentId, setChallengeSentId] = useState<string | null>(null);
 
     // Lokaler Game-Mode (Single/Duell/Duett)
     const [libGameMode, setLibGameMode] = useState<GameMode>('single');
+
+    // ---- Overlay-State ----
+    const [overlaySong, setOverlaySong] = useState<MobileSong | null>(null);
+    const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+    const [ovPartnerId, setOvPartnerId] = useState<string | null>(null);
+    const [ovAdding, setOvAdding] = useState(false);
+    const [ovChallengeSent, setOvChallengeSent] = useState(false);
 
     // Duett: auto-filtere auf Duett-Songs
     const isDuetMode = libGameMode === 'duet';
@@ -94,20 +124,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       if (languageFilter !== 'all') {
         result = result.filter((s) => s.language === languageFilter);
       }
-      // DO-NOT-CHANGE: Duett-Filter basiert auf Titel/Kuenstler-Keywords
       if (isDuetMode) {
-        result = result.filter((s) => {
-          const combined = `${s.title} ${s.artist}`.toLowerCase();
-          return (
-            combined.includes('duet') ||
-            combined.includes('duett') ||
-            combined.includes(' & ') ||
-            combined.includes(' feat ') ||
-            combined.includes('feat. ') ||
-            combined.includes(' vs ') ||
-            combined.includes(' x ')
-          );
-        });
+        result = result.filter(isLikelyDuet);
       }
       return result;
     }, [filteredSongs, genreFilter, languageFilter, isDuetMode]);
@@ -126,60 +144,6 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       };
     }, [songs]);
 
-    const handleAdd = useCallback(
-      async (song: MobileSong) => {
-        if (addingId) return;
-        haptic();
-        setAddingId(song.id);
-        // Game-Mode auf den gewaehlten Modus setzen
-        onSelectGameMode(libGameMode);
-        try {
-          await onAddToQueue(song);
-        } finally {
-          setTimeout(() => setAddingId(null), 500);
-        }
-      },
-      [addingId, onAddToQueue, libGameMode, onSelectGameMode],
-    );
-
-    // DO-NOT-CHANGE: Herausfordern pro Song - sendet song_challenge an die API
-    // Der API-Handler erstellt eine Chat-Nachricht mit Challenge-Daten,
-    // die andere Companion-Geraete annehmen koennen (accept_challenge).
-    const handleChallengeSong = useCallback(async (song: MobileSong) => {
-      if (challengingId) return;
-      haptic();
-      setChallengingId(song.id);
-      try {
-        const res = await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'song_challenge',
-            payload: {
-              songId: song.id,
-              songTitle: song.title,
-              songArtist: song.artist,
-            },
-          }),
-        });
-        if (res.ok) {
-          setChallengeSentId(song.id);
-          setTimeout(() => setChallengeSentId(null), 2000);
-        }
-      } catch { /* ignore */ }
-      finally { setChallengingId(null); }
-    }, [challengingId]);
-
-    const handleGenreFilter = useCallback((g: string) => {
-      haptic();
-      setGenreFilter(g);
-    }, []);
-
-    const handleLanguageFilter = useCallback((l: string) => {
-      haptic();
-      setLanguageFilter(l);
-    }, []);
-
     const handleClearSearch = useCallback(() => {
       onSongSearchChange('');
       searchRef.current?.focus();
@@ -190,14 +154,143 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setLibGameMode(mode);
     }, []);
 
+    // ---- Overlay-Handler ----
+
+    const openOverlay = useCallback((song: MobileSong) => {
+      haptic();
+      setOverlaySong(song);
+      setOvDifficulty('normal');
+      setOvPartnerId(null);
+      setOvChallengeSent(false);
+    }, []);
+
+    const closeOverlay = useCallback(() => {
+      haptic();
+      setOverlaySong(null);
+    }, []);
+
+    // DO-NOT-CHANGE: Queue-Add mit GameMode, Difficulty und Partner-Registrierung.
+    // Die Props (onSelectGameMode, onDifficultyChange, onSelectPartner) setzen
+    // den State auf dem Desktop-Client, der dann beim onAddToQueue-Aufruf
+    // in den QueueItem uebernommen wird.
+    const handleOverlayQueue = useCallback(async () => {
+      if (!overlaySong || ovAdding) return;
+      setOvAdding(true);
+      onSelectGameMode(libGameMode);
+      onDifficultyChange(ovDifficulty);
+      if (ovPartnerId) {
+        const partner = availablePartners.find((p) => p.id === ovPartnerId);
+        onSelectPartner(partner ? { id: partner.id, name: partner.name } : null);
+      } else {
+        onSelectPartner(null);
+      }
+      try {
+        await onAddToQueue(overlaySong);
+        closeOverlay();
+      } finally {
+        setOvAdding(false);
+      }
+    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, closeOverlay]);
+
+    // DO-NOT-CHANGE: Jukebox-Add via mobile API. Der Desktop muss den
+    // 'jukebox_add'-Action-Type unterstuetzen, um den Song in die
+    // Jukebox-Wunschliste aufzunehmen.
+    const handleOverlayJukebox = useCallback(async () => {
+      if (!overlaySong) return;
+      haptic();
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'jukebox_add',
+            payload: {
+              songId: overlaySong.id,
+              songTitle: overlaySong.title,
+              songArtist: overlaySong.artist,
+            },
+          }),
+        });
+        closeOverlay();
+      } catch { /* ignore */ }
+    }, [overlaySong, closeOverlay]);
+
+    // Queue-Add + Spiel direkt starten via Desktop-Command
+    const handleOverlayStart = useCallback(async () => {
+      if (!overlaySong || ovAdding) return;
+      setOvAdding(true);
+      onSelectGameMode(libGameMode);
+      onDifficultyChange(ovDifficulty);
+      if (ovPartnerId) {
+        const partner = availablePartners.find((p) => p.id === ovPartnerId);
+        onSelectPartner(partner ? { id: partner.id, name: partner.name } : null);
+      } else {
+        onSelectPartner(null);
+      }
+      try {
+        await onAddToQueue(overlaySong);
+        onSendDesktopCommand('play_queue');
+        closeOverlay();
+      } finally {
+        setOvAdding(false);
+      }
+    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, onSendDesktopCommand, closeOverlay]);
+
+    // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
+    // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
+    const handleOverlayChallenge = useCallback(async () => {
+      if (!overlaySong || ovChallengeSent) return;
+      haptic();
+      setOvChallengeSent(true);
+      try {
+        const res = await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'song_challenge',
+            payload: {
+              songId: overlaySong.id,
+              songTitle: overlaySong.title,
+              songArtist: overlaySong.artist,
+              gameMode: libGameMode,
+              challengedPartnerId: ovPartnerId || undefined,
+            },
+          }),
+        });
+        if (res.ok) {
+          setTimeout(() => closeOverlay(), 1200);
+        } else {
+          setOvChallengeSent(false);
+        }
+      } catch {
+        setOvChallengeSent(false);
+      }
+    }, [overlaySong, ovChallengeSent, libGameMode, ovPartnerId, closeOverlay]);
+
     // Modus-Button-Konfiguration
     const MODE_BUTTONS: { mode: GameMode; icon: string; labelKey: string; fallback: string; activeColor: string }[] = [
-      { mode: 'single', icon: '\u{1F3B5}', labelKey: 'gameMode.single', fallback: 'Single', activeColor: 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' },
+      { mode: 'single', icon: '\u{1F3B5}', labelKey: 'gameMode.single', fallback: 'Solo', activeColor: 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' },
       { mode: 'duel', icon: '\u2694\uFE0F', labelKey: 'gameMode.duel', fallback: 'Duell', activeColor: 'bg-red-500/25 border-red-400/40 text-red-400' },
       { mode: 'duet', icon: '\u{1F3AD}', labelKey: 'gameMode.duet', fallback: 'Duett', activeColor: 'bg-pink-500/25 border-pink-400/40 text-pink-400' },
     ];
 
     const needsChallenge = libGameMode === 'duel' || libGameMode === 'duet';
+
+    // Schwierigkeits-Optionen fuer Overlay
+    const DIFF_OPTIONS = [
+      { id: 'easy' as const, label: t('mobileViews.easy') || 'Leicht', color: 'bg-green-500/25 border-green-400/40 text-green-400' },
+      { id: 'normal' as const, label: t('mobileViews.normal') || 'Normal', color: 'bg-amber-500/25 border-amber-400/40 text-amber-400' },
+      { id: 'hard' as const, label: t('mobileViews.hard') || 'Schwer', color: 'bg-red-500/25 border-red-400/40 text-red-400' },
+    ];
+
+    // Dropdown-Pfeil SVG als data-URL
+    const dropdownArrow = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`;
+    const dropdownStyle = {
+      backgroundImage: dropdownArrow,
+      backgroundRepeat: 'no-repeat' as const,
+      backgroundPosition: 'right 10px center',
+      backgroundSize: '16px',
+    };
 
     return (
       <div className="flex flex-col gap-3 px-4 pb-8">
@@ -234,8 +327,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
             <span className="text-sm">{'\u2694\uFE0F'}</span>
             <span className="text-xs text-amber-300/80">
               {libGameMode === 'duel'
-                ? (t('mobile.mirrorDuelHint') || 'Tippe auf \u2694\uFE0F bei einem Song, um einen Gegner herauszufordern')
-                : (t('mobile.mirrorDuetHint') || 'Tippe auf \u{1F3AD} bei einem Song, um einen Duett-Partner herauszufordern')}
+                ? (t('mobile.mirrorDuelHint') || 'Tippe auf einen Song, um einen Gegner herauszufordern')
+                : (t('mobile.mirrorDuetHint') || 'Tippe auf einen Song, um einen Duett-Partner zu finden')}
             </span>
           </div>
         )}
@@ -267,50 +360,34 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
           )}
         </div>
 
-        {/* Genre-Filter */}
+        {/* Genre-Filter als Dropdown */}
         {genres.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleGenreFilter('all')}
-              className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-transform ' +
-                (genreFilter === 'all'
-                  ? 'bg-cyan-500/25 border border-cyan-400/30 text-cyan-400'
-                  : 'bg-white/5 border border-white/10 text-white/50')}
-            >Alle</button>
-            {genres.slice(0, 8).map((g) => (
-              <button
-                key={g}
-                onClick={() => handleGenreFilter(g)}
-                className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-transform ' +
-                  (genreFilter === g
-                    ? 'bg-purple-500/25 border border-purple-400/30 text-purple-400'
-                    : 'bg-white/5 border border-white/10 text-white/50')}
-              >{g}</button>
+          <select
+            value={genreFilter}
+            onChange={(e) => { haptic(); setGenreFilter(e.target.value); }}
+            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
+            style={dropdownStyle}
+          >
+            <option value="all" className="bg-[#1a1a2e] text-white">Alle Genres</option>
+            {genres.map((g) => (
+              <option key={g} value={g} className="bg-[#1a1a2e] text-white">{g}</option>
             ))}
-          </div>
+          </select>
         )}
 
-        {/* Sprach-Filter */}
+        {/* Sprach-Filter als Dropdown */}
         {languages.length > 1 && (
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleLanguageFilter('all')}
-              className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-transform ' +
-                (languageFilter === 'all'
-                  ? 'bg-cyan-500/25 border border-cyan-400/30 text-cyan-400'
-                  : 'bg-white/5 border border-white/10 text-white/50')}
-            >Alle</button>
+          <select
+            value={languageFilter}
+            onChange={(e) => { haptic(); setLanguageFilter(e.target.value); }}
+            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
+            style={dropdownStyle}
+          >
+            <option value="all" className="bg-[#1a1a2e] text-white">Alle Sprachen</option>
             {languages.map((l) => (
-              <button
-                key={l}
-                onClick={() => handleLanguageFilter(l)}
-                className={'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-95 transition-transform ' +
-                  (languageFilter === l
-                    ? 'bg-emerald-500/25 border border-emerald-400/30 text-emerald-400'
-                    : 'bg-white/5 border border-white/10 text-white/50')}
-              >{l}</button>
+              <option key={l} value={l} className="bg-[#1a1a2e] text-white">{l}</option>
             ))}
-          </div>
+          </select>
         )}
 
         {/* Loading */}
@@ -336,70 +413,170 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
           </div>
         )}
 
-        {/* Songliste */}
+        {/* Songliste - Tap oeffnet Overlay */}
         <div className="flex flex-col gap-1.5">
-          {displaySongs.map((song) => {
-            const isAdding = addingId === song.id;
-            const isChallenging = challengingId === song.id;
-            const isChallengeSent = challengeSentId === song.id;
-            return (
-              <div
-                key={song.id}
-                className={'flex items-center gap-2 rounded-xl px-2 py-2 text-left transition-all ' +
-                  'bg-white/5 border border-white/10'}
-              >
-                {/* Add-Button */}
-                <button
-                  onClick={() => handleAdd(song)}
-                  disabled={isAdding}
-                  className={'shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm transition-all active:scale-90 ' +
-                    (isAdding
-                      ? 'bg-cyan-500/30 text-cyan-400'
-                      : 'bg-white/10 text-white/40 active:bg-white/15')}
-                >{isAdding ? '\u2713' : '+'}</button>
+          {displaySongs.map((song) => (
+            <button
+              key={song.id}
+              onClick={() => openOverlay(song)}
+              className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all active:scale-[0.98] ' +
+                'bg-white/5 border border-white/10 active:bg-white/10'}
+            >
+              {/* Song-Icon */}
+              <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-base">
+                {'\u{1F3B5}'}
+              </div>
+              {/* Song-Info */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">{song.title}</p>
+                <p className="truncate text-xs text-white/40">{song.artist}</p>
+              </div>
+              {/* Dauer */}
+              <span className="shrink-0 text-[10px] font-mono text-white/30 w-8 text-right">{formatDurationSec(song.duration)}</span>
+              {/* Chevron */}
+              <span className="shrink-0 text-white/20 text-xs">{'\u203A'}</span>
+            </button>
+          ))}
+        </div>
 
-                {/* Song-Info (klickbar fuer Add) */}
+        {/* ============= SONG-OPTIONS-OVERLAY ============= */}
+        {overlaySong && (
+          <div
+            className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm"
+            onClick={closeOverlay}
+          >
+            <div
+              className="w-full rounded-t-2xl bg-[#16162a] border-t border-white/10 p-5 pb-8 max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Overlay Header */}
+              <div className="flex items-start justify-between mb-5">
+                <div className="min-w-0 flex-1 mr-3">
+                  <h3 className="text-base font-bold text-white truncate">{overlaySong.title}</h3>
+                  <p className="text-sm text-white/50 truncate">{overlaySong.artist}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-white/30 font-mono">{formatDurationSec(overlaySong.duration)}</span>
+                    {overlaySong.genre && <span className="text-xs text-white/25">{overlaySong.genre}</span>}
+                  </div>
+                </div>
                 <button
-                  onClick={() => handleAdd(song)}
-                  disabled={isAdding}
-                  className="min-w-0 flex-1 text-left active:opacity-70"
+                  onClick={closeOverlay}
+                  className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 transition-colors"
                 >
-                  <p className="truncate text-sm font-medium text-white">{song.title}</p>
-                  <p className="truncate text-xs text-white/40">{song.artist}</p>
+                  {'\u2715'}
+                </button>
+              </div>
+
+              {/* Game-Mode Badge */}
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xs font-medium text-white/40">{t('mobileViews.gameMode') || 'Modus'}:</span>
+                <span className={'rounded-lg px-2.5 py-1 text-xs font-bold ' +
+                  (libGameMode === 'single' ? 'bg-cyan-500/25 text-cyan-400' : libGameMode === 'duel' ? 'bg-red-500/25 text-red-400' : 'bg-pink-500/25 text-pink-400')}>
+                  {MODE_BUTTONS.find((m) => m.mode === libGameMode)?.icon}{' '}
+                  {t(MODE_BUTTONS.find((m) => m.mode === libGameMode)?.labelKey || '') === MODE_BUTTONS.find((m) => m.mode === libGameMode)?.labelKey
+                    ? MODE_BUTTONS.find((m) => m.mode === libGameMode)?.fallback
+                    : t(MODE_BUTTONS.find((m) => m.mode === libGameMode)?.labelKey || '')}
+                </span>
+              </div>
+
+              {/* Schwierigkeit */}
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+                  {t('mobileViews.difficulty') || 'Schwierigkeit'}
+                </h4>
+                <div className="flex gap-2">
+                  {DIFF_OPTIONS.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => { haptic(); setOvDifficulty(d.id); }}
+                      className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-all border ' +
+                        (ovDifficulty === d.id ? d.color : 'bg-white/5 border-white/10 text-white/50')}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gegner/Partner-Auswahl (nur Duell/Duett) */}
+              {needsChallenge && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+                    {libGameMode === 'duel'
+                      ? (t('mobileViews.selectOpponent') || 'Gegner waehlen')
+                      : (t('mobileViews.noPartner') || 'Duett-Partner waehlen')}
+                  </h4>
+                  <select
+                    value={ovPartnerId || ''}
+                    onChange={(e) => { haptic(); setOvPartnerId(e.target.value || null); }}
+                    className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white cursor-pointer"
+                    style={dropdownStyle}
+                  >
+                    <option value="" className="bg-[#1a1a2e] text-white">
+                      {t('mobileViews.noPartner') || 'Offen (Gegnersuche ausstehend)'}
+                    </option>
+                    {availablePartners.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-[#1a1a2e] text-white">{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Trennlinie */}
+              <div className="border-t border-white/10 my-4" />
+
+              {/* Aktions-Buttons */}
+              <div className="flex flex-col gap-2.5">
+                {/* Zur Queue */}
+                <button
+                  onClick={handleOverlayQueue}
+                  disabled={ovAdding}
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-cyan-500/20 border border-cyan-400/30 text-cyan-400 active:scale-[0.97] transition-all disabled:opacity-40"
+                >
+                  <span className="text-base">{'\u{1F4CB}'}</span>
+                  <span>{t('mobileViews.queueTitle') || 'Zur Queue'}</span>
+                  {ovAdding && <span className="animate-spin text-xs">{'\u23F3'}</span>}
                 </button>
 
-                {/* Dauer */}
-                <span className="shrink-0 text-[10px] font-mono text-white/30 w-8 text-right">{formatDurationSec(song.duration)}</span>
+                {/* Zur Jukebox-Playlist */}
+                <button
+                  onClick={handleOverlayJukebox}
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-purple-500/20 border border-purple-400/30 text-purple-400 active:scale-[0.97] transition-all"
+                >
+                  <span className="text-base">{'\u{1F4FB}'}</span>
+                  <span>{t('mobile.mirrorJukebox') || 'Zur Jukebox'}</span>
+                </button>
 
-                {/* Challenge-Button (nur bei Duell/Duett) */}
+                {/* Spiel starten */}
+                <button
+                  onClick={handleOverlayStart}
+                  disabled={ovAdding}
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400/20 text-white active:scale-[0.97] transition-all disabled:opacity-40"
+                >
+                  <span className="text-base">{'\u25B6\uFE0F'}</span>
+                  <span>Spiel starten</span>
+                </button>
+
+                {/* Herausfordern (nur Duell/Duett) */}
                 {needsChallenge && (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleChallengeSong(song);
-                    }}
-                    disabled={isChallenging}
-                    className={'shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-base transition-all active:scale-90 ' +
-                      (isChallengeSent
-                        ? 'bg-green-500/30 text-green-400'
-                        : isChallenging
-                          ? 'bg-amber-500/20 text-amber-400/50'
-                          : libGameMode === 'duel'
-                            ? 'bg-red-500/15 text-red-400/70 active:bg-red-500/25'
-                            : 'bg-pink-500/15 text-pink-400/70 active:bg-pink-500/25')}
-                    title={isChallengeSent
-                      ? (t('mobile.mirrorChallengeSent') || 'Gesendet!')
-                      : libGameMode === 'duel'
-                        ? (t('mobile.mirrorChallengeDuel') || 'Herausfordern')
-                        : (t('mobile.mirrorChallengeDuet') || 'Duett-Partner suchen')}
+                    onClick={handleOverlayChallenge}
+                    disabled={ovChallengeSent}
+                    className={'w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold active:scale-[0.97] transition-all ' +
+                      (ovChallengeSent
+                        ? 'bg-green-500/20 border border-green-400/30 text-green-400'
+                        : 'bg-red-500/15 border border-red-400/25 text-red-400')}
                   >
-                    {isChallengeSent ? '\u2705' : isChallenging ? '\u23F3' : '\u2694\uFE0F'}
+                    <span className="text-base">{ovChallengeSent ? '\u2705' : '\u2694\uFE0F'}</span>
+                    <span>{ovChallengeSent
+                      ? (t('mobile.mirrorChallengeSent') || 'Gesendet!')
+                      : (t('desktopChat.challenge') || 'Herausfordern (Chat)')}</span>
                   </button>
                 )}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   },
