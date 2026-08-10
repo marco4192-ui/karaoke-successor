@@ -290,6 +290,41 @@ export function usePartySetup({
     }
   }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
 
+  // ── Remote companion config apply ──
+  useEffect(() => {
+    const handleRemoteConfig = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      // Apply players
+      if (Array.isArray(detail.players)) {
+        setSelectedPlayers(detail.players);
+      }
+      // Apply difficulty
+      if (detail.difficulty && ['easy', 'medium', 'hard'].includes(detail.difficulty)) {
+        setDifficulty(detail.difficulty as Difficulty);
+      }
+      // Apply mode-specific settings
+      if (detail.settings && typeof detail.settings === 'object') {
+        setSettings((prev) => ({ ...prev, ...detail.settings }));
+      }
+      // Apply input mode
+      if (detail.inputMode && ['microphone', 'companion', 'mixed'].includes(detail.inputMode)) {
+        setInputMode(detail.inputMode as InputMode);
+      }
+      // Apply song selection after a short delay to let state settle
+      const songSel = detail.songSelection;
+      if (songSel && ['library', 'random', 'vote', 'medley'].includes(songSel)) {
+        const minP = config.minPlayers;
+        if (Array.isArray(detail.players) && detail.players.length >= minP) {
+          setTimeout(() => {
+            handleSongSelection(songSel as SongSelectionOption);
+          }, 200);
+        }
+      }
+    };
+    window.addEventListener('remote-party-apply-config', handleRemoteConfig);
+    return () => window.removeEventListener('remote-party-apply-config', handleRemoteConfig);
+  }, [config.minPlayers, handleSongSelection]);
+
   return {
     config,
     activeProfiles,

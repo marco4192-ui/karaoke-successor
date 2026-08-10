@@ -114,6 +114,19 @@ export const mobileTranslations = {
     mirrorSkip: 'Überspringen',
     mirrorFullscreen: 'Vollbild',
     mirrorChatNew: 'Chat',
+    mirrorChallengeSent: 'Gesendet!',
+    mirrorDuetFilterHint: 'Es werden nur Duett-Songs angezeigt',
+    mirrorDuelHint: 'Tippe auf ⚔️ bei einem Song, um einen Gegner herauszufordern',
+    mirrorDuetHint: 'Tippe auf ⚔️ bei einem Song, um einen Duett-Partner zu finden',
+    mirrorChallengeDuel: 'Herausfordern',
+    mirrorChallengeDuet: 'Duett-Partner suchen',
+    mirrorLoadingProfiles: 'Profile laden...',
+  },
+
+  gameMode: {
+    single: 'Solo',
+    duel: 'Duell',
+    duet: 'Duett',
   },
 
   chatNotification: {

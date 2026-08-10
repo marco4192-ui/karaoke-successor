@@ -328,6 +328,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
           <MirrorPartySetupLite
             gameState={gameState}
             onNavigate={onNavigate}
+            availableProfiles={availableProfiles}
             {...desktopMirrorBase}
           />
         </div>
