@@ -168,6 +168,11 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             queue={queue}
             onOpenChat={onOpenChat}
             onSendDesktopCommand={onSendDesktopCommand}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            lockedByMe={!isRemoteLocked}
+            onAcquireRemote={onAcquireRemote}
+            onReleaseRemote={onReleaseRemote}
           />
         </div>
       );
@@ -189,6 +194,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             availablePartners={availablePartners}
             opponents={opponents}
             availableProfiles={availableProfiles}
+            clientId={clientId}
             onShowSongOptions={onShowSongOptions}
             onSelectGameMode={onSelectGameMode}
             onSelectPartner={onSelectPartner}
@@ -368,6 +374,11 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             queue={queue}
             onOpenChat={onOpenChat}
             onSendDesktopCommand={onSendDesktopCommand}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            lockedByMe={!isRemoteLocked}
+            onAcquireRemote={onAcquireRemote}
+            onReleaseRemote={onReleaseRemote}
           />
         </div>
       );

@@ -30,11 +30,12 @@ const FOOTER_ITEMS: NavItem[] = [
 interface MobileBottomNavProps {
   activeScreen: string;
   onNavigate: (screen: string) => void;
+  disabledScreens?: string[];
 }
 
 // ===================== Component =====================
 
-export function MobileBottomNav({ activeScreen, onNavigate }: MobileBottomNavProps) {
+export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens }: MobileBottomNavProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
@@ -71,6 +72,7 @@ export function MobileBottomNav({ activeScreen, onNavigate }: MobileBottomNavPro
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {FOOTER_ITEMS.map((item) => {
+          const isDisabled = disabledScreens?.includes(item.screen);
           const isActive = activeScreen === item.screen ||
             (item.screen === 'home' && activeScreen === 'home') ||
             (item.screen === 'party' && activeScreen === 'party') ||
@@ -80,15 +82,18 @@ export function MobileBottomNav({ activeScreen, onNavigate }: MobileBottomNavPro
             <button
               key={item.screen}
               ref={isActive ? activeRef : undefined}
-              onClick={() => handleTap(item.screen)}
+              onClick={() => !isDisabled && handleTap(item.screen)}
               role="tab"
               aria-selected={isActive}
               aria-label={label}
+              aria-disabled={isDisabled}
               className={
                 'shrink-0 flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ' +
-                (isActive
-                  ? 'bg-cyan-500/20 text-cyan-400'
-                  : 'text-white/40 active:text-white/70')
+                (isDisabled
+                  ? 'text-white/15 opacity-40 pointer-events-none'
+                  : isActive
+                    ? 'bg-cyan-500/20 text-cyan-400'
+                    : 'text-white/40 active:text-white/70')
               }
             >
               <span className="text-lg leading-none">{item.icon}</span>

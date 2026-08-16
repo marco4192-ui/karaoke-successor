@@ -19,6 +19,7 @@ interface MirrorLibraryLiteProps {
   availablePartners: Array<{ id: string; name: string; code: string }>;
   opponents: any[];
   availableProfiles: any[];
+  clientId: string | null;
   onShowSongOptions: (s: MobileSong | null) => void;
   onSelectGameMode: (m: GameMode) => void;
   onSelectPartner: (p: { id: string; name: string } | null) => void;
@@ -57,24 +58,12 @@ function formatDurationSec(ms: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-// DO-NOT-CHANGE: Duett-Erkennung basiert auf Titel/Kuenstler-Keywords,
-// da MobileSong kein isDuet-Feld hat. Erweiterte Pattern fuer bessere Trefferquote.
+// DO-NOT-CHANGE: Duett-Erkennung sucht explizit nach dem Wort Duet/Duett
+// (auch in anderen Sprachen: Duetto, Dueto) im Titel oder Kuenstler.
+// Keine generischen Keywords wie &, feat, and etc.
 function isLikelyDuet(song: MobileSong): boolean {
-  const combined = `${song.title} ${song.artist}`.toLowerCase();
-  return (
-    combined.includes('duet') ||
-    combined.includes('duett') ||
-    combined.includes(' & ') ||
-    combined.includes(' feat ') ||
-    combined.includes('feat. ') ||
-    combined.includes(' vs ') ||
-    combined.includes(' x ') ||
-    combined.includes('(feat') ||
-    combined.includes('featuring') ||
-    combined.includes(' and ') ||
-    /\bft\.?\b/.test(combined) ||
-    combined.includes(' mit ')
-  );
+  const combined = `${song.title} ${song.artist}`;
+  return /\bduet(t|to)?s?\b/i.test(combined);
 }
 
 // ===================== Component =====================
@@ -94,6 +83,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     onSelectPartner,
     availablePartners,
     opponents,
+    availableProfiles,
+    clientId,
     onDifficultyChange,
     onOpenChat,
     onSendDesktopCommand,
@@ -116,6 +107,22 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
 
     // Duett: auto-filtere auf Duett-Songs
     const isDuetMode = libGameMode === 'duet';
+    // Alle verfuegbaren Partner: Companion-User + aktive Host-Profile
+    const allPartners = useMemo(() => {
+      const list: Array<{ id: string; name: string }> = [
+        ...availablePartners.map((p) => ({ id: p.id, name: p.name })),
+        ...opponents.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
+        ...availableProfiles.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
+      ];
+      // Deduplizierung nach ID
+      const seen = new Set<string>();
+      return list.filter((p) => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+    }, [availablePartners, opponents, availableProfiles]);
+
     const displaySongs = useMemo(() => {
       let result = filteredSongs;
       if (genreFilter !== 'all') {
@@ -127,7 +134,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       if (isDuetMode) {
         result = result.filter(isLikelyDuet);
       }
-      return result;
+      // Nach Songtitel alphabetisch sortieren
+      return [...result].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
     }, [filteredSongs, genreFilter, languageFilter, isDuetMode]);
 
     // Extrahiere verfuegbare Genres und Sprachen
@@ -238,6 +246,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
 
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
+    // clientId MUSS im Body sein, sonst liefert der Server 400.
     const handleOverlayChallenge = useCallback(async () => {
       if (!overlaySong || ovChallengeSent) return;
       haptic();
@@ -248,6 +257,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'song_challenge',
+            clientId,
             payload: {
               songId: overlaySong.id,
               songTitle: overlaySong.title,
@@ -265,7 +275,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       } catch {
         setOvChallengeSent(false);
       }
-    }, [overlaySong, ovChallengeSent, libGameMode, ovPartnerId, closeOverlay]);
+    }, [overlaySong, ovChallengeSent, libGameMode, ovPartnerId, clientId, closeOverlay]);
 
     // Modus-Button-Konfiguration
     const MODE_BUTTONS: { mode: GameMode; icon: string; labelKey: string; fallback: string; activeColor: string }[] = [
@@ -515,7 +525,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                     <option value="" className="bg-[#1a1a2e] text-white">
                       {t('mobileViews.noPartner') || 'Offen (Gegnersuche ausstehend)'}
                     </option>
-                    {availablePartners.map((p) => (
+                    {allPartners.map((p) => (
                       <option key={p.id} value={p.id} className="bg-[#1a1a2e] text-white">{p.name}</option>
                     ))}
                   </select>

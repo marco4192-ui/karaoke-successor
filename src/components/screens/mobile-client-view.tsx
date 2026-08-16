@@ -55,6 +55,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // Aktiver Desktop-Screen (wird vom Footer gesteuert)
   const [activeDesktopScreen, setActiveDesktopScreen] = useState<string>('home');
 
+  // Punkt 6: Ladebildschirm-Animation bei Screen-Wechsel
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevScreenRef = useRef<string>('home');
+
   // Connection
   const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
     onProfileLoaded: (p) => setProfile(p),
@@ -231,20 +236,36 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [clientId, profile]);
 
   // Footer-Navigation: sendet Command an Desktop + setzt lokalen State für sofortiges Feedback
+  // Punkt 8: Nur erlaubte Screens wenn Kontrolle gesperrt ist
+  const LOCKED_ALLOWED_SCREENS = ['home', 'library', 'profile', 'settings'];
+
   const handleFooterNavigate = useCallback((screen: string) => {
+    const controlled = remoteLock.isLocked && !remoteLock.lockedByMe;
+    if (controlled && !LOCKED_ALLOWED_SCREENS.includes(screen)) return;
+    // Ladebildschirm zeigen (kurz, max 800ms)
+    if (screen !== prevScreenRef.current) {
+      setIsTransitioning(true);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
+    }
+    prevScreenRef.current = screen;
     setActiveDesktopScreen(screen);
     handleSendDesktopCommand(screen);
-  }, [handleSendDesktopCommand]);
+  }, [handleSendDesktopCommand, transitionTimerRef]);
 
   // ===================== DESKTOP SCREEN SYNC =====================
   // Wenn der Desktop in einen Sub-Screen navigiert (z.B. party-setup),
   // soll der lokale State aktualisiert werden damit die Companion-Mirror-View
-  // korrekt mitwechselt.
+  // korrekt mitwechselt. Zeigt auch kurzen Ladebildschirm.
   useEffect(() => {
     if (gameState.currentScreen && gameState.currentScreen !== activeDesktopScreen) {
+      setIsTransitioning(true);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
+      prevScreenRef.current = gameState.currentScreen;
       setActiveDesktopScreen(gameState.currentScreen);
     }
-  }, [gameState.currentScreen, activeDesktopScreen]);
+  }, [gameState.currentScreen, activeDesktopScreen, transitionTimerRef]);
 
   // ===================== COMPUTED MIRROR ID =====================
   // Nutze den lokalen activeDesktopScreen (sofortiges Feedback beim Footer-Tap),
@@ -511,9 +532,25 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       )}
 
+      {/* ====== LADEBILDSCHIRM-OVERLAY (Punkt 6) ====== */}
+      {isTransitioning && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-gray-900/95 via-purple-900/95 to-gray-900/95 backdrop-blur-sm pointer-events-none">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-2 border-cyan-500/60 border-t-cyan-400 rounded-full animate-spin" />
+            <p className="text-sm text-white/50 animate-pulse">Wird geladen...</p>
+          </div>
+        </div>
+      )}
+
       {/* ====== FOOTER: Horiz. scrollbar Navigation ====== */}
       {isConnected && profile && !showProfile && (
-        <MobileBottomNav activeScreen={activeFooterScreen} onNavigate={handleFooterNavigate} />
+        <MobileBottomNav
+          activeScreen={activeFooterScreen}
+          onNavigate={handleFooterNavigate}
+          disabledScreens={remoteLock.isLocked && !remoteLock.lockedByMe
+            ? ['party', 'dailyChallenge', 'queue', 'jukebox', 'highscores', 'achievements']
+            : []}
+        />
       )}
 
       {/* ====== CHAT OVERLAY ====== */}
