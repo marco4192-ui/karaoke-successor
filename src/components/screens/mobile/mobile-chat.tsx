@@ -181,7 +181,7 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                       {msg.challenge.gameMode === 'duel'
                         ? '⚔️ ' + t('mobileChat.duel')
                         : '🎭 ' + t('mobileChat.duet')
-                    }
+                      }
                     </span>
                   </div>
                   <p className="text-white/90 text-xs font-medium">{msg.challenge.songTitle}</p>
