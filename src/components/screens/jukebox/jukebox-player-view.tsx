@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSongByIdWithLyrics } from '@/lib/game/song-library';
@@ -8,6 +8,8 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
+import { getPlaylists } from '@/lib/playlist-manager';
+import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 // ==================== UTILITIES ====================
@@ -38,6 +40,64 @@ function formatTimer(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// ==================== POOL SELECTOR (desktop player view) ====================
+
+/** Inline pool/playlist switcher for the jukebox player view */
+function PoolSelector() {
+  const { t } = useTranslation();
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState('');
+
+  // Restore selection on mount
+  useEffect(() => {
+    const stored = getJson<string[] | null>(StorageKeys.JUKEBOX_PLAYLIST, null);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      const playlists = getPlaylists();
+      const match = playlists.find(p => !p.isSystem && JSON.stringify(p.songIds) === JSON.stringify(stored));
+      if (match) setSelectedPlaylistId(match.id);
+    }
+  }, []);
+
+  const handleChange = (playlistId: string) => {
+    setSelectedPlaylistId(playlistId);
+    if (!playlistId) {
+      removeItem(StorageKeys.JUKEBOX_PLAYLIST);
+    } else {
+      const playlists = getPlaylists();
+      const pl = playlists.find(p => p.id === playlistId);
+      if (pl) setJson(StorageKeys.JUKEBOX_PLAYLIST, pl.songIds);
+    }
+    // Notify useJukebox to re-filter via custom event
+    window.dispatchEvent(new CustomEvent('jukebox-pool-changed'));
+  };
+
+  const playlists = getPlaylists().filter(p => !p.isSystem);
+
+  if (playlists.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedPlaylistId}
+        onChange={(e) => handleChange(e.target.value)}
+        className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white appearance-none cursor-pointer hover:border-cyan-500/50 pr-8"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 6px center',
+          backgroundSize: '14px',
+        }}
+      >
+        <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allSongs')}</option>
+        {playlists.map(pl => (
+          <option key={pl.id} value={pl.id} className="bg-gray-800 text-white">
+            {pl.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 }
 
 // ==================== FULLSCREEN HEADER ====================
@@ -522,6 +582,9 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
             {j.songsPlayed > 0 && (
               <span className="text-white/40 text-sm">({j.songsPlayed} {t('jukeboxPlayer.songsPlayed')})</span>
             )}
+          </div>
+          <div className="mt-3">
+            <PoolSelector />
           </div>
         </div>
       )}

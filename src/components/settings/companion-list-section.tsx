@@ -55,6 +55,7 @@ interface CompanionListSectionProps {
 
 export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const [companions, setCompanions] = useState<CompanionClient[]>([]);
+  const [hostProfiles, setHostProfiles] = useState<Array<{ id: string; name: string; avatar?: string; color: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [kickingId, setKickingId] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
@@ -77,14 +78,55 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const profiles = useGameStore((state) => state.profiles);
   const activeProfiles = profiles.filter((p: PlayerProfile) => p.isActive !== false);
 
-  // Fetch connected companions
+  // Merge with host profiles and connected companion profiles for complete dropdown
+  // Deduplicate by ID: game store profiles take priority
+  const allDropdownProfiles = (() => {
+    const seenIds = new Set<string>();
+    const merged: Array<{ id: string; name: string; avatar?: string; color: string }> = [];
+    // 1. Game store profiles (these are the canonical ones)
+    for (const p of activeProfiles) {
+      seenIds.add(p.id);
+      merged.push({ id: p.id, name: p.name, avatar: p.avatar, color: p.color });
+    }
+    // 2. Host profiles not already in game store
+    for (const hp of hostProfiles) {
+      if (!seenIds.has(hp.id)) {
+        seenIds.add(hp.id);
+        merged.push(hp);
+      }
+    }
+    // 3. Connected companion profiles not already included
+    for (const c of companions) {
+      if (c.profile && !seenIds.has(c.profile.id)) {
+        seenIds.add(c.profile.id);
+        merged.push({ id: c.profile.id, name: c.profile.name, avatar: c.profile.avatar, color: c.profile.color });
+      }
+    }
+    return merged;
+  })();
+
+  // Fetch connected companions and host profiles
   const fetchCompanions = useCallback(async () => {
     try {
-      const res = await fetch('/api/mobile?action=clients');
-      if (!res.ok) { setError(t('settingsCompanion.errorLoading')); return; }
-      const data: CompanionListResponse = await res.json();
-      if (data.success) {
-        setCompanions(data.clients || []);
+      const [clientsRes, profilesRes] = await Promise.all([
+        fetch('/api/mobile?action=clients'),
+        fetch('/api/mobile?action=hostprofiles'),
+      ]);
+      // Process clients
+      if (clientsRes.ok) {
+        const data: CompanionListResponse = await clientsRes.json();
+        if (data.success) {
+          setCompanions(data.clients || []);
+        }
+      }
+      // Process host profiles
+      if (profilesRes.ok) {
+        const pdata = await profilesRes.json();
+        if (pdata.success && Array.isArray(pdata.profiles)) {
+          setHostProfiles(pdata.profiles.map((p: { id: string; name: string; avatar?: string; color: string }) => ({
+            id: p.id, name: p.name, avatar: p.avatar, color: p.color,
+          })));
+        }
       }
       setError(null);
     } catch {
@@ -147,7 +189,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   };
 
   // Assign/change character for a companion
-  const handleAssignCharacter = async (companionId: string, profile: PlayerProfile | null) => {
+  const handleAssignCharacter = async (companionId: string, profile: { id: string; name: string; avatar?: string; color: string; createdAt?: number } | null) => {
     setAssigningId(companionId);
     try {
       const payload = profile
@@ -262,7 +304,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
               <CompanionCard
                 key={companion.id}
                 companion={companion}
-                activeProfiles={activeProfiles}
+                activeProfiles={allDropdownProfiles}
                 isKicking={kickingId === companion.id}
                 isAssigning={assigningId === companion.id}
                 isPendingKick={pendingKickClientId === companion.id}
@@ -281,13 +323,13 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
 // ===================== COMPANION CARD =====================
 interface CompanionCardProps {
   companion: CompanionClient;
-  activeProfiles: PlayerProfile[];
+  activeProfiles: Array<{ id: string; name: string; avatar?: string; color: string }>;
   isKicking: boolean;
   isAssigning: boolean;
   isPendingKick: boolean;
   onKick: (_id: string, _name: string) => void;
   onCancelKick: () => void;
-  onAssignCharacter: (_id: string, _profile: PlayerProfile | null) => void;
+  onAssignCharacter: (_id: string, _profile: { id: string; name: string; avatar?: string; color: string } | null) => void;
 }
 
 function CompanionCard({
@@ -429,7 +471,7 @@ function CompanionCard({
                     )}
 
                     {/* Available characters */}
-                    {activeProfiles.map((profile: PlayerProfile) => (
+                    {activeProfiles.map((profile) => (
                       <button
                         key={profile.id}
                         onClick={() => {

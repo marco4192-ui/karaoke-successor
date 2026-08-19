@@ -156,7 +156,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
 
             {/* Playlist selector */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.playlist')}</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.songPool')}</label>
               <select
                 value={selectedPlaylistId}
                 onChange={(e) => handlePlaylistChange(e.target.value)}

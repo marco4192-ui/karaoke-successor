@@ -39,6 +39,9 @@ export function useJukebox(refs?: {
   // F7: Recently played exclusion in minutes (0 = off)
   const [recentlyPlayedMinutes, setRecentlyPlayedMinutes] = useState(30);
 
+  // Pool change counter — incremented by PoolSelector to trigger re-filtering
+  const [poolChangeCounter, setPoolChangeCounter] = useState(0);
+
   // --- Playback State ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
@@ -177,7 +180,7 @@ export function useJukebox(refs?: {
       }
     }
     return filtered;
-  }, [songs, filterGenre, filterArtist, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes]);
+  }, [songs, filterGenre, filterArtist, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
 
   // ==================== DERIVED STATE ====================
 
@@ -492,6 +495,16 @@ export function useJukebox(refs?: {
     window.addEventListener('jukebox:start', handleStartSignal);
     return () => window.removeEventListener('jukebox:start', handleStartSignal);
   }, [startJukebox]);
+
+  // ==================== POOL CHANGE EVENT LISTENER ====================
+
+  useEffect(() => {
+    const handlePoolChange = () => {
+      setPoolChangeCounter(c => c + 1);
+    };
+    window.addEventListener('jukebox-pool-changed', handlePoolChange);
+    return () => window.removeEventListener('jukebox-pool-changed', handlePoolChange);
+  }, []);
 
   // ==================== FULLSCREEN ====================
 

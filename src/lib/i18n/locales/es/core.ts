@@ -290,6 +290,9 @@ export const coreTranslations = {
     noExclusion: 'sin exclusión',
   },
 
+    songPool: 'Pool de canciones',
+    songPoolSelect: 'Selecciona un pool para filtrar canciones',
+    switchPool: 'Cambiar pool',
   jukeboxA11y: {
     songProgress: 'Progreso de canción',
     unmute: 'Activar sonido',

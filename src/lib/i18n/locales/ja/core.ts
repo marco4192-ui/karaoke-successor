@@ -290,6 +290,9 @@ export const coreTranslations = {
     noExclusion: '除外なし',
   },
 
+    songPool: 'ソングプール',
+    songPoolSelect: 'フィルターするソングプールを選択',
+    switchPool: 'プール切替',
   jukeboxA11y: {
     songProgress: '曲の進行状況',
     unmute: 'ミュート解除',

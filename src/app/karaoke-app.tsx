@@ -420,6 +420,7 @@ export default function KaraokeZERO() {
             payload: {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
+              partyGameMode: screen === 'party-setup' ? (party.selectedGameMode ?? null) : null,
             },
           }),
         });
@@ -430,7 +431,7 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen]);
+  }, [screen, party.selectedGameMode]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);

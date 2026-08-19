@@ -311,6 +311,9 @@ export const coreTranslations = {
     ariaRepeat: 'Wiederholung',
   },
 
+    songPool: 'Song-Pool',
+    songPoolSelect: 'Wähle einen Song-Pool zum Filtern',
+    switchPool: 'Pool wechseln',
   jukeboxA11y: {
     songProgress: 'Songfortschritt',
     unmute: 'Stumm aus',

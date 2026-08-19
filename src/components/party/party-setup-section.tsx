@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
@@ -125,6 +126,18 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
   const { profiles, setGameMode, setSong, setDifficulty, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
   const { t } = useTranslation();
+
+  // ── Remote party-start: companion can trigger the start button ──
+  useEffect(() => {
+    const handleRemoteStart = () => {
+      const btn = document.getElementById('party-start-btn');
+      if (btn) {
+        btn.click();
+      }
+    };
+    window.addEventListener('remote-party-start', handleRemoteStart);
+    return () => window.removeEventListener('remote-party-start', handleRemoteStart);
+  }, []);
 
   return (
     <>

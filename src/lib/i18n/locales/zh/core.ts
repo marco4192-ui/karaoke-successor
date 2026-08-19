@@ -290,6 +290,9 @@ export const coreTranslations = {
     noExclusion: '不排除',
   },
 
+    songPool: '歌曲池',
+    songPoolSelect: '选择一个歌曲池来筛选歌曲',
+    switchPool: '切换池',
   jukeboxA11y: {
     songProgress: '歌曲进度',
     unmute: '取消静音',
