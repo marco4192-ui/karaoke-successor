@@ -859,6 +859,41 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Host message sent' });
       }
 
+      // Desktop host sends a challenge via chat
+      case 'chat_host_challenge': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const chPayload = payload as {
+          fromName?: string;
+          songId?: string;
+          songTitle: string;
+          songArtist: string;
+          gameMode?: 'duel' | 'duet';
+        };
+        const hostChallengeMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: 'host',
+          fromName: chPayload.fromName || 'Host',
+          text: '',
+          timestamp: Date.now(),
+          isHost: true,
+          challenge: {
+            songId: chPayload.songId || '',
+            songTitle: chPayload.songTitle,
+            songArtist: chPayload.songArtist,
+            gameMode: chPayload.gameMode || 'duel',
+            challengerClientId: 'host',
+            challengedPartnerId: null,
+          },
+        };
+        mutableState.chatMessages.push(hostChallengeMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+        return Response.json({ success: true, message: 'Host challenge sent' });
+      }
+
       // #10 Tournament crowd vote — companion spectators vote on match results
       case 'tournament_crowd_vote': {
         const votePayload = payload as { matchId: string; playerSide: 1 | 2 };

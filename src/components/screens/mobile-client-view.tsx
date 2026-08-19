@@ -368,7 +368,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
+          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} clientId={clientId} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
               isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone}

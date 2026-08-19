@@ -62,10 +62,10 @@ export function DesktopChatNotification({ onOpenChat }: DesktopChatNotificationP
 
   return (
     <div
-      className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] animate-[slide-in-down_0.3s_ease-out] w-full max-w-md px-4"
+      className="fixed top-16 left-4 z-[100] animate-[slide-in-down_0.3s_ease-out]"
     >
       <div
-        className="flex items-center gap-3 rounded-lg bg-black/90 backdrop-blur-md border border-white/15 px-4 py-2.5 shadow-2xl cursor-pointer"
+        className="flex items-center gap-3 rounded-lg bg-black/90 backdrop-blur-md border border-white/15 px-4 py-2.5 shadow-2xl cursor-pointer max-w-xs"
         onClick={() => { dismiss(); onOpenChat?.(); }}
       >
         <span className="text-sm leading-none shrink-0">💬</span>
@@ -86,8 +86,8 @@ export function DesktopChatNotification({ onOpenChat }: DesktopChatNotificationP
 
       <style>{`
         @keyframes slide-in-down {
-          0% { opacity: 0; transform: translateX(-50%) translateY(-12px); }
-          100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          0% { opacity: 0; transform: translateY(-12px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

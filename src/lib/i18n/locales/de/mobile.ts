@@ -525,6 +525,8 @@ export const mobileTranslations = {
     challengeAccepted: 'Herausforderung angenommen!',
     challengeSent: 'Herausforderung gesendet!',
     sendChallenge: 'Herausfordern (Chat)',
+    acceptDuelChallenge: 'Duell annehmen',
+    acceptDuetChallenge: 'Duett annehmen',
   },
 
   desktopChat: {

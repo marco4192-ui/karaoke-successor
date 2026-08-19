@@ -472,6 +472,36 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       });
     }
 
+    // F19: Get chat players for desktop chat panel (companion users + host profiles)
+    case 'getchatplayers': {
+      // Collect all unique players: connected companions with profiles + active host profiles
+      // Deduplicated by profile ID
+      const seenIds = new Set<string>();
+      const players: Array<{ id: string; name: string; avatar?: string; color: string; isHost: boolean }> = [];
+
+      // 1. Add host profiles (marked as isHost: true)
+      for (const hp of mutableState.hostProfiles) {
+        seenIds.add(hp.id);
+        players.push({ id: hp.id, name: hp.name, avatar: hp.avatar, color: hp.color, isHost: true });
+      }
+
+      // 2. Add connected companion profiles (only those not already in host profiles, deduplicated)
+      mobileClients.forEach((client) => {
+        if (client.profile && !seenIds.has(client.profile.id)) {
+          seenIds.add(client.profile.id);
+          players.push({
+            id: client.profile.id,
+            name: client.profile.name,
+            avatar: client.profile.avatar,
+            color: client.profile.color,
+            isHost: false,
+          });
+        }
+      });
+
+      return Response.json({ success: true, players });
+    }
+
     // Get playlists (synced from main app via POST setplaylists)
     case 'playlists':
       return Response.json({

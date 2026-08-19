@@ -172,10 +172,15 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                     <span className="text-sm">
                       {msg.challenge.gameMode === 'duel' ? '⚔️' : '🎭'}
                     </span>
-                    <span className="text-xs font-bold text-white">
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                      msg.challenge.gameMode === 'duel'
+                        ? 'text-orange-300 bg-red-500/20'
+                        : 'text-pink-300 bg-pink-500/20'
+                    }`}
+                    >
                       {msg.challenge.gameMode === 'duel'
-                        ? t('mobileChat.duel')
-                        : t('mobileChat.duet')
+                        ? '⚔️ ' + t('mobileChat.duel')
+                        : '🎭 ' + t('mobileChat.duet')
                     }
                     </span>
                   </div>
@@ -186,7 +191,10 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                       onClick={() => handleAcceptChallenge(msg)}
                       className="mt-2 w-full py-1.5 rounded-lg bg-green-500/20 text-green-300 text-xs font-bold hover:bg-green-500/30 transition-colors border border-green-500/30"
                     >
-                      {t('mobileChat.acceptChallenge')}
+                      {msg.challenge.gameMode === 'duel'
+                        ? t('mobileChat.acceptDuelChallenge')
+                        : t('mobileChat.acceptDuetChallenge')
+                      }
                     </button>
                   )}
                 </div>
