@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { useTranslation } from '@/lib/i18n/translations';
+import { getPlaylists } from '@/lib/playlist-manager';
+import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 /** Reusable chevron-down icon to replace inline SVGs (#21) */
@@ -21,7 +23,35 @@ function ChevronDownIcon() {
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeError, setYoutubeError] = useState('');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const { t } = useTranslation();
+
+  // Restore playlist selection from localStorage on mount
+  useEffect(() => {
+    const stored = getJson<string[] | null>(StorageKeys.JUKEBOX_PLAYLIST, null);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      // Find the matching playlist by its songIds
+      const playlists = getPlaylists();
+      const match = playlists.find(p => !p.isSystem && JSON.stringify(p.songIds) === JSON.stringify(stored));
+      if (match) setSelectedPlaylistId(match.id);
+    }
+  }, []);
+
+  const handlePlaylistChange = (playlistId: string) => {
+    setSelectedPlaylistId(playlistId);
+    if (!playlistId) {
+      // 'All Songs' — clear stored playlist
+      removeItem(StorageKeys.JUKEBOX_PLAYLIST);
+    } else {
+      const playlists = getPlaylists();
+      const pl = playlists.find(p => p.id === playlistId);
+      if (pl) {
+        setJson(StorageKeys.JUKEBOX_PLAYLIST, pl.songIds);
+      }
+    }
+  };
+
+  const playlists = getPlaylists().filter(p => !p.isSystem);
 
   const handleYoutubeSubmit = () => {
     if (!youtubeUrl.trim()) return;
@@ -122,6 +152,24 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Playlist selector */}
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.playlist')}</label>
+              <select
+                value={selectedPlaylistId}
+                onChange={(e) => handlePlaylistChange(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
+                style={selectStyle}
+              >
+                <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allSongs')}</option>
+                {playlists.map(pl => (
+                  <option key={pl.id} value={pl.id} className="bg-gray-800 text-white">
+                    {pl.name} — {t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(pl.songIds.length))}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Options row: Shuffle + Repeat */}

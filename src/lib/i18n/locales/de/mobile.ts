@@ -176,7 +176,24 @@ export const mobileTranslations = {
     part1: 'Part 1',
     part2: 'Part 2',
     done: 'Fertig',
-    step: 'Schritt {n}'
+    step: 'Schritt {n}',
+    // Playlist picker
+    addToPlaylistBtn: 'Zur Playlist',
+    playlistPick: 'Playlist wählen',
+    noPlaylists: 'Keine Playlists vorhanden',
+    newPlaylist: 'Neue Playlist erstellen',
+    playlistName: 'Playlist-Name',
+    createAdd: 'Erstellen & Hinzufügen',
+    addedToPlaylist: 'Zur Playlist hinzugefügt!',
+    playlistCreateError: 'Playlist konnte nicht erstellt werden',
+    // Party start
+    startGame: 'Spiel starten',
+    configSent: 'Konfiguration gesendet',
+    // Mobile QR in settings
+    connectSecondPhone: 'Zweites Handy verbinden',
+    connectSecondPhoneDesc: 'QR-Code anzeigen um ein zweites Handy zu verbinden',
+    showQrCode: 'QR-Code anzeigen',
+    hideQrCode: 'QR-Code verbergen',
   },
 
   mobileNav: {
@@ -496,6 +513,34 @@ export const mobileTranslations = {
     send: 'Senden',
     noMessages: 'Noch keine Nachrichten',
     host: 'Host',
+    acceptChallenge: 'Herausforderung annehmen',
+    challengeReceived: 'fordert dich heraus zu einem',
+    waitingForOpponent: 'Warte auf Gegner...',
+    duel: 'Duell',
+    duet: 'Duett',
+    selectPlayer: 'Spieler wählen...',
+    songLabel: 'Song:',
+    accept: 'Annehmen',
+    decline: 'Ablehnen',
+    challengeAccepted: 'Herausforderung angenommen!',
+    challengeSent: 'Herausforderung gesendet!',
+    sendChallenge: 'Herausfordern (Chat)',
+  },
+
+  desktopChat: {
+    title: 'Companion-Chat',
+    notificationNew: 'Neue Nachricht von {name}',
+    openChat: 'Chat öffnen',
+    closeChat: 'Schließen',
+    placeholder: 'Nachricht eingeben...',
+    send: 'Senden',
+    noMessages: 'Noch keine Nachrichten',
+    acceptChallenge: 'Annehmen',
+    challengeDuel: 'Duell-Herausforderung',
+    challengeDuet: 'Duett-Herausforderung',
+    from: 'von',
+    selectPlayer: 'Spieler wählen...',
+    challengeAccepted: 'Herausforderung angenommen!',
   },
 
   mobilePreview: {

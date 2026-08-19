@@ -203,7 +203,23 @@ export const mutableState = {
     text: string;
     timestamp: number;
     isHost: boolean;
+    challenge?: {
+      songId: string;
+      songTitle: string;
+      songArtist: string;
+      gameMode: 'duel' | 'duet';
+      challengerClientId: string;
+      challengedPartnerId: string | null;
+    };
+    challengeAccepted?: {
+      challengeMessageId: string;
+      respondingClientId: string;
+      respondingClientName: string;
+    };
   }>,
+
+  // Playlists synced from main app (cannot use localStorage in API route)
+  playlists: [] as Array<{ id: string; name: string; songIds: string[]; isSystem: boolean }>,
 };
 
 export function generateConnectionCode(): string {
@@ -376,4 +392,6 @@ export function resetAllState() {
   mutableState.pendingDuelRequests = [];
   // Clear chat messages
   mutableState.chatMessages = [];
+  // Clear playlists
+  mutableState.playlists = [];
 }

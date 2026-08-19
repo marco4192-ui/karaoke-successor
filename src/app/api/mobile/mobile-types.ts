@@ -55,7 +55,7 @@ export interface QueueItem {
 }
 
 export interface RemoteCommand {
-  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter';
+  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter' | 'party_start';
   data?: unknown;
   timestamp: number;
   fromClientId: string;

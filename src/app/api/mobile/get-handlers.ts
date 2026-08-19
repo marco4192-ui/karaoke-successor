@@ -472,6 +472,13 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       });
     }
 
+    // Get playlists (synced from main app via POST setplaylists)
+    case 'playlists':
+      return Response.json({
+        success: true,
+        playlists: mutableState.playlists.filter(p => !p.isSystem),
+      });
+
     default:
       return Response.json({
         success: true,

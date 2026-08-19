@@ -888,6 +888,111 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Vote recorded' });
       }
 
+      case 'playlist_add': {
+        if (!clientId) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        const plPayload = payload as { playlistId: string; songId: string };
+        const playlist = mutableState.playlists.find(p => p.id === plPayload.playlistId);
+        if (!playlist) return Response.json({ success: false, message: 'Playlist not found' }, { status: 404 });
+        if (!playlist.songIds.includes(plPayload.songId)) {
+          playlist.songIds.push(plPayload.songId);
+        }
+        return Response.json({ success: true, message: 'Song added to playlist' });
+      }
+
+      case 'playlist_create_add': {
+        if (!clientId) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        const pcaPayload = payload as { name: string; songId: string };
+        const newPl = {
+          id: `pl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          name: pcaPayload.name.trim() || 'New Playlist',
+          songIds: [pcaPayload.songId],
+          isSystem: false,
+        };
+        mutableState.playlists.push(newPl);
+        return Response.json({ success: true, playlistId: newPl.id, message: 'Playlist created and song added' });
+      }
+
+      case 'song_challenge': {
+        if (!clientId) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        const chPayload = payload as {
+          songId: string;
+          songTitle: string;
+          songArtist: string;
+          gameMode: 'duel' | 'duet';
+          challengedPartnerId?: string;
+        };
+        const chClient = mobileClients.get(clientId);
+        const challengeMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: chClient?.profile?.name || chClient?.name || 'Unknown',
+          text: '',
+          timestamp: Date.now(),
+          isHost: false,
+          challenge: {
+            songId: chPayload.songId,
+            songTitle: chPayload.songTitle,
+            songArtist: chPayload.songArtist,
+            gameMode: chPayload.gameMode,
+            challengerClientId: clientId,
+            challengedPartnerId: chPayload.challengedPartnerId || null,
+          },
+        };
+        mutableState.chatMessages.push(challengeMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+        return Response.json({ success: true, message: 'Challenge sent' });
+      }
+
+      case 'accept_challenge': {
+        if (!clientId) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        const acPayload = payload as { challengeMessageId: string; respondingClientId: string };
+        const acClient = mobileClients.get(clientId);
+        const acceptedMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: acClient?.profile?.name || acClient?.name || 'Unknown',
+          text: '',
+          timestamp: Date.now(),
+          isHost: false,
+          challengeAccepted: {
+            challengeMessageId: acPayload.challengeMessageId,
+            respondingClientId: acPayload.respondingClientId,
+            respondingClientName: acClient?.profile?.name || acClient?.name || 'Unknown',
+          },
+        };
+        mutableState.chatMessages.push(acceptedMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+        return Response.json({ success: true, message: 'Challenge accepted' });
+      }
+
+      case 'party_start': {
+        if (!clientId) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        mutableState.remoteControlState.pendingCommands.push({
+          type: 'party_start',
+          data: {},
+          timestamp: Date.now(),
+          fromClientId: clientId,
+          fromClientName: mobileClients.get(clientId)?.name || 'Companion',
+        });
+        return Response.json({ success: true, message: 'Party start command sent' });
+      }
+
+      case 'setplaylists': {
+        // Main app syncs its playlists to the server
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const spPayload = payload as { playlists: Array<{ id: string; name: string; songIds: string[]; isSystem: boolean }> };
+        if (Array.isArray(spPayload.playlists)) {
+          mutableState.playlists = spPayload.playlists;
+        }
+        return Response.json({ success: true, message: 'Playlists synced' });
+      }
+
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }

@@ -176,7 +176,24 @@ export const mobileTranslations = {
     part1: 'Part 1',
     part2: 'Part 2',
     done: 'Done',
-    step: 'Step {n}'
+    step: 'Step {n}',
+    // Playlist picker
+    addToPlaylistBtn: 'To Playlist',
+    playlistPick: 'Choose Playlist',
+    noPlaylists: 'No playlists available',
+    newPlaylist: 'Create New Playlist',
+    playlistName: 'Playlist name',
+    createAdd: 'Create & Add',
+    addedToPlaylist: 'Added to playlist!',
+    playlistCreateError: 'Could not create playlist',
+    // Party start
+    startGame: 'Start Game',
+    configSent: 'Configuration sent',
+    // Mobile QR in settings
+    connectSecondPhone: 'Connect Second Phone',
+    connectSecondPhoneDesc: 'Show a QR code to connect another phone',
+    showQrCode: 'Show QR Code',
+    hideQrCode: 'Hide QR Code',
   },
 
   mobileNav: {
@@ -497,6 +514,34 @@ export const mobileTranslations = {
     send: 'Send',
     noMessages: 'No messages yet',
     host: 'Host',
+    acceptChallenge: 'Accept Challenge',
+    challengeReceived: 'challenged you to a',
+    waitingForOpponent: 'Waiting for opponent...',
+    duel: 'Duel',
+    duet: 'Duet',
+    selectPlayer: 'Select player...',
+    songLabel: 'Song:',
+    accept: 'Accept',
+    decline: 'Decline',
+    challengeAccepted: 'Challenge accepted!',
+    challengeSent: 'Challenge sent!',
+    sendChallenge: 'Challenge via Chat',
+  },
+
+  desktopChat: {
+    title: 'Companion Chat',
+    notificationNew: 'New message from {name}',
+    openChat: 'Open Chat',
+    closeChat: 'Close',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    acceptChallenge: 'Accept',
+    challengeDuel: 'Duel Challenge',
+    challengeDuet: 'Duet Challenge',
+    from: 'from',
+    selectPlayer: 'Select player...',
+    challengeAccepted: 'Challenge accepted!',
   },
 
   mobilePreview: {

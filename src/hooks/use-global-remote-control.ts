@@ -338,6 +338,10 @@ export function useGlobalRemoteControl({
         }, 300);
         break;
 
+      case 'party_start':
+        window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
+        break;
+
       default:
     }
   }, [navigateToScreen]);
