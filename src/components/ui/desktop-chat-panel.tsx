@@ -100,7 +100,7 @@ export function DesktopChatPanel({ open, onClose }: DesktopChatPanelProps) {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const selectedPlayerName = players.find((p) => p.id === selectedPlayerId)?.name || 'Host';
+  const selectedPlayerName = players.find((p) => p.id === selectedPlayerId)?.name || t('desktopChat.host');
 
   const handleSend = useCallback(async () => {
     const trimmed = inputText.trim();
@@ -182,7 +182,7 @@ export function DesktopChatPanel({ open, onClose }: DesktopChatPanelProps) {
             <div key={msg.id} className={`flex flex-col ${msg.isHost ? 'items-end' : 'items-start'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-xs ${msg.isHost ? 'text-cyan-400' : 'text-purple-400'}`}>
-                  {msg.isHost ? t('desktopChat.host') || 'Host' : msg.fromName}
+                  {msg.isHost ? t('desktopChat.host') : msg.fromName}
                 </span>
                 <span className="text-white/20 text-xs">{formatTime(msg.timestamp)}</span>
               </div>

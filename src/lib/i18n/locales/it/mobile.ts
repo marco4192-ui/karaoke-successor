@@ -480,6 +480,24 @@ export const mobileTranslations = {
     host: 'Host',
   },
 
+  desktopChat: {
+    title: 'Chat Companion',
+    host: 'Host',
+    notificationNew: 'Nuovo messaggio da {name}',
+    openChat: 'Apri chat',
+    closeChat: 'Chiudi',
+    placeholder: 'Scrivi un messaggio...',
+    send: 'Invia',
+    noMessages: 'Nessun messaggio',
+    acceptChallenge: 'Accetta',
+    challengeDuel: 'Sfida a duello',
+    challengeDuet: 'Sfida a duetto',
+    from: 'di',
+    selectPlayer: 'Scegli giocatore...',
+    challengeAccepted: 'Sfida accettata!',
+    dismiss: 'Chiudi',
+  },
+
   mobilePreview: {
     preview: 'Anteprima',
     listening: 'In ascolto...',

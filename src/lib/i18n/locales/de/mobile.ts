@@ -543,6 +543,8 @@ export const mobileTranslations = {
     from: 'von',
     selectPlayer: 'Spieler wählen...',
     challengeAccepted: 'Herausforderung angenommen!',
+    host: 'Host',
+    dismiss: 'Schließen',
   },
 
   mobilePreview: {

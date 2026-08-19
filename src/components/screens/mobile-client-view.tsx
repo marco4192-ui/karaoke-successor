@@ -383,6 +383,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               opponents={data.opponents} availableProfiles={data.availableProfiles}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
               onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
+              onSendSongChallenge={data.sendSongChallenge}
               onLoadPartners={data.loadAvailablePartners} onLoadOpponents={data.loadOpponents}
               onRefresh={data.loadSongs}
               formatDuration={data.formatDuration}

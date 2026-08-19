@@ -39,6 +39,8 @@ import { NavBar, FullscreenToggleButton } from '@/components/home/navbar';
 import { PartySetupSection } from '@/components/party/party-setup-section';
 import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
+import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
+import { DesktopChatNotification } from '@/components/ui/desktop-chat-notification';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -67,6 +69,9 @@ export default function KaraokeZERO() {
 
   // ── Tournament manual winner overlay ──
   const [showTournamentWinnerOverlay, setShowTournamentWinnerOverlay] = useState(false);
+
+  // ── Desktop chat panel state ──
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
@@ -486,6 +491,7 @@ export default function KaraokeZERO() {
           isMounted={isMounted}
           isFullscreen={isFullscreen}
           toggleFullscreen={toggleFullscreen}
+          onOpenChat={() => setChatOpen(true)}
         />
       )}
 
@@ -745,6 +751,14 @@ export default function KaraokeZERO() {
           onBack={handlePartyLeaveBack}
           onEndParty={handlePartyModeEnd}
         />
+      )}
+
+      {/* Desktop Chat Panel */}
+      <DesktopChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+
+      {/* Desktop Chat Notification — only when chat panel is closed and navbar is visible */}
+      {!IMMERSIVE_SCREENS.has(screen) && !chatOpen && (
+        <DesktopChatNotification onOpenChat={() => setChatOpen(true)} />
       )}
     </div>
   );

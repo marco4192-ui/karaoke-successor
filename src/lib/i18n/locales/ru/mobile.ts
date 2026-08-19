@@ -479,6 +479,24 @@ export const mobileTranslations = {
     host: 'Хост',
   },
 
+  desktopChat: {
+    title: 'Чат компаньона',
+    host: 'Хост',
+    notificationNew: 'Новое сообщение от {name}',
+    openChat: 'Открыть чат',
+    closeChat: 'Закрыть',
+    placeholder: 'Введите сообщение...',
+    send: 'Отправить',
+    noMessages: 'Пока нет сообщений',
+    acceptChallenge: 'Принять',
+    challengeDuel: 'Вызов на дуэль',
+    challengeDuet: 'Вызов на дуэт',
+    from: 'от',
+    selectPlayer: 'Выбрать игрока...',
+    challengeAccepted: 'Вызов принят!',
+    dismiss: 'Закрыть',
+  },
+
   mobilePreview: {
     preview: 'Предпрослушивание',
     listening: 'Слушаем...',

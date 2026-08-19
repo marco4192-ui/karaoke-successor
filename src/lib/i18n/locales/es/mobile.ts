@@ -479,6 +479,24 @@ export const mobileTranslations = {
     host: 'Anfitrión',
   },
 
+  desktopChat: {
+    title: 'Chat de Compañeros',
+    host: 'Anfitrión',
+    notificationNew: 'Nuevo mensaje de {name}',
+    openChat: 'Abrir chat',
+    closeChat: 'Cerrar',
+    placeholder: 'Escribe un mensaje...',
+    send: 'Enviar',
+    noMessages: 'Aún no hay mensajes',
+    acceptChallenge: 'Aceptar',
+    challengeDuel: 'Desafío de duelo',
+    challengeDuet: 'Desafío de dueto',
+    from: 'de',
+    selectPlayer: 'Seleccionar jugador...',
+    challengeAccepted: '¡Desafío aceptado!',
+    dismiss: 'Cerrar',
+  },
+
   mobilePreview: {
     preview: 'Vista previa',
     listening: 'Escuchando...',

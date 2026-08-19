@@ -32,6 +32,7 @@ interface SongsViewProps {
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (_song: MobileSong) => void;
+  onSendSongChallenge?: (_song: MobileSong) => void;
   onLoadPartners: () => void;
   onLoadOpponents: () => void;
   onRefresh: () => Promise<void>;
@@ -72,6 +73,7 @@ export function MobileSongsView({
   onSelectGameMode,
   onSelectPartner,
   onAddToQueue,
+  onSendSongChallenge,
   onLoadPartners,
   onLoadOpponents,
   onRefresh,
@@ -225,9 +227,13 @@ export function MobileSongsView({
   // Helper to handle add to queue and show feedback
   const handleAddToQueue = useCallback(() => {
     if (!showSongOptions) return;
+    // For duel/duet: send chat challenge AND add to queue
+    if (selectedGameMode !== 'single' && onSendSongChallenge) {
+      onSendSongChallenge(showSongOptions);
+    }
     onAddToQueue(showSongOptions);
     setWizardStep(3);
-  }, [showSongOptions, onAddToQueue]);
+  }, [showSongOptions, onAddToQueue, selectedGameMode, onSendSongChallenge]);
 
   return (
     <>

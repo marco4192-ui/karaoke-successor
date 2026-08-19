@@ -479,6 +479,24 @@ export const mobileTranslations = {
     host: '主机',
   },
 
+  desktopChat: {
+    title: '伴唱聊天',
+    host: '主机',
+    notificationNew: '{name} 的新消息',
+    openChat: '打开聊天',
+    closeChat: '关闭',
+    placeholder: '输入消息...',
+    send: '发送',
+    noMessages: '暂无消息',
+    acceptChallenge: '接受',
+    challengeDuel: '对决挑战',
+    challengeDuet: '二重唱挑战',
+    from: '来自',
+    selectPlayer: '选择玩家...',
+    challengeAccepted: '已接受挑战！',
+    dismiss: '关闭',
+  },
+
   mobilePreview: {
     preview: '预览',
     listening: '试听中...',

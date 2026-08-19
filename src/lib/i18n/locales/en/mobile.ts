@@ -532,6 +532,7 @@ export const mobileTranslations = {
 
   desktopChat: {
     title: 'Companion Chat',
+    host: 'Host',
     notificationNew: 'New message from {name}',
     openChat: 'Open Chat',
     closeChat: 'Close',
@@ -544,6 +545,7 @@ export const mobileTranslations = {
     from: 'from',
     selectPlayer: 'Select player...',
     challengeAccepted: 'Challenge accepted!',
+    dismiss: 'Dismiss',
   },
 
   mobilePreview: {

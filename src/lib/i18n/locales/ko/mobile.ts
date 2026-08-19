@@ -479,6 +479,24 @@ export const mobileTranslations = {
     host: '호스트',
   },
 
+  desktopChat: {
+    title: '컴패니언 채팅',
+    host: '호스트',
+    notificationNew: '{name}님의 새 메시지',
+    openChat: '채팅 열기',
+    closeChat: '닫기',
+    placeholder: '메시지를 입력하세요...',
+    send: '전송',
+    noMessages: '아직 메시지가 없습니다',
+    acceptChallenge: '수락',
+    challengeDuel: '듀얼 챌린지',
+    challengeDuet: '듀엣 챌린지',
+    from: '에서',
+    selectPlayer: '플레이어 선택...',
+    challengeAccepted: '챌린지 수락됨!',
+    dismiss: '닫기',
+  },
+
   mobilePreview: {
     preview: '미리듣기',
     listening: '듣는 중...',

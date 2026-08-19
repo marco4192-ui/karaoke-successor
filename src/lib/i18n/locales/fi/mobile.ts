@@ -479,6 +479,24 @@ export const mobileTranslations = {
     host: 'Isäntä',
   },
 
+  desktopChat: {
+    title: 'Companion-keskustelu',
+    host: 'Isäntä',
+    notificationNew: 'Uusi viesti käyttäjältä {name}',
+    openChat: 'Avaa chat',
+    closeChat: 'Sulje',
+    placeholder: 'Kirjoita viesti...',
+    send: 'Lähetä',
+    noMessages: 'Ei vielä viestejä',
+    acceptChallenge: 'Hyväksy',
+    challengeDuel: 'Kaksintaisteluhaku',
+    challengeDuet: 'Duettohaaste',
+    from: 'käyttäjältä',
+    selectPlayer: 'Valitse pelaaja...',
+    challengeAccepted: 'Haaste hyväksytty!',
+    dismiss: 'Sulje',
+  },
+
   mobilePreview: {
     preview: 'Esikuuntelu',
     listening: 'Kuunnellaan...',

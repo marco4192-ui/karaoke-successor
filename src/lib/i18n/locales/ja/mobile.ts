@@ -480,6 +480,24 @@ export const mobileTranslations = {
     host: 'ホスト',
   },
 
+  desktopChat: {
+    title: 'コンパニオンチャット',
+    host: 'ホスト',
+    notificationNew: '{name}からの新着メッセージ',
+    openChat: 'チャットを開く',
+    closeChat: '閉じる',
+    placeholder: 'メッセージを入力...',
+    send: '送信',
+    noMessages: 'メッセージはまだありません',
+    acceptChallenge: '承諾',
+    challengeDuel: 'デュエルチャレンジ',
+    challengeDuet: 'デュエットチャレンジ',
+    from: 'から',
+    selectPlayer: 'プレイヤーを選択...',
+    challengeAccepted: 'チャレンジ承諾済み！',
+    dismiss: '閉じる',
+  },
+
   mobilePreview: {
     preview: 'プレビュー',
     listening: '再生中...',

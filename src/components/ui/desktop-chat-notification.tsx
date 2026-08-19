@@ -62,7 +62,7 @@ export function DesktopChatNotification({ onOpenChat }: DesktopChatNotificationP
 
   return (
     <div
-      className="fixed top-16 left-4 z-[100] animate-[slide-in-down_0.3s_ease-out]"
+      className="fixed top-[4.5rem] left-1/2 -translate-x-1/2 z-[100] animate-[slide-in-down_0.3s_ease-out]"
     >
       <div
         className="flex items-center gap-3 rounded-lg bg-black/90 backdrop-blur-md border border-white/15 px-4 py-2.5 shadow-2xl cursor-pointer max-w-xs"

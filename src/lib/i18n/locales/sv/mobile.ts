@@ -480,6 +480,24 @@ export const mobileTranslations = {
     host: 'Värd',
   },
 
+  desktopChat: {
+    title: 'Companion-chatt',
+    host: 'Värd',
+    notificationNew: 'Nytt meddelande från {name}',
+    openChat: 'Öppna chatt',
+    closeChat: 'Stäng',
+    placeholder: 'Skriv ett meddelande...',
+    send: 'Skicka',
+    noMessages: 'Inga meddelanden än',
+    acceptChallenge: 'Acceptera',
+    challengeDuel: 'Duell-utmaning',
+    challengeDuet: 'Duett-utmaning',
+    from: 'från',
+    selectPlayer: 'Välj spelare...',
+    challengeAccepted: 'Utmaning accepterad!',
+    dismiss: 'Stäng',
+  },
+
   mobilePreview: {
     preview: 'Förhandslyssning',
     listening: 'Lyssnar...',
