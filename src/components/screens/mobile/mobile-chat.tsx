@@ -207,7 +207,7 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                 </div>
               )}
 
-              {/* Normal text message (hide text if challenge/accepted) */
+              {/* Normal text message (hide text if challenge/accepted) */}
               {!isChallenge && !isAccepted && msg.text && (
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${

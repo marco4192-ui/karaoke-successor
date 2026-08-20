@@ -3,13 +3,13 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { MusicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 import { MobilePullRefresh } from './mobile-pull-refresh';
 import { MobileChallengeButton } from './mobile-challenge-button';
 import { MobilePreviewButton } from './mobile-preview-button';
 import { useMobileSongPreview } from '@/hooks/use-mobile-song-preview';
-import type { MobileSong} from './mobile-types';
-import { useState } from 'react';
-import { useTranslation } from '@/lib/i18n/translations';
+import type { MobileSong } from './mobile-types';
+import type { OpponentProfile } from '@/hooks/use-mobile-data';
 import { MOOD_CATEGORIES } from '@/lib/mood-mapper';
 import { filterSongsByMood } from '@/lib/mood-mapper';
 import type { MoodId } from '@/lib/mood-mapper';
