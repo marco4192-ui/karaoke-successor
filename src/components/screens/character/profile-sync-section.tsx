@@ -84,8 +84,8 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           color: downloadedProfile.color,
           stats: downloadedProfile.stats,
           achievements: downloadedProfile.achievements,
-          privacy: downloadedProfile.settings.privacy,
-          syncCode: downloadedProfile.sync_code,
+          privacy: downloadedProfile.privacy,
+          syncCode: downloadedProfile.syncCode,
         });
         
         setMessage({ type: 'success', text: t('profileSync.syncSuccess') });

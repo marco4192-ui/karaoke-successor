@@ -38,29 +38,29 @@ export function SongHighscoreModal({
       setError(null);
       
       import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-        leaderboardService.getSongLeaderboard(song.id, 10)
-          .then(scores => {
+        leaderboardService.getSongLeaderboard(song.id, 's' as const, 10)
+          .then((scores) => {
             const entries = scores.map((s): HighscoreEntry => ({
-              id: String(s.id),
-              playerId: s.player_id,
-              playerName: s.player_name || 'Unknown',
-              playerAvatar: s.player_avatar,
-              playerColor: '#FF6B6B',
+              id: String(s.rank),
+              playerId: s.profile_uid,
+              playerName: s.display_name || 'Unknown',
+              playerAvatar: undefined,
+              playerColor: s.color,
               songId: song.id,
               songTitle: song.title,
               artist: song.artist,
               score: s.score,
               accuracy: s.max_score > 0 ? (s.score / s.max_score) * 100 : 0,
               maxCombo: s.max_combo,
-              difficulty: s.difficulty === 1 ? 'easy' : s.difficulty === 2 ? 'medium' : 'hard',
-              gameMode: s.game_mode as GameMode,
-              rating: 'good',
+              difficulty: s.difficulty === 'easy' ? 'easy' : s.difficulty === 'hard' ? 'hard' : 'medium',
+              gameMode: 'classic' as GameMode,
+              rating: s.rating as 'perfect' | 'excellent' | 'good' | 'okay' | 'poor',
               rankTitle: '',
-              playedAt: new Date(s.created_at).getTime(),
+              playedAt: new Date(s.played_at).getTime(),
             }));
             setGlobalScores(entries);
           })
-          .catch(err => setError(err.message || t('songHighscoreModal.failedToLoad')))
+          .catch((err: Error) => setError(err.message || t('songHighscoreModal.failedToLoad')))
           .finally(() => setIsLoading(false));
       });
     }

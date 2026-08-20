@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { TrophyIcon } from '@/components/icons';
-import { HighscoreEntry, RANKING_TITLES } from '@/types/game';
+import { HighscoreEntry, RANKING_TITLES, GameMode } from '@/types/game';
 
 export function HighscoreScreen() {
   const { t } = useTranslation();
@@ -32,29 +32,29 @@ export function HighscoreScreen() {
             }
             return leaderboardService.getGlobalLeaderboard(50);
           })
-          .then(players => {
+          .then((players) => {
             // Convert API players to highscore format
-            const entries = players.map((p, _i): HighscoreEntry => ({
-              id: `global-${p.id}`,
-              playerId: p.id,
-              playerName: p.name,
-              playerAvatar: p.avatar,
-              playerColor: '#FF6B6B',
+            const entries = players.map((p, _i: number): HighscoreEntry => ({
+              id: `global-${p.profile_uid}`,
+              playerId: p.profile_uid,
+              playerName: p.display_name,
+              playerAvatar: undefined,
+              playerColor: p.color,
               songId: '',
               songTitle: '',
               artist: '',
               score: p.total_score,
-              accuracy: 0,
+              accuracy: p.avg_accuracy,
               maxCombo: 0,
               difficulty: 'medium',
-              gameMode: 'standard',
-              rating: 'good',
-              rankTitle: `${p.games_played} games`,
+              gameMode: 'standard' as GameMode,
+              rating: 'good' as const,
+              rankTitle: `${p.songs_played} songs`,
               playedAt: Date.now(),
             }));
             setGlobalLeaderboard(entries);
           })
-          .catch(err => {
+          .catch((err: Error) => {
             const errorMsg = err.message || 'Failed to load global leaderboard';
             if (errorMsg.includes('HTTP 500') || errorMsg.includes('500')) {
               setGlobalError('Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.');

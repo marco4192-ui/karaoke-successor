@@ -1,14 +1,19 @@
 /**
  * Online Leaderboard Service v2
  * Copyright-safe: uses song hash fingerprints, no song metadata sent.
+ * Now includes v2 fingerprint support and anti-cheat proof generation.
  */
 
 import type {
   OnlineProfile, OnlineScoreEntry, BatchScoresResponse,
   SubmitScorePayload, SubmitScoreResult, GlobalLeaderboardEntry,
-  LeaderboardGameType,
+  LeaderboardGameType, ScoreProofPackage,
 } from '@/lib/leaderboard/types';
-import { generateSongHash, type FingerprintInput, type RawNote } from '@/lib/leaderboard/song-fingerprint';
+import {
+  generateSongHash, generateSongHashV2,
+  type FingerprintInput, type RawNote, type FingerprintInputV2,
+} from '@/lib/leaderboard/song-fingerprint';
+import type { ScoringMetadata } from '@/lib/game/scoring';
 import type { PlayerProfile, Song, Difficulty, GameMode } from '@/types/game';
 
 const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
@@ -26,6 +31,7 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': process.env.NEXT_PUBLIC_LEADERBOARD_API_KEY || '',
         ...(init.headers as Record<string, string>),
       },
     });
@@ -52,17 +58,22 @@ function toApiDifficulty(d: Difficulty): 'easy' | 'normal' | 'hard' {
 
 /** Extract raw notes from a Song for fingerprinting */
 function extractRawNotes(song: Song): RawNote[] {
-  // The song object has parsed notes with startTime/duration in ms.
-  // We need to convert back to beats for the fingerprint.
-  // However, we can use a simplified approach: use the note data directly.
-  // The Ultrastar parser stores notes in the song's parsed structure.
-  return (song.notes || []).map(n => ({
-    type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
-    startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
-    duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
-    pitch: n.pitch - 48, // Convert back from MIDI to relative pitch
-    lyric: '',
-  }));
+  // Notes are nested in song.lyrics[].notes (not song.notes directly)
+  const allNotes: RawNote[] = [];
+  const lyrics = song.lyrics || [];
+  for (const line of lyrics) {
+    const lineNotes = line.notes || [];
+    for (const n of lineNotes) {
+      allNotes.push({
+        type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
+        startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
+        duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
+        pitch: n.pitch - 48,
+        lyric: '',
+      });
+    }
+  }
+  return allNotes;
 }
 
 // ── Public API ──────────────────────────────────────────
@@ -106,7 +117,7 @@ async function updateProfileSettings(profile: PlayerProfile): Promise<OnlineProf
   });
 }
 
-/** Submit a score for a song */
+/** Submit a score for a song (with optional anti-cheat proof) */
 async function submitScore(params: {
   profile: PlayerProfile;
   song: Song;
@@ -116,37 +127,69 @@ async function submitScore(params: {
   accuracy: number;
   maxCombo: number;
   difficulty: Difficulty;
-  rating: string;
+  rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
   notesHit: number;
   notesMissed: number;
+  /** Pre-computed anti-cheat proof package */
+  proof?: ScoreProofPackage;
+  /** Scoring metadata for v2 fingerprint (optional) */
+  scoringMetadata?: ScoringMetadata;
 }): Promise<SubmitScoreResult> {
-  const { profile, song, gameMode, score, maxScore, accuracy, maxCombo, difficulty, rating, notesHit, notesMissed } = params;
+  const { profile, song, gameMode, score, maxScore, accuracy, maxCombo, difficulty, rating, notesHit, notesMissed, proof, scoringMetadata } = params;
 
-  const songHash = generateSongHash({
+  const rawNotes = extractRawNotes(song);
+  const gameType = toGameType(gameMode);
+
+  // Generate v1 hash (always, for backwards compatibility)
+  const v1Hash = generateSongHash({
     artist: song.artist,
     title: song.title,
-    gameType: toGameType(gameMode),
-    notes: extractRawNotes(song),
+    gameType,
+    notes: rawNotes,
   });
+
+  // Generate v2 hash if scoring metadata is available
+  let v2Hash: string | undefined;
+  if (scoringMetadata) {
+    const goldenCount = rawNotes.filter(n => n.type === '*').length;
+    const v2Result = generateSongHashV2({
+      artist: song.artist,
+      title: song.title,
+      gameType,
+      notes: rawNotes,
+      bpm: song.bpm,
+      totalNotes: scoringMetadata.totalNotes,
+      goldenNoteCount: goldenCount,
+      totalNoteTicks: scoringMetadata.totalNoteTicks,
+      songDurationMs: song.duration,
+    });
+    v2Hash = v2Result.v2Hash;
+  }
 
   // Ensure profile is registered first
   await registerProfile(profile).catch(() => {/* ignore if already exists */});
 
+  const payload: SubmitScorePayload = {
+    profile_uid: profile.id,
+    song_hash: v1Hash,
+    game_type: gameType,
+    score,
+    max_score: maxScore,
+    accuracy,
+    max_combo: maxCombo,
+    difficulty: toApiDifficulty(difficulty),
+    rating,
+    notes_hit: notesHit,
+    notes_missed: notesMissed,
+  };
+
+  // Attach proof and v2 hash if available
+  if (proof) payload.proof = proof;
+  if (v2Hash) payload.song_hash_v2 = v2Hash;
+
   return request<SubmitScoreResult>('/scores', {
     method: 'POST',
-    body: JSON.stringify({
-      profile_uid: profile.id,
-      song_hash: songHash,
-      game_type: toGameType(gameMode),
-      score,
-      max_score: maxScore,
-      accuracy,
-      max_combo: maxCombo,
-      difficulty: toApiDifficulty(difficulty),
-      rating,
-      notes_hit: notesHit,
-      notes_missed: notesMissed,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -196,9 +239,17 @@ export const leaderboardService = {
   fetchBatchScores,
   fetchSongLeaderboard,
   fetchGlobalLeaderboard,
+  // Backward-compatible aliases used by UI components
+  getSongLeaderboard: fetchSongLeaderboard,
+  getGlobalLeaderboard: fetchGlobalLeaderboard,
+  // Profile sync stubs (not yet implemented — planned for future)
+  uploadProfile: async (_profile: PlayerProfile, _highscores: unknown) => ({ success: false, error: 'Not yet implemented' } as { success: boolean; error?: string }),
+  downloadProfileByCode: async (_code: string) => null as PlayerProfile | null,
   // Expose fingerprint for UI use (e.g. computing hashes for library songs)
   generateSongHash,
+  generateSongHashV2,
 };
 
 // Re-export fingerprint for convenience
-export { generateSongHash, generateSongHashes } from '@/lib/leaderboard/song-fingerprint';
+export { generateSongHash, generateSongHashes, generateSongHashV2, generateSongHashesV2 } from '@/lib/leaderboard/song-fingerprint';
+export { ScoreProofBuilder, generateProofPackage, verifyScorePlausibility, verifyIntegrityHash, verifyProofTimestamp } from '@/lib/leaderboard/anti-cheat-proof';

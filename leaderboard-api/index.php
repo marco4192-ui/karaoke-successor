@@ -1,19 +1,21 @@
 <?php
 /**
- * Karaoke Successor — Online Leaderboard API v2
+ * Karaoke Successor — Online Leaderboard API v3
  * Copyright-safe: songs identified by SHA-256 fingerprint hash only.
+ * Anti-cheat: score plausibility + integrity hash verification.
  *
  * Endpoints:
  *   GET  /                        API info
  *   POST /profiles                Register / upsert profile
  *   PUT  /profiles/{uid}          Update privacy & display settings
- *   POST /scores                  Submit score (upsert: higher score wins)
+ *   POST /scores                  Submit score (upsert: higher score wins, with anti-cheat)
  *   GET  /scores/batch?hashes=..  Batch-fetch leaderboards for multiple song hashes
  *   GET  /leaderboard/song/{hash} Per-song leaderboard (Top N)
  *   GET  /leaderboard/global      Global player ranking
  */
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/anti-cheat.php';
 
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri    = preg_replace('#^/leaderboard-api#', '', $uri);
@@ -27,7 +29,7 @@ $T_SCORES   = tbl('scores');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '2.0.0', 'copyright_safe' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.0.0', 'copyright_safe' => true, 'anti_cheat' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
@@ -98,7 +100,7 @@ function fetchProfile(string $uid, string $TP): void {
 }
 
 // ============================================================
-// SCORES
+// SCORES (with anti-cheat)
 // ============================================================
 function routeScores(array $parts, string $method, string $TP, string $TS): void {
     if ($method === 'POST' && !isset($parts[1])) { submitScore($TP, $TS); return; }
@@ -111,12 +113,14 @@ function submitScore(string $TP, string $TS): void {
     requireFields($d, ['profile_uid','song_hash','game_type','score','max_score']);
     $uid   = clean($d['profile_uid']);
     $hash  = clean($d['song_hash']);
+    $v2Hash = isset($d['song_hash_v2']) ? clean($d['song_hash_v2']) : null;
     $gt    = $d['game_type'];
     $score = (int)$d['score'];
     $maxSc = (int)$d['max_score'];
 
     if (!isValidUUID($uid))      err('Invalid profile_uid');
     if (!isValidSongHash($hash))  err('Invalid song_hash (v1:hex)');
+    if ($v2Hash !== null && !isValidSongHash($v2Hash)) err('Invalid song_hash_v2');
     if (!in_array($gt, ['s','d'])) err('game_type: s or d');
     if ($score < 0 || $maxSc < 1) err('Invalid score');
 
@@ -134,10 +138,61 @@ function submitScore(string $TP, string $TS): void {
     $hit  = (int)($d['notes_hit'] ?? 0);
     $miss = (int)($d['notes_missed'] ?? 0);
 
+    // ── Anti-Cheat Verification ─────────────────────────────
+    $proof     = $d['proof'] ?? null;
+    $verified  = false;
+    $acFlags   = [];
+    $acReason  = null;
+    $isNewBest = true;
+
+    if ($proof && is_array($proof)) {
+        // Step 1: Verify integrity hash
+        $integrityOk = verifyIntegrityHash($proof, [
+            'score'       => $score,
+            'accuracy'    => $acc,
+            'max_combo'   => $combo,
+            'notes_hit'   => $hit,
+            'notes_missed'=> $miss,
+            'difficulty'  => $diff,
+        ]);
+
+        // Step 2: Verify timestamp
+        $timestampOk = verifyProofTimestamp($proof, 300); // 5 min window
+
+        // Step 3: Plausibility checks
+        $plausibility = verifyScorePlausibility($score, $maxSc, $acc, $combo, $hit, $miss, $proof);
+
+        // Step 4: Check points_per_tick matches server-side computation
+        $comboMultipliers = ['easy' => 1.5, 'normal' => 2.0, 'hard' => 2.5];
+        $pptOk = verifyPointsPerTick($proof, $comboMultipliers[$diff] ?? 2.0);
+
+        // Step 5: Detect soft flags
+        $acFlags = flagSuspiciousScore($score, $acc, $combo, $hit, $miss, $proof);
+
+        // Determine verification result
+        if ($integrityOk && $timestampOk && $plausibility['valid'] && $pptOk) {
+            $verified = true;
+        } else {
+            $reasons = [];
+            if (!$integrityOk)  $reasons[] = 'integrity_hash_mismatch';
+            if (!$timestampOk)   $reasons[] = 'proof_expired';
+            if (!$plausibility['valid']) $reasons[] = $plausibility['reason'] ?? 'plausibility_fail';
+            if (!$pptOk)        $reasons[] = 'ppt_mismatch';
+            $acReason = implode('; ', $reasons);
+        }
+    }
+
+    // If proof is completely missing, we still accept the score but mark unverified
+    // This allows backwards compatibility during the v1→v2 transition
+    $flagsJson = !empty($acFlags) ? json_encode($acFlags, JSON_UNESCAPED_UNICODE) : null;
+
+    // Determine fingerprint version
+    $fpVersion = ($v2Hash !== null) ? 'v2' : 'v1';
+
     // UPSERT: keep higher score
     $sql = "INSERT INTO `$TS`
-        (`profile_uid`,`song_hash`,`game_type`,`score`,`max_score`,`accuracy`,`max_combo`,`difficulty`,`rating`,`notes_hit`,`notes_missed`)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        (`profile_uid`,`song_hash`,`song_hash_v2`,`game_type`,`score`,`max_score`,`accuracy`,`max_combo`,`difficulty`,`rating`,`notes_hit`,`notes_missed`,`verified`,`ac_flags`,`ac_reject_reason`,`fingerprint_version`)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
             `score`        = IF(VALUES(`score`) > `score`, VALUES(`score`), `score`),
             `max_score`    = IF(VALUES(`score`) > `score`, VALUES(`max_score`), `max_score`),
@@ -147,14 +202,27 @@ function submitScore(string $TP, string $TS): void {
             `rating`       = IF(VALUES(`score`) > `score`, VALUES(`rating`), `rating`),
             `notes_hit`    = IF(VALUES(`score`) > `score`, VALUES(`notes_hit`), `notes_hit`),
             `notes_missed` = IF(VALUES(`score`) > `score`, VALUES(`notes_missed`), `notes_missed`),
-            `played_at`    = CURRENT_TIMESTAMP";
-    db()->prepare($sql)->execute([$uid,$hash,$gt,$score,$maxSc,$acc,$combo,$diff,$rat,$hit,$miss]);
+            `played_at`    = CURRENT_TIMESTAMP,
+            `verified`     = IF(VALUES(`score`) > `score`, VALUES(`verified`), `verified`),
+            `ac_flags`     = IF(VALUES(`score`) > `score`, VALUES(`ac_flags`), `ac_flags`),
+            `ac_reject_reason` = IF(VALUES(`score`) > `score`, VALUES(`ac_reject_reason`), `ac_reject_reason`),
+            `song_hash_v2`= IF(VALUES(`song_hash_v2`) IS NOT NULL, VALUES(`song_hash_v2`), `song_hash_v2`),
+            `fingerprint_version` = IF(VALUES(`score`) > `score`, VALUES(`fingerprint_version`), `fingerprint_version`)";
+
+    db()->prepare($sql)->execute([
+        $uid,$hash,$v2Hash,$gt,$score,$maxSc,$acc,$combo,$diff,$rat,$hit,$miss,
+        $verified ? 1 : 0, $flagsJson, $acReason, $fpVersion
+    ]);
 
     db()->prepare("CALL sp_refresh_profile_stats(?)")->execute([$uid]);
 
     // Calculate rank
     $rank = songRank($TS, $TP, $hash, $gt, $score);
-    json(['ok'=>true, 'rank'=>$rank, 'is_new_best'=>true]);
+
+    $response = ['ok'=>true, 'rank'=>$rank, 'is_new_best'=>$isNewBest, 'verified'=>$verified];
+    if ($acReason) $response['verification_note'] = $acReason;
+    if (!empty($acFlags)) $response['flags'] = $acFlags;
+    json($response);
 }
 
 function batchScores(string $TP, string $TS): void {
@@ -170,6 +238,7 @@ function batchScores(string $TP, string $TS): void {
     $sql = "SELECT
         s.`song_hash`, s.`profile_uid`, s.`score`, s.`max_score`, s.`accuracy`,
         s.`max_combo`, s.`difficulty`, s.`rating`, s.`played_at`,
+        s.`verified`, s.`fingerprint_version`,
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TS` s JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
@@ -227,6 +296,7 @@ function songBoard(string $hash, string $TP, string $TS): void {
     $sql = "SELECT
         s.`profile_uid`, s.`score`, s.`max_score`, s.`accuracy`,
         s.`max_combo`, s.`difficulty`, s.`rating`, s.`played_at`,
+        s.`verified`, s.`fingerprint_version`,
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TS` s JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
