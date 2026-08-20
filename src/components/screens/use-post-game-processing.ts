@@ -257,37 +257,24 @@ export function usePostGameProcessing({
           setUploadStatus('uploading');
 
           import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-            // First, ensure player is registered/updated
-            const playerPromise = leaderboardService.savePlayer(profile);
+            const submitPerfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
 
-            // Then, register the song
-            const songPromise = leaderboardService.registerSong(song);
-
-            // Wait for both, then submit score
-            Promise.all([playerPromise, songPromise])
-              .then(() => {
-                // Calculate notes stats from game state (recompute to avoid stale closure)
-                const submitPerfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
-                const goodNotes = Math.max(0, playerResult.notesHit - submitPerfectNotes);
-
-                return leaderboardService.submitScore(
-                  profile,
-                  song,
-                  playerResult.score,
-                  MAX_POINTS_PER_SONG,
-                  {
-                    perfectNotes: submitPerfectNotes,
-                    goodNotes,
-                    missedNotes: playerResult.notesMissed,
-                    maxCombo: playerResult.maxCombo,
-                  },
-                  gameState.difficulty,
-                  gameState.gameMode
-                );
-              })
+            leaderboardService.submitScore({
+              profile,
+              song,
+              gameMode: gameState.gameMode,
+              score: playerResult.score,
+              maxScore: MAX_POINTS_PER_SONG,
+              accuracy: playerResult.accuracy,
+              maxCombo: playerResult.maxCombo,
+              difficulty: gameState.difficulty,
+              rating: playerResult.rating,
+              notesHit: playerResult.notesHit,
+              notesMissed: playerResult.notesMissed,
+            })
               .then((result) => {
                 setUploadStatus('success');
-                if (result.is_new_high_score) {
+                if (result.is_new_best) {
                   setUploadMessage(t('resultsScreen.newGlobalHighscore'));
                 } else {
                   setUploadMessage(t('resultsScreen.uploadedRank').replace('{n}', result.rank.toString()));
