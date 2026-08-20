@@ -120,6 +120,12 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
                 </label>
               </div>
             )}
+            {onlineEnabled && privacySettings.showOnLeaderboard && (
+              <div className="text-xs text-cyan-400/70 bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2">
+                <span className="block">{t('profile.privacyHint')}</span>
+                <span className="block text-white/40 mt-0.5">{t('profile.privacyHintDesc')}</span>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button onClick={handleCreate} disabled={!newName.trim()} className="bg-gradient-to-r from-cyan-500 to-purple-500">
                 {t('profile.create')}

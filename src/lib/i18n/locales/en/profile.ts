@@ -21,7 +21,9 @@ export const profileTranslations = {
     showOnLeaderboard: 'Show on leaderboard',
     showPhoto: 'Show photo',
     photoUploaded: 'Photo uploaded',
-    noPhoto: 'No photo'
+    noPhoto: 'No photo',
+    privacyHint: 'Your scores will be uploaded to the global leaderboard.',
+    privacyHintDesc: 'You can opt out at any time in Profile Settings.'
   },
 
   characterScreen: {
@@ -46,7 +48,9 @@ export const profileTranslations = {
     companionAppLink: 'Companion App Link',
     companionAppLinkDesc: 'Scan this QR code to connect directly with this profile in the companion app.',
     hideQrCode: 'Hide QR Code',
-    showQrCode: 'Show QR Code'
+    showQrCode: 'Show QR Code',
+    leaderboardParticipation: 'Leaderboard Participation',
+    leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players'
   },
 
   characterCard: {

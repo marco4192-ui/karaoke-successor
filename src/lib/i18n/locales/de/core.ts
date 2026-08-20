@@ -118,7 +118,11 @@ export const coreTranslations = {
   },
 
   uploadStatus: {
-    uploading: 'Wird zum globalen Leaderboard hochgeladen...'
+    uploading: 'Wird zum globalen Leaderboard hochgeladen...',
+    verified: 'Verifizierter Score',
+    unverified: 'Unverifiziert (ohne Nachweis)',
+    verifiedDesc: 'Dieser Score wurde vom Anti-Cheat-System verifiziert',
+    unverifiedDesc: 'Für diesen Score wurde kein Anti-Cheat-Nachweis eingeschlossen'
   },
 
   shareSection: {

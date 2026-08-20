@@ -117,7 +117,11 @@ export const coreTranslations = {
   },
 
   uploadStatus: {
-    uploading: 'Uploading to global leaderboard...'
+    uploading: 'Uploading to global leaderboard...',
+    verified: 'Verified score',
+    unverified: 'Unverified (no proof)',
+    verifiedDesc: 'This score was verified by the anti-cheat system',
+    unverifiedDesc: 'Anti-cheat proof was not included for this score'
   },
 
   shareSection: {

@@ -172,6 +172,7 @@ export const gameTranslations = {
   resultsScreen: {
     newGlobalHighscore: '🎉 Neuer globaler Highscore!',
     uploadedRank: 'Hochgeladen! Rang #{n}',
+    uploadedRankVerified: 'Hochgeladen! Rang #{n} (Verifiziert)',
     uploadFailed: 'Hochladen fehlgeschlagen',
     noResults: 'Keine Ergebnisse verfügbar',
     accuracyLabel: '{n}% Genauigkeit',
@@ -245,7 +246,18 @@ export const gameTranslations = {
     noAll: 'Noch keine Highscores. Sei der Erste, der singt!',
     accuracyLabel: '{n}% Genauigkeit',
     maxComboLabel: '{n}x beste Combo',
-    totalPoints: 'Gesamtpunkte'
+    totalPoints: 'Gesamtpunkte',
+    searchPlaceholder: 'Spieler suchen...',
+    searchNoResults: 'Keine Ergebnisse für \"{q}\"',
+    verified: 'Verifiziert',
+    unverified: 'Unverifiziert',
+    songsPlayed: '{n} Songs',
+    bestScore: 'Beste: {n}',
+    avgAccuracy: '{n}% Durchschn.',
+    globalRank: 'Globaler Rang',
+    localHighlight: 'Dein Profil',
+    top100: 'Top 100',
+    noSearchResults: 'Keine Spieler gefunden'
   },
 
   keyboardShortcuts: {

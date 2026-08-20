@@ -42,7 +42,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   // ---- Extracted hooks ----
   const { replayRecord } = useReplayLoading();
   const { nextQueueItem, handlePlayFromQueue } = useQueueNextSong(onPlayAgain);
-  const { uploadStatus, uploadMessage } = usePostGameProcessing({
+  const { uploadStatus, uploadMessage, isVerified } = usePostGameProcessing({
     results,
     song,
     activeProfileId,
@@ -135,11 +135,13 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         onlineEnabled={onlineEnabled}
         uploadStatus={uploadStatus}
         uploadMessage={uploadMessage}
+        isVerified={isVerified}
       />
 
       {/* Song Leaderboard Preview */}
       <SongLeaderboardPreview
         songHighscores={songHighscores}
+        song={song}
         activeProfileId={activeProfileId}
         currentPlayerRank={currentPlayerRank}
         onViewAll={() => setShowHighscoreModal(true)}

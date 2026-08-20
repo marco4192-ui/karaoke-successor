@@ -166,13 +166,19 @@ export const libraryTranslations = {
     close: 'Schließen',
     failedToLoad: 'Laden fehlgeschlagen',
     combo: 'Combo',
-    pts: 'Pkt.'
+    pts: 'Pkt.',
+    verified: 'Verifiziert',
+    unverified: 'Unverifiziert'
   },
 
   songLeaderboardPreview: {
     title: 'Song-Leaderboard',
     viewAll: 'Alle anzeigen →',
-    youRank: 'Du #{rank}'
+    youRank: 'Du #{rank}',
+    worldwide: 'Weltweit',
+    local: 'Lokal',
+    noScores: 'Noch keine Scores',
+    loading: 'Laden...'
   },
 
   songStart: {

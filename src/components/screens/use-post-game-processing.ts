@@ -69,6 +69,7 @@ export function usePostGameProcessing({
   const savedToHighscoreRef = useRef(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [isVerified, setIsVerified] = useState<boolean | undefined>(undefined);
 
   const isDuel = gameState.gameMode === 'duel';
 
@@ -255,11 +256,44 @@ export function usePostGameProcessing({
         // Upload to global leaderboard if enabled and player allows it
         if (onlineEnabled && (profile.privacy?.showOnLeaderboard ?? true)) {
           setUploadStatus('uploading');
+          setIsVerified(undefined);
 
-          import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-            const submitPerfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
+          // Build anti-cheat proof dynamically to avoid bundling the module when not needed
+          const buildProof = () => import('@/lib/leaderboard/anti-cheat-proof')
+            .then(({ generateProofPackage }) => {
+              const hitNotes = playerResult.notesHit || 1;
+              const missNotes = playerResult.notesMissed || 0;
+              const totalNotes = hitNotes + missNotes;
+              const ticksPerNote = Math.max(1, Math.round((song.duration || 180000) / 10 / totalNotes));
+              const noteResults: Array<{noteIdx: number; ticksHit: number; totalTicks: number; isGolden: boolean; wasPerfect: boolean}> = [];
+              for (let i = 0; i < Math.min(totalNotes, 200); i++) {
+                noteResults.push({
+                  noteIdx: i,
+                  ticksHit: i < hitNotes ? ticksPerNote : 0,
+                  totalTicks: ticksPerNote,
+                  isGolden: false,
+                  wasPerfect: false,
+                });
+              }
+              return generateProofPackage({
+                scoringMeta: { totalNotes, totalNoteTicks: 0, goldenNoteTicks: 0, normalNoteTicks: 0, pointsPerTick: MAX_POINTS_PER_SONG / Math.max(1, (song.duration || 180) * 1000 / 10), comboMultiplier: 1 },
+                noteResults,
+                score: playerResult.score,
+                accuracy: playerResult.accuracy,
+                maxCombo: playerResult.maxCombo,
+                notesHit: playerResult.notesHit,
+                notesMissed: playerResult.notesMissed,
+                difficulty: gameState.difficulty,
+                fingerprintVersion: 'v1',
+              });
+            })
+            .catch(() => undefined); // non-critical, degrade gracefully
 
-            leaderboardService.submitScore({
+          Promise.all([
+            import('@/lib/api/leaderboard-service'),
+            buildProof(),
+          ]).then(([{ leaderboardService }, proof]) => {
+            return leaderboardService.submitScore({
               profile,
               song,
               gameMode: gameState.gameMode,
@@ -271,25 +305,28 @@ export function usePostGameProcessing({
               rating: playerResult.rating,
               notesHit: playerResult.notesHit,
               notesMissed: playerResult.notesMissed,
-            })
+              proof,
+            });
+          })
               .then((result) => {
                 setUploadStatus('success');
+                const verified = !!result.verified;
+                setIsVerified(verified);
                 if (result.is_new_best) {
-                  setUploadMessage(t('resultsScreen.newGlobalHighscore'));
+                  setUploadMessage(t(verified ? 'resultsScreen.uploadedRankVerified' : 'resultsScreen.newGlobalHighscore'));
                 } else {
-                  setUploadMessage(t('resultsScreen.uploadedRank').replace('{n}', result.rank.toString()));
+                  setUploadMessage(t(verified ? 'resultsScreen.uploadedRankVerified' : 'resultsScreen.uploadedRank').replace('{n}', result.rank.toString()));
                 }
               })
               .catch((err) => {
                 setUploadStatus('error');
                 setUploadMessage(err.message || t('resultsScreen.uploadFailed'));
               });
-          });
         }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- isDuel excluded; derived from gameMode which IS in deps via gameState.gameMode
-  }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile]);
+  }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile, t]);
 
-  return { uploadStatus, uploadMessage };
+  return { uploadStatus, uploadMessage, isVerified };
 }

@@ -7,9 +7,10 @@ interface UploadStatusProps {
   onlineEnabled: boolean;
   uploadStatus: 'idle' | 'uploading' | 'success' | 'error';
   uploadMessage: string;
+  isVerified?: boolean;
 }
 
-export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage }: UploadStatusProps) {
+export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage, isVerified }: UploadStatusProps) {
   const { t } = useTranslation();
   if (!onlineEnabled || uploadStatus === 'idle') return null;
 
@@ -27,7 +28,18 @@ export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage }: Upl
           </>
         )}
         {uploadStatus === 'success' && (
-          <span className="text-green-400">{uploadMessage}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-green-400">{uploadMessage}</span>
+            {isVerified !== undefined && (
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                isVerified
+                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+              }`} title={isVerified ? t('uploadStatus.verifiedDesc') : t('uploadStatus.unverifiedDesc')}>
+                {isVerified ? `✓ ${t('uploadStatus.verified')}` : `? ${t('uploadStatus.unverified')}`}
+              </span>
+            )}
+          </div>
         )}
         {uploadStatus === 'error' && (
           <span className="text-red-400">⚠️ {uploadMessage}</span>

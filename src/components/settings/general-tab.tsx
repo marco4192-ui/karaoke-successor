@@ -13,6 +13,8 @@ interface GeneralTabProps {
   handleDifficultyChange: (_diff: Difficulty) => void;
   showPitchGuide: boolean;
   handlePitchGuideToggle: (_enabled: boolean) => void;
+  onlineEnabled: boolean;
+  handleOnlineToggle: (_enabled: boolean) => void;
   tx: (_key: string) => string;
 }
 
@@ -23,6 +25,8 @@ export function GeneralTab({
   handleDifficultyChange,
   showPitchGuide,
   handlePitchGuideToggle,
+  onlineEnabled,
+  handleOnlineToggle,
   tx,
 }: GeneralTabProps) {
   return (
@@ -100,6 +104,36 @@ export function GeneralTab({
             >
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
                 showPitchGuide ? 'left-8' : 'left-1'
+              }`} />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Online Activities Toggle */}
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-lg">🌐</span>
+            {tx('settings.onlineActivities')}
+          </CardTitle>
+          <CardDescription>{tx('settings.onlineActivitiesDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div>
+              <h4 className="font-medium">{tx('settings.disableOnline')}</h4>
+              <p className="text-sm text-white/60">{tx('settings.disableOnlineDesc')}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOnlineToggle(!onlineEnabled)}
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
+                onlineEnabled ? 'bg-cyan-500' : 'bg-white/20'
+              }`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
+                onlineEnabled ? 'left-8' : 'left-1'
               }`} />
             </button>
           </div>
