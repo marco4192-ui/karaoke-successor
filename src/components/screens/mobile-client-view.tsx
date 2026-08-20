@@ -409,7 +409,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             />
           )}
         </div>
-      )}
+      ) : null}
 
       {isConnected && profile && <MobileBottomNav currentView={currentView} onNavigate={setCurrentView} />}
 
