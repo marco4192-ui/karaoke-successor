@@ -366,7 +366,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           avatarPreview={avatarPreview} profileColors={PROFILE_COLORS}
           fileInputRef={fileInputRef} onCreateProfile={handleCreateProfile} onPhotoUpload={handlePhotoUpload}
         />
-      ) : (
+      ) : clientId ? (
         <div className="pb-20">
           {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} clientId={clientId} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
           {currentView === 'mic' && (
