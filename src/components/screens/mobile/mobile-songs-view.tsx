@@ -33,6 +33,7 @@ interface SongsViewProps {
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (_song: MobileSong) => void;
   onSendSongChallenge?: (_song: MobileSong) => void;
+  onAddToJukebox?: (_song: MobileSong) => void;
   onLoadPartners: () => void;
   onLoadOpponents: () => void;
   onRefresh: () => Promise<void>;
@@ -74,6 +75,7 @@ export function MobileSongsView({
   onSelectPartner,
   onAddToQueue,
   onSendSongChallenge,
+  onAddToJukebox,
   onLoadPartners,
   onLoadOpponents,
   onRefresh,
@@ -88,6 +90,9 @@ export function MobileSongsView({
   duetPartsSwapped = false,
   onDuetPartsSwappedChange,
   addedQueuePosition = 0,
+  clientId,
+  playlists,
+  onPlaylistAction,
 }: SongsViewProps) {
   const { t } = useTranslation();
   const songListRef = useRef<HTMLDivElement>(null);
@@ -97,12 +102,14 @@ export function MobileSongsView({
 
   // Queue wizard step state: 0 = mode+difficulty, 1 = overview/mic, 2 = opponent, 3 = feedback
   const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | 3>(0);
+  const [addedToJukebox, setAddedToJukebox] = useState(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset wizard when song options change
   useEffect(() => {
     if (showSongOptions) {
       setWizardStep(0);
+      setAddedToJukebox(false);
     }
   }, [showSongOptions]);
 
@@ -218,6 +225,7 @@ export function MobileSongsView({
   // Helper to close wizard
   const closeWizard = useCallback(() => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setAddedToJukebox(false);
     setWizardStep(0);
     onShowSongOptions(null);
     onSelectPartner(null);
@@ -300,8 +308,10 @@ export function MobileSongsView({
             {wizardStep === 3 && (
               <div className="p-6 text-center">
                 <div className="text-4xl mb-2">✓</div>
-                <p className="text-white font-bold text-sm">{t('mobileViews.songAddedToQueue')}</p>
-                {addedQueuePosition > 0 && (
+                <p className="text-white font-bold text-sm">
+                  {addedToJukebox ? t('mobileViews.addedToJukebox') : t('mobileViews.songAddedToQueue')}
+                </p>
+                {!addedToJukebox && addedQueuePosition > 0 && (
                   <p className="text-white/50 text-xs mt-1">{t('mobileViews.positionInQueue').replace('{n}', String(addedQueuePosition))}</p>
                 )}
               </div>
@@ -318,13 +328,13 @@ export function MobileSongsView({
 
                 {/* Content - scrollable */}
                 <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-3">
-                  {/* Game Mode */}
+                  {/* Game Mode + Jukebox */}
                   <div>
                     <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">{t('mobileViews.gameMode')}</label>
-                    <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                    <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                       {(['single', 'duel', 'duet'] as const).map((mode) => {
-                        const icons = { single: '🎤', duel: '⚔️', duet: '🎭' };
-                        const labels = { single: 'mobileViews.gameModeSingle', duel: 'mobileViews.gameModeDuel', duet: 'mobileViews.gameModeDuet' };
+                        const icons: Record<'single' | 'duel' | 'duet', string> = { single: '🎤', duel: '⚔️', duet: '🎭' };
+                        const labels: Record<'single' | 'duel' | 'duet', string> = { single: 'mobileViews.gameModeSingle', duel: 'mobileViews.gameModeDuel', duet: 'mobileViews.gameModeDuet' };
                         const isActive = selectedGameMode === mode;
                         return (
                           <button
@@ -343,6 +353,20 @@ export function MobileSongsView({
                           </button>
                         );
                       })}
+                      {/* Jukebox button */}
+                      <button
+                        onClick={() => {
+                          if (!showSongOptions || !onAddToJukebox) return;
+                          onAddToJukebox(showSongOptions);
+                          setAddedToJukebox(true);
+                          setWizardStep(3);
+                        }}
+                        disabled={!onAddToJukebox}
+                        className="px-2 py-2 rounded-lg text-center transition-all text-xs bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-lg block mb-0.5">📻</span>
+                        <span className="text-[10px]">{t('mobileViews.jukeboxBtn')}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -522,6 +546,17 @@ export function MobileSongsView({
                   <button onClick={closeWizard} className="flex-1 py-2 rounded-lg bg-white/5 text-white/60 text-xs font-medium">
                     {t('mobileViews.cancel')}
                   </button>
+                  {onPlaylistAction && playlists && playlists.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (!showSongOptions || !onPlaylistAction) return;
+                        onPlaylistAction({ songId: showSongOptions.id, songTitle: showSongOptions.title, songArtist: showSongOptions.artist });
+                      }}
+                      className="py-2 px-3 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 text-xs font-medium"
+                    >
+                      📋 {t('mobileViews.addToPlaylistBtn')}
+                    </button>
+                  )}
                   <button
                     onClick={handleAddToQueue}
                     className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold"
@@ -718,13 +753,21 @@ export function MobileSongsView({
               </button>
               
               {/* Cover */}
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0 relative">
                 {song.coverImage ? (
                   <img src={song.coverImage} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <MusicIcon className="w-5 h-5 text-white/30" />
+                    {song.isDuet ? (
+                      <span className="text-lg">🎭</span>
+                    ) : (
+                      <MusicIcon className="w-5 h-5 text-white/30" />
+                    )}
                   </div>
+                )}
+                {/* Duet badge overlay for songs with cover */}
+                {song.isDuet && song.coverImage && (
+                  <div className="absolute bottom-0 right-0 bg-pink-500/90 rounded-tl text-[8px] px-1 leading-tight font-bold">🎭</div>
                 )}
               </div>
               

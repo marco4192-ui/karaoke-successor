@@ -530,5 +530,7 @@ export const mobileTranslations = {
     scoreMaster: { title: '得分大师', description: '总计达到10,000分' },
     playlistBuilder: { title: '播放列表构建者', description: '添加5首歌到队列' },
     genreExplorer: { title: '流派探索者', description: '演唱3个流派的歌曲' },
+    jukeboxBtn: '点播',
+    addedToJukebox: '已添加到点播',
   },
 };

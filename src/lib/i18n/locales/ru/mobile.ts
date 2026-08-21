@@ -530,5 +530,7 @@ export const mobileTranslations = {
     scoreMaster: { title: 'Мастер очков', description: 'Наберите 10 000 очков суммарно' },
     playlistBuilder: { title: 'Создатель плейлистов', description: 'Добавьте 5 песен в очередь' },
     genreExplorer: { title: 'Исследователь жанров', description: 'Спойте песни из 3 жанров' },
+    jukeboxBtn: 'Джукбокс',
+    addedToJukebox: 'Добавлено в Джукбокс',
   },
 };

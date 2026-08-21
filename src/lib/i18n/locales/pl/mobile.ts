@@ -518,6 +518,8 @@ export const mobileTranslations = {
     cameraUnavailable: 'Kamera niedostępna',
     retake: 'Zrób ponownie',
     noResults: 'Brak wyników do wyświetlenia',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Dodano do Jukeboxa',
   },
 
   // --- Mobile Achievements ---

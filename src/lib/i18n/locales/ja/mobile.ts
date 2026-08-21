@@ -531,5 +531,7 @@ export const mobileTranslations = {
     scoreMaster: { title: 'スコアマスター', description: '合計10,000ポイントに到達' },
     playlistBuilder: { title: 'プレイリストビルダー', description: '5曲をキューに入れる' },
     genreExplorer: { title: 'ジャンルエクスプローラー', description: '3つのジャンルから曲を歌う' },
+    jukeboxBtn: 'ジュークボックス',
+    addedToJukebox: 'ジュークボックスに追加',
   },
 };

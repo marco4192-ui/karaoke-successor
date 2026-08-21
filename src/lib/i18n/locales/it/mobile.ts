@@ -531,5 +531,7 @@ export const mobileTranslations = {
     scoreMaster: { title: 'Maestro del Punteggio', description: 'Raggiungi 10.000 punti totali' },
     playlistBuilder: { title: 'Costruttore di Playlist', description: 'Metti in coda 5 canzoni' },
     genreExplorer: { title: 'Esploratore di Generi', description: 'Canta canzoni di 3 generi' },
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Aggiunto al Jukebox',
   },
 };

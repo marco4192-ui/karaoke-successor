@@ -530,5 +530,7 @@ export const mobileTranslations = {
     scoreMaster: { title: 'Maestro de Puntuación', description: 'Alcanza 10,000 puntos totales' },
     playlistBuilder: { title: 'Constructor de Listas', description: 'Añade 5 canciones a la cola' },
     genreExplorer: { title: 'Explorador de Géneros', description: 'Canta canciones de 3 géneros' },
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Añadido al Jukebox',
   },
 };

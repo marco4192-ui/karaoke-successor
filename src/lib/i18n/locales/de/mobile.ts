@@ -179,6 +179,8 @@ export const mobileTranslations = {
     step: 'Schritt {n}',
     // Playlist picker
     addToPlaylistBtn: 'Zur Playlist',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Zur Jukebox hinzugefügt',
     playlistPick: 'Playlist wählen',
     noPlaylists: 'Keine Playlists vorhanden',
     newPlaylist: 'Neue Playlist erstellen',

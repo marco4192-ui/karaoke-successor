@@ -13,6 +13,7 @@ export interface MobileSong {
   genre?: string;
   language?: string;
   coverImage?: string;
+  isDuet?: boolean;
 }
 
 type QueueItemStatus = 'pending' | 'playing' | 'completed';

@@ -519,6 +519,8 @@ export const mobileTranslations = {
     cameraUnavailable: 'Kamera ikke tilgjengelig',
     retake: 'Ta på nytt',
     noResults: 'Ingen resultater å vise',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Lagt til i Jukebox',
   },
 
   // --- Mobile Achievements ---

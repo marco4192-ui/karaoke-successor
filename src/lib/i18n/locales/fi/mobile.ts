@@ -518,6 +518,8 @@ export const mobileTranslations = {
     cameraUnavailable: 'Kamera ei ole käytettävissä',
     retake: 'Ota uudelleen',
     noResults: 'Ei näytettäviä tuloksia',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Lisätty Jukeboxiin',
   },
 
   // --- Mobile Achievements ---

@@ -530,5 +530,7 @@ export const mobileTranslations = {
     scoreMaster: { title: '스코어 마스터', description: '총 10,000점 도달' },
     playlistBuilder: { title: '플레이리스트 빌더', description: '5곡을 대기열에 추가' },
     genreExplorer: { title: '장르 탐험가', description: '3개 장르의 곡을 부르세요' },
+    jukeboxBtn: '주크박스',
+    addedToJukebox: '주크박스에 추가됨',
   },
 };

@@ -531,5 +531,7 @@ export const mobileTranslations = {
     scoreMaster: { title: 'Scoremeester', description: 'Bereik 10.000 punten totaal' },
     playlistBuilder: { title: 'Afspeellijstbouwer', description: 'Zet 5 nummers in de wachtrij' },
     genreExplorer: { title: 'Genre-verkenner', description: 'Zing nummers uit 3 genres' },
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Toegevoegd aan Jukebox',
   },
 };

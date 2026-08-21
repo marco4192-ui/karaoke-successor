@@ -33,6 +33,7 @@ import { MobileErrorBoundary } from './mobile/mobile-error-boundary';
 import { useMobileConnection } from '@/hooks/use-mobile-connection';
 import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
+import { getPlaylists, addSongToPlaylist, createPlaylist } from '@/lib/playlist-manager';
 
 // ===================== MOBILE CLIENT VIEW =====================
 interface MobileClientViewProps {
@@ -51,6 +52,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // #10 Tournament spectator vote state
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const [showChat, setShowChat] = useState(false);
+  // Playlist state (for companion playlist picker)
+  const [playlists, setPlaylists] = useState<Array<{ id: string; name: string; songIds: string[] }>>([]);
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +73,29 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // Data (songs, queue, jukebox, results, partners)
   const data = useMobileData({ clientId, profile, onNavigateToProfile: () => setCurrentView('profile') });
+
+  // Load playlists for companion playlist picker
+  const refreshPlaylists = useCallback(() => {
+    const all = getPlaylists().filter(p => !p.isSystem);
+    setPlaylists(all.map(p => ({ id: p.id, name: p.name, songIds: p.songIds })));
+  }, []);
+  useEffect(() => { refreshPlaylists(); }, [refreshPlaylists]);
+
+  // Handle playlist actions from song options wizard
+  const handlePlaylistAction = useCallback((_actionData: { playlistId?: string; songId: string; name?: string; songTitle?: string; songArtist?: string }) => {
+    if (_actionData.playlistId) {
+      // Add to existing playlist
+      addSongToPlaylist(_actionData.playlistId, _actionData.songId);
+      refreshPlaylists();
+    } else if (_actionData.name) {
+      // Create new playlist and add song
+      const pl = createPlaylist(_actionData.name);
+      if (pl) {
+        addSongToPlaylist(pl.id, _actionData.songId);
+        refreshPlaylists();
+      }
+    }
+  }, [refreshPlaylists]);
 
   // Stop mic when game stops or song ends
   useEffect(() => {
@@ -392,6 +418,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               partnerMicSource={data.partnerMicSource} onPartnerMicSourceChange={data.setPartnerMicSource}
               duetPartsSwapped={data.duetPartsSwapped} onDuetPartsSwappedChange={data.setDuetPartsSwapped}
               addedQueuePosition={data.addedQueuePosition}
+              onAddToJukebox={data.addToJukeboxWishlist}
+              clientId={clientId}
+              playlists={playlists}
+              onPlaylistAction={handlePlaylistAction}
             />
           )}
           {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onReorderQueue={data.reorderQueue} onNavigate={setCurrentView} clientId={clientId} />}

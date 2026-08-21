@@ -43,6 +43,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
           coverImage: song.coverImage && !song.coverImage.startsWith('blob:')
             ? song.coverImage
             : undefined,
+          isDuet: song.isDuet || false,
         }));
 
       await fetch('/api/mobile', {
