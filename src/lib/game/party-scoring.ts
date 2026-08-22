@@ -13,17 +13,8 @@ import type { Note, LyricLine, Difficulty } from '@/types/game';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
 import {
   evaluateTick,
-  calculateTickPoints,
   ScoringMetadata,
 } from './scoring';
-
-// ===================== CONSTANTS =====================
-
-/** Multiplier for converting accuracy (0-1) to fallback tick points when no BPM metadata is available. */
-const FALLBACK_TICK_MULTIPLIER = 10;
-
-/** Maximum points per tick in fallback mode — prevents score inflation on long songs. */
-const FALLBACK_MAX_TICK_PTS = 3;
 
 // ===================== TYPES =====================
 
@@ -107,7 +98,9 @@ export function shouldSkipPitch(
   const diffSettings = DIFFICULTY_SETTINGS[difficulty];
   if (!diffSettings) return true;
   if (pitch.volume < diffSettings.volumeThreshold) return true;
-  if (pitch.isSinging === false) return true; // humming / noise detected
+  // Vocal detection (isSinging) removed from scoring gate — the VocalDetector
+  // misclassified sustained karaoke notes as "humming", blocking scoring.
+  // Pitch tolerance + volume threshold already filter noise.
   return false;
 }
 
@@ -132,23 +125,93 @@ export function evaluateAndScoreTick(
     return { hit: false, points: 0, accuracy: result.accuracy, displayType: result.displayType };
   }
 
-  let tickPts: number;
-  if (scoringMeta) {
-    tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick);
-  } else {
-    // Fallback when no scoring metadata is available (e.g. missing BPM).
-    // Scale accuracy to 0-3 point range without a floor so that poor
-    // accuracy (below ~0.05) correctly awards 0 points instead of
-    // inflating scores on long songs with many ticks.
-    tickPts = result.accuracy * FALLBACK_TICK_MULTIPLIER;
+  if (!scoringMeta) {
+    return { hit: true, points: 0, accuracy: result.accuracy, displayType: result.displayType };
   }
 
-  // When scoringMetadata is available: round and enforce minimum of 1 point per hit
-  // In fallback mode (no BPM metadata): enforce minimum 1 point per hit and cap at 3
-  // This prevents edge-of-tolerance hits from awarding 0 points.
-  const points = scoringMeta
-    ? Math.max(1, Math.round(tickPts))
-    : Math.max(1, Math.min(Math.round(tickPts), FALLBACK_MAX_TICK_PTS));
-
+  // Golden notes use goldenPointsPerTick (2× base) when available
+  const ppt = note.isGolden && scoringMeta.goldenPointsPerTick
+    ? scoringMeta.goldenPointsPerTick
+    : scoringMeta.pointsPerTick;
+  const points = Math.max(1, Math.round(result.accuracy * ppt));
   return { hit: true, points, accuracy: result.accuracy, displayType: result.displayType };
 }
+
+// ===================== MEDLEY NOTE-BASED SCORING =====================
+
+/** Medley tick-based scoring state tracked per player. */
+export interface MedleyTickScoringState {
+  /** Last evaluated time for tick throttling. */
+  lastEvalTime: number;
+  /** Total points accumulated so far. */
+  accumulatedPoints: number;
+  /** Ticks evaluated. */
+  ticksEvaluated: number;
+  /** Ticks hit. */
+  ticksHit: number;
+}
+
+/** Create a fresh MedleyTickScoringState for a player. */
+export function createMedleyTickScoringState(): MedleyTickScoringState {
+  return {
+    lastEvalTime: 0,
+    accumulatedPoints: 0,
+    ticksEvaluated: 0,
+    ticksHit: 0,
+  };
+}
+
+/**
+ * Evaluate pitch against the active note for Medley Contest mode (tick-based).
+ *
+ * Medley scoring is now **tick-based** (10,000 total points across all ticks),
+ * matching the normal game scoring. Golden note ticks earn 2× points.
+ *
+ * @returns Object with `points`, `hit`, and `accuracy` for the current tick.
+ */
+export function evaluateMedleyTick(
+  pitchNote: number,
+  currentTime: number,
+  notes: ScorableNote[] | null | undefined,
+  difficulty: Difficulty,
+  beatDuration: number,
+  state: MedleyTickScoringState,
+  scoringMeta: ScoringMetadata | null,
+): { points: number; hit: boolean; accuracy: number; displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss' } {
+  const activeNote = findActiveNoteFlat(notes, currentTime);
+
+  if (!activeNote) {
+    return { points: 0, hit: false, accuracy: 0, displayType: 'Miss' };
+  }
+
+  // Throttle to one evaluation per beat duration
+  if (currentTime - state.lastEvalTime < beatDuration) {
+    return { points: 0, hit: false, accuracy: 0, displayType: 'Miss' };
+  }
+  state.lastEvalTime = currentTime;
+
+  // Evaluate pitch accuracy for this tick
+  const result = evaluateTick(pitchNote, activeNote.pitch, difficulty);
+  state.ticksEvaluated++;
+
+  if (!result.isHit) {
+    return { points: 0, hit: false, accuracy: 0, displayType: result.displayType };
+  }
+
+  state.ticksHit++;
+
+  if (!scoringMeta) {
+    return { points: 0, hit: true, accuracy: result.accuracy, displayType: result.displayType };
+  }
+
+  // Golden notes use goldenPointsPerTick (2× base) when available
+  const ppt = activeNote.isGolden && scoringMeta.goldenPointsPerTick
+    ? scoringMeta.goldenPointsPerTick
+    : scoringMeta.pointsPerTick;
+  const points = Math.max(1, Math.round(result.accuracy * ppt));
+  state.accumulatedPoints += points;
+
+  return { points, hit: true, accuracy: result.accuracy, displayType: result.displayType };
+}
+
+

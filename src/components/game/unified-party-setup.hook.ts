@@ -179,9 +179,9 @@ export function usePartySetup({
 
   const createPlayers = useCallback((): SelectedPlayer[] => {
     // Load saved mic configs to get mic names
-    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
+    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }> = [];
     try {
-      const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
+      const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }> }>(StorageKeys.MULTI_MIC_CONFIG);
       if (parsed) {
         savedMics = parsed.assignedMics || [];
       }
@@ -191,6 +191,11 @@ export function usePartySetup({
     if (config.sharedMic && selectedMicId) {
       return selectedPlayers.map((id, index) => {
         const profile = profiles.find(p => p.id === id);
+        // Resolve stereo channel from saved mic config
+        const sharedMicEntry = savedMics.find(m => m.id === selectedMicId);
+        const sharedStereoChannel = sharedMicEntry?.config?.stereoSplitMode
+          ? (sharedMicEntry.config.stereoChannel === 'right' ? 1 : 0)
+          : undefined;
         return {
           id,
           name: profile?.name || 'Unknown',
@@ -199,6 +204,7 @@ export function usePartySetup({
           playerType: 'microphone' as const,
           micId: selectedMicId,
           micName: selectedMicName || undefined,
+          stereoChannel: sharedStereoChannel,
         };
       });
     }
@@ -225,6 +231,11 @@ export function usePartySetup({
       const autoMic = isMicPlayer && !assignedMic ? savedMics[autoMicIndex] : null;
       if (isMicPlayer && !assignedMic) autoMicIndex++;
 
+      // Resolve stereo channel from saved mic config
+      const micSource = assignedMic || autoMic;
+      const stereoChannel = micSource?.config?.stereoSplitMode
+        ? (micSource.config.stereoChannel === 'right' ? 1 : 0)
+        : undefined;
       return {
         id,
         name: profile?.name || 'Unknown',
@@ -233,6 +244,7 @@ export function usePartySetup({
         playerType: isMicPlayer ? 'microphone' as const : 'companion' as const,
         micId: assignedMic?.id || autoMic?.id,
         micName: assignedMic?.customName || autoMic?.customName,
+        stereoChannel,
       };
     });
   }, [selectedPlayers, profiles, inputMode, micAssignments, config.sharedMic, selectedMicId, selectedMicName]);
@@ -277,6 +289,41 @@ export function usePartySetup({
       }
     }
   }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
+
+  // ── Remote companion config apply ──
+  useEffect(() => {
+    const handleRemoteConfig = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      // Apply players
+      if (Array.isArray(detail.players)) {
+        setSelectedPlayers(detail.players);
+      }
+      // Apply difficulty
+      if (detail.difficulty && ['easy', 'medium', 'hard'].includes(detail.difficulty)) {
+        setDifficulty(detail.difficulty as Difficulty);
+      }
+      // Apply mode-specific settings
+      if (detail.settings && typeof detail.settings === 'object') {
+        setSettings((prev) => ({ ...prev, ...detail.settings }));
+      }
+      // Apply input mode
+      if (detail.inputMode && ['microphone', 'companion', 'mixed'].includes(detail.inputMode)) {
+        setInputMode(detail.inputMode as InputMode);
+      }
+      // Apply song selection after a short delay to let state settle
+      const songSel = detail.songSelection;
+      if (songSel && ['library', 'random', 'vote', 'medley'].includes(songSel)) {
+        const minP = config.minPlayers;
+        if (Array.isArray(detail.players) && detail.players.length >= minP) {
+          setTimeout(() => {
+            handleSongSelection(songSel as SongSelectionOption);
+          }, 200);
+        }
+      }
+    };
+    window.addEventListener('remote-party-apply-config', handleRemoteConfig);
+    return () => window.removeEventListener('remote-party-apply-config', handleRemoteConfig);
+  }, [config.minPlayers, handleSongSelection]);
 
   return {
     config,

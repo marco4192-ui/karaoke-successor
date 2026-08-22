@@ -102,7 +102,7 @@ export function PlayerGrid({
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium truncate">{profile.name}</span>
-                    {isSelected && (
+                    {isSelected && !config.sharedMic && (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] opacity-70">
                           {isCompanionPlayer ? '📱' : '🎤'}
@@ -354,19 +354,29 @@ export function ReadySummary({
   inputMode?: InputMode;
 }) {
   const { t } = useTranslation();
+  const canStart = selectedPlayerCount >= config.minPlayers;
   const modeLabel = inputMode
     ? t(INPUT_MODE_CONFIG[inputMode].labelKey)
     : t('unifiedSetup.fallbackMicrophones');
+  const missingReason = !canStart
+    ? t('unifiedSetup.minPlayersRequired').replace('{n}', String(config.minPlayers))
+    : null;
   return (
-    <Card className={`bg-gradient-to-r ${config.color} border-0 mb-6`}>
+    <Card className={canStart ? `bg-gradient-to-r ${config.color} border-0 mb-6` : 'bg-white/5 border border-white/10 mb-6 opacity-60'}>
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-lg text-white">{t('unifiedSetup.readyToPlay')}</h3>
-            <p className="text-sm text-white/80">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
+            <h3 className={canStart ? 'font-bold text-lg text-white' : 'font-bold text-lg text-white/50'}>
+              {canStart ? t('unifiedSetup.readyToPlay') : t('unifiedSetup.playerSelection')}
+            </h3>
+            {canStart ? (
+              <p className="text-sm text-white/80">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
+            ) : (
+              <p className="text-sm text-white/30">{missingReason}</p>
+            )}
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold text-white">{selectedPlayerCount}</div>
+            <div className={canStart ? 'text-3xl font-bold text-white' : 'text-3xl font-bold text-white/30'}>{selectedPlayerCount}</div>
             <div className="text-xs text-white/60">{t('unifiedSetup.playerCountLabel')}</div>
           </div>
         </div>

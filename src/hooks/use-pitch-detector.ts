@@ -12,13 +12,13 @@ export function usePitchDetector() {
   const detectorRef = useRef<PitchDetector | null>(null);
   const initializingRef = useRef(false);
 
-  const initialize = useCallback(async (deviceId?: string) => {
+  const initialize = useCallback(async (deviceId?: string, stereoChannel?: number) => {
     if (initializingRef.current) return false;
     initializingRef.current = true;
 
     try {
       const detector = getPitchDetector();
-      const success = await detector.initialize(deviceId);
+      const success = await detector.initialize(deviceId, stereoChannel);
 
       if (success) {
         detectorRef.current = detector;
@@ -40,7 +40,7 @@ export function usePitchDetector() {
    * Re-initialize the pitch detector with a different microphone device.
    * Destroys the current instance and creates a new one with the given deviceId.
    */
-  const switchMicrophone = useCallback(async (deviceId?: string) => {
+  const switchMicrophone = useCallback(async (deviceId?: string, stereoChannel?: number) => {
     try {
       // Stop current detector
       detectorRef.current?.stop();
@@ -56,7 +56,7 @@ export function usePitchDetector() {
 
       // Re-initialize with new (or no) deviceId
       const detector = getPitchDetector();
-      const success = await detector.initialize(deviceId);
+      const success = await detector.initialize(deviceId, stereoChannel);
       if (success) {
         detectorRef.current = detector;
         setIsInitialized(true);

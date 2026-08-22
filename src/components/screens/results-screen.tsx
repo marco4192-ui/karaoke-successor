@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -35,6 +35,17 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
   const [showHighscoreModal, setShowHighscoreModal] = useState(false);
   const [showReplay, setShowReplay] = useState(false);
+
+  // Listen for remote companion action commands (scores, play_again)
+  useEffect(() => {
+    const handleRemoteAction = (e: Event) => {
+      const { action } = (e as CustomEvent).detail;
+      if (action === 'scores') setShowHighscoreModal(true);
+      if (action === 'play_again') { resetGame(); onPlayAgain(); }
+    };
+    window.addEventListener('remote-results-action', handleRemoteAction);
+    return () => window.removeEventListener('remote-results-action', handleRemoteAction);
+  }, [resetGame, onPlayAgain]);
 
   const results = gameState.results;
   const song = gameState.currentSong;

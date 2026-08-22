@@ -133,7 +133,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Build player configs from active mic players, each with their own microphoneId.
   // Use a stable key so this only recalculates when player IDs/types/devices change,
   // NOT on every scoring tick (which changes game.players every ~100ms).
-  const playerConfigsKey = game.players.map(p => `${p.id}:${p.playerType}:${p.microphoneId ?? ''}`).join('|');
+  const playerConfigsKey = game.players.map(p => `${p.id}:${p.playerType}:${p.microphoneId ?? ''}:${p.stereoChannel ?? ''}`).join('|');
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
     game.players
       .filter(p => p.playerType === 'microphone')
@@ -141,6 +141,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         playerId: p.id,
         type: 'local' as const,
         deviceId: p.microphoneId,
+        stereoChannel: p.stereoChannel,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [playerConfigsKey],

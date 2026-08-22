@@ -10,6 +10,7 @@ export interface OpponentProfile {
   avatar?: string;
   color: string;
   connectionCode: string;
+  isActive?: boolean;
 }
 
 interface UseMobileDataOptions {
@@ -359,26 +360,6 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
   }, []);
 
-  // ---- Song Challenge (chat-based, for duel/duet) ----
-  const sendSongChallenge = useCallback(async (song: MobileSong) => {
-    if (!profile || !clientId) return;
-    const gameMode = selectedGameMode === 'duel' ? 'duel' : 'duet';
-    const partnerId = selectedPartner?.id || null;
-    try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'song_challenge',
-          clientId,
-          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, gameMode, challengedPartnerId: partnerId },
-        }),
-      });
-    } catch {
-      // Ignore challenge send errors
-    }
-  }, [profile, clientId, selectedGameMode, selectedPartner]);
-
   // ---- Jukebox ----
   const addToJukeboxWishlist = useCallback(async (song: MobileSong) => {
     if (!profile || !clientId) {
@@ -462,8 +443,6 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     removeFromQueue,
     reorderQueue,
     loadQueue,
-    // Song Challenge (chat)
-    sendSongChallenge,
     // Partners
     selectedPartner,
     selectedGameMode,

@@ -39,8 +39,8 @@ import { NavBar, FullscreenToggleButton } from '@/components/home/navbar';
 import { PartySetupSection } from '@/components/party/party-setup-section';
 import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
-import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
 import { DesktopChatNotification } from '@/components/ui/desktop-chat-notification';
+import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -70,8 +70,8 @@ export default function KaraokeZERO() {
   // ── Tournament manual winner overlay ──
   const [showTournamentWinnerOverlay, setShowTournamentWinnerOverlay] = useState(false);
 
-  // ── Desktop chat panel state ──
-  const [chatOpen, setChatOpen] = useState(false);
+  // ── Desktop chat panel ──
+  const [showChatPanel, setShowChatPanel] = useState(false);
 
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
@@ -369,6 +369,33 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-party-mode', handleRemotePartyMode);
   }, [party, setScreen]);
 
+  // ── Handle remote party-difficulty events from companion ──
+  useEffect(() => {
+    const handleRemotePartyDifficulty = (e: Event) => {
+      const { difficulty } = (e as CustomEvent).detail || {};
+      if (!difficulty) return;
+      // Dispatch event that UnifiedPartySetup can listen to
+      window.dispatchEvent(new CustomEvent('party-set-difficulty', { detail: { difficulty } }));
+    };
+    window.addEventListener('remote-party-difficulty', handleRemotePartyDifficulty);
+    return () => window.removeEventListener('remote-party-difficulty', handleRemotePartyDifficulty);
+  }, []);
+
+  // ── Handle remote party-start events from companion ──
+  useEffect(() => {
+    const handleRemotePartyStart = () => {
+      // Click the first visible "Start" or "Spiel starten" button in the DOM
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button'));
+      const startBtn = buttons.find(b => {
+        const text = b.textContent?.toLowerCase() || '';
+        return text.includes('start') || text.includes('spiel starten');
+      });
+      startBtn?.click();
+    };
+    window.addEventListener('remote-party-start', handleRemotePartyStart);
+    return () => window.removeEventListener('remote-party-start', handleRemotePartyStart);
+  }, []);
+
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
     const handleRemoteRandomSong = (e: Event) => {
@@ -425,7 +452,7 @@ export default function KaraokeZERO() {
             payload: {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
-              partyGameMode: screen === 'party-setup' ? (party.selectedGameMode ?? null) : null,
+              partyGameMode: screen === 'party-setup' ? (party.selectedGameMode || null) : null,
             },
           }),
         });
@@ -436,7 +463,7 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen, party.selectedGameMode]);
+  }, [screen]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);
@@ -491,7 +518,7 @@ export default function KaraokeZERO() {
           isMounted={isMounted}
           isFullscreen={isFullscreen}
           toggleFullscreen={toggleFullscreen}
-          onOpenChat={() => setChatOpen(true)}
+          onToggleChat={() => setShowChatPanel((v) => !v)}
         />
       )}
 
@@ -745,20 +772,18 @@ export default function KaraokeZERO() {
         );
       })()}
 
+      {/* Desktop Chat Panel */}
+      {showChatPanel && <DesktopChatPanel onClose={() => setShowChatPanel(false)} />}
+
+      {/* Desktop Chat Notification Overlay */}
+      <DesktopChatNotification />
+
       {/* Party Mode Leave Warning */}
       {activeDialog === 'party-leave' && (
         <PartyLeaveDialog
           onBack={handlePartyLeaveBack}
           onEndParty={handlePartyModeEnd}
         />
-      )}
-
-      {/* Desktop Chat Panel */}
-      <DesktopChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
-
-      {/* Desktop Chat Notification — only when chat panel is closed and navbar is visible */}
-      {!IMMERSIVE_SCREENS.has(screen) && !chatOpen && (
-        <DesktopChatNotification onOpenChat={() => setChatOpen(true)} />
       )}
     </div>
   );

@@ -3,26 +3,39 @@
 /**
  * Medley Contest — Playing Phase UI
  *
- * Feature #4: MiniNoteHighway — horizontal scrolling note highway
+ * Layout mirrors the standard GameScreen / PTM layout:
+ * - NoteHighway: fullscreen (absolute inset-0)
+ * - Lyrics: pinned to bottom with gradient fade
+ * - Song info + timer: top header bar
+ * - Player ranking: left sidebar (compact)
+ * - HUD controls (pause/fullscreen): handled by parent medley-game-screen.tsx
+ *
+ * Feature #4: Fullscreen NoteHighway (replaces old MiniNoteHighway)
  * Feature #5: Scoring transparency — floating +points popups, combo display
  * Feature #9: Dynamic difficulty badge
  * Feature #10: Elimination — eliminated players grayed out, remaining count
  * Feature #15: Voice modifiers — modifier reveal animation, badge
  * Feature #16: Mystery mode — hidden song info, reveal
  * Feature #18: Team bonuses — synergy flash, comeback boost indicator
- *
- * Layout: absolute positioned overlays on top of GameBackground (fullscreen).
- * Player ranking on the left (like PTM), song info + lyrics + notes centered.
  */
 
+import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import type { Note, LyricLine, Difficulty } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';
-import { PitchIndicator } from './medley-game-components';
 import type { MedleyPlayer, MedleySong, SnippetMatchup, MedleyScoringEvent, VoiceModifier, MedleySettings } from './medley-types';
 import { VOICE_MODIFIERS } from './medley-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { NoteHighway, type NoteWithLine } from '@/components/game/note-highway';
+import {
+  calculatePitchStats,
+  getVisibleNotes,
+  SING_LINE_POSITION,
+  NOTE_WINDOW,
+  VISIBLE_TOP,
+  VISIBLE_RANGE,
+} from '@/lib/game/note-utils';
 
 // ===================== PROPS =====================
 
@@ -111,9 +124,46 @@ export function MedleyPlayingUI({
   // Sort players by score for ranking display
   const rankedPlayers = [...playersDisplay].sort((a, b) => b.score - a.score);
 
+  // ── Compute NoteWithLine[] for the standard NoteHighway ──
+  const notesWithLine = useMemo<NoteWithLine[]>(() => {
+    return snippetNotes.map((note, i) => {
+      // Find the lyric line this note belongs to
+      const lineIdx = snippetLyrics.findIndex(line =>
+        line.notes.some(n => n.startTime === note.startTime && n.pitch === note.pitch),
+      );
+      return {
+        ...note,
+        lineIndex: lineIdx >= 0 ? lineIdx : 0,
+        line: lineIdx >= 0 ? snippetLyrics[lineIdx] : { id: 'medley-fallback', startTime: 0, endTime: 0, text: '', notes: [] },
+      };
+    });
+  }, [snippetNotes, snippetLyrics]);
+
+  // ── Compute pitch stats for the NoteHighway vertical range ──
+  const pitchStats = useMemo(() => calculatePitchStats(snippetNotes), [snippetNotes]);
+
+  // ── Compute visible notes (same logic as useGameTimingData) ──
+  const absoluteTime = currentSnippet.startTime + currentTimeMs;
+  const visibleNotes = useMemo(
+    () => getVisibleNotes(notesWithLine, absoluteTime, NOTE_WINDOW),
+    [notesWithLine, absoluteTime],
+  );
+
+  // ── Find next lyric line for preview ──
+  const nextLyricLine = useMemo(() => {
+    if (!currentLyricLine) return null;
+    const curIdx = snippetLyrics.indexOf(currentLyricLine);
+    return curIdx >= 0 && curIdx + 1 < snippetLyrics.length
+      ? snippetLyrics[curIdx + 1]
+      : null;
+  }, [currentLyricLine, snippetLyrics]);
+
+  // ── Countdown timer ──
+  const countdownSeconds = Math.max(0, Math.ceil((currentSnippet.duration - currentTimeMs) / 1000));
+
   return (
-    <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
-      {/* Feature #15: Modifier Reveal Overlay */}
+    <div className="absolute inset-0 z-10 pointer-events-none">
+      {/* ═══════ Feature #15: Modifier Reveal Overlay ═══════ */}
       {modifierJustRevealed && activeModifier !== 'none' && modDef && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 animate-pulse pointer-events-none">
           <div className="text-center">
@@ -123,7 +173,7 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* Feature #18: Synergy Flash */}
+      {/* ═══════ Feature #18: Synergy Flash ═══════ */}
       {synergyTriggered && (
         <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
           <div className="bg-green-500/30 border-2 border-green-400 rounded-xl px-8 py-4 animate-bounce">
@@ -132,9 +182,9 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* Feature #18: Comeback Boost Indicator */}
+      {/* ═══════ Feature #18: Comeback Boost Indicator ═══════ */}
       {comebackTriggered && comebackTeamId !== null && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
           <div className={`px-4 py-2 rounded-lg font-bold text-lg animate-pulse ${
             comebackTeamId === 0 ? 'bg-blue-500/30 text-blue-400 border border-blue-400' : 'bg-red-500/30 text-red-400 border border-red-400'
           }`}>
@@ -143,7 +193,7 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* Feature #16: Mystery Reveal */}
+      {/* ═══════ Feature #16: Mystery Reveal ═══════ */}
       {mysteryReveal && mysteryRevealSong && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 pointer-events-none">
           <div className="text-center">
@@ -160,7 +210,96 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* ═══════ LEFT SIDE: Player Ranking (like PTM) ═══════ */}
+      {/* ═══════ FULLSCREEN NOTE HIGHWAY ═══════ */}
+      {notesWithLine.length > 0 && (
+        <div className="absolute inset-0 z-0">
+          <NoteHighway
+            visibleNotes={visibleNotes}
+            currentTime={absoluteTime}
+            pitchStats={pitchStats}
+            singLinePosition={SING_LINE_POSITION}
+            noteWindow={NOTE_WINDOW}
+            playerColor="#a855f7"
+            showPlayerLabel={false}
+            visibleTop={VISIBLE_TOP}
+            visibleRange={VISIBLE_RANGE}
+          />
+        </div>
+      )}
+
+      {/* ═══════ TOP BAR: song info + timer + badges ═══════ */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+        {/* Left: spacer for PauseButton (rendered by parent) */}
+        <div className="w-10" />
+
+        {/* Center: song info + timer + badges */}
+        <div className="flex flex-col items-center gap-1">
+          {/* Song info row */}
+          <div className="flex items-center gap-2">
+            <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
+            <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
+            {!isTeam && !isEliminationMode && (
+              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
+            )}
+            {isEliminationMode && (
+              <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5">
+                {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
+              </Badge>
+            )}
+            {/* Feature #9: Dynamic difficulty badge */}
+            {currentDynamicDifficulty && (
+              <MedleyDifficultyBadge difficulty={currentDynamicDifficulty} />
+            )}
+            {/* Feature #15: Active modifier badge */}
+            {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
+              <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
+                {modDef.icon} {modDef.id}
+              </Badge>
+            )}
+            {/* Feature #16: Mystery mode badge */}
+            {isMysteryMode && !mysteryReveal && (
+              <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5">🎰</Badge>
+            )}
+          </div>
+
+          {/* Song title + artist + countdown */}
+          <div className="flex items-center gap-3">
+            {isMysteryMode && !mysteryReveal ? (
+              <>
+                <span className="text-sm font-bold">🎰 ???</span>
+                <span className="text-white/40 text-xs">{t('medley.mysterySong')}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-bold text-white/90">{currentSnippet.song.title}</span>
+                <span className="text-white/40 text-xs">{currentSnippet.song.artist}</span>
+              </>
+            )}
+            <span className="text-lg font-mono text-purple-400 tabular-nums">{countdownSeconds}s</span>
+          </div>
+
+          {/* Feature #18: Team scores */}
+          {isTeam && settings.teamBonusesEnabled && (
+            <div className="flex items-center gap-4 text-xs">
+              <span className="text-blue-400 font-medium">
+                {t('medley.teamA')}: {playersDisplay.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0)}
+              </span>
+              <span className="text-white/30">|</span>
+              <span className="text-red-400 font-medium">
+                {t('medley.teamB')}: {playersDisplay.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0)}
+              </span>
+            </div>
+          )}
+
+          {/* Total progress bar */}
+          <Progress value={totalProgress} className="h-1 bg-white/10 w-64" />
+        </div>
+
+        {/* Right: spacer for FullscreenButton (rendered by parent) */}
+        <div className="w-10" />
+      </div>
+
+      {/* ═══════ LEFT SIDE: Player Ranking ═══════ */}
       <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
         <div className="flex flex-col gap-1.5">
           {rankedPlayers.map((player, rank) => {
@@ -225,255 +364,43 @@ export function MedleyPlayingUI({
         </div>
       </div>
 
-      {/* ═══════ TOP BAR: badges + progress ═══════ */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
-          <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
-          {!isTeam && !isEliminationMode && (
-            <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
-          )}
-          {isEliminationMode && (
-            <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5">
-              {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
-            </Badge>
-          )}
-          {/* Feature #9: Dynamic difficulty badge */}
-          {currentDynamicDifficulty && (
-            <DifficultyBadge difficulty={currentDynamicDifficulty} />
-          )}
-          {/* Feature #15: Active modifier badge */}
-          {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
-            <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
-              {modDef.icon} {modDef.id}
-            </Badge>
-          )}
-          {/* Feature #16: Mystery mode badge */}
-          {isMysteryMode && !mysteryReveal && (
-            <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5">🎰</Badge>
-          )}
-        </div>
-
-        {/* Feature #18: Team scores during gameplay */}
-        {isTeam && settings.teamBonusesEnabled && (
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-blue-400 font-medium">
-              {t('medley.teamA')}: {playersDisplay.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0)}
-            </span>
-            <span className="text-white/30">|</span>
-            <span className="text-red-400 font-medium">
-              {t('medley.teamB')}: {playersDisplay.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0)}
-            </span>
-          </div>
-        )}
-
-        <Progress value={totalProgress} className="h-1.5 bg-white/10 w-64" />
-      </div>
-
-      {/* ═══════ CENTER: Song info + timer + lyrics + notes ═══════ */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pl-44 min-h-0">
-        {/* Song info + timer */}
-        <div className="text-center mb-2">
-          {isMysteryMode && !mysteryReveal ? (
-            <>
-              <h3 className="text-xl font-bold">🎰 ???</h3>
-              <p className="text-white/60 text-sm">{t('medley.mysterySong')}</p>
-            </>
-          ) : (
-            <>
-              <h3 className="text-xl font-bold">{currentSnippet.song.title}</h3>
-              <p className="text-white/60 text-sm">{currentSnippet.song.artist}</p>
-            </>
-          )}
-          <div className="text-2xl font-mono text-purple-400 mt-1">
-            {Math.max(0, Math.ceil((currentSnippet.duration - currentTimeMs) / 1000))}s
+      {/* ═══════ BOTTOM: Lyrics (like SinglePlayerLyrics) ═══════ */}
+      {currentLyricLine && (
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+          <div className="bg-gradient-to-t from-black/80 to-transparent px-6 pb-10 pt-8">
+            {/* Current lyric line */}
+            <div className="font-bold text-center drop-shadow-lg text-2xl md:text-3xl text-white leading-tight">
+              {currentLyricLine.text}
+            </div>
+            {/* Next line preview */}
+            {nextLyricLine && (
+              <p className="text-lg text-white/40 mt-3 text-center">
+                {nextLyricLine.text}
+              </p>
+            )}
           </div>
         </div>
+      )}
 
-        {/* Lyrics — current line large + next line faded (PTM-like) */}
-        {currentLyricLine && (
-          <div className="text-center mb-2 max-w-2xl">
-            {(() => {
-              const curIdx = snippetLyrics.indexOf(currentLyricLine);
-              const nextLine = curIdx >= 0 && curIdx + 1 < snippetLyrics.length
-                ? snippetLyrics[curIdx + 1]
-                : null;
-              return (
-                <>
-                  <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg leading-tight">
-                    {currentLyricLine.text}
-                  </div>
-                  {nextLine && (
-                    <div className="text-lg text-white/30 mt-1 transition-opacity">
-                      {nextLine.text}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* Feature #4: Mini Note Highway */}
-        {snippetNotes.length > 0 && (
-          <MiniNoteHighway
-            notes={snippetNotes}
-            currentTimeMs={currentTimeMs}
-            snippetStartTime={currentSnippet.startTime}
-            snippetDuration={currentSnippet.duration}
-            activePlayers={activePlayers}
-            multiPitch={multiPitch}
-          />
-        )}
-
-        {/* Feature #5: Floating scoring popups */}
-        <ScoringPopups events={lastScoringEvents} players={playersDisplay} />
-      </div>
-
-      {/* ═══════ BOTTOM BAR: snippet progress + quit ═══════ */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-72 pointer-events-none">
-        <Progress value={snippetProgress} className="h-2 bg-white/10" />
-        <div className="flex justify-between text-xs text-white/40 mt-1">
-          <span>{t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
-          <button onClick={handleEndEarly} aria-label={t('medley.quit')} className="text-red-400/60 hover:text-red-400 transition-colors pointer-events-auto">
+      {/* ═══════ BOTTOM EDGE: Snippet progress + quit ═══════ */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        <Progress value={snippetProgress} className="h-1 bg-white/10" />
+        <div className="flex justify-between items-center px-4 py-1">
+          <span className="text-[10px] text-white/30">
+            {t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}
+          </span>
+          <button
+            onClick={handleEndEarly}
+            aria-label={t('medley.quit')}
+            className="text-red-400/50 hover:text-red-400 text-[10px] transition-colors pointer-events-auto"
+          >
             {t('medley.quit')}
           </button>
         </div>
       </div>
-    </div>
-  );
-}
 
-// ===================== FEATURE #4: MINI NOTE HIGHWAY =====================
-
-function MiniNoteHighway({
-  notes,
-  currentTimeMs,
-  snippetStartTime,
-  snippetDuration,
-  activePlayers,
-  multiPitch,
-}: {
-  notes: Note[];
-  currentTimeMs: number;
-  snippetStartTime: number;
-  snippetDuration: number;
-  activePlayers: MedleyPlayer[];
-  multiPitch: ReturnType<typeof useMultiPitchDetector>;
-}) {
-  const HIGHWAY_HEIGHT = 160;
-  const LOOKAHEAD_MS = 5000;
-  const LOOKBEHIND_MS = 1000;
-
-  const absoluteTime = snippetStartTime + currentTimeMs;
-
-  const pitches = notes.map(n => n.pitch);
-  const minPitch = Math.min(...pitches, 40);
-  const maxPitch = Math.max(...pitches, 80);
-  const pitchRange = Math.max(maxPitch - minPitch, 12);
-
-  const pitchToY = (pitch: number) => {
-    const normalized = (pitch - minPitch) / pitchRange;
-    return 1 - Math.max(0, Math.min(1, normalized));
-  };
-
-  const windowStart = absoluteTime - LOOKBEHIND_MS;
-  const windowEnd = absoluteTime + LOOKAHEAD_MS;
-  const windowDuration = windowEnd - windowStart;
-
-  const visibleNotes = notes.filter(n => {
-    const noteEnd = n.startTime + n.duration;
-    return noteEnd > windowStart && n.startTime < windowEnd;
-  });
-
-  const timeToX = (time: number) => {
-    return (time - windowStart) / windowDuration;
-  };
-
-  const playheadX = timeToX(absoluteTime);
-
-  const lanePitches = [minPitch + pitchRange * 0.2, minPitch + pitchRange * 0.5, minPitch + pitchRange * 0.8];
-
-  const playerPitchOverlays = activePlayers.map(p => {
-    const pitchData = multiPitch.getPlayerPitch(p.id);
-    if (!pitchData?.isSinging || pitchData.note == null) return null;
-    return {
-      playerId: p.id,
-      color: p.color,
-      y: pitchToY(pitchData.note),
-    };
-  }).filter(Boolean) as Array<{ playerId: string; color: string; y: number }>;
-
-  return (
-    <div
-      className="w-full max-w-2xl bg-black/30 rounded-lg border border-white/10 overflow-hidden relative mb-2"
-      style={{ height: `${HIGHWAY_HEIGHT}px` }}
-    >
-      {lanePitches.map((lp, i) => {
-        const y = pitchToY(lp) * 100;
-        return (
-          <div
-            key={i}
-            className="absolute left-0 right-0 border-t border-white/5"
-            style={{ top: `${y}%` }}
-          />
-        );
-      })}
-
-      {visibleNotes.map((note, i) => {
-        const x = timeToX(note.startTime);
-        const endX = timeToX(note.startTime + note.duration);
-        const y = pitchToY(note.pitch) * 100;
-        const width = Math.max(2, (endX - x) * 100);
-
-        const isActive = absoluteTime >= note.startTime && absoluteTime <= note.startTime + note.duration;
-        const isPast = absoluteTime > note.startTime + note.duration;
-
-        let bg: string;
-        if (isPast) {
-          bg = note.isGolden ? '#92400e' : '#166534';
-        } else if (isActive) {
-          bg = note.isGolden ? '#fbbf24' : '#a855f7';
-        } else {
-          bg = note.isGolden ? '#fbbf2440' : '#a855f740';
-        }
-
-        return (
-          <div
-            key={`${note.startTime}-${i}`}
-            className={`absolute rounded-sm transition-opacity ${isPast ? 'opacity-40' : isActive ? 'opacity-100' : 'opacity-60'}`}
-            style={{
-              left: `${x * 100}%`,
-              top: `${y}%`,
-              width: `${width}%`,
-              height: '8px',
-              marginTop: '-4px',
-              backgroundColor: bg,
-              boxShadow: isActive ? `0 0 6px ${bg}` : 'none',
-            }}
-          />
-        );
-      })}
-
-      <div
-        className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
-        style={{ left: `${playheadX * 100}%` }}
-      />
-
-      {playerPitchOverlays.map(pp => (
-        <div
-          key={pp.playerId}
-          className="absolute w-4 h-4 rounded-full border-2 border-white z-20"
-          style={{
-            left: `${playheadX * 100}%`,
-            top: `${pp.y * 100}%`,
-            marginTop: '-8px',
-            marginLeft: '-8px',
-            backgroundColor: pp.color,
-            boxShadow: `0 0 8px ${pp.color}`,
-          }}
-        />
-      ))}
+      {/* ═══════ Feature #5: Floating scoring popups ═══════ */}
+      <ScoringPopups events={lastScoringEvents} players={playersDisplay} />
     </div>
   );
 }
@@ -537,7 +464,7 @@ function ScoringPopups({
 
 // ===================== FEATURE #9: DIFFICULTY BADGE =====================
 
-function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
+function MedleyDifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   const { t } = useTranslation();
 
   const configs: Record<Difficulty, { label: string; bg: string; text: string }> = {

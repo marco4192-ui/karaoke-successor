@@ -43,6 +43,9 @@ interface UseGameLoopOptions {
   resetScoring: () => void;
   checkNoteHits: (_time: number, _pitch: PitchDetectionResult) => void;
   checkP2NoteHits: (_time: number, _pitch: PitchDetectionResult) => void;
+  // Visual-only high-rate tick sampling (Singstar-style)
+  sampleVisualTicks: (_time: number, _pitch: PitchDetectionResult | null) => void;
+  sampleP2VisualTicks: (_time: number, _pitch: PitchDetectionResult | null) => void;
   // Game mode / state
   difficulty: Difficulty;
   gameMode: GameMode;
@@ -125,6 +128,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     resetScoring,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     difficulty,
     gameMode,
     timingOffset,
@@ -193,6 +198,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
   const checkP2NoteHitsRef = useRef(checkP2NoteHits);
+  const sampleVisualTicksRef = useRef(sampleVisualTicks);
+  const sampleP2VisualTicksRef = useRef(sampleP2VisualTicks);
 
   // ── Result generation hook (extracted) ──
   const { generateResults, playersRef, p1PerfectNotesCountRef } = useGameResults({
@@ -217,7 +224,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     nativeAudioTimeRef.current = nativeAudioTime;
     checkNoteHitsRef.current = checkNoteHits;
     checkP2NoteHitsRef.current = checkP2NoteHits;
-  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits]);
+    sampleVisualTicksRef.current = sampleVisualTicks;
+    sampleP2VisualTicksRef.current = sampleP2VisualTicks;
+  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits, sampleVisualTicks, sampleP2VisualTicks]);
   // DO-NOT-CHANGE: lastPitchStoreUpdateRef was removed to eliminate a
   // separate throttle gate for setDetectedPitch. Previously, setCurrentTime
   // and setDetectedPitch fired on alternating rAF frames (two independent
@@ -669,6 +678,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       const now = performance.now();
       // Read pitch from ref (not closure) to avoid stale values
       const currentPitch = pitchResultRef.current;
+
+      // Visual tick sampling: ALWAYS called (even when no pitch),
+      // so missed ticks are recorded for Singstar-style display.
+      sampleVisualTicksRef.current(adjustedTime, currentPitch ?? null);
+
       if (now - lastCurrentTimeUpdateRef.current >= 25) {
         setCurrentTime(adjustedTime);
         lastCurrentTimeUpdateRef.current = now;

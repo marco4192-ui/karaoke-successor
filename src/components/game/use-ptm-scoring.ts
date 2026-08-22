@@ -1,16 +1,24 @@
 /**
  * Sub-hook: scoring RAF loop for Pass-the-Mic mode.
  * Evaluates pitch accuracy on each animation frame and updates player scores.
+ *
+ * PTM scoring: each player can earn max 2,000 points, distributed across
+ * the ticks in THEIR segments. The scoring metadata (pointsPerTick) is
+ * computed from the notes within the current segment only.
  */
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Song, PitchDetectionResult, Difficulty } from '@/types/game';
-import type { PtmPlayer } from './ptm-types';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { Song, PitchDetectionResult, Difficulty, Note, LyricLine } from '@/types/game';
+import type { PtmPlayer, PtmSegment } from './ptm-types';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
+import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 export const SCORING_THROTTLE_MS = 250;
+
+/** Max points per player in PTM mode */
+const PTM_MAX_POINTS = 2000;
 
 interface UsePtmScoringOptions {
   phase: string;
@@ -20,9 +28,35 @@ interface UsePtmScoringOptions {
   currentTime: number;
   difficulty: Difficulty;
   currentPlayerIndex: number;
-  scoringMeta: ReturnType<typeof import('@/lib/game/scoring').calculateScoringMetadata> | null;
+  /** Current segments for the song */
+  segments: PtmSegment[];
+  /** Current segment index */
+  currentSegmentIndex: number;
+  /** All notes (from usePtmNoteData) — used to find segment notes */
+  allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  /** BPM for beat duration calculation */
+  bpm: number | null;
   playersRef: React.RefObject<PtmPlayer[]>;
   forceRender: () => void;
+}
+
+/**
+ * Extract notes that fall within a time range from a flat notes array.
+ */
+function getNotesInRange(
+  allNotes: Array<{ startTime: number; duration: number }>,
+  startTime: number,
+  endTime: number,
+): Array<{ duration: number; isGolden: boolean }> {
+  const result: Array<{ duration: number; isGolden: boolean }> = [];
+  for (const note of allNotes) {
+    const noteEnd = note.startTime + note.duration;
+    // Note overlaps with segment if it starts before segment end AND ends after segment start
+    if (note.startTime < endTime && noteEnd > startTime) {
+      result.push({ duration: note.duration, isGolden: (note as Note).isGolden ?? false });
+    }
+  }
+  return result;
 }
 
 export function usePtmScoring({
@@ -33,17 +67,16 @@ export function usePtmScoring({
   currentTime,
   difficulty,
   currentPlayerIndex,
-  scoringMeta,
+  segments,
+  currentSegmentIndex,
+  allNotes,
+  bpm,
   playersRef,
   forceRender,
 }: UsePtmScoringOptions): void {
   const lastEvalTimeRef = useRef(0);
 
   // Separate throttle counters for different log messages.
-  // Previously a single ref was shared between null-pitch and skip-pitch
-  // paths; the reset on line "noPitchLogCooldownRef.current = 0" (executed
-  // every frame when pitchResult is non-null) clobbered the skip-pitch
-  // throttle, causing the shouldSkipPitch log to fire ~60x/sec.
   const noPitchLogCooldownRef = useRef(0);
   const skipPitchLogCooldownRef = useRef(0);
 
@@ -52,11 +85,21 @@ export function usePtmScoring({
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
+  // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
+  // This ensures each player can earn up to 2,000 points across THEIR ticks.
+  const scoringMeta = useMemo((): ScoringMetadata | null => {
+    const segment = segments[currentSegmentIndex];
+    if (!segment || allNotes.length === 0) return null;
+    const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
+    if (segmentNotes.length === 0) return null;
+    const beatDuration = bpm ? 15000 / bpm : 500;
+    return calculateScoringMetadata(segmentNotes, beatDuration, 'medium', PTM_MAX_POINTS);
+  }, [segments, currentSegmentIndex, allNotes, bpm]);
+
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
 
     if (!pitchResult) {
-      // Log at most once per sustained null streak
       noPitchLogCooldownRef.current++;
       if (noPitchLogCooldownRef.current <= 1) {
         // eslint-disable-next-line no-console
@@ -67,7 +110,6 @@ export function usePtmScoring({
     noPitchLogCooldownRef.current = 0;
 
     if (shouldSkipPitch(pitchResult, difficulty)) {
-      // Log the skip reason (throttled: only once per sustained skip streak)
       if (skipPitchLogCooldownRef.current <= 0) {
         // eslint-disable-next-line no-console
         console.warn('[PTM-Scoring] shouldSkipPitch=true:',

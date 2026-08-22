@@ -14,16 +14,19 @@ let _originalPrompt: ((msg?: string, def?: string) => string | null) | null = nu
 
 // Capture ORIGINAL browser dialogs via a hidden iframe BEFORE Tauri overrides them.
 // The iframe's contentWindow has its own, unpatched versions of alert/confirm/prompt.
+// DO-NOT-CHANGE: The iframe must stay in the DOM (not removed) because some WebViews
+// (e.g. Tauri/WebView2) invalidate the captured functions once the browsing context is discarded.
 try {
   if (typeof document !== 'undefined') {
     const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;opacity:0;pointer-events:none;';
+    iframe.setAttribute('aria-hidden', 'true');
     document.head.appendChild(iframe);
     const win = iframe.contentWindow!;
     _originalAlert = win.alert.bind(win);
     _originalConfirm = win.confirm.bind(win);
     _originalPrompt = win.prompt.bind(win);
-    document.head.removeChild(iframe);
+    // Intentionally keep iframe in DOM — do NOT removeChild
   }
 } catch {
   // Fallback: try standard references (may be Tauri-patched, but better than nothing)
@@ -61,8 +64,12 @@ export async function safeConfirm(message: string): Promise<boolean> {
     return result as boolean;
   } catch {
     // Tauri ACL error or plugin failure — fall back to original native dialog
-    if (_originalConfirm) {
-      return _originalConfirm(message);
+    try {
+      if (_originalConfirm) {
+        return _originalConfirm(message);
+      }
+    } catch {
+      // iframe-captured confirm also failed (e.g. detached iframe in some WebViews)
     }
     return false;
   }
@@ -80,8 +87,12 @@ export async function safePrompt(message: string, defaultText?: string): Promise
     }
     return result as string | null;
   } catch {
-    if (_originalPrompt) {
-      return _originalPrompt(message, defaultText);
+    try {
+      if (_originalPrompt) {
+        return _originalPrompt(message, defaultText);
+      }
+    } catch {
+      // iframe-captured prompt also failed (e.g. detached iframe in some WebViews)
     }
     return null;
   }

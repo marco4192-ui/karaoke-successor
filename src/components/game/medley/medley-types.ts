@@ -24,6 +24,8 @@ export interface MedleyPlayer {
   micName?: string;
   /** Companion mobile client ID (mobile only) */
   mobileClientId?: string;
+  /** Stereo channel index for stereo-split microphones (0=left, 1=right) */
+  stereoChannel?: number;
   // Scoring — accumulated across all snippets
   score: number;
   notesHit: number;
@@ -239,7 +241,6 @@ interface MedleyPlayerRoundScore {
 
 export type MedleyGamePhase =
   | 'intro'         // Show players, mic info, "Start" button
-  | 'countdown'     // 3-2-1 countdown
   | 'playing'       // Active snippet playback
   | 'transition'    // 3s pulse before next snippet
   | 'round-results' // After last snippet: show round results

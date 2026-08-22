@@ -45,7 +45,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
   });
 
   const {
-    phase, countdown, transitionCount,
+    phase, transitionCount,
     currentSnippet, currentSnippetIdx, snippetNotes,
     audioRef, videoRef, fallbackVideoRef, audioError,
     playersDisplay, multiPitch,
@@ -71,6 +71,25 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
   if (phase === 'intro') {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6">
+        {/* Audio- und Video-Elemente IMMER rendern, damit der Hook sie auf dem Mount findet.
+           Bei Phase 'intro' existiert das Element sonst nicht → audioRef.current === null → kein Laden möglich. */}
+        <audio
+          ref={audioRef}
+          className="hidden"
+          preload="auto"
+          onError={() => { /* error handled via state */ }}
+        />
+
+        <video
+          key={`medley-fallback-video-${restoredSong?.id ?? currentSnippet?.song.id ?? 'none'}`}
+          ref={fallbackVideoRef}
+          src={restoredSong?.videoBackground ?? undefined}
+          className="hidden"
+          muted={false}
+          playsInline
+          preload="auto"
+        />
+
         <div className="text-5xl mb-6">🎵</div>
         <h2 className="text-3xl font-bold mb-2">{t('medley.gameTitle')}</h2>
         <p className="text-white/60 mb-6">
@@ -303,12 +322,16 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         )}
       </div>
 
-      {/* HUD Controls (top-right) — only during playing */}
+      {/* HUD Controls — PauseButton top-left, FullscreenButton top-right (PTM layout) */}
       {phase === 'playing' && (
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
-          <PauseButton isPlaying={isPlaying} onTogglePause={handleTogglePause} />
-          <FullscreenButton />
-        </div>
+        <>
+          <div className="absolute top-4 left-4 z-30 pointer-events-auto">
+            <PauseButton isPlaying={isPlaying} onTogglePause={handleTogglePause} />
+          </div>
+          <div className="absolute top-4 right-4 z-30 pointer-events-auto">
+            <FullscreenButton />
+          </div>
+        </>
       )}
 
       {/* ── ROUND RESULTS ── */}

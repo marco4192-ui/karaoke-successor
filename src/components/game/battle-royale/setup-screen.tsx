@@ -73,8 +73,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
 
   // V13 Visual settings
   const [showNoteHighway, setShowNoteHighway] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.showNoteHighway);
-  const [noteShapeStyle, setNoteShapeStyle] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noteShapeStyle);
-  const [noteDisplayStyle, setNoteDisplayStyle] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noteDisplayStyle);
   const [showVideoBackground, setShowVideoBackground] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.showVideoBackground);
   const [countdownDuration, setCountdownDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.countdownDuration);
 
@@ -203,18 +201,35 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       color: string;
       playerType: PlayerType;
       microphoneId?: string;
+      stereoChannel?: number;
       connectionCode?: string;
     }> = [];
 
     micPlayers.forEach((id) => {
       const profile = profiles.find(p => p.id === id);
+      const micDeviceId = playerMicDevices[id];
+      // Resolve stereo channel from saved mic config
+      let stereoChannel: number | undefined;
+      if (micDeviceId) {
+        try {
+          const micConfigStr = localStorage.getItem('karaoke-multi-mic-config');
+          if (micConfigStr) {
+            const parsed = JSON.parse(micConfigStr);
+            const micEntry = (parsed.assignedMics || []).find((m: { deviceId?: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }) => m.deviceId === micDeviceId);
+            if (micEntry?.config?.stereoSplitMode) {
+              stereoChannel = micEntry.config.stereoChannel === 'right' ? 1 : 0;
+            }
+          }
+        } catch { /* ignore */ }
+      }
       players.push({
         id,
         name: profile?.name || 'Unknown',
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[players.length % PLAYER_COLORS.length],
         playerType: 'microphone',
-        microphoneId: playerMicDevices[id] || undefined,
+        microphoneId: micDeviceId || undefined,
+        stereoChannel,
       });
     });
 
@@ -249,8 +264,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       minRoundDuration,
       medleySnippets,
       showNoteHighway,
-      noteShapeStyle,
-      noteDisplayStyle,
       showVideoBackground,
       countdownDuration,
     };
@@ -573,60 +586,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             >
               {showNoteHighway ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
-          </div>
-
-          {/* Note Shape Style */}
-          <div>
-            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteShapeLabel')}</label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {([
-                { id: 'rounded' as const, icon: '⬭' },
-                { id: 'sharp' as const, icon: '◆' },
-                { id: 'pill' as const, icon: '💊' },
-                { id: 'music-note' as const, icon: '♪' },
-                { id: 'star' as const, icon: '⭐' },
-                { id: 'circle' as const, icon: '⭕' },
-                { id: 'hexagon' as const, icon: '⬡' },
-                { id: 'triangle' as const, icon: '◀' },
-              ]).map(({ id, icon }) => (
-                <Button
-                  key={id}
-                  variant={noteShapeStyle === id ? 'default' : 'outline'}
-                  onClick={() => setNoteShapeStyle(id)}
-                  size="sm"
-                  className={`text-xs ${noteShapeStyle === id ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}`}
-                >
-                  {icon} {id}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Note Display Style */}
-          <div>
-            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteDisplayStyleLabel')}</label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {([
-                { id: 'classic' as const, label: '➡️ Classic' },
-                { id: 'fill-level' as const, label: '📊 Fill' },
-                { id: 'color-feedback' as const, label: '🎨 Color' },
-                { id: 'glow-intensity' as const, label: '✨ Glow' },
-                { id: 'hit-fill' as const, label: '🥊 Hit Fill' },
-                { id: 'trail-effect' as const, label: '🌌 Trail' },
-                { id: 'retro-bars' as const, label: '🕹️ Retro' },
-                { id: 'particle-fade' as const, label: '💫 Particle' },
-              ]).map(({ id, label }) => (
-                <Button
-                  key={id}
-                  variant={noteDisplayStyle === id ? 'default' : 'outline'}
-                  onClick={() => setNoteDisplayStyle(id)}
-                  size="sm"
-                  className={`text-xs ${noteDisplayStyle === id ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}`}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
           </div>
 
           {/* Video Background */}

@@ -4,32 +4,31 @@
  *
  * Used by both P1 (checkNoteHits) and P2+ (checkPlayerNoteHits).
  * This module has no React dependency; all state is passed in via params.
+ *
+ * Combo system: note-based (consecutive completed notes), not tick-based.
+ * The combo progress bar awards up to comboPoolMaxPoints based on
+ * the ratio of earned progress to max possible progress.
  */
 
 import { Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
-  calculateNoteCompletionBonus,
-  calculateNoteConsolation,
-  getComboFactor,
+  isNoteCompleteForCombo,
+  calculateComboMultiplier,
   NoteProgress,
   ScoringMetadata,
+  ComboScoringState,
 } from '@/lib/game/scoring';
-import { calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 import type { ScoreEvent, ScoringPassResult } from '@/lib/game/scoring-types';
 
 // ---------------------------------------------------------------------------
 // Blind state passed from the hook layer
 // ---------------------------------------------------------------------------
 
-/** Mutable blind karaoke tracking state (persists across scoring passes). */
 export interface BlindScoringState {
-  /** Whether the current passage is a blind section. */
   isBlindSection: boolean;
-  /** Running count of consecutive blind notes hit (reset on miss). */
   blindStreakRef: { current: number };
-  /** Whether the previous blind note was missed (for comeback bonus). */
   blindLastWasMissRef: { current: boolean };
 }
 
@@ -49,8 +48,7 @@ export function runScoringPass(
   noteIdPrefix: string,
   hasPerfectOnly: boolean,
   hasGoldenOnly: boolean,
-  comboRef: { current: number },
-  maxComboRef: { current: number },
+  comboState: ComboScoringState,
   blindState?: BlindScoringState,
 ): ScoringPassResult {
   // Batch accumulator
@@ -65,13 +63,14 @@ export function runScoringPass(
   const pendingEvents: ScoreEvent[] = [];
   let blindBonusDelta = 0;
 
-  // P1 visual tracking — filled during tick evaluation inside the loop
+  // P1 visual tracking
   let activeNoteId: string | undefined;
   let activeNoteIsGolden = false;
   let lastTickAccuracy = 0;
   let lastTickHit = false;
+  let lastTickSungPitch = detectedNote;
 
-  // Clamp index to array bounds — notesToCheck may shrink if timingData changes
+  // Clamp index to array bounds
   if (searchStartRef.current >= notesToCheck.length) {
     searchStartRef.current = 0;
   } else if (searchStartRef.current > 0 &&
@@ -98,7 +97,13 @@ export function runScoringPass(
           ticksEvaluated: 0,
           isGolden: note.isGolden,
           isBlindNote: blindState?.isBlindSection ?? false,
-          lastEvaluatedTime: currentTime,
+          // DO-NOT-CHANGE: Subtract one tick interval so the first tick is
+          // evaluated immediately on the next frame.  Without this, notes
+          // shorter than beatDuration never get a tick evaluated (the
+          // interval never elapses before the note ends), causing them to
+          // always be counted as missed — a major source of artificially
+          // low scores on songs with short / rhythmic notes.
+          lastEvaluatedTime: currentTime - beatDurationMs,
           isComplete: false,
           wasPerfect: false,
           accumulatedPoints: 0,
@@ -120,47 +125,37 @@ export function runScoringPass(
         activeNoteIsGolden = note.isGolden;
         lastTickAccuracy = tickResult.accuracy;
         lastTickHit = tickResult.isHit;
+        lastTickSungPitch = detectedNote;
 
         if (tickResult.isHit) {
           noteProgress.ticksHit++;
 
-          let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+          const ppt = note.isGolden && scoringMeta.goldenPointsPerTick
+            ? scoringMeta.goldenPointsPerTick
+            : scoringMeta.pointsPerTick;
+          let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, ppt);
 
-          // Challenge modifier: perfect_only — only "Perfect" hits score
+          // Challenge modifiers
           if (hasPerfectOnly && tickResult.displayType !== 'Perfect') {
             tickPoints = 0;
           }
-          // Challenge modifier: golden_only — only golden notes score
           if (hasGoldenOnly && !note.isGolden) {
             tickPoints = 0;
           }
 
           if (tickPoints > 0) {
-            const newCombo = comboRef.current + 1;
-
-            // Apply combo multiplier (ramps from 1.0 to comboMultiplier over 50 hits)
-            const comboFactor = getComboFactor(newCombo, scoringMeta.comboMultiplier);
-            const finalPoints = Math.max(1, Math.round(tickPoints * comboFactor));
-
-            scoreDelta += finalPoints;
-            noteProgress.accumulatedPoints += finalPoints;
-            comboUpdate = newCombo;
-            maxComboUpdate = Math.max(maxComboRef.current, newCombo);
-            comboRef.current = newCombo;
-            maxComboRef.current = maxComboUpdate;
+            scoreDelta += tickPoints;
+            noteProgress.accumulatedPoints += tickPoints;
             hasUpdates = true;
           }
-        } else {
-          comboUpdate = 0;
-          comboRef.current = 0;
-          hasUpdates = true;
         }
+        // No combo change on tick hit/miss — combo is note-based
       }
 
       break;
     }
 
-    // Check if we just passed a note — emit ONE aggregated score event
+    // Check if we just passed a note — emit aggregated score event + combo logic
     if (currentTime > noteEnd) {
       const progress = noteProgressMap.get(noteId);
 
@@ -177,71 +172,43 @@ export function runScoringPass(
         if (progress.ticksHit >= progress.totalTicks) {
           progress.wasPerfect = true;
           perfectNotesDelta++;
-
-          // Completion bonus: all ticks hit -> extra 15% of note's max points
-          const completionBonus = calculateNoteCompletionBonus(
-            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
-            scoringMeta,
-          );
-          if (completionBonus > 0) {
-            scoreDelta += completionBonus;
-            progress.accumulatedPoints += completionBonus;
-          }
         }
-        // Track golden notes hit (note was golden and at least one tick hit)
         if (progress.isGolden && progress.ticksHit > 0) {
           goldenNotesDelta++;
         }
 
-        // Consolation: note was attempted but every tick missed -> 10% of max points
-        if (progress.ticksHit === 0 && progress.ticksEvaluated > 0) {
-          const consolation = calculateNoteConsolation(
-            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
-            scoringMeta,
-          );
-          if (consolation > 0) {
-            scoreDelta += consolation;
-            progress.accumulatedPoints += consolation;
-          }
-        }
-
-        // Blind karaoke bonus: correctly sung hidden notes give extra points
-        if (progress.isBlindNote && blindState) {
-          if (progress.ticksHit > 0) {
-            // Note was hit — calculate blind bonus
-            const isPerfect = progress.wasPerfect;
-            const bonusResult = calculateBlindBonus(
-              isPerfect,
-              blindState.blindStreakRef.current,
-              blindState.blindLastWasMissRef.current,
-            );
-
-            if (bonusResult.total > 0) {
-              blindBonusDelta += bonusResult.total;
-              scoreDelta += bonusResult.total;
-              progress.accumulatedPoints += bonusResult.total;
-              hasUpdates = true;
-
-              // Emit a separate blind bonus score event for visual feedback
-              pendingEvents.push({
-                displayType: isPerfect ? 'Perfect' : 'Great',
-                points: bonusResult.total,
-                time: noteEnd,
-                isBlindBonus: true,
-              });
+        // ---- Note-based combo + combo progress bar ----
+        if (scoringMeta.isFullScoring) {
+          if (isNoteCompleteForCombo(progress.ticksHit, progress.totalTicks, difficulty)) {
+            // Note counts as completed for combo
+            const multiplier = calculateComboMultiplier(comboState.comboNotes);
+            comboState.earnedProgress += multiplier;
+            comboState.comboNotes++;
+            if (comboState.comboNotes > comboState.maxComboNotes) {
+              comboState.maxComboNotes = comboState.comboNotes;
             }
-
-            // Update blind streak tracking
-            blindState.blindStreakRef.current++;
-            blindState.blindLastWasMissRef.current = false;
-          } else if (progress.ticksEvaluated > 0) {
-            // Blind note was missed — reset streak, mark for comeback
-            blindState.blindStreakRef.current = 0;
-            blindState.blindLastWasMissRef.current = true;
+          } else {
+            // Note missed for combo — reset streak
+            comboState.comboNotes = 0;
           }
+
+          // Calculate combo score from progress bar
+          if (scoringMeta.maxComboProgress > 0) {
+            const newComboScore = scoringMeta.comboPoolMaxPoints
+              * (comboState.earnedProgress / scoringMeta.maxComboProgress);
+            const comboDelta = Math.round(newComboScore - comboState.lastComboScore);
+            if (comboDelta > 0) {
+              scoreDelta += comboDelta;
+              progress.accumulatedPoints += comboDelta;
+            }
+            comboState.lastComboScore = newComboScore;
+          }
+
+          comboUpdate = comboState.comboNotes;
+          maxComboUpdate = comboState.maxComboNotes;
         }
 
-        // Determine aggregated displayType based on hit ratio across all ticks
+        // Determine aggregated displayType based on hit ratio
         const hitRatio = progress.ticksEvaluated > 0
           ? progress.ticksHit / progress.ticksEvaluated
           : 0;
@@ -282,5 +249,6 @@ export function runScoringPass(
     activeNoteIsGolden,
     lastTickAccuracy,
     lastTickHit,
+    lastTickSungPitch,
   };
 }

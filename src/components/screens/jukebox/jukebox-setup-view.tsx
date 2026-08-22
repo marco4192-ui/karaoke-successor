@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getPlaylists } from '@/lib/playlist-manager';
-import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
+import { getJsonOptional, setJson } from '@/lib/storage';
+import { StorageKeys } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 /** Reusable chevron-down icon to replace inline SVGs (#21) */
@@ -23,35 +24,43 @@ function ChevronDownIcon() {
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeError, setYoutubeError] = useState('');
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const { t } = useTranslation();
 
-  // Restore playlist selection from localStorage on mount
-  useEffect(() => {
-    const stored = getJson<string[] | null>(StorageKeys.JUKEBOX_PLAYLIST, null);
-    if (stored && Array.isArray(stored) && stored.length > 0) {
-      // Find the matching playlist by its songIds
-      const playlists = getPlaylists();
-      const match = playlists.find(p => !p.isSystem && JSON.stringify(p.songIds) === JSON.stringify(stored));
-      if (match) setSelectedPlaylistId(match.id);
-    }
-  }, []);
+  // Playlist-Auswahl fuer Jukebox
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
+  const playlists = useMemo(() => {
+    try {
+      return getPlaylists().filter(p => !p.isSystem);
+    } catch { return []; }
+  }, [selectedPlaylistId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePlaylistChange = (playlistId: string) => {
-    setSelectedPlaylistId(playlistId);
-    if (!playlistId) {
-      // 'All Songs' — clear stored playlist
-      removeItem(StorageKeys.JUKEBOX_PLAYLIST);
+  const handlePlaylistSelect = (plId: string) => {
+    setSelectedPlaylistId(plId);
+    if (!plId) {
+      // "Alle Songs" - JUKEBOX_PLAYLIST loeschen
+      try { localStorage.removeItem(StorageKeys.JUKEBOX_PLAYLIST); } catch { /* ignore */ }
     } else {
-      const playlists = getPlaylists();
-      const pl = playlists.find(p => p.id === playlistId);
-      if (pl) {
+      const pl = playlists.find(p => p.id === plId);
+      if (pl && pl.songIds.length > 0) {
         setJson(StorageKeys.JUKEBOX_PLAYLIST, pl.songIds);
       }
     }
   };
 
-  const playlists = getPlaylists().filter(p => !p.isSystem);
+  // Aktive Playlist beim Mount erkennen
+  useEffect(() => {
+    const saved = getJsonOptional<string[]>(StorageKeys.JUKEBOX_PLAYLIST);
+    if (saved && saved.length > 0) {
+      // Versuche die Playlist anhand der Song-IDs zu finden
+      try {
+        const allPls = getPlaylists();
+        const match = allPls.find(p => !p.isSystem && p.songIds.length > 0 &&
+          saved.length === p.songIds.length &&
+          saved.every((sid, idx) => sid === p.songIds[idx]));
+        if (match) setSelectedPlaylistId(match.id);
+      } catch { /* ignore */ }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleYoutubeSubmit = () => {
     if (!youtubeUrl.trim()) return;
@@ -118,6 +127,26 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Playlist-Auswahl */}
+            {playlists.length > 0 && (
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">Playlist</label>
+                <select
+                  value={selectedPlaylistId}
+                  onChange={(e) => handlePlaylistSelect(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
+                  style={selectStyle}
+                >
+                  <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allSongs') || 'Alle Songs'}</option>
+                  {playlists.map(pl => (
+                    <option key={pl.id} value={pl.id} className="bg-gray-800 text-white">
+                      {pl.name} ({pl.songIds.length} Songs)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Genre + Artist filters in a grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Genre Filter */}
@@ -152,24 +181,6 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   ))}
                 </select>
               </div>
-            </div>
-
-            {/* Playlist selector */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.songPool')}</label>
-              <select
-                value={selectedPlaylistId}
-                onChange={(e) => handlePlaylistChange(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
-                style={selectStyle}
-              >
-                <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allSongs')}</option>
-                {playlists.map(pl => (
-                  <option key={pl.id} value={pl.id} className="bg-gray-800 text-white">
-                    {pl.name} — {t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(pl.songIds.length))}
-                  </option>
-                ))}
-              </select>
             </div>
 
             {/* Options row: Shuffle + Repeat */}

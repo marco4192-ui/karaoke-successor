@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -10,34 +9,12 @@ import { MobileLeaderboard } from './mobile-leaderboard';
 interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
-  clientId: string;
   onNavigate: (_view: MobileView) => void;
   onOpenChat: () => void;
 }
 
-export function MobileHomeView({ gameState, queue, clientId, onNavigate, onOpenChat }: HomeViewProps) {
+export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: HomeViewProps) {
   const { t } = useTranslation();
-  const [startSending, setStartSending] = useState(false);
-  const [configSent, setConfigSent] = useState(false);
-
-  const handleStartGame = async () => {
-    setStartSending(true);
-    try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'remote_command',
-          clientId,
-          payload: { command: 'party_start' },
-        }),
-      });
-      setConfigSent(true);
-      setTimeout(() => setConfigSent(false), 2000);
-    } finally {
-      setStartSending(false);
-    }
-  };
 
   // Map screen names to display labels
   const screenLabel = gameState.currentScreen
@@ -94,29 +71,6 @@ export function MobileHomeView({ gameState, queue, clientId, onNavigate, onOpenC
         <p className="text-center text-white/20 text-sm py-4">{t('mobileViews.nothingPlaying')}</p>
       )}
 
-      {/* Start Game button – shown when desktop is on party-setup with a mode selected */}
-      {gameState.currentScreen === 'party-setup' && gameState.partyGameMode && (
-        <button
-          onClick={handleStartGame}
-          disabled={startSending}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl p-4 flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/25"
-        >
-          {startSending ? (
-            <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : configSent ? (
-            <>
-              <span className="text-xl">✅</span>
-              <span>{t('mobileViews.configSent')}</span>
-            </>
-          ) : (
-            <>
-              <span className="text-xl">🎮</span>
-              <span>{t('mobileViews.startGame')}</span>
-            </>
-          )}
-        </button>
-      )}
-
       {/* Live Leaderboard (shown during companion singalong) */}
       <MobileLeaderboard gameState={gameState} />
       
@@ -137,7 +91,7 @@ export function MobileHomeView({ gameState, queue, clientId, onNavigate, onOpenC
           <span className="text-sm">{t('mobileViews.songs')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('queue')}
+          onClick={() => onNavigate('mirror')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📋</span>
@@ -147,7 +101,7 @@ export function MobileHomeView({ gameState, queue, clientId, onNavigate, onOpenC
           )}
         </button>
         <button 
-          onClick={() => onNavigate('remote')}
+          onClick={() => onNavigate('mirror')}
           className="bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl p-4 text-center hover:from-purple-500/30 hover:to-cyan-500/30 transition-colors border border-purple-500/30"
         >
           <span className="text-3xl mb-2 block">🎮</span>
@@ -161,7 +115,7 @@ export function MobileHomeView({ gameState, queue, clientId, onNavigate, onOpenC
           <span className="text-sm">{t('mobileViews.profile')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('jukebox')}
+          onClick={() => onNavigate('mirror')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📻</span>

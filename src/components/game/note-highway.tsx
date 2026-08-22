@@ -2,8 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Note, LyricLine } from '@/types/game';
-import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
-import { MicIcon } from '@/components/icons';
+import { getNoteDisplayStyleClasses, PitchStats } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== HELPERS =====================
@@ -24,47 +23,24 @@ export interface NoteWithLine extends Note {
 }
 
 export interface NoteHighwayProps {
-  /** All visible notes to render */
   visibleNotes: NoteWithLine[];
-  /** Current game time in milliseconds */
   currentTime: number;
-  /** Pitch statistics for vertical positioning */
   pitchStats: PitchStats;
-  /** Currently detected pitch (MIDI note number) */
-  detectedPitch: number | null;
-  /** Note shape style from settings */
-  noteShapeStyle: NoteShapeStyle;
-  /** Note display style from settings */
-  noteDisplayStyle?: NoteDisplayStyle;
-  /** Note performance for display style feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
-  /** Position of the sing line (percentage from left) */
   singLinePosition?: number;
-  /** Time window for note display (milliseconds) */
   noteWindow?: number;
-  /** Player color for styling */
   playerColor?: string;
-  /** Show player label */
   showPlayerLabel?: boolean;
-  /** Player name for label */
   playerName?: string;
-  /** Player number for label */
   playerNumber?: number;
-  /** Visible top percentage (for half-screen in duet mode) */
   visibleTop?: number;
-  /** Visible range percentage (for half-screen in duet mode) */
   visibleRange?: number;
-  /** Additional CSS class names */
   className?: string;
-  /** Blind mode: hide notes when in a blind section */
   isBlindSection?: boolean;
 }
 
 // ===================== SUB-COMPONENTS =====================
 
-/**
- * Pitch grid background lines
- */
 const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d3d3ee' }: { count?: number; playerColor?: string }) {
   const borderColor = withAlpha(playerColor, 0.1);
   return (
@@ -80,12 +56,9 @@ const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d
   );
 });
 
-/**
- * Vertical sing line indicator
- */
 const SingLine = React.memo(function SingLine({
   position,
-  playerColor = '#22d3d3ee'
+  playerColor = '#22d3d3ee',
 }: {
   position: number;
   playerColor?: string;
@@ -107,24 +80,16 @@ const SingLine = React.memo(function SingLine({
   );
 });
 
-/**
- * Single note block with all styling.
- * Wrapped in React.memo because this is rendered in a .map() at ~60fps
- * during gameplay — without memoization every game frame re-renders all
- * visible notes even when their props haven't changed.
- */
 const NoteBlock = React.memo(function NoteBlock({
   note,
   currentTime,
   pitchStats,
   singLinePosition,
   noteWindow,
-  noteShape,
   visibleTop,
   visibleRange,
   noteWidthExtra = 20,
   playerColor = '#22d3d3ee',
-  noteDisplayStyle = 'classic',
   notePerformance,
 }: {
   note: NoteWithLine;
@@ -132,52 +97,29 @@ const NoteBlock = React.memo(function NoteBlock({
   pitchStats: PitchStats;
   singLinePosition: number;
   noteWindow: number;
-  noteShape: ReturnType<typeof getNoteShapeClasses>;
   visibleTop: number;
   visibleRange: number;
   noteWidthExtra?: number;
   playerColor?: string;
-  noteDisplayStyle?: NoteDisplayStyle;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
   const isActive = currentTime >= note.startTime && currentTime <= noteEnd;
   const isPast = currentTime > noteEnd;
 
-  // Calculate horizontal position (distance from sing line)
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
   const x = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
 
-  // Calculate vertical position based on pitch
   const pr = pitchStats.pitchRange || 1;
   const pitchY = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
 
-  // Calculate note dimensions
   const noteWidthPercent = Math.round(((note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra)) * 100) / 100;
   const noteHeight = 24;
 
-  // Skip notes that are too far off-screen
-  if (x > 120 || x < -30) return null;
+  // Cull notes whose right edge has exited the left screen boundary.
+  if (x > 120 || x + noteWidthPercent < -30) return null;
 
-  // Determine note styling based on type and player color
-  const getBackgroundStyle = (): React.CSSProperties => {
-    // In fill-level and hit-fill modes, skip gradient —
-    // the display style manages its own background via inline styles.
-    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill' || noteDisplayStyle === 'trail-effect' || noteDisplayStyle === 'retro-bars' || noteDisplayStyle === 'particle-fade') return {};
-    if (note.isGolden) {
-      return { background: 'linear-gradient(to right, #facc15, #f97316)' };
-    }
-    if (note.isBonus) {
-      return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})` };
-    }
-    return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.6)})` };
-  };
-
-  const glowColor = withAlpha(playerColor, 0.8);
-
-  // Calculate accuracy for display style
-  // Default is 0 so notes start empty/dim/red and fill/glow/shift-green as the player sings.
   const getNoteAccuracy = (): number => {
     if (!notePerformance) return 0;
     const noteId = note.id || `note-${note.startTime}`;
@@ -188,23 +130,37 @@ const NoteBlock = React.memo(function NoteBlock({
 
   const accuracy = getNoteAccuracy();
 
-  // Extract raw performance samples for hit-fill display style
   const notePerfSamples = notePerformance
     ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
     : [];
 
-  // Apply note display style
+  // Singstar-style fill fraction: how much of the note the singline
+  // has already passed.  0 = not started, 1 = fully passed.
+  const fillFraction = note.duration > 0
+    ? Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration))
+    : 1;
+
   const displayStyle = getNoteDisplayStyleClasses(
-    noteDisplayStyle,
+    'tick-fill-singstar',
     accuracy,
     note.isGolden || false,
     note.isBonus || false,
-    notePerfSamples
+    notePerfSamples,
+    note.pitch,
+    pitchStats,
+    visibleTop,
+    visibleRange,
+    fillFraction,
+    note.startTime,
+    note.duration,
+    typeof window !== 'undefined' ? window.innerHeight : 800,
   );
+
+  const glowColor = withAlpha(playerColor, 0.8);
 
   return (
     <div
-      className={`absolute ${noteShape.baseClass} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''}`}
+      className={`absolute ${displayStyle.additionalClasses}`}
       style={{
         left: `${x}%`,
         top: `${pitchY}%`,
@@ -212,11 +168,10 @@ const NoteBlock = React.memo(function NoteBlock({
         height: `${noteHeight}px`,
         transform: 'translateY(-50%) translateZ(0)',
         willChange: 'left, top, width, opacity',
+        transition: 'opacity 400ms ease-out, box-shadow 200ms ease-out',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
-        ...noteShape.style,
         ...displayStyle.inlineStyle,
-        ...getBackgroundStyle(),
       }}
     >
       {displayStyle.overlayElement}
@@ -224,54 +179,6 @@ const NoteBlock = React.memo(function NoteBlock({
   );
 });
 
-/**
- * Pitch indicator showing singer's current pitch
- */
-const PitchIndicator = React.memo(function PitchIndicator({
-  detectedPitch,
-  pitchStats,
-  singLinePosition,
-  visibleTop,
-  visibleRange,
-  playerColor = '#22d3d3ee',
-}: {
-  detectedPitch: number | null;
-  pitchStats: PitchStats;
-  singLinePosition: number;
-  visibleTop: number;
-  visibleRange: number;
-  playerColor?: string;
-}) {
-  if (detectedPitch === null) return null;
-
-  const pr = pitchStats.pitchRange || 1;
-  // DO-NOT-CHANGE: Round pitchY to 2 decimal places for same sub-pixel
-  // stability reason as NoteBlock positions (see NoteBlock comment).
-  const pitchY = Math.round((visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
-
-  return (
-    <div
-      className="absolute z-30 w-8 h-8 rounded-full shadow-lg flex items-center justify-center"
-      style={{
-        left: `${singLinePosition - 1.5}%`,
-        top: `${pitchY}%`,
-        transform: 'translateY(-50%) translateZ(0)',
-        // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
-        willChange: 'top',
-        background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
-        boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
-        outline: '2px solid',
-        outlineColor: withAlpha(playerColor, 0.5),
-      }}
-    >
-      <MicIcon className="w-4 h-4 text-white" />
-    </div>
-  );
-});
-
-/**
- * Player label badge
- */
 const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
   playerNumber,
@@ -299,9 +206,6 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleNotes,
   currentTime,
   pitchStats,
-  detectedPitch,
-  noteShapeStyle,
-  noteDisplayStyle = 'classic',
   notePerformance,
   singLinePosition = 25,
   noteWindow = 4000,
@@ -316,29 +220,17 @@ export const NoteHighway = React.memo(function NoteHighway({
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 
-  // Get note shape classes from style
-  const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
-
-  // Use playerColor if provided; otherwise derive from playerNumber (P1=cyan, P2=pink)
   const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
-
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
-      {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />
 
-      {/* Pitch grid lines */}
       <PitchGrid count={7} playerColor={effectiveColor} />
-
-      {/* Sing line */}
       <SingLine position={singLinePosition} playerColor={effectiveColor} />
 
-      {/* Notes — hidden in blind sections only */}
-      {/* Missing Words mode: notes always visible on highway (only lyrics text is hidden) */}
-      {!isBlindSection && visibleNotes.map((note) => {
-        return (
+      {!isBlindSection && visibleNotes.map((note) => (
         <NoteBlock
           key={note.id || `note-${note.startTime}`}
           note={note}
@@ -346,26 +238,13 @@ export const NoteHighway = React.memo(function NoteHighway({
           pitchStats={pitchStats}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
-          noteShape={noteShape}
           visibleTop={visibleTop}
           visibleRange={visibleRange}
           playerColor={effectiveColor}
-          noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
         />
-      );
-      })}
+      ))}
 
-      {/* Pitch indicator — hidden in blind sections */}
-      {!isBlindSection && <PitchIndicator
-        detectedPitch={detectedPitch}
-        pitchStats={pitchStats}
-        singLinePosition={singLinePosition}
-        visibleTop={visibleTop}
-        visibleRange={visibleRange}
-        playerColor={effectiveColor}
-      />}
-      {/* Blind indicator — subtle pulse when in blind section */}
       {isBlindSection && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
           <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center" style={{ animation: 'ptm-cursor-blink 1.5s ease-in-out infinite' }}>
@@ -375,7 +254,6 @@ export const NoteHighway = React.memo(function NoteHighway({
         </div>
       )}
 
-      {/* Player label */}
       {showPlayerLabel && (
         <PlayerLabel
           playerName={resolvedPlayerName}

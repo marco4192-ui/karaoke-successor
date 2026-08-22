@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
-import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE, type NoteDisplayStyle } from '@/lib/game/note-utils';
+import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
@@ -230,12 +230,9 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             p1PitchStats={g.p1PitchStats}
             p2PitchStats={g.p2PitchStats}
             currentTime={g.gameState.currentTime}
-            p1DetectedPitch={g.smoothedPitch}
-            p2DetectedPitch={g.p2DetectedPitch}
             p1State={g.gameState.players[0]}
             p2State={g.p2State}
             p2Player={g.gameState.players[1]}
-            noteShapeStyle={g.noteShapeStyle}
             p1Lines={g.timingData?.p1Lines}
             p2Lines={g.timingData?.p2Lines}
             singLinePosition={SING_LINE_POSITION}
@@ -249,16 +246,12 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             hardcoreMissingWords={g.gameState.hardcoreMissingWords}
             p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || t('prominentScore.player1')}
             p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || t('prominentScore.player2')}
-            noteDisplayStyle={g.noteDisplayStyle as NoteDisplayStyle}
           />
         ) : (
           <NoteHighway
             visibleNotes={g.visibleNotes}
             currentTime={g.gameState.currentTime}
             pitchStats={g.pitchStats}
-            detectedPitch={g.smoothedPitch}
-            noteShapeStyle={g.noteShapeStyle}
-            noteDisplayStyle={g.noteDisplayStyle as NoteDisplayStyle}
             notePerformance={g.notePerformance}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
@@ -276,7 +269,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             sortedLines={g.timingData.sortedLines}
             currentTime={g.gameState.currentTime}
             playerColor={PLAYER_COLORS[0]}
-            noteDisplayStyle={g.noteDisplayStyle as NoteDisplayStyle}
             notePerformance={g.notePerformance}
             gameMode={g.gameState.gameMode}
             missingWordsIndices={g.gameState.missingWordsIndices}

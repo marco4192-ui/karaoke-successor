@@ -52,8 +52,6 @@ function SettingsScreen() {
   const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
-  const [noteDisplayStyle, setNoteDisplayStyle] = useState<string>('classic');
-  const [noteShapeStyle, setNoteShapeStyle] = useState<string>('rounded');
   const [bgVideo, setBgVideo] = useState<boolean>(true);
   const [useAnimatedBg, setUseAnimatedBg] = useState<boolean>(false);
   const [performanceMode, setPerformanceMode] = useState<'full' | 'low'>(() => {
@@ -76,6 +74,18 @@ function SettingsScreen() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+
+  // Listen for remote companion settings tab navigation
+  useEffect(() => {
+    const handleRemoteTab = (e: Event) => {
+      const { tab } = (e as CustomEvent).detail;
+      if (tab && ['general','gameplay','appearance','graphicsound','microphone','mobile','webcam','library','viral','about'].includes(tab)) {
+        setActiveTab(tab as SettingsTab);
+      }
+    };
+    window.addEventListener('remote-settings-tab', handleRemoteTab);
+    return () => window.removeEventListener('remote-settings-tab', handleRemoteTab);
+  }, []);
 
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
@@ -108,8 +118,6 @@ function SettingsScreen() {
     setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
     setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
     setLyricsSize(getString(StorageKeys.LYRICS_SIZE, 'medium'));
-    setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
-    setNoteShapeStyle(getString(StorageKeys.NOTE_SHAPE, 'rounded'));
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
     setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
     setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
@@ -228,10 +236,6 @@ function SettingsScreen() {
           setUseAnimatedBg={setUseAnimatedBg}
           currentThemeId={currentThemeId}
           handleThemeChange={handleThemeChange}
-          noteDisplayStyle={noteDisplayStyle}
-          setNoteDisplayStyle={setNoteDisplayStyle}
-          noteShapeStyle={noteShapeStyle}
-          setNoteShapeStyle={setNoteShapeStyle}
           lyricsStyle={lyricsStyle}
           setLyricsStyle={setLyricsStyle}
           lyricsSize={lyricsSize}
@@ -286,6 +290,8 @@ function SettingsScreen() {
           handleBrowseFolder={folderScanner.handleBrowseFolder}
           handleResetLibrary={folderScanner.handleResetLibrary}
           handleClearAllData={folderScanner.handleClearAllData}
+          executeResetLibrary={folderScanner.executeResetLibrary}
+          executeClearAllData={folderScanner.executeClearAllData}
           isResetting={folderScanner.isResetting}
           resetComplete={folderScanner.resetComplete}
           folderSaveComplete={folderScanner.folderSaveComplete}

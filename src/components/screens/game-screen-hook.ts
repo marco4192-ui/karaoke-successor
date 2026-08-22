@@ -31,6 +31,7 @@ import { useMediaSession } from '@/hooks/use-media-session';
 import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
+import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { enterFullscreen } from '@/hooks/use-app-effects';
@@ -99,21 +100,51 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const escalating = usePartyStore(s =>
     s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.escalating
   );
-  const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { pitchResult, initialize: initializePitch, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+
+  // ── Resolve P1 microphone deviceId + stereoChannel from party setup ──
+  // When the game is launched via the unified party setup, the first player's
+  // mic assignment (micId = mic-manager internal ID) and stereoChannel are
+  // available in unifiedSetupResult.players[0]. We resolve the browser deviceId
+  // from the mic manager so the pitch detector opens the correct device.
+  const p1MicRef = useRef<{ deviceId?: string; stereoChannel?: number } | null>(null);
+  useEffect(() => {
+    const setupResult = usePartyStore.getState().unifiedSetupResult;
+    const p1 = setupResult?.players?.[0];
+    if (!p1 || p1.playerType !== 'microphone' || !p1.micId) {
+      p1MicRef.current = null;
+      return;
+    }
+    // Look up the mic manager's internal ID → browser deviceId
+    try {
+      const micManager = getMultiMicrophoneManager();
+      const assigned = micManager.getAssignedMicrophones().find(m => m.id === p1.micId);
+      p1MicRef.current = {
+        deviceId: assigned?.deviceId,
+        stereoChannel: p1.stereoChannel,
+      };
+    } catch {
+      p1MicRef.current = { deviceId: undefined, stereoChannel: p1.stereoChannel };
+    }
+  }, []);
+
+  // Wrap initialize to inject P1's deviceId and stereoChannel
+  const initialize = useCallback(async () => {
+    const mic = p1MicRef.current;
+    return initializePitch(mic?.deviceId, mic?.stereoChannel);
+  }, [initializePitch]);
 
   // Smoothed pitch for visual display (prevents flickering/jitter).
   // Uses rawNote (un-stabilized) instead of the stabilized `note` field
   // for maximum responsiveness. Scoring continues to use the stabilized
   // `note` for accuracy — this only affects the visual pitch indicator.
   //
-  // α=0.80 (was 0.55): Much lighter EMA smoothing for near-real-time tracking.
-  //   The old 0.55 combined with PitchStabilizer created 65-150ms lag on
+  // α=0.90 (was 0.80): Near-instant tracking for visual pitch indicator.
+  //   The old 0.80 combined with PitchStabilizer created 65-150ms lag on
   //   note transitions, making the indicator feel disconnected from the voice.
-  //   0.80 lets the indicator follow the singer within 1-2 frames (~16-33ms).
-  // deadZone=0.08 (was 0.15): Tighter dead zone so even small pitch movements
-  //   register visually. The old 0.15ST threshold swallowed quick melodic
-  //   ornaments and vibrato, making the indicator feel "stuck".
-  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
+  //   0.90 lets the indicator follow the singer within 1 frame (~16ms).
+  // deadZone=0.08: Tight enough that even small pitch movements register.
+  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.90, 0.08);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;
@@ -172,8 +203,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showBackgroundVideo,
     showPitchGuide,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     performanceMode,
   } = useGameSettings();
 
@@ -310,6 +339,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setP2DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     resetScoring,
     p1PerfectNotesCount,
   } = useNoteScoring({
@@ -459,6 +490,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     resetScoring,
     checkNoteHits,
     checkP2NoteHits,
+    sampleVisualTicks,
+    sampleP2VisualTicks,
     difficulty: gameState.difficulty,
     gameMode: gameState.gameMode,
     timingOffset: 0,
@@ -604,8 +637,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showBackgroundVideo,
     showPitchGuide,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     hasChallengeNoPitchGuide,
     activeChallenge,
     challengeTimeLimit,

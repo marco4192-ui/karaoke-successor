@@ -44,7 +44,8 @@ async function scanDirectoryHandle(
   baseFolder: string // Root folder name for media loading
 ): Promise<ScanResult> {
   const result: ScanResult = { songs: [], folders: [], errors: [] };
-  const songFolders: Map<string, ScannedSong> = new Map();
+  // Map folder path → array of ScannedSong (one per .txt file)
+  const songFolders: Map<string, ScannedSong[]> = new Map();
   const subFolders: CachedFolder[] = [];
 
   // Check if this folder contains song files directly
@@ -97,48 +98,56 @@ async function scanDirectoryHandle(
       // If folder has song files, add to song folders
       if (hasSongFiles) {
         if (!songFolders.has(path)) {
-          songFolders.set(path, {
+          songFolders.set(path, []);
+        }
+
+        const folderSongs = songFolders.get(path);
+        if (!folderSongs) continue;
+
+        if (AUDIO_EXTENSIONS.includes(ext)) {
+          // Audio is shared across all .txt files in this folder
+          for (const s of folderSongs) { s.audioFile = file; s.audioUrl = createTrackedBlobUrl(file); }
+          // Also remember for future .txt songs that get added later
+          if (folderSongs.length === 0) {
+            folderSongs.push({ title: folderName, artist: 'Unknown', folder: folderName, folderPath: path, baseFolder, audioFile: file, audioUrl: createTrackedBlobUrl(file) });
+          }
+        } else if (VIDEO_EXTENSIONS.includes(ext)) {
+          for (const s of folderSongs) { s.videoFile = file; s.videoUrl = createTrackedBlobUrl(file); }
+          if (folderSongs.length === 0) {
+            folderSongs.push({ title: folderName, artist: 'Unknown', folder: folderName, folderPath: path, baseFolder, videoFile: file, videoUrl: createTrackedBlobUrl(file) });
+          }
+        } else if (TXT_EXTENSIONS.includes(ext)) {
+          // Each .txt file becomes its own song entry
+          const newSong: ScannedSong = {
             title: folderName,
             artist: 'Unknown',
             folder: folderName,
             folderPath: path,
-            baseFolder, // CRITICAL: Set baseFolder for media loading
-          });
-        }
-
-        const songData = songFolders.get(path);
-        if (!songData) continue;
-
-        if (AUDIO_EXTENSIONS.includes(ext)) {
-          songData.audioFile = file;
-          songData.audioUrl = createTrackedBlobUrl(file);
-        } else if (VIDEO_EXTENSIONS.includes(ext)) {
-          songData.videoFile = file;
-          songData.videoUrl = createTrackedBlobUrl(file);
-        } else if (TXT_EXTENSIONS.includes(ext)) {
-          songData.txtFile = file;
+            baseFolder,
+            txtFile: file,
+          };
+          // Inherit already-scanned media files from sibling songs
+          if (folderSongs.length > 0) {
+            const sibling = folderSongs[0];
+            if (sibling.audioFile) { newSong.audioFile = sibling.audioFile; newSong.audioUrl = sibling.audioUrl; }
+            if (sibling.videoFile) { newSong.videoFile = sibling.videoFile; newSong.videoUrl = sibling.videoUrl; }
+            if (sibling.coverFile) { newSong.coverFile = sibling.coverFile; newSong.coverUrl = sibling.coverUrl; }
+            if (sibling.backgroundFile) { newSong.backgroundFile = sibling.backgroundFile; newSong.backgroundUrl = sibling.backgroundUrl; }
+          }
+          folderSongs.push(newSong);
         } else if (COVER_EXTENSIONS.includes(ext)) {
-          // Check if this should be the cover
           const isPriorityCover = COVER_PATTERNS.some(p => p.test(file.name));
           const isPriorityBackground = BACKGROUND_PATTERNS.some(p => p.test(file.name));
-
-          // If it matches background patterns, use as background
-          if (isPriorityBackground && !songData.backgroundFile) {
-            songData.backgroundFile = file;
-            songData.backgroundUrl = createTrackedBlobUrl(file);
+          if (isPriorityBackground) {
+            for (const s of folderSongs) { if (!s.backgroundFile) { s.backgroundFile = file; s.backgroundUrl = createTrackedBlobUrl(file); } }
           }
-
-          // If it matches cover patterns or no cover exists yet, use as cover
-          if (isPriorityCover || !songData.coverFile) {
-            songData.coverFile = file;
-            songData.coverUrl = createTrackedBlobUrl(file);
+          if (isPriorityCover || folderSongs.every(s => !s.coverFile)) {
+            for (const s of folderSongs) { if (!s.coverFile) { s.coverFile = file; s.coverUrl = createTrackedBlobUrl(file); } }
           }
         } else if (BACKGROUND_EXTENSIONS.includes(ext)) {
-          // Explicitly check for background images
           const isPriorityBackground = BACKGROUND_PATTERNS.some(p => p.test(file.name));
-          if (!songData.backgroundFile || isPriorityBackground) {
-            songData.backgroundFile = file;
-            songData.backgroundUrl = createTrackedBlobUrl(file);
+          if (isPriorityBackground || folderSongs.every(s => !s.backgroundFile)) {
+            for (const s of folderSongs) { if (!s.backgroundFile) { s.backgroundFile = file; s.backgroundUrl = createTrackedBlobUrl(file); } }
           }
         }
       }
@@ -146,25 +155,26 @@ async function scanDirectoryHandle(
   }
 
   // Convert folder map to songs array and parse metadata
-  for (const [folderPath, songData] of songFolders) {
-    if (songData.audioFile || songData.videoFile) {
-      // Parse txt file for metadata
-      if (songData.txtFile) {
-        try {
-          const txtContent = await songData.txtFile.text();
-          const metadata = parseUltraStarMetadata(txtContent);
-          songData.title = metadata.title || songData.folder;
-          songData.artist = metadata.artist || 'Unknown';
-          songData.previewStart = metadata.previewStart;
-          songData.previewDuration = metadata.previewDuration;
-          songData.genre = metadata.genre;
-          songData.language = metadata.language;
-          songData.year = metadata.year;
-        } catch (e) {
-          result.errors.push(`Failed to parse ${folderPath}: ${(e as Error).message}`);
+  for (const [folderPath, songsInFolder] of songFolders) {
+    for (const songData of songsInFolder) {
+      if (songData.audioFile || songData.videoFile) {
+        if (songData.txtFile) {
+          try {
+            const txtContent = await songData.txtFile.text();
+            const metadata = parseUltraStarMetadata(txtContent);
+            songData.title = metadata.title || songData.folder;
+            songData.artist = metadata.artist || 'Unknown';
+            songData.previewStart = metadata.previewStart;
+            songData.previewDuration = metadata.previewDuration;
+            songData.genre = metadata.genre;
+            songData.language = metadata.language;
+            songData.year = metadata.year;
+          } catch (e) {
+            result.errors.push(`Failed to parse ${folderPath}: ${(e as Error).message}`);
+          }
         }
+        result.songs.push(songData);
       }
-      result.songs.push(songData);
     }
   }
 
@@ -187,7 +197,8 @@ async function scanDirectoryHandle(
 // and for drag & drop where files are collected into a plain array).
 export async function scanFilesFromFileList(files: FileList | File[]): Promise<ScanResult> {
   const result: ScanResult = { songs: [], folders: [], errors: [] };
-  const songFolders: Map<string, ScannedSong> = new Map();
+  // Map folder path → array of ScannedSong (one per .txt file)
+  const songFolders: Map<string, ScannedSong[]> = new Map();
 
   // Extract baseFolder from the first file's path
   let baseFolder: string | undefined = undefined;
@@ -222,60 +233,76 @@ export async function scanFilesFromFileList(files: FileList | File[]): Promise<S
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
 
     if (!songFolders.has(songFolderPath)) {
-      songFolders.set(songFolderPath, {
+      songFolders.set(songFolderPath, []);
+    }
+
+    const folderSongs = songFolders.get(songFolderPath);
+    if (!folderSongs) continue;
+
+    if (AUDIO_EXTENSIONS.includes(ext)) {
+      // Audio is shared across all songs in this folder
+      for (const s of folderSongs) { s.audioFile = file; s.audioUrl = createTrackedBlobUrl(file); }
+      if (folderSongs.length === 0) {
+        folderSongs.push({ title: folderName, artist: 'Unknown', folder: folderName, folderPath: songFolderPath, baseFolder, audioFile: file, audioUrl: createTrackedBlobUrl(file) });
+      }
+    } else if (VIDEO_EXTENSIONS.includes(ext)) {
+      for (const s of folderSongs) { s.videoFile = file; s.videoUrl = createTrackedBlobUrl(file); }
+      if (folderSongs.length === 0) {
+        folderSongs.push({ title: folderName, artist: 'Unknown', folder: folderName, folderPath: songFolderPath, baseFolder, videoFile: file, videoUrl: createTrackedBlobUrl(file) });
+      }
+    } else if (TXT_EXTENSIONS.includes(ext)) {
+      // Each .txt file becomes its own song entry
+      const newSong: ScannedSong = {
         title: folderName,
         artist: 'Unknown',
         folder: folderName,
         folderPath: songFolderPath,
-        baseFolder, // CRITICAL: Set baseFolder for media loading
-      });
-    }
-
-    const songData = songFolders.get(songFolderPath);
-    if (!songData) continue;
-
-    if (AUDIO_EXTENSIONS.includes(ext)) {
-      songData.audioFile = file;
-      songData.audioUrl = createTrackedBlobUrl(file);
-    } else if (VIDEO_EXTENSIONS.includes(ext)) {
-      songData.videoFile = file;
-      songData.videoUrl = createTrackedBlobUrl(file);
-    } else if (TXT_EXTENSIONS.includes(ext)) {
-      songData.txtFile = file;
+        baseFolder,
+        txtFile: file,
+      };
+      // Inherit already-scanned media from siblings
+      if (folderSongs.length > 0) {
+        const sibling = folderSongs[0];
+        if (sibling.audioFile) { newSong.audioFile = sibling.audioFile; newSong.audioUrl = sibling.audioUrl; }
+        if (sibling.videoFile) { newSong.videoFile = sibling.videoFile; newSong.videoUrl = sibling.videoUrl; }
+        if (sibling.coverFile) { newSong.coverFile = sibling.coverFile; newSong.coverUrl = sibling.coverUrl; }
+        if (sibling.backgroundFile) { newSong.backgroundFile = sibling.backgroundFile; newSong.backgroundUrl = sibling.backgroundUrl; }
+      }
+      folderSongs.push(newSong);
     } else if (COVER_EXTENSIONS.includes(ext)) {
       const isPriorityCover = COVER_PATTERNS.some(p => p.test(file.name));
-      if (!songData.coverFile || isPriorityCover) {
-        songData.coverFile = file;
-        songData.coverUrl = createTrackedBlobUrl(file);
+      if (isPriorityCover || folderSongs.every(s => !s.coverFile)) {
+        for (const s of folderSongs) { if (!s.coverFile) { s.coverFile = file; s.coverUrl = createTrackedBlobUrl(file); } }
       }
     } else if (BACKGROUND_EXTENSIONS.includes(ext)) {
       const isPriorityBg = BACKGROUND_PATTERNS.some(p => p.test(file.name));
-      if (!songData.backgroundFile || isPriorityBg) {
-        songData.backgroundFile = file;
-        songData.backgroundUrl = createTrackedBlobUrl(file);
+      if (isPriorityBg || folderSongs.every(s => !s.backgroundFile)) {
+        for (const s of folderSongs) { if (!s.backgroundFile) { s.backgroundFile = file; s.backgroundUrl = createTrackedBlobUrl(file); } }
       }
     }
   }
 
   // Parse metadata and build folder structure
-  for (const [folderPath, songData] of songFolders) {
-    if (songData.audioFile || songData.videoFile) {
-      if (songData.txtFile) {
-        try {
-          const txtContent = await songData.txtFile.text();
-          const metadata = parseUltraStarMetadata(txtContent);
-          songData.title = metadata.title || songData.folder;
-          songData.artist = metadata.artist || 'Unknown';
-          songData.previewStart = metadata.previewStart;
-          songData.previewDuration = metadata.previewDuration;
-          songData.genre = metadata.genre;
-          songData.language = metadata.language;
-          songData.year = metadata.year;
-        } catch (e) {
-          result.errors.push(`Failed to parse ${folderPath}: ${(e as Error).message}`);
+  for (const [folderPath, songsInFolder] of songFolders) {
+    for (const songData of songsInFolder) {
+      if (songData.audioFile || songData.videoFile) {
+        if (songData.txtFile) {
+          try {
+            const txtContent = await songData.txtFile.text();
+            const metadata = parseUltraStarMetadata(txtContent);
+            songData.title = metadata.title || songData.folder;
+            songData.artist = metadata.artist || 'Unknown';
+            songData.previewStart = metadata.previewStart;
+            songData.previewDuration = metadata.previewDuration;
+            songData.genre = metadata.genre;
+            songData.language = metadata.language;
+            songData.year = metadata.year;
+          } catch (e) {
+            result.errors.push(`Failed to parse ${folderPath}: ${(e as Error).message}`);
+          }
         }
+        result.songs.push(songData);
       }
-      result.songs.push(songData);
     }
   }
 

@@ -80,8 +80,6 @@ interface PtmGameHookReturn {
   // Settings
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   safeSettings: PassTheMicSettings;
 
   // Transition
@@ -150,8 +148,6 @@ export function usePtmGameLogic({
   const {
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
   } = useGameSettings();
 
   // ── YouTube handling ──
@@ -175,7 +171,7 @@ export function usePtmGameLogic({
   // Uses rawNote (un-stabilized) for responsive pitch indicator.
   // Scoring uses pitchResult.note (stabilized) separately.
   const { pitchResult, stop, switchMicrophone, setDifficulty: setPitchDifficulty } = usePitchDetector();
-  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
+  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.90, 0.08);
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<PtmPlayer[]>(
@@ -277,7 +273,10 @@ export function usePtmGameLogic({
     currentTime,
     difficulty: safeSettings.difficulty,
     currentPlayerIndex,
-    scoringMeta,
+    segments: initialSegments,
+    currentSegmentIndex,
+    allNotes,
+    bpm: notesSource?.bpm ?? null,
     playersRef,
     forceRender,
   });
@@ -748,8 +747,6 @@ export function usePtmGameLogic({
     // Settings
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     safeSettings,
 
     // Transition

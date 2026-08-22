@@ -1,32 +1,22 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  createTournament, 
-  getPlayableMatches, 
-  getTournamentStats,
-  getPlayerPlacements,
-  addToHallOfFame,
   getHallOfFame,
   clearHallOfFame,
-  getEffectiveDifficulty,
-  getFanFavorites,
   getMatchesByBracketType,
   getLBRoundName,
   type TournamentBracket,
   type TournamentPlayer,
   type TournamentMatch,
-  type TournamentSettings,
 } from '@/lib/game/tournament';
-import { PlayerProfile, PLAYER_COLORS } from '@/types/game';
-import { useGameStore } from '@/lib/game/store';
-import { usePartyStore } from '@/lib/game/party-store';
+import { PlayerProfile } from '@/types/game';
 import { useTranslation } from '@/lib/i18n/translations';
 import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
 import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
+import { useTournamentSetup, useTournamentBracket, useTournamentResults, type MaxPlayers } from '@/hooks/use-tournament';
 
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
@@ -36,116 +26,13 @@ interface TournamentScreenProps {
 
 export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: TournamentScreenProps) {
   const { t } = useTranslation();
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 8 | 16 | 32>(8);
-  const [shortMode, setShortMode] = useState(true);
-  const [tournamentType, setTournamentType] = useState<'single' | 'double'>('single');
-  const [tiebreakMode, setTiebreakMode] = useState<TournamentSettings['tiebreakMode']>('accuracy');
-  const [dynamicDifficulty, setDynamicDifficulty] = useState(false);
-  const [songSelectionMode, setSongSelectionMode] = useState<'random' | 'vote'>('random');
-  const [seedingMode, setSeedingMode] = useState<'random' | 'strength'>('random');
-  const [error, setError] = useState<string | null>(null);
-  const [showHallOfFame, setShowHallOfFame] = useState(false);
+  const setup = useTournamentSetup(profiles, onStartTournament);
 
-  // Filter to only show active profiles (isActive === true or undefined for backwards compatibility)
-  const activeProfiles = useMemo(() => 
-    profiles.filter(p => p.isActive !== false),
-    [profiles]
-  );
-
-  // Use global difficulty from store instead of local state
-  const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
-  const setGlobalDifficulty = useGameStore((state) => state.setDifficulty);
-  const difficulty = globalDifficulty;
-
-  const togglePlayer = (playerId: string) => {
-    setSelectedPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      }
-      if (prev.length >= maxPlayers) {
-        setError(t('tournament.errorMaxPlayers').replace('{n}', String(maxPlayers)));
-        return prev;
-      }
-      setError(null);
-      return [...prev, playerId];
-    });
-  };
-
-  const handleStartTournament = () => {
-    if (selectedPlayers.length < 2) {
-      setError(t('tournament.errorMinPlayers'));
-      return;
-    }
-
-    // #9 Calculate player strength for seeding
-    const hofEntries = getHallOfFame();
-    const playerStrengths: Record<string, number> = {};
-    for (const id of selectedPlayers) {
-      const profile = profiles.find(p => p.id === id);
-      if (!profile) { playerStrengths[id] = 0; continue; }
-      // Strength = (HoF championships * 25) + (averageAccuracy * 0.3) + (level * 2) + (totalGames * 0.1)
-      const championships = hofEntries.filter(e => e.champion.id === id).length;
-      const acc = profile.stats?.averageAccuracy ?? 0;
-      const lvl = profile.level ?? 0;
-      const games = profile.stats?.totalGamesPlayed ?? 0;
-      playerStrengths[id] = (championships * 25) + (acc * 0.3) + (lvl * 2) + (games * 0.1);
-    }
-    // Sort by strength descending to assign seeds (strength-based seeding)
-    const sortedByStrength = seedingMode === 'strength'
-      ? [...selectedPlayers].sort((a, b) => (playerStrengths[b] ?? 0) - (playerStrengths[a] ?? 0))
-      : selectedPlayers;
-    
-    const players: TournamentPlayer[] = sortedByStrength.map((id, index) => {
-      const profile = profiles.find(p => p.id === id);
-      return {
-        id,
-        name: profile?.name || 'Unknown',
-        avatar: profile?.avatar,
-        color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
-        eliminated: false,
-        lossCount: 0,
-        // #9 For strength seeding, seed is set by the sorting (lower index = stronger = better seed)
-        // createTournament uses this seed to place players in bracket
-        seed: index + 1,
-      };
-    });
-
-    const settings: TournamentSettings = {
-      maxPlayers,
-      songDuration: shortMode ? 60 : 180, // 60s for short mode, 3 min for full
-      randomSongs: songSelectionMode === 'random',
-      difficulty,
-      tournamentType,
-      tiebreakMode,
-      dynamicDifficulty,
-      songSelectionMode,
-      seedingMode,
-      filterGenre: 'all',
-      filterLanguage: 'all',
-      // TODO: Add genre/language filter UI to tournament setup screen
-    };
-
-    try {
-      const bracket = createTournament(players, settings);
-      onStartTournament(bracket, settings.songDuration);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : t('tournament.errorCreate');
-      setError(msg);
-    }
-  };
-
-  // Hall of Fame data
-  const hallOfFameEntries = useMemo(() => {
-    if (!showHallOfFame) return [];
-    return getHallOfFame();
-  }, [showHallOfFame]);
-
-  if (showHallOfFame) {
+  if (setup.showHallOfFame) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => setShowHallOfFame(false)} className="text-white/60">
+          <Button variant="ghost" onClick={() => setup.setShowHallOfFame(false)} className="text-white/60">
             ← {t('tournament.back')}
           </Button>
           <div>
@@ -153,14 +40,14 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
             <p className="text-white/60">{t('tournament.hallOfFameDesc')}</p>
           </div>
         </div>
-        {hallOfFameEntries.length === 0 ? (
+        {setup.hallOfFameEntries.length === 0 ? (
           <div className="text-center py-12 text-white/40">
             <div className="text-5xl mb-4">🏆</div>
             <p>{t('tournament.hallOfFameEmpty')}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {hallOfFameEntries.map((entry, i) => (
+            {setup.hallOfFameEntries.map((entry, i) => (
               <Card key={entry.id} className="bg-white/5 border-white/10">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -213,14 +100,14 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
           <h1 className="text-3xl font-bold">{t('tournament.title')}</h1>
           <p className="text-white/60">{t('tournament.settings')}</p>
         </div>
-        <Button variant="ghost" onClick={() => setShowHallOfFame(true)} className="text-amber-400 hover:text-amber-300">
+        <Button variant="ghost" onClick={() => setup.setShowHallOfFame(true)} className="text-amber-400 hover:text-amber-300">
           🏆 {t('tournament.hallOfFame')}
         </Button>
       </div>
 
-      {error && (
+      {setup.error && (
         <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 text-red-400">
-          {error}
+          {setup.error}
         </div>
       )}
 
@@ -237,15 +124,15 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               {(['single', 'double'] as const).map(type => (
                 <Button
                   key={type}
-                  variant={tournamentType === type ? 'default' : 'outline'}
-                  onClick={() => setTournamentType(type)}
-                  className={tournamentType === type ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                  variant={setup.tournamentType === type ? 'default' : 'outline'}
+                  onClick={() => setup.setTournamentType(type)}
+                  className={setup.tournamentType === type ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
                 >
                   {type === 'single' ? t('tournament.singleElimination') : t('tournament.doubleElimination')}
                 </Button>
               ))}
             </div>
-            {tournamentType === 'double' && (
+            {setup.tournamentType === 'double' && (
               <p className="text-xs text-amber-400/70 mt-1">{t('tournament.doubleEliminationDesc')}</p>
             )}
           </div>
@@ -254,17 +141,14 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('tournament.bracketSize')}</label>
             <div className="flex gap-2 flex-wrap">
-              {[2, 4, 8, 16, 32].map(size => (
+              {([2, 4, 8, 16, 32] as const).map(size => (
                 <Button
                   key={size}
-                  variant={maxPlayers === size ? 'default' : 'outline'}
+                  variant={setup.maxPlayers === size ? 'default' : 'outline'}
                   onClick={() => {
-                    setMaxPlayers(size as 2 | 4 | 8 | 16 | 32);
-                    if (selectedPlayers.length > size) {
-                      setSelectedPlayers(prev => prev.slice(0, size));
-                    }
+                    setup.handleSetMaxPlayers(size as MaxPlayers);
                   }}
-                  className={maxPlayers === size ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                  className={setup.maxPlayers === size ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
                 >
                   {size} {size === 2 ? t('tournament.duel') : t('tournament.players')}
                 </Button>
@@ -279,11 +163,11 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               <p className="text-sm text-white/60">{t('tournament.shortModeDesc')}</p>
             </div>
             <Button
-              variant={shortMode ? 'default' : 'outline'}
-              onClick={() => setShortMode(!shortMode)}
-              className={shortMode ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+              variant={setup.shortMode ? 'default' : 'outline'}
+              onClick={() => setup.setShortMode(!setup.shortMode)}
+              className={setup.shortMode ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
             >
-              {shortMode ? t('tournament.short') : t('tournament.fullSong')}
+              {setup.shortMode ? t('tournament.short') : t('tournament.fullSong')}
             </Button>
           </div>
 
@@ -294,9 +178,9 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               {(['easy', 'medium', 'hard'] as const).map(diff => (
                 <Button
                   key={diff}
-                  variant={difficulty === diff ? 'default' : 'outline'}
-                  onClick={() => setGlobalDifficulty(diff)}
-                  className={difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                  variant={setup.difficulty === diff ? 'default' : 'outline'}
+                  onClick={() => setup.setGlobalDifficulty(diff)}
+                  className={setup.difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
                 >
                   {diff === 'easy' ? t('tournament.easy') : diff === 'medium' ? t('tournament.medium') : t('tournament.hard')}
                 </Button>
@@ -311,11 +195,11 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               <p className="text-sm text-white/60">{t('tournament.dynamicDifficultyDesc')}</p>
             </div>
             <Button
-              variant={dynamicDifficulty ? 'default' : 'outline'}
-              onClick={() => setDynamicDifficulty(!dynamicDifficulty)}
-              className={dynamicDifficulty ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              variant={setup.dynamicDifficulty ? 'default' : 'outline'}
+              onClick={() => setup.setDynamicDifficulty(!setup.dynamicDifficulty)}
+              className={setup.dynamicDifficulty ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
             >
-              {dynamicDifficulty ? t('tournament.on') : t('tournament.off')}
+              {setup.dynamicDifficulty ? t('tournament.on') : t('tournament.off')}
             </Button>
           </div>
 
@@ -331,9 +215,9 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               ]).map(tb => (
                 <Button
                   key={tb.key}
-                  variant={tiebreakMode === tb.key ? 'default' : 'outline'}
-                  onClick={() => setTiebreakMode(tb.key)}
-                  className={tiebreakMode === tb.key ? 'bg-orange-500 hover:bg-orange-600' : 'border-white/20'}
+                  variant={setup.tiebreakMode === tb.key ? 'default' : 'outline'}
+                  onClick={() => setup.setTiebreakMode(tb.key)}
+                  className={setup.tiebreakMode === tb.key ? 'bg-orange-500 hover:bg-orange-600' : 'border-white/20'}
                   title={tb.desc}
                 >
                   {tb.label}
@@ -352,15 +236,15 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               ]).map(mode => (
                 <Button
                   key={mode.key}
-                  variant={songSelectionMode === mode.key ? 'default' : 'outline'}
-                  onClick={() => setSongSelectionMode(mode.key)}
-                  className={songSelectionMode === mode.key ? 'bg-pink-500 hover:bg-pink-600' : 'border-white/20'}
+                  variant={setup.songSelectionMode === mode.key ? 'default' : 'outline'}
+                  onClick={() => setup.setSongSelectionMode(mode.key)}
+                  className={setup.songSelectionMode === mode.key ? 'bg-pink-500 hover:bg-pink-600' : 'border-white/20'}
                 >
                   {mode.label}
                 </Button>
               ))}
             </div>
-            {songSelectionMode === 'vote' && (
+            {setup.songSelectionMode === 'vote' && (
               <p className="text-xs text-pink-400/70 mt-1">{t('tournament.songVoteDesc')}</p>
             )}
           </div>
@@ -375,15 +259,15 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
               ]).map(mode => (
                 <Button
                   key={mode.key}
-                  variant={seedingMode === mode.key ? 'default' : 'outline'}
-                  onClick={() => setSeedingMode(mode.key)}
-                  className={seedingMode === mode.key ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
+                  variant={setup.seedingMode === mode.key ? 'default' : 'outline'}
+                  onClick={() => setup.setSeedingMode(mode.key)}
+                  className={setup.seedingMode === mode.key ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
                 >
                   {mode.label}
                 </Button>
               ))}
             </div>
-            {seedingMode === 'strength' && (
+            {setup.seedingMode === 'strength' && (
               <p className="text-xs text-indigo-400/70 mt-1">{t('tournament.seedingStrengthDesc')}</p>
             )}
           </div>
@@ -393,16 +277,16 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       {/* Player Selection */}
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader>
-          <CardTitle>{t('tournament.selectPlayers').replace('{n}', String(selectedPlayers.length)).replace('{m}', String(maxPlayers))}</CardTitle>
+          <CardTitle>{t('tournament.selectPlayers').replace('{n}', String(setup.selectedPlayers.length)).replace('{m}', String(setup.maxPlayers))}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {activeProfiles.map(profile => {
-              const isSelected = selectedPlayers.includes(profile.id);
+            {setup.activeProfiles.map(profile => {
+              const isSelected = setup.selectedPlayers.includes(profile.id);
               return (
                 <div
                   key={profile.id}
-                  onClick={() => togglePlayer(profile.id)}
+                  onClick={() => setup.togglePlayer(profile.id)}
                   className={`p-4 rounded-lg cursor-pointer transition-all ${
                     isSelected 
                       ? 'bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-2 border-amber-500' 
@@ -428,7 +312,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
             })}
           </div>
           
-          {activeProfiles.length < 2 && (
+          {setup.activeProfiles.length < 2 && (
             <p className="text-yellow-400 mt-4">
               {t('tournament.noActiveProfiles')}
             </p>
@@ -438,11 +322,11 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
 
       {/* Start Button */}
       <Button
-        onClick={handleStartTournament}
-        disabled={selectedPlayers.length < 2}
+        onClick={setup.handleStartTournament}
+        disabled={setup.selectedPlayers.length < 2}
         className="w-full py-6 text-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
       >
-        {t('tournament.startTournament').replace('{n}', String(selectedPlayers.length))}
+        {t('tournament.startTournament').replace('{n}', String(setup.selectedPlayers.length))}
       </Button>
     </div>
   );
@@ -464,65 +348,20 @@ interface TournamentBracketViewProps {
 
 export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults }: TournamentBracketViewProps) {
   const { t } = useTranslation();
-  const stats = getTournamentStats(bracket);
-  const tournamentCrowdVotes = usePartyStore(s => s.tournamentCrowdVotes);
-
-  // Get next match to play
-  const playableMatches = getPlayableMatches(bracket);
-  const nextMatch = playableMatches[0] || null;
-
-  // #6 Dynamic difficulty indicator
-  const effectiveDiff = getEffectiveDifficulty(
-    bracket.settings.difficulty,
-    bracket.currentRound,
-    bracket.totalRounds,
-    bracket.settings.dynamicDifficulty,
-  );
-  const showDiffBadge = bracket.settings.dynamicDifficulty && effectiveDiff !== bracket.settings.difficulty;
-
-  // #9 Seeding mode indicator
-  const isSeededByStrength = bracket.settings.seedingMode === 'strength';
-
-  // #10 Fan favorites from crowd votes
-  const fanFavorites = useMemo(() => {
-    if (tournamentCrowdVotes.length === 0) return [];
-    return getFanFavorites(bracket, tournamentCrowdVotes);
-  }, [bracket, tournamentCrowdVotes]);
-
-  // Auto-scale bracket to fit available viewport height
-  const bracketWrapperRef = useRef<HTMLDivElement>(null);
-  const bracketInnerRef = useRef<HTMLDivElement>(null);
-  const [bracketScale, setBracketScale] = useState(1);
-
-  // Manual winner dialog state (for picking a winner without playing)
-  const [manualWinnerMatch, setManualWinnerMatch] = useState<TournamentMatch | null>(null);
-
-  useEffect(() => {
-    const updateScale = () => {
-      const wrapper = bracketWrapperRef.current;
-      const inner = bracketInnerRef.current;
-      if (!wrapper || !inner) return;
-      const available = wrapper.clientHeight;
-      const needed = inner.scrollHeight;
-      if (needed > 0 && available > 0) {
-        setBracketScale(Math.min(1, available / needed));
-      }
-    };
-    updateScale();
-    const ro = new ResizeObserver(updateScale);
-    if (bracketWrapperRef.current) ro.observe(bracketWrapperRef.current);
-    return () => ro.disconnect();
-  }, [bracket, showResults]);
-
-  // #7 Auto-add to Hall of Fame when tournament completes
-  const hofRecordedRef = useRef(false);
-  useEffect(() => {
-    if (bracket.status === 'completed' && bracket.champion && !hofRecordedRef.current) {
-      hofRecordedRef.current = true;
-      const placements = getPlayerPlacements(bracket);
-      addToHallOfFame(bracket, placements);
-    }
-  }, [bracket.status, bracket.champion]);
+  const {
+    stats,
+    playableMatches,
+    nextMatch,
+    effectiveDiff,
+    showDiffBadge,
+    isSeededByStrength,
+    fanFavorites,
+    bracketScale,
+    manualWinnerMatch,
+    bracketWrapperRef,
+    bracketInnerRef,
+    setManualWinnerMatch,
+  } = useTournamentBracket(bracket, currentMatch, showResults);
 
   return (
     <div className="max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
@@ -725,14 +564,7 @@ interface TournamentResultsProps {
 
 export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: TournamentResultsProps) {
   const { t } = useTranslation();
-  const placements = useMemo(() => getPlayerPlacements(bracket), [bracket]);
-  const tournamentCrowdVotes = usePartyStore(s => s.tournamentCrowdVotes);
-
-  // #10 Fan favorites from crowd votes
-  const fanFavorites = useMemo(() => {
-    if (tournamentCrowdVotes.length === 0) return [];
-    return getFanFavorites(bracket, tournamentCrowdVotes);
-  }, [bracket, tournamentCrowdVotes]);
+  const { placements, fanFavorites } = useTournamentResults(bracket);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">

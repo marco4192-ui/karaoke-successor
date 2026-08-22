@@ -26,6 +26,10 @@ export interface NotePerformanceSample {
   time: number;
   accuracy: number;
   hit: boolean;
+  /** The actual MIDI note the singer produced at this tick.
+   *  Used by the Singstar-style tick-fill display to show pitch deviation
+   *  for missed ticks (small dot at sung pitch beside the note). */
+  sungPitch: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +88,9 @@ export interface ScoringPassResult {
   activeNoteIsGolden: boolean;
   lastTickAccuracy: number;
   lastTickHit: boolean;
+  /** The raw sung pitch (MIDI) of the last evaluated tick.
+   *  Passed through for visual display modes. */
+  lastTickSungPitch: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +146,13 @@ export interface UseNoteScoringReturn {
     _currentTime: number,
     pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
+
+  /** High-rate visual tick sampler — called every frame from game loop.
+   *  Records both hits and misses for Singstar-style note filling.
+   *  Accepts null pitch (records miss for active note). */
+  sampleVisualTicks: (_currentTime: number, _pitch: import('@/types/game').PitchDetectionResult | null) => void;
+  /** P2 visual tick sampler (duet mode) */
+  sampleP2VisualTicks: (_currentTime: number, _pitch: import('@/types/game').PitchDetectionResult | null) => void;
 
   resetScoring: () => void;
 }

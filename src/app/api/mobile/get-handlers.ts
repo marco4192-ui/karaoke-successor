@@ -413,6 +413,43 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         messages: mutableState.chatMessages.slice(-50),
       });
 
+    case 'playlists':
+      // Gib synchronisierte Playlists zurueck (nur ID, Name, isSystem)
+      return Response.json({
+        success: true,
+        playlists: mutableState.playlists,
+      });
+
+    // Desktop-Chat: Liste aller aktiven Player für Dropdown
+    case 'getchatplayers': {
+      const players: Array<{ id: string; name: string; color: string; isHost: boolean }> = [];
+      // Verbundene Companions mit Profil
+      mobileClients.forEach((client) => {
+        if (client.profile) {
+          players.push({
+            id: client.profile.id,
+            name: client.profile.name,
+            color: client.profile.color,
+            isHost: false,
+          });
+        }
+      });
+      // Host-Profile aus der Haupt-App
+      mutableState.hostProfiles.forEach((hp) => {
+        // Nur hinzufügen wenn nicht bereits von einem Companion beansprucht
+        const alreadyListed = players.some((p) => p.id === hp.id);
+        if (!alreadyListed) {
+          players.push({
+            id: hp.id,
+            name: hp.name,
+            color: hp.color,
+            isHost: true,
+          });
+        }
+      });
+      return Response.json({ success: true, players });
+    }
+
     // #10 Get tournament crowd votes for spectator UI
     case 'get_crowd_votes':
       return Response.json({
@@ -463,6 +500,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         avatar: hp.avatar,
         color: hp.color,
         connectionCode: '',
+        isActive: hp.isActive ?? true,
       }));
 
       return Response.json({
@@ -471,43 +509,6 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         availableProfiles: availableHostProfiles,
       });
     }
-
-    // F19: Get chat players for desktop chat panel (companion users + host profiles)
-    case 'getchatplayers': {
-      // Collect all unique players: connected companions with profiles + active host profiles
-      // Deduplicated by profile ID
-      const seenIds = new Set<string>();
-      const players: Array<{ id: string; name: string; avatar?: string; color: string; isHost: boolean }> = [];
-
-      // 1. Add host profiles (marked as isHost: true)
-      for (const hp of mutableState.hostProfiles) {
-        seenIds.add(hp.id);
-        players.push({ id: hp.id, name: hp.name, avatar: hp.avatar, color: hp.color, isHost: true });
-      }
-
-      // 2. Add connected companion profiles (only those not already in host profiles, deduplicated)
-      mobileClients.forEach((client) => {
-        if (client.profile && !seenIds.has(client.profile.id)) {
-          seenIds.add(client.profile.id);
-          players.push({
-            id: client.profile.id,
-            name: client.profile.name,
-            avatar: client.profile.avatar,
-            color: client.profile.color,
-            isHost: false,
-          });
-        }
-      });
-
-      return Response.json({ success: true, players });
-    }
-
-    // Get playlists (synced from main app via POST setplaylists)
-    case 'playlists':
-      return Response.json({
-        success: true,
-        playlists: mutableState.playlists.filter(p => !p.isSystem),
-      });
 
     default:
       return Response.json({

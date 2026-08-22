@@ -2,7 +2,7 @@
 
 import { TournamentPlayer } from './tournament';
 import type { Difficulty } from '@/types/game';
-import type { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
+
 
 // ==================== TYPES ====================
 
@@ -20,6 +20,7 @@ export interface BattleRoyalePlayer extends TournamentPlayer {
   eliminationRound: number | null;
   playerType: PlayerType;
   microphoneId?: string;
+  stereoChannel?: number;
   connectionCode?: string;
   lastPing?: number;
 }
@@ -183,8 +184,6 @@ export interface BattleRoyaleSettings {
   minRoundDuration: number;
 
   // Visual settings
-  noteShapeStyle: NoteShapeStyle;
-  noteDisplayStyle: NoteDisplayStyle;
   showNoteHighway: boolean;
   showVideoBackground: boolean;
   countdownDuration: number; // seconds (default 3)
@@ -229,8 +228,6 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
   minRoundDuration: 30,
 
   // Visual settings
-  noteShapeStyle: 'rounded' as NoteShapeStyle,
-  noteDisplayStyle: 'classic' as NoteDisplayStyle,
   showNoteHighway: true,
   showVideoBackground: true,
   // DO-NOT-CHANGE: 5 seconds to give audio/video time to buffer before playing.

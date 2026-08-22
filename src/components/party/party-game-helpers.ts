@@ -28,6 +28,7 @@ interface SetupPlayerEntry {
   playerType?: 'microphone' | 'companion';
   micId?: string;
   micName?: string;
+  stereoChannel?: number;
 }
 
 /**
@@ -60,6 +61,7 @@ export function buildGameSetupResult(params: {
       playerType: p.playerType ?? 'microphone',
       micId: p.micId ?? 'default',
       micName: p.micName ?? t('partyHelpers.defaultMicName').replace('{n}', String(i + 1)),
+      stereoChannel: p.stereoChannel,
     })),
     settings: {
       difficulty,

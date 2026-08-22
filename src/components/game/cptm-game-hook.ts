@@ -7,7 +7,6 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
-import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
@@ -56,15 +55,14 @@ interface CptmGameHookReturn {
   // Note data
   allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   sortedLines: LyricLine[];
-  scoringMeta: ReturnType<typeof calculateScoringMetadata> | null;
+  /** @deprecated Scoring is now segment-scoped inside useCptmScoring. Always null. */
+  scoringMeta: null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   displayDuration: number;
 
   // Settings
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   safeSettings: CptmSettings;
 
   // Series
@@ -132,8 +130,6 @@ export function useCptmGameLogic({
   const {
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
   } = useGameSettings();
 
   // ── Playback state ──
@@ -294,9 +290,9 @@ export function useCptmGameLogic({
   }, [effectiveSong, fallbackRef.current]);
 
   // ── Pre-compute note data for highway ──
-  const { allNotes, sortedLines, scoringMeta } = useMemo(() => {
+  const { allNotes, sortedLines } = useMemo(() => {
     if (!notesSource?.lyrics?.length) {
-      return { allNotes: [], sortedLines: [], scoringMeta: null };
+      return { allNotes: [], sortedLines: [] };
     }
 
     const notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
@@ -309,10 +305,7 @@ export function useCptmGameLogic({
     });
     notes.sort((a, b) => a.startTime - b.startTime);
 
-    const bd = notesSource.bpm ? 15000 / notesSource.bpm : 500;
-    const meta = calculateScoringMetadata(notes, bd);
-
-    return { allNotes: notes, sortedLines: lines, scoringMeta: meta };
+    return { allNotes: notes, sortedLines: lines };
   }, [notesSource]);
 
   const visibleNotes = useMemo(
@@ -332,7 +325,10 @@ export function useCptmGameLogic({
     notesSource,
     currentTime,
     difficulty: safeSettings.difficulty,
-    scoringMeta,
+    allNotes,
+    segments: initialSegments,
+    currentSegmentIndex,
+    bpm: notesSource?.bpm ?? null,
     forceRender,
   });
 
@@ -564,15 +560,13 @@ export function useCptmGameLogic({
     // Note data
     allNotes,
     sortedLines,
-    scoringMeta,
+    scoringMeta: null,
     visibleNotes,
     displayDuration,
 
     // Settings
     showBackgroundVideo,
     useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
     safeSettings,
 
     // Series

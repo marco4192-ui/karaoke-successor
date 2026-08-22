@@ -197,6 +197,7 @@ export const mutableState = {
   }>,
 
   // F4: In-game chat messages between companion and host
+  // challenge field: when set, this message is a song challenge with accept button
   chatMessages: [] as Array<{
     id: string;
     from: string;
@@ -208,19 +209,17 @@ export const mutableState = {
       songId: string;
       songTitle: string;
       songArtist: string;
-      gameMode: 'duel' | 'duet';
       challengerClientId: string;
-      challengedPartnerId: string | null;
-    };
-    challengeAccepted?: {
-      challengeMessageId: string;
-      respondingClientId: string;
-      respondingClientName: string;
+      challengerName: string;
+      accepted: boolean;
+      acceptedBy: string | null;
+      acceptedByName: string | null;
     };
   }>,
 
-  // Playlists synced from main app (cannot use localStorage in API route)
-  playlists: [] as Array<{ id: string; name: string; songIds: string[]; isSystem: boolean }>,
+  // Companion Playlist-Sync: Desktop speichert Playlists hier,
+  // damit Companion sie lesen kann (localStorage nicht im API-Route verfuegbar)
+  playlists: [] as Array<{ id: string; name: string; isSystem?: boolean }>,
 };
 
 export function generateConnectionCode(): string {
@@ -381,6 +380,7 @@ export function resetAllState() {
     currentScreen: undefined,
     partyGameMode: null,
   };
+  // Reset remote control state
   mutableState.remoteControlState = {
     lockedBy: null,
     lockedByName: null,
@@ -393,6 +393,4 @@ export function resetAllState() {
   mutableState.pendingDuelRequests = [];
   // Clear chat messages
   mutableState.chatMessages = [];
-  // Clear playlists
-  mutableState.playlists = [];
 }

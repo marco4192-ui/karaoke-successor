@@ -85,6 +85,7 @@ export function createBattleRoyale(
     color: string;
     playerType: PlayerType;
     microphoneId?: string;
+    stereoChannel?: number;
     connectionCode?: string;
   }>,
   settings: BattleRoyaleSettings = DEFAULT_BATTLE_ROYALE_SETTINGS,
@@ -130,6 +131,7 @@ export function createBattleRoyale(
     eliminationRound: null,
     playerType: p.playerType,
     microphoneId: p.microphoneId,
+    stereoChannel: p.stereoChannel,
     connectionCode: p.connectionCode,
     lastPing: p.playerType === 'companion' ? Date.now() : undefined,
   }));

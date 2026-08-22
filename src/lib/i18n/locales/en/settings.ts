@@ -402,6 +402,8 @@ export const settingsTranslations = {
     folderAlreadyExists: 'This folder is already in your library.',
     enterFolderPath: 'Enter the folder path:',
     folderPickerDesktopOnly: 'Folder picker is only available in the desktop app.',
+    dialogCancel: 'Cancel',
+    dialogConfirm: 'Confirm',
   },
 
   settingsCompanion: {

@@ -4,13 +4,15 @@ import { useEffect, useCallback, useRef } from 'react';
 import { getAllSongs } from '@/lib/game/song-library';
 import type { PlayerProfile } from '@/types/game';
 import { StorageKeys, setJson } from '@/lib/storage';
+import { getPlaylists } from '@/lib/playlist-manager';
 
 /**
- * Syncs song library and host profiles to the mobile companion server.
+ * Syncs song library, host profiles, and playlists to the mobile companion server.
  *
  * Extracted from use-mobile-client.ts (Q9) to reduce responsibility count.
  * - Syncs song library to server on mount and every 30 seconds
  * - Publishes host profiles to server on change and every 60 seconds
+ * - Syncs playlists to server every 30 seconds (for companion playlist picker)
  */
 export function useSongLibrarySync(profiles: PlayerProfile[]): {
   syncSongLibrary: () => Promise<void>;
@@ -82,6 +84,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       avatar: p.avatar,
       color: p.color,
       createdAt: p.createdAt,
+      isActive: p.isActive ?? true,
     }));
     // Also keep localStorage for any legacy use
     try {
@@ -106,6 +109,28 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
     const interval = setInterval(pushProfiles, 60000);
     return () => clearInterval(interval);
   }, [profiles]);
+
+  // Sync playlists to server every 30 seconds (for companion playlist picker)
+  useEffect(() => {
+    const syncPlaylists = () => {
+      try {
+        const playlists = getPlaylists();
+        const simplified = playlists.map((p) => ({
+          id: p.id,
+          name: p.name,
+          isSystem: p.isSystem,
+        }));
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'setplaylists', payload: simplified }),
+        }).catch(() => { /* ignore */ });
+      } catch { /* ignore */ }
+    };
+    syncPlaylists();
+    const interval = setInterval(syncPlaylists, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return { syncSongLibrary };
 }

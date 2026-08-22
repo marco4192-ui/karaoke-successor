@@ -55,7 +55,7 @@ export interface QueueItem {
 }
 
 export interface RemoteCommand {
-  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter' | 'party_start';
+  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter' | 'add_to_playlist' | 'create_and_add_to_playlist';
   data?: unknown;
   timestamp: number;
   fromClientId: string;
@@ -104,7 +104,7 @@ export interface MobileGameState {
   companionScores: CompanionScoreEntry[] | null;
   // Current screen name from the desktop app
   currentScreen?: string;
-  // Party game mode selected on the desktop (non-null during party-setup)
+  // Party setup: which game mode is being configured
   partyGameMode?: string | null;
 }
 
@@ -136,4 +136,5 @@ export interface HostProfile {
   avatar?: string;
   color: string;
   createdAt: number;
+  isActive?: boolean;
 }

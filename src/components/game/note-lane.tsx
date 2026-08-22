@@ -18,17 +18,12 @@
  * Accepts raw frequency (Hz) as detectedPitch and converts to MIDI internally.
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
-import { getStoredTheme } from '@/lib/game/themes';
-import { parseNoteShape } from '@/hooks/use-game-settings';
-import { StorageKeys, getItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 import {
   NOTE_HEIGHT,
   PITCH_RANGE,
-  NoteShapeStyle,
-  getNoteShapeClassesForLane,
   getNoteBackgroundClasses,
   getNoteBoxShadow,
   calculatePitchY,
@@ -237,60 +232,8 @@ export const NoteLane = React.memo(function NoteLane({
 }: NoteLaneProps) {
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
-  // Load note shape style - PRIORITIZE localStorage setting, fallback to theme
-  const [noteShapeStyle, setNoteShapeStyle] = useState<NoteShapeStyle>('rounded');
-
-  useEffect(() => {
-    const loadNoteShapeStyle = () => {
-      // First check localStorage for explicit setting
-      const storedNoteShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
-      if (storedNoteShape) {
-        setNoteShapeStyle(storedNoteShape);
-      } else {
-        // Fallback to theme only if no explicit localStorage setting
-        const theme = getStoredTheme();
-        if (theme) {
-          setNoteShapeStyle(theme.noteStyle);
-        }
-      }
-    };
-    loadNoteShapeStyle();
-
-    // Listen for settings changes
-    const handleSettingsChange = () => {
-      const storedShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
-      if (storedShape) {
-        setNoteShapeStyle(storedShape);
-      }
-    };
-    
-    const handleThemeChange = () => {
-      // Only update from theme if no explicit localStorage setting
-      const storedShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
-      if (!storedShape) {
-        const theme = getStoredTheme();
-        if (theme) {
-          setNoteShapeStyle(theme.noteStyle);
-        }
-      }
-    };
-    
-    window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('themeChange', handleThemeChange);
-    window.addEventListener('settingsChange', handleSettingsChange);
-    window.addEventListener('storage', handleSettingsChange);
-
-    // NOTE: No polling interval — this is a Tauri desktop app, not a browser.
-    return () => {
-      window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('themeChange', handleThemeChange);
-      window.removeEventListener('settingsChange', handleSettingsChange);
-      window.removeEventListener('storage', handleSettingsChange);
-    };
-  }, []);
-
-  // Get note shape classes
-  const noteShape = useMemo(() => getNoteShapeClassesForLane(noteShapeStyle), [noteShapeStyle]);
+  // Static note shape (no dynamic shape switching)
+  const noteShape = useMemo(() => ({ baseClass: 'rounded-md', activeClass: '', style: {} }), []);
 
   // Get all notes and calculate positions (Right to Left movement)
   const notesWithPositions = useMemo(() => {
