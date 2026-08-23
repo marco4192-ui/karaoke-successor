@@ -573,4 +573,22 @@ export const mobileTranslations = {
     jukeboxBtn: '点播',
     addedToJukebox: '已添加到点播',
   },
+
+  desktopChat: {
+    title: 'Chat',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    host: 'Host',
+    notificationNew: 'New message from {name}',
+    openChat: 'Open chat',
+    closeChat: 'Close chat',
+    acceptChallenge: 'Accept',
+    challengeDuel: 'Duel challenge',
+    challengeDuet: 'Duet challenge',
+    from: 'from',
+    selectPlayer: 'Select player...',
+    challengeAccepted: 'Challenge accepted!',
+    dismiss: 'Close',
+  },
 };

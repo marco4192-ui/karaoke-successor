@@ -365,4 +365,12 @@ export const coreTranslations = {
       yearlyLegend: 'Lenda Anual',
     },
   },
+
+    desktopChat: {
+      title: 'Companion-Chat',
+      host: 'Host',
+      notificationNew: 'Neue Nachricht von {name}',
+      openChat: 'Chat öffnen',
+      closeChat: 'Chat schließen',
+    },
 };

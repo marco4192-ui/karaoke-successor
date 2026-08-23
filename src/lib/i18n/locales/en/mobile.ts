@@ -142,6 +142,8 @@ export const mobileTranslations = {
     upNext: 'Up Next',
     searchPlaceholder: 'Search songs...',
     gameMode: 'Game Mode',
+    startGame: 'Start Game',
+    configSent: 'Config sent!',
     noPartner: 'No other companions connected. You can still add without a partner.',
     songAdded: 'Song added to queue',
     noSongsFound: 'No songs found',

@@ -574,4 +574,22 @@ export const mobileTranslations = {
     jukeboxBtn: 'ジュークボックス',
     addedToJukebox: 'ジュークボックスに追加',
   },
+
+  desktopChat: {
+    title: 'Chat',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    host: 'Host',
+    notificationNew: 'New message from {name}',
+    openChat: 'Open chat',
+    closeChat: 'Close chat',
+    acceptChallenge: 'Accept',
+    challengeDuel: 'Duel challenge',
+    challengeDuet: 'Duet challenge',
+    from: 'from',
+    selectPlayer: 'Select player...',
+    challengeAccepted: 'Challenge accepted!',
+    dismiss: 'Close',
+  },
 };

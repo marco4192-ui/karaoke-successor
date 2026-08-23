@@ -388,4 +388,12 @@ export const coreTranslations = {
       yearlyLegend: 'Jahres-Legende',
     },
   },
+
+    desktopChat: {
+      title: 'Companion-Chat',
+      host: 'Host',
+      notificationNew: 'Neue Nachricht von {name}',
+      openChat: 'Chat öffnen',
+      closeChat: 'Chat schließen',
+    },
 };

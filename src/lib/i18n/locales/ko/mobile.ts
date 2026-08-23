@@ -573,4 +573,22 @@ export const mobileTranslations = {
     jukeboxBtn: '주크박스',
     addedToJukebox: '주크박스에 추가됨',
   },
+
+  desktopChat: {
+    title: 'Chat',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    host: 'Host',
+    notificationNew: 'New message from {name}',
+    openChat: 'Open chat',
+    closeChat: 'Close chat',
+    acceptChallenge: 'Accept',
+    challengeDuel: 'Duel challenge',
+    challengeDuet: 'Duet challenge',
+    from: 'from',
+    selectPlayer: 'Select player...',
+    challengeAccepted: 'Challenge accepted!',
+    dismiss: 'Close',
+  },
 };
