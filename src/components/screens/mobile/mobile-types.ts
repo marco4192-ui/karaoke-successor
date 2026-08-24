@@ -143,6 +143,8 @@ export interface GameState {
   partyGameMode?: string | null;
   // Party voting: songs available for voting
   votingSongs?: Array<{ id: string; title: string; artist: string; duration: number; coverImage?: string }>;
+  // Party setup: library-selected song awaiting confirmation on companion
+  partyLibrarySong?: { id: string; title: string; artist: string } | null;
 }
 
 export interface PitchData {

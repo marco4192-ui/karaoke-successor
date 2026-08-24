@@ -561,6 +561,9 @@ export default function KaraokeZERO() {
               currentScreen: screen,
               partyGameMode: screen === 'party-setup' ? (party.selectedGameMode || null) : null,
               votingSongs: screen === 'song-voting' ? party.votingSongs : [],
+              partyLibrarySong: screen === 'party-setup' && party.librarySelectedSong
+                ? { id: party.librarySelectedSong.id, title: party.librarySelectedSong.title, artist: party.librarySelectedSong.artist }
+                : null,
             },
           }),
         });

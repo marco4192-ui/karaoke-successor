@@ -752,6 +752,31 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
         </div>
 
         {/* -------- START-LEISTE (bleibt grau bis alle Einstellungen komplett, wird dann zum Start-Button) -------- */}
+        {/* Library-Song-Bestaetigung (Desktop hat einen Song aus der Bibliothek vorausgewaehlt) */}
+        {gameState.partyLibrarySong && (
+          <div className="rounded-xl bg-gradient-to-r from-green-500/15 to-emerald-500/15 border border-green-500/30 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xl shrink-0">
+                {'\u{1F3B5}'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-green-400 font-medium uppercase tracking-wider">{t('unifiedSetup.songSelected') || 'Song ausgewaehlt'}</p>
+                <h3 className="text-white font-bold text-sm truncate">{gameState.partyLibrarySong.title}</h3>
+                <p className="text-white/50 text-xs truncate">{gameState.partyLibrarySong.artist}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  haptic();
+                  onSendDesktopCommand('party_start');
+                }}
+                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white active:scale-95 transition-all shadow-lg"
+              >
+                {'\u25B6'} {t('unifiedSetup.startGame') || 'Starten'}
+              </button>
+            </div>
+          </div>
+        )}
         <button
           type="button"
           onClick={handleStartBarClick}
