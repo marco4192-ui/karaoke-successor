@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'ウェブカムを有効化',
   disableMirror: 'ミラーを無効化',
   enableMirrorTooltip: 'ミラーを有効化（セルフィーモード）',
-},
+
+  appearance: {
+    themeNeonNights: 'ネオンナイツ',
+    themeRetroArcade: 'レトロアーケード',
+    themeSunsetVibes: 'サンセットバイブス',
+    themeOceanDeep: 'ディープオーシャン',
+    themeGalaxyPop: 'ギャラクシーポップ',
+    themeMinimalLight: 'ミニマルライト',
+  },},
 };

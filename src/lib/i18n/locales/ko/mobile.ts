@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: '부르는 중',
   score: '점수',
   noPlayers: '아직 플레이어가 없습니다',
+    gold: '금',
+    silver: '은',
+    bronze: '동',
 },
 mobileErrorBoundary: {
   title: '문제가 발생했습니다',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: '카메라를 사용할 수 없습니다',
   retake: '다시 찍기',
   noResults: '표시할 결과가 없습니다',
+    cameraDeniedDesc: '브라우저 설정에서 카메라 접근 허용을 하고 다시 시도하세요.',
+    cameraUnavailableDesc: '당신 기기는 카메라 접근을 지원하지 않습니다.',
+    startingCamera: '카메라 시작 중...',
 },
 achievements: {
   firstSong: {

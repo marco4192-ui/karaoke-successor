@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Поёт сейчас',
   score: 'Очки',
   noPlayers: 'Игроков пока нет',
+    gold: 'Золото',
+    silver: 'Серебро',
+    bronze: 'Бронза',
 },
 mobileErrorBoundary: {
   title: 'Что-то пошло не так',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Камера недоступна',
   retake: 'Переснять',
   noResults: 'Нет результатов для отображения',
+    cameraDeniedDesc: 'Пожалуйста, разрешите доступ к камере в настройках браузера и попробуйте снова.',
+    cameraUnavailableDesc: 'Ваше устройство не поддерживает доступ к камере.',
+    startingCamera: 'Запуск камеры...',
 },
 achievements: {
   firstSong: {

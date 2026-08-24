@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'Включить веб-камеру',
   disableMirror: 'Отключить зеркало',
   enableMirrorTooltip: 'Включить зеркало (режим селфи)',
-},
+
+  appearance: {
+    themeNeonNights: 'Неоновые Ночи',
+    themeRetroArcade: 'Ретро Аркада',
+    themeSunsetVibes: 'Закатные Вайбы',
+    themeOceanDeep: 'Глубокий Океан',
+    themeGalaxyPop: 'Галактика Поп',
+    themeMinimalLight: 'Минимал Светлый',
+  },},
 };

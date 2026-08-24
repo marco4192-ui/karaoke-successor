@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Singt gerade',
   score: 'Punkte',
   noPlayers: 'Noch keine Spieler',
+    gold: 'Gold',
+    silver: 'Silber',
+    bronze: 'Bronze',
 },
 mobileErrorBoundary: {
   title: 'Etwas ist schief gelaufen',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Kamera nicht verfügbar',
   retake: 'Neu aufnehmen',
   noResults: 'Keine Ergebnisse vorhanden',
+    cameraDeniedDesc: 'Bitte erlaube den Kamerazugriff in deinen Browser-Einstellungen und versuche es erneut.',
+    cameraUnavailableDesc: 'Dein Gerät unterstützt keinen Kamerazugriff.',
+    startingCamera: 'Kamera wird gestartet...',
 },
 achievements: {
   firstSong: {

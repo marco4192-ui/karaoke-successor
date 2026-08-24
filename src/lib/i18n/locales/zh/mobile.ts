@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: '正在演唱',
   score: '得分',
   noPlayers: '还没有玩家',
+    gold: '金牌',
+    silver: '银牌',
+    bronze: '铜牌',
 },
 mobileErrorBoundary: {
   title: '出了点问题',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: '摄像头不可用',
   retake: '重拍',
   noResults: '没有可显示的结果',
+    cameraDeniedDesc: '请在浏览器设置中允许摄像头访问然后重试。',
+    cameraUnavailableDesc: '您的设备不支持摄像头访问。',
+    startingCamera: '正在启动摄像头...',
 },
 achievements: {
   firstSong: {

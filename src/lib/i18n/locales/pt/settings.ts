@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'Ativar Webcam',
   disableMirror: 'Desativar Espelho',
   enableMirrorTooltip: 'Ativar Espelho (Modo Selfie)',
-},
+
+  appearance: {
+    themeNeonNights: 'Noites de Neón',
+    themeRetroArcade: 'Arcade Retro',
+    themeSunsetVibes: 'Vibras de Pôr do Sol',
+    themeOceanDeep: 'Oceano Profundo',
+    themeGalaxyPop: 'Galáxia Pop',
+    themeMinimalLight: 'Mínimo Claro',
+  },},
 };

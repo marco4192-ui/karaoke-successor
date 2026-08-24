@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: '启用摄像头',
   disableMirror: '禁用镜像',
   enableMirrorTooltip: '启用镜像（自拍模式）',
-},
+
+  appearance: {
+    themeNeonNights: '霓虹夜景',
+    themeRetroArcade: '复古街机',
+    themeSunsetVibes: '日落氛围',
+    themeOceanDeep: '深海',
+    themeGalaxyPop: '银河流行',
+    themeMinimalLight: '极简明亮',
+  },},
 };

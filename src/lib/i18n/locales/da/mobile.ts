@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Synger nu',
   score: 'Point',
   noPlayers: 'Ingen spillere endnu',
+    gold: 'Guld',
+    silver: 'Sølv',
+    bronze: 'Bronze',
 },
 mobileErrorBoundary: {
   title: 'Noget gik galt',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Kamera ikke tilgængeligt',
   retake: 'Tag igen',
   noResults: 'Ingen resultater at vise',
+    cameraDeniedDesc: 'Tillad kameraadgang i din browsers indstillinger og prøv igen.',
+    cameraUnavailableDesc: 'Din enhed understøtter ikke kameraadgang.',
+    startingCamera: 'Starter kamera...',
 },
 achievements: {
   firstSong: {

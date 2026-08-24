@@ -17,11 +17,11 @@ function getActiveSingerId(gameState: GameState): string | null {
   return null;
 }
 
-/** Rank medal data */
-const MEDAL: Record<number, { emoji: string; label: string; ring: string; bg: string }> = {
-  1: { emoji: '\u{1F947}', label: 'Gold', ring: 'ring-amber-400', bg: 'bg-gradient-to-r from-amber-500/15 to-yellow-500/5' },
-  2: { emoji: '\u{1F948}', label: 'Silver', ring: 'ring-gray-300', bg: 'bg-gradient-to-r from-gray-400/10 to-gray-300/5' },
-  3: { emoji: '\u{1F949}', label: 'Bronze', ring: 'ring-amber-700', bg: 'bg-gradient-to-r from-amber-800/10 to-amber-700/5' },
+/** Rank medal data — labels use i18n at render time */
+const MEDAL_META: Record<number, { emoji: string; labelKey: string; fallback: string; ring: string; bg: string }> = {
+  1: { emoji: '\u{1F947}', labelKey: 'mobileLeaderboard.gold', fallback: 'Gold', ring: 'ring-amber-400', bg: 'bg-gradient-to-r from-amber-500/15 to-yellow-500/5' },
+  2: { emoji: '\u{1F948}', labelKey: 'mobileLeaderboard.silver', fallback: 'Silver', ring: 'ring-gray-300', bg: 'bg-gradient-to-r from-gray-400/10 to-gray-300/5' },
+  3: { emoji: '\u{1F949}', labelKey: 'mobileLeaderboard.bronze', fallback: 'Bronze', ring: 'ring-amber-700', bg: 'bg-gradient-to-r from-amber-800/10 to-amber-700/5' },
 };
 
 export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
@@ -93,7 +93,7 @@ export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
           <div className="space-y-1">
             {sorted.map((player, index) => {
               const rank = index + 1;
-              const medal = MEDAL[rank];
+              const medal = MEDAL_META[rank];
               const isActiveSinger = player.profileId === activeSingerId;
               const trend = trends.get(player.profileId) ?? 'same';
 
@@ -109,7 +109,7 @@ export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
                   {/* Rank */}
                   <div className="w-7 flex-shrink-0 text-center">
                     {medal ? (
-                      <span className="text-lg" title={medal.label}>{medal.emoji}</span>
+                      <span className="text-lg" title={t(medal.labelKey) === medal.labelKey ? medal.fallback : t(medal.labelKey)}>{medal.emoji}</span>
                     ) : (
                       <span className="text-sm font-bold text-white/40">#{rank}</span>
                     )}

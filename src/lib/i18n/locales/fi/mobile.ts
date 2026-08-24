@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Laulaa nyt',
   score: 'Pisteet',
   noPlayers: 'Ei vielä pelaajia',
+    gold: 'Kulta',
+    silver: 'Hopea',
+    bronze: 'Pronssi',
 },
 mobileErrorBoundary: {
   title: 'Jokin meni pieleen',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Kamera ei ole käytettävissä',
   retake: 'Ota uudelleen',
   noResults: 'Ei näytettäviä tuloksia',
+    cameraDeniedDesc: 'Salli kameran käyttö selaimen asetuksissa ja yritä uudelleen.',
+    cameraUnavailableDesc: 'Laitteesi ei tue kameran käyttöä.',
+    startingCamera: 'Käynnistetään kameraa...',
 },
 achievements: {
   firstSong: {

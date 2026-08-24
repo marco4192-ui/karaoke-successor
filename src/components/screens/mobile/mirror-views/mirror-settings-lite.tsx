@@ -98,35 +98,42 @@ const LANGUAGES = [
   { value: 'zh', label: '\u4E2D\u6587' },
 ];
 
-const LYRICS_STYLES = [
-  { value: 'classic', label: 'Classic' },
-  { value: 'concert', label: 'Concert' },
-  { value: 'retro', label: 'Retro' },
-  { value: 'neon', label: 'Neon' },
-  { value: 'minimal', label: 'Minimal' },
-  { value: 'sunset', label: 'Sunset' },
-  { value: 'ocean', label: 'Ocean' },
-  { value: 'fire', label: 'Fire' },
-  { value: 'disco', label: 'Disco' },
-  { value: 'synthwave', label: 'Synthwave' },
-];
+// i18n-able label helpers (called at render time with t function)
+function lyricsStyles(t: (_key: string) => string) {
+  return [
+    { value: 'classic', label: tOr(t, 'settingsGraphicSound.lyricsClassic', 'Classic') },
+    { value: 'concert', label: tOr(t, 'settingsGraphicSound.lyricsConcert', 'Concert') },
+    { value: 'retro', label: tOr(t, 'settingsGraphicSound.lyricsRetro', 'Retro') },
+    { value: 'neon', label: tOr(t, 'settingsGraphicSound.lyricsNeon', 'Neon') },
+    { value: 'minimal', label: tOr(t, 'settingsGraphicSound.lyricsMinimal', 'Minimal') },
+    { value: 'sunset', label: tOr(t, 'settingsGraphicSound.lyricsSunset', 'Sunset') },
+    { value: 'ocean', label: tOr(t, 'settingsGraphicSound.lyricsOcean', 'Ocean') },
+    { value: 'fire', label: tOr(t, 'settingsGraphicSound.lyricsFire', 'Fire') },
+    { value: 'disco', label: tOr(t, 'settingsGraphicSound.lyricsDisco', 'Disco') },
+    { value: 'synthwave', label: tOr(t, 'settingsGraphicSound.lyricsSynthwave', 'Synthwave') },
+  ];
+}
 
-const THEMES = [
-  { value: 'neon-nights', label: 'Neon Nights', color: '#00ffff' },
-  { value: 'retro-arcade', label: 'Retro Arcade', color: '#ff6600' },
-  { value: 'sunset-vibes', label: 'Sunset Vibes', color: '#ff4488' },
-  { value: 'ocean-deep', label: 'Ocean Deep', color: '#0088ff' },
-  { value: 'galaxy-pop', label: 'Galaxy Pop', color: '#aa44ff' },
-  { value: 'minimal-light', label: 'Minimal Light', color: '#888888' },
-];
+function themes(t: (_key: string) => string) {
+  return [
+    { value: 'neon-nights', label: tOr(t, 'appearance.themeNeonNights', 'Neon Nights'), color: '#00ffff' },
+    { value: 'retro-arcade', label: tOr(t, 'appearance.themeRetroArcade', 'Retro Arcade'), color: '#ff6600' },
+    { value: 'sunset-vibes', label: tOr(t, 'appearance.themeSunsetVibes', 'Sunset Vibes'), color: '#ff4488' },
+    { value: 'ocean-deep', label: tOr(t, 'appearance.themeOceanDeep', 'Ocean Deep'), color: '#0088ff' },
+    { value: 'galaxy-pop', label: tOr(t, 'appearance.themeGalaxyPop', 'Galaxy Pop'), color: '#aa44ff' },
+    { value: 'minimal-light', label: tOr(t, 'appearance.themeMinimalLight', 'Minimal Light'), color: '#888888' },
+  ];
+}
 
-const YT_QUALITY = [
-  { value: 'default', label: 'Auto' },
-  { value: 'hd1080', label: '1080p' },
-  { value: 'hd720', label: '720p' },
-  { value: 'large', label: '480p' },
-  { value: 'medium', label: '360p' },
-];
+function ytQuality(t: (_key: string) => string) {
+  return [
+    { value: 'default', label: tOr(t, 'settingsGraphicSound.youtubeQualityAuto', 'Auto') },
+    { value: 'hd1080', label: tOr(t, 'settingsGraphicSound.youtubeQuality1080', '1080p') },
+    { value: 'hd720', label: tOr(t, 'settingsGraphicSound.youtubeQuality720', '720p') },
+    { value: 'large', label: tOr(t, 'settingsGraphicSound.youtubeQuality480', '480p') },
+    { value: 'medium', label: tOr(t, 'settingsGraphicSound.youtubeQuality360', '360p') },
+  ];
+}
 
 // ===================== Hilfsfunktionen =====================
 
@@ -325,7 +332,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         <div className="flex gap-2 mt-2">
           {(['full', 'low'] as const).map((m) => {
             const isActive = String(settings[SK.PERFORMANCE_MODE]) === m;
-            const labels: Record<string, string> = { full: 'Voll', low: 'Reduziert' };
+            const labels: Record<string, string> = { full: tOr(t, 'appearance.perfFull', 'Voll'), low: tOr(t, 'appearance.perfLow', 'Reduziert') };
             return (
               <button
                 key={m}
@@ -356,7 +363,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.colorTheme', 'Farbschema')}</span>
         <div className="grid grid-cols-2 gap-2 mt-2">
-          {THEMES.map((th) => {
+          {themes(t).map((th) => {
             const isActive = String(settings[SK.THEME]) === th.value;
             return (
               <button
@@ -378,7 +385,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsStyle', 'Lyrics-Stil')}</span>
         <div className="mt-2">
           <Dropdown
-            options={LYRICS_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+            options={lyricsStyles(t)}
             value={String(settings[SK.LYRICS_STYLE] || 'classic')}
             onChange={(v) => sendSetting(SK.LYRICS_STYLE, v)}
           />
@@ -391,7 +398,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         <div className="flex gap-2 mt-2">
           {(['small', 'medium', 'large'] as const).map((s) => {
             const isActive = String(settings[SK.LYRICS_SIZE]) === s;
-            const labels: Record<string, string> = { small: 'Klein', medium: 'Normal', large: 'Gro\u00DF' };
+            const labels: Record<string, string> = { small: tOr(t, 'settingsGraphicSound.lyricsSizeSmall', 'Small'), medium: tOr(t, 'settingsGraphicSound.lyricsSizeMedium', 'Normal'), large: tOr(t, 'settingsGraphicSound.lyricsSizeLarge', 'Large') };
             return (
               <button
                 key={s}
@@ -460,7 +467,7 @@ function GraphicSoundSettings({ settings, sendSetting, t }: {
         <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.youtubeQuality', 'YouTube-Qualit\u00E4t')}</span>
         <div className="mt-2">
           <Dropdown
-            options={YT_QUALITY}
+            options={ytQuality(t)}
             value={String(settings[SK.YOUTUBE_QUALITY] || 'default')}
             onChange={(v) => sendSetting(SK.YOUTUBE_QUALITY, v)}
           />

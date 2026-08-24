@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Śpiewa teraz',
   score: 'Wynik',
   noPlayers: 'Brak graczy',
+    gold: 'Złoto',
+    silver: 'Srebro',
+    bronze: 'Brąz',
 },
 mobileErrorBoundary: {
   title: 'Coś poszło nie tak',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Kamera niedostępna',
   retake: 'Zrób ponownie',
   noResults: 'Brak wyników do wyświetlenia',
+    cameraDeniedDesc: 'Zezwól na dostęp do kamery w ustawieniach przeglądarki i spróbuj ponownie.',
+    cameraUnavailableDesc: 'Twoje urządzenie nie obsługuje dostępu do kamery.',
+    startingCamera: 'Uruchamianie kamery...',
 },
 achievements: {
   firstSong: {

@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Sta cantando',
   score: 'Punteggio',
   noPlayers: 'Nessun giocatore',
+    gold: 'Oro',
+    silver: 'Argento',
+    bronze: 'Bronzo',
 },
 mobileErrorBoundary: {
   title: 'Qualcosa è andato storto',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Fotocamera non disponibile',
   retake: 'Ripeti',
   noResults: 'Nessun risultato da mostrare',
+    cameraDeniedDesc: "Consenti l'accesso alla fotocamera nelle impostazioni del browser e riprova.",
+    cameraUnavailableDesc: "Il tuo dispositivo non supporta l'accesso alla fotocamera.",
+    startingCamera: 'Avvio fotocamera...',
 },
 achievements: {
   firstSong: {

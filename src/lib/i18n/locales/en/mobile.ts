@@ -495,6 +495,9 @@ export const mobileTranslations = {
     currentSinger: 'Now singing',
     score: 'Score',
     noPlayers: 'No players yet',
+    gold: 'Gold',
+    silver: 'Silver',
+    bronze: 'Bronze',
   },
 
   mobileErrorBoundary: {
@@ -581,6 +584,9 @@ export const mobileTranslations = {
     cameraUnavailable: 'Camera not available',
     retake: 'Retake',
     noResults: 'No results to show',
+    cameraDeniedDesc: 'Please allow camera access in your browser settings and try again.',
+    cameraUnavailableDesc: "Your device doesn't support camera access.",
+    startingCamera: 'Starting camera...',
   },
 
   // --- Mobile Achievements ---

@@ -293,7 +293,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
               {t('mobilePhotoBooth.cameraError')}
             </p>
             <p className="text-sm mt-2">
-              Please allow camera access in your browser settings and try again.
+              {t('mobilePhotoBooth.cameraDeniedDesc')}
             </p>
             <button
               onClick={handleClose}
@@ -313,7 +313,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
               {t('mobilePhotoBooth.cameraUnavailable')}
             </p>
             <p className="text-sm mt-2">
-              Your device doesn&apos;t support camera access.
+              {t('mobilePhotoBooth.cameraUnavailableDesc')}
             </p>
             <button
               onClick={handleClose}
@@ -329,7 +329,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/80">
           <div className="text-center text-white/60">
             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
-            <p>Starting camera...</p>
+            <p>{t('mobilePhotoBooth.startingCamera')}</p>
           </div>
         </div>
       )}

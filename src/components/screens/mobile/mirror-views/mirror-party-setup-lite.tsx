@@ -635,7 +635,7 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
             <div className="flex gap-2">
               {(['microphone', 'companion', 'mixed'] as InputMode[]).map((m) => {
                 const icons: Record<InputMode, string> = { microphone: '\u{1F3A4}', companion: '\u{1F4F1}', mixed: '\u{1F3A4}\u{1F4F1}' };
-                const labels: Record<InputMode, string> = { microphone: 'Mic', companion: 'Companion', mixed: 'Gemischt' };
+                const labels: Record<InputMode, string> = { microphone: tOr(t, 'unifiedSetup.mic', 'Mikrofon'), companion: tOr(t, 'unifiedSetup.companion', 'Companion'), mixed: tOr(t, 'unifiedSetup.mixed', 'Gemischt') };
                 const isActive = inputMode === m;
                 return (
                   <button

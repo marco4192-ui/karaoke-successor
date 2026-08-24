@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'Webcam inschakelen',
   disableMirror: 'Spiegelen uitschakelen',
   enableMirrorTooltip: 'Spiegelen inschakelen (Selfiemodus)',
-},
+
+  appearance: {
+    themeNeonNights: 'Neon Nachten',
+    themeRetroArcade: 'Retro Arcade',
+    themeSunsetVibes: 'Zonsondergang Vibes',
+    themeOceanDeep: 'Diepe Oceaan',
+    themeGalaxyPop: 'Galaxy Pop',
+    themeMinimalLight: 'Minimaal Licht',
+  },},
 };

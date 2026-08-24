@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Cantando ahora',
   score: 'Puntuación',
   noPlayers: 'Aún no hay jugadores',
+    gold: 'Oro',
+    silver: 'Plata',
+    bronze: 'Bronce',
 },
 mobileErrorBoundary: {
   title: 'Algo salió mal',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Cámara no disponible',
   retake: 'Tomar de nuevo',
   noResults: 'Sin resultados para mostrar',
+    cameraDeniedDesc: 'Por favor, permite el acceso a la cámara en la configuración de tu navegador e inténtalo de nuevo.',
+    cameraUnavailableDesc: 'Tu dispositivo no admite el acceso a la cámara.',
+    startingCamera: 'Iniciando cámara...',
 },
 achievements: {
   firstSong: {

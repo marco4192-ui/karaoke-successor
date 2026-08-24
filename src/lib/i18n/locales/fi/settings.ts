@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'Ota webcam käyttöön',
   disableMirror: 'Poista peilaus käytöstä',
   enableMirrorTooltip: 'Ota peilaus käyttöön (selfie-tila)',
-},
+
+  appearance: {
+    themeNeonNights: 'Neon Yöt',
+    themeRetroArcade: 'Retro Arcad',
+    themeSunsetVibes: 'Auringonlasku Vibes',
+    themeOceanDeep: 'Syvä Meri',
+    themeGalaxyPop: 'Galaksi Pop',
+    themeMinimalLight: 'Minimaali Vaalea',
+  },},
 };

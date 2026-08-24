@@ -533,5 +533,13 @@ export const settingsTranslations = {
     enableWebcamTooltip: 'Enable Webcam',
     disableMirror: 'Disable Mirror',
     enableMirrorTooltip: 'Enable Mirror (Selfie Mode)',
-  },
+
+  appearance: {
+    themeNeonNights: 'Neon Nights',
+    themeRetroArcade: 'Retro Arcade',
+    themeSunsetVibes: 'Sunset Vibes',
+    themeOceanDeep: 'Ocean Deep',
+    themeGalaxyPop: 'Galaxy Pop',
+    themeMinimalLight: 'Minimal Light',
+  },  },
 };

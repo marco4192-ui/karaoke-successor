@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Chante maintenant',
   score: 'Score',
   noPlayers: 'Aucun joueur',
+    gold: 'Or',
+    silver: 'Argent',
+    bronze: 'Bronze',
 },
 mobileErrorBoundary: {
   title: 'Un problème est survenu',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Caméra non disponible',
   retake: 'Reprendre',
   noResults: 'Aucun résultat à afficher',
+    cameraDeniedDesc: "Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur et réessayer.",
+    cameraUnavailableDesc: "Votre appareil ne prend pas en charge l'accès à la caméra.",
+    startingCamera: 'Démarrage de la caméra...',
 },
 achievements: {
   firstSong: {

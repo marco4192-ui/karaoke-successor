@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Zingt nu',
   score: 'Score',
   noPlayers: 'Nog geen spelers',
+    gold: 'Goud',
+    silver: 'Zilver',
+    bronze: 'Brons',
 },
 mobileErrorBoundary: {
   title: 'Er is iets misgegaan',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Camera niet beschikbaar',
   retake: 'Opnieuw',
   noResults: 'Geen resultaten om te tonen',
+    cameraDeniedDesc: 'Sta camera-toegang toe in je browserinstellingen en probeer opnieuw.',
+    cameraUnavailableDesc: 'Je apparaat ondersteunt geen cameratoegang.',
+    startingCamera: 'Camera starten...',
 },
 achievements: {
   firstSong: {

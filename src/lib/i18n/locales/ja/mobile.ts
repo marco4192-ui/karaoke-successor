@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: '歌唱中',
   score: 'スコア',
   noPlayers: 'プレイヤーなし',
+    gold: '金',
+    silver: '銀',
+    bronze: '銅',
 },
 mobileErrorBoundary: {
   title: '問題が発生しました',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'カメラは利用できません',
   retake: '撮り直す',
   noResults: '表示する結果がありません',
+    cameraDeniedDesc: 'ブラウザの設定でカメラアクセスを許可して再試行してください。',
+    cameraUnavailableDesc: 'お使いのデバイスはカメラアクセスに対応していません。',
+    startingCamera: 'カメラを起動中...',
 },
 achievements: {
   firstSong: {

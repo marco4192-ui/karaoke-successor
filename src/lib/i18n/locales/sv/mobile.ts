@@ -478,6 +478,9 @@ mobileLeaderboard: {
   currentSinger: 'Sjunger nu',
   score: 'Poäng',
   noPlayers: 'Inga spelare ännu',
+    gold: 'Guld',
+    silver: 'Silver',
+    bronze: 'Brons',
 },
 mobileErrorBoundary: {
   title: 'Något gick fel',
@@ -557,6 +560,9 @@ mobilePhotoBooth: {
   cameraUnavailable: 'Kamera inte tillgängligt',
   retake: 'Ta om',
   noResults: 'Inga resultat att visa',
+    cameraDeniedDesc: 'Tillåt kameratillgång i din webbläsares inställningar och försök igen.',
+    cameraUnavailableDesc: 'Din enhet stöder inte kameratillgång.',
+    startingCamera: 'Startar kamera...',
 },
 achievements: {
   firstSong: {

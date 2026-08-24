@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: 'Włącz kamerę',
   disableMirror: 'Wyłącz lustro',
   enableMirrorTooltip: 'Włącz lustro (tryb selfie)',
-},
+
+  appearance: {
+    themeNeonNights: 'Neonowe Noce',
+    themeRetroArcade: 'Retro Arcade',
+    themeSunsetVibes: 'Zachód Słońca',
+    themeOceanDeep: 'Głęboki Ocean',
+    themeGalaxyPop: 'Galaktyka Pop',
+    themeMinimalLight: 'Minimalny Jasny',
+  },},
 };

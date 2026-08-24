@@ -516,5 +516,13 @@ webcamSettings: {
   enableWebcamTooltip: '웹캠 활성화',
   disableMirror: '미러 비활성화',
   enableMirrorTooltip: '미러 활성화 (셀카 모드)',
-},
+
+  appearance: {
+    themeNeonNights: '네온 나이트',
+    themeRetroArcade: '레트로 아케이드',
+    themeSunsetVibes: '선셋 비브스',
+    themeOceanDeep: '딥 오션',
+    themeGalaxyPop: '갤럭시 팝',
+    themeMinimalLight: '미니멀 라이트',
+  },},
 };

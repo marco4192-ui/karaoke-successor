@@ -89,7 +89,7 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
               variant="outline"
               className="border-white/20"
             >
-              📸 Photo
+              {t('mobileViews.photo')}
             </Button>
             <Button 
               onClick={() => {
