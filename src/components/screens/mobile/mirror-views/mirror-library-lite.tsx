@@ -59,14 +59,14 @@ function formatDurationSec(ms: number): string {
 }
 
 function isLikelyDuet(song: MobileSong): boolean {
-  // Tier 1: Metadata flag from Ultrastar parser (P1/P2 note markers)
+  // The desktop pre-computes isDuet using the full isDuetSong() logic
+  // (metadata flag + [Duet]/(Duet) title check + P1/P2 lyrics scan).
+  // Rely on that flag — no lyrics are available on the companion side.
   if (song.isDuet === true) return true;
-  // Tier 2: Title contains [Duet] or (Duet) — brackets required
+  // Safety net: bracketed [Duet] / (Duet) in title (catches songs added after last sync)
   if (song.title && /\[\s*duet\s*\]/i.test(song.title)) return true;
   if (song.title && /\(\s*duet\s*\)/i.test(song.title)) return true;
-  // Fallback: word-boundary match on title+artist (for songs not yet re-parsed)
-  const combined = `${song.title} ${song.artist}`;
-  return /\bduet(t|to)?s?\b/i.test(combined);
+  return false;
 }
 
 // ===================== Component =====================
