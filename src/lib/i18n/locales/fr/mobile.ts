@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Annuler',
   mirrorChallengeSent: 'Envoyé !',
   mirrorDuelHint: 'Touchez une chanson pour défier un adversaire',
+  mirrorDuetHint: "Touchez une chanson pour trouver un partenaire de duo",
+
   mirrorDuetFilterHint: 'Seules les chansons en duo sont affichées',
   mirrorSearchSongs: 'Rechercher des chansons...',
   mirrorBackToParty: '← Retour aux Modes Fête',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Historique de la hauteur de ton',
 },
 mobileViews: {
+  desktopScreen: "Bureau",
+  nothingPlaying: "Aucune lecture en cours",
   nowPlaying: 'En Cours',
   sing: 'Chanter',
   songs: 'Chansons',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Chant Compagnon',
   subtitle: 'Votre téléphone s\'allume aléatoirement — c\'est votre signal pour chanter !',
   back: '← Retour',
+  backToParty: "Retour à la Fête",
   howItWorks: '🎮 Comment ça marche',
   howItWorks1: '📱 Tout le monde garde son téléphone à portée',
   howItWorks2: '⚡ Quand l\'écran de votre téléphone clignote, c\'est VOTRE tour !',

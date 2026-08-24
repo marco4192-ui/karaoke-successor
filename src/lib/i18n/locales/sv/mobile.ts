@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Avbryt',
   mirrorChallengeSent: 'Skickat!',
   mirrorDuelHint: 'Tryck på en låt för att utmana en motståndare',
+  mirrorDuetHint: "Tryck på en låt för att hitta en duettpartner",
+
   mirrorDuetFilterHint: 'Endast duettlåtar visas',
   mirrorSearchSongs: 'Sök låtar...',
   mirrorBackToParty: '← Tillbaka till Festlägen',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Tonhöjdshistorik',
 },
 mobileViews: {
+  desktopScreen: "Skrivbord",
+  nothingPlaying: "Inget spelas upp",
   nowPlaying: 'Spelas Nu',
   sing: 'Sjung',
   songs: 'Låtar',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion Medsång',
   subtitle: 'Din telefon tänds slumpmässigt — det är din tur att sjunga!',
   back: '← Tillbaka',
+  backToParty: "Tillbaka till Fest",
   howItWorks: '🎮 Så fungerar det',
   howItWorks1: '📱 Alla håller sin telefon nära',
   howItWorks2: '⚡ När din telefonskärm blinkar är det DIN tur att sjunga!',

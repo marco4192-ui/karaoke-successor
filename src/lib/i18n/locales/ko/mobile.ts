@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: '취소',
   mirrorChallengeSent: '전송됨!',
   mirrorDuelHint: '노래를 탭하여 상대에게 도전',
+  mirrorDuetHint: "듀엣 파트너를 찾으려면 노래를 탭하세요",
+
   mirrorDuetFilterHint: '듀엣 곡만 표시됩니다',
   mirrorSearchSongs: '노래 검색...',
   mirrorBackToParty: '← 파티 모드로 돌아가기',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: '음높이 기록',
 },
 mobileViews: {
+  desktopScreen: "데스크톱",
+  nothingPlaying: "재생 중인 곡 없음",
   nowPlaying: '재생 중',
   sing: '부르기',
   songs: '곡',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 컴패니언 싱얼롱',
   subtitle: '휴대폰이 무작위로 반짝 — 당신이 부를 차례!',
   back: '← 뒤로',
+  backToParty: "파이티로 돌아가기",
   howItWorks: '🎮 진행 방법',
   howItWorks1: '📱 모두가 휴대폰을 가까이에 둡니다',
   howItWorks2: '⚡ 휴대폰 화면이 깜빡이면 당신 차례!',

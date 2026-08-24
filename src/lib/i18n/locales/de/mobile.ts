@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Abbrechen',
   mirrorChallengeSent: 'Gesendet!',
   mirrorDuelHint: 'Tippe auf einen Song, um einen Gegner herauszufordern',
+  mirrorDuetHint: "Tippe auf einen Song, um einen Duett-Partner zu finden",
+
   mirrorDuetFilterHint: 'Es werden nur Duett-Songs angezeigt',
   mirrorSearchSongs: 'Suche...',
   mirrorBackToParty: '← Zurück zu Party-Modi',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Tonhöhen-Verlauf',
 },
 mobileViews: {
+  desktopScreen: "Desktop",
+  nothingPlaying: "Es spielt nichts",
   nowPlaying: 'Jetzt läuft',
   sing: 'Singen',
   songs: 'Songs',

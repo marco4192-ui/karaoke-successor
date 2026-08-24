@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Cancelar',
   mirrorChallengeSent: '¡Enviado!',
   mirrorDuelHint: 'Toca una canción para desafiar a un oponente',
+  mirrorDuetHint: "Toca una canción para encontrar un compañero de dueto",
+
   mirrorDuetFilterHint: 'Solo se muestran canciones de dúo',
   mirrorSearchSongs: 'Buscar canciones...',
   mirrorBackToParty: '← Volver a Modos de Fiesta',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Historial de tono',
 },
 mobileViews: {
+  desktopScreen: "Escritorio",
+  nothingPlaying: "No se reproduce nada",
   nowPlaying: 'Reproduciendo Ahora',
   sing: 'Cantar',
   songs: 'Canciones',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Cantando con Compañero',
   subtitle: '¡Tu teléfono se ilumina aleatoriamente — esa es tu señal para cantar!',
   back: '← Atrás',
+  backToParty: "Volver a la Fiesta",
   howItWorks: '🎮 Cómo funciona',
   howItWorks1: '📱 Todos mantienen su teléfono cerca',
   howItWorks2: '⚡ Cuando la pantalla de tu teléfono parpadea, ¡es TU turno!',

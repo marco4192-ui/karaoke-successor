@@ -104,6 +104,8 @@ export const mobileTranslations = {
     mirrorCancel: 'Cancel',
     mirrorChallengeSent: 'Sent!',
     mirrorDuelHint: 'Tap a song to challenge an opponent',
+    mirrorDuetHint: "Tap a song to find a duet partner",
+
     mirrorDuetFilterHint: 'Only duet songs are shown',
     mirrorSearchSongs: 'Search songs...',
     mirrorBackToParty: '← Back to Party Modes',
@@ -147,6 +149,8 @@ export const mobileTranslations = {
   },
 
   mobileViews: {
+  desktopScreen: "Desktop",
+  nothingPlaying: "Nothing playing",
     nowPlaying: 'Now Playing',
     sing: 'Sing',
     songs: 'Songs',

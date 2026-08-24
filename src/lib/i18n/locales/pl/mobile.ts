@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Anuluj',
   mirrorChallengeSent: 'Wysłane!',
   mirrorDuelHint: 'Dotknij piosenkę, aby wyzwać przeciwnika',
+  mirrorDuetHint: "Dotknij piosenki, aby znaleźć partnera do duetu",
+
   mirrorDuetFilterHint: 'Pokazywane są tylko piosenki duetowe',
   mirrorSearchSongs: 'Szukaj piosenek...',
   mirrorBackToParty: '← Powrót do Trybów Imprezy',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Historia wysokości dźwięku',
 },
 mobileViews: {
+  desktopScreen: "Pulpit",
+  nothingPlaying: "Nic nie jest odtwarzane",
   nowPlaying: 'Teraz odtwarzane',
   sing: 'Śpiewaj',
   songs: 'Piosenki',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Razem z telefonem',
   subtitle: 'Twój telefon losowo się świeci — to znak, że masz śpiewać!',
   back: '← Wróć',
+  backToParty: "Powrót do imprezy",
   howItWorks: '🎮 Jak to działa',
   howItWorks1: '📱 Każdy trzyma telefon blisko siebie',
   howItWorks2: '⚡ Kiedy ekran Twojego telefonu zaświeci się, to TWOJA kolej na śpiew!',

@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Cancelar',
   mirrorChallengeSent: 'Enviado!',
   mirrorDuelHint: 'Toque numa música para desafiar um oponente',
+  mirrorDuetHint: "Toque numa música para encontrar um parceiro de dueto",
+
   mirrorDuetFilterHint: 'São mostradas apenas músicas de duo',
   mirrorSearchSongs: 'Pesquisar músicas...',
   mirrorBackToParty: '← Voltar aos Modos de Festa',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Histórico do tom',
 },
 mobileViews: {
+  desktopScreen: "Desktop",
+  nothingPlaying: "Nada a reproduzir",
   nowPlaying: 'Tocando Agora',
   sing: 'Cantar',
   songs: 'Músicas',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion Sing-A-Long',
   subtitle: 'Seu telefone acende aleatoriamente — é sua vez de cantar!',
   back: '← Voltar',
+  backToParty: "Voltar para a Festa",
   howItWorks: '🎮 Como funciona',
   howItWorks1: '📱 Todos mantêm o telefone por perto',
   howItWorks2: '⚡ Quando a tela do seu telefone pisca, é SUA vez de cantar!',

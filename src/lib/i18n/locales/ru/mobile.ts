@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Отмена',
   mirrorChallengeSent: 'Отправлено!',
   mirrorDuelHint: 'Нажмите на песню, чтобы бросить вызов',
+  mirrorDuetHint: "Нажмите на песню, чтобы найти партнёра для дуэта",
+
   mirrorDuetFilterHint: 'Показаны только дуэтные песни',
   mirrorSearchSongs: 'Поиск песен...',
   mirrorBackToParty: '← Назад к Режимам Вечеринки',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'История высоты тона',
 },
 mobileViews: {
+  desktopScreen: "Десктоп",
+  nothingPlaying: "Ничего не воспроизводится",
   nowPlaying: 'Сейчас играет',
   sing: 'Петь',
   songs: 'Песни',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Совместное пение',
   subtitle: 'Телефон загорается случайным образом — это ваш сигнал петь!',
   back: '← Назад',
+  backToParty: "Назад к вечеринке",
   howItWorks: '🎮 Как это работает',
   howItWorks1: '📱 Каждый держит телефон рядом',
   howItWorks2: '⚡ Когда экран вашего телефона загорается — ваша очередь петь!',

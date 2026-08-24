@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Annuleren',
   mirrorChallengeSent: 'Verzonden!',
   mirrorDuelHint: 'Tik op een nummer om een tegenstander uit te dagen',
+  mirrorDuetHint: "Tik op een nummer om een duetpartner te vinden",
+
   mirrorDuetFilterHint: 'Alleen duet-nummers worden getoond',
   mirrorSearchSongs: 'Nummers zoeken...',
   mirrorBackToParty: '← Terug naar Party-modi',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Toonhoogtegeschiedenis',
 },
 mobileViews: {
+  desktopScreen: "Desktop",
+  nothingPlaying: "Er wordt niets afgespeeld",
   nowPlaying: 'Nu aan het spelen',
   sing: 'Zingen',
   songs: 'Nummers',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion Meezingen',
   subtitle: 'Je telefoon licht willekeurig op — dat is jouw teken om te zingen!',
   back: '← Terug',
+  backToParty: "Terug naar feest",
   howItWorks: '🎮 Hoe het werkt',
   howItWorks1: '📱 Iedereen houdt zijn telefoon dichtbij',
   howItWorks2: '⚡ Als je telefoonscherm flikkert, ben JIJ aan de beurt om te zingen!',

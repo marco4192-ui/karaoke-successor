@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Annuller',
   mirrorChallengeSent: 'Sendt!',
   mirrorDuelHint: 'Tryk på en sang for at udfordre en modstander',
+  mirrorDuetHint: "Tryk på en sang for at finde en duetpartner",
+
   mirrorDuetFilterHint: 'Kun duetsange vises',
   mirrorSearchSongs: 'Søg sange...',
   mirrorBackToParty: '← Tilbage til Festtilstande',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Tonehøjdeshistorik',
 },
 mobileViews: {
+  desktopScreen: "Skrivebord",
+  nothingPlaying: "Intet spiller",
   nowPlaying: 'Spiller nu',
   sing: 'Syng',
   songs: 'Sange',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion Sing-A-Long',
   subtitle: 'Din telefon lyser tilfældigt op – det er dit signal til at synge!',
   back: '← Tilbage',
+  backToParty: "Tilbage til fest",
   howItWorks: '🎮 Sådan fungerer det',
   howItWorks1: '📱 Alle har deres telefon i nærheden',
   howItWorks2: '⚡ Når din telefonskærm blinker, er det DIN tur til at synge!',

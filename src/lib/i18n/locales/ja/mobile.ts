@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'キャンセル',
   mirrorChallengeSent: '送信済み!',
   mirrorDuelHint: '曲をタップして対戦相手に挑戦',
+  mirrorDuetHint: "デュエットパートナーを見つけるには曲をタップ",
+
   mirrorDuetFilterHint: 'デュエット曲のみ表示されています',
   mirrorSearchSongs: '曲を検索...',
   mirrorBackToParty: '← パーティーモードに戻る',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: '音程の推移',
 },
 mobileViews: {
+  desktopScreen: "デスクトップ",
+  nothingPlaying: "再生中の曲はありません",
   nowPlaying: '再生中',
   sing: '歌う',
   songs: '曲',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 コンパニオン・シング・アロング',
   subtitle: '携帯がランダムに点灯する—それがあなたの歌う合図です！',
   back: '← 戻る',
+  backToParty: "パーティーに戻っ",
   howItWorks: '🎮 仕組み',
   howItWorks1: '📱 みんなが携帯を近くに置く',
   howItWorks2: '⚡ 携帯の画面が点滅したら、あなたの番です！',

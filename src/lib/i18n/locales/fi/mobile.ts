@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Peruuta',
   mirrorChallengeSent: 'Lähetetty!',
   mirrorDuelHint: 'Napauta kappaletta haastaaksesi vastustajan',
+  mirrorDuetHint: "Napauta kappa löytääksesi duettikumppanin",
+
   mirrorDuetFilterHint: 'Näytetään vain duetot',
   mirrorSearchSongs: 'Hae kappaleita...',
   mirrorBackToParty: '← Takaisin Juhlatiloihin',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Sävelkorkeushistoria',
 },
 mobileViews: {
+  desktopScreen: "Työpöytä",
+  nothingPlaying: "Mikään ei soi",
   nowPlaying: 'Nyt soi',
   sing: 'Laula',
   songs: 'Kappaleet',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion-mukalaulu',
   subtitle: 'Puhelimesi syttyy satunnaisesti – se on sinun merkkisi laulaa!',
   back: '← Takaisin',
+  backToParty: "Takaisin juhliin",
   howItWorks: '🎮 Näin se toimii',
   howItWorks1: '📱 Kaikilla on puhelin lähellä',
   howItWorks2: '⚡ Kun puhelimesi näyttö vilkkua, on SINUN vuorosi laulaa!',

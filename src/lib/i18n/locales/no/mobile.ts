@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Avbryt',
   mirrorChallengeSent: 'Sendt!',
   mirrorDuelHint: 'Trykk på en sang for å utfordre en motstander',
+  mirrorDuetHint: "Trykk på en sang for å finne en duettpartner",
+
   mirrorDuetFilterHint: 'Kun duetter vises',
   mirrorSearchSongs: 'Søk sanger...',
   mirrorBackToParty: '← Tilbake til Festmodus',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Tonehøjdeshistorikk',
 },
 mobileViews: {
+  desktopScreen: "Skrivebord",
+  nothingPlaying: "Ingenting spilles",
   nowPlaying: 'Spiller nå',
   sing: 'Syng',
   songs: 'Sanger',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion Syng-Med',
   subtitle: 'Telefonen din lyser tilfeldig opp – det er din tur til å synge!',
   back: '← Tilbake',
+  backToParty: "Tilbake til fest",
   howItWorks: '🎮 Slik fungerer det',
   howItWorks1: '📱 Alle holder telefonen sin i nærheten',
   howItWorks2: '⚡ Når telefon-skjermen din blinker, er det DIN tur til å synge!',

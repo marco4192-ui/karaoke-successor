@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: '取消',
   mirrorChallengeSent: '已发送!',
   mirrorDuelHint: '点击歌曲向对手发起挑战',
+  mirrorDuetHint: "点击歌曲查找对唱搭档",
+
   mirrorDuetFilterHint: '仅显示对唱歌曲',
   mirrorSearchSongs: '搜索歌曲...',
   mirrorBackToParty: '← 返回派对模式',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: '音高历史',
 },
 mobileViews: {
+  desktopScreen: "桌面端",
+  nothingPlaying: "当前没有播放歌曲",
   nowPlaying: '正在播放',
   sing: '演唱',
   songs: '歌曲',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Companion 合唱',
   subtitle: '手机随机亮起——轮到你唱了！',
   back: '← 返回',
+  backToParty: "返回派对",
   howItWorks: '🎮 玩法说明',
   howItWorks1: '📱 所有人把手机放在身边',
   howItWorks2: '⚡ 手机屏幕闪烁时，轮到你唱！',

@@ -101,6 +101,8 @@ mobile: {
   mirrorCancel: 'Annulla',
   mirrorChallengeSent: 'Inviato!',
   mirrorDuelHint: 'Tocca un brano per sfidare un avversario',
+  mirrorDuetHint: "Tocca un brano per trovare un partner di duetto",
+
   mirrorDuetFilterHint: 'Vengono mostrati solo i brani duo',
   mirrorSearchSongs: 'Cerca brani...',
   mirrorBackToParty: '← Torna alle Modalità Party',
@@ -141,6 +143,8 @@ mobileMicView: {
   pitchHistory: 'Cronologia del tono',
 },
 mobileViews: {
+  desktopScreen: "Desktop",
+  nothingPlaying: "Nessuna riproduzione in corso",
   nowPlaying: 'In Riproduzione',
   sing: 'Canta',
   songs: 'Canzoni',
@@ -256,6 +260,7 @@ companion: {
   title: '📱 Canta Insieme',
   subtitle: 'Il tuo telefono si illumina casualmente — è il tuo turno di cantare!',
   back: '← Indietro',
+  backToParty: "Torna alla Festa",
   howItWorks: '🎮 Come funziona',
   howItWorks1: '📱 Tutti tengono il telefono vicino',
   howItWorks2: '⚡ Quando lo schermo lampeggia, è il TUO turno!',
