@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Attivo',
   mirrorProfileInactive: 'Inattivo',
   mirrorProfileSyncNote: 'Le modifiche vengono applicate immediatamente sul desktop',
+  mirrorPlaylist: 'Aggiungi a Playlist',
+  mirrorPlaylistPick: 'Scegli Playlist',
+  mirrorPlaylistName: 'Nome playlist',
+  mirrorNoPlaylists: 'Nessuna playlist',
+  mirrorNewPlaylist: 'Crea Nuova Playlist',
+  mirrorCreateAdd: 'Crea e Aggiungi',
+  mirrorCancel: 'Annulla',
+  mirrorChallengeSent: 'Inviato!',
+  mirrorDuelHint: 'Tocca un brano per sfidare un avversario',
+  mirrorDuetFilterHint: 'Vengono mostrati solo i brani duo',
+  mirrorSearchSongs: 'Cerca brani...',
+  mirrorBackToParty: '← Torna alle Modalità Party',
+  mirrorLibrary: 'Libreria',
+  mirrorNoSongs: 'Nessun brano caricato',
+  mirrorStartGame: 'Inizia Gioco',
 },
 mobileClient: {
   back: '← Indietro',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Coda (Ctrl+Q)',
   oneDevice: 'Solo un dispositivo può controllare l\'app alla volta.',
   instantCommands: 'I comandi vengono inviati allo schermo principale istantaneamente.',
+  controlLockedBy: 'Controllato da {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Torna alla Festa',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: "Consenti l'accesso alla fotocamera nelle impostazioni del browser e riprova.",
     cameraUnavailableDesc: "Il tuo dispositivo non supporta l'accesso alla fotocamera.",
     startingCamera: 'Avvio fotocamera...',
+},
+desktopChat: {
+  challenge: 'Sfida (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Accetta Sfida',
+  acceptedBy: 'Accettato da',
 },
 achievements: {
   firstSong: {

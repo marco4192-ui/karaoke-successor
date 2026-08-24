@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'アクティブ',
   mirrorProfileInactive: '非アクティブ',
   mirrorProfileSyncNote: '変更はデスクトップに即座に反映されます',
+  mirrorPlaylist: 'プレイリストに追加',
+  mirrorPlaylistPick: 'プレイリストを選択',
+  mirrorPlaylistName: 'プレイリスト名',
+  mirrorNoPlaylists: 'プレイリストがありません',
+  mirrorNewPlaylist: '新規プレイリスト作成',
+  mirrorCreateAdd: '作成して追加',
+  mirrorCancel: 'キャンセル',
+  mirrorChallengeSent: '送信済み!',
+  mirrorDuelHint: '曲をタップして対戦相手に挑戦',
+  mirrorDuetFilterHint: 'デュエット曲のみ表示されています',
+  mirrorSearchSongs: '曲を検索...',
+  mirrorBackToParty: '← パーティーモードに戻る',
+  mirrorLibrary: 'ライブラリ',
+  mirrorNoSongs: '曲がまだ読み込まれていません',
+  mirrorStartGame: 'ゲーム開始',
 },
 mobileClient: {
   back: '← 戻る',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'キュー (Ctrl+Q)',
   oneDevice: '一度に1つのデバイスのみがアプリをコントロールできます。',
   instantCommands: 'コマンドはメイン画面に即座に送信されます。',
+  controlLockedBy: '{name}が操作中',
 },
 onlineMultiplayer: {
   backToParty: 'パーティーに戻る',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'ブラウザの設定でカメラアクセスを許可して再試行してください。',
     cameraUnavailableDesc: 'お使いのデバイスはカメラアクセスに対応していません。',
     startingCamera: 'カメラを起動中...',
+},
+desktopChat: {
+  challenge: 'チャレンジ (チャット)',
+},
+songChallenge: {
+  acceptBtn: 'チャレンジを受け入れる',
+  acceptedBy: '受け入れた人',
 },
 achievements: {
   firstSong: {

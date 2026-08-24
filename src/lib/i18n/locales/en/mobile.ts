@@ -95,6 +95,21 @@ export const mobileTranslations = {
     mirrorProfileActive: 'Active',
     mirrorProfileInactive: 'Inactive',
     mirrorProfileSyncNote: 'Changes are applied immediately on the desktop',
+    mirrorPlaylist: 'Add to Playlist',
+    mirrorPlaylistPick: 'Choose Playlist',
+    mirrorPlaylistName: 'Playlist name',
+    mirrorNoPlaylists: 'No playlists yet',
+    mirrorNewPlaylist: 'Create New Playlist',
+    mirrorCreateAdd: 'Create & Add',
+    mirrorCancel: 'Cancel',
+    mirrorChallengeSent: 'Sent!',
+    mirrorDuelHint: 'Tap a song to challenge an opponent',
+    mirrorDuetFilterHint: 'Only duet songs are shown',
+    mirrorSearchSongs: 'Search songs...',
+    mirrorBackToParty: '← Back to Party Modes',
+    mirrorLibrary: 'Library',
+    mirrorNoSongs: 'No songs loaded yet',
+    mirrorStartGame: 'Start Game',
   },
 
   mobileClient: {
@@ -297,7 +312,11 @@ export const mobileTranslations = {
     pts: 'pts',
     endSongEarlyConfirm: 'Really end song early?',
     confirm: 'Confirm',
-    cancel: 'Cancel'
+    cancel: 'Cancel',
+    backToParty: '← Back',
+    releaseControl: 'Release Control',
+    acquireControl: 'Take Control',
+    controlLocked: 'Control: {name}',
   },
 
   remoteControl: {
@@ -359,7 +378,8 @@ export const mobileTranslations = {
     randomDuel: 'Duel (Ctrl+D)',
     playQueue: 'Queue (Ctrl+Q)',
     oneDevice: 'Only one device can control the app at a time.',
-    instantCommands: 'Commands are sent to the main screen instantly.'
+    instantCommands: 'Commands are sent to the main screen instantly.',
+    controlLockedBy: 'Controlled by {name}',
   },
 
   onlineMultiplayer: {
@@ -590,6 +610,15 @@ export const mobileTranslations = {
   },
 
   // --- Mobile Achievements ---
+  desktopChat: {
+    challenge: 'Challenge (Chat)',
+  },
+
+  songChallenge: {
+    acceptBtn: 'Accept Challenge',
+    acceptedBy: 'Accepted by',
+  },
+
   achievements: {
     firstSong: { title: 'First Steps', description: 'Sing your first song' },
     risingStar: { title: 'Rising Star', description: 'Sing 10 songs' },

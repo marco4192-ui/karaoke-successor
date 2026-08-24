@@ -421,7 +421,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
             placeholder={t('mobile.mirrorSearchSongs') || 'Suche...'}
             className={'w-full rounded-xl px-4 py-2.5 pl-9 text-sm text-white placeholder-white/30 ' +
               'bg-white/5 border border-white/10 outline-none focus:border-cyan-400/50 focus:bg-white/8 transition-colors'}
-          />\n          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">{'\u{1F50D}'}</span>
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">{'\u{1F50D}'}</span>
           {songSearch && (
             <button
               onClick={handleClearSearch}
@@ -624,7 +625,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                   className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400/20 text-white active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   <span className="text-base">{'\u25B6\uFE0F'}</span>
-                  <span>Spiel starten</span>
+                  <span>{t('mobile.mirrorStartGame') || 'Spiel starten'}</span>
                 </button>
 
                 {/* Herausfordern (nur Duell/Duett) */}

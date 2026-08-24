@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Actif',
   mirrorProfileInactive: 'Inactif',
   mirrorProfileSyncNote: 'Les modifications sont appliquées immédiatement sur le bureau',
+  mirrorPlaylist: 'Ajouter à la Playlist',
+  mirrorPlaylistPick: 'Choisir une Playlist',
+  mirrorPlaylistName: 'Nom de la playlist',
+  mirrorNoPlaylists: 'Aucune playlist',
+  mirrorNewPlaylist: 'Créer une Nouvelle Playlist',
+  mirrorCreateAdd: 'Créer et Ajouter',
+  mirrorCancel: 'Annuler',
+  mirrorChallengeSent: 'Envoyé !',
+  mirrorDuelHint: 'Touchez une chanson pour défier un adversaire',
+  mirrorDuetFilterHint: 'Seules les chansons en duo sont affichées',
+  mirrorSearchSongs: 'Rechercher des chansons...',
+  mirrorBackToParty: '← Retour aux Modes Fête',
+  mirrorLibrary: 'Bibliothèque',
+  mirrorNoSongs: 'Aucune chanson chargée',
+  mirrorStartGame: 'Lancer la partie',
 },
 mobileClient: {
   back: '← Retour',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'File (Ctrl+Q)',
   oneDevice: 'Un seul appareil peut contrôler l\'app à la fois.',
   instantCommands: 'Les commandes sont envoyées instantanément.',
+  controlLockedBy: 'Contrôlé par {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Retour à la Fête',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: "Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur et réessayer.",
     cameraUnavailableDesc: "Votre appareil ne prend pas en charge l'accès à la caméra.",
     startingCamera: 'Démarrage de la caméra...',
+},
+desktopChat: {
+  challenge: 'Défier (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Accepter le Défi',
+  acceptedBy: 'Accepté par',
 },
 achievements: {
   firstSong: {

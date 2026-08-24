@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: '활성',
   mirrorProfileInactive: '비활성',
   mirrorProfileSyncNote: '변경 사항이 데스크톱에 즉시 적용됩니다',
+  mirrorPlaylist: '재생목록에 추가',
+  mirrorPlaylistPick: '재생목록 선택',
+  mirrorPlaylistName: '재생목록 이름',
+  mirrorNoPlaylists: '재생목록 없음',
+  mirrorNewPlaylist: '새 재생목록 만들기',
+  mirrorCreateAdd: '만들고 추가',
+  mirrorCancel: '취소',
+  mirrorChallengeSent: '전송됨!',
+  mirrorDuelHint: '노래를 탭하여 상대에게 도전',
+  mirrorDuetFilterHint: '듀엣 곡만 표시됩니다',
+  mirrorSearchSongs: '노래 검색...',
+  mirrorBackToParty: '← 파티 모드로 돌아가기',
+  mirrorLibrary: '라이브러리',
+  mirrorNoSongs: '아직 로드된 노래가 없습니다',
+  mirrorStartGame: '게임 시작',
 },
 mobileClient: {
   back: '← 뒤로',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: '대기열 (Ctrl+Q)',
   oneDevice: '한 번에 하나의 기기만 앱을 컨트롤할 수 있습니다.',
   instantCommands: '명령이 메인 화면에 즉시 전송됩니다.',
+  controlLockedBy: '{name}이(가) 제어 중',
 },
 onlineMultiplayer: {
   backToParty: '파티로 돌아가기',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: '브라우저 설정에서 카메라 접근 허용을 하고 다시 시도하세요.',
     cameraUnavailableDesc: '당신 기기는 카메라 접근을 지원하지 않습니다.',
     startingCamera: '카메라 시작 중...',
+},
+desktopChat: {
+  challenge: '도전 (채팅)',
+},
+songChallenge: {
+  acceptBtn: '도전 수락',
+  acceptedBy: '수락한 사람',
 },
 achievements: {
   firstSong: {

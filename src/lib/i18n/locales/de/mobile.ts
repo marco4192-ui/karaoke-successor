@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Aktiv',
   mirrorProfileInactive: 'Inaktiv',
   mirrorProfileSyncNote: 'Änderungen werden sofort auf dem Desktop übernommen',
+  mirrorPlaylist: 'Zur Playlist',
+  mirrorPlaylistPick: 'Playlist wählen',
+  mirrorPlaylistName: 'Playlist-Name',
+  mirrorNoPlaylists: 'Keine Playlists vorhanden',
+  mirrorNewPlaylist: 'Neue Playlist erstellen',
+  mirrorCreateAdd: 'Erstellen & Hinzufügen',
+  mirrorCancel: 'Abbrechen',
+  mirrorChallengeSent: 'Gesendet!',
+  mirrorDuelHint: 'Tippe auf einen Song, um einen Gegner herauszufordern',
+  mirrorDuetFilterHint: 'Es werden nur Duett-Songs angezeigt',
+  mirrorSearchSongs: 'Suche...',
+  mirrorBackToParty: '← Zurück zu Party-Modi',
+  mirrorLibrary: 'Bibliothek',
+  mirrorNoSongs: 'Noch keine Songs geladen',
+  mirrorStartGame: 'Spiel starten',
 },
 mobileClient: {
   back: '← Zurück',
@@ -288,6 +303,10 @@ companion: {
   endSongEarlyConfirm: 'Wirklich vorzeitig beenden?',
   confirm: 'Bestätigen',
   cancel: 'Abbrechen',
+  backToParty: '← Zurück',
+  releaseControl: 'Kontrolle abgeben',
+  acquireControl: 'Kontrolle übernehmen',
+  controlLocked: 'Kontrolle: {name}',
 },
 remoteControl: {
   back: '← Zurück',
@@ -349,6 +368,7 @@ remoteControl: {
   playQueue: 'Queue (Strg+Q)',
   oneDevice: 'Nur ein Gerät kann gleichzeitig die App steuern.',
   instantCommands: 'Befehle werden sofort an den Hauptbildschirm gesendet.',
+  controlLockedBy: 'Gesteuert von {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Zurück zur Party',
@@ -563,6 +583,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Bitte erlaube den Kamerazugriff in deinen Browser-Einstellungen und versuche es erneut.',
     cameraUnavailableDesc: 'Dein Gerät unterstützt keinen Kamerazugriff.',
     startingCamera: 'Kamera wird gestartet...',
+},
+desktopChat: {
+  challenge: 'Herausfordern (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Herausforderung annehmen',
+  acceptedBy: 'Angenommen von',
 },
 achievements: {
   firstSong: {

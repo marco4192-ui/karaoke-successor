@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Активен',
   mirrorProfileInactive: 'Неактивен',
   mirrorProfileSyncNote: 'Изменения применяются немедленно на компьютере',
+  mirrorPlaylist: 'Добавить в Плейлист',
+  mirrorPlaylistPick: 'Выбрать Плейлист',
+  mirrorPlaylistName: 'Название плейлиста',
+  mirrorNoPlaylists: 'Пока нет плейлистов',
+  mirrorNewPlaylist: 'Создать Новый Плейлист',
+  mirrorCreateAdd: 'Создать и Добавить',
+  mirrorCancel: 'Отмена',
+  mirrorChallengeSent: 'Отправлено!',
+  mirrorDuelHint: 'Нажмите на песню, чтобы бросить вызов',
+  mirrorDuetFilterHint: 'Показаны только дуэтные песни',
+  mirrorSearchSongs: 'Поиск песен...',
+  mirrorBackToParty: '← Назад к Режимам Вечеринки',
+  mirrorLibrary: 'Библиотека',
+  mirrorNoSongs: 'Песни ещё не загружены',
+  mirrorStartGame: 'Начать Игру',
 },
 mobileClient: {
   back: '← Назад',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Очередь (Ctrl+Q)',
   oneDevice: 'Только одно устройство может управлять приложением одновременно.',
   instantCommands: 'Команды отправляются на главный экран мгновенно.',
+  controlLockedBy: 'Управляет {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Назад к вечеринке',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Пожалуйста, разрешите доступ к камере в настройках браузера и попробуйте снова.',
     cameraUnavailableDesc: 'Ваше устройство не поддерживает доступ к камере.',
     startingCamera: 'Запуск камеры...',
+},
+desktopChat: {
+  challenge: 'Вызов (Чат)',
+},
+songChallenge: {
+  acceptBtn: 'Принять Вызов',
+  acceptedBy: 'Принято от',
 },
 achievements: {
   firstSong: {

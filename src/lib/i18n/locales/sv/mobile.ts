@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Aktiv',
   mirrorProfileInactive: 'Inaktiv',
   mirrorProfileSyncNote: 'Ändringarna tillämpas omedelbart på skrivbordet',
+  mirrorPlaylist: 'Lägg till i Spellista',
+  mirrorPlaylistPick: 'Välj Spellista',
+  mirrorPlaylistName: 'Spellistans namn',
+  mirrorNoPlaylists: 'Inga spellistor ännu',
+  mirrorNewPlaylist: 'Skapa Ny Spellista',
+  mirrorCreateAdd: 'Skapa och Lägg till',
+  mirrorCancel: 'Avbryt',
+  mirrorChallengeSent: 'Skickat!',
+  mirrorDuelHint: 'Tryck på en låt för att utmana en motståndare',
+  mirrorDuetFilterHint: 'Endast duettlåtar visas',
+  mirrorSearchSongs: 'Sök låtar...',
+  mirrorBackToParty: '← Tillbaka till Festlägen',
+  mirrorLibrary: 'Bibliotek',
+  mirrorNoSongs: 'Inga låtar laddade ännu',
+  mirrorStartGame: 'Starta Spelet',
 },
 mobileClient: {
   back: '← Tillbaka',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Kö (Ctrl+Q)',
   oneDevice: 'Endast en enhet kan styra appen åt gången.',
   instantCommands: 'Kommandon skickas till huvudskärmen omedelbart.',
+  controlLockedBy: 'Kontrolleras av {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Tillbaka till Fest',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Tillåt kameratillgång i din webbläsares inställningar och försök igen.',
     cameraUnavailableDesc: 'Din enhet stöder inte kameratillgång.',
     startingCamera: 'Startar kamera...',
+},
+desktopChat: {
+  challenge: 'Utmana (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Acceptera Utmaning',
+  acceptedBy: 'Accepterad av',
 },
 achievements: {
   firstSong: {

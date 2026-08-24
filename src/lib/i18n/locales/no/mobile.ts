@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Aktiv',
   mirrorProfileInactive: 'Inaktiv',
   mirrorProfileSyncNote: 'Endringer trer i kraft umiddelbart på skrivebordet',
+  mirrorPlaylist: 'Legg til i Spilleliste',
+  mirrorPlaylistPick: 'Velg Spilleliste',
+  mirrorPlaylistName: 'Spillelistens navn',
+  mirrorNoPlaylists: 'Ingen spillelister ennå',
+  mirrorNewPlaylist: 'Opprett Ny Spilleliste',
+  mirrorCreateAdd: 'Opprett og Legg til',
+  mirrorCancel: 'Avbryt',
+  mirrorChallengeSent: 'Sendt!',
+  mirrorDuelHint: 'Trykk på en sang for å utfordre en motstander',
+  mirrorDuetFilterHint: 'Kun duetter vises',
+  mirrorSearchSongs: 'Søk sanger...',
+  mirrorBackToParty: '← Tilbake til Festmodus',
+  mirrorLibrary: 'Bibliotek',
+  mirrorNoSongs: 'Ingen sanger lastet ennå',
+  mirrorStartGame: 'Start Spill',
 },
 mobileClient: {
   back: '← Tilbake',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Kø (Ctrl+Q)',
   oneDevice: 'Kun én enhet kan styre appen om gangen.',
   instantCommands: 'Kommandoer sendes til hovedskjermen umiddelbart.',
+  controlLockedBy: 'Kontrollert av {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Tilbake til fest',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Tillat kameraadgang i nettleserinnstillingene dine og prøv igjen.',
     cameraUnavailableDesc: 'Enheten din støtter ikke kameraadgang.',
     startingCamera: 'Starter kamera...',
+},
+desktopChat: {
+  challenge: 'Utfordre (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Aksepter Utfordring',
+  acceptedBy: 'Akseptert av',
 },
 achievements: {
   firstSong: {

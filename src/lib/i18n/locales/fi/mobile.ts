@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Aktiivinen',
   mirrorProfileInactive: 'Epäaktiivinen',
   mirrorProfileSyncNote: 'Muutokset tulevat voimaan heti työpöydällä',
+  mirrorPlaylist: 'Lisää Soittolistaan',
+  mirrorPlaylistPick: 'Valitse Soittolista',
+  mirrorPlaylistName: 'Soittolistan nimi',
+  mirrorNoPlaylists: 'Ei soittolistoja vielä',
+  mirrorNewPlaylist: 'Luo Uusi Soittolista',
+  mirrorCreateAdd: 'Luo ja Lisää',
+  mirrorCancel: 'Peruuta',
+  mirrorChallengeSent: 'Lähetetty!',
+  mirrorDuelHint: 'Napauta kappaletta haastaaksesi vastustajan',
+  mirrorDuetFilterHint: 'Näytetään vain duetot',
+  mirrorSearchSongs: 'Hae kappaleita...',
+  mirrorBackToParty: '← Takaisin Juhlatiloihin',
+  mirrorLibrary: 'Kirjasto',
+  mirrorNoSongs: 'Kappaleita ei vielä ladattu',
+  mirrorStartGame: 'Aloita Peli',
 },
 mobileClient: {
   back: '← Takaisin',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Jono (Ctrl+Q)',
   oneDevice: 'Vain yksi laite voi hallita sovellusta kerrallaan.',
   instantCommands: 'Komennot lähetetään pääruudulle välittömästi.',
+  controlLockedBy: 'Hallinnassa: {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Takaisin juhliin',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Salli kameran käyttö selaimen asetuksissa ja yritä uudelleen.',
     cameraUnavailableDesc: 'Laitteesi ei tue kameran käyttöä.',
     startingCamera: 'Käynnistetään kameraa...',
+},
+desktopChat: {
+  challenge: 'Haasta (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Hyväksy Haaste',
+  acceptedBy: 'Hyväksynyt',
 },
 achievements: {
   firstSong: {

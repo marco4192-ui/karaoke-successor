@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: '已激活',
   mirrorProfileInactive: '未激活',
   mirrorProfileSyncNote: '更改将立即在桌面端生效',
+  mirrorPlaylist: '添加到播放列表',
+  mirrorPlaylistPick: '选择播放列表',
+  mirrorPlaylistName: '播放列表名称',
+  mirrorNoPlaylists: '暂无播放列表',
+  mirrorNewPlaylist: '创建新播放列表',
+  mirrorCreateAdd: '创建并添加',
+  mirrorCancel: '取消',
+  mirrorChallengeSent: '已发送!',
+  mirrorDuelHint: '点击歌曲向对手发起挑战',
+  mirrorDuetFilterHint: '仅显示对唱歌曲',
+  mirrorSearchSongs: '搜索歌曲...',
+  mirrorBackToParty: '← 返回派对模式',
+  mirrorLibrary: '曲库',
+  mirrorNoSongs: '尚未加载歌曲',
+  mirrorStartGame: '开始游戏',
 },
 mobileClient: {
   back: '← 返回',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: '队列 (Ctrl+Q)',
   oneDevice: '同一时间只有一个设备可以控制应用。',
   instantCommands: '命令将即时发送到主屏幕。',
+  controlLockedBy: '由 {name} 控制',
 },
 onlineMultiplayer: {
   backToParty: '返回派对',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: '请在浏览器设置中允许摄像头访问然后重试。',
     cameraUnavailableDesc: '您的设备不支持摄像头访问。',
     startingCamera: '正在启动摄像头...',
+},
+desktopChat: {
+  challenge: '挑战 (聊天)',
+},
+songChallenge: {
+  acceptBtn: '接受挑战',
+  acceptedBy: '接受者',
 },
 achievements: {
   firstSong: {

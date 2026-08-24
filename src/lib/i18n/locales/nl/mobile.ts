@@ -92,6 +92,21 @@ mobile: {
   mirrorProfileActive: 'Actief',
   mirrorProfileInactive: 'Inactief',
   mirrorProfileSyncNote: 'Wijzigingen worden onmiddellijk toegepast op de desktop',
+  mirrorPlaylist: 'Toevoegen aan Afspeellijst',
+  mirrorPlaylistPick: 'Kies Afspeellijst',
+  mirrorPlaylistName: 'Afspeellijstnaam',
+  mirrorNoPlaylists: 'Nog geen afspeellijsten',
+  mirrorNewPlaylist: 'Nieuwe Afspeellijst Maken',
+  mirrorCreateAdd: 'Maken en Toevoegen',
+  mirrorCancel: 'Annuleren',
+  mirrorChallengeSent: 'Verzonden!',
+  mirrorDuelHint: 'Tik op een nummer om een tegenstander uit te dagen',
+  mirrorDuetFilterHint: 'Alleen duet-nummers worden getoond',
+  mirrorSearchSongs: 'Nummers zoeken...',
+  mirrorBackToParty: '← Terug naar Party-modi',
+  mirrorLibrary: 'Bibliotheek',
+  mirrorNoSongs: 'Nog geen nummers geladen',
+  mirrorStartGame: 'Spel Starten',
 },
 mobileClient: {
   back: '← Terug',
@@ -349,6 +364,7 @@ remoteControl: {
   playQueue: 'Wachtrij (Ctrl+Q)',
   oneDevice: 'Slechts één apparaat kan de app tegelijk bedienen.',
   instantCommands: 'Opdrachten worden direct naar het hoofdscherm gestuurd.',
+  controlLockedBy: 'Gecontroleerd door {name}',
 },
 onlineMultiplayer: {
   backToParty: 'Terug naar feest',
@@ -563,6 +579,13 @@ mobilePhotoBooth: {
     cameraDeniedDesc: 'Sta camera-toegang toe in je browserinstellingen en probeer opnieuw.',
     cameraUnavailableDesc: 'Je apparaat ondersteunt geen cameratoegang.',
     startingCamera: 'Camera starten...',
+},
+desktopChat: {
+  challenge: 'Uitdagen (Chat)',
+},
+songChallenge: {
+  acceptBtn: 'Uitdaging Accepteren',
+  acceptedBy: 'Geaccepteerd door',
 },
 achievements: {
   firstSong: {
