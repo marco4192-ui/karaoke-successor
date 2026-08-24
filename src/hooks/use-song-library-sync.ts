@@ -5,6 +5,7 @@ import { getAllSongs } from '@/lib/game/song-library';
 import type { PlayerProfile } from '@/types/game';
 import { StorageKeys, setJson } from '@/lib/storage';
 import { getPlaylists } from '@/lib/playlist-manager';
+import { isDuetSong } from '@/components/screens/library/utils';
 
 /**
  * Syncs song library, host profiles, and playlists to the mobile companion server.
@@ -45,7 +46,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
           coverImage: song.coverImage && !song.coverImage.startsWith('blob:')
             ? song.coverImage
             : undefined,
-          isDuet: song.isDuet || false,
+          isDuet: isDuetSong(song),
         }));
 
       await fetch('/api/mobile', {

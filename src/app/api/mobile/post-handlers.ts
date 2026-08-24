@@ -1078,6 +1078,99 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Challenge accepted, song queued!' });
       }
 
+      // Accept Challenge from HOST (desktop): uses selected profile identity
+      case 'accept_challenge_host': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const achPayload = payload as { messageId: string; profileId: string; profileName: string };
+        if (!achPayload.messageId || !achPayload.profileId || !achPayload.profileName) {
+          return Response.json({ success: false, message: 'Missing data' }, { status: 400 });
+        }
+
+        // Find the challenge message
+        const achMsgIdx = mutableState.chatMessages.findIndex(
+          (m) => m.id === achPayload.messageId && m.challenge && !m.challenge.accepted
+        );
+        if (achMsgIdx === -1) {
+          return Response.json({ success: false, message: 'Challenge not found or already accepted' }, { status: 400 });
+        }
+
+        const achMsgData = mutableState.chatMessages[achMsgIdx];
+        if (!achMsgData.challenge) {
+          return Response.json({ success: false, message: 'Invalid challenge' }, { status: 400 });
+        }
+
+        // Don't accept own challenge (host challenged with a profile, can't accept with same profile)
+        if (achMsgData.challenge.challengerClientId === 'host' && achPayload.profileId === achMsgData.challenge.challengerClientId) {
+          return Response.json({ success: false, message: 'Cannot accept your own challenge' }, { status: 400 });
+        }
+
+        const acceptorName = achPayload.profileName;
+
+        // Mark challenge as accepted
+        achMsgData.challenge.accepted = true;
+        achMsgData.challenge.acceptedBy = achPayload.profileId;
+        achMsgData.challenge.acceptedByName = acceptorName;
+        mutableState.chatMessages[achMsgIdx] = achMsgData;
+
+        // Find challenger client for queue entry
+        const achChallengerClient = achMsgData.challenge.challengerClientId !== 'host'
+          ? mobileClients.get(achMsgData.challenge.challengerClientId)
+          : null;
+
+        // Create queue entries for the duel/duet
+        const achBaseQueueItem = {
+          songId: achMsgData.challenge.songId,
+          songTitle: achMsgData.challenge.songTitle,
+          songArtist: achMsgData.challenge.songArtist,
+          gameMode: 'duel' as const,
+          difficulty: 'normal' as const,
+          status: 'pending' as const,
+          addedAt: Date.now(),
+        };
+
+        // Queue entry from challenger side (if challenger is a companion)
+        if (achChallengerClient) {
+          const achChallengerQueueItem: QueueItem = {
+            ...achBaseQueueItem,
+            id: `queue-challenge-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+            addedBy: achMsgData.challenge.challengerName,
+            companionCode: achChallengerClient.connectionCode,
+            partnerId: achPayload.profileId,
+            partnerName: acceptorName,
+          };
+          mutableState.songQueue.push(achChallengerQueueItem);
+        }
+
+        // Queue entry from acceptor (host) side
+        const achAcceptorQueueItem: QueueItem = {
+          ...achBaseQueueItem,
+          id: `queue-accept-host-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          addedBy: acceptorName,
+          companionCode: '',
+          partnerId: achChallengerClient?.profile?.id || achMsgData.challenge.challengerClientId,
+          partnerName: achMsgData.challenge.challengerName,
+        };
+        mutableState.songQueue.push(achAcceptorQueueItem);
+
+        // Post acceptance message to chat
+        const achAcceptMsg = {
+          id: `chat-${Date.now()}-accept-${Math.random().toString(36).slice(2, 11)}`,
+          from: 'host',
+          fromName: acceptorName,
+          text: `${acceptorName} hat die Herausforderung von ${achMsgData.challenge.challengerName} angenommen! Song wird der Queue hinzugefuegt.`,
+          timestamp: Date.now(),
+          isHost: true,
+        };
+        mutableState.chatMessages.push(achAcceptMsg);
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        return Response.json({ success: true, message: 'Challenge accepted from host!' });
+      }
+
       // Companion Playlist: Speichere pending Playlist-Operation in mutableState.
       // Der Desktop liest diese via getcommands-Polling und fuehrt
       // die eigentliche localStorage-Operation aus.

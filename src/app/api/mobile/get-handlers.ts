@@ -457,7 +457,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         votes: mutableState.tournamentCrowdVotes || [],
       });
 
-    // F19: Get opponents for duel/duet mode (only clients WITH profiles)
+    // F19: Get opponents for duel/duet mode (all active profiles)
     case 'getopponents': {
       if (!clientId) {
         return Response.json({ success: false, message: 'Client ID required' }, { status: 400 });
@@ -473,11 +473,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         connectionCode: string;
       }> = [];
 
-      // Track which profile IDs are claimed by connected companions
-      const claimedProfileIds = new Set<string>();
+      // Track which profile IDs are already shown as connected opponents
+      const opponentProfileIds = new Set<string>();
       mobileClients.forEach((client) => {
         if (client.profile) {
-          claimedProfileIds.add(client.profile.id);
           if (client.id !== clientId) {
             connectedOpponents.push({
               id: client.profile.id,
@@ -486,14 +485,25 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
               color: client.profile.color,
               connectionCode: client.connectionCode,
             });
+            opponentProfileIds.add(client.profile.id);
           }
         }
       });
 
-      // Also include host profiles not yet claimed by any connected companion
-      // (these are available for companions to adopt)
+      // Include ALL active host profiles that are NOT already shown as connected
+      // opponents and NOT the requesting client's own profile.
+      // This ensures profiles that exist on the desktop but have no companion
+      // connected are also selectable for duel/duet.
       const availableHostProfiles = mutableState.hostProfiles.filter(
-        (hp) => !claimedProfileIds.has(hp.id) && hp.id !== requestingClient?.profile?.id
+        (hp) => {
+          // Exclude inactive profiles
+          if (hp.isActive === false) return false;
+          // Exclude the requesting client's own profile
+          if (hp.id === requestingClient?.profile?.id) return false;
+          // Exclude profiles already shown as connected opponents (avoid duplicates)
+          if (opponentProfileIds.has(hp.id)) return false;
+          return true;
+        }
       ).map((hp) => ({
         id: hp.id,
         name: hp.name,

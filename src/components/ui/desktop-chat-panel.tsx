@@ -42,6 +42,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
   const [challengeMode, setChallengeMode] = useState<'duel' | 'duet' | null>(null);
   const [challengeSending, setChallengeSending] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +152,26 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
     finally { setChallengeSending(false); }
   }, [selectedPlayerId, challengeMode, challengeSending, players, fetchMessages, t]);
 
+  // Herausforderung annehmen (als Host/ausgewaehlter Profile)
+  const handleAcceptChallenge = useCallback(async (messageId: string) => {
+    if (acceptingId || !selectedPlayerId) return;
+    const player = players.find((p) => p.id === selectedPlayerId);
+    if (!player) return;
+    setAcceptingId(messageId);
+    try {
+      const res = await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'accept_challenge_host',
+          payload: { messageId, profileId: player.id, profileName: player.name },
+        }),
+      });
+      if (res.ok) fetchMessages();
+    } catch { /* ignore */ }
+    setAcceptingId(null);
+  }, [acceptingId, selectedPlayerId, players, fetchMessages]);
+
   // Button ist aktiv: 1 Player gewaehlt + 1 Modus gewaehlt
   const isChallengeActive = selectedPlayerId && challengeMode && !challengeSending;
 
@@ -214,8 +235,17 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
                       <p className="text-xs text-green-400">
                         ✅ {(t('songChallenge.acceptedBy') || 'Angenommen von')} {msg.challenge.acceptedByName}
                       </p>
-                    ) : (
+                    ) : msg.challenge.challengerClientId === 'host' ? (
                       <p className="text-xs text-white/40">⏳ {(t('desktopChat.waitingForOpponent') || 'Warte auf Gegner...')}</p>
+                    ) : (
+                      <button
+                        onClick={() => handleAcceptChallenge(msg.id)}
+                        disabled={!!acceptingId || !selectedPlayerId}
+                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!selectedPlayerId ? (t('desktopChat.selectPlayerFirst') || 'Zuerst einen Player auswaehlen') : undefined}
+                      >
+                        {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
+                      </button>
                     )}
                   </div>
                 )}
