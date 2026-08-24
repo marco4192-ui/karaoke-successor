@@ -117,10 +117,11 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
 
     // Duett: auto-filtere auf Duett-Songs
     const isDuetMode = libGameMode === 'duet';
-    // Alle verfuegbaren Partner: Companion-User + aktive Host-Profile
+    // Alle verfuegbaren Partner: verbundene Companion-User + aktive Host-Profile.
+    // availablePartners wird NICHT verwendet (redundant mit opponents, das
+    // dieselben Companion-User aber mit profile.id statt connectionCode liefert).
     const allPartners = useMemo(() => {
       const list: Array<{ id: string; name: string }> = [
-        ...availablePartners.map((p) => ({ id: p.id, name: p.name })),
         ...opponents.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
         ...availableProfiles.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
       ];
@@ -131,7 +132,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
         seen.add(p.id);
         return true;
       });
-    }, [availablePartners, opponents, availableProfiles]);
+    }, [opponents, availableProfiles]);
 
     const displaySongs = useMemo(() => {
       let result = filteredSongs;
@@ -180,7 +181,9 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setOvDifficulty('normal');
       setOvPartnerId(null);
       setOvChallengeSent(false);
-    }, []);
+      // Lade Gegner/Host-Profile fuer Duell/Duett-Auswahl
+      onLoadOpponents();
+    }, [onLoadOpponents]);
 
     const closeOverlay = useCallback(() => {
       haptic();
