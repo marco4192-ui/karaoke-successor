@@ -13,6 +13,10 @@ interface MirrorGameLiteProps {
   profileName: string;
   onNavigate: (v: MobileView) => void;
   onSendDesktopCommand: (screen: string) => void;
+  // Remote control takeover
+  isRemoteLocked?: boolean;
+  remoteLockedBy?: string | null;
+  onAcquireRemote?: () => void;
 }
 
 // ===================== Hilfsfunktionen =====================
@@ -26,7 +30,7 @@ function haptic() {
 // ===================== Component =====================
 
 export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
-  function MirrorGameLite({ gameState, onSendDesktopCommand }) {
+  function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }) {
     const { t } = useTranslation();
     const [showPauseOverlay, setShowPauseOverlay] = useState(false);
 
@@ -161,6 +165,20 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
               </div>
             ))}
           </div>
+        )}
+
+        {/* Remote-Kontrolle uebernehmen (wenn ein anderer Companion kontrolle hat) */}
+        {isRemoteLocked && onAcquireRemote && (
+          <button
+            onClick={() => { haptic(); onAcquireRemote(); }}
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3 text-sm font-semibold bg-amber-500/15 border border-amber-400/30 text-amber-400 active:scale-[0.97] transition-all"
+          >
+            <span className="text-base">{'\uD83D\uDD13'}</span>
+            <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Take Control'}</span>
+            {remoteLockedBy && (
+              <span className="text-xs text-white/30">({remoteLockedBy})</span>
+            )}
+          </button>
         )}
 
         {/* Navigation */}

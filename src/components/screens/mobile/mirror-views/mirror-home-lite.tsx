@@ -109,7 +109,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-red-500/20 border border-red-400/30 text-red-400 active:scale-[0.97] transition-all"
             >
               <span className="text-base">{'🔓'}</span>
-              <span>{t('companion.releaseControl') || t('remoteControl.releaseControl') || 'Kontrolle abgeben'}</span>
+              <span>{t('companion.releaseControl') || t('remoteControl.releaseControl') || 'Release Control'}</span>
             </button>
           ) : isRemoteLocked ? (
             <button
@@ -117,7 +117,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-amber-500/15 border border-amber-400/30 text-amber-400 active:scale-[0.97] transition-all"
             >
               <span className="text-base">{'🔓'}</span>
-              <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Kontrolle übernehmen'}</span>
+              <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Take Control'}</span>
             </button>
           ) : (
             <button
@@ -125,7 +125,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
               className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-amber-500/15 border border-amber-400/30 text-amber-400 active:scale-[0.97] transition-all"
             >
               <span className="text-base">{'🔒'}</span>
-              <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Kontrolle übernehmen'}</span>
+              <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Take Control'}</span>
             </button>
           )}
         </div>

@@ -243,6 +243,9 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             clientId={clientId}
             profileName={profileName}
             onNavigate={onNavigate}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            onAcquireRemote={onAcquireRemote}
             {...desktopMirrorBase}
           />
         </div>
