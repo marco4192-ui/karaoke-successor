@@ -141,6 +141,8 @@ export interface GameState {
   currentScreen?: string;
   // Party setup: which game mode is being configured
   partyGameMode?: string | null;
+  // Party voting: songs available for voting
+  votingSongs?: Array<{ id: string; title: string; artist: string; duration: number; coverImage?: string }>;
 }
 
 export interface PitchData {

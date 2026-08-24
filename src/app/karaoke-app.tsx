@@ -396,6 +396,113 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-party-start', handleRemotePartyStart);
   }, []);
 
+  // ── Handle remote party song selection from companion (library mode) ──
+  useEffect(() => {
+    const handleRemotePartySelectSong = async (e: Event) => {
+      const { songId } = (e as CustomEvent).detail || {};
+      if (!songId) return;
+      const allSongs = getAllSongs();
+      const song = allSongs.find(s => s.id === songId);
+      if (!song) {
+        // eslint-disable-next-line no-console
+        console.error('[RemotePartySelectSong] Song not found:', songId);
+        return;
+      }
+      // Load lyrics and URLs
+      let songWithUrls = song;
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+        songWithUrls = await ensureSongUrls(song);
+        try {
+          const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+          const withLyrics = await getSongByIdWithLyrics(song.id);
+          if (withLyrics) songWithUrls = withLyrics;
+        } catch { /* non-critical */ }
+      } catch { /* non-critical */ }
+      // Navigate to library screen with the song selected
+      // The library screen will show the party setup overlay which auto-starts
+      const currentMode = party.selectedGameMode || useGameStore.getState().gameState.gameMode;
+      resetGame();
+      if (currentMode && currentMode !== 'standard') {
+        setGameMode(currentMode);
+      }
+      setSong(songWithUrls);
+      // Same branching logic as the inline onSelectSong callback
+      if (currentMode === 'pass-the-mic') {
+        const playerCount = party.passTheMicPlayers?.length || 2;
+        const segments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+        party.setPassTheMicSegments(segments);
+        (async () => {
+          try {
+            const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+            let sw = await ensureSongUrls(songWithUrls);
+            if (!sw.lyrics?.length || sw.lyrics.every(l => l.notes.length === 0)) {
+              try {
+                const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+                const wl = await getSongByIdWithLyrics(sw.id);
+                if (wl?.lyrics?.length) sw = { ...sw, lyrics: wl.lyrics };
+              } catch { /* */ }
+            }
+            const scoreSegments = generatePtmSegments(sw.duration, playerCount, party.passTheMicSettings?.segmentDuration, sw.lyrics);
+            party.setPassTheMicSegments(scoreSegments);
+            party.setPassTheMicSong(sw);
+          } catch { party.setPassTheMicSong(songWithUrls); }
+          setScreen('pass-the-mic-game');
+        })();
+      } else if (currentMode === 'companion-singalong') {
+        party.setCptmSong(songWithUrls);
+        party.setLibrarySelectedSong(songWithUrls);
+        setScreen('party-setup');
+      } else {
+        setScreen('game');
+      }
+    };
+    window.addEventListener('remote-party-select-song', handleRemotePartySelectSong);
+    return () => window.removeEventListener('remote-party-select-song', handleRemotePartySelectSong);
+  }, [resetGame, setGameMode, setSong, setScreen]);
+
+  // ── Handle remote party vote from companion ──
+  useEffect(() => {
+    const handleRemotePartyVote = async (e: Event) => {
+      const { songId } = (e as CustomEvent).detail || {};
+      if (!songId) return;
+      // Find the song in the voting songs list
+      const selectedSong = party.votingSongs.find(s => s.id === songId);
+      if (!selectedSong) return;
+      // Ensure URLs
+      let songWithUrls = selectedSong;
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+        songWithUrls = await ensureSongUrls(selectedSong);
+        if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+          try {
+            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+            const lyrics = await loadSongLyrics(songWithUrls);
+            if (lyrics.length > 0) songWithUrls = { ...songWithUrls, lyrics };
+          } catch { /* */ }
+        }
+      } catch { /* */ }
+      // Start the game with the voted song (same as SongVotingModal.onVote)
+      resetGame();
+      setPlayers([]);
+      if (party.selectedGameMode) {
+        setGameMode(party.selectedGameMode);
+        setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
+      }
+      setSong(songWithUrls);
+      if (party.selectedGameMode === 'companion-singalong') {
+        const cptmPlayers = party.cptmPlayers || [];
+        const cptmSegments = generatePtmSegments(songWithUrls, cptmPlayers.length || 2);
+        party.setCptmSegments(cptmSegments);
+        setScreen('companion-singalong-game');
+      } else {
+        setScreen('game');
+      }
+    };
+    window.addEventListener('remote-party-vote', handleRemotePartyVote);
+    return () => window.removeEventListener('remote-party-vote', handleRemotePartyVote);
+  }, [resetGame, setGameMode, setSong, setScreen, setPlayers]);
+
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
     const handleRemoteRandomSong = (e: Event) => {
@@ -453,6 +560,7 @@ export default function KaraokeZERO() {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
               partyGameMode: screen === 'party-setup' ? (party.selectedGameMode || null) : null,
+              votingSongs: screen === 'song-voting' ? party.votingSongs : [],
             },
           }),
         });

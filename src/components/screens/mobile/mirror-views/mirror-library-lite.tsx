@@ -637,6 +637,22 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                   <span>{t('mobile.mirrorStartGame') || 'Spiel starten'}</span>
                 </button>
 
+                {/* Fuer Party auswaehlen (nur im Party-Setup Library-Modus) */
+                {gameState.partyGameMode && (
+                  <button
+                    onClick={() => {
+                      if (!overlaySong) return;
+                      onSendDesktopCommand(`party_select_song:${overlaySong.id}`);
+                      closeOverlay();
+                    }}
+                    disabled={ovAdding}
+                    className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-amber-500/30 to-orange-500/30 border border-amber-400/20 text-white active:scale-[0.97] transition-all disabled:opacity-40"
+                  >
+                    <span className="text-base">{'\u{1F3B5}'}</span>
+                    <span>{t('mobile.mirrorPartySelect') || 'F\u00fcr Party ausw\u00e4hlen'}</span>
+                  </button>
+                )}
+
                 {/* Herausfordern (nur Duell/Duett) */}
                 {needsChallenge && (
                   <button

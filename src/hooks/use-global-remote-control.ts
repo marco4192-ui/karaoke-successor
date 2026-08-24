@@ -440,6 +440,20 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
           break;
         }
+        // Check for party_vote:<songId> pattern
+        // Companion voted for a song in the party voting screen
+        if (cmd.type.startsWith('party_vote:')) {
+          const songId = cmd.type.slice('party_vote:'.length);
+          window.dispatchEvent(new CustomEvent('remote-party-vote', { detail: { songId } }));
+          break;
+        }
+        // Check for party_select_song:<songId> pattern
+        // Companion selected a song from library during party mode
+        if (cmd.type.startsWith('party_select_song:')) {
+          const songId = cmd.type.slice('party_select_song:'.length);
+          window.dispatchEvent(new CustomEvent('remote-party-select-song', { detail: { songId } }));
+          break;
+        }
         // Check for settings_set:<url-encoded key>:<url-encoded value> pattern
         // Companion App: aendert eine Einstellung direkt im Desktop-LocalStorage
         if (cmd.type.startsWith('settings_set:')) {
