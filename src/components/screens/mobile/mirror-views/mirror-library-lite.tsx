@@ -58,10 +58,13 @@ function formatDurationSec(ms: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-// DO-NOT-CHANGE: Duett-Erkennung sucht explizit nach dem Wort Duet/Duett
-// (auch in anderen Sprachen: Duetto, Dueto) im Titel oder Kuenstler.
-// Keine generischen Keywords wie &, feat, and etc.
 function isLikelyDuet(song: MobileSong): boolean {
+  // Tier 1: Metadata flag from Ultrastar parser (P1/P2 note markers)
+  if (song.isDuet === true) return true;
+  // Tier 2: Title contains [Duet] or (Duet) — brackets required
+  if (song.title && /\[\s*duet\s*\]/i.test(song.title)) return true;
+  if (song.title && /\(\s*duet\s*\)/i.test(song.title)) return true;
+  // Fallback: word-boundary match on title+artist (for songs not yet re-parsed)
   const combined = `${song.title} ${song.artist}`;
   return /\bduet(t|to)?s?\b/i.test(combined);
 }
@@ -283,7 +286,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setShowPlaylistPicker(false);
     }, []);
 
-    // Queue-Add + Spiel direkt starten via Desktop-Command
+    // Spiel starten: Im Single-Player-Modus direkt starten, sonst ueber Queue
     const handleOverlayStart = useCallback(async () => {
       if (!overlaySong || ovAdding) return;
       setOvAdding(true);
@@ -296,8 +299,14 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
         onSelectPartner(null);
       }
       try {
-        await onAddToQueue(overlaySong);
-        onSendDesktopCommand('play_queue');
+        if (libGameMode === 'single') {
+          // Single-Player: Song direkt starten (oder in Queue wenn schon einer spielt)
+          onSendDesktopCommand(`play_song:${overlaySong.id}`);
+        } else {
+          // Duell/Duett: Ueber Queue + play_queue Kommando
+          await onAddToQueue(overlaySong);
+          onSendDesktopCommand('play_queue');
+        }
         closeOverlay();
       } finally {
         setOvAdding(false);
