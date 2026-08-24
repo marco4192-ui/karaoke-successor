@@ -417,6 +417,11 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('jukebox:start'));
           break;
         }
+        // Party cancel: companion left party-setup, reset party state on desktop
+        if (cmd.type === 'party_cancel') {
+          window.dispatchEvent(new CustomEvent('remote-party-cancel', { detail: {} }));
+          break;
+        }
         // Check for party_apply_config:<json> pattern
         if (cmd.type.startsWith('party_apply_config:')) {
           const jsonStr = cmd.type.slice('party_apply_config:'.length);

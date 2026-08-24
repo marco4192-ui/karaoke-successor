@@ -396,6 +396,19 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-party-start', handleRemotePartyStart);
   }, []);
 
+  // ── Handle remote party cancel from companion (leave party-setup, reset state) ──
+  useEffect(() => {
+    const handleRemotePartyCancel = () => {
+      party.resetPartyState();
+      resetGame();
+      setGameMode('standard');
+      setScreen('party');
+    };
+    window.addEventListener('remote-party-cancel', handleRemotePartyCancel);
+    return () => window.removeEventListener('remote-party-cancel', handleRemotePartyCancel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Handle remote party song selection from companion (library mode) ──
   useEffect(() => {
     const handleRemotePartySelectSong = async (e: Event) => {

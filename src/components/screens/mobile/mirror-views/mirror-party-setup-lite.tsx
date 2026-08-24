@@ -434,7 +434,7 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
 
     const handleLeaveConfirm = useCallback(() => {
       setShowLeaveDialog(false);
-      onSendDesktopCommand('party');
+      onSendDesktopCommand('party_cancel');
     }, [onSendDesktopCommand]);
 
     const handleLeaveCancel = useCallback(() => {
