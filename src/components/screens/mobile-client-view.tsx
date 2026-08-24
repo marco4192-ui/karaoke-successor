@@ -8,7 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileProfile } from './mobile/mobile-types';
-import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
+import { screenToMirrorId, isCompanionMirroredScreen, type MirrorScreenId } from './mobile/mobile-types';
 import { MobileChat } from './mobile/mobile-chat';
 import { ChatNotificationPopup } from './mobile/mobile-chat-notification';
 import { PROFILE_COLORS } from './mobile/mobile-types';
@@ -254,17 +254,19 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [handleSendDesktopCommand, transitionTimerRef]);
 
   // ===================== DESKTOP SCREEN SYNC =====================
-  // Wenn der Desktop in einen Sub-Screen navigiert (z.B. party-setup),
-  // soll der lokale State aktualisiert werden damit die Companion-Mirror-View
-  // korrekt mitwechselt. Zeigt auch kurzen Ladebildschirm.
+  // Nur Main-Screens werden synchronisiert (autonome Companion-App).
+  // Sub-Screens (Tournament-Round, Editor, etc.) aendern den Companion
+  // View nicht — der Benutzer bleibt auf seiner aktuellen Ansicht.
   useEffect(() => {
-    if (gameState.currentScreen && gameState.currentScreen !== activeDesktopScreen) {
-      setIsTransitioning(true);
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-      transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
-      prevScreenRef.current = gameState.currentScreen;
-      setActiveDesktopScreen(gameState.currentScreen);
-    }
+    const desktopScreen = gameState.currentScreen;
+    if (!desktopScreen || !isCompanionMirroredScreen(desktopScreen)) return;
+    if (desktopScreen === activeDesktopScreen) return;
+
+    setIsTransitioning(true);
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
+    prevScreenRef.current = desktopScreen;
+    setActiveDesktopScreen(desktopScreen);
   }, [gameState.currentScreen, activeDesktopScreen, transitionTimerRef]);
 
   // ===================== COMPUTED MIRROR ID =====================
