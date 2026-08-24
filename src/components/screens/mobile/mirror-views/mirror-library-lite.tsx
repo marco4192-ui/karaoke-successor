@@ -286,7 +286,10 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setShowPlaylistPicker(false);
     }, []);
 
-    // Spiel starten: Im Single-Player-Modus direkt starten, sonst ueber Queue
+    // Spiel starten: Immer ueber Queue + play_queue Kommando.
+    // Der Desktop verarbeitet play_queue (remote-play-queue Event) und
+    // startet den ersten anstehenden Song aus der Queue.
+    // Single-Mode: kein Challenge, kein Partner noetig.
     const handleOverlayStart = useCallback(async () => {
       if (!overlaySong || ovAdding) return;
       setOvAdding(true);
@@ -299,14 +302,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
         onSelectPartner(null);
       }
       try {
-        if (libGameMode === 'single') {
-          // Single-Player: Song direkt starten (oder in Queue wenn schon einer spielt)
-          onSendDesktopCommand(`play_song:${overlaySong.id}`);
-        } else {
-          // Duell/Duett: Ueber Queue + play_queue Kommando
-          await onAddToQueue(overlaySong);
-          onSendDesktopCommand('play_queue');
-        }
+        await onAddToQueue(overlaySong);
+        onSendDesktopCommand('play_queue');
         closeOverlay();
       } finally {
         setOvAdding(false);
