@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -464,12 +465,23 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
       onSendDesktopCommand(`party_apply_config:${config}`);
     }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, t, onSendDesktopCommand]);
 
-    // Song-Auswahl-Klick: sendet Config mit der gewaehlten Songauswahl-Option
+    const label = tOr(t, modeInfo?.labelKey || '', modeInfo?.fallback || '');
+    const canStart = modeInfo ? selectedPlayers.length >= modeInfo.minPlayers : false;
+
+    // Song-Auswahl-Klick: nur State setzen, NICHT senden.
+    // Das Senden passiert erst beim Klick auf die Start-Leiste.
     const handleSongSelectClick = useCallback((opt: string) => {
       haptic();
       setSongSelection(opt);
-      sendConfig(opt);
-    }, [sendConfig]);
+      setConfigSent(false);
+    }, []);
+
+    // Start-Leiste Klick: sendet Config mit der aktuell gewaehlten Songauswahl
+    const handleStartBarClick = useCallback(() => {
+      if (!canStart || !modeInfo) return;
+      haptic();
+      sendConfig(songSelection);
+    }, [canStart, modeInfo, songSelection, sendConfig]);
 
     // -------- Loading State --------
     if (!modeInfo) {
@@ -493,8 +505,37 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
       );
     }
 
-    const label = tOr(t, modeInfo.labelKey, modeInfo.fallback);
-    const canStart = selectedPlayers.length >= modeInfo.minPlayers;
+    const renderLeaveDialog = useCallback(() => {
+      if (!showLeaveDialog) return null;
+      return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleLeaveCancel}>
+          <div className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-5">
+              <div className="text-4xl mb-2">{'\u26A0\uFE0F'}</div>
+              <h2 className="text-lg font-bold text-white">{t('dialogs.partyLeaveTitle') || 'Party-Modus verlassen?'}</h2>
+              <p className="text-sm text-white/50 mt-2">
+                {t('dialogs.partyLeaveDesc') || 'Du bist dabei, den Party-Modus zu verlassen.'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleLeaveCancel}
+                className="flex-1 py-3 rounded-xl font-medium bg-white/10 text-white active:bg-white/20 transition-all text-sm"
+              >
+                {t('dialogs.back') || 'Zurueck'}
+              </button>
+              <button
+                onClick={handleLeaveConfirm}
+                className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
+              >
+                {t('dialogs.endParty') || 'Verlassen'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      );
+    }, [showLeaveDialog, handleLeaveCancel, handleLeaveConfirm, t]);
 
     return (
       <div className="flex flex-col gap-4 px-4 pb-8">
@@ -710,12 +751,15 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
           </div>
         </div>
 
-        {/* -------- INFOLEISTE -------- */}
-        <div
-          className={'rounded-xl border px-4 py-3 transition-all ' +
+        {/* -------- START-LEISTE (bleibt grau bis alle Einstellungen komplett, wird dann zum Start-Button) -------- */}
+        <button
+          type="button"
+          onClick={handleStartBarClick}
+          disabled={!canStart}
+          className={'rounded-xl border px-4 py-3 transition-all active:scale-[0.98] text-left ' +
             (canStart
-              ? `bg-gradient-to-r ${modeInfo.color} border-0 shadow-lg`
-              : 'bg-white/5 border-white/10 opacity-60')}
+              ? `bg-gradient-to-r ${modeInfo.color} border-0 shadow-lg cursor-pointer`
+              : 'bg-white/5 border-white/10 opacity-60 cursor-not-allowed')}
         >
           <div className="flex items-center justify-between">
             <div>
@@ -732,42 +776,18 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
               {canStart && (
                 <p className="text-xs text-white/70 mt-0.5">
                   {selectedPlayers.length} {t('party.players') || 'Spieler'}{' \u2022 '}{tOr(t, DIFFICULTIES.find((d) => d.id === difficulty)?.labelKey || '', difficulty === 'easy' ? 'Leicht' : difficulty === 'medium' ? 'Normal' : 'Schwer')}
+                  {' \u2022 '}{tOr(t, SONG_SEL_CONFIG[songSelection]?.labelKey || '', SONG_SEL_CONFIG[songSelection]?.fallback || songSelection)}
                   {configSent ? ' \u2022 ' + (t('mobile.mirrorChallengeSent') || 'Gesendet!') : ''}
                 </p>
               )}
             </div>
             {canStart && (
-              <span className="text-2xl">{'\u2705'}</span>
+              <span className="text-2xl">{'\u25B6'}</span>
             )}
           </div>
-        </div>
-        {showLeaveDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleLeaveCancel}>
-            <div className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="text-center mb-5">
-                <div className="text-4xl mb-2">{'\u26A0\uFE0F'}</div>
-                <h2 className="text-lg font-bold text-white">{t('dialogs.partyLeaveTitle') || 'Party-Modus verlassen?'}</h2>
-                <p className="text-sm text-white/50 mt-2">
-                  {t('dialogs.partyLeaveDesc') || 'Du bist dabei, den Party-Modus zu verlassen.'}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleLeaveCancel}
-                  className="flex-1 py-3 rounded-xl font-medium bg-white/10 text-white active:bg-white/20 transition-all text-sm"
-                >
-                  {t('dialogs.back') || 'Zurueck'}
-                </button>
-                <button
-                  onClick={handleLeaveConfirm}
-                  className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
-                >
-                  {t('dialogs.endParty') || 'Verlassen'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        </button>
+        {/* Leave-Bestaetigungsdialog via Portal */}
+        {renderLeaveDialog()}
       </div>
     );
   },
