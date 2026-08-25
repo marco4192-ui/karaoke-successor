@@ -504,7 +504,7 @@ export default function KaraokeZERO() {
       setSong(songWithUrls);
       if (party.selectedGameMode === 'companion-singalong') {
         const cptmPlayers = party.cptmPlayers || [];
-        const cptmSegments = generatePtmSegments(songWithUrls, cptmPlayers.length || 2);
+        const cptmSegments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
         party.setCptmSegments(cptmSegments);
         setScreen('companion-singalong-game');
       } else {
