@@ -687,7 +687,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                   <span>{t('mobile.mirrorStartGame') || 'Spiel starten'}</span>
                 </button>
 
-                {/* Fuer Party auswaehlen (nur im Party-Setup Library-Modus) */
+                {/* Fuer Party auswaehlen (nur im Party-Setup Library-Modus) */}
                 {gameState.partyGameMode && (
                   <button
                     onClick={() => {

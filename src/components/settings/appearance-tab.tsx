@@ -194,7 +194,7 @@ export function AppearanceTab({
         </CardContent>
       </Card>
 
-      {/* Note Color Profiles */
+      {/* Note Color Profiles */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

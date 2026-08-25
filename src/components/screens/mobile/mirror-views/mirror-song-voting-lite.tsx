@@ -48,13 +48,13 @@ export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
           <span className="text-xs text-white/40">{votingSongs.length} {t('mobile.mirrorSongCount') || 'Songs'}</span>
         </div>
 
-        {/* Hinweis */
+        {/* Hinweis */}
         <div className="flex items-center gap-2 rounded-xl bg-cyan-500/10 border border-cyan-400/20 px-3 py-2.5">
           <span className="text-sm">ℹ️</span>
           <span className="text-xs text-cyan-300/80">{t('mobile.mirrorSongVotingHint2') || 'Wähle einen Song für das nächste Spiel aus!'}</span>
         </div>
 
-        {/* Keine Songs */
+        {/* Keine Songs */}
         {votingSongs.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-3xl">⚠</span>
@@ -62,7 +62,7 @@ export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
           </div>
         )}
 
-        {/* Song-Liste */
+        {/* Song-Liste */}
         {votingSongs.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {votingSongs.map((song) => (
@@ -89,7 +89,7 @@ export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
           </div>
         )}
 
-        {/* Zurueck */
+        {/* Zurueck */}
         <button
           onClick={handleBack}
           className="w-full rounded-xl p-3 text-center text-sm font-medium bg-white/10 border border-white/20 text-white/70 active:scale-[0.98] transition-transform"
