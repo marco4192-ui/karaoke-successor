@@ -235,6 +235,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     }).catch(() => { /* ignore */ });
   }, [clientId, profile]);
 
+  // ===================== REMOTE LOCK STATE =====================
+  const [remoteLock, setRemoteLock] = useState<{
+    isLocked: boolean;
+    lockedByMe: boolean;
+    lockedByName: string | null;
+  }>({ isLocked: false, lockedByMe: false, lockedByName: null });
+
   // ===================== CONTROL STATE =====================
   // "controlled" = this companion has the remote lock OR nobody has it (desktop drives).
   // Only the controlling companion mirrors the desktop screen and can send commands.
@@ -273,13 +280,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       setActiveDesktopScreen(screen);
     }
   }, [isControlling, handleSendDesktopCommand]);
-
-  // ===================== REMOTE LOCK STATE =====================
-  const [remoteLock, setRemoteLock] = useState<{
-    isLocked: boolean;
-    lockedByMe: boolean;
-    lockedByName: string | null;
-  }>({ isLocked: false, lockedByMe: false, lockedByName: null });
 
   const isMountedRef2 = useRef(true);
   useEffect(() => {
