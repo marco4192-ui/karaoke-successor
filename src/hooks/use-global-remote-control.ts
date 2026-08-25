@@ -459,6 +459,17 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-select-song', { detail: { songId } }));
           break;
         }
+        // Song preview from companion: play a short audio preview on desktop speakers
+        if (cmd.type.startsWith('song_preview:')) {
+          const songId = cmd.type.slice('song_preview:'.length);
+          window.dispatchEvent(new CustomEvent('remote-song-preview', { detail: { songId } }));
+          break;
+        }
+        // Song preview stop from companion
+        if (cmd.type === 'song_preview_stop') {
+          window.dispatchEvent(new CustomEvent('remote-song-preview-stop', { detail: {} }));
+          break;
+        }
         // Check for settings_set:<url-encoded key>:<url-encoded value> pattern
         // Companion App: aendert eine Einstellung direkt im Desktop-LocalStorage
         if (cmd.type.startsWith('settings_set:')) {

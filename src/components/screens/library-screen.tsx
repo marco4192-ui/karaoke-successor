@@ -69,6 +69,24 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   // Preview hook
   const { previewSong, previewAudio, previewVideoRefs, handlePreviewStart, handlePreviewStop } = useLibraryPreview();
 
+  // --- Remote song preview from companion (desktop speakers) ---
+  useEffect(() => {
+    const onPreview = async (e: Event) => {
+      const { songId } = (e as CustomEvent).detail;
+      if (!songId || loadedSongs.length === 0) return;
+      // handlePreviewStart already stops any previous preview
+      const song = loadedSongs.find((s) => s.id === songId);
+      if (song) handlePreviewStart(song);
+    };
+    const onPreviewStop = () => handlePreviewStop();
+    window.addEventListener('remote-song-preview', onPreview);
+    window.addEventListener('remote-song-preview-stop', onPreviewStop);
+    return () => {
+      window.removeEventListener('remote-song-preview', onPreview);
+      window.removeEventListener('remote-song-preview-stop', onPreviewStop);
+    };
+  }, [loadedSongs, handlePreviewStart, handlePreviewStop]);
+
   // Viral charts hook — fetches trending songs from Apple Music, Deezer, iTunes
   const viralCharts = useViralCharts();
   

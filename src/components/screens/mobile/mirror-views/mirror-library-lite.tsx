@@ -115,6 +115,9 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     const [showNewPlaylist, setShowNewPlaylist] = useState(false);
     const [playlistAdding, setPlaylistAdding] = useState<string | null>(null);
 
+    // Desktop-Preview tracking (controlling companion only)
+    const [desktopPreviewSongId, setDesktopPreviewSongId] = useState<string | null>(null);
+
     // Duett: auto-filtere auf Duett-Songs
     const isDuetMode = libGameMode === 'duet';
     // Alle verfuegbaren Partner: verbundene Companion-User + aktive Host-Profile.
@@ -289,12 +292,36 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setShowPlaylistPicker(false);
     }, []);
 
+    // Desktop-Preview: Song auf Desktop-Lautsprechern abspielen (nur kontrollierender Companion)
+    const handleDesktopPreview = useCallback((songId: string) => {
+      // Stop previous preview if switching to a different song
+      if (desktopPreviewSongId && desktopPreviewSongId !== songId) {
+        onSendDesktopCommand('song_preview_stop');
+      }
+      setDesktopPreviewSongId(songId);
+      onSendDesktopCommand('song_preview:' + songId);
+    }, [desktopPreviewSongId, onSendDesktopCommand]);
+
+    const handleStopDesktopPreview = useCallback(() => {
+      if (desktopPreviewSongId) {
+        onSendDesktopCommand('song_preview_stop');
+        setDesktopPreviewSongId(null);
+      }
+    }, [desktopPreviewSongId, onSendDesktopCommand]);
+
+    // Stop desktop preview when opening overlay (game start) or switching songs
+    const openOverlayWithPreviewStop = useCallback((song: MobileSong) => {
+      handleStopDesktopPreview();
+      openOverlay(song);
+    }, [handleStopDesktopPreview, openOverlay]);
+
     // Spiel starten: Immer ueber Queue + play_queue Kommando.
     // Der Desktop verarbeitet play_queue (remote-play-queue Event) und
     // startet den ersten anstehenden Song aus der Queue.
     // Single-Mode: kein Challenge, kein Partner noetig.
     const handleOverlayStart = useCallback(async () => {
       if (!overlaySong || ovAdding) return;
+      handleStopDesktopPreview();
       setOvAdding(true);
       onSelectGameMode(libGameMode);
       onDifficultyChange(ovDifficulty);
@@ -311,7 +338,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       } finally {
         setOvAdding(false);
       }
-    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, onSendDesktopCommand, closeOverlay]);
+    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
 
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
@@ -498,7 +525,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
           {displaySongs.map((song) => (
             <button
               key={song.id}
-              onClick={() => openOverlay(song)}
+              onClick={() => openOverlayWithPreviewStop(song)}
               className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all active:scale-[0.98] ' +
                 'bg-white/5 border border-white/10 active:bg-white/10'}
             >
@@ -511,6 +538,29 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                 <p className="truncate text-sm font-medium text-white">{song.title}</p>
                 <p className="truncate text-xs text-white/40">{song.artist}</p>
               </div>
+              {/* Desktop-Preview Button (nur kontrollierender Companion) */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  haptic();
+                  if (desktopPreviewSongId === song.id) {
+                    handleStopDesktopPreview();
+                  } else {
+                    handleDesktopPreview(song.id);
+                  }
+                }}
+                className={
+                  'shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 ' +
+                  (desktopPreviewSongId === song.id
+                    ? 'bg-cyan-500/30 text-cyan-400'
+                    : 'bg-white/5 text-white/30 active:text-white/60')
+                }
+                aria-label={desktopPreviewSongId === song.id
+                  ? (t('mobilePreview.stopPreview') || 'Stop Preview')
+                  : (t('mobilePreview.playOnDesktop') || 'Preview on Desktop')}
+              >
+                <span className="text-sm">{desktopPreviewSongId === song.id ? '\u23F9' : '\u{1F50A}'}</span>
+              </button>
               {/* Dauer */}
               <span className="shrink-0 text-[10px] font-mono text-white/30 w-8 text-right">{formatDurationSec(song.duration)}</span>
               {/* Chevron */}
