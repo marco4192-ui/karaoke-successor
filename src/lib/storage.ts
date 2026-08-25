@@ -29,6 +29,7 @@ export const StorageKeys = {
   ANIMATED_BG: 'karaoke-animated-bg',
   NOTE_STYLE: 'karaoke-note-style',
   NOTE_SHAPE: 'karaoke-note-shape',
+  NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
   PERFORMANCE_MODE: 'karaoke-performance-mode',
   REPLAY_ENABLED: 'karaoke-replay-enabled',
   SHOW_SCORE: 'karaoke-show-score',

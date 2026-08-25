@@ -54,6 +54,9 @@ function SettingsScreen() {
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
   const [bgVideo, setBgVideo] = useState<boolean>(true);
   const [useAnimatedBg, setUseAnimatedBg] = useState<boolean>(false);
+  const [noteColorProfile, setNoteColorProfile] = useState<string>(() =>
+    getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'),
+  );
   const [performanceMode, setPerformanceMode] = useState<'full' | 'low'>(() => {
     const stored = getString(StorageKeys.PERFORMANCE_MODE);
     return stored === 'low' ? 'low' : 'full';
@@ -120,6 +123,7 @@ function SettingsScreen() {
     setLyricsSize(getString(StorageKeys.LYRICS_SIZE, 'medium'));
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
     setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
+    setNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'));
     setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
     setMasterVolume(getNumber(StorageKeys.MASTER_VOLUME, 100));
     setYoutubeQuality(getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
@@ -242,6 +246,8 @@ function SettingsScreen() {
           setLyricsSize={setLyricsSize}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
+          noteColorProfile={noteColorProfile}
+          setNoteColorProfile={setNoteColorProfile}
           tx={tx}
           setHasChanges={setHasChanges}
         />

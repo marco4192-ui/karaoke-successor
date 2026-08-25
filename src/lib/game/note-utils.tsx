@@ -1,5 +1,7 @@
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
+import { StorageKeys, getString } from '@/lib/storage';
+import { getNoteColorProfile, resolveNoteColors, type NoteColorProfile } from '@/lib/game/note-color-profiles';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -62,23 +64,9 @@ export function getNoteDisplayStyleClasses(
   const reachedCount = Math.floor(reachedFloat);
   const partialFill = reachedFloat - reachedCount;
 
-  // ── Colour palette (maximum saturation neon for visibility over video) ──
-  // These are intentionally oversaturated / glowing so they punch through
-  // bright video backgrounds.  Each colour is at or near 100% saturation.
-  const hitColors = {
-    Perfect: isGolden ? '#FFE100' : isBonus ? '#FF0066' : '#00FF66',
-    Great:   isGolden ? '#FFB800' : isBonus ? '#FF3399' : '#00DDFF',
-    Good:    isGolden ? '#FF8C00' : isBonus ? '#FF0055' : '#0066FF',
-    Okay:    isGolden ? '#CC5500' : isBonus ? '#AA0044' : '#6600FF',
-  };
-
-  // Per-segment glow colour (matches hit colour with strong opacity)
-  const hitGlows = {
-    Perfect: isGolden ? '0 0 10px #FFE100, 0 0 20px rgba(255,225,0,.5)' : isBonus ? '0 0 10px #FF0066, 0 0 20px rgba(255,0,102,.5)' : '0 0 10px #00FF66, 0 0 20px rgba(0,255,102,.5)',
-    Great:   isGolden ? '0 0 8px #FFB800, 0 0 16px rgba(255,184,0,.4)' : isBonus ? '0 0 8px #FF3399, 0 0 16px rgba(255,51,153,.4)' : '0 0 8px #00DDFF, 0 0 16px rgba(0,221,255,.4)',
-    Good:    isGolden ? '0 0 6px #FF8C00, 0 0 12px rgba(255,140,0,.35)' : isBonus ? '0 0 6px #FF0055, 0 0 12px rgba(255,0,85,.35)' : '0 0 6px #0066FF, 0 0 12px rgba(0,102,255,.35)',
-    Okay:    isGolden ? '0 0 4px #CC5500' : isBonus ? '0 0 4px #AA0044' : '0 0 4px #6600FF',
-  };
+  // ── Colour palette (from selected profile, or 'neon' fallback) ──
+  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
+  const { hitColors, hitGlows, glowTint } = resolveNoteColors(profile, isGolden, isBonus);
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
   const unreachedBg   = 'rgba(255, 255, 255, 0.08)';
@@ -169,7 +157,7 @@ export function getNoteDisplayStyleClasses(
     }
   }
 
-  const glowColor = isGolden ? 'rgba(255, 193, 7,' : isBonus ? 'rgba(255, 20, 147,' : 'rgba(0, 229, 255,';
+  const glowColor = glowTint;
 
   // ── Render ──────────────────────────────────────────────────────
   return {
@@ -265,7 +253,7 @@ export function getNoteDisplayStyleClasses(
 }
 
 /**
- * Calculate note background classes based on note type
+ * Calculate note background classes based on note type and color profile
  */
 export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean): string {
   if (isGolden) {
@@ -274,7 +262,8 @@ export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean): s
   if (isBonus) {
     return 'bg-gradient-to-r from-pink-500 to-purple-500';
   }
-  return 'bg-gradient-to-r from-cyan-500 to-blue-500';
+  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
+  return profile.lowPerfGradient;
 }
 
 /**
@@ -285,7 +274,8 @@ export function getNoteBoxShadow(isActive: boolean, isGolden: boolean): string {
   if (isGolden) {
     return '0 0 30px rgba(251, 191, 36, 0.7)';
   }
-  return '0 0 25px rgba(34, 211, 238, 0.7)';
+  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
+  return profile.lowPerfActiveGlow;
 }
 
 /**
