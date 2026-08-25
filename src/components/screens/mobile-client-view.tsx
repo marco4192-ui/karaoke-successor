@@ -8,7 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileProfile } from './mobile/mobile-types';
-import { screenToMirrorId, isCompanionMirroredScreen, type MirrorScreenId } from './mobile/mobile-types';
+import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
 import { MobileChat } from './mobile/mobile-chat';
 import { ChatNotificationPopup } from './mobile/mobile-chat-notification';
 import { PROFILE_COLORS } from './mobile/mobile-types';
@@ -235,43 +235,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     }).catch(() => { /* ignore */ });
   }, [clientId, profile]);
 
-  // Footer-Navigation: sendet Command an Desktop + setzt lokalen State für sofortiges Feedback
-  // Punkt 8: Nur erlaubte Screens wenn Kontrolle gesperrt ist
-  const LOCKED_ALLOWED_SCREENS = ['home', 'library', 'profile', 'settings'];
+  // ===================== CONTROL STATE =====================
+  // "controlled" = this companion has the remote lock OR nobody has it (desktop drives).
+  // Only the controlling companion mirrors the desktop screen and can send commands.
+  const controlled = !remoteLock.isLocked || remoteLock.lockedByMe;
+  const isControlling = controlled;
 
-  const handleFooterNavigate = useCallback((screen: string) => {
-    const controlled = remoteLock.isLocked && !remoteLock.lockedByMe;
-    if (controlled && !LOCKED_ALLOWED_SCREENS.includes(screen)) return;
-    // Ladebildschirm zeigen (kurz, max 800ms)
-    if (screen !== prevScreenRef.current) {
-      setIsTransitioning(true);
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-      transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
-    }
-    prevScreenRef.current = screen;
-    setActiveDesktopScreen(screen);
-    handleSendDesktopCommand(screen);
-  }, [handleSendDesktopCommand, transitionTimerRef]);
-
-  // ===================== DESKTOP SCREEN SYNC =====================
-  // Nur Main-Screens werden synchronisiert (autonome Companion-App).
-  // Sub-Screens (Tournament-Round, Editor, etc.) aendern den Companion
-  // View nicht — der Benutzer bleibt auf seiner aktuellen Ansicht.
+  // ===================== SCREEN SYNC (desktop → companion) =====================
+  // Only sync when this companion has control, or when nobody has control
+  // (desktop user is driving). Non-controlling companions are fully autonomous.
   useEffect(() => {
-    const desktopScreen = gameState.currentScreen;
-    if (!desktopScreen || !isCompanionMirroredScreen(desktopScreen)) return;
-    if (desktopScreen === activeDesktopScreen) return;
-
-    setIsTransitioning(true);
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    transitionTimerRef.current = setTimeout(() => setIsTransitioning(false), 800);
-    prevScreenRef.current = desktopScreen;
-    setActiveDesktopScreen(desktopScreen);
-  }, [gameState.currentScreen, activeDesktopScreen, transitionTimerRef]);
+    if (!controlled) return; // Non-controlling: ignore desktop screen changes
+    const desktop = gameState.currentScreen;
+    if (!desktop) return;
+    setActiveDesktopScreen(desktop);
+  }, [gameState.currentScreen, controlled]);
 
   // ===================== COMPUTED MIRROR ID =====================
-  // Nutze den lokalen activeDesktopScreen (sofortiges Feedback beim Footer-Tap),
-  // falle zurueck auf den vom Desktop gemeldeten Screen
   const mirrorScreenId = useMemo((): MirrorScreenId => {
     const screen = activeDesktopScreen || gameState.currentScreen;
     return screenToMirrorId(screen);
@@ -279,8 +259,20 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {
-    return activeDesktopScreen || gameState.currentScreen || 'home';
-  }, [activeDesktopScreen, gameState.currentScreen]);
+    return activeDesktopScreen || 'home';
+  }, [activeDesktopScreen]);
+
+  // ===================== FOOTER NAVIGATION =====================
+  const handleFooterNavigate = useCallback((screen: string) => {
+    if (isControlling) {
+      // Controlling companion: update local state and send command to desktop
+      setActiveDesktopScreen(screen);
+      handleSendDesktopCommand(screen);
+    } else {
+      // Non-controlling companion: navigate locally only, no desktop influence
+      setActiveDesktopScreen(screen);
+    }
+  }, [isControlling, handleSendDesktopCommand]);
 
   // ===================== REMOTE LOCK STATE =====================
   const [remoteLock, setRemoteLock] = useState<{
@@ -480,57 +472,110 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       ) : (
         <div className="pb-16">
-          {/* Immer die MirrorView (Lite-Version des Desktops) */}
-          <MirrorView
-            mirrorScreenId={mirrorScreenId}
-            gameState={gameState}
-            clientId={clientId}
-            profileName={profile?.name || ''}
-            queue={data.queue}
-            slotsRemaining={data.slotsRemaining}
-            onRemoveFromQueue={data.removeFromQueue}
-            onReorderQueue={data.reorderQueue}
-            songSearch={data.songSearch}
-            onSongSearchChange={data.setSongSearch}
-            songsLoading={data.songsLoading}
-            songsError={data.songsError}
-            songs={data.songs}
-            filteredSongs={data.filteredSongs}
-            showSongOptions={data.showSongOptions}
-            selectedGameMode={data.selectedGameMode}
-            selectedPartner={data.selectedPartner}
-            availablePartners={data.availablePartners}
-            opponents={data.opponents}
-            availableProfiles={data.availableProfiles}
-            onShowSongOptions={data.setShowSongOptions}
-            onSelectGameMode={data.setSelectedGameMode}
-            onSelectPartner={data.setSelectedPartner}
-            onAddToQueue={data.addToQueue}
-            onLoadPartners={data.loadAvailablePartners}
-            onLoadOpponents={data.loadOpponents}
-            onRefreshSongs={data.loadSongs}
-            formatDuration={data.formatDuration}
-            difficulty={data.difficulty}
-            onDifficultyChange={data.setDifficulty}
-            playerMicSource={data.playerMicSource}
-            onPlayerMicSourceChange={data.setPlayerMicSource}
-            partnerMicSource={data.partnerMicSource}
-            onPartnerMicSourceChange={data.setPartnerMicSource}
-            duetPartsSwapped={data.duetPartsSwapped}
-            onDuetPartsSwappedChange={data.setDuetPartsSwapped}
-            addedQueuePosition={data.addedQueuePosition}
-            jukeboxWishlist={data.jukeboxWishlist}
-            onRemoveFromJukebox={data.removeFromJukeboxWishlist}
-            onRefreshJukebox={data.loadJukeboxWishlist}
-            gameResults={data.gameResults}
-            onNavigate={() => {}}
-            onOpenChat={() => setShowChat(true)}
-            isRemoteLocked={remoteLock.isLocked && !remoteLock.lockedByMe}
-            remoteLockedBy={remoteLock.isLocked && !remoteLock.lockedByMe ? remoteLock.lockedByName : null}
-            onAcquireRemote={handleAcquireRemote}
-            onReleaseRemote={handleReleaseRemote}
-            onSendDesktopCommand={handleSendDesktopCommand}
-          />
+          {/* MirrorView: Nur im Kontrollier-Modus oder waehrend des Spiels */}
+          {isControlling ? (
+            <MirrorView
+              mirrorScreenId={mirrorScreenId}
+              gameState={gameState}
+              clientId={clientId}
+              profileName={profile?.name || ''}
+              queue={data.queue}
+              slotsRemaining={data.slotsRemaining}
+              onRemoveFromQueue={data.removeFromQueue}
+              onReorderQueue={data.reorderQueue}
+              songSearch={data.songSearch}
+              onSongSearchChange={data.setSongSearch}
+              songsLoading={data.songsLoading}
+              songsError={data.songsError}
+              songs={data.songs}
+              filteredSongs={data.filteredSongs}
+              showSongOptions={data.showSongOptions}
+              selectedGameMode={data.selectedGameMode}
+              selectedPartner={data.selectedPartner}
+              availablePartners={data.availablePartners}
+              opponents={data.opponents}
+              availableProfiles={data.availableProfiles}
+              onShowSongOptions={data.setShowSongOptions}
+              onSelectGameMode={data.setSelectedGameMode}
+              onSelectPartner={data.setSelectedPartner}
+              onAddToQueue={data.addToQueue}
+              onLoadPartners={data.loadAvailablePartners}
+              onLoadOpponents={data.loadOpponents}
+              onRefreshSongs={data.loadSongs}
+              formatDuration={data.formatDuration}
+              difficulty={data.difficulty}
+              onDifficultyChange={data.setDifficulty}
+              playerMicSource={data.playerMicSource}
+              onPlayerMicSourceChange={data.setPlayerMicSource}
+              partnerMicSource={data.partnerMicSource}
+              onPartnerMicSourceChange={data.setPartnerMicSource}
+              duetPartsSwapped={data.duetPartsSwapped}
+              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+              addedQueuePosition={data.addedQueuePosition}
+              jukeboxWishlist={data.jukeboxWishlist}
+              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
+              onRefreshJukebox={data.loadJukeboxWishlist}
+              gameResults={data.gameResults}
+              onNavigate={() => {}}
+              onOpenChat={() => setShowChat(true)}
+              isRemoteLocked={false}
+              remoteLockedBy={null}
+              onAcquireRemote={handleAcquireRemote}
+              onReleaseRemote={handleReleaseRemote}
+              onSendDesktopCommand={handleSendDesktopCommand}
+            />
+          ) : (
+            <MirrorView
+              mirrorScreenId={screenToMirrorId(activeDesktopScreen)}
+              gameState={gameState}
+              clientId={clientId}
+              profileName={profile?.name || ''}
+              queue={data.queue}
+              slotsRemaining={data.slotsRemaining}
+              onRemoveFromQueue={data.removeFromQueue}
+              onReorderQueue={data.reorderQueue}
+              songSearch={data.songSearch}
+              onSongSearchChange={data.setSongSearch}
+              songsLoading={data.songsLoading}
+              songsError={data.songsError}
+              songs={data.songs}
+              filteredSongs={data.filteredSongs}
+              showSongOptions={data.showSongOptions}
+              selectedGameMode={data.selectedGameMode}
+              selectedPartner={data.selectedPartner}
+              availablePartners={data.availablePartners}
+              opponents={data.opponents}
+              availableProfiles={data.availableProfiles}
+              onShowSongOptions={data.setShowSongOptions}
+              onSelectGameMode={data.setSelectedGameMode}
+              onSelectPartner={data.setSelectedPartner}
+              onAddToQueue={data.addToQueue}
+              onLoadPartners={data.loadAvailablePartners}
+              onLoadOpponents={data.loadOpponents}
+              onRefreshSongs={data.loadSongs}
+              formatDuration={data.formatDuration}
+              difficulty={data.difficulty}
+              onDifficultyChange={data.setDifficulty}
+              playerMicSource={data.playerMicSource}
+              onPlayerMicSourceChange={data.setPlayerMicSource}
+              partnerMicSource={data.partnerMicSource}
+              onPartnerMicSourceChange={data.setPartnerMicSource}
+              duetPartsSwapped={data.duetPartsSwapped}
+              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+              addedQueuePosition={data.addedQueuePosition}
+              jukeboxWishlist={data.jukeboxWishlist}
+              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
+              onRefreshJukebox={data.loadJukeboxWishlist}
+              gameResults={data.gameResults}
+              onNavigate={() => {}}
+              onOpenChat={() => setShowChat(true)}
+              isRemoteLocked={true}
+              remoteLockedBy={remoteLock.lockedByName}
+              onAcquireRemote={handleAcquireRemote}
+              onReleaseRemote={handleReleaseRemote}
+              onSendDesktopCommand={() => {}}
+            />
+          )}
         </div>
       )}
 
@@ -549,9 +594,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         <MobileBottomNav
           activeScreen={activeFooterScreen}
           onNavigate={handleFooterNavigate}
-          disabledScreens={remoteLock.isLocked && !remoteLock.lockedByMe
-            ? ['party', 'dailyChallenge', 'queue', 'jukebox', 'highscores', 'achievements']
-            : []}
+          disabledScreens={isControlling
+            ? []
+            : ['party', 'dailyChallenge', 'jukebox', 'highscores', 'achievements']}
         />
       )}
 

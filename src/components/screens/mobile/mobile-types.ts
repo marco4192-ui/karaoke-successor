@@ -32,25 +32,6 @@ export type MirrorScreenId =
   | 'setup-waiting'
   | 'profile';  // character/profile management
 
-/** Screens that have a proper companion mirror view — sub-screens are excluded. */
-const COMPANION_MIRRORED_SCREENS = new Set<string>([
-  'home', 'library', 'queue', 'game', 'settings', 'highscores',
-  'achievements', 'dailyChallenge', 'party', 'jukebox', 'results',
-  'party-setup', 'song-voting', 'profile',
-]);
-
-/**
- * Returns true for screens that the companion should actively mirror.
- * Sub-screens (tournament-round, medley-setup, editor, etc.) return false
- * so the companion stays on its current autonomous view.
- */
-export function isCompanionMirroredScreen(desktopScreen: string): boolean {
-  if (COMPANION_MIRRORED_SCREENS.has(desktopScreen)) return true;
-  // All *-game screens are immersive and map to 'game' mirror
-  if (desktopScreen.endsWith('-game') || desktopScreen === 'game') return true;
-  return false;
-}
-
 /** Maps desktop Screen → MirrorScreenId */
 export function screenToMirrorId(desktopScreen: string | undefined): MirrorScreenId {
   if (!desktopScreen) return 'home';
