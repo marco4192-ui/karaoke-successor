@@ -497,7 +497,6 @@ export default function KaraokeZERO() {
       } catch { /* */ }
       // Start the game with the voted song (same as SongVotingModal.onVote)
       resetGame();
-      setPlayers([]);
       if (party.selectedGameMode) {
         setGameMode(party.selectedGameMode);
         setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
@@ -514,7 +513,7 @@ export default function KaraokeZERO() {
     };
     window.addEventListener('remote-party-vote', handleRemotePartyVote);
     return () => window.removeEventListener('remote-party-vote', handleRemotePartyVote);
-  }, [resetGame, setGameMode, setSong, setScreen, setPlayers]);
+  }, [resetGame, setGameMode, setSong, setScreen]);
 
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
