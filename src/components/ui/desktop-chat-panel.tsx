@@ -240,9 +240,13 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
                     ) : (
                       <button
                         onClick={() => handleAcceptChallenge(msg.id)}
-                        disabled={!!acceptingId || !selectedPlayerId}
+                        disabled={!!acceptingId || !selectedPlayerId || msg.challenge.challengerClientId === 'host'}
                         className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!selectedPlayerId ? (t('desktopChat.selectPlayerFirst') || 'Zuerst einen Player auswaehlen') : undefined}
+                        title={!selectedPlayerId
+                          ? (t('desktopChat.selectPlayerFirst') || 'Zuerst einen Player auswählen')
+                          : msg.challenge.challengerClientId === 'host'
+                            ? (t('songChallenge.cannotAcceptOwn') || 'Du kannst deine eigene Herausforderung nicht annehmen')
+                            : undefined}
                       >
                         {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
                       </button>

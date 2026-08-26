@@ -204,28 +204,36 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setOverlaySong(null);
     }, []);
 
-    // DO-NOT-CHANGE: Queue-Add mit GameMode, Difficulty und Partner-Registrierung.
-    // Die Props (onSelectGameMode, onDifficultyChange, onSelectPartner) setzen
-    // den State auf dem Desktop-Client, der dann beim onAddToQueue-Aufruf
-    // in den QueueItem uebernommen wird.
+    // Zur Queue: Direkt an die API senden mit lokalem Overlay-State.
     const handleOverlayQueue = useCallback(async () => {
       if (!overlaySong || ovAdding) return;
       setOvAdding(true);
-      onSelectGameMode(libGameMode);
-      onDifficultyChange(ovDifficulty);
-      if (ovPartnerId) {
-        const partner = availablePartners.find((p) => p.id === ovPartnerId);
-        onSelectPartner(partner ? { id: partner.id, name: partner.name } : null);
-      } else {
-        onSelectPartner(null);
-      }
+      const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
       try {
-        await onAddToQueue(overlaySong);
-        closeOverlay();
-      } finally {
-        setOvAdding(false);
-      }
-    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, closeOverlay]);
+        const res = await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'queue',
+            clientId,
+            payload: {
+              songId: overlaySong.id,
+              songTitle: overlaySong.title,
+              songArtist: overlaySong.artist,
+              gameMode: libGameMode,
+              difficulty: ovDifficulty,
+              partnerId: partner?.id || undefined,
+              partnerName: partner?.name || undefined,
+              playerMicSource,
+              partnerMicSource,
+              duetPartsSwapped,
+            },
+          }),
+        });
+        if (res.ok) closeOverlay();
+      } catch { /* ignore */ }
+      finally { setOvAdding(false); }
+    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, closeOverlay]);
 
     // DO-NOT-CHANGE: Playlist-Add via mobile API. Der Desktop muss den
     // 'playlist_add'-Action-Type unterstuetzen, um den Song in eine
@@ -326,30 +334,44 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       openOverlay(song);
     }, [handleStopDesktopPreview, openOverlay]);
 
-    // Spiel starten: Immer ueber Queue + play_queue Kommando.
-    // Der Desktop verarbeitet play_queue (remote-play-queue Event) und
-    // startet den ersten anstehenden Song aus der Queue.
-    // Single-Mode: kein Challenge, kein Partner noetig.
+    // Spiel starten: Direkt an die API senden mit lokalem Overlay-State
+    // (gameMode, difficulty, partner), NICHT ueber use-mobile-data.ts das
+    // einen veralteten State haette.
     const handleOverlayStart = useCallback(async () => {
       if (!overlaySong || ovAdding) return;
       handleStopDesktopPreview();
       setOvAdding(true);
-      onSelectGameMode(libGameMode);
-      onDifficultyChange(ovDifficulty);
-      if (ovPartnerId) {
-        const partner = availablePartners.find((p) => p.id === ovPartnerId);
-        onSelectPartner(partner ? { id: partner.id, name: partner.name } : null);
-      } else {
-        onSelectPartner(null);
-      }
+      const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
       try {
-        await onAddToQueue(overlaySong);
-        onSendDesktopCommand('play_queue');
-        closeOverlay();
-      } finally {
+        const res = await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'queue',
+            clientId,
+            payload: {
+              songId: overlaySong.id,
+              songTitle: overlaySong.title,
+              songArtist: overlaySong.artist,
+              gameMode: libGameMode,
+              difficulty: ovDifficulty,
+              partnerId: partner?.id || undefined,
+              partnerName: partner?.name || undefined,
+              playerMicSource,
+              partnerMicSource,
+              duetPartsSwapped,
+            },
+          }),
+        });
+        if (res.ok) {
+          onSendDesktopCommand('play_queue');
+          closeOverlay();
+        }
+      } catch { /* ignore */ }
+      finally {
         setOvAdding(false);
       }
-    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, availablePartners, onSelectGameMode, onDifficultyChange, onSelectPartner, onAddToQueue, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
+    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
 
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
@@ -644,8 +666,8 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                 <div className="mb-4">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
                     {libGameMode === 'duel'
-                      ? (t('mobileViews.selectOpponent') || 'Gegner waehlen')
-                      : (t('mobileViews.noPartner') || 'Duett-Partner waehlen')}
+                      ? (t('mobileViews.selectOpponent') || 'Gegner wählen')
+                      : (t('mobileViews.selectPartner') || 'Duett-Partner wählen')}
                   </h4>
                   <select
                     value={ovPartnerId || ''}
@@ -653,9 +675,15 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                     className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white cursor-pointer"
                     style={dropdownStyle}
                   >
-                    <option value="" className="bg-[#1a1a2e] text-white">
-                      {t('mobileViews.noPartner') || 'Offen (Gegnersuche ausstehend)'}
-                    </option>
+                    {allPartners.length > 0 ? (
+                      <option value="" className="bg-[#1a1a2e] text-white">
+                        {t('mobileViews.chooseOpponent') || 'Gegner wählen...'}
+                      </option>
+                    ) : (
+                      <option value="" disabled className="bg-[#1a1a2e] text-white">
+                        {t('mobileViews.noOpponentsAvailable') || 'Keine Gegner verfügbar'}
+                      </option>
+                    )}
                     {allPartners.map((p) => (
                       <option key={p.id} value={p.id} className="bg-[#1a1a2e] text-white">{p.name}</option>
                     ))}

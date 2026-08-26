@@ -224,6 +224,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partner (optional)',
     // F19: Duel/Duet opponent selection
     selectOpponent: 'Select Opponent',
+    selectPartner: 'Select Duet Partner',
+    chooseOpponent: 'Choose opponent...',
+    noOpponentsAvailable: 'No opponents available',
     onlineNow: 'Online Now',
     availableProfiles: 'Available Profiles',
     randomOpponent: '🎲 Random',

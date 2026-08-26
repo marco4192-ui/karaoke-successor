@@ -1027,8 +1027,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         // Find challenger client for queue entry
         const challengerClient = mobileClients.get(chMsgData.challenge.challengerClientId);
 
-        // Create TWO duel queue entries (one for each player, same song)
-        // The first entry (challenger) carries the partner info
+        // Create ONE duel queue entry (challenger vs acceptor)
         const baseQueueItem = {
           songId: chMsgData.challenge.songId,
           songTitle: chMsgData.challenge.songTitle,
@@ -1039,8 +1038,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           addedAt: Date.now(),
         };
 
-        // Queue entry from challenger side
-        const challengerQueueItem: QueueItem = {
+        // Single queue entry representing the duel match
+        const duelQueueItem: QueueItem = {
           ...baseQueueItem,
           id: `queue-challenge-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           addedBy: chMsgData.challenge.challengerName,
@@ -1049,17 +1048,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerName: acceptorName,
         };
 
-        // Queue entry from acceptor side
-        const acceptorQueueItem: QueueItem = {
-          ...baseQueueItem,
-          id: `queue-accept-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          addedBy: acceptorName,
-          companionCode: acClient.connectionCode,
-          partnerId: challengerClient?.profile?.id || chMsgData.challenge.challengerClientId,
-          partnerName: chMsgData.challenge.challengerName,
-        };
-
-        mutableState.songQueue.push(challengerQueueItem, acceptorQueueItem);
+        mutableState.songQueue.push(duelQueueItem);
 
         // Post acceptance message to chat
         const acceptMsg = {
@@ -1114,12 +1103,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         achMsgData.challenge.acceptedByName = acceptorName;
         mutableState.chatMessages[achMsgIdx] = achMsgData;
 
-        // Find challenger client for queue entry
-        const achChallengerClient = achMsgData.challenge.challengerClientId !== 'host'
-          ? mobileClients.get(achMsgData.challenge.challengerClientId)
-          : null;
-
-        // Create queue entries for the duel/duet
+        // Create ONE duel queue entry for the match
         const achBaseQueueItem = {
           songId: achMsgData.challenge.songId,
           songTitle: achMsgData.challenge.songTitle,
@@ -1130,29 +1114,20 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           addedAt: Date.now(),
         };
 
-        // Queue entry from challenger side (if challenger is a companion)
-        if (achChallengerClient) {
-          const achChallengerQueueItem: QueueItem = {
-            ...achBaseQueueItem,
-            id: `queue-challenge-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-            addedBy: achMsgData.challenge.challengerName,
-            companionCode: achChallengerClient.connectionCode,
-            partnerId: achPayload.profileId,
-            partnerName: acceptorName,
-          };
-          mutableState.songQueue.push(achChallengerQueueItem);
-        }
+        const achChallengerClient = achMsgData.challenge.challengerClientId !== 'host'
+          ? mobileClients.get(achMsgData.challenge.challengerClientId)
+          : null;
 
-        // Queue entry from acceptor (host) side
-        const achAcceptorQueueItem: QueueItem = {
+        // Single queue entry representing the duel match
+        const achQueueItem: QueueItem = {
           ...achBaseQueueItem,
-          id: `queue-accept-host-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          addedBy: acceptorName,
-          companionCode: '',
-          partnerId: achChallengerClient?.profile?.id || achMsgData.challenge.challengerClientId,
-          partnerName: achMsgData.challenge.challengerName,
+          id: `queue-challenge-host-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          addedBy: achMsgData.challenge.challengerName,
+          companionCode: achChallengerClient?.connectionCode || '',
+          partnerId: achPayload.profileId,
+          partnerName: acceptorName,
         };
-        mutableState.songQueue.push(achAcceptorQueueItem);
+        mutableState.songQueue.push(achQueueItem);
 
         // Post acceptance message to chat
         const achAcceptMsg = {

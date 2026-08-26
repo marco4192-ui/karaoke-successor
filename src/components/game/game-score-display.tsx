@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface GameScoreDisplayProps {
   /** Whether duet mode is active (accepted for compat, rendered elsewhere) */
@@ -33,10 +34,11 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
   activeChallenge,
   timeRemaining,
 }: GameScoreDisplayProps) {
+  const { t } = useTranslation();
   const DIFFICULTY_LABELS: Record<string, string> = {
-    easy: 'Einfach',
-    medium: 'Mittel',
-    hard: 'Schwer',
+    easy: t('difficulty.easy') || 'Easy',
+    medium: t('difficulty.medium') || 'Medium',
+    hard: t('difficulty.hard') || 'Hard',
   };
   const label = DIFFICULTY_LABELS[difficulty] ?? difficulty.toUpperCase();
 
