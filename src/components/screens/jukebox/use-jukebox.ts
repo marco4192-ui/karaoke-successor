@@ -105,6 +105,10 @@ export function useJukebox(refs?: {
   isPlayingRef.current = isPlaying;
   const currentSongRef = useRef(currentSong);
   currentSongRef.current = currentSong;
+  const shuffleRef = useRef(shuffle);
+  shuffleRef.current = shuffle;
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
 
   // ==================== LOAD SONGS ====================
 
@@ -769,6 +773,29 @@ export function useJukebox(refs?: {
       duration: s.duration,
     })), null, 2);
   }, []);
+
+  // ==================== COMPANION REMOTE CONTROL EVENTS ====================
+
+  useEffect(() => {
+    const handlers: Array<[string, EventListener]> = [
+      ['jukebox:stop', () => { stopJukebox(); }],
+      ['jukebox:toggle_play', () => { togglePlayPause(); }],
+      ['jukebox:next', () => { playNext(); }],
+      ['jukebox:prev', () => { playPrevious(); }],
+      ['jukebox:shuffle', () => { handleSetShuffle(!shuffleRef.current); }],
+      ['jukebox:repeat', () => {
+        const modes: RepeatMode[] = ['all', 'none', 'one'];
+        const curIdx = modes.indexOf(repeatRef.current);
+        setRepeat(modes[(curIdx + 1) % modes.length]);
+      }],
+      ['jukebox:volume_up', () => { setVolume(v => Math.min(1, v + 0.1)); }],
+      ['jukebox:volume_down', () => { setVolume(v => Math.max(0, v - 0.1)); }],
+      ['jukebox:lyrics_toggle', () => { setShowLyrics(s => !s); }],
+      ['jukebox:playlist_toggle', () => { setHidePlaylist(h => !h); }],
+    ];
+    handlers.forEach(([evt, fn]) => window.addEventListener(evt, fn));
+    return () => { handlers.forEach(([evt, fn]) => window.removeEventListener(evt, fn)); };
+  }, [stopJukebox, togglePlayPause, playNext, playPrevious, handleSetShuffle, setRepeat, setVolume, setShowLyrics, setHidePlaylist]);
 
   // ==================== YOUTUBE TIME → STATE TIME ====================
 

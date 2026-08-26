@@ -145,6 +145,8 @@ export interface GameState {
   votingSongs?: Array<{ id: string; title: string; artist: string; duration: number; coverImage?: string }>;
   // Party setup: library-selected song awaiting confirmation on companion
   partyLibrarySong?: { id: string; title: string; artist: string } | null;
+  // Whether party mode is active on the desktop (for showing Leave Party button)
+  isPartyModeActive?: boolean;
 }
 
 export interface PitchData {

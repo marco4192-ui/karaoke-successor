@@ -576,6 +576,7 @@ export default function KaraokeZERO() {
               partyLibrarySong: screen === 'party-setup' && party.librarySelectedSong
                 ? { id: party.librarySelectedSong.id, title: party.librarySelectedSong.title, artist: party.librarySelectedSong.artist }
                 : null,
+              isPartyModeActive,
             },
           }),
         });

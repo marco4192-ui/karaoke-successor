@@ -33,6 +33,9 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
   function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }) {
     const { t } = useTranslation();
     const [showPauseOverlay, setShowPauseOverlay] = useState(false);
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+
+    const isPartyGame = !!gameState?.isPartyModeActive;
 
     const handleCmd = useCallback(
       (cmd: string) => {
@@ -199,6 +202,17 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
           </button>
         </div>
 
+        {/* Leave Party Mode (only during active party game) */}
+        {isPartyGame && (
+          <button
+            onClick={() => { haptic(); setShowLeaveDialog(true); }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl p-3 bg-amber-500/10 border border-amber-400/20 text-amber-400 active:scale-[0.97] transition-transform"
+          >
+            <span className="text-base">{'\u{1F6AA}'}</span>
+            <span className="text-xs font-medium">{t('mobile.mirrorJukeboxLeaveParty')}</span>
+          </button>
+        )}
+
         {/* Pause-Overlay (Portal) */}
         {showPauseOverlay && createPortal(
           <div
@@ -228,6 +242,46 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
                   className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
                 >
                   {'\u2716'} {t('mobile.mirrorAbortSong') || 'Abbrechen'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+        {/* Leave Party Confirmation Dialog (Portal) */}
+        {showLeaveDialog && createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowLeaveDialog(false)}
+          >
+            <div
+              className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-6">
+                <div className="text-4xl mb-2">{'\u{1F6AA}'}</div>
+                <h2 className="text-lg font-bold text-white">{t('dialogs.partyLeaveTitle') || 'Party-Modus verlassen?'}</h2>
+                <p className="text-sm text-white/50 mt-2">
+                  {t('dialogs.partyLeaveDesc') || 'Du verlaesst den Party-Modus. Der aktuelle Fortschritt geht verloren.'}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLeaveDialog(false)}
+                  className="flex-1 py-3 rounded-xl font-medium bg-white/10 border border-white/20 text-white/70 active:bg-white/20 transition-all text-sm"
+                >
+                  {t('mobile.mirrorCancel') || 'Abbrechen'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLeaveDialog(false);
+                    haptic();
+                    onSendDesktopCommand('party_cancel');
+                  }}
+                  className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
+                >
+                  {t('dialogs.endParty') || 'Party beenden'}
                 </button>
               </div>
             </div>

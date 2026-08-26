@@ -106,6 +106,8 @@ export interface MobileGameState {
   currentScreen?: string;
   // Party setup: which game mode is being configured
   partyGameMode?: string | null;
+  // Whether party mode is active on the desktop
+  isPartyModeActive?: boolean;
 }
 
 export interface GameResults {

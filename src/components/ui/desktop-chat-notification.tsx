@@ -7,6 +7,7 @@ interface ChatMsg {
   fromName: string;
   text: string;
   isHost: boolean;
+  timestamp?: number;
 }
 
 /**
@@ -33,7 +34,7 @@ export function DesktopChatNotification() {
           // Cleanup: dismiss messages older than 30s
           dismissedRef.current = new Set([...dismissedRef.current].filter((id) => {
             const msg = msgs.find((m) => m.id === id);
-            return msg && Date.now() - msg.timestamp < 30000;
+            return msg && msg.timestamp && Date.now() - msg.timestamp < 30000;
           }));
         }
         prevLatestIdRef.current = latest?.id || '';

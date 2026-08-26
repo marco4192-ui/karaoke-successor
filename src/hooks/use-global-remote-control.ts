@@ -417,6 +417,47 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('jukebox:start'));
           break;
         }
+        // Jukebox companion controls
+        if (cmd.type === 'jukebox_stop') {
+          window.dispatchEvent(new CustomEvent('jukebox:stop'));
+          break;
+        }
+        if (cmd.type === 'jukebox_toggle_play') {
+          window.dispatchEvent(new CustomEvent('jukebox:toggle_play'));
+          break;
+        }
+        if (cmd.type === 'jukebox_next') {
+          window.dispatchEvent(new CustomEvent('jukebox:next'));
+          break;
+        }
+        if (cmd.type === 'jukebox_prev') {
+          window.dispatchEvent(new CustomEvent('jukebox:prev'));
+          break;
+        }
+        if (cmd.type === 'jukebox_shuffle') {
+          window.dispatchEvent(new CustomEvent('jukebox:shuffle'));
+          break;
+        }
+        if (cmd.type === 'jukebox_repeat') {
+          window.dispatchEvent(new CustomEvent('jukebox:repeat'));
+          break;
+        }
+        if (cmd.type === 'jukebox_volume_up') {
+          window.dispatchEvent(new CustomEvent('jukebox:volume_up'));
+          break;
+        }
+        if (cmd.type === 'jukebox_volume_down') {
+          window.dispatchEvent(new CustomEvent('jukebox:volume_down'));
+          break;
+        }
+        if (cmd.type === 'jukebox_lyrics_toggle') {
+          window.dispatchEvent(new CustomEvent('jukebox:lyrics_toggle'));
+          break;
+        }
+        if (cmd.type === 'jukebox_playlist_toggle') {
+          window.dispatchEvent(new CustomEvent('jukebox:playlist_toggle'));
+          break;
+        }
         // Party cancel: companion left party-setup, reset party state on desktop
         if (cmd.type === 'party_cancel') {
           window.dispatchEvent(new CustomEvent('remote-party-cancel', { detail: {} }));
