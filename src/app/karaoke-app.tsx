@@ -50,7 +50,7 @@ export default function KaraokeZERO() {
   const { t } = useTranslation();
 
   // ── Screen navigation (screen state + party-mode guard) ──
-  const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation } = useScreenNavigation(party);
+  const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation, markPartyConfirmed } = useScreenNavigation(party);
 
   // ── App initialization effects (theme, custom songs, fullscreen, mobile redirect) ──
   const { isMounted, isFullscreen, toggleFullscreen } = useAppEffects();
@@ -611,6 +611,7 @@ export default function KaraokeZERO() {
         onLeave={() => {
           const target = pendingNavigation;
           setPendingNavigation(null);
+          markPartyConfirmed();
           party.resetPartyState();
           resetGame();
           setGameMode('standard');

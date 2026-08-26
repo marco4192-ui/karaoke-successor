@@ -46,8 +46,9 @@ function computePartyModeActive(party: PartyStore): boolean {
 export function useScreenNavigation(party: PartyStore) {
   const [screen, setScreen] = useState<Screen>('home');
   const [pendingNavigation, setPendingNavigation] = useState<Screen | null>(null);
+  const [partyConfirmed, setPartyConfirmed] = useState(false);
 
-  const isPartyModeActive = computePartyModeActive(party);
+  const isPartyModeActive = partyConfirmed ? false : computePartyModeActive(party);
 
   /**
    * Navigate to a target screen, but show a confirmation dialog
@@ -58,17 +59,24 @@ export function useScreenNavigation(party: PartyStore) {
       setScreen(target);
       return;
     }
+    if (partyConfirmed) {
+      setPartyConfirmed(false);
+      setScreen(target);
+      return;
+    }
     if (computePartyModeActive(party)) {
       setPendingNavigation(target);
       return;
     }
     setScreen(target);
-  }, [party]);
+  }, [party, partyConfirmed]);
+
+  /** Mark that the user has confirmed leaving party mode. */
+  const markPartyConfirmed = useCallback(() => {
+    setPartyConfirmed(true);
+  }, []);
 
   const confirmPendingNavigation = useCallback(() => {
-    // Caller is responsible for resetting party state and game state.
-    // This hook only consumes the pending target and clears it.
-    // Returns the pending screen so the caller can act on it.
     const target = pendingNavigation;
     setPendingNavigation(null);
     return target;
@@ -87,5 +95,6 @@ export function useScreenNavigation(party: PartyStore) {
     setPendingNavigation,
     confirmPendingNavigation,
     cancelPendingNavigation,
+    markPartyConfirmed,
   } as const;
 }

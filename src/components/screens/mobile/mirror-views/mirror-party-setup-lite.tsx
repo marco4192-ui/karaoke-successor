@@ -373,9 +373,11 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     const [configSent, setConfigSent] = useState(false);
 
-    // Initiale Settings aus Config setzen
+    // Initiale Settings aus Config setzen (nur beim ersten Laden des Modus)
+    const initializedModeRef = React.useRef('');
     React.useEffect(() => {
-      if (!modeInfo) return;
+      if (!modeInfo || initializedModeRef.current === modeInfo.command) return;
+      initializedModeRef.current = modeInfo.command;
       const init: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
       modeInfo.settings.forEach((s) => { init[s.key] = s.defaultValue; });
       setSettings(init);
@@ -386,6 +388,7 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
       if (modeInfo.songSelectionOptions.length > 0) {
         setSongSelection(modeInfo.songSelectionOptions[0]);
       }
+      setConfigSent(false);
     }, [modeInfo?.command]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // DO-NOT-CHANGE: Nutze die direkt geladenen Host-Profile statt des Props,

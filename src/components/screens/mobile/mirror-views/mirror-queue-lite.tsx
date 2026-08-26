@@ -105,7 +105,6 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
               'active:scale-[0.97] transition-transform disabled:opacity-30 disabled:pointer-events-none'
             }
           >
-            <span>{'▶'}</span>
             <span>{t('queueScreen.playNextSong')}</span>
           </button>
           <button

@@ -14,9 +14,9 @@ interface ChatMsg {
  * Pollt den Chat auf neue Nachrichten und zeigt sie als Popup an.
  */
 export function DesktopChatNotification() {
-  const [popup, setPopup] = useState<{ fromName: string; text: string; isHost: boolean } | null>(null);
-  const prevCountRef = useRef(0);
+  const [popup, setPopup] = useState<{ id: string; fromName: string; text: string } | null>(null);
   const prevLatestIdRef = useRef('');
+  const dismissedRef = useRef<Set<string>>(new Set());
 
   const pollChat = useCallback(async () => {
     try {
@@ -27,10 +27,15 @@ export function DesktopChatNotification() {
         const msgs: ChatMsg[] = d.messages;
         const latest = msgs[msgs.length - 1];
         // Zeige nur wenn es eine neue Nachricht gibt (nicht vom Host selbst)
-        if (latest && latest.id !== prevLatestIdRef.current && !latest.isHost) {
-          setPopup({ fromName: latest.fromName, text: latest.text, isHost: latest.isHost });
+        // und die Nachricht noch nicht dismissed wurde
+        if (latest && latest.id !== prevLatestIdRef.current && !latest.isHost && !dismissedRef.current.has(latest.id)) {
+          setPopup({ id: latest.id, fromName: latest.fromName, text: latest.text });
+          // Cleanup: dismiss messages older than 30s
+          dismissedRef.current = new Set([...dismissedRef.current].filter((id) => {
+            const msg = msgs.find((m) => m.id === id);
+            return msg && Date.now() - msg.timestamp < 30000;
+          }));
         }
-        prevCountRef.current = msgs.length;
         prevLatestIdRef.current = latest?.id || '';
       }
     } catch { /* ignore */ }
@@ -47,7 +52,7 @@ export function DesktopChatNotification() {
   return (
     <div
       className="fixed top-4 left-4 z-[100] cursor-pointer animate-[slide-in-down_0.3s_ease-out]"
-      onClick={() => setPopup(null)}
+      onClick={() => { if (popup) dismissedRef.current.add(popup.id); setPopup(null); }}
     >
       <div className="flex items-start gap-2.5 rounded-lg bg-black/90 backdrop-blur-md border border-white/15 px-3 py-2 shadow-2xl max-w-xs">
         <span className="text-sm leading-none mt-0.5 shrink-0">💬</span>

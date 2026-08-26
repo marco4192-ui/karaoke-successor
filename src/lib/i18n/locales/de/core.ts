@@ -400,7 +400,7 @@ dailyChallenge: {
   },
 },
 desktopChat: {
-  title: 'Companion-Chat',
+  title: 'Chat',
   host: 'Host',
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
