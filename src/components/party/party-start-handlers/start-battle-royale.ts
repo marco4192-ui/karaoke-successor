@@ -1,5 +1,6 @@
 import type { StartHandlerContext } from './types';
 import { createBattleRoyale, type BattleRoyaleSettings } from '@/lib/game/battle-royale';
+import type { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, toast, t, filteredSongs } = ctx;
@@ -41,9 +42,11 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     shrinkingTimer: s.shrinkingTimer ?? false,
     shrinkFactor: s.shrinkFactor ?? 5,
     minRoundDuration: s.minRoundDuration ?? 30,
+    noteShapeStyle: 'rounded',
+    noteDisplayStyle: 'classic',
     showNoteHighway: s.showNoteHighway ?? true,
     showVideoBackground: s.showVideoBackground ?? true,
-    countdownDuration: s.countdownDuration ?? 3,
+    countdownDuration: s.countdownDuration ?? 5,
   };
   try {
     const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));
