@@ -1,6 +1,5 @@
 import type { StartHandlerContext } from './types';
 import { createBattleRoyale, type BattleRoyaleSettings } from '@/lib/game/battle-royale';
-import type { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, toast, t, filteredSongs } = ctx;
