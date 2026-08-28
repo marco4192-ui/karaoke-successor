@@ -41,8 +41,6 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     shrinkingTimer: s.shrinkingTimer ?? false,
     shrinkFactor: s.shrinkFactor ?? 5,
     minRoundDuration: s.minRoundDuration ?? 30,
-    noteShapeStyle: 'rounded',
-    noteDisplayStyle: 'classic',
     showNoteHighway: s.showNoteHighway ?? true,
     showVideoBackground: s.showVideoBackground ?? true,
     countdownDuration: s.countdownDuration ?? 5,
