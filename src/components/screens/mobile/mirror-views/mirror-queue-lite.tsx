@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import type { QueueItem, GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -36,33 +36,56 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
     onSendDesktopCommand,
   }) {
     const { t } = useTranslation();
+    const dragItemRef = useRef<string | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const handleRemove = useCallback(
       (id: string) => { onRemoveFromQueue(id); },
       [onRemoveFromQueue],
     );
 
-    const handleMoveUp = useCallback(
-      (index: number) => {
-        if (index <= 0) return;
+    const handlePlayItem = useCallback(
+      (id: string) => {
+        haptic();
+        // Move the target item to position 0, then play
         const activeItems = queue.filter((q) => q.status !== 'completed');
+        const currentIndex = activeItems.findIndex((item) => item.id === id);
+        if (currentIndex < 0) return;
         const newOrder = activeItems.map((item) => item.id);
-        [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
-        onReorderQueue(newOrder);
+        // Move target to front
+        const [targetId] = newOrder.splice(currentIndex, 1);
+        newOrder.unshift(targetId);
+        onReorderQueue(newOrder).then(() => {
+          onSendDesktopCommand('play_queue');
+        });
       },
-      [onReorderQueue, queue],
+      [queue, onReorderQueue, onSendDesktopCommand],
     );
 
-    const handleMoveDown = useCallback(
-      (index: number) => {
+    // Touch-based drag and drop for reordering
+    const handleDragStart = useCallback((id: string) => {
+      haptic();
+      dragItemRef.current = id;
+    }, []);
+
+    const handleDragOver = useCallback((index: number) => {
+      setDragOverIndex(index);
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+      if (dragItemRef.current && dragOverIndex !== null) {
         const activeItems = queue.filter((q) => q.status !== 'completed');
-        if (index >= activeItems.length - 1) return;
-        const newOrder = activeItems.map((item) => item.id);
-        [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-        onReorderQueue(newOrder);
-      },
-      [onReorderQueue, queue],
-    );
+        const fromIndex = activeItems.findIndex((item) => item.id === dragItemRef.current);
+        if (fromIndex >= 0 && fromIndex !== dragOverIndex) {
+          const newOrder = activeItems.map((item) => item.id);
+          const [movedId] = newOrder.splice(fromIndex, 1);
+          newOrder.splice(dragOverIndex, 0, movedId);
+          onReorderQueue(newOrder);
+        }
+      }
+      dragItemRef.current = null;
+      setDragOverIndex(null);
+    }, [queue, dragOverIndex, onReorderQueue]);
 
     const handleCommand = useCallback(
       (cmd: string) => { haptic(); onSendDesktopCommand(cmd); },
@@ -116,14 +139,14 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
               'active:scale-[0.97] transition-transform disabled:opacity-30 disabled:pointer-events-none'
             }
           >
-            <span>{'🗑'}</span>
+            <span>{'\u{1F5D1}'}</span>
           </button>
         </div>
 
         {/* Empty state */}
         {activeItems.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
-            <span className="text-3xl">{'📋'}</span>
+            <span className="text-3xl">{'\u{1F4CB}'}</span>
             <p className="text-sm text-white/40">
               {t('mobile.mirrorQueueEmpty')}
             </p>
@@ -133,74 +156,86 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
           </div>
         )}
 
-        {/* Queue items */}
+        {/* Queue items with drag-and-drop reorder + per-item play button */}
         <div className="flex flex-col gap-2">
-          {activeItems.map((item, index) => (
-            <div
-              key={item.id}
-              className={
-                'flex items-center gap-3 rounded-xl p-3 ' +
-                'bg-white/5 border border-white/10'
-              }
-            >
-              {/* Position number */}
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white/60">
-                {index + 1}
-              </span>
-
-              {/* Song info */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">
-                  {item.songTitle}
-                </p>
-                <p className="truncate text-xs text-white/40">
-                  {item.songArtist}
-                </p>
-              </div>
-
-              {/* Game mode badge */}
-              {item.gameMode && (
-                <span
-                  className={
-                    'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ' +
-                    'text-purple-300/80 bg-purple-500/20'
+          {activeItems.map((item, index) => {
+            const isDragging = dragItemRef.current === item.id;
+            const isDragOver = dragOverIndex === index;
+            return (
+              <div
+                key={item.id}
+                draggable
+                onDragStart={() => handleDragStart(item.id)}
+                onDragOver={() => handleDragOver(index)}
+                onDragEnd={handleDragEnd}
+                onTouchStart={() => handleDragStart(item.id)}
+                onTouchMove={(e) => {
+                  const touch = e.touches[0];
+                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                  if (el) {
+                    const queueEl = el.closest('[data-queue-index]');
+                    if (queueEl) {
+                      handleDragOver(Number(queueEl.getAttribute('data-queue-index')));
+                    }
                   }
-                >
-                  {item.gameMode}
-                </span>
-              )}
-
-              {/* Reorder buttons */}
-              <div className="flex shrink-0 flex-col gap-0.5">
-                <button
-                  onClick={() => handleMoveUp(index)}
-                  disabled={index === 0}
-                  className="rounded px-1 py-0.5 text-[10px] text-white/40 disabled:opacity-20 active:text-white/70"
-                >
-                  {'▲'}
-                </button>
-                <button
-                  onClick={() => handleMoveDown(index)}
-                  disabled={index === activeItems.length - 1}
-                  className="rounded px-1 py-0.5 text-[10px] text-white/40 disabled:opacity-20 active:text-white/70"
-                >
-                  {'▼'}
-                </button>
-              </div>
-
-              {/* Remove button */}
-              <button
-                onClick={() => handleRemove(item.id)}
+                }}
+                onTouchEnd={handleDragEnd}
+                data-queue-index={index}
                 className={
-                  'shrink-0 rounded-lg px-2 py-1 text-xs font-medium ' +
-                  'bg-red-500/15 text-red-400/80 ' +
-                  'active:scale-95 transition-transform'
+                  'flex items-center gap-3 rounded-xl p-3 transition-all ' +
+                  (isDragging ? 'opacity-50 scale-95' : '') +
+                  (isDragOver && !isDragging ? 'border-purple-500/50 bg-purple-500/10' : 'bg-white/5 border-white/10') +
+                  (isDragging ? 'border-white/10' : '')
                 }
               >
-                {'\u2715'}
-              </button>
-            </div>
-          ))}
+                {/* Drag handle */
+                <span className="text-white/20 text-sm cursor-grab active:text-white/50 select-none">{'\u2805'}</span>
+
+                {/* Song info */
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {item.songTitle}
+                  </p>
+                  <p className="truncate text-xs text-white/40">
+                    {item.songArtist}
+                  </p>
+                </div>
+
+                {/* Game mode badge */}
+                {item.gameMode && (
+                  <span
+                    className={
+                      'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ' +
+                      'text-purple-300/80 bg-purple-500/20'
+                    }
+                  >
+                    {item.gameMode}
+                  </span>
+                )}
+
+                {/* Play button per item */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePlayItem(item.id); }}
+                  className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-cyan-500/15 text-cyan-400 active:scale-90 active:bg-cyan-500/30 transition-all"
+                  title={t('queueScreen.playNextSong') || 'Play'}
+                >
+                  {'\u25B6'}
+                </button>
+
+                {/* Remove button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRemove(item.id); }}
+                  className={
+                    'shrink-0 rounded-lg px-2 py-1 text-xs font-medium ' +
+                    'bg-red-500/15 text-red-400/80 ' +
+                    'active:scale-95 transition-transform'
+                  }
+                >
+                  {'\u2715'}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     );

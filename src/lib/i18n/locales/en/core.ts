@@ -380,7 +380,7 @@ export const coreTranslations = {
   },
 
     desktopChat: {
-      title: 'Companion Chat',
+      title: 'Chat',
       host: 'Host',
       notificationNew: 'New message from {name}',
       openChat: 'Open Chat',

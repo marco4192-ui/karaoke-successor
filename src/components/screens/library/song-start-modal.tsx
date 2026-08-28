@@ -212,6 +212,10 @@ export function SongStartModal({
   };
 
   const handleAddToQueue = () => {
+    // Validate duel/duet requires 2 players
+    if ((startOptions.mode === 'duel' || startOptions.mode === 'duet') && startOptions.players.length < 2) {
+      return;
+    }
     // Use the selected player from startOptions, NOT activeProfileId
     const selectedPlayerId = startOptions.players[0] || activeProfileId;
     if (selectedPlayerId) {
@@ -661,7 +665,7 @@ export function SongStartModal({
           <Button 
             variant="outline" 
             onClick={handleAddToQueue}
-            disabled={!(startOptions.players[0] || activeProfileId)}
+            disabled={!(startOptions.players[0] || activeProfileId) || (startOptions.mode === 'duel' && startOptions.players.length < 2) || (startOptions.mode === 'duet' && startOptions.players.length < 2)}
             className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-3"
           >
             <QueueIcon className="w-4 h-4 mr-1.5" /> {t('songStart.queue')}

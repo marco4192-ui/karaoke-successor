@@ -206,7 +206,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
 
     // Zur Queue: Direkt an die API senden mit lokalem Overlay-State.
     const handleOverlayQueue = useCallback(async () => {
-      if (!overlaySong || ovAdding) return;
+      if (!overlaySong || ovAdding || missingOpponent) return;
       setOvAdding(true);
       const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
       try {
@@ -233,7 +233,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
         if (res.ok) closeOverlay();
       } catch { /* ignore */ }
       finally { setOvAdding(false); }
-    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, closeOverlay]);
+    }, [overlaySong, ovAdding, missingOpponent, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, closeOverlay]);
 
     // DO-NOT-CHANGE: Playlist-Add via mobile API. Der Desktop muss den
     // 'playlist_add'-Action-Type unterstuetzen, um den Song in eine
@@ -338,7 +338,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     // (gameMode, difficulty, partner), NICHT ueber use-mobile-data.ts das
     // einen veralteten State haette.
     const handleOverlayStart = useCallback(async () => {
-      if (!overlaySong || ovAdding) return;
+      if (!overlaySong || ovAdding || missingOpponent) return;
       handleStopDesktopPreview();
       setOvAdding(true);
       const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
@@ -371,7 +371,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       finally {
         setOvAdding(false);
       }
-    }, [overlaySong, ovAdding, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
+    }, [overlaySong, ovAdding, missingOpponent, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
 
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
@@ -414,6 +414,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     ];
 
     const needsChallenge = libGameMode === 'duel' || libGameMode === 'duet';
+    const missingOpponent = needsChallenge && !ovPartnerId;
 
     // Schwierigkeits-Optionen fuer Overlay
     const DIFF_OPTIONS = [
@@ -694,12 +695,19 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
               {/* Trennlinie */}
               <div className="border-t border-white/10 my-4" />
 
+              {/* Warnung: kein Gegner ausgewaehlt */}
+              {missingOpponent && (
+                <p className="text-xs text-amber-400 text-center">
+                  {t('mobile.mirrorDuetHint') || 'Bitte Gegner auswaehlen oder Herausfordern (Chat)'}
+                </p>
+              )}
+
               {/* Aktions-Buttons */}
               <div className="flex flex-col gap-2.5">
                 {/* Zur Queue */}
                 <button
                   onClick={handleOverlayQueue}
-                  disabled={ovAdding}
+                  disabled={ovAdding || missingOpponent}
                   className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-cyan-500/20 border border-cyan-400/30 text-cyan-400 active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   <span className="text-base">{'\u{1F4CB}'}</span>
@@ -719,7 +727,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
                 {/* Spiel starten */}
                 <button
                   onClick={handleOverlayStart}
-                  disabled={ovAdding}
+                  disabled={ovAdding || missingOpponent}
                   className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400/20 text-white active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   <span className="text-base">{'\u25B6\uFE0F'}</span>

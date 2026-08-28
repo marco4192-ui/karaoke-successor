@@ -539,7 +539,28 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const handleRemotePlayQueue = () => {
       const q = useGameStore.getState().queue;
-      if (q.length === 0) return;
+      // Check both zustand queue and companion server queue
+      if (q.length === 0) {
+        // No items in local queue — check companion queue
+        fetch('/api/mobile?action=getqueue')
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success && data.queue && data.queue.length > 0) {
+              // Sync companion queue items into zustand store
+              const store = useGameStore.getState();
+              data.queue.forEach((item: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                if (!store.queue.some((qi: { id: string }) => qi.id === item.id)) {
+                  store.addCompanionToQueue(item);
+                }
+              });
+              // Now navigate to queue with autoPlay
+              setAutoPlayNext(true);
+              navigateWithGuard('queue');
+            }
+          })
+          .catch(() => {});
+        return;
+      }
       setAutoPlayNext(true);
       navigateWithGuard('queue');
     };

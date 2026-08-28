@@ -250,7 +250,15 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           }, { status: 400 });
         }
 
-        // F19: Validate partner exists for duel/duet mode
+        // Validate required partner for duel/duet mode
+        if ((queuePayload.gameMode === 'duel' || queuePayload.gameMode === 'duet') && !queuePayload.partnerId) {
+          return Response.json({
+            success: false,
+            message: 'Duel/Duet requires an opponent. Please select an opponent or start a challenge.',
+          }, { status: 400 });
+        }
+
+        // Validate partner exists for duel/duet mode
         if ((queuePayload.gameMode === 'duel' || queuePayload.gameMode === 'duet') && queuePayload.partnerId) {
           // Look up partner by connection code or profile ID
           let partnerFound = false;
