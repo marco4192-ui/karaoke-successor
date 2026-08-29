@@ -187,6 +187,10 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       setLibGameMode(mode);
     }, []);
 
+    // Abgeleitete Werte fuer Overlay-Handler (vor den Callbacks deklariert)
+    const needsChallenge = libGameMode === 'duel' || libGameMode === 'duet';
+    const missingOpponent = needsChallenge && !ovPartnerId;
+
     // ---- Overlay-Handler ----
 
     const openOverlay = useCallback((song: MobileSong) => {
@@ -412,9 +416,6 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
       { mode: 'duel', icon: '\u2694\uFE0F', labelKey: 'gameMode.duel', fallback: 'Duell', activeColor: 'bg-red-500/25 border-red-400/40 text-red-400' },
       { mode: 'duet', icon: '\u{1F3AD}', labelKey: 'gameMode.duet', fallback: 'Duett', activeColor: 'bg-pink-500/25 border-pink-400/40 text-pink-400' },
     ];
-
-    const needsChallenge = libGameMode === 'duel' || libGameMode === 'duet';
-    const missingOpponent = needsChallenge && !ovPartnerId;
 
     // Schwierigkeits-Optionen fuer Overlay
     const DIFF_OPTIONS = [
