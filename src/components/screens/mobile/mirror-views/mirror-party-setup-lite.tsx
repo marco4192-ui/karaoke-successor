@@ -587,10 +587,14 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
                       : 'border-white/10 bg-white/5 opacity-60')}
                 >
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden"
                     style={{ backgroundColor: color + '40', border: `2px solid ${isSelected ? color : 'transparent'}` }}
                   >
-                    {isSelected ? '\u2713' : (profile.avatar || profile.name?.[0] || '?')}
+                    {isSelected
+                      ? '\u2713'
+                      : profile.avatar
+                        ? <img src={profile.avatar} alt="" className="w-full h-full object-cover" />
+                        : (profile.name?.[0] || '?')}
                   </div>
                   <span className="text-sm font-medium text-white truncate">{profile.name || 'Player'}</span>
                 </button>
