@@ -188,10 +188,10 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
                   (isDragging ? 'border-white/10' : '')
                 }
               >
-                {/* Drag handle */
+                {/* Drag handle */}
                 <span className="text-white/20 text-sm cursor-grab active:text-white/50 select-none">{'\u2805'}</span>
 
-                {/* Song info */
+                {/* Song info */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">
                     {item.songTitle}
