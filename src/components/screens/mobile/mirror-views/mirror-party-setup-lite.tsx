@@ -509,7 +509,7 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
     }
 
     const renderLeaveDialog = useCallback(() => {
-      if (!showLeaveDialog) return null;
+      if (!showLeaveDialog || typeof document === 'undefined') return null;
       return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleLeaveCancel}>
           <div className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>

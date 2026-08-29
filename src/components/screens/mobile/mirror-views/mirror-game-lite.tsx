@@ -214,7 +214,7 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         )}
 
         {/* Pause-Overlay (Portal) */}
-        {showPauseOverlay && createPortal(
+        {showPauseOverlay && typeof document !== 'undefined' && createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleResume}
@@ -250,7 +250,7 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         )}
 
         {/* Leave Party Confirmation Dialog (Portal) */}
-        {showLeaveDialog && createPortal(
+        {showLeaveDialog && typeof document !== 'undefined' && createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => setShowLeaveDialog(false)}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap } from './unified-party-setup.types';
@@ -291,6 +291,9 @@ export function usePartySetup({
   }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
 
   // ── Remote companion config apply ──
+  const handleSongSelectionRef = useRef(handleSongSelection);
+  handleSongSelectionRef.current = handleSongSelection;
+
   useEffect(() => {
     const handleRemoteConfig = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
@@ -316,14 +319,14 @@ export function usePartySetup({
         const minP = config.minPlayers;
         if (Array.isArray(detail.players) && detail.players.length >= minP) {
           setTimeout(() => {
-            handleSongSelection(songSel as SongSelectionOption);
+            handleSongSelectionRef.current(songSel as SongSelectionOption);
           }, 200);
         }
       }
     };
     window.addEventListener('remote-party-apply-config', handleRemoteConfig);
     return () => window.removeEventListener('remote-party-apply-config', handleRemoteConfig);
-  }, [config.minPlayers, handleSongSelection]);
+  }, [config.minPlayers]);
 
   return {
     config,
