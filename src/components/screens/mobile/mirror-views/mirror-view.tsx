@@ -104,7 +104,7 @@ export interface MirrorViewProps {
  * Mirror-View-Container – schaltet automatisch zwischen den
  * Lite-Ansichten um, basierend auf dem aktuellen Desktop-Bildschirm.
  */
-export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
+export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   mirrorScreenId,
   gameState,
   clientId,
@@ -387,4 +387,6 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
         </div>
       );
   }
-});
+};
+
+MirrorView.displayName = 'MirrorView';

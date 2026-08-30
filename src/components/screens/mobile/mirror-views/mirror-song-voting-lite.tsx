@@ -100,3 +100,4 @@ export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
     );
   },
 );
+MirrorSongVotingLite.displayName = 'MirrorSongVotingLite';

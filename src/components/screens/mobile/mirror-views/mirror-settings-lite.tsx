@@ -743,3 +743,4 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
     );
   },
 );
+MirrorSettingsLite.displayName = 'MirrorSettingsLite';

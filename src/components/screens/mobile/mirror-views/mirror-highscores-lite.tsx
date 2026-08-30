@@ -123,3 +123,4 @@ export const MirrorHighscoresLite = React.memo<MirrorHighscoresLiteProps>(
     );
   },
 );
+MirrorHighscoresLite.displayName = 'MirrorHighscoresLite';

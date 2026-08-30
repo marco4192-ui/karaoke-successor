@@ -133,3 +133,4 @@ export const MirrorDailyLite = React.memo<MirrorDailyLiteProps>(
     );
   },
 );
+MirrorDailyLite.displayName = 'MirrorDailyLite';

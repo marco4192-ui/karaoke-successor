@@ -877,3 +877,4 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     );
   },
 );
+MirrorLibraryLite.displayName = 'MirrorLibraryLite';

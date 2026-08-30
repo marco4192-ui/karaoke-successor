@@ -133,3 +133,4 @@ export const MirrorAchievementsLite = React.memo<MirrorAchievementsLiteProps>(
     );
   },
 );
+MirrorAchievementsLite.displayName = 'MirrorAchievementsLite';

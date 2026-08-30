@@ -290,3 +290,4 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
     );
   },
 );
+MirrorGameLite.displayName = 'MirrorGameLite';

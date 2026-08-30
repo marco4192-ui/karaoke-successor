@@ -133,3 +133,4 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
     );
   },
 );
+MirrorHomeLite.displayName = 'MirrorHomeLite';

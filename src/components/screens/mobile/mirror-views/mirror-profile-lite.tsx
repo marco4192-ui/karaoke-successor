@@ -152,3 +152,4 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
     );
   },
 );
+MirrorProfileLite.displayName = 'MirrorProfileLite';

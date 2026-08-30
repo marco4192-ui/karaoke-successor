@@ -145,3 +145,4 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
     );
   },
 );
+MirrorResultsLite.displayName = 'MirrorResultsLite';

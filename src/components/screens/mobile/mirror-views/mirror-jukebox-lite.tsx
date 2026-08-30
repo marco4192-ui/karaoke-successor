@@ -307,3 +307,4 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
     );
   },
 );
+MirrorJukeboxLite.displayName = 'MirrorJukeboxLite';

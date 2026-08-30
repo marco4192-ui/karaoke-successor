@@ -97,3 +97,4 @@ export const MirrorPartyLite = React.memo<MirrorPartyLiteProps>(
     );
   },
 );
+MirrorPartyLite.displayName = 'MirrorPartyLite';

@@ -263,3 +263,4 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
     );
   },
 );
+MirrorQueueLite.displayName = 'MirrorQueueLite';

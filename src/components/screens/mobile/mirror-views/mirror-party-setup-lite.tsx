@@ -822,3 +822,4 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
     );
   },
 );
+MirrorPartySetupLite.displayName = 'MirrorPartySetupLite';
