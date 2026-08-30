@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { createPortal } from 'react-dom';
+// createPortal removed — causes React #300 on mobile WebViews
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -124,14 +124,14 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
             onClick={() => handleCmd('volume_down')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
           >
-            <span className="text-base">{'\uDDE0'}</span>
+            <span className="text-base">{'\u{1F509}'}</span>
             <span className="text-xs font-medium text-white/70">Vol -</span>
           </button>
           <button
             onClick={() => handleCmd('volume_up')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
           >
-            <span className="text-base">{'\uDDE1'}</span>
+            <span className="text-base">{'\u{1F50A}'}</span>
             <span className="text-xs font-medium text-white/70">Vol +</span>
           </button>
         </div>
@@ -213,8 +213,8 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
           </button>
         )}
 
-        {/* Pause-Overlay (Portal) */}
-        {showPauseOverlay && typeof document !== 'undefined' && createPortal(
+        {/* Pause-Overlay */}
+        {showPauseOverlay && (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleResume}
@@ -245,12 +245,11 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
                 </button>
               </div>
             </div>
-          </div>,
-          document.body,
+          </div>
         )}
 
-        {/* Leave Party Confirmation Dialog (Portal) */}
-        {showLeaveDialog && typeof document !== 'undefined' && createPortal(
+        {/* Leave Party Confirmation Dialog */}
+        {showLeaveDialog && (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => setShowLeaveDialog(false)}
@@ -285,8 +284,7 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
                 </button>
               </div>
             </div>
-          </div>,
-          document.body,
+          </div>
         )}
       </div>
     );

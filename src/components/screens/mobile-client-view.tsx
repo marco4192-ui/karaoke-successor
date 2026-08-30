@@ -613,21 +613,21 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {/* ====== SINGALONG OVERLAY ====== */}
-      {isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && (
+      {(isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id) ? (
         <SingalongOverlay
           isMyTurn={gameState.singalongTurn.countdown === null}
           countdown={gameState.singalongTurn.countdown}
         />
-      )}
+      ) : null}
 
       {/* ====== CPTM OVERLAY ====== */}
-      {isConnected && profile && gameState.cptmTurn?.isActive && (
+      {(isConnected && profile && gameState.cptmTurn?.isActive) ? (
         (gameState.cptmTurn.countdown !== null && gameState.cptmTurn.nextProfileId === profile.id) ? (
           <CptmBlinkOverlay countdown={gameState.cptmTurn.countdown} playerColor={profile.color} />
         ) : (gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ? (
           <CptmYourTurnOverlay playerName={profile.name} playerColor={profile.color} />
         ) : null
-      )}
+      ) : null}
 
       {/* ====== TOURNAMENT VOTE OVERLAY ====== */}
       {isConnected && profile && gameState.isPlaying && gameState.gameMode === 'duel' && gameState.tournamentMatchId && !votedMatchIds.has(gameState.tournamentMatchId) && (
