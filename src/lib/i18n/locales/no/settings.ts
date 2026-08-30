@@ -84,6 +84,8 @@ settings: {
   feature5: 'Offline-kapabel med lokal SQLite-database',
   autoFullscreen: 'Auto-fullskjerm',
   autoFullscreenDesc: 'Bytt automatisk til fullskjerm når en sang starter.',
+  noteColorProfile: 'Notefarger',
+  noteColorProfileDesc: 'Velg en fargepalett for notestolpene under spilling',
 },
 settingsTabs: {
   gameplay: 'Spilling',

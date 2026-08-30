@@ -5,6 +5,7 @@ import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { NOTE_COLOR_PROFILES } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
 
@@ -58,6 +59,7 @@ const SK = {
   MIC_SENSITIVITY: 'karaoke-mic-sensitivity',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   LANGUAGE: 'karaoke-language',
+  NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
 } as const;
 
 // ===================== Defaults =====================
@@ -76,6 +78,7 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.LYRICS_STYLE]: 'classic',
   [SK.LYRICS_SIZE]: 'medium',
   [SK.THEME]: 'neon-nights',
+  [SK.NOTE_COLOR_PROFILE]: 'neon',
   [SK.MASTER_VOLUME]: 100,
   [SK.PREVIEW_VOLUME]: 30,
   [SK.MIC_SENSITIVITY]: 50,
@@ -406,6 +409,33 @@ function AppearanceSettings({ settings, sendSetting, t }: {
                 className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
                   (isActive ? 'bg-pink-500/25 border-pink-400/40 text-pink-400' : 'bg-white/5 border-white/10 text-white/50')}
               >{labels[s]}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Note-Color-Profil */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.noteColorProfile', 'Note-Farben')}</span>
+        <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.noteColorProfileDesc', 'Farbpalette fuer die Notenbalken')}</p>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {NOTE_COLOR_PROFILES.map((prof) => {
+            const isActive = String(settings[SK.NOTE_COLOR_PROFILE]) === prof.id;
+            return (
+              <button
+                key={prof.id}
+                onClick={() => sendSetting(SK.NOTE_COLOR_PROFILE, prof.id)}
+                className={'flex flex-col items-center gap-1.5 rounded-lg px-3 py-2.5 active:scale-95 transition-all border ' +
+                  (isActive ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5')}
+              >
+                <div className="w-full h-4 rounded overflow-hidden flex">
+                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Perfect }} />
+                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Great }} />
+                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Good }} />
+                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Okay }} />
+                </div>
+                <span className="text-xs font-medium text-white">{prof.name}</span>
+              </button>
             );
           })}
         </div>

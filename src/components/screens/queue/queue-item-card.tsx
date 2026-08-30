@@ -105,14 +105,14 @@ export function QueueItemCard({
         {/* Song Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold truncate">{item.song.title}</h3>
+            <h3 className="font-semibold truncate">{item.song?.title || 'Unknown Song'}</h3>
             {item.isFromCompanion && (
               <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400">
                 📱 Companion
               </Badge>
             )}
           </div>
-          <p className="text-sm text-white/60 truncate">{item.song.artist}</p>
+          <p className="text-sm text-white/60 truncate">{item.song?.artist || ''}</p>
         </div>
 
         {/* Game Mode */}

@@ -84,6 +84,8 @@ settings: {
   feature5: 'ローカルSQLiteデータベースでオフライン対応',
   autoFullscreen: '自動フルスクリーン',
   autoFullscreenDesc: '曲の開始時に自動的にフルスクリーンに切り替えます。',
+  noteColorProfile: 'ノートカラー',
+  noteColorProfileDesc: 'ゲーム中の音符バーのカラーパレットを選択',
 },
 settingsTabs: {
   gameplay: 'ゲームプレイ',

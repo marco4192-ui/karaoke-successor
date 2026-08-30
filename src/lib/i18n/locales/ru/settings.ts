@@ -84,6 +84,8 @@ settings: {
   feature5: 'Работа офлайн с локальной базой данных SQLite',
   autoFullscreen: 'Автоматический полный экран',
   autoFullscreenDesc: 'Автоматический переход в полноэкранный режим при начале песни.',
+  noteColorProfile: 'Цвета нот',
+  noteColorProfileDesc: 'Выберите цветовую палитру для полос нот во время игры',
 },
 settingsTabs: {
   gameplay: 'Игровой процесс',

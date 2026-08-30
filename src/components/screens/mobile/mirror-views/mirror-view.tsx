@@ -228,6 +228,7 @@ export const MirrorView = React.memo<MirrorViewProps>(function MirrorView({
             slotsRemaining={slotsRemaining}
             onRemoveFromQueue={onRemoveFromQueue}
             onReorderQueue={onReorderQueue}
+            availableProfiles={availableProfiles}
             {...navBase}
             {...desktopMirrorBase}
           />

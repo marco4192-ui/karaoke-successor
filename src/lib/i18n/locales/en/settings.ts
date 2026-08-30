@@ -85,6 +85,8 @@ export const settingsTranslations = {
     feature5: 'Offline-capable with local SQLite database',
     autoFullscreen: 'Auto-Fullscreen',
     autoFullscreenDesc: 'Automatically switch to fullscreen when starting a song.',
+    noteColorProfile: 'Note Colors',
+    noteColorProfileDesc: 'Choose a color palette for the note bars during gameplay',
   },
 
   settingsTabs: {

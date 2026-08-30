@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -509,8 +508,8 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
     }
 
     const renderLeaveDialog = useCallback(() => {
-      if (!showLeaveDialog || typeof document === 'undefined') return null;
-      return createPortal(
+      if (!showLeaveDialog) return null;
+      return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleLeaveCancel}>
           <div className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="text-center mb-5">
@@ -535,8 +534,7 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       );
     }, [showLeaveDialog, handleLeaveCancel, handleLeaveConfirm, t]);
 

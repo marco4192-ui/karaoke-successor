@@ -84,6 +84,8 @@ settings: {
   feature5: 'Działanie offline z lokalną bazą danych SQLite',
   autoFullscreen: 'Automatyczny pełny ekran',
   autoFullscreenDesc: 'Automatycznie przełącz w tryb pełnego ekranu przy rozpoczęciu piosenki.',
+  noteColorProfile: 'Kolory nut',
+  noteColorProfileDesc: 'Wybierz paletę kolorów dla prętów nut podczas gry',
 },
 settingsTabs: {
   gameplay: 'Rozgrywka',

@@ -84,6 +84,8 @@ settings: {
   feature5: 'Fonctionne hors-ligne avec une base de données SQLite locale',
   autoFullscreen: 'Plein Écran Auto',
   autoFullscreenDesc: 'Bascule automatiquement en plein écran au démarrage d\'une chanson.',
+  noteColorProfile: 'Couleurs des notes',
+  noteColorProfileDesc: 'Choisissez une palette de couleurs pour les barres de notes pendant le jeu',
 },
 settingsTabs: {
   gameplay: 'Gameplay',

@@ -157,8 +157,15 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
           )}
         </div>
 
-        {/* Playback Controls: Prev / Play-Pause / Next */}
+        {/* Fullscreen & Playback Controls */}
         <div className="flex gap-2">
+          <button
+            onClick={() => handleCommand('fullscreen')}
+            className="flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
+          >
+            <span className="text-base">{'\u{1F4FA}'}</span>
+            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorJukeboxFullscreen')}</span>
+          </button>
           <button
             onClick={() => handleCommand('jukebox_prev')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
@@ -190,17 +197,17 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
         {/* Volume Controls */}
         <div className="flex gap-2">
           <button
-            onClick={() => handleCommand('volume_down')}
+            onClick={() => handleCommand('jukebox_volume_down')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
           >
-            <span className="text-base">{'\uDDE0'}</span>
+            <span className="text-base">{'\u{1F509}'}</span>
             <span className="text-xs font-medium text-white/70">{t('mobile.mirrorJukeboxVolume')} -</span>
           </button>
           <button
-            onClick={() => handleCommand('volume_up')}
+            onClick={() => handleCommand('jukebox_volume_up')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
           >
-            <span className="text-base">{'\uDDE1'}</span>
+            <span className="text-base">{'\u{1F50A}'}</span>
             <span className="text-xs font-medium text-white/70">{t('mobile.mirrorJukeboxVolume')} +</span>
           </button>
         </div>

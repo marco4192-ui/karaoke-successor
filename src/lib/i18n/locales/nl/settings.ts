@@ -84,6 +84,8 @@ settings: {
   feature5: 'Offline-capabel met lokale SQLite-database',
   autoFullscreen: 'Automatisch volledig scherm',
   autoFullscreenDesc: 'Schakel automatisch over naar volledig scherm bij het starten van een nummer.',
+  noteColorProfile: 'Nootkleuren',
+  noteColorProfileDesc: 'Kies een kleurenpalet voor de notenbalken tijdens het spel',
 },
 settingsTabs: {
   gameplay: 'Gameplay',

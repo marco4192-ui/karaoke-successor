@@ -84,6 +84,8 @@ settings: {
   feature5: 'Offline-käyttöinen paikallisella SQLite-tietokannalla',
   autoFullscreen: 'Automaattinen kokonäyttö',
   autoFullscreenDesc: 'Vaihda automaattisesti kokonäyttötilaan kun kappale alkaa.',
+  noteColorProfile: 'Nuottivärit',
+  noteColorProfileDesc: 'Valitse väripaletti nuottipalkkeille pelin aikana',
 },
 settingsTabs: {
   gameplay: 'Pelikokemus',

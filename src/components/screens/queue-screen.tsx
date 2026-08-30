@@ -118,8 +118,8 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
 
   // Unified queue - combine local and companion queue
   const unifiedQueue: UnifiedQueueItem[] = [
-    // Local queue items
-    ...queue.filter(q => q.status !== 'completed').map(item => ({
+    // Local queue items (filter out items with missing song reference)
+    ...queue.filter(q => q.status !== 'completed' && q.song).map(item => ({
       ...item,
       isFromCompanion: false,
       status: item.status || 'pending',
@@ -177,11 +177,18 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
 
   // Play next song from queue
   const playFromQueue = async (item: UnifiedQueueItem) => {
-    let song = item.isFromCompanion ? getFullSong(item.song.id, item.song.title, item.song.artist) : item.song;
-    if (!song) {
+    // Guard: item.song may be undefined if a local queue item's song reference was nulled out
+    if (!item.song) {
       // eslint-disable-next-line no-console
-      console.warn('[QueueScreen] Song not found in library, creating fallback:', item.song.id, item.song.title);
-      song = createFallbackSong(item);
+      console.warn('[QueueScreen] playFromQueue called with item.song === undefined, item.id:', item.id);
+      return;
+    }
+    let song = item.isFromCompanion ? getFullSong(item.song.id, item.song.title, item.song.artist) : item.song;
+    if (!song || !song.title) {
+      // eslint-disable-next-line no-console
+      console.warn('[QueueScreen] Song not found in library, creating fallback:', item.song?.id, item.song?.title);
+      song = item.song ? createFallbackSong(item) : null;
+      if (!song) return;
     }
 
     // CRITICAL FIX: Always pre-resolve lyrics + URLs before setting the song

@@ -84,6 +84,8 @@ settings: {
   feature5: '로컬 SQLite 데이터베이스로 오프라인 지원',
   autoFullscreen: '자동 전체화면',
   autoFullscreenDesc: '노래를 시작할 때 자동으로 전체화면으로 전환해요.',
+  noteColorProfile: '노트 색상',
+  noteColorProfileDesc: '게임 중 노트 바의 색상 팔레트을 선택하세요',
 },
 settingsTabs: {
   gameplay: '게임플레이',

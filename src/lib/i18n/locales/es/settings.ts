@@ -84,6 +84,8 @@ settings: {
   feature5: 'Compatible con modo offline con base de datos SQLite local',
   autoFullscreen: 'Pantalla Completa Automática',
   autoFullscreenDesc: 'Cambiar automáticamente a pantalla completa al iniciar una canción.',
+  noteColorProfile: 'Colores de notas',
+  noteColorProfileDesc: 'Elige una paleta de colores para las barras de notas durante el juego',
 },
 settingsTabs: {
   gameplay: 'Juego',

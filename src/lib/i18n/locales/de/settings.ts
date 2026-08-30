@@ -84,6 +84,8 @@ settings: {
   feature5: 'Offline-fähig mit lokaler SQLite-Datenbank',
   autoFullscreen: 'Auto-Fullscreen',
   autoFullscreenDesc: 'Beim Spielstart automatisch in den Fullscreen wechseln.',
+  noteColorProfile: 'Noten-Farben',
+  noteColorProfileDesc: 'Wähle eine Farbpalette für die Notenbalken während des Spiels',
 },
 settingsTabs: {
   gameplay: 'Gameplay',

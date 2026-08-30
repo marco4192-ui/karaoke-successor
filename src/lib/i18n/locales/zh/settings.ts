@@ -84,6 +84,8 @@ settings: {
   feature5: '支持本地SQLite数据库离线使用',
   autoFullscreen: '自动全屏',
   autoFullscreenDesc: '开始唱歌时自动切换到全屏模式。',
+  noteColorProfile: '音符颜色',
+  noteColorProfileDesc: '选择游戏过程中音符条的颜色方案',
 },
 settingsTabs: {
   gameplay: '游戏玩法',

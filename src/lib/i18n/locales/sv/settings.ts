@@ -84,6 +84,8 @@ settings: {
   feature5: 'Offline-kapabel med lokal SQLite-databas',
   autoFullscreen: 'Auto-helskärn',
   autoFullscreenDesc: 'Byt automatiskt till helskärn när du startar en låt.',
+  noteColorProfile: 'Notfärger',
+  noteColorProfileDesc: 'Välj en färgpalett för notstaplarna under spelet',
 },
 settingsTabs: {
   gameplay: 'Gameplay',

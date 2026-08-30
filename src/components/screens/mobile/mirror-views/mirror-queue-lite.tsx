@@ -15,6 +15,7 @@ interface MirrorQueueLiteProps {
   onNavigate: (v: MobileView) => void;
   /** Sendet einen Command an den Desktop */
   onSendDesktopCommand: (command: string) => void;
+  availableProfiles?: Array<{ id: string; name: string; avatar?: string; color: string }>;
 }
 
 // ===================== Hilfsfunktionen =====================
@@ -34,6 +35,7 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
     onRemoveFromQueue,
     onReorderQueue,
     onSendDesktopCommand,
+    availableProfiles,
   }) {
     const { t } = useTranslation();
     const dragItemRef = useRef<string | null>(null);
@@ -111,8 +113,8 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
           <div className="flex items-center gap-2 rounded-lg bg-cyan-500/10 px-3 py-2 border border-cyan-400/20">
             <span className="text-xs text-cyan-300">
               {slotsRemaining === 1
-                ? t('mobile.queueSlotRemaining')
-                : t('mobile.queueSlotsRemaining').replace('{n}', String(slotsRemaining))}
+                ? `${slotsRemaining} ${t('mobile.queueSlotOne') || 'Platz frei'}`
+                : `${slotsRemaining} ${t('mobile.queueSlotMany') || 'Plätze frei'}`}
             </span>
           </div>
         )}
@@ -199,6 +201,26 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
                   <p className="truncate text-xs text-white/40">
                     {item.songArtist}
                   </p>
+                  {item.addedBy && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {(() => {
+                        const profile = availableProfiles?.find(p => p.name === item.addedBy);
+                        if (profile?.avatar) {
+                          return <img src={profile.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />;
+                        }
+                        const clr = profile?.color || '#06B6D4';
+                        return (
+                          <div
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                            style={{ backgroundColor: clr + '60' }}
+                          >
+                            {(item.addedBy?.[0] || '?').toUpperCase()}
+                          </div>
+                        );
+                      })()}
+                      <span className="text-[10px] text-white/40 truncate">{item.addedBy}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Game mode badge */}
