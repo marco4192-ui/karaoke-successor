@@ -128,9 +128,9 @@ class MirrorViewErrorBoundary extends Component<
 function SafeView({ children, name }: { children: ReactNode; name: string }) {
   return (
     <MirrorViewErrorBoundary viewName={name}>
-      {children}
+      {children !== undefined && children !== null ? children : null}
     </MirrorViewErrorBoundary>
-   );
+  );
 }
 
 /**

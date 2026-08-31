@@ -484,28 +484,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       sendConfig(songSelection);
     }, [canStart, modeInfo, songSelection, sendConfig]);
 
-    // -------- Loading State --------
-    if (!modeInfo) {
-      return (
-        <div className="flex flex-col gap-3 px-4 pb-8">
-          <div className="flex items-center gap-2 py-2">
-            <span className="text-2xl">{'\u{1F3AE}'}</span>
-            <h2 className="text-lg font-semibold text-white">{t('party.title')}</h2>
-          </div>
-          <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
-            <span className="text-3xl">{'\u{23F3}'}</span>
-            <p className="text-sm text-white/40">{t('mobile.mirrorSetupLoading') || 'Setup wird geladen...'}</p>
-          </div>
-          <button
-            onClick={handleBack}
-            className="w-full rounded-lg p-3 text-center text-sm font-medium bg-white/10 border border-white/20 text-white/70 active:scale-[0.98] transition-transform"
-          >
-            {'\u2190'} {t('mobile.mirrorBackToParty') || 'Zurueck zu Party-Modi'}
-          </button>
-        </div>
-      );
-    }
-
+    // -------- Alle Hooks MUSS vor dem fruehen Return stehen (Rules of Hooks) --------
     const renderLeaveDialog = useCallback(() => {
       if (!showLeaveDialog) return null;
       return (
@@ -537,6 +516,28 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       );
     }, [showLeaveDialog, handleLeaveCancel, handleLeaveConfirm, t]);
 
+    // -------- Loading State --------
+    if (!modeInfo) {
+      return (
+        <div className="flex flex-col gap-3 px-4 pb-8">
+          <div className="flex items-center gap-2 py-2">
+            <span className="text-2xl">{'\u{1F3AE}'}</span>
+            <h2 className="text-lg font-semibold text-white">{t('party.title')}</h2>
+          </div>
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
+            <span className="text-3xl">{'\u{23F3}'}</span>
+            <p className="text-sm text-white/40">{t('mobile.mirrorSetupLoading') || 'Setup wird geladen...'}</p>
+          </div>
+          <button
+            onClick={handleBack}
+            className="w-full rounded-lg p-3 text-center text-sm font-medium bg-white/10 border border-white/20 text-white/70 active:scale-[0.98] transition-transform"
+          >
+            {'\u2190'} {t('mobile.mirrorBackToParty') || 'Zurueck zu Party-Modi'}
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-4 px-4 pb-8">
         {/* Header */}
@@ -558,11 +559,11 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         </button>
 
         {/* Fehler-Meldung */}
-        {error && (
+        {error ? (
           <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2">
             <p className="text-xs text-red-400">{error}</p>
           </div>
-        )}
+        ) : null}
 
         {/* -------- SPIELER-AUSWAHL -------- */}
         <div>
@@ -598,17 +599,17 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               );
             })}
           </div>
-          {activeProfiles.length === 0 && !profilesLoading && (
+          {activeProfiles.length === 0 && !profilesLoading ? (
             <p className="text-xs text-white/30 text-center py-3">
               {t('mobile.mirrorProfileNoProfiles') || 'Keine Profile auf dem Desktop vorhanden'}
             </p>
-          )}
-          {profilesLoading && (
+          ) : null}
+          {profilesLoading ? (
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full" />
               <span className="ml-2 text-xs text-white/40">{t('mobile.mirrorLoadingProfiles') || 'Profile laden...'}</span>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* -------- SCHWIERIGKEIT -------- */}
@@ -658,7 +659,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         ) : null}
 
         {/* -------- MODUS-SPEZIFISCHE EINSTELLUNGEN -------- */}
-        {modeInfo.settings.length > 0 && (
+        {modeInfo.settings.length > 0 ? (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
               {t('unifiedSetup.settings') || 'Einstellungen'}
@@ -675,7 +676,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-sm font-medium text-white">{sLabel}</span>
                       </div>
-                      {sDesc && <p className="text-[11px] text-white/30 mb-2">{sDesc}</p>}
+                      {sDesc ? <p className="text-[11px] text-white/30 mb-2">{sDesc}</p> : null}
                       <SelectDropdown
                         options={setting.options.map((o) => ({ value: o.value, label: tOr(t, o.labelKey, o.fallback) }))}
                         value={currentValue}
@@ -690,7 +691,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                     <div key={setting.key} className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-3">
                       <div className="min-w-0 mr-3">
                         <span className="text-sm font-medium text-white">{sLabel}</span>
-                        {sDesc && <p className="text-[11px] text-white/30 mt-0.5">{sDesc}</p>}
+                        {sDesc ? <p className="text-[11px] text-white/30 mt-0.5">{sDesc}</p> : null}
                       </div>
                       <Toggle
                         value={!!currentValue}
@@ -723,7 +724,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               })}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* -------- SONG-AUSWAHL -------- */}
         <div>
@@ -757,7 +758,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
 
         {/* -------- START-LEISTE (bleibt grau bis alle Einstellungen komplett, wird dann zum Start-Button) -------- */}
         {/* Library-Song-Bestaetigung (Desktop hat einen Song aus der Bibliothek vorausgewaehlt) */}
-        {gameState.partyLibrarySong && (
+        {gameState.partyLibrarySong ? (
           <div className="rounded-xl bg-gradient-to-r from-green-500/15 to-emerald-500/15 border border-green-500/30 px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xl shrink-0">
@@ -780,7 +781,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </button>
             </div>
           </div>
-        )}
+        ) : null}
         <button
           type="button"
           onClick={handleStartBarClick}
@@ -797,22 +798,22 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                   ? (t('unifiedSetup.readyToPlay') || 'Bereit zum Spielen!')
                   : (t('partySetup.players') || 'Spieler auswaehlen')}
               </p>
-              {!canStart && (
+              {!canStart ? (
                 <p className="text-xs text-white/30 mt-0.5">
                   {`Mindestens ${modeInfo.minPlayers} ${t('party.players') || 'Spieler'}`}
                 </p>
-              )}
-              {canStart && (
+              ) : null}
+              {canStart ? (
                 <p className="text-xs text-white/70 mt-0.5">
                   {selectedPlayers.length} {t('party.players') || 'Spieler'}{' \u2022 '}{tOr(t, DIFFICULTIES.find((d) => d.id === difficulty)?.labelKey || '', difficulty === 'easy' ? 'Leicht' : difficulty === 'medium' ? 'Normal' : 'Schwer')}
                   {' \u2022 '}{tOr(t, SONG_SEL_CONFIG[songSelection]?.labelKey || '', SONG_SEL_CONFIG[songSelection]?.fallback || songSelection)}
                   {configSent ? ' \u2022 ' + (t('mobile.mirrorChallengeSent') || 'Gesendet!') : ''}
                 </p>
-              )}
+              ) : null}
             </div>
-            {canStart && (
+            {canStart ? (
               <span className="text-2xl">{'\u25B6'}</span>
-            )}
+            ) : null}
           </div>
         </button>
         {/* Leave-Bestaetigungsdialog via Portal */}
