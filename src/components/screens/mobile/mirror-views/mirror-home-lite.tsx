@@ -28,8 +28,7 @@ function haptic() {
 
 // ===================== Komponente =====================
 
-export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
-  function MirrorHomeLite({
+export function MirrorHomeLite({
     gameState,
     queue,
     onSendDesktopCommand,
@@ -38,7 +37,7 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
     lockedByMe,
     onAcquireRemote,
     onReleaseRemote,
-  }) {
+  }: MirrorHomeLiteProps) {
     const { t } = useTranslation();
 
     const handleDesktopNav = useCallback(
@@ -131,6 +130,4 @@ export const MirrorHomeLite = React.memo<MirrorHomeLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorHomeLite.displayName = 'MirrorHomeLite';
+}

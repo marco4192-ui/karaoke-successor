@@ -42,8 +42,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorAchievementsLite = React.memo<MirrorAchievementsLiteProps>(
-  function MirrorAchievementsLite({ onSendDesktopCommand }) {
+export function MirrorAchievementsLite({ onSendDesktopCommand }: MirrorAchievementsLiteProps) {
     const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -131,6 +130,4 @@ export const MirrorAchievementsLite = React.memo<MirrorAchievementsLiteProps>(
         </button>
       </div>
     );
-  },
-);
-MirrorAchievementsLite.displayName = 'MirrorAchievementsLite';
+}

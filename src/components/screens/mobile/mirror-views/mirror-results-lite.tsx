@@ -23,8 +23,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
-  function MirrorResultsLite({ gameResults, onSendDesktopCommand }) {
+export function MirrorResultsLite({ gameResults, onSendDesktopCommand }: MirrorResultsLiteProps) {
     const { t } = useTranslation();
 
     const handleCommand = useCallback(
@@ -143,6 +142,4 @@ export const MirrorResultsLite = React.memo<MirrorResultsLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorResultsLite.displayName = 'MirrorResultsLite';
+}

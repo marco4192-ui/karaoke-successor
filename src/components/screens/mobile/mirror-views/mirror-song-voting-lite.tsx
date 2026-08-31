@@ -21,8 +21,7 @@ function haptic() {
 }
 // ===================== Component =====================
 
-export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
-  function MirrorSongVotingLite({ gameState, onSendDesktopCommand }) {
+export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: MirrorSongVotingLiteProps) {
     const { t } = useTranslation();
     const votingSongs = gameState.votingSongs || [];
 
@@ -98,6 +97,4 @@ export const MirrorSongVotingLite = React.memo<MirrorSongVotingLiteProps>(
         </button>
       </div>
     );
-  },
-);
-MirrorSongVotingLite.displayName = 'MirrorSongVotingLite';
+}

@@ -34,8 +34,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorDailyLite = React.memo<MirrorDailyLiteProps>(
-  function MirrorDailyLite({ onSendDesktopCommand }) {
+export function MirrorDailyLite({ onSendDesktopCommand }: MirrorDailyLiteProps) {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<DailyTab>('challenge');
     const [gameMode, setGameMode] = useState<'single' | 'duel' | 'coop'>('single');
@@ -131,6 +130,4 @@ export const MirrorDailyLite = React.memo<MirrorDailyLiteProps>(
         </button>
       </div>
     );
-  },
-);
-MirrorDailyLite.displayName = 'MirrorDailyLite';
+}

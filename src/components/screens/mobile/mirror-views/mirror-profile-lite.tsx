@@ -34,8 +34,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
-  function MirrorProfileLite({ availableProfiles, onSendDesktopCommand }) {
+export function MirrorProfileLite({ availableProfiles, onSendDesktopCommand }: MirrorProfileLiteProps) {
     const { t } = useTranslation();
 
     const handleToggle = useCallback(
@@ -150,6 +149,4 @@ export const MirrorProfileLite = React.memo<MirrorProfileLiteProps>(
         </p>
       </div>
     );
-  },
-);
-MirrorProfileLite.displayName = 'MirrorProfileLite';
+}

@@ -15,8 +15,7 @@ interface MirrorSetupWaitingProps {
 
 // ===================== Component =====================
 
-export const MirrorSetupWaiting = React.memo<MirrorSetupWaitingProps>(
-  function MirrorSetupWaiting({ profileName }) {
+export function MirrorSetupWaiting({ profileName }: MirrorSetupWaitingProps) {
     const { t } = useTranslation();
 
     return (
@@ -48,6 +47,4 @@ export const MirrorSetupWaiting = React.memo<MirrorSetupWaitingProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorSetupWaiting.displayName = 'MirrorSetupWaiting';
+}

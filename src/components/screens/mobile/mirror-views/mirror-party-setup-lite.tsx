@@ -324,8 +324,7 @@ function TappableSlider({ value, min, max, step, unit, onChange }: {
 
 // ===================== Component =====================
 
-export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
-  function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availableProfiles: _availableProfiles }) {
+export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availableProfiles: _availableProfiles }: MirrorPartySetupLiteProps) {
     const { t } = useTranslation();
     const modeKey = gameState.partyGameMode || '';
     const modeInfo = PARTY_MODE_INFO[modeKey];
@@ -820,6 +819,4 @@ export const MirrorPartySetupLite = React.memo<MirrorPartySetupLiteProps>(
         {renderLeaveDialog()}
       </div>
     );
-  },
-);
-MirrorPartySetupLite.displayName = 'MirrorPartySetupLite';
+}

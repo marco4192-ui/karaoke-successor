@@ -22,8 +22,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorHighscoresLite = React.memo<MirrorHighscoresLiteProps>(
-  function MirrorHighscoresLite({ onSendDesktopCommand }) {
+export function MirrorHighscoresLite({ onSendDesktopCommand }: MirrorHighscoresLiteProps) {
     const { t } = useTranslation();
     const [leaderboardType, setLeaderboardType] = useState<'local' | 'global'>('local');
     const [filter, setFilter] = useState<'all' | 'mine'>('all');
@@ -121,6 +120,4 @@ export const MirrorHighscoresLite = React.memo<MirrorHighscoresLiteProps>(
         </button>
       </div>
     );
-  },
-);
-MirrorHighscoresLite.displayName = 'MirrorHighscoresLite';
+}

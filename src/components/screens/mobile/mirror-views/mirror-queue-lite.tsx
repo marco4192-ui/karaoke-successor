@@ -28,15 +28,14 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
-  function MirrorQueueLite({
+export function MirrorQueueLite({
     queue,
     slotsRemaining,
     onRemoveFromQueue,
     onReorderQueue,
     onSendDesktopCommand,
     availableProfiles,
-  }) {
+  }: MirrorQueueLiteProps) {
     const { t } = useTranslation();
     const dragItemRef = useRef<string | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -261,6 +260,4 @@ export const MirrorQueueLite = React.memo<MirrorQueueLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorQueueLite.displayName = 'MirrorQueueLite';
+}

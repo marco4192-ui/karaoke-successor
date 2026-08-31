@@ -28,8 +28,7 @@ type RepeatMode = 'all' | 'none' | 'one';
 
 // ===================== Component =====================
 
-export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
-  function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSendDesktopCommand, gameState }) {
+export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSendDesktopCommand, gameState }: MirrorJukeboxLiteProps) {
     const { t } = useTranslation();
 
     // Local UI state for toggle buttons (optimistic)
@@ -305,6 +304,4 @@ export const MirrorJukeboxLite = React.memo<MirrorJukeboxLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorJukeboxLite.displayName = 'MirrorJukeboxLite';
+}

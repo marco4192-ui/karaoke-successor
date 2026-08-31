@@ -29,8 +29,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
-  function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }) {
+export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }: MirrorGameLiteProps) {
     const { t } = useTranslation();
     const [showPauseOverlay, setShowPauseOverlay] = useState(false);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -288,6 +287,4 @@ export const MirrorGameLite = React.memo<MirrorGameLiteProps>(
         )}
       </div>
     );
-  },
-);
-MirrorGameLite.displayName = 'MirrorGameLite';
+}

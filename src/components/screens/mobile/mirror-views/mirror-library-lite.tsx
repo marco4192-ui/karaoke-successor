@@ -71,8 +71,7 @@ function isLikelyDuet(song: MobileSong): boolean {
 
 // ===================== Component =====================
 
-export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
-  function MirrorLibraryLite({
+export function MirrorLibraryLite({
     songSearch,
     onSongSearchChange,
     songsLoading,
@@ -103,7 +102,7 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
     onOpenChat,
     onSendDesktopCommand,
     gameState,
-  }) {
+  }: MirrorLibraryLiteProps) {
     const { t } = useTranslation();
     const searchRef = useRef<HTMLInputElement>(null);
     const [genreFilter, setGenreFilter] = useState('all');
@@ -875,6 +874,4 @@ export const MirrorLibraryLite = React.memo<MirrorLibraryLiteProps>(
         )}
       </div>
     );
-  },
-);
-MirrorLibraryLite.displayName = 'MirrorLibraryLite';
+}

@@ -45,8 +45,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export const MirrorPartyLite = React.memo<MirrorPartyLiteProps>(
-  function MirrorPartyLite({ onSendDesktopCommand }) {
+export function MirrorPartyLite({ onSendDesktopCommand }: MirrorPartyLiteProps) {
     const { t } = useTranslation();
 
     const handleStart = useCallback(
@@ -95,6 +94,4 @@ export const MirrorPartyLite = React.memo<MirrorPartyLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorPartyLite.displayName = 'MirrorPartyLite';
+}

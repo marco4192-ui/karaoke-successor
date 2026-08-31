@@ -604,8 +604,7 @@ function MobileSettings({ t }: { t: (_key: string) => string }) {
 
 // ===================== Hauptkomponente =====================
 
-export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
-  function MirrorSettingsLite({ onSendDesktopCommand }) {
+export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteProps) {
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<string | null>(null);
 
@@ -741,6 +740,4 @@ export const MirrorSettingsLite = React.memo<MirrorSettingsLiteProps>(
         </div>
       </div>
     );
-  },
-);
-MirrorSettingsLite.displayName = 'MirrorSettingsLite';
+}
