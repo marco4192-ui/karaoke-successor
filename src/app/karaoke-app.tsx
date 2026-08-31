@@ -592,12 +592,13 @@ export default function KaraokeZERO() {
             payload: {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
-              partyGameMode: screen === 'party-setup' ? (party.selectedGameMode || null) : null,
+              partyGameMode: party.selectedGameMode || null,
               votingSongs: screen === 'song-voting' ? party.votingSongs : [],
-              partyLibrarySong: screen === 'party-setup' && party.librarySelectedSong
+              partyLibrarySong: (screen === 'party-setup' || screen === 'library') && party.librarySelectedSong
                 ? { id: party.librarySelectedSong.id, title: party.librarySelectedSong.title, artist: party.librarySelectedSong.artist }
                 : null,
               isPartyModeActive,
+              desktopDialog: party.pauseDialogAction,
             },
           }),
         });

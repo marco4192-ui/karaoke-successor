@@ -19,6 +19,7 @@ function haptic() {
     navigator.vibrate(10);
   }
 }
+
 // ===================== Component =====================
 
 export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: MirrorSongVotingLiteProps) {
@@ -41,7 +42,7 @@ export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: Mirror
         {/* Header */}
         <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
+            <span className="text-xl">{'\u2728'}</span>
             <h2 className="text-lg font-semibold text-white">{t('mobile.mirrorSongVoting') || 'Song-Abstimmung'}</h2>
           </div>
           <span className="text-xs text-white/40">{votingSongs.length} {t('mobile.mirrorSongCount') || 'Songs'}</span>
@@ -49,22 +50,22 @@ export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: Mirror
 
         {/* Hinweis */}
         <div className="flex items-center gap-2 rounded-xl bg-cyan-500/10 border border-cyan-400/20 px-3 py-2.5">
-          <span className="text-sm">ℹ️</span>
-          <span className="text-xs text-cyan-300/80">{t('mobile.mirrorSongVotingHint2') || 'Wähle einen Song für das nächste Spiel aus!'}</span>
+          <span className="text-sm">{'\u2139\uFE0F'}</span>
+          <span className="text-xs text-cyan-300/80">{t('mobile.mirrorSongVotingHint2') || 'Waehle einen Song fuer das naechste Spiel aus!'}</span>
         </div>
 
         {/* Keine Songs */}
-        {votingSongs.length === 0 && (
+        {votingSongs.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
-            <span className="text-3xl">⚠</span>
-            <p className="text-sm text-white/50 text-center">{t('mobile.mirrorNoVotingSongs') || 'Keine Songs zum Abstimmen verfügbar'}</p>
+            <span className="text-3xl">{'\u26A0'}</span>
+            <p className="text-sm text-white/50 text-center">{t('mobile.mirrorNoVotingSongs') || 'Keine Songs zum Abstimmen verfuegbar'}</p>
           </div>
-        )}
+        ) : null}
 
-        {/* Song-Liste */}
-        {votingSongs.length > 0 && (
+        {/* Song-Liste mit nummerierten Buttons */}
+        {votingSongs.length > 0 ? (
           <div className="flex flex-col gap-2.5">
-            {votingSongs.map((song) => (
+            {votingSongs.map((song, idx) => (
               <button
                 key={song.id}
                 onClick={() => handleVote(song.id)}
@@ -73,27 +74,27 @@ export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: Mirror
                   'bg-white/5 border border-white/10 active:bg-amber-500/15 active:border-amber-400/30'
                 }
               >
-                <div className="shrink-0 w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center text-lg">
-                  {'♪'}
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-400/30 flex items-center justify-center text-lg font-bold text-amber-400">
+                  {idx + 1}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{song.title}</p>
                   <p className="truncate text-xs text-white/40">{song.artist}</p>
                 </div>
                 <span className="shrink-0 text-lg text-white/20">
-                  {'▶'}
+                  {'\u25B6'}
                 </span>
               </button>
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Zurueck */}
         <button
           onClick={handleBack}
           className="w-full rounded-xl p-3 text-center text-sm font-medium bg-white/10 border border-white/20 text-white/70 active:scale-[0.98] transition-transform"
         >
-          {'←'} {t('mobile.mirrorBackToSetup') || 'Zurück zum Setup'}
+          {'\u2190'} {t('mobile.mirrorBackToSetup') || 'Zurueck zum Setup'}
         </button>
       </div>
     );

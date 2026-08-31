@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-// createPortal removed — causes React #300 on mobile WebViews
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -31,10 +30,27 @@ function haptic() {
 
 export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }: MirrorGameLiteProps) {
     const { t } = useTranslation();
+
+    const isPartyGame = !!gameState?.isPartyModeActive;
+
+    // Sync leave/pause dialog from desktop
     const [showPauseOverlay, setShowPauseOverlay] = useState(false);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
-    const isPartyGame = !!gameState?.isPartyModeActive;
+    // 1:1 sync with desktop dialog state
+    const desktopDialog = gameState.desktopDialog;
+    React.useEffect(() => {
+      if (desktopDialog === 'party-leave') {
+        setShowLeaveDialog(true);
+        setShowPauseOverlay(false);
+      } else if (desktopDialog === 'song-pause') {
+        setShowPauseOverlay(true);
+        setShowLeaveDialog(false);
+      } else {
+        setShowPauseOverlay(false);
+        setShowLeaveDialog(false);
+      }
+    }, [desktopDialog]);
 
     const handleCmd = useCallback(
       (cmd: string) => {
@@ -46,19 +62,16 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
 
     const handlePause = useCallback(() => {
       haptic();
-      setShowPauseOverlay(true);
       onSendDesktopCommand('pause');
     }, [onSendDesktopCommand]);
 
     const handleResume = useCallback(() => {
       haptic();
-      setShowPauseOverlay(false);
       onSendDesktopCommand('play');
     }, [onSendDesktopCommand]);
 
     const handleAbort = useCallback(() => {
       haptic();
-      setShowPauseOverlay(false);
       onSendDesktopCommand('quit');
     }, [onSendDesktopCommand]);
 
@@ -82,9 +95,9 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
             <p className="truncate text-sm font-medium text-white">{gameState.currentSong.title}</p>
             <p className="truncate text-xs text-white/40">{gameState.currentSong.artist}</p>
           </div>
-          {gameState.isPlaying && (
+          {gameState.isPlaying ? (
             <div className="shrink-0 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          )}
+          ) : null}
         </div>
 
         {/* Wiedergabesteuerung */}
@@ -117,40 +130,8 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
           </button>
         </div>
 
-        {/* Lautstaerkeregelung */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleCmd('volume_down')}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u{1F509}'}</span>
-            <span className="text-xs font-medium text-white/70">Vol -</span>
-          </button>
-          <button
-            onClick={() => handleCmd('volume_up')}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u{1F50A}'}</span>
-            <span className="text-xs font-medium text-white/70">Vol +</span>
-          </button>
-        </div>
-
-        {/* Abbrechen-Button (während Pause) */}
-        {!gameState.isPlaying && !showPauseOverlay && (
-          <button
-            onClick={() => {
-              haptic();
-              onSendDesktopCommand('quit');
-            }}
-            className="w-full flex items-center justify-center gap-2 rounded-xl p-3 bg-red-500/10 border border-red-400/20 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u2716'}</span>
-            <span className="text-xs font-medium text-red-400">{t('mobile.mirrorAbortSong') || 'Song abbrechen'}</span>
-          </button>
-        )}
-
         {/* Live-Punkte-Rangliste */}
-        {gameState.companionScores && gameState.companionScores.length > 0 && (
+        {gameState.companionScores && gameState.companionScores.length > 0 ? (
           <div className="flex flex-col gap-2 rounded-xl bg-white/5 border border-white/10 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
               {t('mobile.mirrorLiveScores')}
@@ -167,42 +148,24 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Remote-Kontrolle uebernehmen (wenn ein anderer Companion kontrolle hat) */}
-        {isRemoteLocked && onAcquireRemote && (
+        {isRemoteLocked && onAcquireRemote ? (
           <button
             onClick={() => { haptic(); onAcquireRemote(); }}
             className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3 text-sm font-semibold bg-amber-500/15 border border-amber-400/30 text-amber-400 active:scale-[0.97] transition-all"
           >
             <span className="text-base">{'\uD83D\uDD13'}</span>
             <span>{t('companion.acquireControl') || t('remoteControl.acquireControl') || 'Take Control'}</span>
-            {remoteLockedBy && (
+            {remoteLockedBy ? (
               <span className="text-xs text-white/30">({remoteLockedBy})</span>
-            )}
+            ) : null}
           </button>
-        )}
+        ) : null}
 
-        {/* Navigation */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            onClick={() => handleCmd('home')}
-            className="flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u{1F3E0}'}</span>
-            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorHome') || 'Home'}</span>
-          </button>
-          <button
-            onClick={() => handleCmd('fullscreen')}
-            className="flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u{1F5A5}'}</span>
-            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorFullscreen') || 'Fullscreen'}</span>
-          </button>
-        </div>
-
-        {/* Leave Party Mode (only during active party game) */}
-        {isPartyGame && (
+        {/* Leave Party Mode (nur waehrend des aktiven Party-Spiels) */}
+        {isPartyGame ? (
           <button
             onClick={() => { haptic(); setShowLeaveDialog(true); }}
             className="w-full flex items-center justify-center gap-2 rounded-xl p-3 bg-amber-500/10 border border-amber-400/20 text-amber-400 active:scale-[0.97] transition-transform"
@@ -210,10 +173,10 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
             <span className="text-base">{'\u{1F6AA}'}</span>
             <span className="text-xs font-medium">{t('mobile.mirrorJukeboxLeaveParty')}</span>
           </button>
-        )}
+        ) : null}
 
-        {/* Pause-Overlay */}
-        {showPauseOverlay && (
+        {/* Pause-Overlay (1:1 mit Desktop synchronisiert) */}
+        {showPauseOverlay ? (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleResume}
@@ -226,7 +189,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
                 <div className="text-4xl mb-2">{'\u23F8'}</div>
                 <h2 className="text-lg font-bold text-white">{t('mobile.mirrorPauseTitle') || 'Pausiert'}</h2>
                 <p className="text-sm text-white/50 mt-2">
-                  {gameState.currentSong.title} — {gameState.currentSong.artist}
+                  {gameState.currentSong.title} {'\u2014'} {gameState.currentSong.artist}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -245,10 +208,10 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* Leave Party Confirmation Dialog */}
-        {showLeaveDialog && (
+        {/* Leave Party Confirmation Dialog (1:1 mit Desktop synchronisiert) */}
+        {showLeaveDialog ? (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => setShowLeaveDialog(false)}
@@ -284,7 +247,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     );
 }MirrorGameLite.displayName = 'MirrorGameLite';

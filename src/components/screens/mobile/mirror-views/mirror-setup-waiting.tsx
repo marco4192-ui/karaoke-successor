@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -11,12 +11,26 @@ interface MirrorSetupWaitingProps {
   clientId: string | null;
   profileName: string;
   onNavigate: (v: MobileView) => void;
+  onSendDesktopCommand: (command: string) => void;
+}
+
+// ===================== Hilfsfunktionen =====================
+
+function haptic() {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
 }
 
 // ===================== Component =====================
 
-export function MirrorSetupWaiting({ profileName }: MirrorSetupWaitingProps) {
+export function MirrorSetupWaiting({ profileName, onSendDesktopCommand }: MirrorSetupWaitingProps) {
     const { t } = useTranslation();
+
+    const handleStart = useCallback(() => {
+      haptic();
+      onSendDesktopCommand('party_start');
+    }, [onSendDesktopCommand]);
 
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-4 py-16">
@@ -38,12 +52,21 @@ export function MirrorSetupWaiting({ profileName }: MirrorSetupWaitingProps) {
           </div>
 
           {/* Profile indicator */}
-          {profileName && (
+          {profileName ? (
             <div className="mt-2 flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
               <span className="h-2 w-2 rounded-full bg-green-400" />
               <span className="text-xs text-white/60">{profileName}</span>
             </div>
-          )}
+          ) : null}
+
+          {/* Start-Button fuer Party-Mode */}
+          <button
+            type="button"
+            onClick={handleStart}
+            className="mt-4 w-full rounded-xl px-6 py-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500 to-blue-500 text-white active:scale-95 transition-all shadow-lg"
+          >
+            {'\u25B6'} {t('unifiedSetup.startGame') || 'Spiel starten'}
+          </button>
         </div>
       </div>
     );

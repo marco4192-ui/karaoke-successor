@@ -249,13 +249,19 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const isControlling = controlled;
 
   // ===================== SCREEN SYNC (desktop → companion) =====================
-  // Only sync when this companion has control, or when nobody has control
-  // (desktop user is driving). Non-controlling companions are fully autonomous.
+  // Always sync for party/game/setup screens so ALL companions follow the
+  // desktop during party mode. For regular screens, only sync when controlling.
   useEffect(() => {
-    if (!controlled) return; // Non-controlling: ignore desktop screen changes
     const desktop = gameState.currentScreen;
     if (!desktop) return;
-    setActiveDesktopScreen(desktop);
+    // Party-related screens: always follow desktop, even for non-controlling companions
+    const isPartyScreen = desktop === 'party' || desktop === 'party-setup'
+      || desktop === 'song-voting' || desktop === 'setup-waiting'
+      || desktop === 'game' || desktop.endsWith('-game')
+      || desktop === 'results';
+    if (isPartyScreen || controlled) {
+      setActiveDesktopScreen(desktop);
+    }
   }, [gameState.currentScreen, controlled]);
 
   // ===================== COMPUTED MIRROR ID =====================

@@ -333,9 +333,15 @@ export function MirrorLibraryLite({
 
     // Stop desktop preview when opening overlay (game start) or switching songs
     const openOverlayWithPreviewStop = useCallback((song: MobileSong) => {
+      // Party-Modus: Song direkt fuer Party auswaehlen, kein Overlay
+      if (gameState.partyGameMode) {
+        haptic();
+        onSendDesktopCommand(`party_select_song:${song.id}`);
+        return;
+      }
       handleStopDesktopPreview();
       openOverlay(song);
-    }, [handleStopDesktopPreview, openOverlay]);
+    }, [handleStopDesktopPreview, openOverlay, gameState.partyGameMode, onSendDesktopCommand]);
 
     // Spiel starten: Direkt an die API senden mit lokalem Overlay-State
     // (gameMode, difficulty, partner), NICHT ueber use-mobile-data.ts das

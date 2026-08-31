@@ -427,6 +427,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             clientId={clientId}
             profileName={profileName}
             onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
           />
           </SafeView>
         </div>
