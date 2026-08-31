@@ -48,3 +48,4 @@ export function ChatNotificationPopup({ message, onDismiss }: ChatNotificationPo
     </div>
   );
 }
+ChatNotificationPopup.displayName = 'ChatNotificationPopup';

@@ -130,4 +130,4 @@ export function MirrorDailyLite({ onSendDesktopCommand }: MirrorDailyLiteProps) 
         </button>
       </div>
     );
-}
+}MirrorDailyLite.displayName = 'MirrorDailyLite';

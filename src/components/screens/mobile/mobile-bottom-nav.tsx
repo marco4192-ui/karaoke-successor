@@ -104,4 +104,4 @@ export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens }: M
       </div>
     </nav>
   );
-}
+}MobileBottomNav.displayName = 'MobileBottomNav';

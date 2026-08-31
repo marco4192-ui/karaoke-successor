@@ -757,3 +757,7 @@ function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayPro
     </div>
   );
 }
+MobileClientView.displayName = 'MobileClientView';
+SingalongOverlay.displayName = 'SingalongOverlay';
+CptmBlinkOverlay.displayName = 'CptmBlinkOverlay';
+CptmYourTurnOverlay.displayName = 'CptmYourTurnOverlay';

@@ -130,4 +130,4 @@ export function MirrorAchievementsLite({ onSendDesktopCommand }: MirrorAchieveme
         </button>
       </div>
     );
-}
+}MirrorAchievementsLite.displayName = 'MirrorAchievementsLite';

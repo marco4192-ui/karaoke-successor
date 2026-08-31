@@ -874,4 +874,4 @@ export function MirrorLibraryLite({
         )}
       </div>
     );
-}
+}MirrorLibraryLite.displayName = 'MirrorLibraryLite';

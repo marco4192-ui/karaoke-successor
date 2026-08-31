@@ -260,4 +260,4 @@ export function MirrorQueueLite({
         </div>
       </div>
     );
-}
+}MirrorQueueLite.displayName = 'MirrorQueueLite';

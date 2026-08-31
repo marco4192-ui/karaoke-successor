@@ -118,3 +118,4 @@ export function MobileJukeboxView({ jukeboxWishlist, onNavigate, onRemoveFromWis
 
   return inner;
 }
+MobileJukeboxView.displayName = 'MobileJukeboxView';

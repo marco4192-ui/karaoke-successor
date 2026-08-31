@@ -94,4 +94,4 @@ export function MirrorPartyLite({ onSendDesktopCommand }: MirrorPartyLiteProps) 
         </div>
       </div>
     );
-}
+}MirrorPartyLite.displayName = 'MirrorPartyLite';

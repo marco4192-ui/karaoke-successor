@@ -287,4 +287,4 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
         )}
       </div>
     );
-}
+}MirrorGameLite.displayName = 'MirrorGameLite';

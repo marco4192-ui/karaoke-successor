@@ -163,3 +163,4 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
     </div>
   );
 }
+MobileResultsView.displayName = 'MobileResultsView';

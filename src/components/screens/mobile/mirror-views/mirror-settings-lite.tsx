@@ -740,4 +740,4 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
         </div>
       </div>
     );
-}
+}MirrorSettingsLite.displayName = 'MirrorSettingsLite';

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 
 // ===================== Typen =====================
 import type {
@@ -101,6 +101,39 @@ export interface MirrorViewProps {
 // ===================== Hauptkomponente =====================
 
 /**
+ * Per-view error boundary that catches React #300 (undefined return)
+ * and any other render errors from individual mirror-lite views.
+ * Falls back to null so the parent MirrorView never crashes.
+ */
+class MirrorViewErrorBoundary extends Component<
+  { children: ReactNode; viewName: string },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err: Error, info: ErrorInfo) {
+    console.warn(`[MirrorView:${this.props.viewName}] Render error caught:`, err.message, info.componentStack);
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
+/**
+ * Safe wrapper that guarantees a child component never returns undefined.
+ * React #300 occurs when a component returns undefined instead of
+ * null/JSX. This wrapper catches that at the mirror-view level.
+ */
+function SafeView({ children, name }: { children: ReactNode; name: string }) {
+  return (
+    <MirrorViewErrorBoundary viewName={name}>
+      {children}
+    </MirrorViewErrorBoundary>
+   );
+}
+
+/**
  * Mirror-View-Container – schaltet automatisch zwischen den
  * Lite-Ansichten um, basierend auf dem aktuellen Desktop-Bildschirm.
  */
@@ -163,17 +196,19 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'home':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
-          <MirrorHomeLite
-            gameState={gameState}
-            queue={queue}
-            onOpenChat={onOpenChat}
-            onSendDesktopCommand={onSendDesktopCommand}
-            isRemoteLocked={isRemoteLocked}
-            remoteLockedBy={remoteLockedBy}
-            lockedByMe={!isRemoteLocked}
-            onAcquireRemote={onAcquireRemote}
-            onReleaseRemote={onReleaseRemote}
-          />
+          <SafeView name="home">
+            <MirrorHomeLite
+              gameState={gameState}
+              queue={queue}
+              onOpenChat={onOpenChat}
+              onSendDesktopCommand={onSendDesktopCommand}
+              isRemoteLocked={isRemoteLocked}
+              remoteLockedBy={remoteLockedBy}
+              lockedByMe={!isRemoteLocked}
+              onAcquireRemote={onAcquireRemote}
+              onReleaseRemote={onReleaseRemote}
+            />
+          </SafeView>
         </div>
       );
 
@@ -181,6 +216,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'library':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="library">
           <MirrorLibraryLite
             songSearch={songSearch}
             onSongSearchChange={onSongSearchChange}
@@ -216,6 +252,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             {...navBase}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -223,6 +260,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'queue':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="queue">
           <MirrorQueueLite
             queue={queue}
             slotsRemaining={slotsRemaining}
@@ -232,6 +270,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             {...navBase}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -239,6 +278,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'game':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="game">
           <MirrorGameLite
             gameState={gameState}
             clientId={clientId}
@@ -249,6 +289,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onAcquireRemote={onAcquireRemote}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -256,7 +297,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'settings':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="settings">
           <MirrorSettingsLite {...navBase} {...desktopMirrorBase} />
+          </SafeView>
         </div>
       );
 
@@ -264,7 +307,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'highscores':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="highscores">
           <MirrorHighscoresLite {...navBase} {...desktopMirrorBase} />
+          </SafeView>
         </div>
       );
 
@@ -272,7 +317,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'dailyChallenge':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="dailyChallenge">
           <MirrorDailyLite {...navBase} {...desktopMirrorBase} />
+          </SafeView>
         </div>
       );
 
@@ -280,7 +327,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'party':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="party">
           <MirrorPartyLite {...navBase} {...desktopMirrorBase} />
+          </SafeView>
         </div>
       );
 
@@ -288,11 +337,13 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'results':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="results">
           <MirrorResultsLite
             gameResults={gameResults}
             onNavigate={onNavigate}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -300,6 +351,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'jukebox':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="jukebox">
           <MirrorJukeboxLite
             jukeboxWishlist={jukeboxWishlist}
             onRemoveFromJukebox={onRemoveFromJukebox}
@@ -307,6 +359,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             {...navBase}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -314,7 +367,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'achievements':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="achievements">
           <MirrorAchievementsLite {...navBase} {...desktopMirrorBase} />
+          </SafeView>
         </div>
       );
 
@@ -322,12 +377,14 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'profile':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="profile">
           <MirrorProfileLite
             gameState={gameState}
             onNavigate={onNavigate}
             availableProfiles={availableProfiles}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -335,12 +392,14 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'party-setup':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="party-setup">
           <MirrorPartySetupLite
             gameState={gameState}
             onNavigate={onNavigate}
             availableProfiles={availableProfiles}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -348,11 +407,13 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'song-voting':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="song-voting">
           <MirrorSongVotingLite
             gameState={gameState}
             onNavigate={onNavigate}
             {...desktopMirrorBase}
           />
+          </SafeView>
         </div>
       );
 
@@ -360,12 +421,14 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     case 'setup-waiting':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="setup-waiting">
           <MirrorSetupWaiting
             gameState={gameState}
             clientId={clientId}
             profileName={profileName}
             onNavigate={onNavigate}
           />
+          </SafeView>
         </div>
       );
 
@@ -373,6 +436,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
     default:
       return (
         <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="default">
           <MirrorHomeLite
             gameState={gameState}
             queue={queue}
@@ -384,6 +448,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onAcquireRemote={onAcquireRemote}
             onReleaseRemote={onReleaseRemote}
           />
+          </SafeView>
         </div>
       );
   }

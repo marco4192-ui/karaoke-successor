@@ -142,4 +142,4 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand }: MirrorR
         </div>
       </div>
     );
-}
+}MirrorResultsLite.displayName = 'MirrorResultsLite';

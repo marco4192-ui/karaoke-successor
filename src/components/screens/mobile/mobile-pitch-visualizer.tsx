@@ -269,3 +269,4 @@ export function MobilePitchVisualizer({ pitchHistory, isListening }: MobilePitch
     </div>
   );
 }
+MobilePitchVisualizer.displayName = 'MobilePitchVisualizer';

@@ -226,3 +226,4 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
     </div>
   );
 }
+MobileChat.displayName = 'MobileChat';

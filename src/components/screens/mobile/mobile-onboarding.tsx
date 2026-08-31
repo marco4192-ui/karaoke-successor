@@ -198,3 +198,4 @@ function GetStartedStep({ t, onGo }: { t: (key: string) => string; onGo: () => v
     </div>
   );
 }
+MobileOnboarding.displayName = 'MobileOnboarding';

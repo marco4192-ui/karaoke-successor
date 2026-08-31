@@ -286,3 +286,4 @@ export function MobileProfileEditView({
     </div>
   );
 }
+MobileProfileEditView.displayName = 'MobileProfileEditView';

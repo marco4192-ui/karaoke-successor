@@ -130,4 +130,4 @@ export function MirrorHomeLite({
         </div>
       </div>
     );
-}
+}MirrorHomeLite.displayName = 'MirrorHomeLite';

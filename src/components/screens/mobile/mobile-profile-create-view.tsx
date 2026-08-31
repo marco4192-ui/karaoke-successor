@@ -260,3 +260,4 @@ export function MobileProfileCreateView({
     </div>
   );
 }
+MobileProfileCreateView.displayName = 'MobileProfileCreateView';

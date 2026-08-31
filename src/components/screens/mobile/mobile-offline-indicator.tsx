@@ -76,3 +76,4 @@ export function MobileOfflineIndicator() {
     </div>
   );
 }
+MobileOfflineIndicator.displayName = 'MobileOfflineIndicator';

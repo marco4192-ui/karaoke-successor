@@ -47,4 +47,4 @@ export function MirrorSetupWaiting({ profileName }: MirrorSetupWaitingProps) {
         </div>
       </div>
     );
-}
+}MirrorSetupWaiting.displayName = 'MirrorSetupWaiting';

@@ -736,3 +736,4 @@ export function RemoteControlView({
     </div>
   );
 }
+RemoteControlView.displayName = 'RemoteControlView';

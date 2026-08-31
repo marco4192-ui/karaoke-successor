@@ -97,4 +97,4 @@ export function MirrorSongVotingLite({ gameState, onSendDesktopCommand }: Mirror
         </button>
       </div>
     );
-}
+}MirrorSongVotingLite.displayName = 'MirrorSongVotingLite';

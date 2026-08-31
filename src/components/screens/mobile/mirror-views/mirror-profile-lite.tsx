@@ -149,4 +149,4 @@ export function MirrorProfileLite({ availableProfiles, onSendDesktopCommand }: M
         </p>
       </div>
     );
-}
+}MirrorProfileLite.displayName = 'MirrorProfileLite';

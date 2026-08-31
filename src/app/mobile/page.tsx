@@ -8,7 +8,15 @@ import { t } from '@/lib/i18n/translations';
 // Dynamic import with ssr: false prevents white-screen SSR/hydration failures
 // when the companion phone loads /mobile via the QR code.
 const MobileClientView = dynamic(
-  () => import('@/components/screens/mobile-client-view').then(m => ({ default: m.MobileClientView })),
+  () => import('@/components/screens/mobile-client-view').then(m => {
+    // Defensive: ensure the component exists before rendering
+    const C = m.MobileClientView;
+    if (!C) {
+      console.error('[MobilePage] MobileClientView is undefined in dynamic import');
+      return { default: () => null };
+    }
+    return { default: C };
+  }),
   {
     ssr: false,
     loading: () => (

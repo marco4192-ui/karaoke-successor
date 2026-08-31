@@ -120,4 +120,4 @@ export function MirrorHighscoresLite({ onSendDesktopCommand }: MirrorHighscoresL
         </button>
       </div>
     );
-}
+}MirrorHighscoresLite.displayName = 'MirrorHighscoresLite';

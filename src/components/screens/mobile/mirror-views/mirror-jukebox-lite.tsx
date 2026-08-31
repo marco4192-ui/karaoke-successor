@@ -304,4 +304,4 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
         </div>
       </div>
     );
-}
+}MirrorJukeboxLite.displayName = 'MirrorJukeboxLite';

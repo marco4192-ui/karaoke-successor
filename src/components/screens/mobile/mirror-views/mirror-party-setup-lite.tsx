@@ -819,4 +819,4 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         {renderLeaveDialog()}
       </div>
     );
-}
+}MirrorPartySetupLite.displayName = 'MirrorPartySetupLite';
