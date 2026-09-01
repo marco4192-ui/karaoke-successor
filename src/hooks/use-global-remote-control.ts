@@ -543,6 +543,17 @@ export function useGlobalRemoteControl({
     }
   }, [navigateToScreen]);
 
+  // Listen for commands forwarded by useRemoteControl (500ms hook)
+  // which steals commands from the shared getcommands endpoint.
+  useEffect(() => {
+    const handleForwarded = (e: Event) => {
+      const cmd = (e as CustomEvent<RemoteCommand>).detail;
+      if (cmd && cmd.type) processCommand(cmd);
+    };
+    window.addEventListener('remote-command-forward', handleForwarded);
+    return () => window.removeEventListener('remote-command-forward', handleForwarded);
+  }, [processCommand]);
+
   useEffect(() => {
     const pollRemoteCommands = async () => {
       try {

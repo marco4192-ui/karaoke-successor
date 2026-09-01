@@ -339,6 +339,15 @@ export function useRemoteControl({
               case 'backspace':
                 document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
                 break;
+
+              // --- Commands NOT handled here ---
+              // Re-dispatch via custom event so useGlobalRemoteControl can process them.
+              // This fixes the race condition where useRemoteControl (500ms) steals
+              // commands meant for useGlobalRemoteControl (1000ms) from the shared
+              // getcommands endpoint which clears all commands after first fetch.
+              default:
+                window.dispatchEvent(new CustomEvent('remote-command-forward', { detail: cmd }));
+                break;
             }
           }
         }

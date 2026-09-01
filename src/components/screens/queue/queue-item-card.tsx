@@ -89,7 +89,7 @@ export function QueueItemCard({
       className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none ${
         draggedIndex === index ? 'opacity-50' : ''
       }`}
-      draggable={!item.isFromCompanion}
+      draggable
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDragEnd={onDragEnd}
@@ -180,11 +180,9 @@ export function QueueItemCard({
             className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
             onClick={(e) => {
               e.stopPropagation();
-              if (item.isFromCompanion) {
-                onRemoveCompanion(item.id);
-              } else {
-                onRemoveLocal(item.id);
-              }
+              // Try both — one will be a no-op for the wrong source
+              onRemoveLocal(item.id);
+              onRemoveCompanion(item.id);
             }}
           >
             ✕

@@ -198,15 +198,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     }
   }, [isConnected, data.loadQueue, data.loadSongs]);
 
-  // ===================== SING BUTTON =====================
-  const handleToggleSing = useCallback(() => {
-    if (isListening) {
-      stopMicrophone();
-    } else {
-      startMicrophone();
-    }
-  }, [isListening, startMicrophone, stopMicrophone]);
-
   // Auto-Sing: Wenn man aktiver Spieler im aktuellen Spiel ist, Mikrofon automatisch starten
   const autoSingDoneRef = useRef(false);
   useEffect(() => {
@@ -355,7 +346,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       {/* ====== HEADER ====== */}
       {isConnected && profile && (
-        <div className={"sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10" + (isSinging ? " opacity-50 pointer-events-none" : "")}>
+        <div className={"sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10" + (isSinging ? " opacity-30 pointer-events-none select-none" : "")}>
           <div className="flex items-center justify-between px-3 py-2.5">
             {/* Links: Profil-Button */}
             <button

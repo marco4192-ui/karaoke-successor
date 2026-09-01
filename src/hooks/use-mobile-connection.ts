@@ -25,6 +25,10 @@ interface RawGameState {
   companionScores?: GameState['companionScores'];
   currentScreen?: string;
   partyGameMode?: string | null;
+  votingSongs?: GameState['votingSongs'];
+  partyLibrarySong?: GameState['partyLibrarySong'];
+  isPartyModeActive?: boolean;
+  desktopDialog?: GameState['desktopDialog'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -41,6 +45,10 @@ function parseGameState(raw: RawGameState): GameState {
     companionScores: raw.companionScores ?? null,
     currentScreen: raw.currentScreen,
     partyGameMode: raw.partyGameMode ?? null,
+    votingSongs: raw.votingSongs,
+    partyLibrarySong: raw.partyLibrarySong ?? null,
+    isPartyModeActive: raw.isPartyModeActive,
+    desktopDialog: raw.desktopDialog ?? null,
   };
 }
 

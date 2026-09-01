@@ -133,6 +133,13 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
             )}
           </button>
           <button
+            onClick={() => handleCommand('fullscreen')}
+            className="flex items-center justify-center gap-2 rounded-xl p-3 px-4 text-sm font-medium bg-cyan-500/15 border border-cyan-400/30 text-cyan-400 active:scale-[0.97] transition-transform"
+            title="Desktop-Fullscreen"
+          >
+            <span className="text-base">{'\u26F6'}</span>
+          </button>
+          <button
             onClick={() => handleCommand('jukebox_stop')}
             className={
               'flex items-center justify-center gap-2 rounded-xl p-3 px-4 text-sm font-medium ' +
