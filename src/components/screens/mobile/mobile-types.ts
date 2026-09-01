@@ -149,6 +149,8 @@ export interface GameState {
   isPartyModeActive?: boolean;
   // Desktop leave/pause dialog state (synced 1:1 with desktop)
   desktopDialog?: 'party-leave' | 'song-pause' | 'song-end-early' | null;
+  // Who initiated the pause (for overlay display)
+  pauseInitiator?: string | null;
 }
 
 export interface PitchData {

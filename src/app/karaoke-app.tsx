@@ -64,6 +64,9 @@ export default function KaraokeZERO() {
   type DialogAction = null | 'song-pause' | 'party-leave' | 'song-end-early';
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
 
+  // ── Track who initiated the pause (for companion overlay) ──
+  const [pauseInitiator, setPauseInitiator] = useState<string | null>(null);
+
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
 
@@ -93,9 +96,7 @@ export default function KaraokeZERO() {
   }, [party.setPauseDialogAction, party]);
 
   const handleResumeGame = useCallback(() => {
-    // For party modes (PTM, CPTM, Medley, BR), just close the dialog —
-    // the mode-specific hook's pauseDialogAction effect handles resume.
-    // For standard game, also call resumeGame() to unpause the game store.
+    setPauseInitiator(null);
     if (isPartyModeActive) {
       closeDialog();
     } else {
@@ -344,6 +345,7 @@ export default function KaraokeZERO() {
       'highscores': 'highscores', 'achievements': 'achievements',
       'jukebox': 'jukebox', 'editor': 'editor',
       'dailyChallenge': 'dailyChallenge', 'online': 'online',
+      'party-setup': 'party-setup',
     };
     navigateWithGuard(screenMap[targetScreen] || 'home');
   }, [navigateWithGuard]);
@@ -395,6 +397,53 @@ export default function KaraokeZERO() {
     window.addEventListener('remote-party-start', handleRemotePartyStart);
     return () => window.removeEventListener('remote-party-start', handleRemotePartyStart);
   }, []);
+
+  // ── Handle companion pause: show desktop pause dialog with pauser name ──
+  useEffect(() => {
+    const handleCompanionPause = (e: Event) => {
+      const { fromName } = (e as CustomEvent).detail || {};
+      pauseGame();
+      setPauseInitiator(fromName || 'Companion');
+      party.setPauseDialogAction('song-pause');
+    };
+    window.addEventListener('remote-companion-pause', handleCompanionPause);
+    return () => window.removeEventListener('remote-companion-pause', handleCompanionPause);
+  }, [pauseGame, party.setPauseDialogAction]);
+
+  // ── Handle companion-triggered leave dialog (sync with desktop) ──
+  useEffect(() => {
+    const handleShowLeave = () => {
+      party.setPauseDialogAction('party-leave');
+    };
+    window.addEventListener('remote-party-show-leave', handleShowLeave);
+    return () => window.removeEventListener('remote-party-show-leave', handleShowLeave);
+  }, [party.setPauseDialogAction]);
+
+  useEffect(() => {
+    const handleLeaveConfirm = () => {
+      party.resetPartyState();
+      resetGame();
+      setGameMode('standard');
+      setScreen('home');
+    };
+    window.addEventListener('remote-party-leave-confirm', handleLeaveConfirm);
+    return () => window.removeEventListener('remote-party-leave-confirm', handleLeaveConfirm);
+  }, [party.resetPartyState, resetGame, setScreen, setGameMode]);
+
+  useEffect(() => {
+    const handleLeaveCancel = () => {
+      party.setPauseDialogAction(null);
+    };
+    window.addEventListener('remote-party-leave-cancel', handleLeaveCancel);
+    return () => window.removeEventListener('remote-party-leave-cancel', handleLeaveCancel);
+  }, [party.setPauseDialogAction]);
+
+  // ── Handle toggle-fullscreen event from remote control ──
+  useEffect(() => {
+    const handleToggleFullscreen = () => toggleFullscreen();
+    window.addEventListener('toggle-fullscreen', handleToggleFullscreen);
+    return () => window.removeEventListener('toggle-fullscreen', handleToggleFullscreen);
+  }, [toggleFullscreen]);
 
   // ── Handle remote party cancel from companion (leave party-setup, reset state) ──
   useEffect(() => {
@@ -599,6 +648,7 @@ export default function KaraokeZERO() {
                 : null,
               isPartyModeActive,
               desktopDialog: party.pauseDialogAction,
+              pauseInitiator,
             },
           }),
         });
@@ -609,7 +659,7 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen]);
+  }, [screen, pauseInitiator]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);
@@ -750,6 +800,7 @@ export default function KaraokeZERO() {
             onBack={handleSongAbort}
             onPause={() => {
               pauseGame();
+              setPauseInitiator('Desktop');
               party.setPauseDialogAction('song-pause');
             }}
           />
@@ -823,9 +874,16 @@ export default function KaraokeZERO() {
 
             setSong(song);
             setGameMode(gameMode === 'duel' || gameMode === 'duet' ? 'duel' : 'standard');
+            // Clear old players — zustand stores expose setState directly
+            (useGameStore as any).setState?.((state: any) => ({ gameState: { ...state.gameState, players: [] } }));
             players.forEach(player => {
               const profile = profiles.find(p => p.id === player.id);
-              if (profile) addPlayer(profile);
+              if (profile) {
+                addPlayer(profile);
+              } else {
+                // Companion partner not in desktop profiles — add with raw ID/name
+                addPlayer({ id: player.id, name: player.name, avatar: undefined, color: '#888888' });
+              }
             });
             setScreen('game');
           }} />

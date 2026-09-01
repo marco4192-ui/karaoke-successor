@@ -237,13 +237,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // "controlled" = this companion has the remote lock OR nobody has it (desktop drives).
   // Only the controlling companion mirrors the desktop screen and can send commands.
   const controlled = !remoteLock.isLocked || remoteLock.lockedByMe;
-  const isControlling = controlled;
+  const hasReleasedRef = useRef(false);
+  const isControlling = controlled && !hasReleasedRef.current;
 
   // ===================== SINGING STATE =====================
   // Whether this companion user is the active singer
   const isSinging = profile && (
     (gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null) ||
-    (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null)
+    (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ||
+    // Also disable during any active game when this companion is participating
+    (gameState.isPlaying && !!gameState.currentSong && gameState.isPartyModeActive)
   ) ? true : false;
 
   // ===================== SONG-RUNNING WARNING (Issue 11) =====================
@@ -269,8 +272,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // ===================== COMPUTED MIRROR ID =====================
   const mirrorScreenId = useMemo((): MirrorScreenId => {
     const screen = activeDesktopScreen || gameState.currentScreen;
+    // After party setup config is complete, show the waiting screen with start button
+    if (screen === 'party-setup' && gameState.partyGameMode) {
+      return 'setup-waiting';
+    }
     return screenToMirrorId(screen);
-  }, [activeDesktopScreen, gameState.currentScreen]);
+  }, [activeDesktopScreen, gameState.currentScreen, gameState.partyGameMode]);
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {
@@ -318,6 +325,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   const handleAcquireRemote = useCallback(async () => {
     if (!clientId) return;
+    hasReleasedRef.current = false;
     try {
       await fetch('/api/mobile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -329,6 +337,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   const handleReleaseRemote = useCallback(async () => {
     if (!clientId) return;
+    hasReleasedRef.current = true;
     try {
       await fetch('/api/mobile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -345,8 +354,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       <MobileErrorBoundary>
 
       {/* ====== HEADER ====== */}
-      {isConnected && profile && (
-        <div className={"sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10" + (isSinging ? " opacity-30 pointer-events-none select-none" : "")}>
+      {isConnected && profile && !isSinging && (
+        <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center justify-between px-3 py-2.5">
             {/* Links: Profil-Button */}
             <button
@@ -697,6 +706,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 onClick={() => {
                   setShowSongRunningOverlay(false);
                   handleReleaseRemote();
+                  // Navigate to home locally so the user can use free functions
+                  setActiveDesktopScreen('home');
                 }}
                 className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
               >

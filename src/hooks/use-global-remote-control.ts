@@ -259,6 +259,29 @@ export function useGlobalRemoteControl({
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
         break;
 
+      // --- Party setup navigation ---
+      case 'party-setup':
+        navigateToScreen('party-setup');
+        break;
+
+      // --- Companion pause: show desktop pause dialog with pauser name ---
+      case 'companion_pause':
+        window.dispatchEvent(new CustomEvent('remote-companion-pause', { detail: { fromName: cmd.fromClientName } }));
+        break;
+
+      // --- Companion leave dialog sync ---
+      case 'party_show_leave':
+        window.dispatchEvent(new CustomEvent('remote-party-show-leave', { detail: {} }));
+        break;
+
+      case 'party_leave_confirm':
+        window.dispatchEvent(new CustomEvent('remote-party-leave-confirm', { detail: {} }));
+        break;
+
+      case 'party_leave_cancel':
+        window.dispatchEvent(new CustomEvent('remote-party-leave-cancel', { detail: {} }));
+        break;
+
       // --- Toggle fullscreen ---
       case 'fullscreen':
         window.dispatchEvent(new Event('toggle-fullscreen'));

@@ -62,7 +62,8 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
 
     const handlePause = useCallback(() => {
       haptic();
-      onSendDesktopCommand('pause');
+      // Send companion_pause command so desktop shows the pause dialog with pauser name
+      onSendDesktopCommand('companion_pause');
     }, [onSendDesktopCommand]);
 
     const handleResume = useCallback(() => {
@@ -160,7 +161,12 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
         {/* Leave Party Mode (nur waehrend des aktiven Party-Spiels) */}
         {isPartyGame ? (
           <button
-            onClick={() => { haptic(); setShowLeaveDialog(true); }}
+            onClick={() => {
+              haptic();
+              // Sync leave dialog with desktop so both show it simultaneously
+              onSendDesktopCommand('party_show_leave');
+              setShowLeaveDialog(true);
+            }}
             className="w-full flex items-center justify-center gap-2 rounded-xl p-3 bg-amber-500/10 border border-amber-400/20 text-amber-400 active:scale-[0.97] transition-transform"
           >
             <span className="text-base">{'\u{1F6AA}'}</span>
@@ -181,7 +187,12 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
               <div className="text-center mb-6">
                 <div className="text-4xl mb-2">{'\u23F8'}</div>
                 <h2 className="text-lg font-bold text-white">{t('mobile.mirrorPauseTitle')}</h2>
-                <p className="text-sm text-white/50 mt-2">
+                {gameState.pauseInitiator ? (
+                  <p className="text-sm text-cyan-300/80 mt-2">
+                    {t('mobile.mirrorPausedBy') || 'Pausiert von'} {gameState.pauseInitiator}
+                  </p>
+                ) : null}
+                <p className="text-sm text-white/50 mt-1">
                   {gameState.currentSong.title} {'\u2014'} {gameState.currentSong.artist}
                 </p>
               </div>
@@ -222,7 +233,12 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowLeaveDialog(false)}
+                  onClick={() => {
+                    setShowLeaveDialog(false);
+                    haptic();
+                    // Sync cancel with desktop so both dismiss dialog together
+                    onSendDesktopCommand('party_leave_cancel');
+                  }}
                   className="flex-1 py-3 rounded-xl font-medium bg-white/10 border border-white/20 text-white/70 active:bg-white/20 transition-all text-sm"
                 >
                   {t('mobile.mirrorCancel') || 'Abbrechen'}
@@ -231,7 +247,8 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
                   onClick={() => {
                     setShowLeaveDialog(false);
                     haptic();
-                    onSendDesktopCommand('party_cancel');
+                    // Sync leave confirmation with desktop so both show/hide dialog together
+                    onSendDesktopCommand('party_leave_confirm');
                   }}
                   className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
                 >

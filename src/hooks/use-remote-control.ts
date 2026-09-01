@@ -101,6 +101,8 @@ export function useRemoteControl({
                   videoRef.current.pause();
                 }
                 setIsPlayingRef.current(false);
+                // Forward to global handler so desktop shows pause dialog with pauser name
+                window.dispatchEvent(new CustomEvent('remote-command-forward', { detail: cmd }));
                 break;
                 
               case 'stop':

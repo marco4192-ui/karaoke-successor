@@ -29,6 +29,7 @@ interface RawGameState {
   partyLibrarySong?: GameState['partyLibrarySong'];
   isPartyModeActive?: boolean;
   desktopDialog?: GameState['desktopDialog'];
+  pauseInitiator?: string | null;
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -49,6 +50,7 @@ function parseGameState(raw: RawGameState): GameState {
     partyLibrarySong: raw.partyLibrarySong ?? null,
     isPartyModeActive: raw.isPartyModeActive,
     desktopDialog: raw.desktopDialog ?? null,
+    pauseInitiator: raw.pauseInitiator ?? null,
   };
 }
 
