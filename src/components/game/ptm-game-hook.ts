@@ -132,7 +132,16 @@ export function usePtmGameLogic({
   const unmountGuardRef = useRef(false);
 
   // ── Phase management ──
-  const [phase, setPhase] = useState<GamePhase>('intro');
+  const [phase, setPhaseRaw] = useState<GamePhase>('intro');
+  const setPhase = useCallback((newPhase: GamePhase | ((prev: GamePhase) => GamePhase)) => {
+    const resolved = typeof newPhase === 'function' ? newPhase(ptmPhaseRef.current) : newPhase;
+    setPhaseRaw(resolved);
+    // Notify companion apps about phase changes
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
+  }, []);
+  const ptmPhaseRef = useRef<GamePhase>('intro');
+  // Keep ref in sync for the function-form of setPhase
+  useEffect(() => { ptmPhaseRef.current = phase; }, [phase]);
   const [countdown, setCountdown] = useState(3);
 
   // ── Media: URL restoration, lyrics, media element refs ──

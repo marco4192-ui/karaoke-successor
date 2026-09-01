@@ -241,12 +241,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const isControlling = controlled && !hasReleasedRef.current;
 
   // ===================== SINGING STATE =====================
-  // Whether this companion user is the active singer
+  // Whether this companion user is the active singer OR in an active game screen
+  // (header/footer must be hidden during any game to prevent accidental navigation)
+  const isDesktopGameScreen = activeDesktopScreen === 'game' || !!activeDesktopScreen?.endsWith('-game');
   const isSinging = profile && (
     (gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null) ||
     (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ||
     // Also disable during any active game when this companion is participating
-    (gameState.isPlaying && !!gameState.currentSong && gameState.isPartyModeActive)
+    (gameState.isPlaying && !!gameState.currentSong && gameState.isPartyModeActive) ||
+    // Disable during any game screen (ptm-intro, game) regardless of singing state
+    isDesktopGameScreen
   ) ? true : false;
 
   // ===================== SONG-RUNNING WARNING (Issue 11) =====================
@@ -261,7 +265,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (!desktop) return;
     // Party-related screens: always follow desktop, even for non-controlling companions
     const isPartyScreen = desktop === 'party' || desktop === 'party-setup'
-      || desktop === 'song-voting' || desktop === 'setup-waiting'
+      || desktop === 'song-voting'
       || desktop === 'game' || desktop.endsWith('-game')
       || desktop === 'results';
     if (isPartyScreen || controlled) {
@@ -272,12 +276,16 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // ===================== COMPUTED MIRROR ID =====================
   const mirrorScreenId = useMemo((): MirrorScreenId => {
     const screen = activeDesktopScreen || gameState.currentScreen;
-    // After party setup config is complete, show the waiting screen with start button
-    if (screen === 'party-setup' && gameState.partyGameMode) {
-      return 'setup-waiting';
+    const base = screenToMirrorId(screen);
+    // When Desktop is in PTM/CPTM intro phase, show the intro screen
+    if (
+      (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') &&
+      gameState.ptmPhase === 'intro'
+    ) {
+      return 'ptm-intro';
     }
-    return screenToMirrorId(screen);
-  }, [activeDesktopScreen, gameState.currentScreen, gameState.partyGameMode]);
+    return base;
+  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase]);
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {

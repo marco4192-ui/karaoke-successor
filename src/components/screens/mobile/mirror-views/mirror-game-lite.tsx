@@ -28,7 +28,7 @@ function haptic() {
 
 // ===================== Component =====================
 
-export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }: MirrorGameLiteProps) {
+export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote }: MirrorGameLiteProps) {
     const { t } = useTranslation();
 
     const isPartyGame = !!gameState?.isPartyModeActive;
@@ -36,6 +36,9 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
     // Sync leave/pause dialog from desktop
     const [showPauseOverlay, setShowPauseOverlay] = useState(false);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+
+    // Whether THIS companion is the one who paused (only they can resume)
+    const isPauseOriginator = !!gameState.pauseInitiator && gameState.pauseInitiator === profileName;
 
     // 1:1 sync with desktop dialog state
     const desktopDialog = gameState.desktopDialog;
@@ -178,7 +181,6 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
         {showPauseOverlay ? (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={handleResume}
           >
             <div
               className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
@@ -197,12 +199,18 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={handleResume}
-                  className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
-                >
-                  {'\u25B6'} {t('mobile.mirrorResume')}
-                </button>
+                {isPauseOriginator || !gameState.pauseInitiator ? (
+                  <button
+                    onClick={handleResume}
+                    className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
+                  >
+                    {'\u25B6'} {t('mobile.mirrorResume')}
+                  </button>
+                ) : (
+                  <div className="flex-1 py-3 rounded-xl text-center text-sm text-white/30 bg-white/5 border border-white/10">
+                    {t('mobile.mirrorPausedWait') || 'Warte auf Fortsetzung...'}
+                  </div>
+                )}
                 <button
                   onClick={handleAbort}
                   className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"

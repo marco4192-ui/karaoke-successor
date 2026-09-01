@@ -26,7 +26,7 @@ import { MirrorPartyLite } from './mirror-party-lite';
 import { MirrorResultsLite } from './mirror-results-lite';
 import { MirrorJukeboxLite } from './mirror-jukebox-lite';
 import { MirrorAchievementsLite } from './mirror-achievements-lite';
-import { MirrorSetupWaiting } from './mirror-setup-waiting';
+import { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 import { MirrorProfileLite } from './mirror-profile-lite';
 import { MirrorPartySetupLite } from './mirror-party-setup-lite';
 import { MirrorSongVotingLite } from './mirror-song-voting-lite';
@@ -417,14 +417,13 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
         </div>
       );
 
-    // ---------- Wartebildschirm ----------
-    case 'setup-waiting':
+    // ---------- PTM/CPTM Intro (Ready Screen) ----------
+    case 'ptm-intro':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
-          <SafeView name="setup-waiting">
-          <MirrorSetupWaiting
+          <SafeView name="ptm-intro">
+          <MirrorPtmIntroLite
             gameState={gameState}
-            clientId={clientId}
             profileName={profileName}
             onNavigate={onNavigate}
             onSendDesktopCommand={onSendDesktopCommand}

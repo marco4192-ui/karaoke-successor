@@ -92,14 +92,21 @@ export function useGameFlowHandlers(
       return;
     }
 
-    const score1 = results.players[0]?.score || 0;
-    const score2 = results.players[1]?.score || 0;
+    // Match scores by player ID (not positional) to avoid stale-player bugs
+    const match = party.currentTournamentMatch;
+    const p1Id = match?.player1?.id;
+    const p2Id = match?.player2?.id;
+    const p1Result = p1Id ? results.players.find(p => p.playerId === p1Id) : results.players[0];
+    const p2Result = p2Id ? results.players.find(p => p.playerId === p2Id) : results.players[1];
+
+    const score1 = p1Result?.score || 0;
+    const score2 = p2Result?.score || 0;
 
     // #3 Pass extended stats for tiebreak resolution
-    const accuracy1 = results.players[0]?.accuracy ?? 0;
-    const accuracy2 = results.players[1]?.accuracy ?? 0;
-    const maxCombo1 = results.players[0]?.maxCombo ?? 0;
-    const maxCombo2 = results.players[1]?.maxCombo ?? 0;
+    const accuracy1 = p1Result?.accuracy ?? 0;
+    const accuracy2 = p2Result?.accuracy ?? 0;
+    const maxCombo1 = p1Result?.maxCombo ?? 0;
+    const maxCombo2 = p2Result?.maxCombo ?? 0;
 
     const updatedBracket = recordMatchResult(
       party.tournamentBracket as Parameters<typeof recordMatchResult>[0],

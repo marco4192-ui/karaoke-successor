@@ -481,6 +481,11 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('jukebox:playlist_toggle'));
           break;
         }
+        // Jukebox video fullscreen (only the video container, not the whole app)
+        if (cmd.type === 'jukebox_fullscreen') {
+          window.dispatchEvent(new CustomEvent('jukebox:fullscreen'));
+          break;
+        }
         // Party cancel: companion left party-setup, reset party state on desktop
         if (cmd.type === 'party_cancel') {
           window.dispatchEvent(new CustomEvent('remote-party-cancel', { detail: {} }));

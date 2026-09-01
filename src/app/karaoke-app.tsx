@@ -67,6 +67,21 @@ export default function KaraokeZERO() {
   // ── Track who initiated the pause (for companion overlay) ──
   const [pauseInitiator, setPauseInitiator] = useState<string | null>(null);
 
+  // ── Track PTM/CPTM game phase for companion intro screen ──
+  const [ptmPhase, setPtmPhase] = useState<string | null>(null);
+  useEffect(() => {
+    const handlePhaseChange = (e: Event) => {
+      const { phase } = (e as CustomEvent).detail || {};
+      setPtmPhase(phase || null);
+    };
+    window.addEventListener('ptm-phase-changed', handlePhaseChange);
+    // Reset when leaving game screens
+    return () => {
+      window.removeEventListener('ptm-phase-changed', handlePhaseChange);
+      setPtmPhase(null);
+    };
+  }, []);
+
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
 
@@ -229,6 +244,7 @@ export default function KaraokeZERO() {
     if (!match.player1 || !match.player2) return;
 
     resetGame();
+    useGameStore.getState().setPlayers([]);
     addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
     addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
     setGameMode('duel');
@@ -649,6 +665,21 @@ export default function KaraokeZERO() {
               isPartyModeActive,
               desktopDialog: party.pauseDialogAction,
               pauseInitiator,
+              ptmPhase,
+              ptmIntroData: (ptmPhase === 'intro' && (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'))
+                ? {
+                    songTitle: party.passTheMicSong?.title || party.cptmSong?.title || undefined,
+                    songArtist: party.passTheMicSong?.artist || party.cptmSong?.artist || undefined,
+                    startPlayerName: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.name || undefined,
+                    startPlayerAvatar: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.avatar || undefined,
+                    startPlayerColor: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.color || undefined,
+                    playerCount: (party.passTheMicPlayers.length || party.cptmPlayers.length) || undefined,
+                    isMedley: party.ptmSongSelection === 'medley' || undefined,
+                    medleySnippetCount: party.medleySongs?.length || undefined,
+                    sharedMicName: party.passTheMicSettings?.sharedMicName || undefined,
+                    mediaLoaded: true,
+                  }
+                : null,
             },
           }),
         });
@@ -659,7 +690,7 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen, pauseInitiator]);
+  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, party]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);

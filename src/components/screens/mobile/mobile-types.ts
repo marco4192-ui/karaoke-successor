@@ -29,16 +29,12 @@ export type MirrorScreenId =
   | 'results'
   | 'party-setup'
   | 'song-voting'
-  | 'setup-waiting'
+  | 'ptm-intro'
   | 'profile';  // character/profile management
 
 /** Maps desktop Screen → MirrorScreenId */
 export function screenToMirrorId(desktopScreen: string | undefined): MirrorScreenId {
   if (!desktopScreen) return 'home';
-
-  // Immersive game screens
-  if (desktopScreen.endsWith('-game')) return 'game';
-  if (desktopScreen === 'game') return 'game';
 
   // Direct 1:1 mappings
   const directMap: Record<string, MirrorScreenId> = {
@@ -53,18 +49,22 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     results: 'results',
     party: 'party',
     'party-setup': 'party-setup',
-    profile: 'profile',        // companion can manage profiles
-    import: 'library',       // import redirects to library
-    mobile: 'home',          // mobile management screen → home
-    editor: 'home',          // editor has no mobile equivalent
-    online: 'home',          // online → home for now
+    profile: 'profile',
+    import: 'library',
+    mobile: 'home',
+    editor: 'home',
+    online: 'home',
     'song-voting': 'song-voting',
   };
 
   if (desktopScreen in directMap) return directMap[desktopScreen];
 
-  // All other setup screens (tournament, medley, blind, battle-royale, etc.)
-  return 'setup-waiting';
+  // Generic game screens
+  if (desktopScreen.endsWith('-game')) return 'game';
+  if (desktopScreen === 'game') return 'game';
+
+  // All other screens → home
+  return 'home';
 }
 
 export interface MobileSong {
@@ -151,6 +151,22 @@ export interface GameState {
   desktopDialog?: 'party-leave' | 'song-pause' | 'song-end-early' | null;
   // Who initiated the pause (for overlay display)
   pauseInitiator?: string | null;
+  // PTM/CPTM game phase: 'intro' when showing the ready screen, 'playing' when singing
+  ptmPhase?: 'intro' | 'countdown' | 'playing' | 'transitioning' | 'song-results' | 'series-results' | null;
+  // PTM intro data for companion mirror of the ready screen
+  ptmIntroData?: {
+    songTitle?: string;
+    songArtist?: string;
+    startPlayerName?: string;
+    startPlayerAvatar?: string;
+    startPlayerColor?: string;
+    playerCount?: number;
+    isMedley?: boolean;
+    medleySnippetCount?: number;
+    roundNumber?: number;
+    sharedMicName?: string;
+    mediaLoaded?: boolean;
+  } | null;
 }
 
 export interface PitchData {

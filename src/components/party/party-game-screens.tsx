@@ -165,6 +165,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
       // Reset game state for new match
       resetGame();
+      setPlayers([]);
 
       // Store mic assignments in unifiedSetupResult for MicIndicator display
       const p1IsCompanion = micOverlay.p1Mic === t('partyGameScreens.companion');
@@ -476,6 +477,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const match = party.currentTournamentMatch;
             if (!match.player1 || !match.player2) return;
             resetGame();
+            setPlayers([]);
             addPlayer({
               id: match.player1.id,
               name: match.player1.name,

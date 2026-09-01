@@ -10,7 +10,7 @@ export { MirrorPartyLite } from './mirror-party-lite';
 export { MirrorResultsLite } from './mirror-results-lite';
 export { MirrorJukeboxLite } from './mirror-jukebox-lite';
 export { MirrorAchievementsLite } from './mirror-achievements-lite';
-export { MirrorSetupWaiting } from './mirror-setup-waiting';
+export { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 export { MirrorProfileLite } from './mirror-profile-lite';
 export { MirrorPartySetupLite } from './mirror-party-setup-lite';
 export { MirrorSongVotingLite } from './mirror-song-voting-lite';

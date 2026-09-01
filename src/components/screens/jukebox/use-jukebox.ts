@@ -530,6 +530,15 @@ export function useJukebox(refs?: {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [containerRef]);
 
+  // Listen for jukebox:fullscreen event from companion remote control
+  useEffect(() => {
+    const handleJukeboxFullscreen = () => {
+      toggleFullscreen();
+    };
+    window.addEventListener('jukebox:fullscreen', handleJukeboxFullscreen);
+    return () => window.removeEventListener('jukebox:fullscreen', handleJukeboxFullscreen);
+  }, [toggleFullscreen]);
+
   // ==================== PLAY / PAUSE ====================
 
   const togglePlayPause = useCallback(() => {
