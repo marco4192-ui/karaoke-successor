@@ -156,15 +156,8 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
           )}
         </div>
 
-        {/* Fullscreen & Playback Controls */}
+        {/* Playback Controls */}
         <div className="flex gap-2">
-          <button
-            onClick={() => handleCommand('fullscreen')}
-            className="flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u{1F4FA}'}</span>
-            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorJukeboxFullscreen')}</span>
-          </button>
           <button
             onClick={() => handleCommand('jukebox_prev')}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"

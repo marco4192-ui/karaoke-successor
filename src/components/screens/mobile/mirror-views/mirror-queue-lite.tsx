@@ -218,6 +218,9 @@ export function MirrorQueueLite({
                         );
                       })()}
                       <span className="text-[10px] text-white/40 truncate">{item.addedBy}</span>
+                      {item.partnerName ? (
+                        <span className="text-[10px] text-white/30 truncate">{' \u00B7 vs {item.partnerName}'}</span>
+                      ) : null}
                     </div>
                   )}
                 </div>

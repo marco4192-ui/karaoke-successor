@@ -248,6 +248,17 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const controlled = !remoteLock.isLocked || remoteLock.lockedByMe;
   const isControlling = controlled;
 
+  // ===================== SINGING STATE =====================
+  // Whether this companion user is the active singer
+  const isSinging = profile && (
+    (gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null) ||
+    (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null)
+  ) ? true : false;
+
+  // ===================== SONG-RUNNING WARNING (Issue 11) =====================
+  const [showSongRunningOverlay, setShowSongRunningOverlay] = useState(false);
+  const isSongRunning = gameState.isPlaying && !!gameState.currentSong;
+
   // ===================== SCREEN SYNC (desktop → companion) =====================
   // Always sync for party/game/setup screens so ALL companions follow the
   // desktop during party mode. For regular screens, only sync when controlling.
@@ -277,6 +288,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // ===================== FOOTER NAVIGATION =====================
   const handleFooterNavigate = useCallback((screen: string) => {
+    // Issue 11: Song läuft und User navigiert weg → Overlay zeigen
+    if (isControlling && isSongRunning && screen !== 'game' && screen !== activeDesktopScreen) {
+      setShowSongRunningOverlay(true);
+      return;
+    }
     if (isControlling) {
       // Controlling companion: update local state and send command to desktop
       setActiveDesktopScreen(screen);
@@ -285,7 +301,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       // Non-controlling companion: navigate locally only, no desktop influence
       setActiveDesktopScreen(screen);
     }
-  }, [isControlling, handleSendDesktopCommand]);
+  }, [isControlling, isSongRunning, activeDesktopScreen, handleSendDesktopCommand]);
 
   const isMountedRef2 = useRef(true);
   useEffect(() => {
@@ -339,7 +355,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       {/* ====== HEADER ====== */}
       {isConnected && profile && (
-        <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
+        <div className={"sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10" + (isSinging ? " opacity-50 pointer-events-none" : "")}>
           <div className="flex items-center justify-between px-3 py-2.5">
             {/* Links: Profil-Button */}
             <button
@@ -355,20 +371,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                   : profile.name[0]?.toUpperCase() || '?'}
               </div>
               <span className="text-sm font-medium text-white/80 max-w-[100px] truncate">{profile.name}</span>
-            </button>
-
-            {/* Mitte: SING Button */}
-            <button
-              onClick={handleToggleSing}
-              className={
-                'flex items-center gap-1.5 px-5 py-2 rounded-full font-bold text-sm transition-all active:scale-95 ' +
-                (isListening
-                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 animate-pulse'
-                  : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-purple-500/30')
-              }
-            >
-              <span className="text-base">{isListening ? '⏹' : '🎤'}</span>
-              <span>{isListening ? (t('mobile.mirrorPause') || 'Stop') : (t('mobile.mirrorSing') || 'SING')}</span>
             </button>
 
             {/* Rechts: Chat-Button, Verbindung-Info + Abmelden */}
@@ -596,7 +598,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {/* ====== FOOTER: Horiz. scrollbar Navigation ====== */}
-      {isConnected && profile && !showProfile && (
+      {isConnected && profile && !showProfile && !isSinging && (
         <MobileBottomNav
           activeScreen={activeFooterScreen}
           onNavigate={handleFooterNavigate}
@@ -673,6 +675,47 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           </div>
         </div>
       )}
+      {/* ====== SONG-RUNNING WARNING OVERLAY (Issue 11) ====== */}
+      {showSongRunningOverlay ? (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowSongRunningOverlay(false)}
+        >
+          <div
+            className="bg-[#1a1a2e] border border-amber-400/30 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">{'\u26A0\uFE0F'}</div>
+              <h2 className="text-lg font-bold text-white">{t('mobile.mirrorSongRunningWarning')}</h2>
+              <p className="text-sm text-white/50 mt-2">
+                {gameState.currentSong ? `${gameState.currentSong.title} {'\u2014'} ${gameState.currentSong.artist}` : ''}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSongRunningOverlay(false);
+                  handleSendDesktopCommand('quit');
+                }}
+                className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
+              >
+                {'\u2716'} {t('mobile.mirrorEndSong')}
+              </button>
+              <button
+                onClick={() => {
+                  setShowSongRunningOverlay(false);
+                  handleReleaseRemote();
+                }}
+                className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
+              >
+                {'\u{1F513}'} {t('mobile.mirrorReleaseControlShort')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       </MobileErrorBoundary>
     </div>
   );

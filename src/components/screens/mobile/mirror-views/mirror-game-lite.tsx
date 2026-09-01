@@ -107,7 +107,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
             className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
           >
             <span className="text-base">{'\u23EE'}</span>
-            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorRestart') || 'Restart'}</span>
+            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorRestart')}</span>
           </button>
           <button
             onClick={gameState.isPlaying ? handlePause : () => handleCmd('play')}
@@ -119,14 +119,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
             }
           >
             <span className="text-base">{gameState.isPlaying ? '\u23F8' : '\u25B6'}</span>
-            <span className="text-xs font-medium">{gameState.isPlaying ? (t('mobile.mirrorPause') || 'Pause') : (t('mobile.mirrorPlay') || 'Play')}</span>
-          </button>
-          <button
-            onClick={() => handleCmd('skip')}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl p-3 bg-white/5 border border-white/10 active:scale-95 transition-transform"
-          >
-            <span className="text-base">{'\u23ED'}</span>
-            <span className="text-xs font-medium text-white/70">{t('mobile.mirrorSkip') || 'Skip'}</span>
+            <span className="text-xs font-medium">{gameState.isPlaying ? t('mobile.mirrorPause') : t('mobile.mirrorPlay')}</span>
           </button>
         </div>
 
@@ -187,7 +180,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
             >
               <div className="text-center mb-6">
                 <div className="text-4xl mb-2">{'\u23F8'}</div>
-                <h2 className="text-lg font-bold text-white">{t('mobile.mirrorPauseTitle') || 'Pausiert'}</h2>
+                <h2 className="text-lg font-bold text-white">{t('mobile.mirrorPauseTitle')}</h2>
                 <p className="text-sm text-white/50 mt-2">
                   {gameState.currentSong.title} {'\u2014'} {gameState.currentSong.artist}
                 </p>
@@ -197,7 +190,7 @@ export function MirrorGameLite({ gameState, onSendDesktopCommand, isRemoteLocked
                   onClick={handleResume}
                   className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
                 >
-                  {'\u25B6'} {t('mobile.mirrorResume') || 'Fortfahren'}
+                  {'\u25B6'} {t('mobile.mirrorResume')}
                 </button>
                 <button
                   onClick={handleAbort}

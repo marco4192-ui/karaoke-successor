@@ -88,7 +88,7 @@ export function QueueItemCard({
       tabIndex={0}
       className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none ${
         draggedIndex === index ? 'opacity-50' : ''
-      } ${item.isFromCompanion ? 'border-l-4 border-l-cyan-500' : ''}`}
+      }`}
       draggable={!item.isFromCompanion}
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
@@ -106,13 +106,13 @@ export function QueueItemCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold truncate">{item.song?.title || 'Unknown Song'}</h3>
-            {item.isFromCompanion && (
-              <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400">
-                📱 Companion
-              </Badge>
-            )}
           </div>
           <p className="text-sm text-white/60 truncate">{item.song?.artist || ''}</p>
+          <p className="text-xs text-white/35 truncate mt-0.5">
+            {item.partnerName
+              ? `${item.playerName || ''} + ${item.partnerName}`
+              : (item.playerName || '')}
+          </p>
         </div>
 
         {/* Game Mode */}
@@ -120,49 +120,45 @@ export function QueueItemCard({
           {getGameModeBadge(item.gameMode, t)}
         </div>
 
-        {/* Players */}
-        <div className="flex items-center gap-2">
+        {/* Spieler-Paarung mit vollen Namen */}
+        <div className="flex items-center gap-1.5 min-w-0">
           {(() => {
             const mainProfile = profiles.find(p => p.id === item.playerId);
             const isMainInactive = mainProfile && mainProfile.isActive === false;
             return (
               <div className="flex items-center gap-1">
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                   style={{ backgroundColor: mainProfile?.color || '#888', opacity: isMainInactive ? 0.4 : 1 }}
                   title={isMainInactive ? t('queueScreen.playerDeactivated') : ''}
                 >
                   {item.playerName?.[0]?.toUpperCase() || '?'}
                 </div>
-                {isMainInactive && (
-                  <span className="text-[10px] text-red-400">⚠</span>
-                )}
+                <span className="text-xs text-white/70 truncate max-w-[80px]" title={item.playerName || ''}>{item.playerName || ''}</span>
               </div>
             );
           })()}
-          {item.partnerName && (
+          {item.partnerName ? (
             <>
-              <span className="text-white/40">+</span>
+              <span className="text-white/30 text-xs">+</span>
               {(() => {
                 const partnerProfile = profiles.find(p => p.id === item.partnerId);
                 const isPartnerInactive = partnerProfile && partnerProfile.isActive === false;
                 return (
                   <div className="flex items-center gap-1">
                     <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                       style={{ backgroundColor: partnerProfile?.color || '#888', opacity: isPartnerInactive ? 0.4 : 1 }}
                       title={isPartnerInactive ? t('queueScreen.playerDeactivated') : ''}
                     >
                       {(item.partnerName || '?')[0]?.toUpperCase() || '?'}
                     </div>
-                    {isPartnerInactive && (
-                      <span className="text-[10px] text-red-400">⚠</span>
-                    )}
+                    <span className="text-xs text-white/70 truncate max-w-[80px]" title={item.partnerName}>{item.partnerName}</span>
                   </div>
                 );
               })()}
             </>
-          )}
+          ) : null}
         </div>
 
         {/* Actions */}
