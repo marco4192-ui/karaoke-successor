@@ -542,7 +542,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             />
           ) : (
             <MirrorView
-              mirrorScreenId={screenToMirrorId(activeDesktopScreen)}
+              mirrorScreenId={mirrorScreenId}
               gameState={gameState}
               clientId={clientId}
               profileName={profile?.name || ''}

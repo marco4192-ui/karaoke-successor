@@ -69,18 +69,28 @@ export default function KaraokeZERO() {
 
   // ── Track PTM/CPTM game phase for companion intro screen ──
   const [ptmPhase, setPtmPhase] = useState<string | null>(null);
+
+  // Listen for explicit phase changes dispatched by the game hook
   useEffect(() => {
     const handlePhaseChange = (e: Event) => {
       const { phase } = (e as CustomEvent).detail || {};
       setPtmPhase(phase || null);
     };
     window.addEventListener('ptm-phase-changed', handlePhaseChange);
-    // Reset when leaving game screens
-    return () => {
-      window.removeEventListener('ptm-phase-changed', handlePhaseChange);
-      setPtmPhase(null);
-    };
+    return () => window.removeEventListener('ptm-phase-changed', handlePhaseChange);
   }, []);
+
+  // When entering a PTM/CPTM game screen, assume 'intro' phase until the
+  // game hook explicitly dispatches a phase-change event. The hook only
+  // fires the event on *transitions* (intro→countdown), so the initial
+  // 'intro' phase would otherwise never reach the companion.
+  useEffect(() => {
+    if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
+      setPtmPhase(prev => prev === null ? 'intro' : prev);
+    } else {
+      setPtmPhase(null);
+    }
+  }, [screen]);
 
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
@@ -437,6 +447,11 @@ export default function KaraokeZERO() {
 
   useEffect(() => {
     const handleLeaveConfirm = () => {
+      // Clear the dialog FIRST — mirrors handlePartyModeEnd which calls
+      // closeDialog() before resetPartyState(). Without this, if
+      // resetPartyState() is blocked by the safety net (medley/CPTM),
+      // the desktop overlay would stay open forever.
+      party.setPauseDialogAction(null);
       party.resetPartyState();
       resetGame();
       setGameMode('standard');
@@ -444,7 +459,7 @@ export default function KaraokeZERO() {
     };
     window.addEventListener('remote-party-leave-confirm', handleLeaveConfirm);
     return () => window.removeEventListener('remote-party-leave-confirm', handleLeaveConfirm);
-  }, [party.resetPartyState, resetGame, setScreen, setGameMode]);
+  }, [party.setPauseDialogAction, party.resetPartyState, resetGame, setScreen, setGameMode]);
 
   useEffect(() => {
     const handleLeaveCancel = () => {

@@ -226,7 +226,10 @@ export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, i
         {showLeaveDialog ? (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={() => setShowLeaveDialog(false)}
+            onClick={() => {
+              setShowLeaveDialog(false);
+              onSendDesktopCommand('party_leave_cancel');
+            }}
           >
             <div
               className="bg-[#1a1a2e] border border-white/15 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
