@@ -127,6 +127,18 @@ libraryPlaylist: {
   tags: 'Tags (kommagetrennt, optional)',
   tagsPlaceholder: 'z.B. party, chill, workout',
 },
+playlistQueueConfig: {
+  title: 'Playlist in Warteschlange',
+  desc: 'Konfiguriere für jeden Song den Modus und die Spieler, bevor sie zur Warteschlange hinzugefügt werden.',
+  single: 'Solo',
+  duel: 'Duell',
+  duet: 'Duett',
+  remove: 'Entfernen',
+  empty: 'Keine Songs ausgewählt',
+  willAdd: '{count} von {total} Songs werden hinzugefügt',
+  cancel: 'Abbrechen',
+  addAll: '{count} Songs hinzufügen',
+},
 song: {
   difficulty: 'Schwierigkeit',
   easy: 'Leicht',

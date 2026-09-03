@@ -135,6 +135,19 @@ export const libraryTranslations = {
     tagsPlaceholder: 'e.g. party, chill, workout'
   },
 
+  playlistQueueConfig: {
+    title: 'Playlist to Queue',
+    desc: 'Configure the mode and players for each song before adding them to the queue.',
+    single: 'Solo',
+    duel: 'Duel',
+    duet: 'Duet',
+    remove: 'Remove',
+    empty: 'No songs selected',
+    willAdd: '{count} of {total} songs will be added',
+    cancel: 'Cancel',
+    addAll: 'Add {count} songs',
+  },
+
   song: {
     difficulty: 'Difficulty',
     easy: 'Easy',

@@ -9,6 +9,7 @@ import { VirtualizedSongGrid } from './virtualized-song-grid';
 import { safeConfirm } from '@/lib/safe-dialog';
 import { SongCardProps } from './types';
 import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from '@/components/icons';
+import { PlaylistQueueConfigModal } from './playlist-queue-config-modal';
 import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
@@ -47,6 +48,8 @@ export function PlaylistView({
   const { t } = useTranslation();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Playlist | null>(null);
+  const [showQueueConfig, setShowQueueConfig] = useState(false);
+  const [queueConfigSongs, setQueueConfigSongs] = useState<Song[]>([]);
 
   const handleEditPlaylist = (playlist: Playlist) => {
     setEditTarget(playlist);
@@ -227,16 +230,12 @@ export function PlaylistView({
               <Button
                 onClick={() => {
                   const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                  const { queue } = useGameStore.getState();
-                  for (const song of songs) {
-                    const currentCount = queue.filter(item => item.playerId === activeProfileId).length;
-                    if (!activeProfileId || currentCount >= 3) break;
-                    addToQueue(song, activeProfileId, activeProfileName);
-                  }
+                  setQueueConfigSongs(songs);
+                  setShowQueueConfig(true);
                 }}
                 variant="outline"
                 className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
-                disabled={!activeProfileId}
+                disabled={!activeProfileId || getPlaylistSongs(selectedPlaylist.id, loadedSongs).length === 0}
               >
                 <QueueIcon className="w-4 h-4 mr-2" />
                 {t('libraryPlaylist.addToQueue')}
@@ -300,6 +299,13 @@ export function PlaylistView({
         onClose={setShowEditModal}
         onSuccess={() => onPlaylistSelect(null)}
         playlist={editTarget}
+      />
+
+      {/* Playlist Queue Config Modal */}
+      <PlaylistQueueConfigModal
+        show={showQueueConfig}
+        onClose={setShowQueueConfig}
+        songs={queueConfigSongs}
       />
     </div>
   );
