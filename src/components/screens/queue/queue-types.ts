@@ -10,6 +10,8 @@ export interface CompanionQueueItem {
   addedAt: number;
   companionCode: string;
   status: 'pending' | 'playing' | 'completed';
+  playerId?: string;
+  playerName?: string;
   partnerId?: string;
   partnerName?: string;
   gameMode?: 'single' | 'duel' | 'duet';

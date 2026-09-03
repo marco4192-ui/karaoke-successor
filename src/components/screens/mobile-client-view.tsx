@@ -295,7 +295,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // ===================== FOOTER NAVIGATION =====================
   const handleFooterNavigate = useCallback((screen: string) => {
     // Issue 11: Song läuft und User navigiert weg → Overlay zeigen
-    if (isControlling && isSongRunning && screen !== 'game' && screen !== activeDesktopScreen) {
+    // But exempt party-setup: going back to setup doesn't leave the party
+    if (isControlling && isSongRunning && screen !== 'game' && screen !== 'party-setup' && screen !== activeDesktopScreen) {
       setShowSongRunningOverlay(true);
       return;
     }

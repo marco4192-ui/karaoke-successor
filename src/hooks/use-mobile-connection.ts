@@ -30,6 +30,9 @@ interface RawGameState {
   isPartyModeActive?: boolean;
   desktopDialog?: GameState['desktopDialog'];
   pauseInitiator?: string | null;
+  ptmPhase?: GameState['ptmPhase'];
+  ptmIntroData?: GameState['ptmIntroData'];
+  viralSongIds?: string[];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -51,6 +54,9 @@ function parseGameState(raw: RawGameState): GameState {
     isPartyModeActive: raw.isPartyModeActive,
     desktopDialog: raw.desktopDialog ?? null,
     pauseInitiator: raw.pauseInitiator ?? null,
+    ptmPhase: raw.ptmPhase ?? null,
+    ptmIntroData: raw.ptmIntroData ?? null,
+    viralSongIds: raw.viralSongIds ?? [],
   };
 }
 
@@ -67,6 +73,9 @@ const INITIAL_GAME_STATE: GameState = {
   companionScores: null,
   currentScreen: undefined,
   partyGameMode: null,
+  ptmPhase: null,
+  ptmIntroData: null,
+  viralSongIds: [],
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

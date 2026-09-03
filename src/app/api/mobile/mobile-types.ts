@@ -40,6 +40,9 @@ export interface QueueItem {
   addedAt: number;
   companionCode: string;
   status: 'pending' | 'playing' | 'completed';
+  // Player who is singing (profile ID from companion — maps to a Desktop profile)
+  playerId?: string;
+  playerName?: string;
   // Optional partner for duet/duel mode
   partnerId?: string;
   partnerName?: string;

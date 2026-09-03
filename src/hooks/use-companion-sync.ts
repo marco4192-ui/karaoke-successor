@@ -20,6 +20,8 @@ export interface CompanionQueueItem {
   addedAt: number;
   companionCode: string;
   status: 'pending' | 'playing' | 'completed';
+  playerId?: string;
+  playerName?: string;
 }
 
 /**

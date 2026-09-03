@@ -132,8 +132,8 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
         title: item.songTitle,
         artist: item.songArtist,
       } as Song,
-      playerId: item.companionCode,
-      playerName: item.addedBy,
+      playerId: item.playerId || item.companionCode,
+      playerName: item.playerName || item.addedBy,
       addedAt: item.addedAt,
       partnerId: item.partnerId,
       partnerName: item.partnerName,
@@ -240,6 +240,17 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
     if (item.playerId && !item.isFromCompanion) {
       const profile = profiles.find(p => p.id === item.playerId);
       if (profile) players.push({ id: profile.id, name: profile.name });
+    } else if (item.playerId && item.isFromCompanion) {
+      // Companion item with a playerId that maps to a Desktop profile
+      const profile = profiles.find(p => p.id === item.playerId);
+      if (profile) {
+        players.push({ id: profile.id, name: profile.name });
+      } else if (item.playerName) {
+        players.push({ id: item.playerId, name: item.playerName });
+      } else if (activeProfileId) {
+        const fallbackProfile = profiles.find(p => p.id === activeProfileId);
+        if (fallbackProfile) players.push({ id: fallbackProfile.id, name: fallbackProfile.name });
+      }
     } else if (activeProfileId) {
       const profile = profiles.find(p => p.id === activeProfileId);
       if (profile) players.push({ id: profile.id, name: profile.name });

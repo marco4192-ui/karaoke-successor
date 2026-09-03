@@ -88,6 +88,8 @@ export interface QueueItem {
   addedBy: string;
   status: QueueItemStatus;
   companionCode?: string;
+  playerId?: string;
+  playerName?: string;
   partnerId?: string;
   partnerName?: string;
   gameMode?: 'single' | 'duel' | 'duet';
@@ -167,6 +169,8 @@ export interface GameState {
     sharedMicName?: string;
     mediaLoaded?: boolean;
   } | null;
+  // Viral-hit song IDs synced from desktop (for library filter)
+  viralSongIds?: string[];
 }
 
 export interface PitchData {

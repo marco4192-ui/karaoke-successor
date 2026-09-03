@@ -218,6 +218,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           songId: string; 
           songTitle: string; 
           songArtist: string;
+          playerId?: string;
+          playerName?: string;
           partnerId?: string;
           partnerName?: string;
           gameMode?: 'single' | 'duel' | 'duet';
@@ -314,6 +316,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           addedAt: Date.now(),
           companionCode: clientForQueue.connectionCode,
           status: 'pending',
+          playerId: queuePayload.playerId || clientForQueue.profile?.id,
+          playerName: queuePayload.playerName || clientForQueue.profile?.name,
           partnerId: queuePayload.partnerId,
           partnerName: queuePayload.partnerName,
           gameMode: queuePayload.gameMode || 'single',

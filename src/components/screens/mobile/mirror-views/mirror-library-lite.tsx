@@ -107,6 +107,7 @@ export function MirrorLibraryLite({
     const searchRef = useRef<HTMLInputElement>(null);
     const [genreFilter, setGenreFilter] = useState('all');
     const [languageFilter, setLanguageFilter] = useState('all');
+    const [filterViral, setFilterViral] = useState(false);
 
     // Lokaler Game-Mode (Single/Duell/Duett)
     const [libGameMode, setLibGameMode] = useState<GameMode>('single');
@@ -158,9 +159,19 @@ export function MirrorLibraryLite({
       if (isDuetMode) {
         result = result.filter(isLikelyDuet);
       }
+      // Viral-Hits filter (IDs synced from desktop)
+      if (filterViral) {
+        const viralIds = gameState.viralSongIds;
+        if (viralIds && viralIds.length > 0) {
+          const viralSet = new Set(viralIds);
+          result = result.filter(s => viralSet.has(s.id));
+        } else {
+          result = [];
+        }
+      }
       // Nach Songtitel alphabetisch sortieren
       return [...result].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
-    }, [filteredSongs, genreFilter, languageFilter, isDuetMode]);
+    }, [filteredSongs, genreFilter, languageFilter, isDuetMode, filterViral, gameState.viralSongIds]);
 
     // Extrahiere verfuegbare Genres und Sprachen
     const { genres, languages } = useMemo(() => {
@@ -537,6 +548,23 @@ export function MirrorLibraryLite({
           </select>
         )}
 
+        {/* Viral-Hits Filter-Button (1:1 wie Desktop Library) */}
+        {(gameState.viralSongIds?.length ?? 0) > 0 && (
+          <button
+            onClick={() => { haptic(); setFilterViral(!filterViral); }}
+            className={
+              'w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ' +
+              (filterViral
+                ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50'
+                : 'bg-white/5 text-white/60 border border-white/10')
+            }
+          >
+            <span>{'\uD83D\uDD25'}</span>
+            <span>{t('libraryFilters.viralHits') || 'Viral Hits'}</span>
+            {filterViral && <span className="text-xs text-orange-400/60">({gameState.viralSongIds?.length})</span>}
+          </button>
+        )}
+
         {/* Loading */}
         {songsLoading && (
           <div className="flex items-center justify-center py-8">
@@ -575,7 +603,12 @@ export function MirrorLibraryLite({
               </div>
               {/* Song-Info */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{song.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate text-sm font-medium text-white">{song.title}</p>
+                  {gameState.viralSongIds?.includes(song.id) && (
+                    <span className="shrink-0 text-xs">{'\uD83D\uDD25'}</span>
+                  )}
+                </div>
                 <p className="truncate text-xs text-white/40">{song.artist}</p>
               </div>
               {/* Desktop-Preview Button (nur kontrollierender Companion) */}

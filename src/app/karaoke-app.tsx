@@ -12,6 +12,7 @@ import { getAllSongs } from '@/lib/game/song-library';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useViralCharts } from '@/hooks/use-viral-charts';
 
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
@@ -48,6 +49,7 @@ export default function KaraokeZERO() {
   const { gameState, setSong, setGameMode, setDifficulty, setChallengeMode, setActiveProfile, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
   const { t } = useTranslation();
+  const viralCharts = useViralCharts();
 
   // ── Screen navigation (screen state + party-mode guard) ──
   const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation, markPartyConfirmed } = useScreenNavigation(party);
@@ -593,7 +595,7 @@ export default function KaraokeZERO() {
     };
     window.addEventListener('remote-party-vote', handleRemotePartyVote);
     return () => window.removeEventListener('remote-party-vote', handleRemotePartyVote);
-  }, [resetGame, setGameMode, setSong, setScreen]);
+  }, [resetGame, setGameMode, setSong, setScreen, party]);
 
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
@@ -695,6 +697,7 @@ export default function KaraokeZERO() {
                     mediaLoaded: true,
                   }
                 : null,
+              viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
             },
           }),
         });

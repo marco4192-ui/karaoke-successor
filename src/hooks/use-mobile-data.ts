@@ -223,7 +223,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         body: JSON.stringify({
           type: 'queue',
           clientId,
-          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, partnerId, partnerName, gameMode, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped },
+          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, playerId: profile.id, playerName: profile.name, partnerId, partnerName, gameMode, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped },
         }),
       });
       if (!response.ok) return;
