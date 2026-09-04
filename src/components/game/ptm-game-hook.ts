@@ -144,6 +144,13 @@ export function usePtmGameLogic({
   useEffect(() => { ptmPhaseRef.current = phase; }, [phase]);
   const [countdown, setCountdown] = useState(3);
 
+  // ── Dispatch initial 'intro' phase on mount ──
+  // The useState('intro') never triggers the custom event, so the companion
+  // never learns about the initial phase. Dispatch it once on mount.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+  }, []);
+
   // ── Media: URL restoration, lyrics, media element refs ──
   const {
     effectiveSong,

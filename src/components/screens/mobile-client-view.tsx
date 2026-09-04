@@ -282,12 +282,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const mirrorScreenId = useMemo((): MirrorScreenId => {
     const screen = activeDesktopScreen || gameState.currentScreen;
     const base = screenToMirrorId(screen);
-    // When Desktop is in PTM/CPTM intro phase, show the intro screen
-    if (
-      (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') &&
-      gameState.ptmPhase === 'intro'
-    ) {
+    // When Desktop is in PTM/CPTM intro phase, show the intro screen.
+    // Check BOTH activeDesktopScreen and gameState.currentScreen to handle
+    // the one-render delay where activeDesktopScreen hasn't updated yet.
+    const isPtmGameScreen = screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'
+      || gameState.currentScreen === 'pass-the-mic-game' || gameState.currentScreen === 'companion-singalong-game';
+    if (isPtmGameScreen && gameState.ptmPhase === 'intro') {
+      // Debug: verify intro detection on companion (remove after fix confirmed)
+      // eslint-disable-next-line no-console
+      console.log('[PTM-Mirror] Showing ptm-intro | activeDesktopScreen=%s, currentScreen=%s, ptmPhase=%s',
+        activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase);
       return 'ptm-intro';
+    }
+    // Debug: log when NOT showing intro despite being on PTM game screen
+    if (isPtmGameScreen) {
+      // eslint-disable-next-line no-console
+      console.log('[PTM-Mirror] NOT showing intro | activeDesktopScreen=%s, currentScreen=%s, ptmPhase=%s',
+        activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase);
     }
     return base;
   }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase]);

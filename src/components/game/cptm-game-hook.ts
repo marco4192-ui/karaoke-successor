@@ -115,8 +115,21 @@ export function useCptmGameLogic({
   const unmountGuardRef = useRef(false);
 
   // ── Phase management ──
-  const [phase, setPhase] = useState<GamePhase>('intro');
+  const [phase, setPhaseRaw] = useState<GamePhase>('intro');
+  // Wrap setPhase to dispatch ptm-phase-changed events (same pattern as ptm-game-hook)
+  const setPhase = useCallback((newPhase: GamePhase | ((prev: GamePhase) => GamePhase)) => {
+    const resolved = typeof newPhase === 'function' ? newPhase(phase) : newPhase;
+    setPhaseRaw(resolved);
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
+  }, [phase]);
   const [countdown, setCountdown] = useState(3);
+
+  // ── Dispatch initial 'intro' phase on mount ──
+  // The useState('intro') never triggers the custom event, so the companion
+  // never learns about the initial phase. Dispatch it once on mount.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+  }, []);
 
   // ── Media: URL restoration, lyrics, media element refs ──
   const {

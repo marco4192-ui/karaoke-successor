@@ -76,19 +76,30 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const handlePhaseChange = (e: Event) => {
       const { phase } = (e as CustomEvent).detail || {};
+      // eslint-disable-next-line no-console
+      console.log('[PTM-Phase] Event received: phase=%s, screen=%s', phase, screen);
       setPtmPhase(phase || null);
     };
     window.addEventListener('ptm-phase-changed', handlePhaseChange);
     return () => window.removeEventListener('ptm-phase-changed', handlePhaseChange);
-  }, []);
+  }, [screen]);
 
-  // When entering a PTM/CPTM game screen, assume 'intro' phase until the
-  // game hook explicitly dispatches a phase-change event. The hook only
-  // fires the event on *transitions* (intro→countdown), so the initial
-  // 'intro' phase would otherwise never reach the companion.
+  // When entering a PTM/CPTM game screen, ensure 'intro' phase is set.
+  // The game hook now dispatches the initial 'intro' event on mount,
+  // but this useEffect acts as a safety net — if the event arrives before
+  // this listener is registered, or if ptmPhase is stale, we force 'intro'.
   useEffect(() => {
     if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
-      setPtmPhase(prev => prev === null ? 'intro' : prev);
+      // Always ensure 'intro' is set when entering a game screen with null phase.
+      // Don't overwrite a phase that was already set (e.g. 'countdown' from a fast start).
+      setPtmPhase(prev => {
+        if (prev === null) {
+          // eslint-disable-next-line no-console
+          console.log('[PTM-Phase] Safety net: setting intro (was null), screen=%s', screen);
+          return 'intro';
+        }
+        return prev;
+      });
     } else {
       setPtmPhase(null);
     }
@@ -684,6 +695,27 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const syncScreen = async () => {
       try {
+        const isPtmIntro = ptmPhase === 'intro' && (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game');
+        const introData = isPtmIntro
+          ? {
+              songTitle: party.passTheMicSong?.title || party.cptmSong?.title || undefined,
+              songArtist: party.passTheMicSong?.artist || party.cptmSong?.artist || undefined,
+              startPlayerName: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.name || undefined,
+              startPlayerAvatar: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.avatar || undefined,
+              startPlayerColor: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.color || undefined,
+              playerCount: (party.passTheMicPlayers.length || party.cptmPlayers.length) || undefined,
+              isMedley: party.ptmSongSelection === 'medley' || undefined,
+              medleySnippetCount: party.medleySongs?.length || undefined,
+              sharedMicName: party.passTheMicSettings?.sharedMicName || undefined,
+              mediaLoaded: true,
+            }
+          : null;
+        // Debug: log PTM intro sync state (remove after verifying fix)
+        if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
+          // eslint-disable-next-line no-console
+          console.log('[PTM-Sync] screen=%s, ptmPhase=%s, isPtmIntro=%s, hasIntroData=%s',
+            screen, ptmPhase, isPtmIntro, !!introData);
+        }
         await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -701,20 +733,7 @@ export default function KaraokeZERO() {
               desktopDialog: party.pauseDialogAction,
               pauseInitiator,
               ptmPhase,
-              ptmIntroData: (ptmPhase === 'intro' && (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'))
-                ? {
-                    songTitle: party.passTheMicSong?.title || party.cptmSong?.title || undefined,
-                    songArtist: party.passTheMicSong?.artist || party.cptmSong?.artist || undefined,
-                    startPlayerName: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.name || undefined,
-                    startPlayerAvatar: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.avatar || undefined,
-                    startPlayerColor: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.color || undefined,
-                    playerCount: (party.passTheMicPlayers.length || party.cptmPlayers.length) || undefined,
-                    isMedley: party.ptmSongSelection === 'medley' || undefined,
-                    medleySnippetCount: party.medleySongs?.length || undefined,
-                    sharedMicName: party.passTheMicSettings?.sharedMicName || undefined,
-                    mediaLoaded: true,
-                  }
-                : null,
+              ptmIntroData: introData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
               difficulty: useGameStore.getState().gameState.difficulty || 'normal',
             },
