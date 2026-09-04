@@ -438,6 +438,17 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-companion-pause', handleCompanionPause);
   }, [pauseGame, party.setPauseDialogAction]);
 
+  // ── Handle companion resume: dismiss desktop pause dialog and resume game ──
+  useEffect(() => {
+    const handleCompanionResume = () => {
+      resumeGame();
+      setPauseInitiator(null);
+      party.setPauseDialogAction(null);
+    };
+    window.addEventListener('remote-companion-resume', handleCompanionResume);
+    return () => window.removeEventListener('remote-companion-resume', handleCompanionResume);
+  }, [resumeGame, party.setPauseDialogAction]);
+
   // ── Handle companion-triggered leave dialog (sync with desktop) ──
   useEffect(() => {
     const handleShowLeave = () => {
@@ -589,6 +600,13 @@ export default function KaraokeZERO() {
         const cptmSegments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
         party.setCptmSegments(cptmSegments);
         setScreen('companion-singalong-game');
+      } else if (party.selectedGameMode === 'pass-the-mic') {
+        // Use PTM game screen so intro phase is shown
+        const ptmPlayers = party.passTheMicPlayers || [];
+        const segments = generatePtmSegments(songWithUrls.duration, ptmPlayers.length || 2, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+        party.setPassTheMicSegments(segments);
+        party.setPassTheMicSong(songWithUrls);
+        setScreen('pass-the-mic-game');
       } else {
         setScreen('game');
       }
@@ -698,6 +716,7 @@ export default function KaraokeZERO() {
                   }
                 : null,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
+              difficulty: useGameStore.getState().gameState.difficulty || 'normal',
             },
           }),
         });

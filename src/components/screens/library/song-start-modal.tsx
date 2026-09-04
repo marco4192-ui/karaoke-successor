@@ -648,8 +648,8 @@ export function SongStartModal({
             variant="outline" 
             onClick={handleFavorite}
             className={favoriteSongIds.has(selectedSong.id) 
-              ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30 h-10 px-3" 
-              : "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
+              ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30 active:scale-95 active:bg-yellow-500/40 transition-transform h-10 px-3" 
+              : "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 active:scale-95 active:bg-yellow-500/20 transition-transform h-10 px-3"
             }
           >
             <StarIcon className="w-4 h-4 mr-1.5" filled={favoriteSongIds.has(selectedSong.id)} />
@@ -658,7 +658,7 @@ export function SongStartModal({
           <Button 
             variant="outline" 
             onClick={() => { setHighscoreSong(selectedSong); setShowHighscoreModal(true); }}
-            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
+            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 active:scale-95 active:bg-yellow-500/20 transition-transform h-10 px-3"
           >
             <TrophyIcon className="w-4 h-4 mr-1.5" /> {t('songStart.scores')}
           </Button>
@@ -666,14 +666,14 @@ export function SongStartModal({
             variant="outline" 
             onClick={handleAddToQueue}
             disabled={!(startOptions.players[0] || activeProfileId) || (startOptions.mode === 'duel' && startOptions.players.length < 2) || (startOptions.mode === 'duet' && startOptions.players.length < 2)}
-            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-3"
+            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 active:scale-95 active:bg-purple-500/20 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 h-10 px-3"
           >
             <QueueIcon className="w-4 h-4 mr-1.5" /> {t('songStart.queue')}
           </Button>
           <Button 
             variant="outline" 
             onClick={() => { setSongToAddToPlaylist(selectedSong); setShowAddToPlaylistModal(true); }}
-            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 h-10 px-3"
+            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 active:scale-95 active:bg-cyan-500/20 transition-transform h-10 px-3"
           >
             <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 18V5l12-2v13" />
@@ -705,7 +705,7 @@ export function SongStartModal({
           <Button 
             variant="outline" 
             onClick={() => setShowSongModal(false)}
-            className="border-white/20 text-white hover:bg-white/10 h-10 px-3"
+            className="border-white/20 text-white hover:bg-white/10 active:scale-95 active:bg-white/20 transition-transform h-10 px-3"
           >
             {t('songStart.cancel')}
           </Button>

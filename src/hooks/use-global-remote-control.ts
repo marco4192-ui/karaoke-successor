@@ -269,6 +269,10 @@ export function useGlobalRemoteControl({
         window.dispatchEvent(new CustomEvent('remote-companion-pause', { detail: { fromName: cmd.fromClientName } }));
         break;
 
+      case 'companion_resume':
+        window.dispatchEvent(new CustomEvent('remote-companion-resume', { detail: {} }));
+        break;
+
       // --- Companion leave dialog sync ---
       case 'party_show_leave':
         window.dispatchEvent(new CustomEvent('remote-party-show-leave', { detail: {} }));

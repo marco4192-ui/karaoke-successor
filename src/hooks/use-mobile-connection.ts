@@ -33,6 +33,7 @@ interface RawGameState {
   ptmPhase?: GameState['ptmPhase'];
   ptmIntroData?: GameState['ptmIntroData'];
   viralSongIds?: string[];
+  difficulty?: 'easy' | 'normal' | 'hard';
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -57,6 +58,7 @@ function parseGameState(raw: RawGameState): GameState {
     ptmPhase: raw.ptmPhase ?? null,
     ptmIntroData: raw.ptmIntroData ?? null,
     viralSongIds: raw.viralSongIds ?? [],
+    difficulty: raw.difficulty ?? 'normal',
   };
 }
 
@@ -76,6 +78,7 @@ const INITIAL_GAME_STATE: GameState = {
   ptmPhase: null,
   ptmIntroData: null,
   viralSongIds: [],
+  difficulty: 'normal',
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

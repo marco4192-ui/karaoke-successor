@@ -71,7 +71,8 @@ export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, i
 
     const handleResume = useCallback(() => {
       haptic();
-      onSendDesktopCommand('play');
+      // Send companion_resume so desktop also resumes and clears the pause dialog
+      onSendDesktopCommand('companion_resume');
     }, [onSendDesktopCommand]);
 
     const handleAbort = useCallback(() => {
@@ -114,12 +115,12 @@ export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, i
             <span className="text-xs font-medium text-white/70">{t('mobile.mirrorRestart')}</span>
           </button>
           <button
-            onClick={gameState.isPlaying ? handlePause : () => handleCmd('play')}
+            onClick={gameState.isPlaying ? handlePause : handleResume}
             className={
-              'flex-1 flex items-center justify-center gap-2 rounded-xl p-3 active:scale-95 transition-transform ' +
+              'flex-1 flex items-center justify-center gap-2 rounded-xl p-3 active:scale-95 transition-transform border ' +
               (gameState.isPlaying
-                ? 'bg-yellow-500/15 border border-yellow-400/30 text-yellow-400'
-                : 'bg-green-500/15 border border-green-400/30 text-green-400')
+                ? 'bg-yellow-500/15 border-yellow-400/30 text-yellow-400'
+                : 'bg-green-500/15 border-green-400/30 text-green-400')
             }
           >
             <span className="text-base">{gameState.isPlaying ? '\u23F8' : '\u25B6'}</span>
@@ -161,21 +162,7 @@ export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, i
           </button>
         ) : null}
 
-        {/* Leave Party Mode (nur waehrend des aktiven Party-Spiels) */}
-        {isPartyGame ? (
-          <button
-            onClick={() => {
-              haptic();
-              // Sync leave dialog with desktop so both show it simultaneously
-              onSendDesktopCommand('party_show_leave');
-              setShowLeaveDialog(true);
-            }}
-            className="w-full flex items-center justify-center gap-2 rounded-xl p-3 bg-amber-500/10 border border-amber-400/20 text-amber-400 active:scale-[0.97] transition-transform"
-          >
-            <span className="text-base">{'\u{1F6AA}'}</span>
-            <span className="text-xs font-medium">{t('mobile.mirrorJukeboxLeaveParty')}</span>
-          </button>
-        ) : null}
+        {/* Leave Party Mode button removed per user request — Issue 5 */}
 
         {/* Pause-Overlay (1:1 mit Desktop synchronisiert) */}
         {showPauseOverlay ? (

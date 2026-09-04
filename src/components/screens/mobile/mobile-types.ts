@@ -171,6 +171,8 @@ export interface GameState {
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];
+  // Global difficulty setting from desktop (for companion library)
+  difficulty?: 'easy' | 'normal' | 'hard';
 }
 
 export interface PitchData {

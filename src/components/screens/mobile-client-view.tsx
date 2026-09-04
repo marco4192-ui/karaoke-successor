@@ -64,7 +64,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
-    onGameStateUpdate: (_state) => {},
+    onGameStateUpdate: (_state) => {
+      // Sync difficulty from desktop global settings to companion
+      if (_state.difficulty && _state.difficulty !== data.difficulty) {
+        data.setDifficulty(_state.difficulty);
+      }
+    },
     onError: setError,
     onSongEnd: () => { data.loadGameResults(); data.loadQueue(); },
   });

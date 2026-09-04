@@ -168,7 +168,7 @@ export function PlaylistQueueConfigModal({
 
   return (
     <Dialog open={show} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-5xl w-[95vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('playlistQueueConfig.title')}</DialogTitle>
           <DialogDescription className="text-white/60">
@@ -186,7 +186,7 @@ export function PlaylistQueueConfigModal({
             return (
               <div
                 key={config.songId}
-                className={`flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10 transition-opacity ${
+                className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 p-2 rounded-lg bg-white/5 border border-white/10 transition-opacity ${
                   draggedIndex === index ? 'opacity-40' : ''
                 }`}
                 draggable
@@ -199,19 +199,25 @@ export function PlaylistQueueConfigModal({
                 }}
                 onDragEnd={() => setDraggedIndex(null)}
               >
-                {/* Drag handle */}
-                <div className="cursor-grab active:cursor-grabbing flex-shrink-0">
-                  <DragHandleIcon />
+                {/* Row 1: Drag + Position + Song info | Row 2 on mobile: Controls */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Drag handle */}
+                  <div className="cursor-grab active:cursor-grabbing flex-shrink-0">
+                    <DragHandleIcon />
+                  </div>
+
+                  {/* Position */}
+                  <span className="w-6 text-center text-white/40 text-sm flex-shrink-0">{index + 1}</span>
+
+                  {/* Song info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm truncate">{song.title}</div>
+                    <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                  </div>
                 </div>
 
-                {/* Position */}
-                <span className="w-6 text-center text-white/40 text-sm flex-shrink-0">{index + 1}</span>
-
-                {/* Song info */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{song.title}</div>
-                  <div className="text-xs text-white/50 truncate">{song.artist}</div>
-                </div>
+                {/* Controls row */}
+                <div className="flex items-center gap-2 flex-shrink-0 sm:flex-shrink-0 pl-8 sm:pl-0">
 
                 {/* Game mode selector */}
                 <div className="flex-shrink-0 w-24">
@@ -297,6 +303,7 @@ export function PlaylistQueueConfigModal({
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
+                </div>{/* end Controls row */}
               </div>
             );
           })}

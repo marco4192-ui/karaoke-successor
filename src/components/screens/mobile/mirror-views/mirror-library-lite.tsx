@@ -91,6 +91,7 @@ export function MirrorLibraryLite({
     onLoadPartners,
     onLoadOpponents,
     onDifficultyChange,
+    difficulty,
     playerMicSource,
     onPlayerMicSourceChange,
     partnerMicSource,
@@ -114,7 +115,7 @@ export function MirrorLibraryLite({
 
     // ---- Overlay-State ----
     const [overlaySong, setOverlaySong] = useState<MobileSong | null>(null);
-    const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+    const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'normal' | 'hard'>(difficulty || 'normal');
     const [ovPartnerId, setOvPartnerId] = useState<string | null>(null);
     const [ovAdding, setOvAdding] = useState(false);
     const [ovChallengeSent, setOvChallengeSent] = useState(false);
