@@ -66,8 +66,8 @@ export interface MirrorViewProps {
   onLoadOpponents: () => void;
   onRefreshSongs: () => void;
   formatDuration: (ms: number) => string;
-  difficulty: 'easy' | 'normal' | 'hard';
-  onDifficultyChange: (d: 'easy' | 'normal' | 'hard') => void;
+  difficulty: 'easy' | 'medium' | 'hard';
+  onDifficultyChange: (d: 'easy' | 'medium' | 'hard') => void;
   playerMicSource: 'companion' | 'microphone';
   onPlayerMicSourceChange: (s: 'companion' | 'microphone') => void;
   partnerMicSource: 'companion' | 'microphone';

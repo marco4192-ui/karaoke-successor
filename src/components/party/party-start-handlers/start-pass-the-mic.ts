@@ -7,7 +7,7 @@ import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
-  const { result, party, setScreen, toast, t, filteredSongs } = ctx;
+  const { result, party, setScreen, toast, t, filteredSongs, resetGame, setSong, setGameMode, setDifficulty } = ctx;
   const s = result.settings as GameModeSettingsMap['pass-the-mic'];
   // Store song selection mode so handleContinue knows how to pick the next song
   party.setPtmSongSelection(result.songSelection || 'random');
@@ -73,6 +73,11 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
     }));
     // Prevent React #185
     party.setIsSongPlaying(false);
+    // Initialize game store so companion gets correct currentSong + gameMode
+    resetGame();
+    setGameMode('pass-the-mic');
+    setDifficulty(result.difficulty || 'medium');
+    setSong(firstSong);
     setScreen('pass-the-mic-game');
     return;
   }
@@ -115,6 +120,11 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
     party.setPassTheMicSong(songWithUrls);
     party.setPassTheMicSettings(toPassTheMicSettings(settingsWithMic));
     party.setIsSongPlaying(false);
+    // Initialize game store so companion gets correct currentSong + gameMode
+    resetGame();
+    setGameMode('pass-the-mic');
+    setDifficulty(result.difficulty || 'medium');
+    setSong(songWithUrls);
     // Use dedicated PTM game screen (not main game screen)
     setScreen('pass-the-mic-game');
   }

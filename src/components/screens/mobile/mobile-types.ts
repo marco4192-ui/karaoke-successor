@@ -93,7 +93,7 @@ export interface QueueItem {
   partnerId?: string;
   partnerName?: string;
   gameMode?: 'single' | 'duel' | 'duet';
-  difficulty?: 'easy' | 'normal' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
   playerMicSource?: 'companion' | 'microphone';
   partnerMicSource?: 'companion' | 'microphone';
   duetPartsSwapped?: boolean;
@@ -172,7 +172,7 @@ export interface GameState {
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];
   // Global difficulty setting from desktop (for companion library)
-  difficulty?: 'easy' | 'normal' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface PitchData {

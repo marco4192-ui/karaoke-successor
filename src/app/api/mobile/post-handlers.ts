@@ -223,7 +223,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerId?: string;
           partnerName?: string;
           gameMode?: 'single' | 'duel' | 'duet';
-          difficulty?: 'easy' | 'normal' | 'hard';
+          difficulty?: 'easy' | 'medium' | 'hard';
           playerMicSource?: 'companion' | 'microphone';
           partnerMicSource?: 'companion' | 'microphone';
           duetPartsSwapped?: boolean;
@@ -1045,7 +1045,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           songTitle: chMsgData.challenge.songTitle,
           songArtist: chMsgData.challenge.songArtist,
           gameMode: 'duel' as const,
-          difficulty: 'normal' as const,
+          difficulty: 'medium' as const,
           status: 'pending' as const,
           addedAt: Date.now(),
         };
@@ -1121,7 +1121,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           songTitle: achMsgData.challenge.songTitle,
           songArtist: achMsgData.challenge.songArtist,
           gameMode: 'duel' as const,
-          difficulty: 'normal' as const,
+          difficulty: 'medium' as const,
           status: 'pending' as const,
           addedAt: Date.now(),
         };

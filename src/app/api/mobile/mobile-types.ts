@@ -49,7 +49,7 @@ export interface QueueItem {
   // Game mode for this queue item
   gameMode?: 'single' | 'duel' | 'duet';
   // Difficulty setting from companion
-  difficulty?: 'easy' | 'normal' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
   // Mic source preferences (companion = sing via phone, microphone = sing via main app mic)
   playerMicSource?: 'companion' | 'microphone';
   partnerMicSource?: 'companion' | 'microphone';

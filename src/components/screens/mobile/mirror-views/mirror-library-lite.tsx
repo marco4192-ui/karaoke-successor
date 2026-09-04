@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileSong, GameMode, GameState, MobileView } from '../mobile-types';
 
@@ -28,8 +28,8 @@ interface MirrorLibraryLiteProps {
   onLoadOpponents: () => void;
   onRefreshSongs: () => void;
   formatDuration: (ms: number) => string;
-  difficulty: 'easy' | 'normal' | 'hard';
-  onDifficultyChange: (d: 'easy' | 'normal' | 'hard') => void;
+  difficulty: 'easy' | 'medium' | 'hard';
+  onDifficultyChange: (d: 'easy' | 'medium' | 'hard') => void;
   playerMicSource: 'companion' | 'microphone';
   onPlayerMicSourceChange: (s: 'companion' | 'microphone') => void;
   partnerMicSource: 'companion' | 'microphone';
@@ -115,7 +115,9 @@ export function MirrorLibraryLite({
 
     // ---- Overlay-State ----
     const [overlaySong, setOverlaySong] = useState<MobileSong | null>(null);
-    const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'normal' | 'hard'>(difficulty || 'normal');
+    const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'medium' | 'hard'>(difficulty || 'medium');
+    // Sync ovDifficulty when the difficulty prop changes (e.g. from desktop global settings)
+    useEffect(() => { setOvDifficulty(difficulty || 'medium'); }, [difficulty]);
     const [ovPartnerId, setOvPartnerId] = useState<string | null>(null);
     const [ovAdding, setOvAdding] = useState(false);
     const [ovChallengeSent, setOvChallengeSent] = useState(false);
@@ -207,7 +209,7 @@ export function MirrorLibraryLite({
     const openOverlay = useCallback((song: MobileSong) => {
       haptic();
       setOverlaySong(song);
-      setOvDifficulty('normal');
+      setOvDifficulty('medium');
       setOvPartnerId(null);
       setOvChallengeSent(false);
       // Lade Gegner/Host-Profile fuer Duell/Duett-Auswahl
@@ -437,7 +439,7 @@ export function MirrorLibraryLite({
     // Schwierigkeits-Optionen fuer Overlay
     const DIFF_OPTIONS = [
       { id: 'easy' as const, label: t('mobileViews.easy') || 'Leicht', color: 'bg-green-500/25 border-green-400/40 text-green-400' },
-      { id: 'normal' as const, label: t('mobileViews.normal') || 'Normal', color: 'bg-amber-500/25 border-amber-400/40 text-amber-400' },
+      { id: 'medium' as const, label: t('mobileViews.normal') || 'Normal', color: 'bg-amber-500/25 border-amber-400/40 text-amber-400' },
       { id: 'hard' as const, label: t('mobileViews.hard') || 'Schwer', color: 'bg-red-500/25 border-red-400/40 text-red-400' },
     ];
 

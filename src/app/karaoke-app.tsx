@@ -550,6 +550,10 @@ export default function KaraokeZERO() {
         const playerCount = party.passTheMicPlayers?.length || 2;
         const segments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
         party.setPassTheMicSegments(segments);
+        // Set screen SYNCHRONOUSLY so companion sees 'pass-the-mic-game' immediately
+        // instead of staying on 'library' during the async URL/lyrics work
+        setScreen('pass-the-mic-game');
+        // Then do async URL/lyrics enrichment in the background
         (async () => {
           try {
             const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
@@ -565,7 +569,6 @@ export default function KaraokeZERO() {
             party.setPassTheMicSegments(scoreSegments);
             party.setPassTheMicSong(sw);
           } catch { party.setPassTheMicSong(songWithUrls); }
-          setScreen('pass-the-mic-game');
         })();
       } else if (currentMode === 'companion-singalong') {
         party.setCptmSong(songWithUrls);
@@ -736,7 +739,7 @@ export default function KaraokeZERO() {
               ptmPhase,
               ptmIntroData: introData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
-              difficulty: useGameStore.getState().gameState.difficulty || 'normal',
+              difficulty: useGameStore.getState().gameState.difficulty || 'medium',
             },
           }),
         });
@@ -835,8 +838,10 @@ export default function KaraokeZERO() {
                 // Always generate initial segments (may be time-based if lyrics lack notes)
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
                 party.setPassTheMicSegments(segments);
-                // Ensure URLs AND lyrics (with notes) are ready BEFORE navigating to PTM screen.
-                // Always re-generate segments after lyrics load so score-based splitting is used.
+                // Set screen SYNCHRONOUSLY so companion sees 'pass-the-mic-game' immediately
+                // instead of staying on 'library' during the async URL/lyrics work
+                setScreen('pass-the-mic-game');
+                // Then do async URL/lyrics enrichment in the background
                 (async () => {
                   try {
                     const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
@@ -858,7 +863,6 @@ export default function KaraokeZERO() {
                   } catch {
                     party.setPassTheMicSong(song);
                   }
-                  setScreen('pass-the-mic-game');
                 })();
               } else if (currentMode === 'companion-singalong') {
                 party.setCptmSong(song);

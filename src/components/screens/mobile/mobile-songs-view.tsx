@@ -42,8 +42,8 @@ interface SongsViewProps {
    *  a preview play button is shown next to the song item. */
   getAudioUrl?: (song: MobileSong) => string | undefined;
   // Queue wizard props
-  difficulty?: 'easy' | 'normal' | 'hard';
-  onDifficultyChange: (d: 'easy' | 'normal' | 'hard') => void;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  onDifficultyChange: (d: 'easy' | 'medium' | 'hard') => void;
   playerMicSource?: 'companion' | 'microphone';
   onPlayerMicSourceChange: (s: 'companion' | 'microphone') => void;
   partnerMicSource?: 'companion' | 'microphone';
@@ -81,7 +81,7 @@ export function MobileSongsView({
   onRefresh,
   formatDuration,
   getAudioUrl,
-  difficulty = 'normal',
+  difficulty = 'medium',
   onDifficultyChange,
   playerMicSource = 'companion',
   onPlayerMicSourceChange,
@@ -374,7 +374,7 @@ export function MobileSongsView({
                   <div>
                     <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">{t('mobileViews.difficulty')}</label>
                     <div className="grid grid-cols-3 gap-1.5 mt-1.5">
-                      {(['easy', 'normal', 'hard'] as const).map((d) => (
+                      {(['easy', 'medium', 'hard'] as const).map((d) => (
                         <button
                           key={d}
                           onClick={() => onDifficultyChange(d)}

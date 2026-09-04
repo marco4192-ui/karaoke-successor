@@ -96,7 +96,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const [showSongOptions, setShowSongOptions] = useState<MobileSong | null>(null);
 
   // Queue wizard: difficulty, mic source, duet parts
-  const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [playerMicSource, setPlayerMicSource] = useState<'companion' | 'microphone'>('companion');
   const [partnerMicSource, setPartnerMicSource] = useState<'companion' | 'microphone'>('companion');
   const [duetPartsSwapped, setDuetPartsSwapped] = useState(false);
@@ -240,7 +240,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setShowSongOptions(null);
         setSelectedPartner(null);
         setSelectedGameMode('single');
-        setDifficulty('normal');
+        setDifficulty('medium');
         setPlayerMicSource('companion');
         setPartnerMicSource('companion');
         setDuetPartsSwapped(false);
