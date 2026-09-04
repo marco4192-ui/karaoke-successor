@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
@@ -84,18 +84,19 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('ptm-phase-changed', handlePhaseChange);
   }, [screen]);
 
-  // When entering a PTM/CPTM game screen, ensure 'intro' phase is set.
-  // The game hook now dispatches the initial 'intro' event on mount,
-  // but this useEffect acts as a safety net — if the event arrives before
-  // this listener is registered, or if ptmPhase is stale, we force 'intro'.
-  useEffect(() => {
+  // When entering a PTM/CPTM game screen, ensure 'intro' phase is set
+  // SYNCHRONOUSLY before the sync loop fires. Using useLayoutEffect
+  // guarantees ptmPhase='intro' is available in the same render's
+  // sync useEffect, eliminating the one-POST timing gap where
+  // the companion would see ptmPhase=null.
+  useLayoutEffect(() => {
     if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
       // Always ensure 'intro' is set when entering a game screen with null phase.
       // Don't overwrite a phase that was already set (e.g. 'countdown' from a fast start).
       setPtmPhase(prev => {
         if (prev === null) {
           // eslint-disable-next-line no-console
-          console.log('[PTM-Phase] Safety net: setting intro (was null), screen=%s', screen);
+          console.log('[PTM-Phase] Safety net (sync): setting intro (was null), screen=%s', screen);
           return 'intro';
         }
         return prev;
