@@ -79,3 +79,6 @@ agent-ctx/
 .zscripts/
 download/
 upload/
+
+# Leaderboard API local secrets (never commit)
+leaderboard-api/config.local.php
