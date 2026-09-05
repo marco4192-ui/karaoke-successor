@@ -1,0 +1,389 @@
+{
+  "schema_version": "mimosa-task-review/v2",
+  "run_id": "20260905T175042478Z-15992-c74a3fa87b91",
+  "run_status": "inconclusive",
+  "errors": [
+    {
+      "stage": "candidate-select",
+      "target": "src/components/settings/gameplay-tab.tsx",
+      "reason": "candidate_limit_exceeded: 23 changed reviewable file(s) were not scanned because the limit is 20"
+    },
+    {
+      "stage": "baseline",
+      "target": ".",
+      "reason": "baseline_partial: baseline capture had enumeration or snapshot errors"
+    }
+  ],
+  "coverage": {
+    "schema_version": "mimosa-hook-coverage/v1",
+    "status": "partial",
+    "scope": "hook_observed_diff",
+    "baseline": {
+      "complete": false,
+      "captured_files": 43,
+      "candidate_limit": 5000,
+      "truncated": false,
+      "enumeration_error_count": 0,
+      "snapshot_error_count": 0,
+      "compensated_target_count": 43
+    },
+    "change_tracking": {
+      "touched_observed": 43,
+      "touched_retained": 43,
+      "truncated": false,
+      "bash_mutation": true,
+      "bash_discovered": 43,
+      "bash_discovery_limit": 80,
+      "bash_discovery_truncated": false
+    },
+    "candidates": {
+      "eligible_files": 43,
+      "selected_files": 20,
+      "limit": 20,
+      "truncated": true
+    },
+    "scanning": {
+      "required_files": 17,
+      "scanned_files": 17,
+      "skipped_files": 0,
+      "failed_files": 0,
+      "project_checks_required": 0,
+      "project_checks_completed": 0
+    },
+    "notification": {
+      "eligible_findings": 0,
+      "detailed_findings": 0,
+      "detail_limit": 3,
+      "truncated": false
+    },
+    "reason_counts": {
+      "candidate_limit_exceeded": 1,
+      "baseline_partial": 1,
+      "project_check_failed": 2
+    },
+    "reasons": [
+      {
+        "code": "candidate_limit_exceeded",
+        "stage": "candidate-select",
+        "target": "src/components/settings/gameplay-tab.tsx",
+        "detail": "23 changed reviewable file(s) were not scanned because the limit is 20",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_partial",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline capture had enumeration or snapshot errors",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "candidate-select",
+        "target": "src/components/settings/gameplay-tab.tsx",
+        "detail": "candidate_limit_exceeded: 23 changed reviewable file(s) were not scanned because the limit is 20",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline_partial: baseline capture had enumeration or snapshot errors",
+        "affects_completion": true
+      }
+    ],
+    "reasons_truncated": false
+  },
+  "generated_at": "2026-09-05T17:50:42.478Z",
+  "session_id": "sess_3bf2ba0b-f252-4d71-bfa5-dc3be8c9fe5e",
+  "target": ".",
+  "revision": "109ae805fca909df608af33cee063cd211a58d71",
+  "rules_version": "unavailable",
+  "diff_hash": "994a790b68d7b8794d98fb2e274bf282fcad950efac6d119fa3b95a351681eef",
+  "diff": {
+    "algorithm": "sha256",
+    "changed_file_count": 17,
+    "changed_files": [
+      {
+        "file": "leaderboard-api/config.local.example.php",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 14
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "f7211d82e7036cf24785c8e6d8b906e13a264ab2374d02fd57fd771569de38fb"
+      },
+      {
+        "file": "leaderboard-api/config.php",
+        "ranges": [
+          {
+            "start": 5,
+            "end": 14
+          },
+          {
+            "start": 18,
+            "end": 28
+          },
+          {
+            "start": 33,
+            "end": 33
+          },
+          {
+            "start": 37,
+            "end": 44
+          }
+        ],
+        "before_hash": "1550a3888e36374973a6d7f230b08a28a59ca14503d7eb9d4e9fefa2fa318030",
+        "after_hash": "271f4f2b309dfb41f3eef434f77a78c78a67f89ca56930e2b6c0fc79e18ebfee"
+      },
+      {
+        "file": "leaderboard-api/index.php",
+        "ranges": [
+          {
+            "start": 191,
+            "end": 197
+          }
+        ],
+        "before_hash": "0e2e3f4e4d452150fa6c2b66335e9d85a9fe704ae5e5edd1b7f0cd5d6a7181cb",
+        "after_hash": "c271ac09ead4fcfefaf5681215bc87b0d5ace656d1d24a160371a2c7f2bb0428"
+      },
+      {
+        "file": "src/components/editor/editor-lyrics-tab.tsx",
+        "ranges": [
+          {
+            "start": 61,
+            "end": 89
+          }
+        ],
+        "before_hash": "55ad9acc62c5e636ec1167b328b2c107ada91b1fd7c808845ba84ed8b1595379",
+        "after_hash": "10a369134eca82797baefb313de2de3c9e874ba46a5205d0db9d99f91a833535"
+      },
+      {
+        "file": "src/components/editor/new-song-dialog.tsx",
+        "ranges": [
+          {
+            "start": 3,
+            "end": 3
+          }
+        ],
+        "before_hash": "5684b2806f10d8e6d4d3c675372dfc35952afb759894786b70f7bec234e24d68",
+        "after_hash": "34fce5ca2775508671dc67686422ca3769d2e215e1f08410870e537f63e362f3"
+      },
+      {
+        "file": "src/components/game/battle-royale/lyrics-display.tsx",
+        "ranges": [
+          {
+            "start": 10,
+            "end": 12
+          },
+          {
+            "start": 15,
+            "end": 16
+          },
+          {
+            "start": 21,
+            "end": 21
+          },
+          {
+            "start": 25,
+            "end": 26
+          },
+          {
+            "start": 76,
+            "end": 80
+          }
+        ],
+        "before_hash": "a4ef8b5af1ec1791128082bd39dc769d2de0d6ca6184bc9b07c052b3945da32c",
+        "after_hash": "8f33d59c4bc177572500f54281ca1a0ac3347fad51de93abdba4f56b3f9c2d27"
+      },
+      {
+        "file": "src/components/game/note-highway.tsx",
+        "ranges": [
+          {
+            "start": 3,
+            "end": 3
+          }
+        ],
+        "before_hash": "0dd248e179f2f67a41667aaa6e986c78f2bcbea40e27e835a9ed072c39a1a704",
+        "after_hash": "7b374875bf0c597316c389441b77b477ba9e9ed58f5048a9b0ad3145f169daaa"
+      },
+      {
+        "file": "src/components/game/rate-my-song-results.tsx",
+        "ranges": [
+          {
+            "start": 27,
+            "end": 27
+          },
+          {
+            "start": 29,
+            "end": 29
+          }
+        ],
+        "before_hash": "1c903c212bce42e3b6a569df40d2fd715e609b7dbe6b6e97b2cd337ca7546e4e",
+        "after_hash": "06bd5b92ac7a7364aaf9636b7821d8f637c5877a7d4be4ecc111bb4a4afec9c7"
+      },
+      {
+        "file": "src/components/game/rate-my-song-setup.tsx",
+        "ranges": [
+          {
+            "start": 8,
+            "end": 8
+          }
+        ],
+        "before_hash": "d996e06e42a742f0bb20497d3e3e05665e02fe634699aacbef54ae10ee5cf373",
+        "after_hash": "10bfb6a2991193d4dad62c94547c780ff2960256ccccfdf082ac1078f23511b9"
+      },
+      {
+        "file": "src/components/game/unified-party-setup-mic.tsx",
+        "ranges": [
+          {
+            "start": 3,
+            "end": 3
+          }
+        ],
+        "before_hash": "5f74a36eefbd652430d540b80d840c3fb3e91f5fedfe1f1690c1b0bf24d8f170",
+        "after_hash": "fa39f35452ea46f405d913db685151a38d91972149cc04139053b0834663c2e1"
+      },
+      {
+        "file": "src/components/party/party-start-handlers/start-medley.ts",
+        "ranges": [
+          {
+            "start": 6,
+            "end": 6
+          }
+        ],
+        "before_hash": "6f563cf9e6fa6affe20dc8a3cbd73d08ddc8581da21f1f1d5887bbedbcf1572e",
+        "after_hash": "fb0a4d4da1ebdf652fc91de5291c47e816914fe38390e3bcd538fc17a05a83ff"
+      },
+      {
+        "file": "src/components/results/song-highscore-modal.tsx",
+        "ranges": [
+          {
+            "start": 8,
+            "end": 8
+          }
+        ],
+        "before_hash": "81e5353631a6f7a6980818d9b0214ad4e75bd4688188077029e1433fc36296ca",
+        "after_hash": "961d3675ff37b7d567cbba9801c73be67a0d36670caceb0d5e3fa0827799e70c"
+      },
+      {
+        "file": "src/components/screens/jukebox/jukebox-player-view.tsx",
+        "ranges": [
+          {
+            "start": 401,
+            "end": 402
+          },
+          {
+            "start": 420,
+            "end": 423
+          }
+        ],
+        "before_hash": "e5dc9824326e19df9a6aca0d4e9d89d89fa71f0cfd3046bd5001dd5e6eefd9cc",
+        "after_hash": "e4e17f20b9977a98d7ba5e77978380b916442081602b8462530ef907cc341ee8"
+      },
+      {
+        "file": "src/components/screens/use-post-game-processing.ts",
+        "ranges": [
+          {
+            "start": 315,
+            "end": 319
+          }
+        ],
+        "before_hash": "144699a6fa2fbc2055019dafce65585baaa878375ecc3baeb5131f615cb7a7ee",
+        "after_hash": "a3aed3ee7bd3c7c1821857694e7aeb34e9c04f68866c643a21bf72e88ce03997"
+      },
+      {
+        "file": "src/components/settings/appearance-tab.tsx",
+        "ranges": [
+          {
+            "start": 8,
+            "end": 8
+          }
+        ],
+        "before_hash": "3eceb8bcc0f3ce9a93ff51d21005631d39947c012eeb17696fe8d885919037a7",
+        "after_hash": "12099dddb34430d44a85a97d2cd6eaa8066533ddb5db08b15d4cd4b65c611d74"
+      },
+      {
+        "file": "src/hooks/use-network-status.ts",
+        "ranges": [
+          {
+            "start": 4,
+            "end": 4
+          }
+        ],
+        "before_hash": "92c70074d14235a304fd32c1e115f952f73bcfb28caa03275e8f299b53e3d17c",
+        "after_hash": "08b26948d3f1335e74c437cccd4c9bdff4339d4a8623d6d6d972cad0d9208939"
+      },
+      {
+        "file": "src/lib/api/leaderboard-service.ts",
+        "ranges": [
+          {
+            "start": 8,
+            "end": 8
+          },
+          {
+            "start": 14,
+            "end": 14
+          },
+          {
+            "start": 19,
+            "end": 19
+          }
+        ],
+        "before_hash": "b083f9d95ca989164c1e8fece550f59b265b0bee6bdeb62070d21ed28c62135a",
+        "after_hash": "92ad567e8d33df15129d9ce4935fd13d0a9a658ee1e1db5319b5f19c030423c1"
+      }
+    ]
+  },
+  "timing": {
+    "started_at": "2026-09-05T17:50:40.811Z",
+    "completed_at": "2026-09-05T17:50:42.478Z",
+    "duration_ms": 1667,
+    "measurement": "hook_wall_clock"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "model_calls": 0,
+    "measurement": "known-zero"
+  },
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "Stop",
+    "outcome": "partial/INCONCLUSIVE",
+    "latencyMs": 1667,
+    "peakMemoryBytes": 150241280,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 17,
+    "cache": {
+      "hits": 0,
+      "misses": 0,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "finding_count": 0,
+  "rewake_finding_count": 0,
+  "evidence_boundary": {
+    "scan": "candidate",
+    "static_fix_verification": "observed_static_only",
+    "runtime_verification": "not_performed"
+  },
+  "finding_events": [],
+  "findings": [],
+  "artifacts": {
+    "immutable_report": ".mimosa/reports/task-review-sess_3bf2ba0b-f252-4d71-bfa5-dc3be8c9fe5e-20260905T175042478Z-15992-c74a3fa87b91.json",
+    "latest_report": ".mimosa/reports/task-review-sess_3bf2ba0b-f252-4d71-bfa5-dc3be8c9fe5e.json",
+    "history_summary": ".mimosa/history/run-20260905T175042478Z-15992-c74a3fa87b91.json"
+  }
+}

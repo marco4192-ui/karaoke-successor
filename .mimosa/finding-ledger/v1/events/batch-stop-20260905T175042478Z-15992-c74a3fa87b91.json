@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20260905T175042478Z-15992-c74a3fa87b91",
+  "runId": "20260905T175042478Z-15992-c74a3fa87b91",
+  "runStatus": "inconclusive",
+  "coverage": {
+    "status": "partial",
+    "reasons": [
+      {
+        "code": "candidate_limit_exceeded",
+        "stage": "candidate-select",
+        "target": "src/components/settings/gameplay-tab.tsx",
+        "detail": "23 changed reviewable file(s) were not scanned because the limit is 20",
+        "affectsCompletion": true
+      },
+      {
+        "code": "baseline_partial",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline capture had enumeration or snapshot errors",
+        "affectsCompletion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "candidate-select",
+        "target": "src/components/settings/gameplay-tab.tsx",
+        "detail": "candidate_limit_exceeded: 23 changed reviewable file(s) were not scanned because the limit is 20",
+        "affectsCompletion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline_partial: baseline capture had enumeration or snapshot errors",
+        "affectsCompletion": true
+      }
+    ]
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": "109ae805fca909df608af33cee063cd211a58d71",
+  "diffHash": "994a790b68d7b8794d98fb2e274bf282fcad950efac6d119fa3b95a351681eef",
+  "rulesVersion": "unavailable",
+  "sessionHash": "b02fc14d4d14425c243e60b0a5a7d7f42bc3d8af52eea36b4ff6ed8c96578fcf",
+  "reportRef": ".mimosa/reports/task-review-sess_3bf2ba0b-f252-4d71-bfa5-dc3be8c9fe5e-20260905T175042478Z-15992-c74a3fa87b91.json",
+  "events": [],
+  "observedFindingIds": [
+    "mimosa-12d236a2404dfd88cddb9a6d",
+    "mimosa-ce774e81374ad7322d164589",
+    "mimosa-7d1e87ff4a3f73181ab2049c",
+    "mimosa-3d992c1eab681d4e71cfda92",
+    "mimosa-914b210e962e80729073334e",
+    "mimosa-a2e370bb17ea41ad0c15bdb5",
+    "mimosa-4be5754e7988c0ec3997ceeb",
+    "mimosa-611e4493f3931516dae839a8"
+  ],
+  "verifiedFiles": [
+    {
+      "file": "src/components/editor/editor-lyrics-tab.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/game/battle-royale/lyrics-display.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/screens/jukebox/jukebox-player-view.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/lib/api/leaderboard-service.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/hooks/use-network-status.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/screens/use-post-game-processing.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "leaderboard-api/index.php",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "leaderboard-api/config.php",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "leaderboard-api/config.local.example.php",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/editor/new-song-dialog.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/game/note-highway.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/game/unified-party-setup-mic.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/game/rate-my-song-results.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/game/rate-my-song-setup.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/party/party-start-handlers/start-medley.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/results/song-highscore-modal.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/components/settings/appearance-tab.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-09-05T17:50:42.800Z"
+}
