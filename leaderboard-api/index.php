@@ -143,7 +143,6 @@ function submitScore(string $TP, string $TS): void {
     $verified  = false;
     $acFlags   = [];
     $acReason  = null;
-    $isNewBest = true;
 
     if ($proof && is_array($proof)) {
         // Step 1: Verify integrity hash
@@ -188,6 +187,13 @@ function submitScore(string $TP, string $TS): void {
 
     // Determine fingerprint version
     $fpVersion = ($v2Hash !== null) ? 'v2' : 'v1';
+
+    // New personal best = no existing row yet, or submitted score beats it.
+    // Must be read BEFORE the upsert overwrites the row.
+    $cur = db()->prepare("SELECT `score` FROM `$TS` WHERE `profile_uid` = ? AND `song_hash` = ? AND `game_type` = ?");
+    $cur->execute([$uid, $hash, $gt]);
+    $existingScore = $cur->fetchColumn();
+    $isNewBest = ($existingScore === false) || ($score > (int)$existingScore);
 
     // UPSERT: keep higher score
     $sql = "INSERT INTO `$TS`

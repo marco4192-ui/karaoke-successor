@@ -312,11 +312,11 @@ export function usePostGameProcessing({
                 setUploadStatus('success');
                 const verified = !!result.verified;
                 setIsVerified(verified);
-                if (result.is_new_best) {
-                  setUploadMessage(t(verified ? 'resultsScreen.uploadedRankVerified' : 'resultsScreen.newGlobalHighscore'));
-                } else {
-                  setUploadMessage(t(verified ? 'resultsScreen.uploadedRankVerified' : 'resultsScreen.uploadedRank').replace('{n}', result.rank.toString()));
-                }
+                // Verified uploads always include the rank; non-verified new bests use a fixed message.
+                const key = verified
+                  ? 'resultsScreen.uploadedRankVerified'
+                  : result.is_new_best ? 'resultsScreen.newGlobalHighscore' : 'resultsScreen.uploadedRank';
+                setUploadMessage(t(key).replace('{n}', String(result.rank)));
               })
               .catch((err) => {
                 setUploadStatus('error');
