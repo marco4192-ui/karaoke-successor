@@ -1,169 +1,92 @@
-# Karaoke Leaderboard API
+# Karaoke Leaderboard API (v3)
 
-A simple PHP/MySQL API for the Karaoke Successor leaderboard system.
+PHP/MySQL API for the Karaoke Successor online leaderboard.
+Copyright-safe: songs are identified only by a SHA-256 fingerprint hash
+(`v1:<16 hex chars>`) — no titles, artists, or lyrics are stored.
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `index.php` | Front controller + all endpoints |
+| `config.php` | Bootstrapping, CORS, rate limit, API-key check, helpers |
+| `config.local.php` | **Local secrets — NOT in git.** Create from `config.local.example.php` |
+| `anti-cheat.php` | Server-side proof verification (mirrors `src/lib/leaderboard/anti-cheat-proof.ts`) |
+| `schema.sql` | MySQL schema (import once, then remove from the server) |
+| `.htaccess` | Routing + blocks direct access to `config*.php` / `*.sql` |
 
 ## Installation on Shared Hosting (netcup)
 
-### 1. Create Database
+1. Create a MySQL database and a database user (Plesk → Datenbanken).
+2. Import `schema.sql` via phpMyAdmin.
+3. Copy `config.local.example.php` to `config.local.php`, fill in `DB_PASS`
+   and `API_SECRET` (and DB host/name/user if they differ from the defaults
+   in `config.php` — which are empty by default and set via env vars
+   `KS_DB_HOST`, `KS_DB_NAME`, `KS_DB_USER`, `KS_DB_PASS`, `KS_API_SECRET`).
+4. Upload the folder contents to `https://your-domain.com/leaderboard-api/`.
+5. Delete `schema.sql` from the server after the import (it is blocked by
+   `.htaccess`, but it has no business being deployed).
+6. Test: `GET https://your-domain.com/leaderboard-api/` → API info JSON.
 
-1. Log into your hosting control panel (Plesk, cPanel, etc.)
-2. Create a new MySQL database named `karaoke_leaderboard`
-3. Create a database user and grant all privileges
-4. Import the schema: `schema.sql` via phpMyAdmin
+## Authentication
 
-### 2. Upload Files
+All `POST`/`PUT` requests require the header `X-API-Key` with the value of
+`API_SECRET`. The desktop app ships this key in its client bundle
+(`NEXT_PUBLIC_LEADERBOARD_API_KEY`) — it is therefore **not** a security
+boundary against determined attackers, only a spam deterrent. GET requests
+need no key.
 
-Upload the contents of this folder to your web server:
-```
-your-domain.com/leaderboard-api/
-├── config.php
-├── index.php
-├── .htaccess
-└── schema.sql (optional - can be deleted after setup)
-```
-
-### 3. Configure
-
-Edit `config.php` and update:
-```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'karaoke_leaderboard');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
-```
-
-### 4. Test
-
-Visit `https://your-domain.com/leaderboard-api/` to see API info.
-
-## API Endpoints
-
-### Players
+## Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/players` | List all players |
-| GET | `/players/{id}` | Get player details with top songs |
-| POST | `/players` | Create or update player |
-| PUT | `/players/{id}` | Update player privacy settings |
+| GET | `/` | API info |
+| POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`) |
+| GET | `/profiles/{uid}` | Fetch profile |
+| PUT | `/profiles/{uid}` | Update profile fields (display name, color, country, privacy) |
+| POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) |
+| GET | `/leaderboard/song/{hash}?game_type=s|d&limit=N` | Per-song Top N |
+| GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
 
-**Example - Create Player:**
+Submit-score payload (all required unless noted):
+
 ```json
-POST /players
 {
-    "id": "player-123",
-    "name": "RockStar",
-    "country": "DE",
-    "color": "#FF6B6B",
-    "avatar_url": "https://..."
+  "profile_uid": "uuid-v4",
+  "song_hash": "v1:0123456789abcdef",
+  "song_hash_v2": "v2:… (optional)",
+  "game_type": "s",
+  "score": 9500,
+  "max_score": 10000,
+  "accuracy": 92.5,
+  "max_combo": 45,
+  "difficulty": "normal",
+  "rating": "excellent",
+  "notes_hit": 180,
+  "notes_missed": 15,
+  "proof": { "…": "see anti-cheat.php" }
 }
 ```
 
-**Example - Update Privacy:**
-```json
-PUT /players/player-123
-{
-    "show_on_leaderboard": 1,
-    "show_photo": 0,
-    "show_country": 1
-}
-```
+Response: `{ "ok": true, "rank": 1, "is_new_best": true, "verified": true }`
+(+ `verification_note` / `flags` when the anti-cheat marked the score).
 
-### Scores
+`verified` semantics: a score is verified only when a proof package is sent
+and passes integrity hash, timestamp window, plausibility, and
+points-per-tick re-computation. Scores without proof are accepted but stored
+as unverified.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/scores` | List scores (filterable) |
-| POST | `/scores` | Submit new score |
+## Privacy
 
-**Example - Submit Score:**
-```json
-POST /scores
-{
-    "player_id": "player-123",
-    "song_id": "song-456",
-    "song_title": "Bohemian Rhapsody",
-    "song_artist": "Queen",
-    "score": 95000,
-    "accuracy": 92.5,
-    "max_combo": 45,
-    "difficulty": "hard",
-    "game_mode": "standard",
-    "rating": "excellent",
-    "notes_hit": 180,
-    "notes_missed": 15,
-    "duration": 354000
-}
-```
+| Setting | Meaning |
+|---------|---------|
+| `show_on_board` | Opt in/out of all public leaderboards |
+| `show_country` | Show country flag (country is `NULL`ed in responses when 0) |
 
-### Leaderboards
+Profiles are identified by a client-generated UUID — no email, no password,
+no IP stored (rate limiting uses IPs only in temporary files, not the DB).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/leaderboard/global` | Global top players |
-| GET | `/leaderboard/song/{id}` | Song-specific leaderboard |
-| GET | `/leaderboard/recent` | Recent scores |
+## Rate limiting
 
-### Songs
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/songs` | List all songs |
-| GET | `/songs/{id}` | Get song stats |
-
-### Search
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/search?q=query` | Search players and songs |
-
-## Privacy Settings
-
-Players can control their visibility:
-
-| Setting | Description |
-|---------|-------------|
-| `show_on_leaderboard` | Appear on public leaderboards (0/1) |
-| `show_photo` | Show profile photo on leaderboard (0/1) |
-| `show_country` | Show country flag on leaderboard (0/1) |
-
-## Integration with Next.js App
-
-Update your app configuration:
-```typescript
-const API_BASE = 'https://your-domain.com/leaderboard-api';
-
-// Submit score
-fetch(`${API_BASE}/scores`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(scoreData)
-});
-
-// Get leaderboard
-const response = await fetch(`${API_BASE}/leaderboard/global`);
-const { leaderboard } = await response.json();
-```
-
-## Security Notes
-
-1. The API uses CORS headers for cross-origin requests
-2. Rate limiting is built-in (100 requests/minute per IP)
-3. All input is sanitized
-4. Prepared statements prevent SQL injection
-5. Consider adding API key authentication for write operations
-
-## Troubleshooting
-
-### 500 Internal Server Error
-- Check database credentials in `config.php`
-- Ensure MySQL extension is enabled
-- Check error logs in hosting panel
-
-### CORS Errors
-- Ensure `ENABLE_CORS` is set to `true` in `config.php`
-- Check that `.htaccess` is uploaded correctly
-
-### Mod Rewrite Not Working
-- Ensure Apache `mod_rewrite` is enabled
-- Check if `.htaccess` is allowed by your hosting provider
+60 requests/minute per IP, file-based (`sys_get_temp_dir()`), enforced in
+`config.php` for every request.

@@ -2,20 +2,45 @@
 /**
  * Karaoke Successor — Online Leaderboard API Configuration
  * Hash-based, copyright-safe. No song metadata stored.
+ *
+ * CREDENTIALS LIVE OUTSIDE THIS FILE — it is committed to a public repo.
+ * Provide them either via environment variables (preferred) or by uploading
+ * a `config.local.php` next to this file (gitignored, never commit it):
+ *
+ *   <?php
+ *   define('DB_PASS', '...');
+ *   define('API_SECRET', '...');
+ *
+ * Environment variables override config.local.php.
  */
 
 // ── Database ──────────────────────────────────────────────
-define('DB_HOST', 'mysqle88c.netcup.net');
-define('DB_NAME', 'k347227_karaoke_leaderboard');
-define('DB_USER', 'k347227_MightyUser');
-define('DB_PASS', 'MichtyUser9911');
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once __DIR__ . '/config.local.php';
+}
+$env = static function (string $key, string $fallback = ''): string {
+    $v = getenv($key);
+    return ($v === false || $v === '') ? $fallback : $v;
+};
+define('DB_HOST', $env('KS_DB_HOST'));
+define('DB_NAME', $env('KS_DB_NAME'));
+define('DB_USER', $env('KS_DB_USER'));
+define('DB_PASS', $env('KS_DB_PASS'));
 define('DB_CHARSET', 'utf8mb4');
 define('DB_PREFIX', 'ks_');
 
 // ── API ───────────────────────────────────────────────────
-define('API_SECRET', 'ks-api-s3cr3t-ch4ng3-m3-1n-pr0d');
+define('API_SECRET', $env('KS_API_SECRET'));
 define('RATE_LIMIT_PER_MINUTE', 60);
 define('MAX_LEADERBOARD_ENTRIES', 500);
+
+// Fail fast with a clear message instead of a fatal PDO error later.
+if (DB_HOST === '' || DB_NAME === '' || DB_USER === '') {
+    err('Server misconfiguration: database credentials missing (set KS_DB_* env vars or upload config.local.php).', 500);
+}
+if (API_SECRET === '') {
+    err('Server misconfiguration: KS_API_SECRET not set.', 500);
+}
 
 // ── CORS (allow all origins — app-only, no web access) ────
 define('ALLOWED_ORIGINS', '*');
