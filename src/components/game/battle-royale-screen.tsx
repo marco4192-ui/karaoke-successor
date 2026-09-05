@@ -70,6 +70,17 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     }
   }, [game.status, setPauseDialogAction]);
 
+  // ── Dispatch phase events for companion mirroring ──
+  useEffect(() => {
+    if (game.status === 'setup' || game.status === 'grand-finale-intro') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+    } else if (game.status === 'playing' || game.status === 'voting' || game.status === 'countdown') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'playing' } }));
+    } else if (game.status === 'completed') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'series-results' } }));
+    }
+  }, [game.status]);
+
   // Winner celebration
   if (game.status === 'completed' && game.winner) {
     return (

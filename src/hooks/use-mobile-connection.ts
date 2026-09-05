@@ -390,7 +390,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       } catch (error) {
         console.debug('[useMobileConnection]: game state sync failed', error);
       }
-    }, 1000);
+    }, 500);
     
     return () => clearInterval(syncInterval);
   }, [isConnected]);

@@ -77,8 +77,15 @@ export function MirrorGameLite({ gameState, profileName, onSendDesktopCommand, i
 
     const handleAbort = useCallback(() => {
       haptic();
-      onSendDesktopCommand('quit');
-    }, [onSendDesktopCommand]);
+      // In party mode: send companion_end_early so Desktop shows the party-leave
+      // confirmation dialog instead of immediately quitting. The dialog state
+      // (desktopDialog) will be synced back to the companion via gamestate.
+      if (isPartyGame) {
+        onSendDesktopCommand('companion_end_early');
+      } else {
+        onSendDesktopCommand('quit');
+      }
+    }, [onSendDesktopCommand, isPartyGame]);
 
     // Wenn kein Song aktiv, nur Platzhalter
     if (!gameState.currentSong) {

@@ -442,6 +442,18 @@ export function CompetitiveGameView({
 
   // TODO: Add back navigation from competitive game view to setup screen
   // Delegate to game screen when round is ready to play
+
+  // ── Dispatch phase events for companion mirroring ──
+  useEffect(() => {
+    if (game.status === 'setup') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+    } else if (game.status === 'playing') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'playing' } }));
+    } else if (game.status === 'round-end' || game.status === 'game-over') {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'song-results' } }));
+    }
+  }, [game.status]);
+
   useEffect(() => {
     if (game.status === 'playing' && currentRound && !hasTriggeredPlay.current) {
       const song = songs.find(s => s.id === currentRound.songId);

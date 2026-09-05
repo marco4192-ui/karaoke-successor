@@ -30,6 +30,10 @@ export type MirrorScreenId =
   | 'party-setup'
   | 'song-voting'
   | 'ptm-intro'
+  | 'medley-intro'
+  | 'battle-intro'
+  | 'competitive-intro'
+  | 'rate-my-song-intro'
   | 'profile';  // character/profile management
 
 /** Maps desktop Screen → MirrorScreenId */
@@ -168,6 +172,7 @@ export interface GameState {
     roundNumber?: number;
     sharedMicName?: string;
     mediaLoaded?: boolean;
+    partyGameMode?: string;
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];

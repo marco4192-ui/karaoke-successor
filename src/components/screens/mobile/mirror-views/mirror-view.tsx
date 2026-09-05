@@ -27,6 +27,10 @@ import { MirrorResultsLite } from './mirror-results-lite';
 import { MirrorJukeboxLite } from './mirror-jukebox-lite';
 import { MirrorAchievementsLite } from './mirror-achievements-lite';
 import { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
+import { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
+import { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
+import { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';
+import { MirrorRateMySongIntroLite } from './mirror-rate-my-song-intro-lite';
 import { MirrorProfileLite } from './mirror-profile-lite';
 import { MirrorPartySetupLite } from './mirror-party-setup-lite';
 import { MirrorSongVotingLite } from './mirror-song-voting-lite';
@@ -423,6 +427,66 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="ptm-intro">
           <MirrorPtmIntroLite
+            gameState={gameState}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Medley Intro ----------
+    case 'medley-intro':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="medley-intro">
+          <MirrorMedleyIntroLite
+            gameState={gameState}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Battle Royale / Tournament Intro ----------
+    case 'battle-intro':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="battle-intro">
+          <MirrorBattleIntroLite
+            gameState={gameState}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Competitive (Missing Words / Blind) Intro ----------
+    case 'competitive-intro':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="competitive-intro">
+          <MirrorCompetitiveIntroLite
+            gameState={gameState}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Rate My Song Intro ----------
+    case 'rate-my-song-intro':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="rate-my-song-intro">
+          <MirrorRateMySongIntroLite
             gameState={gameState}
             profileName={profileName}
             onNavigate={onNavigate}

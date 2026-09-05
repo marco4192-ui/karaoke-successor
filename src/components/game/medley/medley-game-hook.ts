@@ -161,11 +161,22 @@ export function useMedleyGame({
   onEndGameRef.current = onEndGame;
 
   // ── Phase ──
-  const [phase, setPhase] = useState<MedleyGamePhase>('intro');
+  const [phase, setPhaseRaw] = useState<MedleyGamePhase>('intro');
+  // Wrap setPhase to dispatch ptm-phase-changed events for companion mirroring
+  const setPhase = useCallback((newPhase: MedleyGamePhase | ((prev: MedleyGamePhase) => MedleyGamePhase)) => {
+    const resolved = typeof newPhase === 'function' ? newPhase(phase) : newPhase;
+    setPhaseRaw(resolved);
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
+  }, [phase]);
   const phaseRef = useRef<MedleyGamePhase>('intro');
   const [transitionCount, setTransitionCount] = useState(3);
   // Keep phaseRef in sync (used in async callbacks to avoid stale closures)
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  // ── Dispatch initial 'intro' phase on mount ──
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+  }, []);
 
   // ── Current snippet ──
   const [currentSnippetIdx, setCurrentSnippetIdx] = useState(0);
@@ -176,6 +187,25 @@ export function useMedleyGame({
   // ── Time (owned by main hook — driven by game loop / fallback timer) ──
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // ── Pause handling: properly stop game loop when pause is triggered ──
+  // The audio hook pauses the media elements, but we also need to set
+  // isPlaying=false so the game loop interval is cleaned up, and
+  // isSongPlaying is updated for companion sync.
+  const wasPausedRef = useRef(false);
+  useEffect(() => {
+    if (pauseDialogAction === 'song-pause' && isPlaying) {
+      wasPausedRef.current = true;
+      setIsPlaying(false);
+      setIsSongPlaying(false);
+    } else if (pauseDialogAction === null && wasPausedRef.current && !isPlaying && phase === 'playing') {
+      wasPausedRef.current = false;
+      // Resume: only if we paused while in the playing phase
+      // The audio hook will handle resuming audio playback
+      setIsPlaying(true);
+      setIsSongPlaying(true);
+    }
+  }, [pauseDialogAction, isPlaying, phase, setIsSongPlaying]);
 
   // ── Game settings (display preferences) ──
   const { showBackgroundVideo, useAnimatedBackground } = useGameSettings();

@@ -362,7 +362,16 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     }, [modeInfo?.command]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Lokaler State fuer das gesamte Setup
-    const [difficulty, setDifficulty] = React.useState<Difficulty>('medium');
+    // Initialize difficulty from the desktop's global setting (synced via gamestate)
+    const [difficulty, setDifficulty] = React.useState<Difficulty>(
+      (gameState.difficulty as Difficulty) || 'medium'
+    );
+    // Sync difficulty when the desktop global setting changes
+    React.useEffect(() => {
+      if (gameState.difficulty && gameState.difficulty !== difficulty) {
+        setDifficulty(gameState.difficulty as Difficulty);
+      }
+    }, [gameState.difficulty]);
     const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
     const [settings, setSettings] = useState<Record<string, any>>({}); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [songSelection, setSongSelection] = useState<string>('random');

@@ -282,23 +282,28 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const mirrorScreenId = useMemo((): MirrorScreenId => {
     const screen = activeDesktopScreen || gameState.currentScreen;
     const base = screenToMirrorId(screen);
-    // When Desktop is in PTM/CPTM intro phase, show the intro screen.
+    // When Desktop is in a party game intro phase, show the mode-specific intro screen.
     // Check BOTH activeDesktopScreen and gameState.currentScreen to handle
     // the one-render delay where activeDesktopScreen hasn't updated yet.
-    const isPtmGameScreen = screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'
-      || gameState.currentScreen === 'pass-the-mic-game' || gameState.currentScreen === 'companion-singalong-game';
-    if (isPtmGameScreen && gameState.ptmPhase === 'intro') {
-      // Debug: verify intro detection on companion (remove after fix confirmed)
-      // eslint-disable-next-line no-console
-      console.log('[PTM-Mirror] Showing ptm-intro | activeDesktopScreen=%s, currentScreen=%s, ptmPhase=%s',
-        activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase);
+    const currentScreen = gameState.currentScreen || '';
+    const isPartyGameScreen = screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'
+      || screen === 'medley-game' || screen === 'battle-royale-game'
+      || screen === 'tournament-game' || screen === 'missing-words-game'
+      || screen === 'blind-game' || screen === 'rate-my-song-game'
+      || currentScreen === 'pass-the-mic-game' || currentScreen === 'companion-singalong-game'
+      || currentScreen === 'medley-game' || currentScreen === 'battle-royale-game'
+      || currentScreen === 'tournament-game' || currentScreen === 'missing-words-game'
+      || currentScreen === 'blind-game' || currentScreen === 'rate-my-song-game';
+
+    if (isPartyGameScreen && gameState.ptmPhase === 'intro') {
+      // Route to mode-specific intro screen based on current screen
+      const effectiveScreen = screen || currentScreen;
+      if (effectiveScreen === 'medley-game') return 'medley-intro';
+      if (effectiveScreen === 'battle-royale-game' || effectiveScreen === 'tournament-game') return 'battle-intro';
+      if (effectiveScreen === 'missing-words-game' || effectiveScreen === 'blind-game') return 'competitive-intro';
+      if (effectiveScreen === 'rate-my-song-game') return 'rate-my-song-intro';
+      // Default: PTM/CPTM intro
       return 'ptm-intro';
-    }
-    // Debug: log when NOT showing intro despite being on PTM game screen
-    if (isPtmGameScreen) {
-      // eslint-disable-next-line no-console
-      console.log('[PTM-Mirror] NOT showing intro | activeDesktopScreen=%s, currentScreen=%s, ptmPhase=%s',
-        activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase);
     }
     return base;
   }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase]);

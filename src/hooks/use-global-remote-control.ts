@@ -286,6 +286,13 @@ export function useGlobalRemoteControl({
         window.dispatchEvent(new CustomEvent('remote-party-leave-cancel', { detail: {} }));
         break;
 
+      // --- Companion end song early in party mode → show party-leave dialog ---
+      case 'companion_end_early':
+        // Trigger the same flow as Escape key when in a party game:
+        // pause the game and show the party-leave dialog
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        break;
+
       // --- Toggle fullscreen ---
       case 'fullscreen':
         window.dispatchEvent(new Event('toggle-fullscreen'));

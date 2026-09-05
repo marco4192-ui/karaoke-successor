@@ -50,7 +50,7 @@ export function useRemoteControl({
   stop,
   onBack,
   onEnd,
-  pollInterval = 500,
+  pollInterval = 200,
 }: UseRemoteControlProps) {
   // Use refs so the polling interval isn't torn down and recreated
   // every time isPlaying / isAdPlaying change.

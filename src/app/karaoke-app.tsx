@@ -84,19 +84,27 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('ptm-phase-changed', handlePhaseChange);
   }, [screen]);
 
-  // When entering a PTM/CPTM game screen, ensure 'intro' phase is set
-  // SYNCHRONOUSLY before the sync loop fires. Using useLayoutEffect
-  // guarantees ptmPhase='intro' is available in the same render's
-  // sync useEffect, eliminating the one-POST timing gap where
+  // When entering a party game screen (PTM/CPTM/Medley/Battle/Competitive/RateMySong),
+  // ensure 'intro' phase is set SYNCHRONOUSLY before the sync loop fires.
+  // Using useLayoutEffect guarantees ptmPhase='intro' is available in the same
+  // render's sync useEffect, eliminating the one-POST timing gap where
   // the companion would see ptmPhase=null.
+  const isPartyGameScreen = screen === 'pass-the-mic-game'
+    || screen === 'companion-singalong-game'
+    || screen === 'medley-game'
+    || screen === 'battle-royale-game'
+    || screen === 'tournament-game'
+    || screen === 'missing-words-game'
+    || screen === 'blind-game'
+    || screen === 'rate-my-song-game';
   useLayoutEffect(() => {
-    if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
+    if (isPartyGameScreen) {
       // Always ensure 'intro' is set when entering a game screen with null phase.
       // Don't overwrite a phase that was already set (e.g. 'countdown' from a fast start).
       setPtmPhase(prev => {
         if (prev === null) {
           // eslint-disable-next-line no-console
-          console.log('[PTM-Phase] Safety net (sync): setting intro (was null), screen=%s', screen);
+          console.log('[Party-Phase] Safety net (sync): setting intro (was null), screen=%s', screen);
           return 'intro';
         }
         return prev;
@@ -104,7 +112,7 @@ export default function KaraokeZERO() {
     } else {
       setPtmPhase(null);
     }
-  }, [screen]);
+  }, [screen, isPartyGameScreen]);
 
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
@@ -699,9 +707,36 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const syncScreen = async () => {
       try {
-        const isPtmIntro = ptmPhase === 'intro' && (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game');
-        const introData = isPtmIntro
-          ? {
+        // ── Build intro data for ALL party game modes ──
+        const isPartyIntro = ptmPhase === 'intro' && isPartyGameScreen;
+        // Type matches ptmIntroData shape from mobile-types.ts GameState
+        type PartyIntroData = {
+          songTitle?: string;
+          songArtist?: string;
+          startPlayerName?: string;
+          startPlayerAvatar?: string;
+          startPlayerColor?: string;
+          playerCount?: number;
+          isMedley?: boolean;
+          medleySnippetCount?: number;
+          roundNumber?: number;
+          sharedMicName?: string;
+          mediaLoaded?: boolean;
+          partyGameMode?: string;
+        } | null;
+        let introData: PartyIntroData = null;
+
+        if (isPartyIntro) {
+          const gameMode = party.selectedGameMode;
+          // Common base fields
+          const base = {
+            mediaLoaded: true,
+            partyGameMode: gameMode || undefined,
+          };
+
+          if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
+            introData = {
+              ...base,
               songTitle: party.passTheMicSong?.title || party.cptmSong?.title || undefined,
               songArtist: party.passTheMicSong?.artist || party.cptmSong?.artist || undefined,
               startPlayerName: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.name || undefined,
@@ -711,14 +746,48 @@ export default function KaraokeZERO() {
               isMedley: party.ptmSongSelection === 'medley' || undefined,
               medleySnippetCount: party.medleySongs?.length || undefined,
               sharedMicName: party.passTheMicSettings?.sharedMicName || undefined,
-              mediaLoaded: true,
-            }
-          : null;
-        // Debug: log PTM intro sync state (remove after verifying fix)
-        if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
+            };
+          } else if (screen === 'medley-game') {
+            introData = {
+              ...base,
+              songTitle: party.medleySongs?.[0]?.song?.title || undefined,
+              songArtist: party.medleySongs?.[0]?.song?.artist || undefined,
+              startPlayerName: party.medleyPlayers?.[0]?.name || undefined,
+              startPlayerAvatar: party.medleyPlayers?.[0]?.avatar || undefined,
+              startPlayerColor: party.medleyPlayers?.[0]?.color || undefined,
+              playerCount: party.medleyPlayers?.length || undefined,
+              isMedley: true,
+              medleySnippetCount: party.medleySongs?.length || undefined,
+            };
+          } else if (screen === 'battle-royale-game') {
+            introData = {
+              ...base,
+              playerCount: party.battleRoyaleGame?.players?.length || undefined,
+              startPlayerName: party.battleRoyaleGame?.players?.[0]?.name || undefined,
+              startPlayerColor: party.battleRoyaleGame?.players?.[0]?.color || undefined,
+            };
+          } else if (screen === 'rate-my-song-game') {
+            introData = {
+              ...base,
+              playerCount: party.rateMySongPlayerIds?.length || undefined,
+            };
+          } else {
+            // Generic competitive modes (missing-words, blind, tournament)
+            introData = {
+              ...base,
+              songTitle: party.competitiveGame?.rounds?.[0]?.songTitle || undefined,
+              playerCount: party.competitiveGame?.players?.length || undefined,
+              startPlayerName: party.competitiveGame?.players?.[0]?.name || undefined,
+              startPlayerColor: party.competitiveGame?.players?.[0]?.color || undefined,
+            };
+          }
+        }
+
+        // Debug: log party intro sync state
+        if (isPartyGameScreen) {
           // eslint-disable-next-line no-console
-          console.log('[PTM-Sync] screen=%s, ptmPhase=%s, isPtmIntro=%s, hasIntroData=%s',
-            screen, ptmPhase, isPtmIntro, !!introData);
+          console.log('[Party-Sync] screen=%s, ptmPhase=%s, isPartyIntro=%s, hasIntroData=%s',
+            screen, ptmPhase, isPartyIntro, !!introData);
         }
         await fetch('/api/mobile', {
           method: 'POST',
@@ -750,7 +819,7 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, party]);
+  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, isPartyGameScreen, party]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);
