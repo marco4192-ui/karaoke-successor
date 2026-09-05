@@ -3,15 +3,22 @@
  * Karaoke Successor — Online Leaderboard API v3
  * Copyright-safe: songs identified by SHA-256 fingerprint hash only.
  * Anti-cheat: score plausibility + integrity hash verification.
+ * Ownership: every write to a profile requires its sync_code (8 chars,
+ * generated at registration). The sync_code also unlocks the profile
+ * sync backup and profile deletion.
  *
  * Endpoints:
- *   GET  /                        API info
- *   POST /profiles                Register / upsert profile
- *   PUT  /profiles/{uid}          Update privacy & display settings
- *   POST /scores                  Submit score (upsert: higher score wins, with anti-cheat)
- *   GET  /scores/batch?hashes=..  Batch-fetch leaderboards for multiple song hashes
- *   GET  /leaderboard/song/{hash} Per-song leaderboard (Top N)
- *   GET  /leaderboard/global      Global player ranking
+ *   GET    /                          API info
+ *   POST   /profiles                  Register / upsert profile (upsert requires sync_code)
+ *   GET    /profiles/{uid}            Public profile data (no sync_code in response)
+ *   PUT    /profiles/{uid}            Update settings (requires sync_code)
+ *   DELETE /profiles/{uid}            Delete profile + scores (requires sync_code)
+ *   PUT    /profiles/{uid}/sync       Store profile sync snapshot (requires sync_code)
+ *   GET    /profiles/sync/{code}      Retrieve sync snapshot by code
+ *   POST   /scores                    Submit score (requires profile sync_code)
+ *   GET    /scores/batch?hashes=..    Batch-fetch leaderboards for multiple song hashes
+ *   GET    /leaderboard/song/{hash}   Per-song leaderboard (Top N)
+ *   GET    /leaderboard/global        Global player ranking
  */
 
 require_once __DIR__ . '/config.php';
@@ -46,8 +53,9 @@ try {
 // ============================================================
 function routeProfiles(array $parts, string $method, string $TP, string $TS): void {
     $uid = $parts[1] ?? null;
+    $sub = $parts[2] ?? null;
 
-    // POST /profiles — register or upsert
+    // POST /profiles — register or upsert (upsert requires the sync_code)
     if ($method === 'POST' && !$uid) {
         $d = body();
         requireFields($d, ['profile_uid', 'display_name']);
@@ -56,47 +64,199 @@ function routeProfiles(array $parts, string $method, string $TP, string $TS): vo
         if (!isValidUUID($uid)) err('Invalid profile_uid');
         if (mb_strlen($name) < 1 || mb_strlen($name) > 64) err('display_name: 1-64 chars');
         $color = preg_match('/^#[0-9a-f]{6}$/i', $d['color'] ?? '') ? $d['color'] : '#8B5CF6';
-        $cc    = $d['country_code'] ?? null;
+        $cc    = ($d['country_code'] ?? '') === '' ? null : $d['country_code'];
         if ($cc !== null && !isValidCountry($cc)) err('Invalid country_code');
 
-        $sql = "INSERT INTO `$TP` (`profile_uid`,`display_name`,`color`,`country_code`)
-               VALUES (?,?,?,?)
+        $code = resolveSyncCode($uid, $d['sync_code'] ?? null, $TP);
+
+        db()->prepare("INSERT INTO `$TP`
+                (`profile_uid`,`display_name`,`color`,`country_code`,`sync_code`)
+               VALUES (?,?,?,?,?)
                ON DUPLICATE KEY UPDATE
                    `display_name` = VALUES(`display_name`),
                    `color`        = VALUES(`color`),
-                   `country_code` = VALUES(`country_code`)";
-        db()->prepare($sql)->execute([$uid, $name, $color, $cc]);
-        fetchProfile($uid, $TP); return;
+                   `country_code` = VALUES(`country_code`)")
+            ->execute([$uid, $name, $color, $cc, $code]);
+        fetchProfile($uid, $TP, true); return;
     }
 
-    // PUT /profiles/{uid} — update settings
-    if ($method === 'PUT' && $uid) {
+    // PUT /profiles/{uid}/sync — store profile sync snapshot
+    if ($method === 'PUT' && $uid && $sub === 'sync') { syncUpload($uid, $TP); return; }
+
+    // GET /profiles/sync/{code} — retrieve a sync snapshot by code
+    if ($method === 'GET' && $uid === 'sync' && $sub) { syncDownload($sub, $TP); return; }
+
+    // PUT /profiles/{uid} — update settings (requires sync_code)
+    // All fields are sent; the statement is fully static, request data is
+    // bound through placeholders only.
+    if ($method === 'PUT' && $uid && !$sub) {
         $d = body();
-        $sets = []; $vals = [];
-        $map = ['display_name'=>'s','color'=>'s','country_code'=>'s','show_on_board'=>'i','show_country'=>'i'];
-        foreach ($map as $k => $t) {
-            if (!array_key_exists($k, $d)) continue;
-            $sets[] = "`$k` = ?";
-            $vals[] = $t === 'i' ? (int)$d[$k] : clean((string)$d[$k]);
-        }
-        if (!$sets) err('No valid fields');
-        $vals[] = $uid;
-        db()->prepare("UPDATE `$TP` SET " . implode(', ', $sets) . " WHERE `profile_uid` = ?")->execute($vals);
-        fetchProfile($uid, $TP); return;
+        requireOwnership($uid, $d, $TP);
+        requireFields($d, ['display_name', 'color', 'show_on_board', 'show_country']);
+        $name = clean((string)$d['display_name']);
+        if (mb_strlen($name) < 1 || mb_strlen($name) > 64) err('display_name: 1-64 chars');
+        $color = preg_match('/^#[0-9a-f]{6}$/i', $d['color'] ?? '') ? $d['color'] : '#8B5CF6';
+        $cc    = ($d['country_code'] ?? '') === '' ? null : $d['country_code'];
+        if ($cc !== null && !isValidCountry($cc)) err('Invalid country_code');
+
+        db()->prepare("UPDATE `$TP` SET
+                `display_name` = ?, `color` = ?, `country_code` = ?,
+                `show_on_board` = ?, `show_country` = ?
+             WHERE `profile_uid` = ?")
+            ->execute([$name, $color, $cc, (int)$d['show_on_board'], (int)$d['show_country'], $uid]);
+        fetchProfile($uid, $TP, true); return;
+    }
+
+    // DELETE /profiles/{uid} — remove profile + all scores (GDPR)
+    if ($method === 'DELETE' && $uid && !$sub) {
+        $d = body();
+        requireOwnership($uid, $d, $TP);
+        db()->prepare("DELETE FROM `$TP` WHERE `profile_uid` = ?")->execute([$uid]);
+        json(['ok' => true, 'deleted' => $uid]);
     }
 
     // GET /profiles/{uid}
-    if ($method === 'GET' && $uid) { fetchProfile($uid, $TP); return; }
+    if ($method === 'GET' && $uid && !$sub) { fetchProfile($uid, $TP, false); return; }
 
     err('Not found', 404);
 }
 
-function fetchProfile(string $uid, string $TP): void {
-    $s = db()->prepare("SELECT * FROM `$TP` WHERE `profile_uid` = ?");
+// ── Sync-code helpers ──────────────────────────────────────
+
+/** Validate the sync_code format (8 chars A-Z0-9). */
+function isValidSyncCode(string $c): bool {
+    return (bool) preg_match('/^[A-Z0-9]{8}$/', $c);
+}
+
+/**
+ * Determine the sync_code for a register/upsert request.
+ * - New profile: use the provided code (if valid + free) or generate one.
+ * - Existing profile: the provided code must match (prevents take-over of
+ *   an existing identity by re-registering its UUID).
+ * Returns the authoritative code for this profile.
+ */
+function resolveSyncCode(string $uid, $provided, string $TP): string {
+    $cur = db()->prepare("SELECT `sync_code` FROM `$TP` WHERE `profile_uid` = ?");
+    $cur->execute([$uid]);
+    $existing = $cur->fetchColumn();
+
+    if ($provided !== null && $provided !== '') {
+        $provided = strtoupper(clean((string)$provided));
+        if (!isValidSyncCode($provided)) err('Invalid sync_code (8 chars A-Z0-9)');
+    }
+
+    if ($existing !== false && $existing !== null) {
+        if ($provided === null || $provided === '' || !hash_equals((string)$existing, $provided)) {
+            err('Profile already exists — provide the matching sync_code', 403);
+        }
+        return (string)$existing;
+    }
+
+    if ($provided !== null && $provided !== '') {
+        $dup = db()->prepare("SELECT 1 FROM `$TP` WHERE `sync_code` = ? AND `profile_uid` <> ?");
+        $dup->execute([$provided, $uid]);
+        if ($dup->fetchColumn()) err('sync_code already in use', 409);
+        return $provided;
+    }
+
+    return generateSyncCode($TP);
+}
+
+/** Generate a random, unused 8-char sync code. */
+function generateSyncCode(string $TP): string {
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for ($try = 0; $try < 20; $try++) {
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $chk = db()->prepare("SELECT 1 FROM `$TP` WHERE `sync_code` = ?");
+        $chk->execute([$code]);
+        if (!$chk->fetchColumn()) return $code;
+    }
+    err('Could not generate a unique sync_code', 500);
+}
+
+/**
+ * Verify that the request carries the sync_code owning this profile.
+ * Rejects unauthenticated writes to foreign profiles.
+ */
+function requireOwnership(string $uid, array $d, string $TP): void {
+    $cur = db()->prepare("SELECT `sync_code` FROM `$TP` WHERE `profile_uid` = ?");
+    $cur->execute([$uid]);
+    $existing = $cur->fetchColumn();
+    if ($existing === false) err('Profile not found', 404);
+    $provided = strtoupper(clean((string)($d['sync_code'] ?? '')));
+    if ($provided === '' || $existing === null || !hash_equals((string)$existing, $provided)) {
+        err('Invalid or missing sync_code for this profile', 403);
+    }
+}
+
+/**
+ * Fetch a profile. $withCode controls whether the sync_code is included:
+ * it is an ownership secret and must only be returned to responses that
+ * already presented it (register/update), never to public GETs.
+ */
+function fetchProfile(string $uid, string $TP, bool $withCode): void {
+    if ($withCode) {
+        $s = db()->prepare("SELECT * FROM `$TP` WHERE `profile_uid` = ?");
+    } else {
+        $s = db()->prepare("SELECT `profile_uid`,`display_name`,`color`,`country_code`,`show_on_board`,`show_country`,`total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`created_at`,`updated_at` FROM `$TP` WHERE `profile_uid` = ?");
+    }
     $s->execute([$uid]);
     $p = $s->fetch() ?: null;
     if (!$p) err('Profile not found', 404);
     json($p);
+}
+
+// ── Profile sync (cross-device backup) ─────────────────────
+
+/** PUT /profiles/{uid}/sync — store profile + highscores snapshot. */
+function syncUpload(string $uid, string $TP): void {
+    $d = body();
+    requireFields($d, ['profile']);
+    requireOwnership($uid, $d, $TP);
+
+    $rawBody = file_get_contents('php://input');
+    if (strlen($rawBody) > 1024 * 1024) err('Sync payload too large (max 1 MB)', 413);
+
+    $snapshot = json_encode($d['profile'], JSON_UNESCAPED_UNICODE);
+    if ($snapshot === false || strlen($snapshot) > 768 * 1024) err('Profile snapshot invalid or too large', 400);
+
+    $scores = null;
+    if (isset($d['highscores']) && $d['highscores'] !== null) {
+        $scores = json_encode($d['highscores'], JSON_UNESCAPED_UNICODE);
+        if ($scores === false) err('Invalid highscores payload', 400);
+    }
+
+    db()->prepare("INSERT INTO `ks_profile_sync` (`profile_uid`,`snapshot`,`scores`)
+            VALUES (?,?,?)
+            ON DUPLICATE KEY UPDATE
+                `snapshot` = VALUES(`snapshot`),
+                `scores`   = VALUES(`scores`)")
+        ->execute([$uid, $snapshot, $scores]);
+    json(['ok' => true]);
+}
+
+/** GET /profiles/sync/{code} — retrieve the snapshot behind a sync code. */
+function syncDownload(string $code, string $TP): void {
+    $code = strtoupper(clean($code));
+    if (!isValidSyncCode($code)) err('Invalid sync code');
+
+    $s = db()->prepare("SELECT s.`profile_uid`, s.`snapshot`, s.`scores`, s.`updated_at`
+                        FROM `ks_profile_sync` s
+                        JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
+                        WHERE p.`sync_code` = ?");
+    $s->execute([$code]);
+    $row = $s->fetch();
+    if (!$row) err('No synced profile found for this code', 404);
+
+    json([
+        'profile_uid' => $row['profile_uid'],
+        'profile'     => json_decode((string)$row['snapshot'], true),
+        'highscores'  => $row['scores'] !== null ? json_decode((string)$row['scores'], true) : null,
+        'updated_at'  => $row['updated_at'],
+    ]);
 }
 
 // ============================================================
@@ -124,11 +284,16 @@ function submitScore(string $TP, string $TS): void {
     if (!in_array($gt, ['s','d'])) err('game_type: s or d');
     if ($score < 0 || $maxSc < 1) err('Invalid score');
 
-    // Profile must exist & opted in
-    $p = db()->prepare("SELECT `show_on_board` FROM `$TP` WHERE `profile_uid` = ?");
+    // Profile must exist, be owned by the caller (sync_code), and opted in
+    $p = db()->prepare("SELECT `show_on_board`, `sync_code` FROM `$TP` WHERE `profile_uid` = ?");
     $p->execute([$uid]);
     $prof = $p->fetch();
     if (!$prof) err('Profile not found — register first', 404);
+    $providedCode = strtoupper(clean((string)($d['sync_code'] ?? '')));
+    if ($providedCode === '' || $prof['sync_code'] === null
+        || !hash_equals((string)$prof['sync_code'], $providedCode)) {
+        err('Invalid or missing sync_code for this profile', 403);
+    }
     if (!(int)$prof['show_on_board']) err('Profile opted out');
 
     $acc  = min(100, max(0, (float)($d['accuracy'] ?? 0)));

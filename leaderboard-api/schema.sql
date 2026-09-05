@@ -23,6 +23,7 @@ CREATE TABLE `ks_profiles` (
   `country_code`   CHAR(2)      NULL     DEFAULT NULL     COMMENT 'ISO 3166-1 alpha-2, nullable',
   `show_on_board`  TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Opt-in to leaderboard visibility',
   `show_country`   TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Show country flag on leaderboard',
+  `sync_code`      CHAR(8)      NULL     DEFAULT NULL     COMMENT 'Profile ownership token (8 chars A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.',
   `total_score`    BIGINT       NOT NULL DEFAULT 0       COMMENT 'Cached sum of best scores',
   `best_score`     INT          NOT NULL DEFAULT 0       COMMENT 'Cached single best score',
   `songs_played`   INT          NOT NULL DEFAULT 0       COMMENT 'Cached count of distinct songs with scores',
@@ -30,7 +31,27 @@ CREATE TABLE `ks_profiles` (
   `avg_accuracy`   DECIMAL(5,2) NOT NULL DEFAULT 0.00   COMMENT 'Cached average accuracy',
   `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`profile_uid`)
+  PRIMARY KEY (`profile_uid`),
+  UNIQUE KEY `uq_sync_code` (`sync_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Table: ks_profile_sync
+-- Private per-profile backup used by the "profile sync" feature.
+-- snapshot: the full local profile (name, color, country, xp,
+--   achievements, stats, privacy settings).
+-- scores:   the local highscore list. NOTE: this is personal backup
+--   data and may contain local song titles — it is never exposed on
+--   any public leaderboard and only returned to whoever presents the
+--   matching sync_code.
+-- -----------------------------------------------------------
+CREATE TABLE `ks_profile_sync` (
+  `profile_uid` VARCHAR(36) NOT NULL,
+  `snapshot`    JSON        NOT NULL COMMENT 'Full profile snapshot (JSON)',
+  `scores`      JSON        NULL     COMMENT 'Highscore snapshot (JSON), optional',
+  `updated_at`  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`profile_uid`),
+  CONSTRAINT `fk_sync_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
