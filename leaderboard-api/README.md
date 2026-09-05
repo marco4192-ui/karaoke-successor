@@ -30,29 +30,57 @@ Copyright-safe: songs are identified only by a SHA-256 fingerprint hash
 
 ## Authentication
 
-All `POST`/`PUT` requests require the header `X-API-Key` with the value of
-`API_SECRET`. The desktop app ships this key in its client bundle
+All `POST`/`PUT`/`DELETE` requests require the header `X-API-Key` with the
+value of `API_SECRET`. The desktop app ships this key in its client bundle
 (`NEXT_PUBLIC_LEADERBOARD_API_KEY`) — it is therefore **not** a security
 boundary against determined attackers, only a spam deterrent. GET requests
 need no key.
+
+**Profile ownership:** every write to a profile (score submission, settings
+update, sync snapshot, deletion) additionally requires the profile's
+`sync_code` (8 chars A-Z0-9). The server generates one at registration and
+returns it in the register/update responses; clients must persist it. This
+prevents anyone with the API key from writing to *foreign* profiles.
+Public `GET /profiles/{uid}` responses never contain the sync_code.
 
 ## Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | API info |
-| POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`) |
-| GET | `/profiles/{uid}` | Fetch profile |
-| PUT | `/profiles/{uid}` | Update profile fields (display name, color, country, privacy) |
-| POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) |
+| POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`, optional `sync_code`). Upserting an existing profile requires its sync_code; new profiles get one generated when omitted. |
+| GET | `/profiles/{uid}` | Public profile data (no sync_code) |
+| PUT | `/profiles/{uid}` | Update settings — requires `sync_code`; all fields expected |
+| DELETE | `/profiles/{uid}` | Delete profile + scores + sync snapshot — requires `sync_code` (GDPR) |
+| PUT | `/profiles/{uid}/sync` | Store private profile sync snapshot — requires `sync_code` |
+| GET | `/profiles/sync/{code}` | Retrieve profile sync snapshot by code |
+| POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code` |
 | GET | `/leaderboard/song/{hash}?game_type=s|d&limit=N` | Per-song Top N |
 | GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
 
-Submit-score payload (all required unless noted):
+## Profile sync (cross-device)
+
+The client stores a private backup of a profile (display data, XP,
+achievements, stats, privacy, and optionally the local highscores) under
+the profile's sync code:
+
+```
+PUT /profiles/{uid}/sync      { "sync_code": "AB12CD34", "profile": {...}, "highscores": {...} }
+GET /profiles/sync/AB12CD34   → { "profile_uid", "profile", "highscores", "updated_at" }
+```
+
+The backup is **personal data**: the highscores may contain local song
+titles. It never appears on any public leaderboard and is only returned to
+whoever presents the sync code. Snapshots are capped at 1 MB per request.
+
+## Score submission
+
+Payload (all required unless noted):
 
 ```json
 {
   "profile_uid": "uuid-v4",
+  "sync_code": "AB12CD34",
   "song_hash": "v1:0123456789abcdef",
   "song_hash_v2": "v2:… (optional)",
   "game_type": "s",
@@ -73,8 +101,10 @@ Response: `{ "ok": true, "rank": 1, "is_new_best": true, "verified": true }`
 
 `verified` semantics: a score is verified only when a proof package is sent
 and passes integrity hash, timestamp window, plausibility, and
-points-per-tick re-computation. Scores without proof are accepted but stored
-as unverified.
+points-per-tick re-computation. Points-per-tick is re-computed from the
+claimed tick counts under the client scoring model
+(`tickPool = 70% (or 80% without golden notes) of max_score`). Scores
+without proof are accepted but stored as unverified.
 
 ## Privacy
 
