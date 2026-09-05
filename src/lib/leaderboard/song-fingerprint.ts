@@ -10,6 +10,7 @@
  */
 
 import { sha256 } from './song-fingerprint-internal';
+import type { Song } from '@/types/game';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -121,67 +122,42 @@ export function generateSongHashV2(input: FingerprintInputV2): { v1Hash: string;
   return { v1Hash, v2Hash };
 }
 
+// ── Song-level helpers ─────────────────────────────────────
+
 /**
- * Batch-generate v1 hashes for all songs in a library.
- * Returns a Map<songId, hash>.
+ * Extract a song's notes in fingerprint input format.
+ * Single source of truth — the submission path and every UI hash
+ * (song modal, leaderboard preview) must produce byte-identical input.
  */
-export function generateSongHashes(
-  songs: Array<{ id: string; artist: string; title: string; notes?: RawNote[]; parsedNotes?: Array<{ startBeat: number; duration: number; pitch: number }> }>,
-  gameType: 's' | 'd' = 's'
-): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const song of songs) {
-    const notes = (song.notes ?? song.parsedNotes ?? []).map(n => ({
-      type: ':',
-      startBeat: n.startBeat,
-      duration: n.duration,
-      pitch: n.pitch,
-      lyric: '',
-    }));
-    map.set(song.id, generateSongHash({
-      artist: song.artist,
-      title: song.title,
-      gameType,
-      notes,
-    }));
+export function songNotesFromSong(song: Song): RawNote[] {
+  const allNotes: RawNote[] = [];
+  const lyrics = song.lyrics || [];
+  for (const line of lyrics) {
+    const lineNotes = line.notes || [];
+    for (const n of lineNotes) {
+      allNotes.push({
+        type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
+        startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
+        duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
+        pitch: n.pitch - 48,
+        lyric: '',
+      });
+    }
   }
-  return map;
+  return allNotes;
 }
 
 /**
- * Batch-generate v2 hashes for all songs in a library.
- * Returns a Map<songId, { v1Hash, v2Hash }>.
+ * Copyright-safe fingerprint for a Song object.
+ * gameType: 's' = single/duel (default), 'd' = duet.
  */
-export function generateSongHashesV2(
-  songs: Array<{
-    id: string; artist: string; title: string; bpm?: number; duration?: number;
-    notes?: RawNote[]; parsedNotes?: Array<{ startBeat: number; duration: number; pitch: number; isGolden?: boolean }>;
-  }>,
-  gameType: 's' | 'd' = 's'
-): Map<string, { v1Hash: string; v2Hash: string }> {
-  const map = new Map<string, { v1Hash: string; v2Hash: string }>();
-  for (const song of songs) {
-    const rawInput = song.notes ?? song.parsedNotes ?? [];
-    const notes = rawInput.map(n => ({
-      type: ('type' in n && n.type === '*') || ('isGolden' in n && n.isGolden) ? '*' : ':',
-      startBeat: n.startBeat,
-      duration: n.duration,
-      pitch: n.pitch,
-      lyric: '',
-    }));
-    const goldenCount = rawInput.filter(n => ('type' in n && n.type === '*') || ('isGolden' in n && n.isGolden)).length;
-    map.set(song.id, generateSongHashV2({
-      artist: song.artist,
-      title: song.title,
-      gameType,
-      notes,
-      bpm: song.bpm,
-      totalNotes: notes.length,
-      goldenNoteCount: goldenCount,
-      songDurationMs: song.duration,
-    }));
-  }
-  return map;
+export function songHashFromSong(song: Song, gameType: 's' | 'd' = 's'): string {
+  return generateSongHash({
+    artist: song.artist,
+    title: song.title,
+    gameType,
+    notes: songNotesFromSong(song),
+  });
 }
 
 // ── Internal: Unicode Normalization ─────────────────────────

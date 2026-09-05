@@ -12,23 +12,9 @@ import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
 
 // ── Compute song hash for a song ──
 function computeSongHash(song: Song): Promise<string | null> {
-  return import('@/lib/leaderboard/song-fingerprint').then(({ generateSongHash }) => {
+  return import('@/lib/leaderboard/song-fingerprint').then(({ songHashFromSong }) => {
     try {
-      const rawNotes: { type: string; startBeat: number; duration: number; pitch: number; lyric: string }[] = [];
-      const lyrics = song.lyrics || [];
-      for (const line of lyrics) {
-        const lineNotes = line.notes || [];
-        for (const n of lineNotes) {
-          rawNotes.push({
-            type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
-            startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
-            duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
-            pitch: n.pitch - 48,
-            lyric: '',
-          });
-        }
-      }
-      return generateSongHash({ artist: song.artist, title: song.title, gameType: 's', notes: rawNotes });
+      return songHashFromSong(song);
     } catch {
       return null;
     }

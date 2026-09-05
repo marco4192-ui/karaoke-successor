@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useGameStore } from '@/lib/game/store';
-import { Song, GameMode, HighscoreEntry } from '@/types/game';
+import { Song } from '@/types/game';
 import { TrophyIcon } from './constants';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
@@ -33,25 +33,10 @@ function useSongHash(song: Song): string | null {
 
   useEffect(() => {
     let cancelled = false;
-    import('@/lib/leaderboard/song-fingerprint').then(({ generateSongHash }) => {
+    import('@/lib/leaderboard/song-fingerprint').then(({ songHashFromSong }) => {
       if (cancelled) return;
       try {
-        const rawNotes: { type: string; startBeat: number; duration: number; pitch: number; lyric: string }[] = [];
-        const lyrics = song.lyrics || [];
-        for (const line of lyrics) {
-          const lineNotes = line.notes || [];
-          for (const n of lineNotes) {
-            rawNotes.push({
-              type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
-              startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
-              duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
-              pitch: n.pitch - 48,
-              lyric: '',
-            });
-          }
-        }
-        const h = generateSongHash({ artist: song.artist, title: song.title, gameType: 's', notes: rawNotes });
-        setHash(h);
+        setHash(songHashFromSong(song));
       } catch {
         setHash(null);
       }

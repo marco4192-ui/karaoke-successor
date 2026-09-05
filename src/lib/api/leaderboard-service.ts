@@ -5,18 +5,17 @@
  */
 
 import type {
-  OnlineProfile, OnlineScoreEntry, BatchScoresResponse,
+  OnlineProfile, OnlineScoreEntry,
   SubmitScorePayload, SubmitScoreResult, GlobalLeaderboardEntry,
   LeaderboardGameType, ScoreProofPackage,
 } from '@/lib/leaderboard/types';
 import {
-  generateSongHash, generateSongHashV2,
-  type FingerprintInput, type RawNote, type FingerprintInputV2,
+  generateSongHash, generateSongHashV2, songNotesFromSong,
 } from '@/lib/leaderboard/song-fingerprint';
 import type { ScoringMetadata } from '@/lib/game/scoring';
 import type { PlayerProfile, Song, Difficulty, GameMode } from '@/types/game';
 
-const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
+export const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
 // ── Internal helpers ────────────────────────────────────
 
@@ -56,26 +55,6 @@ function toApiDifficulty(d: Difficulty): 'easy' | 'normal' | 'hard' {
   return d === 'easy' ? 'easy' : d === 'hard' ? 'hard' : 'normal';
 }
 
-/** Extract raw notes from a Song for fingerprinting */
-function extractRawNotes(song: Song): RawNote[] {
-  // Notes are nested in song.lyrics[].notes (not song.notes directly)
-  const allNotes: RawNote[] = [];
-  const lyrics = song.lyrics || [];
-  for (const line of lyrics) {
-    const lineNotes = line.notes || [];
-    for (const n of lineNotes) {
-      allNotes.push({
-        type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
-        startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
-        duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
-        pitch: n.pitch - 48,
-        lyric: '',
-      });
-    }
-  }
-  return allNotes;
-}
-
 // ── Public API ──────────────────────────────────────────
 
 /** Test if the API is reachable */
@@ -94,20 +73,6 @@ async function registerProfile(profile: PlayerProfile): Promise<OnlineProfile> {
     method: 'POST',
     body: JSON.stringify({
       profile_uid: profile.id,
-      display_name: profile.name,
-      color: profile.color,
-      country_code: profile.country || null,
-      show_on_board: profile.privacy?.showOnLeaderboard ? 1 : 0,
-      show_country: profile.privacy?.showCountry ? 1 : 0,
-    }),
-  });
-}
-
-/** Update profile privacy/settings */
-async function updateProfileSettings(profile: PlayerProfile): Promise<OnlineProfile> {
-  return request<OnlineProfile>(`/profiles/${profile.id}`, {
-    method: 'PUT',
-    body: JSON.stringify({
       display_name: profile.name,
       color: profile.color,
       country_code: profile.country || null,
@@ -137,7 +102,7 @@ async function submitScore(params: {
 }): Promise<SubmitScoreResult> {
   const { profile, song, gameMode, score, maxScore, accuracy, maxCombo, difficulty, rating, notesHit, notesMissed, proof, scoringMetadata } = params;
 
-  const rawNotes = extractRawNotes(song);
+  const rawNotes = songNotesFromSong(song);
   const gameType = toGameType(gameMode);
 
   // Generate v1 hash (always, for backwards compatibility)
@@ -193,20 +158,6 @@ async function submitScore(params: {
   });
 }
 
-/** Batch-fetch leaderboard scores for multiple song hashes */
-async function fetchBatchScores(
-  songHashes: string[],
-  gameType: LeaderboardGameType = 's',
-  limit = 5000
-): Promise<BatchScoresResponse> {
-  if (songHashes.length === 0) return {};
-  const hashesParam = songHashes.slice(0, 200).join(',');
-  const result = await request<{ scores: BatchScoresResponse }>(
-    `/scores/batch?hashes=${encodeURIComponent(hashesParam)}&game_type=${gameType}&limit=${limit}`
-  );
-  return result.scores;
-}
-
 /** Fetch leaderboard for a single song */
 async function fetchSongLeaderboard(
   songHash: string,
@@ -234,9 +185,7 @@ async function fetchGlobalLeaderboard(
 export const leaderboardService = {
   testConnection,
   registerProfile,
-  updateProfileSettings,
   submitScore,
-  fetchBatchScores,
   fetchSongLeaderboard,
   fetchGlobalLeaderboard,
   // Backward-compatible aliases used by UI components
@@ -245,11 +194,4 @@ export const leaderboardService = {
   // Profile sync stubs (not yet implemented — planned for future)
   uploadProfile: async (_profile: PlayerProfile, _highscores: unknown) => ({ success: false, error: 'Not yet implemented' } as { success: boolean; error?: string }),
   downloadProfileByCode: async (_code: string) => null as PlayerProfile | null,
-  // Expose fingerprint for UI use (e.g. computing hashes for library songs)
-  generateSongHash,
-  generateSongHashV2,
 };
-
-// Re-export fingerprint for convenience
-export { generateSongHash, generateSongHashes, generateSongHashV2, generateSongHashesV2 } from '@/lib/leaderboard/song-fingerprint';
-export { ScoreProofBuilder, generateProofPackage, verifyScorePlausibility, verifyIntegrityHash, verifyProofTimestamp } from '@/lib/leaderboard/anti-cheat-proof';
