@@ -107,6 +107,9 @@ jobs:
           Write-Host "=== Toolchain verified ==="
 
       - name: Build Next.js standalone
+        env:
+          NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+          NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
         run: |
           bun run next build --webpack
           if (-not (Test-Path ".next\standalone")) {
@@ -426,6 +429,9 @@ jobs:
           echo "=== Toolchain verified ==="
 
       - name: Build Next.js standalone
+        env:
+          NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+          NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
         run: bun run next build --webpack
 
       - name: Download Node.js portable (macOS)
@@ -593,6 +599,9 @@ jobs:
           echo "=== Toolchain verified ==="
 
       - name: Build Next.js standalone
+        env:
+          NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+          NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
         run: bun run next build --webpack
 
       - name: Download Node.js portable (Linux)
