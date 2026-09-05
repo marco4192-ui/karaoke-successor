@@ -162,7 +162,20 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           tournamentVoteRegistry.clear();
         }
         mutableState.gameState = { ...mutableState.gameState, ...gsPayload };
-        
+
+        // Notify Socket.IO server to push gamestate to all companions
+        try {
+          const { mobileEvents, EVENTS } = require('@/lib/socketio-events');
+          mobileEvents.emit(EVENTS.GAMESTATE_UPDATE, {
+            gameState: {
+              ...mutableState.gameState,
+              queueLength: mutableState.songQueue.filter(q => q.status === 'pending').length,
+            },
+          });
+        } catch {
+          // Socket.IO events module not available (e.g. during build)
+        }
+
         // If song ended, notify all clients and clear pitch data
         if (gsPayload.songEnded) {
           latestPitchData.clear();

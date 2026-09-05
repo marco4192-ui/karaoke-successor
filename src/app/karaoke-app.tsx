@@ -453,6 +453,13 @@ export default function KaraokeZERO() {
       pauseGame();
       setPauseInitiator(fromName || 'Companion');
       party.setPauseDialogAction('song-pause');
+      // Notify Socket.IO to push pause state to companions
+      window.dispatchEvent(new CustomEvent('pause-state-change', {
+        detail: { isPaused: true, pauseInitiator: fromName || 'Companion' },
+      }));
+      window.dispatchEvent(new CustomEvent('desktop-dialog-change', {
+        detail: { dialog: 'song-pause' },
+      }));
     };
     window.addEventListener('remote-companion-pause', handleCompanionPause);
     return () => window.removeEventListener('remote-companion-pause', handleCompanionPause);
@@ -464,6 +471,13 @@ export default function KaraokeZERO() {
       resumeGame();
       setPauseInitiator(null);
       party.setPauseDialogAction(null);
+      // Notify Socket.IO to push resume state to companions
+      window.dispatchEvent(new CustomEvent('pause-state-change', {
+        detail: { isPaused: false, pauseInitiator: null },
+      }));
+      window.dispatchEvent(new CustomEvent('desktop-dialog-change', {
+        detail: { dialog: null },
+      }));
     };
     window.addEventListener('remote-companion-resume', handleCompanionResume);
     return () => window.removeEventListener('remote-companion-resume', handleCompanionResume);
@@ -473,6 +487,13 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const handleShowLeave = () => {
       party.setPauseDialogAction('party-leave');
+      // Notify Socket.IO to push party-leave to companions
+      window.dispatchEvent(new CustomEvent('party-leave-change', {
+        detail: { show: true },
+      }));
+      window.dispatchEvent(new CustomEvent('desktop-dialog-change', {
+        detail: { dialog: 'party-leave' },
+      }));
     };
     window.addEventListener('remote-party-show-leave', handleShowLeave);
     return () => window.removeEventListener('remote-party-show-leave', handleShowLeave);

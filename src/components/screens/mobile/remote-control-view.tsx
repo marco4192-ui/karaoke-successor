@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -186,7 +187,47 @@ export function RemoteControlView({
     }
   };
 
+  // Socket.IO for instant command delivery
+  const socketRef = useRef<Socket | null>(null);
+  const socketConnectedRef = useRef(false);
+
+  useEffect(() => {
+    const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+    });
+
+    socket.on('connect', () => {
+      socketConnectedRef.current = true;
+      // Register as companion if we have a clientId
+      if (clientId) {
+        socket.emit('companion:register', { clientId });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      socketConnectedRef.current = false;
+    });
+
+    socket.on('connect_error', () => {});
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      socketConnectedRef.current = false;
+    };
+  }, [clientId]);
+
   // Send command (with debounce to ignore rapid duplicate presses)
+  // Uses Socket.IO for instant delivery, falls back to HTTP POST
   const lastCommandRef = useRef<{ command: string; timestamp: number } | null>(null);
   const sendCommand = useCallback(async (command: RemoteCommandType) => {
     if (!clientId || !remoteState.hasControl) return;
@@ -200,6 +241,21 @@ export function RemoteControlView({
 
     vibrate();
 
+    // Prefer Socket.IO for instant delivery (no HTTP round-trip)
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('companion:command', {
+        type: command,
+        timestamp: now,
+      });
+      setCommandSent(command);
+      setRemoteState(prev => ({ ...prev, error: null }));
+      if (command === 'play') setIsPlaying(true);
+      if (command === 'pause') setIsPlaying(false);
+      setTimeout(() => setCommandSent(null), 1500);
+      return;
+    }
+
+    // Fallback: HTTP POST
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -217,7 +273,6 @@ export function RemoteControlView({
       if (data.success) {
         setCommandSent(command);
         setRemoteState(prev => ({ ...prev, error: null }));
-        // Update local play/pause state for toggle button
         if (command === 'play') setIsPlaying(true);
         if (command === 'pause') setIsPlaying(false);
         setTimeout(() => setCommandSent(null), 1500);

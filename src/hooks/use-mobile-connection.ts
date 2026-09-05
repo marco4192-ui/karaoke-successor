@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { StorageKeys, setItem, removeItem, getString } from '@/lib/storage';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
 
@@ -93,9 +94,13 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isConnectingRef = useRef(false); // True while a connect attempt is in progress
+  const isConnectingRef = useRef(false);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
+
+  // Socket.IO connection ref
+  const socketRef = useRef<Socket | null>(null);
+  const socketConnectedRef = useRef(false);
 
   // Keep isConnectedRef in sync for use in setTimeout callbacks
   const isConnectedRef = useRef(isConnected);
@@ -103,14 +108,163 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
   // clientIdRef tracks the latest clientId for use in callbacks that run
   // after the component may have re-rendered (e.g. disconnect, wake-up).
-  // Declared early because it's used by disconnect() (line ~172).
   const clientIdRef = useRef(clientId);
   clientIdRef.current = clientId;
 
+  // ─── Process game state update (shared by Socket.IO and HTTP fallback) ───
+  const processGameStateUpdate = useCallback((rawGameState: RawGameState) => {
+    const prevSongEnded = gameStateRef.current.songEnded || false;
+
+    const parsed = parseGameState(rawGameState);
+    // Explicitly update ref so the next poll sees the latest state
+    // immediately, without depending on React render timing.
+    gameStateRef.current = parsed;
+    setGameState(parsed);
+    callbacksRef.current.onGameStateUpdate(parsed);
+
+    const newSongEnded = parsed.songEnded || false;
+    if (newSongEnded && !prevSongEnded) {
+      callbacksRef.current.onSongEnd();
+    }
+  }, []);
+
+  // ─── Socket.IO Connection (real-time, replaces polling) ───
+  useEffect(() => {
+    // Only connect Socket.IO after we have a clientId from HTTP
+    if (!clientId || !isConnected) return;
+
+    const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+    });
+
+    socket.on('connect', () => {
+      console.log('[Socket.IO Companion] Connected:', socket.id);
+      socketConnectedRef.current = true;
+      // Register as companion with our clientId
+      socket.emit('companion:register', { clientId });
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[Socket.IO Companion] Disconnected:', reason);
+      socketConnectedRef.current = false;
+    });
+
+    // ─── Receive game state updates via WebSocket (PUSH, no polling!) ───
+    socket.on('gamestate', (data: { gameState: RawGameState }) => {
+      processGameStateUpdate(data.gameState);
+    });
+
+    // ─── Receive difficulty updates ───
+    socket.on('difficulty', (data: { difficulty: 'easy' | 'medium' | 'hard' }) => {
+      const current = gameStateRef.current;
+      const updated = { ...current, difficulty: data.difficulty };
+      gameStateRef.current = updated;
+      setGameState(updated);
+      callbacksRef.current.onGameStateUpdate(updated);
+    });
+
+    // ─── Receive pause state updates ───
+    socket.on('pause-state', (data: { isPaused: boolean; pauseInitiator: string | null }) => {
+      const current = gameStateRef.current;
+      const updated = { ...current, isPlaying: !data.isPaused, pauseInitiator: data.pauseInitiator };
+      gameStateRef.current = updated;
+      setGameState(updated);
+      callbacksRef.current.onGameStateUpdate(updated);
+    });
+
+    // ─── Receive dialog/overlay updates ───
+    socket.on('desktop-dialog', (data: { dialog: string | null; dialogData?: Record<string, unknown> }) => {
+      const current = gameStateRef.current;
+      const updated = { ...current, desktopDialog: data.dialog as GameState['desktopDialog'] };
+      gameStateRef.current = updated;
+      setGameState(updated);
+      callbacksRef.current.onGameStateUpdate(updated);
+    });
+
+    // ─── Receive party-leave overlay ───
+    socket.on('party-leave', (data: { show: boolean }) => {
+      // Dispatch custom event for the companion UI to react
+      window.dispatchEvent(new CustomEvent('socket-party-leave', { detail: data }));
+    });
+
+    // ─── Receive PTM/party-mode phase changes ───
+    socket.on('ptm-phase', (data: { phase: string; introData?: Record<string, unknown> }) => {
+      const current = gameStateRef.current;
+      const updated = {
+        ...current,
+        ptmPhase: data.phase as GameState['ptmPhase'],
+        ptmIntroData: data.introData as GameState['ptmIntroData'],
+      };
+      gameStateRef.current = updated;
+      setGameState(updated);
+      callbacksRef.current.onGameStateUpdate(updated);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.debug('[Socket.IO Companion] Connection error:', err.message);
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      socketConnectedRef.current = false;
+    };
+  }, [clientId, isConnected, processGameStateUpdate]);
+
+  // ─── HTTP Fallback: Slow polling only when Socket.IO is NOT connected ───
+  // This provides resilience if WebSocket fails or isn't available.
+  // Polls every 3 seconds instead of 500ms, only as a safety net.
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const fallbackInterval = setInterval(async () => {
+      // Skip HTTP poll if Socket.IO is connected (we get push updates)
+      if (socketConnectedRef.current) return;
+
+      try {
+        const response = await fetch('/api/mobile?action=gamestate');
+        const data = await response.json();
+        if (data.success && data.gameState) {
+          processGameStateUpdate(data.gameState);
+        }
+      } catch (error) {
+        console.debug('[useMobileConnection]: fallback game state sync failed', error);
+      }
+    }, 3000); // 3s fallback — much slower than before, only when WS is down
+
+    return () => clearInterval(fallbackInterval);
+  }, [isConnected, processGameStateUpdate]);
+
+  // ─── Send command via Socket.IO (for Companion → Desktop) ───
+  const sendCommand = useCallback((command: { type: string; data?: unknown }) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('companion:command', {
+        ...command,
+        timestamp: Date.now(),
+      });
+    }
+  }, []);
+
+  // ─── Send pitch data via Socket.IO ───
+  const sendPitch = useCallback((pitch: { frequency: number; clarity: number; volume: number }) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('companion:pitch', pitch);
+    }
+  }, []);
+
   // Internal reconnect function — bypasses the isConnecting guard.
-  // Used by visibilitychange handler to force reconnect after wake from sleep.
   const reconnectInternal = useCallback(async (_isWakeUp = false) => {
-    if (isConnectingRef.current) return; // Don't double-connect
+    if (isConnectingRef.current) return;
     isConnectingRef.current = true;
 
     try {
@@ -129,9 +283,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
               callbacksRef.current.onProfileFieldsLoaded(d.profile.name, d.profile.color, d.profile.avatar || null);
             }
             if (d.gameState) {
-              const parsed = parseGameState(d.gameState);
-              setGameState(parsed);
-              callbacksRef.current.onGameStateUpdate(parsed);
+              processGameStateUpdate(d.gameState);
             }
             reconnectBackoffRef.current = 0;
             isConnectingRef.current = false;
@@ -153,9 +305,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         setItem(StorageKeys.CONNECTION_CODE, newCode);
 
         if (data.gameState) {
-          const parsed = parseGameState(data.gameState);
-          setGameState(parsed);
-          callbacksRef.current.onGameStateUpdate(parsed);
+          processGameStateUpdate(data.gameState);
         }
 
         if (data.ipReconnected && data.profile) {
@@ -182,12 +332,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         callbacksRef.current.onError('Failed to connect to server');
       }
     } catch {
-      reconnectBackoffRef.current = Math.min(reconnectBackoffRef.current * 2 + 1000, 60000); // max 60s
+      reconnectBackoffRef.current = Math.min(reconnectBackoffRef.current * 2 + 1000, 60000);
       callbacksRef.current.onError('Connection failed - is the server running?');
     } finally {
       isConnectingRef.current = false;
     }
-  }, []);
+  }, [processGameStateUpdate]);
 
   // Connect — idempotent, safe to call multiple times
   const connect = useCallback(async () => {
@@ -209,7 +359,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         setItem(StorageKeys.CONNECTION_CODE, data.connectionCode);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[MobileClient] Error syncing profile:', error);
     }
   }, [clientId]);
@@ -225,6 +374,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   // Disconnect from server: call API, clear local state, prepare for fresh reconnect
   const disconnect = useCallback(async () => {
     const currentClientId = clientIdRef.current;
+    // Stop Socket.IO
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      socketConnectedRef.current = false;
+    }
     // Stop heartbeat
     cleanup();
     // Notify server
@@ -248,6 +403,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   }, [connect]);
 
   // Heartbeat + connection health check
+  // Uses Socket.IO heartbeat when connected, falls back to HTTP
   useEffect(() => {
     if (!isConnected || !clientId) return;
 
@@ -255,6 +411,14 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     const MAX_MISSED = 2;
 
     const sendHeartbeat = async () => {
+      // Prefer Socket.IO heartbeat
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('companion:heartbeat');
+        missedHeartbeats = 0;
+        return;
+      }
+
+      // Fallback: HTTP heartbeat
       try {
         const r = await fetch('/api/mobile', {
           method: 'POST',
@@ -262,7 +426,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           body: JSON.stringify({ type: 'heartbeat', clientId }),
         });
         if (r.ok) {
-          missedHeartbeats = 0; // Reset on success
+          missedHeartbeats = 0;
         } else {
           missedHeartbeats++;
         }
@@ -270,7 +434,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         missedHeartbeats++;
       }
 
-      // If too many missed heartbeats, try reconnecting
       if (missedHeartbeats >= MAX_MISSED) {
         setIsConnected(false);
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
@@ -282,7 +445,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       }
     };
 
-    // Send heartbeat every 15 seconds (more frequent for faster failure detection)
     heartbeatIntervalRef.current = setInterval(sendHeartbeat, 15000);
 
     return () => {
@@ -293,19 +455,21 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     };
   }, [isConnected, clientId, reconnectInternal]);
 
-  // Shared wake-up handler: sends heartbeat and reconnects on failure.
-  // Used by visibilitychange, pageshow (iOS), and focus events.
-
-  // Debounce wake-up handler: visibilitychange, pageshow, and focus can
-  // all fire within milliseconds of each other. We only need one reconnect.
+  // Shared wake-up handler
   const wakeUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectBackoffRef = useRef<number>(0);
 
   const handleWakeUp = useCallback(() => {
-    // Debounce: ignore subsequent calls within 2 seconds
     if (wakeUpTimerRef.current) return;
     wakeUpTimerRef.current = setTimeout(() => { wakeUpTimerRef.current = null; }, 2000);
 
+    // Prefer Socket.IO reconnect
+    if (socketRef.current && !socketRef.current.connected) {
+      socketRef.current.connect();
+      return;
+    }
+
+    // Fallback: HTTP heartbeat
     const currentClientId = clientIdRef.current;
     if (!currentClientId) return;
     fetch('/api/mobile', {
@@ -329,9 +493,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     return () => document.removeEventListener('visibilitychange', handleWakeUp);
   }, [handleWakeUp]);
 
-  // pageshow: iOS Safari fires this when returning from background or
-  // navigating back to a frozen tab. "persisted" means the page was
-  // restored from the bfcache (back-forward cache).
+  // pageshow: iOS Safari bfcache
   useEffect(() => {
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted || document.visibilityState === 'visible') {
@@ -363,38 +525,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     };
   }, []);
 
-  // Sync game state periodically and detect song end
-  useEffect(() => {
-    if (!isConnected) return;
-    
-    const syncInterval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/mobile?action=gamestate');
-        const data = await response.json();
-        if (data.success && data.gameState) {
-          // Capture previous state BEFORE updating the ref
-          const prevSongEnded = gameStateRef.current.songEnded || false;
-          
-          const parsed = parseGameState(data.gameState);
-          // Explicitly update ref so the next poll sees the latest state
-          // immediately, without depending on React render timing.
-          gameStateRef.current = parsed;
-          setGameState(parsed);
-          callbacksRef.current.onGameStateUpdate(parsed);
-          
-          const newSongEnded = parsed.songEnded || false;
-          if (newSongEnded && !prevSongEnded) {
-            callbacksRef.current.onSongEnd();
-          }
-        }
-      } catch (error) {
-        console.debug('[useMobileConnection]: game state sync failed', error);
-      }
-    }, 500);
-    
-    return () => clearInterval(syncInterval);
-  }, [isConnected]);
-
   return {
     clientId,
     connectionCode,
@@ -404,5 +534,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     disconnect,
     syncProfile,
     cleanup,
+    sendCommand,
+    sendPitch,
+    socketConnected: socketConnectedRef.current,
   };
 }

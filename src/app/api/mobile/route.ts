@@ -13,6 +13,7 @@ const GET_RATE_LIMITS: Record<string, number> = {
   connect: 10,    // new companion connections — keep existing limit
   getpitch: 300,   // BR companion polls at 5 Hz = 300/min
   getcommands: 300, // polled by main app at ~2-5 Hz for remote control commands
+  gamestate: 180,  // companion polls at 2 Hz = 120/min; 180 gives headroom for reconnects
   status: 30,
   clients: 30,
 };

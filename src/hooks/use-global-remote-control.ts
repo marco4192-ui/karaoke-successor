@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 /**
  * Global remote control command types from mobile companions
@@ -582,8 +583,7 @@ export function useGlobalRemoteControl({
     }
   }, [navigateToScreen]);
 
-  // Listen for commands forwarded by useRemoteControl (500ms hook)
-  // which steals commands from the shared getcommands endpoint.
+  // Listen for commands forwarded by useRemoteControl (Socket.IO or HTTP fallback)
   useEffect(() => {
     const handleForwarded = (e: Event) => {
       const cmd = (e as CustomEvent<RemoteCommand>).detail;
@@ -593,8 +593,56 @@ export function useGlobalRemoteControl({
     return () => window.removeEventListener('remote-command-forward', handleForwarded);
   }, [processCommand]);
 
+  // ─── Socket.IO Connection for instant command delivery ───
+  const socketRef = useRef<Socket | null>(null);
+  const socketConnectedRef = useRef(false);
+
+  useEffect(() => {
+    const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+    });
+
+    socket.on('connect', () => {
+      socketConnectedRef.current = true;
+      socket.emit('host:register');
+    });
+
+    socket.on('disconnect', () => {
+      socketConnectedRef.current = false;
+    });
+
+    // ─── Receive commands from Companions via Socket.IO (INSTANT!) ───
+    socket.on('command', (cmd: RemoteCommand) => {
+      processCommand(cmd);
+    });
+
+    socket.on('connect_error', () => {
+      // Silent — fallback to HTTP polling
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      socketConnectedRef.current = false;
+    };
+  }, [processCommand]);
+
+  // ─── HTTP Fallback: Poll commands only when Socket.IO is NOT connected ───
   useEffect(() => {
     const pollRemoteCommands = async () => {
+      // Skip HTTP poll if Socket.IO is connected
+      if (socketConnectedRef.current) return;
+
       try {
         const response = await fetch('/api/mobile?action=getcommands');
         if (!response.ok) return;
@@ -606,7 +654,6 @@ export function useGlobalRemoteControl({
           }
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('[GlobalRemoteControl] Error polling remote commands:', error);
       }
     };
