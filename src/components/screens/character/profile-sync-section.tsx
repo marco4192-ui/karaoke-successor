@@ -19,21 +19,23 @@ function generateSyncCode(): string {
 
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   const { t } = useTranslation();
-  const [__syncCode, setSyncCode] = useState<string>('');
   const [inputCode, setInputCode] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const { updateProfile, highscores } = useGameStore();
+  const { updateProfile, highscores, addHighscore } = useGameStore();
 
   const handleUploadProfile = async () => {
     setIsUploading(true);
     setMessage(null);
-    
+
     try {
       const code = profile.syncCode || generateSyncCode();
+      // Upload immediately with the fresh code — the profile object from
+      // this render is stale and would upload without it.
+      const uploadableProfile: PlayerProfile = { ...profile, syncCode: code };
       updateProfile(profile.id, { syncCode: code });
-      
+
       const profileHighscores: Record<string, HighscoreEntry[]> = {};
       highscores
         .filter(h => h.playerId === profile.id)
@@ -43,15 +45,14 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           }
           profileHighscores[h.songId].push(h);
         });
-      
+
       const { leaderboardService } = await import('@/lib/api/leaderboard-service');
-      const result = await leaderboardService.uploadProfile(profile, profileHighscores);
-      
+      const result = await leaderboardService.uploadProfile(uploadableProfile, profileHighscores);
+
       if (result.success) {
-        setSyncCode(code);
         setMessage({ type: 'success', text: t('profileSync.uploadSuccess').replace('{n}', code) });
       } else {
-        throw new Error(t('profileSync.uploadFailed'));
+        throw new Error(result.error || t('profileSync.uploadFailed'));
       }
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
@@ -68,26 +69,41 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
       setMessage({ type: 'error', text: t('profileSync.invalidCode') });
       return;
     }
-    
+
     setIsDownloading(true);
     setMessage(null);
-    
+
     try {
       const { leaderboardService } = await import('@/lib/api/leaderboard-service');
-      const downloadedProfile = await leaderboardService.downloadProfileByCode(inputCode.toUpperCase());
-      
-      if (downloadedProfile) {
+      const result = await leaderboardService.downloadProfileByCode(inputCode.toUpperCase());
+
+      if (result?.profile) {
+        const synced = result.profile;
         updateProfile(profile.id, {
-          name: downloadedProfile.name,
-          avatar: downloadedProfile.avatar || undefined,
-          country: downloadedProfile.country || undefined,
-          color: downloadedProfile.color,
-          stats: downloadedProfile.stats,
-          achievements: downloadedProfile.achievements,
-          privacy: downloadedProfile.privacy,
-          syncCode: downloadedProfile.syncCode,
+          name: synced.name,
+          avatar: synced.avatar || undefined,
+          country: synced.country || undefined,
+          color: synced.color,
+          stats: synced.stats,
+          achievements: synced.achievements || [],
+          xp: synced.xp,
+          level: synced.level,
+          privacy: synced.privacy,
+          syncCode: inputCode.toUpperCase(),
+          syncUid: result.profile_uid,
         });
-        
+
+        // Restore the backed-up highscores for this profile (skip entries
+        // that already exist locally so repeated downloads don't duplicate).
+        const existing = new Set(
+          highscores.filter(h => h.playerId === profile.id).map(h => `${h.songId}|${h.difficulty}|${h.score}`)
+        );
+        const backup = Object.values(result.highscores ?? {}).flat();
+        for (const entry of backup) {
+          if (existing.has(`${entry.songId}|${entry.difficulty}|${entry.score}`)) continue;
+          addHighscore({ ...entry, playerId: profile.id, playerName: synced.name, playerColor: synced.color });
+        }
+
         setMessage({ type: 'success', text: t('profileSync.syncSuccess') });
         setInputCode('');
       } else {

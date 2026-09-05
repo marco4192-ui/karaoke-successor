@@ -8,12 +8,13 @@ import type {
   OnlineProfile, OnlineScoreEntry,
   SubmitScorePayload, SubmitScoreResult, GlobalLeaderboardEntry,
   LeaderboardGameType, ScoreProofPackage,
+  ProfileSyncDownload, ProfileSyncUpload,
 } from '@/lib/leaderboard/types';
 import {
   generateSongHash, generateSongHashV2, songNotesFromSong,
 } from '@/lib/leaderboard/song-fingerprint';
 import type { ScoringMetadata } from '@/lib/game/scoring';
-import type { PlayerProfile, Song, Difficulty, GameMode } from '@/types/game';
+import type { PlayerProfile, Song, Difficulty, GameMode, HighscoreEntry } from '@/types/game';
 
 export const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
@@ -67,7 +68,8 @@ async function testConnection(): Promise<boolean> {
   }
 }
 
-/** Register or update a profile on the server */
+/** Register or update a profile on the server. The response carries the
+ *  authoritative sync_code (generated server-side on first registration). */
 async function registerProfile(profile: PlayerProfile): Promise<OnlineProfile> {
   return request<OnlineProfile>('/profiles', {
     method: 'POST',
@@ -78,6 +80,7 @@ async function registerProfile(profile: PlayerProfile): Promise<OnlineProfile> {
       country_code: profile.country || null,
       show_on_board: profile.privacy?.showOnLeaderboard ? 1 : 0,
       show_country: profile.privacy?.showCountry ? 1 : 0,
+      sync_code: profile.syncCode || undefined,
     }),
   });
 }
@@ -131,11 +134,16 @@ async function submitScore(params: {
     v2Hash = v2Result.v2Hash;
   }
 
-  // Ensure profile is registered first
-  await registerProfile(profile).catch(() => {/* ignore if already exists */});
+  // The server requires the profile's sync_code on every submission.
+  // The caller is responsible for registering the profile first (and
+  // persisting the code) when it doesn't have one yet.
+  if (!profile.syncCode) {
+    throw new Error('Profile is not registered for online submissions (missing sync code)');
+  }
 
   const payload: SubmitScorePayload = {
     profile_uid: profile.id,
+    sync_code: profile.syncCode,
     song_hash: v1Hash,
     game_type: gameType,
     score,
@@ -152,10 +160,23 @@ async function submitScore(params: {
   if (proof) payload.proof = proof;
   if (v2Hash) payload.song_hash_v2 = v2Hash;
 
-  return request<SubmitScoreResult>('/scores', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  try {
+    return await request<SubmitScoreResult>('/scores', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    // The profile vanished server-side (fresh server, deleted profile):
+    // re-register with our identity + code and retry a single time.
+    if (/HTTP 404/.test(err instanceof Error ? err.message : '')) {
+      await registerProfile(profile).catch(() => null);
+      return request<SubmitScoreResult>('/scores', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    }
+    throw err;
+  }
 }
 
 /** Fetch leaderboard for a single song */
@@ -182,6 +203,45 @@ async function fetchGlobalLeaderboard(
 
 // ── Export singleton ────────────────────────────────────
 
+/**
+ * Store a private cross-device backup of the profile (and optionally its
+ * highscores) under the profile's sync code. Note: the backup is personal
+ * data — it never appears on any public leaderboard.
+ */
+async function uploadProfile(
+  profile: PlayerProfile,
+  highscores: Record<string, HighscoreEntry[]> | null,
+): Promise<{ success: boolean; error?: string }> {
+  if (!profile.syncCode) {
+    return { success: false, error: 'Missing sync code' };
+  }
+  const payload: ProfileSyncUpload = {
+    sync_code: profile.syncCode,
+    profile,
+    highscores: highscores ?? null,
+  };
+  try {
+    await request(`/profiles/${profile.syncUid || profile.id}/sync`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** Fetch the profile backup behind a sync code, or null if unknown. */
+async function downloadProfileByCode(code: string): Promise<ProfileSyncDownload | null> {
+  try {
+    return await request<ProfileSyncDownload>(
+      `/profiles/sync/${encodeURIComponent(code.toUpperCase())}`
+    );
+  } catch {
+    return null;
+  }
+}
+
 export const leaderboardService = {
   testConnection,
   registerProfile,
@@ -191,7 +251,7 @@ export const leaderboardService = {
   // Backward-compatible aliases used by UI components
   getSongLeaderboard: fetchSongLeaderboard,
   getGlobalLeaderboard: fetchGlobalLeaderboard,
-  // Profile sync stubs (not yet implemented — planned for future)
-  uploadProfile: async (_profile: PlayerProfile, _highscores: unknown) => ({ success: false, error: 'Not yet implemented' } as { success: boolean; error?: string }),
-  downloadProfileByCode: async (_code: string) => null as PlayerProfile | null,
+  // Profile sync (cross-device backup)
+  uploadProfile,
+  downloadProfileByCode,
 };

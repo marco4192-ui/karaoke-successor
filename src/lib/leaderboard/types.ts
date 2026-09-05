@@ -20,6 +20,8 @@ export interface OnlineProfile {
   country_code: string | null;
   show_on_board: 1 | 0;
   show_country: 1 | 0;
+  /** Ownership token — only present in responses that presented it (register/update) */
+  sync_code?: string;
   total_score: number;
   best_score: number;
   songs_played: number;
@@ -56,6 +58,8 @@ export type BatchScoresResponse = Record<string, OnlineScoreEntry[]>;
 // ── Submit score request payload ──────────────────────────
 export interface SubmitScorePayload {
   profile_uid: string;
+  /** Ownership token of the profile — required by the server */
+  sync_code: string;
   song_hash: string;
   game_type: LeaderboardGameType;
   score: number;
@@ -95,6 +99,24 @@ export interface GlobalLeaderboardEntry {
   songs_played: number;
   games_played: number;
   avg_accuracy: number;
+}
+
+// ── Profile sync (cross-device backup) ────────────────────
+import type { PlayerProfile, HighscoreEntry } from '@/types/game';
+
+/** Payload stored on the server by uploadProfile() */
+export interface ProfileSyncUpload {
+  sync_code: string;
+  profile: PlayerProfile;
+  highscores: Record<string, HighscoreEntry[]> | null;
+}
+
+/** What GET /profiles/sync/{code} returns */
+export interface ProfileSyncDownload {
+  profile_uid: string;
+  profile: PlayerProfile;
+  highscores: Record<string, HighscoreEntry[]> | null;
+  updated_at: string;
 }
 
 // ── API error ─────────────────────────────────────────────

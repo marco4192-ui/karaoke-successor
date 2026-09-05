@@ -293,20 +293,34 @@ export function usePostGameProcessing({
             import('@/lib/api/leaderboard-service'),
             buildProof(),
           ]).then(([{ leaderboardService }, proof]) => {
-            return leaderboardService.submitScore({
-              profile,
-              song,
-              gameMode: gameState.gameMode,
-              score: playerResult.score,
-              maxScore: MAX_POINTS_PER_SONG,
-              accuracy: playerResult.accuracy,
-              maxCombo: playerResult.maxCombo,
-              difficulty: gameState.difficulty,
-              rating: playerResult.rating,
-              notesHit: playerResult.notesHit,
-              notesMissed: playerResult.notesMissed,
-              proof,
-            });
+            // The server requires the profile's sync_code on every score
+            // submission. Register once while we don't have a code and
+            // persist the code the server generated — later games then
+            // submit without the extra roundtrip.
+            const ensureRegistered = async () => {
+              if (profile.syncCode) return profile;
+              const p = await leaderboardService.registerProfile(profile).catch(() => null);
+              const code = p?.sync_code;
+              if (!code) return profile;
+              updateProfile(profile.id, { syncCode: code });
+              return { ...profile, syncCode: code };
+            };
+            return ensureRegistered().then((prof) =>
+              leaderboardService.submitScore({
+                profile: prof,
+                song,
+                gameMode: gameState.gameMode,
+                score: playerResult.score,
+                maxScore: MAX_POINTS_PER_SONG,
+                accuracy: playerResult.accuracy,
+                maxCombo: playerResult.maxCombo,
+                difficulty: gameState.difficulty,
+                rating: playerResult.rating,
+                notesHit: playerResult.notesHit,
+                notesMissed: playerResult.notesMissed,
+                proof,
+              })
+            );
           })
               .then((result) => {
                 setUploadStatus('success');

@@ -150,6 +150,7 @@ export interface PlayerProfile {
   };
   // Profile sync
   syncCode?: string; // 8-character code for cross-device sync
+  syncUid?: string; // server-side profile_uid this sync code belongs to (differs from local id)
   // Active status for party mode
   isActive?: boolean; // When false, profile won't appear in party mode selections
 }
