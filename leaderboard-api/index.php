@@ -326,9 +326,9 @@ function submitScore(string $TP, string $TS): void {
         // Step 3: Plausibility checks
         $plausibility = verifyScorePlausibility($score, $maxSc, $acc, $combo, $hit, $miss, $proof);
 
-        // Step 4: Check points_per_tick matches server-side computation
-        $comboMultipliers = ['easy' => 1.5, 'normal' => 2.0, 'hard' => 2.5];
-        $pptOk = verifyPointsPerTick($proof, $comboMultipliers[$diff] ?? 2.0);
+        // Step 4: Check points_per_tick matches the client scoring model
+        // (70/80% tick pool over the claimed note ticks)
+        $pptOk = verifyPointsPerTick($proof, $maxSc);
 
         // Step 5: Detect soft flags
         $acFlags = flagSuspiciousScore($score, $acc, $combo, $hit, $miss, $proof);

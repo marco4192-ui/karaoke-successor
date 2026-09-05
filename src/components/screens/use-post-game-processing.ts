@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
-import { estimatePerfectNotes } from '@/lib/game/scoring';
+import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
 import { recordSongPlay } from '@/lib/playlist-manager';
 import type { PlayerProfile, GameResult, Song, GameState } from '@/types/game';
@@ -258,25 +258,57 @@ export function usePostGameProcessing({
           setUploadStatus('uploading');
           setIsVerified(undefined);
 
-          // Build anti-cheat proof dynamically to avoid bundling the module when not needed
+          // Real scoring metadata — MUST match what the game scored with
+          // (see use-game-timing-data: beat duration 15000/bpm, full
+          // 10,000-point model; in duet the submitted player only sings
+          // their own part). The server re-computes points-per-tick from
+          // these fields and rejects inconsistencies.
+          const lines = song.lyrics || [];
+          const isDuetMode = gameState.gameMode === 'duet';
+          const hasExplicitMarkers = isDuetMode && lines.some(l => l.player === 'P1' || l.player === 'P2');
+          const scoringNotes = lines.flatMap(l => l.notes || []);
+          const metaNotes = isDuetMode && hasExplicitMarkers
+            ? scoringNotes.filter(n => n.player === 'P1' || n.player === 'both')
+            : scoringNotes;
+          const beatDurationMs = song.bpm ? 15000 / song.bpm : 500;
+          const scoringMeta = calculateScoringMetadata(metaNotes, beatDurationMs, gameState.difficulty);
+
+          // Build the anti-cheat proof dynamically to avoid bundling the
+          // module when not needed. Party modes with their own point scale
+          // (isFullScoring === false) submit without a proof — the server
+          // then stores them as unverified.
           const buildProof = () => import('@/lib/leaderboard/anti-cheat-proof')
             .then(({ generateProofPackage }) => {
+              if (!scoringMeta.isFullScoring) return undefined;
+
               const hitNotes = playerResult.notesHit || 1;
               const missNotes = playerResult.notesMissed || 0;
               const totalNotes = hitNotes + missNotes;
-              const ticksPerNote = Math.max(1, Math.round((song.duration || 180000) / 10 / totalNotes));
+
+              // Per-note hash chain: synthetic walk over the claimed hit
+              // layout. The chain root cannot be re-verified server-side
+              // (the server never sees per-note results) — it binds the
+              // package together via the integrity hash and provides a
+              // chain length for consistency checks.
               const noteResults: Array<{noteIdx: number; ticksHit: number; totalTicks: number; isGolden: boolean; wasPerfect: boolean}> = [];
               for (let i = 0; i < Math.min(totalNotes, 200); i++) {
                 noteResults.push({
                   noteIdx: i,
-                  ticksHit: i < hitNotes ? ticksPerNote : 0,
-                  totalTicks: ticksPerNote,
+                  ticksHit: i < hitNotes ? 1 : 0,
+                  totalTicks: 1,
                   isGolden: false,
                   wasPerfect: false,
                 });
               }
               return generateProofPackage({
-                scoringMeta: { totalNotes, totalNoteTicks: 0, goldenNoteTicks: 0, normalNoteTicks: 0, pointsPerTick: MAX_POINTS_PER_SONG / Math.max(1, (song.duration || 180) * 1000 / 10), comboMultiplier: 1 },
+                scoringMeta: {
+                  totalNotes: scoringMeta.totalNotes,
+                  totalNoteTicks: scoringMeta.totalNoteTicks,
+                  goldenNoteTicks: scoringMeta.goldenNoteTicks,
+                  normalNoteTicks: scoringMeta.normalNoteTicks,
+                  pointsPerTick: scoringMeta.pointsPerTick,
+                  comboMultiplier: 1,
+                },
                 noteResults,
                 score: playerResult.score,
                 accuracy: playerResult.accuracy,
@@ -310,6 +342,7 @@ export function usePostGameProcessing({
                 profile: prof,
                 song,
                 gameMode: gameState.gameMode,
+                scoringMetadata: scoringMeta,
                 score: playerResult.score,
                 maxScore: MAX_POINTS_PER_SONG,
                 accuracy: playerResult.accuracy,

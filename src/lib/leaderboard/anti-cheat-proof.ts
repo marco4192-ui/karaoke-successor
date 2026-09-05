@@ -241,6 +241,28 @@ function computeIntegrityHash(pkg: ScoreProofPackage, params: {
 // ── Server-side verification (mirrored in PHP) ─────────────
 
 /**
+ * Expected points-per-tick under the client's scoring model
+ * (src/lib/game/scoring.ts, full scoring with maxPoints):
+ *
+ *   tickPool = hasGolden ? 0.70 * maxPoints : 0.80 * maxPoints
+ *              (70% tick pool; the 10% golden pool is redistributed
+ *               to ticks when the song has no golden notes)
+ *   pointsPerTick = tickPool / totalNoteTicks
+ *
+ * This is MIRRORED in PHP (expectedPointsPerTick in anti-cheat.php) —
+ * both must stay in sync.
+ */
+export function expectedPointsPerTick(
+  totalNoteTicks: number,
+  goldenNoteTicks: number,
+  maxPoints: number,
+): number {
+  if (totalNoteTicks <= 0) return 0;
+  const tickPool = (goldenNoteTicks > 0 ? 0.70 : 0.80) * maxPoints;
+  return tickPool / totalNoteTicks;
+}
+
+/**
  * Server-side score plausibility checks.
  * This logic is MIRRORED in PHP on the server — both must stay in sync.
  *
@@ -279,7 +301,7 @@ export function verifyScorePlausibility(
   }
 
   // 4. Max combo cannot exceed total note ticks
-  if (maxCombo > proof.total_note_ticks) {
+  if (maxCombo > proof.total_note_ticks && proof.total_note_ticks > 0) {
     return { valid: false, reason: 'combo_exceeds_ticks' };
   }
   // Max combo cannot exceed notes hit
@@ -313,12 +335,28 @@ export function verifyScorePlausibility(
   }
 
   // 8. Combo multiplier must match difficulty
-  const validCombos: Record<string, number> = { easy: 1.5, normal: 2.0, hard: 2.5 };
-  // Note: proof doesn't include difficulty directly, it's in the score submission
+  // (The client's combo system is a progress bar — the multiplier does not
+  // depend on difficulty, so there is no difficulty-based ppt expectation.)
 
   // 9. Points per tick plausibility
   if (proof.points_per_tick <= 0 || proof.points_per_tick > 100) {
     return { valid: false, reason: 'invalid_points_per_tick' };
+  }
+
+  // 9b. Points per tick must be consistent with the claimed tick counts
+  // under the client scoring model (mirrors expectedPointsPerTick below /
+  // verifyPointsPerTick in anti-cheat.php)
+  if (proof.total_note_ticks > 0) {
+    const expected = expectedPointsPerTick(
+      proof.total_note_ticks,
+      proof.golden_note_ticks,
+      maxScore,
+    );
+    if (expected <= 0) return { valid: false, reason: 'invalid_points_per_tick' };
+    const diff = Math.abs(proof.points_per_tick - expected);
+    if (diff > Math.max(expected * 0.01, 0.000001)) {
+      return { valid: false, reason: 'ppt_mismatch' };
+    }
   }
 
   // 10. Rough maximum score estimation

@@ -218,59 +218,44 @@ function flagSuspiciousScore(
 // ============================================================
 
 /**
- * Estimate the maximum possible score for given scoring parameters.
- * This uses the same normalization formula as the client's calculateScoringMetadata().
+ * Expected points-per-tick under the client's scoring model
+ * (src/lib/game/scoring.ts, full scoring with maxPoints = 10,000):
  *
- * Scoring constants (mirrored from scoring.ts):
- *   MAX_POINTS_PER_SONG = 10000
- *   PERFECT_NOTE_MULTIPLIER = 2
- *   PERFECT_GOLDEN_MULTIPLIER = 10
- *   COMPLETION_BONUS_RATIO = 0.15
- *   COMBO_RAMP_TICKS = 50
+ *   tickPool = hasGolden ? 0.70 * maxPoints : 0.80 * maxPoints
+ *              (70% tick pool; the 10% golden pool is redistributed
+ *               to ticks when the song has no golden notes)
+ *   pointsPerTick = tickPool / totalNoteTicks
+ *
+ * The client computes the same value from the song at game start; the
+ * proof carries it, and this function verifies that the claimed tick
+ * counts and points-per-tick are consistent with that formula.
  */
-function estimateMaxPossibleScore(
+function expectedPointsPerTick(
     int $totalNoteTicks,
     int $goldenNoteTicks,
-    float $comboMultiplier
+    int $maxScore
 ): float {
-    if ($totalNoteTicks <= 0) return 10000.0;
-
-    $normalNoteTicks = $totalNoteTicks - $goldenNoteTicks;
-    $baseWeight = ($normalNoteTicks * 2) + ($goldenNoteTicks * 10);
-    $completionBonusPool = $baseWeight * 0.15;
-    $rampTicks = 50;
-
-    // Combo normalization factor
-    if ($totalNoteTicks <= $rampTicks) {
-        $comboNormFactor = 1 + ($comboMultiplier - 1) * ($totalNoteTicks + 1) / (2 * $rampTicks);
-    } else {
-        $rampSum = $rampTicks + ($comboMultiplier - 1) * $rampTicks * ($rampTicks + 1) / (2 * $rampTicks);
-        $fullSum = ($totalNoteTicks - $rampTicks) * $comboMultiplier;
-        $comboNormFactor = ($rampSum + $fullSum) / $totalNoteTicks;
-    }
-
-    $perfectScoreBase = $baseWeight * $comboNormFactor;
-    $pointsPerTick = ($perfectScoreBase + $completionBonusPool) > 0
-        ? 10000 / ($perfectScoreBase + $completionBonusPool)
-        : 1;
-
-    return $pointsPerTick;
+    if ($totalNoteTicks <= 0) return 0.0;
+    $tickPool = ($goldenNoteTicks > 0 ? 0.70 : 0.80) * $maxScore;
+    return $tickPool / $totalNoteTicks;
 }
 
 /**
- * Validate that the submitted points_per_tick matches what the server computes.
+ * Validate that the submitted points_per_tick matches what the client
+ * scoring model computes for the claimed tick counts.
  * Allows 1% tolerance for floating point differences.
  */
-function verifyPointsPerTick(array $proof, float $comboMultiplier): bool {
+function verifyPointsPerTick(array $proof, int $maxScore): bool {
     $totalTicks = (int)($proof['total_note_ticks'] ?? 0);
     $goldenTicks = (int)($proof['golden_note_ticks'] ?? 0);
     $submitted = (float)($proof['points_per_tick'] ?? 0);
 
-    if ($submitted <= 0) return false;
+    if ($totalTicks <= 0 || $submitted <= 0) return false;
 
-    $expected = estimateMaxPossibleScore($totalTicks, $goldenTicks, $comboMultiplier);
+    $expected = expectedPointsPerTick($totalTicks, $goldenTicks, $maxScore);
+    if ($expected <= 0) return false;
     $diff = abs($submitted - $expected);
     $tolerance = $expected * 0.01; // 1% tolerance
 
-    return $diff <= max($tolerance, 0.001);
+    return $diff <= max($tolerance, 0.000001);
 }
