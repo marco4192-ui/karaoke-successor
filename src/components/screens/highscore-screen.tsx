@@ -78,7 +78,6 @@ export function HighscoreScreen() {
               rating: 'good' as const,
               rankTitle: `${p.songs_played} songs`,
               playedAt: Date.now(),
-              verified: true,
               country_code: p.country_code,
 
               songs_played: p.songs_played,
