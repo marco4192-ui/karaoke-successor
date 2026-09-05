@@ -55,16 +55,37 @@ export function EditorLyricsTab({
     );
   }, [rawSyllableData]);
 
-  // Get all notes in order (sorted by startTime) for matching
-  const allNotesOrdered = useMemo(() => {
-    return song.lyrics
-      .flatMap(line => line.notes)
-      .filter(n => n.lyric && n.lyric !== '---')
-      .sort((a, b) => a.startTime - b.startTime);
-  }, [song.lyrics]);
-
   // Whether we have existing note-based lyrics (imported song or partially edited)
   const hasLyricNotes = song.lyrics.length > 0 && song.lyrics.some(l => l.notes.length > 0);
+
+  // Standard note-based lyrics (existing behavior)
+  // Hooks must run unconditionally: switching between modes below changes
+  // the early-return path, but the hook order must stay identical every render.
+  const lyricLines = useMemo(() => {
+    return song.lyrics.map((line, lineIndex) => ({
+      ...line,
+      lineIndex,
+      wordGroups: groupNotesIntoWords(line.notes),
+    }));
+  }, [song.lyrics]);
+
+  const activeLineIndex = useMemo(() => {
+    for (let i = lyricLines.length - 1; i >= 0; i--) {
+      if (currentTime >= lyricLines[i].startTime) {
+        return i;
+      }
+    }
+    return 0;
+  }, [lyricLines, currentTime]);
+
+  useEffect(() => {
+    if (activeLineRef.current) {
+      activeLineRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [activeLineIndex]);
 
   // ── Mode 1: Raw lyrics only (new song, no notes yet) ──
   if (!hasLyricNotes && rawSyllableData) {
@@ -124,33 +145,6 @@ export function EditorLyricsTab({
   // ── Mode 2: Note-based lyrics with progressive assignment ──
   // Also handles the case where rawLyrics exists alongside notes (progressive view)
   if (hasLyricNotes) {
-    // Standard note-based lyrics (existing behavior)
-    const lyricLines = useMemo(() => {
-      return song.lyrics.map((line, lineIndex) => ({
-        ...line,
-        lineIndex,
-        wordGroups: groupNotesIntoWords(line.notes),
-      }));
-    }, [song.lyrics]);
-
-    const activeLineIndex = useMemo(() => {
-      for (let i = lyricLines.length - 1; i >= 0; i--) {
-        if (currentTime >= lyricLines[i].startTime) {
-          return i;
-        }
-      }
-      return 0;
-    }, [lyricLines, currentTime]);
-
-    useEffect(() => {
-      if (activeLineRef.current) {
-        activeLineRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-        });
-      }
-    }, [activeLineIndex]);
-
     const handleWordClick = (note: Note) => {
       onNoteSelect(note.id);
       onTimeChange(Math.max(0, note.startTime - 200));

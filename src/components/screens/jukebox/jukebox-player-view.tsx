@@ -397,11 +397,9 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
 
-  // #4 FIX: Never return null in fullscreen — use CSS width transition instead
-  // to avoid React #300 (DOM mismatch when toggling playlist in fullscreen flex layout)
-  if (j.upNext.length === 0) return null;
-
   // #3 FIX: Song click with loading state and error handling
+  // (declared before the empty-state early return below so the hook order
+  // stays identical when the playlist transitions empty <-> non-empty)
   const handleSongClick = useCallback(async (songId: string) => {
     if (loadingSongId) return;
     setLoadingSongId(songId);
@@ -418,6 +416,10 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
       setLoadingSongId(null);
     }
   }, [j, loadingSongId]);
+
+  // #4 FIX: Never return null in fullscreen — use CSS width transition instead
+  // to avoid React #300 (DOM mismatch when toggling playlist in fullscreen flex layout)
+  if (j.upNext.length === 0) return null;
 
   return (
     <div className={j.isFullscreen ? 'h-full flex flex-col bg-black/80 pt-14 transition-all duration-300' : ''} style={j.isFullscreen ? { width: j.hidePlaylist ? '0px' : '25%', overflow: 'hidden' } : undefined}>

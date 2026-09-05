@@ -7,24 +7,23 @@ import { useTranslation } from '@/lib/i18n/translations';
 export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; currentTime: number }) {
   const { t } = useTranslation();
 
-  // Empty lyrics guard
-  if (!lyrics || lyrics.length === 0) {
-    return <div className="text-center text-white/30">{t('battleRoyale.noLyrics')}</div>;
-  }
+  // Hooks must run on every render: the empty-state early return below must
+  // not change the hook order when `lyrics` transitions empty <-> non-empty.
+  const safeLyrics = lyrics ?? [];
 
   // Find current line — the one that is currently playing
-  let currentLineIndex = lyrics.findIndex((line, index) => {
-    const nextLine = lyrics[index + 1];
+  let currentLineIndex = safeLyrics.findIndex((line, index) => {
+    const nextLine = safeLyrics[index + 1];
     return currentTime >= line.startTime && (!nextLine || currentTime < nextLine.startTime);
   });
 
   // Before first line starts: show first line as upcoming
-  if (currentLineIndex < 0 && lyrics.length > 0) {
+  if (currentLineIndex < 0 && safeLyrics.length > 0) {
     currentLineIndex = 0;
   }
 
-  const currentLine = lyrics[currentLineIndex] || null;
-  const nextLine = currentLineIndex >= 0 && currentLineIndex < lyrics.length - 1 ? lyrics[currentLineIndex + 1] : null;
+  const currentLine = safeLyrics[currentLineIndex] || null;
+  const nextLine = currentLineIndex >= 0 && currentLineIndex < safeLyrics.length - 1 ? safeLyrics[currentLineIndex + 1] : null;
 
   // Check if we are actually in the current line (before song starts = upcoming)
   const isUpcoming = currentTime < (currentLine?.startTime ?? 0);
@@ -73,6 +72,11 @@ export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; cu
       }
     });
   }, [wordBoundaries, lineProgress]);
+
+  // Empty lyrics guard
+  if (safeLyrics.length === 0) {
+    return <div className="text-center text-white/30">{t('battleRoyale.noLyrics')}</div>;
+  }
 
   return (
     <div className="text-center select-none">
