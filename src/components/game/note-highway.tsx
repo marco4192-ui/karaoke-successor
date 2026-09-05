@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteDisplayStyleClasses, PitchStats } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';

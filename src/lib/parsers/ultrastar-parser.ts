@@ -18,7 +18,7 @@
 // - Line breaks ("- <beat>") create new lyric lines
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
-import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
+import { Song, Difficulty, DuetPlayer } from '@/types/game';
 import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
@@ -283,7 +283,6 @@ export function convertUltraStarToSong(
   // UltraStar BPM is actually "Beats per 4 measures" - so we need to divide by 4
   // Formula: beatDuration = 60 seconds / BPM / 4 * 1000 = 15000 / BPM
   // This matches the official UltraStar formula: time = beat / BPM / 4 * 60 + GAP
-  const beatDuration = 15000 / ultraStar.bpm; // 60000 / (BPM * 4)
 
   // Use the shared converter to build lyric lines (handles duet P1/P2 separation)
   const lyricLines = convertNotesToLyricLines(

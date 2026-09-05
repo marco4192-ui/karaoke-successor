@@ -36,7 +36,6 @@ export function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange
 // ===================== INPUT MODE TOGGLE (Feature #2) =====================
 
 export function InputModeToggle({
-  profileId,
   currentMode,
   companionProfiles,
   currentMobileClientId,

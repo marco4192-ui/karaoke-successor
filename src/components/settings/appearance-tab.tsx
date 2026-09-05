@@ -5,7 +5,7 @@ import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';
 import { NOTE_COLOR_PROFILES } from '@/lib/game/note-color-profiles';
 import { PaletteIcon } from '@/components/settings/settings-icons';
-import { StorageKeys, setItem, setBool, getString, getBool } from '@/lib/storage';
+import { StorageKeys, setItem, setBool } from '@/lib/storage';
 
 interface AppearanceTabProps {
   bgVideo: boolean;

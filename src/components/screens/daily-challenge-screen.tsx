@@ -25,12 +25,11 @@ import {
   getActiveQuests,
   claimQuestReward,
 } from '@/lib/game/daily-challenge';
-import { 
-  CHALLENGE_MODES, 
+import {
+  CHALLENGE_MODES,
   getChallengeRequirementStatus,
   createCustomChallenge,
   AVAILABLE_MODIFIERS,
-  type CustomChallengeConfig,
 } from '@/lib/game/player-progression';
 import { getExtendedStats } from '@/lib/game/player-progression';
 import { Song } from '@/types/game';

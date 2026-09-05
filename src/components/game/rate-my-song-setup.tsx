@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { PlayerProfile, Song, PLAYER_COLORS } from '@/types/game';
+import { Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { RateMySongPlayMode, RateMySongDuration } from './rate-my-song-types';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { StorageKeys, getString } from '@/lib/storage';
-import { getNoteColorProfile, resolveNoteColors, type NoteColorProfile } from '@/lib/game/note-color-profiles';
+import { getNoteColorProfile, resolveNoteColors } from '@/lib/game/note-color-profiles';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -16,7 +16,7 @@ export const BASE_PITCH = 48; // C3 - lowest pitch to display
  */
 export function getNoteDisplayStyleClasses(
   _displayStyle: string,
-  accuracy: number = 1,
+  _accuracy: number = 1,
   isGolden: boolean = false,
   isBonus: boolean = false,
   performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>,

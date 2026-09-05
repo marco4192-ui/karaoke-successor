@@ -10,11 +10,9 @@ import {
   ScoreEvent,
   NotePerformanceSample,
   PlayerScoringState,
-  TimingDataForScoring,
   UseNoteScoringOptions,
   UseNoteScoringReturn,
 } from '@/lib/game/scoring-types';
-import type { ChallengeModifier } from '@/lib/game/player-progression';
 
 /**
  * Custom hook for note scoring and hit detection

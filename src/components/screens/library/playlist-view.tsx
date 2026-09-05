@@ -13,7 +13,6 @@ import { PlaylistQueueConfigModal } from './playlist-queue-config-modal';
 import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
-import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 
 interface PlaylistViewProps {
@@ -38,12 +37,9 @@ export function PlaylistView({
   onPlaylistSelect,
   onPlaylistDelete,
   onRemoveSongFromPlaylist,
-  onSongClick,
   onShowCreatePlaylist,
   songCardProps,
   activeProfileId,
-  addToQueue,
-  activeProfileName,
 }: PlaylistViewProps) {
   const { t } = useTranslation();
   const [showEditModal, setShowEditModal] = useState(false);

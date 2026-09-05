@@ -28,12 +28,6 @@ interface HarmonizeRequest {
   }>;
 }
 
-interface HarmonizeResponse {
-  success: boolean;
-  suggestions?: HarmonizeEntry[];
-  error?: string;
-}
-
 // ── Genre normalization map (common sub-genres → parent genres) ──
 
 const NORMALIZATION_HINTS = `

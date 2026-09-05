@@ -3,7 +3,7 @@ import type { MedleySettings as MedleySettingsType, MedleyPlayer as MedleyPlayer
 import { generateTeamMatchups } from '@/components/game/medley/medley-types';
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
+import { EMPTY_PLAYER_SCORE } from '@/types/game';
 
 export async function startMedley(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, filteredSongs } = ctx;

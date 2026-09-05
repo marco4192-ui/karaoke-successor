@@ -1,7 +1,7 @@
 // Tournament Mode - Statistics, Placements, Hall of Fame, Crowd Votes, Effective Difficulty
 // Read-only tournament data queries and side-effectful localStorage operations
 
-import type { TournamentPlayer, TournamentBracket, TournamentMatch } from './tournament-types';
+import type { TournamentPlayer, TournamentBracket } from './tournament-types';
 
 // ─── Tournament Statistics ────────────────────────────────────────
 

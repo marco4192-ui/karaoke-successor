@@ -742,7 +742,6 @@ export function useJukebox(refs?: {
 
     // Reshuffle remaining songs (from currentIndex+1 onward) while keeping current song
     setPlaylist(prev => {
-      const current = prev[currentIndexRef.current];
       const alreadyPlayed = prev.slice(0, currentIndexRef.current + 1);
       const remaining = prev.slice(currentIndexRef.current + 1);
 

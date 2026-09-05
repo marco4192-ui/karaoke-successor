@@ -370,7 +370,7 @@ function yesterdayISO(): string {
  * Returns the streak bonus XP to add on top of the base XP.
  * Mutates `stats.currentStreak`, `stats.longestStreak`, and `stats.lastCompletedDate`.
  */
-function advanceStreak(stats: PlayerDailyStats, baseXP: number): { xpAdjustment: number; streakBonusXP: number } {
+function advanceStreak(stats: PlayerDailyStats, _baseXP: number): { xpAdjustment: number; streakBonusXP: number } {
   if (stats.lastCompletedDate === yesterdayISO()) {
     stats.currentStreak++;
   } else {

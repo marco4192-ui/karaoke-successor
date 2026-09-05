@@ -458,7 +458,6 @@ export function useGameModes({
       for (let i = 1; i < passages.length; i++) {
         const passage = passages[i];
         const passageStart = passage[0]?.startTime ?? 0;
-        const passageEnd = passage[passage.length - 1]?.endTime ?? 0;
 
         // Only warn if this passage actually contains hidden words
         const passageHasHidden = passage.some(line => hiddenStartTimesRef.current.has(line.startTime));

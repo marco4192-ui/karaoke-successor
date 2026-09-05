@@ -67,7 +67,7 @@ export function MedleyRoundResults({
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
           <h3 className="font-bold text-sm mb-2 text-red-400">{t('medley.eliminationOrder')}</h3>
           <div className="space-y-1">
-            {eliminationOrder.map((id, idx) => {
+            {eliminationOrder.map((id, _idx) => {
               const p = players.find(pl => pl.id === id);
               if (!p) return null;
               return (
@@ -276,7 +276,7 @@ function HighlightRow({
 // ===================== FEATURE #17: SHARE BUTTON =====================
 
 export function ShareButton({
-  players, winner, settings,
+  players, winner,
 }: {
   players: MedleyPlayer[];
   winner: { name: string; score: number } | null;

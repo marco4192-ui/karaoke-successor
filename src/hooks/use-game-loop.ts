@@ -202,7 +202,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const sampleP2VisualTicksRef = useRef(sampleP2VisualTicks);
 
   // ── Result generation hook (extracted) ──
-  const { generateResults, playersRef, p1PerfectNotesCountRef } = useGameResults({
+  const { generateResults, playersRef } = useGameResults({
     song,
     gameMode,
     isDuetMode,

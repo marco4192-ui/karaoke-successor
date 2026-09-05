@@ -26,7 +26,7 @@ export function RateMySongRatingScreen({
   onSubmit,
   onBack,
 }: RateMySongRatingScreenProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const audienceProfiles = useMemo(() => {
     const singerIds = new Set(singingPlayers.map(p => p.id));
     return allProfiles.filter(p => p.isActive !== false && !singerIds.has(p.id));

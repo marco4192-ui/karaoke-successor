@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -56,9 +55,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [activeDesktopScreen, setActiveDesktopScreen] = useState<string>('home');
 
   // Punkt 6: Ladebildschirm-Animation bei Screen-Wechsel
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevScreenRef = useRef<string>('home');
+  const [isTransitioning] = useState(false);
 
   // Connection
   const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
@@ -75,7 +72,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   });
 
   // Pitch detection
-  const { isListening, currentPitch, micPermissionDenied, startMicrophone, stopMicrophone, getPitchHistory } = useMobilePitchDetection({
+  const { isListening, currentPitch, startMicrophone, stopMicrophone } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
   });
 

@@ -47,7 +47,6 @@ export function usePtmMedley({
   setPhase,
   setIsPlaying,
   segmentSwitchHandledRef,
-  forceRender,
 }: UsePtmMedleyOptions): {
   isMedleyMode: boolean;
   currentSnippet: MedleySnippet | null;

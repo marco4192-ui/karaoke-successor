@@ -5,7 +5,6 @@
 
 import { Song, Difficulty } from '@/types/game';
 import { storeMedia } from '@/lib/db/media-db';
-import { createTrackedBlobUrl } from '@/lib/parsers/blob-url-tracker';
 import { ScannedSong } from '@/lib/parsers/scan-types';
 import { parseUltraStarFull } from '@/lib/parsers/ultrastar-metadata';
 import { getAudioDuration, getVideoDuration } from '@/lib/parsers/media-duration';

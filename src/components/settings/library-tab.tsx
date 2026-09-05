@@ -8,8 +8,7 @@ import { ImportScreen } from '@/components/import/import-screen';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
-import { StorageKeys, getJsonOptional, setJson, setItem } from '@/lib/storage';
-import { getAllSongs } from '@/lib/game/song-library';
+import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { nativePickFolder } from '@/lib/native-fs';
 import { safePrompt } from '@/lib/safe-dialog';
@@ -51,13 +50,10 @@ export function LibraryTab({
   songCount,
   handleSaveFolder,
   handleBrowseFolder,
-  handleResetLibrary,
-  handleClearAllData,
   executeResetLibrary,
   executeClearAllData,
   isResetting,
   resetComplete,
-  folderSaveComplete,
   tx,
 }: LibraryTabProps) {
   const { t } = useTranslation();

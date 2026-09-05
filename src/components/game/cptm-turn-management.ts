@@ -74,7 +74,6 @@ export function useCptmTurnManagement(
   params: CptmTurnManagementParams,
 ): CptmTurnManagementReturn {
   const {
-    initialPlayers,
     initialSegments,
     playersRef,
     phase,

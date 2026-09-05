@@ -38,7 +38,6 @@ export function MobileSwipeableItem({
   children,
   leftAction,
   onSwipeLeft,
-  rightAction,
   onSwipeRight,
   className = '',
   disabled = false,
@@ -49,9 +48,6 @@ export function MobileSwipeableItem({
     onSwipeRight,
     disabled,
   });
-
-  // We use the absolute value for the "revealed" width of the action area
-  const revealedWidth = Math.abs(Math.min(swipeOffset, 0)); // only left-swipe reveals
 
   return (
     <div className={`relative overflow-hidden ${className}`}>

@@ -46,7 +46,6 @@ export function useCptmSeries(params: CptmSeriesParams): CptmSeriesReturn {
     effectiveSong,
     song,
     playersRef,
-    cptmSeriesHistory,
     setCptmSeriesHistory,
     setCptmPlayers,
     setCptmSong,

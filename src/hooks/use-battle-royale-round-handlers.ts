@@ -63,7 +63,7 @@ export function useBattleRoyaleRoundHandlers({
   setShowElimination,
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
-  const [eliminationPhase, setEliminationPhase] = useState<null | 'eliminating' | 'survivor-flash'>(null);
+  const [eliminationPhase] = useState<null | 'eliminating' | 'survivor-flash'>(null);
   const gameRef = useRef(game);
   const mountedRef = useRef(true);
   /** Guard: true while handleRoundEnd is processing or during the elimination timeout.
@@ -124,7 +124,6 @@ export function useBattleRoyaleRoundHandlers({
     // during gameplay (every scoring tick), which can cause infinite re-render
     // loops when combined with React effect chains during round transitions.
     const currentGame = gameRef.current;
-    const currentActivePlayers = activePlayersRef.current;
 
     if (audioRef.current) {
       audioRef.current.pause();

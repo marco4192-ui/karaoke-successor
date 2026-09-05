@@ -122,7 +122,7 @@ export function useCptmGameLogic({
     setPhaseRaw(resolved);
     window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
   }, [phase]);
-  const [countdown, setCountdown] = useState(3);
+  const [countdown] = useState(3);
 
   // ── Dispatch initial 'intro' phase on mount ──
   // The useState('intro') never triggers the custom event, so the companion

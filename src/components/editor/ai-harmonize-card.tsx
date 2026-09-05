@@ -33,7 +33,7 @@ export function AiHarmonizeCard({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [pendingApplyAll, setPendingApplyAll] = useState(false);
+  const [, setPendingApplyAll] = useState(false);
 
   // Process ALL songs (up to 50) — the AI will return null for songs that are already fine
   const songsToHarmonize = useMemo(() =>

@@ -36,7 +36,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
   const rmsGameMode = useGameStore((s) => s.gameState.gameMode);
   const party = usePartyStore();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   // State for Rate my Song results
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);

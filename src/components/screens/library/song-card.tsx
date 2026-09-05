@@ -1,6 +1,5 @@
 'use client';
 
-import { Song } from '@/types/game';
 import { Badge } from '@/components/ui/badge';
 import { SongCardProps } from './types';
 import { MusicIcon, PlayIcon } from '@/components/icons';

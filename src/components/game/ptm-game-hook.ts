@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Song, LyricLine, Note, EMPTY_PLAYER_SCORE } from '@/types/game';
 
-import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameMedia } from '@/hooks/use-game-media';

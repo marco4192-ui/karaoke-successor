@@ -46,7 +46,7 @@ import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
   // ── Store hooks (must be called before any conditional returns) ──
-  const { gameState, setSong, setGameMode, setDifficulty, setChallengeMode, setActiveProfile, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
+  const { gameState, setSong, setGameMode, setDifficulty, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
   const { t } = useTranslation();
   const viralCharts = useViralCharts();

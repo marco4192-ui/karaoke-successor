@@ -192,7 +192,6 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   onSendDesktopCommand,
 }) {
   const navBase = { onNavigate, gameState };
-  const remoteBase = { isRemoteLocked, remoteLockedBy, onAcquireRemote, onReleaseRemote };
   const desktopMirrorBase = { onSendDesktopCommand };
 
   switch (mirrorScreenId) {

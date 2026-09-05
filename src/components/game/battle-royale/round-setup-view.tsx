@@ -261,7 +261,6 @@ function SpectatorPredictionCard({
   correctPredictions: number;
   onUpdateGame: (_game: BattleRoyaleGame) => void;
 }) {
-  const { t } = useTranslation();
   const [prediction, setPrediction] = useState<string | null>(
     game.spectatorPredictions[spectator.id] ?? null
   );

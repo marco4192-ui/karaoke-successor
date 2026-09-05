@@ -37,7 +37,6 @@ export function MedleyFinalResults({
   players, settings, seriesHistory, onBack,
   eliminationOrder = [],
   showLeaderboard = false,
-  highlights = [],
   teamBonusResult,
 }: MedleyFinalResultsProps) {
   const { t } = useTranslation();

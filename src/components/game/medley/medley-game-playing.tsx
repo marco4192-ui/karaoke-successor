@@ -89,7 +89,6 @@ export function MedleyPlayingUI({
   totalProgress,
   currentMatchup,
   isTeam,
-  multiPitch,
   handleEndEarly,
   lastScoringEvents = [],
   currentDynamicDifficulty = null,
@@ -126,7 +125,7 @@ export function MedleyPlayingUI({
 
   // ── Compute NoteWithLine[] for the standard NoteHighway ──
   const notesWithLine = useMemo<NoteWithLine[]>(() => {
-    return snippetNotes.map((note, i) => {
+    return snippetNotes.map((note, _i) => {
       // Find the lyric line this note belongs to
       const lineIdx = snippetLyrics.findIndex(line =>
         line.notes.some(n => n.startTime === note.startTime && n.pitch === note.pitch),
@@ -409,7 +408,6 @@ export function MedleyPlayingUI({
 
 function ScoringPopups({
   events,
-  players,
 }: {
   events: MedleyScoringEvent[];
   players: MedleyPlayer[];
@@ -422,8 +420,6 @@ function ScoringPopups({
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {recentEvents.map((event, i) => {
-        const player = players.find(p => p.id === event.playerId);
-        const color = player?.color || '#fff';
         const age = now - event.timestamp;
         const opacity = Math.max(0, 1 - age / 1000);
         const translateY = -(age / 1000) * 40;

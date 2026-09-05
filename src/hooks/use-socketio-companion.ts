@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { GameState } from '@/components/screens/mobile/mobile-types';
 
 /**
  * Socket.IO hook for the Companion (mobile) side.

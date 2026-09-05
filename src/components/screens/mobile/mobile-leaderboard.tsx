@@ -3,7 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
-import type { GameState, CompanionScoreEntry } from './mobile-types';
+import type { GameState } from './mobile-types';
 
 interface MobileLeaderboardProps {
   gameState: GameState;

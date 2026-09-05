@@ -45,7 +45,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
   });
 
   const {
-    phase, transitionCount,
+    phase,
     currentSnippet, currentSnippetIdx, snippetNotes,
     audioRef, videoRef, fallbackVideoRef, audioError,
     playersDisplay, multiPitch,

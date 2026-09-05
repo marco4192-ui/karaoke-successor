@@ -12,14 +12,6 @@ import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
 
-/** Reusable chevron-down icon to replace inline SVGs (#21) */
-function ChevronDownIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
 
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');

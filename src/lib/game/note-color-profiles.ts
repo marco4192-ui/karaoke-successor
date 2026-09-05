@@ -33,14 +33,6 @@ export interface NoteColorProfile {
   lowPerfActiveGlow: string;
 }
 
-/** Helper: create golden/bonus variants from a normal palette */
-function withVariants(
-  normal: NoteColorProfile,
-  overrides?: Partial<Pick<NoteColorProfile, 'glowTint' | 'lowPerfGradient' | 'lowPerfActiveGlow'>>,
-): NoteColorProfile {
-  return normal; // variants are computed at runtime in note-utils.tsx
-}
-
 // ═══════════════════════════════════════════════════════════════
 //  PROFILE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════

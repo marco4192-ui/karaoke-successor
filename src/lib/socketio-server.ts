@@ -15,7 +15,7 @@
  */
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { mobileEvents, EVENTS, type CompanionCommandEvent, type CompanionPitchEvent } from './socketio-events';
+import { mobileEvents, EVENTS, type CompanionCommandEvent } from './socketio-events';
 import { mutableState, mobileClients, latestPitchData } from '@/app/api/mobile/mobile-state';
 
 // ─── Types ───

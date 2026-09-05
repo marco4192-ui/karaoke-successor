@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { Song, PlayerProfile } from '@/types/game';
+import type { Song } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -25,14 +24,6 @@ interface PlaylistQueueConfigModalProps {
   songs: Song[];
 }
 
-/** Chevron-down icon for native selects */
-function ChevronDown() {
-  return (
-    <svg className="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
 
 /** Drag handle icon */
 function DragHandleIcon() {

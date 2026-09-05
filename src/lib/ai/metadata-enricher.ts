@@ -26,7 +26,7 @@ interface EnrichResponse {
 export async function enrichSongMetadata(
   songs: Array<{ id: string; title: string; artist: string; genre?: string; language?: string }>,
   mode: 'enrich' | 'harmonize',
-  onProgress?: (_batchNum: number, _totalBatches: number) => void,
+  _onProgress?: (_batchNum: number, _totalBatches: number) => void,
 ): Promise<EnrichResponse> {
   try {
     const response = await fetch('/api/metadata-enrich', {

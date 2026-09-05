@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { GamepadIcon } from '@/components/settings/settings-icons';
-import { StorageKeys, getBool, getJson, setBool, setJson, getString, setItem } from '@/lib/storage';
+import { StorageKeys, getBool, getJson, setBool, setJson, setItem } from '@/lib/storage';
 
 interface GameplayTabProps {
   tx: (_key: string) => string;

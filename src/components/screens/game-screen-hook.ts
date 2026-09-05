@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
@@ -315,9 +315,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     pitchStats,
     p1PitchStats,
     p2PitchStats,
-    visibleNotes,
-    p1VisibleNotes,
-    p2VisibleNotes,
     visibleNotesRef,
     p1VisibleNotesRef,
     p2VisibleNotesRef,

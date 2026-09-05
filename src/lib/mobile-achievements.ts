@@ -1,6 +1,6 @@
 // Mobile Companion Achievements — track and display user milestones
 
-import { getJson, setJson, getItem, setItem, StorageKeys } from '@/lib/storage';
+import { getJson, setJson, StorageKeys } from '@/lib/storage';
 import type { Language } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/translations';
 

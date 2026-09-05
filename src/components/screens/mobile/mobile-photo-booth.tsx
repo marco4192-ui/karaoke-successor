@@ -251,7 +251,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
         // Fallback to download
         handleSave();
       }
-    } catch (err) {
+    } catch {
       // User cancelled or share not supported — fall back to save
       handleSave();
     }

@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AudioOutputSection } from '@/components/settings/audio-output-section';
-import { StorageKeys, getNumber, setItem, getString } from '@/lib/storage';
+import { StorageKeys, setItem } from '@/lib/storage';
 
 interface GraphicSoundTabProps {
   previewVolume: number;

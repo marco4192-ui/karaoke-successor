@@ -23,7 +23,6 @@ export function usePtmTimeTracking({
   youtubeTime,
   audioRef,
   videoRef,
-  audioSong,
 }: UsePtmTimeTrackingOptions): {
   currentTime: number;
   setCurrentTime: React.Dispatch<React.SetStateAction<number>>;

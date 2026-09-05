@@ -198,7 +198,6 @@ export function getPlayerRank(stats: RateMySongPlayerStats): RankResult {
       currentRankIdx = 0;
       break;
     }
-    const prev = RANK_THRESHOLDS[i - 1];
     if (i === 1) {
       // OpenMic: 3+ performances OR avg >= 5.0
       if (perfs >= t.minPerformances || avg >= t.minAvgRating) {

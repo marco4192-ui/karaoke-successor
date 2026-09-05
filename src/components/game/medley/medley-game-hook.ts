@@ -23,7 +23,6 @@ import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi
 import { usePartyStore } from '@/lib/game/party-store';
 import { shouldSkipPitch, createMedleyTickScoringState, evaluateMedleyTick, type MedleyTickScoringState } from '@/lib/game/party-scoring';
 import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
-import { useTranslation } from '@/lib/i18n/translations';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
@@ -152,7 +151,6 @@ export function useMedleyGame({
   // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
-  const { t } = useTranslation();
   const isTeam = settings.playMode === 'team';
   const isEliminationMode = settings.playMode === 'elimination';
 

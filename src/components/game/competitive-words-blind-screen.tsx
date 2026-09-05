@@ -28,7 +28,6 @@ import {
   getRankedPlayers,
   getCurrentRound,
   pickSmartSong,
-  DEFAULT_COMPETITIVE_SETTINGS,
 } from '@/lib/game/competitive-words-blind';
 
 // ===================== SETUP SCREEN =====================

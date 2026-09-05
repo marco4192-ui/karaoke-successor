@@ -49,7 +49,7 @@ export function generateLosersBracket(
 }
 
 /** Calculate the number of matches in a given losers bracket round */
-function getLBMatchesCount(lbRound: number, wbRounds: number, numPlayers: number): number {
+function getLBMatchesCount(lbRound: number, wbRounds: number, _numPlayers: number): number {
   const N = Math.pow(2, wbRounds); // Use power-of-2 size (DE always uses exact Po2)
 
   if (lbRound === 1) {
@@ -229,7 +229,6 @@ function handleGrandFinalsResult(
   // GF1
   // Check if the WB champion (lossCount === 0) won
   const winnerLossCount = players.find(p => p.id === winner.id)?.lossCount ?? 0;
-  const loserLossCount = players.find(p => p.id === loser.id)?.lossCount ?? 0;
 
   if (winnerLossCount === 0) {
     // WB champion won GF1 -> tournament over, eliminate LB champion (2nd loss)

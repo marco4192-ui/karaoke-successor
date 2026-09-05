@@ -78,7 +78,6 @@ export function useBattleRoyaleRoundTimer({
         return;
       }
       // Unpausing: restore saved time and start interval from there
-      const restoredTime = preservedRoundTimeRef.current;
       preservedRoundTimeRef.current = null;
       
       const interval = setInterval(() => {

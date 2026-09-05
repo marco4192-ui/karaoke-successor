@@ -47,7 +47,6 @@ export function LyricLineDisplay({
   line,
   currentTime,
   playerColor,
-  noteDisplayStyle = 'classic',
   notePerformance = EMPTY_NOTE_PERFORMANCE,
   gameMode = 'standard',
   missingWordsIndices = [],

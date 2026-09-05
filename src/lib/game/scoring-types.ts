@@ -3,7 +3,7 @@
  */
 
 import type { Note, LyricLine } from '@/types/game';
-import type { NoteProgress, ScoringMetadata } from '@/lib/game/scoring';
+import type { ScoringMetadata } from '@/lib/game/scoring';
 import type { ChallengeModifier } from '@/lib/game/player-progression';
 import type { Player, Difficulty } from '@/types/game';
 

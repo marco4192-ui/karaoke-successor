@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE } from '@/lib/api/leaderboard-service';
 
 // ============================================================================
 // Types
@@ -16,8 +17,6 @@ export interface NetworkStatus {
 // ============================================================================
 // Server reachability check
 // ============================================================================
-
-const API_BASE = 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
 async function checkServerReachable(): Promise<boolean> {
   try {

@@ -24,9 +24,9 @@ import {
   type SongSuggestion,
   type Achievement,
 } from '@/lib/game/rate-my-song-ranking';
-import type { RateMySongResult, RateMySongResultsScreenProps, RateMySongSeriesResultsScreenProps } from './rate-my-song-types';
+import type { RateMySongResultsScreenProps, RateMySongSeriesResultsScreenProps } from './rate-my-song-types';
 import type { RateMySongRating } from './rate-my-song-types';
-import { CATEGORY_WEIGHTS, CATEGORY_KEYS, type CategoryKey } from './rate-my-song-types';
+import { CATEGORY_KEYS, type CategoryKey } from './rate-my-song-types';
 
 // ===================== RESULTS SCREEN =====================
 

@@ -248,7 +248,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     handleRoundEndRef,
-    handleStartRoundRef,
     onSnippetEndRef,
     activePlayersRef,
     gameRef,

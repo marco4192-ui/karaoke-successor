@@ -90,7 +90,6 @@ export function MobileSongsView({
   duetPartsSwapped = false,
   onDuetPartsSwappedChange,
   addedQueuePosition = 0,
-  clientId,
   playlists,
   onPlaylistAction,
 }: SongsViewProps) {
