@@ -157,6 +157,12 @@ export function useGameFlowHandlers(
     // Tournament match end — check FIRST to prevent medley/competitive hijacking
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();
+      // IMPORTANT: return here! handleTournamentGameEnd routes back to the
+      // bracket screen. Without this return, execution falls through to the
+      // default `setScreen('results')` below, which hijacks the tournament
+      // flow (the match result was recorded, but the user lands on the duel
+      // results screen instead of the bracket).
+      return;
     }
     // Medley / Duel snippet end — accumulate scores and return to medley flow
     else if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0 && party.medleySettings) {

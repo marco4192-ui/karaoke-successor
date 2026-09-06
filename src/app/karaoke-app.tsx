@@ -434,11 +434,27 @@ export default function KaraokeZERO() {
   // ── Handle remote party-start events from companion ──
   useEffect(() => {
     const handleRemotePartyStart = () => {
-      // Click the first visible "Start" or "Spiel starten" button in the DOM
+      // Robust selectors first (unified setup "Ready to Play", mode starting
+      // screens, PTM/CPTM/BR intros), then fall back to a text search.
+      const byId = document.querySelector<HTMLButtonElement>('#party-start-btn:not([disabled])');
+      if (byId) { byId.click(); return; }
+
+      const byTestId = document.querySelector<HTMLButtonElement>(
+        '[data-testid="party-starting-start-button"]:not([disabled])'
+      );
+      if (byTestId) { byTestId.click(); return; }
+
+      const introButtons = [
+        'ptm-start-button',
+      ].map(id => document.querySelector<HTMLButtonElement>(`[data-testid="${id}"]:not([disabled])`));
+      const introBtn = introButtons.find(Boolean);
+      if (introBtn) { introBtn!.click(); return; }
+
+      // Fallback: first visible "Start"/"Spiel starten" button
       const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button'));
       const startBtn = buttons.find(b => {
         const text = b.textContent?.toLowerCase() || '';
-        return text.includes('start') || text.includes('spiel starten');
+        return (text.includes('start') || text.includes('spiel starten')) && !b.disabled;
       });
       startBtn?.click();
     };

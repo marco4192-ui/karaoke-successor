@@ -525,6 +525,55 @@
   animation: perfectSparkle 0.5s ease-in-out infinite;
 }
 
+/* Party mode starting screen animations */
+@keyframes startingCardIn {
+  0% { opacity: 0; transform: translateY(18px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes startingCardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes startingIconDrop {
+  0% { opacity: 0; transform: translateY(-24px) scale(0.6); }
+  55% { opacity: 1; transform: translateY(4px) scale(1.1); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes startBtnGlow {
+  0%, 100% { box-shadow: 0 0 18px rgba(255, 255, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.45); }
+  50% { box-shadow: 0 0 34px rgba(255, 255, 255, 0.45), 0 8px 28px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes startingBadgePop {
+  0% { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  70% { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.animate-starting-card-in {
+  animation: startingCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-starting-card-float {
+  animation: startingCardFloat 3.2s ease-in-out infinite;
+}
+
+.animate-starting-icon-drop {
+  animation: startingIconDrop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-start-btn-glow {
+  animation: startBtnGlow 2.2s ease-in-out infinite;
+}
+
+.animate-starting-badge-pop {
+  animation: startingBadgePop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Pass-the-Mic transition animations */
 @keyframes ptm-pulse {
   0%, 100% { opacity: 0.85; }

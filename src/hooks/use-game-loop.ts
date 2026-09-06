@@ -380,78 +380,84 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
       if (!isMountedRef.current) return; // Check if still mounted after async
 
-      if (success) {
+      if (!success && !isNonScoringMode) {
+        // Graceful degradation: the game MUST still start when the microphone
+        // is unavailable (no mic, permission denied, device busy). Pitch-based
+        // scoring is simply disabled — same behavior as Pass-the-Mic.
+        // eslint-disable-next-line no-console
+        console.warn('[GameScreen] Pitch detector initialization failed — continuing without pitch scoring.');
+      }
+
+      if (success && !isNonScoringMode) {
         // Set pitch detector to current difficulty
-        if (!isNonScoringMode) {
-          setPitchDifficulty(difficulty);
-          start();
+        setPitchDifficulty(difficulty);
+        start();
+      }
+
+      // Reset per-game tracking refs
+      comebackRef.current = false;
+
+      // Reset scoring state (note progress tracking is handled by the hook)
+      resetScoring();
+
+      // ── Media playback function (extracted to use-media-playback.ts) ──
+      const playMedia = () => playSongMedia({
+        audioRef,
+        videoRef,
+        song: effectiveSong,
+        isNativeAudio,
+        nativeAudioPlay,
+        nativeAudioSeek,
+      });
+
+      // Store playMedia in ref so the pause-resume effect can call it
+      // when restarting an interrupted countdown.
+      playMediaRef.current = playMedia;
+
+      // ── Medley mode: skip countdown (MedleyGameView already counted down) ──
+      if (gameMode === 'medley') {
+        setCountdown(0);
+        setIsPlaying(true);
+        startTimeRef.current = Date.now();
+        playMedia();
+        scheduleWatchdog(false);
+        return;
+      }
+
+      // ── Normal mode: 3-second countdown then play ──
+      // Start countdown from 3
+      setCountdown(3);
+
+      // Use a ref to track countdown value for proper timing
+      let currentCount = 3;
+
+      countdownIntervalRef.current = setInterval(() => {
+        if (!isMountedRef.current) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          return;
         }
 
-        // Reset per-game tracking refs
-        comebackRef.current = false;
+        currentCount -= 1;
 
-        // Reset scoring state (note progress tracking is handled by the hook)
-        resetScoring();
+        if (currentCount <= 0) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
 
-        // ── Media playback function (extracted to use-media-playback.ts) ──
-        const playMedia = () => playSongMedia({
-          audioRef,
-          videoRef,
-          song: effectiveSong,
-          isNativeAudio,
-          nativeAudioPlay,
-          nativeAudioSeek,
-        });
-
-        // Store playMedia in ref so the pause-resume effect can call it
-        // when restarting an interrupted countdown.
-        playMediaRef.current = playMedia;
-
-        // ── Medley mode: skip countdown (MedleyGameView already counted down) ──
-        if (gameMode === 'medley') {
           setCountdown(0);
           setIsPlaying(true);
           startTimeRef.current = Date.now();
           playMedia();
-          scheduleWatchdog(false);
-          return;
+
+          scheduleWatchdog(isNonScoringMode);
+        } else {
+          setCountdown(currentCount);
         }
-
-        // ── Normal mode: 3-second countdown then play ──
-        // Start countdown from 3
-        setCountdown(3);
-
-        // Use a ref to track countdown value for proper timing
-        let currentCount = 3;
-
-        countdownIntervalRef.current = setInterval(() => {
-          if (!isMountedRef.current) {
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-            return;
-          }
-
-          currentCount -= 1;
-
-          if (currentCount <= 0) {
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-
-            setCountdown(0);
-            setIsPlaying(true);
-            startTimeRef.current = Date.now();
-            playMedia();
-
-            scheduleWatchdog(isNonScoringMode);
-          } else {
-            setCountdown(currentCount);
-          }
-        }, 1000);
-      }
+      }, 1000);
     };
 
     initGame();

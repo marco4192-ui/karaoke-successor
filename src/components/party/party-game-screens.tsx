@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
@@ -8,18 +8,15 @@ import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-libra
 import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
 import { shuffleArray } from '@/lib/utils';
-import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
-import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
-import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
+import { TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
+import { BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
-import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
-import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
 import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
-import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
+import { CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { PartyStartingScreen } from '@/components/game/party-starting-screen';
-import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
+import { RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
 import { toast } from '@/hooks/use-toast';
@@ -249,20 +246,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Pass the Mic Setup Screen */}
-      {screen === 'pass-the-mic' && (
-        <PassTheMicSetupScreen
-          profiles={profiles}
-          onSelectSong={(players, settings) => {
-            party.setPassTheMicPlayers(players);
-            party.setPassTheMicSettings(settings);
-            setGameMode('pass-the-mic');
-            setScreen('library');
-          }}
-          onBack={() => setScreen('party')}
-        />
-      )}
-
       {/* Pass the Mic Game Screen — dedicated PTM screen with note highway */}
       {screen === 'pass-the-mic-game' && party.passTheMicSong && (
         <PtmGameScreen
@@ -396,24 +379,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         </div>
       )}
 
-      {/* Tournament Setup Screen */}
-      {screen === 'tournament' && (
-        <TournamentSetupScreen
-          profiles={profiles}
-          onStartTournament={(bracket, songDuration) => {
-            party.setTournamentBracket(bracket);
-            party.setTournamentSongDuration(songDuration);
-            // #2 Reset used songs when a new tournament starts
-            party.resetTournamentUsedSongIds();
-            // #10 Reset crowd votes when a new tournament starts
-            party.resetTournamentCrowdVotes();
-            setShowTournamentResults(false);
-            setScreen('tournament-game');
-          }}
-          onBack={() => setScreen('party')}
-        />
-      )}
-
       {/* Tournament Game Screen */}
       {screen === 'tournament-game' && party.tournamentBracket && !showTournamentResults && (
         <TournamentBracketView
@@ -508,24 +473,18 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           bracket={party.tournamentBracket}
           onBack={() => setShowTournamentResults(false)}
           onNewTournament={() => {
+            // Unified flow: "New Tournament" returns to the unified party setup
+            // (same flow as initial mode selection) instead of the legacy setup screen.
             party.setTournamentBracket(null);
+            party.setCurrentTournamentMatch(null);
+            party.setTournamentVotedSong(null);
+            party.resetTournamentUsedSongIds();
+            party.setTournamentMatchAborted(false);
+            party.setPtmMedleySnippets([]);
             setShowTournamentResults(false);
-            setScreen('tournament');
+            party.setSelectedGameMode('tournament');
+            setScreen('party-setup');
           }}
-        />
-      )}
-
-      {/* Battle Royale Setup Screen */}
-      {screen === 'battle-royale' && (
-        <BattleRoyaleSetupScreen
-          profiles={profiles}
-          songs={getNonDuetSongs()}
-          onStartGame={(game) => {
-            party.setIsSongPlaying(false);
-            party.setBattleRoyaleGame(game);
-            setScreen('battle-royale-game');
-          }}
-          onBack={() => setScreen('party')}
         />
       )}
 
@@ -615,24 +574,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Medley Contest Setup Screen (redesigned: FFA + Team modes) */}
-      {screen === 'medley' && (
-        <MedleySetupScreen
-          profiles={profiles}
-          onStartGame={(players: MedleyPlayer[], medleySongList: MedleySong[], settings: MedleySettings, matchups: SnippetMatchup[]) => {
-            party.setMedleyPlayers(players);
-            party.setMedleySongs(medleySongList);
-            party.setMedleySettings(settings);
-            party.setMedleyMatches(matchups);
-            party.setMedleySeriesHistory([]);
-            // Reset isSongPlaying BEFORE navigating to prevent React #185
-            party.setIsSongPlaying(false);
-            setScreen('medley-game');
-          }}
-          onBack={() => setScreen('party')}
-        />
-      )}
-
       {/* Medley Contest Game Screen — dedicated screen with multi-pitch detection */}
       {screen === 'medley-game' && party.medleySongs.length > 0 && party.medleySettings ? (
         <MedleyGameScreen
@@ -685,19 +626,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           return null;
         })()
       )}
-      {screen === 'missing-words' && (
-        <CompetitiveSetupScreen
-          profiles={profiles}
-          songs={getNonDuetSongs()}
-          modeType='missing-words'
-          onStartGame={(game) => {
-            party.setCompetitiveGame(game);
-            setScreen('missing-words-game');
-          }}
-          onBack={() => setScreen('party')}
-        />
-      )}
-
       {/* Missing Words Competitive Game */}
       {screen === 'missing-words-game' && party.competitiveGame && (
         <CompetitiveGameView
@@ -762,20 +690,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setSong(song);
             setScreen('game');
           }}
-        />
-      )}
-
-      {/* Blind Karaoke Competitive Setup */}
-      {screen === 'blind' && (
-        <CompetitiveSetupScreen
-          profiles={profiles}
-          songs={getNonDuetSongs()}
-          modeType='blind'
-          onStartGame={(game) => {
-            party.setCompetitiveGame(game);
-            setScreen('blind-game');
-          }}
-          onBack={() => setScreen('party')}
         />
       )}
 
@@ -873,74 +787,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Rate my Song Setup */}
-      {screen === 'rate-my-song' && (
-        <RateMySongSetupScreen
-          profiles={profiles}
-          onStart={(settings, playerIds) => {
-            party.setRateMySongSettings(settings);
-            party.setRateMySongPlayerIds(playerIds);
-            setRateMySongResult(null);
-            // Reset challenge overlay so it shows for the new round
-            setChallengeOverlayDismissed(false);
-
-            // Reset series state for new game
-            if (!party.rateMySongSeriesHistory || party.rateMySongSeriesHistory.length === 0) {
-              setRateMySongSeriesRound(1);
-              party.resetRateMySongSeries();
-            }
-
-            // Draw a challenge if enabled
-            if (settings.challengesEnabled) {
-              const challenge = getRandomChallenge();
-              party.setRateMySongCurrentChallenge(challenge);
-            } else {
-              party.setRateMySongCurrentChallenge(null);
-            }
-
-            const song = getAllSongs().find(s => s.id === settings.songId);
-            if (!song) return;
-
-            resetGame();
-            setGameMode('rate-my-song');
-
-            // If short mode, trim song to 60 seconds
-            if (settings.duration === 'short') {
-              setSong(trimSongToShortMode(song));
-            } else {
-              setSong(song);
-            }
-
-            // Add players
-            setPlayers([]);
-            const setupResult = buildGameSetupResult({
-              mode: 'rate-my-song',
-              players: playerIds.map((id, i) => {
-                const p = profiles.find(pr => pr.id === id);
-                return {
-                  id,
-                  name: p?.name || t('battleRoyale.player').replace('{n}', String(i + 1)),
-                  color: p?.color || '#FF6B6B',
-                  micName: t('partyGameScreens.microphone1').replace('1', String(i + 1)),
-                };
-              }),
-              difficulty: 'medium',
-              settings: {},
-              songSelection: 'library',
-              inputMode: 'mixed',
-            });
-            party.setUnifiedSetupResult(setupResult);
-            playerIds.forEach((id, _i) => {
-              const p = profiles.find(pr => pr.id === id);
-              if (p) addPlayer({ id: p.id, name: p.name, color: p.color });
-            });
-
-            setScreen('game');
-          }}
-          onBack={() => setScreen('party')}
-        />
       )}
 
       {/* Rate my Song — After song ends, go to rating screen */}
@@ -1045,7 +891,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 const challenge = getRandomChallenge(prevChallenge?.id);
                 party.setRateMySongCurrentChallenge(challenge);
               }
-              setScreen('rate-my-song');
+              // Unified flow: "Play Again" returns to the unified party setup
+              // (mode, players, song selection, "Ready to Play") instead of the
+              // legacy setup screen — the flow stays identical every round.
+              party.setSelectedGameMode('rate-my-song');
+              setScreen('party-setup');
             }}
             onEnd={() => {
               party.setRateMySongSettings(null);

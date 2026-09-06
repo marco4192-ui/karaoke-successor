@@ -413,6 +413,7 @@ partyStarting: {
   companion: 'Companion',
   startButton: 'Starten',
   hint: 'Die Sänger können sich in Position bringen — starte, wenn alle bereit sind.',
+  enterHint: 'oder Enter drücken',
   minutes: 'Min.',
 },
 extendedDesc: {

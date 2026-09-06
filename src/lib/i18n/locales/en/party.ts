@@ -555,6 +555,7 @@ export const partyTranslations = {
     companion: 'Companion',
     startButton: 'Start',
     hint: 'Singers can get into position — start when everyone is ready.',
+    enterHint: 'or press Enter',
     minutes: 'min',
   },
 
