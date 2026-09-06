@@ -14,8 +14,7 @@ import { PlayerIntroCard } from './medley-game-components';
 import { MedleyPlayingUI } from './medley-game-playing';
 import { MedleyRoundResults, MedleyFinalResults } from './medley-game-results';
 import { GameBackground } from '@/components/game/game-background';
-import { PauseButton } from '@/components/game/hud/pause-button';
-import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -219,6 +218,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             multiPitch={multiPitch}
             handleEndEarly={handleEndEarly}
             lastScoringEvents={lastScoringEvents}
+            notePerformance={state.notePerformance}
             currentDynamicDifficulty={currentDynamicDifficulty}
             // Feature #10
             isEliminationMode={state.isEliminationMode}
@@ -322,16 +322,14 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         )}
       </div>
 
-      {/* HUD Controls — PauseButton top-left, FullscreenButton top-right (PTM layout) */}
+      {/* HUD Controls — unified chrome: Pause + End Song (top-left), Webcam + Difficulty + Fullscreen (top-right) */}
       {phase === 'playing' && (
-        <>
-          <div className="absolute top-4 left-4 z-30 pointer-events-auto">
-            <PauseButton isPlaying={isPlaying} onTogglePause={handleTogglePause} />
-          </div>
-          <div className="absolute top-4 right-4 z-30 pointer-events-auto">
-            <FullscreenButton />
-          </div>
-        </>
+        <GameHudChrome
+          isPlaying={isPlaying}
+          onTogglePause={handleTogglePause}
+          onEndSong={handleEndEarly}
+          difficulty={currentDynamicDifficulty ?? settings.difficulty ?? 'medium'}
+        />
       )}
 
       {/* ── ROUND RESULTS ── */}

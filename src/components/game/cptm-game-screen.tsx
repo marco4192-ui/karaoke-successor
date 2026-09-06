@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useCallback } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
 import { NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
@@ -9,10 +10,10 @@ import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
-import { PauseButton } from '@/components/game/hud/pause-button';
-import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
 import { PtmPlayerRanking } from '@/components/game/ptm-player-ranking';
+import { PtmHudPlayerScore } from '@/components/game/ptm-hud-player-score';
 import { useCptmGameLogic } from '@/components/game/cptm-game-hook';
 import { usePartyStore } from '@/lib/game/party-store';
 import type { PtmPlayer } from '@/components/game/ptm-types';
@@ -48,6 +49,14 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = useCptmGameLogic(props);
   const cptmSongSelection = usePartyStore((s) => s.cptmSongSelection);
+  const cptmSettings = usePartyStore((s) => s.cptmSettings);
+  const setCptmSettings = usePartyStore((s) => s.setCptmSettings);
+  const cptmDifficulty = cptmSettings?.difficulty ?? 'medium';
+  const cycleCptmDifficulty = useCallback(() => {
+    const levels: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
+    const next = levels[(levels.indexOf(cptmDifficulty) + 1) % levels.length];
+    setCptmSettings({ ...(cptmSettings ?? { difficulty: next, blinkWarning: 3 }), difficulty: next });
+  }, [cptmDifficulty, cptmSettings, setCptmSettings]);
 
   // ── Guard: no effective song ──
   if (!g.effectiveSong) {
@@ -297,36 +306,32 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
         )}
       </div>
 
-      {/* ═══════ HUD OVERLAYS ═══════ */}
+      {/* ═══════ HUD OVERLAYS (unified layout: PTM as model) ═══════ */}
 
-      {/* Controls — Pause (top-left) + End Song (top-left, after pause) + Fullscreen (top-right) */}
+      {/* Top-left: Pause + End Song • Top-right: Webcam + Difficulty + Fullscreen */}
       {g.phase === 'playing' && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
-            <PauseButton
-              isPlaying={g.isPlaying}
-              onTogglePause={g.showPauseDialog}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={g.handleEndSong}
-              className="text-white/40 hover:text-white/70 hover:bg-white/10 text-xs px-3 py-1.5"
-            >
-              {t('game.endSong')}
-            </Button>
-          </div>
-          <div className="absolute top-4 right-4 z-20 pointer-events-auto">
-            <FullscreenButton />
-          </div>
-        </div>
+        <GameHudChrome
+          isPlaying={g.isPlaying}
+          onTogglePause={g.showPauseDialog}
+          onEndSong={g.handleEndSong}
+          difficulty={cptmDifficulty}
+          onCycleDifficulty={cycleCptmDifficulty}
+        />
       )}
 
-      {/* Player Ranking — vertical left side, sorted by score (no active-player highlight for CPTM) */}
+      {/* Now Singing — prominent top-center card incl. live score (pattern C) */}
+      {g.phase === 'playing' && g.currentPlayer && (
+        <PtmHudPlayerScore
+          players={ptmPlayers}
+          currentPlayer={g.currentPlayer}
+        />
+      )}
+
+      {/* Player Ranking — vertical left side with live ranking; active singer highlighted */}
       {g.phase === 'playing' && (
         <PtmPlayerRanking
           players={ptmPlayers}
-          currentPlayerIndex={-1}
+          currentPlayerIndex={g.currentPlayerIndex}
         />
       )}
 

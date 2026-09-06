@@ -28,6 +28,8 @@ import type { MedleyPlayer, MedleySong, SnippetMatchup, MedleyScoringEvent, Voic
 import { VOICE_MODIFIERS } from './medley-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { NoteHighway, type NoteWithLine } from '@/components/game/note-highway';
+import { TimeDisplay } from '@/components/game/game-hud';
+import { MicIndicator } from '@/components/game/mic-indicator';
 import {
   calculatePitchStats,
   getVisibleNotes,
@@ -55,6 +57,8 @@ interface MedleyPlayingProps {
   multiPitch: ReturnType<typeof useMultiPitchDetector>;
   handleEndEarly: () => void;
   lastScoringEvents?: MedleyScoringEvent[];
+  /** Unified HUD: per-note performance samples (colored notes + wrong-singing marks) */
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   currentDynamicDifficulty?: Difficulty | null;
   settings: MedleySettings;
   // Feature #10
@@ -89,9 +93,8 @@ export function MedleyPlayingUI({
   totalProgress,
   currentMatchup,
   isTeam,
-  handleEndEarly,
   lastScoringEvents = [],
-  currentDynamicDifficulty = null,
+  notePerformance,
   settings,
   // Feature #10
   isEliminationMode = false,
@@ -209,7 +212,7 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* ═══════ FULLSCREEN NOTE HIGHWAY ═══════ */}
+      {/* ═══════ FULLSCREEN NOTE HIGHWAY (unified note performance: colored fills + wrong-singing marks) ═══════ */}
       {notesWithLine.length > 0 && (
         <div className="absolute inset-0 z-0">
           <NoteHighway
@@ -218,6 +221,7 @@ export function MedleyPlayingUI({
             pitchStats={pitchStats}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
+            notePerformance={notePerformance}
             playerColor="#a855f7"
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
@@ -245,10 +249,7 @@ export function MedleyPlayingUI({
                 {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
               </Badge>
             )}
-            {/* Feature #9: Dynamic difficulty badge */}
-            {currentDynamicDifficulty && (
-              <MedleyDifficultyBadge difficulty={currentDynamicDifficulty} />
-            )}
+            {/* Feature #9: Dynamic difficulty badge now lives in the unified top-right HUD chrome */}
             {/* Feature #15: Active modifier badge */}
             {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
               <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
@@ -381,25 +382,82 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* ═══════ BOTTOM EDGE: Snippet progress + quit ═══════ */}
+      {/* ═══════ PATTERN E — Team matchup bar (both players per team, current singer highlighted) ═══════ */}
+      {isTeam && <TeamMatchupBar players={playersDisplay} currentMatchup={currentMatchup} />}
+
+      {/* ═══════ BOTTOM EDGE: Snippet progress (unified: no Quit — End Song lives top-left) ═══════ */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
         <Progress value={snippetProgress} className="h-1 bg-white/10" />
         <div className="flex justify-between items-center px-4 py-1">
           <span className="text-[10px] text-white/30">
             {t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}
           </span>
-          <button
-            onClick={handleEndEarly}
-            aria-label={t('medley.quit')}
-            className="text-red-400/50 hover:text-red-400 text-[10px] transition-colors pointer-events-auto"
-          >
-            {t('medley.quit')}
-          </button>
         </div>
+      </div>
+
+      {/* ═══════ Unified bottom HUD: mic indicator (bottom-left) + playtime/duration (bottom-right) ═══════ */}
+      <div className="absolute bottom-8 left-4 z-20">
+        <MicIndicator isPlaying />
+      </div>
+      <div className="absolute bottom-8 right-4 z-20">
+        <TimeDisplay currentTime={currentTimeMs} duration={currentSnippet.duration} />
       </div>
 
       {/* ═══════ Feature #5: Floating scoring popups ═══════ */}
       <ScoringPopups events={lastScoringEvents} players={playersDisplay} />
+    </div>
+  );
+}
+
+// ===================== PATTERN E: TEAM MATCHUP BAR =====================
+// Duel-style center bar for team mode (1v1 / 2v2): both players of each team
+// are shown in the center separator; the player currently singing is highlighted.
+
+function TeamMatchupBar({ players, currentMatchup }: { players: MedleyPlayer[]; currentMatchup: SnippetMatchup | null }) {
+  const { t } = useTranslation();
+  const teamA = players.filter(p => p.team === 0);
+  const teamB = players.filter(p => p.team === 1);
+  const singingIds = new Set([currentMatchup?.playerA.id, currentMatchup?.playerB.id]);
+
+  const renderTeam = (team: MedleyPlayer[], align: 'right' | 'left', color: string, label: string) => (
+    <div className={`flex flex-col gap-1 ${align === 'right' ? 'items-end' : 'items-start'}`}>
+      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color }}>{label}</span>
+      {team.map(player => {
+        const isSinging = singingIds.has(player.id);
+        return (
+          <div
+            key={player.id}
+            className={`flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 border transition-all ${
+              isSinging ? 'border-white/60 bg-white/15 shadow-lg scale-105' : 'border-white/10 bg-black/30 opacity-60'
+            }`}
+          >
+            {player.avatar ? (
+              <img src={player.avatar} alt={player.name} className={`w-6 h-6 rounded-full object-cover ${isSinging ? 'border-2' : 'border'} border-white/30`} />
+            ) : (
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-white/30" style={{ backgroundColor: `${player.color}90` }}>
+                {player.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className={`text-xs font-semibold whitespace-nowrap ${isSinging ? 'text-white' : 'text-white/60'}`}>
+              {player.name}
+            </span>
+            <span className="text-[10px] text-cyan-300 tabular-nums">{String(player.score ?? 0).toLocaleString()}</span>
+            {isSinging && <span className="text-[9px]">🎤</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+      <div className="flex items-center gap-3 bg-black/50 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/10">
+        {renderTeam(teamA, 'right', '#60a5fa', t('medley.teamA'))}
+        <div className="flex flex-col items-center px-1">
+          <span className="text-lg font-black text-white/40">VS</span>
+        </div>
+        {renderTeam(teamB, 'left', '#f87171', t('medley.teamB'))}
+      </div>
     </div>
   );
 }
@@ -455,24 +513,5 @@ function ScoringPopups({
         );
       })}
     </div>
-  );
-}
-
-// ===================== FEATURE #9: DIFFICULTY BADGE =====================
-
-function MedleyDifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
-  const { t } = useTranslation();
-
-  const configs: Record<Difficulty, { label: string; bg: string; text: string }> = {
-    easy: { label: t('medley.easy'), bg: 'bg-green-500/20', text: 'text-green-400' },
-    medium: { label: t('medley.medium'), bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
-    hard: { label: t('medley.hard'), bg: 'bg-red-500/20', text: 'text-red-400' },
-  };
-  const config = configs[difficulty];
-
-  return (
-    <Badge className={`${config.bg} ${config.text} text-xs px-2 py-0.5`}>
-      {config.label}
-    </Badge>
   );
 }

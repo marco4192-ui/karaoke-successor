@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle } from 'lucide-react';
-import { PauseButton } from '@/components/game/hud/pause-button';
-import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
+import { TimeDisplay } from '@/components/game/game-hud';
 import { NoteHighway } from '@/components/game/note-highway';
 import { GameBackground } from '@/components/game/game-background';
 import { GameCountdown } from '@/components/game/game-countdown';
@@ -350,25 +350,22 @@ export function PlayingView({
         <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
       )}
 
-      {/* ─────────── Pause + Fullscreen ─────────── */}
-      <div className="absolute top-3 left-3 z-20 pointer-events-auto">
-        <PauseButton
-          isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
-          onTogglePause={() => {
-            if (pauseDialogAction === 'song-pause') {
-              setPauseDialogAction(null);
-            } else {
-              if (audioRef.current && !audioRef.current.paused) {
-                audioRef.current.pause();
-              }
-              setPauseDialogAction('song-pause');
+      {/* ─────────── Unified HUD chrome (top-left: Pause + End Round; top-right: Webcam + Difficulty + Fullscreen) ─────────── */}
+      <GameHudChrome
+        isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
+        onTogglePause={() => {
+          if (pauseDialogAction === 'song-pause') {
+            setPauseDialogAction(null);
+          } else {
+            if (audioRef.current && !audioRef.current.paused) {
+              audioRef.current.pause();
             }
-          }}
-        />
-      </div>
-      <div className="absolute top-3 right-3 z-20 pointer-events-auto">
-        <FullscreenButton />
-      </div>
+            setPauseDialogAction('song-pause');
+          }
+        }}
+        onEndSong={onRoundEnd}
+        difficulty={game.effectiveDifficulty}
+      />
 
       {/* ─────────── Inline Elimination Overlay ─────────── */}
       {eliminationPhase && (
@@ -426,15 +423,7 @@ export function PlayingView({
         </div>
       )}
 
-      {/* ─────────── Pause Overlay ─────────── */}
-      {pauseDialogAction === 'song-pause' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-          <div className="text-center animate-in fade-in duration-300">
-            <div className="text-8xl mb-4">⏸</div>
-            <h2 className="text-3xl font-bold text-white/90">{t('game.paused')}</h2>
-          </div>
-        </div>
-      )}
+      {/* ─────────── Pause is handled by the app-level SongPauseDialog ─────────── */}
 
       {/* ─────────── V3: Countdown Overlay ─────────── */}
       {countdown > 0 && <GameCountdown countdown={countdown} />}
@@ -497,13 +486,6 @@ export function PlayingView({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {/* #1 Medley snippet indicator */}
-            {totalSnippets > 1 && (
-              <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0">
-                🎵 {currentSnippetIndex + 1}/{totalSnippets}
-                {snippetTimeLeft !== null && ` (${snippetTimeLeft}s)`}
-              </Badge>
-            )}
             <Badge variant="outline" className="border-red-500 text-red-400 text-[10px] px-1.5 py-0">
               {t('battleRoyale.playersLeft').replace('{n}', String(activePlayers.length))}
             </Badge>
@@ -710,7 +692,7 @@ export function PlayingView({
       {/* If highway is hidden, this spacer pushes lyrics down */}
       {!showNoteHighway && <div className="flex-1" />}
 
-      {/* ─────────── 4. SONG PROGRESS BAR (2px) ─────────── */}
+      {/* ─────────── 4. SONG PROGRESS BAR (2px, bottom edge) ─────────── */}
       {currentSong && songProgress > 0 && (
         <div className="flex-shrink-0 w-full h-[2px] bg-white/5">
           <div
@@ -722,6 +704,20 @@ export function PlayingView({
           />
         </div>
       )}
+
+      {/* ─────────── Unified bottom HUD: snippet timer (bottom-left) + playtime/duration (bottom-right) ─────────── */}
+      <div className="absolute bottom-1 left-3 z-30 pointer-events-none flex items-center gap-2">
+        {/* #1 Medley snippet indicator — moved to the BOTTOM (unified HUD spec) */}
+        {totalSnippets > 1 && (
+          <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0 bg-black/40">
+            🎵 {currentSnippetIndex + 1}/{totalSnippets}
+            {snippetTimeLeft !== null && ` (${snippetTimeLeft}s)`}
+          </Badge>
+        )}
+      </div>
+      <div className="absolute bottom-1 right-3 z-30 pointer-events-none">
+        <TimeDisplay currentTime={currentTime} duration={currentSong?.duration ?? 0} />
+      </div>
 
       {/* ─────────── 5. LYRICS (bottom) — uses standard LyricLineDisplay ─────────── */}
       <div className="flex-shrink-0 px-4 pb-4 min-h-0">
@@ -762,14 +758,7 @@ export function PlayingView({
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-red-500/20 to-transparent pointer-events-none transition-opacity duration-500" />
       )}
 
-      {/* #7 Difficulty indicator */}
-      {game.settings.escalatingDifficulty && (
-        <div className="absolute bottom-3 left-3 z-20 pointer-events-none">
-          <Badge variant="outline" className="border-white/20 text-white/40 text-xs">
-            {t('battleRoyale.difficulty').toLowerCase()}: {game.effectiveDifficulty.toUpperCase()}
-          </Badge>
-        </div>
-      )}
+      {/* Difficulty now lives in the unified top-right HUD chrome (GameHudChrome) */}
     </div>
   );
 }

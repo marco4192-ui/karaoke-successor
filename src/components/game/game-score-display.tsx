@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { useTranslation } from '@/lib/i18n/translations';
+import { DifficultyBadge } from '@/components/game/hud/difficulty-badge';
+import type { Difficulty } from '@/components/game/hud/difficulty-badge';
 
 interface GameScoreDisplayProps {
   /** Whether duet mode is active (accepted for compat, rendered elsewhere) */
@@ -23,7 +24,8 @@ interface GameScoreDisplayProps {
 }
 
 /**
- * Header badge display showing difficulty badge and active challenge mode indicator.
+ * Header badge display showing the unified difficulty badge and active
+ * challenge mode indicator.
  * Mini score/combo has been moved to ProminentScoreDisplay for single-player.
  */
 export const GameScoreDisplay = React.memo(function GameScoreDisplay({
@@ -34,19 +36,13 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
   activeChallenge,
   timeRemaining,
 }: GameScoreDisplayProps) {
-  const { t } = useTranslation();
-  const DIFFICULTY_LABELS: Record<string, string> = {
-    easy: t('difficulty.easy') || 'Easy',
-    medium: t('difficulty.medium') || 'Medium',
-    hard: t('difficulty.hard') || 'Hard',
-  };
-  const label = DIFFICULTY_LABELS[difficulty] ?? difficulty.toUpperCase();
+  const normalizedDifficulty: Difficulty =
+    difficulty === 'easy' || difficulty === 'hard' ? difficulty : 'medium';
 
   return (
     <div className="flex items-center gap-3">
-      <Badge variant="outline" className="border-white/20 text-white/80">
-        {label}
-      </Badge>
+      {/* Unified difficulty badge (same component as PTM & party modes) */}
+      <DifficultyBadge difficulty={normalizedDifficulty} />
 
       {/* Active Challenge Mode Indicator */}
       {activeChallenge && (

@@ -6,6 +6,8 @@ import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/l
 import { useTranslation } from '@/lib/i18n/translations';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { PauseButton } from '@/components/game/hud/pause-button';
+import { EndSongButton } from '@/components/game/hud/end-song-button';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
 import { PracticePanel } from '@/components/game/practice-panel';
@@ -46,28 +48,46 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
-      {/* Header Overlay */}
+      {/* Header Overlay (unified layout: icon Pause + End Song top-left) */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-        {/* Left: Back / Pause Button */}
-        <Button variant="ghost" onClick={() => {
-          if (props.onPause) {
-            props.onPause();
-          } else {
-            g.abortGameLoop();
-            g.stop();
-            if (g.audioEffects) g.audioEffects.disconnect();
-            /* eslint-disable react-hooks/immutability -- imperative DOM cleanup: pause and rewind media refs */
-            if (g.audioRef.current) { g.audioRef.current.pause(); g.audioRef.current.currentTime = 0; }
-            if (g.videoRef.current) { g.videoRef.current.pause(); g.videoRef.current.currentTime = 0; }
-            /* eslint-enable react-hooks/immutability */
-            g.nativeAudio.stop().catch(() => {});
-            g.setIsPlaying(false);
-            g.resetScoring();
-            props.onBack();
-          }
-        }} className="text-white/80 hover:text-white hover:bg-white/10">
-          {t('gameScreen.pause')}
-        </Button>
+        {/* Top-left: Pause (icon) + End Song + rate-my-song player name (pattern B) */}
+        <div className="flex items-center gap-2">
+          <PauseButton
+            isPlaying={g.isPlaying}
+            onTogglePause={() => {
+              if (props.onPause) {
+                props.onPause();
+              } else {
+                g.abortGameLoop();
+                g.stop();
+                if (g.audioEffects) g.audioEffects.disconnect();
+                /* eslint-disable react-hooks/immutability -- imperative DOM cleanup: pause and rewind media refs */
+                if (g.audioRef.current) { g.audioRef.current.pause(); g.audioRef.current.currentTime = 0; }
+                if (g.videoRef.current) { g.videoRef.current.pause(); g.videoRef.current.currentTime = 0; }
+                /* eslint-enable react-hooks/immutability */
+                g.nativeAudio.stop().catch(() => {});
+                g.setIsPlaying(false);
+                g.resetScoring();
+                props.onBack();
+              }
+            }}
+          />
+          <EndSongButton onEndSong={g.endGameAndCleanup} disabled={!g.isPlaying} />
+
+          {/* Pattern B — Rate my Song: single player name next to the pause button (no score in this mode) */}
+          {g.gameState.gameMode === 'rate-my-song' && g.gameState.players[0] && (
+            <div className="flex items-center gap-2 ml-1 bg-black/40 backdrop-blur-md rounded-full pl-1 pr-3 py-1 border border-white/10">
+              {g.gameState.players[0].avatar ? (
+                <img src={g.gameState.players[0].avatar} alt={g.gameState.players[0].name} className="w-7 h-7 rounded-full object-cover border border-white/30" />
+              ) : (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: g.gameState.players[0].color || '#FF6B6B' }}>
+                  {g.gameState.players[0].name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-sm font-semibold text-white/90">{g.gameState.players[0].name}</span>
+            </div>
+          )}
+        </div>
 
         {/* Center: Low-perf indicator only */}
         {g.isLowPerf && (
@@ -325,7 +345,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
-      {!g.isLowPerf && g.showParticles !== false && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} isDuetMode={g.isDuetMode} />}
+      {/* Score Events — hidden in Rate my Song (no score in this mode) */}
+      {!g.isLowPerf && g.showParticles !== false && g.gameState.gameMode !== 'rate-my-song' && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} isDuetMode={g.isDuetMode} />}
       {!g.isLowPerf && g.showParticles !== false && <ParticleSystem particles={g.particles} />}
 
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
@@ -349,8 +370,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         </div>
       )}
 
-      {/* Prominent Score Display - Only for Single Player Mode */}
-      {!g.isDuetMode && g.showScore !== false && <ProminentScoreDisplay player={g.gameState.players[0]} showCombo={g.showCombo !== false} />}
+      {/* Prominent Score Display - Only for Single Player Mode (hidden in Rate my Song — pattern B: no score) */}
+      {!g.isDuetMode && g.showScore !== false && g.gameState.gameMode !== 'rate-my-song' && <ProminentScoreDisplay player={g.gameState.players[0]} showCombo={g.showCombo !== false} />}
     </div>
   );
 }

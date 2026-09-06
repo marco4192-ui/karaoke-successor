@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import { PauseButton } from '@/components/game/hud/pause-button';
+import { EndSongButton } from '@/components/game/hud/end-song-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { loadWebcamConfig, saveWebcamConfig } from '@/components/game/webcam-background';
@@ -16,6 +17,8 @@ interface PtmHudControlsProps {
   isPlaying: boolean;
   /** Legacy toggle — NOT used for the PauseButton anymore. Kept for backward compat. */
   onTogglePause: () => void;
+  /** End the current song early WITH evaluation (unified HUD layout: top-left next to Pause) */
+  onEndSong?: () => void;
   /** Ref to active webcam streams (for cleanup on unmount). */
   activeWebcamStreamsRef?: React.RefObject<MediaStream[]>;
 }
@@ -30,6 +33,7 @@ export function PtmHudControls({
   safeSettings,
   isPlaying,
   onTogglePause,
+  onEndSong,
 }: PtmHudControlsProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(safeSettings.difficulty);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
@@ -100,9 +104,10 @@ export function PtmHudControls({
       <WebcamBackground config={webcamConfig} onConfigChange={updateWebcamConfig} />
 
       <div className="fixed inset-0 z-50 pointer-events-none">
-        {/* Top-left: Pause */}
+        {/* Top-left: Pause + End Song (unified layout across all party modes) */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
           <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
+          {onEndSong && <EndSongButton onEndSong={onEndSong} />}
         </div>
 
         {/* Top-right: WebcamQuickControls + Difficulty + Vollbild */}

@@ -88,6 +88,10 @@ interface MedleyGameState {
   // Feature #5: Scoring events for UI popups
   lastScoringEvents: MedleyScoringEvent[];
 
+  // Unified HUD: per-note performance samples for the NoteHighway
+  // (colored tick fills + wrong-singing ghost bars, as in other modes)
+  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+
   // Feature #9: Dynamic difficulty
   currentDynamicDifficulty: Difficulty | null;
 
@@ -220,6 +224,10 @@ export function useMedleyGame({
   // ── Feature #5: Scoring events for UI feedback ──
   const [lastScoringEvents, setLastScoringEvents] = useState<MedleyScoringEvent[]>([]);
   const scoringEventsRef = useRef<MedleyScoringEvent[]>([]);
+
+  // ── Unified HUD: per-note performance samples for the NoteHighway ──
+  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
   // Throttle UI update for scoring events to ~100ms
   const lastScoringUiUpdateRef = useRef(0);
 
@@ -399,6 +407,24 @@ export function useMedleyGame({
     const result = evaluateMedleyTick(
       pitch.note, absTime, audio.snippetNotes, effectiveDiff, beatDuration, tickState, snippetScoringMetaRef.current,
     );
+
+    // Unified HUD: record a performance sample for the active note so the
+    // NoteHighway shows colored tick fills + wrong-singing marks like other modes.
+    const activeNoteForPerf = audio.snippetNotes.find(
+      n => absTime >= n.startTime && absTime < n.startTime + n.duration,
+    );
+    if (activeNoteForPerf) {
+      const perfNoteId = activeNoteForPerf.id || `note-${activeNoteForPerf.startTime}`;
+      let perfSamples = notePerformanceRef.current.get(perfNoteId);
+      if (!perfSamples) {
+        perfSamples = [];
+        notePerformanceRef.current.set(perfNoteId, perfSamples);
+      }
+      perfSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit });
+      if (perfSamples.length > 100) {
+        notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
+      }
+    }
 
     if (result.points > 0) {
       let points = result.points;
@@ -643,6 +669,11 @@ export function useMedleyGame({
         scoringEventsRef.current = scoringEventsRef.current.filter(e => e.timestamp > cutoff);
       }
 
+      // Unified HUD: sync note performance samples to state (~100ms) for the NoteHighway
+      if (notePerformanceRef.current.size > 0) {
+        setNotePerformance(new Map(notePerformanceRef.current));
+      }
+
       // Keep display state in sync with ref mutations for live score updates
       forceRender();
     }, 50);
@@ -857,6 +888,7 @@ export function useMedleyGame({
     currentMatchup,
     currentLyricLine,
     lastScoringEvents,
+    notePerformance,
     currentDynamicDifficulty: features.currentDynamicDifficulty,
     // Feature #10
     isEliminationMode,

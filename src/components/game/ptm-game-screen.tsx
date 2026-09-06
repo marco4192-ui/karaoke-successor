@@ -10,6 +10,7 @@ import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
+import { MicIndicator } from '@/components/game/mic-indicator';
 import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
 import { PtmIntroScreen } from '@/components/game/ptm-intro-screen';
@@ -205,12 +206,13 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
         />
       )}
 
-      {/* Controls (top-right) */}
+      {/* Controls (top-left: Pause + End Song; top-right: Webcam + Difficulty + Fullscreen) */}
       {g.phase === 'playing' && (
         <PtmHudControls
           safeSettings={g.safeSettings}
           isPlaying={g.isPlaying}
           onTogglePause={g.togglePause}
+          onEndSong={g.handleEndSong}
         />
       )}
 
@@ -225,6 +227,14 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       {/* Progress Bar (bottom) */}
       <GameProgressBar currentTime={g.currentTime} duration={g.displayDuration} />
       <TimeDisplay currentTime={g.currentTime} duration={g.displayDuration} />
+
+      {/* Mic indicator (bottom-left) — shows which player sings on which mic */}
+      {(g.phase === 'playing' || g.phase === 'transitioning') && (
+        <MicIndicator
+          isPlaying={g.isPlaying}
+          gameMode="pass-the-mic"
+        />
+      )}
 
       {/* ═══════ TRANSITION OVERLAY ═══════ */}
       <PtmTransitionOverlay
