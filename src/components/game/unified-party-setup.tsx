@@ -24,17 +24,24 @@ interface UnifiedPartySetupProps {
   onSelectLibrary: (result: import('./unified-party-setup.types').GameSetupResult) => void;
   onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, _suggestedSongs: Song[]) => void;
   onBack: () => void;
-  /** Pre-selected song from library (user returned after picking a song) */
+  /** Pre-selected song from library/vote (user returned after picking a song) */
   preSelectedSong?: Song | null;
-  /** Called when user clicks "Start Game" with the pre-selected library song */
-  onStartWithPreselectedSong?: () => void;
-  /** Called when user wants to change the pre-selected song (go back to library) */
+  /** Which song-selection method produced the pre-selected song ('library' | 'vote') */
+  preSelectedMethod?: import('./unified-party-setup.types').SongSelectionOption | null;
+  /** Called when the user switches back to a songless method (random/medley) */
+  onClearSelectedSong?: () => void;
+  /** Called when user wants to pick a different song (go back to library) */
   onChangePreselectedSong?: () => void;
+  /** Restored setup form snapshot after returning from library/voting */
+  initialDraft?: import('./unified-party-setup.types').PartySetupDraft | null;
+  /** Persist the setup form before leaving to library/voting */
+  onSaveDraft?: (_draft: import('./unified-party-setup.types').PartySetupDraft) => void;
 }
 
 export function UnifiedPartySetup({
   gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode, onBack,
-  preSelectedSong, onStartWithPreselectedSong, onChangePreselectedSong,
+  preSelectedSong, preSelectedMethod, onClearSelectedSong, onChangePreselectedSong,
+  initialDraft, onSaveDraft,
 }: UnifiedPartySetupProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,13 +63,30 @@ export function UnifiedPartySetup({
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
+    songSelection, setSongSelection, resolvedSong, setResolvedSong, readyToPlay, handleReadyToPlay,
     inputMode, setInputMode,
     micAssignments, assignMic, removeMicAssignment,
     selectedMicId, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined, filterReleaseYear,
     setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear,
     availableGenres, availableLanguages, filteredSongs,
-  } = usePartySetup({ gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode });
+  } = usePartySetup({
+    gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode,
+    initialSongSelection: preSelectedMethod ?? null,
+    initialSelectedSong: preSelectedSong ?? null,
+    onClearSelectedSong,
+    initialDraft,
+    onSaveDraft,
+  });
+
+  // Keep the hook's song state in sync when the parent (party store) updates
+  // the pre-selected song (e.g. after returning from library or voting).
+  useEffect(() => {
+    setResolvedSong(preSelectedSong ?? null);
+  }, [preSelectedSong, setResolvedSong]);
+  useEffect(() => {
+    if (preSelectedMethod) setSongSelection(preSelectedMethod);
+  }, [preSelectedMethod, setSongSelection]);
 
   const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -147,7 +171,7 @@ export function UnifiedPartySetup({
           onFilterReleaseYearChange={setFilterReleaseYear}
         />
 
-        {/* Pre-selected Library Song Banner */}
+        {/* Pre-selected Library/Vote Song Banner (display-only — the "Ready to Play" button below starts the game) */}
         {preSelectedSong && (
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-4 mb-6">
             <div className="flex items-center gap-4">
@@ -171,17 +195,6 @@ export function UnifiedPartySetup({
                     {t('unifiedSetup.change')}
                   </Button>
                 )}
-                {onStartWithPreselectedSong && (
-                  <Button
-                    id="party-start-btn"
-                    size="sm"
-                    onClick={onStartWithPreselectedSong}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
-                    data-testid="party-setup-start-button"
-                  >
-                    {t('unifiedSetup.startGame')}
-                  </Button>
-                )}
               </div>
             </div>
           </div>
@@ -190,11 +203,16 @@ export function UnifiedPartySetup({
         <SongSelectionGrid
           config={config} selectedPlayerCount={selectedPlayers.length}
           onSongSelection={handleSongSelection}
+          selectedOption={songSelection ?? null}
         />
 
         <ReadySummary
           config={config} selectedPlayerCount={selectedPlayers.length}
           difficulty={difficulty} inputMode={inputMode}
+          songSelection={songSelection ?? null}
+          selectedSong={preSelectedSong ?? resolvedSong ?? null}
+          readyToPlay={readyToPlay}
+          onReadyToPlay={handleReadyToPlay}
         />
       </div>
     </div>

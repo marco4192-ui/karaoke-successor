@@ -19,6 +19,8 @@ interface PtmIntroScreenProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   playersCount: number;
+  /** How the song was chosen ('random' | 'library' | 'vote' | 'medley') — the song name is hidden for 'random' */
+  songSelectionMethod?: string | null;
 }
 
 export function PtmIntroScreen({
@@ -34,8 +36,13 @@ export function PtmIntroScreen({
   audioRef,
   videoRef,
   playersCount,
+  songSelectionMethod,
 }: PtmIntroScreenProps) {
   const { t } = useTranslation();
+  // The song name stays hidden when the song was picked randomly —
+  // it is revealed at game start. Legacy flows without a stored method
+  // keep showing the song name.
+  const hideSongName = songSelectionMethod === 'random';
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -69,7 +76,9 @@ export function PtmIntroScreen({
         <p className="text-white/60 mb-8">
           {isMedleyMode
             ? t('passTheMic.medleyLabel').replace('{n}', String(medleySnippetCount))
-            : `${audioSong?.title ?? ''} — ${audioSong?.artist ?? ''}`}
+            : hideSongName
+              ? `🎲 ${t('unifiedSetup.randomSongDesc')}`
+              : `${audioSong?.title ?? ''} — ${audioSong?.artist ?? ''}`}
         </p>
 
         <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">

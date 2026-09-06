@@ -286,6 +286,7 @@ export const medleyTournamentTranslations = {
     matchesVoted: 'matches',
     micAssignment: 'Microphone Assignment',
     singsWith: 'sings with',
+    startingTitle: 'Next Match',
   },
 
   rateMySong: {

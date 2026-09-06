@@ -14,6 +14,7 @@ import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
 import { PtmPlayerRanking } from '@/components/game/ptm-player-ranking';
 import { useCptmGameLogic } from '@/components/game/cptm-game-hook';
+import { usePartyStore } from '@/lib/game/party-store';
 import type { PtmPlayer } from '@/components/game/ptm-types';
 
 // Re-export types for backward compatibility
@@ -46,6 +47,7 @@ function toPtmPlayers(players: Parameters<typeof useCptmGameLogic>[0]['players']
 export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = useCptmGameLogic(props);
+  const cptmSongSelection = usePartyStore((s) => s.cptmSongSelection);
 
   // ── Guard: no effective song ──
   if (!g.effectiveSong) {
@@ -62,9 +64,14 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
   // ===================== INTRO PHASE =====================
   if (g.phase === 'intro') {
+    // Song name shown only when explicitly chosen (library/vote) — hidden for random
+    const songSelectionMethod = cptmSongSelection;
+    const showSong = songSelectionMethod === 'library' || songSelectionMethod === 'vote';
+    // The player who starts singing (first turn) — highlighted as start player
+    const startPlayer = g.players[0];
     return (
-      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-zinc-900 via-black to-zinc-900 px-4">
-        <div className="flex flex-col items-center max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
+      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-zinc-900 via-black to-zinc-900 px-4 overflow-y-auto">
+        <div className="flex flex-col items-center max-w-md w-full animate-in fade-in zoom-in-95 duration-500 py-8">
           {/* CPtM Icon */}
           <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center mb-6 shadow-2xl">
             <span className="text-5xl">📱</span>
@@ -77,18 +84,59 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           <h2 className="text-2xl sm:text-3xl font-bold text-cyan-400 mb-1 text-center">
             {t('companionSingalong.introSubtitle')}
           </h2>
-          <p className="text-white/40 text-sm mb-8 text-center">
+          <p className="text-white/40 text-sm mb-6 text-center">
             {t('companionSingalong.introDescription')}
           </p>
 
-          {/* Player count indicator (no individual player names in CPTM) */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-full mb-8 flex items-center justify-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🎤</span>
-              <span className="text-lg font-medium text-white/60">
-                {g.players.length} {t('passTheMic.players')}
-              </span>
-            </div>
+          {/* Song — name hidden when randomly selected */}
+          <div className={`w-full rounded-xl px-6 py-4 mb-6 text-center border ${
+            showSong
+              ? 'bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border-cyan-500/30'
+              : 'bg-white/5 border-white/10'
+          }`}>
+            <div className="text-xs text-white/60 uppercase tracking-wider mb-1">{t('partyStarting.song')}</div>
+            {showSong ? (
+              <>
+                <div className="text-lg font-bold text-white truncate">🎵 {g.effectiveSong.title}</div>
+                <div className="text-sm text-white/60 truncate">{g.effectiveSong.artist}</div>
+              </>
+            ) : (
+              <div className="text-base font-medium text-white/70">🎲 {t('unifiedSetup.randomSongDesc')}</div>
+            )}
+          </div>
+
+          {/* Participants (small boxes) with start-player highlight */}
+          <div className="flex flex-wrap justify-center gap-2 mb-4 max-w-md">
+            {g.players.map((p, idx) => (
+              <div
+                key={p.id}
+                className={`relative flex flex-col items-center w-20 rounded-xl p-2 ${
+                  idx === 0
+                    ? 'bg-gradient-to-br from-cyan-500 to-emerald-500 border-2 border-white/50 shadow-lg scale-105'
+                    : 'bg-white/5 border border-white/10'
+                }`}
+                data-testid={`cptm-starting-player-${p.name}`}
+              >
+                {idx === 0 && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shadow">
+                    ▶ {t('partyStarting.startPlayer')}
+                  </span>
+                )}
+                {p.avatar ? (
+                  <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover border-2 border-white/30 mb-1" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-white/30 mb-1" style={{ backgroundColor: p.color }}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-xs font-semibold text-white truncate w-full text-center">{p.name}</span>
+                <span className="text-[9px] text-white/50">📱 {t('partyStarting.companion')}</span>
+              </div>
+            ))}
+          </div>
+          <div className="text-white/40 text-xs mb-6 flex items-center gap-1.5">
+            <span className="text-base">🎤</span>
+            {g.players.length} {t('passTheMic.players')}
           </div>
 
           {/* Media loaded indicator */}
@@ -109,6 +157,11 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
               ? t('passTheMic.startSinging')
               : t('gameScreen.loading')}
           </Button>
+          {startPlayer && (
+            <p className="text-white/30 text-xs mt-3 text-center">
+              {t('partyStarting.startPlayerHint').replace('{name}', startPlayer.name)}
+            </p>
+          )}
         </div>
       </div>
     );

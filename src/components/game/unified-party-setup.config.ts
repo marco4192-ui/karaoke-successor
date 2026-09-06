@@ -15,7 +15,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 2,
     maxPlayers: 8,
     settings: [],
-    songSelectionOptions: ['library', 'random', 'vote', 'medley'],
+    songSelectionOptions: ['random', 'library', 'vote', 'medley'],
     supportsCompanionApp: false,
     forceInputMode: 'microphone',
     sharedMic: true,
@@ -36,7 +36,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'maxTurnDuration', label: 'Max Turn Duration', labelKey: 'modeSettings.maxTurnDuration', type: 'slider', min: 30, max: 90, step: 5, defaultValue: 45, unit: 's' },
       { key: 'blinkWarning', label: 'Blink Warning', description: 'Warning time before switch', labelKey: 'modeSettings.blinkWarning', descriptionKey: 'modeSettings.blinkWarningDesc', type: 'slider', min: 1, max: 5, step: 1, defaultValue: 3, unit: 's' },
     ],
-    songSelectionOptions: ['library', 'random', 'vote', 'medley'],
+    songSelectionOptions: ['random', 'library', 'vote', 'medley'],
     supportsCompanionApp: true,
     forceInputMode: 'companion',
   },
@@ -105,7 +105,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       ], defaultValue: 'random' },
     ],
     songSelectionOptions: ['random'],
-    supportsCompanionApp: false,
+    supportsCompanionApp: true,
   },
   'battle-royale': {
     mode: 'battle-royale',
@@ -177,7 +177,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       ], defaultValue: 3 },
     ],
     songSelectionOptions: ['random'],
-    supportsCompanionApp: false,
+    supportsCompanionApp: true,
   },
   'missing-words': {
     mode: 'missing-words',
@@ -206,7 +206,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       ], defaultValue: 3 },
     ],
     songSelectionOptions: ['random'],
-    supportsCompanionApp: false,
+    supportsCompanionApp: true,
   },
   'rate-my-song': {
     mode: 'rate-my-song',
@@ -234,7 +234,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'challengesEnabled', label: 'Challenges', description: 'Random challenges before each round', labelKey: 'modeSettings.challenges', descriptionKey: 'modeSettings.challengesDesc', type: 'toggle', defaultValue: false },
       { key: 'bettingEnabled', label: 'Betting', description: 'Audience can predict', labelKey: 'modeSettings.betting', descriptionKey: 'modeSettings.bettingDesc', type: 'toggle', defaultValue: false },
     ],
-    songSelectionOptions: ['library', 'random'],
+    songSelectionOptions: ['random', 'library', 'vote'],
     supportsCompanionApp: true,
   },
 };

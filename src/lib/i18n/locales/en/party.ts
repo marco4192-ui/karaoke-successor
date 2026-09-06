@@ -399,6 +399,9 @@ export const partyTranslations = {
     removeAssignment: 'Remove assignment',
     inputMode: 'Input Mode',
     readyToPlay: 'Ready to Play!',
+    readyToPlayButton: 'Ready to Play',
+    chooseSongFirst: '⚠️ Choose a song-selection method (and a song) first',
+    selectMethodHint: 'Selecting a method does NOT start the game — press "Ready to Play" below when everyone is set.',
     playerCountLabel: 'players',
     // Input mode options
     inputMicrophoneOnly: 'Microphones Only',
@@ -426,6 +429,7 @@ export const partyTranslations = {
     // Voting modal
     chooseSong: '🎵 Choose a Song!',
     clickSongToPlay: 'Click on a song to start playing!',
+    clickSongToSelect: 'Click on a song to select it for your party — the game starts with "Ready to Play".',
     // Song too short (CPTM)
     songTooShortCptm: 'Song too short for Companion Sing-A-Long.',
     errorMaxPlayers: 'Maximum {n} players allowed',
@@ -539,6 +543,19 @@ export const partyTranslations = {
     challengesDesc: 'Random challenges before each round',
     betting: 'Betting',
     bettingDesc: 'Audience can predict',
+  },
+
+  // Unified party mode starting screen (after "Ready to Play", before gameplay)
+  partyStarting: {
+    song: 'Song',
+    participants: '{n} Participants',
+    startPlayer: 'Starts first',
+    startsFirst: 'Starts first',
+    startPlayerHint: '{name} sings first — get ready!',
+    companion: 'Companion',
+    startButton: 'Start',
+    hint: 'Singers can get into position — start when everyone is ready.',
+    minutes: 'min',
   },
 
   // Game mode titles and descriptions

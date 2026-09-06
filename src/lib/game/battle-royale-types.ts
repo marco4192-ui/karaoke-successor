@@ -164,6 +164,14 @@ export interface BattleRoyaleSettings {
   // Song selection (#2)
   songSelection: 'random' | 'vote';
 
+  /**
+   * Host-voted song from the unified party setup (setup-level "Vote" option).
+   * When set, round 1 uses exactly this song instead of a random pick;
+   * later rounds fall back to the configured per-round selection method.
+   */
+  firstRoundSongId?: string;
+  firstRoundSongTitle?: string;
+
   // No-repeat protection (#3)
   noRepeatProtection: boolean;
   noRepeatCount: number;

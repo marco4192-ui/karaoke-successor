@@ -127,6 +127,12 @@ export interface PartyStore {
   librarySelectedSong: Song | null;
   setLibrarySelectedSong: (_song: Song | null) => void;
 
+  // Which song-selection method was last chosen in the unified setup
+  // ('random' | 'library' | 'vote' | 'medley') — restored when the user
+  // returns to the setup screen after picking a song (library/vote).
+  songSelectionMethod: string | null;
+  setSongSelectionMethod: (_method: string | null) => void;
+
   // Unified Party Setup
   selectedGameMode: GameMode | null;
   setSelectedGameMode: (_mode: GameMode | null) => void;
@@ -134,6 +140,9 @@ export interface PartyStore {
   setUnifiedSetupResult: (_result: GameSetupResult | null) => void;
   votingSongs: Song[];
   setVotingSongs: (_songs: Song[]) => void;
+  /** Setup form snapshot kept while the user visits library/voting and returns */
+  setupDraft: import('@/components/game/unified-party-setup.types').PartySetupDraft | null;
+  setSetupDraft: (_draft: import('@/components/game/unified-party-setup.types').PartySetupDraft | null) => void;
 
   // Pause / Leave dialog management (shared between page.tsx and party components)
   pauseDialogAction: null | 'song-pause' | 'party-leave' | 'song-end-early';
@@ -244,6 +253,8 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
   // Pre-selected library song
   librarySelectedSong: null,
   setLibrarySelectedSong: (librarySelectedSong) => set({ librarySelectedSong }),
+  songSelectionMethod: null,
+  setSongSelectionMethod: (songSelectionMethod) => set({ songSelectionMethod }),
 
   // Unified Party Setup
   selectedGameMode: null,
@@ -252,6 +263,8 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
   setUnifiedSetupResult: (unifiedSetupResult) => set({ unifiedSetupResult }),
   votingSongs: [],
   setVotingSongs: (votingSongs) => set({ votingSongs }),
+  setupDraft: null,
+  setSetupDraft: (setupDraft) => set({ setupDraft }),
 
   // Pause / Leave dialog
   pauseDialogAction: null as null | 'song-pause' | 'party-leave' | 'song-end-early',
@@ -321,8 +334,10 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
     rateMySongCurrentChallenge: null,
 
     librarySelectedSong: null,
+    songSelectionMethod: null,
     selectedGameMode: null,
     unifiedSetupResult: null,
+    setupDraft: null,
     votingSongs: [],
     pauseDialogAction: null,
     isSongPlaying: false,

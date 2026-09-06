@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlayerProfile, Difficulty } from '@/types/game';
 import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
@@ -288,11 +289,13 @@ export function SongFilterSection({
 // ===================== SONG SELECTION GRID =====================
 
 export function SongSelectionGrid({
-  config, selectedPlayerCount, onSongSelection,
+  config, selectedPlayerCount, onSongSelection, selectedOption,
 }: {
   config: PartyGameConfig;
   selectedPlayerCount: number;
   onSongSelection: (_option: SongSelectionOption) => void;
+  /** Currently chosen song-selection method (highlighted) */
+  selectedOption?: SongSelectionOption | null;
 }) {
   const { t } = useTranslation();
 
@@ -319,18 +322,25 @@ export function SongSelectionGrid({
           {config.songSelectionOptions.map((option, index) => {
             const optConfig = SONG_SELECTION_CONFIG[option];
             const enabled = selectedPlayerCount >= config.minPlayers;
+            const isSelected = selectedOption === option;
             return (
               <button
                 key={option}
                 {...getSongOptionProps(index)}
                 onClick={() => onSongSelection(option)}
                 disabled={!enabled}
-                className={`p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
+                aria-pressed={isSelected}
+                data-selected={isSelected ? 'true' : 'false'}
+                data-testid={`song-selection-${option}`}
+                className={`relative p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   enabled
                     ? `${optConfig.color} text-white hover:scale-105`
                     : 'bg-white/5 text-white/30 cursor-not-allowed'
-                }`}
+                } ${isSelected ? 'ring-4 ring-white/70 scale-[1.03] shadow-lg' : ''}`}
               >
+                {isSelected && (
+                  <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-sm font-bold shadow" aria-hidden="true">✓</span>
+                )}
                 <div className="text-4xl mb-2">{optConfig.icon}</div>
                 <div className="font-bold">{t(optConfig.labelKey)}</div>
                 <div className="text-xs opacity-80 mt-1">{t(optConfig.descriptionKey)}</div>
@@ -338,6 +348,7 @@ export function SongSelectionGrid({
             );
           })}
         </div>
+        <p className="text-xs text-white/40 mt-3">{t('unifiedSetup.selectMethodHint')}</p>
       </CardContent>
     </Card>
   );
@@ -347,11 +358,20 @@ export function SongSelectionGrid({
 
 export function ReadySummary({
   config, selectedPlayerCount, difficulty, inputMode,
+  songSelection, selectedSong, readyToPlay, onReadyToPlay,
 }: {
   config: PartyGameConfig;
   selectedPlayerCount: number;
   difficulty: Difficulty;
   inputMode?: InputMode;
+  /** Chosen song-selection method */
+  songSelection?: SongSelectionOption | null;
+  /** Explicitly chosen song (library/vote) — shown when set */
+  selectedSong?: import('@/types/game').Song | null;
+  /** Whether all preconditions for starting are met */
+  readyToPlay?: boolean;
+  /** "Ready to Play" start handler — the ONLY start trigger */
+  onReadyToPlay?: () => void;
 }) {
   const { t } = useTranslation();
   const canStart = selectedPlayerCount >= config.minPlayers;
@@ -360,24 +380,57 @@ export function ReadySummary({
     : t('unifiedSetup.fallbackMicrophones');
   const missingReason = !canStart
     ? t('unifiedSetup.minPlayersRequired').replace('{n}', String(config.minPlayers))
-    : null;
+    : !readyToPlay
+      ? t('unifiedSetup.chooseSongFirst')
+      : null;
+
+  const methodLabel = songSelection ? t(SONG_SELECTION_CONFIG[songSelection].labelKey) : null;
+
   return (
-    <Card className={canStart ? `bg-gradient-to-r ${config.color} border-0 mb-6` : 'bg-white/5 border border-white/10 mb-6 opacity-60'}>
+    <Card className={readyToPlay ? `bg-gradient-to-r ${config.color} border-0 mb-6` : 'bg-white/5 border border-white/10 mb-6 opacity-90'} data-testid="party-ready-summary">
       <CardContent className="py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className={canStart ? 'font-bold text-lg text-white' : 'font-bold text-lg text-white/50'}>
-              {canStart ? t('unifiedSetup.readyToPlay') : t('unifiedSetup.playerSelection')}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className={readyToPlay ? 'font-bold text-lg text-white' : 'font-bold text-lg text-white/50'}>
+              {readyToPlay ? t('unifiedSetup.readyToPlay') : t('unifiedSetup.playerSelection')}
             </h3>
-            {canStart ? (
-              <p className="text-sm text-white/80">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
+            {readyToPlay ? (
+              <div className="text-sm text-white/80 space-y-0.5 min-w-0">
+                <p className="truncate">
+                  {methodLabel && <>🎲 {methodLabel} • </>}
+                  {selectedSong ? (
+                    <span className="font-medium text-white">🎵 {selectedSong.title} — {selectedSong.artist}</span>
+                  ) : songSelection === 'medley' ? (
+                    <span>{t('unifiedSetup.medleyMixDesc')}</span>
+                  ) : (
+                    <span>{t('unifiedSetup.randomSongDesc')}</span>
+                  )}
+                </p>
+                <p className="truncate">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
+              </div>
             ) : (
               <p className="text-sm text-white/30">{missingReason}</p>
             )}
           </div>
-          <div className="text-right">
-            <div className={canStart ? 'text-3xl font-bold text-white' : 'text-3xl font-bold text-white/30'}>{selectedPlayerCount}</div>
-            <div className="text-xs text-white/60">{t('unifiedSetup.playerCountLabel')}</div>
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="text-right">
+              <div className={readyToPlay ? 'text-3xl font-bold text-white' : 'text-3xl font-bold text-white/30'}>{selectedPlayerCount}</div>
+              <div className="text-xs text-white/60">{t('unifiedSetup.playerCountLabel')}</div>
+            </div>
+            <Button
+              id="party-start-btn"
+              size="lg"
+              onClick={onReadyToPlay}
+              disabled={!readyToPlay}
+              className={`px-8 py-6 text-lg font-bold focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
+                readyToPlay
+                  ? 'bg-white text-gray-900 hover:bg-white/90 animate-pulse'
+                  : 'bg-white/10 text-white/30 cursor-not-allowed'
+              }`}
+              data-testid="party-setup-start-button"
+            >
+              🎤 {t('unifiedSetup.readyToPlayButton')}
+            </Button>
           </div>
         </div>
       </CardContent>

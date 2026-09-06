@@ -86,9 +86,18 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
       ) : (
         <>
           <h1 className="text-3xl font-bold mb-2">{t('battleRoyale.roundSetup').replace('{n}', String(game.currentRound + 1))}</h1>
-          <p className="text-white/60 mb-6">
+          <p className="text-white/60 mb-2">
             {stats.activeMicPlayers} {t('battleRoyale.mic')} + {stats.activeCompanionPlayers} {t('battleRoyale.companion')} = {activePlayers.length} {t('battleRoyale.playersSelected')}
           </p>
+          {/* Host-voted song from the unified party setup — round 1 only, name shown */}
+          {game.currentRound === 0 && game.settings.firstRoundSongTitle ? (
+            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-2.5 mb-4">
+              <span className="text-xs text-red-300 uppercase tracking-wider">{t('partyStarting.song')}</span>
+              <span className="text-base font-bold text-white">🎵 {game.settings.firstRoundSongTitle}</span>
+            </div>
+          ) : (
+            <p className="text-white/40 text-sm mb-4">🎲 {t('unifiedSetup.randomSongDesc')}</p>
+          )}
         </>
       )}
 

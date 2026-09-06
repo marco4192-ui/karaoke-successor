@@ -25,6 +25,8 @@ interface UseBattleRoyaleRoundHandlersParams {
   audioHasPlayedRef: React.RefObject<boolean>;
   getRandomSong: (_excludeIds?: string[]) => Song | null;
   getRandomSongs: (_count: number, _excludeIds?: string[]) => Song[];
+  /** Resolve a song by id (used for the host-voted first-round song) */
+  getSongById: (_id: string) => Song | null;
   setShowElimination: (_show: boolean) => void;
 }
 
@@ -60,6 +62,7 @@ export function useBattleRoyaleRoundHandlers({
   audioHasPlayedRef,
   getRandomSong,
   getRandomSongs,
+  getSongById,
   setShowElimination,
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
@@ -245,8 +248,16 @@ export function useBattleRoyaleRoundHandlers({
       ? currentGame.recentlyPlayedSongIds.slice(-currentGame.settings.noRepeatCount)
       : [];
 
-    // #2 Song Voting: enter voting phase
-    if (currentGame.settings.songSelection === 'vote') {
+    // Host-voted song from the unified party setup (setup-level "Vote"):
+    // round 1 always uses this song — the host already decided, so skip
+    // the in-game voting phase for round 1.
+    const hostVotedFirstSong =
+      currentGame.currentRound === 0 && currentGame.settings.firstRoundSongId
+        ? getSongById(currentGame.settings.firstRoundSongId)
+        : null;
+
+    // #2 Song Voting: enter voting phase (skipped for round 1 with a host-voted song)
+    if (!hostVotedFirstSong && currentGame.settings.songSelection === 'vote') {
       const voteSongs = getRandomSongs(3, excludeIds);
       if (voteSongs.length >= 2) {
         const options = voteSongs.map(s => ({ songId: s.id, songName: s.title }));
@@ -257,7 +268,7 @@ export function useBattleRoyaleRoundHandlers({
       // Fall through to random if not enough songs for voting
     }
 
-    const song = getRandomSong(excludeIds);
+    const song = hostVotedFirstSong ?? getRandomSong(excludeIds);
     if (!song) {
       // eslint-disable-next-line no-console
       console.error('[BattleRoyale] No playable songs found.');
@@ -279,7 +290,7 @@ export function useBattleRoyaleRoundHandlers({
       onUpdateGameRef.current(updatedGame);
     }
   // Stable deps: removed game and onUpdateGame — read from refs instead
-  }, [getRandomSong, getRandomSongs]);
+  }, [getRandomSong, getRandomSongs, getSongById]);
 
   useEffect(() => {
     handleStartRoundRef.current = handleStartRound;

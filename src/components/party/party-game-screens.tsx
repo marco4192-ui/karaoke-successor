@@ -18,6 +18,7 @@ import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
 import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
 import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
+import { PartyStartingScreen } from '@/components/game/party-starting-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
@@ -51,14 +52,19 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // #8 Tournament song voting state
   const [tournamentVotingActive, setTournamentVotingActive] = useState(false);
 
-  // ── Tournament mic assignment overlay state ──
-  const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
-  const micOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Tournament starting-screen state (replaces the old 3-2-1 mic overlay) ──
+  // After selecting the next pairing ("Start Next Match"), the mode starting
+  // screen shows both players + their mic assignment + the song (if voted).
+  // The match starts via the explicit Start button — not via a countdown.
+  const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; votedSong: import('@/types/game').Song | null } | null>(null);
 
-  // Cleanup timer on unmount
-  useEffect(() => () => {
-    if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current);
-  }, []);
+  // Dispatch the intro phase while the tournament starting screen is visible
+  // so companion mirrors show the mode intro.
+  useEffect(() => {
+    if (micOverlay) {
+      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
+    }
+  }, [micOverlay]);
 
   // Helper: fetch connected companion profiles and compute mic assignments
   const startMatchWithMicOverlay = useCallback(async (
@@ -96,13 +102,13 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     party.setCurrentTournamentMatch(match);
     if (preSelectedSong) party.setTournamentVotedSong(preSelectedSong);
 
-    // Show mic assignment overlay with countdown
+    // Show the tournament starting screen (players, mic assignment, song)
     setMicOverlay({
       p1Name: match.player1.name,
       p2Name: match.player2.name,
       p1Mic,
       p2Mic,
-      countdown: 3,
+      votedSong: preSelectedSong ?? null,
     });
   }, [party.setCurrentTournamentMatch, party.setTournamentVotedSong, t]);
 
@@ -148,107 +154,99 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     return chosen;
   }, [party]);
 
-  useEffect(() => {
+  // ── Launch the selected tournament match (invoked by the starting screen's Start button) ──
+  const launchTournamentMatch = useCallback(() => {
     if (!micOverlay) return;
 
-    if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current);
+    const match = party.currentTournamentMatch;
+    if (!match) return;
+    if (!match.player1 || !match.player2) return;
 
-    if (micOverlay.countdown <= 0) {
-      // Time's up — actually start the match
-      micOverlayTimerRef.current = null;
-      const match = party.currentTournamentMatch;
-      if (!match) return;
+    setMicOverlay(null);
 
-      if (!match.player1 || !match.player2) return;
+    // Reset game state for new match
+    resetGame();
+    setPlayers([]);
 
-      setMicOverlay(null);
+    // Store mic assignments in unifiedSetupResult for MicIndicator display
+    const p1IsCompanion = micOverlay.p1Mic === t('partyGameScreens.companion');
+    const p2IsCompanion = micOverlay.p2Mic === t('partyGameScreens.companion');
+    const setupResult = buildGameSetupResult({
+      mode: 'tournament',
+      players: [
+        { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: p1IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p1Mic },
+        { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: p2IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p2Mic },
+      ],
+      difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium',
+      settings: {},
+    });
+    party.setUnifiedSetupResult(setupResult);
 
-      // Reset game state for new match
-      resetGame();
-      setPlayers([]);
+    // Add both players for the duel
+    if (match.player1) addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
+    if (match.player2) addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
 
-      // Store mic assignments in unifiedSetupResult for MicIndicator display
-      const p1IsCompanion = micOverlay.p1Mic === t('partyGameScreens.companion');
-      const p2IsCompanion = micOverlay.p2Mic === t('partyGameScreens.companion');
-      const setupResult = buildGameSetupResult({
-        mode: 'tournament',
-        players: [
-          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: p1IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p1Mic },
-          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: p2IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p2Mic },
-        ],
-        difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium',
-        settings: {},
-      });
-      party.setUnifiedSetupResult(setupResult);
-
-      // Add both players for the duel
-      if (match.player1) addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
-      if (match.player2) addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
-
-      // #6 Set dynamic difficulty if enabled
-      const bracket = party.tournamentBracket;
-      if (bracket && bracket.settings.dynamicDifficulty) {
-        const effectiveDiff = getEffectiveDifficulty(
-          bracket.settings.difficulty,
-          bracket.currentRound,
-          bracket.totalRounds,
-          true,
-        );
-        useGameStore.getState().setDifficulty(effectiveDiff);
-      }
-
-      setGameMode('duel');
-
-      // #8 Use voted song if available, otherwise pick randomly
-      const votedSong = party.tournamentVotedSong;
-      party.setTournamentVotedSong(null);
-      const song = votedSong || pickTournamentSong();
-      if (song) {
-        setSong(song);
-        setScreen('game');
-      }
-      return;
+    // #6 Set dynamic difficulty if enabled
+    const bracket = party.tournamentBracket;
+    if (bracket && bracket.settings.dynamicDifficulty) {
+      const effectiveDiff = getEffectiveDifficulty(
+        bracket.settings.difficulty,
+        bracket.currentRound,
+        bracket.totalRounds,
+        true,
+      );
+      useGameStore.getState().setDifficulty(effectiveDiff);
     }
 
-    micOverlayTimerRef.current = setTimeout(() => {
-      setMicOverlay(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null);
-    }, 1000);
+    setGameMode('duel');
 
-    return () => { if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; getAllSongs is from static import; specific fields used in body
-  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party.setUnifiedSetupResult, t]);
+    // #8 Use voted song if available, otherwise pick randomly
+    const votedSong = party.tournamentVotedSong;
+    party.setTournamentVotedSong(null);
+    const song = votedSong || pickTournamentSong();
+    if (song) {
+      setSong(song);
+      setScreen('game');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; specific fields used in body
+  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, party.setUnifiedSetupResult, party.tournamentBracket, party.tournamentVotedSong, t, pickTournamentSong]);
 
   return (
     <>
-      {/* Tournament Mic Assignment Overlay */}
-      {micOverlay && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
-            <div className="text-4xl mb-4">🎤</div>
-            <h2 className="text-xl font-bold text-white mb-6">{t('tournament.micAssignment')}</h2>
-            <div className="text-lg font-bold text-amber-400 animate-pulse mb-6">{micOverlay.countdown}</div>
-            <div className="space-y-3 text-left">
-              <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-lg font-bold text-cyan-400 shrink-0">
-                  1
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white truncate">{micOverlay.p1Name}</div>
-                  <div className="text-sm text-cyan-400">{t('tournament.singsWith')} <b>{micOverlay.p1Mic}</b></div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-lg font-bold text-purple-400 shrink-0">
-                  2
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white truncate">{micOverlay.p2Name}</div>
-                  <div className="text-sm text-purple-400">{t('tournament.singsWith')} <b>{micOverlay.p2Mic}</b></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Tournament Starting Screen — shown after selecting the next pairing.
+          Shows both players with their mic assignment and the voted song (if any).
+          The match starts via the explicit Start button. */}
+      {micOverlay && party.currentTournamentMatch?.player1 && party.currentTournamentMatch?.player2 && (
+        <PartyStartingScreen
+          overlay
+          modeIcon="🏆"
+          modeTitle={t('tournament.startingTitle')}
+          modeColor="from-amber-500 to-yellow-500"
+          players={[
+            {
+              id: party.currentTournamentMatch.player1.id,
+              name: micOverlay.p1Name,
+              avatar: party.currentTournamentMatch.player1.avatar,
+              color: party.currentTournamentMatch.player1.color || '#FF6B6B',
+              micName: micOverlay.p1Mic,
+              playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone',
+              isStartPlayer: true,
+            },
+            {
+              id: party.currentTournamentMatch.player2.id,
+              name: micOverlay.p2Name,
+              avatar: party.currentTournamentMatch.player2.avatar,
+              color: party.currentTournamentMatch.player2.color || '#4ECDC4',
+              micName: micOverlay.p2Mic,
+              playerType: micOverlay.p2Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone',
+            },
+          ]}
+          song={micOverlay.votedSong}
+          subtitle={t('tournament.roundOfOf').replace('{n}', String(party.tournamentBracket?.currentRound ?? 1)).replace('{m}', String(party.tournamentBracket?.totalRounds ?? 1))}
+          startPlayerLabel={t('partyStarting.startsFirst')}
+          onStart={launchTournamentMatch}
+          testId="tournament-starting-screen"
+        />
       )}
 
       {/* Pass the Mic Setup Screen */}
@@ -846,6 +844,14 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
+      {/* Rate my Song — Mode Starting Screen (before the game screen).
+          Shown after "Ready to Play": singers get into position, then press Start. */}
+      {screen === 'rate-my-song-game' && party.rateMySongSettings && (
+        <RmsStartingScreen
+          setScreen={setScreen}
+        />
+      )}
+
       {/* Challenge Pre-Singing Overlay (Rate my Song) */}
       {screen === 'game' && rmsGameMode === 'rate-my-song' && party.rateMySongCurrentChallenge && !challengeOverlayDismissed && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -1055,3 +1061,47 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     </>
   );
 }
+
+// ===================== RATE MY SONG STARTING SCREEN =====================
+// Mode starting screen between "Ready to Play" and the actual game screen.
+// Shows mode name, singers (boxes) and the song (unless randomly selected).
+function RmsStartingScreen({ setScreen }: { setScreen: (_s: Screen) => void }) {
+  const { t } = useTranslation();
+  const party = usePartyStore();
+  const profiles = useGameStore((s) => s.profiles);
+  const currentSong = useGameStore((s) => s.gameState.currentSong);
+
+  const songSelection = party.unifiedSetupResult?.songSelection;
+  // Song name only shown when it was explicitly chosen (library/vote)
+  const showSong = (songSelection === 'library' || songSelection === 'vote') ? currentSong : null;
+
+  const players: import('@/components/game/party-starting-screen').PartyStartingPlayer[] = (party.rateMySongPlayerIds ?? [])
+    .map((id, index) => {
+      const profile = profiles.find(p => p.id === id);
+      const setupPlayer = party.unifiedSetupResult?.players?.find(p => p.id === id);
+      return {
+        id,
+        name: profile?.name ?? setupPlayer?.name ?? `P${index + 1}`,
+        avatar: profile?.avatar ?? setupPlayer?.avatar,
+        color: profile?.color ?? setupPlayer?.color ?? '#FF6B6B',
+        micName: setupPlayer?.micName,
+        playerType: setupPlayer?.playerType,
+        isStartPlayer: index === 0,
+      };
+    });
+
+  return (
+    <PartyStartingScreen
+      modeIcon="⭐"
+      modeTitle={t('gameModes.rateMySong.title')}
+      modeColor="from-amber-500 to-orange-500"
+      players={players}
+      song={showSong}
+      subtitle={party.rateMySongSettings?.duration === 'short' ? t('modeSettings.short60s') : undefined}
+      startPlayerLabel={t('partyStarting.startsFirst')}
+      onStart={() => setScreen('game')}
+      testId="rate-my-song-starting-screen"
+    />
+  );
+}
+

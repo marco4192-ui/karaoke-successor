@@ -230,6 +230,7 @@ export const libraryTranslations = {
     playlist: 'Playlist',
     cancel: 'Cancel',
     start: 'Start',
+    selectSongForParty: 'Select Song',
     bpm: 'BPM:',
     genre: 'Genre:'
   },

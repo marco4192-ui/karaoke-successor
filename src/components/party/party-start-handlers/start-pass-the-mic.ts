@@ -82,13 +82,13 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
     return;
   }
 
-  // Default: single random song with segment-based pass-the-mic
-  const randomSong = pickRandomSong(filteredSongs);
-  if (randomSong) {
-    // Pre-restore URLs for the random song (needed for Tauri file:// paths)
-    let songWithUrls = randomSong;
+  // Default: single song (explicitly selected via library/vote, or random) with segment-based pass-the-mic
+  const baseSong = result.selectedSong ?? pickRandomSong(filteredSongs);
+  if (baseSong) {
+    // Pre-restore URLs for the chosen song (needed for Tauri file:// paths)
+    let songWithUrls = baseSong;
     try {
-      songWithUrls = await ensureSongUrls(randomSong);
+      songWithUrls = await ensureSongUrls(baseSong);
       // Also load lyrics so the PTM note highway and lyrics display work
       if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
         try {

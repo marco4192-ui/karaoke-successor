@@ -217,6 +217,7 @@ songStart: {
   playlist: 'Playlist',
   cancel: 'Abbrechen',
   start: 'Starten',
+  selectSongForParty: 'Song auswählen',
   bpm: 'BPM:',
   genre: 'Genre:',
 },

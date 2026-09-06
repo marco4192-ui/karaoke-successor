@@ -17,6 +17,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { PlayerProfile, Song, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 import {
   CompetitiveGame,
@@ -29,6 +30,8 @@ import {
   getCurrentRound,
   pickSmartSong,
 } from '@/lib/game/competitive-words-blind';
+import { PartyStartingScreen, type PartyStartingPlayer } from './party-starting-screen';
+import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 
 // ===================== SETUP SCREEN =====================
 
@@ -413,9 +416,9 @@ export function CompetitiveGameView({
   onPlaySolo,
 }: CompetitiveGameViewProps) {
   const { t } = useTranslation();
+  const party = usePartyStore();
   const currentRound = getCurrentRound(game);
   const ranked = getRankedPlayers(game);
-  const hasTriggeredSetup = useRef(false);
   const hasTriggeredPlay = useRef(false);
 
   // Smart song selection: no repeats
@@ -424,23 +427,15 @@ export function CompetitiveGameView({
     return picked ?? songs[Math.floor(Math.random() * songs.length)] ?? null;
   }, [songs, game.usedSongIds]);
 
-  // Automatically start first round when game enters 'setup' status
-  useEffect(() => {
-    if (game.status === 'setup' && !hasTriggeredSetup.current) {
-      hasTriggeredSetup.current = true;
-      const song = pickNextSong();
-      if (!song) return;
-      const updated = startCompetitiveRound(game, song.id, song.title);
-      onUpdateGame(updated);
-    }
-    if (game.status !== 'setup') {
-      hasTriggeredSetup.current = false;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status, songs, game.players, game.rounds, onUpdateGame]);
-
-  // TODO: Add back navigation from competitive game view to setup screen
-  // Delegate to game screen when round is ready to play
+  // ── Mode starting screen (status 'setup') ──
+  // The first round is NO LONGER auto-started. The starting screen shows the
+  // mode, participants and a start button — singers get into position first.
+  const startFirstRound = useCallback(() => {
+    const song = pickNextSong();
+    if (!song) return;
+    const updated = startCompetitiveRound(game, song.id, song.title);
+    onUpdateGame(updated);
+  }, [game, pickNextSong, onUpdateGame]);
 
   // ── Dispatch phase events for companion mirroring ──
   useEffect(() => {
@@ -512,6 +507,39 @@ export function CompetitiveGameView({
       <div className="min-h-screen flex items-center justify-center text-white">
         <p className="text-xl">{t('competitiveWords.noSongsInLibrary')}</p>
       </div>
+    );
+  }
+
+  // ── Starting screen: mode, participants, (hidden) song, start button ──
+  if (game.status === 'setup') {
+    const config = PARTY_GAME_CONFIGS[modeType];
+    const setupPlayers = party.unifiedSetupResult?.players ?? [];
+    const startingPlayers: PartyStartingPlayer[] = game.players.map(p => {
+      const sp = setupPlayers.find(s => s.id === p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        color: p.color || PLAYER_COLORS[0],
+        micName: sp?.micName,
+        playerType: sp?.playerType,
+      };
+    });
+    return (
+      <PartyStartingScreen
+        modeIcon={config?.icon ?? '📝'}
+        modeTitle={config?.titleKey ? t(config.titleKey) : (config?.title ?? '')}
+        modeColor={config?.color ?? 'from-orange-500 to-red-500'}
+        players={startingPlayers}
+        song={null}
+        subtitle={game.settings.playMode === 'solo'
+          ? t('competitiveWords.modeSolo')
+          : game.settings.playMode === 'coop'
+            ? t('competitiveWords.modeCoop')
+            : t('competitiveWords.modeCompetitive')}
+        onStart={startFirstRound}
+        testId="competitive-starting-screen"
+      />
     );
   }
 

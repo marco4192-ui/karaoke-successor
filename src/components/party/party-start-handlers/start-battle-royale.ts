@@ -44,6 +44,9 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     showNoteHighway: s.showNoteHighway ?? true,
     showVideoBackground: s.showVideoBackground ?? true,
     countdownDuration: s.countdownDuration ?? 5,
+    // Host-voted song from the unified party setup (setup-level "Vote"):
+    // round 1 uses exactly this song.
+    ...(result.selectedSong ? { firstRoundSongId: result.selectedSong.id, firstRoundSongTitle: result.selectedSong.title } : {}),
   };
   try {
     const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));

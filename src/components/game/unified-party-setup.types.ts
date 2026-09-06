@@ -263,4 +263,32 @@ export interface GameSetupResult {
   songSelection: SongSelectionOption;
   difficulty: Difficulty;
   inputMode: InputMode;
+  /**
+   * Explicitly chosen song (library pick or vote winner).
+   * When set, start handlers must use this song instead of picking a random
+   * one. `null`/`undefined` means "pick randomly at game start" (song name
+   * stays hidden on the mode starting screen for random selection).
+   */
+  selectedSong?: import('@/types/game').Song | null;
+}
+
+// ===================== PARTY SETUP DRAFT =====================
+
+/**
+ * Snapshot of the unified setup form, persisted in the party store while the
+ * user navigates to the library or voting screen and back. Without this,
+ * player selection/settings would reset on every remount.
+ */
+export interface PartySetupDraft {
+  selectedPlayers: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic mode settings
+  settings: Record<string, any>;
+  difficulty: Difficulty;
+  inputMode: InputMode;
+  selectedMicId: string | null;
+  selectedMicName: string | null;
+  filterGenre: string;
+  filterLanguage: string;
+  filterCombined: boolean;
+  filterReleaseYear: string;
 }

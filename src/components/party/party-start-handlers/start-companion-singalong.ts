@@ -11,13 +11,14 @@ export async function startCompanionSingalong(ctx: StartHandlerContext): Promise
   // Store the user's preferred song selection mode for series "next song" navigation
   party.setCptmSongSelection(result.songSelection || 'random');
 
-  const randomSong = pickRandomSong(filteredSongs);
-  if (randomSong) {
-    // Pre-restore URLs for the random song (needed for Tauri file:// paths)
+  // Explicitly chosen song (library/vote) or random pick
+  const baseSong = result.selectedSong ?? pickRandomSong(filteredSongs);
+  if (baseSong) {
+    // Pre-restore URLs for the chosen song (needed for Tauri file:// paths)
     // and load lyrics so the note highway and lyrics display work
-    let songWithUrls = randomSong;
+    let songWithUrls = baseSong;
     try {
-      songWithUrls = await ensureSongUrls(randomSong);
+      songWithUrls = await ensureSongUrls(baseSong);
       if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
         try {
           const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');

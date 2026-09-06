@@ -240,6 +240,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return shuffled.slice(0, count);
   }, [songs]);
 
+  // Resolve a song by id (host-voted first-round song from party setup)
+  const getSongById = useCallback((id: string): Song | null => {
+    return songs.find(s => s.id === id) ?? null;
+  }, [songs]);
+
   // ── Round Handlers ────────────────────────────────────────────────
   const {
     handleRoundEnd,
@@ -263,6 +268,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     audioHasPlayedRef,
     getRandomSong,
     getRandomSongs,
+    getSongById,
     setShowElimination,
   });
 

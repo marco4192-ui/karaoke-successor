@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SongStartModalProps } from './types';
-import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from '@/components/icons';
+import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon, CheckIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
 import { useFocusTrap } from '@/hooks/use-roving-focus';
 import { StorageKeys, getItem } from '@/lib/storage';
@@ -709,19 +709,24 @@ export function SongStartModal({
           >
             {t('songStart.cancel')}
           </Button>
-          <Button 
+          <Button
             id="song-start-btn"
             onClick={onStartGame}
             disabled={
-              (!startOptions.partyMode && startOptions.mode === 'single' && 
-               activeProfiles.length > 1 && 
+              (!startOptions.partyMode && startOptions.mode === 'single' &&
+               activeProfiles.length > 1 &&
                startOptions.players.length === 0) ||
               (startOptions.mode === 'duet' && startOptions.players.length < 2) ||
               (startOptions.mode === 'duel' && startOptions.players.length < 2)
             }
             className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+            data-testid="song-start-confirm"
           >
-            <PlayIcon className="w-4 h-4 mr-1.5" /> {t('songStart.start')}
+            {startOptions.partyMode ? (
+              <><CheckIcon className="w-4 h-4 mr-1.5" /> {t('songStart.selectSongForParty')}</>
+            ) : (
+              <><PlayIcon className="w-4 h-4 mr-1.5" /> {t('songStart.start')}</>
+            )}
           </Button>
         </div>
       </DialogContent>

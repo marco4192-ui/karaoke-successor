@@ -918,59 +918,24 @@ export default function KaraokeZERO() {
               // IMPORTANT: Prefer explicitGameMode passed from the caller
               // over the store value to avoid timing/race conditions.
               const currentMode = explicitGameMode || useGameStore.getState().gameState.gameMode;
+
+              // ── Unified party flow: picking a song from the library NEVER
+              // starts the game. The song is stored and the user returns to
+              // the party setup screen, where the explicit "Ready to Play"
+              // button launches the mode (followed by the mode starting screen).
+              if (party.selectedGameMode) {
+                party.setLibrarySelectedSong(song);
+                party.setSongSelectionMethod('library');
+                setScreen('party-setup');
+                return;
+              }
+
               resetGame();
               if (currentMode && currentMode !== 'standard') {
                 setGameMode(currentMode);
               }
               setSong(song);
-              if (currentMode === 'pass-the-mic') {
-                const playerCount = party.passTheMicPlayers?.length || 2;
-                // Always generate initial segments (may be time-based if lyrics lack notes)
-                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
-                party.setPassTheMicSegments(segments);
-                // Set screen SYNCHRONOUSLY so companion sees 'pass-the-mic-game' immediately
-                // instead of staying on 'library' during the async URL/lyrics work
-                setScreen('pass-the-mic-game');
-                // Then do async URL/lyrics enrichment in the background
-                (async () => {
-                  try {
-                    const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
-                    let songWithUrls = await ensureSongUrls(song);
-                    // Also load lyrics from DB if the song has none or lyrics without notes
-                    if (!songWithUrls.lyrics?.length || songWithUrls.lyrics.every(l => l.notes.length === 0)) {
-                      try {
-                        const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
-                        const withLyrics = await getSongByIdWithLyrics(songWithUrls.id);
-                        if (withLyrics?.lyrics?.length) {
-                          songWithUrls = { ...songWithUrls, lyrics: withLyrics.lyrics };
-                        }
-                      } catch { /* non-critical */ }
-                    }
-                    // Always regenerate segments with the best available lyrics for score-based splitting
-                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
-                    party.setPassTheMicSegments(scoreSegments);
-                    party.setPassTheMicSong(songWithUrls);
-                  } catch {
-                    party.setPassTheMicSong(song);
-                  }
-                })();
-              } else if (currentMode === 'companion-singalong') {
-                party.setCptmSong(song);
-                party.setLibrarySelectedSong(song);
-                setScreen('party-setup');
-              } else if (currentMode === 'rate-my-song' && party.rateMySongSettings) {
-                const duration = party.rateMySongSettings.duration;
-                party.setRateMySongSettings({ ...party.rateMySongSettings, songId: song.id });
-                if (duration === 'short') {
-                  setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
-                }
-                setScreen('game');
-              } else {
-                // Standard, duel, duet, rate-my-song (no duration trim), or any other mode.
-                // Players and gameMode are already set by LibraryScreen.handleStartGame
-                // and preserved across resetGame(). No need to re-add players here.
-                setScreen('game');
-              }
+              setScreen('game');
             }}
             initialGameMode={gameState.gameMode}
             onNavigateToEditor={() => setScreen('editor')}

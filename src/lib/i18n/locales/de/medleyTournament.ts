@@ -262,6 +262,7 @@ tournament: {
   votes: ' Stimmen',
   matchesVoted: 'Matches',
   micAssignment: 'Mikrofon-Zuweisung',
+  startingTitle: 'Nächstes Match',
   singsWith: 'singt mit',
 },
 rateMySong: {

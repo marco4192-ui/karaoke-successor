@@ -82,3 +82,13 @@ upload/
 
 # Leaderboard API local secrets (never commit)
 leaderboard-api/config.local.php
+
+# sandbox infrastructure (not part of the app)
+/.zscripts/
+/mini-services/
+/skills/
+/upload/
+/tool-results/
+/Caddyfile
+worklog.md
+dev.log

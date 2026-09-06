@@ -5,10 +5,11 @@ import { Song } from '@/types/game';
 export async function startRateMySong(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, resetGame, setGameMode, addPlayer, setPlayers, setSong, filteredSongs, mode } = ctx;
   const s = result.settings as GameModeSettingsMap['rate-my-song'];
-  const randomSong = pickRandomSong(filteredSongs);
-  if (!randomSong) return;
+  // Explicitly chosen song (library/vote) or random pick
+  const chosenSong = result.selectedSong ?? pickRandomSong(filteredSongs);
+  if (!chosenSong) return;
   const duration = s.duration || 'normal';
-  const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: randomSong.id };
+  const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: chosenSong.id };
   const playerIds = result.players.map(p => p.id);
   party.setRateMySongSettings(rateSettings);
   party.setRateMySongPlayerIds(playerIds);
@@ -21,11 +22,14 @@ export async function startRateMySong(ctx: StartHandlerContext): Promise<void> {
     addPlayer({ id: _p.id, name: _p.name, color: _p.color, avatar: _p.avatar });
   });
   if (duration === 'short') {
-    setSong({ ...randomSong, start: randomSong.start, end: Math.min((randomSong.start || 0) + 60000, randomSong.end || randomSong.duration) });
+    setSong({ ...chosenSong, start: chosenSong.start, end: Math.min((chosenSong.start || 0) + 60000, chosenSong.end || chosenSong.duration) });
   } else {
-    setSong(randomSong);
+    setSong(chosenSong);
   }
-  setScreen('game');
+  // Route through the mode starting screen first ("Ready to Play" is already
+  // done; the starting screen lets singers get into position). Confirming
+  // the starting screen switches to the actual game screen.
+  setScreen('rate-my-song-game');
 }
 
 function pickRandomSong(songs: Song[]): Song | null {

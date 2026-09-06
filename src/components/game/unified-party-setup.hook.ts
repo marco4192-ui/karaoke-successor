@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
-import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap } from './unified-party-setup.types';
+import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap, PartySetupDraft } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
@@ -14,6 +14,16 @@ interface UsePartySetupArgs {
   onStartGame: (_result: GameSetupResult) => void;
   onSelectLibrary: (_result: GameSetupResult) => void;
   onVoteMode: (_result: GameSetupResult, _suggestedSongs: Song[]) => void;
+  /** Song-selection method restored after returning from library/voting (party store) */
+  initialSongSelection?: SongSelectionOption | null;
+  /** Explicitly selected song (library pick / vote winner) restored after navigation */
+  initialSelectedSong?: Song | null;
+  /** Called when the user switches back to a songless method (random/medley) so the parent can clear the pre-selected song */
+  onClearSelectedSong?: () => void;
+  /** Restored setup form snapshot (players/settings/filters) after returning from library/voting */
+  initialDraft?: PartySetupDraft | null;
+  /** Persist the setup form before leaving to library/voting so it can be restored */
+  onSaveDraft?: (_draft: PartySetupDraft) => void;
 }
 
 export function usePartySetup({
@@ -23,6 +33,11 @@ export function usePartySetup({
   onStartGame,
   onSelectLibrary,
   onVoteMode,
+  initialSongSelection = null,
+  initialSelectedSong = null,
+  onClearSelectedSong,
+  initialDraft = null,
+  onSaveDraft,
 }: UsePartySetupArgs) {
   const config = PARTY_GAME_CONFIGS[gameMode] || PARTY_GAME_CONFIGS['pass-the-mic'];
 
@@ -37,15 +52,17 @@ export function usePartySetup({
     return s;
   }, [config]);
 
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [settings, setSettings] = useState<Record<string, any>>(initialSettings); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>(initialDraft?.selectedPlayers ?? []);
+  const [settings, setSettings] = useState<Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
+    initialDraft ? { ...initialSettings, ...initialDraft.settings } : initialSettings
+  );
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
-  const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
+  const [difficulty, setDifficulty] = useState<Difficulty>(initialDraft?.difficulty ?? storeDifficulty ?? 'medium');
 
   // ── Input Mode ──
   const [inputMode, setInputMode] = useState<InputMode>(
-    config.forceInputMode || (config.supportsCompanionApp ? 'mixed' : 'microphone')
+    initialDraft?.inputMode ?? (config.forceInputMode || (config.supportsCompanionApp ? 'mixed' : 'microphone'))
   );
 
   // ── Mic-to-Player assignment (micId → profileId) ──
@@ -55,10 +72,10 @@ export function usePartySetup({
 
   // ── Shared single mic (for modes like pass-the-mic) ──
   const [selectedMicId, setSelectedMicId] = useState<string | null>(() => {
-    return getString(StorageKeys.PTM_SHARED_MIC_ID) || null;
+    return initialDraft?.selectedMicId ?? getString(StorageKeys.PTM_SHARED_MIC_ID) ?? null;
   });
   const [selectedMicName, setSelectedMicName] = useState<string | null>(() => {
-    return getString(StorageKeys.PTM_SHARED_MIC_NAME) || null;
+    return initialDraft?.selectedMicName ?? getString(StorageKeys.PTM_SHARED_MIC_NAME) ?? null;
   });
 
   // Persist shared mic selection to localStorage
@@ -71,11 +88,19 @@ export function usePartySetup({
     } catch { /* ignore */ }
   }, [selectedMicId, selectedMicName]);
 
+  // ── Song selection state ──
+  // The chosen song-selection method ('random' | 'library' | 'vote' | 'medley').
+  // Picking a method NEVER starts the game — the explicit "Ready to Play"
+  // button (handleReadyToPlay) is the only start trigger.
+  const [songSelection, setSongSelection] = useState<SongSelectionOption | null>(initialSongSelection);
+  // Explicitly chosen song (library pick / vote winner) — null for random/medley.
+  const [resolvedSong, setResolvedSong] = useState<Song | null>(initialSelectedSong);
+
   // ── Song filter state ──
-  const [filterGenre, setFilterGenre] = useState('all');
-  const [filterLanguage, setFilterLanguage] = useState('all');
-  const [filterCombined, setFilterCombined] = useState(true);
-  const [filterReleaseYear, setFilterReleaseYear] = useState('all');
+  const [filterGenre, setFilterGenre] = useState(initialDraft?.filterGenre ?? 'all');
+  const [filterLanguage, setFilterLanguage] = useState(initialDraft?.filterLanguage ?? 'all');
+  const [filterCombined, setFilterCombined] = useState(initialDraft?.filterCombined ?? true);
+  const [filterReleaseYear, setFilterReleaseYear] = useState(initialDraft?.filterReleaseYear ?? 'all');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- songs.length is a proxy for songs identity change; songs itself would cause infinite loop
   const availableGenres = useMemo(() => getGenres(), [songs.length]);
@@ -270,25 +295,94 @@ export function usePartySetup({
       songSelection: option,
       difficulty,
       inputMode,
+      selectedSong: resolvedSong ?? null,
     };
 
     setError(null);
+    setSongSelection(option);
+
+    // Persist the current setup form so it survives the navigation
+    // to library/voting and back (remount would lose the state otherwise).
+    const saveDraft = () => {
+      onSaveDraft?.({
+        selectedPlayers,
+        settings,
+        difficulty,
+        inputMode,
+        selectedMicId,
+        selectedMicName,
+        filterGenre,
+        filterLanguage,
+        filterCombined,
+        filterReleaseYear,
+      });
+    };
 
     switch (option) {
       case 'library':
+        // Navigate to the library — the game is NOT started here.
+        // The user picks a song, returns to this setup and presses "Ready to Play".
+        saveDraft();
         onSelectLibrary(result);
         break;
       case 'random':
       case 'medley':
-        onStartGame(result);
+        // Random/medley need no explicit song — just mark the method as selected.
+        // The game starts exclusively via the "Ready to Play" button.
+        setResolvedSong(null);
+        onClearSelectedSong?.();
         break;
       case 'vote': {
+        // Navigate to the voting screen — the game is NOT started here.
+        // Picking a song in the voting modal returns to this setup.
+        saveDraft();
         const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
         onVoteMode(result, shuffled.slice(0, 3));
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, resolvedSong, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName, onClearSelectedSong, onSaveDraft]);
+
+  // ── "Ready to Play" — the single explicit start action for every party mode ──
+  const readyToPlay =
+    selectedPlayers.length >= config.minPlayers &&
+    (
+      songSelection === 'random' ||
+      songSelection === 'medley' ||
+      ((songSelection === 'library' || songSelection === 'vote') && !!resolvedSong)
+    );
+
+  const handleReadyToPlay = useCallback(() => {
+    if (!readyToPlay) {
+      if (selectedPlayers.length < config.minPlayers) {
+        setError(t('unifiedSetup.errorMinPlayers').replace('{n}', String(config.minPlayers)));
+      } else {
+        setError(t('unifiedSetup.chooseSongFirst'));
+      }
+      return;
+    }
+
+    const result: GameSetupResult = {
+      mode: gameMode,
+      players: createPlayers(),
+      settings: {
+        ...settings,
+        difficulty,
+        filterGenre,
+        filterLanguage,
+        filterCombined,
+        filterReleaseYear,
+        ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
+      } as GameModeSettingsMap[typeof gameMode],
+      songSelection: songSelection!,
+      difficulty,
+      inputMode,
+      selectedSong: songSelection === 'library' || songSelection === 'vote' ? resolvedSong : null,
+    };
+
+    setError(null);
+    onStartGame(result);
+  }, [readyToPlay, selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, songSelection, resolvedSong, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onStartGame, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
 
   // ── Remote companion config apply ──
   const handleSongSelectionRef = useRef(handleSongSelection);
@@ -339,6 +433,13 @@ export function usePartySetup({
     setDifficulty,
     togglePlayer,
     handleSongSelection,
+    // Ready to Play (explicit start)
+    songSelection,
+    setSongSelection,
+    resolvedSong,
+    setResolvedSong,
+    readyToPlay,
+    handleReadyToPlay,
     // Input mode
     inputMode,
     setInputMode,

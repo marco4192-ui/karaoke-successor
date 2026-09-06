@@ -17,6 +17,7 @@ import { PtmPlayerRanking } from '@/components/game/ptm-player-ranking';
 import { PtmHudPlayerScore } from '@/components/game/ptm-hud-player-score';
 import { PtmHudControls } from '@/components/game/ptm-hud-controls';
 import { usePtmGameLogic } from '@/components/game/ptm-game-hook';
+import { usePartyStore } from '@/lib/game/party-store';
 
 // Re-export types for backward compatibility
 export type { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from '@/components/game/ptm-types';
@@ -26,6 +27,7 @@ export type { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from '@/
 export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = usePtmGameLogic(props);
+  const ptmSongSelection = usePartyStore((s) => s.ptmSongSelection);
 
   // Guard: no song
   if (!g.effectiveSong) {
@@ -53,6 +55,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
         audioRef={g.audioRef}
         videoRef={g.videoRef}
         playersCount={g.players.length}
+        songSelectionMethod={ptmSongSelection}
       />
     );
   }

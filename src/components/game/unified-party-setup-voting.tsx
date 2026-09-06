@@ -81,7 +81,7 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
           <Button variant="ghost" onClick={onClose} className="text-white/60">✕</Button>
         </CardHeader>
         <CardContent>
-          <p className="text-white/60 mb-6">{t('unifiedSetup.clickSongToPlay')}</p>
+          <p className="text-white/60 mb-6">{t('unifiedSetup.clickSongToSelect')}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {enrichedSongs.map((song, index) => (
               <div
