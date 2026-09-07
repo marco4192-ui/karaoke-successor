@@ -61,8 +61,13 @@ export interface RovingFocusResult {
   focusedIndex: number;
   /** Programmatically set the focused index */
   setFocusedIndex: (_index: number) => void;
-  /** Get props for a specific item at the given index */
-  getItemProps: (_index: number) => {
+  /** Get props for a specific item at the given index.
+   *  `selected` reflects the REAL selection state of the item (aria-selected).
+   *  When omitted, grid cells get no aria-selected (focus ≠ selection — the
+   *  old behavior announced every focused cell as "selected", which is wrong
+   *  for multi-select grids and action tiles); listbox options fall back to
+   *  focus-based selection for single-select semantics. */
+  getItemProps: (_index: number, _selected?: boolean) => {
     tabIndex: number;
     'aria-selected'?: boolean;
     role?: string;
@@ -264,10 +269,15 @@ export function useRovingFocus(options: RovingFocusOptions): RovingFocusResult {
     }
   }, [focusedIndex, itemCount]);
 
-  const getItemProps = useCallback((index: number) => {
+  const getItemProps = useCallback((index: number, selected?: boolean) => {
+    // aria-selected must reflect actual selection. Only fall back to
+    // focus-based selection for listbox options (single-select pattern).
+    const ariaSelected = selected !== undefined
+      ? selected
+      : role !== 'grid' && index === focusedIndex ? true : undefined;
     return {
       tabIndex: index === focusedIndex ? 0 : -1,
-      'aria-selected': index === focusedIndex ? true : undefined,
+      'aria-selected': ariaSelected,
       role: role === 'grid' ? 'gridcell' : 'option',
       ref: (el: HTMLElement | null) => {
         if (el) {

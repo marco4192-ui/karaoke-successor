@@ -234,7 +234,6 @@ export function useGameModes({
     setMissingWordsIndices([]);
     setBlindHardcore?.(false);
     setHardcoreMissingWords?.(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- songId and gameMode are the intentional triggers
   }, [songId, gameMode, setBlindSection, setMissingWordsIndices, setBlindHardcore, setHardcoreMissingWords]);
 
   // Set hardcore mode on store when blind game starts
@@ -458,6 +457,7 @@ export function useGameModes({
       for (let i = 1; i < passages.length; i++) {
         const passage = passages[i];
         const passageStart = passage[0]?.startTime ?? 0;
+        const passageEnd = passage[passage.length - 1]?.endTime ?? 0;
 
         // Only warn if this passage actually contains hidden words
         const passageHasHidden = passage.some(line => hiddenStartTimesRef.current.has(line.startTime));
@@ -471,6 +471,14 @@ export function useGameModes({
             lastMWWarningKeyRef.current = warnKey;
             onMissingWordsWarning(countdown, true);
           }
+          return;
+        }
+
+        // Currently INSIDE this hidden passage → active signal (drives the
+        // persistent "Hidden Words" indicator pill on the warning banner)
+        if (currentTime >= passageStart && currentTime < passageEnd) {
+          onMissingWordsWarning(0, true);
+          lastMWWarningKeyRef.current = '';
           return;
         }
       }

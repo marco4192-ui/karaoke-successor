@@ -241,6 +241,7 @@ battleRoyale: {
   errorCreateGame: 'Spiel konnte nicht erstellt werden',
   round: 'Runde {n}',
   playersLeft: '{n} übrig',
+  timeLeft: '{n} Sekunden bis zum Rundenende',
   loadingLyrics: 'Lade Lyrics...',
   loadingSong: 'Lade Song...',
   eliminateLowest: '💔 Schlechtesten eliminieren',

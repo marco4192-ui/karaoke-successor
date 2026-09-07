@@ -44,6 +44,12 @@ game: {
   lyrics: 'Songtext',
   notes: 'Noten',
   score: 'Punkte',
+  blindWarningIncoming: 'Blind-Passage in {n}s',
+  blindWarningHint: 'Noten verschwinden gleich — aus dem Gedächtnis singen',
+  blindWarningActive: 'Blind-Passage',
+  mwWarningIncoming: 'Fehlende Wörter in {n}s',
+  mwWarningHint: 'Einige Lyrics verschwinden gleich',
+  mwWarningActive: 'Fehlende Wörter',
 },
 gameScreen: {
   noSongSelected: 'Kein Song ausgewählt',

@@ -166,7 +166,7 @@ export function InputModeSelector({
             return (
               <button
                 key={mode}
-                {...getModeProps(index)}
+                {...getModeProps(index, isActive)}
                 onClick={() => onInputModeChange(mode)}
                 className={`p-4 rounded-xl text-left transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   isActive

@@ -13,7 +13,11 @@ export async function startCompetitive(ctx: StartHandlerContext): Promise<void> 
   const compSettings: CompetitiveSettings = {
     difficulty: result.difficulty,
     modeType,
-    playMode: 'competitive',
+    // Solo fallback: MW/Blind allow a single player (minPlayers 1), but the
+    // competitive pairing logic needs 2+ players — without this, the Start
+    // button on the starting screen would silently do nothing (getNextRoundPairing
+    // returns null for n<2 and startCompetitiveRound returns the game unchanged).
+    playMode: result.players.length >= 2 ? 'competitive' : 'solo',
     bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
     missingWordFrequency: modeType === 'missing-words'
       ? (mwFreqMap[freqSetting] ?? 0.30)

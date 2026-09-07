@@ -51,7 +51,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     bountyMultiplier,
     pitchStats,
     visibleNotes,
-    songProgress,
     countdown,
     playerPitchMap,
     multiPitchErrors,
@@ -171,7 +170,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         bountyMultiplier={bountyMultiplier}
         pitchStats={pitchStats}
         visibleNotes={visibleNotes}
-        songProgress={songProgress}
         countdown={countdown}
         playerPitchMap={playerPitchMap}
         multiPitchErrors={multiPitchErrors}
@@ -216,7 +214,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       bountyMultiplier={bountyMultiplier}
       pitchStats={pitchStats}
       visibleNotes={visibleNotes}
-      songProgress={songProgress}
       countdown={countdown}
       playerPitchMap={playerPitchMap}
       multiPitchErrors={multiPitchErrors}

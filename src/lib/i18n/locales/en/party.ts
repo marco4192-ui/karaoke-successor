@@ -251,6 +251,7 @@ export const partyTranslations = {
     errorCreateGame: 'Failed to create game',
     round: 'Round {n}',
     playersLeft: '{n} Left',
+    timeLeft: '{n} seconds left in this round',
     loadingLyrics: 'Loading lyrics...',
     loadingSong: 'Loading song...',
     eliminateLowest: '💔 Eliminate Lowest Scorer',

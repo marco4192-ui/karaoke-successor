@@ -30,6 +30,7 @@ import {
   TimeDisplay,
 } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
+import { ModeWarningBanner } from '@/components/game/hud/mode-warning-banner';
 import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 
 // ===================== GAME SCREEN =====================
@@ -110,6 +111,14 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           <FullscreenButton />
         </div>
       </div>
+
+      {/* Blind / Missing Words warning banner (countdown before hidden sections + active indicator) */}
+      {(g.gameState.gameMode === 'blind' || g.gameState.gameMode === 'missing-words') && g.isPlaying && (
+        <ModeWarningBanner
+          blindWarning={g.blindWarning}
+          missingWordsWarning={g.missingWordsWarning}
+        />
+      )}
 
       {/* Pitch Graph Display — disabled in low-performance mode and no_pitch_guide challenge */}
       {g.isPlaying && g.showPitchGuide && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (

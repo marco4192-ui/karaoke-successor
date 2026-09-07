@@ -47,7 +47,13 @@ export const gameTranslations = {
     endSong: 'End Song',
     lyrics: 'Lyrics',
     notes: 'Notes',
-    score: 'Score'
+    score: 'Score',
+    blindWarningIncoming: 'Blind section in {n}s',
+    blindWarningHint: 'Notes will disappear — sing from memory',
+    blindWarningActive: 'Blind section',
+    mwWarningIncoming: 'Hidden words in {n}s',
+    mwWarningHint: 'Some lyrics are about to vanish',
+    mwWarningActive: 'Hidden words',
   },
 
   gameScreen: {

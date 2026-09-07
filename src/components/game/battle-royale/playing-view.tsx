@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { AlertTriangle } from 'lucide-react';
 import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { TimeDisplay } from '@/components/game/game-hud';
@@ -87,7 +86,6 @@ interface PlayingViewProps {
   // New props
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  songProgress: number;
   countdown: number;
   // Multi-pitch detection
   playerPitchMap: Map<string, PitchDetectionResult | null>;
@@ -115,7 +113,6 @@ export function PlayingView({
   bountyMultiplier,
   pitchStats,
   visibleNotes,
-  songProgress,
   countdown,
   playerPitchMap,
   multiPitchErrors,
@@ -489,19 +486,10 @@ export function PlayingView({
             <Badge variant="outline" className="border-red-500 text-red-400 text-[10px] px-1.5 py-0">
               {t('battleRoyale.playersLeft').replace('{n}', String(activePlayers.length))}
             </Badge>
-            <Badge className={`font-mono text-sm ${roundTimeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-500/20 text-purple-400'}`}>
-              {roundTimeLeft}s
-            </Badge>
           </div>
         </div>
 
-        {/* Timer Progress Bar */}
-        <Progress
-          value={(roundTimeLeft / (currentRound?.duration || 60)) * 100}
-          className="h-1.5 bg-white/10"
-        />
-
-        {/* #1 Medley: Snippet progress bar */}
+        {/* #1 Medley: Snippet progress bar (medley-only segment info, not the round countdown) */}
         {totalSnippets > 1 && snippetTimeLeft !== null && currentSnippet && (
           <div className="flex gap-1 mt-1.5">
             {game.medleySnippetList.map((_, i) => (
@@ -692,22 +680,35 @@ export function PlayingView({
       {/* If highway is hidden, this spacer pushes lyrics down */}
       {!showNoteHighway && <div className="flex-1" />}
 
-      {/* ─────────── 4. SONG PROGRESS BAR (2px, bottom edge) ─────────── */}
-      {currentSong && songProgress > 0 && (
-        <div className="flex-shrink-0 w-full h-[2px] bg-white/5">
-          <div
-            className="h-full transition-all duration-300"
-            style={{
-              width: `${Math.min(100, Math.max(0, songProgress * 100))}%`,
-              background: 'linear-gradient(90deg, #06b6d4, #a855f7)',
-            }}
-          />
-        </div>
-      )}
+      {/* ─────────── 4. ROUND PROGRESS BAR (2px, bottom edge — Muster F: duration indicator at the BOTTOM) ─────────── */}
+      <div className="flex-shrink-0 w-full h-[2px] bg-white/5">
+        <div
+          className="h-full transition-all duration-300"
+          style={{
+            width: `${Math.min(100, Math.max(0, (roundTimeLeft / (currentRound?.duration || 60)) * 100))}%`,
+            background: roundTimeLeft <= 5
+              ? 'linear-gradient(90deg, #ef4444, #f97316)'
+              : 'linear-gradient(90deg, #06b6d4, #a855f7)',
+          }}
+        />
+      </div>
 
-      {/* ─────────── Unified bottom HUD: snippet timer (bottom-left) + playtime/duration (bottom-right) ─────────── */}
+      {/* ─────────── Unified bottom HUD: round countdown + snippet timer (bottom-left) + playtime/duration (bottom-right) ─────────── */}
       <div className="absolute bottom-1 left-3 z-30 pointer-events-none flex items-center gap-2">
-        {/* #1 Medley snippet indicator — moved to the BOTTOM (unified HUD spec) */}
+        {/* Round countdown — moved from top to BOTTOM-left (unified HUD spec, Muster F) */}
+        <Badge
+          className={`font-mono text-xs ${
+            roundTimeLeft <= 5
+              ? 'bg-red-500 text-white animate-pulse'
+              : roundTimeLeft <= 10
+                ? 'bg-orange-500/25 text-orange-300 border border-orange-400/40'
+                : 'bg-purple-500/20 text-purple-400'
+          }`}
+          aria-label={t('battleRoyale.timeLeft').replace('{n}', String(roundTimeLeft))}
+        >
+          {roundTimeLeft}s
+        </Badge>
+        {/* #1 Medley snippet indicator — bottom-left (unified HUD spec) */}
         {totalSnippets > 1 && (
           <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0 bg-black/40">
             🎵 {currentSnippetIndex + 1}/{totalSnippets}

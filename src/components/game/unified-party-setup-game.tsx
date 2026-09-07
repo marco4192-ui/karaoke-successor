@@ -66,7 +66,7 @@ export function PlayerGrid({
             return (
               <div
                 key={profile.id}
-                {...getPlayerProps(index)}
+                {...getPlayerProps(index, isSelected)}
                 onClick={() => togglePlayer(profile.id)}
                 className={`p-4 rounded-lg cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   isSelected
@@ -326,10 +326,9 @@ export function SongSelectionGrid({
             return (
               <button
                 key={option}
-                {...getSongOptionProps(index)}
+                {...getSongOptionProps(index, isSelected)}
                 onClick={() => onSongSelection(option)}
                 disabled={!enabled}
-                aria-pressed={isSelected}
                 data-selected={isSelected ? 'true' : 'false'}
                 data-testid={`song-selection-${option}`}
                 className={`relative p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${

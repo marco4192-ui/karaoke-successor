@@ -114,6 +114,16 @@ export default function KaraokeZERO() {
     }
   }, [screen, isPartyGameScreen]);
 
+  // ── Scroll-reset on screen change ──
+  // Screen switches are client-side state changes (not route navigations), so the
+  // browser preserves the scroll offset of the previous screen. Without a reset,
+  // content starts hidden behind the sticky navbar and elements become unclickable
+  // (clicks land on the navbar overlay). Games run in fixed full-viewport layouts,
+  // so resetting to top is always safe.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [screen]);
+
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
 

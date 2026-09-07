@@ -370,17 +370,38 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const competitiveGame = usePartyStore(s => s.competitiveGame);
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
 
-  // Warning callbacks for blind / missing-words passages (stable refs for useEffect deps)
-  // TODO: Implement real UI warnings for blind passages and missing-words passages.
-  // These callbacks receive (countdown, isActive) and should trigger visual/audio cues.
-  const onBlindWarning = useCallback((_countdown: number, _isActive: boolean) => {
-    // eslint-disable-next-line no-console
-    console.debug(`[blind-warning] countdown=${_countdown}, active=${_isActive}`);
+  // ── Blind / Missing-Words warning state (drives the in-game warning banner) ──
+  // useGameModes fires these callbacks per frame with (countdown, isActive):
+  //   countdown > 0 && isActive → N seconds until the blind/hidden section starts
+  //   countdown = 0 && isActive → currently inside a blind/hidden section
+  //   countdown = 0 && !isActive → idle
+  // The prev-check keeps repeated per-frame setState calls cheap (identical values
+  // return the previous state object → React skips the re-render).
+  const [blindWarning, setBlindWarning] = useState({ countdown: 0, active: false });
+  const [missingWordsWarning, setMissingWordsWarning] = useState({ countdown: 0, active: false });
+  const onBlindWarning = useCallback((countdown: number, isActive: boolean) => {
+    setBlindWarning(prev => (prev.countdown === countdown && prev.active === isActive)
+      ? prev
+      : { countdown, active: isActive });
   }, []);
-  const onMissingWordsWarning = useCallback((_countdown: number, _isActive: boolean) => {
-    // eslint-disable-next-line no-console
-    console.debug(`[missing-words-warning] countdown=${_countdown}, active=${_isActive}`);
+  const onMissingWordsWarning = useCallback((countdown: number, isActive: boolean) => {
+    setMissingWordsWarning(prev => (prev.countdown === countdown && prev.active === isActive)
+      ? prev
+      : { countdown, active: isActive });
   }, []);
+
+  // Clear stale warning state when playback stops (game end / pause exits the
+  // per-frame callback loop, so an active warning would otherwise persist).
+  // Uses the React "adjust state during render" pattern instead of an effect
+  // to avoid cascading renders (react-hooks/set-state-in-effect).
+  const [wasPlaying, setWasPlaying] = useState(isPlaying);
+  if (wasPlaying !== isPlaying) {
+    setWasPlaying(isPlaying);
+    if (!isPlaying) {
+      setBlindWarning({ countdown: 0, active: false });
+      setMissingWordsWarning({ countdown: 0, active: false });
+    }
+  }
 
   // Special game modes (blind + missing words)
   useGameModes({
@@ -684,5 +705,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
 
     // Callbacks
     handleEnd,
+
+    // Blind / Missing-Words warning banner state
+    blindWarning,
+    missingWordsWarning,
   };
 }
