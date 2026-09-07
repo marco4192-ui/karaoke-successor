@@ -116,20 +116,18 @@ export function useCptmGameLogic({
 
   // ── Phase management ──
   const [phase, setPhaseRaw] = useState<GamePhase>('intro');
-  // Wrap setPhase to dispatch ptm-phase-changed events (same pattern as ptm-game-hook)
+  // Plain setter — the ptm-phase-changed event is dispatched from the [phase]
+  // effect below (after commit), same safe pattern as ptm-game-hook/medley.
   const setPhase = useCallback((newPhase: GamePhase | ((prev: GamePhase) => GamePhase)) => {
-    const resolved = typeof newPhase === 'function' ? newPhase(phase) : newPhase;
-    setPhaseRaw(resolved);
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
-  }, [phase]);
+    setPhaseRaw(newPhase);
+  }, []);
   const [countdown] = useState(3);
 
-  // ── Dispatch initial 'intro' phase on mount ──
-  // The useState('intro') never triggers the custom event, so the companion
-  // never learns about the initial phase. Dispatch it once on mount.
+  // ── Dispatch phase for companion mirroring whenever it commits ──
+  // Covers the initial 'intro' phase on mount AND every later change.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
-  }, []);
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase } }));
+  }, [phase]);
 
   // ── Media: URL restoration, lyrics, media element refs ──
   const {

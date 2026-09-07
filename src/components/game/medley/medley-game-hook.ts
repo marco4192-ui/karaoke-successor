@@ -164,21 +164,27 @@ export function useMedleyGame({
 
   // ── Phase ──
   const [phase, setPhaseRaw] = useState<MedleyGamePhase>('intro');
-  // Wrap setPhase to dispatch ptm-phase-changed events for companion mirroring
+  // Plain setter alias — the ptm-phase-changed event for companion mirroring
+  // is dispatched from the [phase] effect below, AFTER the phase commits.
+  // (Previously it was dispatched synchronously inside setPhase, which — when
+  // called from a state-updater function — fired listener setStates during
+  // this component's render, triggering React's
+  // "Cannot update a component while rendering a different component" warning.)
   const setPhase = useCallback((newPhase: MedleyGamePhase | ((prev: MedleyGamePhase) => MedleyGamePhase)) => {
-    const resolved = typeof newPhase === 'function' ? newPhase(phase) : newPhase;
-    setPhaseRaw(resolved);
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
-  }, [phase]);
+    setPhaseRaw(newPhase);
+}, []);
   const phaseRef = useRef<MedleyGamePhase>('intro');
   const [transitionCount, setTransitionCount] = useState(3);
+  // Guard: snippet index already advanced out of its transition (idempotency)
+  const lastTransitionAdvanceRef = useRef<number>(-1);
   // Keep phaseRef in sync (used in async callbacks to avoid stale closures)
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
-  // ── Dispatch initial 'intro' phase on mount ──
+  // ── Dispatch phase for companion mirroring whenever it commits ──
+  // Covers the initial 'intro' phase on mount AND every later transition.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
-  }, []);
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase } }));
+  }, [phase]);
 
   // ── Current snippet ──
   const [currentSnippetIdx, setCurrentSnippetIdx] = useState(0);
@@ -688,26 +694,35 @@ export function useMedleyGame({
     const transitionTime = settings.transitionTime ?? 3;
     setTransitionCount(transitionTime);
 
+    // Pure countdown tick — NO side effects inside the state updater.
+    // (React may invoke updaters during render / twice in StrictMode; putting
+    // setPhase / ref mutations / callbacks in there previously caused
+    // "Cannot update a component while rendering a different component".)
     const interval = setInterval(() => {
-      setTransitionCount(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          const nextIdx = currentSnippetIdx + 1;
-          setCurrentSnippetIdx(nextIdx);
-          setPhase('playing');
-          setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
-          setCurrentTimeMs(0);
-          audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
-          // Feature #18: Pre-check comeback boost before the last snippet starts
-          teamBonuses.preCheckComeback(nextIdx);
-          return transitionTime;
-        }
-        return prev - 1;
-      });
+      setTransitionCount(prev => prev - 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [phase, currentSnippetIdx, teamBonuses.preCheckComeback]);
+  }, [phase, currentSnippetIdx]);
+
+  // ── Advance to the next snippet once the countdown expires ──
+  // Idempotent via lastTransitionAdvanceRef (guards against double-firing
+  // when transitionCount stays ≤ 0 across re-renders or StrictMode remounts).
+  useEffect(() => {
+    if (phase !== 'transition' || transitionCount > 0) return;
+    if (lastTransitionAdvanceRef.current === currentSnippetIdx) return;
+    lastTransitionAdvanceRef.current = currentSnippetIdx;
+
+    const nextIdx = currentSnippetIdx + 1;
+    setCurrentSnippetIdx(nextIdx);
+    setPhase('playing');
+    setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
+    setCurrentTimeMs(0);
+    audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
+    // Feature #18: Pre-check comeback boost before the last snippet starts
+    teamBonuses.preCheckComeback(nextIdx);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks
+  }, [phase, transitionCount, currentSnippetIdx]);
 
   // ==================== ACTIONS ====================
 

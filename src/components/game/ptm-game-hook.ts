@@ -133,22 +133,22 @@ export function usePtmGameLogic({
   // ── Phase management ──
   const [phase, setPhaseRaw] = useState<GamePhase>('intro');
   const setPhase = useCallback((newPhase: GamePhase | ((prev: GamePhase) => GamePhase)) => {
-    const resolved = typeof newPhase === 'function' ? newPhase(ptmPhaseRef.current) : newPhase;
-    setPhaseRaw(resolved);
-    // Notify companion apps about phase changes
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: resolved } }));
+    setPhaseRaw(newPhase);
+    // NOTE: the ptm-phase-changed event is dispatched from the [phase] effect
+    // below (after commit) — dispatching synchronously here caused
+    // "Cannot update a component while rendering a different component" when
+    // setPhase was called from a state-updater function.
   }, []);
   const ptmPhaseRef = useRef<GamePhase>('intro');
   // Keep ref in sync for the function-form of setPhase
   useEffect(() => { ptmPhaseRef.current = phase; }, [phase]);
   const [countdown, setCountdown] = useState(3);
 
-  // ── Dispatch initial 'intro' phase on mount ──
-  // The useState('intro') never triggers the custom event, so the companion
-  // never learns about the initial phase. Dispatch it once on mount.
+  // ── Dispatch phase for companion mirroring whenever it commits ──
+  // Covers the initial 'intro' phase on mount AND every later change.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
-  }, []);
+    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase } }));
+  }, [phase]);
 
   // ── Media: URL restoration, lyrics, media element refs ──
   const {
@@ -617,48 +617,52 @@ export function usePtmGameLogic({
       });
     }
 
+    // Pure countdown interval — all side effects moved OUT of the state
+    // updater (React may invoke updaters during render / twice in StrictMode;
+    // calling setPhase() inside previously dispatched ptm-phase-changed during
+    // render, which updated KaraokeApp while rendering PTMGameScreen — the
+    // "Cannot update a component while rendering a different component" warning).
+    let countdownValue = 3;
     const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          countdownIntervalRef.current = null;
-          setPhase('playing');
-          setIsPlaying(true);
-          setCurrentTime(0);
-          const seekTo = isMedleyMode && ptmMedleySnippets[0]
-            ? ptmMedleySnippets[0].startTime / 1000
-            : 0;
+      countdownValue -= 1;
+      setCountdown(countdownValue);
+      if (countdownValue > 0) return;
 
-          requestAnimationFrame(() => {
+      clearInterval(interval);
+      countdownIntervalRef.current = null;
+      setPhase('playing');
+      setIsPlaying(true);
+      setCurrentTime(0);
+      const seekTo = isMedleyMode && ptmMedleySnippets[0]
+        ? ptmMedleySnippets[0].startTime / 1000
+        : 0;
+
+      requestAnimationFrame(() => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = seekTo;
+          audioRef.current.play().catch(() => {});
+          if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+            videoRef.current.currentTime = seekTo;
+            videoRef.current.play().catch(() => {});
+          }
+        } else if (videoRef.current && !isYouTube) {
+          videoRef.current.currentTime = seekTo;
+          videoRef.current.play().catch(() => {});
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn('[PTM] No media element available at game start, retrying...');
+          countdownRetryRef.current = setTimeout(() => {
+            countdownRetryRef.current = null;
+            if (unmountGuardRef.current) return;
             if (audioRef.current) {
               audioRef.current.currentTime = seekTo;
               audioRef.current.play().catch(() => {});
-              if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
-                videoRef.current.currentTime = seekTo;
-                videoRef.current.play().catch(() => {});
-              }
             } else if (videoRef.current && !isYouTube) {
               videoRef.current.currentTime = seekTo;
               videoRef.current.play().catch(() => {});
-            } else {
-              // eslint-disable-next-line no-console
-              console.warn('[PTM] No media element available at game start, retrying...');
-              countdownRetryRef.current = setTimeout(() => {
-                countdownRetryRef.current = null;
-                if (unmountGuardRef.current) return;
-                if (audioRef.current) {
-                  audioRef.current.currentTime = seekTo;
-                  audioRef.current.play().catch(() => {});
-                } else if (videoRef.current && !isYouTube) {
-                  videoRef.current.currentTime = seekTo;
-                  videoRef.current.play().catch(() => {});
-                }
-              }, 300);
             }
-          });
-          return 0;
+          }, 300);
         }
-        return prev - 1;
       });
     }, 1000);
     countdownIntervalRef.current = interval;
