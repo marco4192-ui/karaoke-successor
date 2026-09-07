@@ -7,13 +7,14 @@
  * Feature #18: Team bonuses — MVP indicator
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MedleyPlayer, MedleySettings, MedleyRoundResult, MedleyHighlight, TeamBonusResult } from './medley-types';
 import { getDailyMedleyTopN, getMedleyTopN, type MedleyHistoryEntry } from '@/lib/game/medley-ranking';
 import { useTranslation } from '@/lib/i18n/translations';
 import { toast } from '@/hooks/use-toast';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 import { ShareButton } from './medley-round-results';
 
 // ===================== FINAL RESULTS =====================
@@ -65,6 +66,29 @@ export function MedleyFinalResults({
 
   const sorted = Object.entries(cumulative).sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sorted[0];
+
+  // Record this finished medley in the party session history (once).
+  // Computed synchronously (not from the async `cumulative` state) so the
+  // mount-effect of the recorder hook sees the full data immediately.
+  const sessionPlayers = useMemo(() => {
+    const agg: Record<string, { name: string; avatar?: string; color: string; score: number }> = {};
+    for (const p of players) {
+      agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, score: p.score };
+    }
+    for (const round of seriesHistory) {
+      for (const [id, scores] of Object.entries(round.playerScores)) {
+        const entry = agg[id];
+        if (entry) entry.score += scores.score;
+      }
+    }
+    return Object.values(agg).sort((a, b) => b.score - a.score);
+  }, [players, seriesHistory]);
+
+  useRecordPartySession({
+    mode: 'medley',
+    rounds: seriesHistory.length,
+    players: sessionPlayers,
+  });
 
   const teamATotal = Object.values(cumulative).filter(p => p.team === 0).reduce((s, p) => s + p.totalScore, 0);
   const teamBTotal = Object.values(cumulative).filter(p => p.team === 1).reduce((s, p) => s + p.totalScore, 0);

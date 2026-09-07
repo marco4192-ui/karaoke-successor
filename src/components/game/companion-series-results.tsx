@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
 // ===================== SERIES RESULTS =====================
 
@@ -48,6 +49,18 @@ export function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
   const sortedPlayers = Object.entries(cumulative)
     .sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sortedPlayers[0];
+
+  // Record this finished series in the party session history (once)
+  useRecordPartySession({
+    mode: 'companion-singalong',
+    rounds: history.length,
+    players: sortedPlayers.map(([_, p]) => ({
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      score: p.totalScore,
+    })),
+  });
 
   return (
     <div className="flex flex-col items-center">

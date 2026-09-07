@@ -785,3 +785,44 @@
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
+
+/* ===================== Party Session History ===================== */
+
+/* Horizontal session cards: slim, subtle scrollbar that appears on hover */
+.party-history-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scroll-snap-type: x proximity;
+}
+
+.party-history-scroll > * {
+  scroll-snap-align: start;
+}
+
+.party-history-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.party-history-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.party-history-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.party-history-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Hide scrollbar entirely on touch devices (swipe is natural there) */
+@media (hover: none) {
+  .party-history-scroll {
+    scrollbar-width: none;
+  }
+  .party-history-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -32,6 +32,7 @@ import {
 } from '@/lib/game/competitive-words-blind';
 import { PartyStartingScreen, type PartyStartingPlayer } from './party-starting-screen';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
 // ===================== SETUP SCREEN =====================
 
@@ -696,6 +697,18 @@ function CompetitiveWinnerScreen({
   const { t } = useTranslation();
   const winner = ranked[0];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
+
+  // Record this finished game in the party session history (once)
+  useRecordPartySession({
+    mode: modeType,
+    rounds: game.rounds.length,
+    players: ranked.map(p => ({
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      score: p.totalScore,
+    })),
+  });
 
   // Game-level statistics from the competitive game object
   const totalRoundsPlayed = game.rounds.length;

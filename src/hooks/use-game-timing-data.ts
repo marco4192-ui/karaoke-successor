@@ -79,14 +79,19 @@ export function useGameTimingData({
   // =====================================================
   const timingData = useMemo<TimingData | null>(() => {
     const src = songForTiming || effectiveSong;
-    if (!src || src.lyrics.length === 0) return null;
+    // Robustness: malformed/corrupted song data (e.g. legacy localStorage imports)
+    // must not hard-crash the game — treat as "no timing data" instead.
+    if (!src || !Array.isArray(src.lyrics) || src.lyrics.length === 0) return null;
 
     const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
     // Determine if notes have explicit P1/P2 markers — needed before the forEach below
-    const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
+    const sortedLines = [...src.lyrics]
+      .filter(line => line && Array.isArray(line.notes))
+      .sort((a, b) => a.startTime - b.startTime);
+    if (sortedLines.length === 0) return null;
     const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 
     sortedLines.forEach((line, lineIndex) => {

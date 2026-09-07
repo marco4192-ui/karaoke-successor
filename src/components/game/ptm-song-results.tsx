@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 // ===================== TYPES =====================
@@ -244,6 +245,18 @@ export function PtmSeriesResults({
     () => [...cumulative.entries()].sort(([, a], [, b]) => b.totalScore - a.totalScore),
     [cumulative]
   );
+
+  // Record this finished series in the party session history (once)
+  useRecordPartySession({
+    mode: 'pass-the-mic',
+    rounds: seriesHistory.length,
+    players: sortedPlayers.map(([, p]) => ({
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      score: p.totalScore,
+    })),
+  });
 
   const winner = sortedPlayers[0];
 

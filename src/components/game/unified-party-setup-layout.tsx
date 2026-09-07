@@ -105,7 +105,7 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
             <h2 className="text-2xl font-bold text-white mb-2">{config.titleKey ? t(config.titleKey) : config.title}</h2>
             <p className="text-white/80 mb-4">{config.descriptionKey ? t(config.descriptionKey) : config.description}</p>
             <div className="bg-black/20 rounded-lg p-4 space-y-2">
-              <h3 className="font-bold text-white/90 mb-2">🎮 {t('unifiedSetup.howItWorks')}</h3>
+              <h3 className="font-bold text-white/90 mb-2">{t('unifiedSetup.howItWorks')}</h3>
               {extendedDesc.map((desc, i) => (
                 <p key={i} className="text-sm text-white/70">{desc}</p>
               ))}
@@ -178,7 +178,7 @@ export function SettingsPanel({
                 onClick={() => onDifficultyChange(diff)}
                 className={difficulty === diff ? `bg-gradient-to-r ${config.color}` : 'border-white/20'}
               >
-                {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                {t(`difficulty.${diff}`)}
               </Button>
             ))}
           </div>

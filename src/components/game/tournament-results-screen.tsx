@@ -11,6 +11,7 @@ import {
 } from '@/lib/game/tournament';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
 // #7 Tournament Results Screen
 interface TournamentResultsProps {
@@ -23,6 +24,23 @@ export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: To
   const { t } = useTranslation();
   const placements = useMemo(() => getPlayerPlacements(bracket), [bracket]);
   const party = usePartyStore();
+
+  // Record the completed tournament in the party session history (once)
+  useRecordPartySession(
+    bracket.status === 'completed' && bracket.champion
+      ? {
+          mode: 'tournament',
+          rounds: bracket.totalRounds,
+          players: bracket.players.map(p => ({
+            name: p.name,
+            avatar: p.avatar,
+            color: p.color,
+            score: 0,
+            isWinner: p.id === bracket.champion?.id,
+          })),
+        }
+      : null
+  );
 
   // #10 Fan favorites from crowd votes
   const fanFavorites = useMemo(() => {

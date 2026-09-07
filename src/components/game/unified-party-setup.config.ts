@@ -124,7 +124,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'medleyMode', label: 'Medley Mode', description: 'Multiple song snippets per round', labelKey: 'modeSettings.medleyMode', descriptionKey: 'modeSettings.medleyModeDesc', type: 'toggle', defaultValue: false },
       // NOTE: Song selection method is controlled by the top-level songSelectionOptions (random|vote),
       // NOT by an inner setting. The UI renders selection buttons based on songSelectionOptions.
-      { key: 'grandFinaleBestOf', label: 'Grand Finale', description: 'Final 2 players format', type: 'select', options: [
+      { key: 'grandFinaleBestOf', label: 'Grand Finale', description: 'Final 2 players format', labelKey: 'modeSettings.grandFinale', descriptionKey: 'modeSettings.grandFinaleDesc', type: 'select', options: [
         { value: 1, label: 'Normal Final', labelKey: 'modeSettings.normalFinal' },
         { value: 3, label: '🏆 Best of 3', labelKey: 'modeSettings.bestOf3' },
         { value: 5, label: '🏆 Best of 5', labelKey: 'modeSettings.bestOf5' },
@@ -165,13 +165,13 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 1,
     maxPlayers: 4,
     settings: [
-      { key: 'blindFrequency', label: 'Blind Frequency', description: 'How often passages go blind', type: 'select', options: [
+      { key: 'blindFrequency', label: 'Blind Frequency', description: 'How often passages go blind', labelKey: 'modeSettings.blindFrequency', descriptionKey: 'modeSettings.blindFrequencyDesc', type: 'select', options: [
         { value: 'light', label: 'Light (15%)', labelKey: 'modeSettings.blindLight' }, { value: 'normal', label: 'Normal (30%)', labelKey: 'modeSettings.blindNormal' },
         { value: 'hard', label: 'Hard (60%)', labelKey: 'modeSettings.blindHard' }, { value: 'insane', label: 'Insane (90%)', labelKey: 'modeSettings.blindInsane' },
       ], defaultValue: 'normal' },
       { key: 'hardcore', label: 'Hardcore Mode', description: 'Text hidden when notes visible, and vice versa', labelKey: 'modeSettings.hardcoreMode', descriptionKey: 'modeSettings.hardcoreModeDesc', type: 'toggle', defaultValue: false },
       { key: 'escalating', label: 'Escalating', description: 'Frequency increases each round', labelKey: 'modeSettings.escalating', descriptionKey: 'modeSettings.escalatingDesc', type: 'toggle', defaultValue: false },
-      { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', type: 'select', options: [
+      { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', labelKey: 'modeSettings.bestOf', descriptionKey: 'modeSettings.bestOfDesc', type: 'select', options: [
         { value: 1, label: '1 Round', labelKey: 'modeSettings.1Round' }, { value: 3, label: 'Best of 3', labelKey: 'modeSettings.bestOf3' },
         { value: 5, label: 'Best of 5', labelKey: 'modeSettings.bestOf5' }, { value: 7, label: 'Best of 7', labelKey: 'modeSettings.bestOf7' },
       ], defaultValue: 3 },
@@ -191,16 +191,16 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 1,
     maxPlayers: 4,
     settings: [
-      { key: 'missingWordFrequency', label: 'Missing Words Frequency', description: 'How much text is hidden', type: 'select', options: [
+      { key: 'missingWordFrequency', label: 'Missing Words Frequency', description: 'How much text is hidden', labelKey: 'modeSettings.missingWordFrequency', descriptionKey: 'modeSettings.missingWordFrequencyDesc', type: 'select', options: [
         { value: 'light', label: 'Light (15%)', labelKey: 'modeSettings.mwLight' }, { value: 'normal', label: 'Normal (30%)', labelKey: 'modeSettings.mwNormal' },
         { value: 'hard', label: 'Hard (60%)', labelKey: 'modeSettings.mwHard' }, { value: 'insane', label: 'Insane (90%)', labelKey: 'modeSettings.mwInsane' },
       ], defaultValue: 'normal' },
-      { key: 'granularity', label: 'Hiding Mode', description: 'Words, passages, or both', type: 'select', options: [
+      { key: 'granularity', label: 'Hiding Mode', description: 'Words, passages, or both', labelKey: 'modeSettings.missingGranularity', descriptionKey: 'modeSettings.missingGranularityDesc', type: 'select', options: [
         { value: 'word', label: 'Words', labelKey: 'modeSettings.mwWords' }, { value: 'passage', label: 'Passages', labelKey: 'modeSettings.mwPassages' }, { value: 'both', label: 'Both', labelKey: 'modeSettings.mwBoth' },
       ], defaultValue: 'passage' },
       { key: 'hardcoreMissingWords', label: 'Hardcore Mode', description: 'Hidden words stay hidden until song ends', labelKey: 'modeSettings.mwHardcoreMode', descriptionKey: 'modeSettings.mwHardcoreModeDesc', type: 'toggle', defaultValue: false },
       { key: 'escalating', label: 'Escalating', description: 'Frequency increases each round', labelKey: 'modeSettings.mwEscalating', descriptionKey: 'modeSettings.mwEscalatingDesc', type: 'toggle', defaultValue: false },
-      { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', type: 'select', options: [
+      { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', labelKey: 'modeSettings.bestOf', descriptionKey: 'modeSettings.bestOfDesc', type: 'select', options: [
         { value: 1, label: '1 Round', labelKey: 'modeSettings.1Round' }, { value: 3, label: 'Best of 3', labelKey: 'modeSettings.bestOf3' },
         { value: 5, label: 'Best of 5', labelKey: 'modeSettings.bestOf5' }, { value: 7, label: 'Best of 7', labelKey: 'modeSettings.bestOf7' },
       ], defaultValue: 3 },

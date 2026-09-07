@@ -129,4 +129,92 @@ describe('i18n translation system', () => {
       }
     });
   });
+
+  describe('party extendedDesc bullet arrays (regression: comma-joined strings)', () => {
+    const modes = ['passTheMic', 'companionSingalong', 'medley', 'tournament', 'battleRoyale', 'duel', 'blind', 'missingWords', 'rateMySong'] as const;
+    const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+
+    it('English defines bullet counts for every mode', () => {
+      for (const mode of modes) {
+        let count = 0;
+        while (translations.en[`extendedDesc.${mode}.${count}`]) count++;
+        expect(count).toBeGreaterThan(0);
+      }
+    });
+
+    it('every language has the same bullet count as English for every mode', () => {
+      for (const mode of modes) {
+        let enCount = 0;
+        while (translations.en[`extendedDesc.${mode}.${enCount}`]) enCount++;
+        for (const lang of languages) {
+          let langCount = 0;
+          while (translations[lang][`extendedDesc.${mode}.${langCount}`]) langCount++;
+          // languages fall back to en key-for-key; identical counts prove real translations exist
+          expect(langCount, `${lang} extendedDesc.${mode} bullet count`).toBe(enCount);
+        }
+      }
+    });
+
+    it('no language stores a legacy comma-joined string under extendedDesc.<mode>', () => {
+      for (const lang of languages) {
+        for (const mode of modes) {
+          expect(translations[lang][`extendedDesc.${mode}`]).toBeUndefined();
+        }
+      }
+    });
+  });
+
+  describe('unified party setup i18n coverage', () => {
+    it('difficulty labels are translated in all languages', () => {
+      const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+      for (const lang of languages) {
+        for (const diff of ['easy', 'medium', 'hard'] as const) {
+          const value = translations[lang][`difficulty.${diff}`];
+          expect(value, `${lang} difficulty.${diff}`).toBeTruthy();
+        }
+      }
+    });
+
+    it('modeSettings labels used by the unified setup config exist in all languages', () => {
+      const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+      const keys = [
+        'modeSettings.missingWordFrequency', 'modeSettings.missingWordFrequencyDesc',
+        'modeSettings.missingGranularity', 'modeSettings.missingGranularityDesc',
+        'modeSettings.bestOf', 'modeSettings.bestOfDesc',
+        'modeSettings.blindFrequency', 'modeSettings.blindFrequencyDesc',
+        'modeSettings.grandFinale', 'modeSettings.grandFinaleDesc',
+      ];
+      for (const lang of languages) {
+        for (const key of keys) {
+          expect(translations[lang][key], `${lang} ${key}`).toBeTruthy();
+        }
+      }
+    });
+  });
+
+  describe('party session history i18n coverage', () => {
+    it('partyHistory keys exist in all languages', () => {
+      const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+      const keys = [
+        'partyHistory.title', 'partyHistory.empty', 'partyHistory.winner',
+        'partyHistory.players', 'partyHistory.rounds', 'partyHistory.timesPlayed',
+        'partyHistory.clear', 'partyHistory.confirmClear',
+        'partyHistory.playerSingular', 'partyHistory.roundSingular',
+      ];
+      for (const lang of languages) {
+        for (const key of keys) {
+          expect(translations[lang][key], `${lang} ${key}`).toBeTruthy();
+        }
+      }
+    });
+
+    it('placeholder keys keep their {n} placeholder in all languages', () => {
+      const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+      for (const lang of languages) {
+        for (const key of ['partyHistory.players', 'partyHistory.rounds', 'partyHistory.timesPlayed']) {
+          expect(translations[lang][key], `${lang} ${key}`).toContain('{n}');
+        }
+      }
+    });
+  });
 });

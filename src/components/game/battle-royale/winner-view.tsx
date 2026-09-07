@@ -12,6 +12,7 @@ import {
   HallOfFameEntry,
 } from '@/lib/game/battle-royale';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
 interface WinnerViewProps {
   winner: NonNullable<import('@/lib/game/battle-royale').BattleRoyaleGame['winner']>;
@@ -25,6 +26,20 @@ export function WinnerView({ winner, eliminationOrder, gameStats, onEndGame }: W
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
   const [hallOfFame, setHallOfFame] = useState<HallOfFameEntry[]>([]);
+
+  // Record this finished battle in the party session history (once)
+  useRecordPartySession({
+    mode: 'battle-royale',
+    rounds: gameStats?.roundHighlights?.length || undefined,
+    players: eliminationOrder.map(p => ({
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      score: p.score,
+      isWinner: p.id === winner.id,
+    })),
+  });
+
 
   useEffect(() => {
     setHallOfFame(getHallOfFame());

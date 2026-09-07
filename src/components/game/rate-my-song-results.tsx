@@ -27,6 +27,7 @@ import {
 import type { RateMySongResultsScreenProps, RateMySongSeriesResultsScreenProps } from './rate-my-song-types';
 import type { RateMySongRating } from './rate-my-song-types';
 import { CATEGORY_KEYS, type CategoryKey } from './rate-my-song-types';
+import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
 // ===================== RESULTS SCREEN =====================
 
@@ -560,6 +561,17 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
   }, [cumulativeScores]);
 
   const winner = sortedPlayers[0];
+
+  // Record this finished series in the party session history (once)
+  useRecordPartySession({
+    mode: 'rate-my-song',
+    rounds: seriesHistory.length,
+    players: sortedPlayers.map(p => ({
+      name: p.name,
+      color: p.color,
+      score: Math.round(p.total * 10) / 10,
+    })),
+  });
 
   // "Song des Abends" — best single rating across all rounds
   const bestSinglePerformance = useMemo(() => {

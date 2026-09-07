@@ -448,6 +448,19 @@ export const partyTranslations = {
   },
 
   // Extended descriptions for game modes
+  partyHistory: {
+    title: 'Recent Parties',
+    empty: 'No parties yet — play a game and the results will show up here',
+    winner: 'Winner',
+    players: '{n} players',
+    rounds: '{n} rounds',
+    playerSingular: '{n} player',
+    roundSingular: '{n} round',
+    timesPlayed: '{n}× played',
+    clear: 'Clear',
+    confirmClear: 'Sure?',
+  },
+
   extendedDesc: {
     passTheMic: ['🎵 The song is divided into segments', '🔄 The singer changes after each segment', '🏆 The team score is tallied at the end'],
     companionSingalong: ['📱 All players keep their phone ready', '⚡ When your phone lights up, it\'s your turn!', '🎤 Nobody knows who\'s next', '🏆 Collect points for your team'],
@@ -554,10 +567,15 @@ export const partyTranslations = {
     betting: 'Betting',
     bettingDesc: 'Audience can predict',
     missingWordFrequency: 'Frequency',
+    missingWordFrequencyDesc: 'How much text is hidden',
     missingGranularity: 'Hide Mode',
+    missingGranularityDesc: 'Words, passages, or both',
     bestOf: 'Best of',
+    bestOfDesc: 'Number of rounds per player',
     blindFrequency: 'Blind Frequency',
+    blindFrequencyDesc: 'How often passages go blind',
     grandFinale: 'Grand Finale',
+    grandFinaleDesc: 'Format for the final 2 players',
   },
 
   // Unified party mode starting screen (after "Ready to Play", before gameplay)

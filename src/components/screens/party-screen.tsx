@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useRovingFocus } from '@/hooks/use-roving-focus';
+import { PartyHistorySection } from '@/components/party/party-history-section';
+import { getPartyModePlayCounts } from '@/lib/game/party-session-history';
 import type { GameMode } from '@/types/game';
 
 interface PartyGame {
@@ -22,6 +25,7 @@ interface PartyScreenProps {
 
 export function PartyScreen({ onSelectMode }: PartyScreenProps) {
   const { t } = useTranslation();
+  const [modePlayCounts] = useState(() => getPartyModePlayCounts());
 
   const partyGames: PartyGame[] = [
     {
@@ -133,7 +137,16 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
                   ✨ {t('party.newBadge')}
                 </div>
               )}
-              <div className="text-5xl mb-4">{game.icon}</div>
+              {modePlayCounts[game.mode] > 0 && (
+                <div
+                  className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-sm text-white/85 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/15"
+                  title={t('partyHistory.timesPlayed').replace('{n}', String(modePlayCounts[game.mode]))}
+                  data-testid={`party-mode-count-${game.mode}`}
+                >
+                  {t('partyHistory.timesPlayed').replace('{n}', String(modePlayCounts[game.mode]))}
+                </div>
+              )}
+              <div className="text-5xl mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{game.icon}</div>
               <h3 className="tile-text-white text-2xl font-bold text-white mb-2">{t(game.titleKey)}</h3>
               <p className="tile-text-white text-white/80 mb-4">{t(game.descKey)}</p>
               <div className="flex items-center gap-2">
@@ -145,6 +158,9 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
           </Card>
         ))}
       </div>
+
+      {/* Recent party sessions (localStorage) */}
+      <PartyHistorySection />
     </div>
   );
 }
