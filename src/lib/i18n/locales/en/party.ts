@@ -383,6 +383,7 @@ export const partyTranslations = {
     playerSelectionCount: 'Player Selection ({n}/{m})',
     micPlayersCompanion: '(🎮 Mic Players • 📱 Companion)',
     notConnected: '(not connected)',
+    connected: '(connected)',
     minPlayersRequired: '⚠️ At least {n} active profiles required. Create more in Character Selection or activate existing ones.',
     songFilter: 'Song Filter',
     songsOfTotal: '{n} of {m} Songs',

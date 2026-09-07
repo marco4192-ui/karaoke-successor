@@ -355,6 +355,7 @@ unifiedSetup: {
   playerSelectionCount: 'Spieler-Auswahl ({n}/{m})',
   micPlayersCompanion: '(🎮 Mikrofon-Spieler • 📱 Companion)',
   notConnected: '(nicht verbunden)',
+  connected: '(verbunden)',
   minPlayersRequired: '⚠️ Mindestens {n} aktive Profile benötigt. Erstelle weitere in der Charakterauswahl oder aktiviere bestehende.',
   songFilter: 'Song-Filter',
   songsOfTotal: '{n} von {m} Songs',

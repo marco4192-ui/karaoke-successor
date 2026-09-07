@@ -172,7 +172,7 @@ export function HighscoreScreen() {
               {RANKING_TITLES.slice(0, 10).map((rank) => (
                 <div key={rank.minScore} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                   <span>{rank.emoji}</span>
-                  <span className="truncate">{t(`rankingTitles.${rank.minScore}`)}</span>
+                  <span className="truncate">{t(rank.titleKey)}</span>
                 </div>
               ))}
             </div>

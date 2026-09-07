@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: '플레이어 선택 ({n}/{m})',
   micPlayersCompanion: '(🎮 마이크 플레이어 • 📱 컴패니언)',
   notConnected: '(연결되지 않음)',
+  connected: '(연결됨)',
   minPlayersRequired: '⚠️ 최소 {n}개의 활성 프로필이 필요합니다. 캐릭터 선택에서 더 만들거나 기존 프로필을 활성화하세요.',
   songFilter: '곡 필터',
   songsOfTotal: '{m}곡 중 {n}곡',

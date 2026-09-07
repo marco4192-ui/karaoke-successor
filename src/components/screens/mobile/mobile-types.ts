@@ -35,6 +35,7 @@ export type MirrorScreenId =
   | 'tournament-intro'
   | 'competitive-intro'
   | 'rate-my-song-intro'
+  | 'cptm-game'      // Companion Sing-A-Long active game (turn signals)
   | 'profile';  // character/profile management
 
 /** Maps desktop Screen → MirrorScreenId */
@@ -60,6 +61,7 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     editor: 'home',
     online: 'home',
     'song-voting': 'song-voting',
+    'companion-singalong-game': 'cptm-game',
   };
 
   if (desktopScreen in directMap) return directMap[desktopScreen];
@@ -129,6 +131,20 @@ interface SingalongTurn {
   nextProfileId: string | null;
   countdown: number | null; // 3, 2, 1 when switching, null when actively singing
   isActive: boolean;
+  // ── CPTM companion mirror context (optional — sent by the desktop) ──
+  currentPlayerName?: string;
+  currentPlayerColor?: string;
+  nextPlayerName?: string;
+  players?: CptmMirrorPlayerInfo[];
+}
+
+/** Player roster entry for the CPTM companion game mirror. */
+export interface CptmMirrorPlayerInfo {
+  profileId: string;
+  name: string;
+  color: string;
+  score: number;
+  segmentsSung: number;
 }
 
 export interface GameState {

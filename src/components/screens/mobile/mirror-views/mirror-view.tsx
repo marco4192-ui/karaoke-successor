@@ -19,6 +19,7 @@ import { MirrorHomeLite } from './mirror-home-lite';
 import { MirrorLibraryLite } from './mirror-library-lite';
 import { MirrorQueueLite } from './mirror-queue-lite';
 import { MirrorGameLite } from './mirror-game-lite';
+import { MirrorCptmGameLite } from './mirror-cptm-game-lite';
 import { MirrorSettingsLite } from './mirror-settings-lite';
 import { MirrorHighscoresLite } from './mirror-highscores-lite';
 import { MirrorDailyLite } from './mirror-daily-lite';
@@ -43,6 +44,8 @@ export interface MirrorViewProps {
   gameState: GameState;
   clientId: string | null;
   profileName: string;
+  /** The companion's own profile id — used to match CPTM turn signals. */
+  profileId?: string | null;
 
   // Warteschlange & Daten
   queue: QueueItem[];
@@ -147,6 +150,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   gameState,
   clientId,
   profileName,
+  profileId,
   queue,
   slotsRemaining,
   onRemoveFromQueue,
@@ -286,6 +290,26 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
           <MirrorGameLite
             gameState={gameState}
             clientId={clientId}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            onAcquireRemote={onAcquireRemote}
+            {...desktopMirrorBase}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- CPTM aktives Spiel (Companion Sing-A-Long) ----------
+    case 'cptm-game':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="game">
+          <MirrorCptmGameLite
+            gameState={gameState}
+            clientId={clientId}
+            profileId={profileId}
             profileName={profileName}
             onNavigate={onNavigate}
             isRemoteLocked={isRemoteLocked}

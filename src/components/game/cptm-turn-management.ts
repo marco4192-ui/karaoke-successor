@@ -11,6 +11,23 @@ interface CptmScheduleEntry {
   playerIndex: number;
 }
 
+/** Player roster entry sent to companion mirrors for the CPTM game view. */
+export interface CptmCompanionPlayerInfo {
+  profileId: string;
+  name: string;
+  color: string;
+  score: number;
+  segmentsSung: number;
+}
+
+/** Extra context so companion mirrors can render names, colors and scores. */
+export interface CptmTurnContext {
+  currentPlayerName?: string;
+  currentPlayerColor?: string;
+  nextPlayerName?: string;
+  players?: CptmCompanionPlayerInfo[];
+}
+
 // ===================== STANDALONE FUNCTIONS =====================
 
 /**
@@ -22,6 +39,7 @@ export function sendCompanionTurnSignal(
   nextProfileId: string | null,
   countdown: number | null,
   isActive: boolean,
+  context?: CptmTurnContext,
 ): void {
   try {
     fetch('/api/mobile', {
@@ -30,7 +48,7 @@ export function sendCompanionTurnSignal(
       body: JSON.stringify({
         type: 'gamestate',
         payload: {
-          cptmTurn: { profileId, nextProfileId, countdown, isActive },
+          cptmTurn: { profileId, nextProfileId, countdown, isActive, ...context },
         },
       }),
     }).catch(() => {
@@ -39,6 +57,19 @@ export function sendCompanionTurnSignal(
   } catch {
     // Ignore
   }
+}
+
+/** Builds the companion roster from the mutable players ref (names/colors/scores). */
+export function buildCptmPlayerInfo(
+  players: CptmPlayer[],
+): CptmCompanionPlayerInfo[] {
+  return players.map(p => ({
+    profileId: p.id,
+    name: p.name,
+    color: p.color,
+    score: p.score,
+    segmentsSung: p.segmentsSung,
+  }));
 }
 
 // ===================== HOOK PARAMS =====================
@@ -207,7 +238,12 @@ export function useCptmTurnManagement(
         if (nextPlayer) {
           // Send blink warning with countdown starting at blinkLeadTime
           blinkCountdownValueRef.current = blinkLeadTime;
-          sendCompanionTurnSignal(null, nextPlayer.id, blinkLeadTime, true);
+          sendCompanionTurnSignal(null, nextPlayer.id, blinkLeadTime, true, {
+            currentPlayerName: playersRef.current[currentPlayerIndexRef.current]?.name,
+            currentPlayerColor: playersRef.current[currentPlayerIndexRef.current]?.color,
+            nextPlayerName: nextPlayer.name,
+            players: buildCptmPlayerInfo(playersRef.current),
+          });
 
           // Countdown every second: 3 → 2 → 1
           if (blinkCountdownRef.current) clearInterval(blinkCountdownRef.current);
@@ -215,7 +251,12 @@ export function useCptmTurnManagement(
             blinkCountdownValueRef.current--;
             const remaining = blinkCountdownValueRef.current;
             if (remaining > 0) {
-              sendCompanionTurnSignal(null, nextPlayer.id, remaining, true);
+              sendCompanionTurnSignal(null, nextPlayer.id, remaining, true, {
+                currentPlayerName: playersRef.current[currentPlayerIndexRef.current]?.name,
+                currentPlayerColor: playersRef.current[currentPlayerIndexRef.current]?.color,
+                nextPlayerName: nextPlayer.name,
+                players: buildCptmPlayerInfo(playersRef.current),
+              });
             } else {
               // Countdown finished — clear interval (turn signal sent at segment switch)
               if (blinkCountdownRef.current) {
@@ -256,7 +297,11 @@ export function useCptmTurnManagement(
         // Send "YOUR TURN" signal to the next player
         const nextPlayer = playersRef.current[nextPlayerIdx];
         if (nextPlayer) {
-          sendCompanionTurnSignal(nextPlayer.id, null, null, true);
+          sendCompanionTurnSignal(nextPlayer.id, null, null, true, {
+            currentPlayerName: nextPlayer.name,
+            currentPlayerColor: nextPlayer.color,
+            players: buildCptmPlayerInfo(playersRef.current),
+          });
         }
 
       } else {
@@ -269,7 +314,9 @@ export function useCptmTurnManagement(
         recordRound();
         setPhase('song-results');
         // Clear all turn signals
-        sendCompanionTurnSignal(null, null, null, false);
+        sendCompanionTurnSignal(null, null, null, false, {
+          players: buildCptmPlayerInfo(playersRef.current),
+        });
       }
     }
   }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments, blinkLeadTime, recordRound, setIsPlaying, setPhase]);

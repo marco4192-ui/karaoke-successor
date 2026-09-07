@@ -515,6 +515,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               gameState={gameState}
               clientId={clientId}
               profileName={profile?.name || ''}
+              profileId={profile?.id || null}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}
@@ -566,6 +567,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               gameState={gameState}
               clientId={clientId}
               profileName={profile?.name || ''}
+              profileId={profile?.id || null}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}

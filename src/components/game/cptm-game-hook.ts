@@ -14,7 +14,7 @@ import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
 // ── Sub-hooks ──
 import { useCompanionPitchPolling } from './cptm-companion-polling';
 import { useCptmScoring } from './cptm-scoring';
-import { useCptmTurnManagement, sendCompanionTurnSignal } from './cptm-turn-management';
+import { useCptmTurnManagement, sendCompanionTurnSignal, buildCptmPlayerInfo } from './cptm-turn-management';
 import { useCptmSeries } from './cptm-series';
 
 // ===================== CONSTANTS =====================
@@ -347,9 +347,15 @@ export function useCptmGameLogic({
   const lastCurrentTimeUpdateRef = useRef(0);
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
+  // Wall-clock fallback when no media is playing (audio failed/stalled):
+  // without this the game would hang forever at the current time.
+  const fallbackClockRef = useRef<{ base: number; startedAt: number | null }>({ base: 0, startedAt: null });
 
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying) return;
+    if (phase !== 'playing' || !isPlaying) {
+      fallbackClockRef.current.startedAt = null;
+      return;
+    }
     let rafId: number;
 
     const timeLoop = () => {
@@ -357,10 +363,19 @@ export function useCptmGameLogic({
 
       if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsedMs = audioRef.current.currentTime * 1000;
+        fallbackClockRef.current.startedAt = null;
       } else if (videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2) {
         elapsedMs = videoRef.current.currentTime * 1000;
+        fallbackClockRef.current.startedAt = null;
       } else {
-        elapsedMs = currentTimeRef.current;
+        // No media element playing — advance via wall clock so the game
+        // (segments, turn switching, results) still progresses.
+        const fc = fallbackClockRef.current;
+        if (fc.startedAt === null) {
+          fc.base = currentTimeRef.current;
+          fc.startedAt = performance.now();
+        }
+        elapsedMs = fc.base + (performance.now() - fc.startedAt);
       }
 
       const now = performance.now();
@@ -449,7 +464,11 @@ export function useCptmGameLogic({
     // Send "YOUR TURN" to the first player's companion
     const firstPlayer = playersRef.current[currentPlayerIndexRef.current];
     if (firstPlayer) {
-      sendCompanionTurnSignal(firstPlayer.id, null, null, true);
+      sendCompanionTurnSignal(firstPlayer.id, null, null, true, {
+        currentPlayerName: firstPlayer.name,
+        currentPlayerColor: firstPlayer.color,
+        players: buildCptmPlayerInfo(playersRef.current),
+      });
     }
 
     requestAnimationFrame(() => {

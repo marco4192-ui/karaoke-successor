@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: 'Pelaajien valinta ({n}/{m})',
   micPlayersCompanion: '(🎮 Mikrofonipelaajat • 📱 Companion)',
   notConnected: '(ei yhdistetty)',
+  connected: '(yhdistetty)',
   minPlayersRequired: '⚠️ Vähintään {n} aktiivista profiilia tarvitaan. Luo lisää profiilivalinnassa tai aktivoi olemassa olevia.',
   songFilter: 'Kappalesuodatin',
   songsOfTotal: '{n}/{m} kappaletta',

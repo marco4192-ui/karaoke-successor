@@ -100,6 +100,17 @@ export interface MobileGameState {
     nextProfileId: string | null; // player whose phone will blink
     countdown: number | null; // 3 when warning, null when actively singing
     isActive: boolean;
+    // ── CPTM companion mirror context (optional — sent by the desktop) ──
+    currentPlayerName?: string;
+    currentPlayerColor?: string;
+    nextPlayerName?: string;
+    players?: Array<{
+      profileId: string;
+      name: string;
+      color: string;
+      score: number;
+      segmentsSung: number;
+    }>;
   } | null;
   // #10 Tournament match ID — spectators use this to vote on the current match
   tournamentMatchId: string | null;

@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { getYears } from '@/lib/game/song-library';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
 
 // Re-export public API (only exports actually consumed by other modules)
 export { SongVotingModal } from './unified-party-setup.components';
@@ -91,6 +92,11 @@ export function UnifiedPartySetup({
   const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
 
+  // Live companion connection status (green dot / "connected" label)
+  // for companion players in the player grid.
+  const showCompanionStatus = inputMode === 'companion' || inputMode === 'mixed';
+  const connectedProfileIds = useCompanionConnections(showCompanionStatus);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableYears = useMemo(() => getYears(), [songs.length]);
 
@@ -130,6 +136,7 @@ export function UnifiedPartySetup({
           config={config} activeProfiles={activeProfiles}
           selectedPlayers={selectedPlayers} togglePlayer={togglePlayer}
           inputMode={inputMode}
+          connectedProfileIds={connectedProfileIds}
         />
 
         {/* Shared single mic (e.g. Pass-the-Mic) */}

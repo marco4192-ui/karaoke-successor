@@ -18,12 +18,15 @@ import { useRovingFocus } from '@/hooks/use-roving-focus';
 
 export function PlayerGrid({
   config, activeProfiles, selectedPlayers, togglePlayer, inputMode,
+  connectedProfileIds,
 }: {
   config: PartyGameConfig;
   activeProfiles: PlayerProfile[];
   selectedPlayers: string[];
   togglePlayer: (_id: string) => void;
   inputMode?: InputMode;
+  /** Profile ids that currently have a connected companion device (live status). */
+  connectedProfileIds?: Set<string>;
 }) {
 
   const { t } = useTranslation();
@@ -62,6 +65,7 @@ export function PlayerGrid({
             const selectedIdx = selectedPlayers.indexOf(profile.id);
             const isCompanionInMixed = inputMode === 'mixed' && selectedIdx >= 0 && selectedIdx >= Math.ceil(selectedPlayers.length / 2);
             const isCompanionPlayer = inputMode === 'companion' || isCompanionInMixed;
+            const isCompanionConnected = !!connectedProfileIds?.has(profile.id);
 
             return (
               <div
@@ -94,7 +98,7 @@ export function PlayerGrid({
                             name: profile.name,
                             color: profile.color,
                             playerType: 'companion',
-                            isConnected: false, // Will be updated by mobile sync
+                            isConnected: isCompanionConnected,
                           }}
                           size="sm"
                         />
@@ -109,8 +113,8 @@ export function PlayerGrid({
                           {isCompanionPlayer ? '📱' : '🎤'}
                         </span>
                         {isCompanionPlayer && (
-                          <span className="text-[10px] text-white/40">
-                            {t('unifiedSetup.notConnected')}
+                          <span className={`text-[10px] ${isCompanionConnected ? 'text-emerald-400' : 'text-white/40'}`}>
+                            {isCompanionConnected ? t('unifiedSetup.connected') : t('unifiedSetup.notConnected')}
                           </span>
                         )}
                       </div>

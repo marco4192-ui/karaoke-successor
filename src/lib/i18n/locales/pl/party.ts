@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: 'Wybór graczy ({n}/{m})',
   micPlayersCompanion: '(🎮 Gracze z mikrofonem • 📱 Kompan)',
   notConnected: '(nie połączony)',
+  connected: '(połączony)',
   minPlayersRequired: '⚠️ Wymaganych co najmniej {n} aktywnych profili. Utwórz więcej w wyborze postaci lub aktywuj istniejące.',
   songFilter: 'Filtr piosenek',
   songsOfTotal: '{n} z {m} piosenek',

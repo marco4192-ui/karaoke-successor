@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: '玩家选择 ({n}/{m})',
   micPlayersCompanion: '（🎮 麦克风玩家 • 📱 伴侣）',
   notConnected: '（未连接）',
+  connected: '（已连接）',
   minPlayersRequired: '⚠️ 至少需要{n}个激活的档案。请在角色选择中创建更多或激活现有档案。',
   songFilter: '歌曲筛选',
   songsOfTotal: '{n}/{m} 首歌曲',

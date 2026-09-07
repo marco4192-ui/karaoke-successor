@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: 'Spelerselectie ({n}/{m})',
   micPlayersCompanion: '(🎮 Mic-spelers • 📱 Companion)',
   notConnected: '(niet verbonden)',
+  connected: '(verbonden)',
   minPlayersRequired: '⚠️ Minimaal {n} actieve profielen vereist. Maak meer aan in Profielselectie of activeer bestaande.',
   songFilter: 'Nummerfilter',
   songsOfTotal: '{n} van {m} nummers',

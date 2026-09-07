@@ -352,6 +352,7 @@ unifiedSetup: {
   playerSelectionCount: 'Spillervalg ({n}/{m})',
   micPlayersCompanion: '(🎮 Mikrofonspillere • 📱 Companion)',
   notConnected: '(ikke forbundet)',
+  connected: '(forbundet)',
   minPlayersRequired: '⚠️ Mindst {n} aktive profiler kræves. Opret flere i profilvalg eller aktivér eksisterende.',
   songFilter: 'Sangfilter',
   songsOfTotal: '{n} af {m} sange',
