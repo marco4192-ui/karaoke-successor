@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Optager lyd og webcam mens du synger. Replay tilgængelig på resultatskærmen.',
   autoFullscreen: 'Auto-fuldskærm',
   autoFullscreenDesc: 'Går automatisk i fuldskærmstilstand når en sang starter.',
+  warningCues: 'Lydadvarselssignaler',
+  warningCuesDesc: 'Kort bip før blindsektioner og skjulte ord',
 },
 settingsGraphicSound: {
   performanceMode: 'Ydelsestilstand',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'aktiv',
   secondsAgo: '{n}s siden',
   minutesAgo: '{n}m siden',
+  min: 'min',
+  hr: 't',
+  errorLoading: 'Fejl ved indlæsning af companions',
 },
 settingsAudioOutput: {
   title: 'Lydudgang',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaksi Pop',
     themeMinimalLight: 'Minimal Lys',
   },},
+appearance: {
+  themeNeonNights: 'Neon Nights',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Sunset Vibes',
+  themeOceanDeep: 'Ocean Deep',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Light',
+  animatedBg: 'Animeret baggrund',
+  bgVideo: 'Baggrundsvideo',
+  colorTheme: 'Farvetema',
+  lyricsSize: 'Tekststørrelse',
+  lyricsStyle: 'Tekststil',
+  noteColorProfile: 'Nodefarver',
+  noteColorProfileDesc: 'Farvepalet til nodestolperne',
+  performanceMode: 'Ydeevnetilstand',
+  performanceModeDesc: 'Reduceret animation for svagere enheder',
+  perfFull: 'Fuld',
+  perfLow: 'Reduceret',
+},
+
+gameplay: {
+  showScore: 'Vis point',
+  showScoreDesc: 'Vis pointene, mens du synger',
+  showCombo: 'Vis combo',
+  showComboDesc: 'Vis combotællere, mens du synger',
+  showParticles: 'Vis partikler',
+  showParticlesDesc: 'Partikeleffekter i baggrunden',
+  replayEnabled: 'Aktivér replay',
+  replayEnabledDesc: 'Optager replays af dine optrædener',
+  autoFullscreen: 'Automatisk fuldskærm',
+  autoFullscreenDesc: 'Skifter automatisk til fuldskærm, når en sang starter',
+},
+
+graphicSound: {
+  masterVolume: 'Hovedvolumen',
+  previewVolume: 'Eksempelvolumen',
+  micSensitivity: 'Mikrofonfølsomhed',
+  youtubeQuality: 'YouTube-kvalitet',
+},
+
+about: {
+  version: 'Version',
+  description: 'En moderne karaokeoplevelse med akkompagnement, pointgivning og festtilstande.',
+},
+
 };

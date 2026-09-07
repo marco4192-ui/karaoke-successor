@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Mikrofon 2',
   mic: 'Mikrofon {n}',
   songTooShortCptm: 'Låten är för kort för Companion Sing-A-Long.',
+  players: 'Spelare',
+  difficulty: 'Svårighet',
 },
 partyGameScreens: {
   micAssignment: 'Mikrofontilldelning',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Max {n} spelare tillåtna',
   errorMinPlayers: 'Minst {n} spelare krävs',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Redo att spela',
+  chooseSongFirst: '⚠️ Välj först en urvalsmetod (och en låt)',
+  selectMethodHint: 'Att välja en metod startar INTE spelet — tryck på \'Redo att spela\' när alla är klara.',
+  songSelectionLocked: 'Låtvalet låses upp vid {n} spelare — lägg till spelare först',
+  clickSongToSelect: 'Klicka på en låt för att välja den till ditt party — spelet startar med \'Redo att spela\'.',
+  mic: 'Mikrofon',
+  companion: 'Companion',
+  mixed: 'Blandat',
+  settings: 'Inställningar',
 },
 extendedDesc: {
   passTheMic: '🎵 Låten delas in i segment,🔄 Sångaren byts efter varje segment,🏆 Lagpoängen sammanställs i slutet',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Slumpmässiga utmaningar före varje omgång',
   betting: 'Spel',
   bettingDesc: 'Publiken kan förutsäga',
+  missingWordFrequency: 'Frekvens',
+  missingGranularity: 'Dolningsläge',
+  bestOf: 'Format',
+  blindFrequency: 'Blindfrekvens',
+  grandFinale: 'Grand Finale',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Sjung en låt och låt vänner betygsätta ditt framträdande!',
   },
 },
+partyStarting: {
+  song: 'Låt',
+  participants: '{n} deltagare',
+  startPlayer: 'BÖRJAR SJUNGA',
+  startsFirst: 'Sjunger först',
+  startPlayerHint: 'Denna spelare sjunger första segmentet',
+  companion: '📱 Companion-app',
+  startButton: '🎤 Börja sjunga!',
+  hint: 'Sångarna kan inta sina positioner — starta när alla är redo.',
+  enterHint: 'eller tryck Enter',
+  minutes: 'min',
+},
+
 };

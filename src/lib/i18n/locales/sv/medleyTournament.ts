@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'på: {title}',
   noAudioAvailable: 'Inget ljud tillgängligt',
   audioLoadFailed: 'Ljudinläsning misslyckades',
+  maxCombo: 'Max Combo',
+  notesHit: 'Träffade noter',
+  winner: 'Vinnare',
 },
 tournament: {
   title: 'Turneringsläge',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'matcher',
   micAssignment: 'Mikrofontilldelning',
   singsWith: 'sjunger med',
+  songVoteHint: 'Vilken låt ska avgöra denna duell?',
+  songVoteKeyHint: 'Tryck 1–3 eller klicka på en låt. Esc = slumpmässig',
+  startingTitle: 'Gör er redo!',
+  mirrorWaiting: 'Väntar på nästa duell…',
+  mirrorWaitingHint: 'Värden väljer nästa duell på storskärmen.',
 },
 rateMySong: {
   title: '⭐ Betygsätt min Låt',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Legend',
   },
   awards: 'Utmärkelser',
+  start: 'Börja sjunga',
 },
 };

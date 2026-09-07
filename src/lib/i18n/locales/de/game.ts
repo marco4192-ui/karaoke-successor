@@ -44,6 +44,11 @@ game: {
   lyrics: 'Songtext',
   notes: 'Noten',
   score: 'Punkte',
+  player: 'Spieler',
+  go: 'LOS!',
+  noteLane: {
+    singHere: 'HIER SINGEN',
+  },
   blindWarningIncoming: 'Blind-Passage in {n}s',
   blindWarningHint: 'Noten verschwinden gleich — aus dem Gedächtnis singen',
   blindWarningActive: 'Blind-Passage',
@@ -64,8 +69,10 @@ gameScreen: {
   youtubeErrorHtml5: 'HTML5-Fehler beim YouTube-Player',
   youtubeErrorCode: 'YouTube-Fehler (Code: {n})',
   loadingMedia: 'Medien werden geladen...',
+  loading: 'Lädt…',
 },
 gameHud: {
+  volumeMeter: 'Pegel-Anzeige',
   audioEffects: 'Audio-Effekte',
   reverb: 'Hall: {n}%',
   echo: 'Echo: {n}%',
@@ -276,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Werbung überspringen',
   skipAdDesc: 'Klicke auf das Video, um den "Skip Ad" Button zu drücken!',
+  acquireControl: 'Steuerung übernehmen',
 },
 mobilePage: {
   loadingCompanion: 'Lade Companion-App…',
@@ -603,5 +611,19 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'KOPFGELD',
   micError: 'Mikro',
+  survived: 'Überlebt',
+  visualSettings: 'Visuelle Einstellungen',
+},
+
+blind: {
+  title: 'Blind-Karaoke',
+},
+
+missingWords: {
+  title: 'Fehlende Wörter',
+},
+
+competitive: {
+  start: 'Start',
 },
 };

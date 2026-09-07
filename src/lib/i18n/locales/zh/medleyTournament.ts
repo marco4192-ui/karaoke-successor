@@ -155,6 +155,9 @@ medley: {
   comboOnSong: '在: {title}',
   noAudioAvailable: '没有可用的音频',
   audioLoadFailed: '音频加载失败',
+  maxCombo: '最大连击',
+  notesHit: '命中音符',
+  winner: '获胜者',
 },
 tournament: {
   title: '锦标赛模式',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: '场比赛',
   micAssignment: '麦克风分配',
   singsWith: '合唱',
+  songVoteHint: '哪首歌决定这场对决？',
+  songVoteKeyHint: '按 1–3 或点击歌曲。Esc = 随机',
+  startingTitle: '准备！',
+  mirrorWaiting: '等待下一场对决…',
+  mirrorWaitingHint: '主持人在大屏幕上选择下一场对决。',
 },
 rateMySong: {
   title: '⭐ 帮我评分',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: '传说',
   },
   awards: '奖项',
+  start: '开始演唱',
 },
 };

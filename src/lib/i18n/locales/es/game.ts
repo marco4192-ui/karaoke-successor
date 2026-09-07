@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Difícil',
 },
 game: {
+  noteLane: {
+    singHere: 'CANTA AQUÍ',
+  },
   back: 'Atrás',
   sync: 'Sinc',
   pts: 'pts',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Letras',
   notes: 'Notas',
   score: 'Puntuación',
+  player: 'Jugador',
+  go: '¡YA!',
+  blindWarningIncoming: 'Sección a ciegas en {n}s',
+  blindWarningHint: 'Las notas desaparecerán — canta de memoria',
+  blindWarningActive: 'Sección a ciegas',
+  mwWarningIncoming: 'Palabras ocultas en {n}s',
+  mwWarningHint: 'Algunas letras están a punto de desaparecer',
+  mwWarningActive: 'Palabras ocultas',
 },
 gameScreen: {
   noSongSelected: 'Ninguna canción seleccionada',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'Error HTML5 en el reproductor de YouTube',
   youtubeErrorCode: 'Error de YouTube (Código: {n})',
   loadingMedia: 'Cargando medio...',
+  loading: 'Cargando…',
 },
 gameHud: {
   audioEffects: 'Efectos de Audio',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Presets',
   adPlaying: 'Reproduciendo anuncio',
   gamePaused: 'Juego en Pausa',
+  volumeMeter: 'Medidor de volumen',
 },
 gameEnhancements: {
   loadingStats: 'Cargando estadísticas...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Saltar Anuncio',
   skipAdDesc: '¡Haz clic en el video para presionar el botón "Saltar Anuncio"!',
+  acquireControl: 'Tomar el control',
 },
 mobilePage: {
   loadingCompanion: 'Cargando app compañera…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'RECOMPENSA',
   micError: 'Mic',
+  survived: 'Superviviente',
+  visualSettings: 'Ajustes visuales',
+  title: 'Battle Royale',
+  playersLabel: 'jugadores',
+  timeLeft: 'Quedan {n} segundos en esta ronda',
 },
+blind: {
+  title: 'Karaoke a Ciegas',
+},
+
+missingWords: {
+  title: 'Palabras Faltantes',
+},
+
+competitive: {
+  start: 'Empezar',
+},
+
 };

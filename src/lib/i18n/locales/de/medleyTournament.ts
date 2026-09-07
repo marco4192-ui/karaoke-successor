@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'auf: {title}',
   noAudioAvailable: 'Kein Audio verfügbar',
   audioLoadFailed: 'Audio-Laden fehlgeschlagen',
+  maxCombo: 'Max Combo',
+  notesHit: 'Getroffene Noten',
+  winner: 'Sieger',
 },
 tournament: {
   title: 'Turnier-Modus',
@@ -293,6 +296,7 @@ rateMySong: {
   moreSongs: '+{n} weitere — Bitte Suche oder Filter verwenden',
   players: 'Spieler ({n}/{m})',
   startSinging: '⭐ Singen & Bewerten',
+  start: 'Singen starten',
   ratingByAudience: 'Bewertung durch das Publikum ({n} Stimmen)',
   pleaseRate: 'Bitte bewerte den Auftritt',
   ratedAs: 'Bewertet als: {n}',

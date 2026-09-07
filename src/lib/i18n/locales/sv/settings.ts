@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Spelar in ljud och webbkamera medan du sjunger. Repris tillgängligt på resultatskärmen.',
   autoFullscreen: 'Auto-Helskärm',
   autoFullscreenDesc: 'Går automatiskt in i helskärmsläge när en låt startas.',
+  warningCues: 'Ljudvarningssignaler',
+  warningCuesDesc: 'Kort pip före blindsektioner och dolda ord',
 },
 settingsGraphicSound: {
   performanceMode: 'Prestationsläge',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'aktiv',
   secondsAgo: '{n}s sedan',
   minutesAgo: '{n}m sedan',
+  min: 'min',
+  hr: 'tim',
+  errorLoading: 'Fel vid inläsning av companions',
 },
 settingsAudioOutput: {
   title: 'Ljudutgång',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galax Pop',
     themeMinimalLight: 'Minimal Ljus',
   },},
+appearance: {
+  themeNeonNights: 'Neon Nights',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Sunset Vibes',
+  themeOceanDeep: 'Ocean Deep',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Light',
+  animatedBg: 'Animerad bakgrund',
+  bgVideo: 'Bakgrundsvideo',
+  colorTheme: 'Färgtema',
+  lyricsSize: 'Textstorlek',
+  lyricsStyle: 'Textstil',
+  noteColorProfile: 'Notfärger',
+  noteColorProfileDesc: 'Färgpalett för notstaplarna',
+  performanceMode: 'Prestandaläge',
+  performanceModeDesc: 'Minskade animationer för svagare enheter',
+  perfFull: 'Full',
+  perfLow: 'Reducerad',
+},
+
+gameplay: {
+  showScore: 'Visa poäng',
+  showScoreDesc: 'Visa poängen medan du sjunger',
+  showCombo: 'Visa combo',
+  showComboDesc: 'Visa komboräknare medan du sjunger',
+  showParticles: 'Visa partiklar',
+  showParticlesDesc: 'Partikeleffekter i bakgrunden',
+  replayEnabled: 'Aktivera replay',
+  replayEnabledDesc: 'Spelar in replays av dina framträdanden',
+  autoFullscreen: 'Automatisk helskärm',
+  autoFullscreenDesc: 'Växlar automatiskt till helskärm när en låt börjar',
+},
+
+graphicSound: {
+  masterVolume: 'Huvudvolym',
+  previewVolume: 'Förhandslyssningsvolym',
+  micSensitivity: 'Mikrofonkänslighet',
+  youtubeQuality: 'YouTube-kvalitet',
+},
+
+about: {
+  version: 'Version',
+  description: 'En modern karaokeupplevelse med komp, poängsättning och partylägen.',
+},
+
 };

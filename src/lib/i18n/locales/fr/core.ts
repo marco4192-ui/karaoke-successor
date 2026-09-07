@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'points',
   download: '📥 Télécharger',
   share: '📤 Partager',
+  accuracy: 'Précision',
+  maxCombo: 'Combo Max',
+  difficulty: 'Difficulté',
 },
 queue: {
   title: 'File de Chansons',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Pas encore de messages',
+  sendAs: 'Envoyer en tant que',
+  noPlayers: 'Aucun joueur',
+  selectPlayerFirst: 'Sélectionnez d\'abord un joueur',
+  placeholder: 'Écrivez un message...',
+  send: 'Envoyer',
+  challengeSong: 'Défier',
+  waitingForOpponent: 'En attente de l\'adversaire...',
 },
+songChallenge: {
+  challengeBtn: 'Défier',
+  cannotAcceptOwn: 'Vous ne pouvez pas accepter votre propre défi',
+},
+
+songStart: {
+  selectSongForParty: 'Sélectionnez une chanson pour votre fête',
+},
+
 };

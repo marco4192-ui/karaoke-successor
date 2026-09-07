@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: '歌唱中のオーディオとウェブカムを録画します。リプレイは結果画面で利用可能です。',
   autoFullscreen: '自動フルスクリーン',
   autoFullscreenDesc: '曲の開始時に自動的にフルスクリーンモードに入ります。',
+  warningCues: '警告音',
+  warningCuesDesc: 'ブラインド区間や隠された歌詞の前に短いビープ音',
 },
 settingsGraphicSound: {
   performanceMode: 'パフォーマンスモード',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'アクティブ',
   secondsAgo: '{n}秒前',
   minutesAgo: '{n}分前',
+  min: '分',
+  hr: '時間',
+  errorLoading: 'コンパニオンの読み込みに失敗しました',
 },
 settingsAudioOutput: {
   title: 'オーディオ出力',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'ギャラクシーポップ',
     themeMinimalLight: 'ミニマルライト',
   },},
+appearance: {
+  themeNeonNights: 'ネオン・ナイト',
+  themeRetroArcade: 'レトロアーケード',
+  themeSunsetVibes: 'サンセット・バイブス',
+  themeOceanDeep: 'ディープオーシャン',
+  themeGalaxyPop: 'ギャラクシー・ポップ',
+  themeMinimalLight: 'ミニマル・ライト',
+  animatedBg: 'アニメ背景',
+  bgVideo: '背景動画',
+  colorTheme: 'カラーテーマ',
+  lyricsSize: '歌詞のサイズ',
+  lyricsStyle: '歌詞のスタイル',
+  noteColorProfile: 'ノートの色',
+  noteColorProfileDesc: 'ノートバーのカラーパレット',
+  performanceMode: 'パフォーマンスモード',
+  performanceModeDesc: '低スペック端末向けにアニメーションを削減',
+  perfFull: 'フル',
+  perfLow: '軽量',
+},
+
+gameplay: {
+  showScore: 'スコア表示',
+  showScoreDesc: '歌唱中のスコアを表示',
+  showCombo: 'コンボ表示',
+  showComboDesc: '歌唱中のコンボカウンターを表示',
+  showParticles: 'パーティクル表示',
+  showParticlesDesc: '背景のパーティクルエフェクト',
+  replayEnabled: 'リプレイを有効化',
+  replayEnabledDesc: 'パフォーマンスのリプレイを記録',
+  autoFullscreen: '自動フルスクリーン',
+  autoFullscreenDesc: '曲の開始時に自動でフルスクリーンに切り替わります',
+},
+
+graphicSound: {
+  masterVolume: 'マスター音量',
+  previewVolume: 'プレビュー音量',
+  micSensitivity: 'マイク感度',
+  youtubeQuality: 'YouTube画質',
+},
+
+about: {
+  version: 'バージョン',
+  description: '伴奏・スコアリング・パーティーモードを備えたモダンなカラオケ体験。',
+},
+
 };

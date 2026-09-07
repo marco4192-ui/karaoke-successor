@@ -412,6 +412,9 @@ export const settingsTranslations = {
 
   settingsCompanion: {
     justNow: 'just now',
+    min: 'min',
+    hr: 'h',
+    errorLoading: 'Failed to load companions',
     kickConfirm: 'Kick "{name}"? They will be disconnected and their queue will be cleared.',
     kickSuccess: '"{name}" has been kicked',
     kickFailed: 'Failed to kick companion',
@@ -537,6 +540,7 @@ export const settingsTranslations = {
     enableWebcamTooltip: 'Enable Webcam',
     disableMirror: 'Disable Mirror',
     enableMirrorTooltip: 'Enable Mirror (Selfie Mode)',
+  },
 
   appearance: {
     themeNeonNights: 'Neon Nights',
@@ -545,5 +549,41 @@ export const settingsTranslations = {
     themeOceanDeep: 'Ocean Deep',
     themeGalaxyPop: 'Galaxy Pop',
     themeMinimalLight: 'Minimal Light',
-  },  },
+    animatedBg: 'Animated Background',
+    bgVideo: 'Background Video',
+    colorTheme: 'Color Theme',
+    lyricsSize: 'Lyrics Size',
+    lyricsStyle: 'Lyrics Style',
+    noteColorProfile: 'Note Colors',
+    noteColorProfileDesc: 'Color palette for the note bars',
+    performanceMode: 'Performance Mode',
+    performanceModeDesc: 'Reduced animations for weaker devices',
+    perfFull: 'Full',
+    perfLow: 'Reduced',
+  },
+
+  gameplay: {
+    showScore: 'Show Score',
+    showScoreDesc: 'Display the score while singing',
+    showCombo: 'Show Combo',
+    showComboDesc: 'Display combo counters while singing',
+    showParticles: 'Show Particles',
+    showParticlesDesc: 'Particle effects in the background',
+    replayEnabled: 'Enable Replay',
+    replayEnabledDesc: 'Record replays of your performances',
+    autoFullscreen: 'Auto Fullscreen',
+    autoFullscreenDesc: 'Enter fullscreen automatically when a song starts',
+  },
+
+  graphicSound: {
+    masterVolume: 'Master Volume',
+    previewVolume: 'Preview Volume',
+    micSensitivity: 'Mic Sensitivity',
+    youtubeQuality: 'YouTube Quality',
+  },
+
+  about: {
+    version: 'Version',
+    description: 'A modern karaoke experience with accompaniment, scoring and party modes.',
+  },
 };

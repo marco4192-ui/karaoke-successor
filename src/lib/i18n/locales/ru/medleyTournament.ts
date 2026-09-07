@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'на: {title}',
   noAudioAvailable: 'Аудио недоступно',
   audioLoadFailed: 'Не удалось загрузить аудио',
+  maxCombo: 'Макс. комбо',
+  notesHit: 'Пойманные ноты',
+  winner: 'Победитель',
 },
 tournament: {
   title: 'Режим турнира',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'матчей',
   micAssignment: 'Назначение микрофона',
   singsWith: 'поёт с',
+  songVoteHint: 'Какая песня решит эту дуэль?',
+  songVoteKeyHint: 'Нажмите 1–3 или выберите песню. Esc = случайная',
+  startingTitle: 'Приготовьтесь!',
+  mirrorWaiting: 'Ожидание следующей дуэли…',
+  mirrorWaitingHint: 'Хост выбирает следующую дуэль на большом экране.',
 },
 rateMySong: {
   title: '⭐ Оцени мою песню',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Легенда',
   },
   awards: 'Награды',
+  start: 'Начать петь',
 },
 };

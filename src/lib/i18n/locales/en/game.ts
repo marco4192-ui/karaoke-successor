@@ -48,6 +48,11 @@ export const gameTranslations = {
     lyrics: 'Lyrics',
     notes: 'Notes',
     score: 'Score',
+    player: 'Player',
+    go: 'GO!',
+    noteLane: {
+      singHere: 'SING HERE',
+    },
     blindWarningIncoming: 'Blind section in {n}s',
     blindWarningHint: 'Notes will disappear — sing from memory',
     blindWarningActive: 'Blind section',
@@ -69,9 +74,11 @@ export const gameTranslations = {
     youtubeErrorHtml5: 'HTML5 error in YouTube player',
     youtubeErrorCode: 'YouTube error (Code: {n})',
     loadingMedia: 'Loading media...',
+    loading: 'Loading…',
   },
 
   gameHud: {
+    volumeMeter: 'Volume meter',
     audioEffects: 'Audio Effects',
     reverb: 'Reverb: {n}%',
     echo: 'Echo: {n}%',
@@ -298,6 +305,7 @@ export const gameTranslations = {
   remoteControl: {
     skipAdTitle: '⏭️ Skip Ad',
     skipAdDesc: 'Click on the video to press the "Skip Ad" button!',
+    acquireControl: 'Take Control',
   },
 
   mobilePage: {
@@ -441,5 +449,19 @@ export const gameTranslations = {
   battleRoyale: {
     bounty: 'BOUNTY',
     micError: 'Mic',
+    survived: 'Survived',
+    visualSettings: 'Visual Settings',
+  },
+
+  blind: {
+    title: 'Blind Karaoke',
+  },
+
+  missingWords: {
+    title: 'Missing Words',
+  },
+
+  competitive: {
+    start: 'Start',
   },
 };

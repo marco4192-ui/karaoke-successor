@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Mikrofoni 2',
   mic: 'Mikrofoni {n}',
   songTooShortCptm: 'Kappale liian lyhyt Companion Sing-A-Longiin.',
+  players: 'Pelaajat',
+  difficulty: 'Vaikeustaso',
 },
 partyGameScreens: {
   micAssignment: 'Mikrofonin liittäminen',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Enintään {n} pelaajaa sallittu',
   errorMinPlayers: 'Vähintään {n} pelaajaa vaaditaan',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Valmiita pelaamaan',
+  chooseSongFirst: '⚠️ Valitse ensin valintatapa (ja kappale)',
+  selectMethodHint: 'Menetelmän valinta EI käynnistä peliä — paina \'Valmiita pelaamaan\', kun kaikki ovat valmiita.',
+  songSelectionLocked: 'Kappaleen valinta avautuu {n} pelaajalla — lisää ensin pelaajia',
+  clickSongToSelect: 'Napsauta kappaletta valitaksesi sen juhliin — peli alkaa \'Valmiita pelaamaan\' -painikkeesta.',
+  mic: 'Mikrofoni',
+  companion: 'Companion',
+  mixed: 'Sekoitettu',
+  settings: 'Asetukset',
 },
 extendedDesc: {
   passTheMic: '🎵 Kappale jaetaan segmentteihin,🔄 Laulaja vaihtuu jokaisen segmentin jälkeen,🏆 Joukkuepisteet lasketaan lopuksi',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Satunnaiset haasteet ennen joka kierrosta',
   betting: 'Vedonlyönti',
   bettingDesc: 'Yleisö voi ennustaa',
+  missingWordFrequency: 'Taajuus',
+  missingGranularity: 'Piilotustila',
+  bestOf: 'Ottelumuoto',
+  blindFrequency: 'Sokeataajuus',
+  grandFinale: 'Suuri finaali',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Laula kappale ja anna kaverien arvioida suoritustasi!',
   },
 },
+partyStarting: {
+  song: 'Kappale',
+  participants: '{n} osallistujaa',
+  startPlayer: 'ALOITTAA LAULUN',
+  startsFirst: 'Laulaa ensin',
+  startPlayerHint: 'Tämä pelaaja laulaa ensimmäisen osan',
+  companion: '📱 Companion-sovellus',
+  startButton: '🎤 Aloita laulu!',
+  hint: 'Laulajat voivat asettua paikoilleen — aloita, kun kaikki ovat valmiita.',
+  enterHint: 'tai paina Enter',
+  minutes: 'min',
+},
+
 };

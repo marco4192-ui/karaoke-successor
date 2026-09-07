@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'sur : {title}',
   noAudioAvailable: 'Aucun audio disponible',
   audioLoadFailed: 'Échec du chargement audio',
+  maxCombo: 'Combo Max',
+  notesHit: 'Notes réussies',
+  winner: 'Vainqueur',
 },
 tournament: {
   title: 'Mode Tournoi',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'matchs',
   micAssignment: 'Assignation de Microphone',
   singsWith: 'chante avec',
+  songVoteHint: 'Quelle chanson décidera de ce duel ?',
+  songVoteKeyHint: 'Appuyez sur 1–3 ou cliquez sur une chanson. Échap = aléatoire',
+  startingTitle: 'Préparez-vous !',
+  mirrorWaiting: 'En attente du prochain duel…',
+  mirrorWaitingHint: 'L\'hôte choisit le prochain duel sur le grand écran.',
 },
 rateMySong: {
   title: '⭐ Notez ma Chanson',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Légende',
   },
   awards: 'Prix',
+  start: 'Commencer à chanter',
 },
 };

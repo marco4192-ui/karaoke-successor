@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Difficile',
 },
 game: {
+  noteLane: {
+    singHere: 'CHANTEZ ICI',
+  },
   back: 'Retour',
   sync: 'Sync',
   pts: 'pts',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Paroles',
   notes: 'Notes',
   score: 'Score',
+  player: 'Joueur',
+  go: 'GO !',
+  blindWarningIncoming: 'Section à l\'aveugle dans {n}s',
+  blindWarningHint: 'Les notes vont disparaître — chantez de mémoire',
+  blindWarningActive: 'Section à l\'aveugle',
+  mwWarningIncoming: 'Mots cachés dans {n}s',
+  mwWarningHint: 'Certaines paroles vont disparaître',
+  mwWarningActive: 'Mots cachés',
 },
 gameScreen: {
   noSongSelected: 'Aucune chanson sélectionnée',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'Erreur HTML5 dans le lecteur YouTube',
   youtubeErrorCode: 'Erreur YouTube (Code : {n})',
   loadingMedia: 'Chargement du média...',
+  loading: 'Chargement…',
 },
 gameHud: {
   audioEffects: 'Effets Audio',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Presets',
   adPlaying: 'Publicité en cours',
   gamePaused: 'Jeu en Pause',
+  volumeMeter: 'Indicateur de volume',
 },
 gameEnhancements: {
   loadingStats: 'Chargement des stats...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Passer la Pub',
   skipAdDesc: 'Cliquez sur la vidéo pour appuyer sur le bouton « Passer la Pub » !',
+  acquireControl: 'Prendre le contrôle',
 },
 mobilePage: {
   loadingCompanion: 'Chargement de l\'app compagnon…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'PRIME',
   micError: 'Micro',
+  survived: 'Survivant',
+  visualSettings: 'Réglages visuels',
+  title: 'Battle Royale',
+  playersLabel: 'joueurs',
+  timeLeft: '{n} secondes restantes dans ce tour',
 },
+blind: {
+  title: 'Karaoké à l\'Aveugle',
+},
+
+missingWords: {
+  title: 'Mots Manquants',
+},
+
+competitive: {
+  start: 'Commencer',
+},
+
 };

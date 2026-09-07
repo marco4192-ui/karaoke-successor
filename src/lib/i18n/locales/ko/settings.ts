@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: '노래하는 동안 오디오와 웹캠을 녹화합니다. 결과 화면에서 리플레이를 사용할 수 있습니다.',
   autoFullscreen: '자동 전체 화면',
   autoFullscreenDesc: '곡을 시작하면 자동으로 전체 화면 모드로 전환합니다.',
+  warningCues: '경고 사운드',
+  warningCuesDesc: '블라인드 구간과 숨겨진 가사 전 짧은 경고음',
 },
 settingsGraphicSound: {
   performanceMode: '성능 모드',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: '활성',
   secondsAgo: '{n}초 전',
   minutesAgo: '{n}분 전',
+  min: '분',
+  hr: '시간',
+  errorLoading: '컴패니언을 불러오지 못했습니다',
 },
 settingsAudioOutput: {
   title: '오디오 출력',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: '갤럭시 팝',
     themeMinimalLight: '미니멀 라이트',
   },},
+appearance: {
+  themeNeonNights: '네온 나이츠',
+  themeRetroArcade: '레트로 아케이드',
+  themeSunsetVibes: '선셋 바이브',
+  themeOceanDeep: '딥 오션',
+  themeGalaxyPop: '갤럭시 팝',
+  themeMinimalLight: '미니멀 라이트',
+  animatedBg: '애니메이션 배경',
+  bgVideo: '배경 영상',
+  colorTheme: '색상 테마',
+  lyricsSize: '가사 크기',
+  lyricsStyle: '가사 스타일',
+  noteColorProfile: '음표 색상',
+  noteColorProfileDesc: '음표 막대 색상 팔레트',
+  performanceMode: '성능 모드',
+  performanceModeDesc: '저사양 기기를 위한 축소된 애니메이션',
+  perfFull: '전체',
+  perfLow: '경량',
+},
+
+gameplay: {
+  showScore: '점수 표시',
+  showScoreDesc: '노래 중 점수 표시',
+  showCombo: '콤보 표시',
+  showComboDesc: '노래 중 콤보 카운터 표시',
+  showParticles: '파티클 표시',
+  showParticlesDesc: '배경 파티클 효과',
+  replayEnabled: '리플레이 활성화',
+  replayEnabledDesc: '연기 리플레이 기록',
+  autoFullscreen: '자동 전체 화면',
+  autoFullscreenDesc: '곡 시작 시 자동으로 전체 화면으로 전환됩니다',
+},
+
+graphicSound: {
+  masterVolume: '마스터 볼륨',
+  previewVolume: '미리듣기 볼륨',
+  micSensitivity: '마이크 감도',
+  youtubeQuality: 'YouTube 화질',
+},
+
+about: {
+  version: '버전',
+  description: '반주, 점수, 파티 모드를 갖춘 현대적인 카라오케 경험.',
+},
+
 };

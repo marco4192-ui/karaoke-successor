@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Förhandsvisning',
+  },
   title: 'Musikbibliotek',
   songsAvailable: 'låtar tillgängliga',
   loadingSongs: 'Laddar låtar...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Skapar...',
     create: 'Skapa Låt',
     noNotesHint: 'Låten kommer att skapas utan noter. Använd Tryckläget (mellanslag under uppspelning) i editorn för att manuellt infoga noter. Stavelserna från sångtexterna kommer att tilldelas automatiskt.',
+    titleLabel: 'Titel',
+    titlePlaceholder: 'Ange titel...',
+    artistLabel: 'Artist',
+    artistPlaceholder: 'Ange artist...',
+    detectBpmTitle: 'Identifiera BPM',
+    selectAudioFirst: 'Välj en ljudfil först',
   },
   songInfoTab: {
     title: 'Titel',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Videoljud',
   dropFailed: 'Släpp misslyckades: {error}',
 },
+playlistQueueConfig: {
+  title: 'Spellista till kö',
+  desc: 'Konfigurera läge och spelare för varje låt innan den läggs i kön.',
+  single: 'Solo',
+  duel: 'Duell',
+  duet: 'Duett',
+  remove: 'Ta bort',
+  empty: 'Inga låtar valda',
+  willAdd: '{count} av {total} låtar kommer att läggas till',
+  cancel: 'Avbryt',
+  addAll: 'Lägg till {count} låtar',
+},
+
 };

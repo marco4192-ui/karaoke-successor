@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'på: {title}',
   noAudioAvailable: 'Ingen lyd tilgjengelig',
   audioLoadFailed: 'Lydinnlasting feilet',
+  maxCombo: 'Maks Combo',
+  notesHit: 'Noter truffet',
+  winner: 'Vinner',
 },
 tournament: {
   title: 'Turneringsmodus',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'kamper',
   micAssignment: 'Mikrofontildeling',
   singsWith: 'synger med',
+  songVoteHint: 'Hvilken sang skal avgjøre denne duellen?',
+  songVoteKeyHint: 'Trykk 1–3 eller klikk på en sang. Esc = tilfeldig',
+  startingTitle: 'Gjør dere klare!',
+  mirrorWaiting: 'Venter på neste duell…',
+  mirrorWaitingHint: 'Verten velger neste duell på storskjermen.',
 },
 rateMySong: {
   title: '⭐ Vurder min sang',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Legende',
   },
   awards: 'Priser',
+  start: 'Begynn å synge',
 },
 };

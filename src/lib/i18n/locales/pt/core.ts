@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'pontos',
   download: '📥 Baixar',
   share: '📤 Compartilhar',
+  accuracy: 'Precisão',
+  maxCombo: 'Combo Máx.',
+  difficulty: 'Dificuldade',
 },
 queue: {
   title: 'Fila de Músicas',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Ainda sem mensagens',
+  sendAs: 'Enviar como',
+  noPlayers: 'Sem jogadores',
+  selectPlayerFirst: 'Seleciona primeiro um jogador',
+  placeholder: 'Escreva uma mensagem...',
+  send: 'Enviar',
+  challengeSong: 'Desafiar',
+  waitingForOpponent: 'Aguardando o oponente...',
 },
+songChallenge: {
+  challengeBtn: 'Desafiar',
+  cannotAcceptOwn: 'Não podes aceitar o teu próprio desafio',
+},
+
+songStart: {
+  selectSongForParty: 'Seleciona uma música para a tua festa',
+},
+
 };

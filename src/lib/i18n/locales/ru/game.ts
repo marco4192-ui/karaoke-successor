@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Сложно',
 },
 game: {
+  noteLane: {
+    singHere: 'ПОЙТЕ ЗДЕСЬ',
+  },
   back: 'Назад',
   sync: 'Синхронизация',
   pts: 'очков',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Текст песни',
   notes: 'Ноты',
   score: 'Счёт',
+  player: 'Игрок',
+  go: 'ВПЕРЁД!',
+  blindWarningIncoming: 'Слепой отрезок через {n}с',
+  blindWarningHint: 'Ноты исчезнут — пойте по памяти',
+  blindWarningActive: 'Слепой отрезок',
+  mwWarningIncoming: 'Скрытые слова через {n}с',
+  mwWarningHint: 'Часть слов вот-вот исчезнет',
+  mwWarningActive: 'Скрытые слова',
 },
 gameScreen: {
   noSongSelected: 'Песня не выбрана',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'Ошибка HTML5 в плеере YouTube',
   youtubeErrorCode: 'Ошибка YouTube (Код: {n})',
   loadingMedia: 'Загрузка медиа...',
+  loading: 'Загрузка…',
 },
 gameHud: {
   audioEffects: 'Аудиоэффекты',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Пресеты',
   adPlaying: 'Реклама',
   gamePaused: 'Игра на паузе',
+  volumeMeter: 'Индикатор громкости',
 },
 gameEnhancements: {
   loadingStats: 'Загрузка статистики...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Пропустить рекламу',
   skipAdDesc: 'Нажмите на видео, чтобы нажать кнопку "Пропустить рекламу"!',
+  acquireControl: 'Взять управление',
 },
 mobilePage: {
   loadingCompanion: 'Загрузка Companion-приложения…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'НАГРАДА',
   micError: 'Микрофон',
+  survived: 'Выжил',
+  visualSettings: 'Настройки графики',
+  title: 'Королевская битва',
+  playersLabel: 'игроков',
+  timeLeft: 'Осталось {n} секунд в этом раунде',
 },
+blind: {
+  title: 'Слепое караоке',
+},
+
+missingWords: {
+  title: 'Пропущенные слова',
+},
+
+competitive: {
+  start: 'Начать',
+},
+
 };

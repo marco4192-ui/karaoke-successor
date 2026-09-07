@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Vanskelig',
 },
 game: {
+  noteLane: {
+    singHere: 'SYNG HER',
+  },
   back: 'Tilbake',
   sync: 'Synk',
   pts: 'poeng',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Sangtekst',
   notes: 'Nøtter',
   score: 'Poeng',
+  player: 'Spiller',
+  go: 'KJØR!',
+  blindWarningIncoming: 'Blindseksjon om {n}s',
+  blindWarningHint: 'Notene forsvinner — syng utenat',
+  blindWarningActive: 'Blindseksjon',
+  mwWarningIncoming: 'Skjulte ord om {n}s',
+  mwWarningHint: 'Noen tekster forsvinner snart',
+  mwWarningActive: 'Skjulte ord',
 },
 gameScreen: {
   noSongSelected: 'Ingen sang valgt',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'HTML5-feil i YouTube-spiller',
   youtubeErrorCode: 'YouTube-feil (Kode: {n})',
   loadingMedia: 'Laster media...',
+  loading: 'Laster…',
 },
 gameHud: {
   audioEffects: 'Lydeffekter',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Forhåndsinnstillinger',
   adPlaying: 'Reklame spilles',
   gamePaused: 'Spill pauset',
+  volumeMeter: 'Volummåler',
 },
 gameEnhancements: {
   loadingStats: 'Laster statistikk...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Hopp over reklame',
   skipAdDesc: 'Klikk på videoen for å trykke «Hopp over reklame»-knappen!',
+  acquireControl: 'Ta over kontrollen',
 },
 mobilePage: {
   loadingCompanion: 'Laster companion-app…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'DUSØR',
   micError: 'Mikrofon',
+  survived: 'Overlevde',
+  visualSettings: 'Visuelle innstillinger',
+  title: 'Battle Royale',
+  playersLabel: 'spillere',
+  timeLeft: '{n} sekunder igjen av denne runden',
 },
+blind: {
+  title: 'Blindkaraoke',
+},
+
+missingWords: {
+  title: 'Manglende Ord',
+},
+
+competitive: {
+  start: 'Start',
+},
+
 };

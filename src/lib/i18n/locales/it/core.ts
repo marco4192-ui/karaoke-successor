@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'punti',
   download: '📥 Scarica',
   share: '📤 Condividi',
+  accuracy: 'Precisione',
+  maxCombo: 'Combo Max',
+  difficulty: 'Difficoltà',
 },
 queue: {
   title: 'Coda Canzoni',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Nessun messaggio',
+  sendAs: 'Invia come',
+  noPlayers: 'Nessun giocatore',
+  selectPlayerFirst: 'Seleziona prima un giocatore',
+  placeholder: 'Scrivi un messaggio...',
+  send: 'Invia',
+  challengeSong: 'Sfida',
+  waitingForOpponent: 'In attesa dell\'avversario...',
 },
+songChallenge: {
+  challengeBtn: 'Sfida',
+  cannotAcceptOwn: 'Non puoi accettare la tua stessa sfida',
+},
+
+songStart: {
+  selectSongForParty: 'Seleziona una canzone per la tua festa',
+},
+
 };

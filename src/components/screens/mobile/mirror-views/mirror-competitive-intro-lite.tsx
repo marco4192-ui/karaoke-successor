@@ -57,7 +57,7 @@ export function MirrorCompetitiveIntroLite({ gameState, onSendDesktopCommand }: 
           </>
         ) : null}
         {intro?.playerCount ? (
-          <p className="text-sm text-white/70">{intro.playerCount} Spieler</p>
+          <p className="text-sm text-white/70">{intro.playerCount} {t('party.players')}</p>
         ) : null}
       </div>
 

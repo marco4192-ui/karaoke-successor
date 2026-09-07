@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'na: {title}',
   noAudioAvailable: 'Brak dostępnego audio',
   audioLoadFailed: 'Nie udało się załadować audio',
+  maxCombo: 'Maks. Combo',
+  notesHit: 'Trafione nuty',
+  winner: 'Zwycięzca',
 },
 tournament: {
   title: 'Tryb turniejowy',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'mecze',
   micAssignment: 'Przypisanie mikrofonu',
   singsWith: 'śpiewa z',
+  songVoteHint: 'Która piosenka rozstrzygnie ten pojedynek?',
+  songVoteKeyHint: 'Naciśnij 1–3 lub kliknij piosenkę. Esc = losowa',
+  startingTitle: 'Przygotujcie się!',
+  mirrorWaiting: 'Oczekiwanie na następny pojedynek…',
+  mirrorWaitingHint: 'Host wybiera następny pojedynek na dużym ekranie.',
 },
 rateMySong: {
   title: '⭐ Oceń moją piosenkę',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Legenda',
   },
   awards: 'Nagrody',
+  start: 'Zacznij śpiewać',
 },
 };

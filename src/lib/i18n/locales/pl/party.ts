@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Mikrofon 2',
   mic: 'Mikrofon {n}',
   songTooShortCptm: 'Piosenka jest za krótka do Companion Sing-A-Long.',
+  players: 'Gracze',
+  difficulty: 'Poziom trudności',
 },
 partyGameScreens: {
   micAssignment: 'Przypisanie mikrofonu',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Maksymalnie {n} graczy',
   errorMinPlayers: 'Wymagani minimum {n} graczy',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Gotowi do gry',
+  chooseSongFirst: '⚠️ Najpierw wybierz metodę wyboru (i piosenkę)',
+  selectMethodHint: 'Wybranie metody NIE uruchamia gry — naciśnij „Gotowi do gry”, gdy wszyscy będą gotowi.',
+  songSelectionLocked: 'Wybór piosenek odblokuje się przy {n} graczach — najpierw dodaj graczy',
+  clickSongToSelect: 'Kliknij piosenkę, aby wybrać ją na imprezę — gra rozpoczyna się przyciskiem „Gotowi do gry”.',
+  mic: 'Mikrofon',
+  companion: 'Companion',
+  mixed: 'Mieszany',
+  settings: 'Ustawienia',
 },
 extendedDesc: {
   passTheMic: '🎵 Piosenka jest podzielona na segmenty,🔄 Śpiewak zmienia się po każdym segmencie,🏆 Wynik drużyny jest podsumowywany na końcu',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Losowe wyzwania przed każdą rundą',
   betting: 'Zakłady',
   bettingDesc: 'Publiczność może przewidywać',
+  missingWordFrequency: 'Częstotliwość',
+  missingGranularity: 'Tryb ukrywania',
+  bestOf: 'Format',
+  blindFrequency: 'Częstotliwość blind',
+  grandFinale: 'Wielki finał',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Zaśpiewaj utwór i pozwól znajomym ocenić Twój występ!',
   },
 },
+partyStarting: {
+  song: 'Piosenka',
+  participants: '{n} uczestników',
+  startPlayer: 'ZACZYNA ŚPIEWAĆ',
+  startsFirst: 'Śpiewa pierwszy',
+  startPlayerHint: 'Ten gracz śpiewa pierwszy fragment',
+  companion: '📱 aplikacja Companion',
+  startButton: '🎤 Zacznijmy śpiewać!',
+  hint: 'Śpiewacy mogą zająć pozycje — zacznij, gdy wszyscy będą gotowi.',
+  enterHint: 'lub naciśnij Enter',
+  minutes: 'min',
+},
+
 };

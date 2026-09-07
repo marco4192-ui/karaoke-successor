@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Trudny',
 },
 game: {
+  noteLane: {
+    singHere: 'ŚPIEJ TUTAJ',
+  },
   back: 'Wróć',
   sync: 'Synchronizuj',
   pts: 'pkt',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Tekst',
   notes: 'Nuty',
   score: 'Wynik',
+  player: 'Gracz',
+  go: 'START!',
+  blindWarningIncoming: 'Ślepy fragment za {n}s',
+  blindWarningHint: 'Nuty znikną — śpiewaj z pamięci',
+  blindWarningActive: 'Ślepy fragment',
+  mwWarningIncoming: 'Ukryte słowa za {n}s',
+  mwWarningHint: 'Niektóre słowa zaraz znikną',
+  mwWarningActive: 'Ukryte słowa',
 },
 gameScreen: {
   noSongSelected: 'Nie wybrano piosenki',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'Błąd HTML5 w odtwarzaczu YouTube',
   youtubeErrorCode: 'Błąd YouTube (Kod: {n})',
   loadingMedia: 'Ładowanie mediów...',
+  loading: 'Ładowanie…',
 },
 gameHud: {
   audioEffects: 'Efekty dźwiękowe',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Presety',
   adPlaying: 'Reklama odtwarzana',
   gamePaused: 'Gra wstrzymana',
+  volumeMeter: 'Wskaźnik głośności',
 },
 gameEnhancements: {
   loadingStats: 'Ładowanie statystyk...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Pomiń reklamę',
   skipAdDesc: 'Kliknij na wideo, aby nacisnąć przycisk „Pomiń reklamę"!',
+  acquireControl: 'Przejmij kontrolę',
 },
 mobilePage: {
   loadingCompanion: 'Ładowanie aplikacji kompana…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'NAGRODA',
   micError: 'Mikrofon',
+  survived: 'Przeżył',
+  visualSettings: 'Ustawienia graficzne',
+  title: 'Battle Royale',
+  playersLabel: 'graczy',
+  timeLeft: 'Pozostało {n} sekund w tej rundzie',
 },
+blind: {
+  title: 'Karaoke w ciemno',
+},
+
+missingWords: {
+  title: 'Brakujące słowa',
+},
+
+competitive: {
+  start: 'Rozpocznij',
+},
+
 };

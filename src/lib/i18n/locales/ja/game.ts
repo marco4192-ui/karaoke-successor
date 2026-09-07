@@ -26,6 +26,9 @@ difficulty: {
   hard: 'ハード',
 },
 game: {
+  noteLane: {
+    singHere: 'ここで歌う',
+  },
   back: '戻る',
   sync: '同期',
   pts: '点',
@@ -44,6 +47,14 @@ game: {
   lyrics: '歌詞',
   notes: 'ノーツ',
   score: 'スコア',
+  player: 'プレイヤー',
+  go: 'スタート！',
+  blindWarningIncoming: 'ブラインド区間まで{n}秒',
+  blindWarningHint: 'ノートが消えます — 記憶を頼りに歌おう',
+  blindWarningActive: 'ブラインド区間',
+  mwWarningIncoming: '隠される歌詞まで{n}秒',
+  mwWarningHint: '一部の歌詞が消えます',
+  mwWarningActive: '歌詞非表示',
 },
 gameScreen: {
   noSongSelected: '曲が選択されていません',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'YouTubeプレイヤーのHTML5エラー',
   youtubeErrorCode: 'YouTubeエラー（コード: {n}）',
   loadingMedia: 'メディアを読み込み中...',
+  loading: '読み込み中…',
 },
 gameHud: {
   audioEffects: 'オーディオエフェクト',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'プリセット',
   adPlaying: '広告再生中',
   gamePaused: 'ゲーム一時停止',
+  volumeMeter: '音量メーター',
 },
 gameEnhancements: {
   loadingStats: '統計情報を読み込み中...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ 広告をスキップ',
   skipAdDesc: '動画をクリックして「広告をスキップ」ボタンを押してください！',
+  acquireControl: '操作を取得',
 },
 mobilePage: {
   loadingCompanion: 'コンパニオンアプリを読み込み中…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'バウンティ',
   micError: 'マイク',
+  survived: '生存',
+  visualSettings: 'ビジュアル設定',
+  title: 'バトルロイヤル',
+  playersLabel: 'プレイヤー',
+  timeLeft: 'このラウンドは残り{n}秒',
 },
+blind: {
+  title: 'ブラインド・カラオケ',
+},
+
+missingWords: {
+  title: 'ワード・ミッシング',
+},
+
+competitive: {
+  start: 'スタート',
+},
+
 };

@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Micrófono 2',
   mic: 'Micrófono {n}',
   songTooShortCptm: 'La canción es muy corta para Companion Sing-A-Long.',
+  players: 'Jugadores',
+  difficulty: 'Dificultad',
 },
 partyGameScreens: {
   micAssignment: 'Asignación de Micrófono',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Máximo {n} jugadores permitidos',
   errorMinPlayers: 'Se necesitan mínimo {n} jugadores',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Listos para jugar',
+  chooseSongFirst: '⚠️ Elige primero un método de selección (y una canción)',
+  selectMethodHint: 'Elegir un método NO inicia el juego — pulsa «Listos para jugar» cuando todos estén listos.',
+  songSelectionLocked: 'La selección de canciones se desbloquea con {n} jugadores — añade primero jugadores',
+  clickSongToSelect: 'Haz clic en una canción para seleccionarla para tu fiesta — el juego se inicia con «Listos para jugar».',
+  mic: 'Micrófono',
+  companion: 'Compañero',
+  mixed: 'Mixto',
+  settings: 'Ajustes',
 },
 extendedDesc: {
   passTheMic: '🎵 La canción se divide en segmentos,🔄 El cantante cambia después de cada segmento,🏆 La puntuación del equipo se suma al final',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Retos aleatorios antes de cada ronda',
   betting: 'Apuestas',
   bettingDesc: 'El público puede predecir',
+  missingWordFrequency: 'Frecuencia',
+  missingGranularity: 'Modo de Ocultación',
+  bestOf: 'Al mejor de',
+  blindFrequency: 'Frecuencia de Ceguera',
+  grandFinale: 'Gran Final',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: '¡Canta una canción y deja que tus amigos valoren tu actuación!',
   },
 },
+partyStarting: {
+  song: 'Canción',
+  participants: '{n} participantes',
+  startPlayer: 'EMPIEZA CANTANDO',
+  startsFirst: 'Canta primero',
+  startPlayerHint: 'Este jugador canta el primer segmento',
+  companion: '📱 App compañera',
+  startButton: '🎤 ¡Empezar a cantar!',
+  hint: 'Los cantantes pueden ocupar su posición — empieza cuando todos estén listos.',
+  enterHint: 'o pulsa Enter',
+  minutes: 'min',
+},
+
 };

@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Микрофон 2',
   mic: 'Микрофон {n}',
   songTooShortCptm: 'Песня слишком короткая для Companion Sing-A-Long.',
+  players: 'Игроки',
+  difficulty: 'Сложность',
 },
 partyGameScreens: {
   micAssignment: 'Назначение микрофона',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Максимум {n} игроков',
   errorMinPlayers: 'Минимум {n} игроков',
   companionBadge: 'Компаньон',
+  readyToPlayButton: 'Готовы играть',
+  chooseSongFirst: '⚠️ Сначала выберите способ выбора песни (и песню)',
+  selectMethodHint: 'Выбор метода НЕ запускает игру — нажмите «Готовы играть», когда все будут готовы.',
+  songSelectionLocked: 'Выбор песен откроется при {n} игроках — сначала добавьте игроков',
+  clickSongToSelect: 'Нажмите на песню, чтобы выбрать её для вечеринки — игра запускается кнопкой «Готовы играть».',
+  mic: 'Микрофон',
+  companion: 'Компаньон',
+  mixed: 'Смешанный',
+  settings: 'Настройки',
 },
 extendedDesc: {
   passTheMic: '🎵 Песня делится на сегменты,🔄 Певец меняется после каждого сегмента,🏆 Командный счёт подводится в конце',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Случайные задания перед каждым раундом',
   betting: 'Ставки',
   bettingDesc: 'Зрители могут прогнозировать',
+  missingWordFrequency: 'Частота',
+  missingGranularity: 'Режим скрытия',
+  bestOf: 'Формат серии',
+  blindFrequency: 'Частота слепых',
+  grandFinale: 'Гранд-финал',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Спой песню и пусть друзья оценят твоё выступление!',
   },
 },
+partyStarting: {
+  song: 'Песня',
+  participants: '{n} участников',
+  startPlayer: 'ПОЁТ ПЕРВЫМ',
+  startsFirst: 'Поёт первым',
+  startPlayerHint: 'Этот игрок поёт первый отрезок',
+  companion: '📱 Приложение-компаньон',
+  startButton: '🎤 Поехали!',
+  hint: 'Певцы могут занять позиции — начинайте, когда все будут готовы.',
+  enterHint: 'или нажмите Enter',
+  minutes: 'мин',
+},
+
 };

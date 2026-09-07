@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Graba audio y cámara web mientras cantas. La repetición está disponible en la pantalla de resultados.',
   autoFullscreen: 'Pantalla Completa Automática',
   autoFullscreenDesc: 'Entra automáticamente en modo pantalla completa al iniciar una canción.',
+  warningCues: 'Señales de aviso sonoras',
+  warningCuesDesc: 'Pitido breve antes de las secciones a ciegas y palabras ocultas',
 },
 settingsGraphicSound: {
   performanceMode: 'Modo Rendimiento',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'activo',
   secondsAgo: 'hace {n}s',
   minutesAgo: 'hace {n}m',
+  min: 'min',
+  hr: 'h',
+  errorLoading: 'Error al cargar los compañeros',
 },
 settingsAudioOutput: {
   title: 'Salida de Audio',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaxia Pop',
     themeMinimalLight: 'Mínimo Claro',
   },},
+appearance: {
+  themeNeonNights: 'Noches Neón',
+  themeRetroArcade: 'Arcade Retro',
+  themeSunsetVibes: 'Vibras de Atardecer',
+  themeOceanDeep: 'Océano Profundo',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Claro',
+  animatedBg: 'Fondo animado',
+  bgVideo: 'Vídeo de fondo',
+  colorTheme: 'Esquema de color',
+  lyricsSize: 'Tamaño de letra',
+  lyricsStyle: 'Estilo de letra',
+  noteColorProfile: 'Colores de notas',
+  noteColorProfileDesc: 'Paleta de colores para las barras de notas',
+  performanceMode: 'Modo de rendimiento',
+  performanceModeDesc: 'Animaciones reducidas para dispositivos más modestos',
+  perfFull: 'Completo',
+  perfLow: 'Reducido',
+},
+
+gameplay: {
+  showScore: 'Mostrar puntuación',
+  showScoreDesc: 'Muestra la puntuación mientras cantas',
+  showCombo: 'Mostrar combo',
+  showComboDesc: 'Muestra los contadores de combo mientras cantas',
+  showParticles: 'Mostrar partículas',
+  showParticlesDesc: 'Efectos de partículas en el fondo',
+  replayEnabled: 'Activar repetición',
+  replayEnabledDesc: 'Graba repeticiones de tus actuaciones',
+  autoFullscreen: 'Pantalla completa automática',
+  autoFullscreenDesc: 'Entra en pantalla completa automáticamente al empezar una canción',
+},
+
+graphicSound: {
+  masterVolume: 'Volumen general',
+  previewVolume: 'Volumen de vista previa',
+  micSensitivity: 'Sensibilidad del micrófono',
+  youtubeQuality: 'Calidad de YouTube',
+},
+
+about: {
+  version: 'Versión',
+  description: 'Una experiencia de karaoke moderna con acompañamiento, puntuación y modos de fiesta.',
+},
+
 };

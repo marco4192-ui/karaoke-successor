@@ -400,6 +400,9 @@ settingsLibrary: {
 },
 settingsCompanion: {
   justNow: 'gerade eben',
+  min: 'Min.',
+  hr: 'Std.',
+  errorLoading: 'Companions konnten nicht geladen werden',
   kickConfirm: '"{name}" kicken? Die Verbindung wird getrennt und die Warteschlange geleert.',
   kickSuccess: '"{name}" wurde gekickt',
   kickFailed: 'Kicken fehlgeschlagen',
@@ -520,13 +523,50 @@ webcamSettings: {
   enableWebcamTooltip: 'Webcam aktivieren',
   disableMirror: 'Spiegeln deaktivieren',
   enableMirrorTooltip: 'Spiegeln aktivieren (Selfie-Modus)',
+},
 
-  appearance: {
-    themeNeonNights: 'Neon Nächte',
-    themeRetroArcade: 'Retro Arcade',
-    themeSunsetVibes: 'Sonnenuntergangs-Vibes',
-    themeOceanDeep: 'Tiefer Ozean',
-    themeGalaxyPop: 'Galaxy Pop',
-    themeMinimalLight: 'Minimal Hell',
-  },},
+appearance: {
+  themeNeonNights: 'Neon Nächte',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Sonnenuntergangs-Vibes',
+  themeOceanDeep: 'Tiefer Ozean',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Hell',
+  animatedBg: 'Animierter Hintergrund',
+  bgVideo: 'Hintergrund-Video',
+  colorTheme: 'Farbschema',
+  lyricsSize: 'Lyrics-Größe',
+  lyricsStyle: 'Lyrics-Stil',
+  noteColorProfile: 'Noten-Farben',
+  noteColorProfileDesc: 'Farbpalette für die Notenbalken',
+  performanceMode: 'Performance-Modus',
+  performanceModeDesc: 'Reduzierte Animationen für schwächere Geräte',
+  perfFull: 'Voll',
+  perfLow: 'Reduziert',
+},
+
+gameplay: {
+  showScore: 'Punkte anzeigen',
+  showScoreDesc: 'Punkte während des Singens anzeigen',
+  showCombo: 'Combo anzeigen',
+  showComboDesc: 'Combo-Zähler während des Singens anzeigen',
+  showParticles: 'Partikel anzeigen',
+  showParticlesDesc: 'Partikeleffekte im Hintergrund',
+  replayEnabled: 'Replay aktivieren',
+  replayEnabledDesc: 'Replays deiner Auftritte aufzeichnen',
+  autoFullscreen: 'Auto-Vollbild',
+  autoFullscreenDesc: 'Beim Songstart automatisch in den Vollbildmodus wechseln',
+},
+
+graphicSound: {
+  masterVolume: 'Gesamtlautstärke',
+  previewVolume: 'Vorschau-Lautstärke',
+  micSensitivity: 'Mikrofon-Empfindlichkeit',
+  youtubeQuality: 'YouTube-Qualität',
+},
+
+about: {
+  version: 'Version',
+  description: 'Ein modernes Karaoke-Erlebnis mit Begleitung, Scoring und Party-Modi.',
+},
 };

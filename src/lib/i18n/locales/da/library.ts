@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Eksempel',
+  },
   title: 'Musikbibliotek',
   songsAvailable: 'sange tilgængelige',
   loadingSongs: 'Indlæser sange...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Opretter...',
     create: 'Opret sang',
     noNotesHint: 'Sangen oprettes uden noder. Brug Tap-tilstanden (mellemrumstast under afspilning) i editoren til manuelt at indsætte noder. Stavelserne fra sangteksten tildeles automatisk.',
+    titleLabel: 'Titel',
+    titlePlaceholder: 'Indtast titlen...',
+    artistLabel: 'Kunstner',
+    artistPlaceholder: 'Indtast kunstneren...',
+    detectBpmTitle: 'Find BPM',
+    selectAudioFirst: 'Vælg en lydfil først',
   },
   songInfoTab: {
     title: 'Titel',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Videolyd',
   dropFailed: 'Drop mislykkedes: {error}',
 },
+playlistQueueConfig: {
+  title: 'Spilleliste til kø',
+  desc: 'Konfigurer tilstand og spillere for hver sang, før den føjes til køen.',
+  single: 'Solo',
+  duel: 'Duel',
+  duet: 'Duet',
+  remove: 'Fjern',
+  empty: 'Ingen sange valgt',
+  willAdd: '{count} af {total} sange tilføjes',
+  cancel: 'Annuller',
+  addAll: 'Tilføj {count} sange',
+},
+
 };

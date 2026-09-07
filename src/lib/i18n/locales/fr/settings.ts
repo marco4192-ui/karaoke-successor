@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Enregistre l\'audio et la webcam pendant le chant. Replay disponible sur l\'écran de résultats.',
   autoFullscreen: 'Plein Écran Auto',
   autoFullscreenDesc: 'Bascule automatiquement en plein écran au démarrage d\'une chanson.',
+  warningCues: 'Signaux d\'avertissement sonores',
+  warningCuesDesc: 'Bip court avant les sections à l\'aveugle et mots cachés',
 },
 settingsGraphicSound: {
   performanceMode: 'Mode Performance',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'actif',
   secondsAgo: 'il y a {n}s',
   minutesAgo: 'il y a {n}m',
+  min: 'min',
+  hr: 'h',
+  errorLoading: 'Erreur lors du chargement des compagnons',
 },
 settingsAudioOutput: {
   title: 'Sortie Audio',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaxie Pop',
     themeMinimalLight: 'Minimal Lumineux',
   },},
+appearance: {
+  themeNeonNights: 'Nuits Néon',
+  themeRetroArcade: 'Arcade Rétro',
+  themeSunsetVibes: 'Vibes Coucher de Soleil',
+  themeOceanDeep: 'Océan Profond',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Clair',
+  animatedBg: 'Fond animé',
+  bgVideo: 'Vidéo de fond',
+  colorTheme: 'Thème de couleurs',
+  lyricsSize: 'Taille des paroles',
+  lyricsStyle: 'Style des paroles',
+  noteColorProfile: 'Couleurs des notes',
+  noteColorProfileDesc: 'Palette de couleurs pour les barres de notes',
+  performanceMode: 'Mode performance',
+  performanceModeDesc: 'Animations réduites pour les appareils moins puissants',
+  perfFull: 'Complet',
+  perfLow: 'Réduit',
+},
+
+gameplay: {
+  showScore: 'Afficher le score',
+  showScoreDesc: 'Affiche le score pendant que vous chantez',
+  showCombo: 'Afficher le combo',
+  showComboDesc: 'Affiche les compteurs de combo pendant que vous chantez',
+  showParticles: 'Afficher les particules',
+  showParticlesDesc: 'Effets de particules en arrière-plan',
+  replayEnabled: 'Activer le replay',
+  replayEnabledDesc: 'Enregistre des replays de vos performances',
+  autoFullscreen: 'Plein écran automatique',
+  autoFullscreenDesc: 'Passe en plein écran automatiquement au début d\'une chanson',
+},
+
+graphicSound: {
+  masterVolume: 'Volume général',
+  previewVolume: 'Volume d\'aperçu',
+  micSensitivity: 'Sensibilité du micro',
+  youtubeQuality: 'Qualité YouTube',
+},
+
+about: {
+  version: 'Version',
+  description: 'Une expérience karaoké moderne avec accompagnement, notation et modes de fête.',
+},
+
 };

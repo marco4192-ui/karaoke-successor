@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'point',
   download: '📥 Download',
   share: '📤 Del',
+  accuracy: 'Præcision',
+  maxCombo: 'Maks Combo',
+  difficulty: 'Sværhedsgrad',
 },
 queue: {
   title: 'Sangkø',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Ingen beskeder endnu',
+  sendAs: 'Send som',
+  noPlayers: 'Ingen spillere',
+  selectPlayerFirst: 'Vælg en spiller først',
+  placeholder: 'Skriv en besked...',
+  send: 'Send',
+  challengeSong: 'Udfordr',
+  waitingForOpponent: 'Venter på modstanderen...',
 },
+songChallenge: {
+  challengeBtn: 'Udfordr',
+  cannotAcceptOwn: 'Du kan ikke acceptere din egen udfordring',
+},
+
+songStart: {
+  selectSongForParty: 'Vælg en sang til din fest',
+},
+
 };

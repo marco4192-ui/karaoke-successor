@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'pistettä',
   download: '📥 Lataa',
   share: '📤 Jaa',
+  accuracy: 'Tarkkuus',
+  maxCombo: 'Max Combo',
+  difficulty: 'Vaikeustaso',
 },
 queue: {
   title: 'Kappalejono',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Ei vielä viestejä',
+  sendAs: 'Lähetä nimellä',
+  noPlayers: 'Ei pelaajia',
+  selectPlayerFirst: 'Valitse ensin pelaaja',
+  placeholder: 'Kirjoita viesti...',
+  send: 'Lähetä',
+  challengeSong: 'Haasta',
+  waitingForOpponent: 'Odotetaan vastustajaa...',
 },
+songChallenge: {
+  challengeBtn: 'Haasta',
+  cannotAcceptOwn: 'Et voi hyväksyä omaa haastettasi',
+},
+
+songStart: {
+  selectSongForParty: 'Valitse laulu juhliisi',
+},
+
 };

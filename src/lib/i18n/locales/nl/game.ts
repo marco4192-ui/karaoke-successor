@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Moeilijk',
 },
 game: {
+  noteLane: {
+    singHere: 'ZING HIER',
+  },
   back: 'Terug',
   sync: 'Synchroniseren',
   pts: 'punten',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Songtekst',
   notes: 'Noten',
   score: 'Score',
+  player: 'Speler',
+  go: 'GA!',
+  blindWarningIncoming: 'Blindgedeelte over {n}s',
+  blindWarningHint: 'Noten verdwijnen — zing uit je hoofd',
+  blindWarningActive: 'Blindgedeelte',
+  mwWarningIncoming: 'Verborgen woorden over {n}s',
+  mwWarningHint: 'Sommige songteksten verdwijnen zo',
+  mwWarningActive: 'Verborgen woorden',
 },
 gameScreen: {
   noSongSelected: 'Geen nummer geselecteerd',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'HTML5-fout in YouTube-speler',
   youtubeErrorCode: 'YouTube-fout (Code: {n})',
   loadingMedia: 'Media laden...',
+  loading: 'Laden…',
 },
 gameHud: {
   audioEffects: 'Audio-effecten',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Voorinstellingen',
   adPlaying: 'Reclame wordt afgespeeld',
   gamePaused: 'Spel gepauzeerd',
+  volumeMeter: 'Volumemeter',
 },
 gameEnhancements: {
   loadingStats: 'Statistieken laden...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Reclame overslaan',
   skipAdDesc: 'Klik op de video om de knop "Reclame overslaan" te activeren!',
+  acquireControl: 'Bediening overnemen',
 },
 mobilePage: {
   loadingCompanion: 'Companion-app laden…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'PREMIE',
   micError: 'Microfoon',
+  survived: 'Overleeft',
+  visualSettings: 'Visuele instellingen',
+  title: 'Battle Royale',
+  playersLabel: 'spelers',
+  timeLeft: 'Nog {n} seconden in deze ronde',
 },
+blind: {
+  title: 'Blind Karaoke',
+},
+
+missingWords: {
+  title: 'Ontbrekende Woorden',
+},
+
+competitive: {
+  start: 'Start',
+},
+
 };

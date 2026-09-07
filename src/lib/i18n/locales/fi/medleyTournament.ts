@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'kappaleella: {title}',
   noAudioAvailable: 'Ääntä ei saatavilla',
   audioLoadFailed: 'Äänen lataus epäonnistui',
+  maxCombo: 'Max Combo',
+  notesHit: 'Osumat',
+  winner: 'Voittaja',
 },
 tournament: {
   title: 'Turnaustila',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'ottelua',
   micAssignment: 'Mikrofonin liittäminen',
   singsWith: 'laulaa',
+  songVoteHint: 'Mikä kappale ratkaisee tämän kaksintaistelun?',
+  songVoteKeyHint: 'Paina 1–3 tai napsauta kappaletta. Esc = satunnainen',
+  startingTitle: 'Valmistautukaa!',
+  mirrorWaiting: 'Odotetaan seuraavaa kaksintaistelua…',
+  mirrorWaitingHint: 'Isäntä valitsee seuraavan kaksintaistelun isolla näytöllä.',
 },
 rateMySong: {
   title: '⭐ Arvioi kappaleeni',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Legenda',
   },
   awards: 'Palkinnot',
+  start: 'Aloita laulaminen',
 },
 };

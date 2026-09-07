@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Grava áudio e webcam enquanto canta. Replay disponível na tela de resultados.',
   autoFullscreen: 'Tela Cheia Automática',
   autoFullscreenDesc: 'Entra automaticamente no modo de tela cheia ao iniciar uma música.',
+  warningCues: 'Sinais de aviso sonoros',
+  warningCuesDesc: 'Bipe curto antes das secções às cegas e palavras ocultas',
 },
 settingsGraphicSound: {
   performanceMode: 'Modo de Desempenho',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'ativo',
   secondsAgo: '{n}s atrás',
   minutesAgo: '{n}min atrás',
+  min: 'min',
+  hr: 'h',
+  errorLoading: 'Erro ao carregar os Companions',
 },
 settingsAudioOutput: {
   title: 'Saída de Áudio',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galáxia Pop',
     themeMinimalLight: 'Mínimo Claro',
   },},
+appearance: {
+  themeNeonNights: 'Noites Neon',
+  themeRetroArcade: 'Arcade Retro',
+  themeSunsetVibes: 'Vibes de Pôr do Sol',
+  themeOceanDeep: 'Oceano Profundo',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Claro',
+  animatedBg: 'Fundo animado',
+  bgVideo: 'Vídeo de fundo',
+  colorTheme: 'Esquema de cores',
+  lyricsSize: 'Tamanho da letra',
+  lyricsStyle: 'Estilo da letra',
+  noteColorProfile: 'Cores das notas',
+  noteColorProfileDesc: 'Paleta de cores para as barras de notas',
+  performanceMode: 'Modo de desempenho',
+  performanceModeDesc: 'Animações reduzidas para dispositivos mais fracos',
+  perfFull: 'Completo',
+  perfLow: 'Reduzido',
+},
+
+gameplay: {
+  showScore: 'Mostrar pontuação',
+  showScoreDesc: 'Mostra a pontuação enquanto cantas',
+  showCombo: 'Mostrar combo',
+  showComboDesc: 'Mostra os contadores de combo enquanto cantas',
+  showParticles: 'Mostrar partículas',
+  showParticlesDesc: 'Efeitos de partículas no fundo',
+  replayEnabled: 'Ativar replay',
+  replayEnabledDesc: 'Grava replays das tuas atuações',
+  autoFullscreen: 'Ecrã inteiro automático',
+  autoFullscreenDesc: 'Entra em ecrã inteiro automaticamente ao começar uma música',
+},
+
+graphicSound: {
+  masterVolume: 'Volume geral',
+  previewVolume: 'Volume de pré-escuta',
+  micSensitivity: 'Sensibilidade do microfone',
+  youtubeQuality: 'Qualidade do YouTube',
+},
+
+about: {
+  version: 'Versão',
+  description: 'Uma experiência de karaokê moderna com acompanhamento, pontuação e modos de festa.',
+},
+
 };

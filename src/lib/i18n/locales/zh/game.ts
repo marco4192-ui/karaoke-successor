@@ -26,6 +26,9 @@ difficulty: {
   hard: '困难',
 },
 game: {
+  noteLane: {
+    singHere: '在此演唱',
+  },
   back: '返回',
   sync: '同步',
   pts: '分',
@@ -44,6 +47,14 @@ game: {
   lyrics: '歌词',
   notes: '音符',
   score: '分数',
+  player: '玩家',
+  go: '开始！',
+  blindWarningIncoming: '{n}秒后进入盲唱段落',
+  blindWarningHint: '音符即将消失——凭记忆演唱',
+  blindWarningActive: '盲唱段落',
+  mwWarningIncoming: '{n}秒后歌词隐藏',
+  mwWarningHint: '部分歌词即将消失',
+  mwWarningActive: '歌词隐藏',
 },
 gameScreen: {
   noSongSelected: '未选择歌曲',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'YouTube播放器HTML5错误',
   youtubeErrorCode: 'YouTube错误（代码: {n}）',
   loadingMedia: '正在加载媒体...',
+  loading: '加载中…',
 },
 gameHud: {
   audioEffects: '音效',
@@ -66,6 +78,7 @@ gameHud: {
   presets: '预设',
   adPlaying: '广告播放中',
   gamePaused: '游戏暂停',
+  volumeMeter: '音量指示器',
 },
 gameEnhancements: {
   loadingStats: '正在加载统计...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ 跳过广告',
   skipAdDesc: '点击视频来按下"跳过广告"按钮！',
+  acquireControl: '接管控制',
 },
 mobilePage: {
   loadingCompanion: '正在加载伴侣应用…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: '悬赏',
   micError: '麦克风',
+  survived: '存活',
+  visualSettings: '视觉设置',
+  title: '大乱斗',
+  playersLabel: '玩家',
+  timeLeft: '本轮还剩 {n} 秒',
 },
+blind: {
+  title: '盲唱卡拉OK',
+},
+
+missingWords: {
+  title: '缺失单词',
+},
+
+competitive: {
+  start: '开始',
+},
+
 };

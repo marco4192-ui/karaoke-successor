@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'puntos',
   download: '📥 Descargar',
   share: '📤 Compartir',
+  accuracy: 'Precisión',
+  maxCombo: 'Combo Máx.',
+  difficulty: 'Dificultad',
 },
 queue: {
   title: 'Cola de Canciones',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Aún no hay mensajes',
+  sendAs: 'Enviar como',
+  noPlayers: 'Sin jugadores',
+  selectPlayerFirst: 'Selecciona primero un jugador',
+  placeholder: 'Escribe un mensaje...',
+  send: 'Enviar',
+  challengeSong: 'Desafiar',
+  waitingForOpponent: 'Esperando al oponente...',
 },
+songChallenge: {
+  challengeBtn: 'Desafiar',
+  cannotAcceptOwn: 'No puedes aceptar tu propio desafío',
+},
+
+songStart: {
+  selectSongForParty: 'Selecciona una canción para tu fiesta',
+},
+
 };

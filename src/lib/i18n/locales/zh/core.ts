@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: '分',
   download: '📥 下载',
   share: '📤 分享',
+  accuracy: '准确度',
+  maxCombo: '最大连击',
+  difficulty: '难度',
 },
 queue: {
   title: '播放队列',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: '暂无消息',
+  sendAs: '发送身份',
+  noPlayers: '暂无玩家',
+  selectPlayerFirst: '请先选择一名玩家',
+  placeholder: '输入消息...',
+  send: '发送',
+  challengeSong: '挑战',
+  waitingForOpponent: '等待对手中...',
 },
+songChallenge: {
+  challengeBtn: '挑战',
+  cannotAcceptOwn: '不能接受自己的挑战',
+},
+
+songStart: {
+  selectSongForParty: '为派对选择一首歌',
+},
+
 };

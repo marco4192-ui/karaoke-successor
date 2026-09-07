@@ -155,6 +155,9 @@ medley: {
   comboOnSong: 'op: {title}',
   noAudioAvailable: 'Geen audio beschikbaar',
   audioLoadFailed: 'Audio laden mislukt',
+  maxCombo: 'Max Combo',
+  notesHit: 'Noten geraakt',
+  winner: 'Winnaar',
 },
 tournament: {
   title: 'Toernooimodus',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'wedstrijden',
   micAssignment: 'Microfoontoewijzing',
   singsWith: 'zingt met',
+  songVoteHint: 'Welk nummer beslist dit duel?',
+  songVoteKeyHint: 'Druk 1–3 of klik op een nummer. Esc = willekeurig',
+  startingTitle: 'Maak je klaar!',
+  mirrorWaiting: 'Wachten op het volgende duel…',
+  mirrorWaitingHint: 'De host kiest het volgende duel op het grote scherm.',
 },
 rateMySong: {
   title: '⭐ Beoordeel mijn nummer',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'Legende',
   },
   awards: 'Prijzen',
+  start: 'Beginnen met zingen',
 },
 };

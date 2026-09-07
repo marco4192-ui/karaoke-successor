@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'プレビュー',
+  },
   title: '音楽ライブラリ',
   songsAvailable: '曲が利用可能',
   loadingSongs: '曲を読み込み中...',
@@ -408,6 +411,12 @@ editor: {
     creating: '作成中...',
     create: '曲を作成',
     noNotesHint: '音符なしで曲が作成されます。エディターのタップモード（再生中にスペースキー）で手動で音符を挿入してください。歌詞の音節が自動的に割り当てられます。',
+    titleLabel: 'タイトル',
+    titlePlaceholder: 'タイトルを入力...',
+    artistLabel: 'アーティスト',
+    artistPlaceholder: 'アーティストを入力...',
+    detectBpmTitle: 'BPMを検出',
+    selectAudioFirst: '先にオーディオファイルを選択してください',
   },
   songInfoTab: {
     title: 'タイトル',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: '動画音声',
   dropFailed: 'ドロップ失敗: {error}',
 },
+playlistQueueConfig: {
+  title: 'プレイリストからキューへ',
+  desc: 'キューに追加する前に各曲のモードとプレイヤーを設定します。',
+  single: 'ソロ',
+  duel: 'デュエル（対戦）',
+  duet: 'デュエット',
+  remove: '削除',
+  empty: '曲が選択されていません',
+  willAdd: '{total}曲中{count}曲を追加します',
+  cancel: 'キャンセル',
+  addAll: '{count}曲を追加',
+},
+
 };

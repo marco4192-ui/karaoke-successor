@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Mikrofon 2',
   mic: 'Mikrofon {n}',
   songTooShortCptm: 'Sangen er for kort for Companion Sing-A-Long.',
+  players: 'Spillere',
+  difficulty: 'Vanskelighet',
 },
 partyGameScreens: {
   micAssignment: 'Mikrofontildeling',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Maks {n} spillere tillatt',
   errorMinPlayers: 'Minimum {n} spillere kreves',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Klar til å spille',
+  chooseSongFirst: '⚠️ Velg først en valgmetode (og en sang)',
+  selectMethodHint: 'Å velge en metode starter IKKE spillet — trykk \'Klar til å spille\' når alle er klare.',
+  songSelectionLocked: 'Sangvalget låses opp ved {n} spillere — legg til spillere først',
+  clickSongToSelect: 'Klikk på en sang for å velge den til festen — spillet starter med \'Klar til å spille\'.',
+  mic: 'Mikrofon',
+  companion: 'Companion',
+  mixed: 'Blandet',
+  settings: 'Innstillinger',
 },
 extendedDesc: {
   passTheMic: '🎵 Sangen er delt inn i segmenter,🔄 Sangeren bytter etter hvert segment,🏆 Lagpoengene summeres til slutt',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Tilfeldige utfordringer før hver runde',
   betting: 'Veddemål',
   bettingDesc: 'Publikum kan tippe',
+  missingWordFrequency: 'Frekvens',
+  missingGranularity: 'Skjulemodus',
+  bestOf: 'Format',
+  blindFrequency: 'Blindfrekvens',
+  grandFinale: 'Grand Finale',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Syng en sang og la vennene vurdere opptredenen din!',
   },
 },
+partyStarting: {
+  song: 'Sang',
+  participants: '{n} deltakere',
+  startPlayer: 'BEGYNNER Å SYNGE',
+  startsFirst: 'Synger først',
+  startPlayerHint: 'Denne spilleren synger første del',
+  companion: '📱 Companion-app',
+  startButton: '🎤 Begynn å synge!',
+  hint: 'Sangerne kan innta posisjon — start når alle er klare.',
+  enterHint: 'eller trykk Enter',
+  minutes: 'min',
+},
+
 };

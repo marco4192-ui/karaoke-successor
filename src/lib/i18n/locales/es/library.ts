@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Vista previa',
+  },
   title: 'Biblioteca Musical',
   songsAvailable: 'canciones disponibles',
   loadingSongs: 'Cargando canciones...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Creando...',
     create: 'Crear Canción',
     noNotesHint: 'La canción se creará sin notas. Usa el Modo Tap (barra espaciadora durante la reproducción) en el editor para insertar notas manualmente. Las sílabas de las letras se asignarán automáticamente.',
+    titleLabel: 'Título',
+    titlePlaceholder: 'Introduce el título...',
+    artistLabel: 'Artista',
+    artistPlaceholder: 'Introduce el artista...',
+    detectBpmTitle: 'Detectar BPM',
+    selectAudioFirst: 'Selecciona primero un archivo de audio',
   },
   songInfoTab: {
     title: 'Título',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Audio del Video',
   dropFailed: 'Error al soltar: {error}',
 },
+playlistQueueConfig: {
+  title: 'Lista a la Cola',
+  desc: 'Configura el modo y los jugadores de cada canción antes de añadirla a la cola.',
+  single: 'Solo',
+  duel: 'Duelo',
+  duet: 'Dúo',
+  remove: 'Quitar',
+  empty: 'No hay canciones seleccionadas',
+  willAdd: 'Se añadirán {count} de {total} canciones',
+  cancel: 'Cancelar',
+  addAll: 'Añadir {count} canciones',
+},
+
 };

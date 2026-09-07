@@ -155,6 +155,9 @@ medley: {
   comboOnSong: '곡: {title}',
   noAudioAvailable: '오디오를 사용할 수 없어요',
   audioLoadFailed: '오디오 로드에 실패했어요',
+  maxCombo: '최대 콤보',
+  notesHit: '맞춘 음표',
+  winner: '우승',
 },
 tournament: {
   title: '토너먼트 모드',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: '매치',
   micAssignment: '마이크 할당',
   singsWith: '함께 부름',
+  songVoteHint: '어떤 곡으로 이 대결을 정할까요?',
+  songVoteKeyHint: '1–3 키 또는 곡 클릭. Esc = 무작위',
+  startingTitle: '준비!',
+  mirrorWaiting: '다음 대결 대기 중…',
+  mirrorWaitingHint: '호스트가 큰 화면에서 다음 대결을 선택합니다.',
 },
 rateMySong: {
   title: '⭐ 내 노래 평가해줘',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: '전설',
   },
   awards: '상',
+  start: '노래 시작',
 },
 };

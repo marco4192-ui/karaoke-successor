@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: '演唱时录制音频和摄像头。回放可在结果页面查看。',
   autoFullscreen: '自动全屏',
   autoFullscreenDesc: '开始歌曲时自动进入全屏模式。',
+  warningCues: '声音提示',
+  warningCuesDesc: '盲唱段落和隐藏歌词前的短促提示音',
 },
 settingsGraphicSound: {
   performanceMode: '性能模式',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: '活跃',
   secondsAgo: '{n}秒前',
   minutesAgo: '{n}分钟前',
+  min: '分钟',
+  hr: '小时',
+  errorLoading: '加载伴侣列表失败',
 },
 settingsAudioOutput: {
   title: '音频输出',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: '银河流行',
     themeMinimalLight: '极简明亮',
   },},
+appearance: {
+  themeNeonNights: '霓虹之夜',
+  themeRetroArcade: '复古街机',
+  themeSunsetVibes: '日落氛围',
+  themeOceanDeep: '深海',
+  themeGalaxyPop: '银河流行',
+  themeMinimalLight: '极简亮色',
+  animatedBg: '动态背景',
+  bgVideo: '背景视频',
+  colorTheme: '配色主题',
+  lyricsSize: '歌词大小',
+  lyricsStyle: '歌词样式',
+  noteColorProfile: '音符颜色',
+  noteColorProfileDesc: '音符条的颜色方案',
+  performanceMode: '性能模式',
+  performanceModeDesc: '为较弱设备减少动画效果',
+  perfFull: '完整',
+  perfLow: '精简',
+},
+
+gameplay: {
+  showScore: '显示分数',
+  showScoreDesc: '演唱时显示分数',
+  showCombo: '显示连击',
+  showComboDesc: '演唱时显示连击计数',
+  showParticles: '显示粒子效果',
+  showParticlesDesc: '背景粒子效果',
+  replayEnabled: '启用回放',
+  replayEnabledDesc: '录制你的表演回放',
+  autoFullscreen: '自动全屏',
+  autoFullscreenDesc: '歌曲开始时自动进入全屏',
+},
+
+graphicSound: {
+  masterVolume: '主音量',
+  previewVolume: '预览音量',
+  micSensitivity: '麦克风灵敏度',
+  youtubeQuality: 'YouTube画质',
+},
+
+about: {
+  version: '版本',
+  description: '带伴奏、计分和派对模式的现代卡拉OK体验。',
+},
+
 };

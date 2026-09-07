@@ -170,6 +170,10 @@ export const medleyTournamentTranslations = {
     // Audio errors
     noAudioAvailable: 'No audio available',
     audioLoadFailed: 'Audio loading failed',
+    // Round/final results stats
+    maxCombo: 'Max Combo',
+    notesHit: 'Notes Hit',
+    winner: 'Winner',
   },
 
   tournament: {
@@ -317,6 +321,7 @@ export const medleyTournamentTranslations = {
     moreSongs: '+{n} more — Use search or filter',
     players: 'Players ({n}/{m})',
     startSinging: '⭐ Sing & Rate',
+    start: 'Start Singing',
     ratingByAudience: 'Rating by the audience ({n} votes)',
     pleaseRate: 'Please rate the performance',
     ratedAs: 'Rated as: {n}',

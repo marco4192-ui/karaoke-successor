@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Nagrywa audio i kamerę podczas śpiewania. Powtórka dostępna na ekranie wyników.',
   autoFullscreen: 'Automatyczny pełny ekran',
   autoFullscreenDesc: 'Automatycznie przechodzi w tryb pełnego ekranu przy rozpoczęciu piosenki.',
+  warningCues: 'Dźwiękowe sygnały ostrzegawcze',
+  warningCuesDesc: 'Krótki sygnał przed ślepymi fragmentami i ukrytymi słowami',
 },
 settingsGraphicSound: {
   performanceMode: 'Tryb wydajności',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'aktywny',
   secondsAgo: '{n} sek. temu',
   minutesAgo: '{n} min. temu',
+  min: 'min',
+  hr: 'godz.',
+  errorLoading: 'Błąd podczas ładowania Companionów',
 },
 settingsAudioOutput: {
   title: 'Wyjście audio',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaktyka Pop',
     themeMinimalLight: 'Minimalny Jasny',
   },},
+appearance: {
+  themeNeonNights: 'Neonowe Noce',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Klimat Zachodu Słońca',
+  themeOceanDeep: 'Głęboki Ocean',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Light',
+  animatedBg: 'Animowane tło',
+  bgVideo: 'Wideo w tle',
+  colorTheme: 'Schemat kolorów',
+  lyricsSize: 'Rozmiar tekstu',
+  lyricsStyle: 'Styl tekstu',
+  noteColorProfile: 'Kolory nut',
+  noteColorProfileDesc: 'Paleta kolorów dla pasków nut',
+  performanceMode: 'Tryb wydajności',
+  performanceModeDesc: 'Zmniejszone animacje dla słabszych urządzeń',
+  perfFull: 'Pełny',
+  perfLow: 'Zredukowany',
+},
+
+gameplay: {
+  showScore: 'Pokazuj wynik',
+  showScoreDesc: 'Wyświetla wynik podczas śpiewania',
+  showCombo: 'Pokazuj combo',
+  showComboDesc: 'Wyświetla liczniki combo podczas śpiewania',
+  showParticles: 'Pokazuj cząsteczki',
+  showParticlesDesc: 'Efekty cząsteczek w tle',
+  replayEnabled: 'Włącz powtórki',
+  replayEnabledDesc: 'Nagrywa powtórki występów',
+  autoFullscreen: 'Automatyczny pełny ekran',
+  autoFullscreenDesc: 'Automatycznie wchodzi w pełny ekran przy starcie piosenki',
+},
+
+graphicSound: {
+  masterVolume: 'Głośność ogólna',
+  previewVolume: 'Głośność podglądu',
+  micSensitivity: 'Czułość mikrofonu',
+  youtubeQuality: 'Jakość YouTube',
+},
+
+about: {
+  version: 'Wersja',
+  description: 'Nowoczesne wrażenia karaoke z akompaniamentem, punktacją i trybami imprezy.',
+},
+
 };

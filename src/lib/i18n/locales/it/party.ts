@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Microfono 2',
   mic: 'Microfono {n}',
   songTooShortCptm: 'Canzone troppo corta per Companion Sing-A-Long.',
+  players: 'Giocatori',
+  difficulty: 'Difficoltà',
 },
 partyGameScreens: {
   micAssignment: 'Assegnazione Microfono',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Massimo {n} giocatori consentiti',
   errorMinPlayers: 'Minimo {n} giocatori richiesti',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Pronti a giocare',
+  chooseSongFirst: '⚠️ Scegli prima un metodo di selezione (e una canzone)',
+  selectMethodHint: 'Scegliere un metodo NON avvia il gioco — premi «Pronti a giocare» quando tutti sono pronti.',
+  songSelectionLocked: 'La selezione delle canzoni si sblocca con {n} giocatori — aggiungi prima i giocatori',
+  clickSongToSelect: 'Fai clic su una canzone per selezionarla per la tua festa — il gioco si avvia con «Pronti a giocare».',
+  mic: 'Microfono',
+  companion: 'Companion',
+  mixed: 'Misto',
+  settings: 'Impostazioni',
 },
 extendedDesc: {
   passTheMic: '🎵 La canzone è divisa in segmenti,🔄 Il cantante cambia dopo ogni segmento,🏆 Il punteggio della squadra viene totalizzato alla fine',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Sfide casuali prima di ogni turno',
   betting: 'Scommessa',
   bettingDesc: 'Il pubblico può pronosticare',
+  missingWordFrequency: 'Frequenza',
+  missingGranularity: 'Modalità Occultamento',
+  bestOf: 'Al meglio di',
+  blindFrequency: 'Frequenza Cieca',
+  grandFinale: 'Gran Finale',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Canta una canzone e fatti votare dagli amici!',
   },
 },
+partyStarting: {
+  song: 'Canzone',
+  participants: '{n} partecipanti',
+  startPlayer: 'INIZIA A CANTARE',
+  startsFirst: 'Canta per primo',
+  startPlayerHint: 'Questo giocatore canta il primo segmento',
+  companion: '📱 App Companion',
+  startButton: '🎤 Inizia a cantare!',
+  hint: 'I cantanti possono mettersi in posizione — inizia quando tutti sono pronti.',
+  enterHint: 'o premi Invio',
+  minutes: 'min',
+},
+
 };

@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Esikatselu',
+  },
   title: 'Musiikkikirjasto',
   songsAvailable: 'kappaletta saatavilla',
   loadingSongs: 'Ladataan kappaleita...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Luodaan...',
     create: 'Luo kappale',
     noNotesHint: 'Kappale luodaan ilman nuotteja. Käytä Napautustilaa (välilyönti toiston aikana) editorissa lisätäksesi nuotteja manuaalisesti. Sanoituksen tavut liitetään automaattisesti.',
+    titleLabel: 'Otsikko',
+    titlePlaceholder: 'Syötä otsikko...',
+    artistLabel: 'Esittäjä',
+    artistPlaceholder: 'Syötä esittäjä...',
+    detectBpmTitle: 'Tunnista BPM',
+    selectAudioFirst: 'Valitse ensin äänitiedosto',
   },
   songInfoTab: {
     title: 'Otsikko',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Videoääni',
   dropFailed: 'Pudotus epäonnistui: {error}',
 },
+playlistQueueConfig: {
+  title: 'Soittolista jonoon',
+  desc: 'Määritä jokaisen kappaleen tila ja pelaajat ennen jonoon lisäämistä.',
+  single: 'Solo',
+  duel: 'Kaksintaistelu',
+  duet: 'Duetto',
+  remove: 'Poista',
+  empty: 'Kappaleita ei valittu',
+  willAdd: '{count}/{total} kappaletta lisätään',
+  cancel: 'Peruuta',
+  addAll: 'Lisää {count} kappaletta',
+},
+
 };

@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Microfone 2',
   mic: 'Microfone {n}',
   songTooShortCptm: 'Música muito curta para Companion Sing-A-Long.',
+  players: 'Jogadores',
+  difficulty: 'Dificuldade',
 },
 partyGameScreens: {
   micAssignment: 'Atribuição de Microfone',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Máximo de {n} jogadores permitidos',
   errorMinPlayers: 'Mínimo de {n} jogadores necessários',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Prontos para jogar',
+  chooseSongFirst: '⚠️ Escolhe primeiro um método de seleção (e uma música)',
+  selectMethodHint: 'Escolher um método NÃO inicia o jogo — prime «Prontos para jogar» quando todos estiverem prontos.',
+  songSelectionLocked: 'A seleção de músicas desbloqueia com {n} jogadores — adiciona primeiro jogadores',
+  clickSongToSelect: 'Clica numa música para a selecionar para a tua festa — o jogo começa com «Prontos para jogar».',
+  mic: 'Microfone',
+  companion: 'Companion',
+  mixed: 'Misto',
+  settings: 'Definições',
 },
 extendedDesc: {
   passTheMic: '🎵 A música é dividida em segmentos,🔄 O cantor muda após cada segmento,🏆 A pontuação da equipe é totalizada ao final',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Desafios aleatórios antes de cada rodada',
   betting: 'Apostas',
   bettingDesc: 'A plateia pode prever',
+  missingWordFrequency: 'Frequência',
+  missingGranularity: 'Modo de Ocultação',
+  bestOf: 'Melhor de',
+  blindFrequency: 'Frequência de Cegueira',
+  grandFinale: 'Grande Final',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Cante uma música e deixe os amigos avaliarem sua apresentação!',
   },
 },
+partyStarting: {
+  song: 'Música',
+  participants: '{n} participantes',
+  startPlayer: 'COMEÇA A CANTAR',
+  startsFirst: 'Canta primeiro',
+  startPlayerHint: 'Este jogador canta o primeiro segmento',
+  companion: '📱 App Companion',
+  startButton: '🎤 Começar a cantar!',
+  hint: 'Os cantores podem tomar posição — começa quando todos estiverem prontos.',
+  enterHint: 'ou prime Enter',
+  minutes: 'min',
+},
+
 };

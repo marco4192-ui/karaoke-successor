@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'punktów',
   download: '📥 Pobierz',
   share: '📤 Udostępnij',
+  accuracy: 'Celność',
+  maxCombo: 'Maks. Combo',
+  difficulty: 'Poziom trudności',
 },
 queue: {
   title: 'Kolejka piosenek',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Brak wiadomości',
+  sendAs: 'Wyślij jako',
+  noPlayers: 'Brak graczy',
+  selectPlayerFirst: 'Najpierw wybierz gracza',
+  placeholder: 'Napisz wiadomość...',
+  send: 'Wyślij',
+  challengeSong: 'Wyzwij',
+  waitingForOpponent: 'Oczekiwanie na przeciwnika...',
 },
+songChallenge: {
+  challengeBtn: 'Wyzwij',
+  cannotAcceptOwn: 'Nie możesz zaakceptować własnego wyzwania',
+},
+
+songStart: {
+  selectSongForParty: 'Wybierz piosenkę na imprezę',
+},
+
 };

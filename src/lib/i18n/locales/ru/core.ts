@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'очков',
   download: '📥 Скачать',
   share: '📤 Поделиться',
+  accuracy: 'Точность',
+  maxCombo: 'Макс. комбо',
+  difficulty: 'Сложность',
 },
 queue: {
   title: 'Очередь песен',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Сообщений пока нет',
+  sendAs: 'Отправить как',
+  noPlayers: 'Нет игроков',
+  selectPlayerFirst: 'Сначала выберите игрока',
+  placeholder: 'Введите сообщение...',
+  send: 'Отправить',
+  challengeSong: 'Вызов',
+  waitingForOpponent: 'Ожидание соперника...',
 },
+songChallenge: {
+  challengeBtn: 'Вызвать',
+  cannotAcceptOwn: 'Нельзя принять собственный вызов',
+},
+
+songStart: {
+  selectSongForParty: 'Выберите песню для вашей вечеринки',
+},
+
 };

@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: '预览',
+  },
   title: '音乐曲库',
   songsAvailable: '首歌曲可用',
   loadingSongs: '正在加载歌曲...',
@@ -408,6 +411,12 @@ editor: {
     creating: '创建中...',
     create: '创建歌曲',
     noNotesHint: '歌曲将不带音符创建。在编辑器中使用打拍模式（播放时按空格键）手动插入音符。歌词中的音节将自动分配。',
+    titleLabel: '标题',
+    titlePlaceholder: '输入标题...',
+    artistLabel: '艺术家',
+    artistPlaceholder: '输入艺术家...',
+    detectBpmTitle: '检测BPM',
+    selectAudioFirst: '请先选择音频文件',
   },
   songInfoTab: {
     title: '标题',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: '视频音频',
   dropFailed: '拖放失败：{error}',
 },
+playlistQueueConfig: {
+  title: '歌单加入队列',
+  desc: '加入队列前，为每首歌设置模式和玩家。',
+  single: '单人',
+  duel: '对决',
+  duet: '合唱',
+  remove: '移除',
+  empty: '未选择歌曲',
+  willAdd: '将添加 {count}/{total} 首歌',
+  cancel: '取消',
+  addAll: '添加 {count} 首歌',
+},
+
 };

@@ -56,6 +56,8 @@ partySetup: {
   mic2: '마이크 2',
   mic: '마이크 {n}',
   songTooShortCptm: 'Companion Sing-A-Long에 곡이 너무 짧습니다.',
+  players: '플레이어',
+  difficulty: '난이도',
 },
 partyGameScreens: {
   micAssignment: '마이크 할당',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: '최대 {n}명까지 참여할 수 있어요',
   errorMinPlayers: '최소 {n}명이 필요해요',
   companionBadge: '컴패니언',
+  readyToPlayButton: '게임 시작',
+  chooseSongFirst: '⚠️ 먼저 곡 선택 방식(과 곡)을 선택하세요',
+  selectMethodHint: '방식을 선택해도 게임이 시작되지 않습니다 — 모두 준비되면 \'게임 시작\'을 누르세요.',
+  songSelectionLocked: '곡 선택은 {n}명부터 잠금 해제됩니다 — 먼저 플레이어를 추가하세요',
+  clickSongToSelect: '곡을 클릭해 파티용으로 선택 — 게임은 \'게임 시작\'으로 시작됩니다.',
+  mic: '마이크',
+  companion: '컴패니언',
+  mixed: '혼합',
+  settings: '설정',
 },
 extendedDesc: {
   passTheMic: '🎵 곡이 구간으로 나뉩니다,🔄 구간이 끝나면 가수가 변경됩니다,🏆 마지막에 팀 점수가 집계됩니다',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: '각 라운드 전 랜덤 도전',
   betting: '베팅',
   bettingDesc: '관객이 예측할 수 있습니다',
+  missingWordFrequency: '빈도',
+  missingGranularity: '숨김 방식',
+  bestOf: '대결 형식',
+  blindFrequency: '블라인드 빈도',
+  grandFinale: '그랜드 피날레',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: '노래를 부르고 친구들에게 평가를 받아보세요!',
   },
 },
+partyStarting: {
+  song: '곡',
+  participants: '참가자 {n}명',
+  startPlayer: '첫 가수',
+  startsFirst: '먼저 노래합니다',
+  startPlayerHint: '이 플레이어가 첫 구간을 노래합니다',
+  companion: '📱 컴패니언 앱',
+  startButton: '🎤 시작!',
+  hint: '가수들은 자리를 잡으세요 — 모두 준비되면 시작합니다.',
+  enterHint: '또는 Enter 키',
+  minutes: '분',
+},
+
 };

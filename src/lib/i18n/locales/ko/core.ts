@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: '점',
   download: '📥 다운로드',
   share: '📤 공유',
+  accuracy: '정확도',
+  maxCombo: '최대 콤보',
+  difficulty: '난이도',
 },
 queue: {
   title: '곡 대기열',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: '메시지가 아직 없습니다',
+  sendAs: '다음으로 보내기',
+  noPlayers: '플레이어 없음',
+  selectPlayerFirst: '먼저 플레이어를 선택하세요',
+  placeholder: '메시지 입력...',
+  send: '보내기',
+  challengeSong: '도전',
+  waitingForOpponent: '상대를 기다리는 중...',
 },
+songChallenge: {
+  challengeBtn: '도전',
+  cannotAcceptOwn: '자신의 도전은 받을 수 없습니다',
+},
+
+songStart: {
+  selectSongForParty: '파티용 곡 선택',
+},
+
 };

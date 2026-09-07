@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Voorbeeld',
+  },
   title: 'Muziekbibliotheek',
   songsAvailable: 'nummers beschikbaar',
   loadingSongs: 'Nummers laden...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Aanmaken...',
     create: 'Nummer aanmaken',
     noNotesHint: 'Het nummer wordt aangemaakt zonder noten. Gebruik de Tap-modus (spatiebalk tijdens het afspelen) in de editor om handmatig noten in te voegen. De lettergrepen uit de songtekst worden automatisch toegewezen.',
+    titleLabel: 'Titel',
+    titlePlaceholder: 'Voer de titel in...',
+    artistLabel: 'Artiest',
+    artistPlaceholder: 'Voer de artiest in...',
+    detectBpmTitle: 'BPM detecteren',
+    selectAudioFirst: 'Selecteer eerst een audiobestand',
   },
   songInfoTab: {
     title: 'Titel',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Video-audio',
   dropFailed: 'Sleepen mislukt: {error}',
 },
+playlistQueueConfig: {
+  title: 'Playlist naar wachtrij',
+  desc: 'Configureer de modus en spelers voor elk nummer voordat je het toevoegt aan de wachtrij.',
+  single: 'Solo',
+  duel: 'Duel',
+  duet: 'Duet',
+  remove: 'Verwijderen',
+  empty: 'Geen nummers geselecteerd',
+  willAdd: '{count} van {total} nummers worden toegevoegd',
+  cancel: 'Annuleren',
+  addAll: '{count} nummers toevoegen',
+},
+
 };

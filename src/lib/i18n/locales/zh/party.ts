@@ -56,6 +56,8 @@ partySetup: {
   mic2: '麦克风 2',
   mic: '麦克风 {n}',
   songTooShortCptm: '歌曲太短，无法用于 Companion Sing-A-Long。',
+  players: '玩家',
+  difficulty: '难度',
 },
 partyGameScreens: {
   micAssignment: '麦克风分配',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: '最多允许 {n} 名玩家',
   errorMinPlayers: '至少需要 {n} 名玩家',
   companionBadge: '手机伴侣',
+  readyToPlayButton: '准备就绪',
+  chooseSongFirst: '⚠️ 请先选择选歌方式（和歌曲）',
+  selectMethodHint: '选择方式不会立即开始游戏——全员就绪后请点击“准备就绪”。',
+  songSelectionLocked: '选歌需 {n} 名玩家解锁——请先添加玩家',
+  clickSongToSelect: '点击歌曲为派对选中——游戏通过“准备就绪”开始。',
+  mic: '麦克风',
+  companion: '伴侣',
+  mixed: '混合',
+  settings: '设置',
 },
 extendedDesc: {
   passTheMic: '🎵 歌曲被分为多个片段,🔄 每个片段后更换歌手,🏆 最后统计队伍得分',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: '每轮前随机挑战',
   betting: '竞猜',
   bettingDesc: '观众可以预测',
+  missingWordFrequency: '频率',
+  missingGranularity: '隐藏方式',
+  bestOf: '赛制',
+  blindFrequency: '盲唱频率',
+  grandFinale: '总决赛',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: '唱一首歌，让朋友们给你的表演打分！',
   },
 },
+partyStarting: {
+  song: '歌曲',
+  participants: '{n} 名参与者',
+  startPlayer: '首先演唱',
+  startsFirst: '首先演唱',
+  startPlayerHint: '该玩家演唱第一个段落',
+  companion: '📱 伴侣应用',
+  startButton: '🎤 开始演唱！',
+  hint: '歌手可以就位——全员准备好后开始。',
+  enterHint: '或按回车键',
+  minutes: '分钟',
+},
+
 };

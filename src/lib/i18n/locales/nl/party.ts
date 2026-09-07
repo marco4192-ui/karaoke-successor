@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Microfoon 2',
   mic: 'Microfoon {n}',
   songTooShortCptm: 'Nummer te kort voor Companion Sing-A-Long.',
+  players: 'Spelers',
+  difficulty: 'Moeilijkheid',
 },
 partyGameScreens: {
   micAssignment: 'Microfoontoewijzing',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Maximaal {n} spelers toegestaan',
   errorMinPlayers: 'Minimaal {n} spelers vereist',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Klaar om te spelen',
+  chooseSongFirst: '⚠️ Kies eerst een selectiemethode (en een nummer)',
+  selectMethodHint: 'Een methode kiezen start het spel NIET — druk op \'Klaar om te spelen\' als iedereen zover is.',
+  songSelectionLocked: 'Nummerselectie ontgrendelt bij {n} spelers — voeg eerst spelers toe',
+  clickSongToSelect: 'Klik op een nummer om het voor je feest te selecteren — het spel start met \'Klaar om te spelen\'.',
+  mic: 'Microfoon',
+  companion: 'Companion',
+  mixed: 'Gemengd',
+  settings: 'Instellingen',
 },
 extendedDesc: {
   passTheMic: '🎵 Het nummer wordt verdeeld in segmenten,🔄 De zanger wisselt na elk segment,🏆 De teamscore wordt aan het einde opgeteld',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Willekeurige uitdagingen voor elke ronde',
   betting: 'Wedden',
   bettingDesc: 'Publiek kan voorspellen',
+  missingWordFrequency: 'Frequentie',
+  missingGranularity: 'Verbergmodus',
+  bestOf: 'Best of',
+  blindFrequency: 'Blindfrequentie',
+  grandFinale: 'Grand Finale',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Zing een nummer en laat je vrienden je optreden beoordelen!',
   },
 },
+partyStarting: {
+  song: 'Nummer',
+  participants: '{n} deelnemers',
+  startPlayer: 'BEGINT MET ZINGEN',
+  startsFirst: 'Zingt eerst',
+  startPlayerHint: 'Deze speler zingt het eerste deel',
+  companion: '📱 Companion-app',
+  startButton: '🎤 Beginnen met zingen!',
+  hint: 'Zangers kunnen op hun plek gaan staan — start als iedereen klaar is.',
+  enterHint: 'of druk op Enter',
+  minutes: 'min',
+},
+
 };

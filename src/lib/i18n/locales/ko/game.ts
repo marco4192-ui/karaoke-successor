@@ -26,6 +26,9 @@ difficulty: {
   hard: '어려움',
 },
 game: {
+  noteLane: {
+    singHere: '여기서 노래',
+  },
   back: '뒤로',
   sync: '동기화',
   pts: '점',
@@ -44,6 +47,14 @@ game: {
   lyrics: '가사',
   notes: '노트',
   score: '점수',
+  player: '플레이어',
+  go: '시작!',
+  blindWarningIncoming: '블라인드 구간 {n}초 전',
+  blindWarningHint: '음표가 사라집니다 — 기억으로 노래하세요',
+  blindWarningActive: '블라인드 구간',
+  mwWarningIncoming: '숨겨질 가사 {n}초 전',
+  mwWarningHint: '일부 가사가 사라집니다',
+  mwWarningActive: '가사 숨김',
 },
 gameScreen: {
   noSongSelected: '곡이 선택되지 않았습니다',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'YouTube 플레이어 HTML5 오류',
   youtubeErrorCode: 'YouTube 오류 (코드: {n})',
   loadingMedia: '미디어 로딩 중...',
+  loading: '불러오는 중…',
 },
 gameHud: {
   audioEffects: '오디오 효과',
@@ -66,6 +78,7 @@ gameHud: {
   presets: '프리셋',
   adPlaying: '광고 재생 중',
   gamePaused: '게임 일시정지',
+  volumeMeter: '볼륨 미터',
 },
 gameEnhancements: {
   loadingStats: '통계를 불러오는 중...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ 광고 건너뛰기',
   skipAdDesc: '동영상을 클릭하여 "광고 건너뛰기" 버튼을 누르세요!',
+  acquireControl: '제어 가져오기',
 },
 mobilePage: {
   loadingCompanion: '컴패니언 앱을 불러오는 중…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: '현상금',
   micError: '마이크',
+  survived: '생존',
+  visualSettings: '화면 설정',
+  title: '배틀 로얄',
+  playersLabel: '플레이어',
+  timeLeft: '이번 라운드 {n}초 남음',
 },
+blind: {
+  title: '블라인드 카라오케',
+},
+
+missingWords: {
+  title: '빈칸 가사',
+},
+
+competitive: {
+  start: '시작',
+},
+
 };

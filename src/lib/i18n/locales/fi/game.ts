@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Vaikea',
 },
 game: {
+  noteLane: {
+    singHere: 'LAULA TÄÄLLÄ',
+  },
   back: 'Takaisin',
   sync: 'Synkronoi',
   pts: 'pistettä',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Sanat',
   notes: 'Nuotit',
   score: 'Pisteet',
+  player: 'Pelaaja',
+  go: 'Nyt!',
+  blindWarningIncoming: 'Sokea osio {n}s kuluttua',
+  blindWarningHint: 'Nuotit katoavat — laula muistista',
+  blindWarningActive: 'Sokea osio',
+  mwWarningIncoming: 'Piilotetut sanat {n}s kuluttua',
+  mwWarningHint: 'Osa sanoista katoaa kohta',
+  mwWarningActive: 'Piilotetut sanat',
 },
 gameScreen: {
   noSongSelected: 'Ei kappaletta valittuna',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'HTML5-virhe YouTube-soittimessa',
   youtubeErrorCode: 'YouTube-virhe (Koodi: {n})',
   loadingMedia: 'Ladataan mediaa...',
+  loading: 'Ladataan…',
 },
 gameHud: {
   audioEffects: 'Äänitehosteet',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Esiasetukset',
   adPlaying: 'Mainos toistetaan',
   gamePaused: 'Peli keskeytetty',
+  volumeMeter: 'Äänimittari',
 },
 gameEnhancements: {
   loadingStats: 'Ladataan tilastoja...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Ohita mainos',
   skipAdDesc: 'Napsauta videota painaaksesi "Ohita mainos" -painiketta!',
+  acquireControl: 'Ota hallinta',
 },
 mobilePage: {
   loadingCompanion: 'Ladataan companion-sovellusta…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'PÄÄPALKO',
   micError: 'Mikrofoni',
+  survived: 'Selvisi',
+  visualSettings: 'Visuaaliset asetukset',
+  title: 'Battle Royale',
+  playersLabel: 'pelaajaa',
+  timeLeft: '{n} sekuntia jäljellä tällä kierroksella',
 },
+blind: {
+  title: 'Sokea karaoke',
+},
+
+missingWords: {
+  title: 'Puuttuvat Sanat',
+},
+
+competitive: {
+  start: 'Aloita',
+},
+
 };

@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: '미리보기',
+  },
   title: '음악 라이브러리',
   songsAvailable: '사용 가능한 곡',
   loadingSongs: '곡을 불러오는 중...',
@@ -408,6 +411,12 @@ editor: {
     creating: '생성 중...',
     create: '곡 만들기',
     noNotesHint: '노트 없이 곡이 생성됩니다. 에디터에서 탭 모드(재생 중 스페이스바)를 사용하여 수동으로 노트를 삽입하세요. 가사의 음절이 자동으로 할당됩니다.',
+    titleLabel: '제목',
+    titlePlaceholder: '제목 입력...',
+    artistLabel: '아티스트',
+    artistPlaceholder: '아티스트 입력...',
+    detectBpmTitle: 'BPM 감지',
+    selectAudioFirst: '먼저 오디오 파일을 선택하세요',
   },
   songInfoTab: {
     title: '제목',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: '영상 오디오',
   dropFailed: '드롭 실패: {error}',
 },
+playlistQueueConfig: {
+  title: '재생목록 → 대기열',
+  desc: '대기열에 추가하기 전에 각 곡의 모드와 플레이어를 설정하세요.',
+  single: '솔로',
+  duel: '대결',
+  duet: '듀엣',
+  remove: '제거',
+  empty: '선택된 곡이 없습니다',
+  willAdd: '전체 {total}곡 중 {count}곡 추가',
+  cancel: '취소',
+  addAll: '{count}곡 추가',
+},
+
 };

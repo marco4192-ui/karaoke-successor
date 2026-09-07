@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Записывает аудио и веб-камеру во время пения. Повтор доступен на экране результатов.',
   autoFullscreen: 'Автоматический полный экран',
   autoFullscreenDesc: 'Автоматический переход в полноэкранный режим при начале песни.',
+  warningCues: 'Звуковые предупреждения',
+  warningCuesDesc: 'Короткий сигнал перед слепыми отрезками и скрытыми словами',
 },
 settingsGraphicSound: {
   performanceMode: 'Режим производительности',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'активен',
   secondsAgo: '{n}с назад',
   minutesAgo: '{n}м назад',
+  min: 'мин',
+  hr: 'ч',
+  errorLoading: 'Ошибка загрузки компаньонов',
 },
 settingsAudioOutput: {
   title: 'Вывод аудио',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Галактика Поп',
     themeMinimalLight: 'Минимал Светлый',
   },},
+appearance: {
+  themeNeonNights: 'Неоновые ночи',
+  themeRetroArcade: 'Ретро-аркада',
+  themeSunsetVibes: 'Закатные вайбы',
+  themeOceanDeep: 'Глубины океана',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Минимал лайт',
+  animatedBg: 'Анимированный фон',
+  bgVideo: 'Фоновое видео',
+  colorTheme: 'Цветовая тема',
+  lyricsSize: 'Размер текста',
+  lyricsStyle: 'Стиль текста',
+  noteColorProfile: 'Цвета нот',
+  noteColorProfileDesc: 'Цветовая палитра для нотных полос',
+  performanceMode: 'Режим производительности',
+  performanceModeDesc: 'Сокращённые анимации для слабых устройств',
+  perfFull: 'Полный',
+  perfLow: 'Сокращённый',
+},
+
+gameplay: {
+  showScore: 'Показывать счёт',
+  showScoreDesc: 'Показывать счёт во время пения',
+  showCombo: 'Показывать комбо',
+  showComboDesc: 'Показывать счётчик комбо во время пения',
+  showParticles: 'Показывать частицы',
+  showParticlesDesc: 'Частицы на фоне',
+  replayEnabled: 'Включить повтор',
+  replayEnabledDesc: 'Записывает повторы ваших выступлений',
+  autoFullscreen: 'Автополноэкранный режим',
+  autoFullscreenDesc: 'Автоматически входит в полный экран при старте песни',
+},
+
+graphicSound: {
+  masterVolume: 'Общая громкость',
+  previewVolume: 'Громкость предпросмотра',
+  micSensitivity: 'Чувствительность микрофона',
+  youtubeQuality: 'Качество YouTube',
+},
+
+about: {
+  version: 'Версия',
+  description: 'Современный караоке-опыт с аккомпанементом, подсчётом очков и режимами вечеринки.',
+},
+
 };

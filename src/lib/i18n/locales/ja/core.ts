@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'ポイント',
   download: '📥 ダウンロード',
   share: '📤 シェア',
+  accuracy: '精度',
+  maxCombo: '最大コンボ',
+  difficulty: '難易度',
 },
 queue: {
   title: '曲キュー',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'メッセージはまだありません',
+  sendAs: 'として送信',
+  noPlayers: 'プレイヤーなし',
+  selectPlayerFirst: '先にプレイヤーを選択してください',
+  placeholder: 'メッセージを入力...',
+  send: '送信',
+  challengeSong: 'チャレンジ',
+  waitingForOpponent: '対戦相手を待機中...',
 },
+songChallenge: {
+  challengeBtn: 'チャレンジ',
+  cannotAcceptOwn: '自分のチャレンジは受けられません',
+},
+
+songStart: {
+  selectSongForParty: 'パーティー用の曲を選択',
+},
+
 };

@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'poäng',
   download: '📥 Ladda ner',
   share: '📤 Dela',
+  accuracy: 'Precision',
+  maxCombo: 'Max Combo',
+  difficulty: 'Svårighet',
 },
 queue: {
   title: 'Låtkö',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Inga meddelanden än',
+  sendAs: 'Skicka som',
+  noPlayers: 'Inga spelare',
+  selectPlayerFirst: 'Välj en spelare först',
+  placeholder: 'Skriv ett meddelande...',
+  send: 'Skicka',
+  challengeSong: 'Utmana',
+  waitingForOpponent: 'Väntar på motståndaren...',
 },
+songChallenge: {
+  challengeBtn: 'Utmana',
+  cannotAcceptOwn: 'Du kan inte acceptera din egen utmaning',
+},
+
+songStart: {
+  selectSongForParty: 'Välj en låt för ditt party',
+},
+
 };

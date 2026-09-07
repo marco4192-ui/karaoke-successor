@@ -26,6 +26,9 @@ difficulty: {
   hard: 'Svårt',
 },
 game: {
+  noteLane: {
+    singHere: 'SJUNG HÄR',
+  },
   back: 'Tillbaka',
   sync: 'Synka',
   pts: 'poäng',
@@ -44,6 +47,14 @@ game: {
   lyrics: 'Sångtexter',
   notes: 'Noter',
   score: 'Poäng',
+  player: 'Spelare',
+  go: 'KÖR!',
+  blindWarningIncoming: 'Blindsektion om {n}s',
+  blindWarningHint: 'Noterna försvinner — sjung utantill',
+  blindWarningActive: 'Blindsektion',
+  mwWarningIncoming: 'Dolda ord om {n}s',
+  mwWarningHint: 'Vissa texter försvinner strax',
+  mwWarningActive: 'Dolda ord',
 },
 gameScreen: {
   noSongSelected: 'Ingen låt vald',
@@ -58,6 +69,7 @@ gameScreen: {
   youtubeErrorHtml5: 'HTML5-fel i YouTube-spelare',
   youtubeErrorCode: 'YouTube-fel (Kod: {n})',
   loadingMedia: 'Laddar media...',
+  loading: 'Laddar…',
 },
 gameHud: {
   audioEffects: 'Ljudeffekter',
@@ -66,6 +78,7 @@ gameHud: {
   presets: 'Förinställningar',
   adPlaying: 'Reklam spelas',
   gamePaused: 'Spel Pausat',
+  volumeMeter: 'Volymmätare',
 },
 gameEnhancements: {
   loadingStats: 'Laddar statistik...',
@@ -270,6 +283,7 @@ battleRoyaleGame: {
 remoteControl: {
   skipAdTitle: '⏭️ Hoppa över Reklam',
   skipAdDesc: 'Klicka på videon för att trycka på knappen "Hoppa över reklam"!',
+  acquireControl: 'Ta över kontrollen',
 },
 mobilePage: {
   loadingCompanion: 'Laddar companion-app…',
@@ -597,5 +611,22 @@ rankingTitles: {
 battleRoyale: {
   bounty: 'HUVUDJAG',
   micError: 'Mikrofon',
+  survived: 'Överlevde',
+  visualSettings: 'Visuella inställningar',
+  title: 'Battle Royale',
+  playersLabel: 'spelare',
+  timeLeft: '{n} sekunder kvar av denna runda',
 },
+blind: {
+  title: 'Blindkaraoke',
+},
+
+missingWords: {
+  title: 'Saknade Ord',
+},
+
+competitive: {
+  start: 'Starta',
+},
+
 };

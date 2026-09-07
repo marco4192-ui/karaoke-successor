@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Mikrofon 2',
   mic: 'Mikrofon {n}',
   songTooShortCptm: 'Song zu kurz für Companion Sing-A-Long.',
+  players: 'Spieler',
+  difficulty: 'Schwierigkeit',
 },
 partyGameScreens: {
   micAssignment: 'Mikrofon-Zuweisung',
@@ -407,6 +409,10 @@ unifiedSetup: {
   errorMaxPlayers: 'Maximal {n} Spieler erlaubt',
   errorMinPlayers: 'Mindestens {n} Spieler erforderlich',
   companionBadge: 'Companion',
+  mic: 'Mikrofon',
+  companion: 'Companion',
+  mixed: 'Gemischt',
+  settings: 'Einstellungen',
 },
 partyStarting: {
   song: 'Song',
@@ -516,6 +522,11 @@ modeSettings: {
   challengesDesc: 'Zufällige Challenges vor jeder Runde',
   betting: 'Tippen',
   bettingDesc: 'Publikum kann vorhersagen',
+  missingWordFrequency: 'Frequenz',
+  missingGranularity: 'Versteck-Modus',
+  bestOf: 'Best of',
+  blindFrequency: 'Blind-Frequenz',
+  grandFinale: 'Großes Finale',
 },
 gameModes: {
   passTheMic: {

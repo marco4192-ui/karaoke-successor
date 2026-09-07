@@ -153,6 +153,9 @@ scoreCardSocial: {
   points: 'punten',
   download: '📥 Downloaden',
   share: '📤 Delen',
+  accuracy: 'Nauwkeurigheid',
+  maxCombo: 'Max Combo',
+  difficulty: 'Moeilijkheid',
 },
 queue: {
   title: 'Nummerwachtrij',
@@ -405,5 +408,22 @@ desktopChat: {
   notificationNew: 'Neue Nachricht von {name}',
   openChat: 'Chat öffnen',
   closeChat: 'Chat schließen',
+  noMessages: 'Nog geen berichten',
+  sendAs: 'Versturen als',
+  noPlayers: 'Geen spelers',
+  selectPlayerFirst: 'Selecteer eerst een speler',
+  placeholder: 'Typ een bericht...',
+  send: 'Versturen',
+  challengeSong: 'Uitdagen',
+  waitingForOpponent: 'Wachten op tegenstander...',
 },
+songChallenge: {
+  challengeBtn: 'Uitdagen',
+  cannotAcceptOwn: 'Je kunt je eigen uitdaging niet accepteren',
+},
+
+songStart: {
+  selectSongForParty: 'Selecteer een nummer voor je feest',
+},
+
 };

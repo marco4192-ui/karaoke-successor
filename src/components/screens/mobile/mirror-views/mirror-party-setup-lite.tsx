@@ -262,6 +262,16 @@ function tOr(t: (_key: string) => string, key: string, fallback: string): string
 
 // ===================== Wiederverwendbare UI-Bausteine =====================
 
+/** Section header with gradient accent bar (unified visual hierarchy) */
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+      <span className="w-1 h-3.5 rounded-full bg-gradient-to-b from-cyan-400 to-purple-500 shrink-0" aria-hidden="true" />
+      {children}
+    </h3>
+  );
+}
+
 /** Mobile-freundlicher Toggle-Switch */
 function Toggle({ value, onToggle }: { value: boolean; onToggle: (v: boolean) => void }) {
   return (
@@ -534,7 +544,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             <h2 className="text-lg font-semibold text-white">{t('party.title')}</h2>
           </div>
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
-            <span className="text-3xl">{'\u{23F3}'}</span>
+            <span className="text-3xl animate-pulse">{'\u{23F3}'}</span>
             <p className="text-sm text-white/40">{t('mobile.mirrorSetupLoading') || 'Setup wird geladen...'}</p>
           </div>
           <button
@@ -552,10 +562,12 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${modeInfo.color} text-xl`}>{modeInfo.icon}</div>
+            <div className={`flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${modeInfo.color} text-xl shadow-lg`}>{modeInfo.icon}</div>
             <h2 className="text-lg font-semibold text-white">{label}</h2>
           </div>
-          <span className="text-xs text-white/30">{selectedPlayers.length}/{modeInfo.maxPlayers}</span>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-white/60 tabular-nums">
+            {selectedPlayers.length}/{modeInfo.maxPlayers}
+          </span>
         </div>
 
         {/* Zurueck-Button */}
@@ -576,9 +588,9 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
 
         {/* -------- SPIELER-AUSWAHL -------- */}
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+          <SectionHeader>
             {t('partySetup.players') || 'Spieler'} ({selectedPlayers.length}/{modeInfo.minPlayers}-{modeInfo.maxPlayers})
-          </h3>
+          </SectionHeader>
           <div className="grid grid-cols-2 gap-2">
             {activeProfiles.map((profile: any, idx: number) => {
               const isSelected = selectedPlayers.includes(profile.id);
@@ -623,9 +635,9 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
 
         {/* -------- SCHWIERIGKEIT -------- */}
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+          <SectionHeader>
             {t('partySetup.difficulty') || 'Schwierigkeit'}
-          </h3>
+          </SectionHeader>
           <div className="flex gap-2">
             {DIFFICULTIES.map((d) => {
               const isActive = difficulty === d.id;
@@ -643,9 +655,9 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
 
         {modeInfo.supportsCompanionApp && !modeInfo.forceInputMode ? (
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+            <SectionHeader>
               {t('unifiedSetup.inputMode') || 'Input-Modus'}
-            </h3>
+            </SectionHeader>
             <div className="flex gap-2">
               {(['microphone', 'companion', 'mixed'] as InputMode[]).map((m) => {
                 const icons: Record<InputMode, string> = { microphone: '\u{1F3A4}', companion: '\u{1F4F1}', mixed: '\u{1F3A4}\u{1F4F1}' };
@@ -670,9 +682,9 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         {/* -------- MODUS-SPEZIFISCHE EINSTELLUNGEN -------- */}
         {modeInfo.settings.length > 0 ? (
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+            <SectionHeader>
               {t('unifiedSetup.settings') || 'Einstellungen'}
-            </h3>
+            </SectionHeader>
             <div className="flex flex-col gap-2.5">
               {modeInfo.settings.map((setting) => {
                 const currentValue = settings[setting.key] ?? setting.defaultValue;
@@ -737,9 +749,9 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
 
         {/* -------- SONG-AUSWAHL -------- */}
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
+          <SectionHeader>
             {t('unifiedSetup.songSelection') || 'Song-Auswahl'}
-          </h3>
+          </SectionHeader>
           <div className="flex gap-2">
             {modeInfo.songSelectionOptions.map((opt) => {
               const cfg = SONG_SEL_CONFIG[opt];
@@ -754,7 +766,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                   disabled={!enabled}
                   className={'flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-semibold active:scale-95 transition-all border ' +
                     (enabled
-                      ? (isActive ? 'bg-purple-500/25 border-purple-400/40 text-purple-400' : 'bg-white/5 border-white/10 text-white/50')
+                      ? (isActive ? 'bg-purple-500/25 border-purple-400/40 text-purple-400 shadow-lg shadow-purple-500/25' : 'bg-white/5 border-white/10 text-white/50')
                       : 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed')}
                 >
                   <span>{cfg.icon}</span>
@@ -809,7 +821,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </p>
               {!canStart ? (
                 <p className="text-xs text-white/30 mt-0.5">
-                  {`Mindestens ${modeInfo.minPlayers} ${t('party.players') || 'Spieler'}`}
+                  {t('unifiedSetup.errorMinPlayers').replace('{n}', String(modeInfo.minPlayers))}
                 </p>
               ) : null}
               {canStart ? (

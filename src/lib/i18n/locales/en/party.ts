@@ -59,6 +59,8 @@ export const partyTranslations = {
     mic2: 'Microphone 2',
     mic: 'Microphone {n}',
     songTooShortCptm: 'Song too short for Companion Sing-A-Long.',
+    players: 'Players',
+    difficulty: 'Difficulty',
   },
 
   partyGameScreens: {
@@ -439,6 +441,10 @@ export const partyTranslations = {
     errorMaxPlayers: 'Maximum {n} players allowed',
     errorMinPlayers: 'Minimum {n} players required',
     companionBadge: 'Companion',
+    mic: 'Microphone',
+    companion: 'Companion',
+    mixed: 'Mixed',
+    settings: 'Settings',
   },
 
   // Extended descriptions for game modes
@@ -547,6 +553,11 @@ export const partyTranslations = {
     challengesDesc: 'Random challenges before each round',
     betting: 'Betting',
     bettingDesc: 'Audience can predict',
+    missingWordFrequency: 'Frequency',
+    missingGranularity: 'Hide Mode',
+    bestOf: 'Best of',
+    blindFrequency: 'Blind Frequency',
+    grandFinale: 'Grand Finale',
   },
 
   // Unified party mode starting screen (after "Ready to Play", before gameplay)

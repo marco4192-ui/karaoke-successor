@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Neemt audio en webcam op tijdens het zingen. Herhaling beschikbaar op het resultaatenscherm.',
   autoFullscreen: 'Automatisch volledig scherm',
   autoFullscreenDesc: 'Schakelt automatisch over naar volledig scherm bij het starten van een nummer.',
+  warningCues: 'Auditieve waarschuwingssignalen',
+  warningCuesDesc: 'Korte piep vóór blindgedeelten en verborgen woorden',
 },
 settingsGraphicSound: {
   performanceMode: 'Prestatiemodus',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'actief',
   secondsAgo: '{n}s geleden',
   minutesAgo: '{n}m geleden',
+  min: 'min',
+  hr: 'u',
+  errorLoading: 'Fout bij het laden van companions',
 },
 settingsAudioOutput: {
   title: 'Audio-uitvoer',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaxy Pop',
     themeMinimalLight: 'Minimaal Licht',
   },},
+appearance: {
+  themeNeonNights: 'Neon Nights',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Sunset Vibes',
+  themeOceanDeep: 'Ocean Deep',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Light',
+  animatedBg: 'Geanimeerde achtergrond',
+  bgVideo: 'Achtergrondvideo',
+  colorTheme: 'Kleurenthema',
+  lyricsSize: 'Tekstgrootte',
+  lyricsStyle: 'Tekststijl',
+  noteColorProfile: 'Notenkleuren',
+  noteColorProfileDesc: 'Kleurenpalet voor de notenbalken',
+  performanceMode: 'Prestatiemodus',
+  performanceModeDesc: 'Verminderde animaties voor zwakkere apparaten',
+  perfFull: 'Volledig',
+  perfLow: 'Verminderd',
+},
+
+gameplay: {
+  showScore: 'Score tonen',
+  showScoreDesc: 'Toon de score tijdens het zingen',
+  showCombo: 'Combo tonen',
+  showComboDesc: 'Toon combotellers tijdens het zingen',
+  showParticles: 'Deeltjes tonen',
+  showParticlesDesc: 'Deeltjeseffecten op de achtergrond',
+  replayEnabled: 'Replay inschakelen',
+  replayEnabledDesc: 'Neemt replays van je optredens op',
+  autoFullscreen: 'Automatisch volledig scherm',
+  autoFullscreenDesc: 'Ga automatisch naar volledig scherm wanneer een nummer begint',
+},
+
+graphicSound: {
+  masterVolume: 'Hoofdvolume',
+  previewVolume: 'Voorbeeldvolume',
+  micSensitivity: 'Microfoongevoeligheid',
+  youtubeQuality: 'YouTube-kwaliteit',
+},
+
+about: {
+  version: 'Versie',
+  description: 'Een moderne karaoke-ervaring met begeleiding, score en feestmodi.',
+},
+
 };

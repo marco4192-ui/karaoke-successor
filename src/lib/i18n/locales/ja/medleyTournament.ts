@@ -155,6 +155,9 @@ medley: {
   comboOnSong: '曲: {title}',
   noAudioAvailable: 'オーディオがありません',
   audioLoadFailed: 'オーディオの読み込みに失敗しました',
+  maxCombo: '最大コンボ',
+  notesHit: 'ヒットした音',
+  winner: '優勝',
 },
 tournament: {
   title: 'トーナメントモード',
@@ -263,6 +266,11 @@ tournament: {
   matchesVoted: 'マッチ',
   micAssignment: 'マイク割り当て',
   singsWith: 'と一緒に歌う',
+  songVoteHint: 'どの曲でこの決闘を戦う？',
+  songVoteKeyHint: '1〜3キーまたは曲をクリック。Escでランダム',
+  startingTitle: '位置について！',
+  mirrorWaiting: '次の試合を待機中…',
+  mirrorWaitingHint: 'ホストが大画面で次の決闘を選択します。',
 },
 rateMySong: {
   title: '⭐ レート・マイ・ソング',
@@ -478,5 +486,6 @@ rateMySong: {
     legend: 'レジェンド',
   },
   awards: '賞',
+  start: '歌い始める',
 },
 };

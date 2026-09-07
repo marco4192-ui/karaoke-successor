@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Tallentaa äänen ja webcamin laulamisen aikana. Uusinta saatavilla tulosnäytöllä.',
   autoFullscreen: 'Automaattinen kokonäyttö',
   autoFullscreenDesc: 'Siirtyy automaattisesti kokonäyttötilaan kun kappale alkaa.',
+  warningCues: 'Äänivaroitussignaalit',
+  warningCuesDesc: 'Lyhyt piippaus ennen sokeita osioita ja piilotettuja sanoja',
 },
 settingsGraphicSound: {
   performanceMode: 'Suorituskykytila',
@@ -427,6 +429,9 @@ settingsCompanion: {
   active: 'aktiivinen',
   secondsAgo: '{n}s sitten',
   minutesAgo: '{n}min sitten',
+  min: 'min',
+  hr: 't',
+  errorLoading: 'Virhe ladattaessa accompany-laitteita',
 },
 settingsAudioOutput: {
   title: 'Ääniulostulo',
@@ -527,4 +532,49 @@ webcamSettings: {
     themeGalaxyPop: 'Galaksi Pop',
     themeMinimalLight: 'Minimaali Vaalea',
   },},
+appearance: {
+  themeNeonNights: 'Neon Nights',
+  themeRetroArcade: 'Retro Arcade',
+  themeSunsetVibes: 'Sunset Vibes',
+  themeOceanDeep: 'Ocean Deep',
+  themeGalaxyPop: 'Galaxy Pop',
+  themeMinimalLight: 'Minimal Light',
+  animatedBg: 'Animoidut taustat',
+  bgVideo: 'Taustavideo',
+  colorTheme: 'Väriteema',
+  lyricsSize: 'Sanojen koko',
+  lyricsStyle: 'Sanojen tyyli',
+  noteColorProfile: 'Nuottivärit',
+  noteColorProfileDesc: 'Nuottipalkkien väripaletti',
+  performanceMode: 'Suorituskykytila',
+  performanceModeDesc: 'Vähemmän animaatioita heikommille laitteille',
+  perfFull: 'Täysi',
+  perfLow: 'Supistettu',
+},
+
+gameplay: {
+  showScore: 'Näytä pisteet',
+  showScoreDesc: 'Näytä pisteet laulaessa',
+  showCombo: 'Näytä combo',
+  showComboDesc: 'Näytä kombolaskurit laulaessa',
+  showParticles: 'Näytä partikkelit',
+  showParticlesDesc: 'Partikkeliefektit taustalla',
+  replayEnabled: 'Ota toisto käyttöön',
+  replayEnabledDesc: 'Tallentaa esiintymistesi toistot',
+  autoFullscreen: 'Automaattinen koko näyttö',
+  autoFullscreenDesc: 'Siirtyy automaattisesti koko näytölle kappaleen alkaessa',
+},
+
+graphicSound: {
+  masterVolume: 'Päävolume',
+  previewVolume: 'Esikuuntelun äänenvoimakkuus',
+  micSensitivity: 'Mikrofonin herkkyys',
+  youtubeQuality: 'YouTube-laatu',
+},
+
+about: {
+  version: 'Versio',
+  description: 'Moderni karaokekokemus säestyksellä, pisteytyksellä ja juhlatoiminnoilla.',
+},
+
 };

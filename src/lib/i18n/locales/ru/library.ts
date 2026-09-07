@@ -11,6 +11,9 @@ ai: {
   },
 },
 library: {
+  song: {
+    preview: 'Предпросмотр',
+  },
   title: 'Музыкальная библиотека',
   songsAvailable: 'доступных песен',
   loadingSongs: 'Загрузка песен...',
@@ -408,6 +411,12 @@ editor: {
     creating: 'Создание...',
     create: 'Создать песню',
     noNotesHint: 'Песня будет создана без нот. Используйте режим Tap (пробел во время воспроизведения) в редакторе для ручной вставки нот. Слоги из текста будут назначены автоматически.',
+    titleLabel: 'Название',
+    titlePlaceholder: 'Введите название...',
+    artistLabel: 'Исполнитель',
+    artistPlaceholder: 'Введите исполнителя...',
+    detectBpmTitle: 'Определить BPM',
+    selectAudioFirst: 'Сначала выберите аудиофайл',
   },
   songInfoTab: {
     title: 'Название',
@@ -622,4 +631,17 @@ importExtra: {
   videoAudio: 'Аудио из видео',
   dropFailed: 'Ошибка перетаскивания: {error}',
 },
+playlistQueueConfig: {
+  title: 'Плейлист в очередь',
+  desc: 'Настройте режим и игроков для каждой песни перед добавлением в очередь.',
+  single: 'Соло',
+  duel: 'Дуэль',
+  duet: 'Дуэт',
+  remove: 'Убрать',
+  empty: 'Песни не выбраны',
+  willAdd: 'Будут добавлены {count} из {total} песен',
+  cancel: 'Отмена',
+  addAll: 'Добавить {count} песен',
+},
+
 };

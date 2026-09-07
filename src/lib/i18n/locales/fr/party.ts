@@ -56,6 +56,8 @@ partySetup: {
   mic2: 'Microphone 2',
   mic: 'Microphone {n}',
   songTooShortCptm: 'Chanson trop courte pour Companion Sing-A-Long.',
+  players: 'Joueurs',
+  difficulty: 'Difficulté',
 },
 partyGameScreens: {
   micAssignment: 'Assignation de Microphone',
@@ -399,6 +401,15 @@ unifiedSetup: {
   errorMaxPlayers: 'Maximum {n} joueurs autorisés',
   errorMinPlayers: 'Minimum {n} joueurs requis',
   companionBadge: 'Companion',
+  readyToPlayButton: 'Prêt à jouer',
+  chooseSongFirst: '⚠️ Choisissez d\'abord une méthode de sélection (et une chanson)',
+  selectMethodHint: 'Choisir une méthode ne lance PAS le jeu — appuyez sur « Prêt à jouer » quand tout le monde est prêt.',
+  songSelectionLocked: 'La sélection de chansons se déverrouille à {n} joueurs — ajoutez d\'abord des joueurs',
+  clickSongToSelect: 'Cliquez sur une chanson pour la sélectionner pour votre fête — le jeu démarre avec « Prêt à jouer ».',
+  mic: 'Micro',
+  companion: 'Compagnon',
+  mixed: 'Mixte',
+  settings: 'Réglages',
 },
 extendedDesc: {
   passTheMic: '🎵 La chanson est divisée en segments,🔄 Le chanteur change après chaque segment,🏆 Le score d\'équipe est totalisé à la fin',
@@ -496,6 +507,11 @@ modeSettings: {
   challengesDesc: 'Défis aléatoires avant chaque tour',
   betting: 'Paris',
   bettingDesc: 'Le public peut prédire',
+  missingWordFrequency: 'Fréquence',
+  missingGranularity: 'Mode de Masquage',
+  bestOf: 'Au meilleur de',
+  blindFrequency: 'Fréquence Aveugle',
+  grandFinale: 'Grande Finale',
 },
 gameModes: {
   passTheMic: {
@@ -535,4 +551,17 @@ gameModes: {
     description: 'Chante une chanson et laisse tes amis noter ta performance !',
   },
 },
+partyStarting: {
+  song: 'Chanson',
+  participants: '{n} participants',
+  startPlayer: 'COMMENCE À CHANTER',
+  startsFirst: 'Chante en premier',
+  startPlayerHint: 'Ce joueur chante le premier segment',
+  companion: '📱 App compagnon',
+  startButton: '🎤 Commencer à chanter !',
+  hint: 'Les chanteurs peuvent se mettre en place — démarrez quand tout le monde est prêt.',
+  enterHint: 'ou appuyez sur Entrée',
+  minutes: 'min',
+},
+
 };
