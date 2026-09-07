@@ -296,7 +296,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       // Route to mode-specific intro screen based on current screen
       const effectiveScreen = screen || currentScreen;
       if (effectiveScreen === 'medley-game') return 'medley-intro';
-      if (effectiveScreen === 'battle-royale-game' || effectiveScreen === 'tournament-game') return 'battle-intro';
+      if (effectiveScreen === 'battle-royale-game') return 'battle-intro';
+      if (effectiveScreen === 'tournament-game') return 'tournament-intro';
       if (effectiveScreen === 'missing-words-game' || effectiveScreen === 'blind-game') return 'competitive-intro';
       if (effectiveScreen === 'rate-my-song-game') return 'rate-my-song-intro';
       // Default: PTM/CPTM intro

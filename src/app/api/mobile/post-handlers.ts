@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteCommand } from './mobile-types';
+import { mobileEvents, EVENTS } from '@/lib/socketio-events';
 import {
   mobileClients,
   connectionCodes,
@@ -164,17 +165,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         mutableState.gameState = { ...mutableState.gameState, ...gsPayload };
 
         // Notify Socket.IO server to push gamestate to all companions
-        try {
-          const { mobileEvents, EVENTS } = require('@/lib/socketio-events');
-          mobileEvents.emit(EVENTS.GAMESTATE_UPDATE, {
-            gameState: {
-              ...mutableState.gameState,
-              queueLength: mutableState.songQueue.filter(q => q.status === 'pending').length,
-            },
-          });
-        } catch {
-          // Socket.IO events module not available (e.g. during build)
-        }
+        mobileEvents.emit(EVENTS.GAMESTATE_UPDATE, {
+          gameState: {
+            ...mutableState.gameState,
+            queueLength: mutableState.songQueue.filter(q => q.status === 'pending').length,
+          },
+        });
 
         // If song ended, notify all clients and clear pitch data
         if (gsPayload.songEnded) {
@@ -664,9 +660,14 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         };
         
         mutableState.remoteControlState.pendingCommands.push(newCommand);
-        
-        return Response.json({ 
-          success: true, 
+
+        // Forward to the desktop host via Socket.IO — the desktop stops
+        // HTTP-polling getcommands while its WebSocket is connected, so the
+        // queued command would otherwise sit unseen in the pending queue.
+        mobileEvents.emit(EVENTS.REMOTE_COMMAND, { command: newCommand });
+
+        return Response.json({
+          success: true,
           message: 'Command queued',
           command: newCommand,
         });

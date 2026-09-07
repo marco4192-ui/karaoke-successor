@@ -121,106 +121,141 @@ export const tournamentVoteRegistry: Set<string> = new Set();
 
 
 // ===================== GLOBAL STATE =====================
-// Shared state for mobile clients (in-memory, resets on server restart)
-export const mobileClients = new Map<string, MobileClient>();
-export const connectionCodes = new Map<string, string>(); // code -> clientId
-export const profileToClient = new Map<string, string>(); // profileId -> clientId (for duplicate detection)
+// Shared state for mobile clients (in-memory, resets on server restart).
+//
+// NOTE: Next.js dev mode (and standalone builds) load route handlers and the
+// custom server (server.ts → socketio-server) through SEPARATE module graphs.
+// Plain module-level state would exist once per graph — the Socket.IO server
+// would push STALE state to companions while the API routes keep updating
+// their own copy. Anchoring the container on globalThis guarantees ONE
+// shared instance across all module graphs in the same Node.js process.
+
+/** Mutable state container — allows importing modules to reassign properties */
+function createMutableState() {
+  return {
+    // Game state to sync to mobile clients
+    gameState: {
+      currentSong: null,
+      isPlaying: false,
+      currentTime: 0,
+      songEnded: false,
+      isAdPlaying: false,
+      gameMode: null,
+      singalongTurn: null,
+      cptmTurn: null,
+      tournamentMatchId: null,
+      companionScores: null,
+      currentScreen: undefined,
+      partyGameMode: null,
+    } as MobileGameState,
+
+    // Queue for song requests from mobile clients
+    songQueue: [] as QueueItem[],
+
+    // Jukebox wishlist
+    jukeboxWishlist: [] as QueueItem[],
+
+    // Game results for social features
+    lastGameResults: null as GameResults | null,
+
+    // Remote Control State - Only ONE client can have control at a time
+    remoteControlState: {
+      lockedBy: null,
+      lockedByName: null,
+      lockedAt: null,
+      pendingCommands: [],
+    } as RemoteControlState,
+
+    // Song Library - Cached songs from main app for companion clients
+    songLibrary: [] as SongSummary[],
+
+    // Host Profiles - Characters from main app for companion to choose from
+    // (Cannot use localStorage in API route - must store in server memory)
+    hostProfiles: [] as HostProfile[],
+
+    // #10 Tournament crowd votes from companion spectators
+    tournamentCrowdVotes: [] as Array<{
+      clientId: string;
+      profileId: string | null;
+      profileName: string;
+      matchId: string;
+      playerSide: 1 | 2;
+      timestamp: number;
+    }>,
+
+    // F19: Pending duel/duet requests — stored so the partner's companion can poll
+    pendingDuelRequests: [] as Array<{
+      fromClientId: string;
+      fromProfileName: string;
+      targetClientId: string;
+      songTitle: string;
+      gameMode: 'duel' | 'duet';
+      timestamp: number;
+    }>,
+
+    // F4: In-game chat messages between companion and host
+    // challenge field: when set, this message is a song challenge with accept button
+    chatMessages: [] as Array<{
+      id: string;
+      from: string;
+      fromName: string;
+      text: string;
+      timestamp: number;
+      isHost: boolean;
+      challenge?: {
+        songId: string;
+        songTitle: string;
+        songArtist: string;
+        challengerClientId: string;
+        challengerName: string;
+        accepted: boolean;
+        acceptedBy: string | null;
+        acceptedByName: string | null;
+      };
+    }>,
+
+    // Companion Playlist-Sync: Desktop speichert Playlists hier,
+    // damit Companion sie lesen kann (localStorage nicht im API-Route verfuegbar)
+    playlists: [] as Array<{ id: string; name: string; isSystem?: boolean }>,
+  };
+}
+
+type MutableState = ReturnType<typeof createMutableState>;
+
+interface MobileSharedState {
+  mobileClients: Map<string, MobileClient>;
+  connectionCodes: Map<string, string>;
+  profileToClient: Map<string, string>;
+  persistentProfileByIp: Map<string, { profile: MobileProfile; storedAt: number }>;
+  latestPitchData: Map<string, PitchData>;
+  mutableState: MutableState;
+}
+
+const globalWithShared = globalThis as typeof globalThis & { __karaokeMobileShared?: MobileSharedState };
+const shared: MobileSharedState = globalWithShared.__karaokeMobileShared ?? {
+  mobileClients: new Map<string, MobileClient>(),
+  connectionCodes: new Map<string, string>(),
+  profileToClient: new Map<string, string>(),
+  persistentProfileByIp: new Map<string, { profile: MobileProfile; storedAt: number }>(),
+  latestPitchData: new Map<string, PitchData>(),
+  mutableState: createMutableState(),
+};
+globalWithShared.__karaokeMobileShared = shared;
+
+export const mobileClients: Map<string, MobileClient> = shared.mobileClients;
+export const connectionCodes: Map<string, string> = shared.connectionCodes; // code -> clientId
+export const profileToClient: Map<string, string> = shared.profileToClient; // profileId -> clientId (for duplicate detection)
 
 // Persistent profile by IP — survives client cleanup so profiles can be restored
 // after long standby periods where the server cleaned up the client session.
 // Keyed by IP, stores the last known profile for each IP address.
-export const persistentProfileByIp = new Map<string, { profile: MobileProfile; storedAt: number }>(); // ip -> { profile, storedAt }
+export const persistentProfileByIp: Map<string, { profile: MobileProfile; storedAt: number }> = shared.persistentProfileByIp;
 
 // Latest pitch data from all clients (for PC to poll)
-export const latestPitchData: Map<string, PitchData> = new Map();
+export const latestPitchData: Map<string, PitchData> = shared.latestPitchData;
 
-// Mutable state container — allows importing modules to reassign properties
-export const mutableState = {
-  // Game state to sync to mobile clients
-  gameState: {
-    currentSong: null,
-    isPlaying: false,
-    currentTime: 0,
-    songEnded: false,
-    isAdPlaying: false,
-    gameMode: null,
-    singalongTurn: null,
-    cptmTurn: null,
-    tournamentMatchId: null,
-    companionScores: null,
-    currentScreen: undefined,
-    partyGameMode: null,
-  } as MobileGameState,
-
-  // Queue for song requests from mobile clients
-  songQueue: [] as QueueItem[],
-
-  // Jukebox wishlist
-  jukeboxWishlist: [] as QueueItem[],
-
-  // Game results for social features
-  lastGameResults: null as GameResults | null,
-
-  // Remote Control State - Only ONE client can have control at a time
-  remoteControlState: {
-    lockedBy: null,
-    lockedByName: null,
-    lockedAt: null,
-    pendingCommands: [],
-  } as RemoteControlState,
-
-  // Song Library - Cached songs from main app for companion clients
-  songLibrary: [] as SongSummary[],
-
-  // Host Profiles - Characters from main app for companion to choose from
-  // (Cannot use localStorage in API route - must store in server memory)
-  hostProfiles: [] as HostProfile[],
-
-  // #10 Tournament crowd votes from companion spectators
-  tournamentCrowdVotes: [] as Array<{
-    clientId: string;
-    profileId: string | null;
-    profileName: string;
-    matchId: string;
-    playerSide: 1 | 2;
-    timestamp: number;
-  }>,
-
-  // F19: Pending duel/duet requests — stored so the partner's companion can poll
-  pendingDuelRequests: [] as Array<{
-    fromClientId: string;
-    fromProfileName: string;
-    targetClientId: string;
-    songTitle: string;
-    gameMode: 'duel' | 'duet';
-    timestamp: number;
-  }>,
-
-  // F4: In-game chat messages between companion and host
-  // challenge field: when set, this message is a song challenge with accept button
-  chatMessages: [] as Array<{
-    id: string;
-    from: string;
-    fromName: string;
-    text: string;
-    timestamp: number;
-    isHost: boolean;
-    challenge?: {
-      songId: string;
-      songTitle: string;
-      songArtist: string;
-      challengerClientId: string;
-      challengerName: string;
-      accepted: boolean;
-      acceptedBy: string | null;
-      acceptedByName: string | null;
-    };
-  }>,
-
-  // Companion Playlist-Sync: Desktop speichert Playlists hier,
-  // damit Companion sie lesen kann (localStorage nicht im API-Route verfuegbar)
-  playlists: [] as Array<{ id: string; name: string; isSystem?: boolean }>,
-};
+// Shared mutable state — one instance across API routes + Socket.IO server
+export const mutableState: MutableState = shared.mutableState;
 
 export function generateConnectionCode(): string {
   return generateCode(4, COMPANION_CODE_CHARS);

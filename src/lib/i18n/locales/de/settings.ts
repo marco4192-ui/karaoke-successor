@@ -109,6 +109,8 @@ settingsGameplay: {
   replayDesc: 'Nimmt Audio und Webcam während des Singens auf. Replay auf dem Ergebnisse-Screen abspielbar.',
   autoFullscreen: 'Auto-Fullscreen',
   autoFullscreenDesc: 'Wechselt beim Spielstart automatisch in den Fullscreen-Modus.',
+  warningCues: 'Warn-Sound-Cues',
+  warningCuesDesc: 'Kurze Signaltöne vor Blind-/Wort-ausblenden-Passagen (Blind Karaoke & Missing Words).',
 },
 settingsGraphicSound: {
   performanceMode: 'Leistungsmodus',

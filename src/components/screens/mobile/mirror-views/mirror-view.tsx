@@ -29,6 +29,7 @@ import { MirrorAchievementsLite } from './mirror-achievements-lite';
 import { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 import { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
 import { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
+import { MirrorTournamentIntroLite } from './mirror-tournament-intro-lite';
 import { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';
 import { MirrorRateMySongIntroLite } from './mirror-rate-my-song-intro-lite';
 import { MirrorProfileLite } from './mirror-profile-lite';
@@ -450,12 +451,27 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
         </div>
       );
 
-    // ---------- Battle Royale / Tournament Intro ----------
+    // ---------- Battle Royale Intro ----------
     case 'battle-intro':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="battle-intro">
           <MirrorBattleIntroLite
+            gameState={gameState}
+            profileName={profileName}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Tournament Starting Screen (Next Match) ----------
+    case 'tournament-intro':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="tournament-intro">
+          <MirrorTournamentIntroLite
             gameState={gameState}
             profileName={profileName}
             onNavigate={onNavigate}

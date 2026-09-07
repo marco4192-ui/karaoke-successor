@@ -271,6 +271,8 @@ export const medleyTournamentTranslations = {
     songVoteDesc: 'Players choose from 3 suggested songs before each match',
     songVoteTitle: 'Pick a Song!',
     songVoteSkip: 'Choose random instead',
+    songVoteHint: 'Which song should decide this duel?',
+    songVoteKeyHint: 'Tip: press 1–3 to pick a song · Esc chooses randomly',
     // #9 Seeding
     seedingMode: 'Seeding',
     seeding: 'Seeding',
@@ -287,6 +289,8 @@ export const medleyTournamentTranslations = {
     micAssignment: 'Microphone Assignment',
     singsWith: 'sings with',
     startingTitle: 'Next Match',
+    mirrorWaiting: 'Waiting for the next match…',
+    mirrorWaitingHint: 'The host picks the next duel on the big screen.',
   },
 
   rateMySong: {

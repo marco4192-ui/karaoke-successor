@@ -284,6 +284,15 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     io!.to('companions').emit('pause-state', data);
   });
 
+  // HTTP-POSTed remote commands (e.g. mirror-view start buttons) → desktop host.
+  // The desktop only polls `getcommands` while its WebSocket is DOWN; when the
+  // socket is up, this forward is the only way HTTP commands reach it.
+  mobileEvents.on(EVENTS.REMOTE_COMMAND, (data: { command: { type: string; data?: unknown; timestamp: number; fromClientId: string; fromClientName: string } }) => {
+    if (hostSocket) {
+      hostSocket.emit('command', data.command);
+    }
+  });
+
   console.log('[Socket.IO] Server initialized on path /socket.io');
   return io;
 }

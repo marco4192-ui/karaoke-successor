@@ -32,6 +32,7 @@ export type MirrorScreenId =
   | 'ptm-intro'
   | 'medley-intro'
   | 'battle-intro'
+  | 'tournament-intro'
   | 'competitive-intro'
   | 'rate-my-song-intro'
   | 'profile';  // character/profile management
@@ -170,9 +171,14 @@ export interface GameState {
     isMedley?: boolean;
     medleySnippetCount?: number;
     roundNumber?: number;
+    totalRounds?: number;
     sharedMicName?: string;
     mediaLoaded?: boolean;
     partyGameMode?: string;
+    // Tournament duel: the opponent of the start player (player 2)
+    vsPlayerName?: string;
+    vsPlayerAvatar?: string;
+    vsPlayerColor?: string;
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];

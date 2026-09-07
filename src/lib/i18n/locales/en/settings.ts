@@ -112,6 +112,8 @@ export const settingsTranslations = {
     replayDesc: 'Records audio and webcam while singing. Replay available on the results screen.',
     autoFullscreen: 'Auto-Fullscreen',
     autoFullscreenDesc: 'Automatically enters fullscreen mode when starting a song.',
+    warningCues: 'Warning Sound Cues',
+    warningCuesDesc: 'Short beeps before hidden-word/blind sections start (Blind Karaoke & Missing Words).',
   },
 
   settingsGraphicSound: {

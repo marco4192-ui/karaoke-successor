@@ -11,7 +11,15 @@
  */
 import { EventEmitter } from 'events';
 
-export const mobileEvents = new EventEmitter();
+// NOTE: Next.js dev mode (and standalone builds) load route handlers and the
+// custom server (server.ts → socketio-server) through SEPARATE module graphs.
+// A plain `new EventEmitter()` here would create one instance per graph, and
+// events emitted from API routes would never reach the Socket.IO server.
+// Storing the instance on globalThis guarantees a single shared bus.
+const globalWithBus = globalThis as typeof globalThis & { __karaokeMobileEvents?: EventEmitter };
+
+export const mobileEvents: EventEmitter = globalWithBus.__karaokeMobileEvents ?? new EventEmitter();
+globalWithBus.__karaokeMobileEvents = mobileEvents;
 
 // Increase max listeners — with 50 companions each potentially subscribing,
 // the default limit of 10 would trigger warnings.
@@ -40,6 +48,14 @@ export interface CompanionCommandEvent {
   };
 }
 
+/** Emitted when a Companion sends a remote control command via HTTP POST
+ *  (remote_command) — the Socket.IO server forwards it to the desktop host
+ *  so the command arrives instantly even when the desktop relies on its
+ *  WebSocket connection (it stops HTTP-polling getcommands while connected). */
+export interface RemoteCommandEvent {
+  command: CompanionCommandEvent['command'];
+}
+
 /** Emitted when a Companion sends pitch data via WebSocket */
 export interface CompanionPitchEvent {
   clientId: string;
@@ -66,4 +82,5 @@ export const EVENTS = {
   DESKTOP_DIALOG: 'desktop-dialog',
   PARTY_LEAVE: 'party-leave',
   PAUSE_STATE: 'pause-state',
+  REMOTE_COMMAND: 'remote-command',
 } as const;

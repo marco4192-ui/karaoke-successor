@@ -201,7 +201,13 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       const updated = {
         ...current,
         ptmPhase: data.phase as GameState['ptmPhase'],
-        ptmIntroData: data.introData as GameState['ptmIntroData'],
+        // Preserve the last intro data when the event doesn't carry one —
+        // some phase events (e.g. the tournament starting screen) only signal
+        // the phase; the full data arrives via the periodic gamestate push.
+        // Clearing it here would leave companion mirrors data-less.
+        ptmIntroData: data.introData !== undefined
+          ? (data.introData as GameState['ptmIntroData'])
+          : (current.ptmIntroData ?? null),
       };
       gameStateRef.current = updated;
       setGameState(updated);

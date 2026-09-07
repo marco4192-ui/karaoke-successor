@@ -250,6 +250,8 @@ tournament: {
   songVoteDesc: 'Spieler wählen aus 3 vorgeschlagenen Songs vor jedem Match',
   songVoteTitle: 'Wählt einen Song!',
   songVoteSkip: 'Stattdessen zufällig wählen',
+  songVoteHint: 'Welcher Song soll dieses Duell entscheiden?',
+  songVoteKeyHint: 'Tipp: Taste 1–3 zum Auswählen · Esc wählt zufällig',
   seedingMode: 'Setzung',
   seeding: 'Setzung',
   seedingRandom: '🎲 Zufällig',
@@ -264,6 +266,8 @@ tournament: {
   micAssignment: 'Mikrofon-Zuweisung',
   startingTitle: 'Nächstes Match',
   singsWith: 'singt mit',
+  mirrorWaiting: 'Warten auf das nächste Match…',
+  mirrorWaitingHint: 'Der Host wählt das nächste Duell auf dem großen Bildschirm.',
 },
 rateMySong: {
   title: '⭐ Bewerte meinen Song',

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
@@ -16,6 +15,7 @@ import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
 import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
 import { CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { PartyStartingScreen } from '@/components/game/party-starting-screen';
+import { TournamentSongVoteOverlay } from '@/components/game/tournament-song-vote-overlay';
 import { RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
@@ -328,55 +328,27 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Tournament Song Voting Overlay (#8) */}
+      {/* Tournament Song Voting Overlay (#8) — unified design (VS header, animated cards, keyboard picking) */}
       {tournamentVotingActive && party.tournamentVotingSongs.length > 0 && party.tournamentVotingMatch && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-pink-500/30 rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">🗳️</div>
-              <h2 className="text-xl font-bold text-white">{t('tournament.songVoteTitle')}</h2>
-              <p className="text-sm text-white/60 mt-1">
-                {party.tournamentVotingMatch.player1?.name} {t('tournament.vs')} {party.tournamentVotingMatch.player2?.name}
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {party.tournamentVotingSongs.map((song) => (
-                <div
-                  key={song.id}
-                  onClick={() => {
-                    // Mark as voted and proceed to mic overlay
-                    setTournamentVotingActive(false);
-                    party.setTournamentVotingSongs([]);
-                    party.setTournamentVotedSong(song);
-                    party.addTournamentUsedSongId(song.id);
-                    startMatchWithMicOverlay(party.tournamentVotingMatch!, song);
-                  }}
-                  className="bg-white/5 hover:bg-white/15 border border-white/10 hover:border-pink-500/50 rounded-xl p-3 cursor-pointer transition-all hover:scale-[1.02]"
-                >
-                  {song.coverImage ? (
-                    <img src={song.coverImage} alt={song.title} className="w-full aspect-square object-cover rounded-lg mb-2" />
-                  ) : (
-                    <div className="w-full aspect-square bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-lg mb-2 flex items-center justify-center text-3xl">🎵</div>
-                  )}
-                  <div className="font-medium text-sm text-white truncate">{song.title}</div>
-                  <div className="text-xs text-white/50 truncate">{song.artist}</div>
-                </div>
-              ))}
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setTournamentVotingActive(false);
-                party.setTournamentVotingSongs([]);
-                party.setTournamentVotingMatch(null);
-              }}
-              className="w-full text-white/40 hover:text-white/70"
-              data-testid="party-song-vote-skip-button"
-            >
-              {t('tournament.songVoteSkip')}
-            </Button>
-          </div>
-        </div>
+        <TournamentSongVoteOverlay
+          match={party.tournamentVotingMatch}
+          roundLabel={t('tournament.roundOfOf')
+            .replace('{n}', String(party.tournamentVotingMatch.round))
+            .replace('{m}', String(party.tournamentBracket?.totalRounds ?? 1))}
+          songs={party.tournamentVotingSongs}
+          onPick={(song) => {
+            setTournamentVotingActive(false);
+            party.setTournamentVotingSongs([]);
+            party.setTournamentVotedSong(song);
+            party.addTournamentUsedSongId(song.id);
+            startMatchWithMicOverlay(party.tournamentVotingMatch!, song);
+          }}
+          onSkip={() => {
+            setTournamentVotingActive(false);
+            party.setTournamentVotingSongs([]);
+            party.setTournamentVotingMatch(null);
+          }}
+        />
       )}
 
       {/* Tournament Game Screen */}

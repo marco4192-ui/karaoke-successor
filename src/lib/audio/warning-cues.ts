@@ -11,8 +11,20 @@
 //     blind          : C5 → E5  (darker, matches the purple banner)
 //     missing-words  : E5 → A5  (brighter, matches the amber banner)
 //   active (section started): single soft low beep + faint fifth — "you're in it"
+//
+// Users can disable the cues in Settings → Gameplay ("Warning Sound Cues").
+// The setting is read on every play call (localStorage reads are cheap and
+// this fires at most a few times per song), so toggling mid-song applies
+// immediately without any cache invalidation wiring.
+
+import { StorageKeys, getBool } from '@/lib/storage';
 
 export type WarningCueKind = 'blind' | 'missing-words';
+
+/** True when the audible warning cues are enabled (default: on). */
+export function areWarningCuesEnabled(): boolean {
+  return getBool(StorageKeys.WARNING_CUES, true);
+}
 
 let sharedCtx: AudioContext | null = null;
 
@@ -57,6 +69,7 @@ function playTone(ctx: AudioContext, freq: number, startOffsetSec: number, durat
 
 /** Play the "blind/hidden section starts in N seconds" attention cue. */
 export function playWarningCountdownCue(kind: WarningCueKind): void {
+  if (!areWarningCuesEnabled()) return;
   const ctx = getContext();
   if (!ctx) return;
   const [f1, f2] = kind === 'blind' ? [523.25, 659.25] : [659.25, 880.0];
@@ -66,6 +79,7 @@ export function playWarningCountdownCue(kind: WarningCueKind): void {
 
 /** Play the "section is now active" cue (softer, lower). */
 export function playSectionActiveCue(kind: WarningCueKind): void {
+  if (!areWarningCuesEnabled()) return;
   const ctx = getContext();
   if (!ctx) return;
   const base = kind === 'blind' ? 311.13 : 415.30; // Eb4 / Ab4

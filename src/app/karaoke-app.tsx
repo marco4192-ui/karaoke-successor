@@ -772,9 +772,13 @@ export default function KaraokeZERO() {
           isMedley?: boolean;
           medleySnippetCount?: number;
           roundNumber?: number;
+          totalRounds?: number;
           sharedMicName?: string;
           mediaLoaded?: boolean;
           partyGameMode?: string;
+          vsPlayerName?: string;
+          vsPlayerAvatar?: string;
+          vsPlayerColor?: string;
         } | null;
         let introData: PartyIntroData = null;
 
@@ -823,6 +827,27 @@ export default function KaraokeZERO() {
               ...base,
               playerCount: partyNow.rateMySongPlayerIds?.length || undefined,
             };
+          } else if (screen === 'tournament-game') {
+            // Tournament: show BOTH duel players + the voted song (if any).
+            // Only build data when a match is actually pending
+            // (currentTournamentMatch is null while the bracket is on screen).
+            const match = partyNow.currentTournamentMatch;
+            if (match?.player1 && match?.player2) {
+              introData = {
+                ...base,
+                songTitle: partyNow.tournamentVotedSong?.title || undefined,
+                songArtist: partyNow.tournamentVotedSong?.artist || undefined,
+                startPlayerName: match.player1.name,
+                startPlayerAvatar: match.player1.avatar || undefined,
+                startPlayerColor: match.player1.color || undefined,
+                vsPlayerName: match.player2.name,
+                vsPlayerAvatar: match.player2.avatar || undefined,
+                vsPlayerColor: match.player2.color || undefined,
+                playerCount: 2,
+                roundNumber: partyNow.tournamentBracket?.currentRound || undefined,
+                totalRounds: partyNow.tournamentBracket?.totalRounds || undefined,
+              };
+            }
           } else {
             // Generic competitive modes (missing-words, blind, tournament)
             introData = {

@@ -41,6 +41,7 @@ export function GameplayTab({ tx, setHasChanges }: GameplayTabProps) {
   const [showCombo, setShowCombo] = useState(true);
   const [replayEnabled, setReplayEnabled] = useState(true);
   const [autoFullscreen, setAutoFullscreen] = useState(false);
+  const [warningCues, setWarningCues] = useState(true);
 
   useEffect(() => {
     setShowScore(getBool(StorageKeys.SHOW_SCORE, true));
@@ -48,6 +49,7 @@ export function GameplayTab({ tx, setHasChanges }: GameplayTabProps) {
     setShowCombo(getBool(StorageKeys.SHOW_COMBO, true));
     setReplayEnabled(getJson<boolean>(StorageKeys.REPLAY_ENABLED, true));
     setAutoFullscreen(getBool(StorageKeys.AUTO_FULLSCREEN, false));
+    setWarningCues(getBool(StorageKeys.WARNING_CUES, true));
   }, []);
 
   const saveSetting = (key: string, value: boolean | string) => {
@@ -100,6 +102,12 @@ export function GameplayTab({ tx, setHasChanges }: GameplayTabProps) {
             description={tx('settingsGameplay.autoFullscreenDesc')}
             value={autoFullscreen}
             onToggle={(v) => { setAutoFullscreen(v); saveSetting(StorageKeys.AUTO_FULLSCREEN, v); }}
+          />
+          <SettingToggle
+            label={tx('settingsGameplay.warningCues')}
+            description={tx('settingsGameplay.warningCuesDesc')}
+            value={warningCues}
+            onToggle={(v) => { setWarningCues(v); saveSetting(StorageKeys.WARNING_CUES, v); }}
           />
         </CardContent>
       </Card>
