@@ -95,7 +95,7 @@ export function PtmHudControls({
       // Pause triggered (button click or Escape) — toggle to paused
       onTogglePause();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pauseDialogAction, isPlaying, onTogglePause]);
 
   return (

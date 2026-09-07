@@ -215,7 +215,7 @@ export function useCanvasRenderer({
     let animationId: number;
 
     if (!isRecording) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
+       
       drawFrame(performance.now());
       return undefined;
     }

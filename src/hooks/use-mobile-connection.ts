@@ -148,6 +148,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     });
 
     socket.on('connect', () => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Companion] Connected:', socket.id);
       socketConnectedRef.current = true;
       // Register as companion with our clientId
@@ -155,6 +156,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     });
 
     socket.on('disconnect', (reason) => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Companion] Disconnected:', reason);
       socketConnectedRef.current = false;
     });
@@ -217,6 +219,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     });
 
     socket.on('connect_error', (err) => {
+      // eslint-disable-next-line no-console
       console.debug('[Socket.IO Companion] Connection error:', err.message);
     });
 
@@ -246,6 +249,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           processGameStateUpdate(data.gameState);
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[useMobileConnection]: fallback game state sync failed', error);
       }
     }, 3000); // 3s fallback — much slower than before, only when WS is down
@@ -333,6 +337,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'profile', clientId: newClientId, payload: profileToRestore }),
               }).catch(() => {});
+            // eslint-disable-next-line no-console
             } catch (error) { console.debug('[useMobileConnection]: profile restore failed', error); }
           }
         }
@@ -367,6 +372,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         setItem(StorageKeys.CONNECTION_CODE, data.connectionCode);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[MobileClient] Error syncing profile:', error);
     }
   }, [clientId]);
@@ -395,6 +401,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       if (currentClientId) {
         await fetch(`/api/mobile?action=disconnect&clientId=${currentClientId}`);
       }
+    // eslint-disable-next-line no-console
     } catch (error) { console.debug('[useMobileConnection]: disconnect API call failed', error); }
     // Clear local state
     setClientId(null);

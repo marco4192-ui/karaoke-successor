@@ -344,6 +344,7 @@ export function useJukebox(refs?: {
         }
       } catch (error) {
         // #25 FIX: Log instead of ignoring
+        // eslint-disable-next-line no-console
         console.debug('[useJukebox] Wishlist poll failed:', error);
       }
     };
@@ -351,7 +352,7 @@ export function useJukebox(refs?: {
     const interval = setInterval(pollWishlist, 5000);
     return () => { active = false; clearInterval(interval); };
   // #2 FIX: Only run once when songs are first loaded
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []); // Intentionally empty — songsRef is always current
 
   // ==================== PLAY NEXT ====================
@@ -389,6 +390,7 @@ export function useJukebox(refs?: {
       setCurrentTime(0);
       setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useJukebox] playNext failed:', error);
     } finally {
       setIsLoading(false);
@@ -419,6 +421,7 @@ export function useJukebox(refs?: {
       setCurrentTime(0);
       setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useJukebox] playPrevious failed:', error);
     } finally {
       setIsLoading(false);
@@ -461,6 +464,7 @@ export function useJukebox(refs?: {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useJukebox] startJukebox failed:', error);
     } finally {
       setIsLoading(false);

@@ -539,6 +539,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       });
   }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[mobile GET] Internal error:', error);
     return Response.json(
       { success: false, message: 'Internal error' },

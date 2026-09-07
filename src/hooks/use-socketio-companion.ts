@@ -43,6 +43,7 @@ export function useSocketIOCompanion(clientId: string | null) {
     });
 
     socket.on('connect', () => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Companion] Connected:', socket.id);
       setIsConnected(true);
       // Register as companion with our clientId
@@ -50,6 +51,7 @@ export function useSocketIOCompanion(clientId: string | null) {
     });
 
     socket.on('disconnect', (reason) => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Companion] Disconnected:', reason);
       setIsConnected(false);
     });
@@ -97,6 +99,7 @@ export function useSocketIOCompanion(clientId: string | null) {
     });
 
     socket.on('connect_error', (err) => {
+      // eslint-disable-next-line no-console
       console.debug('[Socket.IO Companion] Connection error:', err.message);
     });
 

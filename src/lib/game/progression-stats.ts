@@ -128,6 +128,7 @@ export function getExtendedStats(): ExtendedPlayerStats {
     try {
       return { ...getDefaultStats(), ...JSON.parse(stored) };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[player-progression]: failed to load extended stats, using defaults', error);
       return getDefaultStats();
     }

@@ -71,6 +71,7 @@ export function useMobileGameSync(
         setLastSyncError(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Network error';
+        // eslint-disable-next-line no-console
         console.warn('Game state sync failed:', err);
         clearSyncError(`Game state sync failed: ${msg}`);
       }

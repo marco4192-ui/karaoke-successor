@@ -80,13 +80,6 @@ export function LyricLineDisplay({
     };
   }, []);
 
-  // Calculate note fill level based on performance (for fill-level mode)
-  const getNoteFillLevel = (noteId: string): number => {
-    const samples = notePerformance.get(noteId) || [];
-    if (samples.length === 0) return 0;
-    return samples.filter(s => s.hit).length / samples.length;
-  };
-
   // Style configurations - each word can be: sung, active, or upcoming
   const getStyleClasses = (isSung: boolean, isActive: boolean) => {
     switch (lyricsStyle) {
@@ -222,9 +215,9 @@ export function LyricLineDisplay({
         const { textClass, fontClass, shadowStyle } = getStyleClasses(isSung, isActive);
 
         // Apply note display mode styling - these are ADDITIVE to the base styles
-        let finalTextClass = textClass;
-        let finalShadowStyle = { ...shadowStyle };
-        let fillClipStyle: React.CSSProperties = {};
+        const finalTextClass = textClass;
+        const finalShadowStyle = { ...shadowStyle };
+        const fillClipStyle: React.CSSProperties = {};
 
 
 

@@ -175,6 +175,7 @@ async function findFileByScanningParentFolder(
       try {
         entries = await nativeReadDir(parentDir.replace(/\//g, '\\'));
       } catch (error) {
+          // eslint-disable-next-line no-console
           console.debug('[tauri-file-storage]: failed to list directory with backslashes', error);
           return null;
       }

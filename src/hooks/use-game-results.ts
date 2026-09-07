@@ -104,7 +104,7 @@ export function useGameResults(options: UseGameResultsOptions) {
         },
       }),
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- players read via ref; gameMode changes should not restart the init effect (handled separately)
+   
   }, [song, setResults, isDuetMode, p2ScoringState, gameMode, playbackRate, comebackRef]);
 
   return { generateResults, playersRef, p1PerfectNotesCountRef };

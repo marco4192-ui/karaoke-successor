@@ -19,6 +19,7 @@ export function useCompanionConnections(enabled: boolean, pollMs = 2000): Set<st
 
   useEffect(() => {
     if (!enabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync (clear stale ids when disabled)
       setConnectedProfileIds(new Set());
       return;
     }

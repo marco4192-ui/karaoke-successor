@@ -102,7 +102,9 @@ export function PtmTransitionOverlay({
     }
     if (visible && isTypingDone) {
       autoDismissRef.current = setTimeout(() => {
-        onComplete ?? onSkip?.();
+        // Prefer onComplete; fall back to onSkip when not provided
+        if (onComplete) onComplete();
+        else onSkip?.();
       }, AUTO_DISMISS_MS);
     }
     return () => {

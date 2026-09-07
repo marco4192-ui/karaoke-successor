@@ -383,7 +383,7 @@ export function usePtmGameLogic({
       }).catch(() => {});
     }).catch(() => {});
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run when effectiveSong or snippet changes
+   
   }, [effectiveSong, currentSnippet, isMedleyMode, forceRender]);
 
   // ── Show transition text ──

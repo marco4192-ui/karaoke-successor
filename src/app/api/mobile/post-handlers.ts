@@ -384,7 +384,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           .filter(Boolean) as typeof mutableState.songQueue;
 
         // Build new queue: insert reordered items where the first user item was
-        let newQueue: typeof mutableState.songQueue = [];
+        const newQueue: typeof mutableState.songQueue = [];
         let userItemsInserted = false;
 
         for (const item of mutableState.songQueue) {

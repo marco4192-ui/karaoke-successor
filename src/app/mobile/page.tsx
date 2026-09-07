@@ -12,6 +12,7 @@ const MobileClientView = dynamic(
     // Defensive: ensure the component exists before rendering
     const C = m.MobileClientView;
     if (!C) {
+      // eslint-disable-next-line no-console
       console.error('[MobilePage] MobileClientView is undefined in dynamic import');
       return { default: () => null };
     }

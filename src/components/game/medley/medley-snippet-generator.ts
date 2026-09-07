@@ -165,7 +165,7 @@ function pickSongsWithDedup(candidates: Song[], count: number): Song[] {
 
   // Not enough unique songs — use all, then repeat with max spacing
   const result: Song[] = [...shuffled];
-  let useCount = new Map<string, number>();
+  const useCount = new Map<string, number>();
   for (const s of shuffled) useCount.set(s.id, 1);
 
   while (result.length < count) {

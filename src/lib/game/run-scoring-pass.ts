@@ -61,7 +61,7 @@ export function runScoringPass(
   let goldenNotesDelta = 0;
   let hasUpdates = false;
   const pendingEvents: ScoreEvent[] = [];
-  let blindBonusDelta = 0;
+  const blindBonusDelta = 0;
 
   // P1 visual tracking
   let activeNoteId: string | undefined;

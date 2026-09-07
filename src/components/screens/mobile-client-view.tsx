@@ -142,6 +142,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           setJson(StorageKeys.MOBILE_PROFILE, hostProfile); syncProfile(hostProfile);
         }
       })
+      // eslint-disable-next-line no-console
       .catch(() => { console.warn('Failed to auto-adopt profile'); });
   }, [profileId, isConnected, clientId, syncProfile]);
 
@@ -213,7 +214,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null;
     if (isMyTurn && !isListening && !autoSingDoneRef.current) {
       autoSingDoneRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
       setTimeout(() => startMicrophone(), 500);
     }
     if (!isMyTurn) autoSingDoneRef.current = false;
@@ -684,6 +685,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 fetch('/api/mobile', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 1 }, clientId }),
+                // eslint-disable-next-line no-console
                 }).catch(() => { console.warn('Failed to cast tournament vote for P1'); });
               }}
             >
@@ -697,6 +699,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 fetch('/api/mobile', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 2 }, clientId }),
+                // eslint-disable-next-line no-console
                 }).catch(() => { console.warn('Failed to cast tournament vote for P2'); });
               }}
             >

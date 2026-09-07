@@ -36,6 +36,7 @@ app.prepare().then(() => {
   initSocketIO(server);
 
   server.listen(port, hostname, () => {
+    // eslint-disable-next-line no-console
     console.log(`
 ╔══════════════════════════════════════════════════╗
 ║  🎤 Karaoke ZERO Server                          ║
@@ -48,13 +49,16 @@ app.prepare().then(() => {
 
   // Graceful shutdown
   const shutdown = () => {
+    // eslint-disable-next-line no-console
     console.log('[Server] Shutting down...');
     server.close(() => {
+      // eslint-disable-next-line no-console
       console.log('[Server] HTTP server closed');
       process.exit(0);
     });
     // Force exit after 5s if graceful shutdown fails
     setTimeout(() => {
+      // eslint-disable-next-line no-console
       console.error('[Server] Forced shutdown after timeout');
       process.exit(1);
     }, 5000);

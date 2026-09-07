@@ -404,7 +404,7 @@ export function startRound(
 
   // Build medley snippet list if applicable (#1)
   const snippetList: MedleySnippet[] = [];
-  let currentSnippetIndex = 0;
+  const currentSnippetIndex = 0;
   if (roundType === 'medley' && medleySnippets) {
     const snippetDuration = calculateSnippetDuration(duration, medleySnippets.length);
     for (const snippet of medleySnippets) {

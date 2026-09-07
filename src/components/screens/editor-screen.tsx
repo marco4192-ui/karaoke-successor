@@ -173,11 +173,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setBatchError(null);
   }, []);
 
-  const exitSelectMode = useCallback(() => {
-    setSelectMode(false);
-    clearSelection();
-  }, [clearSelection]);
-
   const selectedCount = selectedIds.size;
 
   // ── Batch AI Suggest ──

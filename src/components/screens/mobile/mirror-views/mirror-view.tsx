@@ -120,6 +120,7 @@ class MirrorViewErrorBoundary extends Component<
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   componentDidCatch(err: Error, info: ErrorInfo) {
+    // eslint-disable-next-line no-console
     console.warn(`[MirrorView:${this.props.viewName}] Render error caught:`, err.message, info.componentStack);
   }
   render() {

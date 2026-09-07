@@ -190,7 +190,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           onAdStart={() => {}}
           onAdEnd={() => {}}
           onVideoEnded={() => {}}
-          // eslint-disable-next-line react-hooks/immutability
+           
           onVideoCanPlay={() => {}}
           onYoutubeError={() => {}}
         />

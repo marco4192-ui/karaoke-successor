@@ -95,6 +95,7 @@ async function processTxtFile(
     const fullPath = `${normalizedBase}/${normalizeFilePath(txtFile.path)}`;
     txtContent = await nativeReadFileText(fullPath);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.debug('[tauri-file-storage]: failed to read TXT content', error);
     return null;
   }

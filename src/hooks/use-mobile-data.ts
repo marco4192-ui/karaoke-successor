@@ -251,6 +251,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData]: addToQueue failed', error);
       setQueueError('Failed to add song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
@@ -276,7 +277,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
             .map(id => prev.find(q => q.id === id))
             .filter(Boolean) as typeof prev;
 
-          let newQueue: typeof prev = [];
+          const newQueue: typeof prev = [];
           let inserted = false;
           for (const item of prev) {
             if (orderedSet.has(item.id)) {
@@ -296,6 +297,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData]: reorderQueue failed', error);
       setQueueError('Failed to reorder queue');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
@@ -322,6 +324,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData]: removeFromQueue failed', error);
       setQueueError('Failed to remove song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);

@@ -59,6 +59,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
   // ─── Connection Handler ───
   io.on('connection', (socket: Socket) => {
+    // eslint-disable-next-line no-console
     console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
     // ─── Host (Desktop) Events ───
@@ -66,6 +67,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       // Desktop registers itself as the host
       (socket as HostSocket)._isHost = true;
       hostSocket = socket;
+      // eslint-disable-next-line no-console
       console.log(`[Socket.IO] Desktop host registered: ${socket.id}`);
 
       // Send current game state to host on registration
@@ -100,6 +102,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
       // Push to all companions
       io!.to('companions').emit('difficulty', { difficulty: data.difficulty });
+      // eslint-disable-next-line no-console
       console.log(`[Socket.IO] Difficulty pushed: ${data.difficulty}`);
     });
 
@@ -168,6 +171,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
         });
       }
 
+      // eslint-disable-next-line no-console
       console.log(`[Socket.IO] Companion registered: ${data.clientId} (${data.clientName})`);
     });
 
@@ -189,6 +193,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
         hostSocket.emit('command', command);
       }
 
+      // eslint-disable-next-line no-console
       console.log(`[Socket.IO] Command from companion: ${command.type} (${command.fromClientName})`);
     });
 
@@ -237,6 +242,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     // ─── Disconnect ───
     socket.on('disconnect', (reason) => {
       if ((socket as HostSocket)._isHost) {
+        // eslint-disable-next-line no-console
         console.log(`[Socket.IO] Desktop host disconnected: ${socket.id} (${reason})`);
         if (hostSocket === socket) hostSocket = null;
       } else {
@@ -252,6 +258,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
             });
           }
         }
+        // eslint-disable-next-line no-console
         console.log(`[Socket.IO] Client disconnected: ${socket.id} (${reason})`);
       }
     });
@@ -293,6 +300,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     }
   });
 
+  // eslint-disable-next-line no-console
   console.log('[Socket.IO] Server initialized on path /socket.io');
   return io;
 }

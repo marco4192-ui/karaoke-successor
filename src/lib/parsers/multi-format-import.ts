@@ -143,6 +143,7 @@ export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
       videoFile: parsed.videoFile,
     };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.debug('[multi-format-import]: failed to parse KaraokeMugen JSON', error);
     return null;
   }
@@ -371,6 +372,7 @@ export function parseSingStarData(data: string): SingStarSongData | null {
     if (!songData.title || !songData.artist) return null;
     return { ...songData, notes } as SingStarSongData;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.debug('[multi-format-import]: failed to parse SingStar data', error);
     return null;
   }
@@ -414,6 +416,7 @@ export function parseStepMania(data: string): StepManiaData | null {
     if (!result.title || !result.artist) return null;
     return result as StepManiaData;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.debug('[multi-format-import]: failed to parse StepMania data', error);
     return null;
   }

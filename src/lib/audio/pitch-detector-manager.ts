@@ -326,6 +326,7 @@ export class PitchDetectorManager {
           }
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[pitch-detector]: mobile pitch polling error', error);
       }
     }, 100); // Poll every 100ms — sufficient for real-time sync, reduces server load

@@ -115,7 +115,7 @@ export function RateMySongResultsScreen({
     if (songId) {
       setSongSuggestions(getSongSuggestions(songGenre || '', songId, 3));
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
+     
   }, [result, songId, songGenre]);
 
   // Single-round games never pass through the SeriesResultsScreen — record

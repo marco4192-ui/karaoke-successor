@@ -429,7 +429,7 @@ export function calculateMissingWordsBonus(
   currentStreak: number,
   lastWasMiss: boolean
 ): { base: number; perfect: number; streak: number; comeback: number; total: number } {
-  let base = MW_BASE_BONUS;
+  const base = MW_BASE_BONUS;
   let perfect = 0;
   let streak = 0;
   let comeback = 0;
@@ -465,7 +465,7 @@ export function calculateBlindBonus(
   currentStreak: number,
   lastWasMiss: boolean
 ): { base: number; perfect: number; streak: number; comeback: number; total: number } {
-  let base = BLIND_BASE_BONUS;
+  const base = BLIND_BASE_BONUS;
   let perfect = 0;
   let streak = 0;
   let comeback = 0;

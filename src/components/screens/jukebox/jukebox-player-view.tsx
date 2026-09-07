@@ -411,6 +411,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
         j.setCurrentSong(preparedSong);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[JukeboxPlayerView] handleSongClick failed:', error);
     } finally {
       setLoadingSongId(null);

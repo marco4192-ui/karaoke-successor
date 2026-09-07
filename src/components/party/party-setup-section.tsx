@@ -6,7 +6,6 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { useTranslation } from '@/lib/i18n/translations';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
-import type { GameModeSettingsMap } from '@/components/game/unified-party-setup.types';
 import { Song } from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';

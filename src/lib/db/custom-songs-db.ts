@@ -150,6 +150,7 @@ function loadMissingSongsFromLocalStorage(missingIds: string[]): Song[] {
     if (!Array.isArray(allLocal)) return [];
     return allLocal.filter(s => missingIds.includes(s.id));
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.debug('[custom-songs-db]: failed to load songs from localStorage', error);
     return [];
   }
@@ -184,6 +185,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
       try {
         removeItem(StorageKeys.CUSTOM_SONG_IDS);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[custom-songs-db]: failed to clear ID index from localStorage', error);
       }
       resolve();

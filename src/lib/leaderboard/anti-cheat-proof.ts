@@ -309,16 +309,11 @@ export function verifyScorePlausibility(
     return { valid: false, reason: 'combo_exceeds_hits' };
   }
 
-  // 5. Accuracy plausibility
-  // accuracy (note-level, 0-100) should roughly correspond to notesHit / totalNotesClaimed
-  // But the actual accuracy is tick-based, so we allow wide tolerance
-  if (proof.total_notes > 0) {
-    const hitRatio = notesHit / totalNotesClaimed;
-    // Note-level accuracy is based on tick hit ratio, which can differ from note hit ratio.
-    // A note with 1/3 ticks hit still counts as "hit". So accuracy can be much lower than hitRatio.
-    // But accuracy cannot be HIGHER than hitRatio (can't have 100% tick accuracy if you missed notes)
-    // Actually this IS possible if missed notes had 0 ticks evaluated. So skip this check.
-  }
+  // 5. Accuracy plausibility — intentionally NOT enforced:
+  // Note-level accuracy is tick-based and can legitimately diverge from
+  // notesHit / totalNotesClaimed (a note with 1/3 ticks hit still counts as
+  // "hit"; accuracy can also be higher than the hit ratio when missed notes
+  // had 0 ticks evaluated). See the test suite for the documented tolerance.
 
   // 6. Chain length consistency
   if (proof.chain_length > 0 && proof.total_notes > 0) {

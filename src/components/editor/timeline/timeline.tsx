@@ -94,7 +94,7 @@ export function Timeline({
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pitch center when song changes
         setPitchScrollCenter(Math.floor(median / 12) * 12);
       } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pitch center when song changes
+         
         setPitchScrollCenter(60);
       }
     }

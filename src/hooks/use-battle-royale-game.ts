@@ -383,6 +383,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           console.warn('[BattleRoyale] No audio URL resolved');
         }
         if (videoRef.current && resolvedVideoUrlRef.current && !pausedRef.current) {
+          // eslint-disable-next-line no-console
           videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
 
@@ -660,7 +661,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return () => {
       multiPitchRef.current.stop();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   return {

@@ -89,6 +89,7 @@ export async function playSongMedia(params: PlayMediaParams): Promise<void> {
         videoRef.current.muted = false;
         await videoRef.current.play();
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[useGameLoop]: video autoplay failed, retrying muted', error);
         videoRef.current.muted = true;
         await videoRef.current.play();

@@ -75,6 +75,7 @@ export function useMobileClient({
     });
 
     socket.on('connect', () => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Host] Connected:', socket.id);
       socketConnectedRef.current = true;
       socket.emit('host:register');
@@ -85,6 +86,7 @@ export function useMobileClient({
     });
 
     socket.on('connect_error', (err) => {
+      // eslint-disable-next-line no-console
       console.debug('[Socket.IO Host] Connection error:', err.message);
     });
 
@@ -142,6 +144,7 @@ export function useMobileClient({
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
+      // eslint-disable-next-line no-console
       console.debug('[useMobileClient]: sendGameState failed', error);
     }
   }, [song]);
@@ -182,7 +185,7 @@ export function useMobileClient({
       clearInterval(interval);
       controller.abort();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [song]);
 
   // ── Ad state sending ──
@@ -199,6 +202,7 @@ export function useMobileClient({
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
+      // eslint-disable-next-line no-console
       console.debug('[useMobileClient]: sendAdState failed', error);
     }
   }, []);

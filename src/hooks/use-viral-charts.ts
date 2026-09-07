@@ -107,6 +107,7 @@ export function useViralCharts(): UseViralCharts {
         setStatus(s);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useViralCharts]: loadStatus failed', error);
     }
   }, []);

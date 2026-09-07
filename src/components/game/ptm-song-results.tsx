@@ -252,7 +252,7 @@ export function PtmSeriesResults({
     rounds: seriesHistory.length,
     // Single-song series carry the song title; multi-song series omit it
     songTitle: seriesHistory.length === 1 ? seriesHistory[0].songTitle : undefined,
-    players: sortedPlayers.map(([id, p], i) => ({
+    players: sortedPlayers.map(([_id, p], i) => ({
       name: p.name,
       avatar: p.avatar,
       color: p.color,

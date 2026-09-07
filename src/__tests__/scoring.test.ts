@@ -8,7 +8,6 @@ import {
   getComboFactor,
   scaleAccuracy,
   MAX_POINTS_PER_SONG,
-  ACCURACY_CURVE_EXPONENT,
   calculateComboMultiplier,
   isNoteCompleteForCombo,
   createComboScoringState,

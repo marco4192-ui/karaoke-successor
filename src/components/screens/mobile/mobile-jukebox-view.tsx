@@ -26,6 +26,7 @@ export function MobileJukeboxView({ jukeboxWishlist, onNavigate, onRemoveFromWis
     try {
       await onRemoveFromWishlist(itemId);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[MobileJukeboxView] remove failed:', error);
     } finally {
       setRemovingId(null);

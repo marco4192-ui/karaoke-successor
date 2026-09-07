@@ -41,6 +41,7 @@ export function useSocketIOHost() {
     });
 
     socket.on('connect', () => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Host] Connected:', socket.id);
       setIsConnected(true);
       // Register as host
@@ -48,6 +49,7 @@ export function useSocketIOHost() {
     });
 
     socket.on('disconnect', (reason) => {
+      // eslint-disable-next-line no-console
       console.log('[Socket.IO Host] Disconnected:', reason);
       setIsConnected(false);
     });
@@ -83,6 +85,7 @@ export function useSocketIOHost() {
     });
 
     socket.on('connect_error', (err) => {
+      // eslint-disable-next-line no-console
       console.debug('[Socket.IO Host] Connection error:', err.message);
     });
 

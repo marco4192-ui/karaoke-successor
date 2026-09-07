@@ -52,7 +52,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         if (match) setSelectedPlaylistId(match.id);
       } catch { /* ignore */ }
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   const handleYoutubeSubmit = () => {
     if (!youtubeUrl.trim()) return;
