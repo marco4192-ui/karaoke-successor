@@ -310,7 +310,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
           <MirrorCptmGameLite
             gameState={gameState}
             clientId={clientId}
-            profileId={profileId}
+            profileId={profileId ?? null}
             profileName={profileName}
             onNavigate={onNavigate}
             isRemoteLocked={isRemoteLocked}
