@@ -352,6 +352,8 @@ companion: {
   getReady: '준비...',
   roundLabel: '라운드 {n}:',
   pts: '점',
+  tieTitle: '무승부!',
+  tieSubtitle: '두 명의 가수가 같은 점수를 기록했습니다 — 왕관의 주인은 없습니다.',
   endSongEarlyConfirm: '정말로 곡을 조기 종료하시겠습니까?',
   confirm: '확인',
   cancel: '취소',

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Problème de micro',
   micIssueDesc: 'Impossible d\'initialiser la détection de hauteur. Le scoring sera désactivé pour ce tour. Vérifie les permissions de ton micro et réessaie.',
   medleySongTitle: 'Medley ({n} chansons)',
+  tieTitle: 'Égalité !',
+  tieSubtitle: 'Les deux chanteurs partagent le meilleur score — personne ne remporte la couronne.',
 },
 companionSingalong: {
   introTitle: 'Companion',

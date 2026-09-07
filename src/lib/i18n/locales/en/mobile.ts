@@ -367,6 +367,9 @@ export const mobileTranslations = {
     getReady: 'Get ready...',
     roundLabel: 'Round {n}:',
     pts: 'pts',
+    // Tie state (series results)
+    tieTitle: 'It\'s a tie!',
+    tieSubtitle: 'Both singers share the top score — nobody takes the crown.',
     endSongEarlyConfirm: 'Really end song early?',
     confirm: 'Confirm',
     cancel: 'Cancel',

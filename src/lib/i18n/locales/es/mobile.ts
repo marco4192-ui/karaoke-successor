@@ -352,6 +352,8 @@ companion: {
   getReady: 'Prepárate...',
   roundLabel: 'Ronda {n}:',
   pts: 'pts',
+  tieTitle: '¡Empate!',
+  tieSubtitle: 'Ambos cantantes comparten la máxima puntuación — nadie se lleva la corona.',
   endSongEarlyConfirm: '¿Realmente terminar la canción antes de tiempo?',
   confirm: 'Confirmar',
   cancel: 'Cancelar',

@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Combo Max',
   notesHit: 'Note Prese',
   winner: 'Vincitore',
+  tieTitle: 'Pareggio!',
+  tieSubtitle: 'I migliori condividono il punteggio più alto — niente campione questa volta.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Vincitore: {name} ({score} pt)',
+  shareBestCombo: '🔥 Miglior combo: {n}x',
 },
 tournament: {
   title: 'Modalità Torneo',

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Problema no Microfone',
   micIssueDesc: 'Não foi possível iniciar a detecção de pitch. A pontuação será desativada nesta rodada. Verifique as permissões do microfone e tente novamente.',
   medleySongTitle: 'Medley ({n} Músicas)',
+  tieTitle: 'Empate!',
+  tieSubtitle: 'Ambos os cantores partilham a melhor pontuação — ninguém leva a coroa.',
 },
 companionSingalong: {
   introTitle: 'Companion',

@@ -186,6 +186,17 @@ export interface GameState {
   viralSongIds?: string[];
   // Global difficulty setting from desktop (for companion library)
   difficulty?: 'easy' | 'medium' | 'hard';
+  // Recent party sessions synced from the desktop party screen (mirror view).
+  // Compact form: avatars stripped to keep the 2s-poll payload small.
+  recentParties?: Array<{
+    id: string;
+    mode: string;
+    finishedAt: number;
+    rounds?: number;
+    songTitle?: string;
+    winner?: { name: string; color?: string; score: number; scoreKind?: 'points' | 'rating' } | null;
+    players: Array<{ name: string; color?: string; score: number; isWinner?: boolean; scoreKind?: 'points' | 'rating' }>;
+  }>;
 }
 
 export interface PitchData {

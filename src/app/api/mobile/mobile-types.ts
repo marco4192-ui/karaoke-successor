@@ -111,6 +111,16 @@ export interface MobileGameState {
   partyGameMode?: string | null;
   // Whether party mode is active on the desktop
   isPartyModeActive?: boolean;
+  // Recent party sessions synced from the desktop party screen (mobile mirror)
+  recentParties?: Array<{
+    id: string;
+    mode: string;
+    finishedAt: number;
+    rounds?: number;
+    songTitle?: string;
+    winner?: { name: string; color?: string; score: number; scoreKind?: 'points' | 'rating' } | null;
+    players: Array<{ name: string; color?: string; score: number; isWinner?: boolean; scoreKind?: 'points' | 'rating' }>;
+  }>;
 }
 
 export interface GameResults {

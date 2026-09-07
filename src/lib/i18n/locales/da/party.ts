@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Mikrofonproblem',
   micIssueDesc: 'Kunne ikke starte tonegenkendelse. Scoring deaktiveres for denne runde. Tjek dine mikrofontilladelser og prøv igen.',
   medleySongTitle: 'Medley ({n} sange)',
+  tieTitle: 'Uafgjort!',
+  tieSubtitle: 'Begge sangere deler topresultatet — ingen får kronen.',
 },
 companionSingalong: {
   introTitle: 'Companion',

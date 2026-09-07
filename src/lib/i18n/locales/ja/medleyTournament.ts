@@ -158,6 +158,11 @@ medley: {
   maxCombo: '最大コンボ',
   notesHit: 'ヒットした音',
   winner: '優勝',
+  tieTitle: '引き分け！',
+  tieSubtitle: '上位者が最高スコアを分かち合っています——今回はチャンピオンなし。',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 勝者: {name}（{score} pt）',
+  shareBestCombo: '🔥 最高コンボ: {n}x',
 },
 tournament: {
   title: 'トーナメントモード',

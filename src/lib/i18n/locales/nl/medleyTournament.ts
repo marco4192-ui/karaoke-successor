@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Max Combo',
   notesHit: 'Noten geraakt',
   winner: 'Winnaar',
+  tieTitle: 'Gelijkspel!',
+  tieSubtitle: 'De besten delen de hoogste score — deze keer geen kampioen.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Winnaar: {name} ({score} ptn)',
+  shareBestCombo: '🔥 Beste combo: {n}x',
 },
 tournament: {
   title: 'Toernooimodus',

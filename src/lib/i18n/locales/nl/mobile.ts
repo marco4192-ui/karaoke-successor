@@ -352,6 +352,8 @@ companion: {
   getReady: 'Maak je klaar...',
   roundLabel: 'Ronde {n}:',
   pts: 'pts',
+  tieTitle: 'Gelijkspel!',
+  tieSubtitle: 'Beide zangers delen de topscore — niemand krijgt de kroon.',
   endSongEarlyConfirm: 'Nummer echt vroegtijdig beëindigen?',
   confirm: 'Bevestigen',
   cancel: 'Annuleren',

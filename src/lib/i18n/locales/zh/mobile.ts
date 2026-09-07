@@ -352,6 +352,8 @@ companion: {
   getReady: '准备...',
   roundLabel: '第{n}轮:',
   pts: '分',
+  tieTitle: '平局！',
+  tieSubtitle: '两位歌手得分相同——没有人能夺得王冠。',
   endSongEarlyConfirm: '真的要提前结束歌曲吗？',
   confirm: '确认',
   cancel: '取消',

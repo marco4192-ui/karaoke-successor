@@ -357,6 +357,8 @@ companion: {
   getReady: 'Mach dich bereit...',
   roundLabel: 'Runde {n}:',
   pts: 'Pkt.',
+  tieTitle: 'Unentschieden!',
+  tieSubtitle: 'Beide Sänger teilen sich den Höchstscore — die Krone geht an niemanden.',
   endSongEarlyConfirm: 'Wirklich vorzeitig beenden?',
   confirm: 'Bestätigen',
   cancel: 'Abbrechen',

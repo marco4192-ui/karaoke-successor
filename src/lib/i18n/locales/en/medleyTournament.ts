@@ -174,6 +174,13 @@ export const medleyTournamentTranslations = {
     maxCombo: 'Max Combo',
     notesHit: 'Notes Hit',
     winner: 'Winner',
+    // Tie state (final results)
+    tieTitle: 'It\'s a tie!',
+    tieSubtitle: 'Top performers share the highest score — no champion this time.',
+    // Share text (i18n-safe, no hardcoded language fragments)
+    shareHeader: '🎵 Medley Contest!',
+    shareWinner: '🏆 Winner: {name} ({score} pts)',
+    shareBestCombo: '🔥 Best combo: {n}x',
   },
 
   tournament: {

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: '마이크 문제',
   micIssueDesc: '피치 감지를 초기화할 수 없어요. 이번 라운드는 점수가 비활성화됩니다. 마이크 권한을 확인하고 다시 시도해 주세요.',
   medleySongTitle: '메들리 ({n}곡)',
+  tieTitle: '무승부!',
+  tieSubtitle: '두 명의 가수가 같은 점수를 기록했습니다 — 왕관의 주인은 없습니다.',
 },
 companionSingalong: {
   introTitle: '컴패니언',

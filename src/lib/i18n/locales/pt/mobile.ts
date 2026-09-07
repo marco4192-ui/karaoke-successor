@@ -352,6 +352,8 @@ companion: {
   getReady: 'Prepare-se...',
   roundLabel: 'Rodada {n}:',
   pts: 'pts',
+  tieTitle: 'Empate!',
+  tieSubtitle: 'Ambos os cantores partilham a melhor pontuação — ninguém leva a coroa.',
   endSongEarlyConfirm: 'Realmente finalizar a música antecipadamente?',
   confirm: 'Confirmar',
   cancel: 'Cancelar',

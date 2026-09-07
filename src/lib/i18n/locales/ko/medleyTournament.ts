@@ -158,6 +158,11 @@ medley: {
   maxCombo: '최대 콤보',
   notesHit: '맞춘 음표',
   winner: '우승',
+  tieTitle: '무승부!',
+  tieSubtitle: '상위 득점자들이 최고 점수를 나누었습니다 — 이번에는 챔피언이 없습니다.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 승자: {name} ({score}점)',
+  shareBestCombo: '🔥 최고 콤보: {n}x',
 },
 tournament: {
   title: '토너먼트 모드',

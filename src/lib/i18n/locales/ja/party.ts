@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'マイクの問題',
   micIssueDesc: 'ピッチ検出を初期化できませんでした。このラウンドはスコアが無効になります。マイクの権限を確認して再度お試しください。',
   medleySongTitle: 'メドレー（{n}曲）',
+  tieTitle: '引き分け！',
+  tieSubtitle: '両者のスコアは同点——王冠を獲得する者はいません。',
 },
 companionSingalong: {
   introTitle: 'コンパニオン',

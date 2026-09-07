@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Problem z mikrofonem',
   micIssueDesc: 'Nie udało się zainicjować wykrywania wysokości dźwięku. Punktacja będzie wyłączona w tej rundzie. Sprawdź uprawnienia mikrofonu i spróbuj ponownie.',
   medleySongTitle: 'Medley ({n} utworów)',
+  tieTitle: 'Remis!',
+  tieSubtitle: 'Obaj piosenkarze dzielą najwyższy wynik — korona nie trafia do nikogo.',
 },
 companionSingalong: {
   introTitle: 'Companion',

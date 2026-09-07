@@ -352,6 +352,8 @@ companion: {
   getReady: 'Gjør deg klar...',
   roundLabel: 'Runde {n}:',
   pts: 'poeng',
+  tieTitle: 'Uavgjort!',
+  tieSubtitle: 'Begge sangerne deler toppscoren — ingen får kronen.',
   endSongEarlyConfirm: 'Vil du virkelig avslutte sangen tidlig?',
   confirm: 'Bekreft',
   cancel: 'Avbryt',

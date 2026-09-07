@@ -352,6 +352,8 @@ companion: {
   getReady: '準備...',
   roundLabel: 'ラウンド {n}:',
   pts: 'pt',
+  tieTitle: '引き分け！',
+  tieSubtitle: '両者のスコアは同点——王冠を獲得する者はいません。',
   endSongEarlyConfirm: '本当に途中で終了しますか？',
   confirm: '確認',
   cancel: 'キャンセル',

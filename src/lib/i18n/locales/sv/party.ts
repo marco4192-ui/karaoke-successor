@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Mikrofonproblem',
   micIssueDesc: 'Kunde inte starta tonhöjdsdetektering. Poängsättningen kommer att inaktiveras för den här omgången. Kontrollera dina mikrofonrättigheter och försök igen.',
   medleySongTitle: 'Medley ({n} låtar)',
+  tieTitle: 'Oavgjort!',
+  tieSubtitle: 'Båda sångarna delar top-poängen — ingen får kronan.',
 },
 companionSingalong: {
   introTitle: 'Companion',

@@ -74,7 +74,7 @@ export function MedleyRoundResults({
                 <div key={id} className="flex items-center gap-2 text-sm opacity-60">
                   <span className="text-red-400">💀</span>
                   <span style={{ color: p.color }}>{p.name}</span>
-                  <span className="text-white/40 text-xs">({p.score} Pkt)</span>
+                  <span className="text-white/40 text-xs">({p.score} {t('medley.pts')})</span>
                 </div>
               );
             })}
@@ -83,7 +83,7 @@ export function MedleyRoundResults({
               <div key={p.id} className="flex items-center gap-2 text-sm font-bold">
                 <span className="text-green-400">✅</span>
                 <span style={{ color: p.color }}>{p.name}</span>
-                <span className="text-green-400 text-xs">{t('medley.survived')} ({p.score} Pkt)</span>
+                <span className="text-green-400 text-xs">{t('medley.survived')} ({p.score} {t('medley.pts')})</span>
               </div>
             ))}
           </div>
@@ -289,7 +289,12 @@ export function ShareButton({
 
     // TODO: Show cumulative max combo across series rounds in share text
     const bestCombo = Math.max(...players.map(p => p.maxCombo));
-    const text = `🎵 Medley Contest!\n🏆 Gewinner: ${winner.name} (${winner.score} Pkt)\n🔥 Beste Combo: ${bestCombo}x\n${t('medley.shareText')}`;
+    const text = [
+      t('medley.shareHeader'),
+      t('medley.shareWinner').replace('{name}', winner.name).replace('{score}', String(winner.score)),
+      t('medley.shareBestCombo').replace('{n}', String(bestCombo)),
+      t('medley.shareText'),
+    ].join('\n');
 
     navigator.clipboard.writeText(text).then(() => {
       toast({

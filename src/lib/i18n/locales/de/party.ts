@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Mikrofon-Problem',
   micIssueDesc: 'Pitch-Erkennung konnte nicht initialisiert werden. Die Wertung wird für diese Runde deaktiviert. Überprüfe deine Mikrofon-Berechtigungen und versuche es erneut.',
   medleySongTitle: 'Medley ({n} Songs)',
+  tieTitle: 'Unentschieden!',
+  tieSubtitle: 'Beide Sänger teilen sich den Höchstscore — die Krone geht an niemanden.',
 },
 companionSingalong: {
   introTitle: 'Companion',

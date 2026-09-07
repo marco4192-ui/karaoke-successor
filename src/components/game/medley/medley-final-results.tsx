@@ -67,6 +67,14 @@ export function MedleyFinalResults({
   const sorted = Object.entries(cumulative).sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sorted[0];
 
+  // A tie at the top (2+ players sharing the highest score) shows a dedicated
+  // tie card instead of crowning an arbitrary first-ranked player — this
+  // mirrors the session-history logic (tie → no winner recorded).
+  const topScore = winner?.[1].totalScore ?? 0;
+  const tiedPlayers = sorted.length > 1 && (sorted[1]?.[1].totalScore ?? -Infinity) === topScore
+    ? sorted.filter(([, p]) => p.totalScore === topScore)
+    : null;
+
   // Record this finished medley in the party session history (once).
   // Computed synchronously (not from the async `cumulative` state) so the
   // mount-effect of the recorder hook sees the full data immediately.
@@ -95,6 +103,9 @@ export function MedleyFinalResults({
 
   const teamATotal = Object.values(cumulative).filter(p => p.team === 0).reduce((s, p) => s + p.totalScore, 0);
   const teamBTotal = Object.values(cumulative).filter(p => p.team === 1).reduce((s, p) => s + p.totalScore, 0);
+  // Team mode: a team-total tie highlights both teams equally instead of
+  // arbitrarily favouring Team A.
+  const isTeamTie = isTeam && teamATotal === teamBTotal;
 
   // Feature #13: Show toast when leaderboard data was saved
   useEffect(() => {
@@ -110,13 +121,15 @@ export function MedleyFinalResults({
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-6">
-        <div className="text-6xl mb-2">{isElimination ? '💀' : '🏆'}</div>
+        <div className="text-6xl mb-2">{isElimination ? '💀' : tiedPlayers ? '🤝' : '🏆'}</div>
         <h2 className="text-3xl font-bold">
           {isElimination
             ? t('medley.elimination')
-            : isTeam
-              ? t('medley.teamWinner')
-              : t('medley.medleyChampion')
+            : tiedPlayers
+              ? t('medley.tieTitle')
+              : isTeam
+                ? t('medley.teamWinner')
+                : t('medley.medleyChampion')
           }
         </h2>
         <p className="text-white/60">{t('medley.roundOf').replace('{n}', String(seriesHistory.length + 1))}</p>
@@ -135,7 +148,7 @@ export function MedleyFinalResults({
                 <div key={id} className="flex items-center gap-2 text-sm opacity-60">
                   <span>💀</span>
                   <span style={{ color: p.color }}>{p.name}</span>
-                  <span className="text-white/40 text-xs">({p.score} Pkt)</span>
+                  <span className="text-white/40 text-xs">({p.score} {t('medley.pts')})</span>
                 </div>
               );
             })}
@@ -147,7 +160,7 @@ export function MedleyFinalResults({
                 <div className="flex items-center gap-2 text-sm font-bold text-green-400">
                   <span>👑</span>
                   <span style={{ color: survivor.color }}>{survivor.name}</span>
-                  <span className="text-white/40 text-xs">({survivor.score} Pkt)</span>
+                  <span className="text-white/40 text-xs">({survivor.score} {t('medley.pts')})</span>
                   <span className="ml-auto font-bold">{t('medley.winner')}</span>
                 </div>
               );
@@ -159,19 +172,41 @@ export function MedleyFinalResults({
       {/* Team total */}
       {isTeam && (
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className={`rounded-lg p-4 text-center ${teamATotal >= teamBTotal ? 'bg-blue-500/20 border-2 border-blue-500' : 'bg-blue-500/10 border border-blue-500/30'}`}>
+          <div className={`rounded-lg p-4 text-center ${teamATotal > teamBTotal ? 'bg-blue-500/20 border-2 border-blue-500' : isTeamTie ? 'bg-blue-500/15 border-2 border-blue-500/50' : 'bg-blue-500/10 border border-blue-500/30'}`}>
             <div className="text-sm text-blue-300 mb-1">{t('medley.teamA')}</div>
             <div className="text-3xl font-bold text-blue-400">{teamATotal}</div>
+            {isTeamTie && <div className="text-xs text-white/50 mt-1">🤝 {t('medley.tieTitle')}</div>}
           </div>
-          <div className={`rounded-lg p-4 text-center ${teamBTotal > teamATotal ? 'bg-red-500/20 border-2 border-red-500' : 'bg-red-500/10 border border-red-500/30'}`}>
+          <div className={`rounded-lg p-4 text-center ${teamBTotal > teamATotal ? 'bg-red-500/20 border-2 border-red-500' : isTeamTie ? 'bg-red-500/15 border-2 border-red-500/50' : 'bg-red-500/10 border border-red-500/30'}`}>
             <div className="text-sm text-red-300 mb-1">{t('medley.teamB')}</div>
             <div className="text-3xl font-bold text-red-400">{teamBTotal}</div>
+            {isTeamTie && <div className="text-xs text-white/50 mt-1">🤝 {t('medley.tieTitle')}</div>}
           </div>
         </div>
       )}
 
-      {/* Winner card */}
-      {winner && (
+      {/* Winner card / Tie card — the tie state shows the tied players side
+          by side (title/subtitle live in the page header) */}
+      {tiedPlayers ? (
+        <div className="bg-gradient-to-br from-cyan-500/15 to-teal-500/10 border border-cyan-400/30 rounded-lg p-6 text-center mb-6">
+          <p className="text-sm text-white/75 mb-5 leading-relaxed">{t('medley.tieSubtitle')}</p>
+          {/* Tied players side by side */}
+          <div className="flex flex-wrap items-start justify-center gap-5">
+            {tiedPlayers.map(([id, w]) => (
+              <div key={id} className="flex flex-col items-center gap-2">
+                {w.avatar ? (
+                  <img src={w.avatar} alt={w.name} className="w-16 h-16 rounded-full object-cover border-4 border-cyan-400 ring-2 ring-cyan-300/40 mx-auto" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-4 border-cyan-400 ring-2 ring-cyan-300/40 shadow-lg shadow-black/30 mx-auto"
+                    style={{ backgroundColor: w.color }}>{w.name.charAt(0).toUpperCase()}</div>
+                )}
+                <div className="text-lg font-bold" style={{ color: w.color }}>{w.name}</div>
+                <div className="text-xl font-bold text-cyan-300 tabular-nums">{w.totalScore.toLocaleString()} {t('medley.pts')}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : winner && (
         <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/30 rounded-lg p-6 text-center mb-6">
           {(() => {
             const w = winner[1];
@@ -238,8 +273,14 @@ export function MedleyFinalResults({
         })}
       </div>
 
-      {/* Feature #17: Share button */}
-      <ShareButton players={players} winner={winner ? { name: winner[1].name, score: winner[1].totalScore } as { name: string; score: number } : null} settings={settings} />
+      {/* Feature #17: Share button — on a tie the tied names share the title */}
+      <ShareButton
+        players={players}
+        winner={tiedPlayers
+          ? { name: tiedPlayers.map(([, p]) => p.name).join(' & '), score: topScore }
+          : winner ? { name: winner[1].name, score: winner[1].totalScore } as { name: string; score: number } : null}
+        settings={settings}
+      />
 
       {/* Feature #13: Leaderboard */}
       {showLeaderboard && <LeaderboardSection showLeaderboard={showLeaderboard} />}

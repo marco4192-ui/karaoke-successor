@@ -50,6 +50,14 @@ export function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
     .sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sortedPlayers[0];
 
+  // A tie at the top (2+ players sharing the highest score) shows a dedicated
+  // tie state instead of crowning an arbitrary first-ranked player — this
+  // mirrors the session-history logic (tie → no winner recorded).
+  const topScore = winner?.[1].totalScore ?? 0;
+  const tiedPlayers = sortedPlayers.length > 1 && (sortedPlayers[1]?.[1].totalScore ?? -Infinity) === topScore
+    ? sortedPlayers.filter(([, p]) => p.totalScore === topScore)
+    : null;
+
   // Record this finished series in the party session history (once)
   useRecordPartySession({
     mode: 'companion-singalong',
@@ -67,7 +75,38 @@ export function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="flex flex-col items-center">
-      {winner && (
+      {tiedPlayers ? (
+        <>
+          <div className="text-6xl mb-4" aria-hidden="true">🤝</div>
+          <h2 className="text-3xl font-bold mb-2 tracking-tight">{t('companion.tieTitle')}</h2>
+          <Card className="bg-gradient-to-br from-cyan-500/15 to-teal-500/10 border border-cyan-400/30 max-w-md w-full mb-6">
+            <CardContent className="py-6">
+              <p className="text-sm text-white/75 mb-5 text-center max-w-sm mx-auto leading-relaxed">{t('companion.tieSubtitle')}</p>
+              {/* Tied players side by side */}
+              <div className="flex flex-wrap items-start justify-center gap-4">
+                {tiedPlayers.map(([id, p]) => (
+                  <div key={id} className="flex flex-col items-center gap-2">
+                    {p.avatar ? (
+                      <img src={p.avatar} alt={p.name}
+                        className="w-20 h-20 rounded-full object-cover border-4 border-cyan-400 ring-2 ring-cyan-300/40" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-cyan-400 ring-2 ring-cyan-300/40 shadow-lg shadow-black/30"
+                        style={{ backgroundColor: p.color }}>
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="text-base font-bold text-white">{p.name}</div>
+                    <div className="text-xl font-bold text-cyan-300 tabular-nums">{p.totalScore.toLocaleString()} {t('companion.pts')}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-sm text-white/40 mt-5 text-center">
+                {t('companion.roundsPlayed').replace('{n}', String(history.length))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : winner && (
         <>
           <div className="text-6xl mb-4">🏆</div>
           <h2 className="text-3xl font-bold mb-2">{t('companion.seriesChampion')}</h2>

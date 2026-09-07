@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Maks Combo',
   notesHit: 'Noder ramt',
   winner: 'Vinder',
+  tieTitle: 'Uafgjort!',
+  tieSubtitle: 'De bedste deler den højeste score — ingen mester denne gang.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Vinder: {name} ({score} p)',
+  shareBestCombo: '🔥 Bedste combo: {n}x',
 },
 tournament: {
   title: 'Turneringstilstand',

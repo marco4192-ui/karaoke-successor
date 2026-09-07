@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Problema con il microfono',
   micIssueDesc: 'Impossibile inizializzare il rilevamento dell\'intonazione. La valutazione sarà disabilitata per questo turno. Controlla i permessi del microfono e riprova.',
   medleySongTitle: 'Medley ({n} canzoni)',
+  tieTitle: 'Pareggio!',
+  tieSubtitle: 'Entrambi i cantanti condividono il punteggio migliore — nessuno si aggiudica la corona.',
 },
 companionSingalong: {
   introTitle: 'Companion',

@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Max Combo',
   notesHit: 'Träffade noter',
   winner: 'Vinnare',
+  tieTitle: 'Oavgjort!',
+  tieSubtitle: 'De bästa delar högsta poängen — ingen mästare denna gång.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Vinnare: {name} ({score} p)',
+  shareBestCombo: '🔥 Bästa combo: {n}x',
 },
 tournament: {
   title: 'Turneringsläge',

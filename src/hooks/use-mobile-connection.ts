@@ -35,6 +35,7 @@ interface RawGameState {
   ptmIntroData?: GameState['ptmIntroData'];
   viralSongIds?: string[];
   difficulty?: 'easy' | 'medium' | 'hard';
+  recentParties?: GameState['recentParties'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -60,6 +61,7 @@ function parseGameState(raw: RawGameState): GameState {
     ptmIntroData: raw.ptmIntroData ?? null,
     viralSongIds: raw.viralSongIds ?? [],
     difficulty: raw.difficulty ?? 'medium',
+    recentParties: raw.recentParties ?? undefined,
   };
 }
 

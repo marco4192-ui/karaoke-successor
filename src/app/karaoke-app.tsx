@@ -17,6 +17,8 @@ import { useViralCharts } from '@/hooks/use-viral-charts';
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
 import { IMMERSIVE_SCREENS } from '@/types/screens';
+// Mobile-mirror game-state shape (for the recent-parties sync payload)
+import type { GameState } from '@/components/screens/mobile/mobile-types';
 
 // Extracted hooks
 import { useScreenNavigation } from '@/hooks/use-screen-navigation';
@@ -881,6 +883,35 @@ export default function KaraokeZERO() {
           console.log('[Party-Sync] screen=%s, ptmPhase=%s, isPartyIntro=%s, hasIntroData=%s',
             screen, ptmPhase, isPartyIntro, !!introData);
         }
+        // Party screen: sync the recent-parties history so the mobile mirror
+        // can render the same "Recent Parties" section (avatars stripped —
+        // data-URL avatars would bloat the 2s-poll payload).
+        let recentPartiesPayload: GameState['recentParties'];
+        if (screen === 'party') {
+          try {
+            const { getPartySessions, getSessionWinner } = await import('@/lib/game/party-session-history');
+            recentPartiesPayload = getPartySessions().slice(0, 6).map(record => {
+              const winner = getSessionWinner(record);
+              return {
+                id: record.id,
+                mode: record.mode,
+                finishedAt: record.finishedAt,
+                rounds: record.rounds,
+                songTitle: record.songTitle,
+                winner: winner ? { name: winner.name, color: winner.color, score: winner.score, scoreKind: winner.scoreKind } : null,
+                players: record.players.map(p => ({
+                  name: p.name,
+                  color: p.color,
+                  score: p.score,
+                  isWinner: p.isWinner,
+                  scoreKind: p.scoreKind,
+                })),
+              };
+            });
+          } catch {
+            // history is best-effort for the mirror
+          }
+        }
         await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -901,6 +932,7 @@ export default function KaraokeZERO() {
               ptmIntroData: introData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
+              recentParties: recentPartiesPayload,
             },
           }),
         });

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: '麦克风问题',
   micIssueDesc: '无法初始化音高检测。本回合将禁用计分。请检查麦克风权限后重试。',
   medleySongTitle: '串烧（{n} 首）',
+  tieTitle: '平局！',
+  tieSubtitle: '两位歌手得分相同——没有人能夺得王冠。',
 },
 companionSingalong: {
   introTitle: '手机伴侣',

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Mikrofonproblem',
   micIssueDesc: 'Klarte ikke starte toneregistrering. Poenggivning vil være deaktivert denne runden. Sjekk mikrofontillatelsene dine og prøv igjen.',
   medleySongTitle: 'Medley ({n} sanger)',
+  tieTitle: 'Uavgjort!',
+  tieSubtitle: 'Begge sangerne deler toppscoren — ingen får kronen.',
 },
 companionSingalong: {
   introTitle: 'Companion',

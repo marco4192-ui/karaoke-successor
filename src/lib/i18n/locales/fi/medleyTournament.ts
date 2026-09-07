@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Max Combo',
   notesHit: 'Osumat',
   winner: 'Voittaja',
+  tieTitle: 'Tasapeli!',
+  tieSubtitle: 'Parhaat jakavat korkeimmat pisteet — tällä kertaa ei mestaria.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Voittaja: {name} ({score} pistettä)',
+  shareBestCombo: '🔥 Paras combo: {n}x',
 },
 tournament: {
   title: 'Turnaustila',

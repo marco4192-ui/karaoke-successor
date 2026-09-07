@@ -352,6 +352,8 @@ companion: {
   getReady: 'Przygotuj się...',
   roundLabel: 'Runda {n}:',
   pts: 'pkt',
+  tieTitle: 'Remis!',
+  tieSubtitle: 'Obaj piosenkarze dzielą najwyższy wynik — korona nie trafia do nikogo.',
   endSongEarlyConfirm: 'Na pewno zakończyć piosenkę wcześniej?',
   confirm: 'Potwierdź',
   cancel: 'Anuluj',

@@ -124,6 +124,9 @@ export const partyTranslations = {
     micIssueTitle: 'Microphone Issue',
     micIssueDesc: 'Could not initialize pitch detection. Scoring will be disabled for this round. Check your microphone permissions and try again.',
     medleySongTitle: 'Medley ({n} Songs)',
+    // Tie state (series results)
+    tieTitle: 'It\'s a tie!',
+    tieSubtitle: 'Both singers share the top score — nobody takes the crown.',
   },
 
   companionSingalong: {

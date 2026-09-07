@@ -263,6 +263,14 @@ export function PtmSeriesResults({
 
   const winner = sortedPlayers[0];
 
+  // A tie at the top (2+ players sharing the highest score) shows a dedicated
+  // tie ceremony instead of crowning an arbitrary first-ranked player — this
+  // mirrors the session-history logic (tie → no winner recorded).
+  const topScore = winner?.[1].totalScore ?? 0;
+  const tiedPlayers = sortedPlayers.length > 1 && (sortedPlayers[1]?.[1].totalScore ?? -Infinity) === topScore
+    ? sortedPlayers.filter(([, p]) => p.totalScore === topScore)
+    : null;
+
   // Confetti animation
   useEffect(() => {
     const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
@@ -337,8 +345,44 @@ export function PtmSeriesResults({
         </div>
       )}
 
-      {/* Winner Ceremony */}
-      {winner && (
+      {/* Winner Ceremony / Tie State */}
+      {tiedPlayers ? (
+        <div className="text-center mb-8 animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-7xl mb-4" aria-hidden="true">🤝</div>
+          <h2 className="text-4xl font-black text-cyan-300 mb-2 tracking-tight" style={{ textShadow: '0 0 30px rgba(103,232,249,0.4)' }}>
+            {t('passTheMic.tieTitle')}
+          </h2>
+          <p className="text-sm text-white/75 mb-6 max-w-md mx-auto leading-relaxed">{t('passTheMic.tieSubtitle')}</p>
+          {/* Tied players side by side */}
+          <div className="flex flex-wrap items-start justify-center gap-6 mb-2">
+            {tiedPlayers.map(([id, p]) => (
+              <div key={id} className="flex flex-col items-center gap-2">
+                {p.avatar ? (
+                  <img
+                    src={p.avatar}
+                    alt={p.name}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-cyan-400 ring-2 ring-cyan-300/40 shadow-2xl"
+                  />
+                ) : (
+                  <div
+                    className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-cyan-400 ring-2 ring-cyan-300/40 shadow-2xl text-white"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="text-2xl font-bold text-white">{p.name}</div>
+                <div className="text-xl font-bold text-cyan-300 tabular-nums">
+                  {t('passTheMic.pointsLabel').replace('{n}', p.totalScore.toLocaleString())}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-sm text-white/40 mt-2">
+            {t('passTheMic.roundsPlayed').replace('{n}', String(seriesHistory.length))}
+          </div>
+        </div>
+      ) : winner && (
         <div className="text-center mb-8 animate-in fade-in zoom-in-95 duration-500">
           <div className="text-7xl mb-4" style={{ animation: 'ptm-crown-bounce 1s ease-in-out infinite' }}>
             👑

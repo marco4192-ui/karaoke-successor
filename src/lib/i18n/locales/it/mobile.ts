@@ -352,6 +352,8 @@ companion: {
   getReady: 'Preparati...',
   roundLabel: 'Turno {n}:',
   pts: 'punti',
+  tieTitle: 'Pareggio!',
+  tieSubtitle: 'Entrambi i cantanti condividono il punteggio migliore — nessuno si aggiudica la corona.',
   endSongEarlyConfirm: 'Terminare davvero la canzone in anticipo?',
   confirm: 'Conferma',
   cancel: 'Annulla',

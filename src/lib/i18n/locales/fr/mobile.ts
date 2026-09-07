@@ -352,6 +352,8 @@ companion: {
   getReady: 'Préparez-vous...',
   roundLabel: 'Tour {n} :',
   pts: 'pts',
+  tieTitle: 'Égalité !',
+  tieSubtitle: 'Les deux chanteurs partagent le meilleur score — personne ne remporte la couronne.',
   endSongEarlyConfirm: 'Vraiment terminer la chanson en avance ?',
   confirm: 'Confirmer',
   cancel: 'Annuler',

@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Mikrofoniongelma',
   micIssueDesc: 'Äänikorkeuden tunnistusta ei voitu alustaa. Pisteitä ei lasketa tässä kierroksessa. Tarkista mikrofonin oikeudet ja yritä uudelleen.',
   medleySongTitle: 'Medley ({n} kappaletta)',
+  tieTitle: 'Tasapeli!',
+  tieSubtitle: 'Molemmat laulajat jakavat huippupisteet — kruunu jää saamatta.',
 },
 companionSingalong: {
   introTitle: 'Companion',

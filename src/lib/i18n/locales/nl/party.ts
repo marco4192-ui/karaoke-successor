@@ -119,6 +119,8 @@ passTheMic: {
   micIssueTitle: 'Microfoonprobleem',
   micIssueDesc: 'Kan toonherkenning niet initialiseren. Scoring wordt uitgeschakeld voor deze ronde. Controleer je microfoonrechten en probeer opnieuw.',
   medleySongTitle: 'Medley ({n} nummers)',
+  tieTitle: 'Gelijkspel!',
+  tieSubtitle: 'Beide zangers delen de topscore — niemand krijgt de kroon.',
 },
 companionSingalong: {
   introTitle: 'Companion',

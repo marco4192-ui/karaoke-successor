@@ -158,6 +158,11 @@ medley: {
   maxCombo: 'Макс. комбо',
   notesHit: 'Пойманные ноты',
   winner: 'Победитель',
+  tieTitle: 'Ничья!',
+  tieSubtitle: 'Лучшие делят высший счёт — чемпиона в этот раз нет.',
+  shareHeader: '🎵 Medley Contest!',
+  shareWinner: '🏆 Победитель: {name} ({score} очков)',
+  shareBestCombo: '🔥 Лучшая серия: {n}x',
 },
 tournament: {
   title: 'Режим турнира',

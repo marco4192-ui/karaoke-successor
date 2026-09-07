@@ -352,6 +352,8 @@ companion: {
   getReady: 'Valmistaudu...',
   roundLabel: 'Kierros {n}:',
   pts: 'pistettä',
+  tieTitle: 'Tasapeli!',
+  tieSubtitle: 'Molemmat laulajat jakavat huippupisteet — kruunu jää saamatta.',
   endSongEarlyConfirm: 'Haluatko varmasti lopettaa kappaleen ennenaikaisesti?',
   confirm: 'Vahvista',
   cancel: 'Peruuta',
