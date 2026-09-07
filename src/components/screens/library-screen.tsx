@@ -153,26 +153,42 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   useEffect(() => { if (viewMode === 'playlists') { setPlaylists(getPlaylists()); updateFavoriteIds(); } }, [viewMode, updateFavoriteIds]);
   
   useEffect(() => {
+    let cancelled = false;
+    const applySongs = (songs: Awaited<ReturnType<typeof getAllSongsAsync>>) => {
+      if (cancelled) return;
+      setLoadedSongs(songs);
+      // One-time cleanup: remove orphaned song IDs from playlists and stale play counts
+      const allIds = new Set(songs.map(s => s.id));
+      cleanupPlaylistSongIds(allIds);
+      cleanupPlayCounts(allIds);
+    };
     const loadSongs = async () => {
       setSongsLoading(true);
       try {
         const songs = await getAllSongsAsync();
-        setLoadedSongs(songs);
-        // One-time cleanup: remove orphaned song IDs from playlists and stale play counts
-        const allIds = new Set(songs.map(s => s.id));
-        cleanupPlaylistSongIds(allIds);
-        cleanupPlayCounts(allIds);
+        applySongs(songs);
+        // Retry when empty: the async IndexedDB startup load
+        // (loadCustomSongsFromStorage in useAppEffects) may not have completed
+        // when this screen mounts first (child effects run before parent
+        // effects). Re-check after a short delay so a refresh directly onto
+        // the library screen still shows stored songs.
+        if (songs.length === 0) {
+          for (const delay of [600, 2000]) {
+            await new Promise(r => setTimeout(r, delay));
+            if (cancelled) return;
+            const retry = await getAllSongsAsync();
+            if (retry.length > 0) { applySongs(retry); break; }
+          }
+        }
       } catch {
         const fallbackSongs = getAllSongs();
-        setLoadedSongs(fallbackSongs);
-        const allIds = new Set(fallbackSongs.map(s => s.id));
-        cleanupPlaylistSongIds(allIds);
-        cleanupPlayCounts(allIds);
+        applySongs(fallbackSongs);
       } finally {
-        setSongsLoading(false);
+        if (!cancelled) setSongsLoading(false);
       }
     };
     loadSongs();
+    return () => { cancelled = true; };
   }, []);
   
   useEffect(() => { setStartOptions(prev => ({ ...prev, difficulty: storeDifficulty })); }, [storeDifficulty]);

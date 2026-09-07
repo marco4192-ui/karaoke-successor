@@ -180,6 +180,13 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
     // Only overwrite cache if it's empty or has fewer songs.
     if (songs.length > 0 && (!customSongsCache || customSongsCache.length < songs.length)) {
       customSongsCache = songs;
+      // CRITICAL FIX: a consumer (e.g. useSongLibrarySync on mount) may have
+      // called getAllSongs() BEFORE this async IndexedDB load completed, which
+      // cached an empty list in `songCache` (TTL: 5 minutes). Invalidate the
+      // stale combined cache so the next getAllSongs() re-reads from
+      // customSongsCache instead of returning the stale empty array.
+      songCache = null;
+      songCacheTimestamp = 0;
       return songs;
     }
     // If cache has data, prefer it (it's more recent)
