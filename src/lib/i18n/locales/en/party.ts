@@ -403,6 +403,7 @@ export const partyTranslations = {
     readyToPlayButton: 'Ready to Play',
     chooseSongFirst: '⚠️ Choose a song-selection method (and a song) first',
     selectMethodHint: 'Selecting a method does NOT start the game — press "Ready to Play" below when everyone is set.',
+    songSelectionLocked: 'Song selection unlocks at {n} players — add players above first',
     playerCountLabel: 'players',
     // Input mode options
     inputMicrophoneOnly: 'Microphones Only',

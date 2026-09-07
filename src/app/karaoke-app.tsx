@@ -755,6 +755,11 @@ export default function KaraokeZERO() {
     const syncScreen = async () => {
       try {
         // ── Build intro data for ALL party game modes ──
+        // Read the party store fresh at call time (NOT via closure) — the effect
+        // deps intentionally exclude the party store object; otherwise every
+        // per-frame score update would re-run this effect and spam the mobile
+        // sync endpoint + console log.
+        const partyNow = usePartyStore.getState();
         const isPartyIntro = ptmPhase === 'intro' && isPartyGameScreen;
         // Type matches ptmIntroData shape from mobile-types.ts GameState
         type PartyIntroData = {
@@ -774,7 +779,7 @@ export default function KaraokeZERO() {
         let introData: PartyIntroData = null;
 
         if (isPartyIntro) {
-          const gameMode = party.selectedGameMode;
+          const gameMode = partyNow.selectedGameMode;
           // Common base fields
           const base = {
             mediaLoaded: true,
@@ -784,48 +789,48 @@ export default function KaraokeZERO() {
           if (screen === 'pass-the-mic-game' || screen === 'companion-singalong-game') {
             introData = {
               ...base,
-              songTitle: party.passTheMicSong?.title || party.cptmSong?.title || undefined,
-              songArtist: party.passTheMicSong?.artist || party.cptmSong?.artist || undefined,
-              startPlayerName: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.name || undefined,
-              startPlayerAvatar: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.avatar || undefined,
-              startPlayerColor: (party.passTheMicPlayers[0] || party.cptmPlayers[0])?.color || undefined,
-              playerCount: (party.passTheMicPlayers.length || party.cptmPlayers.length) || undefined,
-              isMedley: party.ptmSongSelection === 'medley' || undefined,
-              medleySnippetCount: party.medleySongs?.length || undefined,
-              sharedMicName: party.passTheMicSettings?.sharedMicName || undefined,
+              songTitle: partyNow.passTheMicSong?.title || partyNow.cptmSong?.title || undefined,
+              songArtist: partyNow.passTheMicSong?.artist || partyNow.cptmSong?.artist || undefined,
+              startPlayerName: (partyNow.passTheMicPlayers[0] || partyNow.cptmPlayers[0])?.name || undefined,
+              startPlayerAvatar: (partyNow.passTheMicPlayers[0] || partyNow.cptmPlayers[0])?.avatar || undefined,
+              startPlayerColor: (partyNow.passTheMicPlayers[0] || partyNow.cptmPlayers[0])?.color || undefined,
+              playerCount: (partyNow.passTheMicPlayers.length || partyNow.cptmPlayers.length) || undefined,
+              isMedley: partyNow.ptmSongSelection === 'medley' || undefined,
+              medleySnippetCount: partyNow.medleySongs?.length || undefined,
+              sharedMicName: partyNow.passTheMicSettings?.sharedMicName || undefined,
             };
           } else if (screen === 'medley-game') {
             introData = {
               ...base,
-              songTitle: party.medleySongs?.[0]?.song?.title || undefined,
-              songArtist: party.medleySongs?.[0]?.song?.artist || undefined,
-              startPlayerName: party.medleyPlayers?.[0]?.name || undefined,
-              startPlayerAvatar: party.medleyPlayers?.[0]?.avatar || undefined,
-              startPlayerColor: party.medleyPlayers?.[0]?.color || undefined,
-              playerCount: party.medleyPlayers?.length || undefined,
+              songTitle: partyNow.medleySongs?.[0]?.song?.title || undefined,
+              songArtist: partyNow.medleySongs?.[0]?.song?.artist || undefined,
+              startPlayerName: partyNow.medleyPlayers?.[0]?.name || undefined,
+              startPlayerAvatar: partyNow.medleyPlayers?.[0]?.avatar || undefined,
+              startPlayerColor: partyNow.medleyPlayers?.[0]?.color || undefined,
+              playerCount: partyNow.medleyPlayers?.length || undefined,
               isMedley: true,
-              medleySnippetCount: party.medleySongs?.length || undefined,
+              medleySnippetCount: partyNow.medleySongs?.length || undefined,
             };
           } else if (screen === 'battle-royale-game') {
             introData = {
               ...base,
-              playerCount: party.battleRoyaleGame?.players?.length || undefined,
-              startPlayerName: party.battleRoyaleGame?.players?.[0]?.name || undefined,
-              startPlayerColor: party.battleRoyaleGame?.players?.[0]?.color || undefined,
+              playerCount: partyNow.battleRoyaleGame?.players?.length || undefined,
+              startPlayerName: partyNow.battleRoyaleGame?.players?.[0]?.name || undefined,
+              startPlayerColor: partyNow.battleRoyaleGame?.players?.[0]?.color || undefined,
             };
           } else if (screen === 'rate-my-song-game') {
             introData = {
               ...base,
-              playerCount: party.rateMySongPlayerIds?.length || undefined,
+              playerCount: partyNow.rateMySongPlayerIds?.length || undefined,
             };
           } else {
             // Generic competitive modes (missing-words, blind, tournament)
             introData = {
               ...base,
-              songTitle: party.competitiveGame?.rounds?.[0]?.songTitle || undefined,
-              playerCount: party.competitiveGame?.players?.length || undefined,
-              startPlayerName: party.competitiveGame?.players?.[0]?.name || undefined,
-              startPlayerColor: party.competitiveGame?.players?.[0]?.color || undefined,
+              songTitle: partyNow.competitiveGame?.rounds?.[0]?.songTitle || undefined,
+              playerCount: partyNow.competitiveGame?.players?.length || undefined,
+              startPlayerName: partyNow.competitiveGame?.players?.[0]?.name || undefined,
+              startPlayerColor: partyNow.competitiveGame?.players?.[0]?.color || undefined,
             };
           }
         }
@@ -844,13 +849,13 @@ export default function KaraokeZERO() {
             payload: {
               ...useGameStore.getState().gameState,
               currentScreen: screen,
-              partyGameMode: party.selectedGameMode || null,
-              votingSongs: screen === 'song-voting' ? party.votingSongs : [],
-              partyLibrarySong: (screen === 'party-setup' || screen === 'library') && party.librarySelectedSong
-                ? { id: party.librarySelectedSong.id, title: party.librarySelectedSong.title, artist: party.librarySelectedSong.artist }
+              partyGameMode: partyNow.selectedGameMode || null,
+              votingSongs: screen === 'song-voting' ? partyNow.votingSongs : [],
+              partyLibrarySong: (screen === 'party-setup' || screen === 'library') && partyNow.librarySelectedSong
+                ? { id: partyNow.librarySelectedSong.id, title: partyNow.librarySelectedSong.title, artist: partyNow.librarySelectedSong.artist }
                 : null,
               isPartyModeActive,
-              desktopDialog: party.pauseDialogAction,
+              desktopDialog: partyNow.pauseDialogAction,
               pauseInitiator,
               ptmPhase,
               ptmIntroData: introData,
@@ -866,7 +871,11 @@ export default function KaraokeZERO() {
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
-  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, isPartyGameScreen, party]);
+    // NOTE: `party` store object intentionally NOT in deps — syncScreen reads
+    // fresh state via usePartyStore.getState(). Including it re-ran this effect
+    // on every per-frame score update (~40/s during competitive games),
+    // spamming the mobile sync endpoint and the console log.
+  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, isPartyGameScreen]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);

@@ -96,21 +96,6 @@ export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
 }
 
 /**
- * Generate a deterministic seed sequence (xorshift32).
- */
-function generateSeedSequence(maxValues: number): number[] {
-  const seedValues: number[] = [];
-  let state = Math.floor(Math.random() * 2147483647);
-  for (let i = 0; i < maxValues; i++) {
-    state = (state + 0x6D2B79F5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    seedValues.push(((t ^ (t >>> 14)) >>> 0) / 4294967296);
-  }
-  return seedValues;
-}
-
-/**
  * Fisher-Yates shuffle (in-place).
  */
 function shuffleArray<T>(arr: T[]): T[] {
@@ -120,6 +105,42 @@ function shuffleArray<T>(arr: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+/**
+ * Pick which hideable passages get marked (blind / hidden).
+ * Shared by Blind Karaoke and Missing Words (passage granularity) so both modes
+ * follow the same deterministic rules:
+ *   - count = max(1, round(hideableCount × frequency)) → GUARANTEES at least
+ *     one marked passage whenever frequency > 0 (a "Blind Karaoke" round with
+ *     zero blind passages would silently degenerate into normal karaoke —
+ *     previously a ~34% chance at "Normal 30%" on 4-passage songs).
+ *   - selection is shuffled so the marked passages are spread unpredictably.
+ */
+function pickMarkedPassageIndices(hideableCount: number, frequency: number): Set<number> {
+  if (hideableCount <= 0) return new Set();
+  const markCount = Math.max(1, Math.round(hideableCount * frequency));
+  const shuffled = shuffleArray(Array.from({ length: hideableCount }, (_, i) => i));
+  return new Set(shuffled.slice(0, Math.min(markCount, hideableCount)));
+}
+
+/**
+ * Group lines into passages with the shared chunk-fallback for songs without
+ * natural breaks. Used by blind pattern generation, MW pattern generation AND
+ * the MW warning effect so all three agree on the same passage boundaries
+ * (previously the warning effect used raw groupIntoPassages and silently
+ * skipped warnings for chunked songs).
+ */
+function getPassagesWithFallback(lines: LyricLine[]): LyricLine[][] {
+  let passages = groupIntoPassages(lines);
+  if (passages.length <= 1 && lines.length > 8) {
+    const chunkSize = Math.max(4, Math.ceil(lines.length / Math.max(3, Math.ceil(lines.length / 10))));
+    passages = [];
+    for (let i = 0; i < lines.length; i += chunkSize) {
+      passages.push(lines.slice(i, i + chunkSize));
+    }
+  }
+  return passages;
 }
 
 /**
@@ -162,7 +183,7 @@ function hideEveryNthNote(noteStartTimes: number[], n: number): number[] {
  * - First passage is ALWAYS fully visible (notes + text)
  * - Hardcore mode: inverts visibility — text hidden when notes visible & vice versa
  * - Frequencies: 15%, 30%, 60%, 90% (Insane)
- * - Warning signal 1s before blind sections (via onBlindWarning callback)
+ * - Warning signal 2s before blind sections with live ticking countdown (via onBlindWarning)
  *
  * MISSING WORDS — Multi-granularity hiding:
  * - 'word': Every N-th note hidden within ALL passages (except first)
@@ -171,7 +192,7 @@ function hideEveryNthNote(noteStartTimes: number[], n: number): number[] {
  * - First passage always visible
  * - Hardcore MW: Hidden words stay hidden until song ends (not revealed after singing)
  * - Frequencies: 15%, 30%, 60%, 90% (Insane)
- * - Warning signal 1s before hidden passages (via onMissingWordsWarning callback)
+ * - Warning signal 2s before hidden passages with live ticking countdown (via onMissingWordsWarning)
  */
 export function useGameModes({
   gameMode,
@@ -255,28 +276,18 @@ export function useGameModes({
   // songId is included to guarantee regeneration when a new song loads.
   useEffect(() => {
     if (gameMode === 'blind' && sortedLines && sortedLines.length > 0 && !blindPatternRef.current) {
-      let passages = groupIntoPassages(sortedLines);
-      // DO-NOT-CHANGE: Fallback for songs without natural passage breaks.
-      // Many karaoke songs flow continuously with gaps < 1.5s, producing only
-      // one passage. Without multiple passages, no blind sections can be created.
-      // Splitting into equal chunks of ~8-15 lines guarantees blind passages.
-      if (passages.length <= 1 && sortedLines.length > 8) {
-        const chunkSize = Math.max(4, Math.ceil(sortedLines.length / Math.max(3, Math.ceil(sortedLines.length / 10))));
-        passages = [];
-        for (let i = 0; i < sortedLines.length; i += chunkSize) {
-          passages.push(sortedLines.slice(i, i + chunkSize));
-        }
-      }
-      const seeds = generateSeedSequence(passages.length);
-
+      const passages = getPassagesWithFallback(sortedLines);
       // Apply escalating multiplier to frequency
       const baseFreq = blindFrequency ?? 0.30;
       const effectiveFreq = Math.min(0.95, baseFreq * (escalatingMultiplier ?? 1));
 
-      const isBlind: boolean[] = passages.map((_, i) => {
-        if (i === 0) return false; // First passage always visible
-        return seeds[i] < effectiveFreq;
-      });
+      // Deterministic selection with minimum guarantee: at least ONE passage is
+      // blind whenever the mode is active. The old seed-per-passage approach
+      // (~30% each, independently) left a ~34% chance of ZERO blind passages on
+      // short songs — a Blind Karaoke round that was just normal karaoke.
+      const hideableCount = passages.length - 1; // first passage always visible
+      const blindIndices = pickMarkedPassageIndices(hideableCount, effectiveFreq);
+      const isBlind: boolean[] = passages.map((_, i) => i === 0 ? false : blindIndices.has(i - 1));
 
       blindPatternRef.current = {
         isBlind,
@@ -302,9 +313,18 @@ export function useGameModes({
         }
       }
 
-      // Look ahead for next blind passage (for warning signal)
+      // ── Warning signal ──
+      // Phases reported via onBlindWarning(countdown, isActive):
+      //   countdown > 0, active → next blind passage starts in countdown seconds
+      //                          (fires again whenever the ceil() value ticks down,
+      //                          so the banner shows a live 2…1 countdown)
+      //   countdown = 0, active → singer is INSIDE a blind passage (persistent pill)
+      //   countdown = 0, idle   → nothing to report
       if (onBlindWarning) {
-        const WARNING_LEAD_MS = 1000; // 1 second warning
+        const WARNING_LEAD_MS = 2000; // 2 second warning (reaction time + audible cue)
+        const inBlindPassage = currentPassageIndex >= 0 && pattern.isBlind[currentPassageIndex];
+
+        // Next blind passage that has not started yet
         let nextBlindPassageIndex = -1;
         for (let i = 0; i < pattern.passages.length; i++) {
           if (pattern.isBlind[i] && currentTime < pattern.passages[i].startTime) {
@@ -313,27 +333,29 @@ export function useGameModes({
           }
         }
 
+        let reported = false;
         if (nextBlindPassageIndex >= 0) {
           const timeUntilBlind = pattern.passages[nextBlindPassageIndex].startTime - currentTime;
-          if (timeUntilBlind <= WARNING_LEAD_MS && timeUntilBlind > 0) {
+          if (timeUntilBlind > 0 && timeUntilBlind <= WARNING_LEAD_MS) {
             const countdown = Math.ceil(timeUntilBlind / 1000);
-            if (lastBlindWarningKeyRef.current !== String(nextBlindPassageIndex)) {
-              lastBlindWarningKeyRef.current = String(nextBlindPassageIndex);
+            // Key includes the countdown value → refires on each tick (2 → 1)
+            const warnKey = `blind-${nextBlindPassageIndex}-${countdown}`;
+            if (lastBlindWarningKeyRef.current !== warnKey) {
+              lastBlindWarningKeyRef.current = warnKey;
               onBlindWarning(countdown, true);
             }
-          } else if (currentPassageIndex === nextBlindPassageIndex) {
-            // We're now in the blind section
-            onBlindWarning(0, true);
-            lastBlindWarningKeyRef.current = '';
-          } else if (timeUntilBlind > WARNING_LEAD_MS || currentPassageIndex >= 0 && !pattern.isBlind[currentPassageIndex]) {
-            // Not near a blind section
-            onBlindWarning(0, false);
-            lastBlindWarningKeyRef.current = '';
+            reported = true;
           }
-        } else {
-          // No upcoming blind passage
-          const isInBlind = currentPassageIndex >= 0 && pattern.isBlind[currentPassageIndex];
-          onBlindWarning(0, isInBlind);
+        }
+
+        if (!reported) {
+          // Far from the next blind passage (or none left) — while inside a
+          // blind passage keep the persistent active pill, otherwise idle.
+          // (The previous implementation had a dead branch here that could
+          // never be true, so the active pill only showed when no further
+          // blind passages existed — inconsistent behaviour.)
+          onBlindWarning(0, inBlindPassage);
+          if (!inBlindPassage) lastBlindWarningKeyRef.current = '';
         }
       }
 
@@ -368,18 +390,7 @@ export function useGameModes({
     if (gameMode === 'missing-words' && sortedLines && sortedLines.length > 0 && !missingWordsGeneratedRef.current) {
       missingWordsGeneratedRef.current = true;
 
-      let passages = groupIntoPassages(sortedLines);
-      // DO-NOT-CHANGE: Fallback for songs without natural passage breaks.
-      // Many karaoke songs flow continuously with gaps < 1.5s, producing only
-      // one passage. Without multiple passages, no missing-word sections can be created.
-      // Splitting into equal chunks of ~8-15 lines guarantees hideable passages.
-      if (passages.length <= 1 && sortedLines.length > 8) {
-        const chunkSize = Math.max(4, Math.ceil(sortedLines.length / Math.max(3, Math.ceil(sortedLines.length / 10))));
-        passages = [];
-        for (let i = 0; i < sortedLines.length; i += chunkSize) {
-          passages.push(sortedLines.slice(i, i + chunkSize));
-        }
-      }
+      const passages = getPassagesWithFallback(sortedLines);
       if (passages.length <= 1) {
         setMissingWordsIndices([]);
         return;
@@ -405,14 +416,7 @@ export function useGameModes({
       } else if (granularity === 'both') {
         // BOTH mode: hide some full passages + scattered words in visible ones
         // Passages: use half the frequency for passage-level hiding
-        const passageFreq = effectiveFreq * 0.5;
-        const passageHideCount = Math.max(1, Math.round(hideablePassages.length * passageFreq));
-        const shuffledIndices = shuffleArray(Array.from({ length: hideablePassages.length }, (_, i) => i));
-
-        const hiddenPassageIndices = new Set<number>();
-        for (let i = 0; i < passageHideCount && i < shuffledIndices.length; i++) {
-          hiddenPassageIndices.add(shuffledIndices[i]);
-        }
+        const hiddenPassageIndices = pickMarkedPassageIndices(hideablePassages.length, effectiveFreq * 0.5);
 
         // Add line startTimes from fully hidden passages
         for (const idx of hiddenPassageIndices) {
@@ -428,13 +432,10 @@ export function useGameModes({
         const wordN = wordSkipMap[Math.round(effectiveFreq * 20) / 20] ?? Math.max(1, Math.round(1 / effectiveFreq));
         hiddenStartTimes.push(...hideEveryNthNote(visibleNoteTimes, wordN));
       } else {
-        // PASSAGE mode (original): entire passages hidden
-        const hideCount = Math.max(1, Math.round(hideablePassages.length * effectiveFreq));
-        const shuffledIndices = shuffleArray(Array.from({ length: hideablePassages.length }, (_, i) => i));
-
-        for (let i = 0; i < hideCount && i < shuffledIndices.length; i++) {
-          const passage = hideablePassages[shuffledIndices[i]];
-          for (const line of passage) {
+        // PASSAGE mode (original): entire passages hidden (shared minimum guarantee)
+        const hiddenPassageIndices = pickMarkedPassageIndices(hideablePassages.length, effectiveFreq);
+        for (const idx of hiddenPassageIndices) {
+          for (const line of hideablePassages[idx]) {
             hiddenStartTimes.push(line.startTime);
           }
         }
@@ -449,24 +450,31 @@ export function useGameModes({
   // ── Missing Words Warning: signal before hidden passages approach ──
   useEffect(() => {
     if (gameMode === 'missing-words' && isGameActive && sortedLines && onMissingWordsWarning) {
-      const passages = groupIntoPassages(sortedLines);
+      const passages = getPassagesWithFallback(sortedLines);
       if (passages.length <= 1) return;
 
-      // Check if current time is approaching a hidden passage (first hideable one)
-      const WARNING_LEAD_MS = 1500;
+      const WARNING_LEAD_MS = 2000; // 2 second warning (matches Blind Karaoke)
       for (let i = 1; i < passages.length; i++) {
         const passage = passages[i];
         const passageStart = passage[0]?.startTime ?? 0;
         const passageEnd = passage[passage.length - 1]?.endTime ?? 0;
 
-        // Only warn if this passage actually contains hidden words
-        const passageHasHidden = passage.some(line => hiddenStartTimesRef.current.has(line.startTime));
+        // Only warn if this passage actually contains hidden words.
+        // RANGE check (not exact line.startTime match): word granularity hides
+        // NOTE start times which almost never coincide with line start times in
+        // real UltraStar files — the old exact-match check silently disabled
+        // warnings for 'word' and 'both' granularity.
+        let passageHasHidden = false;
+        for (const t of hiddenStartTimesRef.current) {
+          if (t >= passageStart && t < passageEnd) { passageHasHidden = true; break; }
+        }
         if (!passageHasHidden) continue;
 
         const timeUntilPassage = passageStart - currentTime;
         if (timeUntilPassage > 0 && timeUntilPassage <= WARNING_LEAD_MS) {
           const countdown = Math.ceil(timeUntilPassage / 1000);
-          const warnKey = `mw-${i}`;
+          // Key includes the countdown value → refires on each tick (2 → 1)
+          const warnKey = `mw-${i}-${countdown}`;
           if (lastMWWarningKeyRef.current !== warnKey) {
             lastMWWarningKeyRef.current = warnKey;
             onMissingWordsWarning(countdown, true);

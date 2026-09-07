@@ -323,6 +323,9 @@ export function SongSelectionGrid({
             const optConfig = SONG_SELECTION_CONFIG[option];
             const enabled = selectedPlayerCount >= config.minPlayers;
             const isSelected = selectedOption === option;
+            const lockReason = !enabled
+              ? t('unifiedSetup.songSelectionLocked').replace('{n}', String(config.minPlayers))
+              : undefined;
             return (
               <button
                 key={option}
@@ -331,23 +334,40 @@ export function SongSelectionGrid({
                 disabled={!enabled}
                 data-selected={isSelected ? 'true' : 'false'}
                 data-testid={`song-selection-${option}`}
-                className={`relative p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
+                data-locked={!enabled ? 'true' : 'false'}
+                title={lockReason}
+                aria-label={lockReason ? `${t(optConfig.labelKey)} — ${lockReason}` : undefined}
+                className={`group relative p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   enabled
-                    ? `${optConfig.color} text-white hover:scale-105`
-                    : 'bg-white/5 text-white/30 cursor-not-allowed'
+                    ? `${optConfig.color} text-white hover:scale-105 hover:shadow-lg hover:shadow-white/10`
+                    : 'song-card-locked bg-white/5 text-white/30 cursor-not-allowed'
                 } ${isSelected ? 'ring-4 ring-white/70 scale-[1.03] shadow-lg' : ''}`}
               >
                 {isSelected && (
                   <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-sm font-bold shadow" aria-hidden="true">✓</span>
                 )}
-                <div className="text-4xl mb-2">{optConfig.icon}</div>
+                {!enabled && (
+                  <span
+                    className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 border border-white/10 text-white/50 text-xs"
+                    aria-hidden="true"
+                    data-testid={`song-selection-locked-badge-${option}`}
+                  >🔒</span>
+                )}
+                <div className={`text-4xl mb-2 ${enabled ? 'drop-shadow-md transition-transform group-hover:scale-110' : 'opacity-40 grayscale'}`}>{optConfig.icon}</div>
                 <div className="font-bold">{t(optConfig.labelKey)}</div>
                 <div className="text-xs opacity-80 mt-1">{t(optConfig.descriptionKey)}</div>
               </button>
             );
           })}
         </div>
-        <p className="text-xs text-white/40 mt-3">{t('unifiedSetup.selectMethodHint')}</p>
+        {selectedPlayerCount < config.minPlayers ? (
+          <p className="text-xs text-amber-200/70 mt-3 flex items-center gap-1.5" data-testid="song-selection-locked-hint">
+            <span aria-hidden="true">🔒</span>
+            {t('unifiedSetup.songSelectionLocked').replace('{n}', String(config.minPlayers))}
+          </p>
+        ) : (
+          <p className="text-xs text-white/40 mt-3">{t('unifiedSetup.selectMethodHint')}</p>
+        )}
       </CardContent>
     </Card>
   );

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
+import { useModeWarningCues } from '@/hooks/use-mode-warning-cues';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import {
@@ -379,6 +380,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // return the previous state object → React skips the re-render).
   const [blindWarning, setBlindWarning] = useState({ countdown: 0, active: false });
   const [missingWordsWarning, setMissingWordsWarning] = useState({ countdown: 0, active: false });
+  // Audible attention cues for blind/hidden section transitions
+  // (visual banner + sound — singers can't stare at the HUD while singing)
+  useModeWarningCues(gameState.gameMode, blindWarning, missingWordsWarning);
   const onBlindWarning = useCallback((countdown: number, isActive: boolean) => {
     setBlindWarning(prev => (prev.countdown === countdown && prev.active === isActive)
       ? prev

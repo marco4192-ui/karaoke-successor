@@ -92,3 +92,4 @@ leaderboard-api/config.local.php
 /Caddyfile
 worklog.md
 dev.log
+public/qa-tones.wav

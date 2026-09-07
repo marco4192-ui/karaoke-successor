@@ -376,6 +376,7 @@ unifiedSetup: {
   readyToPlayButton: 'Bereit zum Spielen',
   chooseSongFirst: '⚠️ Wähle zuerst eine Song-Auswahlmethode (und ggf. einen Song)',
   selectMethodHint: 'Die Auswahl startet NICHT das Spiel — drücke unten „Bereit zum Spielen“, wenn alles bereit ist.',
+  songSelectionLocked: 'Die Song-Auswahl wird ab {n} Spielern freigeschaltet — zuerst oben Spieler hinzufügen',
   playerCountLabel: 'Spieler',
   inputMicrophoneOnly: 'Nur Mikrofone',
   inputMicrophoneOnlyDesc: 'Alle Spieler nutzen die Mikrofone am Gerät',
