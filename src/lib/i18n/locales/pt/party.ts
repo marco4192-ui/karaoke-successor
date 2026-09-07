@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} rodadas jogadas',
   nextRound: 'Próxima Rodada →',
   winner: 'Vencedor!',
+  tieTitle: 'Empate!',
+  tieSubtitle: 'Ambos os cantores partilham a melhor pontuação — ninguém leva a coroa.',
   points: '{n} pontos',
   backToMenu: '← Voltar ao Menu Principal',
   errorMaxPlayers: 'Máximo de 4 jogadores',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Modo favorito',
   topWinner: 'Vencedor principal',
   bestScore: 'Melhor pontuação',
+  bestRating: 'Melhor avaliação',
 },
 
 extendedDesc: {

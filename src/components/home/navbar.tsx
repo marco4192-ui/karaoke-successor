@@ -101,6 +101,7 @@ export function FullscreenToggleButton({ isFullscreen, toggleFullscreen }: { isF
       onClick={toggleFullscreen}
       className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 hover:bg-black/70 hover:border-white/40 transition-all group"
       title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
+      aria-label={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
     >
       {isFullscreen ? (
         <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

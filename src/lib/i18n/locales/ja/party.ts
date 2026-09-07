@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n}ラウンドプレイ済み',
   nextRound: '次のラウンド →',
   winner: '勝者！',
+  tieTitle: '引き分け！',
+  tieSubtitle: '両者のスコアは同点——王冠を獲得する者はいません。',
   points: '{n}ポイント',
   backToMenu: '← メインメニューに戻る',
   errorMaxPlayers: '最大4人まで',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'お気に入りモード',
   topWinner: '最多勝者',
   bestScore: '最高スコア',
+  bestRating: '最高評価',
 },
 
 extendedDesc: {

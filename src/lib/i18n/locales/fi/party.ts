@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} kierrosta pelattu',
   nextRound: 'Seuraava kierros →',
   winner: 'Voittaja!',
+  tieTitle: 'Tasapeli!',
+  tieSubtitle: 'Molemmat laulajat jakavat huippupisteet — kruunu jää saamatta.',
   points: '{n} pistettä',
   backToMenu: '← Takaisin päävalikkoon',
   errorMaxPlayers: 'Enintään 4 pelaajaa',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Suosikkimoodi',
   topWinner: 'Eniten voittoja',
   bestScore: 'Paras pistemäärä',
+  bestRating: 'Paras arvio',
 },
 
 extendedDesc: {

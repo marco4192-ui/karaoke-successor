@@ -63,7 +63,17 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "warn",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
+  ignores: [
+    "node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills",
+    // Sandbox-only artifacts (gitignored, not part of the app)
+    ".zscripts/**", "download/**", "mini-services/**", "tool-results/**", "upload/**",
+    // Generated / bundled output (repo ships it, but it is not hand-written source)
+    "src-tauri/bundled/**", "dist/**", "portable-node/**",
+    // Build scripts (Node tooling scripts using CommonJS require by design)
+    "scripts/**",
+    // Legacy PHP leaderboard service (no JS tooling)
+    "leaderboard-api/**",
+  ]
 }];
 
 export default eslintConfig;

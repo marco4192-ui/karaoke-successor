@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Canzone della Serata',
   voteSongOfEvening: 'Vota per la Canzone della Serata',
   seriesWinner: 'Vincitore della Serie',
+  tieTitle: 'Pareggio!',
+  tieSubtitle: 'Entrambi gli artisti hanno ricevuto lo stesso punteggio — il pubblico non sa decidere.',
   roundHistory: 'Cronologia Turni',
   cumulativeScore: 'Punteggio Cumulativo',
   awardBestPerformance: 'Migliore Esibizione',

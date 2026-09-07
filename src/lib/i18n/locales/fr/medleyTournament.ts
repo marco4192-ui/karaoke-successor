@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Chanson de la Soirée',
   voteSongOfEvening: 'Votez pour la Chanson de la Soirée',
   seriesWinner: 'Gagnant de la Série',
+  tieTitle: 'Égalité !',
+  tieSubtitle: 'Les deux artistes ont reçu la même note — le public ne peut pas trancher.',
   roundHistory: 'Historique des Tours',
   cumulativeScore: 'Score Cumulatif',
   awardBestPerformance: 'Meilleure Performance',

@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: '今晚之歌',
   voteSongOfEvening: '投票选出今晚之歌',
   seriesWinner: '系列赛冠军',
+  tieTitle: '平局！',
+  tieSubtitle: '两位表演者获得了相同的评分——观众无法做出选择。',
   roundHistory: '回合记录',
   cumulativeScore: '累计得分',
   awardBestPerformance: '最佳表演',

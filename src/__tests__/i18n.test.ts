@@ -202,6 +202,7 @@ describe('i18n translation system', () => {
         'partyHistory.playerSingular', 'partyHistory.roundSingular',
         'partyHistory.totalParties', 'partyHistory.favoriteMode',
         'partyHistory.topWinner', 'partyHistory.bestScore',
+        'partyHistory.bestRating',
       ];
       for (const lang of languages) {
         for (const key of keys) {
@@ -215,6 +216,19 @@ describe('i18n translation system', () => {
       for (const lang of languages) {
         for (const key of ['partyHistory.players', 'partyHistory.rounds', 'partyHistory.timesPlayed']) {
           expect(translations[lang][key], `${lang} ${key}`).toContain('{n}');
+        }
+      }
+    });
+
+    it('tie-state keys exist in all languages (competitiveWords + rateMySong)', () => {
+      const languages: Language[] = ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'nl', 'pl', 'sv', 'no', 'da', 'fi'];
+      const keys = [
+        'competitiveWords.tieTitle', 'competitiveWords.tieSubtitle',
+        'rateMySong.tieTitle', 'rateMySong.tieSubtitle',
+      ];
+      for (const lang of languages) {
+        for (const key of keys) {
+          expect(translations[lang][key], `${lang} ${key}`).toBeTruthy();
         }
       }
     });

@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} turni giocati',
   nextRound: 'Turno Successivo →',
   winner: 'Vincitore!',
+  tieTitle: 'Pareggio!',
+  tieSubtitle: 'Entrambi i cantanti condividono il punteggio migliore — nessuno si aggiudica la corona.',
   points: '{n} punti',
   backToMenu: '← Torna al Menu Principale',
   errorMaxPlayers: 'Massimo 4 giocatori',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Modalità preferita',
   topWinner: 'Vincitore top',
   bestScore: 'Miglior punteggio',
+  bestRating: 'Miglior valutazione',
 },
 
 extendedDesc: {

@@ -14,13 +14,19 @@ import type { GameMode } from '@/types/game';
 
 // ===================== TYPES =====================
 
-/** A single player line inside a session record. */
+/**
+ * A single player line inside a session record.
+ * `scoreKind` separates karaoke point scores (0–10000+) from Rate-my-Song
+ * rating sums (0–30) so insights never mix the two scales.
+ */
 export interface PartySessionPlayerResult {
   name: string;
   avatar?: string;
   color?: string;
   score: number;
   isWinner?: boolean;
+  /** 'points' (default) for karaoke scores, 'rating' for RMS rating sums */
+  scoreKind?: 'points' | 'rating';
 }
 
 /** One completed party session (game/series over). */
@@ -136,6 +142,15 @@ export function getSessionWinner(session: PartySessionRecord): PartySessionPlaye
   return top;
 }
 
+/**
+ * True when the session's scores are rating sums (Rate my Song) rather than
+ * karaoke points. A session counts as a rating session when ANY player line
+ * carries `scoreKind: 'rating'` (the recorder sets it on every line).
+ */
+export function isRatingSession(session: PartySessionRecord): boolean {
+  return session.players.some(p => p.scoreKind === 'rating');
+}
+
 // ===================== INSIGHTS =====================
 
 /** Aggregated party statistics derived from the stored session history. */
@@ -148,8 +163,10 @@ export interface PartyInsights {
   favoriteMode: { mode: string; count: number } | null;
   /** Player with the most session wins (ties → first alphabetically for stability). */
   topWinner: { name: string; avatar?: string; color?: string; wins: number } | null;
-  /** Highest single-session score and who achieved it. */
+  /** Highest single-session karaoke point score and who achieved it (points scale only). */
   bestScore: { name: string; avatar?: string; color?: string; score: number } | null;
+  /** Highest single-session rating sum and who achieved it (rating scale only, RMS). */
+  bestRating: { name: string; avatar?: string; color?: string; rating: number } | null;
 }
 
 /**
@@ -164,6 +181,7 @@ export function getPartyInsights(input?: PartySessionRecord[]): PartyInsights {
     favoriteMode: null,
     topWinner: null,
     bestScore: null,
+    bestRating: null,
   };
 
   const modeCounts: Record<string, number> = {};
@@ -184,8 +202,16 @@ export function getPartyInsights(input?: PartySessionRecord[]): PartyInsights {
     }
 
     for (const p of session.players) {
-      if (!insights.bestScore || p.score > insights.bestScore.score) {
-        insights.bestScore = { name: p.name, avatar: p.avatar, color: p.color, score: p.score };
+      if (p.scoreKind === 'rating') {
+        // Rating scale (RMS sums, e.g. 24.5) — never mixed into bestScore
+        if (!insights.bestRating || p.score > insights.bestRating.rating) {
+          insights.bestRating = { name: p.name, avatar: p.avatar, color: p.color, rating: p.score };
+        }
+      } else {
+        // Points scale (karaoke scores)
+        if (!insights.bestScore || p.score > insights.bestScore.score) {
+          insights.bestScore = { name: p.name, avatar: p.avatar, color: p.color, score: p.score };
+        }
       }
     }
   }

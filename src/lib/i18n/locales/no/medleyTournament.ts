@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Kveldens sang',
   voteSongOfEvening: 'Stem på kveldens sang',
   seriesWinner: 'Serievinner',
+  tieTitle: 'Uavgjort!',
+  tieSubtitle: 'Begge artistene fikk samme vurdering — publikum kan ikke bestemme seg.',
   roundHistory: 'Rundehistorikk',
   cumulativeScore: 'Samlet poengsum',
   awardBestPerformance: 'Beste fremføring',

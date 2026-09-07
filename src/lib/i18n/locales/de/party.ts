@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} Runden gespielt',
   nextRound: 'Nächste Runde →',
   winner: 'Gewinner!',
+  tieTitle: 'Unentschieden!',
+  tieSubtitle: 'Beide Sänger teilen den Top-Score — die Krone geht an niemanden.',
   points: '{n} Punkte',
   backToMenu: '← Zurück zum Hauptmenü',
   errorMaxPlayers: 'Maximal 4 Spieler',
@@ -441,6 +443,7 @@ partyHistory: {
   favoriteMode: 'Lieblingsmodus',
   topWinner: 'Häufigster Sieger',
   bestScore: 'Bester Score',
+  bestRating: 'Beste Bewertung',
 },
 
 extendedDesc: {

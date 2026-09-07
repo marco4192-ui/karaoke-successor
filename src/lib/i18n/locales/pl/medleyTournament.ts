@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Piosenka wieczoru',
   voteSongOfEvening: 'Głosuj na piosenkę wieczoru',
   seriesWinner: 'Mistrz serii',
+  tieTitle: 'Remis!',
+  tieSubtitle: 'Obaj wykonawcy otrzymali tę samą ocenę — publiczność nie może się zdecydować.',
   roundHistory: 'Historia rund',
   cumulativeScore: 'Wynik skumulowany',
   awardBestPerformance: 'Najlepsze wystąpienie',

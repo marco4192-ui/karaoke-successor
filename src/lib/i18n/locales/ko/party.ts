@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n}라운드 플레이됨',
   nextRound: '다음 라운드 →',
   winner: '승자!',
+  tieTitle: '무승부!',
+  tieSubtitle: '두 명의 가수가 같은 점수를 기록했습니다 — 왕관의 주인은 없습니다.',
   points: '{n}점',
   backToMenu: '← 메인 메뉴로 돌아가기',
   errorMaxPlayers: '최대 4명',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: '선호 모드',
   topWinner: '최다 승자',
   bestScore: '최고 점수',
+  bestRating: '최고 평점',
 },
 
 extendedDesc: {

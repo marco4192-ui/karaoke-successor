@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Nummer van de avond',
   voteSongOfEvening: 'Stem op het nummer van de avond',
   seriesWinner: 'Serie-winnaar',
+  tieTitle: 'Gelijkspel!',
+  tieSubtitle: 'Beide artiesten kregen dezelfde beoordeling — het publiek kan niet kiezen.',
   roundHistory: 'Rondegeschiedenis',
   cumulativeScore: 'Cumulatieve score',
   awardBestPerformance: 'Beste optreden',

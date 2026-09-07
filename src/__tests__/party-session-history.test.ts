@@ -12,6 +12,7 @@ import {
   getPartyInsights,
   clearPartySessions,
   getSessionWinner,
+  isRatingSession,
   formatSessionTimeAgo,
 } from '@/lib/game/party-session-history';
 
@@ -193,6 +194,46 @@ describe('party-session-history', () => {
       const insights = getPartyInsights(sessions);
       expect(insights.bestScore).not.toBeNull();
       expect(insights.bestScore!.score).toBe(0);
+    });
+
+    it('separates rating sums (RMS) from karaoke point scores', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'rate-my-song', rounds: 2, players: [
+          { name: 'Anna', score: 24.5, scoreKind: 'rating' as const },
+          { name: 'Ben', score: 12, scoreKind: 'rating' as const },
+        ] },
+        { id: 'b', finishedAt: 2, mode: 'missing-words', players: [
+          { name: 'Clara', score: 18 },
+          { name: 'Ben', score: 9 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      // Rating sums never leak into bestScore — 24.5 > 18 would win without the split
+      expect(insights.bestScore).toMatchObject({ name: 'Clara', score: 18 });
+      // Karaoke points never leak into bestRating
+      expect(insights.bestRating).toMatchObject({ name: 'Anna', rating: 24.5 });
+    });
+
+    it('bestRating stays null when only point-score sessions exist', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'duel', players: [
+          { name: 'A', score: 4300 }, { name: 'B', score: 900 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      expect(insights.bestRating).toBeNull();
+      expect(insights.bestScore).toMatchObject({ name: 'A', score: 4300 });
+    });
+
+    it('isRatingSession detects RMS sessions via any player line', () => {
+      const rms = { id: 'a', finishedAt: 1, mode: 'rate-my-song', players: [
+        { name: 'A', score: 10, scoreKind: 'rating' as const },
+      ] };
+      const pts = { id: 'b', finishedAt: 2, mode: 'duel', players: [
+        { name: 'A', score: 10 },
+      ] };
+      expect(isRatingSession(rms)).toBe(true);
+      expect(isRatingSession(pts)).toBe(false);
     });
   });
 });

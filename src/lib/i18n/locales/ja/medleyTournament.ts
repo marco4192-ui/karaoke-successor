@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: '今夜の一曲',
   voteSongOfEvening: '今夜の一曲に投票',
   seriesWinner: 'シリーズ優勝',
+  tieTitle: '引き分け！',
+  tieSubtitle: '両者の評価は同点——観客は決めかねています。',
   roundHistory: 'ラウンド履歴',
   cumulativeScore: '累計スコア',
   awardBestPerformance: 'ベストパフォーマンス',

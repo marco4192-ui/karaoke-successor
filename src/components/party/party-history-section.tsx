@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, History, Sparkles, Music, Crown, Target, PartyPopper, Flame } from 'lucide-react';
+import { Trash2, History, Sparkles, Music, Crown, Target, Star, PartyPopper, Flame } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/translations';
 import {
   getPartySessions,
@@ -11,6 +11,7 @@ import {
   getSessionWinner,
   formatSessionTimeAgo,
   getPartyInsights,
+  isRatingSession,
   type PartySessionRecord,
 } from '@/lib/game/party-session-history';
 import { PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup.config';
@@ -96,21 +97,38 @@ function InsightsBar({ sessions }: { sessions: PartySessionRecord[] }) {
           dotColor: insights.bestScore.color,
         }
       : null,
+    insights.bestRating && insights.bestRating.rating > 0
+      ? {
+          icon: '⭐',
+          lucide: Star,
+          label: t('partyHistory.bestRating'),
+          value: insights.bestRating.rating.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+          accent: 'from-amber-500 to-orange-600',
+          ring: 'border-amber-500/25',
+          dotColor: insights.bestRating.color,
+        }
+      : null,
   ].filter((tile): tile is StatTile => tile !== null);
 
   if (tiles.length === 0) return null;
+
+  // With an odd 5th tile (bestRating) the layout would orphan it on the second
+  // row — the last tile then spans 2 columns so the row reads as a deliberate
+  // wide "featured" tile instead of a lonely leftover.
+  const orphanFix = tiles.length % 2 === 1 && tiles.length > 4 ? 'sm:col-span-2 lg:col-span-2' : '';
 
   return (
     <div
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5"
       data-testid="party-history-insights"
     >
-      {tiles.map(tile => {
+      {tiles.map((tile, i) => {
         const Icon = tile.lucide;
+        const spanCls = orphanFix && i === tiles.length - 1 ? orphanFix : '';
         return (
           <div
             key={tile.label}
-            className={`group relative overflow-hidden rounded-xl border ${tile.ring} bg-white/[0.03] backdrop-blur-sm px-4 py-3 transition-all duration-300 hover:bg-white/[0.06] hover:-translate-y-0.5`}
+            className={`group relative overflow-hidden rounded-xl border ${tile.ring} bg-white/[0.03] backdrop-blur-sm px-4 py-3 transition-all duration-300 hover:bg-white/[0.06] hover:-translate-y-0.5 ${spanCls}`}
           >
             {/* top gradient hairline */}
             <div
@@ -157,6 +175,12 @@ function SessionCard({ session, locale }: { session: PartySessionRecord; locale:
   const meta = getModeMeta(session.mode, t);
   const winner = getSessionWinner(session);
   const soloPlayer = session.players.length === 1 ? session.players[0] : null;
+  const ratingSession = isRatingSession(session);
+
+  /** Format a score respecting the session's scale (⭐ rating vs. points). */
+  const fmtScore = (score: number) => ratingSession
+    ? `⭐ ${score.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
+    : score.toLocaleString();
 
   return (
     <div
@@ -219,7 +243,7 @@ function SessionCard({ session, locale }: { session: PartySessionRecord; locale:
               <div className="text-sm font-semibold text-white truncate">{winner.name}</div>
             </div>
             <div className="ml-auto text-sm font-bold text-amber-300 tabular-nums shrink-0">
-              {winner.score.toLocaleString()}
+              {fmtScore(winner.score)}
             </div>
           </div>
         ) : soloPlayer ? (

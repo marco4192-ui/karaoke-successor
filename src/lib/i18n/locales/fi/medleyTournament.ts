@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Illan kappale',
   voteSongOfEvening: 'Äänestä illan kappaletta',
   seriesWinner: 'Sarjan voittaja',
+  tieTitle: 'Tasapeli!',
+  tieSubtitle: 'Molemmat esiintyjät saivat saman arvion — yleisö ei osaa päättää.',
   roundHistory: 'Kierroshistoria',
   cumulativeScore: 'Kokonaispisteet',
   awardBestPerformance: 'Paras suoritus',

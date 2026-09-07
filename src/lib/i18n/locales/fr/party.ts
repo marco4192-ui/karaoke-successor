@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} tours joués',
   nextRound: 'Tour Suivant →',
   winner: 'Gagnant !',
+  tieTitle: 'Égalité !',
+  tieSubtitle: 'Les deux chanteurs partagent le meilleur score — personne ne remporte la couronne.',
   points: '{n} points',
   backToMenu: '← Retour au Menu Principal',
   errorMaxPlayers: 'Maximum 4 joueurs',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Mode favori',
   topWinner: 'Champion des victoires',
   bestScore: 'Meilleur score',
+  bestRating: 'Meilleure note',
 },
 
 extendedDesc: {

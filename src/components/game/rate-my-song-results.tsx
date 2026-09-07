@@ -118,6 +118,28 @@ export function RateMySongResultsScreen({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
   }, [result, songId, songGenre]);
 
+  // Single-round games never pass through the SeriesResultsScreen — record
+  // the session here instead (multi-round series record in the series screen
+  // once, with cumulative scores across all rounds).
+  useRecordPartySession(
+    (seriesTotalRounds ?? 1) <= 1
+      ? {
+          mode: 'rate-my-song',
+          rounds: 1,
+          songTitle: result.songTitle,
+          players: [...result.ratings]
+            .sort((a, b) => b.rating - a.rating)
+            .map((p, i, sorted) => ({
+              name: p.playerName,
+              color: p.playerColor,
+              score: Math.round(p.rating * 10) / 10,
+              scoreKind: 'rating' as const,
+              isWinner: i === 0 && sorted.length > 1 && p.rating > (sorted[1]?.rating ?? -Infinity),
+            })),
+        }
+      : null
+  );
+
   // ── AI critic comment (needed before typewriter effect) ──
   const topRating = result.ratings.length > 0
     ? Math.max(...result.ratings.map(r => r.rating))
@@ -562,7 +584,15 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
 
   const winner = sortedPlayers[0];
 
-  // Record this finished series in the party session history (once)
+  // A tie at the top shows a dedicated tie state instead of crowning an
+  // arbitrary first-ranked player (mirrors session-history tie logic).
+  const tiedPlayers = sortedPlayers.length > 1 && sortedPlayers[1]?.total === winner?.total
+    ? sortedPlayers.filter(p => p.total === winner.total)
+    : null;
+
+  // Record this finished series in the party session history (once).
+  // `scoreKind: 'rating'` keeps rating sums (0–30) out of the karaoke
+  // best-score insights — they feed the separate best-rating tile instead.
   useRecordPartySession({
     mode: 'rate-my-song',
     rounds: seriesHistory.length,
@@ -570,6 +600,7 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
       name: p.name,
       color: p.color,
       score: Math.round(p.total * 10) / 10,
+      scoreKind: 'rating' as const,
       isWinner: i === 0 && sortedPlayers.length > 1 && p.total > (sortedPlayers[1]?.total ?? -Infinity),
     })),
   });
@@ -590,20 +621,50 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/20 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg w-full text-center">
-        <div className="text-6xl mb-4 animate-rms-score-reveal">👑</div>
-        <h1 className="text-3xl font-bold mb-2">{t('rateMySong.seriesWinner')}</h1>
-        {winner && (
-          <div className="mb-6">
-            <div
-              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl font-bold mb-2"
-              style={{ backgroundColor: winner.color }}
-            >
-              {winner.name.charAt(0).toUpperCase()}
+        {tiedPlayers ? (
+          <>
+            <div className="text-6xl mb-4 animate-starting-card-float" aria-hidden="true">🤝</div>
+            <h1 className="text-3xl font-bold mb-3 tracking-tight">{t('rateMySong.tieTitle')}</h1>
+            <p className="text-sm text-white/75 mb-6 max-w-md mx-auto leading-relaxed">{t('rateMySong.tieSubtitle')}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              {tiedPlayers.map(p => (
+                <div
+                  key={p.id}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-5 py-4"
+                >
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg shadow-black/30 ring-2 ring-amber-300/40"
+                    style={{ backgroundColor: p.color }}
+                    aria-hidden="true"
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-base font-bold text-white">{p.name}</div>
+                  <div className="text-2xl font-bold text-amber-300 tabular-nums">
+                    ⭐ {p.total.toFixed(1)}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="text-xl font-bold">{winner.name}</div>
-            <div className="text-3xl font-bold text-amber-400">{winner.total.toFixed(1)}</div>
-            <div className="text-sm text-gray-400">{t('rateMySong.totalScore')}</div>
-          </div>
+          </>
+        ) : (
+          <>
+            <div className="text-6xl mb-4 animate-rms-score-reveal" aria-hidden="true">👑</div>
+            <h1 className="text-3xl font-bold mb-2">{t('rateMySong.seriesWinner')}</h1>
+            {winner && (
+              <div className="mb-6">
+                <div
+                  className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl font-bold mb-2 shadow-lg shadow-amber-900/40"
+                  style={{ backgroundColor: winner.color }}
+                >
+                  {winner.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="text-xl font-bold">{winner.name}</div>
+                <div className="text-3xl font-bold text-amber-400">{winner.total.toFixed(1)}</div>
+                <div className="text-sm text-gray-400">{t('rateMySong.totalScore')}</div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Round History */}

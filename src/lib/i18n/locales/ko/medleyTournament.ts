@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: '오늘의 명곡',
   voteSongOfEvening: '오늘의 명곡에 투표',
   seriesWinner: '시리즈 우승자',
+  tieTitle: '무승부!',
+  tieSubtitle: '두 출연자가 같은 평점을 받았습니다 — 관객은 결정하지 못했습니다.',
   roundHistory: '라운드 기록',
   cumulativeScore: '누적 점수',
   awardBestPerformance: '최고의 퍼포먼스',

@@ -244,6 +244,8 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
             : 'bg-white/10 text-white/60 hover:bg-white/20'
         }`}
         title={config.enabled ? t('webcamSettings.disableWebcam') : t('webcamSettings.enableWebcamTooltip')}
+        aria-label={config.enabled ? t('webcamSettings.disableWebcam') : t('webcamSettings.enableWebcamTooltip')}
+        aria-pressed={config.enabled}
       >
         <WebcamIcon className="w-4 h-4" />
       </button>

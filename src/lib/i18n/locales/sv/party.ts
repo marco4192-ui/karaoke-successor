@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} omgångar spelade',
   nextRound: 'Nästa Omgång →',
   winner: 'Vinnare!',
+  tieTitle: 'Oavgjort!',
+  tieSubtitle: 'Båda sångarna delar top-poängen — ingen får kronan.',
   points: '{n} poäng',
   backToMenu: '← Tillbaka till Huvudmeny',
   errorMaxPlayers: 'Maximalt 4 spelare',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Favoritläge',
   topWinner: 'Toppvinnare',
   bestScore: 'Bästa poäng',
+  bestRating: 'Bästa betyg',
 },
 
 extendedDesc: {

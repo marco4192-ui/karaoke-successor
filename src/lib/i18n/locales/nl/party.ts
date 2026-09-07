@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} rondes gespeeld',
   nextRound: 'Volgende ronde →',
   winner: 'Winnaar!',
+  tieTitle: 'Gelijkspel!',
+  tieSubtitle: 'Beide zangers delen de topscore — niemand krijgt de kroon.',
   points: '{n} punten',
   backToMenu: '← Terug naar hoofdmenu',
   errorMaxPlayers: 'Maximaal 4 spelers',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Favoriete modus',
   topWinner: 'Topwinnaar',
   bestScore: 'Beste score',
+  bestRating: 'Beste beoordeling',
 },
 
 extendedDesc: {

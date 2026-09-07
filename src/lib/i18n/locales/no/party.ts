@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '{n} runder spilt',
   nextRound: 'Neste runde →',
   winner: 'Vinner!',
+  tieTitle: 'Uavgjort!',
+  tieSubtitle: 'Begge sangerne deler toppscoren — ingen får kronen.',
   points: '{n} poeng',
   backToMenu: '← Tilbake til hovedmeny',
   errorMaxPlayers: 'Maksimalt 4 spillere',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Favorittmodus',
   topWinner: 'Toppvinner',
   bestScore: 'Beste poeng',
+  bestRating: 'Beste vurdering',
 },
 
 extendedDesc: {

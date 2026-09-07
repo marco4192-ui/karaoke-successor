@@ -388,6 +388,8 @@ export const medleyTournamentTranslations = {
     songOfTheEvening: 'Song of the Evening',
     voteSongOfEvening: 'Vote for Song of the Evening',
     seriesWinner: 'Series Winner',
+    tieTitle: 'It\'s a tie!',
+    tieSubtitle: 'Both performers earned the same rating — the audience cannot decide.',
     roundHistory: 'Round History',
     cumulativeScore: 'Cumulative Score',
     awardBestPerformance: 'Best Performance',

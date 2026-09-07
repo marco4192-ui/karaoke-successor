@@ -698,6 +698,14 @@ function CompetitiveWinnerScreen({
   const winner = ranked[0];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
 
+  // A tie at the top (2+ players sharing the highest score) shows a dedicated
+  // tie state instead of crowning an arbitrary first-ranked player — this
+  // mirrors the session-history logic (tie → no winner recorded).
+  const topScore = winner?.totalScore ?? 0;
+  const tiedPlayers = ranked.length > 1 && ranked[1]?.totalScore === topScore
+    ? ranked.filter(p => p.totalScore === topScore)
+    : null;
+
   // Record this finished game in the party session history (once)
   useRecordPartySession({
     mode: modeType,
@@ -725,27 +733,59 @@ function CompetitiveWinnerScreen({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg mx-auto text-center">
-        <div className="text-6xl mb-4">👑</div>
-        <h1 className="text-4xl font-bold mb-2">{t('competitiveWords.winner')}</h1>
-        <h2 className="text-2xl text-indigo-400 mb-6">{winner?.name}</h2>
+        {tiedPlayers ? (
+          <>
+            <div className="text-6xl mb-4 animate-starting-card-float" aria-hidden="true">🤝</div>
+            <h1 className="text-4xl font-bold mb-3 tracking-tight">{t('competitiveWords.tieTitle')}</h1>
+            <p className="text-sm text-white/75 mb-6 max-w-md mx-auto leading-relaxed">{t('competitiveWords.tieSubtitle')}</p>
 
-        {winner && (
-          <div
-            className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold"
-            style={{ backgroundColor: winner.color }}
-          >
-            {winner.name?.[0]}
-          </div>
+            {/* Tied players side by side */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              {tiedPlayers.map(player => (
+                <div
+                  key={player.id}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 py-4"
+                >
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg shadow-black/30 ring-2 ring-cyan-300/40"
+                    style={{ backgroundColor: player.color }}
+                    aria-hidden="true"
+                  >
+                    {player.name?.[0]}
+                  </div>
+                  <div className="text-base font-bold text-white">{player.name}</div>
+                  <div className="text-2xl font-bold text-cyan-300 tabular-nums">
+                    {player.totalScore}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-6xl mb-4" aria-hidden="true">👑</div>
+            <h1 className="text-4xl font-bold mb-2">{t('competitiveWords.winner')}</h1>
+            <h2 className="text-2xl text-indigo-400 mb-6">{winner?.name}</h2>
+
+            {winner && (
+              <div
+                className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold shadow-lg shadow-indigo-900/40"
+                style={{ backgroundColor: winner.color }}
+              >
+                {winner.name?.[0]}
+              </div>
+            )}
+
+            <div className="text-5xl font-bold text-yellow-400 mb-4">
+              {winner?.totalScore} {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
+            </div>
+          </>
         )}
 
-        <div className="text-5xl font-bold text-yellow-400 mb-4">
-          {winner?.totalScore} {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
-        </div>
-
         {/* Game statistics */}
-        <div className="flex items-center justify-center gap-4 mb-6 text-sm text-gray-400">
-          <span className="bg-gray-700/50 px-3 py-1 rounded-full">{playModeLabel}</span>
-          <span className="bg-gray-700/50 px-3 py-1 rounded-full">
+        <div className="flex items-center justify-center gap-3 mb-8 text-sm">
+          <span className="bg-gray-700/60 text-gray-300 px-3 py-1.5 rounded-full border border-white/10">{playModeLabel}</span>
+          <span className="bg-gray-700/60 text-gray-300 px-3 py-1.5 rounded-full border border-white/10">
             {totalRoundsPlayed} {t('competitiveWords.roundsPlayed').replace('{n}', String(totalRoundsPlayed))}
           </span>
         </div>

@@ -187,6 +187,8 @@ export const partyTranslations = {
     roundsPlayed: '{n} rounds played',
     nextRound: 'Next Round →',
     winner: 'Winner!',
+    tieTitle: 'It\'s a tie!',
+    tieSubtitle: 'Both singers share the top score — nobody takes the crown.',
     points: '{n} points',
     backToMenu: '← Back to Main Menu',
     errorMaxPlayers: 'Maximum 4 players',
@@ -463,6 +465,7 @@ export const partyTranslations = {
     favoriteMode: 'Favorite mode',
     topWinner: 'Top winner',
     bestScore: 'Best score',
+    bestRating: 'Best rating',
   },
 
   extendedDesc: {

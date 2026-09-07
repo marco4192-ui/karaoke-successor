@@ -363,6 +363,8 @@ rateMySong: {
   songOfTheEvening: 'Song des Abends',
   voteSongOfEvening: 'Wähle den Song des Abends',
   seriesWinner: 'Serien-Sieger',
+  tieTitle: 'Unentschieden!',
+  tieSubtitle: 'Beide Performer erhielten dieselbe Bewertung — das Publikum kann sich nicht entscheiden.',
   roundHistory: 'Rundenverlauf',
   cumulativeScore: 'Gesamtpunktzahl',
   awardBestPerformance: 'Bester Auftritt',

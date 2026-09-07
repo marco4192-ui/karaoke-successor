@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: '已进行{n}轮',
   nextRound: '下一轮 →',
   winner: '胜者！',
+  tieTitle: '平局！',
+  tieSubtitle: '两位歌手得分相同——没有人能夺得王冠。',
   points: '{n}分',
   backToMenu: '← 返回主菜单',
   errorMaxPlayers: '最多4人',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: '最爱模式',
   topWinner: '获胜最多',
   bestScore: '最高得分',
+  bestRating: '最佳评分',
 },
 
 extendedDesc: {

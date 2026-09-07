@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Kvällens Låt',
   voteSongOfEvening: 'Rösta på Kvällens Låt',
   seriesWinner: 'Serievinnare',
+  tieTitle: 'Oavgjort!',
+  tieSubtitle: 'Båda artisterna fick samma betyg — publiken kan inte bestämma sig.',
   roundHistory: 'Omgångshistorik',
   cumulativeScore: 'Ackumulerad Poäng',
   awardBestPerformance: 'Bästa Framträdande',

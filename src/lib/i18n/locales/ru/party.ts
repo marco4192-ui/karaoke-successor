@@ -178,6 +178,8 @@ competitiveWords: {
   roundsPlayed: 'Сыграно {n} раундов',
   nextRound: 'Следующий раунд →',
   winner: 'Победитель!',
+  tieTitle: 'Ничья!',
+  tieSubtitle: 'Оба певца набрали одинаковый счёт — корона никому не достаётся.',
   points: '{n} очков',
   backToMenu: '← В главное меню',
   errorMaxPlayers: 'Максимум 4 игрока',
@@ -426,6 +428,7 @@ partyHistory: {
   favoriteMode: 'Любимый режим',
   topWinner: 'Топ-победитель',
   bestScore: 'Лучший результат',
+  bestRating: 'Лучшая оценка',
 },
 
 extendedDesc: {

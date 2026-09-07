@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Песня вечера',
   voteSongOfEvening: 'Голосование за песню вечера',
   seriesWinner: 'Победитель серии',
+  tieTitle: 'Ничья!',
+  tieSubtitle: 'Оба исполнителя получили одинаковую оценку — публика не может определиться.',
   roundHistory: 'История раундов',
   cumulativeScore: 'Накопленный счёт',
   awardBestPerformance: 'Лучшее выступление',

@@ -362,6 +362,8 @@ rateMySong: {
   songOfTheEvening: 'Música da Noite',
   voteSongOfEvening: 'Vote na Música da Noite',
   seriesWinner: 'Vencedor da Série',
+  tieTitle: 'Empate!',
+  tieSubtitle: 'Ambos os artistas receberam a mesma avaliação — o público não consegue decidir.',
   roundHistory: 'Histórico de Rodadas',
   cumulativeScore: 'Pontuação Acumulada',
   awardBestPerformance: 'Melhor Performance',
