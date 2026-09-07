@@ -779,6 +779,7 @@ export default function KaraokeZERO() {
           vsPlayerName?: string;
           vsPlayerAvatar?: string;
           vsPlayerColor?: string;
+          brPlayers?: { name: string; avatar?: string; color?: string }[];
         } | null;
         let introData: PartyIntroData = null;
 
@@ -816,11 +817,25 @@ export default function KaraokeZERO() {
               medleySnippetCount: partyNow.medleySongs?.length || undefined,
             };
           } else if (screen === 'battle-royale-game') {
+            // Battle Royale: badge list of ALL players + round-1 song (if voted)
+            const brGame = partyNow.battleRoyaleGame;
+            const brPlayers = (brGame?.players || []).map((p) => ({
+              name: p.name,
+              avatar: p.avatar || undefined,
+              color: p.color || undefined,
+            }));
             introData = {
               ...base,
-              playerCount: partyNow.battleRoyaleGame?.players?.length || undefined,
-              startPlayerName: partyNow.battleRoyaleGame?.players?.[0]?.name || undefined,
-              startPlayerColor: partyNow.battleRoyaleGame?.players?.[0]?.color || undefined,
+              playerCount: brPlayers.length || undefined,
+              startPlayerName: brPlayers[0]?.name || undefined,
+              startPlayerAvatar: brPlayers[0]?.avatar || undefined,
+              startPlayerColor: brPlayers[0]?.color || undefined,
+              brPlayers: brPlayers.length > 0 ? brPlayers : undefined,
+              // currentRound is 0-based: round 1 = 0
+              roundNumber: brGame ? brGame.currentRound + 1 : undefined,
+              songTitle: (brGame?.currentRound === 0
+                ? brGame?.settings?.firstRoundSongTitle
+                : brGame?.rounds?.[brGame.currentRound]?.songName) || undefined,
             };
           } else if (screen === 'rate-my-song-game') {
             introData = {

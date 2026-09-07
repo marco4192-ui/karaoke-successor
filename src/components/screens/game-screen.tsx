@@ -51,8 +51,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Header Overlay (unified layout: icon Pause + End Song top-left) */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-        {/* Top-left: Pause (icon) + End Song + rate-my-song player name (pattern B) */}
-        <div className="flex items-center gap-2">
+        {/* Top-left: Pause (icon) + End Song + rate-my-song player name (pattern B) — glass panel */}
+        <div className="flex items-center gap-1.5 rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <PauseButton
             isPlaying={g.isPlaying}
             onTogglePause={() => {
@@ -95,8 +95,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
         )}
 
-        {/* Right: Fullscreen > Difficulty > Webcam (right to left) */}
-        <div className="flex items-center gap-2">
+        {/* Right: Fullscreen > Difficulty > Webcam (right to left) — matching glass panel */}
+        <div className="flex items-center gap-1.5 rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <GameScoreDisplay
             difficulty={g.gameState.difficulty}
             activeChallenge={g.activeChallenge}

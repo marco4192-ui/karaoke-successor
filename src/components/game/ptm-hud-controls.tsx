@@ -105,13 +105,13 @@ export function PtmHudControls({
 
       <div className="fixed inset-0 z-50 pointer-events-none">
         {/* Top-left: Pause + End Song (unified layout across all party modes) */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
           {onEndSong && <EndSongButton onEndSong={onEndSong} />}
         </div>
 
         {/* Top-right: WebcamQuickControls + Difficulty + Vollbild */}
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <WebcamQuickControls config={webcamConfig} onConfigChange={updateWebcamConfig} />
           <DifficultyBadge difficulty={difficulty} onCycleDifficulty={cycleDifficulty} />
           <FullscreenButton />

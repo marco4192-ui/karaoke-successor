@@ -63,14 +63,14 @@ export function GameHudChrome({
       )}
 
       <div className="fixed inset-0 z-50 pointer-events-none">
-        {/* Top-left: Pause + End Song */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
+        {/* Top-left: Pause + End Song — glass panel keeps icons readable over bright backgrounds */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
           {onEndSong && <EndSongButton onEndSong={onEndSong} />}
         </div>
 
-        {/* Top-right: Webcam controls + Difficulty + Fullscreen */}
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
+        {/* Top-right: Webcam controls + Difficulty + Fullscreen — matching glass panel */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           {showWebcamControls && (
             <WebcamQuickControls config={webcamConfig} onConfigChange={updateWebcamConfig} />
           )}

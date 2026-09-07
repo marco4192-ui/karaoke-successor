@@ -208,6 +208,7 @@ competitiveWords: {
   comebackShort: 'Comeback',
 },
 battleRoyale: {
+  title: 'Battle Royale',
   setupTitle: '👑 Battle Royale',
   setupSubtitle: 'Alle singen zusammen — der schlechteste Score scheidet aus!',
   back: '← Zurück',
@@ -241,6 +242,7 @@ battleRoyale: {
   errorCreateGame: 'Spiel konnte nicht erstellt werden',
   round: 'Runde {n}',
   playersLeft: '{n} übrig',
+  playersLabel: 'Spieler',
   timeLeft: '{n} Sekunden bis zum Rundenende',
   loadingLyrics: 'Lade Lyrics...',
   loadingSong: 'Lade Song...',

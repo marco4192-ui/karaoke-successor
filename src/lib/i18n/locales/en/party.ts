@@ -218,6 +218,7 @@ export const partyTranslations = {
   },
 
   battleRoyale: {
+    title: 'Battle Royale',
     setupTitle: '👑 Battle Royale',
     setupSubtitle: 'All sing together - lowest score eliminated each round!',
     back: '← Back',
@@ -251,6 +252,7 @@ export const partyTranslations = {
     errorCreateGame: 'Failed to create game',
     round: 'Round {n}',
     playersLeft: '{n} Left',
+    playersLabel: 'players',
     timeLeft: '{n} seconds left in this round',
     loadingLyrics: 'Loading lyrics...',
     loadingSong: 'Loading song...',

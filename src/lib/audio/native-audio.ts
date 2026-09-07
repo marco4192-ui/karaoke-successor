@@ -8,6 +8,23 @@ import { invoke, Channel } from '@tauri-apps/api/core';
 
 // ---- Types ----
 
+/** Whether the Tauri IPC bridge is available (i.e. we run inside the desktop app). */
+function isTauriAvailable(): boolean {
+  return typeof window !== 'undefined'
+    && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+}
+
+/**
+ * Guard: no-op outside Tauri. Prevents "Cannot read properties of undefined
+ * (reading 'invoke')" TypeErrors when playback cleanup calls run in the browser.
+ */
+function tauriInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  if (!isTauriAvailable()) {
+    return Promise.resolve(undefined as unknown as T);
+  }
+  return invoke<T>(command, args);
+}
+
 export interface AudioDeviceInfo {
   id: string;
   name: string;
@@ -35,9 +52,10 @@ export interface AudioEventCallbacks {
 
 // ---- Device Management ----
 
-/** List all available audio output devices (ASIO + WASAPI). */
+/** List all available audio output devices (ASIO + WASAPI). Empty outside Tauri. */
 export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
-  return invoke<AudioDeviceInfo[]>('audio_list_devices');
+  if (!isTauriAvailable()) return [];
+  return tauriInvoke<AudioDeviceInfo[]>('audio_list_devices');
 }
 
 // ---- Playback Control ----
@@ -54,6 +72,10 @@ export async function playAudioFile(
   deviceId: string = 'default',
   callbacks?: AudioEventCallbacks
 ): Promise<void> {
+  // Outside Tauri there is no native output — resolve immediately so callers
+  // fall back to the regular HTMLAudioElement pipeline.
+  if (!isTauriAvailable()) return;
+
   // Create Tauri Channels for streaming events
   const onTimeUpdate = new Channel<number>();
   if (callbacks?.onTimeUpdate) {
@@ -70,7 +92,7 @@ export async function playAudioFile(
     onError.onmessage = (message) => callbacks.onError!(message);
   }
 
-  return invoke<void>('audio_play_file', {
+  return tauriInvoke<void>('audio_play_file', {
     filePath,
     deviceId,
     onTimeUpdate,
@@ -81,30 +103,33 @@ export async function playAudioFile(
 
 /** Pause native audio playback. */
 export async function pauseAudio(): Promise<void> {
-  return invoke<void>('audio_pause');
+  return tauriInvoke<void>('audio_pause');
 }
 
 /** Resume native audio playback. */
 export async function resumeAudio(): Promise<void> {
-  return invoke<void>('audio_resume');
+  return tauriInvoke<void>('audio_resume');
 }
 
 /** Seek to a position in milliseconds. */
 export async function seekAudio(positionMs: number): Promise<void> {
-  return invoke<void>('audio_seek', { positionMs });
+  return tauriInvoke<void>('audio_seek', { positionMs });
 }
 
 /** Set volume (0.0 – 1.0). */
 export async function setAudioVolume(volume: number): Promise<void> {
-  return invoke<void>('audio_set_volume', { volume });
+  return tauriInvoke<void>('audio_set_volume', { volume });
 }
 
 /** Stop native audio playback. */
 export async function stopAudio(): Promise<void> {
-  return invoke<void>('audio_stop');
+  return tauriInvoke<void>('audio_stop');
 }
 
-/** Get full playback state. */
+/** Get full playback state. Null outside Tauri. */
 export async function getAudioState(): Promise<AudioPlaybackState> {
-  return invoke<AudioPlaybackState>('audio_get_state');
+  if (!isTauriAvailable()) {
+    return { position_ms: 0, duration_ms: 0, is_playing: false, volume: 1 };
+  }
+  return tauriInvoke<AudioPlaybackState>('audio_get_state');
 }

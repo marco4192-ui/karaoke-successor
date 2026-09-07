@@ -4,6 +4,7 @@ import { useEffect, useRef, RefObject } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { toast } from '@/hooks/use-toast';
 import { t } from '@/lib/i18n/translations';
+import { createPollErrorLogger } from '@/lib/polling-resilience';
 
 /**
  * Remote control command types from mobile companions
@@ -355,6 +356,8 @@ export function useRemoteControl({
   }, []);
 
   // ─── HTTP Fallback: Poll commands only when Socket.IO is NOT connected ───
+  const pollLoggerRef = useRef(createPollErrorLogger('useRemoteControl'));
+
   useEffect(() => {
     const pollRemoteCommands = async () => {
       // Skip HTTP poll if Socket.IO is connected (commands arrive instantly)
@@ -370,8 +373,9 @@ export function useRemoteControl({
             processCommand.current(cmd);
           }
         }
+        pollLoggerRef.current.logSuccess();
       } catch (error) {
-        console.error('[useRemoteControl] Error polling remote commands:', error);
+        pollLoggerRef.current.logError(error);
       }
     };
 

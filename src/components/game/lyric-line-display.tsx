@@ -250,10 +250,11 @@ export function LyricLineDisplay({
 
         // Render the lyric - with special handling for game modes
         let renderedLyric = displayLyric;
+        const isMissingWordSlot = isMissingWord && (!isSung || hardcoreMissingWords);
         if (shouldHideLyric) {
           // In blind mode, show underscores or blanks for the entire line
           renderedLyric = displayLyric.replace(/[^-\s]/g, '_');
-        } else if (isMissingWord && (!isSung || hardcoreMissingWords)) {
+        } else if (isMissingWordSlot) {
           // In missing-words mode, hide specific words until they're sung
           // Hardcore MW: words stay hidden even after being sung
           renderedLyric = displayLyric.replace(/[^-\s]/g, '_');
@@ -270,14 +271,26 @@ export function LyricLineDisplay({
         // (the "first sung word"), not just the first note at idx===0
         const isFirstSingableNote = idx === firstSungNoteIndex;
 
+        // Missing-words hidden slot: split off trailing whitespace so the amber
+        // pill frames only the word itself (not the word boundary space).
+        const trailingSpace = isMissingWordSlot ? renderedLyric.match(/\s+$/)?.[0] : undefined;
+        const slotText = trailingSpace ? renderedLyric.slice(0, renderedLyric.length - trailingSpace.length) : renderedLyric;
+
         return (
           <span key={noteId} style={{ display: 'inline' }}>
             <span
               ref={isFirstSingableNote ? firstNoteRef : undefined}
-              className={`${fontClass} ${finalTextClass} transition-all duration-150 ${isMissingWord && (!isSung || hardcoreMissingWords) ? 'tracking-wider' : ''}`}
+              className={`${fontClass} ${finalTextClass} transition-all duration-150 ${isMissingWordSlot ? 'tracking-wider' : ''}`}
               style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
             >
-              {renderedLyric}
+              {isMissingWordSlot ? (
+                <>
+                  <span className="mw-hidden-slot" data-testid="mw-hidden-slot">{slotText}</span>
+                  {trailingSpace}
+                </>
+              ) : (
+                renderedLyric
+              )}
             </span>
           </span>
         );

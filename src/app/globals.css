@@ -607,9 +607,38 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
+/* Missing Words: hidden word slot — amber glow pill that pulses while waiting to be sung */
+.mw-hidden-slot {
+  display: inline-block;
+  padding: 0 0.28em;
+  margin: 0 0.04em;
+  border-radius: 0.38em;
+  line-height: 1.25;
+  vertical-align: baseline;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.07));
+  border-bottom: 2px solid rgba(245, 158, 11, 0.65);
+  box-shadow:
+    0 0 10px rgba(245, 158, 11, 0.2),
+    inset 0 0 6px rgba(245, 158, 11, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  animation: mwSlotPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes mwSlotPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.16), inset 0 0 5px rgba(245, 158, 11, 0.1);
+    border-bottom-color: rgba(245, 158, 11, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.34), inset 0 0 8px rgba(245, 158, 11, 0.18);
+    border-bottom-color: rgba(252, 211, 77, 0.9);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mode-warning-pulse { animation: none; }
   .warning-countdown-pop { animation: none; }
+  .mw-hidden-slot { animation: none; }
 }
 
 /* Tournament bracket song-vote overlay */

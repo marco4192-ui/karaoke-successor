@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
+import { createPollErrorLogger } from '@/lib/polling-resilience';
 
 export interface CompanionProfile {
   id: string;
@@ -42,6 +43,7 @@ export function useCompanionSync(): {
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
   const syncVersionRef = useRef(0);
+  const pollLoggerRef = useRef(createPollErrorLogger('CompanionSync'));
 
   // Sync companion profiles: fetch from server AND import into main app's character list
   const syncCompanionProfiles = useCallback(async () => {
@@ -49,8 +51,7 @@ export function useCompanionSync(): {
     try {
       const response = await fetch('/api/mobile?action=getprofiles');
       if (!response.ok) {
-        // eslint-disable-next-line no-console
-        console.error('[CompanionSync] Failed to fetch profiles:', response.status);
+        pollLoggerRef.current.logError(new Error(`HTTP ${response.status}`));
         return;
       }
       const data = await response.json();
@@ -61,9 +62,9 @@ export function useCompanionSync(): {
           importProfileFromMobile(profile);
         });
       }
+      pollLoggerRef.current.logSuccess();
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('[CompanionSync] Error syncing profiles:', error);
+      pollLoggerRef.current.logError(error);
     }
   }, [importProfileFromMobile]);
 

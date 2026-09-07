@@ -132,8 +132,19 @@ export function PitchGraphDisplay({
         ref={canvasRef}
         className="block"
       />
-      {/* Current pitch indicator — kept as technical display */}
-      <div className="absolute bottom-1 right-2 text-xs text-white/60">
+      {/* Current pitch indicator — status chip with live dot */}
+      <div
+        className={`absolute bottom-1.5 right-2 flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border backdrop-blur-sm ${
+          currentPitch !== null
+            ? 'bg-cyan-500/15 border-cyan-400/30 text-cyan-300'
+            : 'bg-white/5 border-white/10 text-white/45'
+        }`}
+        data-testid="pitch-status-chip"
+      >
+        <span
+          className={`inline-block w-1.5 h-1.5 rounded-full ${currentPitch !== null ? 'bg-cyan-400 animate-pulse' : 'bg-white/30'}`}
+          aria-hidden="true"
+        />
         {currentPitch !== null ? t('pitchGraph.pitch').replace('{n}', currentPitch.toFixed(1)) : t('pitchGraph.noPitch')}
       </div>
     </div>

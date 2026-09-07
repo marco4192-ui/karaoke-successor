@@ -11,10 +11,25 @@ interface DifficultyBadgeProps {
   onCycleDifficulty?: () => void;
 }
 
-const DIFFICULTY_CONFIG: Record<Difficulty, { bg: string; text: string; border: string }> = {
-  easy:   { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30' },
-  medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-  hard:   { bg: 'bg-red-500/20',    text: 'text-red-400',    border: 'border-red-500/30' },
+const DIFFICULTY_CONFIG: Record<Difficulty, { bg: string; text: string; border: string; glow: string }> = {
+  easy: {
+    bg: 'bg-green-500/20',
+    text: 'text-green-300',
+    border: 'border-green-400/40',
+    glow: '0 0 12px rgba(74,222,128,0.25)',
+  },
+  medium: {
+    bg: 'bg-yellow-500/20',
+    text: 'text-yellow-300',
+    border: 'border-yellow-400/40',
+    glow: '0 0 12px rgba(250,204,21,0.25)',
+  },
+  hard: {
+    bg: 'bg-red-500/20',
+    text: 'text-red-300',
+    border: 'border-red-400/40',
+    glow: '0 0 12px rgba(248,113,113,0.25)',
+  },
 };
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -37,9 +52,11 @@ export function DifficultyBadge({ difficulty, onCycleDifficulty }: DifficultyBad
     <Badge
       variant="outline"
       onClick={onCycleDifficulty}
-      className={`text-[10px] px-2 py-0.5 border-white/20 select-none hover:opacity-80 ${
-        onCycleDifficulty ? 'cursor-pointer' : 'cursor-default'
+      className={`text-[10px] font-semibold px-2.5 py-0.5 border select-none hover:opacity-80 ${
+        onCycleDifficulty ? 'cursor-pointer hover:scale-105' : 'cursor-default'
       } ${cfg.bg} ${cfg.text} ${cfg.border}`}
+      style={{ boxShadow: cfg.glow, transition: 'opacity 150ms, transform 150ms' }}
+      title={onCycleDifficulty ? label : undefined}
     >
       {label}
     </Badge>

@@ -2,6 +2,8 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { createPollErrorLogger } from '@/lib/polling-resilience';
+import { addSongToPlaylist, createPlaylist } from '@/lib/playlist-manager';
 
 /**
  * Global remote control command types from mobile companions
@@ -386,7 +388,6 @@ export function useGlobalRemoteControl({
       // Companion Playlist: Song zu bestehender Playlist hinzufuegen
       case 'add_to_playlist': {
         try {
-          const { addSongToPlaylist } = require('@/lib/playlist-manager');
           const plId = (cmd.data as { playlistId?: string })?.playlistId;
           const sId = (cmd.data as { songId?: string })?.songId;
           if (plId && sId) {
@@ -402,7 +403,6 @@ export function useGlobalRemoteControl({
       // Companion Playlist: Neue Playlist erstellen und Song hinzufuegen
       case 'create_and_add_to_playlist': {
         try {
-          const { createPlaylist, addSongToPlaylist } = require('@/lib/playlist-manager');
           const plName = (cmd.data as { name?: string })?.name;
           const sId = (cmd.data as { songId?: string })?.songId;
           if (plName && sId) {
@@ -638,6 +638,8 @@ export function useGlobalRemoteControl({
   }, [processCommand]);
 
   // ─── HTTP Fallback: Poll commands only when Socket.IO is NOT connected ───
+  const pollLoggerRef = useRef(createPollErrorLogger('GlobalRemoteControl'));
+
   useEffect(() => {
     const pollRemoteCommands = async () => {
       // Skip HTTP poll if Socket.IO is connected
@@ -653,8 +655,9 @@ export function useGlobalRemoteControl({
             processCommand(cmd);
           }
         }
+        pollLoggerRef.current.logSuccess();
       } catch (error) {
-        console.error('[GlobalRemoteControl] Error polling remote commands:', error);
+        pollLoggerRef.current.logError(error);
       }
     };
 

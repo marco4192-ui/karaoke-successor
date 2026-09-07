@@ -179,6 +179,8 @@ export interface GameState {
     vsPlayerName?: string;
     vsPlayerAvatar?: string;
     vsPlayerColor?: string;
+    // Battle Royale: full player badge list for the mirror (name/avatar/color)
+    brPlayers?: { name: string; avatar?: string; color?: string }[];
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];
