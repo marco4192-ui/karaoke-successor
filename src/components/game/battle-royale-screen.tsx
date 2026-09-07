@@ -87,6 +87,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         winner={game.winner}
         eliminationOrder={getEliminationOrder(game)}
         gameStats={game.gameStats}
+        finaleSongTitle={game.rounds[game.rounds.length - 1]?.songName}
         onEndGame={onEndGame}
       />
     );

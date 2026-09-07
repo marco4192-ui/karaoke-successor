@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× giocato',
   clear: 'Cancella',
   confirmClear: 'Sicuro?',
+  totalParties: 'Party totali',
+  favoriteMode: 'Modalità preferita',
+  topWinner: 'Vincitore top',
+  bestScore: 'Miglior punteggio',
 },
 
 extendedDesc: {

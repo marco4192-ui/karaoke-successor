@@ -323,7 +323,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
       {g.phase === 'playing' && g.currentPlayer && (
         <PtmHudPlayerScore
           players={ptmPlayers}
-          currentPlayer={g.currentPlayer}
+          currentPlayer={ptmPlayers.find(p => p.id === g.currentPlayer?.id)}
         />
       )}
 

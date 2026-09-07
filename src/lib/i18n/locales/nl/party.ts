@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× gespeeld',
   clear: 'Wissen',
   confirmClear: 'Zeker?',
+  totalParties: 'Totaal aan partys',
+  favoriteMode: 'Favoriete modus',
+  topWinner: 'Topwinnaar',
+  bestScore: 'Beste score',
 },
 
 extendedDesc: {

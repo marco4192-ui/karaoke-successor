@@ -702,11 +702,15 @@ function CompetitiveWinnerScreen({
   useRecordPartySession({
     mode: modeType,
     rounds: game.rounds.length,
-    players: ranked.map(p => ({
+    songTitle: game.rounds[0]?.songTitle,
+    players: ranked.map((p, i) => ({
       name: p.name,
       avatar: p.avatar,
       color: p.color,
       score: p.totalScore,
+      // Only flag a winner for 2+ players with a strictly higher score —
+      // a tie (e.g. 0:0 without microphones) shows no winner in the history.
+      isWinner: i === 0 && ranked.length > 1 && p.totalScore > (ranked[1]?.totalScore ?? -Infinity),
     })),
   });
 

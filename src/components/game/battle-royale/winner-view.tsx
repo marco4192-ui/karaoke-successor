@@ -18,10 +18,12 @@ interface WinnerViewProps {
   winner: NonNullable<import('@/lib/game/battle-royale').BattleRoyaleGame['winner']>;
   eliminationOrder: BattleRoyalePlayer[];
   gameStats: BattleRoyaleGameStats;
+  /** Title of the grand-finale song (last round) — recorded in the session history */
+  finaleSongTitle?: string;
   onEndGame: () => void;
 }
 
-export function WinnerView({ winner, eliminationOrder, gameStats, onEndGame }: WinnerViewProps) {
+export function WinnerView({ winner, eliminationOrder, gameStats, finaleSongTitle, onEndGame }: WinnerViewProps) {
   const { t } = useTranslation();
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
@@ -31,6 +33,7 @@ export function WinnerView({ winner, eliminationOrder, gameStats, onEndGame }: W
   useRecordPartySession({
     mode: 'battle-royale',
     rounds: gameStats?.roundHighlights?.length || undefined,
+    songTitle: finaleSongTitle,
     players: eliminationOrder.map(p => ({
       name: p.name,
       avatar: p.avatar,

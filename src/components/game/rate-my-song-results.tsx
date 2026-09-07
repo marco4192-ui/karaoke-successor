@@ -566,10 +566,11 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
   useRecordPartySession({
     mode: 'rate-my-song',
     rounds: seriesHistory.length,
-    players: sortedPlayers.map(p => ({
+    players: sortedPlayers.map((p, i) => ({
       name: p.name,
       color: p.color,
       score: Math.round(p.total * 10) / 10,
+      isWinner: i === 0 && sortedPlayers.length > 1 && p.total > (sortedPlayers[1]?.total ?? -Infinity),
     })),
   });
 

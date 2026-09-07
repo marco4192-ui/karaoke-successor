@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× spillet',
   clear: 'Ryd',
   confirmClear: 'Sikker?',
+  totalParties: 'Partys i alt',
+  favoriteMode: 'Yndlingsmodus',
+  topWinner: 'Topvinder',
+  bestScore: 'Bedste score',
 },
 
 extendedDesc: {

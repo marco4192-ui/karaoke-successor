@@ -136,6 +136,73 @@ export function getSessionWinner(session: PartySessionRecord): PartySessionPlaye
   return top;
 }
 
+// ===================== INSIGHTS =====================
+
+/** Aggregated party statistics derived from the stored session history. */
+export interface PartyInsights {
+  /** Total number of recorded sessions. */
+  totalParties: number;
+  /** Sum of rounds/songs played across all sessions. */
+  totalRounds: number;
+  /** Most played mode (only when at least one session exists). */
+  favoriteMode: { mode: string; count: number } | null;
+  /** Player with the most session wins (ties → first alphabetically for stability). */
+  topWinner: { name: string; avatar?: string; color?: string; wins: number } | null;
+  /** Highest single-session score and who achieved it. */
+  bestScore: { name: string; avatar?: string; color?: string; score: number } | null;
+}
+
+/**
+ * Compute aggregate insights from the session history.
+ * Accepts an optional pre-read session list (for tests); reads storage otherwise.
+ */
+export function getPartyInsights(input?: PartySessionRecord[]): PartyInsights {
+  const sessions = input ?? (typeof window === 'undefined' ? [] : safeRead());
+  const insights: PartyInsights = {
+    totalParties: sessions.length,
+    totalRounds: 0,
+    favoriteMode: null,
+    topWinner: null,
+    bestScore: null,
+  };
+
+  const modeCounts: Record<string, number> = {};
+  const winCounts: Record<string, { name: string; avatar?: string; color?: string; wins: number }> = {};
+
+  for (const session of sessions) {
+    insights.totalRounds += session.rounds ?? 0;
+    modeCounts[session.mode] = (modeCounts[session.mode] ?? 0) + 1;
+
+    const winner = getSessionWinner(session);
+    if (winner) {
+      const key = winner.name;
+      const entry = winCounts[key] ?? { name: winner.name, avatar: winner.avatar, color: winner.color, wins: 0 };
+      entry.wins += 1;
+      if (!entry.avatar && winner.avatar) entry.avatar = winner.avatar;
+      if (!entry.color && winner.color) entry.color = winner.color;
+      winCounts[key] = entry;
+    }
+
+    for (const p of session.players) {
+      if (!insights.bestScore || p.score > insights.bestScore.score) {
+        insights.bestScore = { name: p.name, avatar: p.avatar, color: p.color, score: p.score };
+      }
+    }
+  }
+
+  const favEntry = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0];
+  if (favEntry && favEntry[1] > 0) {
+    insights.favoriteMode = { mode: favEntry[0], count: favEntry[1] };
+  }
+
+  const topWinnerEntry = Object.values(winCounts).sort((a, b) => b.wins - a.wins || a.name.localeCompare(b.name))[0];
+  if (topWinnerEntry && topWinnerEntry.wins > 0) {
+    insights.topWinner = topWinnerEntry;
+  }
+
+  return insights;
+}
+
 /** Relative time label via Intl (locale-aware, no i18n keys needed). */
 export function formatSessionTimeAgo(finishedAt: number, locale: string): string {
   const diffMs = Date.now() - finishedAt;

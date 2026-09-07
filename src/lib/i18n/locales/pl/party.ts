@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× zagrane',
   clear: 'Wyczyść',
   confirmClear: 'Na pewno?',
+  totalParties: 'Imprez łącznie',
+  favoriteMode: 'Ulubiony tryb',
+  topWinner: 'Najczęstszy zwycięzca',
+  bestScore: 'Najlepszy wynik',
 },
 
 extendedDesc: {

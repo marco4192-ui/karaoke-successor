@@ -459,6 +459,10 @@ export const partyTranslations = {
     timesPlayed: '{n}× played',
     clear: 'Clear',
     confirmClear: 'Sure?',
+    totalParties: 'Total parties',
+    favoriteMode: 'Favorite mode',
+    topWinner: 'Top winner',
+    bestScore: 'Best score',
   },
 
   extendedDesc: {

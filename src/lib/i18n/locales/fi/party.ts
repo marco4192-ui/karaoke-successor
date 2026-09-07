@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× pelattu',
   clear: 'Tyhjennä',
   confirmClear: 'Varma?',
+  totalParties: 'Partyja yhteensä',
+  favoriteMode: 'Suosikkimoodi',
+  topWinner: 'Eniten voittoja',
+  bestScore: 'Paras pistemäärä',
 },
 
 extendedDesc: {

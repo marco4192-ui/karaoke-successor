@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× spilt',
   clear: 'Tøm',
   confirmClear: 'Sikker?',
+  totalParties: 'Fester totalt',
+  favoriteMode: 'Favorittmodus',
+  topWinner: 'Toppvinner',
+  bestScore: 'Beste poeng',
 },
 
 extendedDesc: {

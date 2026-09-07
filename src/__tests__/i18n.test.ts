@@ -200,6 +200,8 @@ describe('i18n translation system', () => {
         'partyHistory.players', 'partyHistory.rounds', 'partyHistory.timesPlayed',
         'partyHistory.clear', 'partyHistory.confirmClear',
         'partyHistory.playerSingular', 'partyHistory.roundSingular',
+        'partyHistory.totalParties', 'partyHistory.favoriteMode',
+        'partyHistory.topWinner', 'partyHistory.bestScore',
       ];
       for (const lang of languages) {
         for (const key of keys) {

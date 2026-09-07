@@ -26,11 +26,25 @@ export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: To
   const party = usePartyStore();
 
   // Record the completed tournament in the party session history (once)
+  // Song title: the champion's final match song (last completed match involving the champion)
+  const finalSongTitle = useMemo(() => {
+    if (bracket.status !== 'completed' || !bracket.champion) return undefined;
+    for (let i = bracket.matches.length - 1; i >= 0; i--) {
+      const m = bracket.matches[i];
+      if (m.completed && !m.isBye && m.songTitle
+        && (m.player1?.id === bracket.champion.id || m.player2?.id === bracket.champion.id)) {
+        return m.songTitle;
+      }
+    }
+    return undefined;
+  }, [bracket]);
+
   useRecordPartySession(
     bracket.status === 'completed' && bracket.champion
       ? {
           mode: 'tournament',
           rounds: bracket.totalRounds,
+          songTitle: finalSongTitle,
           players: bracket.players.map(p => ({
             name: p.name,
             avatar: p.avatar,

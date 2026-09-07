@@ -9,6 +9,7 @@ import {
   recordPartySession,
   getPartySessions,
   getPartyModePlayCounts,
+  getPartyInsights,
   clearPartySessions,
   getSessionWinner,
   formatSessionTimeAgo,
@@ -61,7 +62,10 @@ describe('party-session-history', () => {
   });
 
   it('winner = highest distinct score; tie or solo → null', () => {
-    const solo = { mode: 'rate-my-song', players: [{ name: 'Solo', score: 5 }] } as const;
+    const solo: { mode: string; players: Array<{ name: string; score: number }> } = {
+      mode: 'rate-my-song',
+      players: [{ name: 'Solo', score: 5 }],
+    };
     expect(getSessionWinner({ ...solo, id: 'x', finishedAt: 0 })).toBeNull();
 
     const tie = {
@@ -116,5 +120,79 @@ describe('party-session-history', () => {
     // one minute ago → contains "1"
     const oneMin = formatSessionTimeAgo(now - 60_000, 'en');
     expect(oneMin).toMatch(/1|minute/i);
+  });
+
+  describe('getPartyInsights', () => {
+    it('returns zeroed insights for an empty history', () => {
+      const insights = getPartyInsights();
+      expect(insights.totalParties).toBe(0);
+      expect(insights.totalRounds).toBe(0);
+      expect(insights.favoriteMode).toBeNull();
+      expect(insights.topWinner).toBeNull();
+      expect(insights.bestScore).toBeNull();
+    });
+
+    it('computes totals, favorite mode, top winner and best score', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'medley', rounds: 2, players: [
+          { name: 'Anna', color: '#ff0000', score: 500, isWinner: true },
+          { name: 'Ben', score: 300 },
+        ] },
+        { id: 'b', finishedAt: 2, mode: 'medley', rounds: 3, players: [
+          { name: 'Anna', color: '#ff0000', score: 700 },
+          { name: 'Ben', score: 800 },
+        ] },
+        { id: 'c', finishedAt: 3, mode: 'blind', players: [
+          { name: 'Clara', score: 900 },
+          { name: 'Ben', score: 100 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      expect(insights.totalParties).toBe(3);
+      expect(insights.totalRounds).toBe(5);
+      expect(insights.favoriteMode).toEqual({ mode: 'medley', count: 2 });
+      // Anna won session a (flag) and b (700 vs 800? no — Ben 800 > Anna 700 → Ben)
+      // → Anna 1 win, Ben 1 win, tie broken alphabetically (Anna first)
+      expect(insights.topWinner).toMatchObject({ name: 'Anna', wins: 1 });
+      expect(insights.bestScore).toMatchObject({ name: 'Clara', score: 900 });
+    });
+
+    it('prefers flag-based winners for win counting', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'tournament', players: [
+          { name: 'Champ', score: 0, isWinner: true },
+          { name: 'Rival', score: 500 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      expect(insights.topWinner).toMatchObject({ name: 'Champ', wins: 1 });
+    });
+
+    it('counts multiple wins across sessions for the same player', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'duel', players: [
+          { name: 'Ben', score: 900 }, { name: 'A', score: 100 },
+        ] },
+        { id: 'b', finishedAt: 2, mode: 'duel', players: [
+          { name: 'Ben', score: 800 }, { name: 'A', score: 200 },
+        ] },
+        { id: 'c', finishedAt: 3, mode: 'duel', players: [
+          { name: 'A', score: 300 }, { name: 'Ben', score: 400 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      expect(insights.topWinner).toMatchObject({ name: 'Ben', wins: 3 });
+    });
+
+    it('computes best score even for zero-score sessions (UI decides visibility)', () => {
+      const sessions = [
+        { id: 'a', finishedAt: 1, mode: 'missing-words', players: [
+          { name: 'A', score: 0 }, { name: 'B', score: 0 },
+        ] },
+      ];
+      const insights = getPartyInsights(sessions);
+      expect(insights.bestScore).not.toBeNull();
+      expect(insights.bestScore!.score).toBe(0);
+    });
   });
 });

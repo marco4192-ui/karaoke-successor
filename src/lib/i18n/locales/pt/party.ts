@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× jogado',
   clear: 'Limpar',
   confirmClear: 'Certo?',
+  totalParties: 'Festas no total',
+  favoriteMode: 'Modo favorito',
+  topWinner: 'Vencedor principal',
+  bestScore: 'Melhor pontuação',
 },
 
 extendedDesc: {

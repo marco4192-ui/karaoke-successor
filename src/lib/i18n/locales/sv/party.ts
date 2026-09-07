@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× spelat',
   clear: 'Rensa',
   confirmClear: 'Säkert?',
+  totalParties: 'Partyn totalt',
+  favoriteMode: 'Favoritläge',
+  topWinner: 'Toppvinnare',
+  bestScore: 'Bästa poäng',
 },
 
 extendedDesc: {

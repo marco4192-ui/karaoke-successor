@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}회 플레이',
   clear: '지우기',
   confirmClear: '확실합니까?',
+  totalParties: '총 파티',
+  favoriteMode: '선호 모드',
+  topWinner: '최다 승자',
+  bestScore: '최고 점수',
 },
 
 extendedDesc: {

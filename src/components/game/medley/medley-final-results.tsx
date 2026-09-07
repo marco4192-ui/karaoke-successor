@@ -87,7 +87,10 @@ export function MedleyFinalResults({
   useRecordPartySession({
     mode: 'medley',
     rounds: seriesHistory.length,
-    players: sessionPlayers,
+    players: sessionPlayers.map((p, i) => ({
+      ...p,
+      isWinner: i === 0 && sessionPlayers.length > 1 && p.score > (sessionPlayers[1]?.score ?? -Infinity),
+    })),
   });
 
   const teamATotal = Object.values(cumulative).filter(p => p.team === 0).reduce((s, p) => s + p.totalScore, 0);

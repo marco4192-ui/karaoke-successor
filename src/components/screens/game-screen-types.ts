@@ -147,4 +147,8 @@ export interface GameScreenHookReturn {
 
   // Callbacks
   handleEnd: () => void;
+
+  // Blind / Missing-Words warning banner state (countdown 0 = not imminent)
+  blindWarning: { countdown: number; active: boolean };
+  missingWordsWarning: { countdown: number; active: boolean };
 }

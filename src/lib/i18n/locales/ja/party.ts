@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}回プレイ',
   clear: 'クリア',
   confirmClear: '本当に？',
+  totalParties: 'パーティー合計',
+  favoriteMode: 'お気に入りモード',
+  topWinner: '最多勝者',
+  bestScore: '最高スコア',
 },
 
 extendedDesc: {

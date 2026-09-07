@@ -54,11 +54,14 @@ export function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
   useRecordPartySession({
     mode: 'companion-singalong',
     rounds: history.length,
-    players: sortedPlayers.map(([_, p]) => ({
+    // Single-song series carry the song title; multi-song series omit it
+    songTitle: history.length === 1 ? history[0].songTitle : undefined,
+    players: sortedPlayers.map(([_, p], i) => ({
       name: p.name,
       avatar: p.avatar,
       color: p.color,
       score: p.totalScore,
+      isWinner: i === 0 && sortedPlayers.length > 1 && p.totalScore > (sortedPlayers[1]?.[1].totalScore ?? -Infinity),
     })),
   });
 

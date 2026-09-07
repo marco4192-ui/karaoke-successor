@@ -65,7 +65,9 @@ export function ModeWarningBanner({ blindWarning, missingWordsWarning }: ModeWar
     },
   } as const;
 
-  const renderCountdown = (w: ModeWarning, c: typeof tint.mw, warningId: string, incomingKey: string, hintKey: string) => (
+  type Tint = (typeof tint)['mw'] | (typeof tint)['blind'];
+
+  const renderCountdown = (w: ModeWarning, c: Tint, warningId: string, incomingKey: string, hintKey: string) => (
     <div
       role="status"
       aria-live="assertive"
@@ -99,7 +101,7 @@ export function ModeWarningBanner({ blindWarning, missingWordsWarning }: ModeWar
     </div>
   );
 
-  const renderActive = (w: ModeWarning, c: typeof tint.mw, warningId: string, activeKey: string) => (
+  const renderActive = (w: ModeWarning, c: Tint, warningId: string, activeKey: string) => (
     <div
       role="status"
       aria-live="off"

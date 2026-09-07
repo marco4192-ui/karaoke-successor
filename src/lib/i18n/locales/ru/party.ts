@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '{n}× сыграно',
   clear: 'Очистить',
   confirmClear: 'Точно?',
+  totalParties: 'Всего вечеринок',
+  favoriteMode: 'Любимый режим',
+  topWinner: 'Топ-победитель',
+  bestScore: 'Лучший результат',
 },
 
 extendedDesc: {

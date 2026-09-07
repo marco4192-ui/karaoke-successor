@@ -250,11 +250,14 @@ export function PtmSeriesResults({
   useRecordPartySession({
     mode: 'pass-the-mic',
     rounds: seriesHistory.length,
-    players: sortedPlayers.map(([, p]) => ({
+    // Single-song series carry the song title; multi-song series omit it
+    songTitle: seriesHistory.length === 1 ? seriesHistory[0].songTitle : undefined,
+    players: sortedPlayers.map(([id, p], i) => ({
       name: p.name,
       avatar: p.avatar,
       color: p.color,
       score: p.totalScore,
+      isWinner: i === 0 && sortedPlayers.length > 1 && p.totalScore > (sortedPlayers[1]?.[1].totalScore ?? -Infinity),
     })),
   });
 

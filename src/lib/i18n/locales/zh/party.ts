@@ -422,6 +422,10 @@ partyHistory: {
   timesPlayed: '已玩 {n} 次',
   clear: '清除',
   confirmClear: '确定？',
+  totalParties: '派对总数',
+  favoriteMode: '最爱模式',
+  topWinner: '获胜最多',
+  bestScore: '最高得分',
 },
 
 extendedDesc: {
