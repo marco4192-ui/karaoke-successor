@@ -25,6 +25,10 @@ interface HarmonizeRequest {
     artist: string;
     genre: string | null;
     language: string | null;
+    /** Factual hint from MusicBrainz/Deezer (R6) — reliable, not a guess. */
+    hintGenre?: string | null;
+    hintSource?: string | null;
+    hintYear?: number | null;
   }>;
 }
 
@@ -72,10 +76,16 @@ export async function POST(request: NextRequest) {
     // Limit batch size to prevent token overflow
     const batch = songs.slice(0, 50);
 
-    // Build a compact song list for the LLM prompt
-    const songList = batch.map((s, i) =>
-      `${i + 1}. "${s.artist}" - "${s.title}" [Genre: ${s.genre || '(none)'}, Language: ${s.language || '(none)'}]`
-    ).join('\n');
+    // Build a compact song list for the LLM prompt. Songs resolved by the
+    // factual lookup (R6) carry their facts as hints so the AI doesn't have
+    // to guess — it just normalizes and handles the language.
+    const songList = batch.map((s, i) => {
+      const facts: string[] = [];
+      if (s.hintGenre) facts.push(`genre=${s.hintGenre} (${s.hintSource ?? 'factual'})`);
+      if (s.hintYear) facts.push(`year=${s.hintYear} (${s.hintSource ?? 'factual'})`);
+      const factPart = facts.length > 0 ? ` [Facts: ${facts.join(', ')}]` : '';
+      return `${i + 1}. "${s.artist}" - "${s.title}" [Genre: ${s.genre || '(none)'}, Language: ${s.language || '(none)'}]${factPart}`;
+    }).join('\n');
 
     let zai;
     try {
@@ -96,6 +106,7 @@ RULES:
 4. Set confidence 90-100 for clear matches, 70-89 for reasonable guesses, 50-69 for uncertain.
 5. Provide a brief reason for each suggestion.
 6. If the current value is already good, set the suggestion to null with confidence 100.
+7. If a [Facts: ...] hint is present, it comes from MusicBrainz/Deezer and is RELIABLE. Trust it: suggest the fact's genre (normalized to the standard spelling) instead of guessing. Never contradict a factual year.
 
 ${NORMALIZATION_HINTS}
 

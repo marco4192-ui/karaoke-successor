@@ -73,6 +73,9 @@ export const StorageKeys = {
   RATE_MY_SONG_DAILY: 'karaoke-rate-my-song-daily',
   RATE_MY_SONG_PLAYER_STATS: 'karaoke-rms-player-stats',
 
+  // --- AI Harmonize Cache ---
+  HARMONIZE_CACHE: 'karaoke-harmonize-cache',
+
   // --- Native Audio ---
   NATIVE_AUDIO_DEVICE: 'karaoke-native-audio-device',
   NATIVE_AUDIO_ENABLED: 'karaoke-native-audio-enabled',

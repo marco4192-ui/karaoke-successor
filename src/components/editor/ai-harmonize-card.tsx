@@ -1,25 +1,32 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { updateSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
+import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
+import {
+  harmonizeSongs,
+  HarmonizeSuggestion,
+  HarmonizeProgress,
+} from '@/lib/ai/harmonize-client';
+import {
+  SuggestionRow,
+  ConfidenceFilter,
+  fieldPassesThreshold,
+  countApplicableSongs,
+} from '@/components/editor/harmonize-shared';
 
-interface HarmonizeSuggestion {
-  songId: string;
-  title: string;
-  artist: string;
-  currentGenre: string | null;
-  currentLanguage: string | null;
-  suggestedGenre: string | null;
-  suggestedLanguage: string | null;
-  genreConfidence: number;
-  languageConfidence: number;
-  genreReason: string;
-  languageReason: string;
-}
-
+/**
+ * Per-library AI harmonize card (sidebar of the editor).
+ *
+ * Runs the shared pipeline (R2 cache → R6 factual lookup → LLM chunks R3)
+ * over the whole library instead of a silent 50-song slice, with the same
+ * threshold filter (R4), reason display (R5) — and the same txt persistence
+ * as the batch dialog (library-only updates would be wiped by a rescan).
+ */
 export function AiHarmonizeCard({
   songs,
   onApplied,
@@ -33,76 +40,122 @@ export function AiHarmonizeCard({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [, setPendingApplyAll] = useState(false);
+  const [progress, setProgress] = useState<HarmonizeProgress | null>(null);
+  const [minConfidence, setMinConfidence] = useState(70);
+  // txt persistence feedback (same as the batch dialog)
+  const [applyProgress, setApplyProgress] = useState<{ done: number; total: number } | null>(null);
+  const [fileErrors, setFileErrors] = useState<number | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Process ALL songs (up to 50) — the AI will return null for songs that are already fine
-  const songsToHarmonize = useMemo(() =>
-    songs.slice(0, 50),
-    [songs],
-  );
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // R3: ALL songs — the pipeline chunks internally
+  const songsToHarmonize = useMemo(() => songs, [songs]);
 
   const handleHarmonize = useCallback(async () => {
     if (songsToHarmonize.length === 0) return;
     setIsLoading(true);
     setError(null);
     setSuggestions([]);
+    setProgress(null);
 
     try {
-      const res = await fetch('/api/harmonize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          songs: songsToHarmonize.map(s => ({
-            id: s.id, title: s.title, artist: s.artist,
-            genre: s.genre || null, language: s.language || null,
-          })),
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.suggestions) {
-        setSuggestions(data.suggestions.filter(
-          (s: HarmonizeSuggestion) => s.suggestedGenre || s.suggestedLanguage
-        ));
+      const result = await harmonizeSongs(
+        songsToHarmonize.map(s => ({
+          id: s.id, title: s.title, artist: s.artist,
+          genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
+        })),
+        { onProgress: setProgress },
+      );
+
+      if (result.success || result.suggestions.length > 0) {
+        setSuggestions(result.suggestions);
       } else {
-        setError(data.error || t('editor.aiAssistant.failed'));
+        setError(result.error || t('editor.aiAssistant.failed'));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : t('editor.aiAssistant.networkError'));
     } finally {
       setIsLoading(false);
+      setProgress(null);
     }
-  }, [songsToHarmonize]);
+  }, [songsToHarmonize, t]);
 
-  const handleApplySingle = useCallback((suggestion: HarmonizeSuggestion, field: 'genre' | 'language') => {
-    const value = field === 'genre' ? suggestion.suggestedGenre : suggestion.suggestedLanguage;
-    if (!value) return;
-    updateSong(suggestion.songId, { [field]: value });
-    setSuggestions(prev => prev.filter(s => s.songId !== suggestion.songId));
+  const handleApplySingle = useCallback(async (
+    songId: string,
+    field: 'genre' | 'language' | 'year',
+    value: string | number,
+  ) => {
+    const normalized = field === 'genre'
+      ? normalizeGenreName(String(value))
+      : field === 'language'
+        ? normalizeLanguage(String(value))
+        : Number(value);
+    const updates: Partial<Song> = { [field]: normalized };
+
+    updateSong(songId, updates);
+    // Same persistence contract as the batch dialog: write #GENRE/#LANGUAGE/
+    // #YEAR to the source txt so a folder rescan doesn't wipe the change.
+    const fileOk = await persistSongMetadataToTxt(songId, updates);
+    if (!isMountedRef.current) return;
+    if (!fileOk.success) setFileErrors(prev => (prev ?? 0) + 1);
+
+    setSuggestions(prev => prev
+      .map(s => s.songId === songId
+        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
+        : s)
+      .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
     onApplied();
   }, [onApplied]);
 
-  const handleApplyAll = useCallback(() => {
-    suggestions.forEach(s => {
+  const handleApplyAll = useCallback(async () => {
+    const list = suggestions;
+    if (list.length === 0) return;
+
+    setApplyProgress({ done: 0, total: list.length });
+    let failedFiles = 0;
+    let processed = 0;
+
+    for (const s of list) {
       const updates: Partial<Song> = {};
-      if (s.suggestedGenre) updates.genre = s.suggestedGenre;
-      if (s.suggestedLanguage) updates.language = s.suggestedLanguage;
+      // R4: threshold-aware (factual sources + years exempt)
+      if (s.suggestedGenre && fieldPassesThreshold('genre', s, minConfidence)) {
+        updates.genre = normalizeGenreName(s.suggestedGenre);
+      }
+      if (s.suggestedLanguage && fieldPassesThreshold('language', s, minConfidence)) {
+        updates.language = normalizeLanguage(s.suggestedLanguage);
+      }
+      if (s.suggestedYear && s.suggestedYear !== s.currentYear) {
+        updates.year = s.suggestedYear;
+      }
+
       if (Object.keys(updates).length > 0) {
         updateSong(s.songId, updates);
+        const fileOk = await persistSongMetadataToTxt(s.songId, updates);
+        if (!fileOk.success) failedFiles++;
       }
-    });
+      processed++;
+      if (!isMountedRef.current) return;
+      setApplyProgress({ done: processed, total: list.length });
+    }
+
+    if (!isMountedRef.current) return;
+    setApplyProgress(null);
+    setFileErrors(failedFiles > 0 ? failedFiles : null);
     setSuggestions([]);
     setShowWarning(false);
-    setPendingApplyAll(false);
     onApplied();
-  }, [suggestions, onApplied]);
+  }, [suggestions, minConfidence, onApplied]);
 
   const requestApplyAll = useCallback(() => {
-    setPendingApplyAll(true);
     setShowWarning(true);
   }, []);
 
   const dismissed = suggestions.length === 0 && !isLoading && !error;
-
+  const applicableCount = countApplicableSongs(suggestions, minConfidence);
   return (
     <Card className="bg-white/5 border-white/10">
       <CardHeader className="pb-2">
@@ -113,45 +166,48 @@ export function AiHarmonizeCard({
       <CardContent className="space-y-3">
         {dismissed ? (
           <p className="text-xs text-white/40">
-            {t('editor.aiHarmonizeDesc')} ({Math.min(songs.length, 50)})
+            {t('editor.aiHarmonizeDesc')} ({songs.length})
           </p>
         ) : null}
 
         {suggestions.length > 0 && (
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {suggestions.map(s => (
-              <div key={s.songId} className="bg-white/5 rounded-lg p-2 text-xs space-y-1">
-                <p className="font-medium text-white/80 truncate">{s.artist} - {s.title}</p>
-                {s.suggestedGenre && s.suggestedGenre !== s.currentGenre && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-red-400 line-through">{s.currentGenre || '-'}</span>
-                    <span className="text-white/40">→</span>
-                    <span className="text-green-400">{s.suggestedGenre}</span>
-                    <span className="text-white/30">({s.genreConfidence}%)</span>
-                    <button
-                      onClick={() => handleApplySingle(s, 'genre')}
-                      className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                    >✓</button>
-                  </div>
-                )}
-                {s.suggestedLanguage && s.suggestedLanguage !== s.currentLanguage && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-red-400 line-through">{s.currentLanguage || '-'}</span>
-                    <span className="text-white/40">→</span>
-                    <span className="text-green-400">{s.suggestedLanguage}</span>
-                    <span className="text-white/30">({s.languageConfidence}%)</span>
-                    <button
-                      onClick={() => handleApplySingle(s, 'language')}
-                      className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                    >✓</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <>
+            <ConfidenceFilter value={minConfidence} onChange={setMinConfidence} t={t} />
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {suggestions.map(s => (
+                <SuggestionRow
+                  key={s.songId}
+                  suggestion={s}
+                  minConfidence={minConfidence}
+                  onApply={handleApplySingle}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {error && <p className="text-xs text-red-400">{error}</p>}
+
+        {/* txt persistence progress + file errors (same contract as the batch dialog) */}
+        {applyProgress && (
+          <div className="flex items-center gap-2 text-[11px] text-white/60">
+            <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <span className="font-mono tabular-nums">{applyProgress.done}/{applyProgress.total}</span>
+          </div>
+        )}
+        {fileErrors !== null && (
+          <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="harmonize-card-file-error">
+            <span className="text-sm leading-none">⚠️</span>
+            <p className="text-[10px] text-amber-200/90 flex-1">
+              {t('editor.aiBatchFileErrors').replace('{count}', String(fileErrors))}
+            </p>
+            <button
+              onClick={() => setFileErrors(null)}
+              className="text-white/40 hover:text-white/80 text-xs"
+              aria-label="Dismiss"
+            >✕</button>
+          </div>
+        )}
 
         <div className="flex gap-2">
           <Button
@@ -164,16 +220,21 @@ export function AiHarmonizeCard({
             {isLoading ? (
               <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-1" />
             ) : null}
-            {isLoading ? t('editor.aiHarmonizeLoading') : t('editor.aiHarmonizeBtn')}
+            {isLoading && progress
+              ? `${progress.done}/${progress.total}`
+              : isLoading
+                ? t('editor.aiHarmonizeLoading')
+                : t('editor.aiHarmonizeBtn')}
           </Button>
           {suggestions.length > 0 && (
             <Button
               size="sm"
               variant="outline"
               onClick={requestApplyAll}
-              className="border-green-500/50 text-green-400 hover:bg-green-500/10 text-xs"
+              disabled={applicableCount === 0}
+              className="border-green-500/50 text-green-400 hover:bg-green-500/10 text-xs disabled:opacity-40"
             >
-              {t('editor.aiApplyAll')} ({suggestions.length})
+              {t('editor.aiApplyAll')} ({applicableCount})
             </Button>
           )}
         </div>
@@ -202,23 +263,35 @@ export function AiHarmonizeCard({
               </div>
 
               <div className="flex items-center gap-2 text-xs text-white/50">
-                <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{suggestions.length}</span>
+                <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{applicableCount}</span>
                 <span>{t('editor.aiHarmonizeWarnCount')}</span>
+              </div>
+
+              {/* R4: threshold note in the warning */}
+              <div className="flex items-center gap-2 text-[11px] text-white/50 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
+                <span>🛡️</span>
+                <span>
+                  {t('editor.aiBatchThresholdNote').replace('{value}', String(minConfidence))}
+                </span>
               </div>
 
               <div className="flex gap-2 pt-1">
                 <Button
                   variant="outline"
-                  onClick={() => { setShowWarning(false); setPendingApplyAll(false); }}
+                  onClick={() => { setShowWarning(false); }}
+                  disabled={!!applyProgress}
                   className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
                 >
                   {t('editor.aiHarmonizeWarnCancel')}
                 </Button>
                 <Button
                   onClick={handleApplyAll}
+                  disabled={!!applyProgress}
                   className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
                 >
-                  {t('editor.aiHarmonizeWarnConfirm')}
+                  {applyProgress
+                    ? `${applyProgress.done}/${applyProgress.total}`
+                    : t('editor.aiHarmonizeWarnConfirm')}
                 </Button>
               </div>
             </div>

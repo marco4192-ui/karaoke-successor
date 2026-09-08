@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
-import { saveSongToTxt } from '@/lib/editor/save-to-file';
+import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { StorageKeys, getString } from '@/lib/storage';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
@@ -15,21 +15,18 @@ import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
-
-// ── Types for batch AI suggestion ──
-interface BatchSuggestion {
-  songId: string;
-  title: string;
-  artist: string;
-  currentGenre: string | null;
-  currentLanguage: string | null;
-  suggestedGenre: string | null;
-  suggestedLanguage: string | null;
-  genreConfidence: number;
-  languageConfidence: number;
-  genreReason: string;
-  languageReason: string;
-}
+import {
+  harmonizeSongs,
+  HarmonizeSuggestion,
+  HarmonizeProgress,
+  HarmonizeStats,
+} from '@/lib/ai/harmonize-client';
+import {
+  SuggestionRow,
+  ConfidenceFilter,
+  fieldPassesThreshold,
+  countApplicableSongs,
+} from '@/components/editor/harmonize-shared';
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
@@ -66,7 +63,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // ── Multi-select state ──
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [batchSuggestions, setBatchSuggestions] = useState<BatchSuggestion[]>([]);
+  const [batchSuggestions, setBatchSuggestions] = useState<HarmonizeSuggestion[]>([]);
   const [batchLoading, setBatchLoading] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [showBatchDialog, setShowBatchDialog] = useState(false);
@@ -76,6 +73,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // Progress + file-error feedback for the batch apply (txt persistence)
   const [batchApplyProgress, setBatchApplyProgress] = useState<{ done: number; total: number } | null>(null);
   const [batchFileErrors, setBatchFileErrors] = useState<number | null>(null);
+
+  // R3/R6 pipeline progress (factual lookup + LLM chunks) + stats
+  const [batchProgress, setBatchProgress] = useState<HarmonizeProgress | null>(null);
+  const [batchStats, setBatchStats] = useState<HarmonizeStats | null>(null);
+  // R4: minimum confidence threshold for apply-all (AI guesses only)
+  const [minConfidence, setMinConfidence] = useState(70);
+  // R1: lyrics warm-up (pre-loads lyrics so the apply loop never blocks on
+  // per-song file reads)
+  const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
+  const warmupPromiseRef = useRef<Promise<void> | null>(null);
 
   // Abort in-flight batch operations when the screen unmounts
   useEffect(() => {
@@ -188,101 +195,132 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setSelectedIds(new Set());
     setBatchSuggestions([]);
     setBatchError(null);
+    setBatchStats(null);
+    setBatchProgress(null);
   }, []);
 
   const selectedCount = selectedIds.size;
 
-  // ── Batch AI Suggest ──
+  // ── R1: lyrics warm-up ──
+  // Pre-loads lyrics (IndexedDB → file fallback) with limited concurrency
+  // so the batch apply loop writes txt files without per-song cold reads.
+  // Started in parallel with the AI call — by the time the dialog shows, the
+  // cache is usually warm.
+  const startLyricsWarmup = useCallback((list: Song[]) => {
+    const total = list.length;
+    if (total === 0) return;
+    let index = 0;
+    let done = 0;
+    setWarmupProgress({ done: 0, total });
+
+    const worker = async () => {
+      while (index < total) {
+        const song = list[index++];
+        try {
+          await getSongByIdWithLyrics(song.id);
+        } catch {
+          // Non-fatal — the apply loop retries per song and reports file errors
+        }
+        done++;
+        setWarmupProgress({ done, total });
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(4, total) }, () => worker());
+    warmupPromiseRef.current = Promise.all(workers).then(() => {
+      setWarmupProgress(null);
+    });
+  }, []);
+
+  // ── Batch AI Suggest (R2 cache → R6 factual lookup → LLM, chunked R3) ──
   const handleBatchSuggest = useCallback(async () => {
-    const selectedSongs = songs.filter(s => selectedIds.has(s.id)).slice(0, 50);
+    // R3: ALL selected songs — no silent 50-song truncation. harmonizeSongs
+    // chunks internally (50/LLM call, 12/lookup call) with progress.
+    const selectedSongs = songs.filter(s => selectedIds.has(s.id));
     if (selectedSongs.length === 0) return;
 
     setBatchLoading(true);
     setBatchError(null);
     setBatchSuggestions([]);
     setBatchFileErrors(null);
+    setBatchStats(null);
     batchAbortRef.current = false;
 
-    try {
-      const res = await fetch('/api/harmonize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          songs: selectedSongs.map(s => ({
-            id: s.id, title: s.title, artist: s.artist,
-            genre: s.genre || null, language: s.language || null,
-          })),
-        }),
-      });
-      const data = await res.json();
-      if (batchAbortRef.current) return;
+    // R1: warm the lyrics cache while the AI thinks
+    startLyricsWarmup(selectedSongs);
 
-      if (data.success && data.suggestions) {
-        setBatchSuggestions(data.suggestions.filter(
-          (s: BatchSuggestion) => s.suggestedGenre || s.suggestedLanguage
-        ));
+    try {
+      const result = await harmonizeSongs(
+        selectedSongs.map(s => ({
+          id: s.id, title: s.title, artist: s.artist,
+          genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
+        })),
+        { onProgress: setBatchProgress },
+      );
+      if (batchAbortRef.current) return;
+      setBatchProgress(null);
+
+      if (result.success || result.suggestions.length > 0) {
+        setBatchSuggestions(result.suggestions);
+        setBatchStats(result.stats);
         setShowBatchDialog(true);
       } else {
-        setBatchError(data.error || 'Failed');
+        setBatchError(result.error || t('editor.aiBatchError'));
       }
     } catch (e) {
       if (batchAbortRef.current) return;
       setBatchError(e instanceof Error ? e.message : 'Network error');
     } finally {
       setBatchLoading(false);
+      setBatchProgress(null);
     }
-  }, [songs, selectedIds]);
+  }, [songs, selectedIds, t, startLyricsWarmup]);
 
   /**
    * Persist a metadata update to the song's SOURCE txt file.
-   * The library entry alone is NOT enough: a folder rescan replaces the whole
-   * library from the filesystem (replaceCustomSongs) — without writing
-   * #GENRE:/#LANGUAGE: to the txt, AI-applied values are silently wiped.
+   * Shared module — the card uses the same contract.
    */
-  const persistSongMetadataToTxt = useCallback(async (songId: string, updates: Partial<Song>): Promise<boolean> => {
-    try {
-      const song = await getSongByIdWithLyrics(songId);
-      if (!song || !song.lyrics || song.lyrics.length === 0) return false;
-      const updated = { ...song, ...updates };
-      const result = await saveSongToTxt(updated);
-      return result.success;
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[EditorScreen] Failed to persist metadata to txt:', e);
-      return false;
-    }
+  const persistMetadata = useCallback(async (songId: string, updates: Partial<Song>): Promise<boolean> => {
+    const result = await persistSongMetadataToTxt(songId, updates);
+    return result.success;
   }, []);
 
-  const handleBatchApplySingle = useCallback(async (suggestion: BatchSuggestion, field: 'genre' | 'language') => {
-    const rawValue = field === 'genre' ? suggestion.suggestedGenre : suggestion.suggestedLanguage;
-    if (!rawValue) return;
-
+  const handleBatchApplySingle = useCallback(async (songId: string, field: 'genre' | 'language' | 'year', value: string | number) => {
     // Normalize to the app's canonical naming (English language names,
-    // title-cased genres) — the two AI endpoints return different conventions
-    // ("Deutsch" vs "German", "es" vs "Spanish") which would fragment the
-    // genre/language filters in the library.
-    const value = field === 'genre' ? normalizeGenreName(rawValue) : normalizeLanguage(rawValue);
-    const updates: Partial<Song> = { [field]: value };
+    // title-cased genres) — factual sources are pre-normalized, LLM output
+    // is normalized here as a safety net.
+    const normalized = field === 'genre'
+      ? normalizeGenreName(String(value))
+      : field === 'language'
+        ? normalizeLanguage(String(value))
+        : Number(value);
+    const updates: Partial<Song> = { [field]: normalized };
 
-    updateSong(suggestion.songId, updates);
-    const fileOk = await persistSongMetadataToTxt(suggestion.songId, updates);
+    updateSong(songId, updates);
+    const fileOk = await persistMetadata(songId, updates);
     if (!fileOk) {
       setBatchFileErrors(prev => (prev ?? 0) + 1);
     }
 
-    // Clear only the applied suggestion — the OTHER field's suggestion stays
+    // Clear only the applied suggestion — the OTHER fields' suggestions stay
     // pending in the dialog (previously the whole row vanished).
     setBatchSuggestions(prev => prev
-      .map(s => s.songId === suggestion.songId
-        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : { suggestedLanguage: null }) }
+      .map(s => s.songId === songId
+        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
         : s)
-      .filter(s => s.suggestedGenre || s.suggestedLanguage));
+      .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
     refreshSongs();
-  }, [refreshSongs, persistSongMetadataToTxt]);
+  }, [refreshSongs, persistMetadata]);
 
   const handleBatchApplyAll = useCallback(async () => {
     const list = batchSuggestions;
     if (list.length === 0) return;
+
+    // R1: make sure the lyrics warm-up finished — the apply loop then writes
+    // txt files from the warm cache instead of hitting cold file reads.
+    if (warmupPromiseRef.current) {
+      try { await warmupPromiseRef.current; } catch { /* warmup is best-effort */ }
+    }
 
     setBatchApplyProgress({ done: 0, total: list.length });
     setBatchFileErrors(0);
@@ -292,12 +330,21 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     for (const s of list) {
       if (batchAbortRef.current) break;
       const updates: Partial<Song> = {};
-      if (s.suggestedGenre) updates.genre = normalizeGenreName(s.suggestedGenre);
-      if (s.suggestedLanguage) updates.language = normalizeLanguage(s.suggestedLanguage);
+      // R4: apply-all respects the confidence threshold — but factual
+      // sources (Deezer/MusicBrainz) and years are exempt (verified data).
+      if (s.suggestedGenre && fieldPassesThreshold('genre', s, minConfidence)) {
+        updates.genre = normalizeGenreName(s.suggestedGenre);
+      }
+      if (s.suggestedLanguage && fieldPassesThreshold('language', s, minConfidence)) {
+        updates.language = normalizeLanguage(s.suggestedLanguage);
+      }
+      if (s.suggestedYear && s.suggestedYear !== s.currentYear) {
+        updates.year = s.suggestedYear;
+      }
 
       if (Object.keys(updates).length > 0) {
         updateSong(s.songId, updates);
-        const fileOk = await persistSongMetadataToTxt(s.songId, updates);
+        const fileOk = await persistMetadata(s.songId, updates);
         if (!fileOk) fileErrors++;
       }
       processed++;
@@ -307,11 +354,12 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setBatchApplyProgress(null);
     setBatchFileErrors(fileErrors > 0 ? fileErrors : null);
     setBatchSuggestions([]);
+    setBatchStats(null);
     setShowBatchWarning(false);
     setShowBatchDialog(false);
     clearSelection();
     refreshSongs();
-  }, [batchSuggestions, clearSelection, refreshSongs, persistSongMetadataToTxt]);
+  }, [batchSuggestions, minConfidence, clearSelection, refreshSongs, persistMetadata]);
 
   // Handle song selection - load lyrics from IndexedDB/filesystem if needed
   const handleSelectSong = useCallback(async (song: Song) => {
@@ -408,37 +456,43 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 <p className="text-white/50 text-sm">{t('editor.aiBatchNoSuggestions')}</p>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto space-y-2 mb-4">
-                {batchSuggestions.map(s => (
-                  <div key={s.songId} className="bg-white/5 rounded-lg p-2.5 text-xs space-y-1.5">
-                    <p className="font-medium text-white/80 truncate">{s.artist} - {s.title}</p>
-                    {s.suggestedGenre && s.suggestedGenre !== s.currentGenre && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-red-400 line-through">{s.currentGenre || '-'}</span>
-                        <span className="text-white/40">→</span>
-                        <span className="text-green-400">{s.suggestedGenre}</span>
-                        <span className="text-white/30">({s.genreConfidence}%)</span>
-                        <button
-                          onClick={() => handleBatchApplySingle(s, 'genre')}
-                          className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                        >✓</button>
-                      </div>
-                    )}
-                    {s.suggestedLanguage && s.suggestedLanguage !== s.currentLanguage && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-red-400 line-through">{s.currentLanguage || '-'}</span>
-                        <span className="text-white/40">→</span>
-                        <span className="text-green-400">{s.suggestedLanguage}</span>
-                        <span className="text-white/30">({s.languageConfidence}%)</span>
-                        <button
-                          onClick={() => handleBatchApplySingle(s, 'language')}
-                          className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                        >✓</button>
-                      </div>
-                    )}
+              <>
+                {/* R4: confidence threshold filter — AI guesses only */}
+                <div className="flex items-center justify-between gap-2 flex-wrap pb-2 mb-2 border-b border-white/10">
+                  <ConfidenceFilter value={minConfidence} onChange={setMinConfidence} t={t} />
+                  {batchStats && (
+                    <p className="text-[10px] text-white/40 truncate">
+                      {t('editor.aiBatchStatsLine')
+                        .replace('{cache}', String(batchStats.fromCache))
+                        .replace('{facts}', String(batchStats.factualHits))
+                        .replace('{ai}', String(batchStats.total - batchStats.fromCache))}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+                  {batchSuggestions.map(s => (
+                    <SuggestionRow
+                      key={s.songId}
+                      suggestion={s}
+                      minConfidence={minConfidence}
+                      onApply={(songId, field, value) => handleBatchApplySingle(songId, field, value)}
+                    />
+                  ))}
+                </div>
+
+                {/* R1: lyrics warm-up indicator */}
+                {warmupProgress && (
+                  <div className="flex items-center gap-2 text-[11px] text-white/50 pb-2">
+                    <span>📖</span>
+                    <span className="font-mono tabular-nums">
+                      {t('editor.aiBatchWarmup')
+                        .replace('{current}', String(warmupProgress.done))
+                        .replace('{total}', String(warmupProgress.total))}
+                    </span>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
             <div className="flex gap-2 pt-2 border-t border-white/10">
@@ -453,10 +507,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               {batchSuggestions.length > 0 && (
                 <Button
                   onClick={() => setShowBatchWarning(true)}
-                  className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs"
+                  disabled={countApplicableSongs(batchSuggestions, minConfidence) === 0}
+                  className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs disabled:opacity-40"
                   data-testid="editor-batch-apply-button"
                 >
-                  {t('editor.aiApplyAll')} ({batchSuggestions.length})
+                  {t('editor.aiApplyAll')} ({countApplicableSongs(batchSuggestions, minConfidence)}
+                    {countApplicableSongs(batchSuggestions, minConfidence) !== batchSuggestions.length
+                      ? `/${batchSuggestions.length}`
+                      : ''})
                 </Button>
               )}
             </div>
@@ -488,8 +546,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             </div>
 
             <div className="flex items-center gap-2 text-xs text-white/50">
-              <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{batchSuggestions.length}</span>
+              <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{countApplicableSongs(batchSuggestions, minConfidence)}</span>
               <span>{t('editor.aiHarmonizeWarnCount')}</span>
+            </div>
+
+            {/* R4: threshold note in the warning */}
+            <div className="flex items-center gap-2 text-[11px] text-white/50 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
+              <span>🛡️</span>
+              <span>
+                {t('editor.aiBatchThresholdNote').replace('{value}', String(minConfidence))}
+              </span>
             </div>
 
             {/* Progress while writing the txt files */}
@@ -788,8 +854,23 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             ) : (
               <span>🤖</span>
             )}
-            {t('editor.aiBatchSuggestBtn')}
+            {batchProgress
+              ? `${batchProgress.phase === 'lookup' ? '🔎' : '🤖'} ${batchProgress.done}/${batchProgress.total}`
+              : t('editor.aiBatchSuggestBtn')}
           </Button>
+        </div>
+      )}
+
+      {/* Pipeline progress pill — shows factual lookup / AI chunk progress */}
+      {batchLoading && batchProgress && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-violet-500/40 rounded-full px-4 py-2 shadow-2xl flex items-center gap-2">
+          <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-white/80 whitespace-nowrap">
+            {batchProgress.phase === 'lookup'
+              ? t('editor.aiBatchLookupPhase')
+              : t('editor.aiBatchAiPhase')}
+          </span>
+          <span className="text-xs text-white/50 font-mono tabular-nums">{batchProgress.done}/{batchProgress.total}</span>
         </div>
       )}
 
