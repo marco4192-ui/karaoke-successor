@@ -6,7 +6,7 @@ import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getYears } from '@/lib/game/song-library';
-import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
+import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector } from './unified-party-setup.components';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
 
@@ -61,12 +61,19 @@ export function UnifiedPartySetup({
     return () => clearTimeout(timer);
   }, []);
 
+  // Live companion connection status — needed for Singing Device Assignment
+  // (companion players must be connected) and the player grid status dots.
+  const connectedProfileIds = useCompanionConnections(true);
+
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
     songSelection, setSongSelection, resolvedSong, setResolvedSong, readyToPlay, handleReadyToPlay,
-    inputMode, setInputMode,
+    inputMode,
+    deviceMode, deviceAssignments, setPlayerDevice,
     micAssignments, assignMic, removeMicAssignment,
+    savedMics, micCount,
+    playersWithoutDevice, deviceBlockReason,
     selectedMicId, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined, filterReleaseYear,
     setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear,
@@ -78,6 +85,7 @@ export function UnifiedPartySetup({
     onClearSelectedSong,
     initialDraft,
     onSaveDraft,
+    connectedProfileIds,
   });
 
   // Keep the hook's song state in sync when the parent (party store) updates
@@ -92,11 +100,6 @@ export function UnifiedPartySetup({
   const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
 
-  // Live companion connection status (green dot / "connected" label)
-  // for companion players in the player grid.
-  const showCompanionStatus = inputMode === 'companion' || inputMode === 'mixed';
-  const connectedProfileIds = useCompanionConnections(showCompanionStatus);
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableYears = useMemo(() => getYears(), [songs.length]);
 
@@ -105,7 +108,7 @@ export function UnifiedPartySetup({
       <GameSidebar config={config} />
 
       <div className="flex-1 min-w-0" ref={containerRef}>
-        {/* Header */}
+        {/* ── A. Header: Back-Button + Title ── */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={onBack} className="text-white/60 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none" data-testid="party-setup-back-button">{t('unifiedSetup.back')}</Button>
           <div>
@@ -120,27 +123,18 @@ export function UnifiedPartySetup({
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 text-red-400">{error}</div>
         )}
 
-        <SettingsPanel
-          config={config} settings={settings} difficulty={difficulty}
-          onSettingChange={onSettingChange} onDifficultyChange={setDifficulty}
-        />
-
-        <InputModeSelector
-          inputMode={inputMode}
-          onInputModeChange={setInputMode}
-          supportsCompanionApp={config.supportsCompanionApp}
-          forceInputMode={config.forceInputMode}
-        />
-
+        {/* ── B. Player Selection ── */}
         <PlayerGrid
           config={config} activeProfiles={activeProfiles}
           selectedPlayers={selectedPlayers} togglePlayer={togglePlayer}
           inputMode={inputMode}
           connectedProfileIds={connectedProfileIds}
+          deviceAssignments={deviceAssignments}
         />
 
-        {/* Shared single mic (e.g. Pass-the-Mic) */}
-        {config.sharedMic && selectedPlayers.length > 0 && (
+        {/* ── D. Singing Device Assignment ── */}
+        {/* D1. Shared mic (PTM): single dropdown for the mic that gets passed around */}
+        {deviceMode === 'shared-mic' && selectedPlayers.length > 0 && (
           <SingleMicSelector
             selectedMicId={selectedMicId}
             onMicChange={(micId, micName) => {
@@ -150,18 +144,58 @@ export function UnifiedPartySetup({
           />
         )}
 
-        {/* Per-player mic assignment */}
-        {!config.sharedMic && !config.forceInputMode && (inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
-          <MicAssignmentPanel
+        {/* D2. Per-player device assignment (exclusive: BR + Medley; flexible: duel modes) */}
+        {(deviceMode === 'exclusive' || deviceMode === 'flexible') && selectedPlayers.length > 0 && (
+          <SingingDeviceAssignment
+            mode={deviceMode}
             selectedPlayers={selectedPlayers}
             profiles={activeProfiles}
+            savedMics={savedMics}
             micAssignments={micAssignments}
+            deviceAssignments={deviceAssignments}
+            connectedProfileIds={connectedProfileIds}
             onAssignMic={assignMic}
             onRemoveMic={removeMicAssignment}
-            inputMode={inputMode}
+            onSetPlayerDevice={setPlayerDevice}
           />
         )}
 
+        {/* D3. CPTM: no Singing Device Assignment section — every player sings
+            via Companion App. Show the connection requirement instead. */}
+        {deviceMode === 'none' && selectedPlayers.length > 0 && (
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+            <p className="text-sm font-semibold text-purple-300 flex items-center gap-2">
+              <span aria-hidden="true">📱</span>
+              {t('unifiedSetup.singingDeviceAssignment')} — {t('unifiedSetup.deviceCompanion')}
+            </p>
+            <p className="text-xs text-white/50 mt-1">{t('unifiedSetup.deviceNeedAllCompanion')}</p>
+            {playersWithoutDevice.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {playersWithoutDevice.map(pid => {
+                  const profile = activeProfiles.find(p => p.id === pid);
+                  if (!profile) return null;
+                  return (
+                    <span
+                      key={pid}
+                      className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-1"
+                    >
+                      <span aria-hidden="true">⚠</span>
+                      {profile.name} — {t('unifiedSetup.deviceNotConnected')}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── E. Game Settings ── */}
+        <SettingsPanel
+          config={config} settings={settings} difficulty={difficulty}
+          onSettingChange={onSettingChange} onDifficultyChange={setDifficulty}
+        />
+
+        {/* ── F. Song Filter ── */}
         <SongFilterSection
           filterGenre={filterGenre}
           filterLanguage={filterLanguage}
@@ -178,6 +212,7 @@ export function UnifiedPartySetup({
           onFilterReleaseYearChange={setFilterReleaseYear}
         />
 
+        {/* ── G. Song Selection ── */}
         {/* Pre-selected Library/Vote Song Banner (display-only — the "Ready to Play" button below starts the game) */}
         {preSelectedSong && (
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-4 mb-6">
@@ -213,6 +248,7 @@ export function UnifiedPartySetup({
           selectedOption={songSelection ?? null}
         />
 
+        {/* ── H. Ready to Play ── */}
         <ReadySummary
           config={config} selectedPlayerCount={selectedPlayers.length}
           difficulty={difficulty} inputMode={inputMode}
@@ -220,6 +256,8 @@ export function UnifiedPartySetup({
           selectedSong={preSelectedSong ?? resolvedSong ?? null}
           readyToPlay={readyToPlay}
           onReadyToPlay={handleReadyToPlay}
+          deviceBlockReason={deviceBlockReason}
+          micCount={micCount}
         />
       </div>
     </div>

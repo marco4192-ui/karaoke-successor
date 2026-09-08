@@ -49,6 +49,7 @@ export const StorageKeys = {
   // --- Multi-mic / Party ---
   MULTI_MIC_CONFIG: 'karaoke-multi-mic-config',
   PLAYER_MIC_PREFERENCES: 'karaoke-player-mic-preferences',
+  PLAYER_DEVICE_PREFERENCES: 'karaoke-player-device-preferences',
   PTM_SHARED_MIC_ID: 'karaoke-ptm-shared-mic-id',
   PTM_SHARED_MIC_NAME: 'karaoke-ptm-shared-mic-name',
 

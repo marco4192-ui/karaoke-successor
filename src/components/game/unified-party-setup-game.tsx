@@ -13,12 +13,13 @@ import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ConnectionStatusBadge } from './connection-status-badge';
 import { useRovingFocus } from '@/hooks/use-roving-focus';
+import type { PlayerDeviceChoice } from './unified-party-setup.types';
 
 // ===================== PLAYER GRID =====================
 
 export function PlayerGrid({
   config, activeProfiles, selectedPlayers, togglePlayer, inputMode,
-  connectedProfileIds,
+  connectedProfileIds, deviceAssignments,
 }: {
   config: PartyGameConfig;
   activeProfiles: PlayerProfile[];
@@ -27,12 +28,14 @@ export function PlayerGrid({
   inputMode?: InputMode;
   /** Profile ids that currently have a connected companion device (live status). */
   connectedProfileIds?: Set<string>;
+  /** Per-player device choice ('mic' | 'companion') — replaces the inputMode split. */
+  deviceAssignments?: Record<string, PlayerDeviceChoice>;
 }) {
 
   const { t } = useTranslation();
 
-  // Check if any input mode involves companion app
-  const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
+  // Companion status shown whenever the mode allows companion players
+  const showConnectionStatus = config.supportsCompanionApp === true;
 
   const { containerProps: playerContainerProps, getItemProps: getPlayerProps } = useRovingFocus({
     itemCount: activeProfiles.length,
@@ -60,11 +63,11 @@ export function PlayerGrid({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" {...playerContainerProps}>
           {activeProfiles.map((profile, index) => {
             const isSelected = selectedPlayers.includes(profile.id);
-            // In mixed mode, first half uses mic, second half uses companion.
-            // Must use position in selectedPlayers (matches actual game logic in hook).
+            // Device per player: from Singing Device Assignment (fallback: legacy inputMode split)
+            const device: PlayerDeviceChoice | undefined = deviceAssignments?.[profile.id];
             const selectedIdx = selectedPlayers.indexOf(profile.id);
             const isCompanionInMixed = inputMode === 'mixed' && selectedIdx >= 0 && selectedIdx >= Math.ceil(selectedPlayers.length / 2);
-            const isCompanionPlayer = inputMode === 'companion' || isCompanionInMixed;
+            const isCompanionPlayer = device === 'companion' || (device === undefined && (inputMode === 'companion' || isCompanionInMixed));
             const isCompanionConnected = !!connectedProfileIds?.has(profile.id);
 
             return (
@@ -90,7 +93,7 @@ export function PlayerGrid({
                       </div>
                     )}
                     {/* Show connection status badge for companion players when selected */}
-                    {isSelected && isCompanionPlayer && (
+                    {isSelected && isCompanionPlayer && showConnectionStatus && (
                       <div className="absolute -bottom-0.5 -right-0.5">
                         <ConnectionStatusBadge
                           player={{
@@ -382,6 +385,7 @@ export function SongSelectionGrid({
 export function ReadySummary({
   config, selectedPlayerCount, difficulty, inputMode,
   songSelection, selectedSong, readyToPlay, onReadyToPlay,
+  deviceBlockReason, micCount,
 }: {
   config: PartyGameConfig;
   selectedPlayerCount: number;
@@ -395,6 +399,10 @@ export function ReadySummary({
   readyToPlay?: boolean;
   /** "Ready to Play" start handler — the ONLY start trigger */
   onReadyToPlay?: () => void;
+  /** Why devices are not ready yet (Singing Device Assignment) */
+  deviceBlockReason?: string | null;
+  /** Number of connected microphones (device summary) */
+  micCount?: number;
 }) {
   const { t } = useTranslation();
   const canStart = selectedPlayerCount >= config.minPlayers;
@@ -404,7 +412,7 @@ export function ReadySummary({
   const missingReason = !canStart
     ? t('unifiedSetup.minPlayersRequired').replace('{n}', String(config.minPlayers))
     : !readyToPlay
-      ? t('unifiedSetup.chooseSongFirst')
+      ? (deviceBlockReason || t('unifiedSetup.chooseSongFirst'))
       : null;
 
   const methodLabel = songSelection ? t(SONG_SELECTION_CONFIG[songSelection].labelKey) : null;
@@ -429,10 +437,20 @@ export function ReadySummary({
                     <span>{t('unifiedSetup.randomSongDesc')}</span>
                   )}
                 </p>
-                <p className="truncate">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
+                <p className="truncate">
+                  {selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}
+                  {typeof micCount === 'number' && micCount > 0 ? ` • 🎤×${micCount}` : ''}
+                </p>
               </div>
             ) : (
-              <p className="text-sm text-white/30">{missingReason}</p>
+              <div className="space-y-1">
+                <p className="text-sm text-white/30">{missingReason}</p>
+                {deviceBlockReason && canStart && (
+                  <p className="text-xs text-amber-300/80 flex items-center gap-1.5">
+                    <span aria-hidden="true">🎤</span>{deviceBlockReason}
+                  </p>
+                )}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-4 shrink-0">

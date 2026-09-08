@@ -19,6 +19,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     supportsCompanionApp: false,
     forceInputMode: 'microphone',
     sharedMic: true,
+    deviceAssignmentMode: 'shared-mic',
   },
   'companion-singalong': {
     mode: 'companion-singalong',
@@ -39,6 +40,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     songSelectionOptions: ['random', 'library', 'vote', 'medley'],
     supportsCompanionApp: true,
     forceInputMode: 'companion',
+    deviceAssignmentMode: 'none',
   },
   'medley': {
     mode: 'medley',
@@ -66,6 +68,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'exclusive',
   },
   'tournament': {
     mode: 'tournament',
@@ -106,6 +109,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'flexible',
   },
   'battle-royale': {
     mode: 'battle-royale',
@@ -137,6 +141,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random', 'vote'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'exclusive',
   },
   'duel': {
     mode: 'duel',
@@ -152,6 +157,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     settings: [],
     songSelectionOptions: ['library', 'random', 'vote'],
     supportsCompanionApp: false,
+    deviceAssignmentMode: 'flexible',
   },
   'blind': {
     mode: 'blind',
@@ -178,6 +184,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'flexible',
   },
   'missing-words': {
     mode: 'missing-words',
@@ -207,6 +214,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'flexible',
   },
   'rate-my-song': {
     mode: 'rate-my-song',
@@ -236,6 +244,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['random', 'library', 'vote'],
     supportsCompanionApp: true,
+    deviceAssignmentMode: 'flexible',
   },
 };
 

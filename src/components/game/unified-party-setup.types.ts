@@ -40,6 +40,18 @@ export interface PartyGameConfig {
   forceInputMode?: InputMode;
   /** If true, players share a single microphone instead of per-player mic assignment */
   sharedMic?: boolean;
+  /**
+   * How singing devices are assigned in the "Singing Device Assignment" section.
+   * - 'shared-mic':  one shared mic dropdown (PTM — the mic is passed around)
+   * - 'exclusive':   every player needs their own device; each mic can only be
+   *                  selected once (Battle Royal, Medley Contest)
+   * - 'flexible':    duel modes — max 2 sing simultaneously, no fixed mic per
+   *                  player when ≥2 mics are connected (Missing Words, Blind,
+   *                  Tournament, Rate my Song, Duel)
+   * - 'none':        no device assignment section at all — all players must be
+   *                  connected via companion app (CPTM)
+   */
+  deviceAssignmentMode?: 'shared-mic' | 'exclusive' | 'flexible' | 'none';
 }
 
 export type SongSelectionOption = 'library' | 'random' | 'vote' | 'medley';
@@ -274,6 +286,9 @@ export interface GameSetupResult {
 
 // ===================== PARTY SETUP DRAFT =====================
 
+/** Per-player singing device choice used by Singing Device Assignment */
+export type PlayerDeviceChoice = 'mic' | 'companion';
+
 /**
  * Snapshot of the unified setup form, persisted in the party store while the
  * user navigates to the library or voting screen and back. Without this,
@@ -285,6 +300,8 @@ export interface PartySetupDraft {
   settings: Record<string, any>;
   difficulty: Difficulty;
   inputMode: InputMode;
+  /** Per-player device choice (profileId → 'mic' | 'companion') */
+  deviceAssignments?: Record<string, PlayerDeviceChoice>;
   selectedMicId: string | null;
   selectedMicName: string | null;
   filterGenre: string;

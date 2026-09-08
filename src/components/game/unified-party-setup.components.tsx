@@ -1,7 +1,7 @@
 // Barrel re-exports — split from the original 867-line unified-party-setup.components.tsx
 
-// Mic / input-related components
-export { SingleMicSelector, InputModeSelector, MicAssignmentPanel } from './unified-party-setup-mic';
+// Mic / singing-device components
+export { SingleMicSelector, SingingDeviceAssignment } from './unified-party-setup-mic';
 
 // Song voting modal
 export { SongVotingModal } from './unified-party-setup-voting';

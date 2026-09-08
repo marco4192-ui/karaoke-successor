@@ -12,6 +12,7 @@ import { COUNTRY_OPTIONS } from './country-options';
 import { ProfileSyncSection } from './profile-sync-section';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 
 interface CharacterSettingsCardProps {
   profile: PlayerProfile;
@@ -312,13 +313,16 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             {showQR ? t('characterScreen.hideQrCode') : t('characterScreen.showQrCode')}
           </button>
           {showQR && localIP && (
-            <div className="mt-3 flex items-center gap-4">
-              <div className="bg-white rounded-lg p-2">
-                {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
+            <div className="mt-3">
+              <div className="flex items-center gap-4">
+                <div className="bg-white rounded-lg p-2">
+                  {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
+                </div>
+                <p className="text-xs text-white/40 font-mono break-all">
+                  {buildCompanionUrl(localIP, undefined, profile.id)}
+                </p>
               </div>
-              <p className="text-xs text-white/40 font-mono break-all">
-                {buildCompanionUrl(localIP, undefined, profile.id)}
-              </p>
+              <QrWlanHint />
             </div>
           )}
           {showQR && !localIP && (

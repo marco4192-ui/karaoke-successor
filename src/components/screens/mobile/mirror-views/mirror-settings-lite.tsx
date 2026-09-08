@@ -5,6 +5,7 @@ import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { NOTE_COLOR_PROFILES } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
@@ -570,6 +571,8 @@ function MobileSettings({ t }: { t: (_key: string) => string }) {
           <div className="w-full h-full animate-pulse bg-white/20 rounded-lg" />
         )}
       </div>
+
+      <QrWlanHint className="justify-center text-center" />
 
       {/* URL Anzeige */}
       {companionUrl && (

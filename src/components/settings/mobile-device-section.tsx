@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { PhoneIcon } from '@/components/settings/settings-icons';
 import { buildCompanionUrl, detectLocalIP } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { useTranslation } from '@/lib/i18n/translations';
 
 interface ConnectedClient {
@@ -95,6 +96,7 @@ export function MobileDeviceMicrophoneSection() {
             <p className="text-xs text-white/40 text-center">
               {t('settingsMobileDevice.pointCamera')}
             </p>
+            <QrWlanHint className="justify-center" />
           </div>
           
           {/* Connection Info */}

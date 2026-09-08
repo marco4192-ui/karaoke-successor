@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Difficulty } from '@/types/game';
 import { useTranslation } from '@/lib/i18n/translations';
+import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { useQRCode } from '@/hooks/use-qr-code';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 import type { PartyGameConfig, GameSettingConfig } from './unified-party-setup.types';
 
 // ===================== SETTING CONTROL =====================
@@ -79,6 +82,54 @@ function SettingControl({
   }
 }
 
+// ===================== COMPANION QR CARD =====================
+
+/**
+ * QR code card for connecting the Companion App — placed below the game
+ * explanation in the setup sidebar so players can join without leaving
+ * the settings screen. Includes the "connect to the same Wi-Fi first" hint.
+ */
+function CompanionQrCard() {
+  const { t } = useTranslation();
+  const [localIP, setLocalIP] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    detectLocalIP().then(ip => {
+      if (!cancelled) setLocalIP(ip);
+    }).catch(() => { /* offline — QR stays hidden */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '', 160);
+
+  if (!localIP) return null;
+
+  return (
+    <Card className="bg-white/5 border-white/10 mt-4">
+      <CardContent className="pt-6">
+        <h3 className="font-bold text-white/90 mb-1 text-sm">{t('unifiedSetup.qrCompanionTitle')}</h3>
+        <p className="text-xs text-white/40 mb-3">{t('unifiedSetup.qrScanToConnect')}</p>
+        <div className="flex justify-center">
+          {qrCodeSrc ? (
+            <img
+              src={qrCodeSrc}
+              alt={t('unifiedSetup.qrCompanionTitle')}
+              className="w-32 h-32 rounded-lg bg-white p-1 shadow-lg"
+            />
+          ) : (
+            <div className="w-32 h-32 rounded-lg bg-white/10 animate-pulse flex items-center justify-center text-white/30 text-xs">
+              ⋯
+            </div>
+          )}
+        </div>
+        {/* Wi-Fi hint under EVERY companion QR code (user request 1.1) */}
+        <QrWlanHint />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ===================== GAME SIDEBAR =====================
 
 export function GameSidebar({ config }: { config: PartyGameConfig }) {
@@ -98,7 +149,7 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
 
   return (
     <div className="hidden lg:block w-64 flex-shrink-0">
-      <div className="sticky top-24">
+      <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1 sidebar-scroll">
         <Card className={`bg-gradient-to-br ${config.color} border-0`}>
           <CardContent className="pt-6">
             <div className="text-6xl mb-4">{config.icon}</div>
@@ -118,6 +169,9 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Companion QR below the game explanation — join without leaving the setup */}
+        <CompanionQrCard />
       </div>
     </div>
   );
