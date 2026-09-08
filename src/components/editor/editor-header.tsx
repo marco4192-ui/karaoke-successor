@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, Undo, Redo, CheckCircle, AlertCircle, Tags } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 import { useTranslation } from '@/lib/i18n/translations';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
@@ -20,6 +20,9 @@ interface EditorHeaderProps {
   onCancel: () => void;
   onSave: () => void;           // Save & close (original behaviour)
   onSaveOnly?: () => void;      // Save only, stay in editor
+  /** Metadata side panel toggle (genre/language editor) */
+  showMetadataPanel?: boolean;
+  onToggleMetadataPanel?: () => void;
 }
 
 export function EditorHeader({
@@ -35,6 +38,8 @@ export function EditorHeader({
   onCancel,
   onSave,
   onSaveOnly,
+  showMetadataPanel = false,
+  onToggleMetadataPanel,
 }: EditorHeaderProps) {
   const { t } = useTranslation();
 
@@ -68,6 +73,19 @@ export function EditorHeader({
         )}
         {hasUnsavedChanges && !saveResult && (
           <span className="text-xs text-yellow-400">{t('editor.header.unsavedChanges')}</span>
+        )}
+        {/* Metadata (genre/language) side panel toggle */}
+        {onToggleMetadataPanel && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleMetadataPanel}
+            title={t(showMetadataPanel ? 'editor.hideMetadata' : 'editor.showMetadata')}
+            className={showMetadataPanel ? 'text-purple-400 hover:text-purple-300' : 'text-slate-400 hover:text-white'}
+            data-testid="editor-metadata-toggle"
+          >
+            <Tags className="w-4 h-4" />
+          </Button>
         )}
         <Button
           variant="ghost"

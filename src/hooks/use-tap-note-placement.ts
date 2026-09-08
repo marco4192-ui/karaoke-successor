@@ -37,12 +37,15 @@ interface UseTapNotePlacementReturn extends TapNoteState {
 
 /**
  * Tap Note Placement Hook (Ultrastar-style)
- * 
+ *
  * When tap mode is active, Space key acts as a note placement trigger:
  * - Space DOWN → Creates a new note at current time with next lyric assigned
  * - Space UP → Sets note duration based on hold length
- * 
- * This enables rapid note entry by tapping along with the music.
+ *
+ * The syllable list is SNAPSHOTTED when tap mode is activated. Without the
+ * snapshot the live list would mutate while tapping (every placed note appends
+ * its own lyric to the list), shifting indices and causing the assignment to
+ * collapse into repeating the previously placed syllable.
  */
 export function useTapNotePlacement({
   currentTimeRef,
@@ -65,9 +68,21 @@ export function useTapNotePlacement({
   const activeNoteIdRef = useRef<string | null>(null);
   const lyricIndexRef = useRef(0);
 
+  // Live reference to the syllable list (updated after each render)…
+  const lyricsRef = useRef(lyrics);
+  useEffect(() => { lyricsRef.current = lyrics; }, [lyrics]);
+  // …but the assignment sequence uses a SNAPSHOT taken on activation.
+  const lyricsSnapshotRef = useRef<string[]>([]);
+
+  const snapshotLyrics = useCallback(() => {
+    const source = lyricsRef.current;
+    lyricsSnapshotRef.current = source.length > 0 ? [...source] : [];
+  }, []);
+
   const toggleTapMode = useCallback(() => {
     setState(prev => {
       if (!prev.isActive) {
+        snapshotLyrics();
         lyricIndexRef.current = 0;
         return { ...prev, isActive: true, isHolding: false, activeNoteId: null, nextLyricIndex: 0, notesPlaced: 0 };
       }
@@ -75,9 +90,10 @@ export function useTapNotePlacement({
       activeNoteIdRef.current = null;
       return { ...prev, isActive: false, isHolding: false, activeNoteId: null };
     });
-  }, []);
+  }, [snapshotLyrics]);
 
   const activateTapMode = useCallback(() => {
+    snapshotLyrics();
     lyricIndexRef.current = 0;
     setState(prev => ({
       ...prev,
@@ -87,7 +103,7 @@ export function useTapNotePlacement({
       nextLyricIndex: 0,
       notesPlaced: 0,
     }));
-  }, []);
+  }, [snapshotLyrics]);
 
   const deactivateTapMode = useCallback(() => {
     isHoldingRef.current = false;
@@ -101,13 +117,15 @@ export function useTapNotePlacement({
   }, []);
 
   const resetSession = useCallback(() => {
+    // Re-snapshot on reset so newly edited lyrics are picked up
+    snapshotLyrics();
     lyricIndexRef.current = 0;
     setState(prev => ({
       ...prev,
       nextLyricIndex: 0,
       notesPlaced: 0,
     }));
-  }, []);
+  }, [snapshotLyrics]);
 
   // Set up event listeners for Space key (tap mode)
   useEffect(() => {
@@ -129,9 +147,12 @@ export function useTapNotePlacement({
       const now = currentTimeRef.current ?? 0;
       holdStartRef.current = now;
 
-      // Get next lyric
-      const syllables = lyrics.length > 0 ? lyrics : ['---'];
-      const lyric = syllables[lyricIndexRef.current % syllables.length];
+      // Get next lyric from the snapshot. Once the syllables are exhausted we
+      // assign '---' instead of silently wrapping around to the start.
+      const syllables = lyricsSnapshotRef.current;
+      const lyric = lyricIndexRef.current < syllables.length
+        ? syllables[lyricIndexRef.current]
+        : '---';
       lyricIndexRef.current++;
 
       // Create note
@@ -177,7 +198,7 @@ export function useTapNotePlacement({
       window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('keyup', handleKeyUp, true);
     };
-  }, [state.isActive, currentTimeRef, defaultPitch, onNoteCreate, onNoteRelease, lyrics]);
+  }, [state.isActive, currentTimeRef, defaultPitch, onNoteCreate, onNoteRelease]);
 
   return {
     ...state,

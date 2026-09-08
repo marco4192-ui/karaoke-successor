@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
+import { StorageKeys, getString } from '@/lib/storage';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { GenreLanguageEditor } from '@/components/editor/genre-language-editor';
@@ -38,7 +39,12 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     try {
       if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
         const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
-        const songsFolder = localStorage.getItem('songsFolder') || localStorage.getItem('karaoke_songs_folder');
+        // Use the REAL storage key ('karaoke-songs-folder') — the old keys
+        // ('songsFolder' / 'karaoke_songs_folder') never matched, so the rescan
+        // silently did nothing.
+        const songsFolder = getString(StorageKeys.SONGS_FOLDER)
+          || localStorage.getItem('songsFolder')
+          || localStorage.getItem('karaoke_songs_folder');
         if (songsFolder) {
           await scanSongsFolderTauri(songsFolder);
         }
@@ -287,6 +293,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setSelectedSong(null);
   };
 
+  // ── Latest song state from the KaraokeEditor (fixes stale saves in the genre panel) ──
+  const latestSongRef = useRef<Song | null>(null);
+  const handleSongSync = useCallback((song: Song) => {
+    latestSongRef.current = song;
+  }, []);
+
+  // Incremented when an external panel saved the current state → the
+  // KaraokeEditor resets its unsaved-changes indicator accordingly.
+  const [externalSaveCount, setExternalSaveCount] = useState(0);
+
   const handleSongMetadataUpdate = (updates: Partial<Song>) => {
     if (selectedSong) {
       setSelectedSong({ ...selectedSong, ...updates } as Song);
@@ -438,16 +454,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <p className="text-white/60">{t('editor.subtitle')}</p>
             </div>
             <div className="flex gap-2">
-              {selectedSong && (
-                <Button
-                  onClick={() => setShowMetadataPanel(!showMetadataPanel)}
-                  variant={showMetadataPanel ? 'default' : 'outline'}
-                  className={showMetadataPanel ? 'bg-purple-500' : 'border-white/20 hover:bg-white/10'}
-                  size="sm"
-                >
-                  🏷️
-                </Button>
-              )}
               <Button onClick={refreshSongs} variant="outline" className="border-white/20" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
                 🔄 {t('editor.refreshBtn')}
               </Button>
@@ -598,7 +604,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 variant="outline"
                 className="border-white/20 text-white/70 hover:bg-white/10"
               >
-                Load More ({filteredSongs.length - visibleCount} remaining)
+                {t('editor.loadMore')} ({filteredSongs.length - visibleCount})
               </Button>
             </div>
           )}
@@ -620,6 +626,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               song={selectedSong}
               onSave={handleSave}
               onCancel={() => setSelectedSong(null)}
+              onSongSync={handleSongSync}
+              externalSaveCount={externalSaveCount}
+              showMetadataPanel={showMetadataPanel}
+              onToggleMetadataPanel={() => setShowMetadataPanel(prev => !prev)}
             />
           </div>
 
@@ -630,8 +640,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 key={selectedSong?.id ?? 'none'}
                 song={selectedSong}
                 onUpdate={handleSongMetadataUpdate}
-                onSaved={refreshSongs}
+                onSaved={() => { refreshSongs(); setExternalSaveCount(c => c + 1); }}
                 t={t}
+                getLatestSong={() => latestSongRef.current ?? selectedSong}
               />
               <AiHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
             </div>

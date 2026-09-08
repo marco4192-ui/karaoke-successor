@@ -9,12 +9,21 @@ interface UseEditorKeyboardShortcutsParams {
   currentTime: number;
   handlePlayPause: () => void;
   handleNoteDelete: (_noteId: string) => void;
+  /** Ctrl+S handler — saves WITHOUT closing (YASS-style) */
   handleSave: () => void;
   undo: () => void;
   redo: () => void;
   handleNoteAdd: (_startTime: number, _pitch: number) => void;
   setSelectedNoteId: (_noteId: string | undefined) => void;
   tapModeActive?: boolean;
+}
+
+/** True when the key event targets an interactive control that handles keys itself. */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest(
+    'button, select, input, textarea, [role="slider"], [role="combobox"], [contenteditable="true"]'
+  ));
 }
 
 export function useEditorKeyboardShortcuts({
@@ -53,8 +62,10 @@ export function useEditorKeyboardShortcuts({
         return;
       }
 
-      // Space: Play/Pause (disabled in tap mode — Space is used for note placement)
+      // Space: Play/Pause (disabled in tap mode — Space is used for note placement).
+      // Focused buttons/sliders handle Space themselves — don't double-trigger.
       if (e.code === 'Space' && !tapModeActiveRef.current) {
+        if (isInteractiveTarget(e.target)) return;
         e.preventDefault();
         handlePlayPause();
       }
@@ -67,7 +78,7 @@ export function useEditorKeyboardShortcuts({
         }
       }
 
-      // Ctrl+S: Save
+      // Ctrl+S: Save (without closing)
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
         e.preventDefault();
         handleSave();
@@ -88,7 +99,7 @@ export function useEditorKeyboardShortcuts({
       // Ctrl+C: Copy selected note
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && selectedNoteRef.current) {
         e.preventDefault();
-        navigator.clipboard.writeText(JSON.stringify(selectedNoteRef.current));
+        navigator.clipboard.writeText(JSON.stringify(selectedNoteRef.current)).catch(() => {});
       }
 
       // Ctrl+V: Paste note
@@ -103,6 +114,8 @@ export function useEditorKeyboardShortcuts({
           } catch {
             // Invalid clipboard data
           }
+        }).catch(() => {
+          // Clipboard read denied — ignore
         });
       }
 

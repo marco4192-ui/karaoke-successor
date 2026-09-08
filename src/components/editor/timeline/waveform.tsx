@@ -5,9 +5,12 @@ import type { Note } from '@/types/game';
 
 interface WaveformProps {
   audioUrl?: string;
+  /** Visible viewport width in CSS pixels — the canvas only renders this window */
   width: number;
   height: number;
-  zoom: number;
+  /** Pixels per second at current zoom (must match the timeline grid) */
+  pixelsPerSecond: number;
+  /** Horizontal scroll offset in pixels */
   scrollOffset: number;
   /** Notes to overlay as boundary lines on the waveform */
   notes?: Note[];
@@ -24,7 +27,7 @@ export function Waveform({
   audioUrl,
   width,
   height,
-  zoom,
+  pixelsPerSecond,
   scrollOffset,
   notes = [],
   selectedNoteId,
@@ -36,16 +39,18 @@ export function Waveform({
   const audioContextRef = useRef<AudioContext | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
 
-  // ── Derived: pixels-per-second and visible range ──
-  const pixelsPerSecond = 100 * zoom;
+  // ── Derived: visible time range ──
   const startTimeSec = scrollOffset / pixelsPerSecond;
+  const visibleDuration = width / pixelsPerSecond;
 
   // ── Click handler: convert pixel position to time and seek ──
   const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't bubble to the timeline container (would deselect/add notes)
+    if (!onSeek) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const timeMs = ((scrollOffset + x) / pixelsPerSecond) * 1000;
-    onSeek?.(timeMs);
+    onSeek(timeMs);
   }, [scrollOffset, pixelsPerSecond, onSeek]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -64,23 +69,29 @@ export function Waveform({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.scale(dpr, dpr);
+    const targetWidth = Math.max(1, Math.round(width));
+    const targetHeight = Math.max(1, Math.round(height));
+    // Only resize when needed (assigning canvas.width resets the context state)
+    if (canvas.width !== targetWidth * dpr || canvas.height !== targetHeight * dpr) {
+      canvas.width = targetWidth * dpr;
+      canvas.height = targetHeight * dpr;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Clear
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, targetWidth, targetHeight);
 
     const rawData = buffer.getChannelData(0);
     const sampleRate = buffer.sampleRate;
-    const totalDuration = buffer.duration;
-    const visibleDuration = width / pixelsPerSecond;
+    const startSample = Math.floor(startTimeSec * sampleRate);
 
     // ── Waveform rendering ──
-    const centerY = height / 2;
-    const amplitude = height * 0.4;
-    const samplesPerPixel = Math.max(1, Math.floor(sampleRate / (totalDuration * pixelsPerSecond)));
-    const startSample = Math.floor(startTimeSec * sampleRate);
+    const centerY = targetHeight / 2;
+    const amplitude = targetHeight * 0.4;
+    // Correct samples-per-pixel: totalSamples / totalPixels → sampleRate / pixelsPerSecond.
+    // (The old formula divided by totalDuration as well, which was off by the
+    // song length factor and rendered only a few milliseconds of audio.)
+    const samplesPerPixel = sampleRate / pixelsPerSecond;
 
     // Gradient fill
     const gradient = ctx.createLinearGradient(0, centerY - amplitude, 0, centerY + amplitude);
@@ -91,31 +102,31 @@ export function Waveform({
     ctx.fillStyle = gradient;
     ctx.beginPath();
 
-    // Upper half
-    for (let i = 0; i < width; i++) {
-      const sampleIndex = startSample + Math.floor(i * samplesPerPixel);
-      if (sampleIndex >= 0 && sampleIndex < rawData.length) {
-        let max = 0;
-        for (let j = 0; j < samplesPerPixel && sampleIndex + j < rawData.length; j++) {
-          const v = rawData[sampleIndex + j];
-          if (v > max) max = v;
-        }
-        const y = centerY - max * amplitude;
-        if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+    // First pass: collect the min/max envelope per pixel
+    const topVals: number[] = new Array(targetWidth);
+    const bottomVals: number[] = new Array(targetWidth);
+    for (let i = 0; i < targetWidth; i++) {
+      const from = startSample + Math.floor(i * samplesPerPixel);
+      const to = startSample + Math.floor((i + 1) * samplesPerPixel);
+      let max = 0;
+      let min = 0;
+      const fromC = Math.max(0, from);
+      const toC = Math.min(to, rawData.length);
+      for (let j = fromC; j < toC; j++) {
+        const v = rawData[j];
+        if (v > max) max = v;
+        if (v < min) min = v;
       }
+      topVals[i] = centerY - max * amplitude;
+      bottomVals[i] = centerY - min * amplitude;
     }
 
-    // Lower half (reverse)
-    for (let i = width - 1; i >= 0; i--) {
-      const sampleIndex = startSample + Math.floor(i * samplesPerPixel);
-      if (sampleIndex >= 0 && sampleIndex < rawData.length) {
-        let min = 0;
-        for (let j = 0; j < samplesPerPixel && sampleIndex + j < rawData.length; j++) {
-          const v = rawData[sampleIndex + j];
-          if (v < min) min = v;
-        }
-        ctx.lineTo(i, centerY - min * amplitude);
-      }
+    // Outline: top chain forward, bottom chain backward → clean filled envelope
+    for (let i = 0; i < targetWidth; i++) {
+      if (i === 0) ctx.moveTo(i, topVals[i]); else ctx.lineTo(i, topVals[i]);
+    }
+    for (let i = targetWidth - 1; i >= 0; i--) {
+      ctx.lineTo(i, bottomVals[i]);
     }
 
     ctx.closePath();
@@ -126,7 +137,7 @@ export function Waveform({
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
-    ctx.lineTo(width, centerY);
+    ctx.lineTo(targetWidth, centerY);
     ctx.stroke();
 
     // ── Note boundary overlays ──
@@ -138,7 +149,7 @@ export function Waveform({
         const noteEndPx = ((note.startTime + note.duration) / 1000) * pixelsPerSecond - scrollOffset;
 
         // Skip notes entirely outside visible range
-        if (noteEndPx < 0 || noteStartPx > width) continue;
+        if (noteEndPx < 0 || noteStartPx > targetWidth) continue;
 
         const isSelected = note.id === selectedNoteId;
 
@@ -147,19 +158,19 @@ export function Waveform({
         ctx.lineWidth = isSelected ? 1.5 : 0.75;
         ctx.beginPath();
         ctx.moveTo(Math.max(0, noteStartPx), 0);
-        ctx.lineTo(Math.max(0, noteStartPx), height);
+        ctx.lineTo(Math.max(0, noteStartPx), targetHeight);
         ctx.stroke();
 
         // Note end line
         ctx.beginPath();
-        ctx.moveTo(Math.min(width, noteEndPx), 0);
-        ctx.lineTo(Math.min(width, noteEndPx), height);
+        ctx.moveTo(Math.min(targetWidth, noteEndPx), 0);
+        ctx.lineTo(Math.min(targetWidth, noteEndPx), targetHeight);
         ctx.stroke();
 
         // Semi-transparent fill for selected note
         if (isSelected) {
           ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
-          ctx.fillRect(Math.max(0, noteStartPx), 0, Math.min(width, noteEndPx) - Math.max(0, noteStartPx), height);
+          ctx.fillRect(Math.max(0, noteStartPx), 0, Math.min(targetWidth, noteEndPx) - Math.max(0, noteStartPx), targetHeight);
         }
       }
 
@@ -171,14 +182,15 @@ export function Waveform({
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
 
+    const zoom = pixelsPerSecond / 100;
     const markerInterval = zoom < 1 ? 10 : zoom < 2 ? 5 : 2;
-    const firstMarker = Math.ceil(startTimeSec / markerInterval) * markerInterval;
+    const firstMarker = Math.max(0, Math.ceil(startTimeSec / markerInterval) * markerInterval);
 
     for (let time = firstMarker; time < startTimeSec + visibleDuration; time += markerInterval) {
       const x = (time - startTimeSec) * pixelsPerSecond;
-      ctx.fillText(formatTime(time), x, height - 2);
+      ctx.fillText(formatTime(time), x, targetHeight - 2);
     }
-  }, [width, height, zoom, scrollOffset, pixelsPerSecond, startTimeSec, notes, selectedNoteId]);
+  }, [width, height, scrollOffset, pixelsPerSecond, startTimeSec, visibleDuration, notes, selectedNoteId]);
 
   // ── Load audio buffer ──
   const loadAudio = useCallback(async (url: string) => {
@@ -209,7 +221,7 @@ export function Waveform({
     const canvas = canvasRef.current;
     const buffer = bufferRef.current;
     if (canvas && buffer) drawWaveform(buffer, canvas);
-  }, [width, height, zoom, scrollOffset, notes, selectedNoteId, drawWaveform]);
+  }, [width, height, scrollOffset, pixelsPerSecond, notes, selectedNoteId, drawWaveform]);
 
   useEffect(() => {
     return () => { audioContextRef.current?.close(); };
@@ -219,7 +231,7 @@ export function Waveform({
     <canvas
       ref={canvasRef}
       className={`${className}${onSeek ? ' cursor-pointer' : ''}`}
-      style={{ width, height }}
+      style={{ width: Math.max(1, width), height }}
       onClick={onSeek ? handleClick : undefined}
       onDoubleClick={onNoteAdd ? handleDoubleClick : undefined}
     />

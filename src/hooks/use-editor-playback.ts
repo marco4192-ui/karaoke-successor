@@ -33,25 +33,38 @@ export function useEditorPlayback(
   const audioRef = useRef<HTMLAudioElement>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Keep a ref of the latest values so the animation loop
-  // always knows the correct state at launch.
+  // Keep refs of the latest values so the animation loop and event handlers
+  // always know the correct state at launch / mid-playback.
   const currentTimeRef = useRef(currentTime);
   const playbackRateRef = useRef(playbackRate);
+  const isPlayingRef = useRef(isPlaying);
   useEffect(() => {
     currentTimeRef.current = currentTime;
     playbackRateRef.current = playbackRate;
-  }, [currentTime, playbackRate]);
+    isPlayingRef.current = isPlaying;
+  }, [currentTime, playbackRate, isPlaying]);
+
+  // ── Re-basable animation loop ─────────────────────────────────────
+  // The loop derives the displayed time from (baseTime + elapsed wall clock × rate).
+  // handleTimeChange re-bases these refs, so seeking WHILE PLAYING now works
+  // (previously the loop kept overwriting the seek with the old position).
+  const baseTimeRef = useRef(0);
+  const baseWallRef = useRef(0);
+
+  const rebase = useCallback((timeMs: number) => {
+    baseTimeRef.current = timeMs;
+    baseWallRef.current = performance.now();
+  }, []);
 
   // ── Start / stop the rAF animation loop + audio element ──
   useEffect(() => {
     if (isPlaying) {
-      const startTime = performance.now();
       const startOffset = currentTimeRef.current;
       const rate = playbackRate;
+      rebase(startOffset);
 
       const animate = () => {
-        const elapsed = performance.now() - startTime;
-        const newTime = startOffset + elapsed * rate;
+        const newTime = baseTimeRef.current + (performance.now() - baseWallRef.current) * rate;
 
         if (newTime >= duration) {
           setCurrentTime(duration);
@@ -86,21 +99,23 @@ export function useEditorPlayback(
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, duration, playbackRate]);
+  }, [isPlaying, duration, playbackRate, rebase]);
 
   // Sync playbackRate to the audio element when changed during playback
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && isPlayingRef.current) {
       audioRef.current.playbackRate = playbackRate;
+      // Re-base the visual loop so time doesn't jump when the rate changes
+      rebase(currentTimeRef.current);
     }
-  }, [playbackRate]);
+  }, [playbackRate, rebase]);
 
   // Update audio element seek position when the user scrubs (not playing)
   useEffect(() => {
-    if (audioRef.current && !isPlaying) {
+    if (audioRef.current && !isPlayingRef.current) {
       audioRef.current.currentTime = currentTime / 1000;
     }
-  }, [currentTime, isPlaying]);
+  }, [currentTime]);
 
   const handlePlayPause = useCallback(() => {
     setIsPlaying(prev => !prev);
@@ -108,7 +123,18 @@ export function useEditorPlayback(
 
   const handleTimeChange = useCallback((time: number) => {
     setCurrentTime(time);
-  }, []);
+    // Sync the ref immediately so tap-mode note placement uses the fresh value
+    currentTimeRef.current = time;
+
+    if (isPlayingRef.current) {
+      // Seek while playing: re-base the animation loop and move the audio
+      // element to the new position.
+      rebase(time);
+      if (audioRef.current) {
+        audioRef.current.currentTime = time / 1000;
+      }
+    }
+  }, [rebase]);
 
   return {
     isPlaying,

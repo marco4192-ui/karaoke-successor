@@ -62,7 +62,10 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.bpm}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, bpm: parseFloat(e.target.value) || 120 }));
+              // Guard: never write NaN into the song (would corrupt the txt export)
+              const v = parseFloat(e.target.value);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, bpm: Math.min(500, Math.max(20, v)) }));
               onSetUnsavedChanges();
             }}
             min={20}
@@ -82,7 +85,9 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.gap}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, gap: parseInt(e.target.value) || 0 }));
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, gap: v }));
               onSetUnsavedChanges();
             }}
             className="bg-slate-800 border-slate-600"
@@ -99,7 +104,11 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.start || 0}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, start: parseInt(e.target.value) ?? undefined }));
+              // parseInt never returns null — `?? undefined` let NaN through and
+              // poisoned the txt export. Guard explicitly instead.
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, start: v }));
               onSetUnsavedChanges();
             }}
             className="bg-slate-800 border-slate-600"
@@ -149,7 +158,9 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.videoGap || 0}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, videoGap: parseInt(e.target.value) ?? undefined }));
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, videoGap: v }));
               onSetUnsavedChanges();
             }}
             className="bg-slate-800 border-slate-600"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -11,14 +12,54 @@ import type { Note, DuetPlayer } from '@/types/game';
 import { midiToNoteName } from '@/types/game';
 import { midiPitchToFrequency } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/translations';
+import type { NoteHistoryMode } from './timeline/timeline';
 
 interface EditorNoteTabProps {
   selectedNote: Note;
-  onUpdateSelectedNote: (_updates: Partial<Note>) => void;
+  onUpdateSelectedNote: (_updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
+  /** Push the accumulated live changes as one history entry (blur / commit) */
+  onCommitHistory: () => void;
+  /** Debounced auto-commit (used while typing) */
+  onScheduleCommit: () => void;
 }
 
-export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNoteTabProps) {
+/**
+ * Parses a number input safely. Returns null for empty/invalid input so the
+ * caller can skip the update instead of poisoning the song with NaN.
+ */
+function parseNumberInput(value: string): number | null {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+export function EditorNoteTab({ selectedNote, onUpdateSelectedNote, onCommitHistory, onScheduleCommit }: EditorNoteTabProps) {
   const { t } = useTranslation();
+
+  // Local draft for the lyric input — commits on blur/Enter, live-updates while typing
+  const [lyricDraft, setLyricDraft] = useState(selectedNote.lyric);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync draft when the selected note changes
+  useEffect(() => {
+    setLyricDraft(selectedNote.lyric);
+  }, [selectedNote.id, selectedNote.lyric]);
+
+  const commitLyric = useCallback(() => {
+    if (lyricDraft !== selectedNote.lyric) {
+      onUpdateSelectedNote({ lyric: lyricDraft.trim() === '' ? '---' : lyricDraft.trim() }, 'push');
+    }
+    onCommitHistory();
+  }, [lyricDraft, selectedNote.lyric, onUpdateSelectedNote, onCommitHistory]);
+
+  const handleLyricKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setLyricDraft(selectedNote.lyric);
+      e.currentTarget.blur();
+    }
+    e.stopPropagation();
+  }, [selectedNote.lyric]);
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
@@ -28,8 +69,15 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
           <Input
             id="note-lyric"
             name="note-lyric"
-            value={selectedNote.lyric}
-            onChange={(e) => onUpdateSelectedNote({ lyric: e.target.value })}
+            value={lyricDraft}
+            onChange={(e) => {
+              setLyricDraft(e.target.value);
+              // Live-update the note (no history push per keystroke)
+              onUpdateSelectedNote({ lyric: e.target.value }, 'live');
+              onScheduleCommit();
+            }}
+            onBlur={commitLyric}
+            onKeyDown={handleLyricKeyDown}
             className="bg-slate-800 border-slate-600"
           />
           <p className="text-xs text-slate-500">
@@ -47,12 +95,14 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
               type="number"
               value={selectedNote.pitch}
               onChange={(e) => {
-                const pitch = parseInt(e.target.value) || 0;
+                const pitch = parseNumberInput(e.target.value);
+                if (pitch === null) return;
                 onUpdateSelectedNote({
-                  pitch,
+                  pitch: Math.max(0, Math.min(127, Math.round(pitch))),
                   frequency: midiPitchToFrequency(pitch)
-                });
+                }, 'live');
               }}
+              onBlur={onCommitHistory}
               min={0}
               max={127}
               className="bg-slate-800 border-slate-600 w-20"
@@ -69,7 +119,8 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             onValueChange={([pitch]) => onUpdateSelectedNote({
               pitch,
               frequency: midiPitchToFrequency(pitch)
-            })}
+            }, 'live')}
+            onValueCommit={() => onCommitHistory()}
             className="mt-2"
           />
         </div>
@@ -82,7 +133,12 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             name="note-start-time"
             type="number"
             value={Math.round(selectedNote.startTime)}
-            onChange={(e) => onUpdateSelectedNote({ startTime: parseInt(e.target.value) || 0 })}
+            onChange={(e) => {
+              const startTime = parseNumberInput(e.target.value);
+              if (startTime === null) return;
+              onUpdateSelectedNote({ startTime: Math.max(0, Math.round(startTime)) }, 'live');
+            }}
+            onBlur={onCommitHistory}
             className="bg-slate-800 border-slate-600"
           />
         </div>
@@ -95,7 +151,12 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             name="note-duration"
             type="number"
             value={Math.round(selectedNote.duration)}
-            onChange={(e) => onUpdateSelectedNote({ duration: parseInt(e.target.value) || 50 })}
+            onChange={(e) => {
+              const duration = parseNumberInput(e.target.value);
+              if (duration === null) return;
+              onUpdateSelectedNote({ duration: Math.max(50, Math.round(duration)) }, 'live');
+            }}
+            onBlur={onCommitHistory}
             min={50}
             className="bg-slate-800 border-slate-600"
           />
@@ -104,7 +165,8 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             min={50}
             max={5000}
             step={50}
-            onValueChange={([duration]) => onUpdateSelectedNote({ duration })}
+            onValueChange={([duration]) => onUpdateSelectedNote({ duration }, 'live')}
+            onValueCommit={() => onCommitHistory()}
             className="mt-2"
           />
         </div>
@@ -121,7 +183,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
               onCheckedChange={(checked) => onUpdateSelectedNote({
                 isGolden: checked,
                 isBonus: checked ? false : selectedNote.isBonus
-              })}
+              }, 'push')}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -134,7 +196,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
               onCheckedChange={(checked) => onUpdateSelectedNote({
                 isBonus: checked,
                 isGolden: checked ? false : selectedNote.isGolden
-              })}
+              }, 'push')}
             />
           </div>
         </div>
@@ -148,7 +210,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
           <Select
             value={selectedNote.player || 'both'}
             onValueChange={(value: DuetPlayer | 'both') =>
-              onUpdateSelectedNote({ player: value === 'both' ? undefined : value })
+              onUpdateSelectedNote({ player: value === 'both' ? undefined : value }, 'push')
             }
           >
             <SelectTrigger className="bg-slate-800 border-slate-600">

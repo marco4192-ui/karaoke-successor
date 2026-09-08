@@ -388,6 +388,7 @@ export const libraryTranslations = {
     aiBatchSuggestDesc: 'Suggested changes for the selected songs',
     aiBatchNoSuggestions: 'All selected songs already have appropriate genre/language tags.',
     aiBatchClose: 'Close',
+    loadMore: 'Load More',
     saving: 'Saving...',
     saveChanges: 'Save changes to TXT file',
     saveError: 'Error saving',

@@ -15,11 +15,19 @@ export function GenreLanguageEditor({
   onUpdate,
   onSaved,
   t,
+  getLatestSong,
 }: {
   song: Song;
   onUpdate: (_updates: Partial<Song>) => void;
   onSaved?: () => void;
   t: (key: string) => string;
+  /**
+   * Returns the LATEST song state (including unsaved edits from the main
+   * KaraokeEditor). Without this, saving from this panel would write the
+   * STALE lyrics from when the song was opened — silently discarding
+   * note edits made in the editor.
+   */
+  getLatestSong?: () => Song;
 }) {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -114,13 +122,15 @@ export function GenreLanguageEditor({
     setSaveMessage(null);
 
     try {
-      // Update the song in the library
+      // Base the save on the LATEST song state (main editor's unsaved changes
+      // included) instead of the possibly stale `song` prop.
+      const base = getLatestSong?.() ?? song;
       const updatedSong = {
-        ...song,
+        ...base,
         genre: customGenre || undefined,
         language: customLanguage || undefined,
       };
-      updateSong(song.id, updatedSong);
+      updateSong(updatedSong.id, updatedSong);
 
       // Save to txt file using the unified save function
       const result = await saveSongToTxt(updatedSong);

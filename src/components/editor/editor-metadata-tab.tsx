@@ -124,7 +124,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.previewStart ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, previewStart: parseFloat(e.target.value) || undefined }));
+              const v = parseFloat(e.target.value);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, previewStart: v }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.metadataTab.gapPlaceholder')}
@@ -140,7 +142,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.previewDuration ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, previewDuration: parseFloat(e.target.value) || undefined }));
+              const v = parseFloat(e.target.value);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, previewDuration: v }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.metadataTab.endGapPlaceholder')}
@@ -158,7 +162,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.medleyStartBeat ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, medleyStartBeat: parseInt(e.target.value) ?? undefined }));
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, medleyStartBeat: v }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.metadataTab.beatPlaceholder')}
@@ -174,7 +180,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.medleyEndBeat ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, medleyEndBeat: parseInt(e.target.value) ?? undefined }));
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, medleyEndBeat: v }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.metadataTab.beatPlaceholder')}
@@ -192,7 +200,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.end ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, end: parseInt(e.target.value) ?? undefined }));
+              const v = parseInt(e.target.value, 10);
+              if (Number.isNaN(v)) return;
+              onSongChange(prev => ({ ...prev, end: v }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.metadataTab.songEndPlaceholder')}

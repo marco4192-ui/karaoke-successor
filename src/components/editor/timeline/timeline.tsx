@@ -11,6 +11,19 @@ import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
+/**
+ * History mode for note updates:
+ * - 'push'   → update state AND push a history entry (discrete actions)
+ * - 'live'   → update state only, mark dirty (dragging, slider, typing)
+ * - 'commit' → push a history entry from the current state (drag release, blur)
+ * - 'replace' → push overwriting the top entry (tap-mode: create + duration = one step)
+ */
+export type NoteHistoryMode = 'push' | 'live' | 'commit' | 'replace';
+
+// Visible pitch range (3 octaves = 36 semitones)
+const VISIBLE_OCTAVES = 3;
+const VISIBLE_PITCH_RANGE = VISIBLE_OCTAVES * 12;
+
 interface TimelineProps {
   song: Song;
   currentTime: number;
@@ -21,10 +34,17 @@ interface TimelineProps {
   onTimeChange: (_time: number) => void;
   onPlayPause: () => void;
   onNoteSelect: (_noteId: string | undefined) => void;
-  onNoteUpdate: (_noteId: string, _updates: Partial<Note>) => void;
+  onNoteUpdate: (_noteId: string, _updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
+  /** Push the accumulated live changes as one history entry (drag release etc.) */
+  onCommitHistory: () => void;
   onNoteAdd: (_startTime: number, _pitch: number) => void;
-  onLyricChange: (_noteId: string, _newLyric: string) => void;
+  onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
 }
+
+// Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
+const LEFT_GUTTER = 32;
+// Max time gap between two tap notes before a new lyric line starts
+export const TAP_LINE_GAP_MS = 1400;
 
 export function Timeline({
   song,
@@ -37,6 +57,7 @@ export function Timeline({
   onPlayPause,
   onNoteSelect,
   onNoteUpdate,
+  onCommitHistory,
   onNoteAdd,
   onLyricChange
 }: TimelineProps) {
@@ -50,22 +71,42 @@ export function Timeline({
     startX: number;
     type: 'move' | 'resize-left' | 'resize-right';
     originalNote: Note;
+    moved: boolean;
   } | null>(null);
+  // Viewport size (measured via ResizeObserver → responsive pitch grid)
+  const [viewport, setViewport] = useState({ width: 1200, height: 700 });
 
-  // ── Dynamic Pitch Range ──────────────────────────────────────────
-  // Constants
+  // ── Layout constants ──────────────────────────────────────────
   const basePixelsPerSecond = 100;
   const pixelsPerSecond = basePixelsPerSecond * zoom;
-  const pitchHeight = 20; // Height per pitch in pixels
-  const VISIBLE_OCTAVES = 3; // Show 3 octaves at a time
-  const VISIBLE_PITCH_RANGE = VISIBLE_OCTAVES * 12; // 36 semitones
   const TOTAL_MIN_PITCH = 24; // C1
   const TOTAL_MAX_PITCH = 96; // C7 (6-octave total range)
   const lyricTrackHeight = 40;
   const waveformHeight = 60;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
+
+  // Responsive pitch lane height: adapt to the available container height so
+  // the timeline fits smaller screens (previously fixed 20px → 860px minimum
+  // layout overflowed laptops).
+  const pitchHeight = useMemo(() => {
+    const notesAreaHeight = Math.max(200, viewport.height - waveformHeight - lyricTrackHeight);
+    return Math.max(12, Math.min(22, Math.floor(notesAreaHeight / VISIBLE_PITCH_RANGE)));
+  }, [viewport.height]);
   const timelineHeight = VISIBLE_PITCH_RANGE * pitchHeight;
+
+  // Measure the viewport size of the scroll container
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const update = () => {
+      setViewport({ width: container.clientWidth, height: container.clientHeight });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   // Get all notes from all lyric lines
   const allNotes = useMemo(() => {
@@ -94,7 +135,6 @@ export function Timeline({
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pitch center when song changes
         setPitchScrollCenter(Math.floor(median / 12) * 12);
       } else {
-         
         setPitchScrollCenter(60);
       }
     }
@@ -107,12 +147,42 @@ export function Timeline({
   // Calculate playhead position
   const playheadPosition = (currentTime / 1000) * pixelsPerSecond - scrollOffset;
 
+  // Clamp scroll offset when zooming out reduces totalWidth
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp scroll when zoom shrinks the timeline
+  useEffect(() => {
+    const maxScroll = Math.max(0, totalWidth - viewport.width + LEFT_GUTTER);
+    setScrollOffset(prev => Math.min(prev, maxScroll));
+  }, [totalWidth, viewport.width]);
+
+  // ── Zoom anchored at the playhead (or viewport center) ──
+  // Keeps the time under the anchor stable instead of jumping to the left edge.
+  const zoomAt = useCallback((nextZoom: number, anchorScreenX?: number) => {
+    const clamped = Math.max(0.25, Math.min(4, nextZoom));
+    setZoom(prevZoom => {
+      if (clamped === prevZoom) return prevZoom;
+      const pps = basePixelsPerSecond;
+      const anchorX = anchorScreenX != null && anchorScreenX >= 0
+        ? anchorScreenX - LEFT_GUTTER
+        : (playheadPosition >= 0 && playheadPosition <= viewport.width
+          ? playheadPosition
+          : viewport.width / 2 - LEFT_GUTTER);
+      // Time under the anchor before the zoom change
+      const anchorTime = (scrollOffset + Math.max(0, anchorX)) / (pps * prevZoom);
+      // Scroll offset that keeps the anchor time at the same screen position
+      const newOffset = Math.max(0, anchorTime * (pps * clamped) - Math.max(0, anchorX));
+      setScrollOffset(newOffset);
+      return clamped;
+    });
+  }, [playheadPosition, scrollOffset, viewport.width]);
+
   // Handle scroll
   const handleScroll = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      // Zoom with ctrl+scroll
+      // Zoom with ctrl+scroll — anchored at the cursor position
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom(prev => Math.max(0.25, Math.min(4, prev + delta)));
+      const rect = containerRef.current?.getBoundingClientRect();
+      const anchor = rect ? e.clientX - rect.left : undefined;
+      zoomAt(zoom + delta, anchor);
     } else if (e.shiftKey) {
       // Vertical pitch scroll with Shift+wheel
       const scrollStep = 2; // semitones per scroll tick
@@ -126,11 +196,11 @@ export function Timeline({
     } else {
       // Horizontal scroll
       setScrollOffset(prev => {
-        const maxScroll = totalWidth - (containerRef.current?.clientWidth || 0);
+        const maxScroll = totalWidth - (containerRef.current?.clientWidth || 0) + LEFT_GUTTER;
         return Math.max(0, Math.min(maxScroll, prev + e.deltaY));
       });
     }
-  }, [totalWidth]);
+  }, [totalWidth, zoom, zoomAt]);
 
   // Handle playhead drag
   const handlePlayheadMouseDown = useCallback((e: React.MouseEvent) => {
@@ -140,13 +210,16 @@ export function Timeline({
 
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
     if (dragState) return;
-    
+    if (e.button !== 0) return;
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const clickX = e.clientX - rect.left + scrollOffset;
+    // Notes are rendered inside a container with a left gutter (pitch labels).
+    // Subtract the gutter so Shift+Click places the note exactly under the cursor.
+    const clickX = e.clientX - rect.left - LEFT_GUTTER + scrollOffset;
     const clickY = e.clientY - rect.top - waveformHeight;
-    
+
     // Check if clicked on empty space (not on a note)
     const clickedTime = (clickX / pixelsPerSecond) * 1000;
     const clickedPitch = Math.round(visibleMaxPitch - (clickY / pitchHeight));
@@ -161,26 +234,27 @@ export function Timeline({
     onNoteSelect(undefined);
   }, [scrollOffset, pixelsPerSecond, pitchHeight, visibleMaxPitch, visibleMinPitch, dragState, onNoteSelect, onNoteAdd]);
 
-  // Handle mouse move for playhead drag
+  // Handle mouse move for playhead drag + note drag (live updates, no history flood)
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDraggingPlayhead) {
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
 
-        const x = e.clientX - rect.left + scrollOffset;
+        const x = e.clientX - rect.left - LEFT_GUTTER + scrollOffset;
         const newTime = (x / pixelsPerSecond) * 1000;
         onTimeChange(Math.max(0, Math.min(totalDuration, newTime)));
       }
 
       if (dragState) {
         const deltaX = e.clientX - dragState.startX;
+        if (Math.abs(deltaX) > 1) dragState.moved = true;
         const deltaTime = (deltaX / pixelsPerSecond) * 1000;
 
         if (dragState.type === 'move') {
           onNoteUpdate(dragState.noteId, {
             startTime: Math.max(0, dragState.originalNote.startTime + deltaTime)
-          });
+          }, 'live');
         } else if (dragState.type === 'resize-left') {
           const newStart = Math.max(0, dragState.originalNote.startTime + deltaTime);
           const newDuration = dragState.originalNote.duration - (newStart - dragState.originalNote.startTime);
@@ -188,18 +262,22 @@ export function Timeline({
             onNoteUpdate(dragState.noteId, {
               startTime: newStart,
               duration: newDuration
-            });
+            }, 'live');
           }
         } else if (dragState.type === 'resize-right') {
           const newDuration = Math.max(100, dragState.originalNote.duration + deltaTime);
-          onNoteUpdate(dragState.noteId, { duration: newDuration });
+          onNoteUpdate(dragState.noteId, { duration: newDuration }, 'live');
         }
       }
     };
 
     const handleMouseUp = () => {
-      setIsDraggingPlayhead(false);
-      setDragState(null);
+      if (isDraggingPlayhead) setIsDraggingPlayhead(false);
+      if (dragState) {
+        // One history entry per drag gesture (not per mousemove frame)
+        if (dragState.moved) onCommitHistory();
+        setDragState(null);
+      }
     };
 
     if (isDraggingPlayhead || dragState) {
@@ -210,13 +288,13 @@ export function Timeline({
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate]);
+  }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate, onCommitHistory]);
 
   // Handle note drag start
   const handleNoteDragStart = useCallback((noteId: string, startX: number, type: 'move' | 'resize-left' | 'resize-right') => {
     const note = allNotes.find(n => n.id === noteId);
     if (note) {
-      setDragState({ noteId, startX, type, originalNote: { ...note } });
+      setDragState({ noteId, startX, type, originalNote: { ...note }, moved: false });
     }
   }, [allNotes]);
 
@@ -228,12 +306,12 @@ export function Timeline({
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
-    setZoom(prev => Math.min(4, prev + 0.25));
-  }, []);
+    zoomAt(zoom + 0.25);
+  }, [zoom, zoomAt]);
 
   const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(0.25, prev - 0.25));
-  }, []);
+    zoomAt(zoom - 0.25);
+  }, [zoom, zoomAt]);
 
   const handleZoomReset = useCallback(() => {
     setZoom(1);
@@ -308,7 +386,7 @@ export function Timeline({
         >
           <SkipBack className="w-4 h-4" />
         </Button>
-        
+
         <Button
           size="sm"
           variant="default"
@@ -409,45 +487,47 @@ export function Timeline({
         className="flex-1 relative overflow-hidden cursor-crosshair"
         onWheel={handleScroll}
         onClick={handleTimelineClick}
-        style={{ minHeight: timelineHeight + waveformHeight + lyricTrackHeight }}
       >
-        {/* Background grid */}
-        <TimelineGrid
-          width={totalWidth}
-          height={timelineHeight}
-          pixelsPerSecond={pixelsPerSecond}
-          scrollOffset={scrollOffset}
-          bpm={song.bpm}
-          minPitch={visibleMinPitch}
-          maxPitch={visibleMaxPitch}
-          pitchHeight={pitchHeight}
-        />
-
-        {/* Waveform */}
+        {/* Waveform (viewport-sized canvas — only the visible window is rendered) */}
         {song.audioUrl && (
           <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: waveformHeight }}>
-            <Waveform
-              audioUrl={song.audioUrl}
-              width={totalWidth}
-              height={waveformHeight}
-              zoom={zoom}
-              scrollOffset={scrollOffset}
-              notes={allNotes}
-              selectedNoteId={selectedNoteId}
-              onSeek={onTimeChange}
-              onNoteAdd={onNoteAdd}
-            />
+            <div className="ml-8" style={{ height: waveformHeight }}>
+              <Waveform
+                audioUrl={song.audioUrl}
+                width={Math.max(1, viewport.width - LEFT_GUTTER)}
+                height={waveformHeight}
+                pixelsPerSecond={pixelsPerSecond}
+                scrollOffset={scrollOffset}
+                notes={allNotes}
+                selectedNoteId={selectedNoteId}
+                onSeek={onTimeChange}
+                onNoteAdd={onNoteAdd}
+              />
+            </div>
           </div>
         )}
 
         {/* Notes area */}
-        <div 
+        <div
           className="absolute left-0 right-0"
-          style={{ 
+          style={{
             top: waveformHeight,
-            height: timelineHeight 
+            height: timelineHeight
           }}
         >
+          {/* Background grid — beat lines match the UltraStar export formula
+              (beatDuration = 15000/BPM, beats offset by GAP) */}
+          <TimelineGrid
+            viewportWidth={viewport.width - LEFT_GUTTER}
+            pixelsPerSecond={pixelsPerSecond}
+            scrollOffset={scrollOffset}
+            bpm={song.bpm}
+            gap={song.gap}
+            minPitch={visibleMinPitch}
+            maxPitch={visibleMaxPitch}
+            pitchHeight={pitchHeight}
+          />
+
           {/* Pitch labels */}
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/80 border-r border-slate-700 z-20">
             {Array.from({ length: VISIBLE_PITCH_RANGE + 1 }, (_, i) => {
@@ -492,11 +572,11 @@ export function Timeline({
         </div>
 
         {/* Lyric track */}
-        <div 
+        <div
           className="absolute left-0 right-0 ml-8"
-          style={{ 
+          style={{
             top: waveformHeight + timelineHeight,
-            height: lyricTrackHeight 
+            height: lyricTrackHeight
           }}
         >
           <LyricTrack
@@ -515,12 +595,12 @@ export function Timeline({
             'absolute top-0 bottom-0 w-0.5 bg-purple-500 z-30 cursor-ew-resize',
             isDraggingPlayhead && 'bg-purple-400'
           )}
-          style={{ left: `${playheadPosition + 32}px` }}
+          style={{ left: `${playheadPosition + LEFT_GUTTER}px` }}
           onMouseDown={handlePlayheadMouseDown}
         >
           {/* Playhead handle */}
           <div className="absolute -top-1 -left-2 w-4 h-4 bg-purple-500 rounded-full border-2 border-purple-400" />
-          
+
           {/* Time indicator */}
           <div className="absolute -top-8 -left-8 px-1 py-0.5 bg-slate-800 border border-purple-500 rounded text-xs text-purple-300 font-mono whitespace-nowrap">
             {formatTime(currentTime)}
@@ -533,50 +613,52 @@ export function Timeline({
 
 // Timeline grid component
 function TimelineGrid({
-  width: _width,
-  height: _height,
+  viewportWidth,
   pixelsPerSecond,
   scrollOffset,
   bpm,
+  gap,
   minPitch,
   maxPitch,
   pitchHeight
 }: {
-  width: number;
-  height: number;
+  viewportWidth: number;
   pixelsPerSecond: number;
   scrollOffset: number;
   bpm: number;
+  gap: number;
   minPitch: number;
   maxPitch: number;
   pitchHeight: number;
 }) {
-  const beatDuration = 60000 / bpm; // ms per beat
-  const beatsPerSecond = 1000 / beatDuration;
-  const pixelsPerBeat = pixelsPerSecond / beatsPerSecond;
+  // UltraStar beat formula — MUST match generateUltraStarTxt / the parser:
+  // beatDuration = 15000 / BPM (ms per beat), beat n occurs at GAP + n * beatDuration.
+  // (The old grid used 60000/BPM without GAP — beats were 4× too wide and offset.)
+  const beatDuration = 15000 / (bpm > 0 ? bpm : 120);
+  const pixelsPerBeat = (beatDuration / 1000) * pixelsPerSecond;
 
-  // Calculate visible range
-  const visibleWidth = typeof window !== 'undefined' ? window.innerWidth : 1000;
-
-  // Generate beat lines
+  // Generate beat lines for the visible range only
   const beatLines: React.JSX.Element[] = [];
-  const firstBeat = Math.floor(scrollOffset / pixelsPerBeat);
-  const lastBeat = Math.ceil((scrollOffset + visibleWidth) / pixelsPerBeat);
+  if (pixelsPerBeat > 4 && isFinite(pixelsPerBeat)) {
+    const firstBeat = Math.floor((scrollOffset - (gap / 1000) * pixelsPerSecond) / pixelsPerBeat);
+    const lastBeat = Math.ceil((scrollOffset + viewportWidth - (gap / 1000) * pixelsPerSecond) / pixelsPerBeat);
 
-  for (let beat = firstBeat; beat <= lastBeat; beat++) {
-    const x = beat * pixelsPerBeat - scrollOffset;
-    const isDownbeat = beat % 4 === 0;
-    
-    beatLines.push(
-      <div
-        key={`beat-${beat}`}
-        className={cn(
-          'absolute top-0 bottom-0 w-px',
-          isDownbeat ? 'bg-slate-600' : 'bg-slate-800'
-        )}
-        style={{ left: `${x}px` }}
-      />
-    );
+    for (let beat = firstBeat; beat <= lastBeat; beat++) {
+      const x = beat * pixelsPerBeat + (gap / 1000) * pixelsPerSecond - scrollOffset;
+      if (x < -1 || x > viewportWidth + 1) continue;
+      const isDownbeat = ((beat % 4) + 4) % 4 === 0;
+
+      beatLines.push(
+        <div
+          key={`beat-${beat}`}
+          className={cn(
+            'absolute top-0 bottom-0 w-px',
+            isDownbeat ? 'bg-slate-600' : 'bg-slate-800'
+          )}
+          style={{ left: `${x}px` }}
+        />
+      );
+    }
   }
 
   // Generate pitch lines
@@ -585,7 +667,7 @@ function TimelineGrid({
     const y = (maxPitch - pitch) * pitchHeight;
     const isC = pitch % 12 === 0;
     const isSharp = [1, 3, 6, 8, 10].includes(pitch % 12);
-    
+
     pitchLines.push(
       <div
         key={`pitch-${pitch}`}
@@ -602,7 +684,7 @@ function TimelineGrid({
     <div className="absolute inset-0 ml-8 pointer-events-none">
       {/* Pitch grid */}
       <div className="absolute inset-0">{pitchLines}</div>
-      
+
       {/* Beat lines */}
       <div className="absolute inset-0">{beatLines}</div>
     </div>

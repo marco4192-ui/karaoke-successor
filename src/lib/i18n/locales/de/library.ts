@@ -368,6 +368,7 @@ editor: {
   aiBatchSuggestDesc: 'Vorgeschlagene Änderungen für die ausgewählten Songs',
   aiBatchNoSuggestions: 'Alle ausgewählten Songs haben bereits passende Genre/Sprache-Tags.',
   aiBatchClose: 'Schließen',
+  loadMore: 'Mehr laden',
   saving: 'Speichere...',
   saveChanges: 'Änderungen in TXT-Datei speichern',
   saveError: 'Fehler beim Speichern',
