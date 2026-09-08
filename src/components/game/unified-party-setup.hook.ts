@@ -619,6 +619,24 @@ export function usePartySetup({
           return updated;
         });
       }
+      // Apply mic assignments (micId → profileId) from the companion
+      if (detail.micAssignments && typeof detail.micAssignments === 'object') {
+        setMicAssignments(prev => {
+          const updated = { ...prev, ...detail.micAssignments };
+          persistMicAssignments(updated);
+          return updated;
+        });
+      }
+      // Apply song filters (companion Song Filter section)
+      if (typeof detail.filterGenre === 'string') setFilterGenre(detail.filterGenre);
+      if (typeof detail.filterLanguage === 'string') setFilterLanguage(detail.filterLanguage);
+      if (typeof detail.filterReleaseYear === 'string') setFilterReleaseYear(detail.filterReleaseYear);
+      if (typeof detail.filterCombined === 'boolean') setFilterCombined(detail.filterCombined);
+      // Apply shared mic (PTM: companion picks the mic dropdown)
+      if (typeof detail.sharedMicId === 'string' && detail.sharedMicId) {
+        setSelectedMicId(detail.sharedMicId);
+        if (typeof detail.sharedMicName === 'string') setSelectedMicName(detail.sharedMicName);
+      }
       // Apply input mode (legacy companions still send it — accepted but no UI)
       if (detail.inputMode && ['microphone', 'companion', 'mixed'].includes(detail.inputMode)) {
         setInputMode(detail.inputMode as InputMode);

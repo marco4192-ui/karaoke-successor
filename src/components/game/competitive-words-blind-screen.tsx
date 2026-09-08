@@ -26,11 +26,14 @@ import {
   PlayMode,
   createCompetitiveGame,
   startCompetitiveRound,
+  endCompetitiveGame,
+  getFirstRoundStartPlayerId,
   getRankedPlayers,
   getCurrentRound,
   pickSmartSong,
 } from '@/lib/game/competitive-words-blind';
 import { PartyStartingScreen, type PartyStartingPlayer } from './party-starting-screen';
+import { Button } from '@/components/ui/button';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import { useRecordPartySession } from '@/hooks/use-record-party-session';
 
@@ -499,6 +502,12 @@ export function CompetitiveGameView({
           const updated = startCompetitiveRound(game, song.id, song.title);
           onUpdateGame(updated);
         }}
+        onEndSeries={() => {
+          // End the series early — same as PTM/CPTM: the cumulative
+          // standings are frozen and the winner screen (series results)
+          // is shown instead of another round.
+          onUpdateGame(endCompetitiveGame(game));
+        }}
       />
     );
   }
@@ -515,6 +524,9 @@ export function CompetitiveGameView({
   if (game.status === 'setup') {
     const config = PARTY_GAME_CONFIGS[modeType];
     const setupPlayers = party.unifiedSetupResult?.players ?? [];
+    // Who sings first: the first player of the first duel (competitive),
+    // the single singer (solo) or nobody (coop — all sing together).
+    const firstSingerId = getFirstRoundStartPlayerId(game);
     const startingPlayers: PartyStartingPlayer[] = game.players.map(p => {
       const sp = setupPlayers.find(s => s.id === p.id);
       return {
@@ -524,6 +536,7 @@ export function CompetitiveGameView({
         color: p.color || PLAYER_COLORS[0],
         micName: sp?.micName,
         playerType: sp?.playerType,
+        isStartPlayer: p.id === firstSingerId,
       };
     });
     return (
@@ -538,6 +551,7 @@ export function CompetitiveGameView({
           : game.settings.playMode === 'coop'
             ? t('competitiveWords.modeCoop')
             : t('competitiveWords.modeCompetitive')}
+        startPlayerLabel={firstSingerId ? t('partyStarting.startsFirst') : undefined}
         onStart={startFirstRound}
         testId="competitive-starting-screen"
       />
@@ -554,9 +568,11 @@ interface CompetitiveScoreboardProps {
   ranked: ReturnType<typeof getRankedPlayers>;
   modeType: CompetitiveModeType;
   onNextRound: () => void;
+  /** Ends the series early — freezes standings, shows the winner screen */
+  onEndSeries: () => void;
 }
 
-function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: CompetitiveScoreboardProps) {
+function CompetitiveScoreboard({ game, ranked, modeType, onNextRound, onEndSeries }: CompetitiveScoreboardProps) {
   const { t } = useTranslation();
   const lastRound = game.rounds[game.rounds.length - 1];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
@@ -667,15 +683,25 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
           ))}
         </div>
 
-        {/* Next round button */}
-        {game.rounds.length < game.totalRounds && (
-          <button
-            onClick={onNextRound}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all"
+        {/* Action buttons — Next Round + End Series, same layout/styling as
+            the PTM/CPTM between-song results (primary gradient + outline) */}
+        <div className="flex gap-3">
+          {game.rounds.length < game.totalRounds && (
+            <Button
+              onClick={onNextRound}
+              className="flex-1 py-4 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500"
+            >
+              {t('competitiveWords.nextRound')}
+            </Button>
+          )}
+          <Button
+            onClick={onEndSeries}
+            variant="outline"
+            className="flex-1 py-4 text-lg border-white/20 text-white/60 hover:text-white"
           >
-            {t('competitiveWords.nextRound')}
-          </button>
-        )}
+            {t('passTheMic.endSeries')}
+          </Button>
+        </div>
       </div>
     </div>
   );

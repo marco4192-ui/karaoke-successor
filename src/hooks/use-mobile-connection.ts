@@ -26,6 +26,7 @@ interface RawGameState {
   companionScores?: GameState['companionScores'];
   currentScreen?: string;
   partyGameMode?: string | null;
+  partySetupState?: GameState['partySetupState'];
   votingSongs?: GameState['votingSongs'];
   partyLibrarySong?: GameState['partyLibrarySong'];
   isPartyModeActive?: boolean;
@@ -52,6 +53,7 @@ function parseGameState(raw: RawGameState): GameState {
     companionScores: raw.companionScores ?? null,
     currentScreen: raw.currentScreen,
     partyGameMode: raw.partyGameMode ?? null,
+    partySetupState: raw.partySetupState ?? null,
     votingSongs: raw.votingSongs,
     partyLibrarySong: raw.partyLibrarySong ?? null,
     isPartyModeActive: raw.isPartyModeActive,
@@ -78,6 +80,7 @@ const INITIAL_GAME_STATE: GameState = {
   companionScores: null,
   currentScreen: undefined,
   partyGameMode: null,
+  partySetupState: null,
   ptmPhase: null,
   ptmIntroData: null,
   viralSongIds: [],

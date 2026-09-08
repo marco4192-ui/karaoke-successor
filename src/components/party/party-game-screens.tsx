@@ -212,7 +212,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     <>
       {/* Tournament Starting Screen — shown after selecting the next pairing.
           Shows both players with their mic assignment and the voted song (if any).
-          The match starts via the explicit Start button. */}
+          The match starts via the explicit Start button.
+          NOTE: no "starts first" highlight — a DUEL is sung by both players
+          simultaneously, so both duelists are shown equally. */}
       {micOverlay && party.currentTournamentMatch?.player1 && party.currentTournamentMatch?.player2 && (
         <PartyStartingScreen
           overlay
@@ -227,7 +229,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               color: party.currentTournamentMatch.player1.color || '#FF6B6B',
               micName: micOverlay.p1Mic,
               playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone',
-              isStartPlayer: true,
             },
             {
               id: party.currentTournamentMatch.player2.id,
@@ -240,7 +241,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           ]}
           song={micOverlay.votedSong}
           subtitle={t('tournament.roundOfOf').replace('{n}', String(party.tournamentBracket?.currentRound ?? 1)).replace('{m}', String(party.tournamentBracket?.totalRounds ?? 1))}
-          startPlayerLabel={t('partyStarting.startsFirst')}
           onStart={launchTournamentMatch}
           testId="tournament-starting-screen"
         />

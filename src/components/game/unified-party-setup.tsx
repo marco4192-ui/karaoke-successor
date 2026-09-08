@@ -74,7 +74,7 @@ export function UnifiedPartySetup({
     micAssignments, assignMic, removeMicAssignment,
     savedMics, micCount,
     playersWithoutDevice, deviceBlockReason,
-    selectedMicId, setSelectedMicId, setSelectedMicName,
+    selectedMicId, selectedMicName, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined, filterReleaseYear,
     setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear,
     availableGenres, availableLanguages, filteredSongs,
@@ -99,6 +99,65 @@ export function UnifiedPartySetup({
 
   const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
+
+  // ── LIVE SETUP PUSH (user request item 7) ──────────────────────────────
+  // Push the current setup form to all companions whenever it changes so
+  // everyone can follow the selection live. Event-driven (debounced 400ms),
+  // NOT polling: only actual changes trigger a POST, which the Socket.IO
+  // server broadcasts to connected companions instantly.
+  // NOTE: connectedProfileIds is a NEW Set every poll — use a stable string
+  // key as dep so the 2s connection poll does not re-trigger the POST.
+  const connectedKey = Array.from(connectedProfileIds).sort().join(',');
+  useEffect(() => {
+    if (selectedPlayers.length === 0 && !songSelection) return; // nothing to mirror yet
+    const connectedIds = connectedKey ? connectedKey.split(',') : [];
+    const timer = setTimeout(() => {
+      const payload = {
+        partySetupState: {
+          selectedPlayers: selectedPlayers.map(pid => {
+            const profile = activeProfiles.find(p => p.id === pid);
+            return {
+              id: pid,
+              name: profile?.name || 'Player',
+              color: profile?.color,
+              hasAvatar: !!profile?.avatar,
+            };
+          }),
+          deviceAssignments,
+          micAssignments,
+          mics: savedMics.map(m => ({ id: m.id, name: m.customName || m.deviceName || m.id })),
+          selectedMicId: deviceMode === 'shared-mic' ? selectedMicId : null,
+          selectedMicName: deviceMode === 'shared-mic' ? selectedMicName : null,
+          connectedProfileIds: connectedIds,
+          difficulty,
+          settings,
+          songSelection: songSelection ?? undefined,
+          selectedSong: (preSelectedSong ?? resolvedSong)
+            ? { id: (preSelectedSong ?? resolvedSong)!.id, title: (preSelectedSong ?? resolvedSong)!.title, artist: (preSelectedSong ?? resolvedSong)!.artist }
+            : null,
+          filterGenre,
+          filterLanguage,
+          filterReleaseYear,
+          filterCombined,
+          availableGenres,
+          availableLanguages,
+          availableYears,
+        },
+      };
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'gamestate', payload }),
+      }).catch(() => { /* non-critical */ });
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- values read fresh; a dep array listing all would be equivalent
+  }, [
+    selectedPlayers, deviceAssignments, micAssignments, difficulty, settings,
+    songSelection, preSelectedSong, resolvedSong, filterGenre, filterLanguage,
+    filterReleaseYear, filterCombined, connectedKey, savedMics,
+    selectedMicName, deviceMode,
+  ]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableYears = useMemo(() => getYears(), [songs.length]);

@@ -153,8 +153,12 @@ export interface PartyStore {
   isSongPlaying: boolean;
   setIsSongPlaying: (_v: boolean) => void;
 
-  // Reset all party state
-  resetPartyState: () => void;
+  // Reset all party state.
+  // `force: true` skips the medley/CPTM safety net — reserved for explicit
+  // user-initiated leave paths ("End Party", exit-confirm, companion leave
+  // confirm) where the reset MUST succeed, otherwise stale state keeps
+  // isPartyModeActive true and the leave dialog can re-open after leaving.
+  resetPartyState: (_force?: boolean) => void;
 }
 
 export const usePartyStore = create<PartyStore>((set, get) => ({
@@ -274,7 +278,8 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
 
   // Reset all party state — "Ultimate Party-Mode Terminator"
   // Logs every invocation for debugging stale-state issues.
-  resetPartyState: () => {
+  // `force: true` bypasses the safety net below (see interface comment).
+  resetPartyState: (force?: boolean) => {
     // DO-NOT-CHANGE: Safety net — if a medley or CPTM game is actively in
     // progress (songs loaded, settings present), block the nuclear reset.
     // This catches any code path we haven't individually guarded in
@@ -282,14 +287,20 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
     // cleanup instead of nuking all party state mid-game.
     const state = get();
     if (
-      (state.selectedGameMode === 'medley' && state.medleySongs.length > 0 && state.medleySettings) ||
-      (state.selectedGameMode === 'companion-singalong' && state.cptmSong && state.cptmSettings)
+      !force &&
+      ((state.selectedGameMode === 'medley' && state.medleySongs.length > 0 && state.medleySettings) ||
+      (state.selectedGameMode === 'companion-singalong' && state.cptmSong && state.cptmSettings))
     ) {
       // eslint-disable-next-line no-console
       console.warn('[PartyTerminator] BLOCKED — medley or CPTM game is active. selectedGameMode=%s, medleySongs=%d, cptmSong=%s',
         state.selectedGameMode, state.medleySongs.length, !!state.cptmSong);
       // eslint-disable-next-line no-console
       console.trace('[PartyTerminator] Blocked call stack:');
+      // Item 14: even when the game-state reset is blocked, the pause/leave
+      // dialog state must NEVER survive a reset attempt — callers intend to
+      // leave/abort, and a stale pauseDialogAction='party-leave' makes the
+      // desktop leave dialog re-appear after the party is already over.
+      set({ pauseDialogAction: null });
       return;
     }
 

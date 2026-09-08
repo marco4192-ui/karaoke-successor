@@ -116,6 +116,10 @@ export interface CompetitiveGame {
   totalRounds: number;
   /** All song IDs already used in any round (for no-repeat) */
   usedSongIds: string[];
+  /** Pre-computed pairing for the very first round (competitive play mode).
+   *  Fixed at game creation so the starting screen can show who sings first
+   *  and the shown matchup matches the one actually sung. */
+  plannedFirstPairing?: { player1Id: string; player2Id: string } | null;
 }
 
 // ===================== GAME CREATION =====================
@@ -163,6 +167,16 @@ export function createCompetitiveGame(
     totalRounds = Math.ceil((n * x) / 2);
   }
 
+  // Pre-compute the first-round duel (competitive mode only). The mode
+  // starting screen highlights who sings first, so the first pairing must be
+  // fixed BEFORE the round starts — otherwise the highlighted player could
+  // differ from the actually paired player. Solo/coop need no pairing.
+  let plannedFirstPairing: { player1Id: string; player2Id: string } | null = null;
+  if (settings.playMode === 'competitive' && players.length >= 2) {
+    const shuffled = shuffleArray(players);
+    plannedFirstPairing = { player1Id: shuffled[0].id, player2Id: shuffled[1].id };
+  }
+
   return {
     settings,
     players,
@@ -172,6 +186,7 @@ export function createCompetitiveGame(
     winner: null,
     totalRounds,
     usedSongIds: [],
+    plannedFirstPairing,
   };
 }
 
@@ -294,7 +309,12 @@ export function startCompetitiveRound(
     player1Id = game.players[0]?.id ?? '';
     player2Id = game.players[1]?.id ?? game.players[0]?.id ?? '';
   } else {
-    const pairing = getNextRoundPairing(game);
+    // First round: use the pairing pre-computed at game creation so the
+    // starting-screen highlight matches the actual matchup. Later rounds
+    // fall through to Swiss-System pairing.
+    const pairing = (game.rounds.length === 0 && game.plannedFirstPairing)
+      ? game.plannedFirstPairing
+      : getNextRoundPairing(game);
     if (!pairing) return game;
     player1Id = pairing.player1Id;
     player2Id = pairing.player2Id;
@@ -486,6 +506,22 @@ export function calculateBlindBonus(
   return { base, perfect, streak, comeback, total };
 }
 
+/**
+ * End the series early ("End Series" button on the between-rounds
+ * scoreboard). Freezes the current cumulative standings and transitions to
+ * the game-over state — the winner screen then shows the final ranking,
+ * exactly like a regularly finished series.
+ */
+export function endCompetitiveGame(game: CompetitiveGame): CompetitiveGame {
+  if (game.status === 'game-over') return game;
+  const sorted = [...game.players].sort((a, b) => b.totalScore - a.totalScore);
+  return {
+    ...game,
+    status: 'game-over',
+    winner: sorted[0] ?? null,
+  };
+}
+
 // ===================== HELPERS =====================
 
 /** Get players sorted by total score (descending) */
@@ -496,6 +532,22 @@ export function getRankedPlayers(game: CompetitiveGame): CompetitivePlayer[] {
 /** Get the current round (or null if none) */
 export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null {
   return game.rounds[game.currentRoundIndex] || null;
+}
+
+/**
+ * The player who sings first (highlighted on the mode starting screen):
+ * - Solo: the single singer
+ * - Coop: nobody (all players sing together)
+ * - Competitive: player 1 of the pre-computed first-round duel
+ */
+export function getFirstRoundStartPlayerId(game: CompetitiveGame): string | null {
+  if (game.settings.playMode === 'solo') {
+    return game.players[0]?.id ?? null;
+  }
+  if (game.settings.playMode === 'coop') {
+    return null;
+  }
+  return game.plannedFirstPairing?.player1Id ?? null;
 }
 
 /** Check if a player has sung in all their required rounds. */

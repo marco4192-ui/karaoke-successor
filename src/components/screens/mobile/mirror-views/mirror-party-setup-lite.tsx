@@ -29,6 +29,8 @@ interface PartyModeInfo {
   supportsCompanionApp: boolean;
   forceInputMode?: InputMode;
   sharedMic: boolean;
+  /** Mirrors the desktop's Singing Device Assignment mode */
+  deviceAssignmentMode: 'shared-mic' | 'exclusive' | 'flexible' | 'none';
   settings: ModeSettingConfig[];
   songSelectionOptions: string[];
 }
@@ -54,14 +56,14 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'pass-the-mic': {
     command: 'start_ptm', icon: '\u{1F3A4}', labelKey: 'party.passTheMic', fallback: 'Pass the Mic',
     color: 'from-cyan-500 to-blue-500', minPlayers: 2, maxPlayers: 8,
-    supportsCompanionApp: false, forceInputMode: 'microphone', sharedMic: true,
+    supportsCompanionApp: false, forceInputMode: 'microphone', sharedMic: true, deviceAssignmentMode: 'shared-mic',
     settings: [],
     songSelectionOptions: ['library', 'random', 'vote', 'medley'],
   },
   'companion-singalong': {
     command: 'start_companion_singalong', icon: '\u{1F4F1}', labelKey: 'party.companionSingalong', fallback: 'Companion Singalong',
     color: 'from-emerald-500 to-teal-500', minPlayers: 2, maxPlayers: 8,
-    supportsCompanionApp: true, forceInputMode: 'companion', sharedMic: false,
+    supportsCompanionApp: true, forceInputMode: 'companion', sharedMic: false, deviceAssignmentMode: 'none',
     settings: [
       { key: 'minTurnDuration', labelKey: 'modeSettings.minTurnDuration', fallback: 'Min. Runden-Dauer', type: 'slider', min: 5, max: 30, step: 5, defaultValue: 15, unit: 's' },
       { key: 'maxTurnDuration', labelKey: 'modeSettings.maxTurnDuration', fallback: 'Max. Runden-Dauer', type: 'slider', min: 30, max: 90, step: 5, defaultValue: 45, unit: 's' },
@@ -72,7 +74,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'medley': {
     command: 'start_medley', icon: '\u{1F3B5}', labelKey: 'party.medleyContest', fallback: 'Medley Contest',
     color: 'from-purple-500 to-pink-500', minPlayers: 2, maxPlayers: 4,
-    supportsCompanionApp: true, sharedMic: false,
+    supportsCompanionApp: true, sharedMic: false, deviceAssignmentMode: 'exclusive',
     settings: [
       { key: 'playMode', labelKey: 'modeSettings.playMode', fallback: 'Spielmodus', type: 'select',
         options: [
@@ -93,7 +95,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'missing-words': {
     command: 'start_missing_words', icon: '\u{1F4DD}', labelKey: 'party.missingWords', fallback: 'Missing Words',
     color: 'from-orange-500 to-red-500', minPlayers: 1, maxPlayers: 4,
-    supportsCompanionApp: false, sharedMic: false,
+    supportsCompanionApp: false, sharedMic: false, deviceAssignmentMode: 'flexible',
     settings: [
       { key: 'missingWordFrequency', labelKey: 'modeSettings.missingWordFrequency', fallback: 'Frequenz', type: 'select',
         options: [
@@ -123,7 +125,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'blind': {
     command: 'start_blind', icon: '\u{1F648}', labelKey: 'party.blindKaraoke', fallback: 'Blind Karaoke',
     color: 'from-green-500 to-teal-500', minPlayers: 1, maxPlayers: 4,
-    supportsCompanionApp: false, sharedMic: false,
+    supportsCompanionApp: false, sharedMic: false, deviceAssignmentMode: 'flexible',
     settings: [
       { key: 'blindFrequency', labelKey: 'modeSettings.blindFrequency', fallback: 'Blind-Frequenz', type: 'select',
         options: [
@@ -147,7 +149,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'tournament': {
     command: 'start_tournament', icon: '\u{1F3C6}', labelKey: 'party.tournamentMode', fallback: 'Tournament',
     color: 'from-amber-500 to-yellow-500', minPlayers: 2, maxPlayers: 32,
-    supportsCompanionApp: false, sharedMic: false,
+    supportsCompanionApp: false, sharedMic: false, deviceAssignmentMode: 'flexible',
     settings: [
       { key: 'maxPlayers', labelKey: 'modeSettings.bracketSize', fallback: 'Turnier-Groesse', type: 'select',
         options: [
@@ -187,7 +189,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'battle-royale': {
     command: 'start_br', icon: '\u{1F451}', labelKey: 'party.battleRoyaleTitle', fallback: 'Battle Royale',
     color: 'from-red-600 to-pink-600', minPlayers: 2, maxPlayers: 24,
-    supportsCompanionApp: true, sharedMic: false,
+    supportsCompanionApp: true, sharedMic: false, deviceAssignmentMode: 'exclusive',
     settings: [
       { key: 'roundDuration', labelKey: 'modeSettings.roundDuration', fallback: 'Runden-Dauer', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
       { key: 'finalRoundDuration', labelKey: 'modeSettings.finalRoundDuration', fallback: 'Finale-Dauer', type: 'slider', min: 60, max: 300, step: 30, defaultValue: 120, unit: 's' },
@@ -209,7 +211,7 @@ const PARTY_MODE_INFO: Record<string, PartyModeInfo> = {
   'rate-my-song': {
     command: 'start_rate_my_song', icon: '\u{2B50}', labelKey: 'party.rateMySongTitle', fallback: 'Rate My Song',
     color: 'from-amber-500 to-orange-500', minPlayers: 1, maxPlayers: 2,
-    supportsCompanionApp: true, sharedMic: false,
+    supportsCompanionApp: true, sharedMic: false, deviceAssignmentMode: 'flexible',
     settings: [
       { key: 'duration', labelKey: 'modeSettings.duration', fallback: 'Dauer', type: 'select',
         options: [
@@ -310,24 +312,31 @@ function SelectDropdown({ options, value, onChange }: {
   );
 }
 
-/** Mobile-freundlicher Slider als Tappable-Buttons */
-function TappableSlider({ value, min, max, step, unit, onChange }: {
+/** Mobile-freundlicher Drag-Slider (range input) — wie in der Main-App (user request item 12) */
+function DragSlider({ value, min, max, step, unit, onChange }: {
   value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
 }) {
-  const steps = [];
-  for (let v = min; v <= max; v += step) steps.push(v);
   return (
-    <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-      {steps.map((s) => (
-        <button
-          key={s}
-          onClick={() => { haptic(); onChange(s); }}
-          className={'shrink-0 rounded-lg px-3 py-2 text-xs font-semibold active:scale-95 transition-all border ' +
-            (value === s
-              ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400'
-              : 'bg-white/5 border-white/10 text-white/50')}
-        >{s}{unit || ''}</button>
-      ))}
+    <div className="flex items-center gap-3">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        onPointerUp={() => haptic()}
+        className="flex-1 h-2 rounded-full appearance-none cursor-pointer bg-white/10 accent-cyan-500
+          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:h-7
+          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400
+          [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(34,211,238,0.5)]
+          [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:rounded-full
+          [&::-moz-range-thumb]:bg-cyan-400 [&::-moz-range-thumb]:border-0"
+        aria-label={String(value)}
+      />
+      <span className="shrink-0 min-w-[52px] text-right text-sm font-mono font-semibold text-cyan-400 tabular-nums">
+        {Math.round(value * 10) / 10}{unit || ''}
+      </span>
     </div>
   );
 }
@@ -390,6 +399,113 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     const [configSent, setConfigSent] = useState(false);
 
+    // ── Singing Device Assignment state (user request items 4 + 7) ──
+    const [deviceAssignments, setDeviceAssignments] = useState<Record<string, 'mic' | 'companion'>>({});
+    const [micAssignments, setMicAssignments] = useState<Record<string, string>>({});
+    const [selectedMicId, setSelectedMicId] = useState<string | null>(null);
+    // ── Song filter state (user request item 4) ──
+    const [filterGenre, setFilterGenre] = useState('all');
+    const [filterLanguage, setFilterLanguage] = useState('all');
+    const [filterReleaseYear, setFilterReleaseYear] = useState('all');
+    const [filterCombined, setFilterCombined] = useState(true);
+
+    // ── LIVE SETUP MIRROR (user request item 7) ──────────────────────────
+    // Desktop-pushed setup state — the mirror renders and edits the SAME
+    // state the desktop shows. Incoming pushes apply field-by-field (diff
+    // guard → no echo loop); outgoing user edits push party_apply_config
+    // to the desktop instantly (push, not poll).
+    const setup = gameState.partySetupState;
+    const desktopMics = React.useMemo(() => setup?.mics ?? [], [setup?.mics]);
+    const micCount = desktopMics.length;
+    const connectedIds = React.useMemo(
+      () => new Set<string>(setup?.connectedProfileIds ?? []),
+      [setup?.connectedProfileIds]
+    );
+    const deviceMode = modeInfo?.deviceAssignmentMode
+      ?? (modeInfo?.sharedMic ? 'shared-mic' : modeInfo?.forceInputMode === 'companion' ? 'none' : 'flexible');
+
+    // Timestamp of the last sync-IN — live pushes skip briefly after it so
+    // applying desktop state does not immediately echo back.
+    const lastSyncInAt = React.useRef(0);
+
+    // Apply desktop pushes (diff-guarded)
+    React.useEffect(() => {
+      if (!setup) return;
+      lastSyncInAt.current = Date.now();
+      // Extract values first — TS narrowing of `setup` does not survive
+      // into the setState callbacks below.
+      const su = setup;
+      const ids = su.selectedPlayers.map(p => p.id);
+      const suDifficulty = su.difficulty;
+      const suSettings = su.settings;
+      const suDeviceAssignments = su.deviceAssignments;
+      const suMicAssignments = su.micAssignments;
+      const suSongSelection = su.songSelection;
+      const suFilterGenre = su.filterGenre;
+      const suFilterLanguage = su.filterLanguage;
+      const suFilterReleaseYear = su.filterReleaseYear;
+      const suFilterCombined = su.filterCombined;
+      const suSelectedMicId = su.selectedMicId;
+      setSelectedPlayers(prev => (prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids));
+      if (suDifficulty) setDifficulty(prev => (prev === suDifficulty ? prev : suDifficulty));
+      if (suSettings && Object.keys(suSettings).length > 0) {
+        setSettings(prev => {
+          const merged = { ...prev, ...suSettings };
+          const changed = Object.keys(merged).some(k => prev[k] !== merged[k]);
+          return changed ? merged : prev;
+        });
+      }
+      if (suDeviceAssignments) {
+        setDeviceAssignments(prev => (JSON.stringify(prev) === JSON.stringify(suDeviceAssignments) ? prev : suDeviceAssignments));
+      }
+      if (suMicAssignments) {
+        setMicAssignments(prev => (JSON.stringify(prev) === JSON.stringify(suMicAssignments) ? prev : suMicAssignments));
+      }
+      if (suSongSelection) {
+        setSongSelection(prev => (prev === suSongSelection ? prev : suSongSelection));
+      }
+      if (typeof suFilterGenre === 'string') setFilterGenre(prev => (prev === suFilterGenre ? prev : suFilterGenre));
+      if (typeof suFilterLanguage === 'string') setFilterLanguage(prev => (prev === suFilterLanguage ? prev : suFilterLanguage));
+      if (typeof suFilterReleaseYear === 'string') setFilterReleaseYear(prev => (prev === suFilterReleaseYear ? prev : suFilterReleaseYear));
+      if (typeof suFilterCombined === 'boolean') setFilterCombined(prev => (prev === suFilterCombined ? prev : suFilterCombined));
+      if (suSelectedMicId !== undefined) {
+        setSelectedMicId(prev => (prev === (suSelectedMicId ?? null) ? prev : (suSelectedMicId ?? null)));
+      }
+    }, [setup]);
+
+    // ── LIVE PUSH OUT: every companion edit reaches the desktop instantly ──
+    React.useEffect(() => {
+      // Nothing selected yet → nothing meaningful to push (avoid overwriting
+      // the desktop with the mirror's initial defaults)
+      if (selectedPlayers.length === 0) return;
+      // Skip when this change came from a desktop sync-in (echo guard)
+      if (Date.now() - lastSyncInAt.current < 600) return;
+      const timer = setTimeout(() => {
+        const config = JSON.stringify({
+          mode: modeKey,
+          players: selectedPlayers,
+          difficulty,
+          settings,
+          deviceAssignments,
+          micAssignments,
+          // Live song selection only for non-navigating methods — library/vote
+          // navigate the desktop and are only sent on the explicit start tap
+          songSelection: (songSelection === 'random' || songSelection === 'medley') ? songSelection : undefined,
+          filterGenre,
+          filterLanguage,
+          filterReleaseYear,
+          filterCombined,
+          ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
+        });
+        onSendDesktopCommand(`party_apply_config:${config}`);
+      }, 300);
+      return () => clearTimeout(timer);
+    }, [
+      selectedPlayers, difficulty, settings, deviceAssignments, micAssignments,
+      songSelection, filterGenre, filterLanguage, filterReleaseYear, filterCombined,
+      selectedMicId, modeKey, onSendDesktopCommand, deviceMode, desktopMics,
+    ]);
+
     // Initiale Settings aus Config setzen (nur beim ersten Laden des Modus)
     const initializedModeRef = React.useRef('');
     React.useEffect(() => {
@@ -419,11 +535,23 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       return _availableProfiles.filter((p: any) => p.isActive !== false); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, [allHostProfiles, _availableProfiles]);
 
-    // Player-Toggle
+    // Player-Toggle (setzt auch eine Default-Device-Wahl wie auf dem Desktop)
     const handleTogglePlayer = useCallback((profileId: string) => {
       haptic();
       setSelectedPlayers((prev) => {
         if (prev.includes(profileId)) {
+          setDeviceAssignments((devPrev) => {
+            const updated = { ...devPrev };
+            delete updated[profileId];
+            return updated;
+          });
+          setMicAssignments((micPrev) => {
+            const updated: Record<string, string> = {};
+            for (const [mic, pid] of Object.entries(micPrev)) {
+              if (pid !== profileId) updated[mic] = pid;
+            }
+            return updated;
+          });
           return prev.filter((id) => id !== profileId);
         }
         if (prev.length >= (modeInfo?.maxPlayers || 8)) {
@@ -431,9 +559,15 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           return prev;
         }
         setError(null);
+        // Default device: flexible with >=2 mics → mic; otherwise companion
+        const defaultDevice: 'mic' | 'companion' =
+          (deviceMode === 'none') ? 'companion'
+          : (deviceMode === 'flexible' && micCount < 2 && prev.length > 0) ? 'companion'
+          : 'mic';
+        setDeviceAssignments((devPrev) => ({ ...devPrev, [profileId]: defaultDevice }));
         return [...prev, profileId];
       });
-    }, [modeInfo?.maxPlayers]);
+    }, [modeInfo?.maxPlayers, deviceMode, micCount]);
 
     // Setting aendern
     const handleSettingChange = useCallback((key: string, value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -480,10 +614,17 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         difficulty,
         settings,
         inputMode,
+        deviceAssignments,
+        micAssignments,
         songSelection: targetSongSelection,
+        filterGenre,
+        filterLanguage,
+        filterReleaseYear,
+        filterCombined,
+        ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
       });
       onSendDesktopCommand(`party_apply_config:${config}`);
-    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, t, onSendDesktopCommand]);
+    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, deviceAssignments, micAssignments, filterGenre, filterLanguage, filterReleaseYear, filterCombined, deviceMode, selectedMicId, desktopMics, t, onSendDesktopCommand]);
 
     const label = tOr(t, modeInfo?.labelKey || '', modeInfo?.fallback || '');
     const canStart = modeInfo ? selectedPlayers.length >= modeInfo.minPlayers : false;
@@ -633,6 +774,192 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           ) : null}
         </div>
 
+        {/* -------- SINGING DEVICE ASSIGNMENT (user request items 3+4) -------- */}
+        {selectedPlayers.length > 0 && (deviceMode === 'exclusive' || deviceMode === 'flexible') ? (
+          <div>
+            <SectionHeader>
+              {tOr(t, 'unifiedSetup.singingDeviceAssignment', 'Singing Device Assignment')}
+            </SectionHeader>
+            {deviceMode === 'flexible' && micCount >= 2 ? (
+              <p className="text-[11px] text-white/40 mb-2 px-1">
+                {tOr(t, 'unifiedSetup.deviceMultiMicHint', 'Duell-Modus: Mikrofone werden geteilt — kein festes Mikro pro Spieler.').replace('{n}', String(micCount))}
+              </p>
+            ) : null}
+            {deviceMode === 'flexible' && micCount === 1 ? (
+              <p className="text-[11px] text-white/40 mb-2 px-1">
+                {tOr(t, 'unifiedSetup.deviceSingleMicHint', 'Nur ein Mikrofon — einem Spieler zuweisen, alle anderen per Companion-App.')}
+              </p>
+            ) : null}
+            {deviceMode === 'flexible' && micCount === 0 ? (
+              <p className="text-[11px] text-amber-300/80 mb-2 px-1">
+                {tOr(t, 'unifiedSetup.deviceNoMicsHint', 'Kein Mikrofon angeschlossen — alle Spieler müssen per Companion-App singen.')}
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-2">
+              {selectedPlayers.map((playerId) => {
+                const profile = activeProfiles.find((p) => p.id === playerId);
+                if (!profile) return null;
+                const choice = deviceAssignments[playerId] === 'companion' ? 'companion' : 'mic';
+                const isCompanion = choice === 'companion';
+                const isCompanionConnected = connectedIds.has(playerId);
+                const currentMicEntry = Object.entries(micAssignments).find(([, pid]) => pid === playerId);
+                const currentMicId = currentMicEntry?.[0];
+                const takenByOther = (micId: string) => {
+                  const holder = micAssignments[micId];
+                  return !!holder && holder !== playerId;
+                };
+                const noFixedMic = deviceMode === 'flexible' && micCount >= 2;
+                return (
+                  <div
+                    key={playerId}
+                    data-testid={`mirror-sda-${profile.name}`}
+                    className={'flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ' +
+                      (isCompanion && !isCompanionConnected
+                        ? 'bg-amber-500/5 border-amber-500/30'
+                        : 'bg-white/5 border-white/10')}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ backgroundColor: (profile.color || '#06B6D4') + '40', border: '2px solid ' + (isCompanion ? (isCompanionConnected ? '#10B981' : 'transparent') : (profile.color || '#06B6D4')) }}
+                    >
+                      {profile.name?.[0] || '?'}
+                    </div>
+                    <span className="text-sm font-medium text-white truncate min-w-[70px] flex-1">{profile.name}</span>
+                    <select
+                      value={noFixedMic ? (isCompanion ? '' : 'auto') : (currentMicId || '')}
+                      disabled={deviceMode === 'flexible' && micCount === 0}
+                      onChange={(e) => {
+                        haptic();
+                        if (noFixedMic) {
+                          setDeviceAssignments((prev) => ({ ...prev, [playerId]: e.target.value === 'auto' ? 'mic' : 'companion' }));
+                          return;
+                        }
+                        if (e.target.value) {
+                          // Assign the mic (moves it from any previous holder)
+                          setMicAssignments((prev) => {
+                            const updated: Record<string, string> = {};
+                            for (const [mic, pid] of Object.entries(prev)) {
+                              if (pid !== playerId && mic !== e.target.value) updated[mic] = pid;
+                            }
+                            updated[e.target.value] = playerId;
+                            return updated;
+                          });
+                          setDeviceAssignments((prev) => ({ ...prev, [playerId]: 'mic' }));
+                        } else {
+                          if (currentMicId) {
+                            setMicAssignments((prev) => {
+                              const updated = { ...prev };
+                              delete updated[currentMicId];
+                              return updated;
+                            });
+                          }
+                          setDeviceAssignments((prev) => ({ ...prev, [playerId]: 'companion' }));
+                        }
+                      }}
+                      className="flex-1 min-w-0 appearance-none bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white disabled:opacity-40"
+                      aria-label={`Device: ${profile.name}`}
+                    >
+                      {noFixedMic ? (
+                        <>
+                          <option value="auto">{'\u{1F3A4}'} {tOr(t, 'unifiedSetup.deviceMicAuto', 'Mikrofon (automatisch)')}</option>
+                          <option value="">{tOr(t, 'unifiedSetup.deviceChooseMic', '— Mikrofon wählen —')}</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="">{tOr(t, 'unifiedSetup.deviceChooseMic', '— Mikrofon wählen —')}</option>
+                          {desktopMics.map((mic) => (
+                            <option key={mic.id} value={mic.id}>
+                              {'\u{1F3A4}'} {mic.name}{takenByOther(mic.id) ? ` — ${tOr(t, 'unifiedSetup.deviceMicTaken', 'belegt')}` : ''}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptic();
+                        if (isCompanion) {
+                          setDeviceAssignments((prev) => ({ ...prev, [playerId]: 'mic' }));
+                        } else {
+                          if (currentMicId) {
+                            setMicAssignments((prev) => {
+                              const updated = { ...prev };
+                              delete updated[currentMicId];
+                              return updated;
+                            });
+                          }
+                          setDeviceAssignments((prev) => ({ ...prev, [playerId]: 'companion' }));
+                        }
+                      }}
+                      aria-pressed={isCompanion}
+                      className={'shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold border active:scale-95 transition-all ' +
+                        (isCompanion
+                          ? 'bg-purple-500/25 border-purple-400/50 text-purple-300'
+                          : 'bg-white/5 border-white/10 text-white/50')}
+                    >
+                      <span>{'\u{1F4F1}'}</span>
+                      <span>{tOr(t, 'unifiedSetup.deviceCompanion', 'App')}</span>
+                      {isCompanion && !isCompanionConnected && (
+                        <span className="text-[9px] text-amber-400">{tOr(t, 'unifiedSetup.deviceNotConnected', 'noch nicht verbunden')}</span>
+                      )}
+                      {isCompanion && isCompanionConnected && (
+                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* PTM: shared mic dropdown (Singing Device Assignment, mode C) */}
+        {deviceMode === 'shared-mic' && selectedPlayers.length > 0 ? (
+          <div>
+            <SectionHeader>
+              {tOr(t, 'unifiedSetup.singingDeviceAssignment', 'Singing Device Assignment')}
+            </SectionHeader>
+            <select
+              value={selectedMicId || ''}
+              onChange={(e) => { haptic(); setSelectedMicId(e.target.value || null); }}
+              className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+              aria-label={tOr(t, 'unifiedSetup.microphoneSelection', 'Mikrofon')}
+            >
+              <option value="">{tOr(t, 'unifiedSetup.selectMicrophone', '— Mikrofon auswählen —')}</option>
+              {desktopMics.map((mic) => (
+                <option key={mic.id} value={mic.id}>{'\u{1F3A4}'} {mic.name}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-white/40 mt-1.5 px-1">{tOr(t, 'unifiedSetup.micSharedDesc', 'Dieses Mikrofon wird weitergegeben.')}</p>
+            {!selectedMicId ? (
+              <p className="text-[11px] text-amber-300/80 mt-1 px-1">{tOr(t, 'unifiedSetup.deviceNeedSharedMic', 'Wähle das gemeinsame Mikrofon, um zu starten')}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* CPTM: no device assignment — all players must be companion-connected (mode D) */}
+        {deviceMode === 'none' && selectedPlayers.length > 0 ? (
+          <div className="rounded-xl bg-purple-500/10 border border-purple-500/30 px-3 py-2.5">
+            <p className="text-xs font-semibold text-purple-300">
+              {'\u{1F4F1}'} {tOr(t, 'unifiedSetup.deviceNeedAllCompanion', 'Alle Spieler müssen per Companion-App verbunden sein')}
+            </p>
+            {selectedPlayers.some((pid) => !connectedIds.has(pid)) ? (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {selectedPlayers.filter((pid) => !connectedIds.has(pid)).map((pid) => {
+                  const profile = activeProfiles.find((p) => p.id === pid);
+                  if (!profile) return null;
+                  return (
+                    <span key={pid} className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
+                      {'\u26A0'} {profile.name} — {tOr(t, 'unifiedSetup.deviceNotConnected', 'noch nicht verbunden')}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {/* -------- SCHWIERIGKEIT -------- */}
         <div>
           <SectionHeader>
@@ -653,31 +980,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           </div>
         </div>
 
-        {modeInfo.supportsCompanionApp && !modeInfo.forceInputMode ? (
-          <div>
-            <SectionHeader>
-              {t('unifiedSetup.inputMode') || 'Input-Modus'}
-            </SectionHeader>
-            <div className="flex gap-2">
-              {(['microphone', 'companion', 'mixed'] as InputMode[]).map((m) => {
-                const icons: Record<InputMode, string> = { microphone: '\u{1F3A4}', companion: '\u{1F4F1}', mixed: '\u{1F3A4}\u{1F4F1}' };
-                const labels: Record<InputMode, string> = { microphone: tOr(t, 'unifiedSetup.mic', 'Mikrofon'), companion: tOr(t, 'unifiedSetup.companion', 'Companion'), mixed: tOr(t, 'unifiedSetup.mixed', 'Gemischt') };
-                const isActive = inputMode === m;
-                return (
-                  <button
-                    key={m}
-                    onClick={() => { haptic(); setInputMode(m); }}
-                    className={'flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-semibold active:scale-95 transition-all border ' +
-                      (isActive ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/50')}
-                  >
-                    <span>{icons[m]}</span>
-                    <span>{labels[m]}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
+        {/* Input-Modus entfernt (user request item 2 — keine nützliche Funktion) */}
 
         {/* -------- MODUS-SPEZIFISCHE EINSTELLUNGEN -------- */}
         {modeInfo.settings.length > 0 ? (
@@ -729,7 +1032,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                         <span className="text-sm font-medium text-white">{sLabel}</span>
                         <span className="text-xs font-mono text-cyan-400">{currentValue}{setting.unit || ''}</span>
                       </div>
-                      <TappableSlider
+                      <DragSlider
                         value={Number(currentValue)}
                         min={setting.min}
                         max={setting.max ?? 999}
@@ -746,6 +1049,81 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             </div>
           </div>
         ) : null}
+
+        {/* -------- SONG-FILTER (user request item 4 — wie in der Desktop-Ansicht) -------- */}
+        <div>
+          <SectionHeader>
+            {tOr(t, 'unifiedSetup.songFilter', 'Song-Filter')}
+          </SectionHeader>
+          <div className="flex flex-col gap-2.5">
+            <div>
+              <label className="text-[11px] text-white/40 mb-1 block px-1">
+                {tOr(t, 'unifiedSetup.genre', 'Genre')}
+              </label>
+              <select
+                value={filterGenre}
+                onChange={(e) => { haptic(); setFilterGenre(e.target.value); }}
+                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+              >
+                <option value="all">{tOr(t, 'unifiedSetup.allGenres', 'Alle Genres')}</option>
+                {(setup?.availableGenres ?? []).map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 mb-1 block px-1">
+                {tOr(t, 'unifiedSetup.language', 'Sprache')}
+              </label>
+              <select
+                value={filterLanguage}
+                onChange={(e) => { haptic(); setFilterLanguage(e.target.value); }}
+                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+              >
+                <option value="all">{tOr(t, 'unifiedSetup.allLanguages', 'Alle Sprachen')}</option>
+                {(setup?.availableLanguages ?? []).map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 mb-1 block px-1">
+                {tOr(t, 'unifiedSetup.releaseYear', 'Erscheinungsjahr')}
+              </label>
+              <select
+                value={filterReleaseYear}
+                onChange={(e) => { haptic(); setFilterReleaseYear(e.target.value); }}
+                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+              >
+                <option value="all">{tOr(t, 'unifiedSetup.allYears', 'Alle Jahre')}</option>
+                {(setup?.availableYears ?? []).map((y) => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+              <span className="text-xs text-white/60">{tOr(t, 'unifiedSetup.filterLogic', 'Filter-Logik')}</span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => { haptic(); setFilterCombined(true); }}
+                  className={'rounded-lg px-2.5 py-1.5 text-[11px] font-semibold border active:scale-95 transition-all ' +
+                    (filterCombined ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/50')}
+                >
+                  {tOr(t, 'unifiedSetup.combined', 'Kombiniert')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { haptic(); setFilterCombined(false); }}
+                  className={'rounded-lg px-2.5 py-1.5 text-[11px] font-semibold border active:scale-95 transition-all ' +
+                    (!filterCombined ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/50')}
+                >
+                  {tOr(t, 'unifiedSetup.independent', 'Unabhängig')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* -------- SONG-AUSWAHL -------- */}
         <div>

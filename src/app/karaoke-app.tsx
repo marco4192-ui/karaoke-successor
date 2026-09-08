@@ -68,6 +68,11 @@ export default function KaraokeZERO() {
   type DialogAction = null | 'song-pause' | 'party-leave' | 'song-end-early';
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
 
+  // Latest syncScreen function (assigned by the 2s sync effect further below)
+  // so the immediate dialog-push effect can trigger an out-of-band companion
+  // sync without duplicating the POST logic.
+  const syncScreenRef = useRef<(() => Promise<void>) | null>(null);
+
   // ── Track who initiated the pause (for companion overlay) ──
   const [pauseInitiator, setPauseInitiator] = useState<string | null>(null);
 
@@ -99,19 +104,31 @@ export default function KaraokeZERO() {
     || screen === 'missing-words-game'
     || screen === 'blind-game'
     || screen === 'rate-my-song-game';
+  // Track the last party game screen so a phase left over from a PREVIOUS
+  // game (e.g. 'song-results' from RMS, which never dispatches its own phase
+  // events) is reset — otherwise the companion mirror would show the generic
+  // game view instead of the mode starting screen (user request item 5).
+  const lastPartyGameScreenRef = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (isPartyGameScreen) {
-      // Always ensure 'intro' is set when entering a game screen with null phase.
-      // Don't overwrite a phase that was already set (e.g. 'countdown' from a fast start).
+      const isScreenChange = lastPartyGameScreenRef.current !== screen;
+      lastPartyGameScreenRef.current = screen;
       setPtmPhase(prev => {
-        if (prev === null) {
-          // eslint-disable-next-line no-console
-          console.log('[Party-Phase] Safety net (sync): setting intro (was null), screen=%s', screen);
-          return 'intro';
+        // New game (screen changed): every mode starts with the starting
+        // screen → always reset to 'intro' so the companion mirrors it.
+        // Same screen: only fill null (don't overwrite 'countdown' etc.).
+        if (isScreenChange || prev === null) {
+          if (prev !== 'intro') {
+            // eslint-disable-next-line no-console
+            console.log('[Party-Phase] Safety net (sync): resetting to intro (was %s), screen=%s', prev, screen);
+            return 'intro';
+          }
+          return prev;
         }
         return prev;
       });
     } else {
+      lastPartyGameScreenRef.current = null;
       setPtmPhase(null);
     }
   }, [screen, isPartyGameScreen]);
@@ -138,6 +155,40 @@ export default function KaraokeZERO() {
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
   }, [party.pauseDialogAction]);
+
+  // ── Item 13: push dialog changes to companions IMMEDIATELY ──
+  // The 2s sync interval is too slow and can miss short open/close windows:
+  // whenever the leave/pause dialog opens or closes on the desktop, fire an
+  // out-of-band gamestate push (HTTP + Socket.IO broadcast, includes
+  // desktopDialog) plus the dedicated desktop-dialog Socket.IO event so the
+  // (controlling) companion mirrors the dialog instantly. Only fires on
+  // actual value changes — no request spam.
+  const pauseDialogAction = party.pauseDialogAction;
+  const prevDialogActionRef = useRef<DialogAction>(pauseDialogAction);
+  useEffect(() => {
+    const prev = prevDialogActionRef.current;
+    prevDialogActionRef.current = pauseDialogAction;
+    if (prev === pauseDialogAction) return; // only actual changes
+    // 'song-end-early' is a desktop-internal CPTM signal — not mirrored.
+    const isMirrored = (a: DialogAction) => a === 'party-leave' || a === 'song-pause';
+    if (!isMirrored(prev) && !isMirrored(pauseDialogAction)) return;
+    // Dedicated instant Socket.IO channel (companion 'desktop-dialog' event)
+    window.dispatchEvent(new CustomEvent('desktop-dialog-change', {
+      detail: { dialog: pauseDialogAction },
+    }));
+    // Full gamestate push (reads fresh state internally — safe to re-call)
+    void syncScreenRef.current?.();
+  }, [pauseDialogAction]);
+
+  // ── Item 14: never keep the leave dialog once the party mode is over ──
+  // A stale pauseDialogAction='party-leave' (e.g. resetPartyState was blocked
+  // by the medley/CPTM safety net) would re-open the leave dialog and push it
+  // to companions although the party is no longer active. Clear it instead.
+  useEffect(() => {
+    if (!isPartyModeActive && party.pauseDialogAction === 'party-leave') {
+      party.setPauseDialogAction(null);
+    }
+  }, [isPartyModeActive, party.pauseDialogAction, party.setPauseDialogAction]);
 
   // Reset autoPlayNext when navigating away from queue screen
   useEffect(() => {
@@ -333,7 +384,11 @@ export default function KaraokeZERO() {
 
   const handlePartyModeEnd = useCallback(() => {
     closeDialog();
-    party.resetPartyState();
+    // Item 14: force=true — the user explicitly ended the party, so the
+    // medley/CPTM safety net must NOT block the reset. A blocked reset would
+    // leave selectedGameMode set (isPartyModeActive stays true) and the leave
+    // dialog could re-open on non-party screens via ESC.
+    party.resetPartyState(true);
     resetGame();
     setGameMode('standard');
     setScreen('home');
@@ -514,6 +569,9 @@ export default function KaraokeZERO() {
   // ── Handle companion-triggered leave dialog (sync with desktop) ──
   useEffect(() => {
     const handleShowLeave = () => {
+      // Item 14: ignore stale companion commands once the party is over —
+      // otherwise the leave dialog would pop up on non-party screens.
+      if (!isPartyModeActive) return;
       party.setPauseDialogAction('party-leave');
       // Notify Socket.IO to push party-leave to companions
       window.dispatchEvent(new CustomEvent('party-leave-change', {
@@ -525,7 +583,7 @@ export default function KaraokeZERO() {
     };
     window.addEventListener('remote-party-show-leave', handleShowLeave);
     return () => window.removeEventListener('remote-party-show-leave', handleShowLeave);
-  }, [party.setPauseDialogAction]);
+  }, [party.setPauseDialogAction, isPartyModeActive]);
 
   useEffect(() => {
     const handleLeaveConfirm = () => {
@@ -534,7 +592,9 @@ export default function KaraokeZERO() {
       // resetPartyState() is blocked by the safety net (medley/CPTM),
       // the desktop overlay would stay open forever.
       party.setPauseDialogAction(null);
-      party.resetPartyState();
+      // Item 14: force — explicit companion leave confirmation must fully
+      // reset the party even when the medley/CPTM safety net would block.
+      party.resetPartyState(true);
       resetGame();
       setGameMode('standard');
       setScreen('home');
@@ -561,7 +621,8 @@ export default function KaraokeZERO() {
   // ── Handle remote party cancel from companion (leave party-setup, reset state) ──
   useEffect(() => {
     const handleRemotePartyCancel = () => {
-      party.resetPartyState();
+      // force — explicit companion cancel of the party setup must fully reset
+      party.resetPartyState(true);
       resetGame();
       setGameMode('standard');
       setScreen('party');
@@ -940,6 +1001,7 @@ export default function KaraokeZERO() {
         // Non-critical — screen sync failure doesn't affect the app
       }
     };
+    syncScreenRef.current = syncScreen;
     syncScreen();
     const interval = setInterval(syncScreen, 2000);
     return () => clearInterval(interval);
@@ -973,7 +1035,8 @@ export default function KaraokeZERO() {
           const target = pendingNavigation;
           setPendingNavigation(null);
           markPartyConfirmed();
-          party.resetPartyState();
+          // Item 14: force — explicit leave confirmation must fully reset
+          party.resetPartyState(true);
           resetGame();
           setGameMode('standard');
           setScreen(target);
@@ -1237,8 +1300,9 @@ export default function KaraokeZERO() {
       {/* Desktop Chat Notification Overlay */}
       <DesktopChatNotification />
 
-      {/* Party Mode Leave Warning */}
-      {activeDialog === 'party-leave' && (
+      {/* Party Mode Leave Warning — Item 14: never render the leave dialog
+          when no party mode is active (stale dialog state after leaving) */}
+      {activeDialog === 'party-leave' && isPartyModeActive && (
         <PartyLeaveDialog
           onBack={handlePartyLeaveBack}
           onEndParty={handlePartyModeEnd}

@@ -164,6 +164,36 @@ export interface GameState {
   currentScreen?: string;
   // Party setup: which game mode is being configured
   partyGameMode?: string | null;
+  // Live party-setup state — pushed by the desktop whenever the setup form
+  // changes so companions mirror the current selection in real time (push,
+  // not poll). Avatars stripped to keep the payload small.
+  partySetupState?: {
+    selectedPlayers: Array<{ id: string; name: string; color?: string; hasAvatar?: boolean }>;
+    /** Per-player device choice (profileId → 'mic' | 'companion') */
+    deviceAssignments?: Record<string, 'mic' | 'companion'>;
+    /** micId → profileId (exclusive modes / single-mic flexible) */
+    micAssignments?: Record<string, string>;
+    /** Desktop microphones (id + display name) for the device dropdowns */
+    mics?: Array<{ id: string; name: string }>;
+    /** Shared mic (PTM): selected mic id + name */
+    selectedMicId?: string | null;
+    /** Profile ids with a connected companion device (live) */
+    connectedProfileIds?: string[];
+    difficulty?: 'easy' | 'medium' | 'hard';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic mode settings
+    settings?: Record<string, any>;
+    songSelection?: string;
+    selectedSong?: { id: string; title: string; artist: string } | null;
+    filterGenre?: string;
+    filterLanguage?: string;
+    filterReleaseYear?: string;
+    filterCombined?: boolean;
+    availableGenres?: string[];
+    availableLanguages?: string[];
+    availableYears?: number[];
+    /** Shared mic (PTM): display name of the selected mic */
+    selectedMicName?: string | null;
+  } | null;
   // Party voting: songs available for voting
   votingSongs?: Array<{ id: string; title: string; artist: string; duration: number; coverImage?: string }>;
   // Party setup: library-selected song awaiting confirmation on companion
