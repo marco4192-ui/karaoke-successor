@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
+import { GENRES, LANGUAGES } from '@/lib/constants';
+import { canonicalizeGenre, normalizeLanguageMixed } from '@/lib/parsers/meta-normalizer';
 
 // ── Types ──
 
@@ -33,6 +35,25 @@ interface HarmonizeRequest {
 }
 
 // ── Genre normalization map (common sub-genres → parent genres) ──
+
+/**
+ * Canonical vocabulary (user item 12): the LLM must pick genres from the
+ * curated GENRES list; language values are canonical English names, mixed
+ * languages joined with '/' — never parenthetical additions. Suggestions
+ * are additionally post-processed deterministically below (belt+suspenders).
+ */
+const CANONICAL_RULES = `
+CANONICAL GENRE LIST — suggested genres MUST be one of these ${GENRES.length} values:
+${GENRES.join(', ')}
+Any sub-genre ("Dance Pop", "Neo Soul", "Dubstep"...) maps to its parent in the list above.
+If nothing fits, use the closest parent — never invent new genres.
+
+LANGUAGE RULES:
+- Values are full ENGLISH language names: ${LANGUAGES.slice(0, 8).join(', ')}, ... (standard names only)
+- NEVER ISO codes or native forms (Deutsch, Español, 日本語).
+- NEVER parenthetical additions: "English (US)", "German (modern)" → just "English" / "German".
+- Mixed-language songs: join BOTH languages with '/' in dominance order,
+  e.g. "German/English". Max 3 languages.`;
 
 const NORMALIZATION_HINTS = `
 Common normalizations (sub-genres → parent genre):
@@ -108,6 +129,8 @@ RULES:
 6. If the current value is already good, set the suggestion to null with confidence 100.
 7. If a [Facts: ...] hint is present, it comes from MusicBrainz/Deezer and is RELIABLE. Trust it: suggest the fact's genre (normalized to the standard spelling) instead of guessing. Never contradict a factual year.
 
+${CANONICAL_RULES}
+
 ${NORMALIZATION_HINTS}
 
 Respond ONLY with a valid JSON array. Each element must have:
@@ -157,17 +180,22 @@ Do NOT include any text outside the JSON array.`,
       languageReason: string;
     }>;
 
-    // Merge AI suggestions with song data
+    // Merge AI suggestions with song data — canonicalized deterministically
+    // (user item 12): even if the LLM outputs "Pop (80s)" or "Englisch (mit
+    // deutschem Refrain)", the applied value is "Pop" / "English/German".
+    // Nulls ("already good") stay null — the current value is kept.
     const suggestions: HarmonizeEntry[] = batch.map((song, i) => {
       const match = parsed.find(p => p.index === i + 1);
+      const rawGenre = match?.suggestedGenre ?? null;
+      const rawLanguage = match?.suggestedLanguage ?? null;
       return {
         songId: song.id,
         title: song.title,
         artist: song.artist,
         currentGenre: song.genre,
         currentLanguage: song.language,
-        suggestedGenre: match?.suggestedGenre ?? null,
-        suggestedLanguage: match?.suggestedLanguage ?? null,
+        suggestedGenre: rawGenre ? canonicalizeGenre(rawGenre) : null,
+        suggestedLanguage: rawLanguage ? normalizeLanguageMixed(rawLanguage) : null,
         genreConfidence: match?.genreConfidence ?? 0,
         languageConfidence: match?.languageConfidence ?? 0,
         genreReason: match?.genreReason ?? '',

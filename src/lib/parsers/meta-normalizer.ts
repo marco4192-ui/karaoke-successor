@@ -2,6 +2,8 @@
 // Handles internationalization of #LANGUAGE and #GENRE fields so that
 // different spellings map to the same canonical category for filtering.
 
+import { GENRES as CANONICAL_GENRE_LIST } from '@/lib/constants';
+
 // ── Language normalization ──
 
 /**
@@ -181,16 +183,189 @@ const LANGUAGE_ALIASES: Record<string, string> = {
 /**
  * Normalize a language string to its canonical form.
  * Case-insensitive lookup; returns the original value if no mapping found.
+ * Parenthetical additions ("German (modern)", "English (US)") are stripped —
+ * the canonical value is always the bare language name.
  */
 export function normalizeLanguage(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
 
-  const key = trimmed.toLowerCase();
-  return LANGUAGE_ALIASES[key] || trimmed;
+  // Strip parenthetical additions BEFORE alias lookup so
+  // "deutsch (neu)" → "deutsch" → "German"
+  const withoutParens = trimmed.replace(/\([^)]*\)/g, ' ').trim();
+  const key = withoutParens.toLowerCase();
+  return LANGUAGE_ALIASES[key] || (withoutParens || trimmed);
+}
+
+// ── Mixed-language handling (user item 12 — Language Harmonization) ──────
+
+/**
+ * Language separators that indicate a genuinely multilingual song.
+ * "German/English", "de+en", "Französisch & Englisch".
+ */
+const LANGUAGE_SEPARATORS = /\s*[\/+&]\s*/;
+
+/**
+ * Normalize a language value that may describe a MULTILINGUAL song.
+ *
+ * User rules (item 12):
+ *  - Mixed-language songs are shown with BOTH languages, joined by "/"
+ *    (e.g. "German/English") — each part normalized to its canonical
+ *    English name.
+ *  - Any parenthetical additions ("German (with English parts)",
+ *    "English (US)") are ALWAYS removed.
+ *  - Duplicates collapse; the first mentioned language leads.
+ *  - Everything that is not a known language keeps its (trimmed) raw form
+ *    as a single part — never silently dropped.
+ */
+export function normalizeLanguageMixed(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+
+  // Always remove parenthetical additions first
+  const withoutParens = trimmed.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!withoutParens) return trimmed;
+
+  const parts = withoutParens
+    .split(LANGUAGE_SEPARATORS)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => normalizeLanguage(part));
+
+  if (parts.length === 0) return trimmed;
+
+  // Dedupe (case-insensitive), preserve first-mention order
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const p of parts) {
+    const key = p.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(p);
+    }
+  }
+
+  return unique.join('/');
 }
 
 // ── Genre normalization ──
+
+/**
+ * Deterministic sub-genre → canonical-genre aliases (user item 12).
+ * Keys are lowercased; values MUST exist in GENRES (src/lib/constants.ts)
+ * so harmonized values always match the filter dropdowns.
+ */
+const GENRE_ALIASES: Record<string, string> = {
+  // Pop family
+  'bubblegum pop': 'Pop', 'dance pop': 'Pop', 'synthpop': 'Pop',
+  'synth-pop': 'Pop', 'electropop': 'Pop', 'indie pop': 'Pop',
+  'art pop': 'Pop', 'bedroom pop': 'Pop', 'europop': 'Pop',
+  'teen pop': 'Pop', 'power pop': 'Pop', 'pop rock': 'Pop',
+  'deutschpop': 'Schlager', 'deutsch-pop': 'Schlager',
+  'austropop': 'Schlager', 'neue deutsche welle': 'Schlager', 'ndw': 'Schlager',
+
+  // Rock family
+  'alternative rock': 'Rock', 'classic rock': 'Rock', 'progressive rock': 'Rock',
+  'prog rock': 'Rock', 'punk rock': 'Rock', 'hard rock': 'Rock',
+  'grunge': 'Rock', 'soft rock': 'Rock', 'arena rock': 'Rock',
+  'indie rock': 'Rock', 'folk rock': 'Folk', 'gothic rock': 'Rock',
+  'post-grunge': 'Rock', 'glam rock': 'Rock', 'psychedelic rock': 'Rock',
+
+  // Metal family
+  'heavy metal': 'Metal', 'death metal': 'Metal', 'black metal': 'Metal',
+  'thrash metal': 'Metal', 'power metal': 'Metal', 'nu metal': 'Metal',
+  'metalcore': 'Metal', 'hair metal': 'Metal', 'symphonic metal': 'Metal',
+
+  // Punk family
+  'post-punk': 'Punk', 'emo': 'Punk', 'screamo': 'Punk',
+  'pop punk': 'Punk', 'hardcore punk': 'Punk', 'street punk': 'Punk',
+
+  // Electronic family
+  'dance': 'Electronic', 'edm': 'Electronic', 'techno': 'Electronic',
+  'house': 'Electronic', 'deep house': 'Electronic', 'trance': 'Electronic',
+  'drum and bass': 'Electronic', 'drum & bass': 'Electronic', 'dnb': 'Electronic',
+  'dubstep': 'Electronic', 'ambient': 'Electronic', 'electro': 'Electronic',
+  'eurodance': 'Electronic', 'big beat': 'Electronic', 'downtempo': 'Electronic',
+
+  // R&B / Soul / Funk family
+  'contemporary r&b': 'R&B', 'neo soul': 'Soul', 'new jack swing': 'R&B',
+  'rhythm and blues': 'R&B', 'r&b/soul': 'R&B', 'motown': 'Soul',
+
+  // Hip-Hop family
+  'rap': 'Hip-Hop', 'hip hop': 'Hip-Hop', 'trap': 'Hip-Hop',
+  'gangsta rap': 'Hip-Hop', 'old school rap': 'Hip-Hop', 'drill': 'Hip-Hop',
+  'west coast hip-hop': 'Hip-Hop', 'east coast hip-hop': 'Hip-Hop',
+
+  // Jazz / Blues family
+  'vocal jazz': 'Jazz', 'smooth jazz': 'Jazz', 'bebop': 'Jazz',
+  'swing': 'Jazz', 'big band': 'Jazz', 'jazz fusion': 'Jazz',
+  'delta blues': 'Blues', 'electric blues': 'Blues', 'rhythm and blues blues': 'Blues',
+
+  // Country / Folk family
+  'country pop': 'Country', 'outlaw country': 'Country', 'bro-country': 'Country',
+  'modern country': 'Country', 'nashville sound': 'Country',
+  'indie folk': 'Folk', 'americana': 'Folk', 'bluegrass': 'Folk',
+  'singer-songwriter': 'Folk', 'liedermacher': 'Folk', 'folkpop': 'Folk',
+
+  // Latin family
+  'reggaeton': 'Latin', 'latin pop': 'Latin', 'bachata': 'Latin',
+  'salsa': 'Latin', 'cumbia': 'Latin', 'merengue': 'Latin',
+  'rumba': 'Latin', 'tango': 'Latin', 'latin rock': 'Latin',
+
+  // Reggae family
+  'reggae fusion': 'Reggae', 'dub': 'Reggae', 'roots reggae': 'Reggae',
+  'dancehall': 'Reggae', 'ska': 'Reggae',
+
+  // Musical / Soundtrack / Classical
+  'musicals': 'Musical', 'showtunes': 'Musical', 'broadway': 'Musical',
+  'film music': 'Soundtrack', 'movie soundtrack': 'Soundtrack',
+  'game soundtrack': 'Soundtrack', 'score': 'Soundtrack', 'filmscore': 'Soundtrack',
+  'opera': 'Classical', 'operette': 'Classical', 'klassik': 'Classical',
+  'klassische musik': 'Classical', 'crossover classical': 'Classical',
+
+  // Children's
+  'children': "Children's", 'kindermusik': "Children's", 'kinderlied': "Children's",
+  'kinderlieder': "Children's", 'kids': "Children's", 'childrens': "Children's",
+
+  // Regional pop families (kept distinct per harmonization hints)
+  'j-rock': 'Rock', 'jpop': 'J-Pop', 'kpop': 'K-Pop', 'k-pop': 'K-Pop',
+  'afrobeats': 'Pop', 'afro pop': 'Pop', 'amapiano': 'Electronic',
+  'chanson': 'Folk', 'canzone': 'Pop', 'italopop': 'Pop', 'volkslied': 'Volksmusik',
+};
+
+/**
+ * Canonicalize a genre value (user item 12 — Genre Harmonization):
+ *  1. Strip parenthetical additions ("Pop (80s)" → "Pop")
+ *  2. Take the first genre when comma-separated ("Pop, Rock" → "Pop" —
+ *     Ultrastar #GENRE is a single value; the harmonize suggestion picks
+ *     the dominant one)
+ *  3. Map sub-genres/aliases to the canonical GENRES list
+ *  4. Unknown values fall back to light title-casing (never dropped)
+ */
+export function canonicalizeGenre(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+
+  // Strip parenthetical additions
+  let value = trimmed.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!value) return normalizeGenreName(trimmed);
+
+  // Comma-separated: keep the primary (first) genre
+  if (/[,;]/.test(value)) {
+    value = value.split(/[,;]/)[0].trim();
+  }
+
+  const key = value.toLowerCase();
+  const canonical = GENRE_ALIASES[key];
+  if (canonical) return canonical;
+
+  // Exact canonical match (case-insensitive) → proper casing
+  const genres = CANONICAL_GENRE_LIST;
+  const exact = genres.find(g => g.toLowerCase() === key);
+  if (exact) return exact;
+
+  return normalizeGenreName(value);
+}
 
 /**
  * Split a genre string into individual genre entries.

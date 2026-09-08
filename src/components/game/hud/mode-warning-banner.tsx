@@ -25,10 +25,20 @@ interface ModeWarningBannerProps {
   blindWarning: ModeWarning;
   /** Missing Words warning state (only relevant in 'missing-words' game mode) */
   missingWordsWarning: ModeWarning;
+  /** Duel layout: place the banner in the center of the left half so it
+   *  never covers the right player's note highway. */
+  placement?: 'center' | 'left-half';
 }
 
-export function ModeWarningBanner({ blindWarning, missingWordsWarning }: ModeWarningBannerProps) {
+export function ModeWarningBanner({ blindWarning, missingWordsWarning, placement = 'center' }: ModeWarningBannerProps) {
   const { t } = useTranslation();
+
+  // Shared position class — top-center by default; in duels the banner sits
+  // in the MIDDLE OF THE LEFT HALF (left-1/4) so it never overlaps the right
+  // player's (blue) note highway. Referenced by both render functions below.
+  const posClass = placement === 'left-half'
+    ? 'absolute top-16 left-1/4 -translate-x-1/2 z-30 pointer-events-none'
+    : 'absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none';
 
   const isBlindModeRelevant = blindWarning.active;
   const isMwModeRelevant = missingWordsWarning.active;
@@ -74,7 +84,7 @@ export function ModeWarningBanner({ blindWarning, missingWordsWarning }: ModeWar
       data-testid="mode-warning-banner"
       data-warning={warningId}
       data-countdown={w.countdown}
-      className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+      className={posClass}
     >
       <div
         className={`flex items-center gap-3 rounded-2xl border-2 ${c.border} ${c.bg} ring-1 ${c.ring} backdrop-blur-md px-5 py-3 shadow-xl ${c.shadow} animate-in fade-in slide-in-from-top-4 duration-300 mode-warning-pulse`}
@@ -107,7 +117,7 @@ export function ModeWarningBanner({ blindWarning, missingWordsWarning }: ModeWar
       aria-live="off"
       data-testid="mode-warning-banner"
       data-warning={warningId}
-      className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+      className={posClass}
     >
       <div className={`flex items-center gap-2 rounded-full border ${c.border} ${c.pillBg} ring-1 ${c.ring} backdrop-blur-md px-4 py-1.5 shadow-lg ${c.shadow} animate-in fade-in duration-300`}>
         {/* Pulsing live dot — reads as "currently inside a blind/hidden passage" */}

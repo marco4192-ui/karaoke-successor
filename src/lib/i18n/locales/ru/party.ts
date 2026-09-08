@@ -584,6 +584,7 @@ partyStarting: {
   participants: '{n} участников',
   startPlayer: 'ПОЁТ ПЕРВЫМ',
   startsFirst: 'Поёт первым',
+  duelSing: 'Дуэль',
   startPlayerHint: 'Этот игрок поёт первый отрезок',
   companion: '📱 Приложение-компаньон',
   startButton: '🎤 Поехали!',

@@ -44,7 +44,7 @@ export function AudioEffectsButton({ onClick }: AudioEffectsButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-36 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+      className="fixed bottom-44 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
       title={t('gameHud.audioEffects')}
       data-testid="game-hud-audio-effects-button"
       aria-label={t('gameHud.audioEffects')}
@@ -82,7 +82,7 @@ export function AudioEffectsPanel({
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-52 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
+    <div className="fixed bottom-60 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
       <h4 className="font-semibold mb-3">{t('gameHud.audioEffects')}</h4>
       <div className="space-y-3">
         <div>

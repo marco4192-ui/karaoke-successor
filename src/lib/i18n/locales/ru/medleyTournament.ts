@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Дополнительные матчи',
   backToBracket: '← Назад к сетке',
   newTournament: 'Новый турнир',
+  backToMainMenu: 'Вернуться в главное меню',
   songSelectionMode: 'Выбор песни',
   songSelection: 'Выбор песен',
   songRandom: '🎲 Случайная',

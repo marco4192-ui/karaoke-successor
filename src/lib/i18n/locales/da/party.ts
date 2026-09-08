@@ -584,6 +584,7 @@ partyStarting: {
   participants: '{n} deltagere',
   startPlayer: 'BEGYNDER AT SYNGE',
   startsFirst: 'Synger først',
+  duelSing: 'Duel',
   startPlayerHint: 'Denne spiller synger første del',
   companion: '📱 Companion-app',
   startButton: '🎤 Begynd at synge!',

@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import type { Note, LyricLine, Difficulty } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';
-import type { MedleyPlayer, MedleySong, SnippetMatchup, MedleyScoringEvent, VoiceModifier, MedleySettings } from './medley-types';
+import type { MedleyPlayer, MedleySong, SnippetMatchup, VoiceModifier, MedleySettings } from './medley-types';
 import { VOICE_MODIFIERS } from './medley-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { NoteHighway, type NoteWithLine } from '@/components/game/note-highway';
@@ -56,11 +56,14 @@ interface MedleyPlayingProps {
   isTeam: boolean;
   multiPitch: ReturnType<typeof useMultiPitchDetector>;
   handleEndEarly: () => void;
-  lastScoringEvents?: MedleyScoringEvent[];
-  /** Unified HUD: per-note performance samples (colored notes + wrong-singing marks) */
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  /** Unified HUD: per-note performance samples (colored fills + wrong-singing marks per player) */
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
   currentDynamicDifficulty?: Difficulty | null;
   settings: MedleySettings;
+  /** Total duration of ALL snippets (user item 6.4: total runtime, one line) */
+  totalDurationMs?: number;
+  /** Elapsed time across all snippets (finished snippets + current snippet time) */
+  totalElapsedMs?: number;
   // Feature #10
   isEliminationMode?: boolean;
   activePlayerCount?: number;
@@ -93,9 +96,10 @@ export function MedleyPlayingUI({
   totalProgress,
   currentMatchup,
   isTeam,
-  lastScoringEvents = [],
   notePerformance,
   settings,
+  totalDurationMs = 0,
+  totalElapsedMs = 0,
   // Feature #10
   isEliminationMode = false,
   activePlayerCount = 0,
@@ -122,6 +126,27 @@ export function MedleyPlayingUI({
       : playersDisplay;
 
   const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
+
+  // ── Current snippet singer (user item 6) ──
+  // The shared note stream is pre-colored in the snippet singer's color so
+  // spectators see whose notes are whose; the tint switches whenever the
+  // snippet's singer changes (featured singer = pool[snippetIdx % pool.length]):
+  // - Team: the current matchup's two singers alternate per snippet
+  //   (both are always shown in the TeamMatchupBar below the top bar)
+  // - FFA / Elimination: the players rotate by snippet index (player order)
+  const singerPool = useMemo<MedleyPlayer[]>(() => {
+    if (isTeam && currentMatchup) return [currentMatchup.playerA, currentMatchup.playerB];
+    if (isEliminationMode) return playersDisplay.filter(p => !p.isEliminated);
+    return playersDisplay;
+  }, [isTeam, currentMatchup, isEliminationMode, playersDisplay]);
+
+  const featuredSinger = singerPool.length > 0
+    ? singerPool[currentSnippetIdx % singerPool.length]
+    : null;
+
+  // The note highway (grid, sing line, glow, unsung note track) uses the
+  // featured singer's base color instead of the old hardcoded purple.
+  const currentSingerColor = featuredSinger?.color ?? '#a855f7';
 
   // Sort players by score for ranking display
   const rankedPlayers = [...playersDisplay].sort((a, b) => b.score - a.score);
@@ -162,6 +187,12 @@ export function MedleyPlayingUI({
 
   // ── Countdown timer ──
   const countdownSeconds = Math.max(0, Math.ceil((currentSnippet.duration - currentTimeMs) / 1000));
+
+  // ── Total medley runtime (user item 6.4) — formatted m:ss ──
+  const formatTotalTime = (ms: number) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')}`;
+  };
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
@@ -222,7 +253,10 @@ export function MedleyPlayingUI({
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             notePerformance={notePerformance}
-            playerColor="#a855f7"
+            // User item 6: pre-color the shared note stream in the current
+            // snippet singer's color (grid / sing line / glow / note tint).
+            playerColor={currentSingerColor}
+            noteTint={currentSingerColor}
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
@@ -230,57 +264,58 @@ export function MedleyPlayingUI({
         </div>
       )}
 
-      {/* ═══════ TOP BAR: song info + timer + badges ═══════ */}
+      {/* ═══════ TOP BAR: compact info row + total progress ═══════
+          User item 6.3: the song title/artist live ONLY in the unified HUD
+          chrome's SongTitleBanner (rendered by medley-game-screen.tsx) —
+          this bar no longer renders a second, centered title. */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
         {/* Left: spacer for PauseButton (rendered by parent) */}
         <div className="w-10" />
 
-        {/* Center: song info + timer + badges */}
+        {/* Center: ONE compact info row (snippet index, current singer,
+            snippet countdown, mode badges) + team scores + total progress */}
         <div className="flex flex-col items-center gap-1">
-          {/* Song info row */}
-          <div className="flex items-center gap-2">
-            <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
-            <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
+          <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+            <Badge className="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 shrink-0">{t('medley.badge')}</Badge>
+            <span className="text-white/60 text-xs whitespace-nowrap">
+              {t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}
+            </span>
+            {/* Current singer badge (snippet singer whose color tints the note stream) */}
+            {featuredSinger && !isTeam && (
+              <span
+                className="flex items-center gap-1 text-xs font-medium whitespace-nowrap"
+                style={{ color: currentSingerColor }}
+                title={featuredSinger.name}
+              >
+                🎤<span className="max-w-[90px] truncate">{featuredSinger.name}</span>
+              </span>
+            )}
+            {/* Snippet duration countdown */}
+            <span className="text-sm font-mono text-purple-400 tabular-nums whitespace-nowrap">{countdownSeconds}s</span>
             {!isTeam && !isEliminationMode && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
+              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 shrink-0">{t('medley.ffaBadge')}</Badge>
             )}
             {isEliminationMode && (
-              <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5">
+              <Badge className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 shrink-0">
                 {t('medley.remaining').replace('{n}', String(activePlayerCount)).replace('{m}', String(totalPlayerCount))}
               </Badge>
             )}
             {/* Feature #9: Dynamic difficulty badge now lives in the unified top-right HUD chrome */}
             {/* Feature #15: Active modifier badge */}
             {activeModifier !== 'none' && !modifierJustRevealed && modDef && (
-              <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5">
+              <Badge className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 shrink-0">
                 {modDef.icon} {modDef.id}
               </Badge>
             )}
             {/* Feature #16: Mystery mode badge */}
             {isMysteryMode && !mysteryReveal && (
-              <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5">🎰</Badge>
+              <Badge className="bg-pink-500/20 text-pink-400 text-xs px-2 py-0.5 shrink-0">🎰</Badge>
             )}
-          </div>
-
-          {/* Song title + artist + countdown */}
-          <div className="flex items-center gap-3">
-            {isMysteryMode && !mysteryReveal ? (
-              <>
-                <span className="text-sm font-bold">🎰 ???</span>
-                <span className="text-white/40 text-xs">{t('medley.mysterySong')}</span>
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-bold text-white/90">{currentSnippet.song.title}</span>
-                <span className="text-white/40 text-xs">{currentSnippet.song.artist}</span>
-              </>
-            )}
-            <span className="text-lg font-mono text-purple-400 tabular-nums">{countdownSeconds}s</span>
           </div>
 
           {/* Feature #18: Team scores */}
           {isTeam && settings.teamBonusesEnabled && (
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-4 text-xs whitespace-nowrap">
               <span className="text-blue-400 font-medium">
                 {t('medley.teamA')}: {playersDisplay.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0)}
               </span>
@@ -385,26 +420,29 @@ export function MedleyPlayingUI({
       {/* ═══════ PATTERN E — Team matchup bar (both players per team, current singer highlighted) ═══════ */}
       {isTeam && <TeamMatchupBar players={playersDisplay} currentMatchup={currentMatchup} />}
 
-      {/* ═══════ BOTTOM EDGE: Snippet progress (unified: no Quit — End Song lives top-left) ═══════ */}
+      {/* ═══════ BOTTOM EDGE: Snippet progress + total runtime (user item 6.4) ═══════ */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
         <Progress value={snippetProgress} className="h-1 bg-white/10" />
-        <div className="flex justify-between items-center px-4 py-1">
-          <span className="text-[10px] text-white/30">
+        <div className="flex justify-between items-center gap-4 px-4 py-1">
+          <span className="text-[10px] text-white/30 whitespace-nowrap">
             {t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}
           </span>
+          {/* Gesamtlaufzeit: total medley runtime on ONE line (no wrap) */}
+          {totalDurationMs > 0 && (
+            <span className="text-[10px] text-white/40 font-mono tabular-nums whitespace-nowrap">
+              ⏱ {formatTotalTime(totalElapsedMs)} / {formatTotalTime(totalDurationMs)}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* ═══════ Unified bottom HUD: mic indicator (bottom-left) + playtime/duration (bottom-right) ═══════ */}
-      <div className="absolute bottom-8 left-4 z-20">
-        <MicIndicator isPlaying />
+      {/* ═══════ Unified bottom HUD: mic indicator (bottom-left) + snippet time (bottom-right) ═══════
+          User item 6.4: the time displays render INLINE with whitespace-nowrap
+          and a wide-enough container — no more line-wrapped corner fields. */}
+      <MicIndicator isPlaying />
+      <div className="absolute bottom-8 right-4 z-20 min-w-[110px] whitespace-nowrap text-right">
+        <TimeDisplay inline currentTime={currentTimeMs} duration={currentSnippet.duration} />
       </div>
-      <div className="absolute bottom-8 right-4 z-20">
-        <TimeDisplay currentTime={currentTimeMs} duration={currentSnippet.duration} />
-      </div>
-
-      {/* ═══════ Feature #5: Floating scoring popups ═══════ */}
-      <ScoringPopups events={lastScoringEvents} players={playersDisplay} />
     </div>
   );
 }
@@ -462,56 +500,7 @@ function TeamMatchupBar({ players, currentMatchup }: { players: MedleyPlayer[]; 
   );
 }
 
-// ===================== FEATURE #5: SCORING POPUPS =====================
-
-function ScoringPopups({
-  events,
-}: {
-  events: MedleyScoringEvent[];
-  players: MedleyPlayer[];
-}) {
-  const now = Date.now();
-  const recentEvents = events.filter(e => now - e.timestamp < 1000);
-
-  if (recentEvents.length === 0) return null;
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {recentEvents.map((event, i) => {
-        const age = now - event.timestamp;
-        const opacity = Math.max(0, 1 - age / 1000);
-        const translateY = -(age / 1000) * 40;
-
-        let text: string;
-        let textColor: string;
-        if (event.hit && event.golden) {
-          text = `+${event.points}`;
-          textColor = '#fbbf24';
-        } else if (event.hit) {
-          text = `+${event.points}`;
-          textColor = '#4ade80';
-        } else {
-          text = `${event.points}`;
-          textColor = '#f87171';
-        }
-
-        return (
-          <div
-            key={`${event.playerId}-${event.timestamp}-${i}`}
-            className="absolute text-lg font-bold"
-            style={{
-              right: `${20 + (i * 40)}px`,
-              top: '50%',
-              color: textColor,
-              opacity,
-              transform: `translateY(${translateY}px)`,
-              textShadow: `0 0 6px ${textColor}`,
-            }}
-          >
-            {text}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// NOTE (user item 6.1): the former Feature #5 "ScoringPopups" (flying
+// +/-points numbers for hit and wrong notes) was removed from the Medley
+// in-game view. Wrong-note feedback now renders on the note stream itself:
+// per-player colored ghost bars (see note-utils getNoteDisplayStyleClasses).

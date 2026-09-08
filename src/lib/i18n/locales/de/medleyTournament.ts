@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Tiebreak-Matches',
   backToBracket: '← Zum Bracket',
   newTournament: 'Neues Turnier',
+  backToMainMenu: 'Zurück zum Hauptmenü',
   songSelectionMode: 'Song-Auswahl',
   songSelection: 'Song-Auswahl',
   songRandom: '🎲 Zufällig',

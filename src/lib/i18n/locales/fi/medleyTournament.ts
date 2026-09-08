@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Tasapeliottelut',
   backToBracket: '← Takaisin turnauspuuhun',
   newTournament: 'Uusi turnaus',
+  backToMainMenu: 'Takaisin päävalikkoon',
   songSelectionMode: 'Kappaleen valinta',
   songSelection: 'Kappaleen valintatila',
   songRandom: '🎲 Satunnainen',

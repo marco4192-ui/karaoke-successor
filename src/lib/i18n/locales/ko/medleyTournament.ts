@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: '동점 처리 매치',
   backToBracket: '← 브래킷으로 돌아가기',
   newTournament: '새 토너먼트',
+  backToMainMenu: '메인 메뉴로 돌아가기',
   songSelectionMode: '곡 선택',
   songSelection: '곡 선택',
   songRandom: '🎲 랜덤',

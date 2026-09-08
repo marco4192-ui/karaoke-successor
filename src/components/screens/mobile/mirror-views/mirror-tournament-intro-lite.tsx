@@ -146,7 +146,7 @@ export function MirrorTournamentIntroLite({ gameState, onSendDesktopCommand }: M
                 )}
               </>
             ) : (
-              <p className="text-sm font-semibold text-white/70">🎲 {t('tournament.songRandom') || 'Random'}</p>
+              <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || 'Random'}</p>
             )}
           </div>
 

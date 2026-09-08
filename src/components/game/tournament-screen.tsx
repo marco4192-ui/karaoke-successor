@@ -564,11 +564,16 @@ interface TournamentResultsProps {
   bracket: TournamentBracket;
   onBack: () => void;
   onNewTournament: () => void;
+  /** Item 11: leave the tournament completely and return to the main menu */
+  onExitToMenu: () => void;
 }
 
-export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: TournamentResultsProps) {
+export function TournamentResultsScreen({ bracket, onBack, onNewTournament, onExitToMenu }: TournamentResultsProps) {
   const { t } = useTranslation();
   const { placements, fanFavorites } = useTournamentResults(bracket);
+  // Item 11: graceful fallback if the key is missing in a locale
+  const backToMenuLabel = t('tournament.backToMainMenu');
+  const backToMenuText = backToMenuLabel === 'tournament.backToMainMenu' ? 'Back to Main Menu' : backToMenuLabel;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -694,20 +699,30 @@ export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: To
         </Card>
       )}
 
-      {/* Action buttons */}
-      <div className="flex gap-3">
+      {/* Action buttons — Item 11: explicit exit options after the final
+          results (previously only the ESC key could leave the tournament). */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            onClick={onExitToMenu}
+            variant="outline"
+            className="flex-1 h-12 border-white/20 hover:bg-white/10"
+          >
+            🏠 {backToMenuText}
+          </Button>
+          <Button
+            onClick={onNewTournament}
+            className="flex-1 h-12 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
+          >
+            🏆 {t('tournament.newTournament')}
+          </Button>
+        </div>
         <Button
           onClick={onBack}
-          variant="outline"
-          className="flex-1 border-white/20"
+          variant="ghost"
+          className="w-full text-white/50 hover:text-white/80"
         >
           ← {t('tournament.backToBracket')}
-        </Button>
-        <Button
-          onClick={onNewTournament}
-          className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
-        >
-          {t('tournament.newTournament')}
         </Button>
       </div>
     </div>

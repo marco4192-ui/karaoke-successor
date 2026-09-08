@@ -38,8 +38,8 @@ export function useSocketIOCompanion(clientId: string | null) {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
+      reconnectionDelayMax: 8000,
+      timeout: 20000,
     });
 
     socket.on('connect', () => {
@@ -52,7 +52,7 @@ export function useSocketIOCompanion(clientId: string | null) {
 
     socket.on('disconnect', (reason) => {
       // eslint-disable-next-line no-console
-      console.log('[Socket.IO Companion] Disconnected:', reason);
+      console.debug('[Socket.IO Companion] Disconnected:', reason);
       setIsConnected(false);
     });
 
@@ -98,14 +98,35 @@ export function useSocketIOCompanion(clientId: string | null) {
       }
     });
 
+    // Rate-limited connect_error logging: log the first error, then at most
+    // once every 30s (or when the message changes) — a flaky WiFi reconnect
+    // loop must not spam the companion console.
+    const lastErrLog = { at: 0, msg: '' };
     socket.on('connect_error', (err) => {
-      // eslint-disable-next-line no-console
-      console.debug('[Socket.IO Companion] Connection error:', err.message);
+      const now = Date.now();
+      const msg = err?.message || 'unknown';
+      if (msg !== lastErrLog.msg || now - lastErrLog.at > 30000) {
+        lastErrLog.at = now;
+        lastErrLog.msg = msg;
+        // eslint-disable-next-line no-console
+        console.debug('[Socket.IO Companion] Connection error (will keep retrying silently):', msg);
+      }
     });
 
     socketRef.current = socket;
 
+    // Reduce page-unload WS-close noise ("Die Verbindung wurde unterbrochen,
+    // während die Seite geladen wurde"): proactively disconnect before the
+    // browser kills the page. Skipped when only entering the back/forward
+    // cache — a manual disconnect would disable Socket.IO auto-reconnect,
+    // leaving a dead socket after a bfcache restore.
+    const handlePageHide = (e: PageTransitionEvent) => {
+      if (!e.persisted) socket.disconnect();
+    };
+    window.addEventListener('pagehide', handlePageHide);
+
     return () => {
+      window.removeEventListener('pagehide', handlePageHide);
       socket.disconnect();
       socketRef.current = null;
     };

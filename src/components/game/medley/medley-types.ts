@@ -7,6 +7,31 @@
 
 import type { Song, Difficulty } from '@/types/game';
 
+// ===================== PLAYER COLORS =====================
+
+/**
+ * Distinct base colors for Medley Contest players (user item 6.1):
+ * red, light blue, green, orange, yellow.
+ *
+ * Assigned by player index (player 0 = red, 1 = light blue, 2 = green,
+ * 3 = orange, 4 = yellow) so every player is clearly identifiable on the
+ * shared note stream — the note highway and wrong-note marks use these
+ * colors, exactly like the player colors in the normal modes.
+ */
+export const MEDLEY_PLAYER_COLORS = [
+  '#FF4B4B', // red
+  '#4BB8FF', // light blue
+  '#4BFF7A', // green
+  '#FFA94B', // orange
+  '#FFE14B', // yellow
+] as const;
+
+/** Medley player base color by player order index. */
+export function getMedleyPlayerColor(index: number): string {
+  const n = MEDLEY_PLAYER_COLORS.length;
+  return MEDLEY_PLAYER_COLORS[((index % n) + n) % n];
+}
+
 // ===================== PLAYERS =====================
 
 export interface MedleyPlayer {

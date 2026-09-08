@@ -445,7 +445,9 @@ export function PlayingView({
       ══════════════════════════════════════════════════════════ */}
 
       {/* ─────────── 1. TIMER BAR + ROUND INFO (pt-16: below the fixed corner buttons) ─────────── */}
-      <div className="flex-shrink-0 px-3 pt-16 pb-1">
+      {/* Item 8: pb-2 (was pb-1) — extra clearance so the player badges below
+          sit a bit lower and no longer crowd the top HUD. */}
+      <div className="flex-shrink-0 px-3 pt-16 pb-2">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-sm font-bold shrink-0">
@@ -485,7 +487,9 @@ export function PlayingView({
       </div>
 
       {/* ─────────── 2. PLAYER CARDS STRIP (flex-wrap) ─────────── */}
-      <div className="flex-shrink-0 px-3 pb-1 overflow-y-auto max-h-[140px]">
+      {/* Item 8: pt-4 (added) — moves the player badges bar slightly DOWN,
+          away from the top HUD (timer bar + round info). */}
+      <div className="flex-shrink-0 px-3 pt-4 pb-1 overflow-y-auto max-h-[140px]">
         <div className="flex flex-wrap gap-1.5">
           {sortedPlayers.map((player) => {
             const danger = isDanger(player);
@@ -685,7 +689,10 @@ export function PlayingView({
       </div>
 
       {/* ─────────── 4. LYRICS (bottom) — BR-style background, lifted above the bottom-corner time displays (B3.6) ─────────── */}
-      <div className="flex-shrink-0 px-4 pb-3 min-h-0">
+      {/* Item 8: pb-7 (was pb-3) — lifts the lyrics bar slightly UP, clear of
+          the bottom-corner time displays; badges + lyrics now sit closer
+          together around the note highway. */}
+      <div className="flex-shrink-0 px-4 pb-7 min-h-0">
         {currentSong ? (
           <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
             {currentLyricLine ? (

@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: '平局比赛',
   backToBracket: '← 返回对阵表',
   newTournament: '新锦标赛',
+  backToMainMenu: '返回主菜单',
   songSelectionMode: '歌曲选择',
   songSelection: '选歌方式',
   songRandom: '🎲 随机',

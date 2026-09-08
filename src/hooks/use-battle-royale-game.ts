@@ -20,6 +20,7 @@ import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
+import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
 
@@ -294,6 +295,37 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- multiPitch is stable for .stop()/.start()
   }, [pauseDialogAction]);
+
+  // ── Item 8.1: Companion game-state sync ──────────────────────────
+  // Same mechanism CPTM/PTM use (useMobileGameSync): pushes the current
+  // (snippet) song + isPlaying to all companion apps so a participating
+  // player's phone shows the BR in-game screen and streams pitch (the
+  // mobile pitch loop only runs/sends while gameState.isPlaying is true).
+  const brCompanionPlaying = game.status === 'playing' && pauseDialogAction !== 'song-pause';
+  useMobileGameSync(
+    currentSong,
+    brCompanionPlaying,
+    'battle-royale',
+    game.status === 'completed',
+    undefined,
+    'battle-royale-game',
+  );
+
+  // Item 8.1: on unmount (game over / party left) tell the companions the BR
+  // game is over — stops their microphone/pitch stream immediately instead of
+  // relying on the next periodic sync.
+  useEffect(() => {
+    return () => {
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'gamestate',
+          payload: { isPlaying: false, songEnded: true, brGameData: null },
+        }),
+      }).catch(() => { /* best-effort */ });
+    };
+  }, []);
 
   // ── Round Timer ────────────────────────────────────────────────────
   const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
@@ -595,12 +627,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
 
           // Score all active COMPANION players (uses polling cache)
+          // Item 8.1: cache is keyed by profile id (BR player ids ARE profile
+          // ids), so companion pitch flows into BR scoring like CPTM/PTM.
           for (const player of companionPlayers) {
-            const cachedPitch = player.connectionCode
-              ? companionPitchCacheRef.current.get(player.connectionCode)
-              : null;
+            const cachedPitch = companionPitchCacheRef.current.get(player.id);
 
-            if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
+            if (cachedPitch && cachedPitch.note != null && cachedPitch.isSinging !== false) {
               const { game: updatedGame } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
               if (updatedGame !== batchedGame) {
                 batchedGame = updatedGame;

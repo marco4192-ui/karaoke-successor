@@ -13,6 +13,7 @@ export { MirrorAchievementsLite } from './mirror-achievements-lite';
 export { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 export { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
 export { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
+export { MirrorBrGameLite } from './mirror-br-game-lite';
 export { MirrorTournamentIntroLite } from './mirror-tournament-intro-lite';
 export { MirrorTournamentBracketLite } from './mirror-tournament-bracket-lite';
 export { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';

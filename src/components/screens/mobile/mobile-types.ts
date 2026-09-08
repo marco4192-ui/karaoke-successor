@@ -32,6 +32,7 @@ export type MirrorScreenId =
   | 'ptm-intro'
   | 'medley-intro'
   | 'battle-intro'
+  | 'br-game'       // Battle Royale active game (live scores + own singing)
   | 'tournament-intro'
   | 'tournament-bracket'  // Tournament bracket on screen — open duels list with start buttons
   | 'competitive-intro'
@@ -63,6 +64,11 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     online: 'home',
     'song-voting': 'song-voting',
     'companion-singalong-game': 'cptm-game',
+    // Battle Royale in-game: dedicated mirror with live player scores and
+    // the companion's own singing visualization (Item 8.1). Without this
+    // mapping the generic game mirror would show "no song" because BR
+    // never sets the standard game-store song.
+    'battle-royale-game': 'br-game',
   };
 
   if (desktopScreen in directMap) return directMap[desktopScreen];
@@ -148,6 +154,30 @@ export interface CptmMirrorPlayerInfo {
   segmentsSung: number;
 }
 
+/** Player roster entry for the Battle Royale companion game mirror. */
+export interface BrGameMirrorPlayer {
+  /** Profile id — matches the companion's own profile id */
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+  eliminated: boolean;
+  playerType: 'microphone' | 'companion';
+}
+
+/** Live Battle Royale game data pushed by the desktop (Item 8.1). */
+export interface BrGameData {
+  /** BR game status: 'countdown' | 'playing' | 'voting' | 'setup' | ... */
+  status?: string;
+  roundNumber?: number;
+  songTitle?: string;
+  songArtist?: string;
+  /** Current medley snippet (0-based) and total snippet count */
+  snippetIndex?: number;
+  snippetCount?: number;
+  players?: BrGameMirrorPlayer[];
+}
+
 export interface GameState {
   currentSong: { title: string; artist: string } | null;
   isPlaying: boolean;
@@ -229,6 +259,8 @@ export interface GameState {
     // Battle Royale: full player badge list for the mirror (name/avatar/color)
     brPlayers?: { name: string; avatar?: string; color?: string }[];
   } | null;
+  // Battle Royale live in-game data (scores + current snippet song)
+  brGameData?: BrGameData | null;
   // Tournament bracket mirror: while the bracket is shown on the desktop (no
   // duel pending), companions get the list of OPEN duels incl. start buttons.
   // Avatars are stripped to keep the payload small — colors + initials only.

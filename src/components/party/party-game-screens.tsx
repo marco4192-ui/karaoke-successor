@@ -264,6 +264,84 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; specific fields used in body
   }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, party.setUnifiedSetupResult, party.tournamentBracket, party.tournamentVotedSong, t, pickTournamentSong]);
 
+  // ── Item 11: Tournament final-results exit actions ──
+  // "Back to Main Menu": leave the tournament completely. Uses the SAME
+  // cleanup as the ESC / "End Party" path (handlePartyModeEnd in
+  // karaoke-app.tsx): force-reset ALL party state (bracket, votes, mode,
+  // setup draft) + reset the game state, then go home — no leaks.
+  const handleTournamentExitToMenu = useCallback(() => {
+    party.resetPartyState(true);
+    resetGame();
+    setGameMode('standard');
+    setShowTournamentResults(false);
+    setScreen('home');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; sub-setters are stable
+  }, [party.resetPartyState, resetGame, setGameMode, setScreen]);
+
+  // "New Tournament": go DIRECTLY to the tournament settings (unified party
+  // setup) with the players of the last tournament pre-selected — still
+  // fully changeable. The old bracket (incl. results, votes, used songs) is
+  // cleared completely so nothing bleeds into the new tournament.
+  // NOTE: unifiedSetupResult is NOT restored from here — every duel
+  // overwrites it with just the 2 current players (see launchTournamentMatch).
+  // The bracket holds the full original player list + settings; per-player
+  // device assignments persist in localStorage and are picked up by the
+  // setup hook automatically.
+  const handleTournamentNew = useCallback(() => {
+    const bracket = party.tournamentBracket;
+    if (bracket && bracket.players.length > 0) {
+      const s = bracket.settings;
+      party.setSetupDraft({
+        selectedPlayers: bracket.players.map(p => p.id),
+        settings: {
+          maxPlayers: s.maxPlayers,
+          shortMode: s.songDuration === 60,
+          tournamentType: s.tournamentType,
+          tiebreakMode: s.tiebreakMode,
+          dynamicDifficulty: s.dynamicDifficulty,
+          songSelectionMode: s.songSelectionMode,
+          seedingMode: s.seedingMode,
+        },
+        difficulty: s.difficulty ?? 'medium',
+        inputMode: 'mixed',
+        selectedMicId: null,
+        selectedMicName: null,
+        filterGenre: s.filterGenre ?? 'all',
+        filterLanguage: s.filterLanguage ?? 'all',
+        filterCombined: true,
+        filterReleaseYear: 'all',
+      });
+    }
+
+    // Clear the finished tournament completely (same fields as
+    // resetPartyState's tournament block — clean slate for the new one)
+    party.setTournamentBracket(null);
+    party.setCurrentTournamentMatch(null);
+    party.setTournamentVotedSong(null);
+    party.setTournamentVotingSongs([]);
+    party.setTournamentVotingMatch(null);
+    party.resetTournamentUsedSongIds();
+    party.setTournamentMatchAborted(false);
+    party.resetTournamentCrowdVotes();
+    party.setPtmMedleySnippets([]);
+    setShowTournamentResults(false);
+    party.setSelectedGameMode('tournament');
+    setScreen('party-setup');
+  }, [party, setScreen]);
+
+  // ── Companion "New Tournament" trigger (Item 11, optional mirror action) ──
+  // The companion champion view sends `party_new_tournament`, which arrives
+  // here as a remote-party-new-tournament CustomEvent. Only active while the
+  // final results are on screen — mirrors the desktop button rules.
+  useEffect(() => {
+    const handler = () => {
+      if (screen !== 'tournament-game' || !showTournamentResults) return;
+      handleTournamentNew();
+    };
+    window.addEventListener('remote-party-new-tournament', handler);
+    return () => window.removeEventListener('remote-party-new-tournament', handler);
+  }, [screen, showTournamentResults, handleTournamentNew]);
+
   return (
     <>
       {/* Tournament Starting Screen — shown after selecting the next pairing.
@@ -467,19 +545,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <TournamentResultsScreen
           bracket={party.tournamentBracket}
           onBack={() => setShowTournamentResults(false)}
-          onNewTournament={() => {
-            // Unified flow: "New Tournament" returns to the unified party setup
-            // (same flow as initial mode selection) instead of the legacy setup screen.
-            party.setTournamentBracket(null);
-            party.setCurrentTournamentMatch(null);
-            party.setTournamentVotedSong(null);
-            party.resetTournamentUsedSongIds();
-            party.setTournamentMatchAborted(false);
-            party.setPtmMedleySnippets([]);
-            setShowTournamentResults(false);
-            party.setSelectedGameMode('tournament');
-            setScreen('party-setup');
-          }}
+          onExitToMenu={handleTournamentExitToMenu}
+          onNewTournament={handleTournamentNew}
         />
       )}
 

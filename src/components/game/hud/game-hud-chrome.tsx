@@ -23,17 +23,17 @@ interface GameHudChromeProps {
   showWebcamControls?: boolean;
   /** Render the webcam background layer. Default: true */
   renderWebcamBackground?: boolean;
-  /** Song title for the top-center banner (between Pause+Skip and the score) */
+  /** Song title for the banner 20px right of the pause panel */
   songTitle?: string | null;
-  /** Song artist for the top-center banner */
+  /** Song artist for the banner next to the pause panel */
   songArtist?: string | null;
 }
 
 /**
  * Unified HUD chrome for every party-mode game screen (PTM layout is the model):
  *
- *   top-center: SongTitleBanner (Artist — Title)
- *   top-left:   PauseButton + EndSongButton
+ *   top-left:   PauseButton + EndSongButton panel, song title banner 20px
+ *               to its right (user request: NOT top-center anymore)
  *   top-right:  DifficultyBadge (read-only) + WebcamQuickControls + FullscreenButton
  *
  * The chrome owns the webcam config state so modes without previous webcam
@@ -68,13 +68,14 @@ export function GameHudChrome({
       )}
 
       <div className="fixed inset-0 z-50 pointer-events-none">
-        {/* Top-center: Artist + Title (between Pause+Skip and the score) */}
-        <SongTitleBanner title={songTitle} artist={songArtist} />
-
-        {/* Top-left: Pause + End Song — glass panel keeps icons readable over bright backgrounds */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
-          <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
-          {onEndSong && <EndSongButton onEndSong={onEndSong} />}
+        {/* Top-left cluster: Pause + End Song panel with the song title
+            20px to its right (gap-5 = 20px, user request item 7) */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-5">
+          <div className="flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
+            <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
+            {onEndSong && <EndSongButton onEndSong={onEndSong} />}
+          </div>
+          <SongTitleBanner title={songTitle} artist={songArtist} />
         </div>
 
         {/* Top-right: Difficulty (read-only) + Webcam + Fullscreen — matching glass panel */}

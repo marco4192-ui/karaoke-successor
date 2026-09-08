@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { updateSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
-import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { normalizeLanguageMixed, normalizeLanguage, canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
 
 import { GENRES, LANGUAGES } from '@/lib/constants';
 
@@ -109,10 +109,14 @@ export function GenreLanguageEditor({
     if (!aiSuggestion) return;
     const raw = aiSuggestion[field];
     if (!raw) return;
-    // Normalize to the app's canonical naming — the AI endpoints return
-    // mixed conventions ("Deutsch" vs "German", "es" vs "Spanish") which
-    // would fragment the library's genre/language filters.
-    const value = field === 'genre' ? normalizeGenreName(raw) : normalizeLanguage(raw);
+    // Normalize to the app's canonical naming (user item 12) — the AI endpoints
+    // return mixed conventions ("Deutsch" vs "German", "es" vs "Spanish")
+    // which would fragment the library's genre/language filters.
+    // Languages: mixed songs keep BOTH ("German/English"), parenthetical
+    // additions are stripped. Genres: sub-genres map to the canonical list.
+    const value = field === 'genre'
+      ? canonicalizeGenre(raw)
+      : (raw.includes('/') ? normalizeLanguageMixed(raw) : normalizeLanguage(raw));
     if (field === 'genre') {
       setCustomGenre(value);
       onUpdate({ genre: value });

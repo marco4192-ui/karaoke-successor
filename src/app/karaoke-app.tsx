@@ -937,6 +937,53 @@ export default function KaraokeZERO() {
           }
         }
 
+        // ── Item 8.1: Battle Royale LIVE game data ─────────────────────
+        // Pushed whenever the BR screen is active (intro AND playing) so the
+        // companion BR in-game mirror can show the current (snippet) song,
+        // the round number and live player scores. Avatars are stripped to
+        // keep the 2s-poll payload small (color + initial only).
+        let brGameData: GameState['brGameData'] = null;
+        // BR never sets the standard game-store song — keep the companion's
+        // gameState.currentSong stable (the 2s spread below would otherwise
+        // push null and fight with the BR hook's useMobileGameSync pushes).
+        let brSongPayload: { id: string; title: string; artist: string } | null = null;
+        if (screen === 'battle-royale-game') {
+          const brGame = partyNow.battleRoyaleGame;
+          if (brGame) {
+            // Current (snippet) song: medley snippet or the round's main song.
+            const brSnippet = brGame.medleySnippetList.length > 0
+              ? brGame.medleySnippetList[brGame.currentSnippetIndex]
+              : null;
+            const brSongId = brSnippet?.songId ?? brGame.rounds?.[brGame.currentRound]?.songId ?? null;
+            const brSongTitle = brSnippet?.songName
+              ?? brGame.rounds?.[brGame.currentRound]?.songName
+              ?? (brGame.currentRound === 0 ? brGame.settings?.firstRoundSongTitle : undefined)
+              ?? undefined;
+            const brSongArtist = brSongId
+              ? getAllSongs().find(s => s.id === brSongId)?.artist
+              : undefined;
+            if (brSongTitle) {
+              brSongPayload = { id: brSongId ?? '', title: brSongTitle, artist: brSongArtist ?? '' };
+            }
+            brGameData = {
+              status: brGame.status,
+              roundNumber: brGame.currentRound + 1,
+              songTitle: brSongTitle,
+              songArtist: brSongArtist,
+              snippetIndex: brGame.currentSnippetIndex,
+              snippetCount: brGame.medleySnippetList.length,
+              players: brGame.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                color: p.color || '#EF4444',
+                score: p.score,
+                eliminated: p.eliminated,
+                playerType: p.playerType === 'companion' ? 'companion' : 'microphone',
+              })),
+            };
+          }
+        }
+
         // ── Tournament bracket mirror: while the bracket is on screen (no duel
         // pending, intro phase), companions receive the list of OPEN duels so
         // they can display and start them (user request: companion bracket view).
@@ -1014,6 +1061,9 @@ export default function KaraokeZERO() {
             type: 'gamestate',
             payload: {
               ...useGameStore.getState().gameState,
+              // BR: keep the companion's currentSong in sync with the current
+              // BR (snippet) song instead of the (unset) standard song.
+              ...(brSongPayload ? { currentSong: brSongPayload } : {}),
               currentScreen: screen,
               partyGameMode: partyNow.selectedGameMode || null,
               votingSongs: screen === 'song-voting' ? partyNow.votingSongs : [],
@@ -1025,6 +1075,9 @@ export default function KaraokeZERO() {
               pauseInitiator,
               ptmPhase,
               ptmIntroData: introData,
+              // Always send the key (null when not on the BR screen) so a
+              // finished BR game doesn't leave stale data on the companions.
+              brGameData: screen === 'battle-royale-game' ? brGameData : null,
               tournamentBracketData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',

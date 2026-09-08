@@ -18,6 +18,8 @@ export interface UseMedleyEliminationReturn {
   eliminateLowestScorer: () => void;
   eliminationOrderRef: React.MutableRefObject<string[]>;
   resetFinalFaceOff: () => void;
+  /** Reset elimination state for a fresh round (Next Round flow) */
+  resetRound: () => void;
 }
 
 // ===================== HOOK =====================
@@ -60,11 +62,25 @@ export function useMedleyElimination({
 
   const resetFinalFaceOff = useCallback(() => setFinalFaceOff(false), []);
 
+  // ── Reset elimination state for a fresh round (Next Round flow — user item 6.2) ──
+  // Revives all players and clears the elimination order; scores stay
+  // cumulative across rounds (series standings).
+  const resetRound = useCallback(() => {
+    eliminationOrderRef.current = [];
+    setEliminationOrder([]);
+    setFinalFaceOff(false);
+    for (const p of playersRef.current) {
+      if (p.isEliminated) p.isEliminated = false;
+    }
+    forceRender();
+  }, [playersRef, forceRender]);
+
   return {
     eliminationOrder,
     finalFaceOff,
     eliminateLowestScorer,
     eliminationOrderRef,
     resetFinalFaceOff,
+    resetRound,
   };
 }

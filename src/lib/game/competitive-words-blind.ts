@@ -535,19 +535,21 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
 }
 
 /**
- * The player who sings first (highlighted on the mode starting screen):
- * - Solo: the single singer
- * - Coop: nobody (all players sing together)
- * - Competitive: player 1 of the pre-computed first-round duel
+ * ALL players who sing in the first round (highlighted on the mode starting
+ * screen): solo → the single singer, coop → nobody (all sing together),
+ * competitive → BOTH players of the pre-computed first-round duel.
  */
-export function getFirstRoundStartPlayerId(game: CompetitiveGame): string | null {
+export function getFirstRoundStartPlayerIds(game: CompetitiveGame): string[] {
   if (game.settings.playMode === 'solo') {
-    return game.players[0]?.id ?? null;
+    const first = game.players[0]?.id;
+    return first ? [first] : [];
   }
   if (game.settings.playMode === 'coop') {
-    return null;
+    return [];
   }
-  return game.plannedFirstPairing?.player1Id ?? null;
+  const pairing = game.plannedFirstPairing;
+  if (!pairing) return [];
+  return [pairing.player1Id, pairing.player2Id].filter((id): id is string => !!id);
 }
 
 /** Check if a player has sung in all their required rounds. */

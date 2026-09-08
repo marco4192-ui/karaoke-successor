@@ -52,9 +52,11 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Header Overlay (unified layout: icon Pause + End Song top-left) */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-        {/* Top-left: Pause (icon) + End Song + rate-my-song player name (pattern B) — glass panel */}
-        <div className="flex items-center gap-1.5 rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
-          <PauseButton
+        {/* Top-left cluster: Pause (icon) + End Song panel, song title banner
+            20px to its right (gap-5 = 20px, user request item 7 — NOT centered) */}
+        <div className="flex items-center gap-5 min-w-0">
+          <div className="flex items-center gap-1.5 rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
+            <PauseButton
             isPlaying={g.isPlaying}
             onTogglePause={() => {
               if (props.onPause) {
@@ -91,11 +93,12 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           )}
         </div>
 
-        {/* Center: song banner (Artist — Title) between Pause+Skip and the score */}
+        {/* Song banner (Artist — Title) 20px right of the Pause/Skip panel (user item 7) */}
         <SongTitleBanner
           title={g.gameState.currentSong?.title ?? null}
           artist={g.gameState.currentSong?.artist ?? null}
         />
+        </div>
 
         {/* Low-perf indicator (right next to the banner when active) */}
         {g.isLowPerf && (
@@ -124,6 +127,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         <ModeWarningBanner
           blindWarning={g.blindWarning}
           missingWordsWarning={g.missingWordsWarning}
+          placement={g.isDuetMode ? 'left-half' : 'center'}
         />
       )}
 

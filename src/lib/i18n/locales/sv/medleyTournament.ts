@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Oavgjort-matcher',
   backToBracket: '← Tillbaka till Träd',
   newTournament: 'Ny Turnering',
+  backToMainMenu: 'Tillbaka till huvudmenyn',
   songSelectionMode: 'Låtval',
   songSelection: 'Låtvalsläge',
   songRandom: '🎲 Slumpad',

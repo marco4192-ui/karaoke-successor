@@ -89,8 +89,10 @@ interface MedleyGameState {
   lastScoringEvents: MedleyScoringEvent[];
 
   // Unified HUD: per-note performance samples for the NoteHighway
-  // (colored tick fills + wrong-singing ghost bars, as in other modes)
-  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  // (colored tick fills + wrong-singing ghost bars, as in other modes).
+  // Medley (user item 6.1): samples also carry the singer's color and sung
+  // pitch so wrong notes render per player in that player's base color.
+  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
 
   // Feature #9: Dynamic difficulty
   currentDynamicDifficulty: Difficulty | null;
@@ -136,6 +138,8 @@ interface MedleyGameState {
 
   // Actions
   handleStart: () => Promise<void>;
+  /** Start the next round directly (no intro screen) — user item 6.2 */
+  handleNextRound: () => void;
   handleEndEarly: () => void;
   handleRoundComplete: () => void;
   handleShowFinalResults: () => void;
@@ -232,8 +236,8 @@ export function useMedleyGame({
   const scoringEventsRef = useRef<MedleyScoringEvent[]>([]);
 
   // ── Unified HUD: per-note performance samples for the NoteHighway ──
-  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
-  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>>(new Map());
+  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>>(new Map());
   // Throttle UI update for scoring events to ~100ms
   const lastScoringUiUpdateRef = useRef(0);
 
@@ -252,6 +256,12 @@ export function useMedleyGame({
       medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
     }
     snippetScoringMetaRef.current = null;
+    // Also clear the per-note performance samples: each snippet has its own
+    // notes (keys may repeat across snippets via the `note-{startTime}`
+    // fallback), so stale fills/wrong-note marks must not bleed into the
+    // next snippet's freshly pre-colored note stream. The game loop re-syncs
+    // the UI state from this ref on its next tick (~50ms).
+    notePerformanceRef.current.clear();
   }, [currentSnippetIdx]);
 
   // ── Multi-pitch detection (one detector per player) ──
@@ -426,7 +436,7 @@ export function useMedleyGame({
         perfSamples = [];
         notePerformanceRef.current.set(perfNoteId, perfSamples);
       }
-      perfSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit });
+      perfSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit, sungPitch: pitch.note, playerColor: p.color });
       if (perfSamples.length > 100) {
         notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
       }
@@ -718,6 +728,11 @@ export function useMedleyGame({
     setPhase('playing');
     setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
     setCurrentTimeMs(0);
+    // Fresh note stream: clear the previous snippet's per-note performance
+    // samples (fills + wrong-note marks) so they cannot bleed into the new
+    // snippet's notes via repeated `note-{startTime}` keys.
+    notePerformanceRef.current.clear();
+    setNotePerformance(new Map());
     audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
     // Feature #18: Pre-check comeback boost before the last snippet starts
     teamBonuses.preCheckComeback(nextIdx);
@@ -748,7 +763,67 @@ export function useMedleyGame({
     setIsPlaying(true);
     setCurrentTimeMs(0);
     audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires
-  }, [multiPitch, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef]);
+  }, [multiPitch, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef, elimination.resetFinalFaceOff]);
+
+  // ── Next round (user item 6.2) ──
+  // The "Next Round" button on the round-results screen previously called
+  // onEndGame(), throwing the user back to the overall start screen. Instead,
+  // reset the per-round state and jump DIRECTLY into the next round — only
+  // the very first game start shows the intro screen.
+  const handleNextRound = useCallback(() => {
+    if (medleySongs.length === 0) return;
+
+    // Rewind to the first snippet
+    setCurrentSnippetIdx(0);
+    setCurrentTimeMs(0);
+
+    // Re-arm the audio pipeline for snippet 0 (prepare + play effects)
+    audio.cancelFallbackTimer();
+    audio.effectiveSnippetRef.current = null;
+    audio.lastPlayPhaseRef.current = '';
+
+    // Reset the snippet-advance guard (transition idempotency)
+    lastTransitionAdvanceRef.current = -1;
+
+    // Clear per-round visuals: note fills / wrong-note marks / popup state
+    notePerformanceRef.current = new Map();
+    setNotePerformance(new Map());
+    scoringEventsRef.current = [];
+    setLastScoringEvents([]);
+
+    // Reset per-player tick scoring states for the fresh round. Critical for
+    // single-snippet medleys (e.g. team 1v1) where the snippet index does not
+    // change and the [currentSnippetIdx] reset effect would never re-run.
+    medleyTickScoringStatesRef.current.clear();
+    for (const p of playersRef.current) {
+      medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
+    }
+    snippetScoringMetaRef.current = null;
+    lastSnippetIdxForMetaRef.current = -1; // force re-computation for snippet 0
+
+    // Reset per-round features (highlights, mystery) + elimination state
+    features.resetRound();
+    if (isEliminationMode) elimination.resetRound();
+
+    // Reset team-bonus bookkeeping for the fresh round
+    teamBonuses.teamBonusResultRef.current = {
+      synergyPoints: {},
+      comebackTeamId: null,
+      comebackMultiplier: 1,
+      mvpPlayerId: null,
+      teamBonusTotal: {},
+    };
+    teamBonuses.comebackActiveTeamIdRef.current = null;
+    teamBonuses.syncTeamBonusResult();
+
+    forceRender();
+
+    // Go DIRECTLY into the next round — no intro screen, no re-setup.
+    // Scores stay cumulative across rounds (series standings).
+    setPhase('playing');
+    setIsPlaying(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks
+  }, [medleySongs.length, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef, features.resetRound, elimination.resetRound, isEliminationMode, teamBonuses.syncTeamBonusResult, teamBonuses.teamBonusResultRef, teamBonuses.comebackActiveTeamIdRef, forceRender]);
 
   // ── Round complete ──
   const handleRoundComplete = useCallback(() => {
@@ -930,6 +1005,7 @@ export function useMedleyGame({
     multiPitch,
     isTeam,
     handleStart,
+    handleNextRound,
     handleEndEarly,
     handleRoundComplete,
     handleShowFinalResults,

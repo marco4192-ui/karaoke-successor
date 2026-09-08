@@ -71,6 +71,8 @@ export function MirrorTournamentBracketLite({ gameState, onSendDesktopCommand }:
   const { t } = useTranslation();
   const data = gameState.tournamentBracketData ?? null;
   const [startingMatchId, setStartingMatchId] = useState<string | null>(null);
+  // Item 11: two-step confirm for "Back to Main Menu" from the champion view
+  const [confirmExit, setConfirmExit] = useState(false);
 
   // Safety net: if the desktop never confirms the start (offline / error),
   // re-enable the buttons after a while instead of spinning forever.
@@ -79,6 +81,13 @@ export function MirrorTournamentBracketLite({ gameState, onSendDesktopCommand }:
     const id = setTimeout(() => setStartingMatchId(null), 8000);
     return () => clearTimeout(id);
   }, [startingMatchId]);
+
+  // Safety net: reset the exit confirm state after a while
+  useEffect(() => {
+    if (!confirmExit) return;
+    const id = setTimeout(() => setConfirmExit(false), 5000);
+    return () => clearTimeout(id);
+  }, [confirmExit]);
 
   // Derived during render: once the started duel actually left the open list
   // (desktop confirmed), it is no longer "starting" here.
@@ -153,6 +162,44 @@ export function MirrorTournamentBracketLite({ gameState, onSendDesktopCommand }:
           <span className="text-3xl" aria-hidden="true">👑</span>
           <p className="text-lg font-bold text-amber-300 text-center">{data?.championName}</p>
           <p className="text-xs text-white/50 text-center">{t('tournament.mirrorChampionHint')}</p>
+
+          {/* Item 11: exit actions — mirror the desktop results-screen buttons.
+              Main Menu needs a second tap (confirm); New Tournament sends the
+              party_new_tournament command which the desktop handles while the
+              final results are on screen. */}
+          <div className="flex gap-2.5 w-full mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                haptic();
+                if (confirmExit) {
+                  setConfirmExit(false);
+                  // Same full-reset → home path as the desktop button
+                  onSendDesktopCommand('party_leave_confirm');
+                } else {
+                  setConfirmExit(true);
+                }
+              }}
+              className={
+                'flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-[0.97] border ' +
+                (confirmExit
+                  ? 'bg-red-500/20 border-red-500/40 text-red-300 active:bg-red-500/30'
+                  : 'bg-white/10 border-white/20 text-white/70 active:bg-white/20')
+              }
+            >
+              {confirmExit ? t('dialogs.endParty') : <>🏠 {t('tournament.backToMainMenu')}</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                haptic();
+                onSendDesktopCommand('party_new_tournament');
+              }}
+              className="flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-[0.97] bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/25"
+            >
+              🏆 {t('tournament.newTournament')}
+            </button>
+          </div>
         </div>
       )}
 

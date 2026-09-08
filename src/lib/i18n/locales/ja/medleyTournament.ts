@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'タイブレークマッチ',
   backToBracket: '← ブラケットに戻る',
   newTournament: '新しいトーナメント',
+  backToMainMenu: 'メインメニューに戻る',
   songSelectionMode: '曲の選択',
   songSelection: '曲選び',
   songRandom: '🎲 ランダム',

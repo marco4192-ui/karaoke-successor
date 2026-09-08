@@ -1,6 +1,6 @@
 import type { StartHandlerContext } from './types';
 import type { MedleySettings as MedleySettingsType, MedleyPlayer as MedleyPlayerType, SnippetMatchup } from '@/components/game/medley/medley-types';
-import { generateTeamMatchups } from '@/components/game/medley/medley-types';
+import { generateTeamMatchups, getMedleyPlayerColor } from '@/components/game/medley/medley-types';
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
@@ -99,5 +99,8 @@ export async function startMedley(ctx: StartHandlerContext): Promise<void> {
 }
 
 function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((_p, _i) => ({ ..._p, team: null as unknown as number, inputType: (_p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0, isEliminated: false }));
+  // Re-assign the distinct Medley base colors by player order (red, light
+  // blue, green, orange, yellow — user item 6.1) so every player's notes and
+  // wrong-note marks are unambiguous on the shared note stream.
+  return players.map((_p, _i) => ({ ..._p, color: getMedleyPlayerColor(_i), team: null as unknown as number, inputType: (_p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0, isEliminated: false }));
 }

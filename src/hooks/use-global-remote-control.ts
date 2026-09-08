@@ -533,6 +533,12 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-start-match', { detail: { matchId } }));
           break;
         }
+        // Item 11: companion starts a NEW tournament from the champion view
+        // (only honored while the desktop shows the tournament final results)
+        if (cmd.type === 'party_new_tournament') {
+          window.dispatchEvent(new CustomEvent('remote-party-new-tournament', { detail: {} }));
+          break;
+        }
         // Check for party_vote:<songId> pattern
         // Companion voted for a song in the party voting screen
         if (cmd.type.startsWith('party_vote:')) {

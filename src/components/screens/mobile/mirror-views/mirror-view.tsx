@@ -12,6 +12,7 @@ import type {
   JukeboxWishlistItem,
   MobileView,
   GameMode,
+  PitchData,
 } from '../mobile-types';
 
 // ===================== Lite-Ansichten =====================
@@ -30,6 +31,7 @@ import { MirrorAchievementsLite } from './mirror-achievements-lite';
 import { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 import { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
 import { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
+import { MirrorBrGameLite } from './mirror-br-game-lite';
 import { MirrorTournamentIntroLite } from './mirror-tournament-intro-lite';
 import { MirrorTournamentBracketLite } from './mirror-tournament-bracket-lite';
 import { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';
@@ -47,6 +49,10 @@ export interface MirrorViewProps {
   profileName: string;
   /** The companion's own profile id — used to match CPTM turn signals. */
   profileId?: string | null;
+  /** Live pitch detected on THIS phone — used by the BR in-game mirror (Item 8.1). */
+  currentPitch?: PitchData | null;
+  /** Whether this phone's microphone is currently capturing (BR in-game mirror). */
+  isMicListening?: boolean;
 
   // Warteschlange & Daten
   queue: QueueItem[];
@@ -153,6 +159,8 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   clientId,
   profileName,
   profileId,
+  currentPitch,
+  isMicListening,
   queue,
   slotsRemaining,
   onRemoveFromQueue,
@@ -487,6 +495,28 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             profileName={profileName}
             onNavigate={onNavigate}
             onSendDesktopCommand={onSendDesktopCommand}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Battle Royale aktives Spiel (Live-Scores + eigenes Mitsingen) ----------
+    case 'br-game':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="br-game">
+          <MirrorBrGameLite
+            gameState={gameState}
+            clientId={clientId}
+            profileId={profileId ?? null}
+            profileName={profileName}
+            currentPitch={currentPitch ?? null}
+            isMicListening={isMicListening ?? false}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            onAcquireRemote={onAcquireRemote}
           />
           </SafeView>
         </div>

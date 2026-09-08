@@ -618,6 +618,7 @@ export const partyTranslations = {
     participants: '{n} Participants',
     startPlayer: 'Starts first',
     startsFirst: 'Starts first',
+    duelSing: 'Duel',
     startPlayerHint: '{name} sings first — get ready!',
     companion: 'Companion',
     startButton: 'Start',

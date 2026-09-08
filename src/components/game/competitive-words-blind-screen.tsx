@@ -27,7 +27,7 @@ import {
   createCompetitiveGame,
   startCompetitiveRound,
   endCompetitiveGame,
-  getFirstRoundStartPlayerId,
+  getFirstRoundStartPlayerIds,
   getRankedPlayers,
   getCurrentRound,
   pickSmartSong,
@@ -524,9 +524,10 @@ export function CompetitiveGameView({
   if (game.status === 'setup') {
     const config = PARTY_GAME_CONFIGS[modeType];
     const setupPlayers = party.unifiedSetupResult?.players ?? [];
-    // Who sings first: the first player of the first duel (competitive),
-    // the single singer (solo) or nobody (coop — all sing together).
-    const firstSingerId = getFirstRoundStartPlayerId(game);
+    // Who sings first: BOTH duel players (competitive — they sing
+    // simultaneously), the single singer (solo) or nobody (coop — all sing
+    // together).
+    const firstSingerIds = getFirstRoundStartPlayerIds(game);
     const startingPlayers: PartyStartingPlayer[] = game.players.map(p => {
       const sp = setupPlayers.find(s => s.id === p.id);
       return {
@@ -536,7 +537,7 @@ export function CompetitiveGameView({
         color: p.color || PLAYER_COLORS[0],
         micName: sp?.micName,
         playerType: sp?.playerType,
-        isStartPlayer: p.id === firstSingerId,
+        isStartPlayer: firstSingerIds.includes(p.id),
       };
     });
     return (
@@ -551,7 +552,12 @@ export function CompetitiveGameView({
           : game.settings.playMode === 'coop'
             ? t('competitiveWords.modeCoop')
             : t('competitiveWords.modeCompetitive')}
-        startPlayerLabel={firstSingerId ? t('partyStarting.startsFirst') : undefined}
+        // Both duel players sing simultaneously — label reflects that
+        startPlayerLabel={firstSingerIds.length === 1
+          ? t('partyStarting.startsFirst')
+          : firstSingerIds.length > 1
+            ? (t('partyStarting.duelSing') === 'partyStarting.duelSing' ? '🎤 Duell' : t('partyStarting.duelSing'))
+            : undefined}
         onStart={startFirstRound}
         testId="competitive-starting-screen"
       />

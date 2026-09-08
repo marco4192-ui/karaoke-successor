@@ -18,7 +18,7 @@
  */
 
 import { getCachedHarmonize, setCachedHarmonize, HarmonizeCacheEntry } from '@/lib/ai/harmonize-cache';
-import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { normalizeLanguageMixed, canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
 import { GENRES, LANGUAGES } from '@/lib/constants';
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -101,7 +101,12 @@ function isCanonicalGenre(genre: string | null): boolean {
 
 function isCanonicalLanguage(language: string | null): boolean {
   if (!language) return false;
-  return LANGUAGES.includes(language as (typeof LANGUAGES)[number]);
+  if (LANGUAGES.includes(language as (typeof LANGUAGES)[number])) return true;
+  // Mixed-language values ("German/English") are canonical when every part is
+  const parts = language.split('/');
+  return parts.length > 1 && parts.every(p =>
+    LANGUAGES.includes(p.trim() as (typeof LANGUAGES)[number]),
+  );
 }
 
 /**
@@ -263,8 +268,10 @@ function cacheEntryToRow(
     currentGenre: song.genre,
     currentLanguage: song.language,
     currentYear: song.year,
-    suggestedGenre: entry.suggestedGenre,
-    suggestedLanguage: entry.suggestedLanguage,
+    // Re-canonicalize cached values (user item 12): entries cached before
+    // the canonical vocabulary may carry sub-genres or language additions.
+    suggestedGenre: entry.suggestedGenre ? canonicalizeGenre(entry.suggestedGenre) : entry.suggestedGenre,
+    suggestedLanguage: entry.suggestedLanguage ? normalizeLanguageMixed(entry.suggestedLanguage) : entry.suggestedLanguage,
     suggestedYear: entry.suggestedYear,
     genreConfidence: entry.genreConfidence,
     languageConfidence: entry.languageConfidence,
@@ -350,14 +357,16 @@ export async function harmonizeSongs(
       const fact = facts.get(song.id);
       const llm = llmMap.get(song.id);
 
-      // Genre: factual fills EMPTY fields; LLM normalizes/fills the rest
+      // Genre: factual fills EMPTY fields; LLM normalizes/fills the rest.
+      // Both go through canonicalizeGenre (user item 12) so Deezer's "Dance
+      // Pop" or an LLM slip becomes the canonical "Pop".
       let suggestedGenre: string | null = null;
       let genreConfidence = 0;
       let genreReason = '';
       let source: HarmonizeSource = 'ai';
 
       if (!song.genre && fact?.genre) {
-        suggestedGenre = normalizeGenreName(fact.genre);
+        suggestedGenre = canonicalizeGenre(fact.genre);
         genreConfidence = fact.genreConfidence ?? 92;
         genreReason = fact.source === 'deezer' ? 'Deezer' : 'MusicBrainz';
         if (fact.matchedArtist || fact.matchedTitle) {
@@ -367,18 +376,20 @@ export async function harmonizeSongs(
         }
         source = fact.source;
       } else if (llm?.suggestedGenre) {
-        suggestedGenre = normalizeGenreName(llm.suggestedGenre);
+        suggestedGenre = canonicalizeGenre(llm.suggestedGenre);
         genreConfidence = llm.genreConfidence ?? 0;
         genreReason = llm.genreReason ?? '';
         source = 'ai';
       }
 
-      // Language: LLM domain (detection + normalization)
+      // Language: LLM domain (detection + normalization). Mixed-language
+      // values keep BOTH languages ("German/English"); parenthetical
+      // additions are always stripped (user item 12).
       let suggestedLanguage: string | null = null;
       let languageConfidence = 0;
       let languageReason = '';
       if (llm?.suggestedLanguage) {
-        suggestedLanguage = normalizeLanguage(llm.suggestedLanguage);
+        suggestedLanguage = normalizeLanguageMixed(llm.suggestedLanguage);
         languageConfidence = llm.languageConfidence ?? 0;
         languageReason = llm.languageReason ?? '';
       }

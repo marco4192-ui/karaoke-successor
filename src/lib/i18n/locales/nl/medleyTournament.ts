@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Tiebreak-wedstrijden',
   backToBracket: '← Terug naar bracket',
   newTournament: 'Nieuw toernooi',
+  backToMainMenu: 'Terug naar hoofdmenu',
   songSelectionMode: 'Nummerselectie',
   songSelection: 'Nummerkeuze',
   songRandom: '🎲 Willekeurig',

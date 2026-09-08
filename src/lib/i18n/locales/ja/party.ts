@@ -584,6 +584,7 @@ partyStarting: {
   participants: '参加者 {n}人',
   startPlayer: '先攻シンガー',
   startsFirst: '最初に歌う',
+  duelSing: 'デュエル',
   startPlayerHint: 'このプレイヤーが最初のパートを歌います',
   companion: '📱 コンパニオンアプリ',
   startButton: '🎤 準備完了！',

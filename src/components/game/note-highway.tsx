@@ -26,10 +26,12 @@ export interface NoteHighwayProps {
   visibleNotes: NoteWithLine[];
   currentTime: number;
   pitchStats: PitchStats;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
   singLinePosition?: number;
   noteWindow?: number;
   playerColor?: string;
+  /** Optional per-singer note tint (Medley): pre-colors the unsung note track in the singer's color */
+  noteTint?: string;
   showPlayerLabel?: boolean;
   playerName?: string;
   playerNumber?: number;
@@ -90,6 +92,7 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleRange,
   noteWidthExtra = 20,
   playerColor = '#22d3d3ee',
+  noteTint,
   notePerformance,
 }: {
   note: NoteWithLine;
@@ -101,7 +104,9 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleRange: number;
   noteWidthExtra?: number;
   playerColor?: string;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
+  /** Optional per-singer note tint (Medley): unsung track in the singer's color */
+  noteTint?: string;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -154,6 +159,7 @@ const NoteBlock = React.memo(function NoteBlock({
     note.startTime,
     note.duration,
     typeof window !== 'undefined' ? window.innerHeight : 800,
+    noteTint,
   );
 
   const glowColor = withAlpha(playerColor, 0.8);
@@ -210,6 +216,7 @@ export const NoteHighway = React.memo(function NoteHighway({
   singLinePosition = 25,
   noteWindow = 4000,
   playerColor,
+  noteTint,
   showPlayerLabel = false,
   playerName,
   playerNumber = 1,
@@ -241,6 +248,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           visibleTop={visibleTop}
           visibleRange={visibleRange}
           playerColor={effectiveColor}
+          noteTint={noteTint}
           notePerformance={notePerformance}
         />
       ))}

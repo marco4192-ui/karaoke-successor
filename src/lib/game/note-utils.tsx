@@ -8,6 +8,15 @@ export const NOTE_HEIGHT = 52;
 export const PITCH_RANGE = 24;
 export const BASE_PITCH = 48; // C3 - lowest pitch to display
 
+/** Convert a hex color (#rrggbb) to an rgba string with the given alpha. Non-hex colors pass through. */
+function hexWithAlpha(hex: string, alpha: number): string {
+  if (!hex.startsWith('#') || hex.length < 7) return hex;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 /**
  * Get note display style classes based on display mode.
  * Currently only 'tick-fill-singstar' is supported — all other
@@ -19,7 +28,7 @@ export function getNoteDisplayStyleClasses(
   _accuracy: number = 1,
   isGolden: boolean = false,
   isBonus: boolean = false,
-  performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>,
+  performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>,
   targetPitch?: number,
   pitchStats?: PitchStats,
   visibleTop?: number,
@@ -32,6 +41,8 @@ export function getNoteDisplayStyleClasses(
   noteDuration?: number,
   /** Container height in px (for exact ghost-bar pitch positioning) */
   containerHeight?: number,
+  /** Optional per-singer tint (Medley): pre-colors the unsung note track in the singer's color */
+  playerTint?: string,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -69,8 +80,11 @@ export function getNoteDisplayStyleClasses(
   const { hitColors, hitGlows, glowTint } = resolveNoteColors(profile, isGolden, isBonus);
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
-  const unreachedBg   = 'rgba(255, 255, 255, 0.08)';
-  const unreachedBdr  = 'rgba(255, 255, 255, 0.14)';
+  // Per-singer tint (Medley): the unsung track shows the snippet singer's
+  // color so all players can sing against one clearly-owned note stream.
+  const tint        = playerTint && playerTint.startsWith('#') ? playerTint : null;
+  const unreachedBg = tint ? hexWithAlpha(tint, 0.22) : 'rgba(255, 255, 255, 0.08)';
+  const unreachedBdr = tint ? hexWithAlpha(tint, 0.45) : 'rgba(255, 255, 255, 0.14)';
 
   // ── Time-based segment → sample mapping ────────────────────────
   const segDur = (noteDuration ?? 0) / segCount;
@@ -128,6 +142,9 @@ export function getNoteDisplayStyleClasses(
   // ── Ghost bars for missed segments within the reached area ─────
   // Positioned at the EXACT sung pitch using the same pitch-to-Y
   // formula as NoteBlock, so the singer sees precisely where they are.
+  // Medley (user item 6.1): samples may carry a playerColor — every
+  // player's missed ticks then appear in THAT player's color so
+  // spectators see whose wrong notes are whose.
   const ghostBars: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
   if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
     const pr = pitchStats.pitchRange || 1;
@@ -136,23 +153,43 @@ export function getNoteDisplayStyleClasses(
     // Pre-compute target pitch Y position (percent of container)
     const targetY = visibleTop + visibleRange - ((targetPitch - pitchStats.minPitch) / pr) * visibleRange;
 
-    for (let si = 0; si < Math.min(reachedCount, segData.length); si++) {
-      const seg = segData[si];
-      if (!seg.hit && seg.sungPitch !== null) {
-        // Compute the exact Y position of the sung pitch
-        const sungY = visibleTop + visibleRange - ((seg.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
-        // Convert percent difference to pixel offset relative to the note center
-        const yOffset = ((sungY - targetY) / 100) * cH;
+    const hasPlayerColors = noteDuration !== undefined && noteDuration > 0
+      && samples.some(s => s.playerColor);
 
-        // Colour by distance: close = bright yellow, far = vivid red
-        let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
-        if (rawDiff > 6) rawDiff = 12 - rawDiff;
-        const color = rawDiff > 2
-          ? 'rgba(255, 30, 30, 0.85)'
-          : rawDiff > 1
-            ? 'rgba(255, 120, 0, 0.80)'
-            : 'rgba(255, 230, 0, 0.75)';
-        ghostBars.push({ segmentIndex: si, yOffset, color });
+    if (hasPlayerColors) {
+      // Per-player marks: one ghost bar per (segment, player), colored in
+      // the responsible player's base color, at their sung pitch.
+      const perSegPlayer = new Map<string, { segIdx: number; sungPitch: number; color: string }>();
+      for (const s of samples) {
+        if (s.hit || s.sungPitch == null || !s.playerColor) continue;
+        const segIdx = Math.floor((s.time - nStart) / segDur);
+        if (segIdx < 0 || segIdx >= reachedCount || segIdx >= segCount) continue;
+        perSegPlayer.set(`${segIdx}:${s.playerColor}`, { segIdx, sungPitch: s.sungPitch, color: s.playerColor });
+      }
+      for (const g of perSegPlayer.values()) {
+        const sungY = visibleTop + visibleRange - ((g.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
+        const yOffset = ((sungY - targetY) / 100) * cH;
+        ghostBars.push({ segmentIndex: g.segIdx, yOffset, color: g.color });
+      }
+    } else {
+      for (let si = 0; si < Math.min(reachedCount, segData.length); si++) {
+        const seg = segData[si];
+        if (!seg.hit && seg.sungPitch !== null) {
+          // Compute the exact Y position of the sung pitch
+          const sungY = visibleTop + visibleRange - ((seg.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
+          // Convert percent difference to pixel offset relative to the note center
+          const yOffset = ((sungY - targetY) / 100) * cH;
+
+          // Colour by distance: close = bright yellow, far = vivid red
+          let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
+          if (rawDiff > 6) rawDiff = 12 - rawDiff;
+          const color = rawDiff > 2
+            ? 'rgba(255, 30, 30, 0.85)'
+            : rawDiff > 1
+              ? 'rgba(255, 120, 0, 0.80)'
+              : 'rgba(255, 230, 0, 0.75)';
+          ghostBars.push({ segmentIndex: si, yOffset, color });
+        }
       }
     }
   }
@@ -163,9 +200,13 @@ export function getNoteDisplayStyleClasses(
   return {
     additionalClasses: 'overflow-visible',
     inlineStyle: {
-      backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
-      backgroundColor: 'rgba(100, 130, 160, 0.08)',
-      border: '1.5px solid rgba(255, 255, 255, 0.16)',
+      backgroundImage: tint
+        ? `linear-gradient(135deg, ${hexWithAlpha(tint, 0.10)} 0%, ${hexWithAlpha(tint, 0.05)} 100%)`
+        : 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
+      backgroundColor: tint ? hexWithAlpha(tint, 0.10) : 'rgba(100, 130, 160, 0.08)',
+      border: tint
+        ? `1.5px solid ${hexWithAlpha(tint, 0.40)}`
+        : '1.5px solid rgba(255, 255, 255, 0.16)',
       boxShadow: hasHits
         ? `0 0 ${6 + hitRatio * 14}px ${glowColor}${hitRatio * 0.5}), 0 0 ${2 + hitRatio * 6}px ${glowColor}${hitRatio * 0.3}), inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.18)`
         : 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',

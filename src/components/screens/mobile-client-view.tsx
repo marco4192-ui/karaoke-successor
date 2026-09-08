@@ -212,13 +212,28 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     const isMyTurn =
       gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null ||
       gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null;
-    if (isMyTurn && !isListening && !autoSingDoneRef.current) {
+    // Item 8.1: Battle Royale — alle (Companion-)Spieler singen GLEICHZEITIG.
+    // Wenn das eigene Profil einer der aktiven BR-Spieler ist (nicht eliminiert),
+    // startet das Mikrofon automatisch und die Pitch-Daten gehen (wie bei CPTM/PTM)
+    // per batch_pitch/pitch an den Desktop, wo sie ins BR-Scoring einfließen.
+    const isBrActivePlayer =
+      !!gameState.brGameData &&
+      gameState.brGameData.status === 'playing' &&
+      (gameState.brGameData.players ?? []).some(p => p.id === profile.id && !p.eliminated);
+    // Eliminated BR players no longer need the mic — stop it so the phone
+    // doesn't keep capturing/sending pitch for a player that is out.
+    if (gameState.brGameData?.status === 'playing' && isListening) {
+      const brMe = (gameState.brGameData.players ?? []).find(p => p.id === profile.id);
+      if (brMe?.eliminated) stopMicrophone();
+    }
+    const shouldSing = isMyTurn || isBrActivePlayer;
+    if (shouldSing && !isListening && !autoSingDoneRef.current) {
       autoSingDoneRef.current = true;
-     
+
       setTimeout(() => startMicrophone(), 500);
     }
-    if (!isMyTurn) autoSingDoneRef.current = false;
-  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, isListening, isConnected, startMicrophone]);
+    if (!shouldSing) autoSingDoneRef.current = false;
+  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
 
   // ===================== DESKTOP MIRRORING =====================
   const handleSendDesktopCommand = useCallback((screen: string) => {
@@ -526,6 +541,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               clientId={clientId}
               profileName={profile?.name || ''}
               profileId={profile?.id || null}
+              currentPitch={currentPitch}
+              isMicListening={isListening}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}
@@ -578,6 +595,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               clientId={clientId}
               profileName={profile?.name || ''}
               profileId={profile?.id || null}
+              currentPitch={currentPitch}
+              isMicListening={isListening}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}

@@ -41,6 +41,8 @@ export interface UseMedleyFeaturesReturn {
   buildSnippetHighlight: (snippetIdx: number) => void;
   highlightsRef: React.MutableRefObject<MedleyHighlight[]>;
   snippetScoreSnapshotsRef: React.MutableRefObject<Record<string, { score: number; combo: number }>>;
+  /** Reset per-round state (highlights, mystery) — called when a new round starts */
+  resetRound: () => void;
 }
 
 // ===================== HOOK =====================
@@ -143,6 +145,15 @@ export function useMedleyFeatures({
     setHighlights([...highlightsRef.current]);
   }, [isEliminationMode, isTeam, matchups, medleySongs, playersRef]);
 
+  // ── Reset per-round state (Next Round flow — user item 6.2) ──
+  const resetRound = useCallback(() => {
+    highlightsRef.current = [];
+    setHighlights([]);
+    snippetScoreSnapshotsRef.current = {};
+    setMysteryReveal(false);
+    setMysteryRevealSong(null);
+  }, []);
+
   return {
     currentDynamicDifficulty,
     activeModifier,
@@ -155,5 +166,6 @@ export function useMedleyFeatures({
     buildSnippetHighlight,
     highlightsRef,
     snippetScoreSnapshotsRef,
+    resetRound,
   };
 }

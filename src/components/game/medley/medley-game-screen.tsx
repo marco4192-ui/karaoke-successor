@@ -7,6 +7,7 @@
  * components.  No game logic lives here — only JSX routing.
  */
 
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMedleyGame, type MedleyGameScreenProps } from './medley-game-hook';
@@ -50,12 +51,13 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     playersDisplay, multiPitch,
     snippetProgress, totalProgress, currentMatchup, currentLyricLine,
     isTeam,
-    lastScoringEvents, currentDynamicDifficulty,
+    currentDynamicDifficulty,
     isPlaying,
     restoredSong,
     showBackgroundVideo,
     useAnimatedBackground,
-    handleStart, handleEndEarly, handleRoundComplete, handleShowFinalResults,
+    notePerformance,
+    handleStart, handleNextRound, handleEndEarly, handleRoundComplete, handleShowFinalResults,
   } = state;
 
   const handleTogglePause = () => {
@@ -65,6 +67,19 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
       setPauseDialogAction(null);
     }
   };
+
+  // Total medley runtime (user item 6.4: "Gesamtlaufzeit" — one line)
+  const medleyTotalMs = useMemo(
+    () => medleySongs.reduce((s, m) => s + m.duration, 0),
+    [medleySongs],
+  );
+  const medleyElapsedMs = useMemo(() => {
+    let t = 0;
+    for (let i = 0; i < currentSnippetIdx && i < medleySongs.length; i++) {
+      t += medleySongs[i].duration;
+    }
+    return t + state.currentTimeMs;
+  }, [medleySongs, currentSnippetIdx, state.currentTimeMs]);
 
   // ===================== INTRO PHASE =====================
   if (phase === 'intro') {
@@ -213,12 +228,13 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             playersDisplay={playersDisplay}
             snippetProgress={snippetProgress}
             totalProgress={totalProgress}
+            totalDurationMs={medleyTotalMs}
+            totalElapsedMs={medleyElapsedMs}
             currentMatchup={currentMatchup}
             isTeam={isTeam}
             multiPitch={multiPitch}
             handleEndEarly={handleEndEarly}
-            lastScoringEvents={lastScoringEvents}
-            notePerformance={state.notePerformance}
+            notePerformance={notePerformance}
             currentDynamicDifficulty={currentDynamicDifficulty}
             // Feature #10
             isEliminationMode={state.isEliminationMode}
@@ -329,8 +345,11 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           onTogglePause={handleTogglePause}
           onEndSong={handleEndEarly}
           difficulty={currentDynamicDifficulty ?? settings.difficulty ?? 'medium'}
-          songTitle={currentSnippet?.song?.title ?? null}
-          songArtist={currentSnippet?.song?.artist ?? null}
+          // User item 6.3: the SongTitleBanner is the ONLY title display in
+          // the medley in-game screen (the playing UI no longer renders its
+          // own centered title). Hidden while mystery mode is unrevealed.
+          songTitle={settings.mysteryMode && !state.mysteryReveal ? null : currentSnippet?.song?.title ?? null}
+          songArtist={settings.mysteryMode && !state.mysteryReveal ? null : currentSnippet?.song?.artist ?? null}
         />
       )}
 
@@ -342,8 +361,11 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             settings={settings}
             seriesHistory={seriesHistory}
             roundNumber={seriesHistory.length + 1}
+            // User item 6.2: "Next Round" continues the series DIRECTLY with
+            // the next round (round result is recorded by the button handler
+            // via onRecordAndEnd before this callback fires).
             onNextRound={() => {
-              onEndGame();
+              handleNextRound();
             }}
             onEndSeries={handleShowFinalResults}
             onRecordAndEnd={handleRoundComplete}

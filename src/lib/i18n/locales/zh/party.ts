@@ -584,6 +584,7 @@ partyStarting: {
   participants: '{n} 名参与者',
   startPlayer: '首先演唱',
   startsFirst: '首先演唱',
+  duelSing: '对决',
   startPlayerHint: '该玩家演唱第一个段落',
   companion: '📱 伴侣应用',
   startButton: '🎤 开始演唱！',

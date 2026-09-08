@@ -447,6 +447,7 @@ partyStarting: {
   participants: '{n} Teilnehmer',
   startPlayer: 'Startet zuerst',
   startsFirst: 'Startet zuerst',
+  duelSing: 'Duell',
   startPlayerHint: '{name} singt zuerst — macht euch bereit!',
   companion: 'Companion',
   startButton: 'Starten',

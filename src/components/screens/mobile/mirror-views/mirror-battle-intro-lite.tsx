@@ -131,7 +131,7 @@ export function MirrorBattleIntroLite({ gameState, onSendDesktopCommand }: Mirro
               <p className="text-base font-semibold text-white truncate max-w-full">🎵 {intro.songTitle}</p>
             </>
           ) : (
-            <p className="text-sm font-semibold text-white/70">🎲 {t('tournament.songRandom') || 'Random'}</p>
+            <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || 'Random'}</p>
           )}
         </div>
       )}

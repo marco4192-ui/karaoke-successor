@@ -274,6 +274,7 @@ export const medleyTournamentTranslations = {
     tiebreakMatches: 'Tiebreak Matches',
     backToBracket: '← Back to Bracket',
     newTournament: 'New Tournament',
+    backToMainMenu: 'Back to Main Menu',
     // #8 Song selection
     songSelectionMode: 'Song Selection',
     songSelection: 'Song Selection',

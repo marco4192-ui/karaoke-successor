@@ -46,19 +46,26 @@ export function MedleyFinalResults({
 
   const [cumulative, setCumulative] = useState<Record<string, CumulativePlayerScore>>({});
   useEffect(() => {
+    // Series totals: the players carry CUMULATIVE scores across rounds and
+    // every played round is recorded in seriesHistory before this screen
+    // mounts — so the recorded round scores must NOT be summed on top of the
+    // live totals (that double-counted every round). Round history is only
+    // used for the rounds-played count and the best-combo fallback.
     const agg: Record<string, CumulativePlayerScore> = {};
     for (const p of players) {
-      agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, team: p.team, totalScore: p.score, totalHits: p.notesHit, totalMisses: p.notesMissed, bestCombo: p.maxCombo, roundsPlayed: 1 };
+      agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, team: p.team, totalScore: p.score, totalHits: p.notesHit, totalMisses: p.notesMissed, bestCombo: p.maxCombo, roundsPlayed: 0 };
     }
     for (const round of seriesHistory) {
       for (const [id, scores] of Object.entries(round.playerScores)) {
-        if (!agg[id]) continue;
-        agg[id].totalScore += scores.score;
-        agg[id].totalHits += scores.notesHit;
-        agg[id].totalMisses += scores.notesMissed;
-        if (scores.maxCombo > agg[id].bestCombo) agg[id].bestCombo = scores.maxCombo;
-        agg[id].roundsPlayed++;
+        const entry = agg[id];
+        if (!entry) continue;
+        entry.roundsPlayed++;
+        if (scores.maxCombo > entry.bestCombo) entry.bestCombo = scores.maxCombo;
       }
+    }
+    // Fallback when no round was recorded (e.g. direct entry): live values
+    for (const entry of Object.values(agg)) {
+      if (entry.roundsPlayed === 0) entry.roundsPlayed = 1;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCumulative(agg);
@@ -78,19 +85,13 @@ export function MedleyFinalResults({
   // Record this finished medley in the party session history (once).
   // Computed synchronously (not from the async `cumulative` state) so the
   // mount-effect of the recorder hook sees the full data immediately.
+  // Uses the live cumulative player scores (series totals — NOT summed with
+  // the recorded round snapshots, which would double-count).
   const sessionPlayers = useMemo(() => {
-    const agg: Record<string, { name: string; avatar?: string; color: string; score: number }> = {};
-    for (const p of players) {
-      agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, score: p.score };
-    }
-    for (const round of seriesHistory) {
-      for (const [id, scores] of Object.entries(round.playerScores)) {
-        const entry = agg[id];
-        if (entry) entry.score += scores.score;
-      }
-    }
-    return Object.values(agg).sort((a, b) => b.score - a.score);
-  }, [players, seriesHistory]);
+    return [...players]
+      .sort((a, b) => b.score - a.score)
+      .map(p => ({ name: p.name, avatar: p.avatar, color: p.color, score: p.score }));
+  }, [players]);
 
   useRecordPartySession({
     mode: 'medley',
@@ -132,7 +133,7 @@ export function MedleyFinalResults({
                 : t('medley.medleyChampion')
           }
         </h2>
-        <p className="text-white/60">{t('medley.roundOf').replace('{n}', String(seriesHistory.length + 1))}</p>
+        <p className="text-white/60">{t('medley.roundOf').replace('{n}', String(Math.max(1, seriesHistory.length)))}</p>
       </div>
 
       {/* Feature #10: Final elimination order (reversed — last eliminated first) */}

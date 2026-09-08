@@ -642,7 +642,15 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       if (!canStart || !modeInfo) return;
       haptic();
       sendConfig(songSelection);
-    }, [canStart, modeInfo, songSelection, sendConfig]);
+      // Explicit start tap: after the desktop applied the config, trigger the
+      // desktop's Ready-to-Play button via the existing `party_start` command.
+      // The config needs ~500ms to apply (desktop applies it, then marks the
+      // song selection after a 200ms timeout) — retry covers slower devices.
+      if (songSelection === 'random' || songSelection === 'medley') {
+        setTimeout(() => onSendDesktopCommand('party_start'), 700);
+        setTimeout(() => onSendDesktopCommand('party_start'), 1500);
+      }
+    }, [canStart, modeInfo, songSelection, sendConfig, onSendDesktopCommand]);
 
     // -------- Alle Hooks MUSS vor dem fruehen Return stehen (Rules of Hooks) --------
     const renderLeaveDialog = useCallback(() => {
@@ -692,7 +700,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             onClick={handleBack}
             className="w-full rounded-lg p-3 text-center text-sm font-medium bg-white/10 border border-white/20 text-white/70 active:scale-[0.98] transition-transform"
           >
-            {'\u2190'} {t('mobile.mirrorBackToParty') || 'Zurueck zu Party-Modi'}
+            {t('mobile.mirrorBackToParty') || 'Zurueck zu Party-Modi'}
           </button>
         </div>
       );
@@ -716,7 +724,8 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           onClick={handleBack}
           className="flex items-center gap-2 rounded-xl px-4 py-3 text-left bg-white/5 border border-white/10 active:scale-[0.98] active:bg-white/10 transition-all"
         >
-          <span className="text-sm">{'\u2190'}</span>
+          {/* Arrow comes from the i18n string (all locales ship '\u2190 ...') —
+              do NOT add a hardcoded one, it would render double. */}
           <span className="text-sm font-medium text-white/70">{t('mobile.mirrorBackToParty') || 'Zurueck zu Party-Modi'}</span>
         </button>
 

@@ -10,9 +10,11 @@ interface SongTitleBannerProps {
 }
 
 /**
- * Top-center song banner for the unified in-game HUD: shows
- * "Artist — Title" between the Pause+End-Song panel (top-left) and the
- * score / difficulty / camera / fullscreen panel (top-right).
+ * Song banner for the unified in-game HUD: shows "Artist — Title".
+ *
+ * Placement (user request): rendered as a flow element 20px to the RIGHT of
+ * the Pause+End-Song panel (top-left) — NOT centered. Consumers wrap it in
+ * a flex cluster next to the pause panel with a `gap-5` (= 20px) spacer.
  *
  * Purely informational — no interaction, pointer-events-none so it never
  * blocks the note highway underneath.
@@ -23,7 +25,7 @@ export function SongTitleBanner({ title, artist }: SongTitleBannerProps) {
 
   return (
     <div
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none max-w-[40vw]"
+      className="pointer-events-none min-w-0 max-w-[42vw]"
       role="contentinfo"
       aria-label={`${t('partyStarting.song')}: ${title}${artist ? `, ${artist}` : ''}`}
       data-testid="hud-song-title-banner"

@@ -426,8 +426,12 @@ export function usePartySetup({
     }
 
     // exclusive / flexible: player type comes from the per-player device choice
-    // Track mic index for auto-assignment (flexible with ≥2 mics: no fixed assignment)
-    let autoMicIndex = 0;
+    // Item 8.2: auto-assignment must never hand out a mic that is already
+    // explicitly assigned to another player — otherwise two players share one
+    // device while a configured mic stays unused (looks like "only 3 mics
+    // accepted" with 4 mics connected). Track used mic ids and pick the first
+    // FREE configured mic for auto-assigned players.
+    const usedMicIds = new Set(Object.keys(micAssignments));
 
     return selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
@@ -437,9 +441,12 @@ export function usePartySetup({
       const micEntry = Object.entries(micAssignments).find(([, pid]) => pid === id);
       const assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
 
-      // Auto-assign mic from saved configs for mic players without explicit assignment
-      const autoMic = choice === 'microphone' && !assignedMic ? savedMics[autoMicIndex] : null;
-      if (choice === 'microphone' && !assignedMic) autoMicIndex++;
+      // Auto-assign mic from saved configs for mic players without explicit
+      // assignment — first mic that is not taken by an explicit assignment.
+      const autoMic = choice === 'microphone' && !assignedMic
+        ? savedMics.find(m => !usedMicIds.has(m.id)) ?? null
+        : null;
+      if (autoMic) usedMicIds.add(autoMic.id);
 
       // Resolve stereo channel from saved mic config
       const micSource = assignedMic || autoMic;

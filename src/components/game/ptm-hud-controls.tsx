@@ -22,9 +22,9 @@ interface PtmHudControlsProps {
   onEndSong?: () => void;
   /** Ref to active webcam streams (for cleanup on unmount). */
   activeWebcamStreamsRef?: React.RefObject<MediaStream[]>;
-  /** Song title for the top-center banner */
+  /** Song title for the banner 20px right of the pause panel */
   songTitle?: string | null;
-  /** Song artist for the top-center banner */
+  /** Song artist for the banner 20px right of the pause panel */
   songArtist?: string | null;
 }
 
@@ -103,13 +103,14 @@ export function PtmHudControls({
       <WebcamBackground config={webcamConfig} onConfigChange={updateWebcamConfig} />
 
       <div className="fixed inset-0 z-50 pointer-events-none">
-        {/* Top-center: Artist + Title (between Pause+Skip and the score) */}
-        <SongTitleBanner title={songTitle} artist={songArtist} />
-
-        {/* Top-left: Pause + End Song (unified layout across all party modes) */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
-          <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
-          {onEndSong && <EndSongButton onEndSong={onEndSong} />}
+        {/* Top-left cluster: Pause + End Song panel with the song title
+            20px to its right (gap-5 = 20px, user request item 7) */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-5">
+          <div className="flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
+            <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
+            {onEndSong && <EndSongButton onEndSong={onEndSong} />}
+          </div>
+          <SongTitleBanner title={songTitle} artist={songArtist} />
         </div>
 
         {/* Top-right: Difficulty (read-only) + Webcam + Fullscreen */}

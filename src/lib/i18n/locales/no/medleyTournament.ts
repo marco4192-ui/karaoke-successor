@@ -251,6 +251,7 @@ tournament: {
   tiebreakMatches: 'Uavgjortkamper',
   backToBracket: '← Tilbake til bracket',
   newTournament: 'Ny turnering',
+  backToMainMenu: 'Tilbake til hovedmenyen',
   songSelectionMode: 'Sangvalg',
   songSelection: 'Sangvalg',
   songRandom: '🎲 Tilfeldig',
