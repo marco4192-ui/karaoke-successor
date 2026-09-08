@@ -34,6 +34,7 @@ interface RawGameState {
   pauseInitiator?: string | null;
   ptmPhase?: GameState['ptmPhase'];
   ptmIntroData?: GameState['ptmIntroData'];
+  tournamentBracketData?: GameState['tournamentBracketData'];
   viralSongIds?: string[];
   difficulty?: 'easy' | 'medium' | 'hard';
   recentParties?: GameState['recentParties'];
@@ -61,6 +62,7 @@ function parseGameState(raw: RawGameState): GameState {
     pauseInitiator: raw.pauseInitiator ?? null,
     ptmPhase: raw.ptmPhase ?? null,
     ptmIntroData: raw.ptmIntroData ?? null,
+    tournamentBracketData: raw.tournamentBracketData ?? null,
     viralSongIds: raw.viralSongIds ?? [],
     difficulty: raw.difficulty ?? 'medium',
     recentParties: raw.recentParties ?? undefined,

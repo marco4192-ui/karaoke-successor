@@ -276,6 +276,12 @@ tournament: {
   startingTitle: '준비!',
   mirrorWaiting: '다음 대결 대기 중…',
   mirrorWaitingHint: '호스트가 큰 화면에서 다음 대결을 선택합니다.',
+  mirrorOpenDuels: '진행되지 않은 대결',
+  mirrorStartDuel: '대결 시작',
+  mirrorStarting: '대결 시작 중…',
+  mirrorNoOpenDuels: '지금은 시작할 대결이 없습니다…',
+  mirrorVotingActive: '큰 화면에서 노래 투표가 진행 중…',
+  mirrorChampionHint: '챔피언이 탄생했습니다!',
 },
 rateMySong: {
   title: '⭐ 내 노래 평가해줘',

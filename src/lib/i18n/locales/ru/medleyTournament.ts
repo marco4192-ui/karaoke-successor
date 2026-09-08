@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Приготовьтесь!',
   mirrorWaiting: 'Ожидание следующей дуэли…',
   mirrorWaitingHint: 'Хост выбирает следующую дуэль на большом экране.',
+  mirrorOpenDuels: 'Открытые дуэли',
+  mirrorStartDuel: 'Начать дуэль',
+  mirrorStarting: 'Запуск дуэли…',
+  mirrorNoOpenDuels: 'Сейчас нет открытых дуэлей…',
+  mirrorVotingActive: 'На большом экране идёт голосование за песню…',
+  mirrorChampionHint: 'У нас есть чемпион!',
 },
 rateMySong: {
   title: '⭐ Оцени мою песню',

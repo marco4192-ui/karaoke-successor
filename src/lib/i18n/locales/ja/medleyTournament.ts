@@ -276,6 +276,12 @@ tournament: {
   startingTitle: '位置について！',
   mirrorWaiting: '次の試合を待機中…',
   mirrorWaitingHint: 'ホストが大画面で次の決闘を選択します。',
+  mirrorOpenDuels: '未対戦の決闘',
+  mirrorStartDuel: '決闘を開始',
+  mirrorStarting: '決闘を開始中…',
+  mirrorNoOpenDuels: '現在、未対戦の決闘はありません…',
+  mirrorVotingActive: '大画面で曲の投票が進行中…',
+  mirrorChampionHint: 'チャンピオンが決まりました！',
 },
 rateMySong: {
   title: '⭐ レート・マイ・ソング',

@@ -14,6 +14,7 @@ export { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 export { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
 export { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
 export { MirrorTournamentIntroLite } from './mirror-tournament-intro-lite';
+export { MirrorTournamentBracketLite } from './mirror-tournament-bracket-lite';
 export { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';
 export { MirrorRateMySongIntroLite } from './mirror-rate-my-song-intro-lite';
 export { MirrorProfileLite } from './mirror-profile-lite';

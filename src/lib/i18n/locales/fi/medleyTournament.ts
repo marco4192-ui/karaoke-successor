@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Valmistautukaa!',
   mirrorWaiting: 'Odotetaan seuraavaa kaksintaistelua…',
   mirrorWaitingHint: 'Isäntä valitsee seuraavan kaksintaistelun isolla näytöllä.',
+  mirrorOpenDuels: 'Avoimet kaksintaistelut',
+  mirrorStartDuel: 'Aloita kaksintaistelu',
+  mirrorStarting: 'Aloitetaan kaksintaistelua…',
+  mirrorNoOpenDuels: 'Ei avoimia kaksintaisteluja juuri nyt…',
+  mirrorVotingActive: 'Kappaleäänestys käynnissä isolla näytöllä…',
+  mirrorChampionHint: 'Meillä on mestari!',
 },
 rateMySong: {
   title: '⭐ Arvioi kappaleeni',

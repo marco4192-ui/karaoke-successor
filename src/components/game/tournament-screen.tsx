@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Crown } from 'lucide-react';
 import {
   clearHallOfFame,
   getMatchesByBracketType,
@@ -356,6 +357,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
     isSeededByStrength,
     fanFavorites,
     bracketScale,
+    availSize,
     manualWinnerMatch,
     bracketWrapperRef,
     bracketInnerRef,
@@ -410,31 +412,33 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       )}
 
-      {/* Next Match Preview — compact */}
+      {/* Next Match Preview — slim single-row bar (frees vertical space for the bracket) */}
       {nextMatch && !bracket.champion && (
-        <div className="mb-1 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-cyan-500/30 rounded-xl p-2.5 shrink-0">
-          <h3 className="text-sm font-bold mb-1.5 text-center flex items-center justify-center gap-2">
-            <span className="animate-pulse">🎤</span>
-            <span>{t('tournament.nextDuel')} {nextMatch.player1?.name || t('tournament.tbd')} {t('tournament.vs')} {nextMatch.player2?.name || t('tournament.tbd')}</span>
-          </h3>
-          <div className="flex items-center justify-center gap-5 mb-1.5">
-            <PlayerDisplay player={nextMatch.player1} />
-            <span className="text-lg font-bold text-white/40">⚔️</span>
-            <PlayerDisplay player={nextMatch.player2} />
+        <div className="mb-2 shrink-0 flex items-center gap-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/15 via-purple-500/15 to-pink-500/15 px-3 py-2">
+          <span className="text-lg animate-pulse shrink-0" aria-hidden="true">🎤</span>
+          <span className="hidden lg:block text-sm font-bold text-white/80 shrink-0">{t('tournament.nextDuel')}</span>
+          <div className="flex-1 min-w-0 flex items-center justify-center gap-3">
+            <NextPlayerChip player={nextMatch.player1} />
+            <span className="shrink-0 text-white/35 text-xs font-bold" aria-hidden="true">{t('tournament.vs')}</span>
+            <NextPlayerChip player={nextMatch.player2} />
           </div>
           <Button
             onClick={() => onPlayMatch(nextMatch)}
-            className="w-full py-2.5 text-sm bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+            size="sm"
+            className="shrink-0 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
           >
-            {t('tournament.startNextMatch')}
+            ▶ {t('tournament.startNextMatch')}
           </Button>
           {onManualWinner && nextMatch.player1 && nextMatch.player2 && (
             <Button
               onClick={() => setManualWinnerMatch(nextMatch)}
               variant="ghost"
-              className="w-full py-1 text-xs text-white/40 hover:text-white/60 hover:bg-white/5"
+              size="sm"
+              title={t('matchAbort.setWinner')}
+              aria-label={t('matchAbort.setWinner')}
+              className="shrink-0 h-8 w-8 p-0 text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10"
             >
-              {t('matchAbort.setWinner')}
+              <Crown className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
         </div>
@@ -459,6 +463,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
               bracket={bracket}
               currentMatch={currentMatch}
               onPlayMatch={onPlayMatch}
+              availSize={availSize}
             />
           )}
         </div>
@@ -728,35 +733,31 @@ function PlayerResultCard({ placement, t, highlight }: { placement: { player: To
   );
 }
 
-// Player Display Component
-function PlayerDisplay({ player, small = false }: { player: TournamentPlayer | null; small?: boolean }) {
+// Player chip for the slim next-match preview bar
+function NextPlayerChip({ player }: { player: TournamentPlayer | null }) {
   const { t } = useTranslation();
   if (!player) {
     return (
-      <div className={`flex items-center gap-2 ${small ? 'text-sm' : ''}`}>
-        <div className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-white/10`} />
-        <span className="text-white/30">{t('tournament.tbd')}</span>
+      <div className="flex items-center gap-1.5 min-w-0 px-1">
+        <div className="w-7 h-7 rounded-full bg-white/10 shrink-0" aria-hidden="true" />
+        <span className="text-sm text-white/30 truncate">{t('tournament.tbd')}</span>
       </div>
     );
   }
-
   return (
-    <div className={`flex items-center gap-2 ${small ? 'text-sm' : ''}`}>
+    <div className="flex items-center gap-1.5 min-w-0 px-1">
       {player.avatar ? (
-        <img 
-          src={player.avatar} 
-          alt={player.name} 
-          className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover`}
-        />
+        <img src={player.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
       ) : (
-        <div 
-          className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full flex items-center justify-center text-white font-bold`}
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
           style={{ backgroundColor: player.color }}
+          aria-hidden="true"
         >
           {player.name.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="font-medium truncate">{player.name}</span>
+      <span className="text-sm font-medium truncate">{player.name}</span>
     </div>
   );
 }
@@ -894,35 +895,37 @@ function DoubleEliminationBracketView({
   );
 }
 
-// ─── DE Match Card (compact, for DE bracket view) ───────────────
+// ─── DE Match Card (fixed height — compact, for DE bracket view) ───────
 
-function DESmallPlayer({ player }: { player: TournamentPlayer | null }) {
+function DESmallPlayer({ player, isWinner }: { player: TournamentPlayer | null; isWinner?: boolean }) {
   const { t } = useTranslation();
   if (!player) {
     return (
-      <div className="flex items-center gap-1 text-[11px]">
-        <div className="w-5 h-5 rounded-full bg-white/10 shrink-0" />
-        <span className="text-white/30">{t('tournament.tbd')}</span>
+      <div className="flex items-center gap-1.5 text-xs min-w-0">
+        <div className="w-6 h-6 rounded-full bg-white/10 shrink-0 border border-dashed border-white/20" aria-hidden="true" />
+        <span className="text-white/30 truncate">{t('tournament.tbd')}</span>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1 text-[11px] min-w-0">
+    <div className="flex items-center gap-1.5 text-xs min-w-0">
       {player.avatar ? (
         <img
           src={player.avatar}
-          alt={player.name}
-          className="w-5 h-5 rounded-full object-cover shrink-0"
+          alt=""
+          className="w-6 h-6 rounded-full object-cover shrink-0 border border-white/15"
         />
       ) : (
         <div
-          className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] shrink-0"
+          className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0 border border-white/15"
           style={{ backgroundColor: player.color }}
+          aria-hidden="true"
         >
           {player.name.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="font-medium truncate min-w-0">{player.name}</span>
+      {isWinner && <span className="text-[10px] shrink-0" aria-hidden="true">👑</span>}
+      <span className={`truncate min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>{player.name}</span>
     </div>
   );
 }
@@ -962,7 +965,7 @@ function DEMatchCard({
 
   return (
     <div
-      className={`rounded-lg p-1.5 transition-all overflow-hidden border ${borderColor} ${
+      className={`relative rounded-lg p-1.5 px-2 transition-all border ${borderColor} ${
         match.completed
           ? 'bg-white/10'
           : isPlayable
@@ -970,11 +973,11 @@ function DEMatchCard({
             : 'bg-white/5 opacity-50'
       } ${clickable ? 'hover:scale-105' : ''} ${glowClass}`}
       onClick={clickable ? () => onPlay(match) : undefined}
-      style={{ minWidth: 140 }}
+      style={{ minWidth: 150, height: 80 }}
     >
       {/* Player 1 */}
-      <div className={`flex items-center gap-1 p-0.5 rounded text-xs ${match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''}`}>
-        <DESmallPlayer player={match.player1} />
+      <div className={`flex items-center gap-1 rounded text-xs h-[28px] ${match.winner?.id === match.player1?.id ? 'bg-green-500/25' : ''}`}>
+        <DESmallPlayer player={match.player1} isWinner={match.completed && match.winner?.id === match.player1?.id} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'}`}>
             {match.score1}
@@ -985,11 +988,15 @@ function DEMatchCard({
         )}
       </div>
 
-      <div className="text-center text-white/30 text-[9px] my-0.5">{t('tournament.vs')}</div>
+      <div className="text-center text-white/30 text-[9px] my-0.5 flex items-center justify-center gap-1">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="font-bold tracking-wider">{t('tournament.vs')}</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
 
       {/* Player 2 */}
-      <div className={`flex items-center gap-1 p-0.5 rounded text-xs ${match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''}`}>
-        <DESmallPlayer player={match.player2} />
+      <div className={`flex items-center gap-1 rounded text-xs h-[28px] ${match.winner?.id === match.player2?.id ? 'bg-green-500/25' : ''}`}>
+        <DESmallPlayer player={match.player2} isWinner={match.completed && match.winner?.id === match.player2?.id} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'}`}>
             {match.score2}
@@ -1000,15 +1007,13 @@ function DEMatchCard({
         )}
       </div>
 
-      {match.winner && (
-        <div className="text-[9px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5 mt-0.5">
-          {match.winner.name}
-        </div>
-      )}
-
-      {isPlayable && !match.completed && (
-        <div className="text-[9px] text-center text-cyan-400 font-medium mt-0.5">
-          {t('tournament.play')}
+      {/* Playable ▶ badge (replaces the old text row) */}
+      {clickable && (
+        <div
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-cyan-500 text-white text-[9px] font-bold flex items-center justify-center shadow shadow-cyan-500/60 animate-pulse pointer-events-none"
+          aria-hidden="true"
+        >
+          ▶
         </div>
       )}
     </div>

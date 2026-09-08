@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Przygotujcie się!',
   mirrorWaiting: 'Oczekiwanie na następny pojedynek…',
   mirrorWaitingHint: 'Host wybiera następny pojedynek na dużym ekranie.',
+  mirrorOpenDuels: 'Otwarte pojedynki',
+  mirrorStartDuel: 'Rozpocznij pojedynek',
+  mirrorStarting: 'Rozpoczynanie pojedynku…',
+  mirrorNoOpenDuels: 'Brak otwartych pojedynków…',
+  mirrorVotingActive: 'Głosowanie na piosenkę trwa na dużym ekranie…',
+  mirrorChampionHint: 'Mamy mistrza!',
 },
 rateMySong: {
   title: '⭐ Oceń moją piosenkę',

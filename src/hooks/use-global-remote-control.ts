@@ -526,6 +526,13 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
           break;
         }
+        // Companion starts a specific tournament duel from the bracket list
+        // (party_start_match:<matchId> — matchId is the bracket match id)
+        if (cmd.type.startsWith('party_start_match:')) {
+          const matchId = cmd.type.slice('party_start_match:'.length);
+          window.dispatchEvent(new CustomEvent('remote-party-start-match', { detail: { matchId } }));
+          break;
+        }
         // Check for party_vote:<songId> pattern
         // Companion voted for a song in the party voting screen
         if (cmd.type.startsWith('party_vote:')) {

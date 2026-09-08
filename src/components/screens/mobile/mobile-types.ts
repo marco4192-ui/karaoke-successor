@@ -33,6 +33,7 @@ export type MirrorScreenId =
   | 'medley-intro'
   | 'battle-intro'
   | 'tournament-intro'
+  | 'tournament-bracket'  // Tournament bracket on screen — open duels list with start buttons
   | 'competitive-intro'
   | 'rate-my-song-intro'
   | 'cptm-game'      // Companion Sing-A-Long active game (turn signals)
@@ -227,6 +228,28 @@ export interface GameState {
     vsPlayerColor?: string;
     // Battle Royale: full player badge list for the mirror (name/avatar/color)
     brPlayers?: { name: string; avatar?: string; color?: string }[];
+  } | null;
+  // Tournament bracket mirror: while the bracket is shown on the desktop (no
+  // duel pending), companions get the list of OPEN duels incl. start buttons.
+  // Avatars are stripped to keep the payload small — colors + initials only.
+  tournamentBracketData?: {
+    visible: boolean;
+    currentRound: number;
+    totalRounds: number;
+    remainingPlayers: number;
+    tournamentType: 'single' | 'double';
+    status: 'in_progress' | 'completed';
+    championName: string | null;
+    /** True while the desktop shows the 3-song voting overlay for a duel */
+    votingActive: boolean;
+    openMatches: Array<{
+      matchId: string;
+      round: number;
+      position: number;
+      bracketType: 'winners' | 'losers' | 'grand_finals';
+      player1: { id: string; name: string; color: string } | null;
+      player2: { id: string; name: string; color: string } | null;
+    }>;
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];

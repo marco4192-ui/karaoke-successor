@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Gør jer klar!',
   mirrorWaiting: 'Venter på næste duel…',
   mirrorWaitingHint: 'Værten vælger næste duel på storskærmen.',
+  mirrorOpenDuels: 'Åbne dueller',
+  mirrorStartDuel: 'Start duel',
+  mirrorStarting: 'Starter duellen…',
+  mirrorNoOpenDuels: 'Ingen åbne dueller lige nu…',
+  mirrorVotingActive: 'Sangafstemningen kører på storskærmen…',
+  mirrorChampionHint: 'Vi har en mester!',
 },
 rateMySong: {
   title: '⭐ Bedøm min sang',

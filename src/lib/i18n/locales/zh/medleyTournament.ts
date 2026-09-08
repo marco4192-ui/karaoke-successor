@@ -276,6 +276,12 @@ tournament: {
   startingTitle: '准备！',
   mirrorWaiting: '等待下一场对决…',
   mirrorWaitingHint: '主持人在大屏幕上选择下一场对决。',
+  mirrorOpenDuels: '待开赛的对决',
+  mirrorStartDuel: '开始对决',
+  mirrorStarting: '正在开始对决…',
+  mirrorNoOpenDuels: '目前没有待开赛的对决…',
+  mirrorVotingActive: '大屏幕上正在进行歌曲投票…',
+  mirrorChampionHint: '我们有了冠军！',
 },
 rateMySong: {
   title: '⭐ 帮我评分',

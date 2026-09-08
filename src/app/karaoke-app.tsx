@@ -10,7 +10,7 @@ import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { getAllSongs } from '@/lib/game/song-library';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
-import { recordMatchResult } from '@/lib/game/tournament';
+import { recordMatchResult, getPlayableMatches } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
@@ -845,7 +845,6 @@ export default function KaraokeZERO() {
           brPlayers?: { name: string; avatar?: string; color?: string }[];
         } | null;
         let introData: PartyIntroData = null;
-
         if (isPartyIntro) {
           const gameMode = partyNow.selectedGameMode;
           // Common base fields
@@ -938,6 +937,41 @@ export default function KaraokeZERO() {
           }
         }
 
+        // ── Tournament bracket mirror: while the bracket is on screen (no duel
+        // pending, intro phase), companions receive the list of OPEN duels so
+        // they can display and start them (user request: companion bracket view).
+        // Avatars are stripped — colors + initials keep the payload small.
+        let tournamentBracketData: GameState['tournamentBracketData'] = null;
+        if (screen === 'tournament-game' && isPartyModeActive && ptmPhase === 'intro' && !partyNow.currentTournamentMatch) {
+          const b = partyNow.tournamentBracket;
+          if (b) {
+            const openMatches = getPlayableMatches(b)
+              .filter(m => m.player1 && m.player2)
+              .sort((a, x) => a.round - x.round
+                || (a.bracketType === x.bracketType ? 0 : a.bracketType === 'winners' ? -1 : x.bracketType === 'winners' ? 1 : a.bracketType === 'losers' ? -1 : 1)
+                || a.position - x.position)
+              .map(m => ({
+                matchId: m.id,
+                round: m.round,
+                position: m.position,
+                bracketType: m.bracketType,
+                player1: m.player1 ? { id: m.player1.id, name: m.player1.name, color: m.player1.color } : null,
+                player2: m.player2 ? { id: m.player2.id, name: m.player2.name, color: m.player2.color } : null,
+              }));
+            tournamentBracketData = {
+              visible: true,
+              currentRound: b.currentRound,
+              totalRounds: b.totalRounds,
+              remainingPlayers: b.players.filter(p => !p.eliminated).length,
+              tournamentType: b.settings.tournamentType,
+              status: b.status === 'completed' ? 'completed' : 'in_progress',
+              championName: b.champion?.name ?? null,
+              votingActive: !!partyNow.tournamentVotingMatch,
+              openMatches,
+            };
+          }
+        }
+
         // Debug: log party intro sync state
         if (isPartyGameScreen) {
           // eslint-disable-next-line no-console
@@ -991,6 +1025,7 @@ export default function KaraokeZERO() {
               pauseInitiator,
               ptmPhase,
               ptmIntroData: introData,
+              tournamentBracketData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
               recentParties: recentPartiesPayload,
@@ -1010,6 +1045,19 @@ export default function KaraokeZERO() {
     // on every per-frame score update (~40/s during competitive games),
     // spamming the mobile sync endpoint and the console log.
   }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, isPartyGameScreen]);
+
+  // ── Tournament bracket live push ──
+  // Bracket changes (duel started / finished, manual winner, vote started or
+  // skipped) must reach the companion "open duels" list quickly — waiting for
+  // the 2s interval makes the list feel stale. Push immediately (debounced
+  // 250ms so a burst of changes results in a single POST).
+  const tournamentBracketObj = party.tournamentBracket;
+  const currentTournamentMatchObj = party.currentTournamentMatch;
+  const tournamentVotingMatchObj = party.tournamentVotingMatch;
+  useEffect(() => {
+    const id = setTimeout(() => { void syncScreenRef.current?.(); }, 250);
+    return () => clearTimeout(id);
+  }, [tournamentBracketObj, currentTournamentMatchObj, tournamentVotingMatchObj]);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);

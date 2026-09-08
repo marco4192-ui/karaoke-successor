@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Gör er redo!',
   mirrorWaiting: 'Väntar på nästa duell…',
   mirrorWaitingHint: 'Värden väljer nästa duell på storskärmen.',
+  mirrorOpenDuels: 'Öppna dueller',
+  mirrorStartDuel: 'Starta duell',
+  mirrorStarting: 'Startar duellen…',
+  mirrorNoOpenDuels: 'Inga öppna dueller just nu…',
+  mirrorVotingActive: 'Röstningen pågår på storskärmen…',
+  mirrorChampionHint: 'Vi har en vinnare!',
 },
 rateMySong: {
   title: '⭐ Betygsätt min Låt',

@@ -298,14 +298,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       const effectiveScreen = screen || currentScreen;
       if (effectiveScreen === 'medley-game') return 'medley-intro';
       if (effectiveScreen === 'battle-royale-game') return 'battle-intro';
-      if (effectiveScreen === 'tournament-game') return 'tournament-intro';
+      if (effectiveScreen === 'tournament-game') {
+        // Pending duel → starting-screen mirror. Otherwise, when the bracket
+        // itself is on the big screen, show the open-duels list with start
+        // buttons (companion-driven match starts).
+        if (gameState.ptmIntroData?.startPlayerName && gameState.ptmIntroData?.vsPlayerName) {
+          return 'tournament-intro';
+        }
+        if (gameState.tournamentBracketData?.visible) return 'tournament-bracket';
+        return 'tournament-intro';
+      }
       if (effectiveScreen === 'missing-words-game' || effectiveScreen === 'blind-game') return 'competitive-intro';
       if (effectiveScreen === 'rate-my-song-game') return 'rate-my-song-intro';
       // Default: PTM/CPTM intro
       return 'ptm-intro';
     }
     return base;
-  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase]);
+  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase, gameState.ptmIntroData, gameState.tournamentBracketData]);
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {

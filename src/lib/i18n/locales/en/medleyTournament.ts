@@ -302,6 +302,12 @@ export const medleyTournamentTranslations = {
     startingTitle: 'Next Match',
     mirrorWaiting: 'Waiting for the next match…',
     mirrorWaitingHint: 'The host picks the next duel on the big screen.',
+    mirrorOpenDuels: 'Open Duels',
+    mirrorStartDuel: 'Start Duel',
+    mirrorStarting: 'Starting duel…',
+    mirrorNoOpenDuels: 'No open duels right now…',
+    mirrorVotingActive: 'Song voting is running on the desktop…',
+    mirrorChampionHint: 'We have a champion!',
   },
 
   rateMySong: {

@@ -210,6 +210,8 @@ export interface UseTournamentBracketReturn {
   fanFavorites: ReturnType<typeof getFanFavorites>;
   // State
   bracketScale: number;
+  /** Measured size of the bracket area — drives the butterfly's responsive spacing */
+  availSize: { w: number; h: number } | null;
   manualWinnerMatch: TournamentMatch | null;
   // Refs
   bracketWrapperRef: React.RefObject<HTMLDivElement | null>;
@@ -249,30 +251,61 @@ export function useTournamentBracket(
     return getFanFavorites(bracket, tournamentCrowdVotes);
   }, [bracket, tournamentCrowdVotes]);
 
-  // Auto-scale bracket to fit available viewport height
+  // Auto-scale bracket to fit the available viewport — BOTH dimensions,
+  // with limited up-scaling. Few matchups → the bracket grows (max ×2.0,
+  // big readable cards); many matchups (32 players) → it shrinks to fit.
   const bracketWrapperRef = useRef<HTMLDivElement>(null);
   const bracketInnerRef = useRef<HTMLDivElement>(null);
   const [bracketScale, setBracketScale] = useState(1);
+  const [availSize, setAvailSize] = useState<{ w: number; h: number } | null>(null);
 
   // Manual winner dialog state (for picking a winner without playing)
   const [manualWinnerMatch, setManualWinnerMatch] = useState<TournamentMatch | null>(null);
 
+  const MAX_UPSCALE = 2.5;
+
+  // Pass 1: measure the available area (independent of the bracket content —
+  // the wrapper is flex-1/overflow-hidden, so its size never depends on children)
   useEffect(() => {
+    const wrapper = bracketWrapperRef.current;
+    if (!wrapper) return;
+    const update = () => {
+      const w = wrapper.clientWidth;
+      const h = wrapper.clientHeight;
+      if (w > 0 && h > 0) {
+        setAvailSize((prev) => (prev && Math.abs(prev.w - w) < 2 && Math.abs(prev.h - h) < 2 ? prev : { w, h }));
+      }
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, []);
+
+  // Pass 2: compute the uniform scale AFTER the butterfly re-rendered with the
+  // spacing derived from availSize (runs on bracket / availSize changes and
+  // observes the inner content for natural-size changes)
+  useEffect(() => {
+    const wrapper = bracketWrapperRef.current;
+    const inner = bracketInnerRef.current;
+    if (!wrapper || !inner) return;
     const updateScale = () => {
-      const wrapper = bracketWrapperRef.current;
-      const inner = bracketInnerRef.current;
-      if (!wrapper || !inner) return;
-      const available = wrapper.clientHeight;
-      const needed = inner.scrollHeight;
-      if (needed > 0 && available > 0) {
-        setBracketScale(Math.min(1, available / needed));
+      const availableW = wrapper.clientWidth;
+      const availableH = wrapper.clientHeight;
+      const neededW = inner.scrollWidth;
+      const neededH = inner.scrollHeight;
+      if (availableW > 0 && availableH > 0 && neededW > 0 && neededH > 0) {
+        const scale = Math.min(availableW / neededW, availableH / neededH, MAX_UPSCALE);
+        if (isFinite(scale) && scale > 0) {
+          setBracketScale((prev) => (Math.abs(prev - scale) < 0.004 ? prev : scale));
+        }
       }
     };
     updateScale();
     const ro = new ResizeObserver(updateScale);
-    if (bracketWrapperRef.current) ro.observe(bracketWrapperRef.current);
+    ro.observe(inner);
     return () => ro.disconnect();
-  }, [bracket, showResults]);
+  }, [bracket, showResults, availSize]);
 
   // #7 Auto-add to Hall of Fame when tournament completes
   const hofRecordedRef = useRef(false);
@@ -293,6 +326,7 @@ export function useTournamentBracket(
     isSeededByStrength,
     fanFavorites,
     bracketScale,
+    availSize,
     manualWinnerMatch,
     bracketWrapperRef,
     bracketInnerRef,

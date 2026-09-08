@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Preparados!',
   mirrorWaiting: 'A aguardar o próximo duelo…',
   mirrorWaitingHint: 'O anfitrião escolhe o próximo duelo no ecrã grande.',
+  mirrorOpenDuels: 'Duelos abertos',
+  mirrorStartDuel: 'Iniciar duelo',
+  mirrorStarting: 'A iniciar o duelo…',
+  mirrorNoOpenDuels: 'Sem duelos abertos neste momento…',
+  mirrorVotingActive: 'A votação de músicas está a decorrer no ecrã grande…',
+  mirrorChampionHint: 'Temos um campeão!',
 },
 rateMySong: {
   title: '⭐ Avalie minha Música',

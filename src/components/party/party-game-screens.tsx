@@ -109,6 +109,62 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     });
   }, [party.setCurrentTournamentMatch, party.setTournamentVotedSong, t]);
 
+  // ── Start (or vote-for) a tournament duel ──
+  // Shared by the desktop bracket view (card click / next-match button) and
+  // the companion "open duels" list (remote-party-start-match event): when
+  // the tournament uses song voting, the 3-song vote overlay opens first,
+  // otherwise the duel's starting screen is shown directly.
+  const handlePlayTournamentMatch = useCallback((match: import('@/lib/game/tournament').TournamentMatch) => {
+    if (!match.player1 || !match.player2) return;
+    const bracket = party.tournamentBracket;
+    if (bracket && bracket.settings.songSelectionMode === 'vote') {
+      // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
+      const usedIds = new Set(party.tournamentUsedSongIds);
+      const pool = getNonDuetSongs().filter(s => {
+        if (usedIds.has(s.id)) return false;
+        const genre = bracket.settings.filterGenre;
+        const lang = bracket.settings.filterLanguage;
+        if (genre && genre !== 'all') {
+          if (!s.genre || s.genre !== genre) return false;
+        }
+        if (lang && lang !== 'all') {
+          if (!s.language || s.language !== lang) return false;
+        }
+        return true;
+      });
+      if (pool.length >= 3) {
+        const shuffled = shuffleArray(pool).slice(0, 3);
+        party.setTournamentVotingSongs(shuffled);
+        party.setTournamentVotingMatch(match);
+        setTournamentVotingActive(true);
+      } else {
+        void startMatchWithMicOverlay(match);
+      }
+    } else {
+      startMatchWithMicOverlay(match);
+    }
+  }, [party, startMatchWithMicOverlay]);
+
+  // ── Companion "open duels" list: start a specific duel from a companion app ──
+  // The companion sends `party_start_match:<matchId>` which arrives here as a
+  // remote-party-start-match CustomEvent. Guards mirror the desktop UI rules:
+  // only while the bracket is on screen, no duel/vote pending, match open.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { matchId } = (e as CustomEvent<{ matchId?: string }>).detail || {};
+      if (!matchId || screen !== 'tournament-game') return;
+      const partyNow = usePartyStore.getState();
+      const bracket = partyNow.tournamentBracket;
+      if (!bracket) return;
+      if (partyNow.currentTournamentMatch || partyNow.tournamentVotingMatch || micOverlay) return;
+      const match = bracket.matches.find(m => m.id === matchId);
+      if (!match || match.completed || match.isBye || !match.player1 || !match.player2) return;
+      handlePlayTournamentMatch(match);
+    };
+    window.addEventListener('remote-party-start-match', handler);
+    return () => window.removeEventListener('remote-party-start-match', handler);
+  }, [screen, handlePlayTournamentMatch, micOverlay]);
+
   // #1 #2 #5 #6 Helper: Pick a tournament song (no repeats, filter, trim duration)
   const pickTournamentSong = useCallback((): import('@/types/game').Song | null => {
     const bracket = party.tournamentBracket;
@@ -357,40 +413,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           bracket={party.tournamentBracket}
           currentMatch={party.currentTournamentMatch}
           matchAborted={party.tournamentMatchAborted}
-          onPlayMatch={(match) => {
-            // #8 Check if voting mode — show voting overlay instead of starting directly
-            const bracket = party.tournamentBracket;
-            if (bracket && bracket.settings.songSelectionMode === 'vote') {
-              // TODO: Use filterSongs utility with filterCombined setting for tournament voting
-              // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
-              const usedIds = new Set(party.tournamentUsedSongIds);
-              const pool = getNonDuetSongs().filter(s => {
-                if (usedIds.has(s.id)) return false;
-                const genre = bracket.settings.filterGenre;
-                const lang = bracket.settings.filterLanguage;
-                if (genre && genre !== 'all') {
-                  if (!s.genre || s.genre !== genre) return false;
-                }
-                if (lang && lang !== 'all') {
-                  if (!s.language || s.language !== lang) return false;
-                }
-                return true;
-              });
-              if (pool.length >= 3) {
-                const shuffled = shuffleArray(pool).slice(0, 3);
-                party.setTournamentVotingSongs(shuffled);
-                party.setTournamentVotingMatch(match);
-                setTournamentVotingActive(true);
-              } else if (pool.length > 0) {
-                // Not enough songs for voting, pick randomly
-                startMatchWithMicOverlay(match);
-              } else {
-                startMatchWithMicOverlay(match);
-              }
-            } else {
-              startMatchWithMicOverlay(match);
-            }
-          }}
+          onPlayMatch={handlePlayTournamentMatch}
           onManualWinner={(matchId, winnerId) => {
             if (!party.tournamentBracket) return;
             // Look up the match from the bracket (works for both abort dialog and manual selection)

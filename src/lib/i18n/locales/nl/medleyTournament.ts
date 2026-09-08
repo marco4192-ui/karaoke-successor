@@ -276,6 +276,12 @@ tournament: {
   startingTitle: 'Maak je klaar!',
   mirrorWaiting: 'Wachten op het volgende duel…',
   mirrorWaitingHint: 'De host kiest het volgende duel op het grote scherm.',
+  mirrorOpenDuels: 'Open duels',
+  mirrorStartDuel: 'Duel starten',
+  mirrorStarting: 'Duel wordt gestart…',
+  mirrorNoOpenDuels: 'Momenteel geen open duels…',
+  mirrorVotingActive: 'De songstemming loopt op het grote scherm…',
+  mirrorChampionHint: 'We hebben een kampioen!',
 },
 rateMySong: {
   title: '⭐ Beoordeel mijn nummer',

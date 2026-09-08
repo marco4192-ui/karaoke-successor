@@ -276,6 +276,12 @@ tournament: {
   singsWith: 'singt mit',
   mirrorWaiting: 'Warten auf das nächste Match…',
   mirrorWaitingHint: 'Der Host wählt das nächste Duell auf dem großen Bildschirm.',
+  mirrorOpenDuels: 'Offene Duelle',
+  mirrorStartDuel: 'Duell starten',
+  mirrorStarting: 'Duell wird gestartet…',
+  mirrorNoOpenDuels: 'Aktuell keine offenen Duelle…',
+  mirrorVotingActive: 'Song-Abstimmung läuft auf dem großen Bildschirm…',
+  mirrorChampionHint: 'Wir haben einen Champion!',
 },
 rateMySong: {
   title: '⭐ Bewerte meinen Song',
