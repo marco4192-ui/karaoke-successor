@@ -204,25 +204,29 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   if (!displayLine) return null;
 
   return (
-    <div className="absolute bottom-2 left-0 right-0 z-20 bg-gradient-to-t from-black/60 to-transparent py-1.5 px-4">
-      <div className="text-lg md:text-xl font-bold text-center">
-        <LyricLineDisplay
-          line={displayLine}
-          currentTime={currentTime}
-          playerColor={playerColor}
-          notePerformance={notePerformance}
-          gameMode={gameMode}
-          missingWordsIndices={missingWordsIndices}
-          isBlindSection={isBlindSection}
-          isBlindHardcore={isBlindHardcore}
-          hardcoreMissingWords={hardcoreMissingWords}
-        />
+    // B3.6: BR-style lyric background card per duet half — lifted above the
+    // bottom-corner time displays (bottom-7)
+    <div className="absolute bottom-7 left-0 right-0 z-20 px-3">
+      <div className="bg-black/40 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-white/10">
+        <div className="text-lg md:text-xl font-bold text-center">
+          <LyricLineDisplay
+            line={displayLine}
+            currentTime={currentTime}
+            playerColor={playerColor}
+            notePerformance={notePerformance}
+            gameMode={gameMode}
+            missingWordsIndices={missingWordsIndices}
+            isBlindSection={isBlindSection}
+            isBlindHardcore={isBlindHardcore}
+            hardcoreMissingWords={hardcoreMissingWords}
+          />
+        </div>
+        {nextLine && !shouldHidePreview && previewText && (
+          <p className="text-xs text-center text-white/30 mt-0.5 truncate">
+            {previewText}
+          </p>
+        )}
       </div>
-      {nextLine && !shouldHidePreview && previewText && (
-        <p className="text-xs text-center text-white/30 mt-0.5 truncate">
-          {previewText}
-        </p>
-      )}
     </div>
   );
 });

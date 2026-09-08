@@ -322,13 +322,15 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         )}
       </div>
 
-      {/* HUD Controls — unified chrome: Pause + End Song (top-left), Webcam + Difficulty + Fullscreen (top-right) */}
+      {/* HUD Controls — unified chrome: song banner (top-center), Pause + End Song (top-left), Difficulty + Webcam + Fullscreen (top-right) */}
       {phase === 'playing' && (
         <GameHudChrome
           isPlaying={isPlaying}
           onTogglePause={handleTogglePause}
           onEndSong={handleEndEarly}
           difficulty={currentDynamicDifficulty ?? settings.difficulty ?? 'medium'}
+          songTitle={currentSnippet?.song?.title ?? null}
+          songArtist={currentSnippet?.song?.artist ?? null}
         />
       )}
 

@@ -6,6 +6,7 @@ import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/l
 import { useTranslation } from '@/lib/i18n/translations';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { SongTitleBanner } from '@/components/game/hud/song-title-banner';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { EndSongButton } from '@/components/game/hud/end-song-button';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
@@ -90,7 +91,13 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           )}
         </div>
 
-        {/* Center: Low-perf indicator only */}
+        {/* Center: song banner (Artist — Title) between Pause+Skip and the score */}
+        <SongTitleBanner
+          title={g.gameState.currentSong?.title ?? null}
+          artist={g.gameState.currentSong?.artist ?? null}
+        />
+
+        {/* Low-perf indicator (right next to the banner when active) */}
         {g.isLowPerf && (
           <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
         )}

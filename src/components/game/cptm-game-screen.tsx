@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useCallback } from 'react';
+import React from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
 import { NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
@@ -50,13 +50,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const g = useCptmGameLogic(props);
   const cptmSongSelection = usePartyStore((s) => s.cptmSongSelection);
   const cptmSettings = usePartyStore((s) => s.cptmSettings);
-  const setCptmSettings = usePartyStore((s) => s.setCptmSettings);
   const cptmDifficulty = cptmSettings?.difficulty ?? 'medium';
-  const cycleCptmDifficulty = useCallback(() => {
-    const levels: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
-    const next = levels[(levels.indexOf(cptmDifficulty) + 1) % levels.length];
-    setCptmSettings({ ...(cptmSettings ?? { difficulty: next, blinkWarning: 3 }), difficulty: next });
-  }, [cptmDifficulty, cptmSettings, setCptmSettings]);
 
   // ── Guard: no effective song ──
   if (!g.effectiveSong) {
@@ -308,14 +302,15 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
 
       {/* ═══════ HUD OVERLAYS (unified layout: PTM as model) ═══════ */}
 
-      {/* Top-left: Pause + End Song • Top-right: Webcam + Difficulty + Fullscreen */}
+      {/* Top-left: Pause + End Song • Top-center: song banner • Top-right: Difficulty + Webcam + Fullscreen */}
       {g.phase === 'playing' && (
         <GameHudChrome
           isPlaying={g.isPlaying}
           onTogglePause={g.showPauseDialog}
           onEndSong={g.handleEndSong}
           difficulty={cptmDifficulty}
-          onCycleDifficulty={cycleCptmDifficulty}
+          songTitle={g.effectiveSong.title}
+          songArtist={g.effectiveSong.artist}
         />
       )}
 

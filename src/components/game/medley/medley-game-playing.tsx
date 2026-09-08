@@ -364,17 +364,17 @@ export function MedleyPlayingUI({
         </div>
       </div>
 
-      {/* ═══════ BOTTOM: Lyrics (like SinglePlayerLyrics) ═══════ */}
+      {/* ═══════ BOTTOM: Lyrics — BR-style background card (B3.6), lifted above the bottom-corner time displays ═══════ */}
       {currentLyricLine && (
-        <div className="absolute bottom-0 left-0 right-0 z-20">
-          <div className="bg-gradient-to-t from-black/80 to-transparent px-6 pb-10 pt-8">
+        <div className="absolute bottom-10 left-0 right-0 z-20 px-4">
+          <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
             {/* Current lyric line */}
             <div className="font-bold text-center drop-shadow-lg text-2xl md:text-3xl text-white leading-tight">
               {currentLyricLine.text}
             </div>
             {/* Next line preview */}
             {nextLyricLine && (
-              <p className="text-lg text-white/40 mt-3 text-center">
+              <p className="text-lg text-white/40 mt-2 text-center">
                 {nextLyricLine.text}
               </p>
             )}

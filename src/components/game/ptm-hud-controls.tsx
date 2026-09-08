@@ -5,6 +5,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { EndSongButton } from '@/components/game/hud/end-song-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { SongTitleBanner } from '@/components/game/hud/song-title-banner';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { loadWebcamConfig, saveWebcamConfig } from '@/components/game/webcam-background';
 import type { WebcamBackgroundConfig } from '@/components/game/webcam-background';
@@ -21,24 +22,29 @@ interface PtmHudControlsProps {
   onEndSong?: () => void;
   /** Ref to active webcam streams (for cleanup on unmount). */
   activeWebcamStreamsRef?: React.RefObject<MediaStream[]>;
+  /** Song title for the top-center banner */
+  songTitle?: string | null;
+  /** Song artist for the top-center banner */
+  songArtist?: string | null;
 }
 
 /**
  * PTM-specific HUD controls that delegate to universal HUD components.
- * Adds PTM-specific logic: difficulty cycling persisted to party store,
- * pause dialog action sync via party store, and WebcamQuickControls
- * (same as the regular game screen) instead of a simple toggle.
+ * Adds PTM-specific logic: pause dialog action sync via party store and
+ * WebcamQuickControls (same as the regular game screen).
+ * Difficulty badge is read-only (configured in the party setup).
  */
 export function PtmHudControls({
   safeSettings,
   isPlaying,
   onTogglePause,
   onEndSong,
+  songTitle,
+  songArtist,
 }: PtmHudControlsProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(safeSettings.difficulty);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
-  const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
 
   // Webcam config state (loaded from localStorage, same as regular GameScreen)
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>(() => loadWebcamConfig());
@@ -51,18 +57,11 @@ export function PtmHudControls({
     });
   }, []);
 
-  // Sync difficulty with safeSettings prop
+  // Sync difficulty with safeSettings prop (read-only badge — NO cycling:
+  // the difficulty is configured in the party setup, not changed in-game)
   useEffect(() => {
     setDifficulty(safeSettings.difficulty);
   }, [safeSettings.difficulty]);
-
-  // Cycle difficulty and persist to party store so scoring uses the new value
-  const cycleDifficulty = useCallback(() => {
-    const levels: Difficulty[] = ['easy', 'medium', 'hard'];
-    const next = levels[(levels.indexOf(difficulty) + 1) % levels.length];
-    setDifficulty(next);
-    setPassTheMicSettings({ ...safeSettings, difficulty: next });
-  }, [difficulty, safeSettings, setPassTheMicSettings]);
 
   // Handle pause: route through the universal SongPauseDialog (via party store)
   // instead of toggling audio directly. This ensures the pause dialog appears
@@ -104,16 +103,19 @@ export function PtmHudControls({
       <WebcamBackground config={webcamConfig} onConfigChange={updateWebcamConfig} />
 
       <div className="fixed inset-0 z-50 pointer-events-none">
+        {/* Top-center: Artist + Title (between Pause+Skip and the score) */}
+        <SongTitleBanner title={songTitle} artist={songArtist} />
+
         {/* Top-left: Pause + End Song (unified layout across all party modes) */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
           {onEndSong && <EndSongButton onEndSong={onEndSong} />}
         </div>
 
-        {/* Top-right: WebcamQuickControls + Difficulty + Vollbild */}
+        {/* Top-right: Difficulty (read-only) + Webcam + Fullscreen */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 pointer-events-auto rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
+          <DifficultyBadge difficulty={difficulty} />
           <WebcamQuickControls config={webcamConfig} onConfigChange={updateWebcamConfig} />
-          <DifficultyBadge difficulty={difficulty} onCycleDifficulty={cycleDifficulty} />
           <FullscreenButton />
         </div>
       </div>

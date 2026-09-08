@@ -230,22 +230,25 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
   const { t } = useTranslation();
   const { devices } = useWebcamBackground();
   
+  // Plain row — no nested panel border/background: the parent HUD chrome
+  // already provides the glass panel ("frame in frame" removed).
   return (
-    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
-      {/* Enable/Disable */}
+    <div className="flex items-center gap-1.5">
+      {/* Enable/Disable — w-10 h-10 to match Pause/Fullscreen buttons */}
       <button
         onClick={() => onConfigChange({ 
           enabled: !config.enabled,
           sizeMode: !config.enabled && config.sizeMode === 'fullscreen' ? '2:10' : config.sizeMode,
         })}
-        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
           config.enabled 
-            ? 'bg-cyan-500 text-white' 
+            ? 'bg-cyan-500/80 text-white' 
             : 'bg-white/10 text-white/60 hover:bg-white/20'
         }`}
         title={config.enabled ? t('webcamSettings.disableWebcam') : t('webcamSettings.enableWebcamTooltip')}
         aria-label={config.enabled ? t('webcamSettings.disableWebcam') : t('webcamSettings.enableWebcamTooltip')}
         aria-pressed={config.enabled}
+        data-testid="hud-webcam-toggle"
       >
         <WebcamIcon className="w-4 h-4" />
       </button>

@@ -195,8 +195,10 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
     : 1 - Math.pow(-2 * flyProgress + 2, 2) / 2;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20">
-      <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
+    <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-7">
+      {/* B3.6: BR-style lyric background card — rounded, blurred, bordered;
+          lifted above the bottom-corner time displays (pb-7) */}
+      <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
         <div ref={containerRef} className="font-bold text-center drop-shadow-lg relative w-full">
           {/* Flying Pointer — flies from off-screen left to the first singable note.
               Disappears immediately when singing starts (no lingering indicator). */}

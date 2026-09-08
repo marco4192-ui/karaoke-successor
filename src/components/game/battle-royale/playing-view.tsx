@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle } from 'lucide-react';
 import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { NoteHighway } from '@/components/game/note-highway';
@@ -274,13 +273,8 @@ export function PlayingView({
 
   // V5: Multi-pitch mic status — count players whose pitch detector is initialized
   const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');
-  // Count mic players that have been initialized (present in pitch map) without errors.
-  // This reflects the number of working mics, not just those currently singing.
-  // Per-player singing indicators on the cards already show real-time singing status.
-  const activePitchCount = activeMicPlayers.filter(p =>
-    playerPitchMap.has(p.id) && !multiPitchErrors.has(p.id)
-  ).length;
-  const hasPitchErrors = multiPitchErrors.size > 0;
+  // (B3.2) The central "x/x mics active" pill was removed — per-player
+  // singing indicators on the cards already show real-time mic status.
 
   // V1: Note highway visibility
   const showNoteHighway = game.settings.showNoteHighway && pitchStats !== null && visibleNotes.length > 0;
@@ -347,7 +341,7 @@ export function PlayingView({
         <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
       )}
 
-      {/* ─────────── Unified HUD chrome (top-left: Pause + End Round; top-right: Webcam + Difficulty + Fullscreen) ─────────── */}
+      {/* ─────────── Unified HUD chrome (top-center: song; top-left: Pause + End Round; top-right: Difficulty + Webcam + Fullscreen) ─────────── */}
       <GameHudChrome
         isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
         onTogglePause={() => {
@@ -362,6 +356,7 @@ export function PlayingView({
         }}
         onEndSong={onRoundEnd}
         difficulty={game.effectiveDifficulty}
+        songTitle={currentSnippet?.songName ?? currentRound?.songName ?? null}
       />
 
       {/* ─────────── Inline Elimination Overlay ─────────── */}
@@ -422,8 +417,7 @@ export function PlayingView({
 
       {/* ─────────── Pause is handled by the app-level SongPauseDialog ─────────── */}
 
-      {/* ─────────── V3: Countdown Overlay ─────────── */}
-      {countdown > 0 && <GameCountdown countdown={countdown} />}
+      {/* ─────────── V3: Countdown Overlay ─────────── */}      {countdown > 0 && <GameCountdown countdown={countdown} />}
 
       {/* V3: "GO!" / "LOS!" overlay when countdown finishes */}
       {showGoOverlay && (
@@ -437,42 +431,24 @@ export function PlayingView({
         </div>
       )}
 
-      {/* ─────────── V5: Multi-Pitch Mic Status ─────────── */}
-      {activeMicPlayers.length >= 2 && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm ${
-            hasPitchErrors
-              ? 'bg-amber-500/20 border border-amber-500/40'
-              : 'bg-green-500/20 border border-green-500/40'
-          }`}>
-            {hasPitchErrors ? (
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
-            ) : (
-              <span className="text-[10px] text-green-400">●</span>
-            )}
-            <span className={`text-[10px] font-medium whitespace-nowrap ${
-              hasPitchErrors ? 'text-amber-300' : 'text-green-300'
-            }`}>
-              {activePitchCount}/{activeMicPlayers.length} {t('battleRoyale.multiPitchActive')}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* B3.2: Multi-Pitch mic status pill removed (redundant with per-player
+          mic indicators in the player cards + volume meters) */}
 
       {/* ══════════════════════════════════════════════════════════
           LAYOUT (top to bottom):
-          1. Timer bar + round info (~40px)
-          2. Player cards strip (scrollable horizontal, ~60px)
+          1. Timer bar + round info (~40px, below the fixed corner buttons)
+          2. Player cards strip (scrollable, ~60px — clear of corner buttons)
           3. Note Highway (flex-1, majority of space)
-          4. Song progress bar (2px)
-          5. Lyrics (bottom, ~80px)
+          4. Lyrics (bottom, ~80px — BR-style background, clear of the
+             bottom-corner time displays)
+          5. Round progress bar (very bottom edge, h-1 like other modes)
       ══════════════════════════════════════════════════════════ */}
 
-      {/* ─────────── 1. TIMER BAR + ROUND INFO ─────────── */}
-      <div className="flex-shrink-0 px-3 pt-3 pb-1">
-        <div className="flex items-center justify-between mb-1.5 pl-16 pr-14">
-          <div className="flex items-center gap-2">
-            <h1 className="text-sm font-bold">
+      {/* ─────────── 1. TIMER BAR + ROUND INFO (pt-16: below the fixed corner buttons) ─────────── */}
+      <div className="flex-shrink-0 px-3 pt-16 pb-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-sm font-bold shrink-0">
               {game.isGrandFinale
                 ? `🏆 ${t('battleRoyale.grandFinaleRound').replace('{n}', String(game.currentRound))}`
                 : t('battleRoyale.round').replace('{n}', String(game.currentRound))
@@ -680,21 +656,8 @@ export function PlayingView({
       {/* If highway is hidden, this spacer pushes lyrics down */}
       {!showNoteHighway && <div className="flex-1" />}
 
-      {/* ─────────── 4. ROUND PROGRESS BAR (2px, bottom edge — Muster F: duration indicator at the BOTTOM) ─────────── */}
-      <div className="flex-shrink-0 w-full h-[2px] bg-white/5">
-        <div
-          className="h-full transition-all duration-300"
-          style={{
-            width: `${Math.min(100, Math.max(0, (roundTimeLeft / (currentRound?.duration || 60)) * 100))}%`,
-            background: roundTimeLeft <= 5
-              ? 'linear-gradient(90deg, #ef4444, #f97316)'
-              : 'linear-gradient(90deg, #06b6d4, #a855f7)',
-          }}
-        />
-      </div>
-
-      {/* ─────────── Unified bottom HUD: round countdown + snippet timer (bottom-left) + playtime/duration (bottom-right) ─────────── */}
-      <div className="absolute bottom-1 left-3 z-30 pointer-events-none flex items-center gap-2">
+      {/* ─────────── Unified bottom HUD: round countdown + snippet timer (bottom-left, above the progress bar) + playtime/duration (bottom-right, ONE LINE) ─────────── */}
+      <div className="absolute bottom-2 left-3 z-30 pointer-events-none flex items-center gap-2">
         {/* Round countdown — moved from top to BOTTOM-left (unified HUD spec, Muster F) */}
         <Badge
           className={`font-mono text-xs ${
@@ -716,12 +679,13 @@ export function PlayingView({
           </Badge>
         )}
       </div>
-      <div className="absolute bottom-1 right-3 z-30 pointer-events-none">
-        <TimeDisplay currentTime={currentTime} duration={currentSong?.duration ?? 0} />
+      {/* B3.5: playtime/duration — single line, right-aligned, no wrapping */}
+      <div className="absolute bottom-2 right-3 z-30 pointer-events-none whitespace-nowrap text-right">
+        <TimeDisplay currentTime={currentTime} duration={currentSong?.duration ?? 0} inline />
       </div>
 
-      {/* ─────────── 5. LYRICS (bottom) — uses standard LyricLineDisplay ─────────── */}
-      <div className="flex-shrink-0 px-4 pb-4 min-h-0">
+      {/* ─────────── 4. LYRICS (bottom) — BR-style background, lifted above the bottom-corner time displays (B3.6) ─────────── */}
+      <div className="flex-shrink-0 px-4 pb-3 min-h-0">
         {currentSong ? (
           <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
             {currentLyricLine ? (
@@ -752,6 +716,19 @@ export function PlayingView({
             <p className="text-white/30 text-sm">{t('battleRoyale.loadingSong')}</p>
           </div>
         )}
+      </div>
+
+      {/* ─────────── 5. ROUND PROGRESS BAR (very bottom edge, h-1 like other modes — B3.4) ─────────── */}
+      <div className="flex-shrink-0 w-full h-1 bg-white/10" data-testid="br-round-progress">
+        <div
+          className="h-full transition-all duration-300"
+          style={{
+            width: `${Math.min(100, Math.max(0, (roundTimeLeft / (currentRound?.duration || 60)) * 100))}%`,
+            background: roundTimeLeft <= 5
+              ? 'linear-gradient(90deg, #ef4444, #f97316)'
+              : 'linear-gradient(90deg, #06b6d4, #a855f7)',
+          }}
+        />
       </div>
 
       {/* Danger Warning Overlay */}

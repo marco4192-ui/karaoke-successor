@@ -199,15 +199,29 @@ export function GameProgressBar({ currentTime, duration }: GameProgressBarProps)
 interface TimeDisplayProps {
   currentTime: number;
   duration: number;
+  /**
+   * Inline variant: renders as a normal flow element (single line,
+   * right-aligned, no wrapping) instead of an absolute bottom-right
+   * overlay. Used by Battle Royale where the wrapper controls placement.
+   */
+  inline?: boolean;
 }
 
-export function TimeDisplay({ currentTime, duration }: TimeDisplayProps) {
+export function TimeDisplay({ currentTime, duration, inline }: TimeDisplayProps) {
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${String(seconds).padStart(2, '0')}`;
   };
+
+  if (inline) {
+    return (
+      <div className="text-white/60 text-sm font-mono whitespace-nowrap tabular-nums">
+        {formatTime(currentTime)} / {formatTime(duration || 0)}
+      </div>
+    );
+  }
 
   return (
     <div className="absolute bottom-2 right-4 z-20 text-white/60 text-sm font-mono">

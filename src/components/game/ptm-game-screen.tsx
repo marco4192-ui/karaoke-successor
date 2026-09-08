@@ -206,13 +206,15 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
         />
       )}
 
-      {/* Controls (top-left: Pause + End Song; top-right: Webcam + Difficulty + Fullscreen) */}
+      {/* Controls (top-center: song banner; top-left: Pause + End Song; top-right: Difficulty + Webcam + Fullscreen) */}
       {g.phase === 'playing' && (
         <PtmHudControls
           safeSettings={g.safeSettings}
           isPlaying={g.isPlaying}
           onTogglePause={g.togglePause}
           onEndSong={g.handleEndSong}
+          songTitle={g.isMedleyMode ? 'Medley' : (g.effectiveSong?.title ?? null)}
+          songArtist={g.isMedleyMode ? null : (g.effectiveSong?.artist ?? null)}
         />
       )}
 
