@@ -6,10 +6,12 @@ import type { Note, Song } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
 import { Waveform } from './waveform';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge } from 'lucide-react';
+import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet } from 'lucide-react';
 import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { useTranslation } from '@/lib/i18n/translations';
+import { snapTimeToBeat } from '@/lib/editor/beat-utils';
 
 /**
  * History mode for note updates:
@@ -29,11 +31,18 @@ interface TimelineProps {
   currentTime: number;
   isPlaying: boolean;
   selectedNoteId?: string;
+  /** Multi-selection set (YASS-style Ctrl+Click) */
+  selectedNoteIds?: Set<string>;
+  /** Beat snapping enabled (magnet) */
+  snapEnabled?: boolean;
+  onToggleSnap?: () => void;
   playbackRate?: number;
   onPlaybackRateChange?: (_rate: number) => void;
   onTimeChange: (_time: number) => void;
   onPlayPause: () => void;
   onNoteSelect: (_noteId: string | undefined) => void;
+  /** Ctrl+Click on a note — toggle it in the multi-selection */
+  onNoteCtrlToggle: (_noteId: string) => void;
   onNoteUpdate: (_noteId: string, _updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
   /** Push the accumulated live changes as one history entry (drag release etc.) */
   onCommitHistory: () => void;
@@ -51,16 +60,21 @@ export function Timeline({
   currentTime,
   isPlaying,
   selectedNoteId,
+  selectedNoteIds,
+  snapEnabled = false,
+  onToggleSnap,
   playbackRate = 1.0,
   onPlaybackRateChange,
   onTimeChange,
   onPlayPause,
   onNoteSelect,
+  onNoteCtrlToggle,
   onNoteUpdate,
   onCommitHistory,
   onNoteAdd,
   onLyricChange
 }: TimelineProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollCheckRef = useRef<number>(0);
   const [zoom, setZoom] = useState(1);
@@ -144,6 +158,10 @@ export function Timeline({
   const visibleMinPitch = pitchScrollCenter - VISIBLE_PITCH_RANGE / 2;
   const visibleMaxPitch = pitchScrollCenter + VISIBLE_PITCH_RANGE / 2;
 
+  // ── Beat snapping (YASS-style magnet) ──
+  // Shared formula with the export/parser: beat n occurs at GAP + n * 15000/BPM
+  const snapTime = useCallback((t: number) => snapTimeToBeat(t, song.bpm, song.gap, snapEnabled), [snapEnabled, song.bpm, song.gap]);
+
   // Calculate playhead position
   const playheadPosition = (currentTime / 1000) * pixelsPerSecond - scrollOffset;
 
@@ -224,15 +242,15 @@ export function Timeline({
     const clickedTime = (clickX / pixelsPerSecond) * 1000;
     const clickedPitch = Math.round(visibleMaxPitch - (clickY / pitchHeight));
 
-    // If shift+click, add a new note
+    // If shift+click, add a new note (snapped to the beat grid when the magnet is on)
     if (e.shiftKey && clickedPitch >= visibleMinPitch && clickedPitch <= visibleMaxPitch) {
-      onNoteAdd(clickedTime, clickedPitch);
+      onNoteAdd(snapTime(clickedTime), clickedPitch);
       return;
     }
 
     // Deselect if clicking on empty space
     onNoteSelect(undefined);
-  }, [scrollOffset, pixelsPerSecond, pitchHeight, visibleMaxPitch, visibleMinPitch, dragState, onNoteSelect, onNoteAdd]);
+  }, [scrollOffset, pixelsPerSecond, pitchHeight, visibleMaxPitch, visibleMinPitch, dragState, onNoteSelect, onNoteAdd, snapTime]);
 
   // Handle mouse move for playhead drag + note drag (live updates, no history flood)
   useEffect(() => {
@@ -253,10 +271,10 @@ export function Timeline({
 
         if (dragState.type === 'move') {
           onNoteUpdate(dragState.noteId, {
-            startTime: Math.max(0, dragState.originalNote.startTime + deltaTime)
+            startTime: snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime))
           }, 'live');
         } else if (dragState.type === 'resize-left') {
-          const newStart = Math.max(0, dragState.originalNote.startTime + deltaTime);
+          const newStart = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
           const newDuration = dragState.originalNote.duration - (newStart - dragState.originalNote.startTime);
           if (newDuration > 100) {
             onNoteUpdate(dragState.noteId, {
@@ -265,7 +283,10 @@ export function Timeline({
             }, 'live');
           }
         } else if (dragState.type === 'resize-right') {
-          const newDuration = Math.max(100, dragState.originalNote.duration + deltaTime);
+          // Snap the note END to the beat grid when magnet is on
+          const originalEnd = dragState.originalNote.startTime + dragState.originalNote.duration;
+          const newEnd = snapTime(originalEnd + deltaTime);
+          const newDuration = Math.max(100, newEnd - dragState.originalNote.startTime);
           onNoteUpdate(dragState.noteId, { duration: newDuration }, 'live');
         }
       }
@@ -288,7 +309,7 @@ export function Timeline({
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate, onCommitHistory]);
+  }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate, onCommitHistory, snapTime]);
 
   // Handle note drag start
   const handleNoteDragStart = useCallback((noteId: string, startX: number, type: 'move' | 'resize-left' | 'resize-right') => {
@@ -298,11 +319,15 @@ export function Timeline({
     }
   }, [allNotes]);
 
-  // Handle note click
+  // Handle note click — Ctrl/Cmd+Click toggles the multi-selection (YASS-style)
   const handleNoteClick = useCallback((noteId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    onNoteSelect(noteId);
-  }, [onNoteSelect]);
+    if (event.ctrlKey || event.metaKey) {
+      onNoteCtrlToggle(noteId);
+    } else {
+      onNoteSelect(noteId);
+    }
+  }, [onNoteSelect, onNoteCtrlToggle]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -449,6 +474,22 @@ export function Timeline({
 
           <span className="text-slate-600 text-xs mx-1">|</span>
 
+          {/* Beat snap toggle (magnet) */}
+          {onToggleSnap && (
+            <Button
+              size="sm"
+              variant={snapEnabled ? 'default' : 'ghost'}
+              onClick={onToggleSnap}
+              title={t('editor.timeline.snap')}
+              className={snapEnabled
+                ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
+                : 'text-slate-400 hover:text-white'}
+              data-testid="editor-snap-toggle"
+            >
+              <Magnet className="w-4 h-4" />
+            </Button>
+          )}
+
           <Button
             size="sm"
             variant="ghost"
@@ -554,6 +595,7 @@ export function Timeline({
                 key={note.id}
                 note={note}
                 isSelected={selectedNoteId === note.id}
+                isMultiSelected={selectedNoteIds?.has(note.id) && selectedNoteId !== note.id}
                 isPlayingNote={
                   isPlaying &&
                   currentTime >= note.startTime &&

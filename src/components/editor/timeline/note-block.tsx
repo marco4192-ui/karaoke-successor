@@ -7,6 +7,8 @@ import type { Note } from '@/types/game';
 interface NoteBlockProps {
   note: Note;
   isSelected: boolean;
+  /** Part of the Ctrl+Click multi-selection (but not the primary note) */
+  isMultiSelected?: boolean;
   isPlayingNote?: boolean;
   zoom: number;
   pixelsPerSecond: number;
@@ -21,6 +23,7 @@ interface NoteBlockProps {
 export function NoteBlock({
   note,
   isSelected,
+  isMultiSelected = false,
   isPlayingNote = false,
   pixelsPerSecond,
   scrollOffset,
@@ -116,9 +119,10 @@ export function NoteBlock({
         colors.text,
         'border-2',
         isSelected && 'ring-2 ring-white ring-offset-1 ring-offset-transparent',
+        isMultiSelected && !isSelected && 'ring-1 ring-cyan-300/80 ring-offset-1 ring-offset-transparent',
         isPlayingNote && 'ring-2 ring-green-400 ring-offset-1 ring-offset-transparent scale-[1.02] brightness-125',
         isHovered && !isPlayingNote && 'brightness-110',
-        (isSelected || isPlayingNote) && 'z-10'
+        (isSelected || isPlayingNote || isMultiSelected) && 'z-10'
       )}
       style={{
         left: `${startX}px`,

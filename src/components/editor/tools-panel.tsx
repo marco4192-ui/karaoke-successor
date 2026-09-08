@@ -2,19 +2,25 @@
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand } from 'lucide-react';
+import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand, Merge } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { Note, DuetPlayer } from '@/types/game';
 
 interface ToolsPanelProps {
   selectedNote: Note | undefined;
+  /** Size of the effective selection (multi-select aware) */
+  selectedCount?: number;
   currentTime: number;
   onAddNote: (_startTime: number, _pitch: number) => void;
   onDuplicateNote: () => void;
   onDeleteNote: () => void;
   onSplitNote: () => void;
+  /** Merge the selected note with the next note in the same line */
+  onMergeNote: () => void;
   onUpdateSelectedNote: (_updates: Partial<Note>) => void;
+  /** Apply updates to ALL selected notes (type/player buttons in multi-select) */
+  onUpdateSelection?: (_updates: Partial<Note>) => void;
   tapMode?: {
     isActive: boolean;
     isHolding: boolean;
@@ -27,19 +33,29 @@ interface ToolsPanelProps {
 
 export function ToolsPanel({
   selectedNote,
+  selectedCount = 0,
   currentTime,
   onAddNote,
   onDuplicateNote,
   onDeleteNote,
   onSplitNote,
+  onMergeNote,
   onUpdateSelectedNote,
+  onUpdateSelection,
   tapMode,
 }: ToolsPanelProps) {
   const { t } = useTranslation();
   return (
     <aside className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col overflow-y-auto flex-shrink-0">
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.tools')}</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+          {t('editor.toolsPanel.tools')}
+          {selectedCount > 1 && (
+            <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300" data-testid="editor-selection-count">
+              {selectedCount} {t('editor.toolsPanel.notesSelected')}
+            </span>
+          )}
+        </h2>
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -100,6 +116,22 @@ export function ToolsPanel({
             </TooltipTrigger>
             <TooltipContent side="right">{t('editor.toolsPanel.splitNote')}</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onMergeNote}
+                disabled={!selectedNote}
+                className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
+                data-testid="editor-merge-button"
+              >
+                <Merge className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{t('editor.toolsPanel.merge')}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{t('editor.toolsPanel.mergeNote')}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -109,7 +141,7 @@ export function ToolsPanel({
           <Button
             variant={selectedNote && !selectedNote.isGolden && !selectedNote.isBonus ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onUpdateSelectedNote({ isGolden: false, isBonus: false })}
+            onClick={() => (onUpdateSelection ?? onUpdateSelectedNote)({ isGolden: false, isBonus: false })}
             className="bg-cyan-600 hover:bg-cyan-700"
           >
             <Music className="w-4 h-4" />
@@ -117,7 +149,7 @@ export function ToolsPanel({
           <Button
             variant={selectedNote?.isGolden ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onUpdateSelectedNote({ isGolden: true, isBonus: false })}
+            onClick={() => (onUpdateSelection ?? onUpdateSelectedNote)({ isGolden: true, isBonus: false })}
             className="bg-amber-600 hover:bg-amber-700"
           >
             <Star className="w-4 h-4" />
@@ -125,7 +157,7 @@ export function ToolsPanel({
           <Button
             variant={selectedNote?.isBonus ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onUpdateSelectedNote({ isGolden: false, isBonus: true })}
+            onClick={() => (onUpdateSelection ?? onUpdateSelectedNote)({ isGolden: false, isBonus: true })}
             className="bg-pink-600 hover:bg-pink-700"
           >
             <Zap className="w-4 h-4" />
@@ -143,7 +175,7 @@ export function ToolsPanel({
         <Select
           value={selectedNote?.player || 'both'}
           onValueChange={(value: DuetPlayer | 'both') =>
-            onUpdateSelectedNote({ player: value === 'both' ? undefined : value })
+            (onUpdateSelection ?? onUpdateSelectedNote)({ player: value === 'both' ? undefined : value })
           }
           disabled={!selectedNote}
         >
@@ -226,8 +258,20 @@ export function ToolsPanel({
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Space</kbd>
           </div>
           <div className="flex justify-between">
+            <span>{t('editor.toolsPanel.transpose')}</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">↑/↓</kbd>
+          </div>
+          <div className="flex justify-between">
+            <span>{t('editor.toolsPanel.nudge')}</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">←/→</kbd>
+          </div>
+          <div className="flex justify-between">
             <span>{t('editor.toolsPanel.deleteNote')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Del</kbd>
+          </div>
+          <div className="flex justify-between">
+            <span>{t('editor.toolsPanel.mergeShortcut')}</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">M</kbd>
           </div>
           <div className="flex justify-between">
             <span>{t('editor.toolsPanel.save')}</span>
@@ -240,6 +284,10 @@ export function ToolsPanel({
           <div className="flex justify-between">
             <span>{t('editor.toolsPanel.addNote')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Shift+Click</kbd>
+          </div>
+          <div className="flex justify-between">
+            <span>{t('editor.toolsPanel.multiSelect')}</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Ctrl+Click</kbd>
           </div>
         </div>
       </div>

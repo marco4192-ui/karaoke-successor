@@ -407,6 +407,11 @@ export const libraryTranslations = {
       saveAndExit: 'Save & Exit',
       hidePanel: 'Hide panel',
       showPanel: 'Show panel',
+      cancelConfirmTitle: 'Unsaved changes',
+      cancelConfirmDesc: 'Your changes have not been saved yet. What do you want to do?',
+      cancelConfirmKeep: 'Keep editing',
+      cancelConfirmDiscard: 'Discard',
+      cancelConfirmSave: 'Save & close',
     },
 
     // New song dialog
@@ -554,6 +559,13 @@ export const libraryTranslations = {
       deleteNote: 'Delete Note',
       split: 'Split',
       splitNote: 'Split Note',
+      merge: 'Merge',
+      mergeNote: 'Merge note with the next note in the line (M)',
+      mergeShortcut: 'Merge',
+      notesSelected: 'notes selected',
+      transpose: 'Transpose',
+      nudge: 'Nudge',
+      multiSelect: 'Multi-select',
       noteType: 'Note Type',
       normal: 'Normal',
       golden: 'Golden',
@@ -644,6 +656,7 @@ export const libraryTranslations = {
     // Timeline
     timeline: {
       noLyrics: 'No lyrics - double-click to add notes',
+      snap: 'Snap to beat (magnet)',
     },
 
     // Editor core (shared)

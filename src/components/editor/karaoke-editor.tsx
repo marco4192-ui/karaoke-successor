@@ -7,11 +7,13 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline, type NoteHistoryMode } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, FileText, Settings, BookOpen, Waves, Sparkles, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { midiPitchToFrequency } from '@/lib/utils';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
+import { snapTimeToBeat } from '@/lib/editor/beat-utils';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -58,9 +60,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
   const { t } = useTranslation();
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
+  // Multi-selection (YASS-style Ctrl+Click); primary selection is always included
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default
+  // Cancel confirmation (unsaved changes guard)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Beat snapping (YASS-style magnet)
+  const [snapEnabled, setSnapEnabled] = useState(false);
 
   // ── Authoritative song ref ──
   // All mutation handlers compute the next state from this ref (NOT from a
@@ -148,6 +156,12 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
 
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
   const selectedNote = useMemo(() => allNotes.find(n => n.id === selectedNoteId), [allNotes, selectedNoteId]);
+
+  // Effective selection: multi-selection when present, else the primary note
+  const effectiveSelection = useMemo(() => {
+    if (selectedNoteIds.size > 0) return selectedNoteIds;
+    return selectedNoteId ? new Set([selectedNoteId]) : new Set<string>();
+  }, [selectedNoteIds, selectedNoteId]);
 
   // All lyrics syllables for tap-mode auto-assignment.
   // Prefer syllables from existing notes; fall back to rawLyrics text if no notes exist yet.
@@ -309,7 +323,27 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
       .map(finalizeLine);
     applyLyrics(newLyrics, 'push');
     if (selectedNoteId === noteId) setSelectedNoteId(undefined);
+    setSelectedNoteIds(prevIds => {
+      if (!prevIds.has(noteId)) return prevIds;
+      const next = new Set(prevIds);
+      next.delete(noteId);
+      return next;
+    });
   }, [applyLyrics, selectedNoteId]);
+
+  /** Delete ALL notes in the effective selection (single undo step). */
+  const handleSelectionDelete = useCallback(() => {
+    const ids = effectiveSelection;
+    if (ids.size === 0) return;
+    const prev = currentSongRef.current;
+    const newLyrics = prev.lyrics
+      .map(line => ({ ...line, notes: line.notes.filter(note => !ids.has(note.id)) }))
+      .filter(line => line.notes.length > 0)
+      .map(finalizeLine);
+    applyLyrics(newLyrics, 'push');
+    if (selectedNoteId && ids.has(selectedNoteId)) setSelectedNoteId(undefined);
+    setSelectedNoteIds(new Set());
+  }, [effectiveSelection, applyLyrics, selectedNoteId]);
 
   /** Insert a note into the lyrics structure. `groupLine` merges close tap notes into the previous line. */
   const insertNote = useCallback((lyrics: LyricLine[], newNote: Note, groupLine: boolean): LyricLine[] => {
@@ -467,22 +501,187 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
     lyrics: allLyricsSyllables,
   });
 
-  // Keyboard shortcuts (disabled when tap mode is active — Space handled by tap hook)
-  // Ctrl+S saves WITHOUT closing (YASS-style) — Save & Exit stays a button action.
-  useEditorKeyboardShortcuts({
-    selectedNoteId, selectedNote, currentTime,
-    handlePlayPause, handleNoteDelete, handleSave: handleSaveOnly,
-    undo, redo, handleNoteAdd, setSelectedNoteId,
-    tapModeActive: tapPlacement.isActive,
-  });
+  // Keyboard shortcuts are wired further below (after all handlers exist)
 
   const handleNoteSelect = useCallback((noteId: string | undefined) => {
     setSelectedNoteId(noteId);
+    setSelectedNoteIds(noteId ? new Set([noteId]) : new Set());
+  }, []);
+
+  /** Ctrl+Click: toggle a note in the multi-selection (YASS-style). */
+  const handleNoteCtrlToggle = useCallback((noteId: string) => {
+    setSelectedNoteIds(prev => {
+      const next = new Set(prev);
+      if (next.has(noteId)) next.delete(noteId);
+      else next.add(noteId);
+      return next;
+    });
+    setSelectedNoteId(noteId); // clicked note becomes the primary selection
   }, []);
 
   const updateSelectedNote = useCallback((updates: Partial<Note>, mode: NoteHistoryMode = 'push') => {
     if (selectedNoteId) handleNoteUpdate(selectedNoteId, updates, mode);
   }, [selectedNoteId, handleNoteUpdate]);
+
+  // ── YASS-style editing operations ──
+
+  /** Apply an update to ALL selected notes in one history step (type/player). */
+  const updateMultiSelected = useCallback((updates: Partial<Note>) => {
+    const ids = effectiveSelection;
+    if (ids.size === 0) return;
+    const prev = currentSongRef.current;
+    let touched = false;
+    const newLyrics = prev.lyrics.map(line => {
+      const has = line.notes.some(n => ids.has(n.id));
+      if (!has) return line;
+      touched = true;
+      return finalizeLine({
+        ...line,
+        notes: line.notes.map(n => {
+          if (!ids.has(n.id)) return n;
+          const merged = { ...n, ...updates };
+          if (updates.pitch !== undefined && updates.frequency === undefined) {
+            merged.frequency = midiPitchToFrequency(updates.pitch);
+          }
+          return merged;
+        }),
+      });
+    });
+    if (touched) applyLyrics(newLyrics, 'push');
+  }, [effectiveSelection, applyLyrics]);
+
+  /** Transpose all selected notes (↑/↓, Shift = octave). Coalesced undo per burst. */
+  const handleTranspose = useCallback((delta: number) => {
+    const ids = effectiveSelection;
+    if (ids.size === 0) return;
+    const prev = currentSongRef.current;
+    let touched = false;
+    const newLyrics = prev.lyrics.map(line => {
+      const has = line.notes.some(n => ids.has(n.id));
+      if (!has) return line;
+      touched = true;
+      return {
+        ...line,
+        notes: line.notes.map(n => {
+          if (!ids.has(n.id)) return n;
+          const pitch = Math.max(0, Math.min(127, n.pitch + delta));
+          return { ...n, pitch, frequency: midiPitchToFrequency(pitch) };
+        }),
+      };
+    });
+    if (touched) {
+      applyLyrics(newLyrics, 'live');
+      scheduleCommit();
+    }
+  }, [effectiveSelection, applyLyrics, scheduleCommit]);
+
+  /** Nudge all selected notes' start time (←/→, Shift = coarse). Coalesced undo per burst.
+   *  Snaps to the beat grid when the magnet is enabled. */
+  const handleNudge = useCallback((delta: number) => {
+    const ids = effectiveSelection;
+    if (ids.size === 0) return;
+    const prev = currentSongRef.current;
+    let touched = false;
+    const newLyrics = prev.lyrics.map(line => {
+      const has = line.notes.some(n => ids.has(n.id));
+      if (!has) return line;
+      touched = true;
+      return finalizeLine({
+        ...line,
+        notes: line.notes.map(n => ids.has(n.id)
+          ? { ...n, startTime: Math.max(0, Math.round(snapTimeToBeat(n.startTime + delta, prev.bpm, prev.gap, snapEnabled))) }
+          : n
+        ),
+      });
+    });
+    if (touched) {
+      applyLyrics(newLyrics, 'live');
+      scheduleCommit();
+    }
+  }, [effectiveSelection, applyLyrics, scheduleCommit, snapEnabled]);
+
+  /** Merge the selected note with the NEXT note in the same line (M). */
+  const handleMergeNote = useCallback(() => {
+    if (!selectedNote) return;
+    const prev = currentSongRef.current;
+
+    for (const line of prev.lyrics) {
+      const idx = line.notes.findIndex(n => n.id === selectedNote.id);
+      if (idx === -1) continue;
+      if (idx === line.notes.length - 1) return; // no next note in this line
+
+      const a = line.notes[idx];
+      const b = line.notes[idx + 1];
+
+      // UltraStar syllable join: 'Hel-' + 'lo' → 'Hello' (no space, trailing '-' stripped)
+      const lyric = a.lyric.endsWith('-')
+        ? a.lyric.slice(0, -1) + b.lyric
+        : a.lyric + ' ' + b.lyric;
+
+      const start = Math.min(a.startTime, b.startTime);
+      const end = Math.max(a.startTime + a.duration, b.startTime + b.duration);
+      const merged: Note = { ...a, startTime: start, duration: end - start, lyric };
+
+      const newNotes = [...line.notes];
+      newNotes.splice(idx, 2, merged);
+      const newLyrics = prev.lyrics.map(l =>
+        l.id === line.id ? finalizeLine({ ...l, notes: newNotes }) : l
+      );
+      applyLyrics(newLyrics, 'push');
+      setSelectedNoteId(merged.id);
+      setSelectedNoteIds(new Set([merged.id]));
+      return;
+    }
+  }, [selectedNote, applyLyrics]);
+
+  /** Paste a full note (Ctrl+V) at the playhead — keeps lyric/duration/type/player.
+   *  Start snaps to the beat grid when the magnet is enabled. */
+  const handlePasteNote = useCallback((data: Partial<Note>) => {
+    const rawStart = Math.max(0, Math.round(currentTimeRef.current));
+    const start = Math.round(snapTimeToBeat(rawStart, currentSongRef.current.bpm, currentSongRef.current.gap, snapEnabled));
+    const pitch = typeof data.pitch === 'number' ? Math.max(0, Math.min(127, data.pitch)) : 60;
+    const newNote: Note = {
+      id: uuidv4(),
+      pitch,
+      frequency: midiPitchToFrequency(pitch),
+      startTime: start,
+      duration: typeof data.duration === 'number' && data.duration > 0 ? data.duration : 500,
+      lyric: data.lyric || '---',
+      isBonus: Boolean(data.isBonus),
+      isGolden: Boolean(data.isGolden),
+      player: data.player,
+    };
+    const newLyrics = insertNote(currentSongRef.current.lyrics, newNote, false);
+    applyLyrics(newLyrics, 'push');
+    setSelectedNoteId(newNote.id);
+    setSelectedNoteIds(new Set([newNote.id]));
+  }, [applyLyrics, insertNote, snapEnabled]);
+
+  // Keyboard shortcuts (Space disabled in tap mode; Ctrl+S saves without closing)
+  useEditorKeyboardShortcuts({
+    selectedNoteId, selectedNote, currentTime,
+    handlePlayPause, handleNoteDelete: handleSelectionDelete, handleSave: handleSaveOnly,
+    undo, redo, handlePasteNote, handleMergeNote, handleTranspose, handleNudge,
+    setSelectedNoteId: handleNoteSelect,
+    tapModeActive: tapPlacement.isActive,
+  });
+
+  // ── Cancel confirmation (guard against losing unsaved changes) ──
+  const requestCancel = useCallback(() => {
+    if (hasUnsavedChanges) setShowCancelConfirm(true);
+    else onCancel();
+  }, [hasUnsavedChanges, onCancel]);
+
+  // beforeunload guard while there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
 
   const duplicateNote = useCallback(() => {
     if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
@@ -654,7 +853,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
-        onCancel={onCancel}
+        onCancel={requestCancel}
         onSave={handleSave}
         onSaveOnly={handleSaveOnly}
         showMetadataPanel={showMetadataPanel}
@@ -664,12 +863,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
       <div className="flex flex-1 overflow-hidden min-h-0">
         <ToolsPanel
           selectedNote={selectedNote}
+          selectedCount={effectiveSelection.size}
           currentTime={currentTime}
           onAddNote={handleNoteAdd}
           onDuplicateNote={duplicateNote}
-          onDeleteNote={() => selectedNoteId && handleNoteDelete(selectedNoteId)}
+          onDeleteNote={handleSelectionDelete}
           onSplitNote={handleNoteSplit}
+          onMergeNote={handleMergeNote}
           onUpdateSelectedNote={updateSelectedNote}
+          onUpdateSelection={updateMultiSelected}
           tapMode={tapPlacement}
         />
 
@@ -690,11 +892,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
             currentTime={currentTime}
             isPlaying={isPlaying}
             selectedNoteId={selectedNoteId}
+            selectedNoteIds={selectedNoteIds}
+            snapEnabled={snapEnabled}
+            onToggleSnap={() => setSnapEnabled(prev => !prev)}
             playbackRate={playbackRate}
             onPlaybackRateChange={setPlaybackRate}
             onTimeChange={handleTimeChange}
             onPlayPause={handlePlayPause}
             onNoteSelect={handleNoteSelect}
+            onNoteCtrlToggle={handleNoteCtrlToggle}
             onNoteUpdate={handleNoteUpdate}
             onCommitHistory={handleCommitHistory}
             onNoteAdd={handleNoteAdd}
@@ -800,6 +1006,49 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
       {/* Fallback: play audio from video file when no separate audio exists */}
       {!currentSong.audioUrl && currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && (
         <audio ref={audioRef} src={currentSong.videoBackground} onEnded={() => setIsPlaying(false)} />
+      )}
+
+      {/* Cancel confirmation — guard against losing unsaved changes */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">⚠️</span>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">{t('editor.header.cancelConfirmTitle')}</h3>
+                <p className="text-white/60 text-xs mt-0.5">{t('editor.header.cancelConfirmDesc')}</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 border-white/20 text-white/80 hover:bg-white/10"
+                data-testid="editor-cancel-keep-button"
+              >
+                {t('editor.header.cancelConfirmKeep')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setShowCancelConfirm(false); onCancel(); }}
+                className="flex-1 border-red-500/40 text-red-400 hover:bg-red-500/10"
+                data-testid="editor-cancel-discard-button"
+              >
+                {t('editor.header.cancelConfirmDiscard')}
+              </Button>
+              <Button
+                onClick={() => { setShowCancelConfirm(false); handleSave(); }}
+                disabled={isSaving}
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700"
+                data-testid="editor-cancel-save-button"
+              >
+                {t('editor.header.cancelConfirmSave')}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
