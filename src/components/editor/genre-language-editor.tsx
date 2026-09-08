@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { updateSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
+import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 
 import { GENRES, LANGUAGES } from '@/lib/constants';
 
@@ -106,8 +107,12 @@ export function GenreLanguageEditor({
 
   const handleAcceptSuggestion = useCallback((field: 'genre' | 'language') => {
     if (!aiSuggestion) return;
-    const value = aiSuggestion[field];
-    if (!value) return;
+    const raw = aiSuggestion[field];
+    if (!raw) return;
+    // Normalize to the app's canonical naming — the AI endpoints return
+    // mixed conventions ("Deutsch" vs "German", "es" vs "Spanish") which
+    // would fragment the library's genre/language filters.
+    const value = field === 'genre' ? normalizeGenreName(raw) : normalizeLanguage(raw);
     if (field === 'genre') {
       setCustomGenre(value);
       onUpdate({ genre: value });
@@ -297,21 +302,23 @@ export function GenreLanguageEditor({
           )}
         </div>
 
-        {/* Current Status */}
+        {/* Current Status — reflects the panel's current input, not the stale song prop */}
         <div className="flex gap-4 text-sm">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.genre ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-            {song.genre ? '✅' : '❌'} {t('editor.genre')}: {song.genre || t('editor.genreNotSet')}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${customGenre ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            {customGenre ? '✅' : '❌'} {t('editor.genre')}: {customGenre || t('editor.genreNotSet')}
           </div>
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.language ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-            {song.language ? '✅' : '❌'} {t('editor.language')}: {song.language || t('editor.languageNotSet')}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${customLanguage ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            {customLanguage ? '✅' : '❌'} {t('editor.language')}: {customLanguage || t('editor.languageNotSet')}
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Save Button — also enabled when values were CLEARED (removing a
+            wrong tag is a legitimate change; the old condition made clearing
+            impossible to save) */}
         <div className="pt-2">
           <Button
             onClick={handleSaveToTxt}
-            disabled={isSaving || (!customGenre && !customLanguage)}
+            disabled={isSaving || (!customGenre && !customLanguage && !song.genre && !song.language)}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
           >
             {isSaving ? (

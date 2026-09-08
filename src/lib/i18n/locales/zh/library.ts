@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: '所选歌曲的建议更改',
   aiBatchNoSuggestions: '所有选中的歌曲已有合适的流派/语言标签。',
   aiBatchClose: '关闭',
+  aiBatchSavingFiles: '正在将 {current}/{total} 保存到 TXT 文件…',
+  aiBatchFileErrors: '{count} 首歌曲仅在曲库中更新 — TXT 文件写入失败。这些更改将在下次文件夹重新扫描时丢失。',
   saving: '保存中...',
   saveChanges: '保存更改到TXT文件',
   saveError: '保存出错：{error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: '输入艺术家...',
     detectBpmTitle: '检测BPM',
     selectAudioFirst: '请先选择音频文件',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: '视频同步',
+    toggle: '显示视频同步悬浮窗',
+    close: '关闭视频悬浮窗',
+    songTimecode: '歌曲时间码',
+    videoPosition: '视频',
+    videoGap: '视频偏移',
+    gapHint: '正值使视频延后',
+    jumpTo: '点击输入时间码 (m:ss.mmm)',
   },
   songInfoTab: {
     title: '标题',

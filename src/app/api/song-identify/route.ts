@@ -25,16 +25,17 @@ interface SongIdentifyResponse {
   error?: string;
 }
 
-// Map ISO 639-1 codes to full language names
+// Map ISO 639-1 codes to full English language names (app convention —
+// matches the library's normalizeLanguage aliases and the LANGUAGES constant)
 const LANGUAGE_FULL_NAMES: Record<string, string> = {
-  en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français',
-  it: 'Italiano', pt: 'Português', ja: '日本語', ko: '한국어',
-  zh: '中文', ru: 'Русский', nl: 'Nederlands', pl: 'Polski',
-  sv: 'Svenska', no: 'Norsk', da: 'Dansk', fi: 'Suomi',
-  ar: 'العربية', hi: 'हिन्दी', th: 'ไทย', vi: 'Tiếng Việt',
-  tr: 'Türkçe', cs: 'Čeština', el: 'Ελληνικά', he: 'עברית',
-  ro: 'Română', hu: 'Magyar', uk: 'Українська', bg: 'Български',
-  id: 'Bahasa Indonesia', ms: 'Bahasa Melayu', tl: 'Filipino',
+  en: 'English', de: 'German', es: 'Spanish', fr: 'French',
+  it: 'Italian', pt: 'Portuguese', ja: 'Japanese', ko: 'Korean',
+  zh: 'Chinese', ru: 'Russian', nl: 'Dutch', pl: 'Polish',
+  sv: 'Swedish', no: 'Norwegian', da: 'Danish', fi: 'Finnish',
+  ar: 'Arabic', hi: 'Hindi', th: 'Thai', vi: 'Vietnamese',
+  tr: 'Turkish', cs: 'Czech', el: 'Greek', he: 'Hebrew',
+  ro: 'Romanian', hu: 'Hungarian', uk: 'Ukrainian', bg: 'Bulgarian',
+  id: 'Indonesian', ms: 'Malay', tl: 'Filipino',
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse<SongIdentifyResponse>> {
@@ -99,7 +100,7 @@ Return ONLY a valid JSON object with the following structure:
 
 Rules:
 - confidence should be 0-100 based on how certain you are
-- For language, use the FULL language name in its native form (e.g. "English", "Deutsch", "Español", "Français", "日本語", "한국어", "中文", "Русский", "Italiano", "Português", etc.) — NOT ISO codes
+- For language, ALWAYS use the full ENGLISH language name (e.g. "English", "German", "Spanish", "French", "Japanese", "Korean", "Chinese", "Russian", "Italian", "Portuguese") — NOT ISO codes, NOT native forms (no "Deutsch", "Español", "日本語")
 - If you cannot determine a field, set it to null
 - For genre, use ONE of these well-known genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, J-Pop, Schlager, Volksmusik, Singer-Songwriter, Reggae, Soul, Funk, Metal, Punk, Indie, Folk, Blues, Dance, Reggaeton, Afrobeats, Alternative, Children's
 - Sub-genres should be normalized to their parent genre. Examples: "Synthpop" → "Pop", "Alternative Rock" → "Rock", "Deep House" → "Electronic", "Contemporary R&B" → "R&B", "Indie Folk" → "Folk", "Neo Soul" → "Soul"

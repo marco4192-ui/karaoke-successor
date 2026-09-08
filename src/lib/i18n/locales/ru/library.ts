@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Предложенные изменения для выбранных песен',
   aiBatchNoSuggestions: 'Все выбранные песни уже имеют подходящие теги жанра/языка.',
   aiBatchClose: 'Закрыть',
+  aiBatchSavingFiles: 'Сохранение {current}/{total} в TXT-файлы…',
+  aiBatchFileErrors: '{count} песня(и) обновлены только в библиотеке — TXT-файл не удалось записать. Эти изменения будут потеряны при следующем сканировании папки.',
   saving: 'Сохранение...',
   saveChanges: 'Сохранить изменения в TXT-файл',
   saveError: 'Ошибка сохранения: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Введите исполнителя...',
     detectBpmTitle: 'Определить BPM',
     selectAudioFirst: 'Сначала выберите аудиофайл',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Синхронизация видео',
+    toggle: 'Показать оверлей синхронизации видео',
+    close: 'Закрыть видео-оверлей',
+    songTimecode: 'Таймкод песни',
+    videoPosition: 'Видео',
+    videoGap: 'Смещение видео',
+    gapHint: 'Положительные значения задерживают видео',
+    jumpTo: 'Нажмите, чтобы ввести таймкод (м:сс.ммм)',
   },
   songInfoTab: {
     title: 'Название',

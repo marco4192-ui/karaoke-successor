@@ -50,10 +50,10 @@ Common normalizations (sub-genres → parent genre):
 
 Language detection hints:
 - Artist names ending in common patterns: "-ovic", "-ova" → Slavic language; "-sson", "-sen" → Scandinavian
-- Known non-English genres hint at language: "Schlager"/"Volksmusik" → Deutsch; "Chanson" → Français; "Canzone" → Italiano
-- If lyrics are in the input and contain common words from a language, use that (e.g. "ich", "du", "der" → Deutsch)
-- "Volksmusik" is traditional German/Austrian/Swiss folk → Deutsch
-- Keep "K-Pop" songs as "한국어" (Korean), "J-Pop" as "日本語" (Japanese)
+- Known non-English genres hint at language: "Schlager"/"Volksmusik" → German; "Chanson" → French; "Canzone" → Italian
+- If lyrics are in the input and contain common words from a language, use that (e.g. "ich", "du", "der" → German)
+- "Volksmusik" is traditional German/Austrian/Swiss folk → German (language)
+- K-Pop songs → "Korean", J-Pop songs → "Japanese" (English language names)
 `;
 
 export async function POST(request: NextRequest) {
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 RULES:
 1. Only suggest changes where the current value is missing, misspelled, overly specific, or inconsistent.
 2. Normalize sub-genres to well-known parent genres where appropriate.
-3. Map language codes (de, en, es, fr, ja, ko, etc.) to full language names.
+3. Map language codes (de, en, es, fr, ja, ko, etc.) and native forms (Deutsch, Español, 日本語) to full ENGLISH language names ("German", "Spanish", "Japanese") — never ISO codes or native forms.
 4. Set confidence 90-100 for clear matches, 70-89 for reasonable guesses, 50-69 for uncertain.
 5. Provide a brief reason for each suggestion.
 6. If the current value is already good, set the suggestion to null with confidence 100.

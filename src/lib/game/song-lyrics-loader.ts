@@ -3,6 +3,7 @@ import type { Song, LyricLine } from '@/types/game';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getTxtContent, storeMedia, getMedia } from '@/lib/db/media-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
+import { matchPlayerMarkerLine, matchDuetNotePrefix } from '@/lib/parsers/duet-markers';
 import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
 import { normalizeTxtContent } from '@/lib/utils';
 
@@ -155,8 +156,10 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     // (Same rule as in ultrastar-metadata.ts — keep both in sync.)
     const trimmedLine = line.trimStart();
 
-    if (trimmedLine === 'P1' || trimmedLine === 'P1:' || trimmedLine === 'P 1') { currentPlayer = 'P1'; continue; }
-    if (trimmedLine === 'P2' || trimmedLine === 'P2:' || trimmedLine === 'P 2') { currentPlayer = 'P2'; continue; }
+    // Standalone P1/P2 marker — shared tolerant matcher (handles trailing
+    // whitespace like "P2 " which the old strict comparison silently dropped)
+    const markerTag = matchPlayerMarkerLine(trimmedLine);
+    if (markerTag) { currentPlayer = markerTag; continue; }
     if (trimmedLine.startsWith('#')) continue;
     if (trimmedLine === 'E') break;
 
@@ -166,12 +169,12 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
       continue;
     }
 
-    const duetPrefixMatch = trimmedLine.match(/^(P1|P2):\s*(.*)$/);
+    const duetPrefix = matchDuetNotePrefix(trimmedLine);
     let noteLine = trimmedLine;
     let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
-    if (duetPrefixMatch) {
-      notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';
-      noteLine = duetPrefixMatch[2];
+    if (duetPrefix) {
+      notePlayer = duetPrefix.player;
+      noteLine = duetPrefix.rest;
     }
 
     const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);

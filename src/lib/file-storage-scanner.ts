@@ -3,6 +3,7 @@
 
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
+import { matchPlayerMarkerLine, matchDuetNotePrefix, lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
 import {
   nativeReadFileText,
   nativeReadDir,
@@ -214,12 +215,15 @@ async function processTxtFile(
   const finalCoverPath = resolveTxtReference(txtCoverFile, coverFile);
   const finalBackgroundPath = resolveTxtReference(txtBackgroundFile, null);
 
-  const isDuet = !!(p1Name || p2Name);
+  // Duet detection: header tags (#P1/#P2) OR body markers in the notes.
+  // The old header-only check silently missed the MOST COMMON duet format
+  // (body P1/P2 markers without header tags) — the "editor doesn't recognize
+  // duet songs" bug.
+  const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
+  const isDuet = !!(p1Name || p2Name) || lyricsIndicateDuet(lyrics);
   const duetPlayerNames: [string, string] | undefined = isDuet
     ? [p1Name || 'Player 1', p2Name || 'Player 2']
     : undefined;
-
-  const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
 
   return {
     title,
@@ -302,8 +306,10 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
     // (Same rule as in ultrastar-metadata.ts and song-lyrics-loader.ts — keep all in sync.)
     const trimmedLine = line.trimStart();
 
-    if (trimmedLine === 'P1' || trimmedLine === 'P1:') { currentPlayer = 'P1'; continue; }
-    if (trimmedLine === 'P2' || trimmedLine === 'P2:') { currentPlayer = 'P2'; continue; }
+    // Standalone P1/P2 marker — shared tolerant matcher (fixes dropped
+    // markers with trailing whitespace and accepts "P1 :" variants)
+    const markerTag = matchPlayerMarkerLine(trimmedLine);
+    if (markerTag) { currentPlayer = markerTag; continue; }
     if (trimmedLine.startsWith('#')) continue;
     if (trimmedLine === 'E') break;
 
@@ -313,12 +319,12 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
       continue;
     }
 
-    const duetPrefixMatch = trimmedLine.match(/^(P1|P2):\s*(.*)$/);
+    const duetPrefix = matchDuetNotePrefix(trimmedLine);
     let noteLine = trimmedLine;
     let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
-    if (duetPrefixMatch) {
-      notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';
-      noteLine = duetPrefixMatch[2];
+    if (duetPrefix) {
+      notePlayer = duetPrefix.player;
+      noteLine = duetPrefix.rest;
     }
 
     const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);

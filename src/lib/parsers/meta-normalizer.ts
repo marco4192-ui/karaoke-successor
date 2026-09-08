@@ -75,6 +75,8 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'japanisch': 'Japanese',
   'nippon': 'Japanese',
   'nipponisch': 'Japanese',
+  '日本語': 'Japanese',
+  '日本': 'Japanese',
 
   // Korean variants
   'korean': 'Korean',
@@ -82,6 +84,8 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'kor': 'Korean',
   'koreanisch': 'Korean',
   'coreano': 'Korean',
+  '한국어': 'Korean',
+  '한국': 'Korean',
 
   // Chinese variants
   'chinese': 'Chinese',
@@ -90,6 +94,10 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'mandarin': 'Chinese',
   'cantonese': 'Chinese',
   'chinesisch': 'Chinese',
+  '中文': 'Chinese',
+  '汉语': 'Chinese',
+  '普通话': 'Chinese',
+  '中国語': 'Chinese',
 
   // Dutch variants
   'dutch': 'Dutch',

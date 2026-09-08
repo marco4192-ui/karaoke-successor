@@ -388,6 +388,8 @@ export const libraryTranslations = {
     aiBatchSuggestDesc: 'Suggested changes for the selected songs',
     aiBatchNoSuggestions: 'All selected songs already have appropriate genre/language tags.',
     aiBatchClose: 'Close',
+    aiBatchSavingFiles: 'Saving {current}/{total} to TXT files…',
+    aiBatchFileErrors: '{count} song(s) were updated in the library only — the TXT file could not be written. These changes will be lost on the next folder rescan.',
     loadMore: 'Load More',
     saving: 'Saving...',
     saveChanges: 'Save changes to TXT file',
@@ -460,6 +462,18 @@ export const libraryTranslations = {
       creating: 'Creating...',
       create: 'Create Song',
       noNotesHint: 'The song will be created without notes. Use the Tap Mode (spacebar during playback) in the editor to manually insert notes. The syllables from the lyrics will be automatically assigned.',
+    },
+
+    // Video sync overlay (floating overlay in the editor)
+    videoOverlay: {
+      title: 'Video Sync',
+      toggle: 'Show video sync overlay',
+      close: 'Close video overlay',
+      songTimecode: 'Song timecode',
+      videoPosition: 'Video',
+      videoGap: 'Video gap',
+      gapHint: 'Positive values delay the video',
+      jumpTo: 'Click to type a timecode (m:ss.mmm)',
     },
 
     // Song info tab

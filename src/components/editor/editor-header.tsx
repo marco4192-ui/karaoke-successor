@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, Undo, Redo, CheckCircle, AlertCircle, Tags } from 'lucide-react';
+import { Save, Undo, Redo, CheckCircle, AlertCircle, Tags, MonitorPlay } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 import { useTranslation } from '@/lib/i18n/translations';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
@@ -23,6 +23,10 @@ interface EditorHeaderProps {
   /** Metadata side panel toggle (genre/language editor) */
   showMetadataPanel?: boolean;
   onToggleMetadataPanel?: () => void;
+  /** Video sync overlay toggle (only shown when the song has a video) */
+  hasVideo?: boolean;
+  showVideoOverlay?: boolean;
+  onToggleVideoOverlay?: () => void;
 }
 
 export function EditorHeader({
@@ -40,6 +44,9 @@ export function EditorHeader({
   onSaveOnly,
   showMetadataPanel = false,
   onToggleMetadataPanel,
+  hasVideo = false,
+  showVideoOverlay = false,
+  onToggleVideoOverlay,
 }: EditorHeaderProps) {
   const { t } = useTranslation();
 
@@ -85,6 +92,20 @@ export function EditorHeader({
             data-testid="editor-metadata-toggle"
           >
             <Tags className="w-4 h-4" />
+          </Button>
+        )}
+        {/* Video sync overlay toggle — sync notes with the song's video */}
+        {onToggleVideoOverlay && hasVideo && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleVideoOverlay}
+            title={t('editor.videoOverlay.toggle')}
+            className={showVideoOverlay ? 'text-cyan-400 hover:text-cyan-300' : 'text-slate-400 hover:text-white'}
+            data-testid="editor-video-overlay-toggle"
+            aria-pressed={showVideoOverlay}
+          >
+            <MonitorPlay className="w-4 h-4" />
           </Button>
         )}
         <Button

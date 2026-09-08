@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Proponowane zmiany dla zaznaczonych utworów',
   aiBatchNoSuggestions: 'Wszystkie zaznaczone utwory mają już odpowiednie tagi gatunku/języka.',
   aiBatchClose: 'Zamknij',
+  aiBatchSavingFiles: 'Zapisywanie {current}/{total} do plików TXT…',
+  aiBatchFileErrors: '{count} utwór/utwory zaktualizowano tylko w bibliotece — nie udało się zapisać pliku TXT. Te zmiany zostaną utracone przy kolejnym skanowaniu folderu.',
   saving: 'Zapisywanie...',
   saveChanges: 'Zapisz zmiany w pliku TXT',
   saveError: 'Błąd zapisu: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Wpisz wykonawcę...',
     detectBpmTitle: 'Wykryj BPM',
     selectAudioFirst: 'Najpierw wybierz plik audio',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Synchronizacja wideo',
+    toggle: 'Pokaż nakładkę synchronizacji wideo',
+    close: 'Zamknij nakładkę wideo',
+    songTimecode: 'Kod czasowy utworu',
+    videoPosition: 'Wideo',
+    videoGap: 'Przesunięcie wideo',
+    gapHint: 'Wartości dodatnie opóźniają wideo',
+    jumpTo: 'Kliknij, aby wpisać kod czasowy (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Tytuł',

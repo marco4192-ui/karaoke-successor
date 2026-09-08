@@ -19,6 +19,7 @@ import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
 import { useTapNotePlacement } from '@/hooks/use-tap-note-placement';
 import { EditorHeader } from './editor-header';
+import { VideoSyncOverlay } from './video-sync-overlay';
 import { ToolsPanel } from './tools-panel';
 import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
 import { EditorSongInfoTab } from './editor-song-info-tab';
@@ -69,6 +70,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   // Beat snapping (YASS-style magnet)
   const [snapEnabled, setSnapEnabled] = useState(false);
+  // Video sync overlay (video + notes side by side, with timecode control)
+  const [showVideoOverlay, setShowVideoOverlay] = useState(false);
 
   // ── Authoritative song ref ──
   // All mutation handlers compute the next state from this ref (NOT from a
@@ -156,6 +159,17 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
 
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
   const selectedNote = useMemo(() => allNotes.find(n => n.id === selectedNoteId), [allNotes, selectedNoteId]);
+
+  // The video sync overlay is available for any song with a video source
+  const hasVideo = useMemo(() =>
+    !!(currentSong.videoBackground || currentSong.videoUrl || currentSong.youtubeUrl),
+    [currentSong.videoBackground, currentSong.videoUrl, currentSong.youtubeUrl]);
+
+  // Live VIDEOGAP updates from the sync overlay: metadata change + unsaved flag
+  const handleVideoGapChange = useCallback((gapMs: number) => {
+    setSongInternal({ ...currentSongRef.current, videoGap: gapMs });
+    markDirty();
+  }, [setSongInternal, markDirty]);
 
   // Effective selection: multi-selection when present, else the primary note
   const effectiveSelection = useMemo(() => {
@@ -858,6 +872,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
         onSaveOnly={handleSaveOnly}
         showMetadataPanel={showMetadataPanel}
         onToggleMetadataPanel={onToggleMetadataPanel}
+        hasVideo={hasVideo}
+        showVideoOverlay={showVideoOverlay}
+        onToggleVideoOverlay={() => setShowVideoOverlay(prev => !prev)}
       />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
@@ -1006,6 +1023,19 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
       {/* Fallback: play audio from video file when no separate audio exists */}
       {!currentSong.audioUrl && currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && (
         <audio ref={audioRef} src={currentSong.videoBackground} onEnded={() => setIsPlaying(false)} />
+      )}
+
+      {/* Video sync overlay — video + notes side by side with timecode control */}
+      {showVideoOverlay && hasVideo && (
+        <VideoSyncOverlay
+          song={currentSong}
+          currentTime={currentTime}
+          isPlaying={isPlaying}
+          playbackRate={playbackRate}
+          onTimeChange={handleTimeChange}
+          onVideoGapChange={handleVideoGapChange}
+          onClose={() => setShowVideoOverlay(false)}
+        />
       )}
 
       {/* Cancel confirmation — guard against losing unsaved changes */}

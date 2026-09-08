@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Föreslagna ändringar för de valda låtarna',
   aiBatchNoSuggestions: 'Alla valda låtar har redan lämpliga genre-/språktaggar.',
   aiBatchClose: 'Stäng',
+  aiBatchSavingFiles: 'Sparar {current}/{total} till TXT-filer…',
+  aiBatchFileErrors: '{count} låt(ar) uppdaterades endast i biblioteket — TXT-filen kunde inte skrivas. Dessa ändringar går förlorade vid nästa mappskanning.',
   saving: 'Sparar...',
   saveChanges: 'Spara ändringar till TXT-fil',
   saveError: 'Fel vid sparande: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Ange artist...',
     detectBpmTitle: 'Identifiera BPM',
     selectAudioFirst: 'Välj en ljudfil först',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Videosynk',
+    toggle: 'Visa videosynk-overlay',
+    close: 'Stäng video-overlay',
+    songTimecode: 'Låtens tidskod',
+    videoPosition: 'Video',
+    videoGap: 'Videoförskjutning',
+    gapHint: 'Positiva värden fördröjer videon',
+    jumpTo: 'Klicka för att ange tidskod (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Titel',

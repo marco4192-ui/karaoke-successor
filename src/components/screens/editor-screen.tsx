@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
+import { saveSongToTxt } from '@/lib/editor/save-to-file';
+import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { StorageKeys, getString } from '@/lib/storage';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
@@ -71,6 +73,15 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [showBatchWarning, setShowBatchWarning] = useState(false);
   const batchAbortRef = useRef(false);
   const lastProcessedSongsRef = useRef<Song[]>([]);
+  // Progress + file-error feedback for the batch apply (txt persistence)
+  const [batchApplyProgress, setBatchApplyProgress] = useState<{ done: number; total: number } | null>(null);
+  const [batchFileErrors, setBatchFileErrors] = useState<number | null>(null);
+
+  // Abort in-flight batch operations when the screen unmounts
+  useEffect(() => {
+    return () => { batchAbortRef.current = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Restore cover URLs for Tauri ──
   // On Tauri, song.coverImage may be a relative path (e.g. "Covers/song.jpg") that
@@ -189,6 +200,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setBatchLoading(true);
     setBatchError(null);
     setBatchSuggestions([]);
+    setBatchFileErrors(null);
     batchAbortRef.current = false;
 
     try {
@@ -221,29 +233,85 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
   }, [songs, selectedIds]);
 
-  const handleBatchApplySingle = useCallback((suggestion: BatchSuggestion, field: 'genre' | 'language') => {
-    const value = field === 'genre' ? suggestion.suggestedGenre : suggestion.suggestedLanguage;
-    if (!value) return;
-    updateSong(suggestion.songId, { [field]: value });
-    setBatchSuggestions(prev => prev.filter(s => s.songId !== suggestion.songId));
-    refreshSongs();
-  }, [refreshSongs]);
+  /**
+   * Persist a metadata update to the song's SOURCE txt file.
+   * The library entry alone is NOT enough: a folder rescan replaces the whole
+   * library from the filesystem (replaceCustomSongs) — without writing
+   * #GENRE:/#LANGUAGE: to the txt, AI-applied values are silently wiped.
+   */
+  const persistSongMetadataToTxt = useCallback(async (songId: string, updates: Partial<Song>): Promise<boolean> => {
+    try {
+      const song = await getSongByIdWithLyrics(songId);
+      if (!song || !song.lyrics || song.lyrics.length === 0) return false;
+      const updated = { ...song, ...updates };
+      const result = await saveSongToTxt(updated);
+      return result.success;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[EditorScreen] Failed to persist metadata to txt:', e);
+      return false;
+    }
+  }, []);
 
-  const handleBatchApplyAll = useCallback(() => {
-    batchSuggestions.forEach(s => {
+  const handleBatchApplySingle = useCallback(async (suggestion: BatchSuggestion, field: 'genre' | 'language') => {
+    const rawValue = field === 'genre' ? suggestion.suggestedGenre : suggestion.suggestedLanguage;
+    if (!rawValue) return;
+
+    // Normalize to the app's canonical naming (English language names,
+    // title-cased genres) — the two AI endpoints return different conventions
+    // ("Deutsch" vs "German", "es" vs "Spanish") which would fragment the
+    // genre/language filters in the library.
+    const value = field === 'genre' ? normalizeGenreName(rawValue) : normalizeLanguage(rawValue);
+    const updates: Partial<Song> = { [field]: value };
+
+    updateSong(suggestion.songId, updates);
+    const fileOk = await persistSongMetadataToTxt(suggestion.songId, updates);
+    if (!fileOk) {
+      setBatchFileErrors(prev => (prev ?? 0) + 1);
+    }
+
+    // Clear only the applied suggestion — the OTHER field's suggestion stays
+    // pending in the dialog (previously the whole row vanished).
+    setBatchSuggestions(prev => prev
+      .map(s => s.songId === suggestion.songId
+        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : { suggestedLanguage: null }) }
+        : s)
+      .filter(s => s.suggestedGenre || s.suggestedLanguage));
+    refreshSongs();
+  }, [refreshSongs, persistSongMetadataToTxt]);
+
+  const handleBatchApplyAll = useCallback(async () => {
+    const list = batchSuggestions;
+    if (list.length === 0) return;
+
+    setBatchApplyProgress({ done: 0, total: list.length });
+    setBatchFileErrors(0);
+    let fileErrors = 0;
+    let processed = 0;
+
+    for (const s of list) {
+      if (batchAbortRef.current) break;
       const updates: Partial<Song> = {};
-      if (s.suggestedGenre) updates.genre = s.suggestedGenre;
-      if (s.suggestedLanguage) updates.language = s.suggestedLanguage;
+      if (s.suggestedGenre) updates.genre = normalizeGenreName(s.suggestedGenre);
+      if (s.suggestedLanguage) updates.language = normalizeLanguage(s.suggestedLanguage);
+
       if (Object.keys(updates).length > 0) {
         updateSong(s.songId, updates);
+        const fileOk = await persistSongMetadataToTxt(s.songId, updates);
+        if (!fileOk) fileErrors++;
       }
-    });
+      processed++;
+      setBatchApplyProgress({ done: processed, total: list.length });
+    }
+
+    setBatchApplyProgress(null);
+    setBatchFileErrors(fileErrors > 0 ? fileErrors : null);
     setBatchSuggestions([]);
     setShowBatchWarning(false);
     setShowBatchDialog(false);
     clearSelection();
     refreshSongs();
-  }, [batchSuggestions, clearSelection, refreshSongs]);
+  }, [batchSuggestions, clearSelection, refreshSongs, persistSongMetadataToTxt]);
 
   // Handle song selection - load lyrics from IndexedDB/filesystem if needed
   const handleSelectSong = useCallback(async (song: Song) => {
@@ -424,10 +492,23 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <span>{t('editor.aiHarmonizeWarnCount')}</span>
             </div>
 
+            {/* Progress while writing the txt files */}
+            {batchApplyProgress && (
+              <div className="flex items-center gap-3 text-xs text-white/70">
+                <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <span className="font-mono tabular-nums">
+                  {t('editor.aiBatchSavingFiles')
+                    .replace('{current}', String(batchApplyProgress.done))
+                    .replace('{total}', String(batchApplyProgress.total))}
+                </span>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-1">
               <Button
                 variant="outline"
                 onClick={() => setShowBatchWarning(false)}
+                disabled={!!batchApplyProgress}
                 className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
                 data-testid="editor-batch-warning-cancel-button"
               >
@@ -435,12 +516,32 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               </Button>
               <Button
                 onClick={handleBatchApplyAll}
+                disabled={!!batchApplyProgress}
                 className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
                 data-testid="editor-batch-warning-confirm-button"
               >
-                {t('editor.aiHarmonizeWarnConfirm')}
+                {batchApplyProgress
+                  ? `${batchApplyProgress.done}/${batchApplyProgress.total}`
+                  : t('editor.aiHarmonizeWarnConfirm')}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* File persistence warning — library updated but txt could not be written */}
+      {batchFileErrors !== null && (
+        <div className="fixed bottom-4 right-4 z-[70] max-w-sm bg-gray-900 border border-amber-500/40 rounded-xl p-3 shadow-2xl" data-testid="editor-batch-file-error">
+          <div className="flex items-start gap-2">
+            <span className="text-lg leading-none">⚠️</span>
+            <p className="text-xs text-amber-200/90">
+              {t('editor.aiBatchFileErrors').replace('{count}', String(batchFileErrors))}
+            </p>
+            <button
+              onClick={() => setBatchFileErrors(null)}
+              className="ml-1 text-white/40 hover:text-white/80 text-xs"
+              aria-label={t('editor.aiBatchClose')}
+            >✕</button>
           </div>
         </div>
       )}

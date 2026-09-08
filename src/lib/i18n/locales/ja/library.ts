@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: '選択した曲への提案された変更',
   aiBatchNoSuggestions: '選択したすべての曲に既に適切なジャンル/言語タグが設定されています。',
   aiBatchClose: '閉じる',
+  aiBatchSavingFiles: '{current}/{total} 件をTXTファイルに保存中…',
+  aiBatchFileErrors: '{count} 曲はライブラリのみ更新されました — TXTファイルに書き込めませんでした。これらの変更は次回のフォルダ再スキャンで失われます。',
   saving: '保存中...',
   saveChanges: 'TXTファイルに変更を保存',
   saveError: '保存エラー: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'アーティストを入力...',
     detectBpmTitle: 'BPMを検出',
     selectAudioFirst: '先にオーディオファイルを選択してください',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: '動画シンク',
+    toggle: '動画シンクオーバーレイを表示',
+    close: '動画オーバーレイを閉じる',
+    songTimecode: '曲のタイムコード',
+    videoPosition: '動画',
+    videoGap: '動画オフセット',
+    gapHint: '正の値で動画が遅れます',
+    jumpTo: 'クリックしてタイムコードを入力 (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'タイトル',

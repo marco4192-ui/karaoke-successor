@@ -2,6 +2,7 @@
 
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
+import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
 import { normalizeTxtContent } from '@/lib/utils';
 
 // Parse UltraStar txt file for metadata (headers only)
@@ -68,6 +69,7 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   previewStart?: number;
   previewDuration?: number;
   isDuet?: boolean;
+  duetPlayerNames?: [string, string];
 }> {
   if (!txtFile) {
     return { lyrics: [], bpm: 120, gap: 0, isDuet: false };
@@ -83,7 +85,9 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   let gap = 0;
   let previewStart: number | undefined;
   let previewDuration: number | undefined;
-  let hasDuetNotes = false;
+  let hasDuetHeader = false;
+  let p1Name: string | undefined;
+  let p2Name: string | undefined;
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
 
@@ -92,6 +96,8 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   for (const line of lines) {
     // Use trimmed version for header parsing (header values should be trimmed)
     const trimmedLine = line.trim();
+    // Standalone P1/P2 section marker (shared tolerant matcher)
+    const markerTag = matchPlayerMarkerLine(line);
 
     if (trimmedLine.startsWith('#BPM:')) {
       bpm = parseFloat(trimmedLine.substring(5).replace(',', '.')) || 120;
@@ -103,16 +109,18 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
     } else if (trimmedLine.startsWith('#PREVIEWDURATION:')) {
       const val = parseFloat(trimmedLine.substring(16));
       previewDuration = isNaN(val) ? undefined : val;
+    } else if (trimmedLine.startsWith('#P1:')) {
+      hasDuetHeader = true;
+      p1Name = trimmedLine.substring(4).trim() || 'Player 1';
+    } else if (trimmedLine.startsWith('#P2:')) {
+      hasDuetHeader = true;
+      p2Name = trimmedLine.substring(4).trim() || 'Player 2';
     } else if (trimmedLine.startsWith('#')) {
       continue;
     } else if (trimmedLine === 'E') {
       break;
-    } else if (trimmedLine === 'P1' || trimmedLine === 'P1:' || trimmedLine === 'P 1') {
-      currentPlayer = 'P1';
-      hasDuetNotes = true;
-    } else if (trimmedLine === 'P2' || trimmedLine === 'P2:' || trimmedLine === 'P 2') {
-      currentPlayer = 'P2';
-      hasDuetNotes = true;
+    } else if (markerTag) {
+      currentPlayer = markerTag;
     } else if (trimmedLine.startsWith('-')) {
       // Line break
       const match = trimmedLine.match(/^-\s*(-?\d+)/);
@@ -120,15 +128,14 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
         lineBreakBeats.add(parseInt(match[1]));
       }
     } else {
-      // Check for P1/P2 prefix in note line
-      const duetPrefixMatch = line.match(/^(P1|P2):\s*(.*)$/);
+      // Check for P1/P2 prefix in note line (shared tolerant matcher)
+      const duetPrefix = matchDuetNotePrefix(line);
       let noteLine = line;
       let notePlayer = currentPlayer;
 
-      if (duetPrefixMatch) {
-        notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';
-        noteLine = duetPrefixMatch[2];
-        hasDuetNotes = true;
+      if (duetPrefix) {
+        notePlayer = duetPrefix.player;
+        noteLine = duetPrefix.rest;
       }
 
       // IMPORTANT: Use trimStart() — NOT trim() — to handle leading spaces
@@ -158,5 +165,12 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   // Use the shared converter to build lyric lines (handles duet P1/P2 separation)
   const lyricLines = convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 
-  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet: hasDuetNotes };
+  // Duet detection: header tags (#P1/#P2) OR body markers with notes for
+  // BOTH players (a stray P1 marker alone is not a duet).
+  const isDuet = hasDuetHeader || notesHaveBothPlayers(notes);
+  const duetPlayerNames: [string, string] | undefined = isDuet
+    ? [p1Name || 'Player 1', p2Name || 'Player 2']
+    : undefined;
+
+  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames };
 }

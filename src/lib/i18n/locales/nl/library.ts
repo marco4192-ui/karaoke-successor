@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Voorgestelde wijzigingen voor de geselecteerde nummers',
   aiBatchNoSuggestions: 'Alle geselecteerde nummers hebben al passende genre-/taaltags.',
   aiBatchClose: 'Sluiten',
+  aiBatchSavingFiles: '{current}/{total} opslaan in TXT-bestanden…',
+  aiBatchFileErrors: '{count} nummer(s) zijn alleen in de bibliotheek bijgewerkt — het TXT-bestand kon niet worden geschreven. Deze wijzigingen gaan verloren bij de volgende mapscan.',
   saving: 'Opslaan...',
   saveChanges: 'Wijzigingen opslaan in TXT-bestand',
   saveError: 'Fout bij opslaan',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Voer de artiest in...',
     detectBpmTitle: 'BPM detecteren',
     selectAudioFirst: 'Selecteer eerst een audiobestand',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Videosync',
+    toggle: 'Videosync-overlay weergeven',
+    close: 'Video-overlay sluiten',
+    songTimecode: 'Tijdcode van nummer',
+    videoPosition: 'Video',
+    videoGap: 'Videoverschil',
+    gapHint: 'Positieve waarden vertragen de video',
+    jumpTo: 'Klik om een tijdcode in te voeren (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Titel',

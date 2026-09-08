@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Ehdotetut muutokset valituille kappaleille',
   aiBatchNoSuggestions: 'Kaikilla valituilla kappaleilla on jo sopivat genre-/kielitagit.',
   aiBatchClose: 'Sulje',
+  aiBatchSavingFiles: 'Tallennetaan {current}/{total} TXT-tiedostoihin…',
+  aiBatchFileErrors: '{count} kappaletta päivitettiin vain kirjastoon — TXT-tiedostoa ei voitu kirjoittaa. Nämä muutokset katoavat seuraavassa kansiotarkistuksessa.',
   saving: 'Tallennetaan...',
   saveChanges: 'Tallenna muutokset TXT-tiedostoon',
   saveError: 'Virhe tallennettaessa: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Syötä esittäjä...',
     detectBpmTitle: 'Tunnista BPM',
     selectAudioFirst: 'Valitse ensin äänitiedosto',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Videosynkronointi',
+    toggle: 'Näytä videosynkronointi-ikkuna',
+    close: 'Sulje video-ikkuna',
+    songTimecode: 'Kappaleen aikakoodi',
+    videoPosition: 'Video',
+    videoGap: 'Videoviive',
+    gapHint: 'Positiiviset arvot viivästyttävät videota',
+    jumpTo: 'Napsauta kirjoittaaksesi aikakoodin (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Otsikko',

@@ -23,6 +23,7 @@ import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
+import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
 
 interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -85,7 +86,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
   
   // Track current player for duet mode
   let currentPlayer: DuetPlayer | undefined = undefined;
-  let hasDuetNotes = false;
+  let hasDuetHeader = false;
 
   for (const line of lines) {
     // Parse header attributes (#KEY:VALUE format)
@@ -169,6 +170,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'P1':
             // P1 name for duet mode
+            hasDuetHeader = true;
             if (!song.duetPlayerNames) {
               song.duetPlayerNames = [value.trim(), 'Player 2'];
             } else {
@@ -177,6 +179,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'P2':
             // P2 name for duet mode
+            hasDuetHeader = true;
             if (!song.duetPlayerNames) {
               song.duetPlayerNames = ['Player 1', value.trim()];
             } else {
@@ -215,35 +218,35 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
       continue;
     }
 
-    // Check for player switch markers (P1: or P2: at line start, with or without space)
-    if (line === 'P1' || line === 'P1:' || line === 'P 1') {
-      currentPlayer = 'P1';
-      hasDuetNotes = true;
+    // Check for player switch markers (P1/P2 section switch).
+    // Uses the shared tolerant matcher: accepts P1, P1:, P 1, "P1 :" and
+    // leading/trailing whitespace (trailing spaces on MARKER lines carry no
+    // meaning — unlike note lyrics, where they mark word boundaries).
+    const marker = matchPlayerMarkerLine(line);
+    if (marker) {
+      currentPlayer = marker;
       continue;
     }
-    if (line === 'P2' || line === 'P2:' || line === 'P 2') {
-      currentPlayer = 'P2';
-      hasDuetNotes = true;
-      continue;
-    }
-    
+
     // Parse note lines
     // Format: [P1/P2:] <type> <startBeat> <duration> <pitch> <lyric>
     // Example: : 0 4 12 Hello  OR  P1: : 0 4 12 Hello
     // Types: : = normal, * = golden, F = freestyle, R = rap, G = rap golden
-    
-    // First check for P1/P2 prefix in note line
-    const duetPrefixMatch = line.match(/^(P1|P2):\s*(.*)$/);
+
+    // First check for P1/P2 prefix in note line (tolerates "P1 :" and
+    // leading whitespace; lyric part keeps its trailing spaces intact)
+    const duetPrefix = matchDuetNotePrefix(line);
     let noteLine = line;
     let notePlayer: DuetPlayer | undefined = currentPlayer;
-    
-    if (duetPrefixMatch) {
-      notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';
-      noteLine = duetPrefixMatch[2];
-      hasDuetNotes = true;
+
+    if (duetPrefix) {
+      notePlayer = duetPrefix.player;
+      noteLine = duetPrefix.rest;
     }
-    
-    const noteMatch = noteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+
+    // Note lines tolerate leading whitespace (trimStart), but NEVER a full
+    // trim — trailing spaces in lyrics are significant for syllables.
+    const noteMatch = noteLine.trimStart().match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       const start = parseInt(startStr);
@@ -264,8 +267,10 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
     }
   }
   
-  // Mark as duet if we found player assignments
-  if (hasDuetNotes) {
+  // Mark as duet when body markers OR header tags declare it.
+  // Body markers additionally require BOTH players to have notes — a stray
+  // single P1 marker must not turn a solo song into a duet.
+  if (hasDuetHeader || notesHaveBothPlayers(song.notes)) {
     song.isDuet = true;
   }
 
@@ -494,10 +499,21 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#TAGS:${song.tags}`);
   }
 
-  // Duet mode player names
-  if (song.isDuet && song.duetPlayerNames) {
-    lines.push(`#P1:${song.duetPlayerNames[0]}`);
-    lines.push(`#P2:${song.duetPlayerNames[1]}`);
+  // Duet mode player names.
+  // Export when the song is flagged as duet OR when any note still carries a
+  // P1/P2 assignment — the flag alone must never silently strip player data
+  // (the original duet-recognition bug caused exactly that data loss).
+  const hasAnyPlayerAssignment = song.lyrics.some(
+    line => line.notes.some(n => n.player === 'P1' || n.player === 'P2')
+  );
+  const duetExport = song.isDuet || hasAnyPlayerAssignment;
+  const duetPlayerNames: [string, string] | undefined = duetExport
+    ? (song.duetPlayerNames ?? ['Player 1', 'Player 2'])
+    : undefined;
+
+  if (duetExport && duetPlayerNames) {
+    lines.push(`#P1:${duetPlayerNames[0]}`);
+    lines.push(`#P2:${duetPlayerNames[1]}`);
   }
 
   // Convert notes to UltraStar format using the correct formula
@@ -517,10 +533,11 @@ export function generateUltraStarTxt(song: Song): string {
         ? (note.isGolden ? 'G' : 'R')
         : note.isGolden ? '*' : note.isBonus ? 'F' : ':';
       
-      // Add P1/P2 prefix for duet mode if player changes
+      // Add P1/P2 prefix for duet mode if the player changes.
+      // 'both' means both players sing this note — plain UltraStar has no
+      // marker for that, so the note is written into the current section.
       const noteLine = `${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`;
-      
-      if (song.isDuet && note.player) {
+      if (duetExport && note.player) {
         if (currentPlayer !== note.player) {
           // Add player marker before this note
           // Note: 'both' means the note is sung by both players — write it under both

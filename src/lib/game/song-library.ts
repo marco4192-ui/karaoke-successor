@@ -7,6 +7,7 @@ import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, cl
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
 // NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
@@ -407,7 +408,23 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
         // eslint-disable-next-line no-console
         try { updateSong(id, { storedTxt: true }); } catch (e) { console.debug('[SongLibrary] Failed to update storedTxt flag:', e); }
       }
-      return { ...restoredSong, lyrics, storedTxt: true };
+      let merged: Song = { ...restoredSong, lyrics, storedTxt: true };
+
+      // Duet repair: entries scanned with the old header-only detection keep
+      // isDuet=false even though their lyrics carry P1/P2 markers. Derive the
+      // flag from the loaded lyrics so the editor recognizes the duet and
+      // the txt export never strips the player markers.
+      if (!merged.isDuet && lyricsIndicateDuet(lyrics)) {
+        merged = {
+          ...merged,
+          isDuet: true,
+          duetPlayerNames: merged.duetPlayerNames ?? ['Player 1', 'Player 2'],
+        };
+        try { updateSong(id, { isDuet: true, duetPlayerNames: merged.duetPlayerNames }); } catch (e) {
+          console.debug('[SongLibrary] Failed to repair duet flag:', e);
+        }
+      }
+      return merged;
     } else {
       // eslint-disable-next-line no-console
       console.warn('[SongLibrary] getSongByIdWithLyrics: Failed to load lyrics for song', id);

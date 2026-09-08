@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: '선택한 곡에 대한 제안된 변경 사항',
   aiBatchNoSuggestions: '선택한 모든 곡에 이미 적절한 장르/언어 태그가 있습니다.',
   aiBatchClose: '닫기',
+  aiBatchSavingFiles: '{current}/{total}개를 TXT 파일에 저장하는 중…',
+  aiBatchFileErrors: '{count}곡이 라이브러리에만 업데이트되었습니다 — TXT 파일을 쓰지 못했습니다. 이 변경 사항은 다음 폴더 재스캔 시 손실됩니다.',
   saving: '저장 중...',
   saveChanges: 'TXT 파일에 변경 사항 저장',
   saveError: '저장 오류: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: '아티스트 입력...',
     detectBpmTitle: 'BPM 감지',
     selectAudioFirst: '먼저 오디오 파일을 선택하세요',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: '비디오 동기화',
+    toggle: '비디오 동기화 오버레이 표시',
+    close: '비디오 오버레이 닫기',
+    songTimecode: '곡 타임코드',
+    videoPosition: '비디오',
+    videoGap: '비디오 간격',
+    gapHint: '양수 값은 비디오를 지연시킵니다',
+    jumpTo: '클릭하여 타임코드 입력 (m:ss.mmm)',
   },
   songInfoTab: {
     title: '제목',

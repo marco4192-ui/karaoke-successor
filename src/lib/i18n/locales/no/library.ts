@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Foreslåtte endringer for de valgte sangene',
   aiBatchNoSuggestions: 'Alle valgte sanger har allerede passende sjanger-/språktagger.',
   aiBatchClose: 'Lukk',
+  aiBatchSavingFiles: 'Lagrer {current}/{total} i TXT-filer…',
+  aiBatchFileErrors: '{count} sang(er) ble bare oppdatert i biblioteket — TXT-filen kunne ikke skrives. Disse endringene går tapt ved neste mappeskann.',
   saving: 'Lagrer...',
   saveChanges: 'Lagre endringer til TXT-fil',
   saveError: 'Feil ved lagring: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Skriv inn artisten...',
     detectBpmTitle: 'Oppdag BPM',
     selectAudioFirst: 'Velg en lydfil først',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Videosynk',
+    toggle: 'Vis videosynk-overlay',
+    close: 'Lukk video-overlay',
+    songTimecode: 'Sang-tidskode',
+    videoPosition: 'Video',
+    videoGap: 'Videoforsinkelse',
+    gapHint: 'Positive verdier forsinker videoen',
+    jumpTo: 'Klikk for å skrive inn tidskode (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Tittel',

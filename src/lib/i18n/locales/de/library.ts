@@ -368,6 +368,8 @@ editor: {
   aiBatchSuggestDesc: 'Vorgeschlagene Änderungen für die ausgewählten Songs',
   aiBatchNoSuggestions: 'Alle ausgewählten Songs haben bereits passende Genre/Sprache-Tags.',
   aiBatchClose: 'Schließen',
+  aiBatchSavingFiles: 'Speichere {current}/{total} in TXT-Dateien…',
+  aiBatchFileErrors: '{count} Song(s) wurden nur in der Bibliothek aktualisiert — die TXT-Datei konnte nicht geschrieben werden. Diese Änderungen gehen beim nächsten Ordner-Rescan verloren.',
   loadMore: 'Mehr laden',
   saving: 'Speichere...',
   saveChanges: 'Änderungen in TXT-Datei speichern',
@@ -436,6 +438,17 @@ editor: {
     creating: 'Erstelle...',
     create: 'Song erstellen',
     noNotesHint: 'Der Song wird ohne Noten erstellt. Nutze im Editor den Tap-Modus (Leertaste während der Wiedergabe), um Noten manuell einzufügen. Die Silben aus dem Songtext werden dabei automatisch zugewiesen.',
+  },
+  // Video-Sync-Overlay (schwebendes Overlay im Editor)
+  videoOverlay: {
+    title: 'Video-Sync',
+    toggle: 'Video-Sync-Overlay anzeigen',
+    close: 'Video-Overlay schließen',
+    songTimecode: 'Song-Timecode',
+    videoPosition: 'Video',
+    videoGap: 'Video-Gap',
+    gapHint: 'Positive Werte verzögern das Video',
+    jumpTo: 'Klicken, um Timecode einzugeben (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Titel',

@@ -12,7 +12,7 @@ import { getAudioDuration, getVideoDuration } from '@/lib/parsers/media-duration
 // Convert scanned song to Song format
 export async function convertScannedSongToSong(scanned: ScannedSong): Promise<Song> {
   const parseResult = await parseUltraStarFull(scanned.txtFile);
-  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet } = parseResult;
+  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet, duetPlayerNames: parsedPlayerNames } = parseResult;
 
   // Determine if video has audio
   const hasAudio = !!scanned.audioFile;
@@ -176,5 +176,8 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     storedTxt, // TXT is cached in IndexedDB
     storedMedia: false, // We do NOT store large media files in IndexedDB
     isDuet,
+    // Duet player names from #P1/#P2 headers (previously dropped on this
+    // import path — the editor then showed no player names for duets)
+    duetPlayerNames: isDuet ? (parsedPlayerNames ?? ['Player 1', 'Player 2']) : undefined,
   };
 }

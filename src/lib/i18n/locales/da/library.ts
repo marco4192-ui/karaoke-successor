@@ -355,6 +355,8 @@ editor: {
   aiBatchSuggestDesc: 'Foreslåede ændringer for de valgte sange',
   aiBatchNoSuggestions: 'Alle valgte sange har allerede passende genre-/sprog-tags.',
   aiBatchClose: 'Luk',
+  aiBatchSavingFiles: 'Gemmer {current}/{total} i TXT-filer…',
+  aiBatchFileErrors: '{count} sang(e) blev kun opdateret i biblioteket — TXT-filen kunne ikke skrives. Disse ændringer går tabt ved næste mappescanning.',
   saving: 'Gemmer...',
   saveChanges: 'Gem ændringer til TXT-fil',
   saveError: 'Fejl ved gemning: {error}',
@@ -417,6 +419,17 @@ editor: {
     artistPlaceholder: 'Indtast kunstneren...',
     detectBpmTitle: 'Find BPM',
     selectAudioFirst: 'Vælg en lydfil først',
+  },
+  // Video sync overlay (floating overlay in the editor)
+  videoOverlay: {
+    title: 'Videosync',
+    toggle: 'Vis videosync-overlay',
+    close: 'Luk video-overlay',
+    songTimecode: 'Sang-tidskode',
+    videoPosition: 'Video',
+    videoGap: 'Videoforskydning',
+    gapHint: 'Positive værdier forsinker videoen',
+    jumpTo: 'Klik for at indtaste tidskode (m:ss.mmm)',
   },
   songInfoTab: {
     title: 'Titel',

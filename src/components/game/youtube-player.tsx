@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 export { isYouTubeUrl } from '@/lib/url-utils';
 
@@ -41,6 +41,16 @@ interface YouTubePlayerProps {
   isPlaying?: boolean;
   startTime?: number; // Start position in milliseconds
   interactive?: boolean; // Allow user interaction with the player
+  muted?: boolean; // Audio muted (e.g. when a separate audio track is the master)
+}
+
+/** Imperative handle for parents that need to drive the player directly
+ *  (e.g. the editor's video sync overlay seeking while paused). */
+export interface YouTubePlayerHandle {
+  /** Seek to a VIDEO time position in seconds (not song time). */
+  seekTo: (_seconds: number) => void;
+  /** Current VIDEO time position in seconds (0 when the player is not ready). */
+  getCurrentTime: () => number;
 }
 
 // Global player counter for unique IDs
@@ -55,7 +65,7 @@ const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
   150: 'Das Video kann nicht eingebettet werden.',
 };
 
-export function YouTubePlayer({ 
+export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(function YouTubePlayer({ 
   videoId, 
   videoGap = 0,
   onReady, 
@@ -66,8 +76,9 @@ export function YouTubePlayer({
   onError,
   isPlaying = true,
   startTime = 0,
-  interactive = false
-}: YouTubePlayerProps) {
+  interactive = false,
+  muted = false,
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
@@ -89,6 +100,24 @@ export function YouTubePlayer({
   onErrorRef.current = onError;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
+  
+  // ── Imperative handle: external seek + time queries ──
+  // Used by the editor's video sync overlay. Does NOT re-create the player.
+  useImperativeHandle(ref, () => ({
+    seekTo: (seconds: number) => {
+      const p = playerRef.current;
+      if (!p || !isFinite(seconds)) return;
+      try { p.seekTo(Math.max(0, seconds), true); } catch { /* Player not ready */ }
+    },
+    getCurrentTime: () => {
+      try {
+        const t = playerRef.current?.getCurrentTime();
+        return typeof t === 'number' && isFinite(t) ? t : 0;
+      } catch { return 0; }
+    },
+  }), []);
   
   // Ad detection refs
   const lastDurationRef = useRef<number>(0);
@@ -231,6 +260,12 @@ export function YouTubePlayer({
                 event.target.playVideo();
               } catch { /* ignore */ }
             }
+
+            // Respect the muted flag once the player becomes ready
+            try {
+              if (mutedRef.current) event.target.mute();
+              else event.target.unMute();
+            } catch { /* ignore */ }
             
             onReadyRef.current?.();
           },
@@ -337,6 +372,16 @@ export function YouTubePlayer({
       }
     } catch { /* Player not ready */ }
   }, [isPlaying]);
+
+  // Handle mute changes without re-creating the player
+  useEffect(() => {
+    if (!playerRef.current) return;
+
+    try {
+      if (muted) playerRef.current.mute();
+      else playerRef.current.unMute();
+    } catch { /* Player not ready */ }
+  }, [muted]);
   
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full">
@@ -347,6 +392,6 @@ export function YouTubePlayer({
       />
     </div>
   );
-}
+});
 
 export default YouTubePlayer;
