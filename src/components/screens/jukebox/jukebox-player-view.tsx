@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
+import { EqualizerBars, VinylDisc } from './jukebox-visuals';
 
 // ==================== UTILITIES ====================
 
@@ -81,7 +82,7 @@ function PoolSelector() {
       <select
         value={selectedPlaylistId}
         onChange={(e) => handleChange(e.target.value)}
-        className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white appearance-none cursor-pointer hover:border-cyan-500/50 pr-8"
+        className="bg-white/10 border border-white/20 rounded-xl px-3.5 py-1.5 text-sm text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 outline-none transition-all pr-8"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
@@ -105,32 +106,38 @@ function PoolSelector() {
 function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   return (
-    <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <span className="text-cyan-400 text-sm font-medium">{t('jukeboxPlayer.nowPlaying')}</span>
-        <h2 className="text-xl font-bold text-white">{j.currentSong?.title}</h2>
-        <span className="text-white/60">{j.currentSong?.artist}</span>
+    <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 via-black/60 to-transparent p-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <EqualizerBars
+          active={j.isPlaying && !j.isAdPlaying}
+          bars={4}
+          className="h-5"
+          label={t('jukeboxPlayer.equalizerLabel')}
+        />
+        <span className="text-cyan-400 text-sm font-medium tracking-wide shrink-0">{t('jukeboxPlayer.nowPlaying')}</span>
+        <h2 className="text-xl font-bold text-white truncate">{j.currentSong?.title}</h2>
+        <span className="text-white/60 truncate hidden sm:inline">{j.currentSong?.artist}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         {/* N4: Timer display */}
         {j.timerRemaining !== null && j.timerRemaining > 0 && (
-          <span className="text-white/60 text-sm font-mono">{formatTimer(j.timerRemaining)}</span>
+          <span className="text-white/70 text-sm font-mono bg-white/10 rounded-lg px-2.5 py-1 border border-white/10">{formatTimer(j.timerRemaining)}</span>
         )}
         <Button
           variant="outline"
           onClick={() => j.setShowLyrics(!j.showLyrics)}
-          className={`border-white/20 ${j.showLyrics ? 'bg-purple-500/50 border-purple-500' : 'text-white'}`}
+          className={`border-white/20 ${j.showLyrics ? 'bg-purple-500/60 border-purple-500 text-white shadow-[0_0_16px_rgba(168,85,247,0.35)]' : 'text-white hover:bg-white/10'}`}
         >
           {t('jukeboxPlayer.lyricsToggle')}
         </Button>
         <Button
           variant="outline"
           onClick={() => j.setHidePlaylist(!j.hidePlaylist)}
-          className="border-white/20 text-white"
+          className="border-white/20 text-white hover:bg-white/10"
         >
           {j.hidePlaylist ? t('jukeboxPlayer.showPlaylist') : t('jukeboxPlayer.hidePlaylist')}
         </Button>
-        <Button variant="outline" onClick={j.toggleFullscreen} className="border-white/20 text-white">
+        <Button variant="outline" onClick={j.toggleFullscreen} className="border-white/20 text-white hover:bg-white/10">
           {t('jukeboxPlayer.exitFullscreen')}
         </Button>
       </div>
@@ -184,12 +191,12 @@ function ProgressBar({ j }: { j: UseJukeboxReturn }) {
   };
 
   return (
-    <div className="flex items-center gap-3 w-full">
-      <span className="text-white/60 text-xs font-mono w-10 text-right">
+    <div className="flex items-center gap-3 w-full group/pb">
+      <span className="text-white/60 text-xs font-mono w-10 text-right tabular-nums">
         {formatDurationSec(j.currentTime)}
       </span>
       <div
-        className="flex-1 h-1.5 bg-white/20 rounded-full cursor-pointer group relative"
+        className="flex-1 h-1.5 group-hover/pb:h-2.5 bg-white/15 rounded-full cursor-pointer group relative transition-all"
         onClick={handleSeek}
         role="slider"
         aria-label="Song progress"
@@ -202,16 +209,18 @@ function ProgressBar({ j }: { j: UseJukeboxReturn }) {
           if (e.key === 'ArrowLeft') j.seekTo(Math.max(0, progress - 0.05));
         }}
       >
+        {/* Filled portion with glow */}
         <div
-          className="absolute inset-y-0 left-0 bg-cyan-500 rounded-full group-hover:bg-cyan-400 transition-colors"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-cyan-300 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] transition-colors"
           style={{ width: `${Math.max(0, Math.min(100, progress * 100))}%` }}
         />
+        {/* Playhead dot */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ left: `calc(${Math.max(0, Math.min(100, progress * 100))}% - 6px)` }}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_12px_rgba(34,211,238,0.7)] scale-0 group-hover:scale-100 transition-transform"
+          style={{ left: `${Math.max(0, Math.min(100, progress * 100))}%` }}
         />
       </div>
-      <span className="text-white/60 text-xs font-mono w-10">
+      <span className="text-white/60 text-xs font-mono w-10 tabular-nums">
         {formatDurationSec(j.duration)}
       </span>
     </div>
@@ -226,7 +235,7 @@ function VolumeControl({ j }: { j: UseJukeboxReturn }) {
       {/* F3: Mute toggle button */}
       <button
         onClick={j.toggleMute}
-        className="p-1.5 rounded-lg text-white/60 hover:text-white transition-colors"
+        className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
         aria-label={j.isMuted ? 'Unmute' : 'Mute'}
         title={j.isMuted ? 'Unmute' : 'Mute'}
       >
@@ -255,7 +264,7 @@ function VolumeControl({ j }: { j: UseJukeboxReturn }) {
         type="range" min="0" max="1" step="0.05"
         value={j.volume}
         onChange={(e) => j.setVolume(parseFloat(e.target.value))}
-        className="w-20 accent-cyan-500"
+        className="w-24 accent-cyan-500"
         aria-label="Volume"
       />
     </div>
@@ -267,27 +276,38 @@ function VolumeControl({ j }: { j: UseJukeboxReturn }) {
 function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
-      {/* N8: Requester attribution */}
+    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 p-6">
+      {/* N8: Requester attribution as chip */}
       {j.currentSongRequestedBy && (
-        <p className="text-cyan-300/60 text-xs mb-1">
+        <div className="inline-flex items-center gap-1.5 text-cyan-300/80 text-xs mb-2 bg-cyan-500/10 border border-cyan-500/25 rounded-full px-3 py-1 backdrop-blur-sm">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+          </svg>
           {t('jukeboxPlayer.requestedBy').replace('{name}', j.currentSongRequestedBy)}
-        </p>
-      )}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-cyan-400 text-sm font-medium">{t('jukeboxPlayer.nowPlaying')}</p>
-          <h2 className="text-3xl font-bold text-white">{j.currentSong?.title ?? ''}</h2>
-          <p className="text-white/70 text-lg">{j.currentSong?.artist ?? ''}</p>
         </div>
-        <div className="flex items-center gap-3">
+      )}
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 mb-0.5">
+            <EqualizerBars
+              active={j.isPlaying && !j.isAdPlaying}
+              bars={4}
+              className="h-4"
+              label={t('jukeboxPlayer.equalizerLabel')}
+            />
+            <p className="text-cyan-400 text-sm font-semibold tracking-widest">{t('jukeboxPlayer.nowPlaying')}</p>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{j.currentSong?.title ?? ''}</h2>
+          <p className="text-white/70 text-lg truncate">{j.currentSong?.artist ?? ''}</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
           {/* #19: Transition animation via opacity */}
-          <button onClick={j.playPrevious} className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110">
+          <button onClick={j.playPrevious} aria-label="Previous song" className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95">
             <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
             </svg>
           </button>
-          <button onClick={j.togglePlayPause} className="w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center transition-all duration-200 hover:scale-110">
+          <button onClick={j.togglePlayPause} aria-label={j.isPlaying ? 'Pause' : 'Play'} className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-[0_0_25px_rgba(34,211,238,0.45)]">
             {j.isLoading ? (
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : j.isPlaying ? (
@@ -296,7 +316,7 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
               <PlayIcon className="w-8 h-8 text-white ml-1" />
             )}
           </button>
-          <button onClick={j.playNext} className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110">
+          <button onClick={j.playNext} aria-label="Next song" className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95">
             <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
             </svg>
@@ -316,15 +336,20 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
 function ControlsBar({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-between bg-white/5 rounded-xl p-4">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
+      <div className="flex items-center gap-2">
         {/* Shuffle */}
         <button
           onClick={() => j.setShuffle(!j.shuffle)}
-          className={`p-2 rounded-lg transition-colors ${j.shuffle ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'}`}
-          aria-label="Shuffle"
+          className={`p-2.5 rounded-xl transition-all duration-200 ${
+            j.shuffle
+              ? 'bg-gradient-to-br from-cyan-500 to-cyan-400 text-white shadow-[0_0_14px_rgba(34,211,238,0.4)]'
+              : 'text-white/50 hover:text-white hover:bg-white/10'
+          }`}
+          aria-label={t('jukeboxA11y.shuffle')}
+          title={t('jukeboxA11y.shuffle')}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
           </svg>
         </button>
@@ -332,61 +357,81 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
         {/* Repeat */}
         <button
           onClick={() => j.setRepeat(j.repeat === 'none' ? 'all' : j.repeat === 'all' ? 'one' : 'none')}
-          className={`p-2 rounded-lg transition-colors relative ${j.repeat !== 'none' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'}`}
-          aria-label="Repeat"
+          className={`p-2.5 rounded-xl transition-all duration-200 relative ${
+            j.repeat !== 'none'
+              ? 'bg-gradient-to-br from-cyan-500 to-cyan-400 text-white shadow-[0_0_14px_rgba(34,211,238,0.4)]'
+              : 'text-white/50 hover:text-white hover:bg-white/10'
+          }`}
+          aria-label={t('jukeboxA11y.repeat')}
+          title={j.repeat === 'one' ? t('jukeboxPlayer.repeatOne') : j.repeat === 'all' ? t('jukeboxPlayer.repeatAll') : t('jukeboxPlayer.noRepeat')}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 1l4 4-4 4" />
             <path d="M3 11V9a4 4 0 0 1 4-4h14" />
             <path d="M7 23l-4-4 4-4" />
             <path d="M21 13v2a4 4 0 0 1-4 4H3" />
           </svg>
-          {j.repeat === 'one' && <span className="absolute -top-0.5 -right-0.5 text-[10px] font-bold">1</span>}
+          {j.repeat === 'one' && (
+            <span className="absolute -top-0.5 -right-0.5 text-[10px] font-bold bg-cyan-400 text-black w-4 h-4 rounded-full flex items-center justify-center">1</span>
+          )}
         </button>
+
+        <span className="w-px h-6 bg-white/10 mx-1" aria-hidden />
 
         {/* Lyrics */}
         <button
           onClick={() => j.setShowLyrics(!j.showLyrics)}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${j.showLyrics ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'}`}
+          className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5 ${
+            j.showLyrics
+              ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-[0_0_14px_rgba(168,85,247,0.4)]'
+              : 'text-white/50 hover:text-white hover:bg-white/10'
+          }`}
           title={t('jukeboxPlayer.singAlongMode')}
         >
           <MusicIcon className="w-5 h-5" />
-          <span className="text-xs">{t('jukeboxPlayer.lyricsShort')}</span>
+          <span className="text-xs hidden sm:inline">{t('jukeboxPlayer.lyricsShort')}</span>
         </button>
 
         {/* Playlist toggle */}
         <button
           onClick={() => j.setHidePlaylist(!j.hidePlaylist)}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${!j.hidePlaylist ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'}`}
+          className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5 ${
+            !j.hidePlaylist
+              ? 'bg-gradient-to-br from-cyan-500 to-cyan-400 text-white shadow-[0_0_14px_rgba(34,211,238,0.4)]'
+              : 'text-white/50 hover:text-white hover:bg-white/10'
+          }`}
           title={j.hidePlaylist ? t('jukeboxPlayer.showPlaylist') : t('jukeboxPlayer.hidePlaylist')}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
             <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
             <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
           </svg>
+          <span className="text-xs hidden sm:inline">{t('jukeboxPlayer.playlist')}</span>
         </button>
 
         {/* N9: Songs played indicator */}
         {j.songsPlayed > 0 && (
-          <span className="text-white/40 text-xs">
+          <span className="text-white/40 text-xs ml-1 tabular-nums">
             {j.songsPlayed} {t('jukeboxPlayer.songsPlayed')}
           </span>
         )}
       </div>
 
-      {/* #14 FIX: Single Volume control with mute */}
-      <VolumeControl j={j} />
+      <div className="flex items-center gap-3 ml-auto">
+        {/* N4: Timer display */}
+        {j.timerRemaining !== null && j.timerRemaining > 0 && (
+          <span className="text-white/60 text-xs font-mono bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg tabular-nums">
+            {formatTimer(j.timerRemaining)}
+          </span>
+        )}
 
-      {/* N4: Timer display */}
-      {j.timerRemaining !== null && j.timerRemaining > 0 && (
-        <span className="text-white/60 text-xs font-mono bg-white/5 px-2 py-1 rounded">
-          {formatTimer(j.timerRemaining)}
-        </span>
-      )}
+        {/* #14 FIX: Single Volume control with mute */}
+        <VolumeControl j={j} />
 
-      <Button variant="outline" onClick={j.stopJukebox} className="border-red-500/50 text-red-400 hover:bg-red-500/10">
-        {t('jukeboxPlayer.stopJukebox')}
-      </Button>
+        <Button variant="outline" onClick={j.stopJukebox} className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60">
+          {t('jukeboxPlayer.stopJukebox')}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -422,55 +467,86 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   // to avoid React #300 (DOM mismatch when toggling playlist in fullscreen flex layout)
   if (j.upNext.length === 0) return null;
 
+  const sidebarWrapperClass = j.isFullscreen
+    ? 'h-full flex flex-col bg-black/80 pt-16 transition-all duration-300'
+    : j.hidePlaylist
+      ? 'hidden'
+      : 'lg:w-[21rem] xl:w-88 shrink-0 lg:h-full';
+
   return (
-    <div className={j.isFullscreen ? 'h-full flex flex-col bg-black/80 pt-14 transition-all duration-300' : ''} style={j.isFullscreen ? { width: j.hidePlaylist ? '0px' : '25%', overflow: 'hidden' } : undefined}>
-      <Card className={`bg-white/5 border-white/10 ${j.isFullscreen ? 'flex-1 rounded-none border-0 flex flex-col' : ''}`}>
-        <CardHeader className={j.isFullscreen ? 'pb-2 border-b border-white/10' : ''}>
+    <div
+      className={sidebarWrapperClass}
+      style={j.isFullscreen ? { width: j.hidePlaylist ? '0px' : '25%', overflow: 'hidden' } : undefined}
+    >
+      <Card className={`bg-white/[0.04] backdrop-blur-sm border-white/10 ${j.isFullscreen ? 'flex-1 rounded-none border-0 flex flex-col bg-black/50' : 'lg:h-full flex flex-col'}`}>
+        <CardHeader className={j.isFullscreen ? 'pb-2 border-b border-white/10' : 'pb-3'}>
           <CardTitle className="text-lg flex items-center justify-between">
-            {t('jukeboxPlayer.upNext')}
-            <span className="text-white/40 text-sm font-normal">{j.playlist.length - j.currentIndex - 1} {t('jukeboxPlayer.remaining')}</span>
+            <span className="flex items-center gap-2">
+              <EqualizerBars
+                active={j.isPlaying && !j.isAdPlaying}
+                bars={3}
+                className="h-3.5"
+                label={t('jukeboxPlayer.equalizerLabel')}
+              />
+              {t('jukeboxPlayer.upNext')}
+            </span>
+            <span className="text-cyan-400/80 text-sm font-normal tabular-nums bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-0.5">
+              {j.playlist.length - j.currentIndex - 1} {t('jukeboxPlayer.remaining')}
+            </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className={j.isFullscreen ? 'flex-1 overflow-y-auto p-2' : ''}>
-          <div className="space-y-2">
-            {j.upNext.map((song, index) => (
-              <button
-                key={song.id}
-                onClick={() => handleSongClick(song.id)}
-                disabled={loadingSongId === song.id}
-                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors text-left disabled:opacity-50"
-              >
-                <span className="text-white/40 w-5 text-center text-sm">{index + 1}</span>
-                <div className="w-10 h-10 rounded bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">
-                  {song.coverImage ? (
-                    <img src={song.coverImage} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {loadingSongId === song.id ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <MusicIcon className="w-5 h-5 text-white/30" />
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate text-sm">{song.title}</p>
-                  <p className="text-white/60 text-xs truncate">{song.artist}</p>
-                </div>
-                {/* #24: Use centralized duration formatter */}
-                <span className="text-white/40 text-xs">
-                  {formatDuration(song.duration)}
-                </span>
-              </button>
-            ))}
+        <CardContent className={`${j.isFullscreen ? 'flex-1 overflow-y-auto p-2 jukebox-queue-scroll' : 'pb-4 lg:flex-1 lg:overflow-y-auto lg:max-h-[24rem] xl:max-h-[28rem] jukebox-queue-scroll'}`}>
+          <div className="space-y-1.5">
+            {j.upNext.map((song, index) => {
+              const isNext = index === 0;
+              return (
+                <button
+                  key={song.id}
+                  onClick={() => handleSongClick(song.id)}
+                  disabled={loadingSongId === song.id}
+                  className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 text-left disabled:opacity-50 group ${
+                    isNext
+                      ? 'bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/15'
+                      : 'border border-transparent hover:bg-white/[0.07] hover:border-white/10 hover:translate-x-0.5'
+                  }`}
+                >
+                  <span className={`w-6 text-center text-sm tabular-nums shrink-0 ${isNext ? 'text-cyan-400 font-bold' : 'text-white/30 font-medium'}`}>
+                    {index + 1}
+                  </span>
+                  <div className={`relative w-11 h-11 rounded-lg overflow-hidden shrink-0 ring-1 ${isNext ? 'ring-cyan-500/40' : 'ring-white/10'}`}>
+                    {song.coverImage ? (
+                      <img src={song.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-cyan-600/40 to-purple-600/40 flex items-center justify-center">
+                        {loadingSongId === song.id ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <MusicIcon className="w-5 h-5 text-white/40" />
+                        )}
+                      </div>
+                    )}
+                    {isNext && (
+                      <span className="absolute inset-0 bg-cyan-400/10 border border-cyan-400/30 rounded-lg pointer-events-none" aria-hidden />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`truncate text-sm font-medium ${isNext ? 'text-cyan-100' : 'text-white'}`}>{song.title}</p>
+                    <p className="text-white/50 text-xs truncate">{song.artist}</p>
+                  </div>
+                  {/* #24: Use centralized duration formatter */}
+                  <span className={`text-xs tabular-nums shrink-0 ${isNext ? 'text-cyan-400/70' : 'text-white/35'}`}>
+                    {formatDuration(song.duration)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
 
         {/* #14 FIX: Fullscreen controls — no duplicate volume */}
         {j.isFullscreen && (
           <div className="p-3 border-t border-white/10 space-y-3">
-            <Button variant="outline" onClick={j.stopJukebox} className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10">
+            <Button variant="outline" onClick={j.stopJukebox} className="w-full border-red-500/40 text-red-400 hover:bg-red-500/10">
               {t('jukeboxPlayer.stopJukebox')}
             </Button>
           </div>
@@ -491,8 +567,8 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
   const videoId = j.customYoutubeId || extractYouTubeId(song.youtubeUrl || '') || null;
 
   return (
-    <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
-      <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
+    <div className={j.isFullscreen ? 'flex-1 min-h-0' : 'flex-1'}>
+      <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none border-0' : ''}`}>
         <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'}`}>
           {/* #19: Transition animation wrapper */}
           <div className="absolute inset-0 transition-opacity duration-300">
@@ -521,7 +597,7 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
                 playsInline
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-fuchsia-600/30 flex items-center justify-center">
                 {song.coverImage ? (
                   <img src={song.coverImage} alt={song.title} className="max-h-full max-w-full object-contain" />
                 ) : (
@@ -547,13 +623,16 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
               {j.customYoutubeId && (
                 <button
                   onClick={j.clearCustomYoutube}
-                  className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-red-400 transition-colors text-xs"
+                  className="px-3 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-red-400 border border-white/10 transition-all text-xs"
                   title={t('jukeboxPlayer.youtubeRemove')}
                 >
                   {t('jukeboxPlayer.youtube')}
                 </button>
               )}
-              <button onClick={j.toggleFullscreen} className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors">
+              <button onClick={j.toggleFullscreen} className="px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white border border-white/10 hover:border-cyan-500/40 transition-all text-xs flex items-center gap-1.5">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
                 {t('jukeboxPlayer.fullscreen')}
               </button>
             </div>
@@ -574,44 +653,60 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
     <>
       {j.isFullscreen && <FullscreenHeader j={j} />}
 
-      {/* Normal mode header */}
+      {/* Normal mode header — mini vinyl + title */}
       {!j.isFullscreen && (
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">{t('jukeboxPlayer.jukeboxMode')}</h1>
-          <div className="flex items-center gap-4">
-            <p className="text-white/60">
-              {j.isPlaying ? `${j.playlist.length} ${t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(j.playlist.length))}` : t('jukeboxPlayer.sitBackEnjoy')}
-            </p>
-            {j.songsPlayed > 0 && (
-              <span className="text-white/40 text-sm">({j.songsPlayed} {t('jukeboxPlayer.songsPlayed')})</span>
-            )}
-          </div>
-          <div className="mt-3">
-            <PoolSelector />
+        <div className="mb-6 flex items-center gap-5">
+          <VinylDisc
+            cover={j.currentSong?.coverImage ?? null}
+            spinning={j.isPlaying && !j.isAdPlaying}
+            size={72}
+            label={t('jukeboxPlayer.vinylLabel')}
+          />
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-cyan-300 via-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
+              {t('jukeboxPlayer.jukeboxMode')}
+            </h1>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <p className="text-white/60">
+                {j.isPlaying ? `${j.playlist.length} ${t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(j.playlist.length))}` : t('jukeboxPlayer.sitBackEnjoy')}
+              </p>
+              {j.songsPlayed > 0 && (
+                <span className="text-white/40 text-sm tabular-nums">({j.songsPlayed} {t('jukeboxPlayer.songsPlayed')})</span>
+              )}
+            </div>
+            <div className="mt-2.5">
+              <PoolSelector />
+            </div>
           </div>
         </div>
       )}
 
-      <div className={`flex-1 flex min-h-0 ${j.isFullscreen ? 'flex-row' : 'flex-col space-y-6'}`}>
-        {/* Video Player — #6 FIX: No more IIFE */}
-        {!j.currentSong ? (
-          <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
-            <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
-              <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'} flex items-center justify-center`}>
-                {j.isLoading ? (
-                  <div className="w-12 h-12 border-3 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-                ) : (
-                  <MusicIcon className="w-32 h-32 text-white/30" />
-                )}
-              </div>
-            </Card>
-          </div>
-        ) : (
-          <SongDisplay j={j} videoRef={videoRef} audioRef={audioRef} />
-        )}
+      <div className={`flex-1 flex min-h-0 ${j.isFullscreen ? 'flex-row' : 'flex-col lg:flex-row space-y-6 lg:space-y-0 lg:gap-6'}`}>
+        {/* Left column: video + controls (stacked) */}
+        <div className="flex-1 flex flex-col min-w-0 space-y-6">
+          {/* Video Player — #6 FIX: No more IIFE */}
+          {!j.currentSong ? (
+            <div className={j.isFullscreen ? 'flex-1 min-h-0' : 'flex-1'}>
+              <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
+                <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'} flex items-center justify-center`}>
+                  {j.isLoading ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 border-[3px] border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                      <EqualizerBars active={false} bars={5} label={t('jukeboxPlayer.equalizerLabel')} />
+                    </div>
+                  ) : (
+                    <MusicIcon className="w-32 h-32 text-white/30" />
+                  )}
+                </div>
+              </Card>
+            </div>
+          ) : (
+            <SongDisplay j={j} videoRef={videoRef} audioRef={audioRef} />
+          )}
 
-        {/* Controls Bar (normal mode) */}
-        {!j.isFullscreen && <ControlsBar j={j} />}
+          {/* Controls Bar (normal mode) */}
+          {!j.isFullscreen && <ControlsBar j={j} />}
+        </div>
 
         {/* Playlist Sidebar */}
         <PlaylistSidebar j={j} />

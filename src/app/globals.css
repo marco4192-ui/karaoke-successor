@@ -854,3 +854,113 @@
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.35);
 }
+
+/* ===================== Jukebox — Neon Lounge ===================== */
+
+/* Equalizer bars (now-playing / hero) */
+@keyframes eq-bounce {
+  0%, 100% { height: 22%; }
+  30% { height: 92%; }
+  55% { height: 45%; }
+  80% { height: 75%; }
+}
+
+.eq-bar {
+  width: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to top, #22d3ee, #a855f7);
+  animation: eq-bounce 1.1s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.eq-bar-paused {
+  animation-play-state: paused;
+  height: 22% !important;
+}
+
+/* Vinyl disc spin — slow, luxurious */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.jukebox-vinyl {
+  animation: vinyl-spin 14s linear infinite;
+}
+
+.jukebox-vinyl-paused {
+  animation-play-state: paused;
+}
+
+/* Vinyl grooves via repeating radial gradient (applied inline w/ size) */
+.jukebox-vinyl-disc {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.10) 0%, transparent 40%),
+    repeating-radial-gradient(circle, #0c0c0f 0px, #0c0c0f 2px, #17171d 3px, #0c0c0f 4px);
+  box-shadow:
+    inset 0 0 2px 1px rgba(255,255,255,0.06),
+    0 0 40px rgba(34, 211, 238, 0.18),
+    0 0 90px rgba(168, 85, 247, 0.12);
+}
+
+/* Start button breathing glow */
+@keyframes jukebox-start-glow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(34, 211, 238, 0.35), 0 0 60px rgba(168, 85, 247, 0.20);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(34, 211, 238, 0.55), 0 0 100px rgba(168, 85, 247, 0.35);
+  }
+}
+
+.jukebox-start-glow {
+  animation: jukebox-start-glow 2.6s ease-in-out infinite;
+}
+
+/* Shine sweep across the start button */
+@keyframes jukebox-shine {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  60%, 100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+.jukebox-shine {
+  animation: jukebox-shine 3.2s ease-in-out infinite;
+}
+
+/* Ambient floating blobs behind the setup screen */
+@keyframes blob-float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.08); }
+}
+
+@keyframes blob-float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 25px) scale(0.94); }
+}
+
+.jukebox-blob-a { animation: blob-float-a 11s ease-in-out infinite; }
+.jukebox-blob-b { animation: blob-float-b 14s ease-in-out infinite; }
+
+/* Playlist sidebar slim scrollbar */
+.jukebox-queue-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.jukebox-queue-scroll::-webkit-scrollbar { width: 6px; }
+.jukebox-queue-scroll::-webkit-scrollbar-track { background: transparent; }
+.jukebox-queue-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+.jukebox-queue-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Reduced motion: stop decorative animations */
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar, .jukebox-vinyl, .jukebox-start-glow, .jukebox-shine,
+  .jukebox-blob-a, .jukebox-blob-b {
+    animation: none !important;
+  }
+}
