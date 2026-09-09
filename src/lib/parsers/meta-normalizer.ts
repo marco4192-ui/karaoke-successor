@@ -327,9 +327,22 @@ const GENRE_ALIASES: Record<string, string> = {
   'children': "Children's", 'kindermusik': "Children's", 'kinderlied': "Children's",
   'kinderlieder': "Children's", 'kids': "Children's", 'childrens': "Children's",
 
+  // Gap closure — frequent Deezer/MusicBrainz genres that previously fell
+  // through the alias map and survived as "freak genres" in the filters.
+  // Deterministic so the factual lookup results map cleanly without LLM.
+  'disco': 'Electronic', 'amapiano': 'Electronic', 'alternative': 'Rock',
+  'blues rock': 'Rock',
+  'rock and roll': 'Rock', "rock 'n' roll": 'Rock', "rock'n'roll": 'Rock',
+  'rock n roll': 'Rock', 'rock & roll': 'Rock', 'rock&roll': 'Rock',
+  'gospel': 'Soul', 'ballad': 'Pop', 'adult contemporary': 'Pop',
+  'traditional pop': 'Pop', 'variété française': 'Pop', 'variete francaise': 'Pop',
+  'singer/songwriter': 'Folk', 'world': 'Folk', 'world music': 'Folk',
+  'new age': 'Classical', 'gregorian': 'Classical', 'gregorian chant': 'Classical',
+  'easy listening': 'Jazz',
+
   // Regional pop families (kept distinct per harmonization hints)
   'j-rock': 'Rock', 'jpop': 'J-Pop', 'kpop': 'K-Pop', 'k-pop': 'K-Pop',
-  'afrobeats': 'Pop', 'afro pop': 'Pop', 'amapiano': 'Electronic',
+  'afrobeats': 'Pop', 'afro pop': 'Pop',
   'chanson': 'Folk', 'canzone': 'Pop', 'italopop': 'Pop', 'volkslied': 'Volksmusik',
 };
 
