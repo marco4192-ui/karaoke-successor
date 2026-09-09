@@ -1,0 +1,5 @@
+# Bun runtime configuration.
+# [test] only affects `bun test` (bun's built-in runner); `bun run test`
+# (vitest) and the dev server are unaffected.
+[test]
+preload = ["./src/__tests__/setup-bun.ts"]
