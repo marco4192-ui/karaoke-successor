@@ -54,7 +54,6 @@ export interface GameScreenHookReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   audioLoadedRef: React.RefObject<boolean>;
   videoLoadedRef: React.RefObject<boolean>;
-  spectrogramAudioEl: HTMLAudioElement | null;
   audioElRefCallback: (el: HTMLAudioElement | null) => void;
   displayDuration: number;
   setDisplayDuration: React.Dispatch<React.SetStateAction<number>>;
@@ -75,7 +74,6 @@ export interface GameScreenHookReturn {
 
   // Pitch & Scoring
   pitchResult: ReturnType<typeof usePitchDetector>['pitchResult'];
-  smoothedPitch: number | null;
   scoreEvents: ReturnType<typeof useNoteScoring>['scoreEvents'];
   notePerformance: ReturnType<typeof useNoteScoring>['notePerformance'];
   p2State: ReturnType<typeof useNoteScoring>['p2State'];
@@ -93,7 +91,6 @@ export interface GameScreenHookReturn {
 
   // Settings
   showBackgroundVideo: boolean;
-  showPitchGuide: boolean;
   useAnimatedBackground: boolean;
   hasChallengeNoPitchGuide: boolean;
   activeChallenge: typeof CHALLENGE_MODES[0] | null;

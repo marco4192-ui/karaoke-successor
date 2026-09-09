@@ -22,7 +22,6 @@ import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useNativeAudio } from '@/hooks/use-native-audio';
-import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
 import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useGameModes } from '@/hooks/use-game-modes';
@@ -135,18 +134,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     return initializePitch(mic?.deviceId, mic?.stereoChannel);
   }, [initializePitch]);
 
-  // Smoothed pitch for visual display (prevents flickering/jitter).
-  // Uses rawNote (un-stabilized) instead of the stabilized `note` field
-  // for maximum responsiveness. Scoring continues to use the stabilized
-  // `note` for accuracy — this only affects the visual pitch indicator.
-  //
-  // α=0.90 (was 0.80): Near-instant tracking for visual pitch indicator.
-  //   The old 0.80 combined with PitchStabilizer created 65-150ms lag on
-  //   note transitions, making the indicator feel disconnected from the voice.
-  //   0.90 lets the indicator follow the singer within 1 frame (~16ms).
-  // deadZone=0.08: Tight enough that even small pitch movements register.
-  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.90, 0.08);
-
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;
 
@@ -189,11 +176,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const [isPlaying, setIsPlaying] = useState(false);
   const wasPlayingRef = useRef(false);
 
-  // Track the audio element for SpectrogramDisplay (avoids reading ref during render)
-  const [spectrogramAudioEl, setSpectrogramAudioEl] = useState<HTMLAudioElement | null>(null);
+  // Track the audio element for media-element consumers (avoids reading ref during render)
   const audioElRefCallback = useCallback((el: HTMLAudioElement | null) => {
     audioRef.current = el;
-    setSpectrogramAudioEl(el);
   }, [audioRef]);
 
   // Native audio (ASIO / WASAPI)
@@ -202,7 +187,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // Settings from localStorage - managed via useGameSettings hook
   const {
     showBackgroundVideo,
-    showPitchGuide,
     useAnimatedBackground,
     performanceMode,
   } = useGameSettings();
@@ -618,7 +602,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     videoRef,
     audioLoadedRef,
     videoLoadedRef,
-    spectrogramAudioEl,
     audioElRefCallback,
     displayDuration,
     setDisplayDuration,
@@ -639,7 +622,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
 
     // Pitch & Scoring
     pitchResult,
-    smoothedPitch,
     scoreEvents,
     notePerformance,
     p2NotePerformance,
@@ -657,7 +639,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
 
     // Settings
     showBackgroundVideo,
-    showPitchGuide,
     useAnimatedBackground,
     hasChallengeNoPitchGuide,
     activeChallenge,

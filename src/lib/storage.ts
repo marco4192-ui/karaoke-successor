@@ -24,15 +24,14 @@ export const StorageKeys = {
   DEFAULT_DIFFICULTY: 'karaoke-default-difficulty',
   PREVIEW_VOLUME: 'karaoke-preview-volume',
   MIC_SENSITIVITY: 'karaoke-mic-sensitivity',
-  SHOW_PITCH_GUIDE: 'karaoke-show-pitch-guide',
   BG_VIDEO: 'karaoke-bg-video',
   ANIMATED_BG: 'karaoke-animated-bg',
   NOTE_STYLE: 'karaoke-note-style',
   NOTE_SHAPE: 'karaoke-note-shape',
   NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
-  /** Note bar display mode: 'sealed' (uniform hit color + red misses + seal animation) | 'exact' (5-color quality code) */
+  /** Note bar display mode: 'sealed' (laser/burner fill, uniform hit colour, misses at sung pitch) | 'exact' (5-colour quality code) */
   NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
-  /** Uniform hit color for the 'sealed' note display mode (#rrggbb) */
+  /** Uniform burn colour for the 'sealed' note display mode (#rrggbb) */
   NOTE_SEALED_HIT_COLOR: 'karaoke-note-sealed-hit-color',
   PERFORMANCE_MODE: 'karaoke-performance-mode',
   REPLAY_ENABLED: 'karaoke-replay-enabled',

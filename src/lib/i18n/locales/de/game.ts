@@ -72,7 +72,6 @@ gameScreen: {
   loading: 'Lädt…',
 },
 gameHud: {
-  volumeMeter: 'Pegel-Anzeige',
   audioEffects: 'Audio-Effekte',
   reverb: 'Hall: {n}%',
   echo: 'Echo: {n}%',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Gelb — Wahrscheinlich korrekt',
   confidenceLow: 'Orange — Unsicher',
   confidenceVeryLow: 'Rot — Manuelle Prüfung empfohlen',
-},
-pitchGraph: {
-  pitch: 'Tonhöhe: {n}',
-  noPitch: 'Keine Tonhöhe erkannt',
 },
 battleRoyaleGame: {
   survived: 'ÜBERLEBT!',

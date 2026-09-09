@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Visa alla',
   queueSlotOne: 'plats kvar',
   queueSlotMany: 'platser kvar',
-  mirrorSettingsDescGeneral: 'Språk, svårighetsgrad, tonhöjdsvisning',
+  mirrorSettingsDescGeneral: 'Språk, svårighetsgrad, spelstandarder',
   mirrorSettingsDescGameplay: 'Poängalternativ, tider, hjälpmedel',
   mirrorSettingsDescAppearance: 'Tema, textstil, bakgrund',
   mirrorSettingsDescGraphicSound: 'Volym, mikrofon, YouTube',

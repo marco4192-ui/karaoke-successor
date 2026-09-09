@@ -78,7 +78,6 @@ export const gameTranslations = {
   },
 
   gameHud: {
-    volumeMeter: 'Volume meter',
     audioEffects: 'Audio Effects',
     reverb: 'Reverb: {n}%',
     echo: 'Echo: {n}%',
@@ -293,10 +292,6 @@ export const gameTranslations = {
     confidenceVeryLow: 'Red — Manual check recommended',
   },
 
-  pitchGraph: {
-    pitch: 'Pitch: {n}',
-    noPitch: 'No pitch detected',
-  },
 
   battleRoyaleGame: {
     survived: 'SURVIVED!',

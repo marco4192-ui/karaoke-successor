@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: '查看全部',
   queueSlotOne: '剩余位置',
   queueSlotMany: '剩余位置',
-  mirrorSettingsDescGeneral: '语言、难度、音高显示',
+  mirrorSettingsDescGeneral: '语言、难度、游戏默认设置',
   mirrorSettingsDescGameplay: '评分选项、计时、辅助',
   mirrorSettingsDescAppearance: '主题、歌词样式、背景',
   mirrorSettingsDescGraphicSound: '音量、麦克风、YouTube',

@@ -10,11 +10,9 @@ import { SongTitleBanner } from '@/components/game/hud/song-title-banner';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { EndSongButton } from '@/components/game/hud/end-song-button';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
-import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
 import { PracticePanel } from '@/components/game/practice-panel';
 import { ProminentScoreDisplay } from '@/components/game/prominent-score-display';
 import { ParticleSystem, ComboFireEffect } from '@/components/game/visual-effects';
-import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { GameBackground } from '@/components/game/game-background';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
@@ -23,7 +21,6 @@ import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameScoreDisplay } from '@/components/game/game-score-display';
 import {
-  VolumeMeter,
   AudioEffectsButton,
   AudioEffectsPanel,
   AdIndicator,
@@ -131,29 +128,10 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         />
       )}
 
-      {/* Pitch Graph Display — disabled in low-performance mode and no_pitch_guide challenge */}
-      {g.isPlaying && g.showPitchGuide && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (
-        <div className="absolute top-44 left-4 z-20 w-64">
-          <PitchGraphDisplay
-            currentPitch={g.smoothedPitch}
-            targetPitch={null}
-            currentTime={g.gameState.currentTime}
-            isPlaying={g.isPlaying}
-            accuracy={undefined}
-            width={280}
-            height={80}
-            colorScheme="neon"
-            showTargetLine={false}
-            minPitch={g.pitchStats.minPitch}
-            maxPitch={g.pitchStats.maxPitch}
-          />
-        </div>
-      )}
-
       {/* Audio Element - Primary audio source for songs with separate audio file */}
       {/* key=song.id forces React to create a fresh DOM element per song,
           preventing "already connected to different MediaElementSourceNode" errors
-          when SpectrogramDisplay / useSongEnergy call createMediaElementSource */}
+          when useSongEnergy calls createMediaElementSource */}
       {g.effectiveSong?.audioUrl && (
         <audio
           key={g.effectiveSong.id}
@@ -327,9 +305,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           gameMode={g.gameState.gameMode}
         />
 
-        {/* Volume Meter */}
-        <VolumeMeter volume={g.volume} />
-
         {/* Audio Effects Button */}
         <AudioEffectsButton onClick={g.toggleAudioEffects} />
 
@@ -368,20 +343,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       {/* Score Events — hidden in Rate my Song (no score in this mode) */}
       {!g.isLowPerf && g.showParticles !== false && g.gameState.gameMode !== 'rate-my-song' && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} isDuetMode={g.isDuetMode} />}
       {!g.isLowPerf && g.showParticles !== false && <ParticleSystem particles={g.particles} />}
-
-      {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
-      {g.showPitchGuide && g.isPlaying && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (
-        <SpectrogramDisplay
-          audioElement={g.spectrogramAudioEl}
-          isActive={g.isPlaying && !!g.spectrogramAudioEl}
-          mode="bars"
-          position={{ x: 50, y: 50 }}
-          size={{ width: 256, height: 40 }}
-          colorScheme="neon"
-          numBars={24}
-          className="!absolute !left-4 !top-[17.5rem] !transform-none"
-        />
-      )}
 
       {/* Combo Fire Effect — disabled in low-performance mode */}
       {!g.isLowPerf && g.showCombo !== false && g.gameState.players[0]?.combo && g.gameState.players[0].combo >= 5 && (

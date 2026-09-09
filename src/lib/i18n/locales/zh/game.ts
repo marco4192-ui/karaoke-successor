@@ -78,7 +78,6 @@ gameHud: {
   presets: '预设',
   adPlaying: '广告播放中',
   gamePaused: '游戏暂停',
-  volumeMeter: '音量指示器',
 },
 gameEnhancements: {
   loadingStats: '正在加载统计...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: '黄色 — 大致正确',
   confidenceLow: '橙色 — 不确定',
   confidenceVeryLow: '红色 — 建议手动检查',
-},
-pitchGraph: {
-  pitch: '音高：{n}',
-  noPitch: '未检测到音高',
 },
 battleRoyaleGame: {
   survived: '存活！',

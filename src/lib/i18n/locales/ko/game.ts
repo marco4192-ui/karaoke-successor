@@ -78,7 +78,6 @@ gameHud: {
   presets: '프리셋',
   adPlaying: '광고 재생 중',
   gamePaused: '게임 일시정지',
-  volumeMeter: '볼륨 미터',
 },
 gameEnhancements: {
   loadingStats: '통계를 불러오는 중...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: '노란색 — 대부분 올바름',
   confidenceLow: '주황색 — 불확실함',
   confidenceVeryLow: '빨간색 — 수동 확인 권장',
-},
-pitchGraph: {
-  pitch: '피치: {n}',
-  noPitch: '감지된 피치 없음',
 },
 battleRoyaleGame: {
   survived: '생존!',

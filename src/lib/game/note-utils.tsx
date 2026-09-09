@@ -7,7 +7,6 @@ import {
   getNoteDisplayMode,
   getSealedHitColor,
   hexToRgbaPrefix,
-  SEALED_MISS_COLOR,
   SEALED_GOLD_COLOR,
   SEALED_BONUS_COLOR,
   DEFAULT_SEALED_HIT_COLOR,
@@ -48,14 +47,17 @@ export type NoteRenderMode = 'modern' | 'legacy';
  * renderMode:
  * - 'modern' (default) — honours the user's NOTE_DISPLAY_MODE setting:
  *     • 'sealed': ONE uniform hit colour (options: NOTE_SEALED_HIT_COLOR;
- *       golden notes seal in gold, bonus notes in magenta) + red misses.
- *       No quality gradations, no ghost bars. Every newly reached segment
- *       plays a short "heat-seal" animation (`.note-seal-seg`), the fill
- *       front glows hot like a welding tip, and the completed note pulses
- *       once (`.note-seal-complete`).
- *     • 'exact': like the legacy look, but with the fixed 5-colour code
- *       (hellgrün Perfect / grün Great / dunkelgrün Good-Okay hits,
- *       gelb near-miss + orange far-miss ghost bars).
+ *       golden notes seal in gold, bonus notes in magenta). While the
+ *       singer is on pitch, the sing line acts as a LASER/BURNER head
+ *       ("note-laser-head") burning colour into the note; when they
+ *       miss, the beam cuts out ("Aussetzer" — a scorched dark gap) and
+ *       the sung pitch shows as a red ghost mark at the singer's actual
+ *       pitch, so they can see where they ARE vs. where the note is.
+ *       Re-hitting re-ignites the laser with a flash and the burn
+ *       continues from that point.
+ *     • 'exact': same laser fill, but hits are graded with the fixed
+ *       5-colour code (hellgrün Perfect / grün Great / dunkelgrün
+ *       Good-Okay) and miss ghosts are gelb (≤ 1 semitone) or orange.
  * - 'legacy' — the classic profile-based quality rendering (Battle Royale /
  *   Medley Contest keep this so multi-singer colour coding stays intact).
  */
@@ -109,6 +111,24 @@ export function getNoteDisplayStyleClasses(
   const segCount = noteDuration
     ? Math.max(4, Math.min(24, Math.round(noteDuration / 50)))
     : Math.max(4, Math.min(24, samples.length));
+  const segDur = (noteDuration ?? 0) / segCount;
+  const nStart = noteStartTime ?? 0;
+
+  // ── Laser / burner state ───────────────────────────────────────
+  // While the singer is ON pitch the sing line burns colour into the
+  // note like a laser head. When they miss, the beam cuts out
+  // (Aussetzer); when they hit again it re-ignites with a flash.
+  // currentTime is reconstructed exactly from the fill fraction.
+  const approxNow = nStart + clampedFill * (noteDuration ?? 0);
+  let lastSample: { time: number; hit: boolean; sungPitch: number | null } | null = null;
+  for (const s of samples) {
+    if (s.time <= approxNow + 1) lastSample = { time: s.time, hit: s.hit, sungPitch: s.sungPitch ?? null };
+  }
+  const isNoteActive = clampedFill > 0 && clampedFill < 1;
+  const isBurning = isNoteActive
+    && lastSample !== null
+    && lastSample.hit
+    && (approxNow - lastSample.time) <= 300;
 
   // How many segments the singline has fully passed
   const reachedFloat = clampedFill * segCount;
@@ -158,9 +178,6 @@ export function getNoteDisplayStyleClasses(
   const isNoteComplete = clampedFill >= 1 && hasAnySamples;
 
   // ── Time-based segment → sample mapping ────────────────────────
-  const segDur = (noteDuration ?? 0) / segCount;
-  const nStart = noteStartTime ?? 0;
-
   const segData: Array<{
     hit: boolean;
     accuracy: number;
@@ -210,21 +227,45 @@ export function getNoteDisplayStyleClasses(
     : 0;
   const hasHits = hitRatio > 0;
 
-  // ── Ghost bars for missed segments within the reached area ─────
-  // Positioned at the EXACT sung pitch using the same pitch-to-Y
-  // formula as NoteBlock, so the singer sees precisely where they are.
-  // SEALED mode: no ghost bars at all — deliberately clean (in the heat
-  // of the moment nobody can process them anyway).
-  // Medley (user item 6.1): samples may carry a playerColor — every
-  // player's missed ticks then appear in THAT player's color so
-  // spectators see whose wrong notes are whose.
-  const ghostBars: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
-  if (!isSealed && targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
+  // ── Ghost marks for missed segments within the reached area ────
+  // Misses are ALWAYS visible, at the pitch where they were actually
+  // sung (same pitch-to-Y formula as NoteBlock) — the singer sees where
+  // they ARE vs. where the note is. Consecutive missed segments with a
+  // similar pitch merge into ONE continuous bar ("you were HERE for
+  // this stretch") instead of confetti fragments.
+  //   • sealed: ghosts are always red (miss = red, fixed)
+  //   • exact:  gelb (≤ 1 semitone off) / orange (farther)
+  //   • legacy: yellow / orange / vivid red by distance
+  // Medley: samples may carry a playerColor — every player's missed
+  // ticks then appear in THAT player's color so spectators see whose
+  // wrong notes are whose.
+  const ghostBars: Array<{ startIdx: number; endIdx: number; yOffset: number; color: string }> = [];
+  let liveMissGhost: { leftPercent: number; yOffset: number; color: string } | null = null;
+  if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
     const pr = pitchStats.pitchRange || 1;
     const cH = containerHeight || 800;
 
     // Pre-compute target pitch Y position (percent of container)
     const targetY = visibleTop + visibleRange - ((targetPitch - pitchStats.minPitch) / pr) * visibleRange;
+    const sungYOffset = (sungPitch: number) => {
+      const sungY = visibleTop + visibleRange - ((sungPitch - pitchStats.minPitch) / pr) * visibleRange;
+      return ((sungY - targetY) / 100) * cH;
+    };
+    const missColor = (sungPitch: number) => {
+      let rawDiff = Math.abs(sungPitch - targetPitch) % 12;
+      if (rawDiff > 6) rawDiff = 12 - rawDiff;
+      return isSealed
+        ? 'rgba(255, 65, 65, 0.80)'
+        : isExact
+          ? (rawDiff > 1
+              ? EXACT_NOTE_COLORS.farMissGhost
+              : EXACT_NOTE_COLORS.nearMissGhost)
+          : (rawDiff > 2
+              ? 'rgba(255, 30, 30, 0.85)'
+              : rawDiff > 1
+                ? 'rgba(255, 120, 0, 0.80)'
+                : 'rgba(255, 230, 0, 0.75)');
+    };
 
     const hasPlayerColors = noteDuration !== undefined && noteDuration > 0
       && samples.some(s => s.playerColor);
@@ -240,36 +281,58 @@ export function getNoteDisplayStyleClasses(
         perSegPlayer.set(`${segIdx}:${s.playerColor}`, { segIdx, sungPitch: s.sungPitch, color: s.playerColor });
       }
       for (const g of perSegPlayer.values()) {
-        const sungY = visibleTop + visibleRange - ((g.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
-        const yOffset = ((sungY - targetY) / 100) * cH;
-        ghostBars.push({ segmentIndex: g.segIdx, yOffset, color: g.color });
+        ghostBars.push({ startIdx: g.segIdx, endIdx: g.segIdx, yOffset: sungYOffset(g.sungPitch), color: g.color });
       }
     } else {
-      for (let si = 0; si < Math.min(reachedCount, segData.length); si++) {
+      // Include the front segment while it is being sung so the ghost
+      // appears instantly (not only after the segment fully passed).
+      const scanEnd = Math.min(reachedCount + (partialFill > 0 ? 1 : 0), segData.length);
+      type Run = { startIdx: number; sumPitch: number; n: number; lastPitch: number };
+      let run: Run | null = null;
+      const flushRun = () => {
+        if (!run) return;
+        const meanPitch = run.sumPitch / run.n;
+        ghostBars.push({
+          startIdx: run.startIdx,
+          endIdx: run.startIdx + run.n - 1,
+          yOffset: sungYOffset(meanPitch),
+          color: missColor(meanPitch),
+        });
+        run = null;
+      };
+      for (let si = 0; si < scanEnd; si++) {
         const seg = segData[si];
         if (!seg.hit && seg.sungPitch !== null) {
-          // Compute the exact Y position of the sung pitch
-          const sungY = visibleTop + visibleRange - ((seg.sungPitch - pitchStats.minPitch) / pr) * visibleRange;
-          // Convert percent difference to pixel offset relative to the note center
-          const yOffset = ((sungY - targetY) / 100) * cH;
-
-          // Colour by distance:
-          // - exact mode: fixed code — gelb (≤ 1 semitone) / orange (farther)
-          // - legacy: bright yellow / orange / vivid red
-          let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
-          if (rawDiff > 6) rawDiff = 12 - rawDiff;
-          const color = isExact
-            ? (rawDiff > 1
-                ? EXACT_NOTE_COLORS.farMissGhost
-                : EXACT_NOTE_COLORS.nearMissGhost)
-            : (rawDiff > 2
-                ? 'rgba(255, 30, 30, 0.85)'
-                : rawDiff > 1
-                  ? 'rgba(255, 120, 0, 0.80)'
-                  : 'rgba(255, 230, 0, 0.75)');
-          ghostBars.push({ segmentIndex: si, yOffset, color });
+          // Continue the run while the pitch stays within ~1.5 semitones
+          if (run && Math.abs(seg.sungPitch - run.lastPitch) <= 1.5) {
+            run.sumPitch += seg.sungPitch;
+            run.n++;
+            run.lastPitch = seg.sungPitch;
+          } else {
+            flushRun();
+            run = { startIdx: si, sumPitch: seg.sungPitch, n: 1, lastPitch: seg.sungPitch };
+          }
+        } else {
+          // A hit (or silence) breaks the miss run
+          flushRun();
         }
       }
+      flushRun();
+    }
+
+    // ── Live "you are HERE" marker ────────────────────────────────
+    // While the note is active and currently being MISSED off-pitch,
+    // a pulsing dot follows the singer's pitch in real time.
+    if (
+      isNoteActive && !isBurning && lastSample !== null
+      && !lastSample.hit && lastSample.sungPitch !== null
+      && (approxNow - lastSample.time) <= 300
+    ) {
+      liveMissGhost = {
+        leftPercent: clampedFill * 100,
+        yOffset: sungYOffset(lastSample.sungPitch),
+        color: isSealed ? 'rgba(255, 65, 65, 0.95)' : missColor(lastSample.sungPitch),
+      };
     }
   }
 
@@ -283,6 +346,15 @@ export function getNoteDisplayStyleClasses(
 
   // ── Render ──────────────────────────────────────────────────────
   const sealDoneClass = isSealed && isNoteComplete ? ' note-seal-complete' : '';
+
+  // Laser head colour: sealed → the uniform burn colour (gold/bonus/magenta
+  // preserved); exact/legacy → the quality colour of the segment being burned.
+  const laserColor = sealedHit
+    ? sealedHit
+    : (segData[Math.min(reachedCount, segData.length - 1)]?.hit
+        ? qualityColors[segData[Math.min(reachedCount, segData.length - 1)].displayType as keyof typeof qualityColors] || qualityColors.Okay
+        : qualityColors.Okay);
+
   return {
     additionalClasses: `overflow-visible${sealDoneClass}`,
     inlineStyle: {
@@ -315,28 +387,37 @@ export function getNoteDisplayStyleClasses(
             let animClass = '';
 
             if (isSealed) {
-              // ── SEALED: uniform hit colour + red misses + seal animation ──
+              // ── SEALED: laser/burner fill ──
               if (isUnreached || !hasAnySamples) {
                 // Unreached track — or "no performance data" (PTM/CPTM lanes),
                 // which must stay neutral instead of reading as "missed".
                 bgColor   = unreachedBg;
                 borderCol = unreachedBdr;
               } else if (seg.hit) {
+                // Burned-in fill: uniform hit colour
                 bgColor   = sealedUniform;
                 borderCol = 'rgba(255, 255, 255, 0.30)';
                 segGlow   = `0 0 8px ${hexWithAlpha(sealedUniform, 0.55)}`;
+                // Freshly burned segments right behind the laser head glow
+                // hotter while cooling down (only while the note is active).
+                if (isNoteActive && idx >= reachedCount - 3) {
+                  bgImage = `linear-gradient(90deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 70%), ${sealedUniform}`;
+                  segGlow = `0 0 12px ${hexWithAlpha(sealedUniform, 0.8)}, inset 0 0 5px rgba(255, 255, 255, 0.30)`;
+                }
               } else {
-                bgColor   = SEALED_MISS_COLOR;
-                borderCol = 'rgba(140, 16, 16, 0.85)';
+                // Aussetzer: the beam cut out — a scorched dark gap. The exact
+                // pitch that was sung instead shows in the ghost mark above/
+                // below the note (see ghostBars).
+                bgColor   = 'rgba(140, 21, 21, 0.32)';
+                borderCol = 'rgba(255, 65, 65, 0.28)';
                 segGlow   = 'inset 0 1px 3px rgba(0, 0, 0, 0.35)';
               }
 
               if (isAtFront && partialFill > 0 && partialFill < 1) {
                 clipPath = `inset(0 ${(1 - partialFill) * 100}% 0 0)`;
-                if (hasAnySamples) {
-                  // Hot "welding tip" at the singline: bright sheen on the
-                  // freshly sealed edge of the front segment.
-                  bgImage = `linear-gradient(90deg, rgba(255, 255, 255, ${(0.35 + 0.40 * partialFill).toFixed(2)}) 0%, rgba(255, 255, 255, 0.10) 45%, rgba(255, 255, 255, 0) 75%)`;
+                if (seg.hit && isBurning) {
+                  // Molten edge: the burn front sheen right under the laser head
+                  bgImage = `linear-gradient(90deg, rgba(255, 255, 255, ${(0.45 + 0.35 * partialFill).toFixed(2)}) 0%, rgba(255, 255, 255, 0.10) 45%, rgba(255, 255, 255, 0) 75%)`;
                 }
               } else if (isAtFront && partialFill <= 0) {
                 bgColor   = unreachedBg;
@@ -344,9 +425,9 @@ export function getNoteDisplayStyleClasses(
                 segGlow   = undefined;
               }
 
-              // Every segment the singline has passed gets the one-shot
-              // "heat-seal" flash (fires exactly when the class is added).
-              if (hasAnySamples && (idx < reachedCount || (isAtFront && partialFill > 0))) {
+              // Burn-in flash: fires exactly when a segment first gets
+              // burned (hit) — including the re-ignition after an Aussetzer.
+              if (hasAnySamples && seg.hit && (idx < reachedCount || (isAtFront && partialFill > 0))) {
                 animClass = 'note-seal-seg';
               }
             } else {
@@ -383,29 +464,52 @@ export function getNoteDisplayStyleClasses(
                   border: `1px solid ${borderCol}`,
                   clipPath,
                   boxShadow: segGlow,
-                  transition: 'background-color 60ms linear, box-shadow 60ms linear',
+                  transition: 'background-color 60ms linear, box-shadow 60ms linear, background-image 200ms ease-out',
                 }}
               />
             );
           })}
         </div>
 
-        {/* Ghost bars: missed notes shown at sung pitch, paler */}
-        {ghostBars.length > 0 && (
+        {/* ── Laser / burner head ──
+            Mounted exactly while the singer is ON pitch over an active
+            note: a white-hot core at the sing line that burns colour
+            into the note. Unmounts on a miss (Aussetzer), re-ignites
+            with a flash when the hit resumes (mount animation). */}
+        {isBurning && (
+          <div
+            className="note-laser-head"
+            style={{
+              left: `${clampedFill * 100}%`,
+              '--laser-color': laserColor,
+              '--laser-glow': hexWithAlpha(laserColor, 0.55),
+            } as React.CSSProperties}
+          >
+            <span className="note-laser-core" />
+            <span className="note-laser-spark s1" />
+            <span className="note-laser-spark s2" />
+            <span className="note-laser-spark s3" />
+          </div>
+        )}
+
+        {/* Ghost marks: missed notes shown at the pitch where they were
+            actually sung — merged into continuous runs */}
+        {(ghostBars.length > 0 || liveMissGhost) && (
           <div className="absolute pointer-events-none" style={{ inset: 0, overflow: 'visible' }}>
             {ghostBars.map((bar) => {
               const segW    = 100 / segData.length;
-              const barLeft = segW * bar.segmentIndex + segW * 0.1;
-              const barW    = segW * 0.8;
+              const span    = bar.endIdx - bar.startIdx + 1;
+              const barLeft = segW * bar.startIdx + segW * 0.1;
+              const barW    = segW * span - segW * 0.2;
               return (
                 <div
-                  key={`ghost-${bar.segmentIndex}`}
-                  className="absolute rounded-sm"
+                  key={`ghost-${bar.startIdx}`}
+                  className="absolute rounded-full"
                   style={{
                     left: `${barLeft}%`,
                     top: '50%',
                     width: `${barW}%`,
-                    height: '18px',
+                    height: span > 1 ? '16px' : '18px',
                     transform: `translateY(-50%) translateY(${bar.yOffset}px)`,
                     backgroundColor: bar.color,
                     opacity: 0.9,
@@ -414,6 +518,22 @@ export function getNoteDisplayStyleClasses(
                 />
               );
             })}
+
+            {/* Live "you are HERE" marker: pulsing dot at the singer's
+                current pitch while the note is being missed off-pitch */}
+            {liveMissGhost && (
+              <div
+                className="note-ghost-live"
+                style={{
+                  left: `${liveMissGhost.leftPercent}%`,
+                  top: '50%',
+                  transform: `translate(-50%, -50%) translateY(${liveMissGhost.yOffset}px)`,
+                  '--live-color': liveMissGhost.color,
+                } as React.CSSProperties}
+              >
+                <span className="note-ghost-live-dot" />
+              </div>
+            )}
           </div>
         )}
       </>

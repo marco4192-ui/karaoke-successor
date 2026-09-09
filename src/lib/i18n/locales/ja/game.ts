@@ -78,7 +78,6 @@ gameHud: {
   presets: 'プリセット',
   adPlaying: '広告再生中',
   gamePaused: 'ゲーム一時停止',
-  volumeMeter: '音量メーター',
 },
 gameEnhancements: {
   loadingStats: '統計情報を読み込み中...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: '黄 — ほぼ正確',
   confidenceLow: '橙 — 不確実',
   confidenceVeryLow: '赤 — 手動確認を推奨',
-},
-pitchGraph: {
-  pitch: 'ピッチ: {n}',
-  noPitch: 'ピッチが検出されません',
 },
 battleRoyaleGame: {
   survived: 'サバイバル成功！',

@@ -11,8 +11,6 @@ interface GeneralTabProps {
   handleLanguageChange: (_newLang: Language) => void;
   defaultDifficulty: Difficulty;
   handleDifficultyChange: (_diff: Difficulty) => void;
-  showPitchGuide: boolean;
-  handlePitchGuideToggle: (_enabled: boolean) => void;
   onlineEnabled: boolean;
   handleOnlineToggle: (_enabled: boolean) => void;
   tx: (_key: string) => string;
@@ -23,8 +21,6 @@ export function GeneralTab({
   handleLanguageChange,
   defaultDifficulty,
   handleDifficultyChange,
-  showPitchGuide,
-  handlePitchGuideToggle,
   onlineEnabled,
   handleOnlineToggle,
   tx,
@@ -87,25 +83,6 @@ export function GeneralTab({
               ))}
             </div>
             <p className="text-xs text-white/40">{tx('settings.defaultDifficultyDesc')}</p>
-          </div>
-
-          {/* Show Pitch Guide Toggle */}
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <div>
-              <h4 className="font-medium">{tx('settings.showPitchGuide')}</h4>
-              <p className="text-sm text-white/60">{tx('settings.showPitchGuideDesc')}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handlePitchGuideToggle(!showPitchGuide)}
-              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                showPitchGuide ? 'bg-cyan-500' : 'bg-white/20'
-              }`}
-            >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
-                showPitchGuide ? 'left-8' : 'left-1'
-              }`} />
-            </button>
           </div>
         </CardContent>
       </Card>

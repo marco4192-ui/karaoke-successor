@@ -9,7 +9,6 @@ import {
   NoteDisplayMode,
   SEALED_HIT_COLOR_PRESETS,
   DEFAULT_SEALED_HIT_COLOR,
-  SEALED_MISS_COLOR,
   SEALED_GOLD_COLOR,
   EXACT_NOTE_COLORS,
 } from '@/lib/game/note-color-profiles';
@@ -20,23 +19,59 @@ import { StorageKeys, setItem, setBool } from '@/lib/storage';
 //  NOTE DISPLAY PREVIEWS (mirror the real note-bar rendering)
 // ═══════════════════════════════════════════════════════════════
 
-/** Sealed-mode preview bar: gold + hit + hit + miss + hit segments.
- *  key={hitColor} re-mounts on change → re-plays the heat-seal animation. */
+/** Sealed-mode preview bar: gold + hit + scorched gap (Aussetzer) + hit
+ *  segments with a laser/burner head at the fill front and a red ghost
+ *  mark at the "sung" pitch below the note. key={hitColor} re-mounts on
+ *  change → re-plays the burn-in animation. */
 function SealedNotePreview({ hitColor, tx }: { hitColor: string; tx: (_k: string) => string }) {
+  const missBg = 'rgba(140, 21, 21, 0.32)';
+  const missBdr = 'rgba(255, 65, 65, 0.28)';
   return (
     <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-2.5" data-testid="sealed-note-preview">
-      <div className="flex h-8 rounded-md overflow-hidden gap-[2px]" key={hitColor}>
-        <div className="note-seal-seg flex-[1.2]" style={{ backgroundColor: SEALED_GOLD_COLOR }} title={tx('settings.previewGolden')} />
-        <div className="note-seal-seg flex-1" style={{ backgroundColor: hitColor }} title={tx('settings.previewHit')} />
-        <div className="note-seal-seg flex-1" style={{ backgroundColor: hitColor }} title={tx('settings.previewHit')} />
-        <div className="note-seal-seg flex-[0.8]" style={{ backgroundColor: SEALED_MISS_COLOR }} title={tx('settings.previewMiss')} />
-        <div className="note-seal-seg flex-1" style={{ backgroundColor: hitColor }} title={tx('settings.previewHit')} />
-        <div className="flex-[1.4] bg-white/[0.08] border border-white/10" />
+      <div className="relative h-8 mb-6" key={hitColor}>
+        <div className="absolute inset-0 flex gap-[2px]">
+          <div className="note-seal-seg flex-[1.2] rounded-sm" style={{ backgroundColor: SEALED_GOLD_COLOR, border: '1px solid rgba(255, 255, 255, 0.3)' }} title={tx('settings.previewGolden')} />
+          <div className="note-seal-seg flex-1 rounded-sm" style={{ backgroundColor: hitColor, border: '1px solid rgba(255, 255, 255, 0.3)' }} title={tx('settings.previewHit')} />
+          <div className="note-seal-seg flex-1 rounded-sm" style={{ backgroundColor: hitColor, border: '1px solid rgba(255, 255, 255, 0.3)' }} title={tx('settings.previewHit')} />
+          {/* Aussetzer — the beam cut out: scorched gap in the track… */}
+          <div className="flex-[0.9] rounded-sm" style={{ backgroundColor: missBg, border: `1px solid ${missBdr}`, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.35)' }} title={tx('settings.previewMiss')} />
+          <div className="note-seal-seg flex-1 rounded-sm" style={{ backgroundColor: hitColor, border: '1px solid rgba(255, 255, 255, 0.3)' }} title={tx('settings.previewHit')} />
+          <div className="flex-[1.3] rounded-sm bg-white/[0.08] border border-white/10" />
+        </div>
+        {/* …laser/burner head burning colour into the note at the fill front */}
+        <div
+          className="note-laser-head"
+          style={{
+            left: '74%',
+            '--laser-color': hitColor,
+            '--laser-glow': `rgba(${parseInt(hitColor.slice(1, 3), 16)}, ${parseInt(hitColor.slice(3, 5), 16)}, ${parseInt(hitColor.slice(5, 7), 16)}, 0.55)`,
+          } as React.CSSProperties}
+          aria-hidden="true"
+        >
+          <span className="note-laser-core" />
+          <span className="note-laser-spark s1" />
+          <span className="note-laser-spark s2" />
+          <span className="note-laser-spark s3" />
+        </div>
+        {/* …and the red ghost mark at the pitch that was sung instead */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: '34%',
+            top: '100%',
+            width: '13%',
+            height: '14px',
+            transform: 'translateY(7px)',
+            backgroundColor: 'rgba(255, 65, 65, 0.8)',
+            boxShadow: '0 0 8px rgba(255, 65, 65, 0.8)',
+          }}
+          title={tx('settings.previewMiss')}
+        />
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/50">
         <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-[3px] inline-block" style={{ backgroundColor: SEALED_GOLD_COLOR }} />{tx('settings.previewGolden')}</span>
         <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-[3px] inline-block" style={{ backgroundColor: hitColor }} />{tx('settings.previewHit')}</span>
-        <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-[3px] inline-block" style={{ backgroundColor: SEALED_MISS_COLOR }} />{tx('settings.previewMiss')}</span>
+        <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-[3px] inline-block" style={{ backgroundColor: 'rgba(255, 65, 65, 0.8)' }} />{tx('settings.previewMiss')}</span>
       </div>
     </div>
   );
@@ -302,7 +337,7 @@ export function AppearanceTab({
                 <div className="flex-[1.2]" style={{ backgroundColor: SEALED_GOLD_COLOR }} />
                 <div className="flex-1" style={{ backgroundColor: DEFAULT_SEALED_HIT_COLOR }} />
                 <div className="flex-1" style={{ backgroundColor: DEFAULT_SEALED_HIT_COLOR }} />
-                <div className="flex-[0.8]" style={{ backgroundColor: SEALED_MISS_COLOR }} />
+                <div className="flex-[0.8]" style={{ backgroundColor: 'rgba(140, 21, 21, 0.45)', boxShadow: 'inset 0 0 3px rgba(0, 0, 0, 0.4)' }} />
                 <div className="flex-[1.4] bg-white/[0.08]" />
               </div>
               <div>

@@ -12,22 +12,17 @@ function parsePerformanceMode(raw: string | null): PerformanceMode | null {
 
 interface GameSettings {
   showBackgroundVideo: boolean;
-  showPitchGuide: boolean;
   useAnimatedBackground: boolean;
   performanceMode: PerformanceMode;
 }
 
 export function useGameSettings(): GameSettings & {
   setShowBackgroundVideo: (_value: boolean) => void;
-  setShowPitchGuide: (_value: boolean) => void;
   setUseAnimatedBackground: (_value: boolean) => void;
   setPerformanceMode: (_value: PerformanceMode) => void;
 } {
   const [showBackgroundVideo, setShowBackgroundVideo] = useState(
     () => getBool(StorageKeys.BG_VIDEO, true)
-  );
-  const [showPitchGuide, setShowPitchGuide] = useState(
-    () => getBool(StorageKeys.SHOW_PITCH_GUIDE, true)
   );
   const [useAnimatedBackground, setUseAnimatedBackground] = useState(
     () => getBool(StorageKeys.ANIMATED_BG, false)
@@ -39,13 +34,11 @@ export function useGameSettings(): GameSettings & {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
-    setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
     setUseAnimatedBackground(getBool(StorageKeys.ANIMATED_BG, false));
     setPerformanceMode(parsePerformanceMode(getString(StorageKeys.PERFORMANCE_MODE)) || 'full');
 
     const handleSettingsChange = () => {
       setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
-      setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
       setUseAnimatedBackground(getBool(StorageKeys.ANIMATED_BG, false));
 
       const storedPerf = parsePerformanceMode(
@@ -67,11 +60,9 @@ export function useGameSettings(): GameSettings & {
 
   return {
     showBackgroundVideo,
-    showPitchGuide,
     useAnimatedBackground,
     performanceMode,
     setShowBackgroundVideo,
-    setShowPitchGuide,
     setUseAnimatedBackground,
     setPerformanceMode,
   };

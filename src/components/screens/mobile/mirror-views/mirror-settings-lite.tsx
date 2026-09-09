@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
-import { NOTE_COLOR_PROFILES, SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_MISS_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
+import { NOTE_COLOR_PROFILES, SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
 
@@ -28,7 +28,7 @@ interface SettingsSection {
 }
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: 'general',      icon: '\u2699\uFE0F',  labelKey: 'settings.tabGeneral',        fallback: 'General',      descKey: 'mobile.mirrorSettingsDescGeneral',    descFallback: 'Sprache, Schwierigkeit, Tonh\u00F6henanzeige' },
+  { id: 'general',      icon: '\u2699\uFE0F',  labelKey: 'settings.tabGeneral',        fallback: 'General',      descKey: 'mobile.mirrorSettingsDescGeneral',    descFallback: 'Sprache, Schwierigkeit, Spiel-Standards' },
   { id: 'gameplay',     icon: '\u{1F3AE}',  labelKey: 'settingsTabs.gameplay',    fallback: 'Gameplay',     descKey: 'mobile.mirrorSettingsDescGameplay',   descFallback: 'Scoring-Optionen, Timings, Hilfen' },
   { id: 'appearance',   icon: '\u{1F3A8}',  labelKey: 'settingsTabs.appearance',  fallback: 'Appearance',   descKey: 'mobile.mirrorSettingsDescAppearance', descFallback: 'Theme, Lyrics-Stil, Hintergrund' },
   { id: 'graphicsound',icon: '\u{1F50A}',  labelKey: 'settingsTabs.graphicSound',fallback: 'Graphics & Sound', descKey: 'mobile.mirrorSettingsDescGraphicSound', descFallback: 'Lautst\u00E4rke, Mikrofon, YouTube' },
@@ -43,7 +43,6 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
 
 const SK = {
   DIFFICULTY: 'karaoke-default-difficulty',
-  SHOW_PITCH_GUIDE: 'karaoke-show-pitch-guide',
   SHOW_SCORE: 'karaoke-show-score',
   SHOW_PARTICLES: 'karaoke-show-particles',
   SHOW_COMBO: 'karaoke-show-combo',
@@ -69,7 +68,6 @@ const SK = {
 
 const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.DIFFICULTY]: 'medium',
-  [SK.SHOW_PITCH_GUIDE]: true,
   [SK.SHOW_SCORE]: true,
   [SK.SHOW_PARTICLES]: true,
   [SK.SHOW_COMBO]: true,
@@ -283,14 +281,6 @@ function GeneralSettings({ settings, sendSetting, t }: {
           })}
         </div>
       </div>
-
-      {/* Tonhoehenanzeige */}
-      <SettingToggle
-        label={tOr(t, 'settings.showPitchGuide', 'Tonh\u00F6henanzeige')}
-        description={tOr(t, 'settings.showPitchGuideDesc', 'Hilfestellung beim Singen')}
-        value={!!settings[SK.SHOW_PITCH_GUIDE]}
-        onToggle={(v) => sendSetting(SK.SHOW_PITCH_GUIDE, String(v))}
-      />
     </div>
   );
 }
@@ -436,10 +426,10 @@ function AppearanceSettings({ settings, sendSetting, t }: {
               <div className="flex-[1.2]" style={{ backgroundColor: SEALED_GOLD_COLOR }} />
               <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
               <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
-              <div className="flex-[0.8]" style={{ backgroundColor: SEALED_MISS_COLOR }} />
+              <div className="flex-[0.8]" style={{ backgroundColor: 'rgba(140, 21, 21, 0.45)', boxShadow: 'inset 0 0 3px rgba(0, 0, 0, 0.4)' }} />
               <div className="flex-[1.4] bg-white/[0.08]" />
             </div>
-            <span className="text-xs font-semibold">{tOr(t, 'appearance.noteDisplaySealed', 'Eingeschwei\u00DFt')}</span>
+            <span className="text-xs font-semibold">{tOr(t, 'appearance.noteDisplaySealed', 'Laser')}</span>
           </button>
           {/* Exact */}
           <button

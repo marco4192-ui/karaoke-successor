@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Preset',
   adPlaying: 'Pubblicità in riproduzione',
   gamePaused: 'Gioco in Pausa',
-  volumeMeter: 'Misuratore del volume',
 },
 gameEnhancements: {
   loadingStats: 'Caricamento statistiche...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Giallo — Probabilmente corretto',
   confidenceLow: 'Arancione — Incerto',
   confidenceVeryLow: 'Rosso — Controllo manuale consigliato',
-},
-pitchGraph: {
-  pitch: 'Tono: {n}',
-  noPitch: 'Nessun tono rilevato',
 },
 battleRoyaleGame: {
   survived: 'SOPRAVVISSUTO!',

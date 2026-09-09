@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Esiasetukset',
   adPlaying: 'Mainos toistetaan',
   gamePaused: 'Peli keskeytetty',
-  volumeMeter: 'Äänimittari',
 },
 gameEnhancements: {
   loadingStats: 'Ladataan tilastoja...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Keltainen — Todennäköisesti oikein',
   confidenceLow: 'Oranssi — Epävarma',
   confidenceVeryLow: 'Punainen — Manuaalinen tarkistus suositeltu',
-},
-pitchGraph: {
-  pitch: 'Sävelkorkeus: {n}',
-  noPitch: 'Sävelkorkeutta ei tunnistettu',
 },
 battleRoyaleGame: {
   survived: 'SELVIYTYI!',

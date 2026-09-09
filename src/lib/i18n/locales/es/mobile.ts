@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Ver todo',
   queueSlotOne: 'plaza libre',
   queueSlotMany: 'plazas libres',
-  mirrorSettingsDescGeneral: 'Idioma, dificultad, indicador de tono',
+  mirrorSettingsDescGeneral: 'Idioma, dificultad, valores del juego',
   mirrorSettingsDescGameplay: 'Opciones de puntuación, tiempos, asistencias',
   mirrorSettingsDescAppearance: 'Tema, estilo de letras, fondo',
   mirrorSettingsDescGraphicSound: 'Volumen, micrófono, YouTube',

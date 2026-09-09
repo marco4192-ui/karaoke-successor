@@ -49,7 +49,6 @@ function SettingsScreen() {
   const [previewVolume, setPreviewVolume] = useState(30);
   const [micSensitivity, setMicSensitivity] = useState(50);
   const [defaultDifficulty, setDefaultDifficulty] = useState<Difficulty>('medium');
-  const [showPitchGuide, setShowPitchGuide] = useState(true);
   const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
@@ -145,7 +144,6 @@ function SettingsScreen() {
 
     setPreviewVolume(getNumber(StorageKeys.PREVIEW_VOLUME, 30));
     setMicSensitivity(getNumber(StorageKeys.MIC_SENSITIVITY, 50));
-    setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
     setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
     setLyricsSize(getString(StorageKeys.LYRICS_SIZE, 'medium'));
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
@@ -193,18 +191,12 @@ function SettingsScreen() {
     setHasChanges(true);
   };
 
-  const handlePitchGuideToggle = (enabled: boolean) => {
-    setShowPitchGuide(enabled);
-    setHasChanges(true);
-  };
-
   // Save all settings to localStorage and dispatch events
   const handleSaveSettings = () => {
     try {
       setItem(StorageKeys.PREVIEW_VOLUME, previewVolume.toString());
       setItem(StorageKeys.MIC_SENSITIVITY, micSensitivity.toString());
       setItem(StorageKeys.DEFAULT_DIFFICULTY, defaultDifficulty);
-      setBool(StorageKeys.SHOW_PITCH_GUIDE, showPitchGuide);
       setItem(StorageKeys.LYRICS_STYLE, lyricsStyle);
       setItem(StorageKeys.LYRICS_SIZE, lyricsSize);
       setBool(StorageKeys.BG_VIDEO, bgVideo);
@@ -218,7 +210,7 @@ function SettingsScreen() {
 
       setDifficulty(defaultDifficulty);
       window.dispatchEvent(new CustomEvent('settingsChange', {
-        detail: { difficulty: defaultDifficulty, showPitchGuide, lyricsStyle, lyricsSize, bgVideo, masterVolume }
+        detail: { difficulty: defaultDifficulty, lyricsStyle, lyricsSize, bgVideo, masterVolume }
       }));
 
       setHasChanges(false);
@@ -250,8 +242,6 @@ function SettingsScreen() {
           handleLanguageChange={handleLanguageChange}
           defaultDifficulty={defaultDifficulty}
           handleDifficultyChange={handleDifficultyChange}
-          showPitchGuide={showPitchGuide}
-          handlePitchGuideToggle={handlePitchGuideToggle}
           onlineEnabled={onlineEnabled}
           handleOnlineToggle={setOnlineEnabled}
           tx={tx}

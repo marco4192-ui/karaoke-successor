@@ -2,8 +2,8 @@
  * Shared MediaElementSource cache
  *
  * Web Audio API only allows one createMediaElementSource() call per audio
- * element. Multiple consumers (e.g. useSongEnergy, SpectrogramDisplay) that
- * need to analyse the same <audio> element must share a single source node.
+ * element. Multiple consumers (e.g. useSongEnergy) that need to analyse the
+ * same <audio> element must share a single source node.
  *
  * This module provides a WeakMap-based cache keyed by the HTMLAudioElement
  * DOM node. When the element is garbage-collected the entry is automatically

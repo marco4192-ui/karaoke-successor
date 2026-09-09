@@ -5,33 +5,6 @@ import { PRESET_LABELS } from '@/lib/audio/audio-effects';
 import type { AudioEffectPreset } from '@/lib/audio/audio-effects';
 import { useTranslation } from '@/lib/i18n/translations';
 
-// ===================== VOLUME METER =====================
-
-interface VolumeMeterProps {
-  volume: number;
-}
-
-export function VolumeMeter({ volume }: VolumeMeterProps) {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="absolute top-16 right-4 z-20"
-      role="meter"
-      aria-label={t('gameHud.volumeMeter')}
-      aria-valuenow={Math.round(volume * 100)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
-        <div
-          className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
-          style={{ height: `${Math.min(volume, 1) * 100}%`, marginTop: `${(1 - Math.min(volume, 1)) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ===================== AUDIO EFFECTS BUTTON =====================
 
 interface AudioEffectsButtonProps {

@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Пресеты',
   adPlaying: 'Реклама',
   gamePaused: 'Игра на паузе',
-  volumeMeter: 'Индикатор громкости',
 },
 gameEnhancements: {
   loadingStats: 'Загрузка статистики...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Жёлтый — Вероятно верно',
   confidenceLow: 'Оранжевый — Неопределённо',
   confidenceVeryLow: 'Красный — Рекомендуется ручная проверка',
-},
-pitchGraph: {
-  pitch: 'Тональность: {n}',
-  noPitch: 'Тональность не обнаружена',
 },
 battleRoyaleGame: {
   survived: 'ВЫЖИЛ!',

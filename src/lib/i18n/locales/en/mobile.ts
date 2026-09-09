@@ -78,7 +78,7 @@ export const mobileTranslations = {
     mirrorShowAll: 'Show all',
     queueSlotOne: 'slot remaining',
     queueSlotMany: 'slots remaining',
-    mirrorSettingsDescGeneral: 'Language, difficulty, pitch display',
+    mirrorSettingsDescGeneral: 'Language, difficulty, game defaults',
     mirrorSettingsDescGameplay: 'Scoring options, timings, assists',
     mirrorSettingsDescAppearance: 'Theme, lyrics style, background',
     mirrorSettingsDescGraphicSound: 'Volume, microphone, YouTube',

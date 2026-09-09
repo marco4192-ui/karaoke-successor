@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Показать все',
   queueSlotOne: 'место свободно',
   queueSlotMany: 'мест свободно',
-  mirrorSettingsDescGeneral: 'Язык, сложность, отображение высоты тона',
+  mirrorSettingsDescGeneral: 'Язык, сложность, настройки игры',
   mirrorSettingsDescGameplay: 'Параметры очков, тайминги, подсказки',
   mirrorSettingsDescAppearance: 'Тема, стиль текста, фон',
   mirrorSettingsDescGraphicSound: 'Громкость, микрофон, YouTube',

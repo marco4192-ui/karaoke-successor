@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Forhåndsinnstillinger',
   adPlaying: 'Reklame spilles',
   gamePaused: 'Spill pauset',
-  volumeMeter: 'Volummåler',
 },
 gameEnhancements: {
   loadingStats: 'Laster statistikk...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Gul — Sannsynligvis riktig',
   confidenceLow: 'Oransje — Usikker',
   confidenceVeryLow: 'Rød — Manuell kontroll anbefalt',
-},
-pitchGraph: {
-  pitch: 'Tone: {n}',
-  noPitch: 'Ingen tone oppdaget',
 },
 battleRoyaleGame: {
   survived: 'OVERLEVDE!',

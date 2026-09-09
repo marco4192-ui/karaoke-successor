@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Alles tonen',
   queueSlotOne: 'plek vrij',
   queueSlotMany: 'plekken vrij',
-  mirrorSettingsDescGeneral: 'Taal, moeilijkheidsgraad, toonhoogte-weergave',
+  mirrorSettingsDescGeneral: 'Taal, moeilijkheid, spelstandaarden',
   mirrorSettingsDescGameplay: 'Score-opties, timings, hulpmiddelen',
   mirrorSettingsDescAppearance: 'Thema, liedtekst-stijl, achtergrond',
   mirrorSettingsDescGraphicSound: 'Volume, microfoon, YouTube',

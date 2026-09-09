@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'すべて表示',
   queueSlotOne: '残り1枠',
   queueSlotMany: '枠が残り',
-  mirrorSettingsDescGeneral: '言語、難易度、ピッチ表示',
+  mirrorSettingsDescGeneral: '言語、難易度、ゲームのデフォルト',
   mirrorSettingsDescGameplay: 'スコアオプション、タイミング、アシスト',
   mirrorSettingsDescAppearance: 'テーマ、歌詞スタイル、背景',
   mirrorSettingsDescGraphicSound: '音量、マイク、YouTube',

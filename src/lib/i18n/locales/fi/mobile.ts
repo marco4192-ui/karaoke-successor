@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Näytä kaikki',
   queueSlotOne: 'paikka vapaana',
   queueSlotMany: 'paikkaa vapaana',
-  mirrorSettingsDescGeneral: 'Kieli, vaikeustaso, sävelkorkeuden näyttö',
+  mirrorSettingsDescGeneral: 'Kieli, vaikeustaso, pelin oletukset',
   mirrorSettingsDescGameplay: 'Pistevaihtoehdot, ajoitukset, avustukset',
   mirrorSettingsDescAppearance: 'Teema, sanoitustyyli, tausta',
   mirrorSettingsDescGraphicSound: 'Äänenvoimakkuus, mikrofoni, YouTube',

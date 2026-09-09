@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: '전체 보기',
   queueSlotOne: '자리 남음',
   queueSlotMany: '자리 남음',
-  mirrorSettingsDescGeneral: '언어, 난이도, 피치 표시',
+  mirrorSettingsDescGeneral: '언어, 난이도, 게임 기본값',
   mirrorSettingsDescGameplay: '점수 옵션, 타이밍, 어시스트',
   mirrorSettingsDescAppearance: '테마, 가사 스타일, 배경',
   mirrorSettingsDescGraphicSound: '음량, 마이크, YouTube',

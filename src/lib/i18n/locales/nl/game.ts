@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Voorinstellingen',
   adPlaying: 'Reclame wordt afgespeeld',
   gamePaused: 'Spel gepauzeerd',
-  volumeMeter: 'Volumemeter',
 },
 gameEnhancements: {
   loadingStats: 'Statistieken laden...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Geel — Waarschijnlijk correct',
   confidenceLow: 'Oranje — Onzeker',
   confidenceVeryLow: 'Rood — Handmatige controle aanbevolen',
-},
-pitchGraph: {
-  pitch: 'Toonhoogte: {n}',
-  noPitch: 'Geen toonhoogte gedetecteerd',
 },
 battleRoyaleGame: {
   survived: 'OVERLEefd!',

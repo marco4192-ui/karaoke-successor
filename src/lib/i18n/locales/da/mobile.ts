@@ -75,7 +75,7 @@ mobile: {
   mirrorShowAll: 'Vis alle',
   queueSlotOne: 'plads ledig',
   queueSlotMany: 'pladser ledige',
-  mirrorSettingsDescGeneral: 'Sprog, sværhedsgrad, tonehøjdevisning',
+  mirrorSettingsDescGeneral: 'Sprog, sværhedsgrad, spil-standarder',
   mirrorSettingsDescGameplay: 'Pointindstillinger, tider, hjælpemidler',
   mirrorSettingsDescAppearance: 'Tema, tekststil, baggrund',
   mirrorSettingsDescGraphicSound: 'Lydstyrke, mikrofon, YouTube',

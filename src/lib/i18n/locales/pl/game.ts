@@ -78,7 +78,6 @@ gameHud: {
   presets: 'Presety',
   adPlaying: 'Reklama odtwarzana',
   gamePaused: 'Gra wstrzymana',
-  volumeMeter: 'Wskaźnik głośności',
 },
 gameEnhancements: {
   loadingStats: 'Ładowanie statystyk...',
@@ -272,10 +271,6 @@ audioAnalysis: {
   confidenceMedium: 'Żółty — Prawdopodobnie poprawny',
   confidenceLow: 'Pomarańczowy — Niepewny',
   confidenceVeryLow: 'Czerwony — Zalecana ręczna kontrola',
-},
-pitchGraph: {
-  pitch: 'Wysokość dźwięku: {n}',
-  noPitch: 'Nie wykryto wysokości dźwięku',
 },
 battleRoyaleGame: {
   survived: 'PRZETRWANO!',

@@ -966,11 +966,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   GESANGSBALKEN — „Eingeschweißt"-Notendarstellung (sealed mode)
-   The coloured hit/miss ticks are heat-sealed into the note bar:
-   each segment the sing line passes flashes hot (white, oversized)
-   and shrinks into its sealed final state — like foil being welded
-   onto the note in a rapid wave following the sing line.
+   GESANGSBALKEN — „Eingebrannt"-Segment-Flash (sealed mode)
+   Every segment the burn front reaches flashes hot (white, oversized)
+   and shrinks into its burned final state — the colour is literally
+   burnt into the note in a rapid wave following the sing line.
    ═══════════════════════════════════════════════════════════════ */
 @keyframes note-seal-in {
   0% {
@@ -1008,10 +1007,120 @@
   animation: note-seal-complete 500ms ease-out 1 both;
 }
 
-/* Reduced motion: seal animations become instant */
+/* ═══════════════════════════════════════════════════════════════
+   GESANGSBALKEN — Laser-/Brenner-Füllung (sealed & exact modes)
+   While the singer is on pitch, the sing line acts as a laser head
+   („note-laser-head") burning colour into the note: a white-hot core
+   with sparks at the burn front. A miss cuts the beam („Aussetzer" —
+   scorched dark gap + red ghost mark at the sung pitch); re-hitting
+   re-ignites the laser with a flash (mount animation) and the burn
+   continues from that point.
+   ═══════════════════════════════════════════════════════════════ */
+.note-laser-head {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 6;
+  /* ignite flash on mount (re-ignition after an Aussetzer) + live flicker */
+  animation:
+    note-laser-ignite 240ms cubic-bezier(0.2, 0.9, 0.3, 1) 1,
+    note-laser-flicker 130ms ease-in-out infinite alternate;
+}
+
+.note-laser-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  /* white-hot centre fading into the burn colour */
+  background: radial-gradient(
+    ellipse 62% 52% at 50% 50%,
+    #ffffff 0%,
+    #ffffff 22%,
+    var(--laser-color, #4ade80) 58%,
+    transparent 80%
+  );
+  filter: blur(0.5px);
+  box-shadow:
+    0 0 10px 2px var(--laser-glow, rgba(74, 222, 128, 0.6)),
+    0 0 26px 8px var(--laser-glow, rgba(74, 222, 128, 0.35));
+}
+
+.note-laser-spark {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 4px var(--laser-glow, rgba(74, 222, 128, 0.8));
+  opacity: 0;
+  animation: note-laser-spark 460ms linear infinite;
+}
+
+.note-laser-spark.s1 { animation-delay: 0ms;   --spark-dx: 5px;  }
+.note-laser-spark.s2 { animation-delay: 150ms; --spark-dx: -6px; }
+.note-laser-spark.s3 { animation-delay: 300ms; --spark-dx: 2px;  }
+
+@keyframes note-laser-ignite {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: brightness(3); }
+  60%  { transform: translate(-50%, -50%) scale(1.55); opacity: 1; filter: brightness(2); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; filter: brightness(1); }
+}
+
+@keyframes note-laser-flicker {
+  0%   { opacity: 0.82; }
+  100% { opacity: 1; }
+}
+
+@keyframes note-laser-spark {
+  0%   { transform: translate(-50%, 0) scale(1); opacity: 0.95; }
+  100% { transform: translate(calc(-50% + var(--spark-dx, 4px)), -17px) scale(0.25); opacity: 0; }
+}
+
+/* ── Live „you are HERE" marker ──
+   Pulsing dot at the singer's CURRENT pitch while a note is being
+   missed off-pitch — the anchor point showing where the voice is
+   vs. where the note bar sits. */
+.note-ghost-live {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.note-ghost-live-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: var(--live-color, rgba(255, 65, 65, 0.95));
+  box-shadow: 0 0 10px var(--live-color, rgba(255, 65, 65, 0.7));
+  animation: note-ghost-live-pulse 480ms ease-in-out infinite alternate;
+}
+
+@keyframes note-ghost-live-pulse {
+  0%   { transform: scale(0.82); opacity: 0.75; }
+  100% { transform: scale(1.18); opacity: 1; }
+}
+
+/* Reduced motion: seal / laser / live marker animations become static */
 @media (prefers-reduced-motion: reduce) {
   .note-seal-seg,
-  .note-seal-complete {
+  .note-seal-complete,
+  .note-laser-head,
+  .note-ghost-live-dot {
     animation: none !important;
+  }
+  .note-laser-spark {
+    display: none;
   }
 }
