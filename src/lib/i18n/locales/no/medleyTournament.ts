@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Tilbake til hovedmenyen',
   songSelectionMode: 'Sangvalg',
   songSelection: 'Sangvalg',
-  songRandom: '🎲 Tilfeldig',
+  songRandom: '🎲 Tilfeldig sang',
   songVote: '🗳️ Stem',
   songVoteDesc: 'Spillere velger fra 3 foreslåtte sanger før hver kamp',
   songVoteTitle: 'Velg en sang!',

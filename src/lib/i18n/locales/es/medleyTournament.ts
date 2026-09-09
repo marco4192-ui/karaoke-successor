@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Volver al menú principal',
   songSelectionMode: 'Selección de Canción',
   songSelection: 'Selección de canciones',
-  songRandom: '🎲 Aleatoria',
+  songRandom: '🎲 Canción aleatoria',
   songVote: '🗳️ Votación',
   songVoteDesc: 'Los jugadores eligen entre 3 canciones sugeridas antes de cada partida',
   songVoteTitle: '¡Elige una Canción!',

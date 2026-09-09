@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Terug naar hoofdmenu',
   songSelectionMode: 'Nummerselectie',
   songSelection: 'Nummerkeuze',
-  songRandom: '🎲 Willekeurig',
+  songRandom: '🎲 Willekeurig nummer',
   songVote: '🗳️ Stemmen',
   songVoteDesc: 'Spelers kiezen uit 3 voorgestelde nummers voor elke wedstrijd',
   songVoteTitle: 'Kies een nummer!',

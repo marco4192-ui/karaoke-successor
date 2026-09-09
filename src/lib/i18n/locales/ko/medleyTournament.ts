@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: '메인 메뉴로 돌아가기',
   songSelectionMode: '곡 선택',
   songSelection: '곡 선택',
-  songRandom: '🎲 랜덤',
+  songRandom: '🎲 랜덤 곡',
   songVote: '🗳️ 투표',
   songVoteDesc: '각 매치 전 3곡 중에서 플레이어가 선택합니다',
   songVoteTitle: '곡을 선택하세요!',

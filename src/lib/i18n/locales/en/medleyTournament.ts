@@ -278,7 +278,7 @@ export const medleyTournamentTranslations = {
     // #8 Song selection
     songSelectionMode: 'Song Selection',
     songSelection: 'Song Selection',
-    songRandom: '🎲 Random',
+    songRandom: '🎲 Random Song',
     songVote: '🗳️ Vote',
     songVoteDesc: 'Players choose from 3 suggested songs before each match',
     songVoteTitle: 'Pick a Song!',

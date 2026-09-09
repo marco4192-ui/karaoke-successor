@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: '返回主菜单',
   songSelectionMode: '歌曲选择',
   songSelection: '选歌方式',
-  songRandom: '🎲 随机',
+  songRandom: '🎲 随机歌曲',
   songVote: '🗳️ 投票',
   songVoteDesc: '每场比赛前玩家从3首建议歌曲中选择',
   songVoteTitle: '选一首歌！',

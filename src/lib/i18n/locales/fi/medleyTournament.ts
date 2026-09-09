@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Takaisin päävalikkoon',
   songSelectionMode: 'Kappaleen valinta',
   songSelection: 'Kappaleen valintatila',
-  songRandom: '🎲 Satunnainen',
+  songRandom: '🎲 Satunnainen kappale',
   songVote: '🗳️ Äänestys',
   songVoteDesc: 'Pelaajat valitsevat 3 ehdotetun kappaleen joukosta ennen ottelua',
   songVoteTitle: 'Valitse kappale!',

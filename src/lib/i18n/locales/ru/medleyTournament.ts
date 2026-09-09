@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Вернуться в главное меню',
   songSelectionMode: 'Выбор песни',
   songSelection: 'Выбор песен',
-  songRandom: '🎲 Случайная',
+  songRandom: '🎲 Случайная песня',
   songVote: '🗳️ Голосование',
   songVoteDesc: 'Игроки выбирают из 3 предложенных песен перед каждым матчем',
   songVoteTitle: 'Выберите песню!',

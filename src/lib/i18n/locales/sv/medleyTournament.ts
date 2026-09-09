@@ -254,7 +254,7 @@ tournament: {
   backToMainMenu: 'Tillbaka till huvudmenyn',
   songSelectionMode: 'Låtval',
   songSelection: 'Låtvalsläge',
-  songRandom: '🎲 Slumpad',
+  songRandom: '🎲 Slumpad låt',
   songVote: '🗳️ Röstning',
   songVoteDesc: 'Spelare väljer bland 3 föreslagna låtar före varje match',
   songVoteTitle: 'Välj en Låt!',

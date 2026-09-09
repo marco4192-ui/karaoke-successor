@@ -133,20 +133,22 @@ export function MirrorTournamentIntroLite({ gameState, onSendDesktopCommand }: M
             </div>
           </div>
 
-          {/* Song info */}
+          {/* Song info — placeholder "Random Song" when no fixed song yet
+              (songSelectionMode "random" or skipped vote): the desktop draws
+              the song from the filtered pool when the match starts. */}
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 px-6 py-3.5 w-full max-w-sm">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+              {t('partyStarting.song') || 'Song'}
+            </span>
             {intro?.songTitle ? (
               <>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-                  {t('partyStarting.song') || 'Song'}
-                </span>
                 <p className="text-base font-semibold text-white truncate max-w-full">🎵 {intro.songTitle}</p>
                 {intro.songArtist && (
                   <p className="text-sm text-white/40 truncate max-w-full">{intro.songArtist}</p>
                 )}
               </>
             ) : (
-              <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || 'Random'}</p>
+              <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || '🎲 Random Song'}</p>
             )}
           </div>
 

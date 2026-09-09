@@ -120,18 +120,17 @@ export function MirrorBattleIntroLite({ gameState, onSendDesktopCommand }: Mirro
         )}
       </div>
 
-      {/* Song info */}
+      {/* Song info — placeholder "Random Song" when the round song isn't fixed
+          (BR shuffles a song queue; round 1 only shows a title if preselected). */}
       {(badges.length > 0 || intro?.startPlayerName) && (
         <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 px-6 py-3 w-full max-w-sm">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+            {t('partyStarting.song') || 'Song'}
+          </span>
           {intro?.songTitle ? (
-            <>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-                {t('partyStarting.song') || 'Song'}
-              </span>
-              <p className="text-base font-semibold text-white truncate max-w-full">🎵 {intro.songTitle}</p>
-            </>
+            <p className="text-base font-semibold text-white truncate max-w-full">🎵 {intro.songTitle}</p>
           ) : (
-            <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || 'Random'}</p>
+            <p className="text-sm font-semibold text-white/70">{t('tournament.songRandom') || '🎲 Random Song'}</p>
           )}
         </div>
       )}
