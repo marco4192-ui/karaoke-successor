@@ -6,6 +6,13 @@
 // which are updated separately in note-utils.tsx.
 //
 // The "neon" profile is the original hardcoded palette.
+//
+// NOTE: since the "modern" note display modes (sealed / exact) landed, the
+// profiles only govern the LEGACY note rendering used by modes with more
+// than two simultaneous singers (Battle Royale, Medley Contest) — plus the
+// golden/bonus special-note look everywhere.
+
+import { StorageKeys, getString } from '@/lib/storage';
 
 export interface NoteColorProfile {
   id: string;
@@ -218,4 +225,98 @@ export function resolveNoteColors(
  */
 export function getNoteColorProfile(id: string | null | undefined): NoteColorProfile {
   return NOTE_COLOR_PROFILES.find(p => p.id === id) || NOTE_COLOR_PROFILES[0];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODERN NOTE DISPLAY (user request, "Gesangsbalken aufwerten")
+// ═══════════════════════════════════════════════════════════════
+
+/** Note display mode for all modes except Battle Royale / Medley Contest. */
+export type NoteDisplayMode = 'sealed' | 'exact';
+
+/** Uniform hit colour default (grün) for the sealed display. */
+export const DEFAULT_SEALED_HIT_COLOR = '#4ADE80';
+
+/** Misses are ALWAYS red in the sealed display (fixed, not configurable). */
+export const SEALED_MISS_COLOR = '#FF4141';
+
+/** Golden notes are sealed in gold (preserves the 2x-points semantics). */
+export const SEALED_GOLD_COLOR = '#FFD34A';
+
+/** Bonus notes are sealed in magenta (preserves the special-note semantics). */
+export const SEALED_BONUS_COLOR = '#FF4D9E';
+
+/** Preset swatches offered in the options (plus free colour picker). */
+export const SEALED_HIT_COLOR_PRESETS: string[] = [
+  '#4ADE80', // grün
+  '#22D3EE', // cyan
+  '#FACC15', // gelb
+  '#FF7849', // orange
+  '#F472B6', // pink
+  '#A78BFA', // violet
+  '#FFD34A', // gold
+  '#F5F5F5', // weiß
+];
+
+/**
+ * Fixed 5-colour code for the EXACT display mode (user-specified):
+ *   hellgrün  → Perfect
+ *   grün      → Great
+ *   dunkelgrün→ Good / Okay
+ *   gelb      → near miss (ghost bar, ≤ 1 semitone off)
+ *   orange    → far miss (ghost bar, > 1 semitone off)
+ */
+export const EXACT_NOTE_COLORS = {
+  hitColors: {
+    Perfect: '#4ADE80',
+    Great:   '#22C55E',
+    Good:    '#16A34A',
+    Okay:    '#16A34A',
+  },
+  hitGlows: {
+    Perfect: '0 0 10px #4ADE80, 0 0 20px rgba(74, 222, 128, .5)',
+    Great:   '0 0 8px #22C55E, 0 0 16px rgba(34, 197, 94, .4)',
+    Good:    '0 0 6px #16A34A, 0 0 12px rgba(22, 163, 74, .35)',
+    Okay:    '0 0 4px #16A34A',
+  },
+  glowTint: 'rgba(74, 222, 128,',
+  nearMissGhost: 'rgba(250, 204, 21, 0.80)',  // gelb
+  farMissGhost:  'rgba(251, 146, 60, 0.85)',  // orange
+};
+
+// ── Tiny read-through cache ─────────────────────────────────────
+// getNoteDisplayStyleClasses runs per note & frame; localStorage reads
+// per call would multiply into thousands per second. A short TTL keeps
+// the values effectively live (settings apply within ~200 ms) while
+// keeping the hot path cheap.
+const SETTING_TTL_MS = 200;
+let modeCache: { at: number; value: NoteDisplayMode } | null = null;
+let colorCache: { at: number; value: string } | null = null;
+
+/** Read the note display mode ('sealed' default) with a tiny TTL cache. */
+export function getNoteDisplayMode(): NoteDisplayMode {
+  const now = Date.now();
+  if (modeCache && now - modeCache.at < SETTING_TTL_MS) return modeCache.value;
+  const value: NoteDisplayMode = getString(StorageKeys.NOTE_DISPLAY_MODE, 'sealed') === 'exact' ? 'exact' : 'sealed';
+  modeCache = { at: now, value };
+  return value;
+}
+
+/** Read the uniform sealed hit colour, validating the #rrggbb shape. */
+export function getSealedHitColor(): string {
+  const now = Date.now();
+  if (colorCache && now - colorCache.at < SETTING_TTL_MS) return colorCache.value;
+  const raw = getString(StorageKeys.NOTE_SEALED_HIT_COLOR, DEFAULT_SEALED_HIT_COLOR);
+  const value = /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : DEFAULT_SEALED_HIT_COLOR;
+  colorCache = { at: now, value };
+  return value;
+}
+
+/** Convert a #rrggbb hex to an rgba() PREFIX (no closing paren) for the glowTint trick. */
+export function hexToRgbaPrefix(hex: string): string {
+  if (!hex.startsWith('#') || hex.length < 7) return 'rgba(74, 222, 128,';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b},`;
 }

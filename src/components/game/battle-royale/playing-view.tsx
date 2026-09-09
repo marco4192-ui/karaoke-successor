@@ -653,6 +653,9 @@ export function PlayingView({
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
             notePerformance={notePerformance}
+            // Battle Royale = more than two simultaneous singers → keep the
+            // classic quality-graduated rendering (user decision).
+            legacyNoteStyle
           />
         </div>
       )}

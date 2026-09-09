@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
-import { getNoteDisplayStyleClasses, PitchStats } from '@/lib/game/note-utils';
+import { getNoteDisplayStyleClasses, PitchStats, NoteRenderMode } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== HELPERS =====================
@@ -39,6 +39,13 @@ export interface NoteHighwayProps {
   visibleRange?: number;
   className?: string;
   isBlindSection?: boolean;
+  /**
+   * Force the LEGACY note rendering (profile-based quality colours, ghost
+   * bars). Used by modes with more than two simultaneous singers (Battle
+   * Royale, Medley Contest). All other modes honour the user's note display
+   * setting ('sealed' / 'exact').
+   */
+  legacyNoteStyle?: boolean;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -94,6 +101,7 @@ const NoteBlock = React.memo(function NoteBlock({
   playerColor = '#22d3d3ee',
   noteTint,
   notePerformance,
+  renderMode,
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -107,6 +115,7 @@ const NoteBlock = React.memo(function NoteBlock({
   /** Optional per-singer note tint (Medley): unsung track in the singer's color */
   noteTint?: string;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
+  renderMode: NoteRenderMode;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -160,6 +169,7 @@ const NoteBlock = React.memo(function NoteBlock({
     note.duration,
     typeof window !== 'undefined' ? window.innerHeight : 800,
     noteTint,
+    renderMode,
   );
 
   const glowColor = withAlpha(playerColor, 0.8);
@@ -176,7 +186,7 @@ const NoteBlock = React.memo(function NoteBlock({
         willChange: 'left, top, width, opacity',
         transition: 'opacity 400ms ease-out, box-shadow 200ms ease-out',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
-        opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
+        opacity: isPast ? (displayStyle.pastOpacity ?? (accuracy > 0.3 ? 0.8 : 0.3)) : 1,
         ...displayStyle.inlineStyle,
       }}
     >
@@ -224,11 +234,13 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleRange = 77,
   className = '',
   isBlindSection = false,
+  legacyNoteStyle = false,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 
   const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
   const resolvedPlayerName = playerName || t('prominentScore.player1');
+  const renderMode: NoteRenderMode = legacyNoteStyle ? 'legacy' : 'modern';
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
@@ -250,6 +262,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           playerColor={effectiveColor}
           noteTint={noteTint}
           notePerformance={notePerformance}
+          renderMode={renderMode}
         />
       ))}
 

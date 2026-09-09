@@ -260,6 +260,9 @@ export function MedleyPlayingUI({
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
+            // Medley Contest = more than two simultaneous singers → keep the
+            // classic quality-graduated rendering (user decision).
+            legacyNoteStyle
           />
         </div>
       )}

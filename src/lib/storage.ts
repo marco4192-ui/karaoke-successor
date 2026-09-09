@@ -30,6 +30,10 @@ export const StorageKeys = {
   NOTE_STYLE: 'karaoke-note-style',
   NOTE_SHAPE: 'karaoke-note-shape',
   NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
+  /** Note bar display mode: 'sealed' (uniform hit color + red misses + seal animation) | 'exact' (5-color quality code) */
+  NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
+  /** Uniform hit color for the 'sealed' note display mode (#rrggbb) */
+  NOTE_SEALED_HIT_COLOR: 'karaoke-note-sealed-hit-color',
   PERFORMANCE_MODE: 'karaoke-performance-mode',
   REPLAY_ENABLED: 'karaoke-replay-enabled',
   WARNING_CUES: 'karaoke-warning-cues',

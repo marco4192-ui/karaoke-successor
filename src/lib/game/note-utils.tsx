@@ -1,7 +1,18 @@
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { StorageKeys, getString } from '@/lib/storage';
-import { getNoteColorProfile, resolveNoteColors } from '@/lib/game/note-color-profiles';
+import {
+  getNoteColorProfile,
+  resolveNoteColors,
+  getNoteDisplayMode,
+  getSealedHitColor,
+  hexToRgbaPrefix,
+  SEALED_MISS_COLOR,
+  SEALED_GOLD_COLOR,
+  SEALED_BONUS_COLOR,
+  DEFAULT_SEALED_HIT_COLOR,
+  EXACT_NOTE_COLORS,
+} from '@/lib/game/note-color-profiles';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -18,10 +29,35 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 /**
+ * Which rendering pipeline a note bar uses:
+ * - 'modern' (default): the user's global note display setting
+ *   ('sealed' = uniform hit colour + red misses + heat-seal animation, or
+ *   'exact' = fixed 5-colour quality code dunkelgrün/grün/hellgrün/gelb/orange).
+ * - 'legacy': the classic quality-graduated profile rendering — reserved for
+ *   modes with MORE than two simultaneous singers (Battle Royale, Medley
+ *   Contest) where per-player colour coding must stay intact.
+ */
+export type NoteRenderMode = 'modern' | 'legacy';
+
+/**
  * Get note display style classes based on display mode.
  * Currently only 'tick-fill-singstar' is supported — all other
  * display styles have been removed in favor of this Singstar-style
  * segmented tick rendering.
+ *
+ * renderMode:
+ * - 'modern' (default) — honours the user's NOTE_DISPLAY_MODE setting:
+ *     • 'sealed': ONE uniform hit colour (options: NOTE_SEALED_HIT_COLOR;
+ *       golden notes seal in gold, bonus notes in magenta) + red misses.
+ *       No quality gradations, no ghost bars. Every newly reached segment
+ *       plays a short "heat-seal" animation (`.note-seal-seg`), the fill
+ *       front glows hot like a welding tip, and the completed note pulses
+ *       once (`.note-seal-complete`).
+ *     • 'exact': like the legacy look, but with the fixed 5-colour code
+ *       (hellgrün Perfect / grün Great / dunkelgrün Good-Okay hits,
+ *       gelb near-miss + orange far-miss ghost bars).
+ * - 'legacy' — the classic profile-based quality rendering (Battle Royale /
+ *   Medley Contest keep this so multi-singer colour coding stays intact).
  */
 export function getNoteDisplayStyleClasses(
   _displayStyle: string,
@@ -43,10 +79,14 @@ export function getNoteDisplayStyleClasses(
   containerHeight?: number,
   /** Optional per-singer tint (Medley): pre-colors the unsung note track in the singer's color */
   playerTint?: string,
+  /** Rendering pipeline: 'modern' (sealed/exact setting) or 'legacy' (BR / Medley) */
+  renderMode: NoteRenderMode = 'modern',
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
   overlayElement: React.ReactNode | null;
+  /** Optional past-note opacity hint (sealed mode dims missed notes less aggressively) */
+  pastOpacity?: number;
 } {
   // Singstar-style tick fill: The note fills from LEFT to RIGHT like a
   // progress bar as the singline passes over it. Only the portion the
@@ -75,9 +115,36 @@ export function getNoteDisplayStyleClasses(
   const reachedCount = Math.floor(reachedFloat);
   const partialFill = reachedFloat - reachedCount;
 
-  // ── Colour palette (from selected profile, or 'neon' fallback) ──
+  // ── Colour palette & display mode resolution ──────────────
+  // Modern modes: 'sealed' (uniform hit colour + red misses) or 'exact'
+  // (fixed 5-colour code). Legacy: profile-based quality gradations.
+  const isLegacy = renderMode === 'legacy';
+  const displayMode = isLegacy ? null : getNoteDisplayMode();
+  const isSealed = displayMode === 'sealed';
+  const isExact = displayMode === 'exact';
+
   const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
-  const { hitColors, hitGlows, glowTint } = resolveNoteColors(profile, isGolden, isBonus);
+  const isSpecialNote = isGolden || isBonus;
+  // Sealed: no per-quality colours at all — one uniform hit colour
+  // (golden notes seal in gold, bonus notes in magenta to preserve semantics).
+  const sealedHit = isSealed
+    ? (isGolden ? SEALED_GOLD_COLOR : isBonus ? SEALED_BONUS_COLOR : getSealedHitColor())
+    : null;
+  const hitColors = sealedHit
+    ? null
+    : isExact && !isSpecialNote
+      ? EXACT_NOTE_COLORS.hitColors
+      : resolveNoteColors(profile, isGolden, isBonus).hitColors;
+  const hitGlows = sealedHit
+    ? null
+    : isExact && !isSpecialNote
+      ? EXACT_NOTE_COLORS.hitGlows
+      : resolveNoteColors(profile, isGolden, isBonus).hitGlows;
+  const glowTint = sealedHit
+    ? hexToRgbaPrefix(sealedHit)
+    : isExact && !isSpecialNote
+      ? EXACT_NOTE_COLORS.glowTint
+      : resolveNoteColors(profile, isGolden, isBonus).glowTint;
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
   // Per-singer tint (Medley): the unsung track shows the snippet singer's
@@ -85,6 +152,10 @@ export function getNoteDisplayStyleClasses(
   const tint        = playerTint && playerTint.startsWith('#') ? playerTint : null;
   const unreachedBg = tint ? hexWithAlpha(tint, 0.22) : 'rgba(255, 255, 255, 0.08)';
   const unreachedBdr = tint ? hexWithAlpha(tint, 0.45) : 'rgba(255, 255, 255, 0.14)';
+  // Sealed neutral track: modes without performance data (PTM/CPTM lanes)
+  // must NOT render "missed" red — no samples simply means "no data".
+  const hasAnySamples = samples.length > 0;
+  const isNoteComplete = clampedFill >= 1 && hasAnySamples;
 
   // ── Time-based segment → sample mapping ────────────────────────
   const segDur = (noteDuration ?? 0) / segCount;
@@ -142,11 +213,13 @@ export function getNoteDisplayStyleClasses(
   // ── Ghost bars for missed segments within the reached area ─────
   // Positioned at the EXACT sung pitch using the same pitch-to-Y
   // formula as NoteBlock, so the singer sees precisely where they are.
+  // SEALED mode: no ghost bars at all — deliberately clean (in the heat
+  // of the moment nobody can process them anyway).
   // Medley (user item 6.1): samples may carry a playerColor — every
   // player's missed ticks then appear in THAT player's color so
   // spectators see whose wrong notes are whose.
   const ghostBars: Array<{ segmentIndex: number; yOffset: number; color: string }> = [];
-  if (targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
+  if (!isSealed && targetPitch !== undefined && pitchStats && visibleTop !== undefined && visibleRange !== undefined) {
     const pr = pitchStats.pitchRange || 1;
     const cH = containerHeight || 800;
 
@@ -180,14 +253,20 @@ export function getNoteDisplayStyleClasses(
           // Convert percent difference to pixel offset relative to the note center
           const yOffset = ((sungY - targetY) / 100) * cH;
 
-          // Colour by distance: close = bright yellow, far = vivid red
+          // Colour by distance:
+          // - exact mode: fixed code — gelb (≤ 1 semitone) / orange (farther)
+          // - legacy: bright yellow / orange / vivid red
           let rawDiff = Math.abs(seg.sungPitch - targetPitch) % 12;
           if (rawDiff > 6) rawDiff = 12 - rawDiff;
-          const color = rawDiff > 2
-            ? 'rgba(255, 30, 30, 0.85)'
-            : rawDiff > 1
-              ? 'rgba(255, 120, 0, 0.80)'
-              : 'rgba(255, 230, 0, 0.75)';
+          const color = isExact
+            ? (rawDiff > 1
+                ? EXACT_NOTE_COLORS.farMissGhost
+                : EXACT_NOTE_COLORS.nearMissGhost)
+            : (rawDiff > 2
+                ? 'rgba(255, 30, 30, 0.85)'
+                : rawDiff > 1
+                  ? 'rgba(255, 120, 0, 0.80)'
+                  : 'rgba(255, 230, 0, 0.75)');
           ghostBars.push({ segmentIndex: si, yOffset, color });
         }
       }
@@ -196,9 +275,16 @@ export function getNoteDisplayStyleClasses(
 
   const glowColor = glowTint;
 
+  // Type-safe render values (the null branches only occur in sealed mode,
+  // where the quality palettes are never read — and vice versa).
+  const sealedUniform = sealedHit ?? DEFAULT_SEALED_HIT_COLOR;
+  const qualityColors = hitColors ?? EXACT_NOTE_COLORS.hitColors;
+  const qualityGlows = hitGlows ?? EXACT_NOTE_COLORS.hitGlows;
+
   // ── Render ──────────────────────────────────────────────────────
+  const sealDoneClass = isSealed && isNoteComplete ? ' note-seal-complete' : '';
   return {
-    additionalClasses: 'overflow-visible',
+    additionalClasses: `overflow-visible${sealDoneClass}`,
     inlineStyle: {
       backgroundImage: tint
         ? `linear-gradient(135deg, ${hexWithAlpha(tint, 0.10)} 0%, ${hexWithAlpha(tint, 0.05)} 100%)`
@@ -212,6 +298,7 @@ export function getNoteDisplayStyleClasses(
         : 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
       filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
     },
+    ...(isSealed ? { pastOpacity: hasHits ? 0.85 : 0.5 } : {}),
     overlayElement: (
       <>
         {/* Segments: unreached (dim) → reached+hit (coloured) / reached+miss (gap) */}
@@ -224,34 +311,75 @@ export function getNoteDisplayStyleClasses(
             let borderCol: string;
             let clipPath: string | undefined;
             let segGlow: string | undefined;
+            let bgImage: string | undefined;
+            let animClass = '';
 
-            if (isUnreached) {
-              bgColor   = unreachedBg;
-              borderCol = unreachedBdr;
-            } else if (seg.hit) {
-              bgColor   = hitColors[seg.displayType as keyof typeof hitColors] || hitColors.Okay;
-              borderCol = 'transparent';
-              segGlow   = hitGlows[seg.displayType as keyof typeof hitGlows];
+            if (isSealed) {
+              // ── SEALED: uniform hit colour + red misses + seal animation ──
+              if (isUnreached || !hasAnySamples) {
+                // Unreached track — or "no performance data" (PTM/CPTM lanes),
+                // which must stay neutral instead of reading as "missed".
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
+              } else if (seg.hit) {
+                bgColor   = sealedUniform;
+                borderCol = 'rgba(255, 255, 255, 0.30)';
+                segGlow   = `0 0 8px ${hexWithAlpha(sealedUniform, 0.55)}`;
+              } else {
+                bgColor   = SEALED_MISS_COLOR;
+                borderCol = 'rgba(140, 16, 16, 0.85)';
+                segGlow   = 'inset 0 1px 3px rgba(0, 0, 0, 0.35)';
+              }
+
+              if (isAtFront && partialFill > 0 && partialFill < 1) {
+                clipPath = `inset(0 ${(1 - partialFill) * 100}% 0 0)`;
+                if (hasAnySamples) {
+                  // Hot "welding tip" at the singline: bright sheen on the
+                  // freshly sealed edge of the front segment.
+                  bgImage = `linear-gradient(90deg, rgba(255, 255, 255, ${(0.35 + 0.40 * partialFill).toFixed(2)}) 0%, rgba(255, 255, 255, 0.10) 45%, rgba(255, 255, 255, 0) 75%)`;
+                }
+              } else if (isAtFront && partialFill <= 0) {
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
+                segGlow   = undefined;
+              }
+
+              // Every segment the singline has passed gets the one-shot
+              // "heat-seal" flash (fires exactly when the class is added).
+              if (hasAnySamples && (idx < reachedCount || (isAtFront && partialFill > 0))) {
+                animClass = 'note-seal-seg';
+              }
             } else {
-              bgColor   = missGap;
-              borderCol = missGapBorder;
-            }
+              // ── EXACT / LEGACY: quality-graduated segments (gap = miss) ──
+              if (isUnreached) {
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
+              } else if (seg.hit) {
+                bgColor   = qualityColors[seg.displayType as keyof typeof qualityColors] || qualityColors.Okay;
+                borderCol = 'transparent';
+                segGlow   = qualityGlows[seg.displayType as keyof typeof qualityGlows];
+              } else {
+                bgColor   = missGap;
+                borderCol = missGapBorder;
+              }
 
-            // The segment exactly at the fill front may be partially visible
-            if (isAtFront && partialFill > 0 && partialFill < 1) {
-              clipPath = `inset(0 ${(1 - partialFill) * 100}% 0 0)`;
-            } else if (isAtFront && partialFill <= 0) {
-              bgColor   = unreachedBg;
-              borderCol = unreachedBdr;
-              segGlow   = undefined;
+              // The segment exactly at the fill front may be partially visible
+              if (isAtFront && partialFill > 0 && partialFill < 1) {
+                clipPath = `inset(0 ${(1 - partialFill) * 100}% 0 0)`;
+              } else if (isAtFront && partialFill <= 0) {
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
+                segGlow   = undefined;
+              }
             }
 
             return (
               <div
                 key={idx}
-                className="flex-1 rounded-sm"
+                className={`flex-1 rounded-sm ${animClass}`}
                 style={{
                   backgroundColor: bgColor,
+                  backgroundImage: bgImage,
                   border: `1px solid ${borderCol}`,
                   clipPath,
                   boxShadow: segGlow,
