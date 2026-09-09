@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: '最近追加された',
   genreLabel: '🎸 ジャンル:',
   allGenres: 'すべてのジャンル',
+  christmas: '🎄 クリスマス',
   languageLabel: '🌍 言語:',
   allLanguages: 'すべての言語',
   duet: 'デュエット',

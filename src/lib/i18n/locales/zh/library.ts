@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: '最近添加',
   genreLabel: '🎸 风格：',
   allGenres: '所有风格',
+  christmas: '🎄 圣诞节',
   languageLabel: '🌍 语言：',
   allLanguages: '所有语言',
   duet: '二重唱',

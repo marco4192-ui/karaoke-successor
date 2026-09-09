@@ -7,6 +7,7 @@ import { LibrarySettings, LibraryViewMode, LibraryGroupBy } from './types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
+import { CHRISTMAS_FILTER_VALUE } from '@/lib/seasonal';
 
 interface LibraryFiltersProps {
   searchQuery: string;
@@ -103,7 +104,18 @@ export function LibraryFilters({
             </SelectTrigger>
             <SelectContent>
               {availableGenres.map(g => (
-                <SelectItem key={g} value={g}>{g === 'all' ? t('libraryFilters.allGenres') : g}</SelectItem>
+                <SelectItem
+                  key={g}
+                  value={g}
+                  className={g === CHRISTMAS_FILTER_VALUE ? 'text-red-300' : undefined}
+                  data-testid={g === CHRISTMAS_FILTER_VALUE ? 'christmas-filter-option' : undefined}
+                >
+                  {g === 'all'
+                    ? t('libraryFilters.allGenres')
+                    : g === CHRISTMAS_FILTER_VALUE
+                      ? t('libraryFilters.christmas')
+                      : g}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

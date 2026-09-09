@@ -75,6 +75,7 @@ export const libraryTranslations = {
     recentlyAdded: 'Recently Added',
     genreLabel: '🎸 Genre:',
     allGenres: 'All Genres',
+    christmas: '🎄 Christmas',
     languageLabel: '🌍 Language:',
     allLanguages: 'All Languages',
     duet: 'Duet',

@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: 'Недавно добавленные',
   genreLabel: '🎸 Жанр:',
   allGenres: 'Все жанры',
+  christmas: '🎄 Рождество',
   languageLabel: '🌍 Язык:',
   allLanguages: 'Все языки',
   duet: 'Дуэт',

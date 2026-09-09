@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useDeferredValue } from 'react';
+import { useMemo, useDeferredValue, useState, useEffect } from 'react';
 import { Song } from '@/types/game';
 import { LibrarySettings, StartOptions } from '@/components/screens/library/types';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useDebouncedValue } from './use-debounce';
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { CHRISTMAS_FILTER_VALUE, isChristmasSong, isChristmasSeasonEnabled } from '@/lib/seasonal';
 
 interface UseLibraryFiltersParams {
   loadedSongs: Song[];
@@ -17,6 +18,14 @@ interface UseLibraryFiltersParams {
 }
 
 export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMode, viralSongIds }: UseLibraryFiltersParams) {
+  // Seasonal easter egg: the 🎄 Christmas filter is only offered in December
+  // (or via ?xmas=1). Evaluated post-mount so SSR and client agree on the
+  // initial render — no hydration mismatch across timezone edges.
+  const [xmasSeason, setXmasSeason] = useState(false);
+  useEffect(() => {
+    setXmasSeason(isChristmasSeasonEnabled());
+  }, []);
+
   // B.1: Debounce search — wait 200ms after last keystroke before filtering.
   // This prevents expensive fuzzy matching on every single character typed.
   const debouncedQuery = useDebouncedValue(searchQuery, 200);
@@ -47,7 +56,11 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     
     // Genre filter - reads from #Genre: tag in txt files
     // Supports comma-separated genres (e.g., "Soundtrack, K-Pop")
-    if (settings.filterGenre && settings.filterGenre !== 'all') {
+    if (settings.filterGenre === CHRISTMAS_FILTER_VALUE) {
+      // Seasonal easter egg: heuristic (title/genre), NOT a canonical genre —
+      // Christmas songs keep their real genre in the metadata.
+      songs = songs.filter(s => isChristmasSong(s));
+    } else if (settings.filterGenre && settings.filterGenre !== 'all') {
       const normalizedFilter = normalizeGenreName(settings.filterGenre).toLowerCase();
       songs = songs.filter(s => {
         if (!s.genre) return false;
@@ -110,7 +123,8 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return songs;
   }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds]);
   
-  // Get unique genres from loaded songs (read from #Genre: in txt files, normalized)
+  // Get unique genres from loaded songs (read from #Genre: in txt files, normalized).
+  // In December the seasonal 🎄 Christmas entry is injected right after "all".
   const availableGenres = useMemo(() => {
     const genreSet = new Set<string>();
     loadedSongs.forEach(s => {
@@ -119,8 +133,12 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
         parts.forEach(g => genreSet.add(normalizeGenreName(g)));
       }
     });
-    return ['all', ...Array.from(genreSet).sort()];
-  }, [loadedSongs]);
+    return [
+      'all',
+      ...(xmasSeason ? [CHRISTMAS_FILTER_VALUE] : []),
+      ...Array.from(genreSet).sort(),
+    ];
+  }, [loadedSongs, xmasSeason]);
   
   // Get unique languages from loaded songs (read from #Language: in txt files, normalized)
   const availableLanguages = useMemo(() => {

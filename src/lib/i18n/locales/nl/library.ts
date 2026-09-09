@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: 'Recent toegevoegd',
   genreLabel: '🎸 Genre:',
   allGenres: 'Alle genres',
+  christmas: '🎄 Kerst',
   languageLabel: '🌍 Taal:',
   allLanguages: 'Alle talen',
   duet: 'Duet',

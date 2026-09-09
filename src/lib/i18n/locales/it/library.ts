@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: 'Aggiunte di Recente',
   genreLabel: '🎸 Genere:',
   allGenres: 'Tutti i Generi',
+  christmas: '🎄 Natale',
   languageLabel: '🌍 Lingua:',
   allLanguages: 'Tutte le Lingue',
   duet: 'Duetto',

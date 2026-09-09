@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: 'Tilføjet for nylig',
   genreLabel: '🎸 Genre:',
   allGenres: 'Alle genrer',
+  christmas: '🎄 Jul',
   languageLabel: '🌍 Sprog:',
   allLanguages: 'Alle sprog',
   duet: 'Duet',

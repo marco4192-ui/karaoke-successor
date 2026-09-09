@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: '최근 추가',
   genreLabel: '🎸 장르:',
   allGenres: '모든 장르',
+  christmas: '🎄 크리스마스',
   languageLabel: '🌍 언어:',
   allLanguages: '모든 언어',
   duet: '듀엣',

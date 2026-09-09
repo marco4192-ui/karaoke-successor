@@ -70,6 +70,7 @@ libraryFilters: {
   recentlyAdded: 'Äskettäin lisätyt',
   genreLabel: '🎸 Tyylilaji:',
   allGenres: 'Kaikki genret',
+  christmas: '🎄 Joulu',
   languageLabel: '🌍 Kieli:',
   allLanguages: 'Kaikki kielet',
   duet: 'Duetto',
