@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
-import { NOTE_COLOR_PROFILES } from '@/lib/game/note-color-profiles';
+import { NOTE_COLOR_PROFILES, SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_MISS_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
 
@@ -61,6 +61,8 @@ const SK = {
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   LANGUAGE: 'karaoke-language',
   NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
+  NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
+  NOTE_SEALED_HIT_COLOR: 'karaoke-note-sealed-hit-color',
 } as const;
 
 // ===================== Defaults =====================
@@ -80,6 +82,8 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.LYRICS_SIZE]: 'medium',
   [SK.THEME]: 'neon-nights',
   [SK.NOTE_COLOR_PROFILE]: 'neon',
+  [SK.NOTE_DISPLAY_MODE]: 'sealed',
+  [SK.NOTE_SEALED_HIT_COLOR]: DEFAULT_SEALED_HIT_COLOR,
   [SK.MASTER_VOLUME]: 100,
   [SK.PREVIEW_VOLUME]: 30,
   [SK.MIC_SENSITIVITY]: 50,
@@ -413,6 +417,69 @@ function AppearanceSettings({ settings, sendSetting, t }: {
             );
           })}
         </div>
+      </div>
+
+      {/* Notendarstellung (sealed / exact) */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5" data-testid="mirror-note-display">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.noteDisplayMode', 'Notendarstellung')}</span>
+        <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.noteDisplayModeDesc', 'Look der Notenbalken im Spiel')}</p>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {/* Sealed */}
+          <button
+            onClick={() => sendSetting(SK.NOTE_DISPLAY_MODE, 'sealed')}
+            className={'rounded-lg px-3 py-2.5 active:scale-95 transition-all border flex flex-col gap-1.5 items-start ' +
+              (String(settings[SK.NOTE_DISPLAY_MODE]) !== 'exact'
+                ? 'bg-green-500/25 border-green-400/40'
+                : 'bg-white/5 border-white/10 text-white/50')}
+          >
+            <div className="flex h-3.5 w-full rounded overflow-hidden gap-[2px]" aria-hidden="true">
+              <div className="flex-[1.2]" style={{ backgroundColor: SEALED_GOLD_COLOR }} />
+              <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
+              <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
+              <div className="flex-[0.8]" style={{ backgroundColor: SEALED_MISS_COLOR }} />
+              <div className="flex-[1.4] bg-white/[0.08]" />
+            </div>
+            <span className="text-xs font-semibold">{tOr(t, 'appearance.noteDisplaySealed', 'Eingeschwei\u00DFt')}</span>
+          </button>
+          {/* Exact */}
+          <button
+            onClick={() => sendSetting(SK.NOTE_DISPLAY_MODE, 'exact')}
+            className={'rounded-lg px-3 py-2.5 active:scale-95 transition-all border flex flex-col gap-1.5 items-start ' +
+              (String(settings[SK.NOTE_DISPLAY_MODE]) === 'exact'
+                ? 'bg-green-500/25 border-green-400/40'
+                : 'bg-white/5 border-white/10 text-white/50')}
+          >
+            <div className="flex h-3.5 w-full rounded overflow-hidden gap-[2px]" aria-hidden="true">
+              <div className="flex-[2]" style={{ backgroundColor: EXACT_NOTE_COLORS.hitColors.Perfect }} />
+              <div className="flex-[1.5]" style={{ backgroundColor: EXACT_NOTE_COLORS.hitColors.Great }} />
+              <div className="flex-1" style={{ backgroundColor: EXACT_NOTE_COLORS.hitColors.Good }} />
+              <div className="flex-[2] bg-white/[0.08]" />
+            </div>
+            <span className="text-xs font-semibold">{tOr(t, 'appearance.noteDisplayExact', 'Exakt')}</span>
+          </button>
+        </div>
+
+        {/* Sealed: Treffer-Farb-Swatches */}
+        {String(settings[SK.NOTE_DISPLAY_MODE]) !== 'exact' && (
+          <div className="mt-2.5">
+            <span className="text-[11px] text-white/40">{tOr(t, 'appearance.sealedHitColor', 'Treffer-Farbe')}</span>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {SEALED_HIT_COLOR_PRESETS.map((c) => {
+                const active = String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR).toLowerCase() === c.toLowerCase();
+                return (
+                  <button
+                    key={c}
+                    onClick={() => sendSetting(SK.NOTE_SEALED_HIT_COLOR, c)}
+                    title={c}
+                    aria-label={c}
+                    className={'w-8 h-8 rounded-lg border-2 active:scale-90 transition-all ' + (active ? 'border-white ring-2 ring-white/60 scale-110' : 'border-white/20')}
+                    style={{ backgroundColor: c }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Note-Color-Profil */}

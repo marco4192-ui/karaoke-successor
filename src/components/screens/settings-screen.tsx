@@ -12,6 +12,7 @@ import {
 } from '@/components/game/webcam-background';
 import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { StorageKeys, setItem, setBool, getNumber, getBool, getString } from '@/lib/storage';
+import { NoteDisplayMode, DEFAULT_SEALED_HIT_COLOR } from '@/lib/game/note-color-profiles';
 
 // Tab components
 import { MicrophoneSettingsPanel } from '@/components/settings/microphone-settings-panel';
@@ -57,6 +58,13 @@ function SettingsScreen() {
   const [noteColorProfile, setNoteColorProfile] = useState<string>(() =>
     getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'),
   );
+  const [noteDisplayMode, setNoteDisplayMode] = useState<NoteDisplayMode>(() =>
+    getString(StorageKeys.NOTE_DISPLAY_MODE, 'sealed') === 'exact' ? 'exact' : 'sealed',
+  );
+  const [sealedHitColor, setSealedHitColor] = useState<string>(() => {
+    const raw = getString(StorageKeys.NOTE_SEALED_HIT_COLOR, DEFAULT_SEALED_HIT_COLOR);
+    return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : DEFAULT_SEALED_HIT_COLOR;
+  });
   const [performanceMode, setPerformanceMode] = useState<'full' | 'low'>(() => {
     const stored = getString(StorageKeys.PERFORMANCE_MODE);
     return stored === 'low' ? 'low' : 'full';
@@ -88,6 +96,25 @@ function SettingsScreen() {
     };
     window.addEventListener('remote-settings-tab', handleRemoteTab);
     return () => window.removeEventListener('remote-settings-tab', handleRemoteTab);
+  }, []);
+
+  // Keep the note display state in sync when the companion app changes the
+  // note settings remotely (settings_set → settingsChange event).
+  useEffect(() => {
+    const handleCompanionSetting = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      if (!detail.companionSetting || !detail.key) return;
+      if (detail.key === StorageKeys.NOTE_DISPLAY_MODE) {
+        setNoteDisplayMode(detail.value === 'exact' ? 'exact' : 'sealed');
+      } else if (detail.key === StorageKeys.NOTE_SEALED_HIT_COLOR) {
+        const raw = String(detail.value);
+        setSealedHitColor(/^#[0-9a-fA-F]{6}$/.test(raw) ? raw : DEFAULT_SEALED_HIT_COLOR);
+      } else if (detail.key === StorageKeys.NOTE_COLOR_PROFILE) {
+        setNoteColorProfile(String(detail.value));
+      }
+    };
+    window.addEventListener('settingsChange', handleCompanionSetting);
+    return () => window.removeEventListener('settingsChange', handleCompanionSetting);
   }, []);
 
   // Helper to access nested translations with fallback
@@ -124,6 +151,9 @@ function SettingsScreen() {
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
     setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
     setNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'));
+    setNoteDisplayMode(getString(StorageKeys.NOTE_DISPLAY_MODE, 'sealed') === 'exact' ? 'exact' : 'sealed');
+    const rawSealedColor = getString(StorageKeys.NOTE_SEALED_HIT_COLOR, DEFAULT_SEALED_HIT_COLOR);
+    setSealedHitColor(/^#[0-9a-fA-F]{6}$/.test(rawSealedColor) ? rawSealedColor : DEFAULT_SEALED_HIT_COLOR);
     setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
     setMasterVolume(getNumber(StorageKeys.MASTER_VOLUME, 100));
     setYoutubeQuality(getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
@@ -248,6 +278,10 @@ function SettingsScreen() {
           setPerformanceMode={setPerformanceMode}
           noteColorProfile={noteColorProfile}
           setNoteColorProfile={setNoteColorProfile}
+          noteDisplayMode={noteDisplayMode}
+          setNoteDisplayMode={setNoteDisplayMode}
+          sealedHitColor={sealedHitColor}
+          setSealedHitColor={setSealedHitColor}
           tx={tx}
           setHasChanges={setHasChanges}
         />
