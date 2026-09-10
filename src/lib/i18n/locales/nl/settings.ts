@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Notenweergavestijlen (alleen klassiek)',
   featureAccuracy: 'Notennauwkeurigheidstracking (kleur/glow-feedback)',
   featureParticles: 'Deeleffecten (Perfect-Hit, Combo vuurwerk, Confetti)',
-  featureSpectrogram: 'Spectrogram en toongrafiekweergave',
   featureComboFire: 'Combo vuureffecten',
   featureScorePopups: 'Score-gebeurtenispopups',
   featureWebcam: 'Webcamachtergrond',

@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Nuottinäyttötyylit (vain klassinen)',
   featureAccuracy: 'Nuottitarkkuuden seuranta (väri/hehkupalaute)',
   featureParticles: 'Partikkelitehosteet (täydellinen osuma, combo-ilotulitteet, konfetti)',
-  featureSpectrogram: 'Spektrogrammi ja sävelkorkeuskuvaaja',
   featureComboFire: 'Combo-tulitehosteet',
   featureScorePopups: 'Pistetapahtumien ponnahdusikkunat',
   featureWebcam: 'Webcam-tausta',

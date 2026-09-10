@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: '노트 표시 스타일 (클래식만)',
   featureAccuracy: '노트 정확도 추적 (색상/글로우 피드백)',
   featureParticles: '파티클 효과 (Perfect-Hit, 콤보 불꽃, 꽃가루)',
-  featureSpectrogram: '스펙트로그램 및 피치 그래프 표시',
   featureComboFire: '콤보 불꽃 효과',
   featureScorePopups: '점수 이벤트 팝업',
   featureWebcam: '웹캠 배경',

@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Noten-Darstellungsstile (nur Klassisch)',
   featureAccuracy: 'Noten-Accuracy-Tracking (Farb-/Glow-Feedback)',
   featureParticles: 'Partikeleffekte (Perfect-Hit, Combo-Feuerwerk, Konfetti)',
-  featureSpectrogram: 'Spektrogramm- und Pitch-Graph-Anzeige',
   featureComboFire: 'Combo-Feuereffekte',
   featureScorePopups: 'Score-Event-Popups',
   featureWebcam: 'Webcam-Hintergrund',

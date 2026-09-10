@@ -143,7 +143,6 @@ export const settingsTranslations = {
     featureNoteStyles: 'Note display styles (Classic only)',
     featureAccuracy: 'Note accuracy tracking (color/glow feedback)',
     featureParticles: 'Particle effects (Perfect-Hit, Combo fireworks, Confetti)',
-    featureSpectrogram: 'Spectrogram and pitch graph display',
     featureComboFire: 'Combo fire effects',
     featureScorePopups: 'Score event popups',
     featureWebcam: 'Webcam background',

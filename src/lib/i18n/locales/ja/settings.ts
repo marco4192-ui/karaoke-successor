@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'ノーツ表示スタイル（クラシックのみ）',
   featureAccuracy: 'ノーツ正確度追跡（色/グローフィードバック）',
   featureParticles: 'パーティクル効果（パーフェクトヒット、コンボ花火、コンフェティ）',
-  featureSpectrogram: 'スペクトログラムとピッチグラフ表示',
   featureComboFire: 'コンボ炎効果',
   featureScorePopups: 'スコアイベントポップアップ',
   featureWebcam: 'ウェブカム背景',

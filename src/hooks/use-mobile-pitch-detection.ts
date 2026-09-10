@@ -12,43 +12,6 @@ interface UseMobilePitchDetectionOptions {
   onError?: (_message: string) => void;
 }
 
-// Ring buffer for pitch history (60 entries ≈ 3 seconds at 20fps)
-const PITCH_HISTORY_LENGTH = 60;
-const EMPTY_PITCH: PitchData = { frequency: null, note: null, volume: 0 };
-
-class PitchHistoryBuffer {
-  private buffer: PitchData[];
-  private writeIndex = 0;
-  private count = 0;
-
-  constructor() {
-    this.buffer = Array.from({ length: PITCH_HISTORY_LENGTH }, () => ({ ...EMPTY_PITCH }));
-  }
-
-  push(data: PitchData): void {
-    this.buffer[this.writeIndex] = { ...data };
-    this.writeIndex = (this.writeIndex + 1) % PITCH_HISTORY_LENGTH;
-    if (this.count < PITCH_HISTORY_LENGTH) {
-      this.count++;
-    }
-  }
-
-  toArray(): PitchData[] {
-    if (this.count < PITCH_HISTORY_LENGTH) {
-      return this.buffer.slice(0, this.count);
-    }
-    // Return oldest-first order
-    const start = this.writeIndex;
-    return [...this.buffer.slice(start), ...this.buffer.slice(0, start)];
-  }
-
-  reset(): void {
-    this.buffer.fill({ ...EMPTY_PITCH });
-    this.writeIndex = 0;
-    this.count = 0;
-  }
-}
-
 export function useMobilePitchDetection({
   clientId,
   isPlaying,
@@ -65,7 +28,6 @@ export function useMobilePitchDetection({
   const animationFrameRef = useRef<number | null>(null);
   const vocalDetectorRef = useRef<VocalDetector | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const pitchHistoryRef = useRef<PitchHistoryBuffer>(new PitchHistoryBuffer());
   // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
   const lastPitchUpdateRef = useRef<number>(0);
 
@@ -167,7 +129,6 @@ export function useMobilePitchDetection({
     }
     setIsListening(false);
     setCurrentPitch({ frequency: null, note: null, volume: 0 });
-    pitchHistoryRef.current.reset();
     pitchBatchRef.current = [];
     useFallbackRef.current = false;
   }, [flushPitchBatch]);
@@ -294,9 +255,7 @@ export function useMobilePitchDetection({
         // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders from 60fps RAF loop
         const pitchNow = performance.now();
         if (pitchNow - lastPitchUpdateRef.current >= 50) {
-          const pitchData: PitchData = { frequency, note, volume };
-          setCurrentPitch(pitchData);
-          pitchHistoryRef.current.push(pitchData);
+          setCurrentPitch({ frequency, note, volume });
           lastPitchUpdateRef.current = pitchNow;
         }
         
@@ -401,6 +360,5 @@ export function useMobilePitchDetection({
     micPermissionDenied,
     startMicrophone,
     stopMicrophone,
-    getPitchHistory: () => pitchHistoryRef.current.toArray(),
   };
 }

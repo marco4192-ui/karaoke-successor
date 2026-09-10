@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: '音符显示样式（仅经典）',
   featureAccuracy: '音符准确度跟踪（颜色/发光反馈）',
   featureParticles: '粒子效果（完美命中、连击烟花、彩纸）',
-  featureSpectrogram: '频谱图和音高图表显示',
   featureComboFire: '连击火焰效果',
   featureScorePopups: '分数事件弹窗',
   featureWebcam: '摄像头背景',

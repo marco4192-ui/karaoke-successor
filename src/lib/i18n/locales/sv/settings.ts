@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Notvisningsstilar (endast Klassisk)',
   featureAccuracy: 'Notnoggrannhetsföljning (färg/glöd-feedback)',
   featureParticles: 'Partikeleffekter (Perfekt Träff, Combo-fyrverkeri, Konfetti)',
-  featureSpectrogram: 'Spektrogram och tonhöjdsgrafvisning',
   featureComboFire: 'Combo-eldseffekter',
   featureScorePopups: 'Poänghändelse-popups',
   featureWebcam: 'Webbkamerabakgrund',

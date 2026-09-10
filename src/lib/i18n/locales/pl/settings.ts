@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Style wyświetlania nut (tylko klasyczny)',
   featureAccuracy: 'Śledzenie celności nut (kolorowe/świecące opinie)',
   featureParticles: 'Efekty cząsteczkowe (trafienia perfekcyjne, fajerwerki Combo, konfetti)',
-  featureSpectrogram: 'Spektrogram i wykres wysokości dźwięku',
   featureComboFire: 'Ogień Combo',
   featureScorePopups: 'Wyskakujące okienka wyników',
   featureWebcam: 'Tło z kamery internetowej',

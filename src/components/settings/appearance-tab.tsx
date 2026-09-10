@@ -207,7 +207,6 @@ export function AppearanceTab({
                 <li>{tx('settingsGraphicSound.featureNoteStyles')}</li>
                 <li>{tx('settingsGraphicSound.featureAccuracy')}</li>
                 <li>{tx('settingsGraphicSound.featureParticles')}</li>
-                <li>{tx('settingsGraphicSound.featureSpectrogram')}</li>
                 <li>{tx('settingsGraphicSound.featureComboFire')}</li>
                 <li>{tx('settingsGraphicSound.featureScorePopups')}</li>
                 <li>{tx('settingsGraphicSound.featureWebcam')}</li>

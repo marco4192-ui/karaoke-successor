@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Стили отображения нот (только классический)',
   featureAccuracy: 'Отслеживание точности нот (цветовая/свечовая обратная связь)',
   featureParticles: 'Частицы (идеальное попадание, фейерверки комбо, конфетти)',
-  featureSpectrogram: 'Спектрограмма и график тональности',
   featureComboFire: 'Огненные эффекты комбо',
   featureScorePopups: 'Всплывающие окна очков',
   featureWebcam: 'Фон с веб-камеры',

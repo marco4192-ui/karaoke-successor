@@ -139,7 +139,6 @@ settingsGraphicSound: {
   featureNoteStyles: 'Stili di visualizzazione note (solo Classico)',
   featureAccuracy: 'Tracciamento precisione note (feedback colore/lume)',
   featureParticles: 'Effetti particelle (centri perfetti, fuochi d\'artificio combo, coriandoli)',
-  featureSpectrogram: 'Visualizzazione spettrogramma e grafico del tono',
   featureComboFire: 'Effetti fuoco combo',
   featureScorePopups: 'Popup eventi di punteggio',
   featureWebcam: 'Sfondo webcam',

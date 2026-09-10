@@ -190,32 +190,6 @@ export const mobileTranslations = {
     youreSinging: 'YOU\'RE SINGING!',
     disconnect: 'Disconnect'
   },
-
-  mobileMicView: {
-    permissionDenied: 'Microphone access denied',
-    permissionDesc: 'The app needs microphone access for singing',
-    howToAllow: 'How to allow access:',
-    iOS: 'iOS (Safari):',
-    iOSSteps: 'Settings → Safari → Microphone → Allow',
-    android: 'Android (Chrome):',
-    androidSteps: 'Site settings (lock icon) → Microphone → Allow',
-    desktop: 'Desktop:',
-    desktopSteps: 'Address bar → Camera/Microphone icon → Allow',
-    moreHelp: 'More help',
-    tapToRetry: '🔄 Try again',
-    adPlaying: 'Ad playing',
-    gamePaused: 'Game paused',
-    skipAd: '⏭️ Skip ad',
-    tapToStop: 'Tap to stop',
-    tapToSing: 'Tap to sing',
-    step1: 'Tap the lock icon next to the URL',
-    step2: 'Find "Microphone" and select "Allow"',
-    step3: 'Reload the page',
-    volumeLevel: 'Microphone volume level',
-    currentPitch: 'Current pitch',
-    pitchHistory: 'Pitch History'
-  },
-
   mobileViews: {
   desktopScreen: "Desktop",
   nothingPlaying: "Nothing playing",
