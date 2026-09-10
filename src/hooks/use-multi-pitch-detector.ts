@@ -107,6 +107,16 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
   const managerRef = useRef<PitchDetectorManager | null>(null);
 
+  // ── Fix 15 (4-player stutter): batch pitch state updates ──
+  // Every detection (~60Hz per player) previously created a new Map + setState,
+  // so with 4 mics the whole tree re-rendered ~240x/sec. Instead, onPitchDetected
+  // only mutates this ref (no setState) and a throttled ~20Hz sync (see effect
+  // below) publishes a snapshot to React state for rendering consumers.
+  // Hot paths (scoring loops) read via getPlayerPitch() which consults this ref,
+  // so they still see FRESH values at full detector rate.
+  const pitchesRef = useRef<Map<string, PitchDetectionResult | null>>(new Map());
+  const pitchesDirtyRef = useRef(false);
+
   /**
    * Initialize all players
    */
@@ -142,11 +152,10 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       // Set callbacks
       manager.setCallbacks({
         onPitchDetected: (playerId: string, result: PitchDetectionResult) => {
-          setPlayerPitches(prev => {
-            const newMap = new Map(prev);
-            newMap.set(playerId, result);
-            return newMap;
-          });
+          // Fix 15: update the ref at full detector rate; the throttled sync
+          // effect below publishes it to React state at ~20Hz.
+          pitchesRef.current.set(playerId, result);
+          pitchesDirtyRef.current = true;
         },
       });
 
@@ -231,6 +240,8 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         // Initialize pitch state for all players
         const initialPitches = new Map<string, PitchDetectionResult | null>();
         playersRef.current.forEach(p => initialPitches.set(p.playerId, null));
+        pitchesRef.current = initialPitches;
+        pitchesDirtyRef.current = false;
         setPlayerPitches(initialPitches);
 
         // Auto-start if requested
@@ -273,6 +284,8 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     managerRef.current.stop();
     setIsRunning(false);
+    pitchesRef.current = new Map();
+    pitchesDirtyRef.current = false;
     setPlayerPitches(new Map());
   }, []);
 
@@ -292,6 +305,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         const deviceId = config.deviceId || undefined;
         const success = await managerRef.current.addLocalPlayer(config.playerId, deviceId, config.stereoChannel);
         if (success) {
+          pitchesRef.current.set(config.playerId, null);
           setPlayerPitches(prev => {
             const newMap = new Map(prev);
             newMap.set(config.playerId, null);
@@ -301,6 +315,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         return success;
       } else if (config.type === 'mobile' && config.mobileClientId) {
         managerRef.current.addMobilePlayer(config.playerId, config.mobileClientId);
+        pitchesRef.current.set(config.playerId, null);
         setPlayerPitches(prev => {
           const newMap = new Map(prev);
           newMap.set(config.playerId, null);
@@ -326,6 +341,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     if (!managerRef.current) return;
 
     await managerRef.current.removePlayer(playerId);
+    pitchesRef.current.delete(playerId);
     setPlayerPitches(prev => {
       const newMap = new Map(prev);
       newMap.delete(playerId);
@@ -348,13 +364,27 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
   /**
    * Get pitch for a specific player.
-   * Uses ref to avoid playerPitches in dependency array — this callback
-   * must be stable because it's consumed in hot paths (~50Hz pitch updates).
+   * Reads from pitchesRef (updated at full detector rate, no setState) so hot
+   * paths (~50-100Hz scoring loops) always see FRESH values while React state
+   * is only synced at ~20Hz for rendering. Callback is stable because it has
+   * no dependencies.
    */
-  const playerPitchesRef = useRef(playerPitches);
-  playerPitchesRef.current = playerPitches;
   const getPlayerPitch = useCallback((playerId: string): PitchDetectionResult | null => {
-    return playerPitchesRef.current.get(playerId) || null;
+    return pitchesRef.current.get(playerId) || null;
+  }, []);
+
+  /**
+   * Fix 15: throttled sync (~20Hz) of the ref-held pitches into React state.
+   * Only publishes when the ref changed since the last publish (dirty flag).
+   * Interval is cleaned up on unmount.
+   */
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      if (!pitchesDirtyRef.current) return;
+      pitchesDirtyRef.current = false;
+      setPlayerPitches(new Map(pitchesRef.current));
+    }, 50);
+    return () => clearInterval(syncInterval);
   }, []);
 
   /**

@@ -273,16 +273,125 @@ export function toggleFavorite(songId: string): boolean {
   return index === -1; // Returns true if added, false if removed
 }
 
-// Get playlist songs (full song objects) - requires songs to be passed in
+// Get playlist songs (full song objects) - requires songs to be passed in.
+// Returns ONLY the songs that currently exist in the library (missing IDs are
+// silently dropped) — use getPlaylistEntries() when missing entries must be
+// surfaced (e.g. greyed-out rows in the playlist view).
 export function getPlaylistSongs(playlistId: string, allSongs: Song[]): Song[] {
   const playlist = getPlaylistById(playlistId);
   if (!playlist) return [];
-  
+
   const songMap = new Map(allSongs.map(s => [s.id, s]));
-  
+
   return playlist.songIds
     .map(id => songMap.get(id))
     .filter((s): s is Song => s !== undefined);
+}
+
+/** A single playlist entry in stored order. */
+export interface PlaylistSongEntry {
+  /** Stored playlist song ID (stable across rescans). */
+  songId: string;
+  /** Resolved song object — undefined when the song is missing from the library. */
+  song?: Song;
+  /** true when the song is missing from the library (i.e. `song` is undefined). */
+  missing: boolean;
+}
+
+/**
+ * Get playlist entries in STORED ORDER, resolving IDs against the live song
+ * list. Unlike getPlaylistSongs(), IDs that no longer resolve are NOT dropped:
+ * they come back with `missing: true` (and no song object, so no placeholder
+ * Song can leak into playback). This lets the playlist view grey them out,
+ * keep them manually removable, and automatically resolve them again once the
+ * song returns to the library (song IDs are stable across rescans).
+ */
+export function getPlaylistEntries(playlistId: string, allSongs: Song[]): PlaylistSongEntry[] {
+  const playlist = getPlaylistById(playlistId);
+  if (!playlist) return [];
+
+  const songMap = new Map(allSongs.map(s => [s.id, s]));
+
+  return playlist.songIds.map(songId => {
+    const song = songMap.get(songId);
+    return { songId, song, missing: song === undefined };
+  });
+}
+
+/**
+ * Remap song IDs in ALL playlists (system + user). Used after a rescan when a
+ * song's ID changed (e.g. its file moved to a different path): playlist
+ * references to the old ID are transferred to the new ID. Nothing is dropped —
+ * IDs without a mapping stay as-is so they can still resolve when the song
+ * returns to the library later.
+ * @returns Number of remapped ID occurrences
+ */
+export function remapSongIdsInPlaylists(idMap: Map<string, string>): number {
+  if (idMap.size === 0) return 0;
+
+  const playlists = getPlaylists();
+  let remapped = 0;
+
+  for (const playlist of playlists) {
+    if (!playlist.songIds.some(id => idMap.has(id))) continue;
+    playlist.songIds = playlist.songIds.map(id => {
+      const newId = idMap.get(id);
+      if (newId !== undefined) {
+        remapped++;
+        return newId;
+      }
+      return id;
+    });
+    playlist.updatedAt = Date.now();
+  }
+
+  if (remapped > 0) {
+    savePlaylists(playlists);
+  }
+
+  return remapped;
+}
+
+/**
+ * Remap play-count keys after song IDs changed (e.g. file moved during a
+ * rescan). Counts for old and new ID are merged so no play history is lost.
+ * @returns Number of remapped entries
+ */
+export function remapPlayCountIds(idMap: Map<string, string>): number {
+  if (idMap.size === 0) return 0;
+
+  const counts = getPlayCounts();
+  let remapped = 0;
+
+  for (const [oldId, newId] of idMap) {
+    if (oldId === newId) continue;
+    const oldCount = counts[oldId];
+    if (oldCount === undefined) continue;
+    counts[newId] = (counts[newId] || 0) + oldCount;
+    delete counts[oldId];
+    remapped++;
+  }
+
+  if (remapped > 0) {
+    savePlayCounts(counts);
+  }
+
+  return remapped;
+}
+
+/**
+ * All song IDs referenced anywhere (playlist entries + play counts) —
+ * including IDs whose songs are currently MISSING from the library.
+ * Used by the rescan identity logic to decide which song IDs must stay
+ * resolvable (so their entries can reappear when the song returns).
+ */
+export function getAllReferencedSongIds(): Set<string> {
+  const referenced = new Set<string>();
+  for (const playlist of getPlaylists()) {
+    for (const songId of playlist.songIds) referenced.add(songId);
+  }
+  for (const songId of Object.keys(getPlayCounts())) referenced.add(songId);
+  return referenced;
 }
 
 // ============ PLAYLIST IMPORT / EXPORT ============

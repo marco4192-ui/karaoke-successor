@@ -64,6 +64,14 @@ function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   useEffect(() => { shortcutsRef.current = shortcuts; }, [shortcuts]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Bug 12b: if another handler already consumed this event (preventDefault,
+    // e.g. the tournament song-vote overlay), do NOT run global shortcuts on
+    // top of it — that caused Escape to double-fire (skip the vote AND open
+    // the party-leave dialog).
+    if (event.defaultPrevented) {
+      return;
+    }
+
     // Don't trigger when typing in inputs
     const target = event.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
@@ -96,7 +104,12 @@ interface GlobalShortcutCallbacks {
   // Context info
   screen: Screen;
   isFullscreen: boolean;
-  isPartyModeActive: boolean;
+  /** Bug 12: party-active check computed DIRECTLY from the party store at
+   *  event time — the navigation guard's isPartyModeActive latches to false
+   *  after ONE confirmed leave (partyConfirmed), which made Escape exit
+   *  party games (e.g. an active tournament) immediately without any
+   *  confirmation dialog. */
+  isPartyActive: () => boolean;
   isSongPlaying: boolean;
   isPaused: boolean; // pause dialog is open
 
@@ -120,17 +133,27 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
     key: 'Escape',
     label: 'Esc',
     action: () => {
-      // 1. In-game, pause dialog open → resume (close dialog)
-      //    For party modes (PTM, CPTM, Medley), just close the dialog —
-      //    the mode-specific hook's pauseDialogAction effect handles resume.
-      //    For standard game, also call resumeGame().
+      // Bug 12: compute party-active DIRECTLY from the party store — never
+      // trust the navigation guard flag (it stays false forever after one
+      // confirmed leave). Escape must ALWAYS show a confirmation dialog
+      // whenever a party game is actually active.
+      const partyActive = cb.isPartyActive();
+
+      // 1. In-game, pause dialog open → close dialog (resume)
+      //    For a standard game-screen match (tournament duel, words/blind
+      //    series, medley snippet, plain song — i.e. screen === 'game'), the
+      //    game loop paused via pauseGame() and ONLY resumes when the store's
+      //    gameStatus returns to 'playing' — so ALSO call resumeGame()
+      //    (Bug 12: previously party modes closed the dialog without
+      //    resuming, leaving the game hung on paused audio).
+      //    For modes with their own screens (PTM / CPTM / Medley / BR), just
+      //    closing the dialog is correct — their pauseDialogAction effect
+      //    handles resuming their own audio.
       if (cb.isPaused && cb.isSongPlaying) {
-        if (cb.isPartyModeActive) {
-          cb.setPauseDialog(null);
-        } else {
+        if (cb.screen === 'game') {
           cb.resumeGame();
-          cb.setPauseDialog(null);
         }
+        cb.setPauseDialog(null);
         return;
       }
       // 2. In-game → pause
@@ -140,16 +163,18 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
         return;
       }
       // 3. Party mode, song playing → pause
-      if (cb.isPartyModeActive && cb.isSongPlaying) {
+      if (partyActive && cb.isSongPlaying) {
         cb.setPauseDialog('song-pause');
         return;
       }
-      // 4. Party mode, not playing → leave dialog
-      if (cb.isPartyModeActive) {
+      // 4. Party mode, not playing → leave dialog (never an immediate exit —
+      //    covers tournament bracket view, vote overlays, PTM/CPTM/BR/medley/
+      //    words/blind/rate-my-song screens, regardless of partyConfirmed)
+      if (partyActive) {
         cb.setPauseDialog('party-leave');
         return;
       }
-      // 5. Any menu (not home) → back to home
+      // 5. Genuinely non-party menu (not home) → back to home
       if (cb.screen !== 'home') {
         cb.navigateTo('home');
         return;
@@ -165,12 +190,12 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
     label: 'Enter',
     action: () => {
       if (cb.isPaused && cb.isSongPlaying) {
-        if (cb.isPartyModeActive) {
-          cb.setPauseDialog(null);
-        } else {
+        // Same resume semantics as the Escape handler above (Bug 12): a
+        // game-screen match needs resumeGame() or the game stays paused.
+        if (cb.screen === 'game') {
           cb.resumeGame();
-          cb.setPauseDialog(null);
         }
+        cb.setPauseDialog(null);
       }
     },
   });

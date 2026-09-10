@@ -50,9 +50,20 @@ export interface MedleyGameScreenProps {
   _seriesHistory?: MedleyRoundResult[];
   onRoundComplete: (_result: MedleyRoundResult, _updatedPlayers: MedleyPlayer[]) => void;
   onEndGame: () => void;
+  /**
+   * Regenerates the snippet list for the NEXT round (Fix 7): must return a
+   * prepared MedleySong[] with DIFFERENT songs than the current round
+   * (whenever the pool allows) and swap it into the party store / the
+   * screen's `songs` state. Returning null falls back to replaying the
+   * current round's songs.
+   */
+  onPrepareNextRoundSongs?: () => Promise<MedleySong[] | null>;
 }
 
 // ===================== RETURN TYPE =====================
+
+/** One recorded performance sample (per note, optionally per player). */
+type MedleyNotePerfSample = { time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string };
 
 interface MedleyGameState {
   // Phase
@@ -92,7 +103,11 @@ interface MedleyGameState {
   // (colored tick fills + wrong-singing ghost bars, as in other modes).
   // Medley (user item 6.1): samples also carry the singer's color and sung
   // pitch so wrong notes render per player in that player's base color.
-  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
+  notePerformance: Map<string, MedleyNotePerfSample[]>;
+
+  // Multi-player strips (Fix 6): the SAME samples keyed by player → note,
+  // so each player's strip renders hits/misses in their own single color.
+  notePerformanceByPlayer: Map<string, Map<string, MedleyNotePerfSample[]>>;
 
   // Feature #9: Dynamic difficulty
   currentDynamicDifficulty: Difficulty | null;
@@ -138,8 +153,8 @@ interface MedleyGameState {
 
   // Actions
   handleStart: () => Promise<void>;
-  /** Start the next round directly (no intro screen) — user item 6.2 */
-  handleNextRound: () => void;
+  /** Start the next round directly (no intro screen) — user item 6.2 / Fix 7 */
+  handleNextRound: () => Promise<void>;
   handleEndEarly: () => void;
   handleRoundComplete: () => void;
   handleShowFinalResults: () => void;
@@ -155,6 +170,7 @@ export function useMedleyGame({
   matchups,
   onRoundComplete,
   onEndGame,
+  onPrepareNextRoundSongs,
 }: MedleyGameScreenProps): MedleyGameState {
   // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
@@ -165,6 +181,11 @@ export function useMedleyGame({
   // Store onEndGame in ref for use in game loop callbacks
   const onEndGameRef = useRef(onEndGame);
   onEndGameRef.current = onEndGame;
+
+  // Store the next-round song preparer in a ref (Fix 7) — avoids stale
+  // closures and re-creation churn in handleNextRound.
+  const onPrepareNextRoundSongsRef = useRef(onPrepareNextRoundSongs);
+  onPrepareNextRoundSongsRef.current = onPrepareNextRoundSongs;
 
   // ── Phase ──
   const [phase, setPhaseRaw] = useState<MedleyGamePhase>('intro');
@@ -236,10 +257,16 @@ export function useMedleyGame({
   const scoringEventsRef = useRef<MedleyScoringEvent[]>([]);
 
   // ── Unified HUD: per-note performance samples for the NoteHighway ──
-  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>>(new Map());
-  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>>(new Map());
+  const notePerformanceRef = useRef<Map<string, MedleyNotePerfSample[]>>(new Map());
+  const [notePerformance, setNotePerformance] = useState<Map<string, MedleyNotePerfSample[]>>(new Map());
   // Throttle UI update for scoring events to ~100ms
   const lastScoringUiUpdateRef = useRef(0);
+
+  // ── Multi-player strips (Fix 6): per-player performance samples ──
+  // playerId → noteKey → samples (same samples as notePerformanceRef, just
+  // also bucketed per player so each strip renders one single color).
+  const notePerformanceByPlayerRef = useRef<Map<string, Map<string, MedleyNotePerfSample[]>>>(new Map());
+  const [notePerformanceByPlayer, setNotePerformanceByPlayer] = useState<Map<string, Map<string, MedleyNotePerfSample[]>>>(new Map());
 
   // Per-player tick-based scoring state for Medley (10,000 total points)
   const medleyTickScoringStatesRef = useRef<Map<string, MedleyTickScoringState>>(new Map());
@@ -262,7 +289,29 @@ export function useMedleyGame({
     // next snippet's freshly pre-colored note stream. The game loop re-syncs
     // the UI state from this ref on its next tick (~50ms).
     notePerformanceRef.current.clear();
+    notePerformanceByPlayerRef.current.clear();
   }, [currentSnippetIdx]);
+
+  // ── New round's songs arrival (Fix 7) ──
+  // When the parent swaps in a NEW songs array (next round was prepared by
+  // handleNextRound), rewind to the first snippet. Armed ONLY by
+  // handleNextRound, so the first mount (and any spurious identity churn
+  // mid-round) never rewinds progress.
+  const nextRoundSongsArmedRef = useRef(false);
+  const lastSongsIdentityRef = useRef(medleySongs);
+  useEffect(() => {
+    if (lastSongsIdentityRef.current === medleySongs) return; // first mount / same array
+    lastSongsIdentityRef.current = medleySongs;
+    if (!nextRoundSongsArmedRef.current) return;
+    nextRoundSongsArmedRef.current = false;
+    setCurrentSnippetIdx(0);
+    setCurrentTimeMs(0);
+    lastTransitionAdvanceRef.current = -1;
+    notePerformanceRef.current = new Map();
+    notePerformanceByPlayerRef.current = new Map();
+    setNotePerformance(new Map());
+    setNotePerformanceByPlayer(new Map());
+  }, [medleySongs]);
 
   // ── Multi-pitch detection (one detector per player) ──
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
@@ -414,7 +463,14 @@ export function useMedleyGame({
         duration: n.duration,
         isGolden: n.isGolden ?? false,
       }));
-      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, beatDuration, 'medium', 10000);
+      // Fix 8: the 10,000-point tick budget spans the WHOLE game (all
+      // snippets), NOT per snippet — 5 snippets previously allowed ~40k
+      // points. Each snippet gets 10000 / snippetCount; the golden 2×
+      // multiplier inside calculateScoringMetadata is kept as is.
+      const perSnippetBudget = medleySongs.length > 0
+        ? Math.round(10000 / medleySongs.length)
+        : 10000;
+      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, beatDuration, 'medium', perSnippetBudget);
       lastSnippetIdxForMetaRef.current = currentSnippetIdx;
     }
 
@@ -439,6 +495,23 @@ export function useMedleyGame({
       perfSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit, sungPitch: pitch.note, playerColor: p.color });
       if (perfSamples.length > 100) {
         notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
+      }
+
+      // Multi-player strips (Fix 6): the same sample, bucketed into the
+      // singer's own map so their strip renders hits/misses in their color.
+      let playerPerfMap = notePerformanceByPlayerRef.current.get(playerId);
+      if (!playerPerfMap) {
+        playerPerfMap = new Map();
+        notePerformanceByPlayerRef.current.set(playerId, playerPerfMap);
+      }
+      let playerSamples = playerPerfMap.get(perfNoteId);
+      if (!playerSamples) {
+        playerSamples = [];
+        playerPerfMap.set(perfNoteId, playerSamples);
+      }
+      playerSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit, sungPitch: pitch.note, playerColor: p.color });
+      if (playerSamples.length > 100) {
+        playerPerfMap.set(perfNoteId, playerSamples.slice(-100));
       }
     }
 
@@ -689,6 +762,13 @@ export function useMedleyGame({
       if (notePerformanceRef.current.size > 0) {
         setNotePerformance(new Map(notePerformanceRef.current));
       }
+      // Multi-player strips: sync the per-player buckets in the same tick
+      if (notePerformanceByPlayerRef.current.size > 0) {
+        setNotePerformanceByPlayer(new Map(
+          Array.from(notePerformanceByPlayerRef.current.entries(),
+            ([pid, m]) => [pid, new Map(m)] as const),
+        ));
+      }
 
       // Keep display state in sync with ref mutations for live score updates
       forceRender();
@@ -732,7 +812,9 @@ export function useMedleyGame({
     // samples (fills + wrong-note marks) so they cannot bleed into the new
     // snippet's notes via repeated `note-{startTime}` keys.
     notePerformanceRef.current.clear();
+    notePerformanceByPlayerRef.current.clear();
     setNotePerformance(new Map());
+    setNotePerformanceByPlayer(new Map());
     audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
     // Feature #18: Pre-check comeback boost before the last snippet starts
     teamBonuses.preCheckComeback(nextIdx);
@@ -765,19 +847,39 @@ export function useMedleyGame({
     audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires
   }, [multiPitch, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef, elimination.resetFinalFaceOff]);
 
-  // ── Next round (user item 6.2) ──
+  // ── Next round (user item 6.2, Fix 7) ──
   // The "Next Round" button on the round-results screen previously called
   // onEndGame(), throwing the user back to the overall start screen. Instead,
   // reset the per-round state and jump DIRECTLY into the next round — only
   // the very first game start shows the intro screen.
-  const handleNextRound = useCallback(() => {
+  //
+  // Fix 7: BEFORE resetting, the parent's `onPrepareNextRoundSongs` generates
+  // a FRESH snippet list with DIFFERENT songs than the round just finished
+  // (whenever the library pool allows) and swaps it into the party store +
+  // the screen's `songs` state. The returned array arms the identity-based
+  // reset effect above (belt-and-braces for late-arriving re-renders).
+  const handleNextRound = useCallback(async () => {
     if (medleySongs.length === 0) return;
+
+    // ── Prepare the next round's songs BEFORE resetting anything ──
+    let newSongs: MedleySong[] | null = null;
+    if (onPrepareNextRoundSongsRef.current) {
+      try {
+        newSongs = await onPrepareNextRoundSongsRef.current();
+      } catch {
+        newSongs = null;
+      }
+    }
+    nextRoundSongsArmedRef.current = !!(newSongs && newSongs.length > 0);
 
     // Rewind to the first snippet
     setCurrentSnippetIdx(0);
     setCurrentTimeMs(0);
 
-    // Re-arm the audio pipeline for snippet 0 (prepare + play effects)
+    // Re-arm the audio pipeline for snippet 0 (prepare + play effects).
+    // useMedleyAudio re-prepares per snippet song id (its prepare effect is
+    // keyed on [currentSnippet?.song.id, currentSnippetIdx]), so the new
+    // round's snippet 0 gets loaded + played automatically.
     audio.cancelFallbackTimer();
     audio.effectiveSnippetRef.current = null;
     audio.lastPlayPhaseRef.current = '';
@@ -787,7 +889,9 @@ export function useMedleyGame({
 
     // Clear per-round visuals: note fills / wrong-note marks / popup state
     notePerformanceRef.current = new Map();
+    notePerformanceByPlayerRef.current = new Map();
     setNotePerformance(new Map());
+    setNotePerformanceByPlayer(new Map());
     scoringEventsRef.current = [];
     setLastScoringEvents([]);
 
@@ -979,6 +1083,7 @@ export function useMedleyGame({
     currentLyricLine,
     lastScoringEvents,
     notePerformance,
+    notePerformanceByPlayer,
     currentDynamicDifficulty: features.currentDynamicDifficulty,
     // Feature #10
     isEliminationMode,

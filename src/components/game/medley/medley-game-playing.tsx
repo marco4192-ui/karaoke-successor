@@ -28,7 +28,6 @@ import type { MedleyPlayer, MedleySong, SnippetMatchup, VoiceModifier, MedleySet
 import { VOICE_MODIFIERS } from './medley-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { NoteHighway, type NoteWithLine } from '@/components/game/note-highway';
-import { TimeDisplay } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
 import {
   calculatePitchStats,
@@ -40,6 +39,9 @@ import {
 } from '@/lib/game/note-utils';
 
 // ===================== PROPS =====================
+
+/** Shared empty performance map (multi-player strips fallback). */
+const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>();
 
 interface MedleyPlayingProps {
   currentSnippet: MedleySong;
@@ -58,6 +60,8 @@ interface MedleyPlayingProps {
   handleEndEarly: () => void;
   /** Unified HUD: per-note performance samples (colored fills + wrong-singing marks per player) */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
+  /** Per-player performance samples (multi-player strips): playerId → noteKey → samples */
+  notePerformanceByPlayer?: Map<string, Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>>;
   currentDynamicDifficulty?: Difficulty | null;
   settings: MedleySettings;
   /** Total duration of ALL snippets (user item 6.4: total runtime, one line) */
@@ -97,6 +101,7 @@ export function MedleyPlayingUI({
   currentMatchup,
   isTeam,
   notePerformance,
+  notePerformanceByPlayer,
   settings,
   totalDurationMs = 0,
   totalElapsedMs = 0,
@@ -144,8 +149,9 @@ export function MedleyPlayingUI({
     ? singerPool[currentSnippetIdx % singerPool.length]
     : null;
 
-  // The note highway (grid, sing line, glow, unsung note track) uses the
-  // featured singer's base color instead of the old hardcoded purple.
+  // The note highway chrome (grid, sing line, glow — and the note bars on
+  // solo snippets) uses the featured singer's base color. The note BARS in
+  // multi-singer snippets are per-player strips in each player's own color.
   const currentSingerColor = featuredSinger?.color ?? '#a855f7';
 
   // Sort players by score for ranking display
@@ -193,6 +199,21 @@ export function MedleyPlayingUI({
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')}`;
   };
+
+  // ── Multi-player note strips (Fix 6): active singers of THIS snippet ──
+  // With ≥2 active singers every note bar is split HORIZONTALLY into one
+  // strip per player, stacked top→bottom, each rendered in that player's
+  // SINGLE base color (hits solid, misses as scorched gaps + ghost bars at
+  // the sung pitch — all in the player's color, never a quality palette).
+  // Solo snippets (<2 active singers) keep the single-player rendering.
+  const playerStrips = activePlayers.length >= 2
+    ? activePlayers.map(p => ({
+        id: p.id,
+        color: p.color,
+        performance: notePerformanceByPlayer?.get(p.id) ?? EMPTY_NOTE_PERFORMANCE,
+      }))
+    : undefined;
+  const playerNames = activePlayers.map(p => ({ id: p.id, name: p.name }));
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
@@ -253,16 +274,18 @@ export function MedleyPlayingUI({
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             notePerformance={notePerformance}
-            // User item 6: pre-color the shared note stream in the current
-            // snippet singer's color (grid / sing line / glow / note tint).
+            // Grid / sing line / glow use the current snippet singer's color;
+            // with ≥2 active singers the note BARS themselves render as
+            // per-player strips (one single color per player) — see
+            // getMultiPlayerNoteOverlay. The featured-singer tint and the
+            // legacy quality pipeline are intentionally NOT used anymore
+            // (they leaked extra colors into the multi-singer stream).
             playerColor={currentSingerColor}
-            noteTint={currentSingerColor}
+            playerStrips={playerStrips}
+            playerNames={playerNames}
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
-            // Medley Contest = more than two simultaneous singers → keep the
-            // classic quality-graduated rendering (user decision).
-            legacyNoteStyle
           />
         </div>
       )}
@@ -283,7 +306,7 @@ export function MedleyPlayingUI({
             <span className="text-white/60 text-xs whitespace-nowrap">
               {t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}
             </span>
-            {/* Current singer badge (snippet singer whose color tints the note stream) */}
+            {/* Current singer badge (snippet singer highlighted in the top bar) */}
             {featuredSinger && !isTeam && (
               <span
                 className="flex items-center gap-1 text-xs font-medium whitespace-nowrap"
@@ -439,13 +462,10 @@ export function MedleyPlayingUI({
         </div>
       </div>
 
-      {/* ═══════ Unified bottom HUD: mic indicator (bottom-left) + snippet time (bottom-right) ═══════
-          User item 6.4: the time displays render INLINE with whitespace-nowrap
-          and a wide-enough container — no more line-wrapped corner fields. */}
+      {/* ═══════ Unified bottom HUD: mic indicator (bottom-left) ═══════
+          User item 6.4: the ONLY time display is the total medley runtime
+          row at the bottom edge above (snippet progress + ⏱ elapsed/total). */}
       <MicIndicator isPlaying />
-      <div className="absolute bottom-8 right-4 z-20 min-w-[110px] whitespace-nowrap text-right">
-        <TimeDisplay inline currentTime={currentTimeMs} duration={currentSnippet.duration} />
-      </div>
     </div>
   );
 }

@@ -15,6 +15,8 @@ export function useGameScreenSettings() {
   const [showCombo] = useState(() => getBool(StorageKeys.SHOW_COMBO, true));
   const [autoFullscreen] = useState(() => getBool(StorageKeys.AUTO_FULLSCREEN, false));
   const [masterVolume] = useState(() => getNumber(StorageKeys.MASTER_VOLUME, 100));
+  // Loudness normalization toward the 89 dB ReplayGain reference (default on)
+  const [loudnessNormalization] = useState(() => getBool(StorageKeys.LOUDNESS_NORMALIZATION, true));
   const [lyricsSize] = useState(() => getString(StorageKeys.LYRICS_SIZE, 'medium'));
   const [youtubeQuality] = useState(() => getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
 
@@ -68,6 +70,7 @@ export function useGameScreenSettings() {
     showCombo,
     autoFullscreen,
     masterVolume,
+    loudnessNormalization,
     lyricsSize,
     youtubeQuality,
     replayEnabled,

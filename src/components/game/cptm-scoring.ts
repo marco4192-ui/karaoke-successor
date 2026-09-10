@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Song, Note, LyricLine, Difficulty } from '@/types/game';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
 import type { CptmPlayer, CptmSegment } from './cptm-types';
 import type { CompanionPitchEntry } from './cptm-companion-polling';
 
@@ -14,6 +14,22 @@ const SCORING_THROTTLE_MS = 250;
 
 /** Max points per player in CPTM mode */
 const CPTM_MAX_POINTS = 2000;
+
+// ── Visual note performance samples (note-hit display) ─────────────
+export interface CptmVisualSample {
+  time: number;
+  accuracy: number;
+  hit: boolean;
+  sungPitch?: number | null;
+  /** Color of the companion player who produced the sample. */
+  playerColor?: string;
+}
+export type CptmNotePerformance = Map<string, CptmVisualSample[]>;
+
+/** ms between visual samples (~matches the ~50ms visual tick granularity). */
+const VISUAL_SAMPLE_INTERVAL_MS = 50;
+/** Cap per note so long notes don't accumulate unbounded samples. */
+const MAX_VISUAL_SAMPLES_PER_NOTE = 80;
 
 // ===================== HELPERS =====================
 
@@ -64,8 +80,11 @@ export interface CptmScoringParams {
  * CPTM scoring: each player can earn max 2,000 points, distributed across
  * the ticks in THEIR segments. The scoring metadata (pointsPerTick) is
  * computed from the notes within the current segment only.
+ *
+ * Also produces a visual notePerformance map (hit/miss samples per note)
+ * so the NoteHighway renders the Singstar-style fill and Aussetzer gaps.
  */
-export function useCptmScoring(params: CptmScoringParams): void {
+export function useCptmScoring(params: CptmScoringParams): { notePerformance: CptmNotePerformance } {
   const {
     phase,
     isPlaying,
@@ -83,6 +102,59 @@ export function useCptmScoring(params: CptmScoringParams): void {
   } = params;
 
   const lastEvalTimeRef = useRef(0);
+
+  // ── Visual note performance map (mutated in place; consumed fresh by
+  // NoteHighway on every currentTime-driven render) ──
+  const notePerformanceRef = useRef<CptmNotePerformance>(new Map());
+  const lastVisualSampleTimeRef = useRef(0);
+
+  // Reset when the note source changes (new song).
+  useEffect(() => {
+    notePerformanceRef.current = new Map();
+  }, [notesSource]);
+
+  /**
+   * High-rate visual tick sampler (no scoring side effects): records
+   * hit AND miss samples for the active note, taken from the current
+   * companion's cached pitch.
+   */
+  const sampleVisualTicks = useCallback((time: number) => {
+    const now = performance.now();
+    if (now - lastVisualSampleTimeRef.current < VISUAL_SAMPLE_INTERVAL_MS) return;
+    lastVisualSampleTimeRef.current = now;
+
+    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    if (!activeNote) return;
+    // Notes carry an optional runtime id; fall back to the startTime key
+    // (same key format NoteBlock uses to look samples up).
+    const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
+
+    const player = playersRef.current[currentPlayerIndex];
+    const cachedPitch = player ? companionPitchCacheRef.current.get(player.id) : undefined;
+    const sungPitch = cachedPitch?.note ?? null;
+    const hasPitch = sungPitch !== null && cachedPitch != null && cachedPitch.frequency != null;
+
+    let accuracy = 0;
+    let hit = false;
+    if (hasPitch && sungPitch !== null) {
+      const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+      accuracy = tick.accuracy;
+      hit = tick.isHit;
+    }
+
+    const playerColor = player?.color;
+
+    const perf = notePerformanceRef.current;
+    let samples = perf.get(noteId);
+    if (!samples) {
+      samples = [];
+      perf.set(noteId, samples);
+    }
+    samples.push({ time, accuracy, hit, sungPitch: hasPitch ? sungPitch : null, playerColor });
+    if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
+      samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
+    }
+  }, [notesSource, difficulty, currentPlayerIndex, playersRef, companionPitchCacheRef]);
 
   // Read currentTime from a ref inside the callback to avoid recreating
   // the RAF loop ~40 times/sec (currentTime changes every frame).
@@ -154,10 +226,13 @@ export function useCptmScoring(params: CptmScoringParams): void {
     if (phase !== 'playing' || !isPlaying) return;
     let rafId: number;
     const loop = () => {
+      sampleVisualTicks(currentTimeRef.current);
       scoreCurrentPlayer();
       rafId = requestAnimationFrame(loop);
     };
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [phase, isPlaying, scoreCurrentPlayer]);
+  }, [phase, isPlaying, scoreCurrentPlayer, sampleVisualTicks]);
+
+  return { notePerformance: notePerformanceRef.current };
 }

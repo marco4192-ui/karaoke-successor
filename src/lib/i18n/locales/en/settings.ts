@@ -39,6 +39,8 @@ export const settingsTranslations = {
     previewVolumeDesc: 'Volume for song previews in the library',
     micSensitivity: 'Microphone Sensitivity',
     micSensitivityDesc: 'Adjust microphone input sensitivity',
+    loudnessNormalizationTitle: 'Volume normalization (89 dB target)',
+    loudnessNormalizationDesc: 'Balances loud and quiet songs — loud songs are turned down, quiet ones up (target: 89 dB).',
     selectInputDevice: 'Select Input Device',
     defaultMicrophone: 'Default Microphone',
     microphoneGain: 'Microphone Gain',

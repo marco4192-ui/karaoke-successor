@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
-import { getNoteDisplayStyleClasses, PitchStats, NoteRenderMode } from '@/lib/game/note-utils';
+import { getNoteDisplayStyleClasses, getMultiPlayerNoteOverlay, PitchStats, NoteRenderMode } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== HELPERS =====================
@@ -22,6 +22,15 @@ export interface NoteWithLine extends Note {
   line: LyricLine;
 }
 
+/** One player lane for the multi-player strips rendering (Medley Contest). */
+export interface NotePlayerStrip {
+  id: string;
+  /** The player's SINGLE base color — one color per player, no quality palette. */
+  color: string;
+  /** That player's per-note performance samples (noteKey → samples). */
+  performance: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
+}
+
 export interface NoteHighwayProps {
   visibleNotes: NoteWithLine[];
   currentTime: number;
@@ -32,6 +41,10 @@ export interface NoteHighwayProps {
   playerColor?: string;
   /** Optional per-singer note tint (Medley): pre-colors the unsung note track in the singer's color */
   noteTint?: string;
+  /** Multi-player strips (Medley): with ≥2 entries each note bar renders N stacked per-player strips */
+  playerStrips?: NotePlayerStrip[];
+  /** Player names for the strips legend (first names, tiny dots) */
+  playerNames?: Array<{ id: string; name: string }>;
   showPlayerLabel?: boolean;
   playerName?: string;
   playerNumber?: number;
@@ -42,8 +55,8 @@ export interface NoteHighwayProps {
   /**
    * Force the LEGACY note rendering (profile-based quality colours, ghost
    * bars). Used by modes with more than two simultaneous singers (Battle
-   * Royale, Medley Contest). All other modes honour the user's note display
-   * setting ('sealed' / 'exact').
+   * Royale). All other modes honour the user's note display setting
+   * ('sealed' / 'exact').
    */
   legacyNoteStyle?: boolean;
 }
@@ -101,6 +114,7 @@ const NoteBlock = React.memo(function NoteBlock({
   playerColor = '#22d3d3ee',
   noteTint,
   notePerformance,
+  playerStrips,
   renderMode,
 }: {
   note: NoteWithLine;
@@ -115,6 +129,8 @@ const NoteBlock = React.memo(function NoteBlock({
   /** Optional per-singer note tint (Medley): unsung track in the singer's color */
   noteTint?: string;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
+  /** Multi-player strips (Medley): ≥2 entries → per-player strip rendering */
+  playerStrips?: NotePlayerStrip[];
   renderMode: NoteRenderMode;
 }) {
   const timeUntilNote = note.startTime - currentTime;
@@ -129,10 +145,45 @@ const NoteBlock = React.memo(function NoteBlock({
   const pitchY = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
 
   const noteWidthPercent = Math.round(((note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra)) * 100) / 100;
-  const noteHeight = 24;
+
+  // Singstar-style fill fraction: how much of the note the singline
+  // has already passed.  0 = not started, 1 = fully passed.
+  const fillFraction = note.duration > 0
+    ? Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration))
+    : 1;
+
+  // ── Multi-player strips mode (Medley): N stacked per-player strips ──
+  // The bar grows with the player count and every strip renders in ONE
+  // single color per player (see getMultiPlayerNoteOverlay).
+  const stripsMode = !!playerStrips && playerStrips.length >= 2;
+  const noteHeight = stripsMode && playerStrips
+    ? Math.min(34, Math.max(24, playerStrips.length * 8))
+    : 24;
 
   // Cull notes whose right edge has exited the left screen boundary.
   if (x > 120 || x + noteWidthPercent < -30) return null;
+
+  const containerHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+  const stripsResult = stripsMode && playerStrips
+    ? getMultiPlayerNoteOverlay(
+        playerStrips.map(p => ({
+          id: p.id,
+          color: p.color,
+          samples: p.performance.get(note.id || `note-${note.startTime}`) || [],
+        })),
+        note.startTime,
+        note.duration,
+        fillFraction,
+        note.isGolden || false,
+        note.isBonus || false,
+        note.pitch,
+        pitchStats,
+        visibleTop,
+        visibleRange,
+        containerHeight,
+      )
+    : null;
 
   const getNoteAccuracy = (): number => {
     if (!notePerformance) return 0;
@@ -148,31 +199,47 @@ const NoteBlock = React.memo(function NoteBlock({
     ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
     : [];
 
-  // Singstar-style fill fraction: how much of the note the singline
-  // has already passed.  0 = not started, 1 = fully passed.
-  const fillFraction = note.duration > 0
-    ? Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration))
-    : 1;
-
-  const displayStyle = getNoteDisplayStyleClasses(
-    'tick-fill-singstar',
-    accuracy,
-    note.isGolden || false,
-    note.isBonus || false,
-    notePerfSamples,
-    note.pitch,
-    pitchStats,
-    visibleTop,
-    visibleRange,
-    fillFraction,
-    note.startTime,
-    note.duration,
-    typeof window !== 'undefined' ? window.innerHeight : 800,
-    noteTint,
-    renderMode,
-  );
-
   const glowColor = withAlpha(playerColor, 0.8);
+
+  // Strips mode: neutral container (no playerTint), the returned hitGlow
+  // lights the container while the note is active.
+  const hitGlow = stripsResult?.hitGlow ?? null;
+  const hitGlowShadow = hitGlow
+    ? (hitGlow.startsWith('#') ? `0 0 15px ${withAlpha(hitGlow, 0.8)}` : `0 0 15px ${hitGlow}`)
+    : null;
+
+  const displayStyle = stripsResult
+    ? {
+        additionalClasses: 'overflow-visible',
+        inlineStyle: {
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.08)',
+          border: '1.5px solid rgba(255, 255, 255, 0.16)',
+          boxShadow: isActive && hitGlowShadow
+            ? hitGlowShadow
+            : 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
+        } as React.CSSProperties,
+        overlayElement: stripsResult.overlayElement,
+        pastOpacity: 0.75,
+      }
+    : getNoteDisplayStyleClasses(
+        'tick-fill-singstar',
+        accuracy,
+        note.isGolden || false,
+        note.isBonus || false,
+        notePerfSamples,
+        note.pitch,
+        pitchStats,
+        visibleTop,
+        visibleRange,
+        fillFraction,
+        note.startTime,
+        note.duration,
+        containerHeight,
+        noteTint,
+        renderMode,
+      );
 
   return (
     <div
@@ -227,6 +294,8 @@ export const NoteHighway = React.memo(function NoteHighway({
   noteWindow = 4000,
   playerColor,
   noteTint,
+  playerStrips,
+  playerNames,
   showPlayerLabel = false,
   playerName,
   playerNumber = 1,
@@ -241,6 +310,7 @@ export const NoteHighway = React.memo(function NoteHighway({
   const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
   const resolvedPlayerName = playerName || t('prominentScore.player1');
   const renderMode: NoteRenderMode = legacyNoteStyle ? 'legacy' : 'modern';
+  const stripsActive = !!playerStrips && playerStrips.length >= 2;
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
@@ -248,6 +318,26 @@ export const NoteHighway = React.memo(function NoteHighway({
 
       <PitchGrid count={7} playerColor={effectiveColor} />
       <SingLine position={singLinePosition} playerColor={effectiveColor} />
+
+      {/* Per-player strip legend: tiny dot + first name per player, so
+          viewers know which strip belongs to whom. */}
+      {stripsActive && playerStrips && (
+        <div className="absolute top-20 left-4 z-10 flex items-center gap-3 pointer-events-none">
+          {playerStrips.map(p => {
+            const fullName = playerNames?.find(n => n.id === p.id)?.name ?? '';
+            const short = fullName.trim().split(/\s+/)[0] || p.id;
+            return (
+              <div key={p.id} className="flex items-center gap-1.5">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: p.color, boxShadow: `0 0 5px ${p.color}` }}
+                />
+                <span className="text-[10px] text-white/60 whitespace-nowrap">{short}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {!isBlindSection && visibleNotes.map((note) => (
         <NoteBlock
@@ -262,6 +352,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           playerColor={effectiveColor}
           noteTint={noteTint}
           notePerformance={notePerformance}
+          playerStrips={playerStrips}
           renderMode={renderMode}
         />
       ))}

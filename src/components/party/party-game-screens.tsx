@@ -12,6 +12,9 @@ import { BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
+import type { MedleySong } from '@/components/game/medley/medley-types';
+import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
 import { CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { PartyStartingScreen } from '@/components/game/party-starting-screen';
@@ -27,6 +30,107 @@ import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs, buildGam
 interface PartyGameScreensProps {
   screen: Screen;
   setScreen: (_s: Screen) => void;
+}
+
+// ── Medley next round: regenerate snippets with NEW songs (Fix 7) ──
+// Mirrors start-medley.ts: generate a fresh snippet list — EXCLUDING the songs
+// used in the round just finished when the filtered pool is large enough
+// (pool.length > snippetCount * 2), otherwise falling back to the full pool —
+// then prepare URLs + lyrics per snippet exactly like the initial start
+// (ensureSongUrls + loadSongLyrics + snippet repositioning).
+async function prepareNextMedleyRound(party: import('@/lib/game/party-store').PartyStore): Promise<MedleySong[] | null> {
+  try {
+    const settings = party.medleySettings;
+    const players = party.medleyPlayers;
+    // Mirror the original settings: snippetCount/snippetDuration from
+    // medleySettings when available, else derive (30s, players*2 clamped 3-10).
+    const snippetCount = settings?.snippetCount && settings.snippetCount > 0
+      ? settings.snippetCount
+      : Math.max(3, Math.min((players.length || 2) * 2, 10));
+    const snippetDuration = settings?.snippetDuration || 30;
+
+    // Pool: full library with the same filters as the original start (the
+    // unified setup result's settings carry the filter fields).
+    const filters = party.unifiedSetupResult?.settings;
+    const fullPool = filterSongs(
+      getAllSongs(),
+      filters?.filterGenre,
+      filters?.filterLanguage,
+      filters?.filterCombined,
+      filters?.filterReleaseYear,
+    );
+
+    // Exclude the current round's songs when enough alternatives exist.
+    const currentSongIds = new Set(party.medleySongs.map(m => m.song.id));
+    let pool = fullPool;
+    if (fullPool.length > snippetCount * 2 && currentSongIds.size > 0) {
+      const excluding = fullPool.filter(s => !currentSongIds.has(s.id));
+      if (excluding.length >= snippetCount) pool = excluding;
+    }
+    if (pool.length === 0) return null;
+
+    const medleySongList = generateMedleySnippets(pool, snippetCount, snippetDuration);
+
+    // Pre-restore URLs AND lyrics for all snippet songs (same as the initial
+    // start — needed for Tauri file:// paths and IndexedDB-stored lyrics).
+    const preparedSnippets = await Promise.all(
+      medleySongList.map(async snippet => {
+        try {
+          let prepared = await ensureSongUrls(snippet.song);
+
+          // Also load lyrics if not present (storedTxt / relativeTxtPath)
+          if (!prepared.lyrics || prepared.lyrics.length === 0) {
+            try {
+              const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+              const lyrics = await loadSongLyrics(prepared);
+              if (lyrics.length > 0) {
+                prepared = { ...prepared, lyrics };
+              }
+            } catch { /* non-critical */ }
+          }
+
+          // Re-position the snippet if the now-loaded lyrics have no notes
+          // overlapping the generated range (same as start-medley.ts).
+          let adjustedSnippet = snippet;
+          if (prepared.lyrics && prepared.lyrics.length > 0) {
+            const hasOverlap = prepared.lyrics.some(line =>
+              line.notes.some(n =>
+                n.startTime < snippet.endTime && (n.startTime + n.duration) > snippet.startTime,
+              ),
+            );
+            if (!hasOverlap) {
+              const allNotes = prepared.lyrics.flatMap(l => l.notes);
+              if (allNotes.length > 0) {
+                const snippetMs = snippet.duration;
+                const firstNote = allNotes[0].startTime;
+                const lastNote = allNotes[allNotes.length - 1].startTime;
+                const noteRangeEnd = lastNote + 5000;
+                const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
+                let bestStart = firstNote;
+                let bestCount = 0;
+                for (let pos = Math.max(firstNote, 10000); pos <= maxStart; pos += 2000) {
+                  const count = allNotes.filter(n => n.startTime >= pos && n.startTime <= pos + snippetMs).length;
+                  if (count > bestCount) { bestCount = count; bestStart = pos; }
+                }
+                const newEnd = Math.min(bestStart + snippetMs, prepared.duration);
+                adjustedSnippet = { ...snippet, startTime: bestStart, endTime: newEnd, duration: newEnd - bestStart };
+              }
+            }
+          }
+
+          return { ...adjustedSnippet, song: prepared };
+        } catch {
+          return snippet;
+        }
+      })
+    );
+
+    if (preparedSnippets.length === 0) return null;
+    party.setMedleySongs(preparedSnippets);
+    return preparedSnippets;
+  } catch {
+    return null;
+  }
 }
 
 // ===================== PARTY GAME MODE SCREENS =====================
@@ -438,22 +542,29 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   party.setIsSongPlaying(false);
                   setScreen('pass-the-mic-game');
                 } else {
-                  // Fallback to library
+                  // Fallback to library — still a next-round pick
+                  party.setNextRoundPick('ptm');
                   setScreen('library');
                 }
               } catch (err) {
                 // eslint-disable-next-line no-console
                 console.error('[PTM] Failed to prepare next song:', err);
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
+                party.setNextRoundPick('ptm');
                 setScreen('library');
               }
             } else if (targetScreen === 'song-voting') {
-              // Re-generate voting songs from filtered pool
-              // IMPORTANT: always limit to 3 songs (matching initial setup behavior)
+              // Next-round vote: picking a song returns DIRECTLY into the PTM
+              // game (intro phase) with the same players — no setup detour.
               const filters = party.unifiedSetupResult?.settings;
               const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
               party.setVotingSongs(suggested);
+              party.setNextRoundPick('ptm');
               setScreen('song-voting');
+            } else if (targetScreen === 'library') {
+              // Next-round library pick: returns directly into the PTM game
+              party.setNextRoundPick('ptm');
+              setScreen('library');
             } else {
               setScreen(targetScreen as Screen);
             }
@@ -537,6 +648,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           shortMode={party.tournamentSongDuration === 60}
           showResults={showTournamentResults}
           onShowResults={() => setShowTournamentResults(true)}
+          // Bug 12c: visible way back to the menu on the immersive bracket
+          // screen — opens the party-leave CONFIRMATION dialog (handled in
+          // karaoke-app.tsx), never an immediate exit.
+          onLeaveToMenu={() => party.setPauseDialogAction('party-leave')}
         />
       )}
 
@@ -616,19 +731,27 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   party.setIsSongPlaying(false);
                   setScreen('companion-singalong-game');
                 } else {
+                  // Fallback to library — still a next-round pick
+                  party.setNextRoundPick('cptm');
                   setScreen('library');
                 }
               } catch (err) {
                 // eslint-disable-next-line no-console
                 console.error('[CompanionSingAlong] Failed to prepare next song:', err);
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
+                party.setNextRoundPick('cptm');
                 setScreen('library');
               }
             } else if (targetScreen === 'song-voting') {
               const filters = party.unifiedSetupResult?.settings;
               const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
               party.setVotingSongs(suggested);
+              party.setNextRoundPick('cptm');
               setScreen('song-voting');
+            } else if (targetScreen === 'library') {
+              // Next-round library pick: returns directly into the CPTM game
+              party.setNextRoundPick('cptm');
+              setScreen('library');
             } else {
               setScreen(targetScreen as Screen);
             }
@@ -678,6 +801,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setUnifiedSetupResult(null);
             setScreen('home');
           }}
+          // Fix 7: "Next Round" regenerates a snippet list with DIFFERENT
+          // songs (when the pool allows) before the next round starts.
+          onPrepareNextRoundSongs={() => prepareNextMedleyRound(party)}
         />
       )}
       {/* Missing Words Competitive Game */}

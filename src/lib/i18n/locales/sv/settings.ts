@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Volym för låtförhandsvisningar i biblioteket',
   micSensitivity: 'Mikrofonkänslighet',
   micSensitivityDesc: 'Justera mikrofonens ingångskänslighet',
+  loudnessNormalizationTitle: 'Volymnormalisering (89 dB-mål)',
+  loudnessNormalizationDesc: 'Jämnar ut höga och tysta låtar — höga låtar dämpas och tysta förstärks (mål: 89 dB).',
   selectInputDevice: 'Välj Ingångsenhet',
   defaultMicrophone: 'Standardmikrofon',
   microphoneGain: 'Mikrofonförstärkning',

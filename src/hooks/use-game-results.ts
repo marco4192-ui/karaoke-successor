@@ -23,6 +23,8 @@ export interface P2ScoringSnapshot {
   maxCombo: number;
   perfectNotesCount?: number;
   goldenNotesHit?: number;
+  /** Accumulated blind karaoke bonus points (blind mode) */
+  blindBonusPoints?: number;
 }
 
 export interface UseGameResultsOptions {

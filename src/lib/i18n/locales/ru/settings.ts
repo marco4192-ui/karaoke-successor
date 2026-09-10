@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Громкость превью песен в библиотеке',
   micSensitivity: 'Чувствительность микрофона',
   micSensitivityDesc: 'Настройте чувствительность входа микрофона',
+  loudnessNormalizationTitle: 'Нормализация громкости (цель: 89 дБ)',
+  loudnessNormalizationDesc: 'Выравнивает громкие и тихие песни — громкие приглушаются, тихие усиливаются (цель: 89 дБ).',
   selectInputDevice: 'Выберите устройство ввода',
   defaultMicrophone: 'Микрофон по умолчанию',
   microphoneGain: 'Усиление микрофона',

@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: '라이브러리에서 곡 미리듣기 볼륨',
   micSensitivity: '마이크 감도',
   micSensitivityDesc: '마이크 입력 감도 조정',
+  loudnessNormalizationTitle: '음량 정규화 (89 dB 목표)',
+  loudnessNormalizationDesc: '크고 작은 곡의 음량을 조정합니다 — 큰 곡은 줄이고 작은 곡은 높입니다 (목표: 89 dB).',
   selectInputDevice: '입력 장치 선택',
   defaultMicrophone: '기본 마이크',
   microphoneGain: '마이크 게인',

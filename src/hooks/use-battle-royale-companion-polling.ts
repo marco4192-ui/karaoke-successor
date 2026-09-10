@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { BattleRoyaleGame, BattleRoyalePlayer } from '@/lib/game/battle-royale';
 
 interface CompanionPitchEntry {
@@ -55,6 +55,14 @@ export function useBattleRoyaleCompanionPolling({
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
 
+  // Fix 18: number of ACTIVE (non-eliminated) companion players. Used as an
+  // effect dependency below so polling stops/restarts when the active set
+  // changes (eliminations mid-run) instead of only reacting to gameStatus.
+  const activeCompanionCount = useMemo(
+    () => players.filter(p => p.playerType === 'companion' && !p.eliminated).length,
+    [players],
+  );
+
   useEffect(() => {
     // Clear stale cache when game status changes
     companionPitchCacheRef.current.clear();
@@ -67,8 +75,7 @@ export function useBattleRoyaleCompanionPolling({
       return;
     }
 
-    const companionPlayers = playersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
-    if (companionPlayers.length === 0) return;
+    if (activeCompanionCount === 0) return;
 
     let abortController: AbortController | null = null;
 
@@ -76,6 +83,16 @@ export function useBattleRoyaleCompanionPolling({
       // Cancel any in-flight request
       if (abortController) abortController.abort();
       abortController = new AbortController();
+
+      // Fix 18: re-filter the active (non-eliminated) companion players on
+      // EVERY poll iteration (reads the current players from the ref) so
+      // eliminated players' phones are no longer polled/cached mid-run.
+      const activeCompanionIds = new Set(
+        playersRef.current
+          .filter(p => p.playerType === 'companion' && !p.eliminated)
+          .map(p => p.id),
+      );
+      if (activeCompanionIds.size === 0) return;
 
       try {
         const res = await fetch('/api/mobile?action=getpitch', {
@@ -98,6 +115,11 @@ export function useBattleRoyaleCompanionPolling({
           if (!profileId || !pitchData) continue;
 
           activeProfileIds.add(profileId);
+          // Fix 18: only cache pitches for ACTIVE (non-eliminated) players —
+          // eliminated companions keep streaming on their phones, but their
+          // pitch no longer updates the scoring cache.
+          if (!activeCompanionIds.has(profileId)) continue;
+
           companionPitchCacheRef.current.set(profileId, {
             note: pitchData.note ?? null,
             frequency: pitchData.frequency ?? null,
@@ -107,11 +129,15 @@ export function useBattleRoyaleCompanionPolling({
           });
         }
 
-        // Only evict cached pitches that are stale (not updated within
-        // the grace period). Companions that simply missed one poll cycle
-        // retain their cached pitch data for up to STALE_PITCH_MS.
+        // Evict cached pitches that are stale (not updated within the grace
+        // period) OR that belong to players no longer active (Fix 18 — an
+        // eliminated player's still-streaming phone would otherwise keep its
+        // entry alive forever via activeProfileIds).
         for (const [cachedId, cachedEntry] of companionPitchCacheRef.current.entries()) {
-          if (!activeProfileIds.has(cachedId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS) {
+          if (
+            !activeCompanionIds.has(cachedId) ||
+            (!activeProfileIds.has(cachedId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS)
+          ) {
             companionPitchCacheRef.current.delete(cachedId);
           }
         }
@@ -132,7 +158,7 @@ export function useBattleRoyaleCompanionPolling({
       }
       if (abortController) abortController.abort();
     };
-  }, [gameStatus]);
+  }, [gameStatus, activeCompanionCount]);
 
   return { companionPitchCacheRef };
 }

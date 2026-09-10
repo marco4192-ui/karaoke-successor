@@ -285,6 +285,18 @@ export function useTournamentBracket(
   // Pass 2: compute the uniform scale AFTER the butterfly re-rendered with the
   // spacing derived from availSize (runs on bracket / availSize changes and
   // observes the inner content for natural-size changes)
+  //
+  // Bug 11b: `inner.scrollWidth/scrollHeight` UNDER-REPORTS the bracket's real
+  // extent (cards are absolutely positioned and vertically centred with
+  // translateY(-50%), and the inner element itself carries a scale transform),
+  // which made the computed scale too large and clipped the right bracket half
+  // off-screen for 8/16/32-player brackets. Instead we measure the inner
+  // content's box via getBoundingClientRect() and divide out the currently
+  // applied scale to recover the NATURAL (untransformed) size, taking the max
+  // with scrollWidth/scrollHeight (which still catches bottom/right layout
+  // overflow of grown, name-wrapped cards). A small safety factor keeps hover
+  // badges / card hover-scale / the final's glow from touching the edges.
+  const bracketScaleRef = useRef(1);
   useEffect(() => {
     const wrapper = bracketWrapperRef.current;
     const inner = bracketInnerRef.current;
@@ -292,11 +304,19 @@ export function useTournamentBracket(
     const updateScale = () => {
       const availableW = wrapper.clientWidth;
       const availableH = wrapper.clientHeight;
-      const neededW = inner.scrollWidth;
-      const neededH = inner.scrollHeight;
-      if (availableW > 0 && availableH > 0 && neededW > 0 && neededH > 0) {
-        const scale = Math.min(availableW / neededW, availableH / neededH, MAX_UPSCALE);
+      if (availableW <= 0 || availableH <= 0) return;
+
+      // Natural size = transformed rect ÷ currently applied scale.
+      const prevScale = bracketScaleRef.current || 1;
+      const rect = inner.getBoundingClientRect();
+      const neededW = Math.max(inner.scrollWidth, rect.width / prevScale);
+      const neededH = Math.max(inner.scrollHeight, rect.height / prevScale);
+
+      if (neededW > 0 && neededH > 0) {
+        const SAFETY = 1.02; // ~2% margin so nothing clips at the edges
+        const scale = Math.min(availableW / (neededW * SAFETY), availableH / (neededH * SAFETY), MAX_UPSCALE);
         if (isFinite(scale) && scale > 0) {
+          bracketScaleRef.current = scale;
           setBracketScale((prev) => (Math.abs(prev - scale) < 0.004 ? prev : scale));
         }
       }

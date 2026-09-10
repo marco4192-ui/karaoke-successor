@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Lautstärke für Song-Vorschau in der Bibliothek',
   micSensitivity: 'Mikrofon-Empfindlichkeit',
   micSensitivityDesc: 'Mikrofon-Eingangsempfindlichkeit anpassen',
+  loudnessNormalizationTitle: 'Lautstärke-Harmonisierung (89 dB Ziel)',
+  loudnessNormalizationDesc: 'Gleicht laut/leise Songs an — laute Songs werden leiser, leise lauter geregelt (Ziel: 89 dB).',
   selectInputDevice: 'Eingabegerät wählen',
   defaultMicrophone: 'Standard-Mikrofon',
   microphoneGain: 'Mikrofon-Verstärkung',

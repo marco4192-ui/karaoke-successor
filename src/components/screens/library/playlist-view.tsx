@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Song } from '@/types/game';
-import { Playlist, getPlaylistSongs, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
+import { Playlist, getPlaylistEntries, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
 import { StorageKeys, setJson } from '@/lib/storage';
 import { SongCard } from './song-card';
 import { VirtualizedSongGrid } from './virtualized-song-grid';
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
 import { useTranslation } from '@/lib/i18n/translations';
+import { toast } from '@/hooks/use-toast';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -50,6 +51,32 @@ export function PlaylistView({
   const handleEditPlaylist = (playlist: Playlist) => {
     setEditTarget(playlist);
     setShowEditModal(true);
+  };
+
+  /**
+   * Resolve a playlist against the live library: returns the AVAILABLE songs
+   * (in playlist order) plus the count of entries whose song is currently
+   * missing from the library (greyed out in the UI, skipped during playback —
+   * they resolve again automatically once the song returns).
+   */
+  const getResolvedPlaylistSongs = (playlistId: string): { resolved: Song[]; missingCount: number } => {
+    const entries = getPlaylistEntries(playlistId, loadedSongs);
+    const resolved: Song[] = [];
+    let missingCount = 0;
+    for (const entry of entries) {
+      if (entry.song) resolved.push(entry.song);
+      else missingCount++;
+    }
+    return { resolved, missingCount };
+  };
+
+  /** Toast informing the user how many playlist songs were skipped because they are not in the library. */
+  const notifySkippedSongs = (missingCount: number) => {
+    if (missingCount <= 0) return;
+    toast({
+      title: t('libraryPlaylist.missingSkippedTitle'),
+      description: t('libraryPlaylist.missingSkippedDesc').replace('{n}', String(missingCount)),
+    });
   };
 
   return (
@@ -124,7 +151,7 @@ export function PlaylistView({
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {playlists.map((playlist) => {
-              const playlistSongs = getPlaylistSongs(playlist.id, loadedSongs);
+              const { resolved: playlistSongs, missingCount } = getResolvedPlaylistSongs(playlist.id);
               return (
                 <button
                   key={playlist.id}
@@ -149,7 +176,12 @@ export function PlaylistView({
                   
                   {/* Playlist Name */}
                   <h3 className="font-semibold text-white truncate">{playlist.name}</h3>
-                  <p className="text-xs text-white/40">{playlistSongs.length} {playlistSongs.length !== 1 ? t('libraryPlaylist.songs') : t('libraryPlaylist.song')}</p>
+                  <p className="text-xs text-white/40">
+                    {playlistSongs.length} {playlistSongs.length !== 1 ? t('libraryPlaylist.songs') : t('libraryPlaylist.song')}
+                    {missingCount > 0 && (
+                      <span className="text-white/30"> · {t('libraryPlaylist.missingCount').replace('{n}', String(missingCount))}</span>
+                    )}
+                  </p>
                   
                   {/* Edit & Delete buttons for non-system playlists */}
                   {!playlist.isSystem && (
@@ -225,22 +257,29 @@ export function PlaylistView({
               )}
               <Button
                 onClick={() => {
-                  const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                  setQueueConfigSongs(songs);
+                  // Only AVAILABLE songs can be queued — songs missing from the
+                  // library are skipped (with a toast) and stay greyed out in the
+                  // playlist until they return.
+                  const { resolved, missingCount } = getResolvedPlaylistSongs(selectedPlaylist.id);
+                  notifySkippedSongs(missingCount);
+                  setQueueConfigSongs(resolved);
                   setShowQueueConfig(true);
                 }}
                 variant="outline"
                 className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
-                disabled={!activeProfileId || getPlaylistSongs(selectedPlaylist.id, loadedSongs).length === 0}
+                disabled={!activeProfileId || getResolvedPlaylistSongs(selectedPlaylist.id).resolved.length === 0}
               >
                 <QueueIcon className="w-4 h-4 mr-2" />
                 {t('libraryPlaylist.addToQueue')}
               </Button>
               <Button
                 onClick={() => {
-                  const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                  if (songs.length > 0) {
-                    setJson(StorageKeys.JUKEBOX_PLAYLIST, songs.map(s => s.id));
+                  // Jukebox filters by song ID set — store ONLY the resolved IDs so
+                  // missing entries are never handed to the jukebox pool.
+                  const { resolved, missingCount } = getResolvedPlaylistSongs(selectedPlaylist.id);
+                  notifySkippedSongs(missingCount);
+                  if (resolved.length > 0) {
+                    setJson(StorageKeys.JUKEBOX_PLAYLIST, resolved.map(s => s.id));
                   }
                 }}
                 className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
@@ -252,8 +291,8 @@ export function PlaylistView({
           </div>
           
           {(() => {
-            const playlistSongs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-            if (playlistSongs.length === 0) {
+            const { resolved: playlistSongs, missingCount } = getResolvedPlaylistSongs(selectedPlaylist.id);
+            if (playlistSongs.length === 0 && missingCount === 0) {
               return (
                 <div className="text-center py-12">
                   <p className="text-white/60">{t('libraryPlaylist.empty')}</p>
@@ -261,29 +300,69 @@ export function PlaylistView({
                 </div>
               );
             }
+            const missingEntries = getPlaylistEntries(selectedPlaylist.id, loadedSongs).filter(e => e.missing);
             return (
-              <VirtualizedSongGrid
-                songs={playlistSongs}
-                songCardProps={songCardProps}
-                renderSongCard={(song) => (
-                  <div className="relative group">
-                    <SongCard song={song} {...songCardProps} />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveSongFromPlaylist(selectedPlaylist.id, song.id);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
-                      title={t('libraryPlaylist.removeFromPlaylist')}
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
+              <>
+                {playlistSongs.length > 0 && (
+                  <VirtualizedSongGrid
+                    songs={playlistSongs}
+                    songCardProps={songCardProps}
+                    renderSongCard={(song) => (
+                      <div className="relative group">
+                        <SongCard song={song} {...songCardProps} />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveSongFromPlaylist(selectedPlaylist.id, song.id);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
+                          title={t('libraryPlaylist.removeFromPlaylist')}
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  />
+                )}
+
+                {/* Songs that are in the playlist but no longer in the library —
+                    greyed out, not clickable/playable, but manually removable.
+                    They resolve again automatically once the song returns
+                    (stable song IDs across rescans). */}
+                {missingCount > 0 && (
+                  <div className="mt-4" data-testid="playlist-missing-songs">
+                    <p className="text-sm font-medium text-white/50 mb-2">
+                      {t('libraryPlaylist.missingSongs').replace('{n}', String(missingCount))}
+                    </p>
+                    <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
+                      {missingEntries.map((entry) => (
+                        <div
+                          key={entry.songId}
+                          className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 opacity-40 select-none cursor-default"
+                          aria-disabled="true"
+                        >
+                          <MusicIcon className="w-4 h-4 text-white/30 shrink-0" aria-hidden="true" />
+                          <span className="text-sm text-white/50 truncate flex-1">{t('libraryPlaylist.songMissing')}</span>
+                          <button
+                            onClick={() => onRemoveSongFromPlaylist(selectedPlaylist.id, entry.songId)}
+                            className="p-1.5 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/20 transition-all pointer-events-auto"
+                            title={t('libraryPlaylist.removeFromPlaylist')}
+                            aria-label={t('libraryPlaylist.removeFromPlaylist')}
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              />
+              </>
             );
           })()}
         </div>

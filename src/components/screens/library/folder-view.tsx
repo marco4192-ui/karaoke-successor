@@ -82,39 +82,44 @@ export function FolderView({
   const isLanguageGroup = groupBy === 'language';
   const isGenreGroup = groupBy === 'genre';
 
-  // DO-NOT-CHANGE: ResizeObserver scrollability pattern.
-  // Measures the parent's constrained height (from the flex chain) and applies it
-  // explicitly to this container so that overflow-y-auto works reliably in Tauri
-  // webviews, where the flex min-h-0 chain can silently fail to constrain height.
+  // DO-NOT-CHANGE: Viewport-based height measurement for Tauri webview scrollability.
+  // Measures the element's own position relative to the viewport
+  // (window.innerHeight - getBoundingClientRect().top) and applies it explicitly
+  // so that overflow-y-auto works reliably in Tauri webviews, where the flex
+  // min-h-0 chain can silently fail to constrain height. This matches the proven
+  // approach in VirtualizedSongGrid and is more robust than reading
+  // parent.clientHeight, which can be 0/stale when the parent is itself a nested
+  // overflow container (that caused the group-by grid to collapse into a
+  // ~200px-tall strip). 400px floor guards against degenerate measurements.
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(600);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const measure = () => {
-      const parent = el.parentElement;
-      if (parent && parent.clientHeight > 0) {
-        setContainerHeight(parent.clientHeight);
-      }
+      const top = el.getBoundingClientRect().top;
+      setContainerHeight(Math.max(400, window.innerHeight - top));
     };
 
     measure();
 
     const observer = new ResizeObserver(measure);
-    if (el.parentElement) {
-      observer.observe(el.parentElement);
-    }
+    observer.observe(el);
+    window.addEventListener('resize', measure);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, []);
 
   return (
     <div
       ref={containerRef}
       className="pr-1 overflow-y-auto"
-      style={{ height: containerHeight > 0 ? `${containerHeight}px` : undefined, minHeight: '200px' }}
+      style={{ height: containerHeight }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 pb-4">
       {getSortedFolderKeys(groupedSongs, groupBy).map((folderKey) => {

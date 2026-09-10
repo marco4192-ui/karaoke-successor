@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Volume voor nummervoorvertoningen in de bibliotheek',
   micSensitivity: 'Microfoongevoeligheid',
   micSensitivityDesc: 'Pas de microfoon-ingangsgevoeligheid aan',
+  loudnessNormalizationTitle: 'Volumenormalisatie (89 dB-doel)',
+  loudnessNormalizationDesc: 'Brengt harde en stille nummers in balans — harde nummers worden zachter en stille nummers luider gezet (doel: 89 dB).',
   selectInputDevice: 'Invoerapparaat selecteren',
   defaultMicrophone: 'Standaardmicrofoon',
   microphoneGain: 'Microfoonversterking',

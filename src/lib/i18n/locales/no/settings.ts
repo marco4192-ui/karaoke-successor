@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Volum for sangforhåndsvisninger i biblioteket',
   micSensitivity: 'Mikrofonfølsomhet',
   micSensitivityDesc: 'Juster mikrofonens inngangsfølsomhet',
+  loudnessNormalizationTitle: 'Lydnivå-normalisering (89 dB-mål)',
+  loudnessNormalizationDesc: 'Jevner ut høye og stille sanger — høye sanger dempes og stille forsterkes (mål: 89 dB).',
   selectInputDevice: 'Velg inngangsenhet',
   defaultMicrophone: 'Standardmikrofon',
   microphoneGain: 'Mikrofonforsterkning',

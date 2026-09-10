@@ -9,6 +9,7 @@ import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/compon
 import { Song } from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
+import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import { dispatchStartGame } from './party-start-handlers';
 
@@ -139,11 +140,15 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
       )}
 
       {/* Song Voting Modal — picking a song returns to the setup screen.
-          The game starts via the "Ready to Play" button, not here. */}
+          The game starts via the "Ready to Play" button, not here.
+          EXCEPTION: next-round votes (PTM/CPTM "next song") return directly
+          into the game screen with the existing players. */}
       {screen === 'song-voting' && party.votingSongs.length > 0 && party.selectedGameMode && (
         <SongVotingModal
           songs={party.votingSongs}
-          players={party.unifiedSetupResult?.players || []}
+          players={(party.unifiedSetupResult?.players
+            ?? (party.nextRoundPick === 'cptm' ? party.cptmPlayers : party.passTheMicPlayers)
+          ).map(p => ({ id: p.id, name: p.name, avatar: p.avatar, color: p.color, playerType: 'microphone' as const }))}
           gameColor={PARTY_GAME_CONFIGS[party.selectedGameMode]?.color || 'from-cyan-500 to-blue-500'}
           onVote={async (songId) => {
             const selectedSong = party.votingSongs.find(s => s.id === songId);
@@ -166,12 +171,80 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               }
             } catch { /* non-critical — game view has its own URL restoration */ }
 
+            // ── Next-round vote (PTM/CPTM): re-enter the game directly with
+            // the same players — no setup detour, no lost player grid. ──
+            if (party.nextRoundPick === 'ptm') {
+              party.setNextRoundPick(null);
+              const playerCount = party.passTheMicPlayers.length || 2;
+              const segments = generatePtmSegments(
+                songWithUrls.duration,
+                playerCount,
+                party.passTheMicSettings?.segmentDuration,
+                songWithUrls.lyrics,
+              );
+              party.setPassTheMicSegments(segments);
+              party.setPassTheMicSong(songWithUrls);
+              party.setIsSongPlaying(false);
+              setScreen('pass-the-mic-game');
+              return;
+            }
+            if (party.nextRoundPick === 'cptm') {
+              party.setNextRoundPick(null);
+              const playerCount = party.cptmPlayers.length || 2;
+              const segments = generatePtmSegments(
+                songWithUrls.duration,
+                playerCount,
+                party.cptmSettings?.segmentDuration,
+                songWithUrls.lyrics,
+              );
+              party.setCptmSegments(segments);
+              party.setCptmSong(songWithUrls);
+              party.setIsSongPlaying(false);
+              setScreen('companion-singalong-game');
+              return;
+            }
+
             // Return to the setup screen with the voted song pre-selected
             party.setLibrarySelectedSong(songWithUrls);
             party.setSongSelectionMethod('vote');
             setScreen('party-setup');
           }}
-          onClose={() => setScreen('party-setup')}
+          onClose={() => {
+            if (party.nextRoundPick === 'ptm' || party.nextRoundPick === 'cptm') {
+              // User dismissed the next-round vote overlay: fall back to a
+              // random song so the series continues with the same players
+              // (instead of dumping them into the setup screen with an
+              // empty player grid).
+              const isCptm = party.nextRoundPick === 'cptm';
+              party.setNextRoundPick(null);
+              const playerCount = (isCptm ? party.cptmPlayers : party.passTheMicPlayers).length || 2;
+              const segDur = (isCptm ? party.cptmSettings : party.passTheMicSettings)?.segmentDuration;
+              void (async () => {
+                try {
+                  const { preparePtmNextSong } = await import('@/lib/game/ptm-next-song');
+                  const action = await preparePtmNextSong('random', playerCount, segDur);
+                  if (action.mode === 'random' || action.mode === 'medley') {
+                    if (isCptm) {
+                      party.setCptmSegments(action.result.segments);
+                      party.setCptmSong(action.result.song);
+                      party.setIsSongPlaying(false);
+                      setScreen('companion-singalong-game');
+                    } else {
+                      if (action.mode === 'medley') party.setPtmMedleySnippets(action.result.medleySnippets);
+                      party.setPassTheMicSegments(action.result.segments);
+                      party.setPassTheMicSong(action.result.song);
+                      party.setIsSongPlaying(false);
+                      setScreen('pass-the-mic-game');
+                    }
+                    return;
+                  }
+                } catch { /* fall through to setup */ }
+                setScreen('party-setup');
+              })();
+              return;
+            }
+            setScreen('party-setup');
+          }}
         />
       )}
     </>

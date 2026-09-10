@@ -372,6 +372,32 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           return next;
         });
 
+        // Bug 10b fix: ALSO flush P2's deltas to the game store player so
+        // P2's live score is available outside this hook (previously P2 was
+        // only scored into hook-local state which surfaced solely through
+        // generateGameResults). Game-end/abort handlers read fresh store
+        // state via useGameStore.getState(), so P2's score must land there
+        // too. Mirrors P1's updatePlayer flush in checkNoteHits.
+        const storePlayer = playersRef.current[_playerIndex];
+        if (storePlayer) {
+          const updates: Partial<Player> = {};
+          if (result.scoreDelta !== 0) updates.score = storePlayer.score + result.scoreDelta;
+          if (result.comboUpdate !== undefined) updates.combo = result.comboUpdate;
+          if (result.maxComboUpdate !== undefined) updates.maxCombo = result.maxComboUpdate;
+          if (result.notesHitDelta > 0) updates.notesHit = storePlayer.notesHit + result.notesHitDelta;
+          if (result.notesMissedDelta > 0) updates.notesMissed = storePlayer.notesMissed + result.notesMissedDelta;
+          if (result.goldenNotesDelta > 0) updates.goldenNotesHit = (storePlayer.goldenNotesHit || 0) + result.goldenNotesDelta;
+          if (result.blindBonusDelta > 0) updates.blindBonusPoints = (storePlayer.blindBonusPoints || 0) + result.blindBonusDelta;
+          // Update live accuracy whenever hit/miss counts change
+          if (result.notesHitDelta > 0 || result.notesMissedDelta > 0) {
+            const totalNotes = (storePlayer.notesHit + result.notesHitDelta) + (storePlayer.notesMissed + result.notesMissedDelta);
+            updates.accuracy = totalNotes > 0
+              ? Math.round(((storePlayer.notesHit + result.notesHitDelta) / totalNotes) * 1000) / 10
+              : 0;
+          }
+          updatePlayer(storePlayer.id, updates);
+        }
+
         // Flush score events in a single batch
         if (result.pendingEvents.length > 0) {
           setScoreEventsState(prev => [
@@ -381,7 +407,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
       }
     },
-    [song, difficulty, timingData, hasPerfectOnly, hasGoldenOnly]
+    [song, difficulty, timingData, hasPerfectOnly, hasGoldenOnly, updatePlayer]
   );
 
   // Check if P1 hits notes - using duration-based scoring

@@ -41,6 +41,10 @@ export const StorageKeys = {
   SHOW_COMBO: 'karaoke-show-combo',
   LYRICS_SIZE: 'karaoke-lyrics-size',
   MASTER_VOLUME: 'karaoke-master-volume',
+  /** Loudness normalization toward the 89 dB ReplayGain reference (default on) */
+  LOUDNESS_NORMALIZATION: 'karaoke-loudness-normalization',
+  /** Per-song loudness normalization gains (songId → gainDb) */
+  LOUDNESS_GAINS: 'karaoke-loudness-gains',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
 
@@ -70,6 +74,10 @@ export const StorageKeys = {
   PLAYLISTS: 'karaoke-playlists',
   SONG_PLAY_COUNTS: 'karaoke-song-play-counts',
   JUKEBOX_PLAYLIST: 'jukebox-playlist',
+  // Persistent song identity (file path → song ID) so songs that were
+  // temporarily missing REUSE their previous ID when they return via a later
+  // scan — keeping playlist / play-count references resolvable.
+  SONG_IDENTITY_MAP: 'karaoke-song-identity-map',
 
   // --- Rate My Song ---
   RATE_MY_SONG_HISTORY: 'karaoke-rate-my-song-history',

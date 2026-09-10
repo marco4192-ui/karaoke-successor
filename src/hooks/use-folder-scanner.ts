@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { StorageKeys, getString, setItem, removeItem, clearAll, getJsonOptional } from '@/lib/storage';
+import { StorageKeys, getString, setItem, removeItem, clearAll, getJsonOptional, getJson, setJson } from '@/lib/storage';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
+import { remapSongIdsInPlaylists, remapPlayCountIds, getAllReferencedSongIds } from '@/lib/playlist-manager';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
@@ -97,6 +98,75 @@ export function useFolderScanner(): UseFolderScannerReturn {
     // CRITICAL: Always save the songs folder to localStorage (normalized)
     const normalizedFolder = normalizeFilePath(folderPath);
     setItem(StorageKeys.SONGS_FOLDER, normalizedFolder);
+
+    // ── Stable song IDs across rescans ──
+    // Snapshot the CURRENT library BEFORE clearCustomSongs() wipes it below.
+    // Each snapshot song is keyed by stable identity (file location), so scanned
+    // songs can REUSE their previous ID — keeping playlist / play-count /
+    // favorites references alive across a rescan instead of orphaning them.
+    const preScanSongs = getAllSongs();
+    const preScanIds = new Set(preScanSongs.map(s => s.id));
+    // `${baseFolder}/${relativeTxtPath}` → old song ID (songs WITH file info)
+    const oldIdByPathKey = new Map<string, string>();
+    // `title|artist|Math.round(duration)` → old song ID (fallback: songs WITHOUT file info)
+    const oldIdByMetaKey = new Map<string, string>();
+    for (const s of preScanSongs) {
+      if (s.baseFolder && s.relativeTxtPath) {
+        const key = `${s.baseFolder}/${s.relativeTxtPath}`;
+        if (!oldIdByPathKey.has(key)) oldIdByPathKey.set(key, s.id);
+      } else {
+        const key = `${s.title}|${s.artist}|${Math.round(s.duration || 0)}`;
+        if (!oldIdByMetaKey.has(key)) oldIdByMetaKey.set(key, s.id);
+      }
+    }
+    // PERSISTENT identity map (survives scans in which the song was missing):
+    // path → last known song ID. Consulted when the pre-scan snapshot can't
+    // resolve a scanned song — this is what makes a song that returns in a
+    // LATER scan reuse its ORIGINAL ID, so greyed-out playlist entries and
+    // play counts resolve again automatically.
+    const persistentIdByPathKey = getJson<Record<string, string>>(StorageKeys.SONG_IDENTITY_MAP, {});
+    // Old IDs already handed out in THIS scan — guarantees uniqueness when
+    // duplicate identities exist (two files with the same title/artist/duration).
+    const reusedOldIds = new Set<string>();
+
+    /**
+     * Resolve the ID for a scanned song: REUSE the previous scan's ID when the
+     * identity matches, otherwise generate a fresh one. Reusing IDs is what
+     * keeps playlists, play counts and favorites intact across rescans.
+     */
+    const resolveStableSongId = (
+      baseFolder: string,
+      relativeTxtPath: string | undefined,
+      title: string,
+      artist: string,
+      duration: number,
+    ): string => {
+      if (relativeTxtPath) {
+        const pathKey = `${baseFolder}/${relativeTxtPath}`;
+        // 1. Same file in the current library → keep its ID
+        const oldId = oldIdByPathKey.get(pathKey);
+        if (oldId && !reusedOldIds.has(oldId)) {
+          reusedOldIds.add(oldId);
+          return oldId;
+        }
+        // 2. Song was missing in a previous scan but its file is back →
+        //    restore the ORIGINAL ID so playlist/play-count refs resolve again
+        const persistentId = persistentIdByPathKey[pathKey];
+        if (persistentId && !reusedOldIds.has(persistentId)) {
+          reusedOldIds.add(persistentId);
+          return persistentId;
+        }
+      } else {
+        // No file info — fall back to title/artist/duration identity
+        const oldId = oldIdByMetaKey.get(`${title}|${artist}|${Math.round(duration || 0)}`);
+        if (oldId && !reusedOldIds.has(oldId)) {
+          reusedOldIds.add(oldId);
+          return oldId;
+        }
+      }
+      return `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    };
+
     try {
       // Import the Tauri scanner
       const { scanSongsFolderTauri, isTauri: checkTauri } = await import('@/lib/tauri-file-storage');
@@ -137,8 +207,22 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
         for (const scanned of result.songs) {
           try {
-            // Generate song ID
-            const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            // Calculate actual song duration (needed BEFORE the ID resolution —
+            // the stable-ID fallback identity uses the rounded duration):
+            // Priority 1: #END tag from TXT (explicit song end time)
+            // Priority 2: Last lyric end time + buffer (realistic display)
+            // Priority 3: Fallback 180000 (3 minutes)
+            let calculatedDuration = 180000;
+            if (scanned.end && scanned.end > 0) {
+              calculatedDuration = scanned.end;
+            } else if (scanned.lyrics && scanned.lyrics.length > 0) {
+              const lastLineEnd = Math.max(...scanned.lyrics.map(l => l.endTime));
+              calculatedDuration = lastLineEnd + 5000;
+            }
+
+            // Song ID — REUSED from the previous scan when the identity matches,
+            // so playlists / play counts / favorites survive a rescan.
+            const songId = resolveStableSongId(folderPath, scanned.relativeTxtPath, scanned.title, scanned.artist, calculatedDuration);
 
             // PERFORMANCE: Load TXT cache and cover image in parallel per song.
             // Audio/video URLs are deferred — loaded lazily when played.
@@ -174,18 +258,6 @@ export function useFolderScanner(): UseFolderScannerReturn {
             if (coverResult.status === 'fulfilled') coverImage = coverResult.value;
             // eslint-disable-next-line no-console
             else console.warn(`[Import] Failed to create cover URL for ${scanned.title}`);
-
-            // Calculate actual song duration:
-            // Priority 1: #END tag from TXT (explicit song end time)
-            // Priority 2: Last lyric end time + buffer (realistic display)
-            // Priority 3: Fallback 180000 (3 minutes)
-            let calculatedDuration = 180000;
-            if (scanned.end && scanned.end > 0) {
-              calculatedDuration = scanned.end;
-            } else if (scanned.lyrics && scanned.lyrics.length > 0) {
-              const lastLineEnd = Math.max(...scanned.lyrics.map(l => l.endTime));
-              calculatedDuration = lastLineEnd + 5000;
-            }
 
             // Create song object with relative paths and cover blob URL.
             // Audio/video URLs are NOT set here — they are loaded lazily
@@ -278,7 +350,14 @@ export function useFolderScanner(): UseFolderScannerReturn {
               const extraSongs: Song[] = [];
               for (const scanned of extraResult.songs) {
                 try {
-                  const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+                  let calculatedDuration = 180000;
+                  if (scanned.end && scanned.end > 0) calculatedDuration = scanned.end;
+                  else if (scanned.lyrics && scanned.lyrics.length > 0) {
+                    calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+                  }
+                  // REUSE the previous scan's ID when the identity matches
+                  // (keeps playlist / play-count references alive).
+                  const songId = resolveStableSongId(extraFolder, scanned.relativeTxtPath, scanned.title, scanned.artist, calculatedDuration);
                   let coverImage: string | undefined = undefined;
                   try {
                     if (scanned.relativeCoverPath) {
@@ -286,12 +365,6 @@ export function useFolderScanner(): UseFolderScannerReturn {
                     }
                   } catch {
                     // Cover loading failed for this song — continue without cover
-                  }
-
-                  let calculatedDuration = 180000;
-                  if (scanned.end && scanned.end > 0) calculatedDuration = scanned.end;
-                  else if (scanned.lyrics && scanned.lyrics.length > 0) {
-                    calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
                   }
 
                   extraSongs.push({
@@ -338,7 +411,66 @@ export function useFolderScanner(): UseFolderScannerReturn {
         // Note: blob URL cache was already cleared by clearCustomSongs() at scan start.
         // New blob URLs created during scan are still valid.
         invalidateSongCache();
-        const finalCount = getAllSongs().length;
+        const finalSongs = getAllSongs();
+
+        // ── Remap references for songs whose ID changed (e.g. file moved) ──
+        // An old song that was NOT re-detected at its old path but matches a
+        // freshly scanned song by title/artist/duration is the same song that
+        // moved: transfer its playlist / play-count references to the new ID.
+        // Nothing is dropped — old IDs without a counterpart stay in playlists
+        // and render there as greyed-out "missing" entries until the song
+        // returns to the library.
+        if (finalSongs.length > 0) {
+          const freshByMetaKey = new Map<string, string>();
+          for (const s of finalSongs) {
+            // Only brand-new IDs can be remap targets (reused IDs — snapshot
+            // or persistent-map — already carry their references with them).
+            if (preScanIds.has(s.id) || reusedOldIds.has(s.id)) continue;
+            const key = `${s.title}|${s.artist}|${Math.round(s.duration || 0)}`;
+            if (!freshByMetaKey.has(key)) freshByMetaKey.set(key, s.id);
+          }
+          if (freshByMetaKey.size > 0) {
+            const idChanges = new Map<string, string>();
+            for (const old of preScanSongs) {
+              if (reusedOldIds.has(old.id)) continue; // identity already preserved directly
+              const key = `${old.title}|${old.artist}|${Math.round(old.duration || 0)}`;
+              const newId = freshByMetaKey.get(key);
+              if (newId !== undefined) {
+                idChanges.set(old.id, newId);
+                freshByMetaKey.delete(key); // one-to-one matching only
+              }
+            }
+            if (idChanges.size > 0) {
+              const remappedPlaylists = remapSongIdsInPlaylists(idChanges);
+              const remappedCounts = remapPlayCountIds(idChanges);
+              // eslint-disable-next-line no-console
+              console.log(`[FolderScanner] Remapped ${idChanges.size} song ID(s) after rescan (${remappedPlaylists} playlist refs, ${remappedCounts} play-count entries)`);
+            }
+          }
+        }
+
+        // ── Persist the song identity map (path → ID) ──
+        // Records the identity of every scanned song so a song that goes
+        // missing and returns in a LATER scan reuses its ORIGINAL ID (its
+        // playlist entries / play counts then resolve again automatically).
+        // Entries for songs that are gone AND no longer referenced anywhere
+        // are pruned to keep the map bounded.
+        const finalIdSet = new Set(finalSongs.map(s => s.id));
+        const referencedIds = getAllReferencedSongIds();
+        for (const s of finalSongs) {
+          if (s.baseFolder && s.relativeTxtPath) {
+            persistentIdByPathKey[`${s.baseFolder}/${s.relativeTxtPath}`] = s.id;
+          }
+        }
+        for (const pathKey of Object.keys(persistentIdByPathKey)) {
+          const id = persistentIdByPathKey[pathKey];
+          if (!finalIdSet.has(id) && !referencedIds.has(id)) {
+            delete persistentIdByPathKey[pathKey];
+          }
+        }
+        setJson(StorageKeys.SONG_IDENTITY_MAP, persistentIdByPathKey);
+
+        const finalCount = finalSongs.length;
         // eslint-disable-next-line no-console
         console.log('[FolderScanner] Scan complete. Final song count:', finalCount);
         setSongCount(finalCount);

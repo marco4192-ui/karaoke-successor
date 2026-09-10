@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Äänenvoimakkuus kappaleiden esikatseluun kirjastossa',
   micSensitivity: 'Mikrofonin herkkyys',
   micSensitivityDesc: 'Säädä mikrofonin sisääntulon herkkyyttä',
+  loudnessNormalizationTitle: 'Äänenvoimakkuuden normalisointi (89 dB:n tavoite)',
+  loudnessNormalizationDesc: 'Tasaa lujat ja hiljaiset kappaleet — lujia hiljennetään ja hiljaisia vahvistetaan (tavoite: 89 dB).',
   selectInputDevice: 'Valitse sisääntulolaite',
   defaultMicrophone: 'Oletusmikrofoni',
   microphoneGain: 'Mikrofonin vahvistus',

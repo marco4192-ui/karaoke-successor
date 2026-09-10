@@ -5,7 +5,8 @@ import { Song } from '@/types/game';
 import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { extractYouTubeId } from '@/components/game/youtube-player';
-import { getJsonOptional, setJson } from '@/lib/storage';
+import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { getBool, getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
 import type { UseJukeboxReturn } from './jukebox-types';
@@ -595,14 +596,39 @@ export function useJukebox(refs?: {
 
   // ==================== VOLUME ====================
 
+  // Loudness normalization: per-song attenuation factor toward the 89 dB
+  // reference, folded multiplicatively into the volume write below.
+  // Element-level attenuation only (element.volume cannot boost) — analysis
+  // failures yield factor 1 (unchanged volume) and never block playback.
+  // State is tagged with the analyzed songId so a stale (previous song's)
+  // factor is ignored while the new song's analysis is still running.
+  const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; factor: number }>({ songId: null, factor: 1 });
+  const jukeboxSongId = currentSong?.id;
+  const loudnessFactor = loudnessGain.songId === jukeboxSongId ? loudnessGain.factor : 1;
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume;
-    if (audioRef.current) audioRef.current.volume = volume;
+    let cancelled = false;
+    const audioUrl = currentSong?.audioUrl;
+    if (!jukeboxSongId || !audioUrl || !getBool(StorageKeys.LOUDNESS_NORMALIZATION, true)) return;
+    getSongLoudnessGainDb(jukeboxSongId, audioUrl)
+      .then((gainDb) => {
+        if (cancelled) return;
+        setLoudnessGain({ songId: jukeboxSongId, factor: gainDb <= 0 ? Math.pow(10, gainDb / 20) : 1 });
+      })
+      .catch(() => {
+        // Never throw — analysis failure means factor 1.
+      });
+    return () => { cancelled = true; };
+  }, [jukeboxSongId, currentSong?.audioUrl]);
+
+  useEffect(() => {
+    const v = Math.min(1, Math.max(0, volume * loudnessFactor));
+    if (videoRef.current) videoRef.current.volume = v;
+    if (audioRef.current) audioRef.current.volume = v;
     // If user moves slider while muted, unmute
     if (volume > 0 && isMuted) {
       setIsMuted(false);
     }
-  }, [volume, videoRef, audioRef, isMuted]);
+  }, [volume, loudnessFactor, videoRef, audioRef, isMuted]);
 
   // ==================== #4 FIX: ROBUST AUTO-PLAY ====================
 

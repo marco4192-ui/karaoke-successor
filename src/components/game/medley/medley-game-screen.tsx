@@ -7,7 +7,7 @@
  * components.  No game logic lives here — only JSX routing.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMedleyGame, type MedleyGameScreenProps } from './medley-game-hook';
@@ -18,6 +18,7 @@ import { GameBackground } from '@/components/game/game-background';
 import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
+import type { MedleySong } from './medley-types';
 
 // ===================== COMPONENT =====================
 
@@ -32,16 +33,41 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     _seriesHistory: seriesHistory = [],
     onRoundComplete,
     onEndGame,
+    onPrepareNextRoundSongs,
   } = props;
+
+  // ── Next round songs (Fix 7): lifted song-list state ──
+  // `songs` from the party store is the CURRENT round's snippet list. When
+  // the next round is prepared, the fresh list is swapped in here (the
+  // store is updated by the handler too) so the hook and all totals/
+  // previews switch to the new songs in the same commit as the round reset.
+  const [activeSongs, setActiveSongs] = useState<MedleySong[]>(medleySongs);
+
+  // Wrap the parent's preparer: swap the returned songs into local state so
+  // the hook (and every medleySongs-derived total below) sees them
+  // immediately. Returns null on failure → the old songs are replayed.
+  const prepareNextRoundSongs = useCallback(async (): Promise<MedleySong[] | null> => {
+    if (!onPrepareNextRoundSongs) return null;
+    try {
+      const fresh = await onPrepareNextRoundSongs();
+      if (fresh && fresh.length > 0) {
+        setActiveSongs(fresh);
+      }
+      return fresh ?? null;
+    } catch {
+      return null;
+    }
+  }, [onPrepareNextRoundSongs]);
 
   const state = useMedleyGame({
     players: initialPlayers,
-    songs: medleySongs,
+    songs: activeSongs,
     settings,
     matchups,
     _seriesHistory: seriesHistory,
     onRoundComplete,
     onEndGame,
+    onPrepareNextRoundSongs: prepareNextRoundSongs,
   });
 
   const {
@@ -70,16 +96,16 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
 
   // Total medley runtime (user item 6.4: "Gesamtlaufzeit" — one line)
   const medleyTotalMs = useMemo(
-    () => medleySongs.reduce((s, m) => s + m.duration, 0),
-    [medleySongs],
+    () => activeSongs.reduce((s, m) => s + m.duration, 0),
+    [activeSongs],
   );
   const medleyElapsedMs = useMemo(() => {
     let t = 0;
-    for (let i = 0; i < currentSnippetIdx && i < medleySongs.length; i++) {
-      t += medleySongs[i].duration;
+    for (let i = 0; i < currentSnippetIdx && i < activeSongs.length; i++) {
+      t += activeSongs[i].duration;
     }
     return t + state.currentTimeMs;
-  }, [medleySongs, currentSnippetIdx, state.currentTimeMs]);
+  }, [activeSongs, currentSnippetIdx, state.currentTimeMs]);
 
   // ===================== INTRO PHASE =====================
   if (phase === 'intro') {
@@ -107,7 +133,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
         <div className="text-5xl mb-6">🎵</div>
         <h2 className="text-3xl font-bold mb-2">{t('medley.gameTitle')}</h2>
         <p className="text-white/60 mb-6">
-          {medleySongs.length} {t('medley.snippets')} · {settings.snippetDuration}s {t('medley.proSong')}
+          {activeSongs.length} {t('medley.snippets')} · {settings.snippetDuration}s {t('medley.proSong')}
           {isTeam && ` · ${settings.teamSize} ${t('medley.vs')} ${settings.teamSize}`}
           {state.isEliminationMode && ` · ${t('medley.elimination')}`}
         </p>
@@ -220,7 +246,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           <MedleyPlayingUI
             currentSnippet={currentSnippet}
             currentSnippetIdx={currentSnippetIdx}
-            snippetCount={medleySongs.length}
+            snippetCount={activeSongs.length}
             snippetNotes={snippetNotes}
             snippetLyrics={state.snippetLyrics}
             currentLyricLine={currentLyricLine}
@@ -235,6 +261,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             multiPitch={multiPitch}
             handleEndEarly={handleEndEarly}
             notePerformance={notePerformance}
+            notePerformanceByPlayer={state.notePerformanceByPlayer}
             currentDynamicDifficulty={currentDynamicDifficulty}
             // Feature #10
             isEliminationMode={state.isEliminationMode}
@@ -277,7 +304,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             {/* Preview next players */}
             {isTeam && currentSnippetIdx + 1 < matchups.length && (() => {
               const next = matchups[currentSnippetIdx + 1];
-              const nextSong = medleySongs[currentSnippetIdx + 1]?.song;
+              const nextSong = activeSongs[currentSnippetIdx + 1]?.song;
               return nextSong ? (
                 <div className="bg-black/30 rounded-xl p-4 text-center">
                   <p className="text-sm text-white/40 mb-1">{t('medley.nextSong')}</p>
@@ -301,7 +328,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
               ) : null;
             })()}
 
-            {!isTeam && currentSnippetIdx + 1 < medleySongs.length && (
+            {!isTeam && currentSnippetIdx + 1 < activeSongs.length && (
               <div className="bg-black/30 rounded-xl p-4 text-center">
                 <p className="text-sm text-white/40 mb-1">{t('medley.nextSong')}</p>
                 {settings.mysteryMode ? (
@@ -311,8 +338,8 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-bold">{medleySongs[currentSnippetIdx + 1]?.song.title}</h3>
-                    <p className="text-white/60 text-sm">{medleySongs[currentSnippetIdx + 1]?.song.artist}</p>
+                    <h3 className="text-lg font-bold">{activeSongs[currentSnippetIdx + 1]?.song.title}</h3>
+                    <p className="text-white/60 text-sm">{activeSongs[currentSnippetIdx + 1]?.song.artist}</p>
                   </>
                 )}
                 <p className="text-xs text-white/40 mt-2">{t('medley.allPlayersContinue')}</p>

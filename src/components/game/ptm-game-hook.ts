@@ -73,6 +73,8 @@ interface PtmGameHookReturn {
   pitchStats: ReturnType<typeof import('@/lib/game/note-utils').calculatePitchStats>;
   scoringMeta: ReturnType<typeof import('@/lib/game/scoring').calculateScoringMetadata> | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  /** Live note-hit samples for the NoteHighway fill/miss rendering. */
+  notePerformance: import('./use-ptm-scoring').PtmNotePerformance;
   displayDuration: number;
   songEnergy: number;
 
@@ -279,8 +281,8 @@ export function usePtmGameLogic({
     currentTimeRef,
   });
 
-  // ── Scoring (sub-hook) ──
-  usePtmScoring({
+  // ── Scoring (sub-hook) — also produces the visual notePerformance map ──
+  const { notePerformance } = usePtmScoring({
     phase,
     isPlaying,
     pitchResult,
@@ -760,6 +762,8 @@ export function usePtmGameLogic({
     pitchStats,
     scoringMeta,
     visibleNotes,
+    /** Live note-hit samples for the NoteHighway fill/miss rendering. */
+    notePerformance,
     displayDuration,
     songEnergy,
 

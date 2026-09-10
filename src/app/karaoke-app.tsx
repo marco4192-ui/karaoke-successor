@@ -11,6 +11,7 @@ import { useMobileClient } from '@/hooks/use-mobile-client';
 import { getAllSongs } from '@/lib/game/song-library';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { recordMatchResult, getPlayableMatches } from '@/lib/game/tournament';
+import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
@@ -21,7 +22,7 @@ import { IMMERSIVE_SCREENS } from '@/types/screens';
 import type { GameState } from '@/components/screens/mobile/mobile-types';
 
 // Extracted hooks
-import { useScreenNavigation } from '@/hooks/use-screen-navigation';
+import { useScreenNavigation, computePartyModeActive } from '@/hooks/use-screen-navigation';
 import { useGameFlowHandlers } from '@/hooks/use-game-flow-handlers';
 import { useAppEffects } from '@/hooks/use-app-effects';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
@@ -54,7 +55,16 @@ export default function KaraokeZERO() {
   const viralCharts = useViralCharts();
 
   // ── Screen navigation (screen state + party-mode guard) ──
-  const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation, markPartyConfirmed } = useScreenNavigation(party);
+  // NOTE: the guard's isPartyModeActive flag is intentionally NOT used here —
+  // see isPartyActiveDirect below (Bug 12).
+  const { screen, setScreen, navigateWithGuard, pendingNavigation, setPendingNavigation, markPartyConfirmed } = useScreenNavigation(party);
+
+  // Bug 12: DIRECT party-active computation from the party store state.
+  // The navigation guard's isPartyModeActive flag latches to false after ONE
+  // confirmed leave (partyConfirmed) even when a new party game (e.g. a
+  // tournament) is running — relying on it made Escape/Abort silently wipe or
+  // exit active party games. All exit guards below must use this value instead.
+  const isPartyActiveDirect = computePartyModeActive(party);
 
   // ── App initialization effects (theme, custom songs, fullscreen, mobile redirect) ──
   const { isMounted, isFullscreen, toggleFullscreen } = useAppEffects();
@@ -184,11 +194,14 @@ export default function KaraokeZERO() {
   // A stale pauseDialogAction='party-leave' (e.g. resetPartyState was blocked
   // by the medley/CPTM safety net) would re-open the leave dialog and push it
   // to companions although the party is no longer active. Clear it instead.
+  // Bug 12: uses the DIRECT party-active check (not the navigation guard's
+  // latched flag) so the dialog can never be dropped while a party game is
+  // still genuinely active.
   useEffect(() => {
-    if (!isPartyModeActive && party.pauseDialogAction === 'party-leave') {
+    if (!isPartyActiveDirect && party.pauseDialogAction === 'party-leave') {
       party.setPauseDialogAction(null);
     }
-  }, [isPartyModeActive, party.pauseDialogAction, party.setPauseDialogAction]);
+  }, [isPartyActiveDirect, party.pauseDialogAction, party.setPauseDialogAction]);
 
   // Reset autoPlayNext when navigating away from queue screen
   useEffect(() => {
@@ -207,20 +220,25 @@ export default function KaraokeZERO() {
 
   const handleResumeGame = useCallback(() => {
     setPauseInitiator(null);
-    if (isPartyModeActive) {
-      closeDialog();
-    } else {
-      closeDialog();
+    // Bug 12: a game-screen match (tournament duel, words/blind series,
+    // medley snippet, standard song) runs on the standard game loop — it
+    // paused via pauseGame() and only resumes when the store's gameStatus
+    // returns to 'playing', so resumeGame() must be called (same mechanism
+    // the game loop's pause-sync effect reacts to). Modes with their own
+    // screens (PTM / CPTM / Medley / BR) resume via their pauseDialogAction
+    // effects, so closing the dialog is enough there.
+    closeDialog();
+    if (screen === 'game') {
       resumeGame();
     }
-  }, [closeDialog, resumeGame, isPartyModeActive]);
+  }, [closeDialog, resumeGame, screen]);
 
   const handleSongAbort = useCallback(() => {
     // DO-NOT-CHANGE: Diagnostic logging for PartyTerminator debugging.
     // This helps identify which code path triggers the nuclear reset.
     // eslint-disable-next-line no-console
-    console.log('[handleSongAbort] screen=%s, isPartyModeActive=%s, gameMode=%s, selectedGameMode=%s, isTournamentMatch=%s',
-      screen, isPartyModeActive, gameState.gameMode, party.selectedGameMode, isTournamentMatch);
+    console.log('[handleSongAbort] screen=%s, isPartyActive=%s, gameMode=%s, selectedGameMode=%s, isTournamentMatch=%s',
+      screen, isPartyActiveDirect, gameState.gameMode, party.selectedGameMode, isTournamentMatch);
 
     closeDialog();
 
@@ -235,12 +253,21 @@ export default function KaraokeZERO() {
     // ── Competitive game abort: finalize skipped round, keep multi-round game running ──
     if (screen === 'game' && party.competitiveGame) {
       const cg = party.competitiveGame;
-      const cgRounds = [...cg.rounds];
-      if (cg.currentRoundIndex < cgRounds.length) {
-        cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+      // Bug 10c fix: record the ACTUAL current scores from the game store
+      // instead of zeroing the round — Escape→Abort mid-song still sang part
+      // of the song. Read fresh store state (P2's live score is synced there
+      // too) BEFORE resetGame() zeroes the scores, and route through
+      // finishCompetitiveRound so totalScore/roundsPlayed accumulate exactly
+      // like a regularly finished round.
+      const storePlayers = useGameStore.getState().gameState.players;
+      const currentRound = cg.rounds[cg.currentRoundIndex];
+      let updatedGame = cg;
+      if (currentRound && !currentRound.completed) {
+        const p1 = currentRound.player1Id ? storePlayers.find(p => p.id === currentRound.player1Id) : undefined;
+        const p2 = currentRound.player2Id ? storePlayers.find(p => p.id === currentRound.player2Id) : undefined;
+        updatedGame = finishCompetitiveRound(cg, p1?.score ?? 0, 0, p2?.score ?? 0, 0);
       }
-      const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
-      party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
+      party.setCompetitiveGame(updatedGame);
       resetGame();
       const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
       setScreen(modeScreen as Screen);
@@ -264,7 +291,9 @@ export default function KaraokeZERO() {
     // ── Non-party game abort: go to Library ──
     // If no party mode is active, this was a standard single/duel/duet game
     // started from the Library. Send the user back there.
-    if (!isPartyModeActive) {
+    // Bug 12: DIRECT party-active check (the navigation flag may be latched
+    // false while a party game is actually running).
+    if (!isPartyActiveDirect) {
       resetGame();
       setGameMode('standard');
       setScreen('library');
@@ -274,7 +303,9 @@ export default function KaraokeZERO() {
     // ── CPTM abort: end song with evaluation instead of killing the series ──
     // The "Abort" button in the pause dialog should end the current song,
     // show the evaluation, and let the player continue to the next song.
-    if (isPartyModeActive && party.selectedGameMode === 'companion-singalong') {
+    // Bug 12: selectedGameMode itself proves a party mode is active — do not
+    // gate this on the navigation flag (stale after one confirmed leave).
+    if (party.selectedGameMode === 'companion-singalong') {
       // Signal CPTM to end the song early — the hook's pauseDialogAction
       // effect will detect this and transition to song-results.
       // We use a special action value that the CPTM hook can react to.
@@ -326,11 +357,27 @@ export default function KaraokeZERO() {
 
     // eslint-disable-next-line no-console
     console.log('[handleSongAbort] PARTY TERMINATOR — full reset. screen=%s, selectedGameMode=%s', screen, party.selectedGameMode);
+
+    // ── Bug 12: last-resort guard before the nuclear reset ──
+    // When Abort triggers while NOT on screen==='game' (e.g. BR / PTM running
+    // on their own screens, or any unguarded path), the old code silently
+    // wiped ALL party state (party.resetPartyState()) with no dialog — which
+    // could nuke an active tournament if the navigation guard's flag was
+    // latched false. Only allow the full reset when NO party mode is active;
+    // otherwise route to the leave-confirmation dialog and let the user
+    // decide (End Party → handlePartyModeEnd, Back → resume).
+    if (isPartyActiveDirect) {
+      // eslint-disable-next-line no-console
+      console.warn('[handleSongAbort] PARTY TERMINATOR rerouted to party-leave dialog — party mode still active. screen=%s, selectedGameMode=%s', screen, party.selectedGameMode);
+      party.setPauseDialogAction('party-leave');
+      return;
+    }
+
     party.resetPartyState();
     resetGame();
     setGameMode('standard');
     setScreen('party');
-  }, [closeDialog, screen, isTournamentMatch, isPartyModeActive, party, party.selectedGameMode, gameState.gameMode, resetGame, setScreen, setGameMode]);
+  }, [closeDialog, screen, isTournamentMatch, isPartyActiveDirect, party, party.selectedGameMode, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {
     closeDialog();
@@ -409,7 +456,12 @@ export default function KaraokeZERO() {
   useGlobalKeyboardShortcuts({
     screen: screen as Screen,
     isFullscreen,
-    isPartyModeActive,
+    // Bug 12: direct store read at event time — immune to the navigation
+    // guard's partyConfirmed latch, so Escape ALWAYS shows the leave dialog
+    // while a party game (tournament/PTM/CPTM/BR/medley/words/blind/RMS) is
+    // actually active, and only exits immediately on genuinely non-party
+    // screens.
+    isPartyActive: () => computePartyModeActive(usePartyStore.getState()),
     isSongPlaying,
     isPaused,
     toggleFullscreen,
@@ -571,7 +623,9 @@ export default function KaraokeZERO() {
     const handleShowLeave = () => {
       // Item 14: ignore stale companion commands once the party is over —
       // otherwise the leave dialog would pop up on non-party screens.
-      if (!isPartyModeActive) return;
+      // Bug 12: DIRECT party-active check — the navigation flag can be
+      // latched false while a party game still runs.
+      if (!isPartyActiveDirect) return;
       party.setPauseDialogAction('party-leave');
       // Notify Socket.IO to push party-leave to companions
       window.dispatchEvent(new CustomEvent('party-leave-change', {
@@ -583,7 +637,7 @@ export default function KaraokeZERO() {
     };
     window.addEventListener('remote-party-show-leave', handleShowLeave);
     return () => window.removeEventListener('remote-party-show-leave', handleShowLeave);
-  }, [party.setPauseDialogAction, isPartyModeActive]);
+  }, [party.setPauseDialogAction, isPartyActiveDirect]);
 
   useEffect(() => {
     const handleLeaveConfirm = () => {
@@ -989,7 +1043,7 @@ export default function KaraokeZERO() {
         // they can display and start them (user request: companion bracket view).
         // Avatars are stripped — colors + initials keep the payload small.
         let tournamentBracketData: GameState['tournamentBracketData'] = null;
-        if (screen === 'tournament-game' && isPartyModeActive && ptmPhase === 'intro' && !partyNow.currentTournamentMatch) {
+        if (screen === 'tournament-game' && isPartyActiveDirect && ptmPhase === 'intro' && !partyNow.currentTournamentMatch) {
           const b = partyNow.tournamentBracket;
           if (b) {
             const openMatches = getPlayableMatches(b)
@@ -1070,7 +1124,7 @@ export default function KaraokeZERO() {
               partyLibrarySong: (screen === 'party-setup' || screen === 'library') && partyNow.librarySelectedSong
                 ? { id: partyNow.librarySelectedSong.id, title: partyNow.librarySelectedSong.title, artist: partyNow.librarySelectedSong.artist }
                 : null,
-              isPartyModeActive,
+              isPartyModeActive: isPartyActiveDirect,
               desktopDialog: partyNow.pauseDialogAction,
               pauseInitiator,
               ptmPhase,
@@ -1097,7 +1151,7 @@ export default function KaraokeZERO() {
     // fresh state via usePartyStore.getState(). Including it re-ran this effect
     // on every per-frame score update (~40/s during competitive games),
     // spamming the mobile sync endpoint and the console log.
-  }, [screen, pauseInitiator, ptmPhase, isPartyModeActive, isPartyGameScreen]);
+  }, [screen, pauseInitiator, ptmPhase, isPartyActiveDirect, isPartyGameScreen]);
 
   // ── Tournament bracket live push ──
   // Bracket changes (duel started / finished, manual winner, vote started or
@@ -1183,6 +1237,7 @@ export default function KaraokeZERO() {
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
         {screen === 'library' && (
           <LibraryScreen
+            partyPickActive={!!party.selectedGameMode}
             onSelectSong={(song, explicitGameMode) => {
               // Preserve the gameMode set by LibraryScreen.handleStartGame
               // (e.g. 'duel' or 'duet') across the resetGame() call.
@@ -1195,6 +1250,39 @@ export default function KaraokeZERO() {
               // the party setup screen, where the explicit "Ready to Play"
               // button launches the mode (followed by the mode starting screen).
               if (party.selectedGameMode) {
+                // ── Next-round pick (PTM/CPTM "next song" → library): return
+                // DIRECTLY into the game screen (intro phase) with the same
+                // players/settings — no setup detour. ──
+                if (party.nextRoundPick === 'ptm') {
+                  party.setNextRoundPick(null);
+                  const playerCount = party.passTheMicPlayers?.length || 2;
+                  const segments = generatePtmSegments(
+                    song.duration,
+                    playerCount,
+                    party.passTheMicSettings?.segmentDuration,
+                    song.lyrics,
+                  );
+                  party.setPassTheMicSegments(segments);
+                  party.setPassTheMicSong(song);
+                  party.setIsSongPlaying(false);
+                  setScreen('pass-the-mic-game');
+                  return;
+                }
+                if (party.nextRoundPick === 'cptm') {
+                  party.setNextRoundPick(null);
+                  const playerCount = party.cptmPlayers?.length || 2;
+                  const segments = generatePtmSegments(
+                    song.duration,
+                    playerCount,
+                    party.cptmSettings?.segmentDuration,
+                    song.lyrics,
+                  );
+                  party.setCptmSegments(segments);
+                  party.setCptmSong(song);
+                  party.setIsSongPlaying(false);
+                  setScreen('companion-singalong-game');
+                  return;
+                }
                 party.setLibrarySelectedSong(song);
                 party.setSongSelectionMethod('library');
                 setScreen('party-setup');
@@ -1402,8 +1490,11 @@ export default function KaraokeZERO() {
       <DesktopChatNotification />
 
       {/* Party Mode Leave Warning — Item 14: never render the leave dialog
-          when no party mode is active (stale dialog state after leaving) */}
-      {activeDialog === 'party-leave' && isPartyModeActive && (
+          when no party mode is active (stale dialog state after leaving).
+          Bug 12: gated on the DIRECT party-active computation — the
+          navigation flag can be latched false while a party game still runs,
+          which would suppress the dialog Escape just opened. */}
+      {activeDialog === 'party-leave' && isPartyActiveDirect && (
         <PartyLeaveDialog
           onBack={handlePartyLeaveBack}
           onEndParty={handlePartyModeEnd}

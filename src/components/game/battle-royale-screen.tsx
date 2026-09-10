@@ -40,6 +40,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     totalSnippets,
     audioRef,
     videoRef,
+    baseVolumeRef,
     handleRoundEnd,
     handleStartRound,
     handleVoteSubmit,
@@ -164,6 +165,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         totalSnippets={totalSnippets}
         audioRef={audioRef}
         videoRef={videoRef}
+        baseVolumeRef={baseVolumeRef}
         setCurrentTime={setCurrentTime}
         onRoundEnd={handleRoundEnd}
         previousRoundScores={previousRoundScores}
@@ -208,6 +210,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       totalSnippets={totalSnippets}
       audioRef={audioRef}
       videoRef={videoRef}
+      baseVolumeRef={baseVolumeRef}
       setCurrentTime={setCurrentTime}
       onRoundEnd={handleRoundEnd}
       previousRoundScores={previousRoundScores}

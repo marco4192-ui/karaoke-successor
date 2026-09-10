@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'ライブラリ内の曲プレビューの音量',
   micSensitivity: 'マイク感度',
   micSensitivityDesc: 'マイク入力感度を調整',
+  loudnessNormalizationTitle: '音量のノーマライズ（89 dB目標）',
+  loudnessNormalizationDesc: '大きい曲と小さい曲の音量を調整 — 大きい曲は下げ、小さい曲は上げます（目標：89 dB）。',
   selectInputDevice: '入力デバイスを選択',
   defaultMicrophone: 'デフォルトマイク',
   microphoneGain: 'マイクゲイン',

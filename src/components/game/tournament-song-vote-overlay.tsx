@@ -36,6 +36,12 @@ export function TournamentSongVoteOverlay({
   const { t } = useTranslation();
 
   // Keyboard shortcuts: 1-3 pick a song, Escape skips to a random pick.
+  // Bug 12b: registered in the CAPTURE phase on window and both preventDefault
+  // AND stopPropagation are called — otherwise the global shortcut handler in
+  // use-keyboard-shortcuts.ts (registered earlier on window) ALSO reacts to
+  // Escape and opens the party-leave dialog on top of the skipped vote
+  // (double-fire). Capture guarantees this handler runs first; the global
+  // handler additionally skips events whose default was already prevented.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key >= '1' && e.key <= '9') {
@@ -43,15 +49,17 @@ export function TournamentSongVoteOverlay({
         const song = songs[index];
         if (song) {
           e.preventDefault();
+          e.stopPropagation();
           onPick(song);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         onSkip();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [songs, onPick, onSkip]);
 
   const p1 = match.player1;

@@ -123,6 +123,13 @@ export interface PartyStore {
   ptmSongSelection: string | null;
   setPtmSongSelection: (_mode: string | null) => void;
 
+  // Next-round pickup context: set when PTM/CPTM "next round" navigates to
+  // song voting / library so the picked song returns DIRECTLY into the game
+  // screen (intro phase) with the SAME players/settings instead of dumping
+  // the user back into the setup screen with an empty player grid.
+  nextRoundPick: 'ptm' | 'cptm' | null;
+  setNextRoundPick: (_mode: 'ptm' | 'cptm' | null) => void;
+
   // Pre-selected library song (set when user picks from library for pass-the-mic/companion-singalong)
   librarySelectedSong: Song | null;
   setLibrarySelectedSong: (_song: Song | null) => void;
@@ -254,6 +261,10 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
   ptmSongSelection: null,
   setPtmSongSelection: (ptmSongSelection) => set({ ptmSongSelection }),
 
+  // Next-round pickup context (PTM/CPTM "next round" → vote/library)
+  nextRoundPick: null as 'ptm' | 'cptm' | null,
+  setNextRoundPick: (nextRoundPick) => set({ nextRoundPick }),
+
   // Pre-selected library song
   librarySelectedSong: null,
   setLibrarySelectedSong: (librarySelectedSong) => set({ librarySelectedSong }),
@@ -327,6 +338,7 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
     passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
     ptmMedleySnippets: [],
     ptmSongSelection: null,
+    nextRoundPick: null,
     cptmPlayers: [],
     cptmSong: null,
     cptmSegments: [],

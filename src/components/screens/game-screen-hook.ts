@@ -32,6 +32,11 @@ import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
+import {
+  applyLoudnessVolume,
+  clearLoudnessGain,
+  getSongLoudnessGainDb,
+} from '@/lib/audio/loudness';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { enterFullscreen } from '@/hooks/use-app-effects';
@@ -155,6 +160,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showCombo,
     autoFullscreen,
     masterVolume,
+    loudnessNormalization,
     lyricsSize,
     youtubeQuality,
     replayEnabled,
@@ -561,11 +567,55 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     onResume: resumeGame,
   });
 
-  // Apply master volume to audio/video elements
+  // ── Loudness normalization: per-song gain toward the 89 dB ReplayGain reference ──
+  // Analysis is async and NEVER blocks playback start: the gain is applied as
+  // soon as it arrives (and re-applied whenever masterVolume changes) by the
+  // volume effect below. Failures yield gain 0 (unchanged volume). The state is
+  // tagged with the analyzed songId so a stale (previous song's) gain is
+  // ignored while the new song's analysis is still running.
+  const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; gainDb: number }>({ songId: null, gainDb: 0 });
+  const songLoudnessUrl = effectiveSong?.audioUrl;
+  const songLoudnessId = effectiveSong?.id;
+  const loudnessGainDb = loudnessNormalization && loudnessGain.songId === songLoudnessId
+    ? loudnessGain.gainDb
+    : 0;
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = masterVolume / 100;
-    if (videoRef.current) videoRef.current.volume = masterVolume / 100;
-  }, [masterVolume, audioRef, videoRef]);
+    // Capture the element that belongs to THIS song (the <audio> element is
+    // re-created per song via key={song.id}) so cleanup clears the right one.
+    const el = audioRef.current;
+    let cancelled = false;
+    if (el) clearLoudnessGain(el);
+    if (!songLoudnessId || !songLoudnessUrl || !loudnessNormalization) return;
+    getSongLoudnessGainDb(songLoudnessId, songLoudnessUrl)
+      .then((gainDb) => {
+        if (cancelled) return;
+        setLoudnessGain({ songId: songLoudnessId, gainDb });
+      })
+      .catch(() => {
+        // Never throw — analysis failure means gain 0 (no state update).
+      });
+    return () => {
+      cancelled = true;
+      if (el) clearLoudnessGain(el);
+    };
+  }, [songLoudnessId, songLoudnessUrl, loudnessNormalization, audioRef]);
+
+  // Apply master volume (+ loudness normalization) to audio/video elements.
+  // songLoudnessId is a dependency so a freshly created <audio> element (new
+  // song) gets the volume applied even when masterVolume itself didn't change.
+  useEffect(() => {
+    if (audioRef.current) {
+      applyLoudnessVolume(audioRef.current, masterVolume, loudnessGainDb);
+    }
+    // The video element is only audible when it carries the song's embedded
+    // audio (no separate audioUrl — in that case the gain is 0 anyway); when a
+    // separate audio file exists the background video is muted. Apply the
+    // element-level attenuation only (no Web Audio graph for the video).
+    if (videoRef.current) {
+      const factor = loudnessGainDb <= 0 ? Math.pow(10, loudnessGainDb / 20) : 1;
+      videoRef.current.volume = Math.min(1, Math.max(0, (masterVolume / 100) * factor));
+    }
+  }, [masterVolume, loudnessGainDb, songLoudnessId, audioRef, videoRef]);
 
   // Auto-fullscreen on game start (uses Tauri native API when available — Escape won't exit)
   useEffect(() => {

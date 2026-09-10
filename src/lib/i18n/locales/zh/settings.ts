@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: '曲库中歌曲预览的音量',
   micSensitivity: '麦克风灵敏度',
   micSensitivityDesc: '调整麦克风输入灵敏度',
+  loudnessNormalizationTitle: '音量标准化（89 dB 目标）',
+  loudnessNormalizationDesc: '均衡过响与过轻的歌曲——响亮的调低，轻柔的调高（目标：89 dB）。',
   selectInputDevice: '选择输入设备',
   defaultMicrophone: '默认麦克风',
   microphoneGain: '麦克风增益',

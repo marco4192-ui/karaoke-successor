@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Volume pour les aperçus de chansons dans la bibliothèque',
   micSensitivity: 'Sensibilité du Microphone',
   micSensitivityDesc: 'Ajuster la sensibilité d\'entrée du microphone',
+  loudnessNormalizationTitle: 'Normalisation du volume (cible : 89 dB)',
+  loudnessNormalizationDesc: 'Équilibre les chansons fortes et calmes — les fortes sont atténuées et les calmes renforcées (cible : 89 dB).',
   selectInputDevice: 'Sélectionner le Périphérique d\'Entrée',
   defaultMicrophone: 'Microphone par Défaut',
   microphoneGain: 'Gain du Microphone',

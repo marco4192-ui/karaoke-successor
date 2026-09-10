@@ -38,6 +38,8 @@ settings: {
   previewVolumeDesc: 'Głośność podglądu piosenek w bibliotece',
   micSensitivity: 'Czułość mikrofonu',
   micSensitivityDesc: 'Dostosuj czułość wejścia mikrofonu',
+  loudnessNormalizationTitle: 'Normalizacja głośności (cel: 89 dB)',
+  loudnessNormalizationDesc: 'Wyrównuje głośne i ciche utwory — głośne są ściszane, a ciche wzmacniane (cel: 89 dB).',
   selectInputDevice: 'Wybierz urządzenie wejściowe',
   defaultMicrophone: 'Domyślny mikrofon',
   microphoneGain: 'Wzmocnienie mikrofonu',

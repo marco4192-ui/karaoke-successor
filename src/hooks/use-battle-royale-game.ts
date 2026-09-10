@@ -23,6 +23,8 @@ import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
+import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { StorageKeys, getBool, getNumber } from '@/lib/storage';
 
 function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
   if (notes.length === 0) return [];
@@ -47,6 +49,9 @@ function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
   return result;
 }
 
+/** Stable empty array pinned to visibleNotesRef while the note highway is hidden (Fix 15). */
+const EMPTY_VISIBLE_NOTES: Array<Note & { lineIndex: number; line: LyricLine }> = [];
+
 interface UseBattleRoyaleGameParams {
   game: BattleRoyaleGame;
   songs: Song[];
@@ -66,6 +71,8 @@ interface UseBattleRoyaleGameReturn {
   totalSnippets: number; // #1 Medley
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  /** Base audio volume (master volume × per-song loudness gain) that ALL BR fades run toward/from. */
+  baseVolumeRef: React.MutableRefObject<number>;
   handleRoundEnd: () => void;
   handleStartRound: () => void;
   handleVoteSubmit: (_playerId: string, _songIndex: number) => void;
@@ -124,6 +131,39 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     medleySnippetIndex: game.medleySnippetList.length > 0 ? game.currentSnippetIndex : undefined,
   });
 
+  // ── Loudness normalization: base volume for ALL BR audio fades ──
+  // BR plays short snippets with imperative fades; every fade-in/out now runs
+  // toward/from this base instead of a literal 1. The base combines the
+  // persisted master volume with the per-song loudness gain toward the 89 dB
+  // reference (element-level only — element.volume clamps boosts at 1, no Web
+  // Audio graph in BR). Analysis is cached per songId and never blocks
+  // playback: until the gain arrives the base is just the master volume.
+  const baseVolumeRef = useRef(1);
+  useEffect(() => {
+    let cancelled = false;
+    const songId = currentSong?.id;
+    const audioUrl = resolvedAudioUrlRef.current;
+    const masterVolume = getNumber(StorageKeys.MASTER_VOLUME, 100) / 100;
+    baseVolumeRef.current = Math.min(1, Math.max(0, masterVolume));
+    if (!songId || !audioUrl || !getBool(StorageKeys.LOUDNESS_NORMALIZATION, true)) return;
+    getSongLoudnessGainDb(songId, audioUrl)
+      .then((gainDb) => {
+        if (cancelled) return;
+        const base = Math.min(1, Math.max(0, masterVolume * Math.pow(10, gainDb / 20)));
+        baseVolumeRef.current = base;
+        // Apply immediately (lowering only — never interrupt an active fade-out
+        // or raise the volume mid-fade; PlayingView's per-second reset effect
+        // re-asserts the base afterwards).
+        if (audioRef.current && audioRef.current.volume > base) {
+          audioRef.current.volume = base;
+        }
+      })
+      .catch(() => {
+        // Never throw — analysis failure means gain 0 (base = master volume).
+      });
+    return () => { cancelled = true; };
+  }, [currentSong?.id, mediaLoaded, audioRef, resolvedAudioUrlRef]);
+
   // ── Companion Pitch Polling ────────────────────────────────────────
   const { companionPitchCacheRef } = useBattleRoyaleCompanionPolling({
     gameStatus: game.status,
@@ -131,13 +171,16 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   });
 
   // ── Multi-Pitch Detection (one detector per local mic player) ─────
-  // Build player configs from active mic players, each with their own microphoneId.
-  // Use a stable key so this only recalculates when player IDs/types/devices change,
-  // NOT on every scoring tick (which changes game.players every ~100ms).
-  const playerConfigsKey = game.players.map(p => `${p.id}:${p.playerType}:${p.microphoneId ?? ''}:${p.stereoChannel ?? ''}`).join('|');
+  // Build player configs from ACTIVE (non-eliminated) mic players, each with
+  // their own microphoneId. Use a stable key so this only recalculates when
+  // player IDs/types/devices/elimination change, NOT on every scoring tick
+  // (which changes game.players every ~100ms).
+  // Fix 18: the key MUST include the elimination flag — otherwise the memo
+  // would keep returning the stale array (with eliminated players) forever.
+  const playerConfigsKey = game.players.map(p => `${p.id}:${p.playerType}:${p.microphoneId ?? ''}:${p.stereoChannel ?? ''}:${p.eliminated ? 'e' : 'a'}`).join('|');
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
     game.players
-      .filter(p => p.playerType === 'microphone')
+      .filter(p => p.playerType === 'microphone' && !p.eliminated)
       .map(p => ({
         playerId: p.id,
         type: 'local' as const,
@@ -157,6 +200,28 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Ref to multiPitch for use in game loop callbacks (avoids stale closure)
   const multiPitchRef = useRef(multiPitch);
   multiPitchRef.current = multiPitch;
+
+  // ── Fix 18: tear down detectors of newly eliminated mic players ─────
+  // Eliminated players' microphones must stop recording immediately: their
+  // detector/stream/analyser is torn down via multiPitch.removePlayer →
+  // PitchDetectorManager.removePlayer (stream.stop + analyser.disconnect).
+  // Diffs the eliminated set against the previous render so each player is
+  // removed exactly once.
+  const prevEliminatedIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const eliminatedNow = new Set(
+      game.players.filter(p => p.eliminated).map(p => p.id),
+    );
+    const prev = prevEliminatedIdsRef.current;
+    prevEliminatedIdsRef.current = eliminatedNow;
+
+    for (const playerId of eliminatedNow) {
+      if (prev.has(playerId)) continue;
+      // removePlayer is idempotent (manager early-returns unknown ids), so
+      // this is safe even before/after manager re-initialization.
+      multiPitchRef.current.removePlayer(playerId);
+    }
+  }, [game.players]);
 
   // ── Game State ─────────────────────────────────────────────────────
   const mountedRef = useRef(true);
@@ -213,6 +278,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // ── Visible notes ref (updated every frame) ────────────────────────
   const visibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
   const pitchStatsRef = useRef<PitchStats | null>(null);
+
+  // ── Fix 15: note-highway work is gated on the showNoteHighway setting ──
+  // BR doesn't need the singing visualization when the highway is hidden, so
+  // the game loop skips visible-note recomputation and note-performance state
+  // syncs entirely. The rAF loop reads it via ref (stable closure); the memo
+  // below reads the plain value (proper dep).
+  const showNoteHighwaySetting = game.settings.showNoteHighway;
+  const showNoteHighwaySettingRef = useRef(showNoteHighwaySetting);
+  useEffect(() => {
+    showNoteHighwaySettingRef.current = game.settings.showNoteHighway;
+  }, [game.settings.showNoteHighway]);
 
   const timingDataRef = useRef(timingData);
   timingDataRef.current = timingData;
@@ -374,7 +450,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (cancelled || !audio) return;
             const elapsed = now - fadeStart;
             const progress = Math.min(elapsed / FADE_DURATION, 1);
-            audio.volume = Math.max(0, Math.min(1, progress));
+            // Fade toward the normalized base volume (master × loudness gain),
+            // NOT a literal 1 — re-read the ref every frame so a gain that
+            // arrives mid-fade is respected immediately.
+            audio.volume = Math.max(0, Math.min(1, baseVolumeRef.current * progress));
             if (progress < 1) requestAnimationFrame(fadeIn);
           };
           requestAnimationFrame(fadeIn);
@@ -401,9 +480,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               fadeInAudio();
               lastFadeInRoundRef.current = currentRoundNum;
             } else {
-              // Snippet transition within same round: set volume to full immediately
-              // so there's no audible dip between snippets.
-              audio.volume = 1;
+              // Snippet transition within same round: set volume to the
+              // normalized base immediately so there's no audible dip
+              // between snippets.
+              audio.volume = baseVolumeRef.current;
             }
             audio.play()
               .then(() => { audioHasPlayedRef.current = true; })
@@ -519,11 +599,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       const deltaTime = timestamp - lastTickTime;
 
-      // Update visible notes every frame
+      // Update visible notes every frame — but ONLY when the note highway is
+      // shown (Fix 15). When hidden, pin a stable empty array so consumers see
+      // a constant reference instead of per-frame recomputation.
       const tdForVis = timingDataRef.current;
       const currentAudioTimeForVis = audioRef.current ? audioRef.current.currentTime * 1000 : 0;
       if (tdForVis) {
-        visibleNotesRef.current = getVisibleNotes(tdForVis.allNotes, currentAudioTimeForVis, NOTE_WINDOW);
+        if (showNoteHighwaySettingRef.current) {
+          visibleNotesRef.current = getVisibleNotes(tdForVis.allNotes, currentAudioTimeForVis, NOTE_WINDOW);
+        } else {
+          visibleNotesRef.current = EMPTY_VISIBLE_NOTES;
+        }
       }
 
       if (audioRef.current) {
@@ -642,9 +728,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         }
 
-        // Sync note performance to state at ~60Hz for visual display
+        // Sync note performance to state for visual display (Fix 15):
+        // throttled to ~100ms AND skipped entirely while the note highway is
+        // hidden. Verified: within PlayingView, notePerformance is consumed by
+        // NoteHighway (only rendered when showNoteHighway) and LyricLineDisplay
+        // — which accepts the prop but does NOT read it (lyric highlighting is
+        // driven purely by currentTime), so gating cannot break lyrics.
         const perfNow = performance.now();
-        if (perfNow - lastNotePerfSyncRef.current >= 16) {
+        if (showNoteHighwaySettingRef.current && perfNow - lastNotePerfSyncRef.current >= 100) {
           lastNotePerfSyncRef.current = perfNow;
           setNotePerformance(new Map(notePerformanceRef.current));
         }
@@ -665,7 +756,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // ── Derive detectedPitch for NoteHighway (leading active mic player) ─
   // The NoteHighway can only show one pitch line, so we use the leading
   // (highest-scoring) active mic player's pitch for visual feedback.
+  // Fix 15: skip the sort/lookup entirely when the highway is hidden.
   const detectedPitch = useMemo(() => {
+    if (!showNoteHighwaySetting) return null;
     const activeMicPlayers = game.players
       .filter(p => p.playerType === 'microphone' && !p.eliminated)
       .sort((a, b) => b.score - a.score);
@@ -681,7 +774,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }
     return null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.players, multiPitch.playerPitches]);
+  }, [game.players, multiPitch.playerPitches, showNoteHighwaySetting]);
 
   // ── Cleanup on unmount ─────────────────────────────────────────────
   // Use empty deps + multiPitchRef to avoid re-firing every render.
@@ -709,6 +802,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     totalSnippets,
     audioRef,
     videoRef,
+    baseVolumeRef,
     handleRoundEnd,
     handleStartRound,
     handleVoteSubmit,

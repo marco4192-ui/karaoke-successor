@@ -16,13 +16,16 @@ import {
   getCurrentMedleySnippet,
 } from '@/lib/game/battle-royale';
 import { LyricLineDisplay } from '@/components/game/lyric-line-display';
+import { loadWebcamConfig } from '@/components/game/webcam-background';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== Inline AnimatedNumber =====================
 
-/** Lightweight animated number counter — counts from previous to current over 500ms */
-function AnimatedNumber({ value, className }: { value: number; className?: string }) {
+/** Lightweight animated number counter — counts from previous to current over 500ms.
+ *  Fix 15.4: React.memo so the ~20Hz pitch-state re-renders of the parent
+ *  don't re-render counters whose value didn't change. */
+const AnimatedNumber = React.memo(function AnimatedNumber({ value, className }: { value: number; className?: string }) {
   const [displayed, setDisplayed] = useState(value);
   const prevRef = useRef(value);
   const rafRef = useRef<number | null>(null);
@@ -61,7 +64,7 @@ function AnimatedNumber({ value, className }: { value: number; className?: strin
   }, [value]);
 
   return <span className={className}>{displayed.toLocaleString()}</span>;
-}
+});
 
 // ===================== Main Component =====================
 
@@ -77,6 +80,8 @@ interface PlayingViewProps {
   totalSnippets: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  /** Base audio volume (master volume × per-song loudness gain) that all fades run toward/from. */
+  baseVolumeRef: React.MutableRefObject<number>;
   setCurrentTime: (_time: number) => void;
   onRoundEnd: () => void;
   previousRoundScores: Record<string, number>;
@@ -105,6 +110,7 @@ export function PlayingView({
   totalSnippets,
   audioRef,
   videoRef,
+  baseVolumeRef,
   setCurrentTime,
   onRoundEnd,
   previousRoundScores,
@@ -129,6 +135,15 @@ export function PlayingView({
 
   // V3: "GO!" overlay state
   const [showGoOverlay, setShowGoOverlay] = useState(false);
+
+  // Fix 15 (webcam): BR does not render the webcam background layer (or its
+  // quick controls) by default — a live webcam feed + processing costs real
+  // CPU during 4-player rounds. It is only mounted when the user explicitly
+  // enabled the webcam globally (persisted config from other modes).
+  // Lazy initializer — same pattern GameHudChrome itself uses for this config;
+  // PlayingView only mounts mid-game (never part of SSR HTML), so reading the
+  // persisted config during first render is safe.
+  const [webcamEnabled] = useState(() => loadWebcamConfig().enabled);
 
   // Report song playing status
   useEffect(() => {
@@ -155,20 +170,22 @@ export function PlayingView({
     }
   }, [pauseDialogAction, game.status, audioRef, videoRef]);
 
-  // Audio fade-out in last 3 seconds of round
+  // Audio fade-out in last 3 seconds of round — toward the normalized base
+  // volume (master × per-song loudness gain), never a literal 1.
   useEffect(() => {
+    const base = baseVolumeRef.current;
     if (roundTimeLeft > 3 || roundTimeLeft === 0 || game.status !== 'playing') {
-      // Reset volume when not in fade zone
-      if (audioRef.current && audioRef.current.volume < 1) {
-        audioRef.current.volume = 1;
+      // Reset volume (back up to the base) when not in the fade zone
+      if (audioRef.current && audioRef.current.volume < base) {
+        audioRef.current.volume = base;
       }
       return;
     }
-    const volume = roundTimeLeft / 3;
+    const volume = (roundTimeLeft / 3) * base;
     if (audioRef.current) {
       audioRef.current.volume = Math.max(0, volume);
     }
-  }, [roundTimeLeft, game.status, audioRef]);
+  }, [roundTimeLeft, game.status, audioRef, baseVolumeRef]);
 
   // V3: Show "GO!" when countdown reaches 0
   useEffect(() => {
@@ -357,6 +374,9 @@ export function PlayingView({
         onEndSong={onRoundEnd}
         difficulty={game.effectiveDifficulty}
         songTitle={currentSnippet?.songName ?? currentRound?.songName ?? null}
+        songArtist={currentSong?.artist ?? null}
+        renderWebcamBackground={webcamEnabled}
+        showWebcamControls={webcamEnabled}
       />
 
       {/* ─────────── Inline Elimination Overlay ─────────── */}
@@ -444,10 +464,13 @@ export function PlayingView({
           5. Round progress bar (very bottom edge, h-1 like other modes)
       ══════════════════════════════════════════════════════════ */}
 
-      {/* ─────────── 1. TIMER BAR + ROUND INFO (pt-16: below the fixed corner buttons) ─────────── */}
+      {/* ─────────── 1. TIMER BAR + ROUND INFO (pt-24: below the fixed top HUD chrome) ─────────── */}
       {/* Item 8: pb-2 (was pb-1) — extra clearance so the player badges below
           sit a bit lower and no longer crowd the top HUD. */}
-      <div className="flex-shrink-0 px-3 pt-16 pb-2">
+      {/* Fix 17: pt-24 (was pt-16) — clears the GameHudChrome top-left pause
+          panel + song banner (~68px) AND the top-right difficulty/webcam/fullscreen
+          cluster so the Round badge and PlayersLeft badge are fully visible. */}
+      <div className="flex-shrink-0 px-3 pt-24 pb-2">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-sm font-bold shrink-0">
@@ -456,9 +479,9 @@ export function PlayingView({
                 : t('battleRoyale.round').replace('{n}', String(game.currentRound))
               }
             </h1>
-            <span className="text-[11px] text-white/40 truncate max-w-[120px] sm:max-w-[200px]">
-              {currentSnippet?.songName ?? currentRound?.songName ?? '...'}
-            </span>
+            {/* Fix 16: duplicate song-title span removed — the HUD song banner
+                (top-left, next to the pause panel) already shows "Title — Artist"
+                exactly once. */}
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-red-500 text-red-400 text-[10px] px-1.5 py-0">

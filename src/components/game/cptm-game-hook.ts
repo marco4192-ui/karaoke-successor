@@ -7,7 +7,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
-import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
+import { getVisibleNotes, NOTE_WINDOW, calculatePitchStats } from '@/lib/game/note-utils';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
 
@@ -55,9 +55,13 @@ interface CptmGameHookReturn {
   // Note data
   allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   sortedLines: LyricLine[];
+  /** Real pitch stats from the song's notes. */
+  pitchStats: ReturnType<typeof import('@/lib/game/note-utils').calculatePitchStats>;
   /** @deprecated Scoring is now segment-scoped inside useCptmScoring. Always null. */
   scoringMeta: null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  /** Live note-hit samples for the NoteHighway fill/miss rendering. */
+  notePerformance: import('./cptm-scoring').CptmNotePerformance;
   displayDuration: number;
 
   // Settings
@@ -324,10 +328,14 @@ export function useCptmGameLogic({
     [currentTime, allNotes]
   );
 
+  // Real pitch stats from the song's notes (replaces the hardcoded
+  // 40-80 range that mis-scaled the note highway).
+  const pitchStats = useMemo(() => calculatePitchStats(allNotes), [allNotes]);
+
   // ═══════════════════════════════════════════════════════
   // ── SUB-HOOK: Scoring ──
   // ═══════════════════════════════════════════════════════
-  useCptmScoring({
+  const { notePerformance } = useCptmScoring({
     phase,
     isPlaying,
     playersRef,
@@ -590,8 +598,11 @@ export function useCptmGameLogic({
     // Note data
     allNotes,
     sortedLines,
+    pitchStats,
     scoringMeta: null,
     visibleNotes,
+    /** Live note-hit samples for the NoteHighway fill/miss rendering. */
+    notePerformance,
     displayDuration,
 
     // Settings

@@ -378,7 +378,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
           </div>
           {selectedPlayers.length > 0 && (
             <p className="text-gray-400 text-sm mt-2">
-              {selectedPlayers.length} {t('competitiveWords.playersSelected').replace('{n}', String(selectedPlayers.length))}
+              {t('competitiveWords.playersSelected').replace('{n}', String(selectedPlayers.length))}
             </p>
           )}
         </div>
@@ -609,7 +609,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound, onEndSerie
                 <div className="text-lg font-bold">
                   {game.players.find(p => p.id === lastRound.player1Id)?.name}
                 </div>
-                <div className="text-indigo-400 font-mono">{lastRound.player1Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player1Score))}</div>
+                <div className="text-indigo-400 font-mono">{t('competitiveWords.pts').replace('{n}', String(lastRound.player1Score))}</div>
                 {lastRound.player1Bonus > 0 && (
                   <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player1Bonus))}</div>
                 )}
@@ -622,7 +622,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound, onEndSerie
                     <div className="text-lg font-bold">
                       {game.players.find(p => p.id === lastRound.player2Id)?.name}
                     </div>
-                    <div className="text-indigo-400 font-mono">{lastRound.player2Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player2Score))}</div>
+                    <div className="text-indigo-400 font-mono">{t('competitiveWords.pts').replace('{n}', String(lastRound.player2Score))}</div>
                     {lastRound.player2Bonus > 0 && (
                       <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player2Bonus))}</div>
                     )}
@@ -660,7 +660,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound, onEndSerie
               <div className="flex-1">
                 <div className="font-medium">{player.name}</div>
                 <div className="text-sm text-gray-400">
-                  {player.roundsPlayed} {t('competitiveWords.roundsPlayed').replace('{n}', String(player.roundsPlayed))}
+                  {t('competitiveWords.roundsPlayed').replace('{n}', String(player.roundsPlayed))}
                   {player.maxStreak >= 3 && (
                     <span className="ml-2 text-orange-400">
                       {t('competitiveWords.maxStreak').replace('{n}', String(player.maxStreak))}
@@ -809,7 +809,7 @@ function CompetitiveWinnerScreen({
             )}
 
             <div className="text-5xl font-bold text-yellow-400 mb-4">
-              {winner?.totalScore} {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
+              {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
             </div>
           </>
         )}
@@ -818,7 +818,7 @@ function CompetitiveWinnerScreen({
         <div className="flex items-center justify-center gap-3 mb-8 text-sm">
           <span className="bg-gray-700/60 text-gray-300 px-3 py-1.5 rounded-full border border-white/10">{playModeLabel}</span>
           <span className="bg-gray-700/60 text-gray-300 px-3 py-1.5 rounded-full border border-white/10">
-            {totalRoundsPlayed} {t('competitiveWords.roundsPlayed').replace('{n}', String(totalRoundsPlayed))}
+            {t('competitiveWords.roundsPlayed').replace('{n}', String(totalRoundsPlayed))}
           </span>
         </div>
 

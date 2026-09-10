@@ -15,8 +15,6 @@ import {
   getPlaylistById,
   toggleFavorite,
   initializePlaylists,
-  cleanupPlaylistSongIds,
-  cleanupPlayCounts,
   Playlist
 } from '@/lib/playlist-manager';
 import { SongHighscoreModal } from './results-screen';
@@ -37,7 +35,7 @@ import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 
-export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEditor }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; onNavigateToEditor?: () => void; }) {
+export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEditor, partyPickActive = false }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; }) {
   const { t } = useTranslation();
 
   // Core state
@@ -154,13 +152,19 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   
   useEffect(() => {
     let cancelled = false;
-    const applySongs = (songs: Awaited<ReturnType<typeof getAllSongsAsync>>) => {
+    const applySongs = (songs: Song[]) => {
       if (cancelled) return;
       setLoadedSongs(songs);
-      // One-time cleanup: remove orphaned song IDs from playlists and stale play counts
-      const allIds = new Set(songs.map(s => s.id));
-      cleanupPlaylistSongIds(allIds);
-      cleanupPlayCounts(allIds);
+      // NOTE: deliberately NO cleanupPlaylistSongIds / cleanupPlayCounts here.
+      // Song IDs are now STABLE across rescans (use-folder-scanner reuses the
+      // previous ID for the same file), so a playlist entry that no longer
+      // resolves is a song that is TEMPORARILY missing — it must stay in the
+      // playlist (greyed out in the playlist view, skipped during playback)
+      // and resolve again automatically once the song returns to the library.
+      // Stripping "orphans" here — including the historical empty-list race
+      // where this effect ran before the async IndexedDB song load completed
+      // and cleanupPlaylistSongIds(new Set()) wiped EVERY playlist — would
+      // permanently destroy that data.
     };
     const loadSongs = async () => {
       setSongsLoading(true);
@@ -246,9 +250,25 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   const handleSongClick = async (song: Song) => {
     // Stop any active preview before starting game or opening modal
     handlePreviewStop();
-    // All modes (including Pass-the-Mic) open the song-start modal.
-    // In the unified party flow, confirming the modal returns the user to the
-    // party setup screen with the song pre-selected ("Ready to Play" starts).
+
+    // ── Party pick flow (unified party setup / PTM next round): selecting a
+    // song must NOT open the song-start modal — the song is handed straight
+    // to the caller which returns to the party setup (or starts the next
+    // round directly). The game is never started from here. ──
+    if (partyPickActive) {
+      try {
+        const songWithLyrics = await getSongByIdWithLyrics(song.id) || song;
+        const songWithUrls = await ensureSongUrls(songWithLyrics);
+        onSelectSong(songWithUrls, initialGameMode);
+      } catch {
+        onSelectSong(song, initialGameMode);
+      }
+      return;
+    }
+
+    // Standard flow: open the song-start modal. In the unified party flow,
+    // confirming the modal returns the user to the party setup screen with
+    // the song pre-selected ("Ready to Play" starts).
     setSelectedSong(song);
     // Use the user's global default difficulty (from the store, which
     // reflects the Settings → Default Difficulty choice) instead of the

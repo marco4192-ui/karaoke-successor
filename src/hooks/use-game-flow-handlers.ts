@@ -7,7 +7,7 @@ import type { PartyStore } from '@/lib/game/party-store';
 import { useGameStore } from '@/lib/game/store';
 import { accuracyToRating } from '@/lib/game/rating-utils';
 import { recordMatchResult } from '@/lib/game/tournament';
-import { finishCompetitiveRound, calculateMissingWordsBonus } from '@/lib/game/competitive-words-blind';
+import { finishCompetitiveRound, calculateMissingWordsBonus, type CompetitiveGame } from '@/lib/game/competitive-words-blind';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
 
 /**
@@ -194,15 +194,42 @@ export function useGameFlowHandlers(
     }
     // Competitive Missing Words / Blind match end
     if (party.competitiveGame && (gameState.gameMode === 'missing-words' || gameState.gameMode === 'blind')) {
-      const results = gameState.results;
-      const players = gameState.players;
+      // STALE-CLOSURE FIX (Bug 10a): `onEnd()` fires synchronously right after
+      // `setResults()` inside endGameAndCleanup — BEFORE React re-renders — so
+      // the `gameState` captured in this closure always sees `results === null`
+      // and stale player scores (previously making P2 always 0 and the round
+      // scores collapse to the bonus estimate). Read FRESH state from the
+      // store instead (zustand `set` is synchronous — same pattern as the
+      // tournament branch above).
+      const freshState = useGameStore.getState().gameState;
+      const results = freshState.results ?? gameState.results;
+      const players = freshState.players;
 
-      const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
-      const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
-      const p1NotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
-      const p2NotesHit = results?.players?.[1]?.notesHit || players?.[1]?.notesHit || 0;
-      const p1NotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
-      const p2NotesMissed = results?.players?.[1]?.notesMissed || players?.[1]?.notesMissed || 0;
+      const cg = party.competitiveGame as CompetitiveGame;
+      const currentRound = cg.rounds[cg.currentRoundIndex];
+
+      // Match scores by player ID (not positional) to avoid stale-player bugs —
+      // same rationale as the tournament branch. Positional access is only a
+      // fallback when the round record is unavailable.
+      const p1Id = currentRound?.player1Id;
+      const p2Id = currentRound?.player2Id;
+      const p1Result = p1Id ? results?.players.find(p => p.playerId === p1Id) : results?.players[0];
+      const p2Result = p2Id ? results?.players.find(p => p.playerId === p2Id) : results?.players[1];
+      const p1Player = p1Id ? players.find(p => p.id === p1Id) : players[0];
+      const p2Player = p2Id ? players.find(p => p.id === p2Id) : players[1];
+
+      // Real singing scores for BOTH players (Bug 10b): P1's live score sits in
+      // the store (updated synchronously via updatePlayer); P2's score surfaces
+      // through the generated results (and, with the P2 store sync in
+      // use-note-scoring, also through the store player).
+      const score1 = p1Result?.score ?? p1Player?.score ?? 0;
+      const score2 = p2Result?.score ?? p2Player?.score ?? 0;
+      const p1NotesHit = p1Result?.notesHit ?? p1Player?.notesHit ?? 0;
+      const p2NotesHit = p2Result?.notesHit ?? p2Player?.notesHit ?? 0;
+      const p1NotesMissed = p1Result?.notesMissed ?? p1Player?.notesMissed ?? 0;
+      const p2NotesMissed = p2Result?.notesMissed ?? p2Player?.notesMissed ?? 0;
+      const blindBonus1 = p1Result?.blindBonusPoints ?? p1Player?.blindBonusPoints ?? 0;
+      const blindBonus2 = p2Result?.blindBonusPoints ?? p2Player?.blindBonusPoints ?? 0;
 
       // Use real-time tracked blind bonus points instead of rough estimates.
       // The blind bonus is already included in the score (added per-note during gameplay),
@@ -214,8 +241,6 @@ export function useGameFlowHandlers(
       let baseScore2 = score2;
 
       if (gameState.gameMode === 'blind') {
-        const blindBonus1 = players?.[0]?.blindBonusPoints || 0;
-        const blindBonus2 = players?.[1]?.blindBonusPoints || 0;
         baseScore1 = score1 - blindBonus1;
         baseScore2 = score2 - blindBonus2;
         bonus1 = blindBonus1;
@@ -234,7 +259,7 @@ export function useGameFlowHandlers(
       }
 
       const updatedGame = finishCompetitiveRound(
-        party.competitiveGame as Parameters<typeof finishCompetitiveRound>[0],
+        cg,
         baseScore1, bonus1, baseScore2, bonus2,
       );
       party.setCompetitiveGame(updatedGame);

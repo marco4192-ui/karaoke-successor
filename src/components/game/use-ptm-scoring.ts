@@ -12,13 +12,34 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Song, PitchDetectionResult, Difficulty, Note, LyricLine } from '@/types/game';
 import type { PtmPlayer, PtmSegment } from './ptm-types';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 export const SCORING_THROTTLE_MS = 250;
 
 /** Max points per player in PTM mode */
 const PTM_MAX_POINTS = 2000;
+
+// ── Visual note performance samples (note-hit display) ──────────────
+// Same shape as the standard game's notePerformance map: per-note
+// samples used by NoteHighway / SinglePlayerLyrics to render the
+// Singstar-style fill, misses (Aussetzer) and pitch ghosts.
+export interface PtmVisualSample {
+  time: number;
+  accuracy: number;
+  hit: boolean;
+  sungPitch?: number | null;
+  /** Color of the player who produced the sample (per-player miss ghosts). */
+  playerColor?: string;
+}
+export type PtmNotePerformance = Map<string, PtmVisualSample[]>;
+
+/** ms between visual samples (~matches the ~50ms visual tick granularity). */
+const VISUAL_SAMPLE_INTERVAL_MS = 50;
+/** Cap per note so long notes don't accumulate unbounded samples. */
+const MAX_VISUAL_SAMPLES_PER_NOTE = 80;
+/** Suppress vibrato jitter smaller than this (semitones). */
+const VIBRATO_THRESHOLD = 0.5;
 
 interface UsePtmScoringOptions {
   phase: string;
@@ -73,7 +94,7 @@ export function usePtmScoring({
   bpm,
   playersRef,
   forceRender,
-}: UsePtmScoringOptions): void {
+}: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
 
   // Separate throttle counters for different log messages.
@@ -95,6 +116,71 @@ export function usePtmScoring({
     const beatDuration = bpm ? 15000 / bpm : 500;
     return calculateScoringMetadata(segmentNotes, beatDuration, 'medium', PTM_MAX_POINTS);
   }, [segments, currentSegmentIndex, allNotes, bpm]);
+
+  // ── Visual note performance map (mutated in place; consumed fresh by
+  // NoteHighway on every currentTime-driven render — same pattern as
+  // use-note-scoring's notePerformanceRef) ──
+  const notePerformanceRef = useRef<PtmNotePerformance>(new Map());
+  const lastVisualSampleTimeRef = useRef(0);
+  const lastVisualSungPitchRef = useRef<number | null>(null);
+
+  // Reset when the note source changes (new song / medley snippet switch).
+  useEffect(() => {
+    notePerformanceRef.current = new Map();
+    lastVisualSungPitchRef.current = null;
+  }, [notesSource]);
+
+  /**
+   * High-rate visual tick sampler (no scoring side effects): records
+   * hit AND miss samples for the active note so the note bar fills and
+   * Aussetzer gaps render in real time.
+   */
+  const sampleVisualTicks = useCallback((time: number) => {
+    const now = performance.now();
+    if (now - lastVisualSampleTimeRef.current < VISUAL_SAMPLE_INTERVAL_MS) return;
+    lastVisualSampleTimeRef.current = now;
+
+    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    if (!activeNote) return;
+    // Notes carry an optional runtime id; fall back to the startTime key
+    // (same key format NoteBlock uses to look samples up).
+    const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
+
+    const sungPitch = pitchResult?.note ?? null;
+    const hasPitch = sungPitch !== null && pitchResult !== null && pitchResult.frequency !== null;
+
+    let accuracy = 0;
+    let hit = false;
+    if (hasPitch && sungPitch !== null) {
+      // Vibrato filter: skip samples that only jitter around the last
+      // accepted pitch (prevents hit/miss flicker during vibrato).
+      if (lastVisualSungPitchRef.current !== null) {
+        let wrapped = Math.abs(sungPitch - lastVisualSungPitchRef.current) % 12;
+        if (wrapped > 6) wrapped = 12 - wrapped;
+        if (wrapped < VIBRATO_THRESHOLD) return;
+      }
+      lastVisualSungPitchRef.current = sungPitch;
+
+      const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+      accuracy = tick.accuracy;
+      hit = tick.isHit;
+    } else {
+      lastVisualSungPitchRef.current = null;
+    }
+
+    const playerColor = playersRef.current?.[currentPlayerIndex]?.color;
+
+    const perf = notePerformanceRef.current;
+    let samples = perf.get(noteId);
+    if (!samples) {
+      samples = [];
+      perf.set(noteId, samples);
+    }
+    samples.push({ time, accuracy, hit, sungPitch: hasPitch ? sungPitch : null, playerColor });
+    if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
+      samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
+    }
+  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, playersRef]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
@@ -157,15 +243,18 @@ export function usePtmScoring({
     skipPitchLogCooldownRef.current = 0;
   }, [phase, isPlaying]);
 
-  // ── Game loop: score during playing ──
+  // ── Game loop: score during playing (visual sampling every frame) ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;
     let rafId: number;
     const loop = () => {
+      sampleVisualTicks(currentTimeRef.current);
       scoreCurrentPlayer();
       rafId = requestAnimationFrame(loop);
     };
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [phase, isPlaying, scoreCurrentPlayer]);
+  }, [phase, isPlaying, scoreCurrentPlayer, sampleVisualTicks]);
+
+  return { notePerformance: notePerformanceRef.current };
 }

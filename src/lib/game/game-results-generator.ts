@@ -84,12 +84,19 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
     rating: accuracyToRating(p1Accuracy),
   }];
 
-  // Add P2 results for duel/duet mode if P2 scoring data is available
+  // Add P2 results when P2 sings and P2 scoring data is available.
+  // P2 sings in duet mode AND in duel / competitive missing-words / blind
+  // modes — gating on `isDuetMode` alone misses those game modes (the flag
+  // can be forced false, e.g. in low-perf mode, even though P2 is singing).
+  // The notesHit/notesMissed check below still guards against phantom P2
+  // entries when P2 has no scoring data (never sang / no second mic).
   const p2 = p2ScoringState || null;
   const p2Player = players[1] || null;
-  if ((isDuetMode || gameMode === 'duel') && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
+  const p2Sings = isDuetMode || gameMode === 'duel' || gameMode === 'missing-words' || gameMode === 'blind';
+  if (p2Sings && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
     // For P2, count only notes assigned to P2 in duet mode.
-    // In duel mode (no player assignment), P2 sings the same notes as P1.
+    // In duel / competitive modes (no player assignment), P2 sings the same
+    // notes as P1.
     const p2AssignedNotes = song.lyrics.reduce((acc, line) =>
       acc + line.notes.filter(n => n.player === 'P2').length, 0);
     const p2TotalNotes = hasDuetAssignment ? p2AssignedNotes : totalNotes;

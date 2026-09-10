@@ -277,11 +277,11 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           <NoteHighway
             visibleNotes={g.visibleNotes}
             currentTime={g.currentTime}
-            pitchStats={{ minPitch: 40, maxPitch: 80, pitchRange: 40 }}
-            notePerformance={undefined}
+            pitchStats={g.pitchStats}
+            notePerformance={g.notePerformance}
             singLinePosition={20}
             noteWindow={NOTE_WINDOW}
-            playerColor={PLAYER_COLORS[0]}
+            playerColor={g.currentPlayer?.color || PLAYER_COLORS[0]}
             showPlayerLabel={false}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
@@ -293,8 +293,8 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           <SinglePlayerLyrics
             sortedLines={g.sortedLines}
             currentTime={g.currentTime}
-            playerColor={PLAYER_COLORS[0]}
-            notePerformance={undefined}
+            playerColor={g.currentPlayer?.color || PLAYER_COLORS[0]}
+            notePerformance={g.notePerformance}
             gameMode="companion-singalong"
           />
         )}

@@ -25,7 +25,9 @@ const ROUND_LABEL_H = 26;     // reserved space for the round label above each c
 // Minimum vertical distance between adjacent first-round card CENTRES.
 // Guarantees ZERO overlap: round-1 cards are FIRST_H tall and 1 unit apart,
 // round-2 cards are VERT_H tall and 2 units apart (≥ VERT_H + gap).
-const MIN_UNIT = Math.max(FIRST_H + 10, (VERT_H + 14) / 2);
+// Bug 11a: player names may wrap to 2+ lines, so cards can grow roughly one
+// extra text line beyond the base heights — the allowances absorb that.
+const MIN_UNIT = Math.max(FIRST_H + 26, (VERT_H + 40) / 2);
 const MAX_UNIT = 320;         // airy spacing when only a few matches remain
 
 // Fallback aspect used before the viewport has been measured (≈ HD minus chrome)
@@ -106,7 +108,7 @@ export function TournamentBracketButterfly({
   // Determine width per column based on round number
   const colWidth = (rn: number) => (rn === 1 ? MATCH_W_FIRST : MATCH_W);
 
-  // Compute left X positions cumulatively
+  // Compute left X positions cumulatively (ACTUAL column widths)
   const leftXStarts: number[] = [];
   let cumX = 0;
   for (let i = 0; i < nLeft; i++) {
@@ -117,13 +119,27 @@ export function TournamentBracketButterfly({
 
   const leftEnd = nLeft > 0 ? leftX(nLeft - 1) + colWidth(leftRounds[nLeft - 1].rn) : 0;
   const centerX = leftEnd + FINAL_GAP;
-  const rightX = (j: number) =>
-    centerX + MATCH_W_FINAL + FINAL_GAP + j * (MATCH_W + COL_GAP);
 
-  // Right side last round (outermost) may be round 1 (first round) → wider
-  const rightLastWidth = nRight > 0 && rightRounds[nRight - 1].rn === 1 ? MATCH_W_FIRST : MATCH_W;
+  // Bug 11b: compute right X positions by accumulating ACTUAL column widths
+  // from the final column outward (mirroring the left-side loop, innermost
+  // right round → outermost). The old fixed pitch `j * (MATCH_W + COL_GAP)`
+  // positioned every column as if it were MATCH_W (134px) wide — including
+  // the outermost round-1 column which is MATCH_W_FIRST (256px) wide — so the
+  // right bracket half drifted off-screen and totalW under/over-accounted
+  // the last column. Accumulating real widths keeps the layout symmetric and
+  // guarantees totalW covers the actual rightmost column.
+  const rightXStarts: number[] = [];
+  let cumRX = centerX + MATCH_W_FINAL + FINAL_GAP;
+  for (let j = 0; j < nRight; j++) {
+    rightXStarts.push(cumRX);
+    cumRX += colWidth(rightRounds[j].rn) + COL_GAP;
+  }
+  const rightX = (j: number) => rightXStarts[j] || 0;
+
   const totalW =
-    nRight > 0 ? rightX(nRight - 1) + rightLastWidth : centerX + MATCH_W_FINAL;
+    nRight > 0
+      ? rightX(nRight - 1) + colWidth(rightRounds[nRight - 1].rn)
+      : centerX + MATCH_W_FINAL;
 
   // ── Responsive vertical spacing ──
   // The bracket should FILL the screen: its natural aspect ratio is matched to
@@ -469,12 +485,14 @@ function MatchCard({
     }
   };
 
-  // BYE match — single slim row
+  // ── BYE match — single slim row ──
+  // minHeight (not fixed height) so a wrapping long name grows the card
+  // instead of being cut off (Bug 11a).
   if (match.isBye && match.player1) {
     return (
       <div
         className="rounded-lg border border-white/10 bg-white/[0.03] flex items-center gap-2 px-2"
-        style={{ width: isFirstRound ? MATCH_W_FIRST : MATCH_W, height: FIRST_H }}
+        style={{ width: isFirstRound ? MATCH_W_FIRST : MATCH_W, minHeight: FIRST_H }}
         title={`${t('tournament.bye')} — ${match.player1.name}`}
       >
         <span className="shrink-0 text-[9px] font-bold tracking-wider text-white/35 border border-white/15 rounded px-1 py-0.5">
@@ -489,18 +507,19 @@ function MatchCard({
   }
 
   // ── Horizontal first-round card: both players side-by-side in one row ──
+  // minHeight + flex so wrapping player names grow the card (Bug 11a).
   if (isFirstRound) {
     return (
       <div
-        className={`${boxClasses} ${clickable ? 'hover:scale-[1.03]' : ''}`}
-        style={{ width: MATCH_W_FIRST, height: FIRST_H }}
+        className={`${boxClasses} flex items-center ${clickable ? 'hover:scale-[1.03]' : ''}`}
+        style={{ width: MATCH_W_FIRST, minHeight: FIRST_H }}
         onClick={clickable ? onPlay : undefined}
         onKeyDown={handleKeyDown}
         role={clickable ? 'button' : undefined}
         tabIndex={clickable ? 0 : -1}
         aria-label={matchLabel(match, t)}
       >
-        <div className="flex items-center gap-1 px-2 h-full">
+        <div className="flex items-center gap-1 px-2 w-full min-h-0">
           <FirstRoundPlayerRow match={match} which={1} />
           <div className="shrink-0 text-white/35 text-[9px] font-bold px-0.5">{t('tournament.vs')}</div>
           <FirstRoundPlayerRow match={match} which={2} />
@@ -511,10 +530,12 @@ function MatchCard({
   }
 
   // ── Vertical card (rounds ≥ 2 + final) ──
+  // minHeight (not fixed height): rows may grow when a long player name
+  // wraps to multiple lines — the card grows with them (Bug 11a).
   return (
     <div
       className={`${boxClasses} flex flex-col justify-center gap-0.5 px-1.5 py-1 ${clickable ? 'hover:scale-[1.03]' : ''}`}
-      style={{ width: isFinal ? MATCH_W_FINAL : MATCH_W, height: VERT_H }}
+      style={{ width: isFinal ? MATCH_W_FINAL : MATCH_W, minHeight: VERT_H }}
       onClick={clickable ? onPlay : undefined}
       onKeyDown={handleKeyDown}
       role={clickable ? 'button' : undefined}
@@ -558,7 +579,7 @@ function PlayerRow({ match, which }: { match: TournamentMatch; which: 1 | 2 }) {
   const isWinner = match.completed && !!match.winner && match.winner.id === player?.id;
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-md px-1.5 h-[30px] min-w-0 ${isWinner ? 'bg-green-500/25' : ''}`}>
+    <div className={`flex items-center gap-1.5 rounded-md px-1.5 min-h-[30px] py-0.5 min-w-0 ${isWinner ? 'bg-green-500/25' : ''}`}>
       {player ? (
         <>
           {player.avatar ? (
@@ -577,14 +598,14 @@ function PlayerRow({ match, which }: { match: TournamentMatch; which: 1 | 2 }) {
             </div>
           )}
           {isWinner && <span className="text-[10px] shrink-0" aria-hidden="true">👑</span>}
-          <span className={`text-xs truncate min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>
+          <span className={`text-xs break-words leading-tight min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>
             {player.name}
           </span>
         </>
       ) : (
         <>
           <div className="w-6 h-6 rounded-full bg-white/10 shrink-0 border border-dashed border-white/20" aria-hidden="true" />
-          <span className="text-xs text-white/30 truncate">{t('tournament.tbd')}</span>
+          <span className="text-xs text-white/30 break-words leading-tight">{t('tournament.tbd')}</span>
         </>
       )}
       {match.completed && (
@@ -605,7 +626,7 @@ function FirstRoundPlayerRow({ match, which }: { match: TournamentMatch; which: 
   const isWinner = match.completed && !!match.winner && match.winner.id === player?.id;
 
   return (
-    <div className={`flex-1 flex items-center gap-1.5 rounded-md px-1.5 h-[32px] min-w-0 ${isWinner ? 'bg-green-500/25' : ''}`}>
+    <div className={`flex-1 flex items-center gap-1.5 rounded-md px-1.5 min-h-[32px] py-0.5 min-w-0 ${isWinner ? 'bg-green-500/25' : ''}`}>
       {player ? (
         <>
           {player.avatar ? (
@@ -624,12 +645,12 @@ function FirstRoundPlayerRow({ match, which }: { match: TournamentMatch; which: 
             </div>
           )}
           {isWinner && <span className="text-[10px] shrink-0" aria-hidden="true">👑</span>}
-          <span className={`text-xs truncate min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>
+          <span className={`text-xs break-words leading-tight min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>
             {player.name}
           </span>
         </>
       ) : (
-        <span className="text-xs text-white/30 truncate">{t('tournament.tbd')}</span>
+        <span className="text-xs text-white/30 break-words leading-tight">{t('tournament.tbd')}</span>
       )}
       {match.completed && (
         <span className={`ml-auto shrink-0 text-xs font-bold ${isWinner ? 'text-green-400' : 'text-white/50'}`}>
@@ -661,7 +682,7 @@ function SmallPlayer({ player }: { player: TournamentPlayer | null }) {
           {player.name.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="text-xs font-medium truncate min-w-0">{player.name}</span>
+      <span className="text-xs font-medium break-words leading-tight min-w-0">{player.name}</span>
     </div>
   );
 }

@@ -29,8 +29,14 @@ const PARTY_SCREEN_WHITELIST: Screen[] = [
  * mode's primary state object (e.g., battleRoyaleGame) has been
  * cleared but peripheral state (selectedGameMode, unifiedSetupResult,
  * votingSongs, etc.) still lingers.
+ *
+ * Bug 12: exported so other consumers (global Escape handler, abort
+ * handling, leave-dialog gating in karaoke-app.tsx) can compute the
+ * party-active state DIRECTLY from the party store. The navigation
+ * guard's `isPartyModeActive` latches to false after ONE confirmed
+ * leave (partyConfirmed) and must not be used for exit guards.
  */
-function computePartyModeActive(party: PartyStore): boolean {
+export function computePartyModeActive(party: PartyStore): boolean {
   return !!(
     party.selectedGameMode ||
     party.tournamentBracket ||

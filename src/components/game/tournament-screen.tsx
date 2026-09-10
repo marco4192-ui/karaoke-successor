@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown } from 'lucide-react';
+import { Crown, ArrowLeft } from 'lucide-react';
 import {
   clearHallOfFame,
   getMatchesByBracketType,
@@ -344,9 +344,13 @@ interface TournamentBracketViewProps {
   shortMode: boolean;
   showResults?: boolean;
   onShowResults?: () => void;
+  /** Bug 12c: opens the party-leave confirmation dialog (NOT an immediate
+   *  exit) — tournament-game is an immersive screen with no NavBar, so the
+   *  bracket view needs its own way back to the menu. */
+  onLeaveToMenu?: () => void;
 }
 
-export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults }: TournamentBracketViewProps) {
+export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults, onLeaveToMenu }: TournamentBracketViewProps) {
   const { t } = useTranslation();
   const {
     stats,
@@ -364,8 +368,31 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
     setManualWinnerMatch,
   } = useTournamentBracket(bracket, currentMatch, showResults);
 
+  // #11 / Bug 12c: graceful fallback if the key is missing in a locale
+  const backToMenuLabel = t('tournament.backToMainMenu');
+  const backToMenuText = backToMenuLabel === 'tournament.backToMainMenu' ? 'Back to Main Menu' : backToMenuLabel;
+
   return (
-    <div className="max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
+    <div className="relative max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
+      {/* Bug 12c: "← Back to Main Menu" — tournament-game is an immersive
+          screen (NavBar hidden), so without this button there is no visible
+          way back. Opens the party-leave CONFIRMATION dialog, never an
+          immediate exit. Small + unobtrusive in the top-left corner. */}
+      {onLeaveToMenu && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onLeaveToMenu}
+          aria-label={backToMenuText}
+          title={backToMenuText}
+          className="absolute top-2 left-2 z-20 h-9 px-2.5 sm:px-3 text-xs text-white/50 hover:text-white/90 hover:bg-white/10"
+          data-testid="tournament-back-to-menu"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="hidden sm:inline ml-1">{backToMenuText}</span>
+        </Button>
+      )}
+
       {/* Tournament Header — compact */}
       <div className="text-center mb-1 shrink-0">
         <h1 className="text-2xl font-bold mb-0.5">{t('tournament.bracketTitle')}</h1>
@@ -910,7 +937,8 @@ function DoubleEliminationBracketView({
   );
 }
 
-// ─── DE Match Card (fixed height — compact, for DE bracket view) ───────
+// ─── DE Match Card (compact, for DE bracket view — min-height so wrapped
+// player names grow the card instead of being truncated, Bug 11a) ───────
 
 function DESmallPlayer({ player, isWinner }: { player: TournamentPlayer | null; isWinner?: boolean }) {
   const { t } = useTranslation();
@@ -918,7 +946,7 @@ function DESmallPlayer({ player, isWinner }: { player: TournamentPlayer | null; 
     return (
       <div className="flex items-center gap-1.5 text-xs min-w-0">
         <div className="w-6 h-6 rounded-full bg-white/10 shrink-0 border border-dashed border-white/20" aria-hidden="true" />
-        <span className="text-white/30 truncate">{t('tournament.tbd')}</span>
+        <span className="text-white/30 break-words leading-tight">{t('tournament.tbd')}</span>
       </div>
     );
   }
@@ -940,7 +968,7 @@ function DESmallPlayer({ player, isWinner }: { player: TournamentPlayer | null; 
         </div>
       )}
       {isWinner && <span className="text-[10px] shrink-0" aria-hidden="true">👑</span>}
-      <span className={`truncate min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>{player.name}</span>
+      <span className={`break-words leading-tight min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>{player.name}</span>
     </div>
   );
 }
@@ -988,10 +1016,10 @@ function DEMatchCard({
             : 'bg-white/5 opacity-50'
       } ${clickable ? 'hover:scale-105' : ''} ${glowClass}`}
       onClick={clickable ? () => onPlay(match) : undefined}
-      style={{ minWidth: 150, height: 80 }}
+      style={{ minWidth: 150, minHeight: 80 }}
     >
-      {/* Player 1 */}
-      <div className={`flex items-center gap-1 rounded text-xs h-[28px] ${match.winner?.id === match.player1?.id ? 'bg-green-500/25' : ''}`}>
+      {/* Player 1 — min-height row: wrapping names grow the card (Bug 11a) */}
+      <div className={`flex items-center gap-1 rounded text-xs min-h-[28px] py-0.5 ${match.winner?.id === match.player1?.id ? 'bg-green-500/25' : ''}`}>
         <DESmallPlayer player={match.player1} isWinner={match.completed && match.winner?.id === match.player1?.id} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'}`}>
@@ -1009,8 +1037,8 @@ function DEMatchCard({
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
-      {/* Player 2 */}
-      <div className={`flex items-center gap-1 rounded text-xs h-[28px] ${match.winner?.id === match.player2?.id ? 'bg-green-500/25' : ''}`}>
+      {/* Player 2 — min-height row: wrapping names grow the card (Bug 11a) */}
+      <div className={`flex items-center gap-1 rounded text-xs min-h-[28px] py-0.5 ${match.winner?.id === match.player2?.id ? 'bg-green-500/25' : ''}`}>
         <DESmallPlayer player={match.player2} isWinner={match.completed && match.winner?.id === match.player2?.id} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'}`}>
