@@ -15,19 +15,30 @@ import {
  * Everything must go through iframe URL parameters:
  *
  *   ?bvid=BV… (or aid=…) &page=N &danmaku=0 &high_quality=1 &as_wide=1
- *   &autoplay=0 &t=<seconds>   ← start position (verified live: the player
- *                                starts/pauses exactly at t)
+ *   &autoplay=0|1 &t=<seconds>   ← start position (verified live: the player
+ *                                  starts/pauses exactly at t)
  *
- * Consequently this player ALWAYS needs the manual start gate:
- *  1. The iframe renders paused at the song's start offset (t=…).
- *  2. When the game wants to play (isPlaying), the player fires onAdStart —
- *     the game pauses and the song-start gate UI asks the user to click play
- *     in the Bilibili player, then confirm ("Musik läuft — Los!").
- *  3. On confirmation (manualStartConfirmed) the player fires onAdEnd (game
- *     auto-resumes) and a wall-clock stopwatch becomes the song clock —
- *     onTimeUpdate(startTimeMs + elapsed). Bilibili embeds carry no pre-roll
- *     ads, so the stopwatch stays in sync with the video for practical
- *     purposes; drift from manual pause inside the iframe is accepted.
+ * TWO usage modes:
+ *
+ *  GAME (default): the manual start gate — precise lyric sync matters.
+ *   1. The iframe renders paused at the song's start offset (t=…).
+ *   2. When the game wants to play (isPlaying), the player fires onAdStart —
+ *      the game pauses and the song-start gate UI asks the user to click play
+ *      in the Bilibili player, then confirm ("Musik läuft — Los!").
+ *   3. On confirmation (manualStartConfirmed) the player fires onAdEnd (game
+ *      auto-resumes) and a wall-clock stopwatch becomes the song clock —
+ *      onTimeUpdate(startTimeMs + elapsed).
+ *
+ *  JUKEBOX (autoStart=true): no gate — best-effort AUTOMATIC playback.
+ *   1. The embed URL carries autoplay=1: combined with the iframe's
+ *      allow="autoplay" and the user activation on the embedding page
+ *      (queueing/starting the jukebox are clicks), the video usually starts
+ *      by itself — no in-frame play button needed.
+ *   2. The stopwatch clock runs with playback (isPlaying) right away.
+ *   3. When the browser still blocks autoplay, the jukebox shows its
+ *      start-assist button: one click REMOUNTS this player with autoplay=1
+ *      immediately after the fresh user gesture → autoplay is reliably
+ *      allowed then. (The user may alternatively click play in-frame.)
  *
  * The iframe is ALWAYS interactive (the user must be able to click play).
  */
@@ -46,6 +57,9 @@ export interface BilibiliPlayerProps extends ManualStartPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean; // Ignored — the iframe is always interactive (user must click play)
   muted?: boolean; // Ignored — no API to mute; the user controls volume in the player
+  /** JUKEBOX mode: attempt automatic playback (autoplay=1) and run the song
+   *  clock without the manual gate. The game does NOT pass this (sync-critical). */
+  autoStart?: boolean;
 }
 
 /** Imperative handle — seek is unsupported (no API); time comes from the stopwatch. */
@@ -65,6 +79,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
   isPlaying = true,
   startTime = 0,
   manualStartConfirmed = false,
+  autoStart = false,
 }, ref) {
   const biliRef = extractBilibiliRef(videoUrl);
   const startSeconds = Math.max(0, (startTime / 1000) - (videoGap / 1000));
@@ -85,8 +100,9 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
   const manualConfirmedRef = useRef(manualStartConfirmed);
   manualConfirmedRef.current = manualStartConfirmed;
 
-  // Stopwatch clock state — active only while the game plays AND the gate is confirmed.
-  const clockActive = isPlaying && manualStartConfirmed;
+  // Stopwatch clock state — active while the game plays AND the gate is
+  // confirmed (game mode) OR immediately in jukebox autoStart mode.
+  const clockActive = isPlaying && (manualStartConfirmed || autoStart);
   const currentSongTimeMsRef = useRef(startTime);
 
   // The manual song clock: emits startTime + elapsed while active.
@@ -99,7 +115,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
     },
   });
 
-  // ── Manual start gate (edge-triggered) ──
+  // ── Manual start gate (edge-triggered) — GAME MODE only. ──
   // ENGAGE: the game wants to play but the user hasn't confirmed → onAdStart
   // (game pauses, gate UI shows). RESOLVE: only via explicit confirmation →
   // onAdEnd (game auto-resumes).
@@ -108,11 +124,12 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
   // pending flag derived from isPlaying and swallow the later release.
   const gateEngagedRef = useRef(false);
   useEffect(() => {
+    if (autoStart) return; // jukebox: no gate — autoplay attempt, clock auto-runs
     if (isPlaying && !manualStartConfirmed && !gateEngagedRef.current) {
       gateEngagedRef.current = true;
       onAdStartRef.current?.();
     }
-  }, [isPlaying, manualStartConfirmed]);
+  }, [isPlaying, manualStartConfirmed, autoStart]);
 
   // Confirmation edge — releases an engaged gate exactly once.
   useEffect(() => {
@@ -171,7 +188,8 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
     danmaku: '0',       // no comment barrage over the video
     high_quality: '1',  // best available quality
     as_wide: '1',       // widescreen
-    autoplay: '0',      // paused — the user starts the video (manual gate)
+    autoplay: autoStart ? '1' : '0', // jukebox: auto-play attempt (allow=autoplay
+                                     // + page user activation); game: manual gate
     t: String(Math.floor(startSeconds)),
   });
   const embedSrc = `https://player.bilibili.com/player.html?${embedParams.toString()}`;

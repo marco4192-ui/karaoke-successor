@@ -309,6 +309,8 @@ jukeboxPlayer: {
   videoChip: 'Video',
   queueVideoRemove: 'Video aus der Warteschlange entfernen',
   gateStart: '▶️ Musik/Video läuft — Los!',
+  startVideo: 'Video starten',
+  startVideoHint: 'Falls das Video nicht von selbst startet — mit einem Klick neu starten',
   // ── Link-Liste ──
   linkListTitle: 'Link-Liste',
   linkListDesc: 'Mehrere Links — einer pro Zeile — werden nacheinander abgespielt',

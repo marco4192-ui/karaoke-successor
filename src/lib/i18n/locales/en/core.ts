@@ -326,6 +326,8 @@ export const coreTranslations = {
     videoChip: 'Video',
     queueVideoRemove: 'Remove video from the queue',
     gateStart: '▶️ Music/video is playing — Go!',
+    startVideo: 'Start video',
+    startVideoHint: 'If the video does not start by itself — restart it with one click',
     // ── Link list ──
     linkListTitle: 'Link List',
     linkListDesc: 'Multiple links — one per line — play back to back',

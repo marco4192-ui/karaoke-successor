@@ -57,9 +57,6 @@ export interface YouTubePlayerHandle {
   getCurrentTime: () => number;
 }
 
-// Global player counter for unique IDs
-let playerCounter = 0;
-
 // YouTube error codes mapped to user-friendly messages
 const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
   2: 'Der Anfrage-Parameter enthält einen ungültigen Wert.',
@@ -67,7 +64,20 @@ const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
   100: 'Das Video wurde nicht gefunden. Möglicherweise wurde es gelöscht oder als privat markiert.',
   101: 'Das Video kann nicht eingebettet werden.',
   150: 'Das Video kann nicht eingebettet werden.',
+  1001: 'Die YouTube-API konnte nicht geladen werden (Netzwerk- oder Werbeblocker?).',
 };
+
+/** Synthetic error code: the IFrame API script never became available. */
+export const YT_ERROR_API_UNAVAILABLE = 1001;
+
+/** Report the "API not loadable" failure at most once per page (multiple
+ *  player instances share the same script element). */
+let apiLoadFailureReported = false;
+
+// Timing for the API-load fallback ladder (see the script-load effect):
+// after 8 s start polling; if the API is still absent 6 s later, report.
+const API_LOAD_FALLBACK_MS = 8000;
+const API_LOAD_GIVE_UP_MS = 6000;
 
 export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(function YouTubePlayer({ 
   videoId, 
@@ -89,7 +99,6 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
   const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const playerIdRef = useRef<string>(`youtube-player-${++playerCounter}`);
   
   // Store callback props in refs to avoid re-initialization on identity changes
   const onReadyRef = useRef(onReady);
@@ -160,7 +169,20 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
         }
       }, 100);
       cleanupIntervals.push(checkApi);
-      return () => { cleanupIntervals.forEach(clearInterval); };
+      // Give-up: a script that never loads (network error / blocker) previously
+      // meant a SILENT black screen forever — report it once so hosts (jukebox:
+      // auto-skip) can react.
+      const giveUp = setTimeout(() => {
+        if (!window.YT?.Player) {
+          clearInterval(checkApi);
+          if (!apiLoadFailureReported) {
+            apiLoadFailureReported = true;
+            onErrorRef.current?.(YT_ERROR_API_UNAVAILABLE);
+          }
+        }
+      }, API_LOAD_FALLBACK_MS + API_LOAD_GIVE_UP_MS);
+      cleanupTimeouts.push(giveUp);
+      return () => { cleanupIntervals.forEach(clearInterval); cleanupTimeouts.forEach(clearTimeout); };
     }
     
     // CRITICAL: Set the callback BEFORE appending the script to prevent a race condition.
@@ -175,7 +197,20 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
     script.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(script);
 
-    // Timeout fallback: if the API doesn't load within 10 seconds, try polling
+    // Backstop poll: the global callback can be overwritten by another
+    // YouTubePlayer instance that mounts before the script finishes loading —
+    // this poll guarantees every instance flips its own isApiLoaded.
+    const quickPoll = setInterval(() => {
+      if (window.YT?.Player) {
+        clearInterval(quickPoll);
+        setIsApiLoaded(true);
+      }
+    }, 100);
+    cleanupIntervals.push(quickPoll);
+
+    // Timeout fallback: if the API doesn't load within 8 seconds, keep polling
+    // (up to 6 more seconds) — and when it never appears, report the failure
+    // once so the app does not hang on a silent black screen.
     const fallbackTimeout = setTimeout(() => {
       if (!window.YT?.Player) {
         // eslint-disable-next-line no-console
@@ -187,11 +222,20 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
           }
         }, 200);
         cleanupIntervals.push(poll);
-        // M3: Track the give-up timeout so it gets cleaned up on unmount
-        const giveUpTimeout = setTimeout(() => clearInterval(poll), 10000);
+        const giveUpTimeout = setTimeout(() => {
+          if (!window.YT?.Player) {
+            clearInterval(poll);
+            if (!apiLoadFailureReported) {
+              apiLoadFailureReported = true;
+              // eslint-disable-next-line no-console
+              console.warn('[YouTube] API unavailable — reporting error', YT_ERROR_API_UNAVAILABLE);
+              onErrorRef.current?.(YT_ERROR_API_UNAVAILABLE);
+            }
+          }
+        }, API_LOAD_GIVE_UP_MS);
         cleanupTimeouts.push(giveUpTimeout);
       }
-    }, 10000);
+    }, API_LOAD_FALLBACK_MS);
     
     return () => {
       clearTimeout(fallbackTimeout);
@@ -217,9 +261,6 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
       playerRef.current = null;
     }
     
-    // Generate new player ID for this video
-    playerIdRef.current = `youtube-player-${++playerCounter}`;
-    
     // videoGap is in milliseconds, convert to seconds for YouTube API
     const videoGapSeconds = videoGap / 1000;
     const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGapSeconds);
@@ -232,14 +273,28 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
 
     // Small delay to ensure DOM is ready
     const initTimeout = setTimeout(() => {
-      // Re-check that the container still exists (component may have unmounted)
-      if (!containerRef.current || !document.getElementById(playerIdRef.current)) {
+      const host = containerRef.current;
+      if (!host || !host.isConnected) {
         // eslint-disable-next-line no-console
         console.warn('[YouTube] Container disappeared before player init — skipping');
         return;
       }
 
-      playerRef.current = new window.YT.Player(playerIdRef.current, {
+      // DETERMINISTIC MOUNT: create a FRESH div inside the host for this player
+      // instance. The IFrame API replaces that div with its iframe, so the
+      // element must exist in the DOM at construction time — independent of
+      // React re-renders.
+      // (The previous id-based approach raced React's render cycle: the effect
+      // generated a NEW id after render, and when no re-render happened within
+      // the 100 ms window the id was absent from the DOM — the player was
+      // silently never created → black screen without any error, e.g. for
+      // jukebox video breaks where no 60 fps game loop forces re-renders.)
+      host.replaceChildren();
+      const mountEl = document.createElement('div');
+      mountEl.className = 'absolute inset-0 w-full h-full';
+      host.appendChild(mountEl);
+
+      playerRef.current = new window.YT.Player(mountEl, {
         videoId,
         playerVars: {
           autoplay: 0,
@@ -416,13 +471,14 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
   }, [volume]);
   
   return (
-    <div ref={containerRef} className="absolute inset-0 w-full h-full">
-      <div 
-        id={playerIdRef.current} 
-        className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-      />
-    </div>
+    // The player iframe is mounted imperatively inside this container (see the
+    // init effect). pointer-events is an inherited CSS property, so toggling
+    // interactivity here covers the iframe without re-creating the player.
+    <div
+      ref={containerRef}
+      className="absolute inset-0 w-full h-full"
+      style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+    />
   );
 });
 
