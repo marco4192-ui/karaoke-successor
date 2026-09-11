@@ -110,7 +110,7 @@ export interface MirrorViewProps {
   onReleaseRemote: () => void;
 
   // Desktop-Mirroring: sendet einen Navigations-Command an den Desktop
-  onSendDesktopCommand: (screen: string) => void;
+  onSendDesktopCommand: (screen: string, data?: unknown) => void;
 }
 
 // ===================== Hauptkomponente =====================

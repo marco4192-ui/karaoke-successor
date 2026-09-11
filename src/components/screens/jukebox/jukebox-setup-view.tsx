@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlayIcon, MusicIcon } from '@/components/icons';
-import { extractYouTubeId } from '@/components/game/youtube-player';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useToast } from '@/hooks/use-toast';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
+import {
+  isVideoBreak,
+  parseVideoLinkInput,
+  platformDisplayName,
+  videoBreakPlatform,
+} from './video-break';
 import { EqualizerBars, VinylDisc, StatChip } from './jukebox-visuals';
 
 // ==================== LOCAL ICONS ====================
@@ -71,11 +77,28 @@ function RepeatIcon({ className, one }: { className?: string; one?: boolean }) {
   );
 }
 
-function YoutubeIcon({ className }: { className?: string }) {
+function LinkIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="2" y="5" width="20" height="14" rx="4" fill="#ef4444" opacity="0.9" />
-      <path d="M10 9.5v5l4.5-2.5z" fill="white" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
+function ListIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
+
+function PlayBadgeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <polygon points="6 3 20 12 6 21 6 3" />
     </svg>
   );
 }
@@ -95,9 +118,13 @@ function formatPoolDuration(ms: number): string {
 // ==================== SETUP VIEW ====================
 
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [youtubeError, setYoutubeError] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoError, setVideoError] = useState('');
+  const [linkListText, setLinkListText] = useState('');
+  const [enqueueing, setEnqueueing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   // Playlist-Auswahl fuer Jukebox
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
@@ -135,17 +162,72 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
     }
   }, []);
 
-  const handleYoutubeSubmit = () => {
-    if (!youtubeUrl.trim()) return;
-    const id = extractYouTubeId(youtubeUrl.trim());
-    if (!id) {
-      setYoutubeError(t('jukeboxPlayer.invalidYoutubeUrl'));
+  // ── Video-Link: einzeln in die Warteschlange einreihen ──
+  // Unterstützt auch die „URL | Titel"-Syntax der Link-Liste.
+  const handleVideoSubmit = () => {
+    const raw = videoUrl.trim();
+    if (!raw) return;
+    const link = parseVideoLinkInput(raw)[0];
+    if (!link) {
+      setVideoError(t('jukeboxPlayer.videoLinkInvalid'));
       return;
     }
-    setYoutubeError('');
-    setYoutubeUrl('');
-    j.handleYoutubeUrlSubmit(youtubeUrl.trim());
+    setVideoError('');
+    setVideoUrl('');
+    const ok = j.addVideoToQueue(link.url, link.label);
+    if (ok) {
+      toast({
+        title: `🎬 ${t('jukeboxPlayer.videoLinkQueued')}`,
+        description: t('jukeboxPlayer.videoLinkHint'),
+      });
+    }
   };
+
+  // ── Link-Liste: mehrere Links nacheinander abspielen ──
+  const parsedLinks = useMemo(() => parseVideoLinkInput(linkListText), [linkListText]);
+
+  const handleLinkListSubmit = () => {
+    if (parsedLinks.length === 0) return;
+    const queued = j.addVideoListToQueue(parsedLinks);
+    setLinkListText('');
+    toast({
+      title: `🎬 ${t('jukeboxPlayer.linkListQueued').replace('{n}', String(queued))}`,
+      description: t('jukeboxPlayer.videoLinkHint'),
+    });
+  };
+
+  const handleFileUpload = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : '';
+      setLinkListText(prev => (prev ? `${prev.trim()}\n${text}` : text));
+    };
+    reader.readAsText(file);
+  };
+
+  // ── Library-Playlist direkt in der Jukebox abspielen ──
+  const handleEnqueuePlaylist = async () => {
+    if (!selectedPlaylistId || enqueueing) return;
+    setEnqueueing(true);
+    try {
+      const ok = await j.enqueueLibraryPlaylist(selectedPlaylistId);
+      if (ok) {
+        toast({
+          title: `💿 ${t('jukeboxPlayer.playlistQueued')}`,
+          description: playlists.find(p => p.id === selectedPlaylistId)?.name,
+        });
+      }
+    } finally {
+      setEnqueueing(false);
+    }
+  };
+
+  // Bereits eingereihte Videos (nur die wartenden — das laufende steht im Player)
+  const queuedVideos = useMemo(
+    () => j.playlist.filter((s, idx) => isVideoBreak(s) && idx > j.currentIndex),
+    [j.playlist, j.currentIndex]
+  );
 
   // Hero data: cover for the vinyl + pool stats
   const heroCover = useMemo(
@@ -270,7 +352,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Playlist-Auswahl */}
+            {/* Playlist-Auswahl + direkter Playlist-Start */}
             {playlists.length > 0 && (
               <div>
                 <label htmlFor="jukebox-playlist-select" className="text-sm text-white/60 mb-2 flex items-center gap-1.5">
@@ -291,6 +373,16 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                     </option>
                   ))}
                 </select>
+                {/* Playlist aus der Library direkt in der Jukebox abspielen */}
+                <Button
+                  onClick={handleEnqueuePlaylist}
+                  disabled={!selectedPlaylistId || enqueueing}
+                  className="mt-2 w-full bg-gradient-to-r from-purple-500/80 to-fuchsia-500/80 hover:from-purple-400 hover:to-fuchsia-400 text-white border border-purple-300/30 disabled:opacity-40"
+                  title={t('jukeboxPlayer.enqueuePlaylistDesc')}
+                >
+                  <PlayBadgeIcon className="w-4 h-4 mr-2" />
+                  {enqueueing ? t('jukeboxPlayer.startJukebox') + '…' : t('jukeboxPlayer.enqueuePlaylist')}
+                </Button>
               </div>
             )}
 
@@ -401,57 +493,136 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
           </CardContent>
         </Card>
 
-        {/* YouTube URL Input */}
-        <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-red-500/25 transition-colors">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/25 shrink-0">
-                <YoutubeIcon className="w-5 h-5" />
-              </span>
-              <div className="min-w-0">
-                <CardTitle className="truncate">{t('jukeboxPlayer.youtubeVideo')}</CardTitle>
-                <CardDescription>{t('jukeboxPlayer.youtubeVideoDesc')}</CardDescription>
+        {/* Video-Link + Link-Liste (rechte Spalte, gestapelt) */}
+        <div className="flex flex-col gap-6">
+          {/* ── Video-Link: einzelner Link mit Ton in die Warteschlange ── */}
+          <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-fuchsia-500/30 transition-colors">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-fuchsia-500/10 border border-fuchsia-400/25 shrink-0">
+                  <LinkIcon className="w-5 h-5 text-fuchsia-300" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="truncate">{t('jukeboxPlayer.videoLinkTitle')}</CardTitle>
+                  <CardDescription>{t('jukeboxPlayer.videoLinkDesc')}</CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1 group">
-                <Input
-                  type="text"
-                  placeholder={t('jukeboxPlayer.youtubeUrlPlaceholder')}
-                  value={youtubeUrl}
-                  onChange={(e) => { setYoutubeError(''); setYoutubeUrl(e.target.value); }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
-                  aria-label={t('jukeboxPlayer.youtubeShort')}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-red-500/30 focus-visible:border-red-500/40 transition-all"
-                />
-              </div>
-              <Button
-                onClick={handleYoutubeSubmit}
-                variant="outline"
-                className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 shrink-0"
-              >
-                {t('jukeboxPlayer.set')}
-              </Button>
-            </div>
-            <p className="text-white/35 text-xs">{t('jukeboxPlayer.addYoutubeHint')}</p>
-            {youtubeError && (
-              <p className="text-red-400 text-sm" role="alert">{youtubeError}</p>
-            )}
-            {j.customYoutubeId && (
-              <div className="flex items-center gap-2 text-cyan-400 text-sm bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2">
-                <span className="truncate">{t('jukeboxPlayer.activeLabel').replace('{id}', j.customYoutubeId)}</span>
-                <button
-                  onClick={j.clearCustomYoutube}
-                  className="text-white/60 hover:text-white underline shrink-0 ml-auto"
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1 group">
+                  <Input
+                    type="text"
+                    inputMode="url"
+                    placeholder={t('jukeboxPlayer.videoLinkPlaceholder')}
+                    value={videoUrl}
+                    onChange={(e) => { setVideoError(''); setVideoUrl(e.target.value); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleVideoSubmit()}
+                    aria-label={t('jukeboxPlayer.videoLinkTitle')}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-fuchsia-500/30 focus-visible:border-fuchsia-500/40 transition-all"
+                  />
+                </div>
+                <Button
+                  onClick={handleVideoSubmit}
+                  variant="outline"
+                  className="border-fuchsia-500/50 text-fuchsia-300 hover:bg-fuchsia-500/10 hover:text-fuchsia-200 shrink-0"
                 >
-                  {t('jukeboxPlayer.remove')}
-                </button>
+                  {t('jukeboxPlayer.videoLinkAdd')}
+                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-white/35 text-xs">{t('jukeboxPlayer.videoLinkHint')}</p>
+              {videoError && (
+                <p className="text-red-400 text-sm" role="alert">{videoError}</p>
+              )}
+              {/* Wartende Videos aus der laufenden Warteschlange */}
+              {queuedVideos.length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-white/5">
+                  <p className="text-white/40 text-xs font-medium">{t('jukeboxPlayer.videoQueuedCount').replace('{n}', String(queuedVideos.length))}</p>
+                  <div className="max-h-40 overflow-y-auto jukebox-queue-scroll space-y-1 pr-1">
+                    {queuedVideos.map(v => (
+                      <div key={v.id} className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/5 px-2.5 py-1.5">
+                        <PlayBadgeIcon className="w-3.5 h-3.5 text-fuchsia-400/80 shrink-0" />
+                        <span className="flex-1 min-w-0 truncate text-xs text-white/70">{v.title}</span>
+                        <span className="text-[10px] text-white/35 shrink-0">{platformDisplayName(videoBreakPlatform(v))}</span>
+                        <button
+                          onClick={() => j.removeQueueVideo(v.id)}
+                          className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                          aria-label={t('jukeboxPlayer.queueVideoRemove')}
+                          title={t('jukeboxPlayer.queueVideoRemove')}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Link-Liste: viele Links nacheinander abspielen ── */}
+          <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-purple-500/30 transition-colors">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-400/25 shrink-0">
+                  <ListIcon className="w-5 h-5 text-purple-300" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="truncate">{t('jukeboxPlayer.linkListTitle')}</CardTitle>
+                  <CardDescription>{t('jukeboxPlayer.linkListDesc')}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <textarea
+                value={linkListText}
+                onChange={(e) => setLinkListText(e.target.value)}
+                placeholder={t('jukeboxPlayer.linkListPlaceholder')}
+                aria-label={t('jukeboxPlayer.linkListTitle')}
+                rows={4}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:ring-purple-500/30 focus:border-purple-500/40 outline-none transition-all resize-y jukebox-queue-scroll"
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleLinkListSubmit}
+                  disabled={parsedLinks.length === 0}
+                  variant="outline"
+                  className="flex-1 border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200 disabled:opacity-40"
+                >
+                  <PlayBadgeIcon className="w-4 h-4 mr-2" />
+                  {t('jukeboxPlayer.linkListAdd')}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.m3u,.m3u8,.csv,.text,text/plain"
+                  onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }}
+                  className="hidden"
+                  aria-hidden
+                  tabIndex={-1}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  className="border-white/15 text-white/70 hover:bg-white/10 shrink-0"
+                  title={t('jukeboxPlayer.linkListFile')}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span className="hidden sm:inline ml-2">{t('jukeboxPlayer.linkListFile')}</span>
+                </Button>
+              </div>
+              {linkListText && (
+                <p className={`text-xs ${parsedLinks.length > 0 ? 'text-purple-300/70' : 'text-white/35'}`}>
+                  {t('jukeboxPlayer.linkListParsed').replace('{n}', String(parsedLinks.length))}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* ── Start Button — #8 FIX: only one start button ── */}

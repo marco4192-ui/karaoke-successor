@@ -25,8 +25,10 @@ export interface JukeboxFiltersState {
 
 export interface JukeboxPlaybackState {
   isPlaying: boolean;
+  /** Effective playback state (isPlaying && !platformPaused) — drives the
+   *  play/pause button icon and equalizer animations. */
+  isMediaPlaying: boolean;
   currentSong: Song | null;
-  customYoutubeId: string | null;
   playlist: Song[];
   currentIndex: number;
   youtubeTime: number;
@@ -43,6 +45,12 @@ export interface JukeboxPlaybackState {
   isLoading: boolean;          // #3: loading state for song switching
   // N8: Wishlist song attribution (companion who requested it)
   currentSongRequestedBy: string | null;
+  /** Pause flag for streaming-platform videos (YouTube/Rutube/…) — these are
+   *  driven via the isPlaying prop, not via HTML5 media elements. */
+  platformPaused: boolean;
+  /** Repeat-one restart counter for platform videos — bumping it remounts the
+   *  player (key) which restarts playback from the beginning. */
+  platformRestartKey: number;
 }
 
 export interface JukeboxDerivedState {
@@ -84,9 +92,19 @@ export interface JukeboxPlaybackSetters {
   setDuration: (_d: number) => void;
 }
 
-export interface JukeboxYouTubeActions {
-  handleYoutubeUrlSubmit: (_url: string) => void;
-  clearCustomYoutube: () => void;
+export interface JukeboxVideoQueueActions {
+  /** Queue a video link (video AND sound) following the jukebox queue rules:
+   *  running jukebox → after the last user song; idle jukebox → plays immediately.
+   *  Returns false when the URL matches no supported platform. */
+  addVideoToQueue: (_url: string, _label?: string, _requester?: string) => boolean;
+  /** Queue a parsed list of video links in order (link-list feature).
+   *  Returns the number of successfully queued links. */
+  addVideoListToQueue: (_links: Array<{ url: string; label?: string }>) => number;
+  /** Remove a queued video break that is not currently playing. */
+  removeQueueVideo: (_songId: string) => boolean;
+  /** Play a library playlist directly in the jukebox (stored order) or — when
+   *  the jukebox is already running — enqueue it after the last user song. */
+  enqueueLibraryPlaylist: (_playlistId: string) => Promise<boolean>;
 }
 
 export interface JukeboxPlayerActions {
@@ -109,7 +127,7 @@ export interface UseJukeboxReturn extends
   JukeboxDerivedState,
   JukeboxFilterSetters,
   JukeboxPlaybackSetters,
-  JukeboxYouTubeActions,
+  JukeboxVideoQueueActions,
   JukeboxPlayerActions {
   /** Full song library (all loaded songs) */
   songs: Song[];

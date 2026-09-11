@@ -4,12 +4,17 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Song } from '@/types/game';
 import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { extractYouTubeId } from '@/components/game/youtube-player';
 import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { getPlaylistById } from '@/lib/playlist-manager';
 import { getBool, getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
 import type { UseJukeboxReturn } from './jukebox-types';
+import {
+  createVideoBreakSong,
+  getSongPlatformVideo,
+  isVideoBreak,
+} from './video-break';
 
 /** Track recently played songs for F7 exclusion */
 interface RecentlyPlayedEntry {
@@ -46,7 +51,6 @@ export function useJukebox(refs?: {
   // --- Playback State ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [youtubeTime, setYoutubeTime] = useState(0);
@@ -66,6 +70,11 @@ export function useJukebox(refs?: {
   const [isLoading, setIsLoading] = useState(false);
   // N8: Wishlist song attribution
   const [currentSongRequestedBy, setCurrentSongRequestedBy] = useState<string | null>(null);
+  // Pause flag for streaming-platform videos (driven via isPlaying prop)
+  const [platformPaused, setPlatformPaused] = useState(false);
+  // Repeat-one restart counter for platform videos — bumping the key remounts
+  // the platform player which restarts playback from the beginning.
+  const [platformRestartKey, setPlatformRestartKey] = useState(0);
 
   // --- Song Library ---
   const [songs, setSongs] = useState<Song[]>([]);
@@ -188,6 +197,10 @@ export function useJukebox(refs?: {
   }, [songs, filterGenre, filterArtist, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
 
   // ==================== DERIVED STATE ====================
+
+  /** Effective playback state: platform videos pause via platformPaused,
+   *  HTML5 media via the media elements themselves (isPlaying stays true). */
+  const isMediaPlaying = isPlaying && !platformPaused;
 
   const upNext = useMemo(() => {
     return playlist.slice(currentIndex + 1, currentIndex + 6);
@@ -319,6 +332,174 @@ export function useJukebox(refs?: {
 
   insertManualSongRef.current = insertManualSong;
 
+  // ==================== VIDEO QUEUE (Video Breaks) ====================
+
+  const playNextRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
+  /**
+   * Insert a song into the queue AFTER the last user-requested song (i.e.
+   * before the next random song) — ref-synced so sequential inserts in the
+   * same tick (link lists!) keep their order and are immediately visible to
+   * playNext(). Returns the insert position or -1 when skipped (duplicate).
+   */
+  const insertSongIntoQueue = useCallback((song: Song, requester?: string): number => {
+    const currentPlaylist = playlistRef.current;
+    if (currentPlaylist.some(s => s.id === song.id)) return -1;
+
+    if (requester) {
+      songRequesterRef.current.set(song.id, requester);
+    }
+
+    const newPlaylist = [...currentPlaylist];
+    const ci = currentIndexRef.current;
+    const insertIdx = newPlaylist.findIndex((s, idx) => idx > ci && !manualIdsRef.current.has(s.id));
+    const target = insertIdx === -1 ? newPlaylist.length : insertIdx;
+    newPlaylist.splice(target, 0, song);
+    manualIdsRef.current.add(song.id);
+
+    // Keep the ref in sync IMMEDIATELY — setState is async and same-tick
+    // callers (list inserts, playNext) must see the new queue.
+    playlistRef.current = newPlaylist;
+    setPlaylist(newPlaylist);
+    return target;
+  }, []);
+
+  const addVideoToQueue = useCallback((url: string, label?: string, requester?: string): boolean => {
+    const video = createVideoBreakSong(url, label);
+    if (!video) return false;
+
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // No queue at all → the video starts immediately
+      if (requester) songRequesterRef.current.set(video.id, requester);
+      manualIdsRef.current.add(video.id);
+      playlistRef.current = [video];
+      currentSongRef.current = video;
+      currentIndexRef.current = 0;
+      isPlayingRef.current = true;
+      setPlaylist([video]);
+      setCurrentIndex(0);
+      setCurrentSong(video);
+      setCurrentSongRequestedBy(requester ?? null);
+      setCurrentTime(0);
+      setDuration(0);
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      setSongsPlayed(prev => prev + 1);
+      return true;
+    }
+
+    if (!running) {
+      // Stopped jukebox with an existing queue → the video becomes the next
+      // item and playback resumes with it right away.
+      insertSongIntoQueue(video, requester);
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → insert after the last user song (before the next random song)
+    insertSongIntoQueue(video, requester);
+    return true;
+  }, [insertSongIntoQueue]);
+
+  const addVideoToQueueRef = useRef(addVideoToQueue);
+  addVideoToQueueRef.current = addVideoToQueue;
+
+  const addVideoListToQueue = useCallback((links: Array<{ url: string; label?: string }>): number => {
+    let queued = 0;
+    for (const link of links) {
+      if (!link?.url?.trim()) continue;
+      if (addVideoToQueueRef.current(link.url, link.label)) queued++;
+    }
+    return queued;
+  }, []);
+
+  const removeQueueVideo = useCallback((songId: string): boolean => {
+    const currentPlaylist = playlistRef.current;
+    const idx = currentPlaylist.findIndex(s => s.id === songId);
+    if (idx === -1) return false;
+    // Never remove the currently playing item (use Next instead)
+    if (idx === currentIndexRef.current) return false;
+
+    const newPlaylist = currentPlaylist.filter(s => s.id !== songId);
+    playlistRef.current = newPlaylist;
+    setPlaylist(newPlaylist);
+    if (idx < currentIndexRef.current) {
+      const shifted = currentIndexRef.current - 1;
+      currentIndexRef.current = shifted;
+      setCurrentIndex(shifted);
+    }
+    manualIdsRef.current.delete(songId);
+    songRequesterRef.current.delete(songId);
+    return true;
+  }, []);
+
+  /** Library playlist → jukebox: fresh start (stored order) or enqueue while running. */
+  const enqueueLibraryPlaylist = useCallback(async (playlistId: string): Promise<boolean> => {
+    const pl = getPlaylistById(playlistId);
+    if (!pl || pl.songIds.length === 0) return false;
+
+    const full = pl.songIds
+      .map(id => songsRef.current.find(s => s.id === id))
+      .filter((s): s is Song => !!s);
+    if (full.length === 0) return false;
+
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // Fresh start: play EXACTLY this playlist in stored order
+      const prepared = await prepareSong(full[0]);
+      const newPlaylist = [prepared, ...full.slice(1)];
+      full.forEach(s => manualIdsRef.current.add(s.id));
+      playlistRef.current = newPlaylist;
+      currentSongRef.current = prepared;
+      currentIndexRef.current = 0;
+      isPlayingRef.current = true;
+      setPlaylist(newPlaylist);
+      setCurrentIndex(0);
+      setCurrentSong(prepared);
+      setCurrentSongRequestedBy(null);
+      setCurrentTime(0);
+      setDuration(prepared.duration ? prepared.duration / 1000 : 0);
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      setSongsPlayed(0);
+      genreCountRef.current.clear();
+      requesterCountRef.current.clear();
+      if (timerMinutes > 0) setTimerRemaining(timerMinutes * 60);
+      return true;
+    }
+
+    if (!running) {
+      // Stopped with an existing queue → enqueue after the current position and resume
+      full.forEach(s => insertSongIntoQueue(s));
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → enqueue all songs after the last user song, in stored order
+    full.forEach(s => insertSongIntoQueue(s));
+    return true;
+  }, [prepareSong, insertSongIntoQueue, timerMinutes]);
+
+  // Companion App: video link arrives via the remote-command bridge
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ url?: string; label?: string; requester?: string }>).detail;
+      if (!detail?.url) return;
+      addVideoToQueueRef.current(detail.url, detail.label, detail.requester);
+    };
+    window.addEventListener('jukebox:video-add', handler as EventListener);
+    return () => window.removeEventListener('jukebox:video-add', handler as EventListener);
+  }, []);
+
   // ==================== WISHLIST POLLING ====================
 
   useEffect(() => {
@@ -362,9 +543,13 @@ export function useJukebox(refs?: {
     if (playlistRef.current.length === 0) return;
     let nextIndex = currentIndexRef.current + 1;
     if (nextIndex >= playlistRef.current.length) {
-      if (repeat === 'all') {
+      // A queue that contains ONLY video links ends after the last video —
+      // looping a video list like a song pool is almost never wanted.
+      const onlyVideoBreaks = playlistRef.current.every(s => isVideoBreak(s));
+      if (repeat === 'all' && !onlyVideoBreaks) {
         nextIndex = 0;
       } else {
+        isPlayingRef.current = false;
         setIsPlaying(false);
         return;
       }
@@ -386,9 +571,12 @@ export function useJukebox(refs?: {
       if (requester) {
         requesterCountRef.current.set(requester, (requesterCountRef.current.get(requester) || 0) + 1);
       }
+      currentSongRef.current = preparedSong;
+      currentIndexRef.current = nextIndex;
       setCurrentIndex(nextIndex);
       setCurrentSong(preparedSong);
       setCurrentTime(0);
+      setPlatformPaused(false);
       setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -397,6 +585,8 @@ export function useJukebox(refs?: {
       setIsLoading(false);
     }
   }, [playlist, currentIndex, repeat, prepareSong]);
+
+  playNextRef.current = playNext;
 
   // ==================== PLAY PREVIOUS ====================
 
@@ -417,6 +607,9 @@ export function useJukebox(refs?: {
       const preparedSong = await prepareSong(prevSong);
       const requester = songRequesterRef.current.get(prevSong.id) || null;
       setCurrentSongRequestedBy(requester);
+      currentSongRef.current = preparedSong;
+      currentIndexRef.current = prevIndex;
+      setPlatformPaused(false);
       setCurrentIndex(prevIndex);
       setCurrentSong(preparedSong);
       setCurrentTime(0);
@@ -434,6 +627,13 @@ export function useJukebox(refs?: {
   const handleMediaEnd = useCallback(() => {
     if (repeat === 'one' && currentSongRef.current) {
       const videoHasEmbeddedAudio = currentSongRef.current.hasEmbeddedAudio || !currentSongRef.current.audioUrl;
+      // Streaming-platform videos: restart via player remount (key bump)
+      if (getSongPlatformVideo(currentSongRef.current)) {
+        setPlatformPaused(false);
+        setCurrentTime(0);
+        setPlatformRestartKey(k => k + 1);
+        return;
+      }
       if (currentSongRef.current.videoBackground && videoRef.current) {
         videoRef.current.currentTime = 0;
         videoRef.current.play().catch(() => {});
@@ -473,7 +673,9 @@ export function useJukebox(refs?: {
   }, [generatePlaylist, timerMinutes]);
 
   const stopJukebox = useCallback(() => {
+    isPlayingRef.current = false;
     setIsPlaying(false);
+    setPlatformPaused(false);
     if (videoRef.current) videoRef.current.pause();
     if (audioRef.current) audioRef.current.pause();
     setTimerRemaining(null);
@@ -547,9 +749,17 @@ export function useJukebox(refs?: {
   // ==================== PLAY / PAUSE ====================
 
   const togglePlayPause = useCallback(() => {
-    // #18 FIX: Only play the correct media element
     const song = currentSongRef.current;
     if (!song) return;
+
+    // Streaming-platform videos (video break or platform #VIDEO) are driven
+    // via the isPlaying prop — pause them through the platformPaused flag.
+    if (getSongPlatformVideo(song)) {
+      setPlatformPaused(p => !p);
+      return;
+    }
+
+    // #18 FIX: Only play the correct media element
     const videoHasEmbeddedAudio = song.hasEmbeddedAudio || !song.audioUrl;
 
     if (song.videoBackground && videoRef.current) {
@@ -561,6 +771,11 @@ export function useJukebox(refs?: {
       else audioRef.current.pause();
     }
   }, [videoRef, audioRef]);
+
+  // Reset the platform pause flag whenever the current media changes
+  useEffect(() => {
+    setPlatformPaused(false);
+  }, [currentSong?.id]);
 
   // ==================== F3: MUTE TOGGLE ====================
 
@@ -788,19 +1003,6 @@ export function useJukebox(refs?: {
     });
   }, []);
 
-  // ==================== YOUTUBE URL HANDLING ====================
-
-  const handleYoutubeUrlSubmit = useCallback((url: string) => {
-    const extractedId = extractYouTubeId(url);
-    if (extractedId) {
-      setCustomYoutubeId(extractedId);
-    }
-  }, []);
-
-  const clearCustomYoutube = useCallback(() => {
-    setCustomYoutubeId(null);
-  }, []);
-
   // ==================== N10: EXPORT PLAYLIST ====================
 
   const exportPlaylist = useCallback(() => {
@@ -840,7 +1042,11 @@ export function useJukebox(refs?: {
   useEffect(() => {
     if (youtubeTime > 0 && currentSong) {
       setCurrentTime(youtubeTime / 1000);
-      setDuration(currentSong.duration / 1000);
+      // Video breaks have duration 0 until the player reports it — never
+      // stomp a player-reported duration back to the (unknown) song duration.
+      if (currentSong.duration > 0) {
+        setDuration(currentSong.duration / 1000);
+      }
     }
   }, [youtubeTime, currentSong]);
 
@@ -854,7 +1060,7 @@ export function useJukebox(refs?: {
     setShuffle: handleSetShuffle, setRepeat,
     setMinDuration, setMaxDuration, setMaxSongs, setTimerMinutes, setRecentlyPlayedMinutes,
     // Playback
-    isPlaying, currentSong, customYoutubeId, playlist, currentIndex,
+    isPlaying, isMediaPlaying, currentSong, playlist, currentIndex, platformPaused, platformRestartKey,
     youtubeTime, currentTime, duration, isAdPlaying,
     volume, isFullscreen, isMuted, previousVolume,
     hidePlaylist, showLyrics, currentLyricIndex, isLoading,
@@ -865,8 +1071,8 @@ export function useJukebox(refs?: {
     // Derived
     genres, artists, filteredSongs, upNext,
     songsPlayed, topGenres, topRequesters, timerRemaining,
-    // YouTube
-    handleYoutubeUrlSubmit, clearCustomYoutube,
+    // Video queue (video breaks) + library playlists
+    addVideoToQueue, addVideoListToQueue, removeQueueVideo, enqueueLibraryPlaylist,
     // Actions
     startJukebox, stopJukebox, playNext, playPrevious,
     handleMediaEnd, toggleFullscreen, togglePlayPause,

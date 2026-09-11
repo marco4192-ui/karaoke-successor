@@ -236,11 +236,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
 
   // ===================== DESKTOP MIRRORING =====================
-  const handleSendDesktopCommand = useCallback((screen: string) => {
+  const handleSendDesktopCommand = useCallback((screen: string, data?: unknown) => {
     if (!clientId || !profile) return;
     fetch('/api/mobile', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'remote_command', clientId, payload: { command: screen } }),
+      body: JSON.stringify({ type: 'remote_command', clientId, payload: { command: screen, data } }),
     }).catch(() => { /* ignore */ });
   }, [clientId, profile]);
 

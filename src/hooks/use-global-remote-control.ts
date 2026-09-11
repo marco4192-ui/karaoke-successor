@@ -498,6 +498,22 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('jukebox:fullscreen'));
           break;
         }
+        // Companion App: Video-Link in die Jukebox-Warteschlange einreihen.
+        // Der Desktop muss dafür auf dem Jukebox-Screen sein (nur dort läuft
+        // die Jukebox) — erst navigieren, dann das Event mit dem Link feuern.
+        if (cmd.type === 'jukebox_video_add') {
+          navigateToScreen('jukebox');
+          const url = (cmd.data as { url?: string })?.url;
+          const label = (cmd.data as { label?: string })?.label;
+          if (url) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('jukebox:video-add', {
+                detail: { url, label, requester: cmd.fromClientName || undefined },
+              }));
+            }, 350);
+          }
+          break;
+        }
         // Party cancel: companion left party-setup, reset party state on desktop
         if (cmd.type === 'party_cancel') {
           window.dispatchEvent(new CustomEvent('remote-party-cancel', { detail: {} }));

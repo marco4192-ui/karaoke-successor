@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import type { JukeboxWishlistItem, GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { isSupportedVideoLink } from '@/components/screens/jukebox/video-break';
 
 // ===================== Props =====================
 
@@ -12,8 +13,8 @@ interface MirrorJukeboxLiteProps {
   onRefreshJukebox: () => void;
   gameState: GameState;
   onNavigate: (v: MobileView) => void;
-  /** Sendet einen Command an den Desktop */
-  onSendDesktopCommand: (command: string) => void;
+  /** Sendet einen Command an den Desktop (optional mit Daten-Payload) */
+  onSendDesktopCommand: (command: string, data?: unknown) => void;
 }
 
 // ===================== Hilfsfunktionen =====================
@@ -45,6 +46,29 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
       (cmd: string) => { haptic(); onSendDesktopCommand(cmd); },
       [onSendDesktopCommand],
     );
+
+    // ── Video-Link: wird auf dem Desktop in die Jukebox-Warteschlange
+    //    eingereiht (mit Ton, nach den Wunschsongs). ──
+    const [videoLink, setVideoLink] = useState('');
+    const [videoLinkError, setVideoLinkError] = useState(false);
+    const [videoLinkAdded, setVideoLinkAdded] = useState(false);
+
+    const handleVideoLinkSubmit = useCallback(() => {
+      const url = videoLink.trim();
+      if (!url) return;
+      if (!isSupportedVideoLink(url)) {
+        setVideoLinkError(true);
+        setVideoLinkAdded(false);
+        return;
+      }
+      setVideoLinkError(false);
+      setVideoLink('');
+      haptic();
+      onSendDesktopCommand('jukebox_video_add', { url });
+      // Kurzes visuelles Feedback (der Desktop reiht den Link asynchron ein)
+      setVideoLinkAdded(true);
+      setTimeout(() => setVideoLinkAdded(false), 2500);
+    }, [videoLink, onSendDesktopCommand]);
 
     // DO-NOT-CHANGE: Jukebox starten - wenn Playlist leer, wird auf dem
     // Desktop Random-Musik aus der gesamten Bibliothek abgespielt.
@@ -115,6 +139,50 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
             )}
           </div>
         )}
+
+        {/* Video-Link: in die Desktop-Jukebox-Warteschlange einreihen */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2">
+            {t('mobile.mirrorJukeboxVideoAdd')}
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              inputMode="url"
+              value={videoLink}
+              onChange={(e) => { setVideoLink(e.target.value); setVideoLinkError(false); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleVideoLinkSubmit(); }}
+              placeholder={t('mobile.mirrorJukeboxVideoPlaceholder')}
+              aria-label={t('mobile.mirrorJukeboxVideoAdd')}
+              className={`flex-1 min-w-0 rounded-xl bg-white/10 border text-sm text-white placeholder:text-white/30 outline-none px-3 py-2.5 transition-colors ${
+                videoLinkError
+                  ? 'border-red-400/60 focus:border-red-400'
+                  : videoLinkAdded
+                    ? 'border-green-400/60 focus:border-green-400'
+                    : 'border-white/10 focus:border-cyan-400/60'
+              }`}
+            />
+            <button
+              onClick={handleVideoLinkSubmit}
+              disabled={!videoLink.trim()}
+              className={`shrink-0 flex items-center justify-center rounded-xl px-4 text-sm font-medium active:scale-95 transition-all disabled:opacity-40 ${
+                videoLinkAdded
+                  ? 'bg-green-500/20 border border-green-400/40 text-green-300'
+                  : 'bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-300'
+              }`}
+              aria-label={t('mobile.mirrorJukeboxVideoButton')}
+            >
+              {videoLinkAdded ? '✓' : '➕'}
+            </button>
+          </div>
+          {videoLinkError && (
+            <p className="mt-1.5 text-xs text-red-400">{t('mobile.mirrorJukeboxVideoInvalid')}</p>
+          )}
+          {videoLinkAdded && (
+            <p className="mt-1.5 text-xs text-green-400/80">{t('mobile.mirrorJukeboxVideoAdded')}</p>
+          )}
+          <p className="mt-1.5 text-[11px] text-white/30">{t('mobile.mirrorJukeboxVideoHint')}</p>
+        </div>
 
         {/* Start / Stop */}
         <div className="flex gap-2">

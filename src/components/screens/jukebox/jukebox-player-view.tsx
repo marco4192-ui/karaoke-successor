@@ -1,16 +1,25 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
+import { DailymotionPlayer } from '@/components/game/dailymotion-player';
+import { VimeoPlayer } from '@/components/game/vimeo-player';
+import { RutubePlayer } from '@/components/game/rutube-player';
+import { VKPlayer } from '@/components/game/vk-player';
+import { BilibiliPlayer } from '@/components/game/bilibili-player';
+import { NiconicoPlayer } from '@/components/game/niconico-player';
+import { MANUAL_START_PLATFORMS, type VideoPlatform } from '@/lib/url-utils';
 import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
+import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
+import { getSongPlatformVideo, isVideoBreak, parseVideoLinkInput, videoBreakPlatform, platformDisplayName } from './video-break';
 import { EqualizerBars, VinylDisc } from './jukebox-visuals';
 
 // ==================== UTILITIES ====================
@@ -43,12 +52,139 @@ function formatTimer(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// ==================== PLATFORM VIDEO DISPATCH ====================
+
+/**
+ * Renders the correct streaming-platform player for a song with a platform
+ * video URL — for video breaks (link queue) AND karaoke songs with #VIDEO.
+ *
+ * - Video break: video + SOUND (the link is the audio source).
+ * - Karaoke song with separate #MP3: video muted, audio via <audio> (fixes
+ *   the former double-audio issue for YouTube songs in the jukebox).
+ */
+function JukeboxPlatformVideo({
+  j,
+  song,
+  platformVideo,
+}: {
+  j: UseJukeboxReturn;
+  song: Song;
+  platformVideo: { platform: NonNullable<VideoPlatform>; url: string };
+}) {
+  const { t } = useTranslation();
+  const { platform, url } = platformVideo;
+  const videoGap = song.videoGap || 0;
+  const startTime = song.start || 0;
+
+  // Karaoke songs with a separate audio track keep their audio master (MP3);
+  // the platform video stays muted in that case.
+  const hasSeparateAudio = !!song.audioUrl && !song.hasEmbeddedAudio;
+  const effectiveMuted = hasSeparateAudio || j.isMuted || j.volume === 0;
+  const playerIsPlaying = j.isPlaying && !j.platformPaused;
+
+  // Manual start gate (Bilibili always; Niconico when its API is dead).
+  // Reset happens via the key-based remount in SongDisplay (url change).
+  const [gateConfirmed, setGateConfirmed] = useState(false);
+  const [gateRequired, setGateRequired] = useState((MANUAL_START_PLATFORMS as readonly string[]).includes(platform));
+
+  // Auto-skip broken videos: a jukebox must keep running — after a player
+  // error (embed-disabled, deleted, geo-blocked…) advance to the next item.
+  // jRef keeps the LATEST hook state so a stale timeout never skips a song
+  // the user selected in the meantime.
+  const jRef = useRef(j);
+  jRef.current = j;
+  const skipScheduledRef = useRef(false);
+  const handleError = useCallback(() => {
+    if (skipScheduledRef.current) return;
+    skipScheduledRef.current = true;
+    setTimeout(() => {
+      skipScheduledRef.current = false;
+      if (jRef.current.currentSong?.id === song.id) {
+        jRef.current.playNext();
+      }
+    }, 3500);
+  }, [song]);
+
+  // Only video breaks take the player-reported duration (karaoke songs use
+  // their TXT duration — the platform video may be longer than the song).
+  const handleDuration = useCallback((seconds: number) => {
+    if (isVideoBreak(song)) j.setDuration(seconds);
+  }, [j, song]);
+
+  const commonProps = {
+    videoGap,
+    onReady: () => {},
+    onTimeUpdate: (time: number) => j.setYoutubeTime(time),
+    onEnded: j.handleMediaEnd,
+    onAdStart: () => j.setIsAdPlaying(true),
+    onAdEnd: () => j.setIsAdPlaying(false),
+    isPlaying: playerIsPlaying,
+    startTime,
+  };
+
+  let player: React.ReactNode = null;
+  if (platform === 'youtube') {
+    const videoId = extractYouTubeId(url) || '';
+    player = (
+      <YouTubePlayer
+        videoId={videoId}
+        {...commonProps}
+        muted={effectiveMuted}
+        volume={j.volume}
+        onDuration={handleDuration}
+        interactive={j.isAdPlaying}
+        onError={handleError}
+      />
+    );
+  } else if (platform === 'rutube') {
+    player = <RutubePlayer videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+  } else if (platform === 'vk') {
+    player = <VKPlayer videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+  } else if (platform === 'dailymotion') {
+    player = <DailymotionPlayer videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+  } else if (platform === 'vimeo') {
+    player = <VimeoPlayer videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+  } else if (platform === 'bilibili') {
+    player = <BilibiliPlayer videoUrl={url} {...commonProps} manualStartConfirmed={gateConfirmed} onError={handleError} />;
+  } else if (platform === 'nicovideo') {
+    player = (
+      <NiconicoPlayer
+        videoUrl={url}
+        {...commonProps}
+        manualStartConfirmed={gateConfirmed}
+        onManualGateRequired={() => setGateRequired(true)}
+        onError={handleError}
+      />
+    );
+  }
+
+  return (
+    <>
+      {player}
+      {/* Manual start gate — "music is running" confirmation for platforms
+          without a playback API (Bilibili) or with a dead API (Niconico). */}
+      {gateRequired && !gateConfirmed && (
+        <div className="absolute inset-x-0 top-14 z-20 flex justify-center px-4 pointer-events-none">
+          <button
+            onClick={() => setGateConfirmed(true)}
+            className="pointer-events-auto px-4 py-2.5 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 text-white text-sm font-semibold shadow-[0_0_25px_rgba(34,211,238,0.5)] border border-cyan-300/50 backdrop-blur-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+          >
+            <span aria-hidden>▶️</span>
+            {t('jukeboxPlayer.gateStart')}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ==================== POOL SELECTOR (desktop player view) ====================
 
 /** Inline pool/playlist switcher for the jukebox player view */
-function PoolSelector() {
+function PoolSelector({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   const [selectedPlaylistId, setSelectedPlaylistId] = useState('');
+  const [enqueueState, setEnqueueState] = useState<'idle' | 'busy' | 'done'>('idle');
 
   // Restore selection on mount
   useEffect(() => {
@@ -71,6 +207,21 @@ function PoolSelector() {
     }
     // Notify useJukebox to re-filter via custom event
     window.dispatchEvent(new CustomEvent('jukebox-pool-changed'));
+  };
+
+  // Queue the selected library playlist directly into the running jukebox queue
+  const handleEnqueue = async () => {
+    if (!selectedPlaylistId || enqueueState === 'busy') return;
+    setEnqueueState('busy');
+    try {
+      const ok = await j.enqueueLibraryPlaylist(selectedPlaylistId);
+      setEnqueueState(ok ? 'done' : 'idle');
+      if (ok) {
+        setTimeout(() => setEnqueueState('idle'), 2000);
+      }
+    } catch {
+      setEnqueueState('idle');
+    }
   };
 
   const playlists = getPlaylists().filter(p => !p.isSystem);
@@ -97,6 +248,29 @@ function PoolSelector() {
           </option>
         ))}
       </select>
+      {/* Playlist → queue: appends the playlist songs after the last user song */}
+      <button
+        onClick={handleEnqueue}
+        disabled={!selectedPlaylistId || enqueueState === 'busy'}
+        title={t('jukeboxPlayer.enqueuePlaylistRunning')}
+        aria-label={t('jukeboxPlayer.enqueuePlaylistRunning')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+          enqueueState === 'done'
+            ? 'bg-green-500/20 border-green-400/40 text-green-300'
+            : 'bg-cyan-500/10 border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50'
+        }`}
+      >
+        {enqueueState === 'done' ? (
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        )}
+        <span className="hidden sm:inline">{enqueueState === 'done' ? t('jukeboxPlayer.playlistQueued') : t('jukeboxPlayer.enqueuePlaylistRunning')}</span>
+      </button>
     </div>
   );
 }
@@ -109,7 +283,7 @@ function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
     <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 via-black/60 to-transparent p-4 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
         <EqualizerBars
-          active={j.isPlaying && !j.isAdPlaying}
+          active={j.isMediaPlaying && !j.isAdPlaying}
           bars={4}
           className="h-5"
           label={t('jukeboxPlayer.equalizerLabel')}
@@ -181,7 +355,6 @@ function LyricsOverlay({ j }: { j: UseJukeboxReturn }) {
 // ==================== PROGRESS BAR (F1, F2) ====================
 
 function ProgressBar({ j }: { j: UseJukeboxReturn }) {
-  if (j.customYoutubeId && !j.currentSong) return null;
   const progress = j.duration > 0 ? j.currentTime / j.duration : 0;
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -275,6 +448,7 @@ function VolumeControl({ j }: { j: UseJukeboxReturn }) {
 
 function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
+  const videoBreak = isVideoBreak(j.currentSong);
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 p-6">
       {/* N8: Requester attribution as chip */}
@@ -286,11 +460,20 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
           {t('jukeboxPlayer.requestedBy').replace('{name}', j.currentSongRequestedBy)}
         </div>
       )}
+      {/* Video break chip — marks a queued plain video link */}
+      {videoBreak && (
+        <div className="inline-flex items-center gap-1.5 text-fuchsia-300/90 text-xs mb-2 ml-2 bg-fuchsia-500/10 border border-fuchsia-400/30 rounded-full px-3 py-1 backdrop-blur-sm">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <polygon points="5 3 19 12 5 21 5 3" strokeLinejoin="round" />
+          </svg>
+          {t('jukeboxPlayer.videoChip')}
+        </div>
+      )}
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5 mb-0.5">
             <EqualizerBars
-              active={j.isPlaying && !j.isAdPlaying}
+              active={j.isMediaPlaying && !j.isAdPlaying}
               bars={4}
               className="h-4"
               label={t('jukeboxPlayer.equalizerLabel')}
@@ -307,10 +490,10 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
               <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
             </svg>
           </button>
-          <button onClick={j.togglePlayPause} aria-label={j.isPlaying ? 'Pause' : 'Play'} className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-[0_0_25px_rgba(34,211,238,0.45)]">
+          <button onClick={j.togglePlayPause} aria-label={j.isMediaPlaying ? 'Pause' : 'Play'} className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-[0_0_25px_rgba(34,211,238,0.45)]">
             {j.isLoading ? (
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : j.isPlaying ? (
+            ) : j.isMediaPlaying ? (
               <PauseIcon className="w-8 h-8 text-white" />
             ) : (
               <PlayIcon className="w-8 h-8 text-white ml-1" />
@@ -441,6 +624,23 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
 function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
+  // Compact video-link quick-add while the jukebox is running
+  // (supports the "URL | Title" syntax too)
+  const [quickUrl, setQuickUrl] = useState('');
+  const [quickError, setQuickError] = useState(false);
+
+  const handleQuickAdd = useCallback(() => {
+    const raw = quickUrl.trim();
+    if (!raw) return;
+    const link = parseVideoLinkInput(raw)[0];
+    if (!link) {
+      setQuickError(true);
+      return;
+    }
+    setQuickError(false);
+    setQuickUrl('');
+    j.addVideoToQueue(link.url, link.label);
+  }, [quickUrl, j]);
 
   // #3 FIX: Song click with loading state and error handling
   // (declared before the empty-state early return below so the hook order
@@ -451,7 +651,11 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
     try {
       const songIndex = j.playlist.findIndex(s => s.id === songId);
       if (songIndex !== -1) {
-        const preparedSong = await getSongByIdWithLyrics(songId) || await ensureSongUrls(j.playlist[songIndex]);
+        const target = j.playlist[songIndex];
+        // Video breaks are synthetic songs — never look them up in the library
+        const preparedSong = isVideoBreak(target)
+          ? target
+          : (await getSongByIdWithLyrics(songId) || await ensureSongUrls(target));
         j.setCurrentIndex(songIndex);
         j.setCurrentSong(preparedSong);
       }
@@ -463,10 +667,9 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
     }
   }, [j, loadingSongId]);
 
-  // #4 FIX: Never return null in fullscreen — use CSS width transition instead
-  // to avoid React #300 (DOM mismatch when toggling playlist in fullscreen flex layout)
-  if (j.upNext.length === 0) return null;
-
+  // #4 FIX: Never return null — an empty queue still shows the sidebar with
+  // the video-link quick-add and an empty-state hint (CSS width transition
+  // avoids React #300 DOM mismatch when toggling in fullscreen flex layout).
   const sidebarWrapperClass = j.isFullscreen
     ? 'h-full flex flex-col bg-black/80 pt-16 transition-all duration-300'
     : j.hidePlaylist
@@ -483,7 +686,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
           <CardTitle className="text-lg flex items-center justify-between">
             <span className="flex items-center gap-2">
               <EqualizerBars
-                active={j.isPlaying && !j.isAdPlaying}
+                active={j.isMediaPlaying && !j.isAdPlaying}
                 bars={3}
                 className="h-3.5"
                 label={t('jukeboxPlayer.equalizerLabel')}
@@ -496,9 +699,48 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
           </CardTitle>
         </CardHeader>
         <CardContent className={`${j.isFullscreen ? 'flex-1 overflow-y-auto p-2 jukebox-queue-scroll' : 'pb-4 lg:flex-1 lg:overflow-y-auto lg:max-h-[24rem] xl:max-h-[28rem] jukebox-queue-scroll'}`}>
+          {/* Video-Link Schnell-Hinzufügen (auch während der Jukebox läuft) */}
+          <div className="flex gap-1.5 mb-3">
+            <input
+              type="url"
+              inputMode="url"
+              value={quickUrl}
+              onChange={(e) => { setQuickUrl(e.target.value); setQuickError(false); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleQuickAdd(); }}
+              placeholder={t('jukeboxPlayer.videoLinkPlaceholder')}
+              aria-label={t('jukeboxPlayer.videoLinkTitle')}
+              title={t('jukeboxPlayer.videoLinkHint')}
+              className={`min-w-0 flex-1 bg-white/5 border rounded-lg px-2.5 py-2 text-xs text-white placeholder:text-white/30 outline-none transition-colors ${
+                quickError ? 'border-red-400/60 focus:border-red-400' : 'border-white/10 focus:border-fuchsia-400/60'
+              }`}
+            />
+            <button
+              onClick={handleQuickAdd}
+              disabled={!quickUrl.trim()}
+              className="shrink-0 px-2.5 py-2 rounded-lg bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-300 hover:bg-fuchsia-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label={t('jukeboxPlayer.videoLinkAdd')}
+              title={t('jukeboxPlayer.videoLinkAdd')}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <polygon points="6 3 20 12 6 21 6 3" />
+              </svg>
+            </button>
+          </div>
+          {quickError && (
+            <p className="text-red-400 text-xs mb-2 -mt-1.5" role="alert">{t('jukeboxPlayer.videoLinkInvalid')}</p>
+          )}
           <div className="space-y-1.5">
+            {j.upNext.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-8 text-white/30">
+                <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                  <path d="M3 5h18v14H3z" rx="2" /><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none" />
+                </svg>
+                <p className="text-xs">{t('jukeboxPlayer.queueEmpty')}</p>
+              </div>
+            )}
             {j.upNext.map((song, index) => {
               const isNext = index === 0;
+              const videoBreak = isVideoBreak(song);
               return (
                 <button
                   key={song.id}
@@ -506,37 +748,71 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
                   disabled={loadingSongId === song.id}
                   className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 text-left disabled:opacity-50 group ${
                     isNext
-                      ? 'bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/15'
+                      ? videoBreak
+                        ? 'bg-fuchsia-500/10 border border-fuchsia-400/30 hover:bg-fuchsia-500/15'
+                        : 'bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/15'
                       : 'border border-transparent hover:bg-white/[0.07] hover:border-white/10 hover:translate-x-0.5'
                   }`}
                 >
-                  <span className={`w-6 text-center text-sm tabular-nums shrink-0 ${isNext ? 'text-cyan-400 font-bold' : 'text-white/30 font-medium'}`}>
+                  <span className={`w-6 text-center text-sm tabular-nums shrink-0 ${isNext ? (videoBreak ? 'text-fuchsia-400 font-bold' : 'text-cyan-400 font-bold') : 'text-white/30 font-medium'}`}>
                     {index + 1}
                   </span>
-                  <div className={`relative w-11 h-11 rounded-lg overflow-hidden shrink-0 ring-1 ${isNext ? 'ring-cyan-500/40' : 'ring-white/10'}`}>
+                  <div className={`relative w-11 h-11 rounded-lg overflow-hidden shrink-0 ring-1 ${videoBreak ? 'ring-fuchsia-500/40 bg-gradient-to-br from-fuchsia-600/40 to-purple-600/40' : isNext ? 'ring-cyan-500/40' : 'ring-white/10'}`}>
                     {song.coverImage ? (
                       <img src={song.coverImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-cyan-600/40 to-purple-600/40 flex items-center justify-center">
+                      <div className={`w-full h-full flex items-center justify-center ${videoBreak ? '' : 'bg-gradient-to-br from-cyan-600/40 to-purple-600/40'}`}>
                         {loadingSongId === song.id ? (
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : videoBreak ? (
+                          /* Video break: play badge instead of a music note */
+                          <svg className="w-5 h-5 text-fuchsia-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                            <polygon points="6 3 20 12 6 21 6 3" />
+                          </svg>
                         ) : (
                           <MusicIcon className="w-5 h-5 text-white/40" />
                         )}
                       </div>
                     )}
-                    {isNext && (
+                    {isNext && !videoBreak && (
                       <span className="absolute inset-0 bg-cyan-400/10 border border-cyan-400/30 rounded-lg pointer-events-none" aria-hidden />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`truncate text-sm font-medium ${isNext ? 'text-cyan-100' : 'text-white'}`}>{song.title}</p>
-                    <p className="text-white/50 text-xs truncate">{song.artist}</p>
+                    <p className={`truncate text-sm font-medium ${isNext ? (videoBreak ? 'text-fuchsia-100' : 'text-cyan-100') : 'text-white'}`}>{song.title}</p>
+                    <p className="text-white/50 text-xs truncate flex items-center gap-1">
+                      <span>{videoBreak ? `${platformDisplayName(videoBreakPlatform(song))} · ${t('jukeboxPlayer.videoChip')}` : song.artist}</span>
+                    </p>
                   </div>
                   {/* #24: Use centralized duration formatter */}
-                  <span className={`text-xs tabular-nums shrink-0 ${isNext ? 'text-cyan-400/70' : 'text-white/35'}`}>
+                  <span className={`text-xs tabular-nums shrink-0 ${isNext ? (videoBreak ? 'text-fuchsia-400/70' : 'text-cyan-400/70') : 'text-white/35'}`}>
                     {formatDuration(song.duration)}
                   </span>
+                  {/* Remove queued video breaks directly from the queue */}
+                  {videoBreak && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t('jukeboxPlayer.queueVideoRemove')}
+                      title={t('jukeboxPlayer.queueVideoRemove')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        j.removeQueueVideo(song.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          j.removeQueueVideo(song.id);
+                        }
+                      }}
+                      className="shrink-0 p-1 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -563,8 +839,9 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
   const { t } = useTranslation();
   const song = j.currentSong!;
 
-  // #26 FIX: Unified video ID calculation
-  const videoId = j.customYoutubeId || extractYouTubeId(song.youtubeUrl || '') || null;
+  // Unified platform dispatch: ANY streaming-platform video URL (video break
+  // OR karaoke song with #VIDEO) renders the matching platform player.
+  const platformVideo = getSongPlatformVideo(song);
 
   return (
     <div className={j.isFullscreen ? 'flex-1 min-h-0' : 'flex-1'}>
@@ -573,19 +850,11 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
           {/* #19: Transition animation wrapper */}
           <div className="absolute inset-0 transition-opacity duration-300">
 
-            {/* Video Background — unified YouTubePlayer rendering (#26) */}
-            {videoId ? (
-              <YouTubePlayer
-                videoId={videoId}
-                videoGap={song.videoGap || 0}
-                onReady={() => {}}
-                onTimeUpdate={(time) => j.setYoutubeTime(time)}
-                onEnded={j.handleMediaEnd}
-                onAdStart={() => j.setIsAdPlaying(true)}
-                onAdEnd={() => j.setIsAdPlaying(false)}
-                isPlaying={j.isPlaying}
-                startTime={0}
-              />
+            {/* Streaming-platform video — YouTube/Dailymotion/Vimeo/Rutube/VK/Bilibili/Niconico.
+                Key = url + restart counter: remounts on song change (resets the
+                manual start gate) and on repeat-one restarts. */}
+            {platformVideo ? (
+              <JukeboxPlatformVideo key={`${platformVideo.url}|${j.platformRestartKey}`} j={j} song={song} platformVideo={platformVideo} />
             ) : song.videoBackground ? (
               <video
                 ref={videoRef}
@@ -620,15 +889,6 @@ function SongDisplay({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef:
           {/* Fullscreen button (normal mode) */}
           {!j.isFullscreen && (
             <div className="absolute top-4 right-4 flex items-center gap-2">
-              {j.customYoutubeId && (
-                <button
-                  onClick={j.clearCustomYoutube}
-                  className="px-3 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-red-400 border border-white/10 transition-all text-xs"
-                  title={t('jukeboxPlayer.youtubeRemove')}
-                >
-                  {t('jukeboxPlayer.youtube')}
-                </button>
-              )}
               <button onClick={j.toggleFullscreen} className="px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white border border-white/10 hover:border-cyan-500/40 transition-all text-xs flex items-center gap-1.5">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                   <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
@@ -675,7 +935,7 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
               )}
             </div>
             <div className="mt-2.5">
-              <PoolSelector />
+              <PoolSelector j={j} />
             </div>
           </div>
         </div>

@@ -42,6 +42,10 @@ interface YouTubePlayerProps {
   startTime?: number; // Start position in milliseconds
   interactive?: boolean; // Allow user interaction with the player
   muted?: boolean; // Audio muted (e.g. when a separate audio track is the master)
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
+  /** Reports the video duration in SECONDS once it is known (jukebox progress bar). */
+  onDuration?: (_seconds: number) => void;
 }
 
 /** Imperative handle for parents that need to drive the player directly
@@ -78,6 +82,8 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
   startTime = 0,
   interactive = false,
   muted = false,
+  volume,
+  onDuration,
 }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -102,6 +108,10 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
   isPlayingRef.current = isPlaying;
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const onDurationRef = useRef(onDuration);
+  onDurationRef.current = onDuration;
   
   // ── Imperative handle: external seek + time queries ──
   // Used by the editor's video sync overlay. Does NOT re-create the player.
@@ -250,6 +260,9 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
           onReady: (event) => {
             try {
               expectedDurationRef.current = playerRef.current?.getDuration() || 0;
+              if (expectedDurationRef.current > 0) {
+                onDurationRef.current?.(expectedDurationRef.current);
+              }
             } catch { /* ignore */ }
             
             // CRITICAL: If the game already signaled play, start the video now.
@@ -266,6 +279,11 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
               if (mutedRef.current) event.target.mute();
               else event.target.unMute();
             } catch { /* ignore */ }
+
+            // Apply an explicit volume when provided (jukebox)
+            if (volumeRef.current !== undefined) {
+              try { event.target.setVolume(Math.round(Math.min(1, Math.max(0, volumeRef.current)) * 100)); } catch { /* ignore */ }
+            }
             
             onReadyRef.current?.();
           },
@@ -338,6 +356,12 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
               const songTime = (currentTime + videoGapSeconds) * 1000;
               onTimeUpdateRef.current?.(songTime);
             }
+            // Report the duration once it becomes available (jukebox progress)
+            const dur = playerRef.current.getDuration();
+            if (typeof dur === 'number' && isFinite(dur) && dur > 0 && dur !== expectedDurationRef.current) {
+              expectedDurationRef.current = dur;
+              onDurationRef.current?.(dur);
+            }
           } catch { /* Player not ready yet */ }
         }
       }, 100);
@@ -382,6 +406,14 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
       else playerRef.current.unMute();
     } catch { /* Player not ready */ }
   }, [muted]);
+  
+  // Handle volume changes without re-creating the player (jukebox)
+  useEffect(() => {
+    if (volume === undefined || !playerRef.current) return;
+    try {
+      playerRef.current.setVolume(Math.round(Math.min(1, Math.max(0, volume)) * 100));
+    } catch { /* Player not ready */ }
+  }, [volume]);
   
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full">
