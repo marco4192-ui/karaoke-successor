@@ -5,6 +5,7 @@ import { extractYouTubeId } from '@/components/game/youtube-player';
 import {
   detectVideoPlatform,
   platformAdLabel,
+  MANUAL_START_PLATFORMS,
   type VideoPlatform,
 } from '@/lib/url-utils';
 
@@ -16,9 +17,14 @@ interface UseYouTubeGameParams {
     youtubeUrl?: string;
     dailymotionUrl?: string;
     vimeoUrl?: string;
+    rutubeUrl?: string;
+    vkVideoUrl?: string;
+    bilibiliUrl?: string;
+    nicovideoUrl?: string;
     videoBackground?: string;
     videoUrl?: string;
     audioUrl?: string;
+    id?: string;
   } | null;
   isPlaying: boolean;
   setIsPlaying: (_playing: boolean) => void;
@@ -41,6 +47,16 @@ interface UseYouTubeGameReturn {
   usePlatformAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number;
+  /** True when the platform needs a MANUAL song-start confirmation (Bilibili always; Niconico when its API is dead). */
+  needsManualStart: boolean;
+  /** True while the manual start gate is engaged (game waiting for the user to confirm "music is running"). */
+  manualStartPending: boolean;
+  /** True once the user confirmed the manual start gate — passed down to the players. */
+  manualStartConfirmed: boolean;
+  /** Confirm the manual start gate (user clicked "Musik läuft — Los!"). */
+  confirmManualStart: () => void;
+  /** A player (Niconico) signals its API is dead and requests the manual gate. */
+  requestManualGate: () => void;
   handleYoutubeUrlSubmit: (_url: string) => void;
   clearCustomYoutube: () => void;
   handleAdStart: () => void;
@@ -49,9 +65,12 @@ interface UseYouTubeGameReturn {
 
 /**
  * Hook for managing streaming-video platform integration (YouTube,
- * Dailymotion, Vimeo), custom URL overrides, and ad detection.
+ * Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico), custom URL overrides,
+ * and ad detection.
  * Handles: platform detection, YouTube ID extraction, custom URL overrides,
- * ad countdown timer, and the game-wait/resume flow around ads.
+ * ad countdown timer, the game-wait/resume flow around ads, and the manual
+ * song-start gate for platforms without a playback API (Bilibili) or with a
+ * dead API (Niconico fallback).
  *
  * Naming note: the hook keeps its historical export name (useYouTubeGame)
  * for call-site stability, but is platform-aware since the
@@ -66,11 +85,14 @@ export function useYouTubeGame({
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [adCountdown, setAdCountdown] = useState(0);
+  // ── Manual start gate state (Bilibili / Niconico-API-dead) ──
+  const [manualFallback, setManualFallback] = useState(false);
+  const [manualStartConfirmed, setManualStartConfirmed] = useState(false);
   // Track whether the game was playing before the ad started,
   // so handleAdEnd only auto-resumes if the user didn't manually pause.
   const wasPlayingBeforeAdRef = useRef(false);
 
-  // ── Platform detection (YouTube / Dailymotion / Vimeo) ──
+  // ── Platform detection (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico) ──
   // Candidate URL fields in priority order — mirrors the historical
   // YouTube-only extraction (youtubeUrl → videoBackground → videoUrl).
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
@@ -81,6 +103,10 @@ export function useYouTubeGame({
     songYoutubeUrl ||
     effectiveSong?.dailymotionUrl ||
     effectiveSong?.vimeoUrl ||
+    effectiveSong?.rutubeUrl ||
+    effectiveSong?.vkVideoUrl ||
+    effectiveSong?.bilibiliUrl ||
+    effectiveSong?.nicovideoUrl ||
     (videoBackground && detectVideoPlatform(videoBackground) ? videoBackground : undefined) ||
     (videoUrl && detectVideoPlatform(videoUrl) ? videoUrl : undefined) ||
     null;
@@ -92,6 +118,32 @@ export function useYouTubeGame({
     : detectVideoPlatform(songPlatformUrl ?? '');
   const platformVideoUrl = !customActive && videoPlatform ? songPlatformUrl : null;
   const adPlatformLabel = platformAdLabel(videoPlatform);
+
+  // ── Manual start gate ──
+  // Bilibili has no playback API → always manual. Niconico may request the
+  // manual gate at runtime when its unofficial API is dead (manualFallback).
+  const needsManualStart = !!videoPlatform
+    && (MANUAL_START_PLATFORMS.includes(videoPlatform) || manualFallback);
+  const manualStartPending = needsManualStart && !manualStartConfirmed;
+
+  const confirmManualStart = useCallback(() => {
+    setManualStartConfirmed(true);
+  }, []);
+
+  const requestManualGate = useCallback(() => {
+    setManualFallback(true);
+  }, []);
+
+  // Reset the gate state when the song's platform URL changes (new song / round).
+  const gateResetKey = platformVideoUrl ?? '';
+  const prevGateResetKeyRef = useRef(gateResetKey);
+  useEffect(() => {
+    if (prevGateResetKeyRef.current !== gateResetKey) {
+      prevGateResetKeyRef.current = gateResetKey;
+      setManualFallback(false);
+      setManualStartConfirmed(false);
+    }
+  }, [gateResetKey]);
 
   // Use custom YouTube ID if set, otherwise use song's YouTube ID
   const songYoutubeId = !customActive && videoPlatform === 'youtube' && songPlatformUrl
@@ -186,6 +238,11 @@ export function useYouTubeGame({
     usePlatformAudio,
     isAdPlaying,
     adCountdown,
+    needsManualStart,
+    manualStartPending,
+    manualStartConfirmed,
+    confirmManualStart,
+    requestManualGate,
     handleYoutubeUrlSubmit,
     clearCustomYoutube,
     handleAdStart,

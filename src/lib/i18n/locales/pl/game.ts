@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Gra wstrzymana',
   adPlayingPlatform: 'Reklama z {platform}',
   gameStartsAfterAd: 'Gra rozpocznie się po reklamie',
+  songStartGateTitle: 'Oczekiwanie na rozpoczęcie piosenki',
+  songStartGateHint: 'Uruchom film w odtwarzaczu (▶) i potwierdź, gdy muzyka zacznie grać:',
+  songStartGateConfirm: 'Muzyka gra — start!',
 },
 gameEnhancements: {
   loadingStats: 'Ładowanie statystyk...',

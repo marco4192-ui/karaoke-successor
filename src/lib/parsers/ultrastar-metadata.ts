@@ -4,7 +4,7 @@ import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
 import { normalizeTxtContent } from '@/lib/utils';
-import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl } from '@/lib/url-utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl } from '@/lib/url-utils';
 
 // Parse UltraStar txt file for metadata (headers only)
 export function parseUltraStarMetadata(content: string): {
@@ -74,6 +74,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   youtubeUrl?: string;
   dailymotionUrl?: string;
   vimeoUrl?: string;
+  rutubeUrl?: string;
+  vkVideoUrl?: string;
+  bilibiliUrl?: string;
+  nicovideoUrl?: string;
   videoGap?: number;
 }> {
   if (!txtFile) {
@@ -96,6 +100,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   let youtubeUrl: string | undefined;
   let dailymotionUrl: string | undefined;
   let vimeoUrl: string | undefined;
+  let rutubeUrl: string | undefined;
+  let vkVideoUrl: string | undefined;
+  let bilibiliUrl: string | undefined;
+  let nicovideoUrl: string | undefined;
   let videoGap: number | undefined;
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
@@ -125,12 +133,16 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
       hasDuetHeader = true;
       p2Name = trimmedLine.substring(4).trim() || 'Player 2';
     } else if (trimmedLine.startsWith('#VIDEO:')) {
-      // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo)
+      // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico)
       const videoValue = trimmedLine.substring(7).trim();
       if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
         if (isYouTubeUrl(videoValue)) youtubeUrl = videoValue;
         else if (isDailymotionUrl(videoValue)) dailymotionUrl = videoValue;
         else if (isVimeoUrl(videoValue)) vimeoUrl = videoValue;
+        else if (isRutubeUrl(videoValue)) rutubeUrl = videoValue;
+        else if (isVkVideoUrl(videoValue)) vkVideoUrl = videoValue;
+        else if (isBilibiliUrl(videoValue)) bilibiliUrl = videoValue;
+        else if (isNiconicoUrl(videoValue)) nicovideoUrl = videoValue;
         // Non-platform URLs are resolved via the scanned video FILE instead
       }
     } else if (trimmedLine.startsWith('#VIDEOGAP:')) {
@@ -193,5 +205,5 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
     ? [p1Name || 'Player 1', p2Name || 'Player 2']
     : undefined;
 
-  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, videoGap };
+  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, rutubeUrl, vkVideoUrl, bilibiliUrl, nicovideoUrl, videoGap };
 }

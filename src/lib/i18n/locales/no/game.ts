@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Spill pauset',
   adPlayingPlatform: 'Reklame fra {platform}',
   gameStartsAfterAd: 'Spillet starter etter reklamen',
+  songStartGateTitle: 'Venter på at sangen skal starte',
+  songStartGateHint: 'Start videoen i spilleren (▶), og bekreft når musikken spiller:',
+  songStartGateConfirm: 'Musikken spiller — kjør!',
 },
 gameEnhancements: {
   loadingStats: 'Laster statistikk...',

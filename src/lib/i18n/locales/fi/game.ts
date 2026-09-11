@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Peli keskeytetty',
   adPlayingPlatform: 'Mainos lähteestä {platform}',
   gameStartsAfterAd: 'Peli alkaa mainoksen jälkeen',
+  songStartGateTitle: 'Odotetaan kappaleen alkua',
+  songStartGateHint: 'Käynnistä video soittimessa (▶) ja vahvista, kun musiikki soi:',
+  songStartGateConfirm: 'Musiikki soi — mennään!',
 },
 gameEnhancements: {
   loadingStats: 'Ladataan tilastoja...',

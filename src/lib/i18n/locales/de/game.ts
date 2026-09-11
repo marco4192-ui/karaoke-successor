@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Spiel pausiert',
   adPlayingPlatform: 'Einblendung über {platform}',
   gameStartsAfterAd: 'Das Spiel startet nach der Werbung',
+  songStartGateTitle: 'Warte auf Songbeginn',
+  songStartGateHint: 'Starte das Video im Player (▶) und klicke dann, sobald die Musik läuft:',
+  songStartGateConfirm: 'Musik läuft — Los!',
 },
 gameEnhancements: {
   loadingStats: 'Lade Statistiken...',

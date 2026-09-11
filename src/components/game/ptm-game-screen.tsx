@@ -11,6 +11,7 @@ import { GameCountdown } from '@/components/game/game-countdown';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { AdIndicator } from '@/components/game/game-hud';
+import { SongStartGateIndicator } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
 import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
@@ -150,6 +151,8 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           videoPlatform={g.videoPlatform}
           platformVideoUrl={g.platformVideoUrl}
           usePlatformAudio={g.usePlatformAudio}
+          manualStartConfirmed={g.manualStartConfirmed}
+          onManualGateRequired={g.requestManualGate}
           isPlaying={g.isPlaying}
           isAdPlaying={g.isAdPlaying}
           songEnergy={g.songEnergy}
@@ -164,8 +167,18 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           onYoutubeError={() => {}}
         />
 
-        {/* Ad Indicator — platform-aware overlay (Einblendung über …) */}
-        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
+        {/* Ad Indicator — platform-aware overlay (Einblendung über …).
+            Suppressed while the MANUAL song-start gate is pending. */}
+        {!g.manualStartPending && (
+          <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
+        )}
+
+        {/* Manual song-start gate (Bilibili / Niconico-API-dead) */}
+        <SongStartGateIndicator
+          pending={g.manualStartPending}
+          platformLabel={g.adPlatformLabel}
+          onConfirm={g.confirmManualStart}
+        />
 
         {/* Dark Overlay for visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />

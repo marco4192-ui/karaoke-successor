@@ -12,13 +12,13 @@ import { getAudioDuration, getVideoDuration } from '@/lib/parsers/media-duration
 // Convert scanned song to Song format
 export async function convertScannedSongToSong(scanned: ScannedSong): Promise<Song> {
   const parseResult = await parseUltraStarFull(scanned.txtFile);
-  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet, duetPlayerNames: parsedPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, videoGap } = parseResult;
+  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet, duetPlayerNames: parsedPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, rutubeUrl, vkVideoUrl, bilibiliUrl, nicovideoUrl, videoGap } = parseResult;
 
   // Determine if video has audio
   const hasAudio = !!scanned.audioFile;
   const hasVideo = !!scanned.videoFile;
   // Streaming-platform video (#VIDEO: URL) — no local video file, but provides audio
-  const hasPlatformVideo = !!(youtubeUrl || dailymotionUrl || vimeoUrl);
+  const hasPlatformVideo = !!(youtubeUrl || dailymotionUrl || vimeoUrl || rutubeUrl || vkVideoUrl || bilibiliUrl || nicovideoUrl);
 
   // Check if folder name indicates duet
   const folderNameIsDuet = scanned.folder.toLowerCase().includes('[duet]') ||
@@ -161,6 +161,10 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     youtubeUrl,
     dailymotionUrl,
     vimeoUrl,
+    rutubeUrl,
+    vkVideoUrl,
+    bilibiliUrl,
+    nicovideoUrl,
     videoGap,
     audioUrl: hasAudio ? scanned.audioUrl : undefined,
     hasEmbeddedAudio,

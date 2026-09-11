@@ -18,13 +18,17 @@ export interface MediaWatchdogParams {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isYouTube: boolean;
-  /** True for ANY streaming platform (YouTube/Dailymotion/Vimeo). */
+  /** True for ANY streaming platform (YouTube/Dailymotion/Vimeo/Rutube/VK/Bilibili/Niconico). */
   isStreamingVideo?: boolean;
   isNativeAudio: boolean;
   youtubeTimeRef: React.MutableRefObject<number>;
   nativeAudioTimeRef: React.MutableRefObject<number>;
   wasPausedByStoreRef: React.MutableRefObject<boolean>;
   endGameAndCleanupRef: React.MutableRefObject<() => void>;
+  /** True while the manual song-start gate waits for the user (Bilibili /
+   *  Niconico-API-dead): the watchdog must NOT abort — the user simply hasn't
+   *  clicked "music is running" yet. Re-checks every 2s up to 3 minutes. */
+  manualStartPendingRef?: React.MutableRefObject<boolean>;
 }
 
 // ── Media playback ──
@@ -151,11 +155,23 @@ export function scheduleMediaWatchdog(
     wasPausedByStoreRef,
     endGameAndCleanupRef,
     isNonScoringMode,
+    manualStartPendingRef,
   } = params;
 
-  const timer = setTimeout(() => {
+  const check = () => {
     // Do NOT abort if the user paused during the watchdog window
     if (wasPausedByStoreRef.current) return;
+
+    // Manual start gate pending (Bilibili / Niconico fallback): the user is
+    // being asked to start the video + confirm — media time legitimately
+    // stays 0. Re-check instead of aborting (up to 3 minutes).
+    if (manualStartPendingRef?.current) {
+      if (manualRechecks < 90) {
+        manualRechecks += 1;
+        manualTimer = setTimeout(check, 2000);
+      }
+      return;
+    }
 
     const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
     const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
@@ -173,7 +189,14 @@ export function scheduleMediaWatchdog(
         endGameAndCleanupRef.current();
       }
     }
-  }, 10000);
+  };
 
-  return () => clearTimeout(timer);
+  let manualRechecks = 0;
+  let manualTimer: ReturnType<typeof setTimeout> | null = null;
+  const timer = setTimeout(check, 10000);
+
+  return () => {
+    clearTimeout(timer);
+    if (manualTimer) clearTimeout(manualTimer);
+  };
 }

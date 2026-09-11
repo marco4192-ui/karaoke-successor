@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Игра на паузе',
   adPlayingPlatform: 'Реклама от {platform}',
   gameStartsAfterAd: 'Игра начнётся после рекламы',
+  songStartGateTitle: 'Ожидание начала песни',
+  songStartGateHint: 'Запустите видео в плеере (▶) и подтвердите, когда заиграет музыка:',
+  songStartGateConfirm: 'Музыка играет — поехали!',
 },
 gameEnhancements: {
   loadingStats: 'Загрузка статистики...',

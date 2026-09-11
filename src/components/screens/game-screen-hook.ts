@@ -236,6 +236,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     usePlatformAudio,
     isAdPlaying,
     adCountdown,
+    manualStartPending,
+    manualStartConfirmed,
+    confirmManualStart,
+    requestManualGate,
     handleAdStart,
     handleAdEnd,
   } = useYouTubeGame({
@@ -491,6 +495,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     videoRef,
     isYouTube,
     isStreamingVideo: isYouTube || videoPlatform !== null,
+    manualStartPending,
     youtubeVideoId,
     youtubeTime,
     isPlaying,
@@ -662,7 +667,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setDisplayDuration,
     nativeAudio,
 
-    // Streaming video platform (YouTube / Dailymotion / Vimeo)
+    // Streaming video platform (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico)
     youtubeVideoId,
     isYouTube,
     useYouTubeAudio,
@@ -672,6 +677,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     usePlatformAudio,
     isAdPlaying,
     adCountdown,
+    manualStartPending,
+    manualStartConfirmed,
+    confirmManualStart,
+    requestManualGate,
     handleAdStart,
     handleAdEnd,
     youtubeTime,

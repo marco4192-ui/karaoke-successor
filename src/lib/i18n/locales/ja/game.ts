@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'ゲーム一時停止',
   adPlayingPlatform: '{platform} の広告',
   gameStartsAfterAd: '広告の後にゲームが始まります',
+  songStartGateTitle: '曲の開始を待っています',
+  songStartGateHint: 'プレーヤーで動画を再生（▶）し、音楽が流れたら確認してください：',
+  songStartGateConfirm: '音楽が流れています — スタート！',
 },
 gameEnhancements: {
   loadingStats: '統計情報を読み込み中...',

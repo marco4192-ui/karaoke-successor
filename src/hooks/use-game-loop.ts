@@ -23,8 +23,10 @@ interface UseGameLoopOptions {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isYouTube: boolean;
-  /** True for ANY streaming-platform video (YouTube/Dailymotion/Vimeo) — the platform player's time is the game clock. */
+  /** True for ANY streaming-platform video (YouTube/Dailymotion/Vimeo/Rutube/VK/Bilibili/Niconico) — the platform player's time is the game clock. */
   isStreamingVideo?: boolean;
+  /** True while the manual song-start gate (Bilibili / Niconico fallback) waits for the user — the media watchdog must not abort. */
+  manualStartPending?: boolean;
   youtubeVideoId: string | null;
   youtubeTime: number;
   // Playing state (owned by caller so it's available everywhere)
@@ -115,6 +117,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     videoRef,
     isYouTube,
     isStreamingVideo = false,
+    manualStartPending = false,
     youtubeVideoId,
     youtubeTime,
     isPlaying,
@@ -167,6 +170,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // audio, video and native-audio.
   const gameStatus = useGameStore((s) => s.gameState.status);
   const wasPausedByStoreRef = useRef(false); // tracks whether WE initiated the pause
+  // Manual start gate pending state, kept in a ref for the media watchdog
+  // (which runs on raw timeouts and must see the LIVE value, not a closure).
+  const manualStartPendingRef = useRef(manualStartPending);
+  useEffect(() => {
+    manualStartPendingRef.current = manualStartPending;
+  }, [manualStartPending]);
 
   // ── Internal state (not needed outside the hook) ──
   const [countdown, setCountdown] = useState(3);
@@ -260,6 +269,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       wasPausedByStoreRef,
       endGameAndCleanupRef,
       isNonScoringMode,
+      manualStartPendingRef,
     });
   }, [audioRef, videoRef, isYouTube, isStreamingVideo, isNativeAudio]);
 

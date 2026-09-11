@@ -59,6 +59,14 @@ interface PtmGameHookReturn {
   usePlatformAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number;
+  /** True while the manual song-start gate (Bilibili / Niconico fallback) waits for user confirmation. */
+  manualStartPending: boolean;
+  /** True once the user confirmed the manual start gate — passed down to the players. */
+  manualStartConfirmed: boolean;
+  /** Confirm the manual start gate ("Musik läuft — Los!"). */
+  confirmManualStart: () => void;
+  /** A player requests the manual gate (Niconico API dead). */
+  requestManualGate: () => void;
   handleAdStart: () => void;
   handleAdEnd: () => void;
   onYoutubeTimeUpdate: (_time: number) => void;
@@ -186,6 +194,10 @@ export function usePtmGameLogic({
     usePlatformAudio,
     isAdPlaying,
     adCountdown,
+    manualStartPending,
+    manualStartConfirmed,
+    confirmManualStart,
+    requestManualGate,
     handleAdStart,
     handleAdEnd,
   } = useYouTubeGame({
@@ -759,6 +771,10 @@ export function usePtmGameLogic({
     usePlatformAudio,
     isAdPlaying,
     adCountdown,
+    manualStartPending,
+    manualStartConfirmed,
+    confirmManualStart,
+    requestManualGate,
     handleAdStart,
     handleAdEnd,
     onYoutubeTimeUpdate: setYoutubeTime,

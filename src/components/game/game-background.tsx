@@ -6,6 +6,10 @@ import type { VideoPlatform } from '@/lib/url-utils';
 import { YouTubePlayer } from '@/components/game/youtube-player';
 import { DailymotionPlayer } from '@/components/game/dailymotion-player';
 import { VimeoPlayer } from '@/components/game/vimeo-player';
+import { RutubePlayer } from '@/components/game/rutube-player';
+import { VKPlayer } from '@/components/game/vk-player';
+import { BilibiliPlayer } from '@/components/game/bilibili-player';
+import { NiconicoPlayer } from '@/components/game/niconico-player';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
 import {
   AnimatedBackground as VisualAnimatedBackground,
@@ -18,12 +22,16 @@ export interface GameBackgroundProps {
   isYouTube: boolean;
   youtubeVideoId: string | null;
   useYouTubeAudio: boolean;
-  /** Detected streaming platform (YouTube / Dailymotion / Vimeo). */
+  /** Detected streaming platform (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico). */
   videoPlatform?: VideoPlatform;
-  /** Full platform video URL (Dailymotion / Vimeo players consume the raw URL). */
+  /** Full platform video URL (non-YouTube players consume the raw URL). */
   platformVideoUrl?: string | null;
   /** True when the streaming player (any platform) must provide the audio. */
   usePlatformAudio?: boolean;
+  /** True once the user confirmed the manual song-start gate (Bilibili / Niconico fallback). */
+  manualStartConfirmed?: boolean;
+  /** A player requests the manual gate (Niconico API dead). */
+  onManualGateRequired?: () => void;
   isPlaying: boolean;
   isAdPlaying: boolean;
   songEnergy: number;
@@ -52,6 +60,8 @@ export function GameBackground({
   videoPlatform,
   platformVideoUrl,
   usePlatformAudio,
+  manualStartConfirmed,
+  onManualGateRequired,
   isPlaying,
   isAdPlaying,
   songEnergy,
@@ -68,6 +78,11 @@ export function GameBackground({
   // Fallback: try videoBackground, then videoUrl, then youtubeUrl
   const effectiveVideoUrl = effectiveSong?.videoBackground || effectiveSong?.videoUrl || effectiveSong?.youtubeUrl;
 
+  // NOTE on interactive platforms (Bilibili, Niconico): their blocks below
+  // intentionally ignore showBackgroundVideo — the user must see and click
+  // the player to start the audio, so they render visible even when
+  // background videos are disabled.
+
   // Sync video play/pause with isPlaying prop
   useEffect(() => {
     if (!videoRef?.current) return;
@@ -82,6 +97,128 @@ export function GameBackground({
   // ref object whose identity never changes, so depending on it would miss element swaps.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, videoRef?.current]);
+
+  // ── Rutube — postMessage Player API; start gate = position gate (no ad events) ──
+  if (showBackgroundVideo && videoPlatform === 'rutube' && platformVideoUrl) {
+    return (
+      <RutubePlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive={isAdPlaying}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // ── VK Video — official SDK with OFFICIAL ad events (adStarted/adCompleted) ──
+  if (showBackgroundVideo && videoPlatform === 'vk' && platformVideoUrl) {
+    return (
+      <VKPlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive={isAdPlaying}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // ── Bilibili — iframe only, ALWAYS interactive + visible (manual start gate) ──
+  // NOTE: rendered even when background videos are disabled — the user MUST
+  // see and click the player to start the audio (no programmatic play).
+  if (videoPlatform === 'bilibili' && platformVideoUrl) {
+    return (
+      <BilibiliPlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive
+        manualStartConfirmed={manualStartConfirmed}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // ── Niconico — unofficial jsapi; ALWAYS interactive (autoplay often gesture-gated);
+  // falls back to the manual gate when the API is dead ──
+  if (videoPlatform === 'nicovideo' && platformVideoUrl) {
+    return (
+      <NiconicoPlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive
+        manualStartConfirmed={manualStartConfirmed}
+        onManualGateRequired={onManualGateRequired}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // Hidden Rutube (audio only — SDK-driven playback works while hidden)
+  if (!showBackgroundVideo && videoPlatform === 'rutube' && platformVideoUrl && usePlatformAudio) {
+    return (
+      <div className="hidden">
+        <RutubePlayer
+          videoUrl={platformVideoUrl}
+          videoGap={videoGap}
+          onReady={() => {}}
+          onTimeUpdate={onYoutubeTimeUpdate}
+          onEnded={onVideoEnded}
+          onAdStart={onAdStart}
+          onAdEnd={onAdEnd}
+          isPlaying={isPlaying}
+          startTime={effectiveSong?.start || 0}
+          onError={onYoutubeError}
+        />
+      </div>
+    );
+  }
+
+  // Hidden VK (audio only)
+  if (!showBackgroundVideo && videoPlatform === 'vk' && platformVideoUrl && usePlatformAudio) {
+    return (
+      <div className="hidden">
+        <VKPlayer
+          videoUrl={platformVideoUrl}
+          videoGap={videoGap}
+          onReady={() => {}}
+          onTimeUpdate={onYoutubeTimeUpdate}
+          onEnded={onVideoEnded}
+          onAdStart={onAdStart}
+          onAdEnd={onAdEnd}
+          isPlaying={isPlaying}
+          startTime={effectiveSong?.start || 0}
+          onError={onYoutubeError}
+        />
+      </div>
+    );
+  }
 
   // ── Dailymotion — official ad events (AD_START/AD_END) drive the game-wait flow ──
   if (showBackgroundVideo && videoPlatform === 'dailymotion' && platformVideoUrl) {

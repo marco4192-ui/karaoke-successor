@@ -52,6 +52,10 @@ export interface Song {
   youtubeId?: string; // YouTube video ID (extracted from URL)
   dailymotionUrl?: string; // Dailymotion video URL (#VIDEO:) — official ad events
   vimeoUrl?: string; // Vimeo video URL (#VIDEO:) — ad-free embeds
+  rutubeUrl?: string; // Rutube video URL (#VIDEO:) — postMessage Player API
+  vkVideoUrl?: string; // VK video URL (#VIDEO:) — official videoplayer.js SDK (needs Export-URL hash)
+  bilibiliUrl?: string; // Bilibili video URL (#VIDEO:) — iframe + manual start gate
+  nicovideoUrl?: string; // Niconico video URL (#VIDEO:) — unofficial jsapi embed
   videoUrl?: string; // Direct video URL (for local video files)
   videoGap?: number; // #VIDEOGAP: Offset for video sync (ms)
   videoStart?: number; // #VIDEOSTART: Fixed start point for video (ms)

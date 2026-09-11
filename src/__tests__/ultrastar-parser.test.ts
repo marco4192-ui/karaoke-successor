@@ -338,4 +338,43 @@ E`;
       expect(song.notes[1].lyric).toBe('');
     });
   });
+
+  describe('#VIDEO: platform URL classification (Rutube / VK / Bilibili / Niconico)', () => {
+    const base = `#TITLE:Platform Test
+#ARTIST:Artist
+#BPM:120
+#GAP:0
+`;
+
+    it('classifies a Rutube URL', () => {
+      const song = parseUltraStarTxt(base + '#VIDEO:https://rutube.ru/video/9e4cd81a6b2566e9d949881dbb53905e/\nE');
+      expect(song.rutubeUrl).toBe('https://rutube.ru/video/9e4cd81a6b2566e9d949881dbb53905e/');
+      expect(song.youtubeUrl).toBeUndefined();
+      expect(song.dailymotionUrl).toBeUndefined();
+    });
+
+    it('classifies a VK video_ext.php Export URL', () => {
+      const song = parseUltraStarTxt(base + '#VIDEO:https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=e592e431c98bc184\nE');
+      expect(song.vkVideoUrl).toBe('https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=e592e431c98bc184');
+      expect(song.video).toBeUndefined();
+    });
+
+    it('classifies a Bilibili BV URL', () => {
+      const song = parseUltraStarTxt(base + '#VIDEO:https://www.bilibili.com/video/BV1Kx411q7Eg\nE');
+      expect(song.bilibiliUrl).toBe('https://www.bilibili.com/video/BV1Kx411q7Eg');
+      expect(song.video).toBeUndefined();
+    });
+
+    it('classifies a Niconico URL', () => {
+      const song = parseUltraStarTxt(base + '#VIDEO:https://www.nicovideo.jp/watch/sm9\nE');
+      expect(song.nicovideoUrl).toBe('https://www.nicovideo.jp/watch/sm9');
+    });
+
+    it('unknown http URLs still fall back to the direct-video field', () => {
+      const song = parseUltraStarTxt(base + '#VIDEO:https://example.com/clip.mp4\nE');
+      expect(song.video).toBe('https://example.com/clip.mp4');
+      expect(song.rutubeUrl).toBeUndefined();
+      expect(song.bilibiliUrl).toBeUndefined();
+    });
+  });
 });

@@ -24,6 +24,7 @@ import {
   AudioEffectsButton,
   AudioEffectsPanel,
   AdIndicator,
+  SongStartGateIndicator,
   GameProgressBar,
   TimeDisplay,
 } from '@/components/game/game-hud';
@@ -182,6 +183,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           videoPlatform={g.videoPlatform}
           platformVideoUrl={g.platformVideoUrl}
           usePlatformAudio={g.usePlatformAudio}
+          manualStartConfirmed={g.manualStartConfirmed}
+          onManualGateRequired={g.requestManualGate}
           isPlaying={g.isPlaying}
           isAdPlaying={g.isAdPlaying}
           songEnergy={g.isLowPerf ? 0 : (g.songEnergy ?? 0)}
@@ -223,8 +226,20 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         {/* Countdown */}
         <GameCountdown countdown={g.countdown} />
 
-        {/* Ad Indicator — platform-aware overlay (Einblendung über …) */}
-        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
+        {/* Ad Indicator — platform-aware overlay (Einblendung über …).
+            Suppressed while the MANUAL song-start gate is pending — the
+            SongStartGateIndicator takes over the messaging then. */}
+        {!g.manualStartPending && (
+          <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
+        )}
+
+        {/* Manual song-start gate (Bilibili / Niconico-API-dead) —
+            "start the video in the player, then confirm" */}
+        <SongStartGateIndicator
+          pending={g.manualStartPending}
+          platformLabel={g.adPlatformLabel}
+          onConfirm={g.confirmManualStart}
+        />
 
         {/* YouTube Error Indicator */}
         {g.youtubeError && (

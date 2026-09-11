@@ -152,6 +152,70 @@ export function AdIndicator({ isAdPlaying, adCountdown, platformLabel }: AdIndic
   );
 }
 
+// ===================== SONG START GATE =====================
+
+interface SongStartGateIndicatorProps {
+  /** True while the manual start gate is engaged (game waits for user confirmation). */
+  pending: boolean;
+  /** Platform domain label ("bilibili.com", "nicovideo.jp", …). */
+  platformLabel?: string;
+  /** Confirm callback — user says "the music is running, start!". */
+  onConfirm: () => void;
+}
+
+/**
+ * Manual song-start gate overlay for platforms without a playback API
+ * (Bilibili always; Niconico when its unofficial API is dead).
+ *
+ * The platform player fires the ad-wait (game paused); THIS indicator takes
+ * over the messaging (the plain AdIndicator is suppressed while pending) and
+ * adds the confirmation button that releases the gate and starts the
+ * stopwatch-based karaoke clock.
+ */
+export function SongStartGateIndicator({ pending, platformLabel, onConfirm }: SongStartGateIndicatorProps) {
+  const { t } = useTranslation();
+
+  if (!pending) return null;
+
+  return (
+    <div
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-40 max-w-[92vw]"
+      role="alert"
+      aria-live="polite"
+      data-testid="song-start-gate"
+    >
+      <div className="bg-black/85 backdrop-blur-md px-5 py-4 rounded-2xl border border-cyan-500/50 shadow-2xl shadow-cyan-500/10 flex flex-col items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse shrink-0" />
+          <span className="text-cyan-300 font-semibold">{t('gameHud.songStartGateTitle')}</span>
+          {platformLabel && (
+            <>
+              <span className="text-white/60">·</span>
+              <span className="text-white/80">
+                {t('gameHud.adPlayingPlatform').replace('{platform}', platformLabel)}
+              </span>
+            </>
+          )}
+        </div>
+
+        <p className="text-white/70 text-sm text-center max-w-md leading-relaxed">
+          {t('gameHud.songStartGateHint')}
+        </p>
+
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="px-6 py-2.5 min-h-[44px] rounded-xl bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 font-bold text-base transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2"
+          data-testid="song-start-gate-confirm"
+        >
+          <span aria-hidden="true">▶</span>
+          {t('gameHud.songStartGateConfirm')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ===================== PROGRESS BAR =====================
 
 interface GameProgressBarProps {

@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: '游戏暂停',
   adPlayingPlatform: '来自 {platform} 的广告',
   gameStartsAfterAd: '广告结束后游戏将开始',
+  songStartGateTitle: '等待歌曲开始',
+  songStartGateHint: '在播放器中播放视频（▶），音乐响起后请确认：',
+  songStartGateConfirm: '音乐已播放 — 开始！',
 },
 gameEnhancements: {
   loadingStats: '正在加载统计...',

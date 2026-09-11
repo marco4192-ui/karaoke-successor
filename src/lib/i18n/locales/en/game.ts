@@ -88,6 +88,9 @@ export const gameTranslations = {
     gamePaused: 'Game Paused',
     adPlayingPlatform: 'Advertisement from {platform}',
     gameStartsAfterAd: 'The game starts after the ad',
+    songStartGateTitle: 'Waiting for the song to start',
+    songStartGateHint: 'Start the video in the player (▶), then confirm once the music is running:',
+    songStartGateConfirm: 'Music is playing — Go!',
   },
 
   gameEnhancements: {

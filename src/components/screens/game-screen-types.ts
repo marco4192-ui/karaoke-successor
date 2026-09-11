@@ -59,7 +59,7 @@ export interface GameScreenHookReturn {
   setDisplayDuration: React.Dispatch<React.SetStateAction<number>>;
   nativeAudio: ReturnType<typeof useNativeAudio>;
 
-  // Streaming video platform (YouTube / Dailymotion / Vimeo)
+  // Streaming video platform (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico)
   youtubeVideoId: string | null;
   isYouTube: boolean;
   useYouTubeAudio: boolean;
@@ -69,6 +69,14 @@ export interface GameScreenHookReturn {
   usePlatformAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number | null;
+  /** True while the manual song-start gate (Bilibili / Niconico fallback) waits for user confirmation. */
+  manualStartPending: boolean;
+  /** True once the user confirmed the manual start gate — passed down to the players. */
+  manualStartConfirmed: boolean;
+  /** Confirm the manual start gate ("Musik läuft — Los!"). */
+  confirmManualStart: () => void;
+  /** A player requests the manual gate (Niconico API dead). */
+  requestManualGate: () => void;
   handleAdStart: () => void;
   handleAdEnd: () => void;
   youtubeTime: number;

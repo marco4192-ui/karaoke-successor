@@ -82,6 +82,9 @@ gameHud: {
   gamePaused: 'Spel gepauzeerd',
   adPlayingPlatform: 'Advertentie van {platform}',
   gameStartsAfterAd: 'Het spel begint na de advertentie',
+  songStartGateTitle: 'Wachten op het begin van het nummer',
+  songStartGateHint: 'Start de video in de speler (▶) en bevestig zodra de muziek speelt:',
+  songStartGateConfirm: 'Muziek speelt — gaan!',
 },
 gameEnhancements: {
   loadingStats: 'Statistieken laden...',

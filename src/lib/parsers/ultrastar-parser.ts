@@ -19,7 +19,7 @@
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Difficulty, DuetPlayer } from '@/types/game';
-import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isDirectVideoUrl } from '@/lib/url-utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
@@ -42,6 +42,10 @@ export interface UltraStarSong {
   youtubeUrl?: string; // YouTube video URL (from #VIDEO: if it's a URL)
   dailymotionUrl?: string; // Dailymotion video URL (from #VIDEO:)
   vimeoUrl?: string; // Vimeo video URL (from #VIDEO:)
+  rutubeUrl?: string; // Rutube video URL (from #VIDEO:) — postMessage Player API
+  vkVideoUrl?: string; // VK video URL (from #VIDEO:) — official videoplayer.js SDK (needs Export-URL hash)
+  bilibiliUrl?: string; // Bilibili video URL (from #VIDEO:) — iframe + manual start gate
+  nicovideoUrl?: string; // Niconico video URL (from #VIDEO:) — unofficial jsapi
   videoGap?: number;
   cover?: string;
   background?: string;
@@ -107,7 +111,8 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.mp3 = value.trim();
             break;
           case 'VIDEO': {
-            // Classify URL: YouTube, Dailymotion, Vimeo, direct video file, or local path
+            // Classify URL: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili,
+            // Niconico, direct video file, or local path
             const videoValue = value.trim();
             if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
               if (isYouTubeUrl(videoValue)) {
@@ -119,6 +124,18 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
               } else if (isVimeoUrl(videoValue)) {
                 // Vimeo URL — ad-free embeds with player.js SDK
                 song.vimeoUrl = videoValue;
+              } else if (isRutubeUrl(videoValue)) {
+                // Rutube URL — postMessage Player API (playStart/currentTime)
+                song.rutubeUrl = videoValue;
+              } else if (isVkVideoUrl(videoValue)) {
+                // VK Video URL — official SDK; hash only in Export URLs
+                song.vkVideoUrl = videoValue;
+              } else if (isBilibiliUrl(videoValue)) {
+                // Bilibili URL — iframe embed, manual start gate
+                song.bilibiliUrl = videoValue;
+              } else if (isNiconicoUrl(videoValue)) {
+                // Niconico URL — unofficial jsapi embed
+                song.nicovideoUrl = videoValue;
               } else {
                 // Direct video URL (MP4, WebM, etc.) — play via HTML5 <video> element
                 // Stored in video field, which becomes videoBackground later
@@ -335,11 +352,15 @@ export function convertUltraStarToSong(
   // Calculate rating based on note density
   const rating = Math.min(5, Math.max(1, Math.ceil(notesPerMinute / 10)));
 
-  // Determine if video is a YouTube/Dailymotion/Vimeo URL, direct video URL, or local file
+  // Determine if video is a streaming-platform URL, direct video URL, or local file
   let videoBackground: string | undefined;
   let youtubeUrl: string | undefined;
   let dailymotionUrl: string | undefined;
   let vimeoUrl: string | undefined;
+  let rutubeUrl: string | undefined;
+  let vkVideoUrl: string | undefined;
+  let bilibiliUrl: string | undefined;
+  let nicovideoUrl: string | undefined;
 
   if (ultraStar.youtubeUrl) {
     // YouTube URL was detected during parsing
@@ -348,6 +369,14 @@ export function convertUltraStarToSong(
     dailymotionUrl = ultraStar.dailymotionUrl;
   } else if (ultraStar.vimeoUrl) {
     vimeoUrl = ultraStar.vimeoUrl;
+  } else if (ultraStar.rutubeUrl) {
+    rutubeUrl = ultraStar.rutubeUrl;
+  } else if (ultraStar.vkVideoUrl) {
+    vkVideoUrl = ultraStar.vkVideoUrl;
+  } else if (ultraStar.bilibiliUrl) {
+    bilibiliUrl = ultraStar.bilibiliUrl;
+  } else if (ultraStar.nicovideoUrl) {
+    nicovideoUrl = ultraStar.nicovideoUrl;
   } else if (ultraStar.video) {
     if (isDirectVideoUrl(ultraStar.video)) {
       // Direct video URL (MP4, WebM, OGG, etc.) — play via HTML5 <video> element
@@ -356,6 +385,14 @@ export function convertUltraStarToSong(
       dailymotionUrl = ultraStar.video;
     } else if (isVimeoUrl(ultraStar.video)) {
       vimeoUrl = ultraStar.video;
+    } else if (isRutubeUrl(ultraStar.video)) {
+      rutubeUrl = ultraStar.video;
+    } else if (isVkVideoUrl(ultraStar.video)) {
+      vkVideoUrl = ultraStar.video;
+    } else if (isBilibiliUrl(ultraStar.video)) {
+      bilibiliUrl = ultraStar.video;
+    } else if (isNiconicoUrl(ultraStar.video)) {
+      nicovideoUrl = ultraStar.video;
     } else if (isYouTubeUrl(ultraStar.video)) {
       youtubeUrl = ultraStar.video;
     } else if (ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) {
@@ -388,10 +425,14 @@ export function convertUltraStarToSong(
     youtubeUrl,
     dailymotionUrl,
     vimeoUrl,
+    rutubeUrl,
+    vkVideoUrl,
+    bilibiliUrl,
+    nicovideoUrl,
     videoGap: ultraStar.videoGap,
     audioUrl,
     // If we have video (any streaming platform or direct URL) but no separate audio, video provides audio
-    hasEmbeddedAudio: !audioUrl && (!!youtubeUrl || !!dailymotionUrl || !!vimeoUrl || !!videoBackground),
+    hasEmbeddedAudio: !audioUrl && (!!youtubeUrl || !!dailymotionUrl || !!vimeoUrl || !!rutubeUrl || !!vkVideoUrl || !!bilibiliUrl || !!nicovideoUrl || !!videoBackground),
     lyrics: lyricLines,
     preview: ultraStar.previewStart ? {
       startTime: ultraStar.previewStart * 1000,
@@ -406,7 +447,7 @@ export function convertUltraStarToSong(
     mp3File: ultraStar.mp3,
     coverFile: ultraStar.cover,
     backgroundFile: ultraStar.background,
-    videoFile: ultraStar.video && !ultraStar.youtubeUrl && !ultraStar.dailymotionUrl && !ultraStar.vimeoUrl && !(ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) ? ultraStar.video : undefined,
+    videoFile: ultraStar.video && !ultraStar.youtubeUrl && !ultraStar.dailymotionUrl && !ultraStar.vimeoUrl && !ultraStar.rutubeUrl && !ultraStar.vkVideoUrl && !ultraStar.bilibiliUrl && !ultraStar.nicovideoUrl && !(ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) ? ultraStar.video : undefined,
     previewStart: ultraStar.previewStart,
     previewDuration: ultraStar.previewDuration,
     medleyStartBeat: ultraStar.medleyStartBeat,
@@ -448,6 +489,14 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#VIDEO:${song.dailymotionUrl}`);
   } else if (song.vimeoUrl) {
     lines.push(`#VIDEO:${song.vimeoUrl}`);
+  } else if (song.rutubeUrl) {
+    lines.push(`#VIDEO:${song.rutubeUrl}`);
+  } else if (song.vkVideoUrl) {
+    lines.push(`#VIDEO:${song.vkVideoUrl}`);
+  } else if (song.bilibiliUrl) {
+    lines.push(`#VIDEO:${song.bilibiliUrl}`);
+  } else if (song.nicovideoUrl) {
+    lines.push(`#VIDEO:${song.nicovideoUrl}`);
   } else if (song.videoFile) {
     lines.push(`#VIDEO:${song.videoFile}`);
   } else if (song.videoBackground) {
