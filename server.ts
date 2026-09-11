@@ -23,6 +23,11 @@ const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
 
 // Create Next.js app
+// Next 16's custom-server path (NextCustomServer) reuses the full `next dev`
+// router-server machinery — including the Turbopack dev bundler, hot reloader,
+// and HMR upgrade handling. Turbopack is the right bundler here: it compiles
+// faster and with far less memory than webpack on this huge module graph
+// (webpack peaked >2 GB RSS and its react-refresh entry silently stalled).
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
@@ -34,6 +39,12 @@ app.prepare().then(() => {
 
   // ─── Attach Socket.IO to the same HTTP server ───
   initSocketIO(server);
+
+  // NOTE: no manual 'upgrade' wiring needed here. Next 16's NextCustomServer
+  // auto-wires its own upgrade handler onto this HTTP server on the first
+  // request (via req.socket.server), which routes /_next/l HMR websocket
+  // upgrades to the Turbopack hot reloader. Adding a second listener here
+  // would double-handle upgrades and break the HMR connection.
 
   server.listen(port, hostname, () => {
     // eslint-disable-next-line no-console
