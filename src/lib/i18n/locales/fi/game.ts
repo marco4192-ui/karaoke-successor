@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: 'Virheellinen YouTube-parametri',
   youtubeErrorHtml5: 'HTML5-virhe YouTube-soittimessa',
   youtubeErrorCode: 'YouTube-virhe (Koodi: {n})',
+  videoErrorGeo: 'Tämä video ei ole saatavilla alueellasi.',
+  videoErrorPlatform: 'Videovirhe ({platform}, koodi {n})',
   loadingMedia: 'Ladataan mediaa...',
   loading: 'Ladataan…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'Esiasetukset',
   adPlaying: 'Mainos toistetaan',
   gamePaused: 'Peli keskeytetty',
+  adPlayingPlatform: 'Mainos lähteestä {platform}',
+  gameStartsAfterAd: 'Peli alkaa mainoksen jälkeen',
 },
 gameEnhancements: {
   loadingStats: 'Ladataan tilastoja...',

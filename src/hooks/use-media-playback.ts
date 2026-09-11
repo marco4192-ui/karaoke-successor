@@ -18,6 +18,8 @@ export interface MediaWatchdogParams {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isYouTube: boolean;
+  /** True for ANY streaming platform (YouTube/Dailymotion/Vimeo). */
+  isStreamingVideo?: boolean;
   isNativeAudio: boolean;
   youtubeTimeRef: React.MutableRefObject<number>;
   nativeAudioTimeRef: React.MutableRefObject<number>;
@@ -142,6 +144,7 @@ export function scheduleMediaWatchdog(
     audioRef,
     videoRef,
     isYouTube,
+    isStreamingVideo = false,
     isNativeAudio,
     youtubeTimeRef,
     nativeAudioTimeRef,
@@ -156,7 +159,7 @@ export function scheduleMediaWatchdog(
 
     const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
     const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
-    const youTubeActive = isYouTube;
+    const youTubeActive = isYouTube || isStreamingVideo;
     const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
     const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
 

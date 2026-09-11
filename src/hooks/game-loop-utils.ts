@@ -10,6 +10,8 @@ export interface ComputeElapsedParams {
   song: Song;
   isNativeAudio: boolean;
   isYouTube: boolean;
+  /** True for ANY streaming platform (YouTube/Dailymotion/Vimeo) — platform time is the clock. */
+  isStreamingVideo?: boolean;
   youtubeTimeRef: React.MutableRefObject<number>;
   nativeAudioTimeRef: React.MutableRefObject<number>;
   startTimeRef: React.MutableRefObject<number>;
@@ -28,7 +30,7 @@ export interface BuildP2PitchParams {
  *
  * Priority order:
  * 1. Native audio time (ASIO / WASAPI) — lowest latency
- * 2. YouTube time — from the IFrame Player API
+ * 2. Streaming-platform time — YouTube IFrame API / Dailymotion SDK / Vimeo player.js
  * 3. Browser audio element currentTime
  * 4. Browser video element currentTime (for embedded-audio videos)
  * 5. Wall-clock fallback — (Date.now() − startTime) + startPosition
@@ -40,6 +42,7 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
     song,
     isNativeAudio,
     isYouTube,
+    isStreamingVideo = false,
     youtubeTimeRef,
     nativeAudioTimeRef,
     startTimeRef,
@@ -52,8 +55,8 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
     return nativeAudioTimeRef.current;
   }
 
-  // Priority: YouTube time
-  if (isYouTube && youtubeTimeRef.current > 0) {
+  // Priority: streaming-platform time (YouTube / Dailymotion / Vimeo)
+  if ((isYouTube || isStreamingVideo) && youtubeTimeRef.current > 0) {
     return youtubeTimeRef.current;
   }
 

@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { extractYouTubeId, isYouTubeUrl } from '@/components/game/youtube-player';
+import { extractYouTubeId } from '@/components/game/youtube-player';
+import {
+  detectVideoPlatform,
+  platformAdLabel,
+  type VideoPlatform,
+} from '@/lib/url-utils';
 
 /** Maximum ad countdown duration in seconds */
 const MAX_AD_COUNTDOWN_SECONDS = 30;
@@ -9,6 +14,8 @@ const MAX_AD_COUNTDOWN_SECONDS = 30;
 interface UseYouTubeGameParams {
   effectiveSong: {
     youtubeUrl?: string;
+    dailymotionUrl?: string;
+    vimeoUrl?: string;
     videoBackground?: string;
     videoUrl?: string;
     audioUrl?: string;
@@ -24,6 +31,14 @@ interface UseYouTubeGameReturn {
   setShowYoutubeInput: (_show: boolean) => void;
   isYouTube: boolean;
   useYouTubeAudio: boolean;
+  /** Detected streaming platform of the song's video URL (YouTube/Dailymotion/Vimeo). */
+  videoPlatform: VideoPlatform;
+  /** Full platform video URL (null for the custom-YouTube override and non-platform songs). */
+  platformVideoUrl: string | null;
+  /** Domain label for the ad overlay ("youtube.com", "dailymotion.com", "vimeo.com"). */
+  adPlatformLabel: string;
+  /** True when the streaming player (any platform) must provide the audio. */
+  usePlatformAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number;
   handleYoutubeUrlSubmit: (_url: string) => void;
@@ -33,8 +48,14 @@ interface UseYouTubeGameReturn {
 }
 
 /**
- * Hook for managing YouTube video integration, custom URL input, and ad detection.
- * Handles: YouTube ID extraction, custom URL overrides, ad countdown timer.
+ * Hook for managing streaming-video platform integration (YouTube,
+ * Dailymotion, Vimeo), custom URL overrides, and ad detection.
+ * Handles: platform detection, YouTube ID extraction, custom URL overrides,
+ * ad countdown timer, and the game-wait/resume flow around ads.
+ *
+ * Naming note: the hook keeps its historical export name (useYouTubeGame)
+ * for call-site stability, but is platform-aware since the
+ * Dailymotion/Vimeo integration.
  */
 export function useYouTubeGame({
   effectiveSong,
@@ -49,24 +70,39 @@ export function useYouTubeGame({
   // so handleAdEnd only auto-resumes if the user didn't manually pause.
   const wasPlayingBeforeAdRef = useRef(false);
 
-  // Extract YouTube ID from youtubeUrl, videoBackground, or videoUrl (fallback)
+  // ── Platform detection (YouTube / Dailymotion / Vimeo) ──
+  // Candidate URL fields in priority order — mirrors the historical
+  // YouTube-only extraction (youtubeUrl → videoBackground → videoUrl).
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
   const videoBackground = effectiveSong?.videoBackground;
   const videoUrl = effectiveSong?.videoUrl;
-  const songYoutubeId = songYoutubeUrl
-    ? extractYouTubeId(songYoutubeUrl)
-    : (videoBackground && isYouTubeUrl(videoBackground)
-        ? extractYouTubeId(videoBackground)
-        : (videoUrl && isYouTubeUrl(videoUrl)
-          ? extractYouTubeId(videoUrl)
-          : null));
+
+  const songPlatformUrl =
+    songYoutubeUrl ||
+    effectiveSong?.dailymotionUrl ||
+    effectiveSong?.vimeoUrl ||
+    (videoBackground && detectVideoPlatform(videoBackground) ? videoBackground : undefined) ||
+    (videoUrl && detectVideoPlatform(videoUrl) ? videoUrl : undefined) ||
+    null;
+
+  // A custom YouTube override (user-pasted URL) always wins over the song's video.
+  const customActive = !!customYoutubeId;
+  const videoPlatform: VideoPlatform = customActive
+    ? 'youtube'
+    : detectVideoPlatform(songPlatformUrl ?? '');
+  const platformVideoUrl = !customActive && videoPlatform ? songPlatformUrl : null;
+  const adPlatformLabel = platformAdLabel(videoPlatform);
 
   // Use custom YouTube ID if set, otherwise use song's YouTube ID
+  const songYoutubeId = !customActive && videoPlatform === 'youtube' && songPlatformUrl
+    ? extractYouTubeId(songPlatformUrl)
+    : null;
   const youtubeVideoId = customYoutubeId || songYoutubeId;
   const isYouTube = !!youtubeVideoId;
 
-  // Determine if we should use YouTube audio (no separate audio file)
-  const useYouTubeAudio = isYouTube && !effectiveSong?.audioUrl;
+  // Determine if we should use the streaming player's audio (no separate audio file)
+  const usePlatformAudio = videoPlatform !== null && !effectiveSong?.audioUrl;
+  const useYouTubeAudio = isYouTube && usePlatformAudio;
 
   // Handle custom YouTube URL input
   const handleYoutubeUrlSubmit = useCallback((url: string) => {
@@ -144,6 +180,10 @@ export function useYouTubeGame({
     setShowYoutubeInput,
     isYouTube,
     useYouTubeAudio,
+    videoPlatform,
+    platformVideoUrl,
+    adPlatformLabel,
+    usePlatformAudio,
     isAdPlaying,
     adCountdown,
     handleYoutubeUrlSubmit,

@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: 'Ongeldige YouTube-parameter',
   youtubeErrorHtml5: 'HTML5-fout in YouTube-speler',
   youtubeErrorCode: 'YouTube-fout (Code: {n})',
+  videoErrorGeo: 'Deze video is niet beschikbaar in jouw regio.',
+  videoErrorPlatform: 'Videofout ({platform}, code {n})',
   loadingMedia: 'Media laden...',
   loading: 'Laden…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'Voorinstellingen',
   adPlaying: 'Reclame wordt afgespeeld',
   gamePaused: 'Spel gepauzeerd',
+  adPlayingPlatform: 'Advertentie van {platform}',
+  gameStartsAfterAd: 'Het spel begint na de advertentie',
 },
 gameEnhancements: {
   loadingStats: 'Statistieken laden...',

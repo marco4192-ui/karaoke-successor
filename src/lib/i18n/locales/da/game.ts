@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: 'Ugyldig YouTube-parameter',
   youtubeErrorHtml5: 'HTML5-fejl i YouTube-afspiller',
   youtubeErrorCode: 'YouTube-fejl (Kode: {n})',
+  videoErrorGeo: 'Denne video er ikke tilgængelig i din region.',
+  videoErrorPlatform: 'Videofejl ({platform}, kode {n})',
   loadingMedia: 'Indlæser medie...',
   loading: 'Indlæser…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'Forudindstillinger',
   adPlaying: 'Reklame afspilles',
   gamePaused: 'Spil pauset',
+  adPlayingPlatform: 'Reklame fra {platform}',
+  gameStartsAfterAd: 'Spillet starter efter reklamen',
 },
 gameEnhancements: {
   loadingStats: 'Indlæser statistik...',

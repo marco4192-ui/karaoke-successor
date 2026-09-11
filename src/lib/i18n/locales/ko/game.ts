@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: '잘못된 YouTube 매개변수',
   youtubeErrorHtml5: 'YouTube 플레이어 HTML5 오류',
   youtubeErrorCode: 'YouTube 오류 (코드: {n})',
+  videoErrorGeo: '이 동영상은 해당 지역에서 재생할 수 없습니다.',
+  videoErrorPlatform: '동영상 오류({platform}, 코드 {n})',
   loadingMedia: '미디어 로딩 중...',
   loading: '불러오는 중…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: '프리셋',
   adPlaying: '광고 재생 중',
   gamePaused: '게임 일시정지',
+  adPlayingPlatform: '{platform} 광고',
+  gameStartsAfterAd: '광고 후 게임이 시작됩니다',
 },
 gameEnhancements: {
   loadingStats: '통계를 불러오는 중...',

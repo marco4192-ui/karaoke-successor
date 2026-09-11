@@ -12,11 +12,13 @@ import { getAudioDuration, getVideoDuration } from '@/lib/parsers/media-duration
 // Convert scanned song to Song format
 export async function convertScannedSongToSong(scanned: ScannedSong): Promise<Song> {
   const parseResult = await parseUltraStarFull(scanned.txtFile);
-  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet, duetPlayerNames: parsedPlayerNames } = parseResult;
+  const { lyrics, bpm, gap, previewStart, previewDuration, isDuet: parsedIsDuet, duetPlayerNames: parsedPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, videoGap } = parseResult;
 
   // Determine if video has audio
   const hasAudio = !!scanned.audioFile;
   const hasVideo = !!scanned.videoFile;
+  // Streaming-platform video (#VIDEO: URL) — no local video file, but provides audio
+  const hasPlatformVideo = !!(youtubeUrl || dailymotionUrl || vimeoUrl);
 
   // Check if folder name indicates duet
   const folderNameIsDuet = scanned.folder.toLowerCase().includes('[duet]') ||
@@ -30,7 +32,8 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
   // - Don't set audioUrl - let the video element play the audio
   // - Set hasEmbeddedAudio: true so the game knows to use video for audio
   // - The videoBackground will be played unmuted to provide audio
-  const hasEmbeddedAudio = hasVideo && !hasAudio;
+  // Streaming-platform videos (YouTube/Dailymotion/Vimeo) provide audio the same way.
+  const hasEmbeddedAudio = !hasAudio && (hasVideo || hasPlatformVideo);
 
   // Calculate duration
   let duration = 180000;
@@ -155,6 +158,10 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     coverImage: scanned.coverUrl,
     backgroundImage: scanned.backgroundUrl,
     videoBackground: hasVideo ? scanned.videoUrl : undefined,
+    youtubeUrl,
+    dailymotionUrl,
+    vimeoUrl,
+    videoGap,
     audioUrl: hasAudio ? scanned.audioUrl : undefined,
     hasEmbeddedAudio,
     // Lyrics are kept in memory for current session

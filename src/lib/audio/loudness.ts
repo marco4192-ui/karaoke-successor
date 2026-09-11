@@ -171,14 +171,24 @@ function isYouTubeUrl(url: string): boolean {
   return /(?:^|\.)youtube\.com\/|youtu\.be\//i.test(url);
 }
 
+/** Streaming-platform media cannot be fetched/decoded for loudness analysis. */
+function isStreamingPlatformUrl(url: string): boolean {
+  return /(?:^|\.)youtube\.com\/|youtu\.be\//i.test(url)
+    || /(?:^|\.)dailymotion\.com\//i.test(url)
+    || /(?:^|\.)dai\.ly\//i.test(url)
+    || /(?:^|\.)vimeo\.com\//i.test(url)
+    || /(?:^|\.)player\.vimeo\.com\//i.test(url);
+}
+
 /**
  * Return the per-song loudness normalization gain in dB for the given song.
  *
  * - Cached results come from localStorage (`StorageKeys.LOUDNESS_GAINS`).
  * - On a cache miss the media file is fetched + decoded + analyzed; the
  *   derived gain (target − loudness, clamped to ±12 dB) is persisted.
- * - ANY failure (no URL, YouTube URL, fetch/decode error, …) returns 0 —
- *   this function never throws and never blocks playback.
+ * - ANY failure (no URL, streaming-platform URL [YouTube/Dailymotion/Vimeo],
+ *   fetch/decode error, …) returns 0 — this function never throws and never
+ *   blocks playback.
  */
 export async function getSongLoudnessGainDb(
   songId: string | null | undefined,
@@ -186,7 +196,7 @@ export async function getSongLoudnessGainDb(
 ): Promise<number> {
   try {
     if (!songId || !mediaUrl) return 0;
-    if (isYouTubeUrl(mediaUrl)) return 0;
+    if (isStreamingPlatformUrl(mediaUrl)) return 0;
 
     const cache = readGainCache();
     const cached = cache[songId];

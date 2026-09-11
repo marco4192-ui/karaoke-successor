@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: '無効なYouTubeパラメータ',
   youtubeErrorHtml5: 'YouTubeプレイヤーのHTML5エラー',
   youtubeErrorCode: 'YouTubeエラー（コード: {n}）',
+  videoErrorGeo: 'この動画はお住まいの地域では再生できません。',
+  videoErrorPlatform: '動画エラー({platform}、コード {n})',
   loadingMedia: 'メディアを読み込み中...',
   loading: '読み込み中…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'プリセット',
   adPlaying: '広告再生中',
   gamePaused: 'ゲーム一時停止',
+  adPlayingPlatform: '{platform} の広告',
+  gameStartsAfterAd: '広告の後にゲームが始まります',
 },
 gameEnhancements: {
   loadingStats: '統計情報を読み込み中...',

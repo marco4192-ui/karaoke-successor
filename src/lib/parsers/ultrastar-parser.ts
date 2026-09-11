@@ -19,7 +19,7 @@
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Difficulty, DuetPlayer } from '@/types/game';
-import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
@@ -40,6 +40,8 @@ export interface UltraStarSong {
   mp3: string;
   video?: string;
   youtubeUrl?: string; // YouTube video URL (from #VIDEO: if it's a URL)
+  dailymotionUrl?: string; // Dailymotion video URL (from #VIDEO:)
+  vimeoUrl?: string; // Vimeo video URL (from #VIDEO:)
   videoGap?: number;
   cover?: string;
   background?: string;
@@ -105,12 +107,18 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.mp3 = value.trim();
             break;
           case 'VIDEO': {
-            // Classify URL: YouTube, direct video file, or local path
+            // Classify URL: YouTube, Dailymotion, Vimeo, direct video file, or local path
             const videoValue = value.trim();
             if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
               if (isYouTubeUrl(videoValue)) {
                 // YouTube URL — store separately for YouTube player
                 song.youtubeUrl = videoValue;
+              } else if (isDailymotionUrl(videoValue)) {
+                // Dailymotion URL — official ad events on embeds
+                song.dailymotionUrl = videoValue;
+              } else if (isVimeoUrl(videoValue)) {
+                // Vimeo URL — ad-free embeds with player.js SDK
+                song.vimeoUrl = videoValue;
               } else {
                 // Direct video URL (MP4, WebM, etc.) — play via HTML5 <video> element
                 // Stored in video field, which becomes videoBackground later
@@ -327,21 +335,32 @@ export function convertUltraStarToSong(
   // Calculate rating based on note density
   const rating = Math.min(5, Math.max(1, Math.ceil(notesPerMinute / 10)));
 
-  // Determine if video is a YouTube URL, direct video URL, or local file
+  // Determine if video is a YouTube/Dailymotion/Vimeo URL, direct video URL, or local file
   let videoBackground: string | undefined;
   let youtubeUrl: string | undefined;
-  
+  let dailymotionUrl: string | undefined;
+  let vimeoUrl: string | undefined;
+
   if (ultraStar.youtubeUrl) {
     // YouTube URL was detected during parsing
     youtubeUrl = ultraStar.youtubeUrl;
-    videoBackground = undefined; // Don't set videoBackground for YouTube URLs
+  } else if (ultraStar.dailymotionUrl) {
+    dailymotionUrl = ultraStar.dailymotionUrl;
+  } else if (ultraStar.vimeoUrl) {
+    vimeoUrl = ultraStar.vimeoUrl;
   } else if (ultraStar.video) {
     if (isDirectVideoUrl(ultraStar.video)) {
       // Direct video URL (MP4, WebM, OGG, etc.) — play via HTML5 <video> element
       videoBackground = ultraStar.video;
-    } else if (ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) {
-      // Non-YouTube HTTP URL that isn't a direct video file — treat as YouTube (fallback)
+    } else if (isDailymotionUrl(ultraStar.video)) {
+      dailymotionUrl = ultraStar.video;
+    } else if (isVimeoUrl(ultraStar.video)) {
+      vimeoUrl = ultraStar.video;
+    } else if (isYouTubeUrl(ultraStar.video)) {
       youtubeUrl = ultraStar.video;
+    } else if (ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) {
+      // Unknown HTTP(S) video source — hand it to the HTML5 <video> element as a fallback
+      videoBackground = ultraStar.video;
     } else {
       // Local file path
       videoBackground = videoUrl || ultraStar.video;
@@ -367,10 +386,12 @@ export function convertUltraStarToSong(
     backgroundImage: ultraStar.background,
     videoBackground,
     youtubeUrl,
+    dailymotionUrl,
+    vimeoUrl,
     videoGap: ultraStar.videoGap,
     audioUrl,
-    // If we have video (YouTube or direct URL) but no separate audio, video provides audio
-    hasEmbeddedAudio: !audioUrl && (!!youtubeUrl || !!videoBackground),
+    // If we have video (any streaming platform or direct URL) but no separate audio, video provides audio
+    hasEmbeddedAudio: !audioUrl && (!!youtubeUrl || !!dailymotionUrl || !!vimeoUrl || !!videoBackground),
     lyrics: lyricLines,
     preview: ultraStar.previewStart ? {
       startTime: ultraStar.previewStart * 1000,
@@ -385,7 +406,7 @@ export function convertUltraStarToSong(
     mp3File: ultraStar.mp3,
     coverFile: ultraStar.cover,
     backgroundFile: ultraStar.background,
-    videoFile: ultraStar.video && !ultraStar.youtubeUrl && !(ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) ? ultraStar.video : undefined,
+    videoFile: ultraStar.video && !ultraStar.youtubeUrl && !ultraStar.dailymotionUrl && !ultraStar.vimeoUrl && !(ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) ? ultraStar.video : undefined,
     previewStart: ultraStar.previewStart,
     previewDuration: ultraStar.previewDuration,
     medleyStartBeat: ultraStar.medleyStartBeat,
@@ -423,6 +444,10 @@ export function generateUltraStarTxt(song: Song): string {
   // Video (file or URL)
   if (song.youtubeUrl) {
     lines.push(`#VIDEO:${song.youtubeUrl}`);
+  } else if (song.dailymotionUrl) {
+    lines.push(`#VIDEO:${song.dailymotionUrl}`);
+  } else if (song.vimeoUrl) {
+    lines.push(`#VIDEO:${song.vimeoUrl}`);
   } else if (song.videoFile) {
     lines.push(`#VIDEO:${song.videoFile}`);
   } else if (song.videoBackground) {

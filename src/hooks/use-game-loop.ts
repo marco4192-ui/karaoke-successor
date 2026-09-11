@@ -23,6 +23,8 @@ interface UseGameLoopOptions {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isYouTube: boolean;
+  /** True for ANY streaming-platform video (YouTube/Dailymotion/Vimeo) — the platform player's time is the game clock. */
+  isStreamingVideo?: boolean;
   youtubeVideoId: string | null;
   youtubeTime: number;
   // Playing state (owned by caller so it's available everywhere)
@@ -112,6 +114,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     audioRef,
     videoRef,
     isYouTube,
+    isStreamingVideo = false,
     youtubeVideoId,
     youtubeTime,
     isPlaying,
@@ -250,6 +253,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       audioRef,
       videoRef,
       isYouTube,
+      isStreamingVideo,
       isNativeAudio,
       youtubeTimeRef,
       nativeAudioTimeRef,
@@ -257,7 +261,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       endGameAndCleanupRef,
       isNonScoringMode,
     });
-  }, [audioRef, videoRef, isYouTube, isNativeAudio]);
+  }, [audioRef, videoRef, isYouTube, isStreamingVideo, isNativeAudio]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
@@ -648,6 +652,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         song: effectiveSong,
         isNativeAudio,
         isYouTube,
+        isStreamingVideo,
         youtubeTimeRef,
         nativeAudioTimeRef,
         startTimeRef,
@@ -753,7 +758,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- isNativeAudio read from options but not needed as dep for game loop (read via ref); effectiveSong?.id used instead of effectiveSong to prevent rAF restart on lyrics load
-  }, [isPlaying, effectiveSong?.id, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef]);
+  }, [isPlaying, effectiveSong?.id, setCurrentTime, setDetectedPitch, isYouTube, isStreamingVideo, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {

@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: 'Неверный параметр YouTube',
   youtubeErrorHtml5: 'Ошибка HTML5 в плеере YouTube',
   youtubeErrorCode: 'Ошибка YouTube (Код: {n})',
+  videoErrorGeo: 'Это видео недоступно в вашем регионе.',
+  videoErrorPlatform: 'Ошибка видео ({platform}, код {n})',
   loadingMedia: 'Загрузка медиа...',
   loading: 'Загрузка…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'Пресеты',
   adPlaying: 'Реклама',
   gamePaused: 'Игра на паузе',
+  adPlayingPlatform: 'Реклама от {platform}',
+  gameStartsAfterAd: 'Игра начнётся после рекламы',
 },
 gameEnhancements: {
   loadingStats: 'Загрузка статистики...',

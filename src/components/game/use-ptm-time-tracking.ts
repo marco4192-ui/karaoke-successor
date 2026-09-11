@@ -10,6 +10,9 @@ interface UsePtmTimeTrackingOptions {
   phase: string;
   isPlaying: boolean;
   isYouTube: boolean;
+  /** True for ANY streaming platform (YouTube/Dailymotion/Vimeo) — platform time is the clock. */
+  isStreamingVideo?: boolean;
+  /** Streaming-player time in MILLISECONDS (matches the players' onTimeUpdate contract). */
   youtubeTime: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -20,6 +23,7 @@ export function usePtmTimeTracking({
   phase,
   isPlaying,
   isYouTube,
+  isStreamingVideo = false,
   youtubeTime,
   audioRef,
   videoRef,
@@ -43,11 +47,12 @@ export function usePtmTimeTracking({
     const timeLoop = () => {
       let elapsedMs: number;
 
-      if (isYouTube && youtubeTimeRef.current > 0) {
-        elapsedMs = youtubeTimeRef.current * 1000;
+      // Streaming-platform clock (YouTube / Dailymotion / Vimeo) — youtubeTime is in ms
+      if ((isYouTube || isStreamingVideo) && youtubeTimeRef.current > 0) {
+        elapsedMs = youtubeTimeRef.current;
       } else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsedMs = audioRef.current.currentTime * 1000;
-      } else if (videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2 && !isYouTube) {
+      } else if (videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2 && !isYouTube && !isStreamingVideo) {
         elapsedMs = videoRef.current.currentTime * 1000;
       } else {
         // Fallback: keep current time (no regression)
@@ -66,14 +71,14 @@ export function usePtmTimeTracking({
 
     rafId = requestAnimationFrame(timeLoop);
     return () => cancelAnimationFrame(rafId);
-  }, [phase, isPlaying, isYouTube, audioRef, videoRef]);
+  }, [phase, isPlaying, isYouTube, isStreamingVideo, audioRef, videoRef]);
 
   // ── Legacy timeupdate fallback (non-playing phases: intro, countdown) ──
   useEffect(() => {
     if (phase === 'playing') return; // handled by RAF loop above
 
-    if (isYouTube && youtubeTimeRef.current > 0) {
-      setCurrentTime(youtubeTimeRef.current * 1000);
+    if ((isYouTube || isStreamingVideo) && youtubeTimeRef.current > 0) {
+      setCurrentTime(youtubeTimeRef.current);
       return;
     }
 
@@ -90,7 +95,7 @@ export function usePtmTimeTracking({
       video.addEventListener('timeupdate', handleTimeUpdate);
       return () => video.removeEventListener('timeupdate', handleTimeUpdate);
     }
-  }, [audioRef, videoRef, isYouTube, phase]);
+  }, [audioRef, videoRef, isYouTube, isStreamingVideo, phase]);
 
   return { currentTime, setCurrentTime, currentTimeRef };
 }

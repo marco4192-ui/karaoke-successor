@@ -4,6 +4,7 @@ import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
 import { normalizeTxtContent } from '@/lib/utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl } from '@/lib/url-utils';
 
 // Parse UltraStar txt file for metadata (headers only)
 export function parseUltraStarMetadata(content: string): {
@@ -70,6 +71,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   previewDuration?: number;
   isDuet?: boolean;
   duetPlayerNames?: [string, string];
+  youtubeUrl?: string;
+  dailymotionUrl?: string;
+  vimeoUrl?: string;
+  videoGap?: number;
 }> {
   if (!txtFile) {
     return { lyrics: [], bpm: 120, gap: 0, isDuet: false };
@@ -88,6 +93,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   let hasDuetHeader = false;
   let p1Name: string | undefined;
   let p2Name: string | undefined;
+  let youtubeUrl: string | undefined;
+  let dailymotionUrl: string | undefined;
+  let vimeoUrl: string | undefined;
+  let videoGap: number | undefined;
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
 
@@ -115,6 +124,18 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
     } else if (trimmedLine.startsWith('#P2:')) {
       hasDuetHeader = true;
       p2Name = trimmedLine.substring(4).trim() || 'Player 2';
+    } else if (trimmedLine.startsWith('#VIDEO:')) {
+      // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo)
+      const videoValue = trimmedLine.substring(7).trim();
+      if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
+        if (isYouTubeUrl(videoValue)) youtubeUrl = videoValue;
+        else if (isDailymotionUrl(videoValue)) dailymotionUrl = videoValue;
+        else if (isVimeoUrl(videoValue)) vimeoUrl = videoValue;
+        // Non-platform URLs are resolved via the scanned video FILE instead
+      }
+    } else if (trimmedLine.startsWith('#VIDEOGAP:')) {
+      const val = parseFloat(trimmedLine.substring(10).replace(',', '.'));
+      if (!isNaN(val)) videoGap = val;
     } else if (trimmedLine.startsWith('#')) {
       continue;
     } else if (trimmedLine === 'E') {
@@ -172,5 +193,5 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
     ? [p1Name || 'Player 1', p2Name || 'Player 2']
     : undefined;
 
-  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames };
+  return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, videoGap };
 }

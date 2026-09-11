@@ -53,7 +53,12 @@ interface PtmGameHookReturn {
   isYouTube: boolean;
   youtubeVideoId: string | null;
   useYouTubeAudio: boolean;
+  videoPlatform: import('@/lib/url-utils').VideoPlatform;
+  platformVideoUrl: string | null;
+  adPlatformLabel: string;
+  usePlatformAudio: boolean;
   isAdPlaying: boolean;
+  adCountdown: number;
   handleAdStart: () => void;
   handleAdEnd: () => void;
   onYoutubeTimeUpdate: (_time: number) => void;
@@ -175,7 +180,12 @@ export function usePtmGameLogic({
     youtubeVideoId,
     isYouTube,
     useYouTubeAudio,
+    videoPlatform,
+    platformVideoUrl,
+    adPlatformLabel,
+    usePlatformAudio,
     isAdPlaying,
+    adCountdown,
     handleAdStart,
     handleAdEnd,
   } = useYouTubeGame({
@@ -261,6 +271,7 @@ export function usePtmGameLogic({
     phase,
     isPlaying,
     isYouTube,
+    isStreamingVideo: videoPlatform !== null,
     youtubeTime,
     audioRef,
     videoRef,
@@ -742,7 +753,12 @@ export function usePtmGameLogic({
     isYouTube,
     youtubeVideoId,
     useYouTubeAudio,
+    videoPlatform,
+    platformVideoUrl,
+    adPlatformLabel,
+    usePlatformAudio,
     isAdPlaying,
+    adCountdown,
     handleAdStart,
     handleAdEnd,
     onYoutubeTimeUpdate: setYoutubeTime,

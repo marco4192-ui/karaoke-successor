@@ -240,8 +240,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         }
       }
 
-      // For YouTube videos, just need a small delay for iframe to initialize
-      if (effectiveSongBase.youtubeUrl) {
+      // For streaming-platform videos (YouTube/Dailymotion/Vimeo), just need a small delay for the player iframe/SDK to initialize
+      if (effectiveSongBase.youtubeUrl || effectiveSongBase.dailymotionUrl || effectiveSongBase.vimeoUrl) {
         anyMedia = true;
         await new Promise(resolve => setTimeout(resolve, 500));
       }

@@ -117,24 +117,34 @@ export function AudioEffectsPanel({
 interface AdIndicatorProps {
   isAdPlaying: boolean;
   adCountdown: number;
+  /** Platform domain label ("youtube.com", "dailymotion.com", …) for the ad overlay. */
+  platformLabel?: string;
 }
 
-export function AdIndicator({ isAdPlaying, adCountdown }: AdIndicatorProps) {
+export function AdIndicator({ isAdPlaying, adCountdown, platformLabel }: AdIndicatorProps) {
   const { t } = useTranslation();
 
   if (!isAdPlaying) return null;
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40" role="alert">
-      <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
-        <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 max-w-[92vw]" role="alert" aria-live="polite">
+      <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+        <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse shrink-0" />
         <span className="text-yellow-400 font-medium">{t('gameHud.adPlaying')}</span>
-        <span className="text-white/60">-</span>
-        <span className="text-white/80">{t('gameHud.gamePaused')}</span>
+        {platformLabel && (
+          <>
+            <span className="text-white/60">·</span>
+            <span className="text-white/80">
+              {t('gameHud.adPlayingPlatform').replace('{platform}', platformLabel)}
+            </span>
+          </>
+        )}
+        <span className="text-white/60">·</span>
+        <span className="text-white/60">{t('gameHud.gameStartsAfterAd')}</span>
         {adCountdown > 0 && (
           <>
-            <span className="text-white/60">-</span>
-            <span className="text-cyan-400 font-bold">{adCountdown}s</span>
+            <span className="text-white/60">·</span>
+            <span className="text-cyan-400 font-bold tabular-nums">{adCountdown}s</span>
           </>
         )}
       </div>

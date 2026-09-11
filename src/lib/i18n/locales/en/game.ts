@@ -73,6 +73,8 @@ export const gameTranslations = {
     youtubeErrorInvalid: 'Invalid YouTube parameter',
     youtubeErrorHtml5: 'HTML5 error in YouTube player',
     youtubeErrorCode: 'YouTube error (Code: {n})',
+    videoErrorGeo: 'This video is not available in your region.',
+    videoErrorPlatform: 'Video error ({platform}, code {n})',
     loadingMedia: 'Loading media...',
     loading: 'Loading…',
   },
@@ -83,7 +85,9 @@ export const gameTranslations = {
     echo: 'Echo: {n}%',
     presets: 'Presets',
     adPlaying: 'Ad playing',
-    gamePaused: 'Game Paused'
+    gamePaused: 'Game Paused',
+    adPlayingPlatform: 'Advertisement from {platform}',
+    gameStartsAfterAd: 'The game starts after the ad',
   },
 
   gameEnhancements: {

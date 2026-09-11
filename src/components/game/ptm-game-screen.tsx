@@ -10,6 +10,7 @@ import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
+import { AdIndicator } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
 import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
@@ -146,6 +147,9 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           isYouTube={g.isYouTube}
           youtubeVideoId={g.youtubeVideoId}
           useYouTubeAudio={g.useYouTubeAudio}
+          videoPlatform={g.videoPlatform}
+          platformVideoUrl={g.platformVideoUrl}
+          usePlatformAudio={g.usePlatformAudio}
           isPlaying={g.isPlaying}
           isAdPlaying={g.isAdPlaying}
           songEnergy={g.songEnergy}
@@ -159,6 +163,9 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
           onYoutubeError={() => {}}
         />
+
+        {/* Ad Indicator — platform-aware overlay (Einblendung über …) */}
+        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
 
         {/* Dark Overlay for visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />

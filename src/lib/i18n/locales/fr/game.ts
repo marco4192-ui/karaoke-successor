@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: 'Paramètre YouTube invalide',
   youtubeErrorHtml5: 'Erreur HTML5 dans le lecteur YouTube',
   youtubeErrorCode: 'Erreur YouTube (Code : {n})',
+  videoErrorGeo: 'Cette vidéo n\'est pas disponible dans votre région.',
+  videoErrorPlatform: 'Erreur vidéo ({platform}, code {n})',
   loadingMedia: 'Chargement du média...',
   loading: 'Chargement…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: 'Presets',
   adPlaying: 'Publicité en cours',
   gamePaused: 'Jeu en Pause',
+  adPlayingPlatform: 'Publicité de {platform}',
+  gameStartsAfterAd: 'Le jeu commence après la publicité',
 },
 gameEnhancements: {
   loadingStats: 'Chargement des stats...',

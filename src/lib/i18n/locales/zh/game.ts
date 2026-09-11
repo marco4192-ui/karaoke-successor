@@ -68,6 +68,8 @@ gameScreen: {
   youtubeErrorInvalid: '无效的YouTube参数',
   youtubeErrorHtml5: 'YouTube播放器HTML5错误',
   youtubeErrorCode: 'YouTube错误（代码: {n}）',
+  videoErrorGeo: '此视频在您所在的地区不可用。',
+  videoErrorPlatform: '视频错误({platform},代码 {n})',
   loadingMedia: '正在加载媒体...',
   loading: '加载中…',
 },
@@ -78,6 +80,8 @@ gameHud: {
   presets: '预设',
   adPlaying: '广告播放中',
   gamePaused: '游戏暂停',
+  adPlayingPlatform: '来自 {platform} 的广告',
+  gameStartsAfterAd: '广告结束后游戏将开始',
 },
 gameEnhancements: {
   loadingStats: '正在加载统计...',

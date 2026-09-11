@@ -50,6 +50,8 @@ export interface Song {
   videoBackground?: string;
   youtubeUrl?: string; // YouTube video URL
   youtubeId?: string; // YouTube video ID (extracted from URL)
+  dailymotionUrl?: string; // Dailymotion video URL (#VIDEO:) — official ad events
+  vimeoUrl?: string; // Vimeo video URL (#VIDEO:) — ad-free embeds
   videoUrl?: string; // Direct video URL (for local video files)
   videoGap?: number; // #VIDEOGAP: Offset for video sync (ms)
   videoStart?: number; // #VIDEOSTART: Fixed start point for video (ms)

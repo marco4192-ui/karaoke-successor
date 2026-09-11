@@ -179,6 +179,9 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           isYouTube={g.isYouTube}
           youtubeVideoId={g.youtubeVideoId}
           useYouTubeAudio={g.useYouTubeAudio}
+          videoPlatform={g.videoPlatform}
+          platformVideoUrl={g.platformVideoUrl}
+          usePlatformAudio={g.usePlatformAudio}
           isPlaying={g.isPlaying}
           isAdPlaying={g.isAdPlaying}
           songEnergy={g.isLowPerf ? 0 : (g.songEnergy ?? 0)}
@@ -197,10 +200,15 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
               150: t('gameScreen.youtubeErrorVevo'),
               2: t('gameScreen.youtubeErrorInvalid'),
               5: t('gameScreen.youtubeErrorHtml5'),
+              1000: t('gameScreen.videoErrorGeo'),
             };
-            g.setYoutubeError(messages[errorCode] || t('gameScreen.youtubeErrorCode').replace('{n}', String(errorCode)));
+            // Platform-aware fallback: generic message for non-YouTube players
+            const fallback = g.videoPlatform && g.videoPlatform !== 'youtube'
+              ? t('gameScreen.videoErrorPlatform').replace('{platform}', g.adPlatformLabel).replace('{n}', String(errorCode))
+              : t('gameScreen.youtubeErrorCode').replace('{n}', String(errorCode));
+            g.setYoutubeError(messages[errorCode] || fallback);
             // eslint-disable-next-line no-console
-            console.error('[GameScreen] YouTube error:', errorCode);
+            console.error('[GameScreen] Video platform error:', g.videoPlatform, errorCode);
           }}
         />
 
@@ -215,8 +223,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         {/* Countdown */}
         <GameCountdown countdown={g.countdown} />
 
-        {/* Ad Indicator */}
-        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} />
+        {/* Ad Indicator — platform-aware overlay (Einblendung über …) */}
+        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} platformLabel={g.adPlatformLabel} />
 
         {/* YouTube Error Indicator */}
         {g.youtubeError && (

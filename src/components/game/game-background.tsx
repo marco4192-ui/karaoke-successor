@@ -2,7 +2,10 @@
 
 import { useEffect } from 'react';
 import type { Song } from '@/types/game';
+import type { VideoPlatform } from '@/lib/url-utils';
 import { YouTubePlayer } from '@/components/game/youtube-player';
+import { DailymotionPlayer } from '@/components/game/dailymotion-player';
+import { VimeoPlayer } from '@/components/game/vimeo-player';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
 import {
   AnimatedBackground as VisualAnimatedBackground,
@@ -15,6 +18,12 @@ export interface GameBackgroundProps {
   isYouTube: boolean;
   youtubeVideoId: string | null;
   useYouTubeAudio: boolean;
+  /** Detected streaming platform (YouTube / Dailymotion / Vimeo). */
+  videoPlatform?: VideoPlatform;
+  /** Full platform video URL (Dailymotion / Vimeo players consume the raw URL). */
+  platformVideoUrl?: string | null;
+  /** True when the streaming player (any platform) must provide the audio. */
+  usePlatformAudio?: boolean;
   isPlaying: boolean;
   isAdPlaying: boolean;
   songEnergy: number;
@@ -40,6 +49,9 @@ export function GameBackground({
   isYouTube,
   youtubeVideoId,
   useYouTubeAudio,
+  videoPlatform,
+  platformVideoUrl,
+  usePlatformAudio,
   isPlaying,
   isAdPlaying,
   songEnergy,
@@ -70,6 +82,82 @@ export function GameBackground({
   // ref object whose identity never changes, so depending on it would miss element swaps.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, videoRef?.current]);
+
+  // ── Dailymotion — official ad events (AD_START/AD_END) drive the game-wait flow ──
+  if (showBackgroundVideo && videoPlatform === 'dailymotion' && platformVideoUrl) {
+    return (
+      <DailymotionPlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive={isAdPlaying}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // Hidden Dailymotion (audio only — video disabled but the platform provides the audio)
+  if (!showBackgroundVideo && videoPlatform === 'dailymotion' && platformVideoUrl && usePlatformAudio) {
+    return (
+      <div className="hidden">
+        <DailymotionPlayer
+          videoUrl={platformVideoUrl}
+          videoGap={videoGap}
+          onReady={() => {}}
+          onTimeUpdate={onYoutubeTimeUpdate}
+          onEnded={onVideoEnded}
+          onAdStart={onAdStart}
+          onAdEnd={onAdEnd}
+          isPlaying={isPlaying}
+          startTime={effectiveSong?.start || 0}
+          onError={onYoutubeError}
+        />
+      </div>
+    );
+  }
+
+  // ── Vimeo — ad-free embeds; restrictions surface via the error event ──
+  if (showBackgroundVideo && videoPlatform === 'vimeo' && platformVideoUrl) {
+    return (
+      <VimeoPlayer
+        videoUrl={platformVideoUrl}
+        videoGap={videoGap}
+        onReady={() => {}}
+        onTimeUpdate={onYoutubeTimeUpdate}
+        onEnded={onVideoEnded}
+        onAdStart={onAdStart}
+        onAdEnd={onAdEnd}
+        isPlaying={isPlaying}
+        startTime={effectiveSong?.start || 0}
+        interactive={isAdPlaying}
+        onError={onYoutubeError}
+      />
+    );
+  }
+
+  // Hidden Vimeo (audio only)
+  if (!showBackgroundVideo && videoPlatform === 'vimeo' && platformVideoUrl && usePlatformAudio) {
+    return (
+      <div className="hidden">
+        <VimeoPlayer
+          videoUrl={platformVideoUrl}
+          videoGap={videoGap}
+          onReady={() => {}}
+          onTimeUpdate={onYoutubeTimeUpdate}
+          onEnded={onVideoEnded}
+          isPlaying={isPlaying}
+          startTime={effectiveSong?.start || 0}
+          onError={onYoutubeError}
+        />
+      </div>
+    );
+  }
 
   // YouTube video (visible + audio)
   if (showBackgroundVideo && isYouTube && youtubeVideoId) {

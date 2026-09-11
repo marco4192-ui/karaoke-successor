@@ -59,10 +59,14 @@ export interface GameScreenHookReturn {
   setDisplayDuration: React.Dispatch<React.SetStateAction<number>>;
   nativeAudio: ReturnType<typeof useNativeAudio>;
 
-  // YouTube
+  // Streaming video platform (YouTube / Dailymotion / Vimeo)
   youtubeVideoId: string | null;
   isYouTube: boolean;
   useYouTubeAudio: boolean;
+  videoPlatform: import('@/lib/url-utils').VideoPlatform;
+  platformVideoUrl: string | null;
+  adPlatformLabel: string;
+  usePlatformAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number | null;
   handleAdStart: () => void;
