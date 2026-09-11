@@ -38,6 +38,8 @@ medley: {
   start: '🎤 Start!',
   getReady: 'Maak je klaar...',
   nextSnippet: 'Volgend fragment...',
+  loadingSnippet: 'Fragment wordt geladen...',
+  preparingNextRound: 'Volgende ronde wordt voorbereid...',
   nextSong: 'VOLGEND NUMMER',
   allPlayersContinue: 'Alle spelers blijven zingen!',
   badge: '🎵 MEDLEY',

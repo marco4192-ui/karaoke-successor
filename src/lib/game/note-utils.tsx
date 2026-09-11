@@ -33,10 +33,17 @@ function hexWithAlpha(hex: string, alpha: number): string {
  *   ('sealed' = uniform hit colour + red misses + heat-seal animation, or
  *   'exact' = fixed 5-colour quality code dunkelgrün/grün/hellgrün/gelb/orange).
  * - 'legacy': the classic quality-graduated profile rendering — reserved for
- *   modes with MORE than two simultaneous singers (Battle Royale, Medley
- *   Contest) where per-player colour coding must stay intact.
+ *   modes with MORE than two simultaneous singers where per-player colour
+ *   coding must stay intact.
+ * - 'flat': Battle Royale — notes fill with ONE uniform colour as the sing
+ *   line passes them. No pitch data is visualised at all (no quality
+ *   gradations, no sung-pitch ghosts) and no performance samples are
+ *   needed, making it the cheapest possible pipeline.
  */
-export type NoteRenderMode = 'modern' | 'legacy';
+export type NoteRenderMode = 'modern' | 'legacy' | 'flat';
+
+/** Default fill colour for 'flat' mode (Battle Royale theme cyan). */
+export const FLAT_NOTE_FILL_COLOR = '#22d3ee';
 
 /**
  * Get note display style classes based on display mode.
@@ -58,8 +65,11 @@ export type NoteRenderMode = 'modern' | 'legacy';
  *     • 'exact': same laser fill, but hits are graded with the fixed
  *       5-colour code (hellgrün Perfect / grün Great / dunkelgrün
  *       Good-Okay) and miss ghosts are gelb (≤ 1 semitone) or orange.
- * - 'legacy' — the classic profile-based quality rendering (Battle Royale /
- *   Medley Contest keep this so multi-singer colour coding stays intact).
+ * - 'legacy' — the classic profile-based quality rendering (kept for
+ *   multi-singer modes that still encode pitch info).
+ * - 'flat' — Battle Royale: notes fill in ONE uniform colour as the sing
+ *   line passes (golden → gold, bonus → magenta keep their semantics).
+ *   No pitch data is visualised and no samples are required.
  */
 export function getNoteDisplayStyleClasses(
   _displayStyle: string,
@@ -81,8 +91,10 @@ export function getNoteDisplayStyleClasses(
   containerHeight?: number,
   /** Optional per-singer tint (Medley): pre-colors the unsung note track in the singer's color */
   playerTint?: string,
-  /** Rendering pipeline: 'modern' (sealed/exact setting) or 'legacy' (BR / Medley) */
+  /** Rendering pipeline: 'modern' (sealed/exact setting), 'legacy' or 'flat' (BR) */
   renderMode: NoteRenderMode = 'modern',
+  /** Flat mode: the ONE uniform fill colour (defaults to BR cyan) */
+  flatFill?: string,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -106,6 +118,58 @@ export function getNoteDisplayStyleClasses(
 
   const samples = performanceSamples || [];
   const clampedFill = Math.max(0, Math.min(1, fillFraction));
+
+  // ── FLAT MODE (Battle Royale) ───────────────────────────────
+  // Cheapest possible pipeline: the note fills left-to-right with ONE
+  // uniform colour as the sing line passes it. No samples, no segment
+  // mapping, no quality colours, no sung-pitch ghosts — zero pitch data
+  // is visualised. Early return BEFORE any storage reads / heavy work.
+  if (renderMode === 'flat') {
+    const fillColor = isGolden
+      ? SEALED_GOLD_COLOR
+      : isBonus
+        ? SEALED_BONUS_COLOR
+        : (flatFill || FLAT_NOTE_FILL_COLOR);
+    const fillPercent = Math.round(clampedFill * 1000) / 10;
+    return {
+      additionalClasses: 'overflow-hidden',
+      inlineStyle: {
+        backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
+        backgroundColor: 'rgba(100, 130, 160, 0.08)',
+        border: `1.5px solid ${isGolden ? 'rgba(250, 204, 21, 0.55)' : isBonus ? 'rgba(232, 121, 249, 0.55)' : 'rgba(255, 255, 255, 0.16)'}`,
+        boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
+        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
+      },
+      overlayElement: (
+        <>
+          {/* Uniform fill — grows as the sing line passes the note */}
+          <div
+            className="absolute inset-y-0 left-0"
+            style={{
+              width: `${fillPercent}%`,
+              backgroundColor: fillColor,
+              borderRadius: '2px',
+              boxShadow: `inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.25), 0 0 10px ${hexToRgbaPrefix(fillColor)}0.45)`,
+            }}
+          />
+          {/* Laser head at the fill edge while the note is being passed */}
+          {clampedFill > 0 && clampedFill < 1 && (
+            <div
+              className="absolute inset-y-0"
+              style={{
+                left: `${fillPercent}%`,
+                width: '3px',
+                marginLeft: '-1.5px',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                boxShadow: `0 0 8px ${fillColor}, 0 0 16px ${hexToRgbaPrefix(fillColor)}0.6)`,
+              }}
+            />
+          )}
+        </>
+      ),
+      pastOpacity: 0.55,
+    };
+  }
 
   // Segment count: one per ~50 ms of note duration, clamped 4-24
   const segCount = noteDuration

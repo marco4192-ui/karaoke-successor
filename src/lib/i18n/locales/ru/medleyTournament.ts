@@ -38,6 +38,8 @@ medley: {
   start: '🎤 Начать!',
   getReady: 'Приготовьтесь...',
   nextSnippet: 'Следующий отрывок...',
+  loadingSnippet: 'Загрузка отрывка...',
+  preparingNextRound: 'Подготовка следующего раунда...',
   nextSong: 'СЛЕДУЮЩАЯ ПЕСНЯ',
   allPlayersContinue: 'Все игроки продолжают петь!',
   badge: '🎵 МЕДЛИ',

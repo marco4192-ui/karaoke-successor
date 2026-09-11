@@ -38,6 +38,8 @@ medley: {
   start: '🎤 Los geht\'s!',
   getReady: 'Macht euch bereit...',
   nextSnippet: 'Nächstes Snippet...',
+  loadingSnippet: 'Snippet wird geladen...',
+  preparingNextRound: 'Nächste Runde wird vorbereitet...',
   nextSong: 'NÄCHSTER SONG',
   allPlayersContinue: 'Alle Spieler singen weiter!',
   badge: '🎵 MEDLEY',

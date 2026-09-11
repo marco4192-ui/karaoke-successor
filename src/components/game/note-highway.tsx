@@ -54,14 +54,22 @@ export interface NoteHighwayProps {
   isBlindSection?: boolean;
   /**
    * Force the LEGACY note rendering (profile-based quality colours, ghost
-   * bars). Used by modes with more than two simultaneous singers (Battle
-   * Royale). All other modes honour the user's note display setting
-   * ('sealed' / 'exact').
+   * bars). Reserved for modes that still encode pitch info.
    */
   legacyNoteStyle?: boolean;
+  /**
+   * FLAT note rendering (Battle Royale): notes fill with ONE uniform
+   * colour as the sing line passes them — no pitch data visualised, no
+   * samples needed (cheapest pipeline). Mutually exclusive with
+   * legacyNoteStyle (flat wins when both are set).
+   */
+  flatNoteFill?: string;
 }
 
 // ===================== SUB-COMPONENTS =====================
+
+/** Shared empty samples array for flat mode (stable reference). */
+const EMPTY_PERF_SAMPLES: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }> = [];
 
 const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d3d3ee' }: { count?: number; playerColor?: string }) {
   const borderColor = withAlpha(playerColor, 0.1);
@@ -116,6 +124,7 @@ const NoteBlock = React.memo(function NoteBlock({
   notePerformance,
   playerStrips,
   renderMode,
+  flatFill,
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -132,6 +141,8 @@ const NoteBlock = React.memo(function NoteBlock({
   /** Multi-player strips (Medley): ≥2 entries → per-player strip rendering */
   playerStrips?: NotePlayerStrip[];
   renderMode: NoteRenderMode;
+  /** Flat mode fill colour */
+  flatFill?: string;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -185,6 +196,9 @@ const NoteBlock = React.memo(function NoteBlock({
       )
     : null;
 
+  // Flat mode needs neither accuracy nor samples — skip the lookups.
+  const isFlat = renderMode === 'flat';
+
   const getNoteAccuracy = (): number => {
     if (!notePerformance) return 0;
     const noteId = note.id || `note-${note.startTime}`;
@@ -193,11 +207,13 @@ const NoteBlock = React.memo(function NoteBlock({
     return samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
   };
 
-  const accuracy = getNoteAccuracy();
+  const accuracy = isFlat ? 0 : getNoteAccuracy();
 
-  const notePerfSamples = notePerformance
-    ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
-    : [];
+  const notePerfSamples = isFlat
+    ? EMPTY_PERF_SAMPLES
+    : notePerformance
+      ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
+      : [];
 
   const glowColor = withAlpha(playerColor, 0.8);
 
@@ -239,6 +255,7 @@ const NoteBlock = React.memo(function NoteBlock({
         containerHeight,
         noteTint,
         renderMode,
+        flatFill,
       );
 
   return (
@@ -304,12 +321,15 @@ export const NoteHighway = React.memo(function NoteHighway({
   className = '',
   isBlindSection = false,
   legacyNoteStyle = false,
+  flatNoteFill,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 
   const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
   const resolvedPlayerName = playerName || t('prominentScore.player1');
-  const renderMode: NoteRenderMode = legacyNoteStyle ? 'legacy' : 'modern';
+  const renderMode: NoteRenderMode = flatNoteFill !== undefined
+    ? 'flat'
+    : legacyNoteStyle ? 'legacy' : 'modern';
   const stripsActive = !!playerStrips && playerStrips.length >= 2;
 
   return (
@@ -354,6 +374,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           notePerformance={notePerformance}
           playerStrips={playerStrips}
           renderMode={renderMode}
+          flatFill={flatNoteFill}
         />
       ))}
 

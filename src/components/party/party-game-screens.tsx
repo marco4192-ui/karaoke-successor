@@ -41,13 +41,17 @@ interface PartyGameScreensProps {
 async function prepareNextMedleyRound(party: import('@/lib/game/party-store').PartyStore): Promise<MedleySong[] | null> {
   try {
     const settings = party.medleySettings;
-    const players = party.medleyPlayers;
-    // Mirror the original settings: snippetCount/snippetDuration from
-    // medleySettings when available, else derive (30s, players*2 clamped 3-10).
+    // Item 6: ALWAYS mirror the round just played — the configured snippet
+    // count from medleySettings, else the CURRENT round's actual count (the
+    // user always gets the same number of snippets per round). The old
+    // fallback (players * 2) made a 5-snippet game jump to 8 snippets with
+    // 4 players on the very next round.
     const snippetCount = settings?.snippetCount && settings.snippetCount > 0
       ? settings.snippetCount
-      : Math.max(3, Math.min((players.length || 2) * 2, 10));
-    const snippetDuration = settings?.snippetDuration || 30;
+      : (party.medleySongs.length > 0 ? party.medleySongs.length : 5);
+    const snippetDuration = settings?.snippetDuration
+      || (party.medleySongs[0]?.duration ? Math.round(party.medleySongs[0].duration / 1000) : 30)
+      || 30;
 
     // Pool: full library with the same filters as the original start (the
     // unified setup result's settings carry the filter fields).
@@ -146,6 +150,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const [rateMySongSeriesRound, setRateMySongSeriesRound] = useState(1);
   // Track whether the challenge pre-singing overlay has been dismissed
   const [challengeOverlayDismissed, setChallengeOverlayDismissed] = useState(true);
+
+  // Item 5: visible loading feedback while the next song / medley snippets
+  // are being prepared (PTM & Companion-Sing-Along next-round picks). The
+  // preparation (song pick + snippet building + URL/lyrics restore) takes a
+  // moment and previously froze the results screen with NO indication.
+  const [isPreparingNextSong, setIsPreparingNextSong] = useState(false);
 
   // #7 Tournament results screen
   const [showTournamentResults, setShowTournamentResults] = useState(false);
@@ -512,6 +522,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onNavigate={async (targetScreen) => {
             // Handle special PTM next-song navigation
             if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
+              setIsPreparingNextSong(true);
               try {
                 const playerCount = party.passTheMicPlayers.length || 2;
                 const segDur = party.passTheMicSettings?.segmentDuration;
@@ -552,6 +563,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 party.setNextRoundPick('ptm');
                 setScreen('library');
+              } finally {
+                setIsPreparingNextSong(false);
               }
             } else if (targetScreen === 'song-voting') {
               // Next-round vote: picking a song returns DIRECTLY into the PTM
@@ -711,6 +724,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onNavigate={async (targetScreen) => {
             // Handle next-song navigation (same pattern as PtM)
             if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
+              setIsPreparingNextSong(true);
               try {
                 const playerCount = party.cptmPlayers.length || 2;
                 const segDur = party.cptmSettings?.segmentDuration;
@@ -741,6 +755,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 party.setNextRoundPick('cptm');
                 setScreen('library');
+              } finally {
+                setIsPreparingNextSong(false);
               }
             } else if (targetScreen === 'song-voting') {
               const filters = party.unifiedSetupResult?.settings;
@@ -1088,6 +1104,16 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           />
         );
       })()}
+
+      {/* Item 5: next-song / medley-snippet preparation overlay (PTM & CPTM).
+          Fixed + high z so it covers the frozen results screen while the
+          next round's songs/snippets are being built. */}
+      {isPreparingNextSong && (
+        <div className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto" data-testid="ptm-next-song-loading">
+          <div className="animate-spin w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full mb-4" />
+          <p className="text-white/70 text-sm font-medium">{t('medley.preparingNextRound')}</p>
+        </div>
+      )}
     </>
   );
 }

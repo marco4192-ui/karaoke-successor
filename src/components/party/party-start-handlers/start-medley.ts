@@ -89,8 +89,16 @@ export async function startMedley(ctx: StartHandlerContext): Promise<void> {
 
   party.setMedleyPlayers(medleyPlayers);
   party.setMedleySongs(preparedSnippets);
-  // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
-  party.setMedleySettings(result.settings as unknown as MedleySettingsType);
+  // Cast unified setup settings to MedleySettings (the unified setup provides matching keys).
+  // Item 6: EXPLICITLY persist snippetCount/snippetDuration so later rounds
+  // ("nächste Runde") read the configured values instead of re-deriving them
+  // (the old code lost them when the unified settings object lacked the keys,
+  // making the next round fall back to players*2 = e.g. 8 instead of 5).
+  party.setMedleySettings({
+    ...(result.settings as unknown as Record<string, unknown>),
+    snippetCount,
+    snippetDuration,
+  } as unknown as MedleySettingsType);
   party.setMedleySeriesHistory([]);
   // Reset isSongPlaying BEFORE navigating to prevent React #185
   // (MedleyGameScreen's useEffect would otherwise trigger during mount cycle)

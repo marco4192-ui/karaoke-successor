@@ -38,6 +38,8 @@ medley: {
   start: '🎤 Start!',
   getReady: 'Gjør deg klar...',
   nextSnippet: 'Neste utdrag...',
+  loadingSnippet: 'Laster utdrag...',
+  preparingNextRound: 'Forbereder neste runde...',
   nextSong: 'NESTE SANG',
   allPlayersContinue: 'Alle spillere fortsetter å synge!',
   badge: '🎵 MEDLEY',

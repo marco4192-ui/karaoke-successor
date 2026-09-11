@@ -38,6 +38,8 @@ medley: {
   start: '🎤 Aloita!',
   getReady: 'Valmistaudu...',
   nextSnippet: 'Seuraava pätkä...',
+  loadingSnippet: 'Ladataan pätkää...',
+  preparingNextRound: 'Valmistellaan seuraavaa kierrosta...',
   nextSong: 'SEURAAVA KAPPALE',
   allPlayersContinue: 'Kaikki pelaajat jatkavat laulamista!',
   badge: '🎵 MEDLEY',

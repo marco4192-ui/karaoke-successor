@@ -39,6 +39,8 @@ export const medleyTournamentTranslations = {
     start: '🎤 Start!',
     getReady: 'Get ready...',
     nextSnippet: 'Next Snippet...',
+    loadingSnippet: 'Loading snippet...',
+    preparingNextRound: 'Preparing next round...',
     nextSong: 'NEXT SONG',
     allPlayersContinue: 'All players keep singing!',
     badge: '🎵 MEDLEY',

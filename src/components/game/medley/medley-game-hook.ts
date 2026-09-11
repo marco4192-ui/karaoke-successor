@@ -83,6 +83,10 @@ interface MedleyGameState {
   fallbackVideoRef: React.RefObject<HTMLVideoElement | null>;
   audioUrl: string | null;
   audioError: string | null;
+  /** Item 5/7: media ready flag — drives the snippet loading overlay. */
+  mediaReady: boolean;
+  /** Item 5: preparing the next round's snippets — drives its loading overlay. */
+  isPreparingNextRound: boolean;
   currentTimeMs: number;
   isPlaying: boolean;
   restoredSong: Song | null;
@@ -378,6 +382,9 @@ export function useMedleyGame({
   const audio = useMedleyAudio({
     currentSnippet,
     currentSnippetIdx,
+    // Item 7: preload the next snippet while the current one plays so the
+    // transition into it is uniform (no alternating instant/ loading gaps).
+    nextSnippet: medleySongs[currentSnippetIdx + 1] || null,
     phase,
     phaseRef,
     isPlaying,
@@ -779,47 +786,65 @@ export function useMedleyGame({
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult, finalizeSnippetScores]);
 
   // ── Transition: pulse then next snippet ──
+  // Item 7: the countdown effect OWNS the advance. The previous split design
+  // (countdown effect + separate advance effect reading the transitionCount
+  // STATE) had a race: when phase flipped to 'transition', the advance effect
+  // ran in the same commit with the STALE transitionCount (0 from the previous
+  // countdown) and skipped the screen entirely — which made snippet switches
+  // alternate between instant cuts and loading gaps. Keeping the counter in a
+  // local closure removes the stale-state read: every transition now shows the
+  // SAME short countdown before advancing.
   useEffect(() => {
     if (phase !== 'transition') return;
-    const transitionTime = settings.transitionTime ?? 3;
-    setTransitionCount(transitionTime);
+    const transitionTime = Math.max(0, settings.transitionTime ?? 3);
+    let count = transitionTime;
+    setTransitionCount(count);
+
+    const advance = () => {
+      // Idempotency guard (StrictMode remounts / late re-renders)
+      if (lastTransitionAdvanceRef.current === currentSnippetIdx) return;
+      lastTransitionAdvanceRef.current = currentSnippetIdx;
+
+      const nextIdx = currentSnippetIdx + 1;
+      setCurrentSnippetIdx(nextIdx);
+      setPhase('playing');
+      setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
+      setCurrentTimeMs(0);
+      // Fresh note stream: clear the previous snippet's per-note performance
+      // samples (fills + wrong-note marks) so they cannot bleed into the new
+      // snippet's notes via repeated `note-{startTime}` keys.
+      notePerformanceRef.current.clear();
+      notePerformanceByPlayerRef.current.clear();
+      setNotePerformance(new Map());
+      setNotePerformanceByPlayer(new Map());
+      audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
+      // Feature #18: Pre-check comeback boost before the last snippet starts
+      teamBonuses.preCheckComeback(nextIdx);
+    };
+
+    if (count <= 0) {
+      // Zero-length transitions advance (almost) immediately — still on the
+      // next tick so the phase change settles without a mid-render state storm.
+      const t = setTimeout(advance, 50);
+      return () => clearTimeout(t);
+    }
 
     // Pure countdown tick — NO side effects inside the state updater.
     // (React may invoke updaters during render / twice in StrictMode; putting
     // setPhase / ref mutations / callbacks in there previously caused
     // "Cannot update a component while rendering a different component".)
     const interval = setInterval(() => {
-      setTransitionCount(prev => prev - 1);
+      count -= 1;
+      setTransitionCount(count);
+      if (count <= 0) {
+        clearInterval(interval);
+        advance();
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [phase, currentSnippetIdx]);
-
-  // ── Advance to the next snippet once the countdown expires ──
-  // Idempotent via lastTransitionAdvanceRef (guards against double-firing
-  // when transitionCount stays ≤ 0 across re-renders or StrictMode remounts).
-  useEffect(() => {
-    if (phase !== 'transition' || transitionCount > 0) return;
-    if (lastTransitionAdvanceRef.current === currentSnippetIdx) return;
-    lastTransitionAdvanceRef.current = currentSnippetIdx;
-
-    const nextIdx = currentSnippetIdx + 1;
-    setCurrentSnippetIdx(nextIdx);
-    setPhase('playing');
-    setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
-    setCurrentTimeMs(0);
-    // Fresh note stream: clear the previous snippet's per-note performance
-    // samples (fills + wrong-note marks) so they cannot bleed into the new
-    // snippet's notes via repeated `note-{startTime}` keys.
-    notePerformanceRef.current.clear();
-    notePerformanceByPlayerRef.current.clear();
-    setNotePerformance(new Map());
-    setNotePerformanceByPlayer(new Map());
-    audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
-    // Feature #18: Pre-check comeback boost before the last snippet starts
-    teamBonuses.preCheckComeback(nextIdx);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks
-  }, [phase, transitionCount, currentSnippetIdx]);
+  }, [phase, currentSnippetIdx]);
 
   // ==================== ACTIONS ====================
 
@@ -858,17 +883,26 @@ export function useMedleyGame({
   // (whenever the library pool allows) and swaps it into the party store +
   // the screen's `songs` state. The returned array arms the identity-based
   // reset effect above (belt-and-braces for late-arriving re-renders).
+  // Item 5: isPreparingNextRound drives a visible loading overlay — preparing
+  // URLs + lyrics for the whole next round takes a moment and previously
+  // showed NO feedback at all.
+  const [isPreparingNextRound, setIsPreparingNextRound] = useState(false);
   const handleNextRound = useCallback(async () => {
     if (medleySongs.length === 0) return;
 
     // ── Prepare the next round's songs BEFORE resetting anything ──
     let newSongs: MedleySong[] | null = null;
-    if (onPrepareNextRoundSongsRef.current) {
-      try {
-        newSongs = await onPrepareNextRoundSongsRef.current();
-      } catch {
-        newSongs = null;
+    setIsPreparingNextRound(true);
+    try {
+      if (onPrepareNextRoundSongsRef.current) {
+        try {
+          newSongs = await onPrepareNextRoundSongsRef.current();
+        } catch {
+          newSongs = null;
+        }
       }
+    } finally {
+      setIsPreparingNextRound(false);
     }
     nextRoundSongsArmedRef.current = !!(newSongs && newSongs.length > 0);
 
@@ -1071,6 +1105,8 @@ export function useMedleyGame({
     fallbackVideoRef: audio.fallbackVideoRef,
     audioUrl: audio.audioUrl,
     audioError: audio.audioError,
+    mediaReady: audio.mediaReady,
+    isPreparingNextRound,
     currentTimeMs,
     isPlaying,
     restoredSong: audio.restoredSong,

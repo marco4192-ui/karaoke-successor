@@ -84,12 +84,10 @@ interface UseBattleRoyaleGameReturn {
   bountyMultiplier: number; // #6 Bounty
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  detectedPitch: number | null; // Leading player's MIDI note for NoteHighway
   playerPitchMap: Map<string, PitchDetectionResult | null>; // Per-player pitch data
   multiPitchErrors: Map<string, string>; // Per-player pitch errors
   songProgress: number; // 0-100
   countdown: number;
-  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   eliminationPhase: null | 'eliminating' | 'survivor-flash';
 }
 
@@ -229,11 +227,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
 
-  // Note performance tracking for display styles (fill-level, color-feedback, etc.)
-  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  // Item 3 (BR perf): note-performance sampling removed entirely — the BR
+  // note highway uses the flat single-colour fill driven purely by the sing
+  // line, so no per-tick samples are collected or synced to state. This
+  // saves per-tick array pushes AND a Map copy + setState every ~100ms (a
+  // full PlayingView re-render) in the most performance-critical mode.
   const prefetchAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
-  const lastNotePerfSyncRef = useRef(0);
 
   // ── Countdown state (V3) ───────────────────────────────────────────
   // DO-NOT-CHANGE: countdown is derived synchronously from game.status to avoid
@@ -509,8 +508,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         if (gameLoopRef.current) {
           cancelAnimationFrame(gameLoopRef.current);
         }
-        notePerformanceRef.current.clear();
-        setNotePerformance(new Map());
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -693,22 +690,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (playerPitch.isSinging === false) continue;
             if (playerPitch.note == null) continue;
 
-            const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
+            const { game: updatedGame } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
             if (updatedGame !== batchedGame) {
               batchedGame = updatedGame;
               scoreChanged = true;
-            }
-
-            // Record performance sample for note display styles
-            const perfNoteId = activeNote.id || `note-${activeNote.startTime}`;
-            let perfSamples = notePerformanceRef.current.get(perfNoteId);
-            if (!perfSamples) {
-              perfSamples = [];
-              notePerformanceRef.current.set(perfNoteId, perfSamples);
-            }
-            perfSamples.push({ time: currentAudioTime, accuracy: tick.accuracy, hit: tick.hit });
-            if (perfSamples.length > 100) {
-              notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
             }
           }
 
@@ -728,17 +713,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         }
 
-        // Sync note performance to state for visual display (Fix 15):
-        // throttled to ~100ms AND skipped entirely while the note highway is
-        // hidden. Verified: within PlayingView, notePerformance is consumed by
-        // NoteHighway (only rendered when showNoteHighway) and LyricLineDisplay
-        // — which accepts the prop but does NOT read it (lyric highlighting is
-        // driven purely by currentTime), so gating cannot break lyrics.
-        const perfNow = performance.now();
-        if (showNoteHighwaySettingRef.current && perfNow - lastNotePerfSyncRef.current >= 100) {
-          lastNotePerfSyncRef.current = perfNow;
-          setNotePerformance(new Map(notePerformanceRef.current));
-        }
+        // (Item 3: note-performance state sync removed — the BR note highway
+        // renders the flat fill from the sing line alone; no samples exist.)
 
         if (scoreChanged && mountedRef.current && !roundEndingRef.current) {
           onUpdateGameRef.current(batchedGame);
@@ -753,30 +729,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   useEffect(() => { startGameLoopRef.current = startGameLoop; }, [startGameLoop]);
 
-  // ── Derive detectedPitch for NoteHighway (leading active mic player) ─
-  // The NoteHighway can only show one pitch line, so we use the leading
-  // (highest-scoring) active mic player's pitch for visual feedback.
-  // Fix 15: skip the sort/lookup entirely when the highway is hidden.
-  const detectedPitch = useMemo(() => {
-    if (!showNoteHighwaySetting) return null;
-    const activeMicPlayers = game.players
-      .filter(p => p.playerType === 'microphone' && !p.eliminated)
-      .sort((a, b) => b.score - a.score);
-
-    for (const player of activeMicPlayers) {
-      const pitch = multiPitch.getPlayerPitch(player.id);
-      // Use rawNote (un-stabilized) for responsive visual feedback.
-      // Fall back to stabilized note if rawNote is unavailable.
-      const visualPitch = pitch?.rawNote ?? pitch?.note;
-      if (visualPitch != null && pitch?.isSinging !== false) {
-        return visualPitch;
-      }
-    }
-    return null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.players, multiPitch.playerPitches, showNoteHighwaySetting]);
-
-  // ── Cleanup on unmount ─────────────────────────────────────────────
+  // ── Cleanup on unmount ─────────────────────────────────────────────────
   // Use empty deps + multiPitchRef to avoid re-firing every render.
   // multiPitch is a new object every render (playerPitches Map changes ~50Hz),
   // so [multiPitch] as dep would call stop() every render, which creates
@@ -814,14 +767,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     bountyMultiplier: game.settings.bountyMultiplier,
     pitchStats: pitchStatsRef.current,
     visibleNotes: visibleNotesRef.current,
-    detectedPitch,
     playerPitchMap: multiPitch.playerPitches,
     multiPitchErrors: multiPitch.errors,
     songProgress: currentSong && currentSong.duration > 0
       ? Math.min(100, Math.max(0, (currentTime / currentSong.duration) * 100))
       : 0,
     countdown,
-    notePerformance,
     eliminationPhase,
   };
 }

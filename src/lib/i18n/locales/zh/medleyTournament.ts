@@ -38,6 +38,8 @@ medley: {
   start: '🎤 开始！',
   getReady: '准备...',
   nextSnippet: '下一个片段...',
+  loadingSnippet: '正在加载片段...',
+  preparingNextRound: '正在准备下一轮...',
   nextSong: '下一首',
   allPlayersContinue: '所有玩家继续演唱！',
   badge: '🎵 混唱',

@@ -38,6 +38,8 @@ medley: {
   start: '🎤 시작!',
   getReady: '준비...',
   nextSnippet: '다음 일부...',
+  loadingSnippet: '일부를 불러오는 중...',
+  preparingNextRound: '다음 라운드 준비 중...',
   nextSong: '다음 곡',
   allPlayersContinue: '모든 플레이어 계속 부르세요!',
   badge: '🎵 메들리',

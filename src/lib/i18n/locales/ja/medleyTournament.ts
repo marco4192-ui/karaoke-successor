@@ -38,6 +38,8 @@ medley: {
   start: '🎤 スタート！',
   getReady: '準備...',
   nextSnippet: '次のスニペット...',
+  loadingSnippet: 'スニペットを読み込み中...',
+  preparingNextRound: '次のラウンドを準備中...',
   nextSong: '次の曲',
   allPlayersContinue: '全プレイヤー歌い続けよう！',
   badge: '🎵 メドリー',

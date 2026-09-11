@@ -131,10 +131,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             setScreen('song-voting');
           }}
           onBack={() => {
-            party.setLibrarySelectedSong(null);
-            party.setSongSelectionMethod(null);
-            party.setSetupDraft(null);
-            setScreen('party');
+            // Leave confirmation instead of a silent exit: companions may
+            // already be connected (BR/PTM/CPTM mic step) and the whole
+            // setup draft (players + settings) would be discarded.
+            // Matches the Escape behaviour on this screen.
+            party.setPauseDialogAction('party-leave');
           }}
         />
       )}

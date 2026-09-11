@@ -153,33 +153,42 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!activeNote || !activeNoteId) return;
 
       // Determine sung pitch and evaluate
-      const sungPitch = pitch?.note ?? null;
-      const hasPitch = sungPitch !== null && pitch !== null && pitch.frequency !== null;
+      const sungPitchRaw = pitch?.note ?? null;
+      const hasPitch = sungPitchRaw !== null && pitch !== null && pitch.frequency !== null;
 
       let accuracy = 0;
       let hit = false;
+      let sungPitch: number | null = sungPitchRaw;
 
       if (hasPitch) {
-        // Vibrato filter: if the sung pitch is very close to the last accepted
-        // pitch (within VIBRATO_THRESHOLD semitones), reuse the last result.
+        // Vibrato filter: samples that only jitter around the last accepted
+        // pitch (within VIBRATO_THRESHOLD semitones) are SNAPPED to it —
+        // the sample is still RECORDED so the note fill stays continuous.
+        // (Previously these samples were dropped, which made steady singing
+        // render as regular every-other-tick gaps.)
         // This prevents rapid hit/miss flickering during vibrato.
         if (lastVisualSungPitchRef.current !== null) {
-          const vibratoDelta = Math.abs(sungPitch - lastVisualSungPitchRef.current);
+          const lastAccepted = lastVisualSungPitchRef.current;
+          const vibratoDelta = Math.abs(sungPitchRaw - lastAccepted);
           // Use octave-wrapped difference (same pitch class = 0 diff)
           let wrappedDelta = vibratoDelta % 12;
           if (wrappedDelta > 6) wrappedDelta = 12 - wrappedDelta;
           if (wrappedDelta < VIBRATO_THRESHOLD) {
-            // Vibrato — skip this sample entirely to avoid jitter
-            return;
+            // Vibrato — snap to the last accepted pitch, keep the sample
+            sungPitch = lastAccepted;
+          } else {
+            lastVisualSungPitchRef.current = sungPitchRaw;
           }
+        } else {
+          lastVisualSungPitchRef.current = sungPitchRaw;
         }
-        lastVisualSungPitchRef.current = sungPitch;
 
-        const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+        const tick = evaluateTick(sungPitch!, activeNote.pitch, difficulty);
         accuracy = tick.accuracy;
         hit = tick.isHit;
       } else {
         // No pitch detected — record as miss with null sungPitch
+        sungPitch = null;
         lastVisualSungPitchRef.current = null;
       }
 

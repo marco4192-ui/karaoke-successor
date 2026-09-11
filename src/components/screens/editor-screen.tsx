@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
+import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache, loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { StorageKeys, getString } from '@/lib/storage';
@@ -32,27 +32,56 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
+  // Item 4: visible loading state for library (re)loads — the Tauri folder
+  // rescan can take seconds and previously gave NO feedback at all.
+  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const refreshSongs = useCallback(async () => {
-    // Invalidate cache and try Tauri rescan for fresh data from filesystem
-    clearSongCache();
+    setIsLibraryLoading(true);
     try {
-      if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-        const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
-        // Use the REAL storage key ('karaoke-songs-folder') — the old keys
-        // ('songsFolder' / 'karaoke_songs_folder') never matched, so the rescan
-        // silently did nothing.
-        const songsFolder = getString(StorageKeys.SONGS_FOLDER)
-          || localStorage.getItem('songsFolder')
-          || localStorage.getItem('karaoke_songs_folder');
-        if (songsFolder) {
-          await scanSongsFolderTauri(songsFolder);
+      // Invalidate cache and try Tauri rescan for fresh data from filesystem
+      clearSongCache();
+      try {
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+          const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
+          // Use the REAL storage key ('karaoke-songs-folder') — the old keys
+          // ('songsFolder' / 'karaoke_songs_folder') never matched, so the rescan
+          // silently did nothing.
+          const songsFolder = getString(StorageKeys.SONGS_FOLDER)
+            || localStorage.getItem('songsFolder')
+            || localStorage.getItem('karaoke_songs_folder');
+          if (songsFolder) {
+            await scanSongsFolderTauri(songsFolder);
+          }
         }
+      } catch {
+        // Non-Tauri environment or scan failed — just use cleared cache
       }
-    } catch {
-      // Non-Tauri environment or scan failed — just use cleared cache
+      setSongs(getAllSongs());
+    } finally {
+      setIsLibraryLoading(false);
     }
-    setSongs(getAllSongs());
   }, []);
+
+  // Item 4: when the editor opens before the app-level IndexedDB load has
+  // finished, the sync getAllSongs() returns an empty/stale list and nothing
+  // ever re-triggers it. Await the async load while the list is empty and
+  // refresh — with a visible loading indicator while it runs.
+  // (Deps are [songs.length]: once songs arrive the effect becomes a no-op;
+  // StrictMode double-mounts simply re-run the harmless load.)
+  useEffect(() => {
+    if (songs.length > 0) return; // already loaded — nothing to wait for
+    let cancelled = false;
+    setIsLibraryLoading(true);
+    loadCustomSongsFromStorage()
+      .catch(() => {})
+      .finally(() => {
+        if (cancelled) return;
+        setSongs(getAllSongs());
+        setIsLibraryLoading(false);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songs.length]);
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
@@ -621,8 +650,22 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <p className="text-white/60">{t('editor.subtitle')}</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={refreshSongs} variant="outline" className="border-white/20" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
-                🔄 {t('editor.refreshBtn')}
+              <Button
+                onClick={refreshSongs}
+                variant="outline"
+                className="border-white/20"
+                title={t('editor.refreshTitle')}
+                data-testid="editor-refresh-button"
+                disabled={isLibraryLoading}
+              >
+                {isLibraryLoading ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                    {t('library.loadingSongs')}
+                  </span>
+                ) : (
+                  <>🔄 {t('editor.refreshBtn')}</>
+                )}
               </Button>
               <Button
                 onClick={() => setSelectMode(!selectMode)}
@@ -689,7 +732,13 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* Songs Grid */}
-          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+          {isLibraryLoading && filteredSongs.length === 0 && (
+            <div className="flex items-center justify-center py-16" data-testid="editor-library-loading">
+              <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mr-3" />
+              <span className="text-white/60">{t('library.loadingSongs')}</span>
+            </div>
+          )}
+          <div className={`grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 ${isLibraryLoading ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* New Song Button - First card (only when not in select mode) */}
             {!selectMode && (
               <button

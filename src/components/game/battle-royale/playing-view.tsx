@@ -94,7 +94,6 @@ interface PlayingViewProps {
   // Multi-pitch detection
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
-  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>;
   eliminationPhase?: null | 'eliminating' | 'survivor-flash';
 }
 
@@ -121,7 +120,6 @@ export function PlayingView({
   countdown,
   playerPitchMap,
   multiPitchErrors,
-  notePerformance,
   eliminationPhase,
 }: PlayingViewProps) {
   const { t } = useTranslation();
@@ -675,10 +673,11 @@ export function PlayingView({
             noteWindow={NOTE_WINDOW}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
-            notePerformance={notePerformance}
-            // Battle Royale = more than two simultaneous singers → keep the
-            // classic quality-graduated rendering (user decision).
-            legacyNoteStyle
+            // Item 3: flat single-colour fill as the sing line passes — NO
+            // pitch data visualised (no quality colours, no sung-pitch
+            // ghosts) and no performance samples needed: the cheapest
+            // possible pipeline for this performance-critical mode.
+            flatNoteFill="#22d3ee"
           />
         </div>
       )}
@@ -727,7 +726,6 @@ export function PlayingView({
                   line={currentLyricLine}
                   currentTime={currentTime}
                   playerColor="#22d3ee"
-                  notePerformance={notePerformance}
                   lyricsSize="small"
                 />
                 {nextLyricLine && (

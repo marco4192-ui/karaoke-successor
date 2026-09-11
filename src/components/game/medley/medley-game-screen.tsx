@@ -83,6 +83,8 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     showBackgroundVideo,
     useAnimatedBackground,
     notePerformance,
+    mediaReady,
+    isPreparingNextRound,
     handleStart, handleNextRound, handleEndEarly, handleRoundComplete, handleShowFinalResults,
   } = state;
 
@@ -280,6 +282,30 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             comebackTeamId={state.comebackTeamId}
             settings={settings}
           />
+        )}
+
+        {/* ── Item 5/7: snippet loading overlay ──
+            While the current snippet's media is still loading (right after a
+            transition or round start), show a clear spinner instead of a
+            frozen/blank stage — uniform feedback on EVERY snippet switch. */}
+        {phase === 'playing' && currentSnippet && !mediaReady && !audioError && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm" data-testid="medley-snippet-loading">
+            <div className="animate-spin w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full mb-4" />
+            <p className="text-white/70 text-sm font-medium">{t('medley.loadingSnippet')}</p>
+            <p className="text-white/40 text-xs mt-1">
+              {currentSnippetIdx + 1}/{activeSongs.length} · {currentSnippet.song.title}
+            </p>
+          </div>
+        )}
+
+        {/* ── Item 5: next-round preparation overlay ──
+            "Nächste Runde" builds the whole next round's snippets (URLs +
+            lyrics) — visible feedback while that runs. */}
+        {isPreparingNextRound && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="medley-next-round-loading">
+            <div className="animate-spin w-10 h-10 border-2 border-pink-400 border-t-transparent rounded-full mb-4" />
+            <p className="text-white/70 text-sm font-medium">{t('medley.preparingNextRound')}</p>
+          </div>
         )}
 
         {/* ── TRANSITION ── */}

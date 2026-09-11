@@ -146,25 +146,35 @@ export function usePtmScoring({
     // (same key format NoteBlock uses to look samples up).
     const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
 
-    const sungPitch = pitchResult?.note ?? null;
-    const hasPitch = sungPitch !== null && pitchResult !== null && pitchResult.frequency !== null;
+    const sungPitchRaw = pitchResult?.note ?? null;
+    const hasPitch = sungPitchRaw !== null && pitchResult !== null && pitchResult.frequency !== null;
 
     let accuracy = 0;
     let hit = false;
-    if (hasPitch && sungPitch !== null) {
-      // Vibrato filter: skip samples that only jitter around the last
-      // accepted pitch (prevents hit/miss flicker during vibrato).
+    let sungPitch: number | null = sungPitchRaw;
+    if (hasPitch && sungPitchRaw !== null) {
+      // Vibrato filter: samples that only jitter around the last accepted
+      // pitch are SNAPPED to it (still recorded — the fill stays
+      // continuous) instead of being dropped. Dropping them made steady
+      // singing render as regular every-other-tick gaps.
       if (lastVisualSungPitchRef.current !== null) {
-        let wrapped = Math.abs(sungPitch - lastVisualSungPitchRef.current) % 12;
+        const lastAccepted = lastVisualSungPitchRef.current;
+        let wrapped = Math.abs(sungPitchRaw - lastAccepted) % 12;
         if (wrapped > 6) wrapped = 12 - wrapped;
-        if (wrapped < VIBRATO_THRESHOLD) return;
+        if (wrapped < VIBRATO_THRESHOLD) {
+          sungPitch = lastAccepted;
+        } else {
+          lastVisualSungPitchRef.current = sungPitchRaw;
+        }
+      } else {
+        lastVisualSungPitchRef.current = sungPitchRaw;
       }
-      lastVisualSungPitchRef.current = sungPitch;
 
-      const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+      const tick = evaluateTick(sungPitch!, activeNote.pitch, difficulty);
       accuracy = tick.accuracy;
       hit = tick.isHit;
     } else {
+      sungPitch = null;
       lastVisualSungPitchRef.current = null;
     }
 

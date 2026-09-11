@@ -38,6 +38,8 @@ medley: {
   start: '🎤 ¡Empieza!',
   getReady: 'Prepárate...',
   nextSnippet: 'Siguiente Fragmento...',
+  loadingSnippet: 'Cargando fragmento...',
+  preparingNextRound: 'Preparando la siguiente ronda...',
   nextSong: 'SIGUIENTE CANCIÓN',
   allPlayersContinue: '¡Todos los jugadores siguen cantando!',
   badge: '🎵 POPURRÍ',

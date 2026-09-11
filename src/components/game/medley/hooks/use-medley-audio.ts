@@ -11,6 +11,8 @@ import { VOICE_MODIFIERS } from '../medley-types';
 export interface UseMedleyAudioParams {
   currentSnippet: MedleySong | null;
   currentSnippetIdx: number;
+  /** The snippet AFTER the current one — preloaded while current plays (Item 7). */
+  nextSnippet: MedleySong | null;
   phase: MedleyGamePhase;
   phaseRef: React.MutableRefObject<MedleyGamePhase>;
   isPlaying: boolean;
@@ -58,6 +60,7 @@ export interface UseMedleyAudioReturn {
 export function useMedleyAudio({
   currentSnippet,
   currentSnippetIdx,
+  nextSnippet,
   phase,
   phaseRef,
   isPlaying,
@@ -106,6 +109,39 @@ export function useMedleyAudio({
   // ── Snippet notes (for lyrics display) ──
   const [snippetNotes, setSnippetNotes] = useState<Note[]>([]);
   const [snippetLyrics, setSnippetLyrics] = useState<LyricLine[]>([]);
+
+  // ── Item 7: preload the NEXT snippet's audio while the current one plays ──
+  // Keeps a detached <audio> element warmed with the next snippet's media URL
+  // so the browser/WebView cache holds the data when the prepare effect swaps
+  // the main element's src — snippet transitions become uniform instead of
+  // alternating instant/ loading gaps.
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !nextSnippet) return;
+    let cancelled = false;
+    const preload = async () => {
+      try {
+        const prepared = await ensureSongUrls(nextSnippet.song);
+        if (cancelled) return;
+        const url = prepared.audioUrl || prepared.videoBackground;
+        if (!url) return;
+        if (!preloadAudioRef.current) {
+          preloadAudioRef.current = new Audio();
+          preloadAudioRef.current.preload = 'auto';
+          preloadAudioRef.current.muted = true;
+        }
+        if (preloadAudioRef.current.src !== url) {
+          preloadAudioRef.current.src = url;
+          preloadAudioRef.current.load();
+          // eslint-disable-next-line no-console
+          console.log('[Medley] Preloading next snippet media:', nextSnippet.song.title);
+        }
+      } catch { /* best-effort preload */ }
+    };
+    preload();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextSnippet?.song.id, phase, isPlaying]);
 
   // ── Scoring metadata ──
   const scoringMetaRef = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
@@ -158,6 +194,13 @@ export function useMedleyAudio({
     const prepare = async () => {
       setAudioUrl(null);
       setAudioError(null);
+      // Clear the PREVIOUS snippet's notes/lyrics immediately — during the
+      // loading window the UI must not keep showing stale notes (that made
+      // transitions look like "two snippets loaded at once"). The loading
+      // overlay (driven by !mediaReady) takes over until the new snippet is
+      // ready to play.
+      setSnippetNotes([]);
+      setSnippetLyrics([]);
       mediaReadyRef.current = false;
       setMediaReady(false);
       isPreparingRef.current = true;

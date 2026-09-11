@@ -55,7 +55,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     countdown,
     playerPitchMap,
     multiPitchErrors,
-    notePerformance,
     eliminationPhase,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
 
@@ -176,7 +175,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         countdown={countdown}
         playerPitchMap={playerPitchMap}
         multiPitchErrors={multiPitchErrors}
-        notePerformance={notePerformance}
         eliminationPhase={eliminationPhase}
       />
     );
@@ -221,7 +219,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       countdown={countdown}
       playerPitchMap={playerPitchMap}
       multiPitchErrors={multiPitchErrors}
-      notePerformance={notePerformance}
       eliminationPhase={eliminationPhase}
     />
   );
