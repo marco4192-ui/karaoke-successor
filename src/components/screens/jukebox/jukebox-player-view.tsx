@@ -228,6 +228,10 @@ function JukeboxPlatformVideo({
   };
 
   let player: React.ReactNode = null;
+  // Jukebox volume (0..1) — forwarded to every player whose platform API
+  // supports programmatic volume. Bilibili embeds have NO playback API, so
+  // the slider cannot reach them (the UI shows a hint for that case).
+  const volumeProp = j.volume;
   if (platform === 'youtube') {
     const videoId = extractYouTubeId(url) || '';
     player = (
@@ -236,20 +240,20 @@ function JukeboxPlatformVideo({
         videoId={videoId}
         {...commonProps}
         muted={effectiveMuted}
-        volume={j.volume}
+        volume={volumeProp}
         onDuration={(seconds) => { activityRef.current.duration = true; handleDuration(seconds); }}
         interactive={j.isAdPlaying}
         onError={handleError}
       />
     );
   } else if (platform === 'rutube') {
-    player = <RutubePlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+    player = <RutubePlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} volume={volumeProp} interactive={j.isAdPlaying} onError={handleError} />;
   } else if (platform === 'vk') {
-    player = <VKPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+    player = <VKPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} volume={volumeProp} interactive={j.isAdPlaying} onError={handleError} />;
   } else if (platform === 'dailymotion') {
-    player = <DailymotionPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+    player = <DailymotionPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} volume={volumeProp} interactive={j.isAdPlaying} onError={handleError} />;
   } else if (platform === 'vimeo') {
-    player = <VimeoPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} interactive={j.isAdPlaying} onError={handleError} />;
+    player = <VimeoPlayer key={restartKey} videoUrl={url} {...commonProps} muted={effectiveMuted} volume={volumeProp} interactive={j.isAdPlaying} onError={handleError} />;
   } else if (platform === 'bilibili') {
     player = (
       <BilibiliPlayer
@@ -268,6 +272,7 @@ function JukeboxPlatformVideo({
         videoUrl={url}
         {...commonProps}
         autoStart
+        volume={volumeProp}
         manualStartConfirmed={gateConfirmed}
         onManualGateRequired={() => setGateRequired(true)}
         onDuration={(seconds) => { activityRef.current.duration = true; handleDuration(seconds); }}
@@ -525,6 +530,11 @@ function ProgressBar({ j }: { j: UseJukeboxReturn }) {
 // ==================== VOLUME CONTROL (F3 Mute) ====================
 
 function VolumeControl({ j }: { j: UseJukeboxReturn }) {
+  const { t } = useTranslation();
+  // Bilibili embeds expose no playback API at all — the slider cannot reach
+  // them. Show the amber hint icon so users know to use the in-player control.
+  const currentPlatform = getSongPlatformVideo(j.currentSong)?.platform ?? null;
+  const volumeRemoteUnsupported = currentPlatform === 'bilibili';
   return (
     <div className="flex items-center gap-2">
       {/* F3: Mute toggle button */}
@@ -562,6 +572,20 @@ function VolumeControl({ j }: { j: UseJukeboxReturn }) {
         className="w-24 accent-cyan-500"
         aria-label="Volume"
       />
+      {volumeRemoteUnsupported && (
+        <span
+          className="text-amber-300/90 shrink-0"
+          title={t('jukeboxPlayer.volumeInPlayerHint')}
+          role="status"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <span className="sr-only">{t('jukeboxPlayer.volumeInPlayerHint')}</span>
+        </span>
+      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ interface VimeoPlayerInstance {
   getCurrentTime(): Promise<number>;
   getDuration(): Promise<number>;
   setMuted(_muted: boolean): Promise<boolean>;
+  setVolume(_volume: number): Promise<number>;
   destroy(): Promise<void>;
   on(_event: string, _callback: (_e: Record<string, unknown>) => void): void;
   off?(_event: string, _callback: unknown): void;
@@ -55,6 +56,8 @@ export interface VimeoPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean; // Allow user interaction with the player controls
   muted?: boolean;
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
 }
 
 /** Imperative handle for parents that need to drive the player directly. */
@@ -127,10 +130,14 @@ export const VimeoPlayer = forwardRef<VimeoPlayerHandle, VimeoPlayerProps>(funct
   startTime = 0,
   interactive = false,
   muted = false,
+  volume,
 }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<VimeoPlayerInstance | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
+  /** Flips true once the current player instance fired 'loaded' — gates the
+   *  volume/mute effects so early calls don't hit a not-yet-loaded player. */
+  const [playerLoaded, setPlayerLoaded] = useState(false);
   const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTimeRef = useRef<number>(0);
 
@@ -151,6 +158,8 @@ export const VimeoPlayer = forwardRef<VimeoPlayerHandle, VimeoPlayerProps>(funct
   isPlayingRef.current = isPlaying;
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   useImperativeHandle(ref, () => ({
     seekTo: (seconds: number) => {
@@ -174,6 +183,7 @@ export const VimeoPlayer = forwardRef<VimeoPlayerHandle, VimeoPlayerProps>(funct
     const container = containerRef.current;
     container.innerHTML = '';
     lastTimeRef.current = 0;
+    setPlayerLoaded(false);
 
     // Build the iframe src manually so unlisted-hash URLs work
     const vref = extractVimeoRef(videoUrl);
@@ -209,6 +219,12 @@ export const VimeoPlayer = forwardRef<VimeoPlayerHandle, VimeoPlayerProps>(funct
     playerRef.current = player;
 
     player.on('loaded', () => {
+      setPlayerLoaded(true);
+      // Initial volume (0..1, official player.js API) — applied once the
+      // iframe is actually loaded so it can't be silently rejected.
+      if (volumeRef.current !== undefined) {
+        player.setVolume(Math.min(1, Math.max(0, volumeRef.current))).catch(() => { /* not ready */ });
+      }
       onReadyRef.current?.();
     });
 
@@ -288,6 +304,14 @@ export const VimeoPlayer = forwardRef<VimeoPlayerHandle, VimeoPlayerProps>(funct
     if (!p) return;
     p.setMuted(muted).catch(() => { /* not ready */ });
   }, [muted]);
+
+  // ── Volume (jukebox) — 0..1, applied without re-creating the player ──
+  useEffect(() => {
+    if (volume === undefined) return;
+    const p = playerRef.current;
+    if (!p || !playerLoaded) return;
+    p.setVolume(Math.min(1, Math.max(0, volume))).catch(() => { /* not ready */ });
+  }, [volume, playerLoaded]);
 
   // Ad callbacks are referenced via refs for interface parity (Vimeo: ad-free)
   void onAdStartRef;

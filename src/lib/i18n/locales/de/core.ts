@@ -299,11 +299,11 @@ jukeboxPlayer: {
   // ── Video-Link / Video-Break-Warteschlange (mit Ton) ──
   videoLinkTitle: 'Video-Link',
   videoLinkDesc: 'Link einreihen — läuft mit Musik und Video, auch ohne Songtext',
-  videoLinkPlaceholder: 'Video-Link einfügen (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico, MP4…)',
+  videoLinkPlaceholder: 'Video-Link oder Embed-Code einfügen (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico, MP4…)',
   videoLinkAdd: 'Einreihen',
   videoLinkInvalid: 'Unerkannter Video-Link — wird noch nicht unterstützt',
   videoLinkQueued: 'Video eingereiht!',
-  videoLinkHint: 'Läuft nach dem aktuellen Song bzw. hinter den letzten Wunschsongs — mit Musik und Video. Läuft nichts, startet es sofort.',
+  videoLinkHint: 'Läuft nach dem aktuellen Song bzw. hinter den letzten Wunschsongs — mit Musik und Video. Läuft nichts, startet es sofort. Komplette iframe-Einbettungs-Codes (z. B. VK-Video „Einbetten“) werden direkt akzeptiert.',
   videoQueuedCount: '{n} Videos in der Warteschlange',
   queueEmpty: 'Warteschlange leer — Video-Link oben einreihen oder Songs wünschen',
   videoChip: 'Video',
@@ -311,6 +311,7 @@ jukeboxPlayer: {
   gateStart: '▶️ Musik/Video läuft — Los!',
   startVideo: 'Video starten',
   startVideoHint: 'Falls das Video nicht von selbst startet — mit einem Klick neu starten',
+  volumeInPlayerHint: 'Bilibili bietet keine Player-API — die Lautstärke direkt im Videoplayer regeln',
   // ── Link-Liste ──
   linkListTitle: 'Link-Liste',
   linkListDesc: 'Mehrere Links — einer pro Zeile — werden nacheinander abgespielt',

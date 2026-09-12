@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import type { JukeboxWishlistItem, GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
-import { isSupportedVideoLink } from '@/components/screens/jukebox/video-break';
+import { extractEmbedSrc, isSupportedVideoLink } from '@/components/screens/jukebox/video-break';
 
 // ===================== Props =====================
 
@@ -54,7 +54,9 @@ export function MirrorJukeboxLite({ jukeboxWishlist, onRemoveFromJukebox, onSend
     const [videoLinkAdded, setVideoLinkAdded] = useState(false);
 
     const handleVideoLinkSubmit = useCallback(() => {
-      const url = videoLink.trim();
+      // Embed codes (e.g. VK iframe snippets) are reduced to their src URL
+      // BEFORE sending — keeps the command payload a plain link.
+      const url = extractEmbedSrc(videoLink.trim()) ?? videoLink.trim();
       if (!url) return;
       if (!isSupportedVideoLink(url)) {
         setVideoLinkError(true);

@@ -24,6 +24,32 @@ import {
 /** ID prefix that marks a synthetic video-break song. */
 export const VIDEO_BREAK_ID_PREFIX = 'videobreak-';
 
+/**
+ * Extract the src URL from an iframe/embed HTML snippet.
+ *
+ * VK Video's „Einbetten" dialog hands users an <iframe src="…"> code (the
+ * video_ext.php Export URL with the REQUIRED hash lives in the src attribute)
+ * rather than a plain link — pasting that snippet used to be rejected as
+ * "not a video link". Reducing it to its src URL accepts the full embed code
+ * for every platform (VK, YouTube, Dailymotion, Vimeo, Rutube, …).
+ * Returns null for plain-URL lines (no '<' → cheap fast path).
+ */
+export function extractEmbedSrc(input: string): string | null {
+  if (!input || !input.includes('<')) return null;
+  // [^>]* also spans line breaks — multi-line attribute lists still match.
+  const iframeMatch = input.match(/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
+  if (iframeMatch?.[1]) return iframeMatch[1].trim();
+  const videoMatch = input.match(/<video\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
+  if (videoMatch?.[1]) return videoMatch[1].trim();
+  return null;
+}
+
+/** Normalize any user input (single link OR full embed code) to a bare URL. */
+function normalizeVideoInput(raw: string): string {
+  const trimmed = raw.trim();
+  return extractEmbedSrc(trimmed) ?? trimmed;
+}
+
 /** A single parsed entry of a pasted/uploaded link list. */
 export interface ParsedVideoLink {
   url: string;
@@ -101,10 +127,11 @@ function deriveTitle(url: string, platform: VideoPlatform | 'file'): string {
 
 /**
  * Create a synthetic video-break Song for a supported video URL.
+ * Accepts plain URLs AND full iframe embed codes (reduced to their src URL).
  * Returns null when the URL matches no supported platform and no direct file.
  */
 export function createVideoBreakSong(url: string, label?: string): Song | null {
-  const trimmed = url.trim();
+  const trimmed = normalizeVideoInput(url);
   if (!trimmed) return null;
 
   const platform = detectVideoPlatform(trimmed);
@@ -146,9 +173,9 @@ export function createVideoBreakSong(url: string, label?: string): Song | null {
   return song;
 }
 
-/** Validate a user-pasted link without creating a song. */
+/** Validate a user-pasted link (or full iframe embed code) without creating a song. */
 export function isSupportedVideoLink(url: string): boolean {
-  const trimmed = url.trim();
+  const trimmed = normalizeVideoInput(url);
   if (!trimmed) return false;
   return detectVideoPlatform(trimmed) !== null || isDirectVideoUrl(trimmed);
 }
@@ -160,6 +187,8 @@ export function isSupportedVideoLink(url: string): boolean {
  *   https://…                                    plain URL
  *   https://… | Mein Titel                        URL + custom title
  *   Mein Titel | https://…                        title first
+ *   <iframe src="https://…" …></iframe>           full embed code (VK etc.) —
+ *                                                 reduced to its src URL
  *   #EXTINF:123,Mein Titel  (m3u) followed by URL  → title from EXTINF
  *   #…                                           comment (skipped)
  */
@@ -169,7 +198,7 @@ export function parseVideoLinkInput(input: string): ParsedVideoLink[] {
   let pendingExtinfLabel: string | null = null;
 
   for (const rawLine of input.split(/\r?\n/)) {
-    const line = rawLine.trim();
+    let line = rawLine.trim();
     if (!line) continue;
 
     // m3u metadata: remember the title for the next URL line
@@ -180,6 +209,12 @@ export function parseVideoLinkInput(input: string): ParsedVideoLink[] {
     }
     // Other m3u/comments are skipped
     if (line.startsWith('#')) continue;
+
+    // VK & Co: reduce a full iframe embed snippet on this line to its src URL
+    // (must happen BEFORE the '|'-split below — embed attributes contain no
+    // pipes, but the check keeps a single code path for every entry point).
+    const embedSrc = extractEmbedSrc(line);
+    if (embedSrc) line = embedSrc;
 
     // "URL | Title" or "Title | URL"
     let url = line;
@@ -207,9 +242,12 @@ export function parseVideoLinkInput(input: string): ParsedVideoLink[] {
 /** Extract all video links from a free-form text (any whitespace separated). */
 export function extractVideoLinksFromText(text: string): ParsedVideoLink[] {
   if (!text) return [];
-  const tokens = text.split(/[\s\n\r\t]+/).filter(Boolean);
+  // Collapse iframe embed snippets (they contain spaces!) into their bare src
+  // URL so tokenization treats them as single links.
+  const prepared = text.replace(/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["'][^>]*>\s*<\/iframe\s*>/gi, '$1');
+  const tokens = prepared.split(/[\s\n\r\t]+/).filter(Boolean);
   return tokens
-    .map(token => token.replace(/[),.;]+$/, ''))
+    .map(token => normalizeVideoInput(token.replace(/[),.;]+$/, '')))
     .filter(token => isSupportedVideoLink(token))
     .map(url => ({ url }));
 }

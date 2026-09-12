@@ -18,7 +18,8 @@ import {
  * Commands are JSON strings posted to the iframe:
  *   { type: 'player:play' | 'player:pause' | 'player:stop'
  *     | 'player:setCurrentTime' (data.time) | 'player:mute' | 'player:unMute'
- *     | 'player:hideControls' | 'player:showControls' }
+ *     | 'player:setVolume' (data.volume 0..1) | 'player:hideControls'
+ *     | 'player:showControls' }
  *
  * Events are JSON strings on window.message with type 'player:…':
  *   player:ready · player:playStart (fires ONCE when the video starts) ·
@@ -64,6 +65,8 @@ export interface RutubePlayerProps extends ManualStartPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean;
   muted?: boolean;
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
 }
 
 /** Imperative handle for parents that need to drive the player directly. */
@@ -88,6 +91,7 @@ export const RutubePlayer = forwardRef<RutubePlayerHandle, RutubePlayerProps>(fu
   startTime = 0,
   interactive = false,
   muted = false,
+  volume,
 }, ref) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeIdRef = useRef<string>(`rutube-player-${++iframeIdCounter}`);
@@ -112,6 +116,8 @@ export const RutubePlayer = forwardRef<RutubePlayerHandle, RutubePlayerProps>(fu
   onErrorRef.current = onError;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   // ── Playback state tracking (refs — no re-render churn) ──
   /** Last reported video time (seconds) + wall clock when it arrived (interpolation anchor). */
@@ -200,6 +206,12 @@ export const RutubePlayer = forwardRef<RutubePlayerHandle, RutubePlayerProps>(fu
       switch (msg.type) {
         case 'player:ready':
           setReady(true);
+          // Initial volume (player:setVolume, data.volume 0..1 — verified
+          // against the archived RutubePlayerJSAPI docs). While muted it acts
+          // as the restore target for a later unMute.
+          if (volumeRef.current !== undefined) {
+            postCommand('player:setVolume', { volume: Math.min(1, Math.max(0, volumeRef.current)) });
+          }
           onReadyRef.current?.();
           break;
 
@@ -301,6 +313,12 @@ export const RutubePlayer = forwardRef<RutubePlayerHandle, RutubePlayerProps>(fu
     if (!ready) return;
     postCommand(muted ? 'player:mute' : 'player:unMute');
   }, [muted, ready, postCommand]);
+
+  // ── Volume (jukebox) — player:setVolume, 0..1, no player re-creation ──
+  useEffect(() => {
+    if (volume === undefined || !ready) return;
+    postCommand('player:setVolume', { volume: Math.min(1, Math.max(0, volume)) });
+  }, [volume, ready, postCommand]);
 
   // ── Controls visibility (hide the UI chrome in non-interactive mode) ──
   useEffect(() => {

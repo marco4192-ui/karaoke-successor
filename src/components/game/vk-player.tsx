@@ -93,6 +93,8 @@ export interface VKPlayerProps extends ManualStartPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean;
   muted?: boolean;
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
 }
 
 /** Imperative handle for parents that need to drive the player directly. */
@@ -160,6 +162,7 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
   startTime = 0,
   interactive = false,
   muted = false,
+  volume,
 }, ref) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<VKPlayer | null>(null);
@@ -185,6 +188,10 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
   onErrorRef.current = onError;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   // ── Playback state tracking ──
   const gateOpenRef = useRef(false);
@@ -259,6 +266,11 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
     player.on(E.INITED ?? 'inited', () => {
       if (cancelled) return;
       setInited(true);
+      // Apply the initial volume right away (SDK method — 0..1). While muted
+      // the volume is kept as the restore target for a later unmute.
+      if (volumeRef.current !== undefined) {
+        try { player.setVolume(Math.min(1, Math.max(0, volumeRef.current))); } catch { /* ignore */ }
+      }
       onReadyRef.current?.();
     });
 
@@ -361,13 +373,23 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
     } catch { /* ignore */ }
   }, [muted, inited]);
 
+  // ── Volume (jukebox) — 0..1, applied without re-creating the player ──
+  useEffect(() => {
+    if (volume === undefined) return;
+    const p = playerRef.current;
+    if (!p || !inited) return;
+    try {
+      p.setVolume(Math.min(1, Math.max(0, volume)));
+    } catch { /* ignore */ }
+  }, [volume, inited]);
+
   if (!vkRef || !vkRef.hash) {
     // A watch URL without the embed hash cannot play — explain what to paste.
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-black/60" role="alert">
         <p className="text-white/80 text-sm px-6 text-center max-w-md">
           {vkRef
-            ? 'VK: missing embed hash — paste the full video_ext.php Export URL from the VK video page'
+            ? 'VK: missing embed hash — paste the full video_ext.php Export URL or the complete iframe embed code (Einbetten → code kopieren) from the VK video page'
             : 'VK: video ID not found in URL'}
         </p>
       </div>

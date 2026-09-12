@@ -28,6 +28,7 @@ interface DMPlayer {
   pause(): void;
   seek(_seconds: number): void;
   setMute(_muted: boolean): void;
+  setVolume(_volume: number): void;
   destroy(): void;
   on(_event: string, _callback: (_payload?: DMEventPayload) => void, _opts?: { once?: boolean }): unknown;
   off(_event: string, _callback?: (_payload?: DMEventPayload) => void): unknown;
@@ -79,6 +80,8 @@ export interface DailymotionPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean; // Allow user interaction (needed to click skippable ads)
   muted?: boolean;
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
 }
 
 /** Imperative handle for parents that need to drive the player directly. */
@@ -178,12 +181,16 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
   startTime = 0,
   interactive = false,
   muted = false,
+  volume,
 }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Stable, querySelector-safe id for the lifetime of this component instance.
   const containerIdRef = useRef<string>(`dm-player-${++containerIdCounter}-${Date.now().toString(36)}`);
   const playerRef = useRef<DMPlayer | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
+  /** True while a player facade exists — gates mute/volume effects so early
+   *  calls can't hit a not-yet-created player (createPlayer is async). */
+  const [playerActive, setPlayerActive] = useState(false);
   const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTimeRef = useRef<number>(0);
 
@@ -204,6 +211,8 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
   isPlayingRef.current = isPlaying;
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   const adActiveRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
@@ -244,6 +253,7 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
     const runWhenReady = (p: DMPlayer) => {
       if (cancelled) return;
       playerRef.current = p;
+      setPlayerActive(true);
 
       const safeTime = (): number => lastTimeRef.current;
 
@@ -255,6 +265,11 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
           if (isPlayingRef.current) p.play();
         } catch { /* ignore */ }
         try { p.setMute(mutedRef.current); } catch { /* ignore */ }
+        // Initial volume (0..1, official SDK facade) — set while muted it
+        // becomes the restore target for a later unmute.
+        if (volumeRef.current !== undefined) {
+          try { p.setVolume(Math.min(1, Math.max(0, volumeRef.current))); } catch { /* ignore */ }
+        }
         // Seek to the start offset once the player is ready
         if (adjustedStartSeconds > 0.2) {
           try { p.seek(adjustedStartSeconds); } catch { /* ignore */ }
@@ -342,6 +357,7 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
 
     return () => {
       cancelled = true;
+      setPlayerActive(false);
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
         timeUpdateIntervalRef.current = null;
@@ -372,6 +388,16 @@ export const DailymotionPlayer = forwardRef<DailymotionPlayerHandle, Dailymotion
     if (!p) return;
     try { p.setMute(muted); } catch { /* Player not ready */ }
   }, [muted]);
+
+  // ── Volume (jukebox) — 0..1, applied without re-creating the player ──
+  useEffect(() => {
+    if (volume === undefined) return;
+    const p = playerRef.current;
+    if (!p || !playerActive) return;
+    try {
+      p.setVolume(Math.min(1, Math.max(0, volume)));
+    } catch { /* Player not ready */ }
+  }, [volume, playerActive]);
 
   return (
     <div

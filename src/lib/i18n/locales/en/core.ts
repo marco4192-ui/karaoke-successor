@@ -316,11 +316,11 @@ export const coreTranslations = {
     // ── Video link / video break queue (with sound) ──
     videoLinkTitle: 'Video Link',
     videoLinkDesc: 'Queue a link — plays with music and video, no lyrics needed',
-    videoLinkPlaceholder: 'Paste a video link (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico, MP4…)',
+    videoLinkPlaceholder: 'Paste a video link or embed code (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico, MP4…)',
     videoLinkAdd: 'Queue',
     videoLinkInvalid: 'Unrecognized video link — not supported yet',
     videoLinkQueued: 'Video queued!',
-    videoLinkHint: 'Plays after the current song or behind the last requested songs — with music and video. Starts immediately when nothing is playing.',
+    videoLinkHint: 'Plays after the current song or behind the last requested songs — with music and video. Starts immediately when nothing is playing. Full iframe embed codes (e.g. VK Video “Einbetten”) are accepted as-is.',
     videoQueuedCount: '{n} videos in the queue',
     queueEmpty: 'Queue is empty — queue a video link above or request songs',
     videoChip: 'Video',
@@ -328,6 +328,7 @@ export const coreTranslations = {
     gateStart: '▶️ Music/video is playing — Go!',
     startVideo: 'Start video',
     startVideoHint: 'If the video does not start by itself — restart it with one click',
+    volumeInPlayerHint: 'Bilibili provides no player API — regulate the volume directly in the video player',
     // ── Link list ──
     linkListTitle: 'Link List',
     linkListDesc: 'Multiple links — one per line — play back to back',

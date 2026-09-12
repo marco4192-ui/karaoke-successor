@@ -41,6 +41,7 @@ import {
  *     { eventName: 'play' | 'pause', playerId }
  *     { eventName: 'seek', data: { time }, playerId }
  *     { eventName: 'mute', data: { mute: true|false }, playerId }
+ *     { eventName: 'volumeChange', data: { volume: 0..1 }, playerId }
  *
  * Start gate: playerStatusChange=2 (playing) AND currentTime reaching the song
  * start offset AND the reported duration matching the real video (ad timelines
@@ -96,6 +97,8 @@ export interface NiconicoPlayerProps extends ManualStartPlayerProps {
   startTime?: number; // Start position in MILLISECONDS (song time)
   interactive?: boolean;
   muted?: boolean;
+  /** Playback volume 0..1 — applied when defined (jukebox). Undefined = player default. */
+  volume?: number;
   /** JUKEBOX mode: attempt automatic playback (autoplay=1 + play-command
    *  retries). The game does NOT pass this — playback there is countdown-gated. */
   autoStart?: boolean;
@@ -124,6 +127,7 @@ export const NiconicoPlayer = forwardRef<NiconicoPlayerHandle, NiconicoPlayerPro
   isPlaying = true,
   startTime = 0,
   muted = false,
+  volume,
   manualStartConfirmed = false,
   onManualGateRequired,
   autoStart = false,
@@ -155,6 +159,10 @@ export const NiconicoPlayer = forwardRef<NiconicoPlayerHandle, NiconicoPlayerPro
   onDurationRef.current = onDuration;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   // Seek-once tracker (song-relative): seek to the start offset on the first
   // driven play. Declared before the event effect — loadComplete uses it.
@@ -290,6 +298,14 @@ export const NiconicoPlayer = forwardRef<NiconicoPlayerHandle, NiconicoPlayerPro
                 seekedOnceForSongRef.current = true;
                 postCommand('seek', { time: startSeconds });
               }
+            }
+            // Same drop problem applies to volume/mute — re-send once the
+            // player document actually exists (volumeChange: 0..1).
+            if (volumeRef.current !== undefined) {
+              postCommand('volumeChange', { volume: Math.min(1, Math.max(0, volumeRef.current)) });
+            }
+            if (mutedRef.current) {
+              postCommand('mute', { mute: true });
             }
           }
           break;
@@ -433,6 +449,16 @@ export const NiconicoPlayer = forwardRef<NiconicoPlayerHandle, NiconicoPlayerPro
     if (manualModeRef.current) return;
     postCommand('mute', { mute: muted });
   }, [muted, postCommand]);
+
+  // ── Volume (jukebox) — unofficial 'volumeChange' command, 0..1. Sent in
+  //  API mode only (manual mode = API dead, the command would never arrive;
+  //  loadComplete re-sends the initial value for the same drop reason as the
+  //  play command). ──
+  useEffect(() => {
+    if (volume === undefined) return;
+    if (manualModeRef.current) return;
+    postCommand('volumeChange', { volume: Math.min(1, Math.max(0, volume)) });
+  }, [volume, postCommand]);
 
   if (!videoId) {
     return (
