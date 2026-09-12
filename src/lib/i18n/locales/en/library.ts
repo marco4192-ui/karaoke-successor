@@ -312,7 +312,8 @@ export const libraryTranslations = {
 
   importAlternateFormat: {
     formatDescriptions: {
-      midi: 'MIDI files with embedded lyrics and notes',
+      ultrastar: 'Classic UltraStar .txt format (notes, lyrics, metadata)',
+      midi: 'Karaoke MIDI (.kar) with lyrics & notes — melody track auto-detected',
       karaokeMugen: 'Karaoke Mugen JSON format',
       singStar: 'SingStar INI export format',
       stepMania: 'StepMania/StepFever chart format'
@@ -333,7 +334,19 @@ export const libraryTranslations = {
     importAs: 'Import as {format}',
     addToLibrary: 'Add to Library',
     cancel: 'Cancel',
-    failedToParse: 'Failed to parse file.'
+    failedToParse: 'Failed to parse file.',
+    noNotes: 'No notes found in the MIDI file.',
+    midiTrackSelect: 'Select melody track',
+    midiTrackInfo: '{notes} notes · {syllables} syllables · {coverage}% lyric match',
+    midiMelodyBadge: 'Melody',
+    midiDrumsBadge: 'Drums',
+    midiNoNotesTrack: 'no notes',
+    midiTracksFound: '{n} tracks detected — "{melody}" preselected as melody track.',
+    midiTracksFoundFallback: '{n} tracks detected — no lyrics found, "{melody}" preselected.',
+    midiNoLyricsWarning: 'No lyrics found in this MIDI file — notes will be imported without syllables.',
+    midiCreatePreview: 'Create preview',
+    midiSongInfo: 'Detected: "{title}" by {artist}',
+    midiMetaInfo: '{bpm} BPM · {tracks} tracks'
   },
 
   editor: {

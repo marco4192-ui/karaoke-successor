@@ -11,6 +11,7 @@ import {
   parseStepMania,
   convertToSong,
   type DetectedFormat,
+  type MIDIKaraokeData,
 } from '@/lib/parsers/multi-format-import';
 import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
 import { addSong } from '@/lib/game/song-library';
@@ -32,8 +33,8 @@ const FORMATS: Array<{ id: DetectedFormat; label: string; extensions: string; de
   { id: 'ultrastar', label: 'UltraStar', extensions: '.txt', descriptionKey: 'importAlternateFormat.formatDescriptions.ultrastar' },
   { id: 'midi', label: 'MIDI Karaoke', extensions: '.kar, .mid', descriptionKey: 'importAlternateFormat.formatDescriptions.midi' },
   { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.json', descriptionKey: 'importAlternateFormat.formatDescriptions.karaokeMugen' },
-  { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', descriptionKey: 'importAlternateFormat.formatDescriptions.singstar' },
-  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', descriptionKey: 'importAlternateFormat.formatDescriptions.stepmania' },
+  { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', descriptionKey: 'importAlternateFormat.formatDescriptions.singStar' },
+  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', descriptionKey: 'importAlternateFormat.formatDescriptions.stepMania' },
 ];
 
 export function AlternateFormatTab({
@@ -50,6 +51,9 @@ export function AlternateFormatTab({
   const [songFile, setSongFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  // MIDI two-step flow: parse first → user picks a melody track → build preview
+  const [midiData, setMidiData] = useState<MIDIKaraokeData | null>(null);
+  const [selectedMidiTrack, setSelectedMidiTrack] = useState<number | null>(null);
 
   const songInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +74,9 @@ export function AlternateFormatTab({
     setSongFile(file);
     setPreviewSong(null);
     setDetectedFormat(null);
+    setMidiData(null);
+    setSelectedMidiTrack(null);
+    setStatusMessage(null);
 
     // Auto-detect format
     try {
@@ -125,9 +132,29 @@ export function AlternateFormatTab({
           const buffer = await songFile.arrayBuffer();
           const data = parseMIDIKaraoke(buffer);
           if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
-          if (data.notes.length === 0 && data.lyrics.length === 0) throw new Error(t('importAlternateFormat.noLyricLines'));
+          if (!data.tracks.some(tr => tr.noteCount > 0)) throw new Error(t('importAlternateFormat.noNotes'));
+
+          // Step 1: analyze + show track picker (unless already analyzed for this file)
+          if (!midiData) {
+            setMidiData(data);
+            const melodyTrack = data.melodyTrackIndex >= 0 ? data.tracks[data.melodyTrackIndex] : null;
+            setSelectedMidiTrack(melodyTrack ? melodyTrack.index : null);
+            setStatusMessage(
+              (data.hasLyrics
+                ? t('importAlternateFormat.midiTracksFound')
+                : t('importAlternateFormat.midiTracksFoundFallback')
+              )
+                .replace('{n}', String(data.tracks.length))
+                .replace('{melody}', melodyTrack ? melodyTrack.name : '')
+            );
+            return; // wait for the track selection before building the preview
+          }
+
+          // Step 2: build preview with the selected melody track
           tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
-          partialSong = convertToSong(data, 'midi', tempBlobUrl);
+          partialSong = convertToSong(data, 'midi', tempBlobUrl, undefined, {
+            midiTrackIndex: selectedMidiTrack ?? undefined,
+          });
           break;
         }
         case 'singstar': {
@@ -192,7 +219,12 @@ export function AlternateFormatTab({
       if (song.audioUrl?.startsWith('blob:')) {
         previewBlobUrlRef.current = song.audioUrl;
       }
-      setStatusMessage(t('importAlternateFormat.importSuccess').replace('{title}', song.title).replace('{n}', String(song.lyrics.length)));
+      const noLyricsHint = selectedFormat === 'midi' && midiData && !midiData.hasLyrics
+        ? ` ⚠️ ${t('importAlternateFormat.midiNoLyricsWarning')}`
+        : '';
+      setStatusMessage(
+        t('importAlternateFormat.importSuccess').replace('{title}', song.title).replace('{n}', String(song.lyrics.length)) + noLyricsHint
+      );
     } catch (err) {
       // H19: Revoke temporary blob URL on error
       if (tempBlobUrl) URL.revokeObjectURL(tempBlobUrl);
@@ -201,7 +233,7 @@ export function AlternateFormatTab({
     } finally {
       setIsProcessing(false);
     }
-  }, [songFile, audioFile, selectedFormat, previewSong, setError, setPreviewSong, setIsProcessing]);
+  }, [songFile, audioFile, selectedFormat, selectedMidiTrack, midiData, previewSong, setError, setPreviewSong, setIsProcessing, t]);
 
   return (
     <div className="space-y-4">
@@ -251,6 +283,90 @@ export function AlternateFormatTab({
         <input ref={songInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleSongFileSelect(e.target.files[0])} />
       </div>
 
+      {/* MIDI melody track picker (shown after the file has been analyzed) */}
+      {selectedFormat === 'midi' && midiData && (
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.midiTrackSelect')}</label>
+            <span className="text-[10px] text-slate-500">
+              {t('importAlternateFormat.midiMetaInfo')
+                .replace('{bpm}', String(Math.round(midiData.tempo)))
+                .replace('{tracks}', String(midiData.tracks.length))}
+            </span>
+          </div>
+
+          {(midiData.title || midiData.artist) && (
+            <p className="text-xs text-cyan-400">
+              {t('importAlternateFormat.midiSongInfo')
+                .replace('{title}', midiData.title || '—')
+                .replace('{artist}', midiData.artist || '—')}
+            </p>
+          )}
+
+          <div
+            role="radiogroup"
+            aria-label={t('importAlternateFormat.midiTrackSelect')}
+            className="midi-track-scroll max-h-64 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800/50 divide-y divide-slate-700/50"
+          >
+            {midiData.tracks.map(tr => {
+              const selectable = !tr.isDrum && tr.noteCount > 0;
+              const isSelected = selectedMidiTrack === tr.index;
+              const isMelody = midiData.melodyTrackIndex === tr.index;
+              return (
+                <button
+                  key={tr.index}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  disabled={!selectable}
+                  onClick={() => setSelectedMidiTrack(tr.index)}
+                  className={`w-full p-3 text-left transition-colors ${
+                    !selectable
+                      ? 'cursor-not-allowed opacity-40'
+                      : isSelected
+                        ? 'bg-cyan-500/10'
+                        : 'hover:bg-slate-700/40 cursor-pointer'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">\n                    <span className="text-sm font-medium truncate flex items-center gap-1.5">\n                      {tr.name}
+                      {isMelody && (
+                        <span className="shrink-0 rounded-full bg-cyan-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-cyan-300 border border-cyan-500/40">
+                          {t('importAlternateFormat.midiMelodyBadge')}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-[9px] text-slate-500">
+                      {tr.isDrum
+                        ? `🥁 ${t('importAlternateFormat.midiDrumsBadge')}`
+                        : tr.noteCount === 0
+                          ? t('importAlternateFormat.midiNoNotesTrack')
+                          : `Ch ${tr.channels.map(c => c + 1).join(', ')}`}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-slate-500">
+                    {t('importAlternateFormat.midiTrackInfo')
+                      .replace('{notes}', String(tr.noteCount))
+                      .replace('{syllables}', String(tr.lyricSyllableCount))
+                      .replace('{coverage}', String(Math.round(tr.lyricCoverage * 100)))}
+                  </div>
+                  {/* Lyric coverage bar */}
+                  <div className="mt-1.5 h-1 w-full rounded-full bg-slate-700/60 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${tr.isDrum ? 'bg-slate-600' : 'bg-gradient-to-r from-cyan-500 to-emerald-400'}`}
+                      style={{ width: `${Math.round(tr.lyricCoverage * 100)}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {!midiData.hasLyrics && (
+            <p className="text-[10px] text-amber-400">⚠️ {t('importAlternateFormat.midiNoLyricsWarning')}</p>
+          )}
+        </div>
+      )}
+
       {/* Optional audio file */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.audioFile')}</label>
@@ -276,10 +392,14 @@ export function AlternateFormatTab({
       {/* Process button */}
       <Button
         onClick={handleProcess}
-        disabled={!songFile || !selectedFormat || isProcessing}
+        disabled={!songFile || !selectedFormat || isProcessing || (selectedFormat === 'midi' && midiData && selectedMidiTrack === null)}
         className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
       >
-        {isProcessing ? t('importAlternateFormat.processing') : t('importAlternateFormat.importAs').replace('{format}', FORMATS.find(f => f.id === selectedFormat)?.label || 'Song')}
+        {isProcessing
+          ? t('importAlternateFormat.processing')
+          : selectedFormat === 'midi' && midiData
+            ? t('importAlternateFormat.midiCreatePreview')
+            : t('importAlternateFormat.importAs').replace('{format}', FORMATS.find(f => f.id === selectedFormat)?.label || 'Song')}
       </Button>
 
       {/* Status message */}

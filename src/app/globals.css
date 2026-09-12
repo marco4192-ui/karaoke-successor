@@ -973,6 +973,22 @@
   background: rgba(148, 163, 184, 0.4);
 }
 
+/* MIDI track picker slim scrollbar (import screen) */
+.midi-track-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.35) transparent;
+}
+
+.midi-track-scroll::-webkit-scrollbar { width: 6px; }
+.midi-track-scroll::-webkit-scrollbar-track { background: transparent; }
+.midi-track-scroll::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.22);
+  border-radius: 3px;
+}
+.midi-track-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.4);
+}
+
 /* Reduced motion: stop decorative animations */
 @media (prefers-reduced-motion: reduce) {
   .eq-bar, .jukebox-vinyl, .jukebox-start-glow, .jukebox-shine,

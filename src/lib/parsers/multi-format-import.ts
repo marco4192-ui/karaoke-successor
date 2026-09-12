@@ -151,12 +151,91 @@ export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
 
 // ─── MIDI Karaoke Parser (.kar/.mid) ─────────────────────────────────
 
-interface MIDIKaraokeData {
+/** A single syllable/word event extracted from a MIDI lyrics stream. */
+export interface MIDILyricEvent {
+  startTimeMs: number;
+  text: string;
+  /** True when this syllable starts a new lyric line (`/` or `\` marker in .kar files). */
+  newLine: boolean;
+}
+
+/** One MIDI track with timing data and selection metadata for the import UI. */
+export interface MIDITrackData {
+  index: number;
+  name: string;
+  /** MIDI channels (0-based) this track sends notes on. Channel 9 = drums (GM convention). */
+  channels: number[];
+  isDrum: boolean;
+  noteCount: number;
+  lyricSyllableCount: number;
+  /** 0..1 — share of notes with a matching lyric syllable (time proximity). */
+  lyricCoverage: number;
+  /** Heuristic melody score: prefers non-drum tracks with many notes + lyric coverage. */
+  melodyScore: number;
+  notes: Array<{ startTimeMs: number; durationMs: number; pitch: number; velocity: number }>;
+  lyrics: MIDILyricEvent[];
+}
+
+export interface MIDIKaraokeData {
+  /** Initial tempo (first tempo event) in BPM. */
   tempo: number;
   ticksPerBeat: number;
-  tracks: Array<{ name: string; events: Array<{ tick: number; type: string; data: unknown }> }>;
-  lyrics: Array<{ startTimeMs: number; text: string }>;
-  notes: Array<{ startTimeMs: number; duration: number; pitch: number; velocity: number }>;
+  /** MIDI header format (0 = single track, 1 = multi track, 2 = async). */
+  headerFormat: number;
+  /** Title from `@T` meta text, if the file provides one. */
+  title?: string;
+  /** Artist from `@T` meta text (second `@T` entry), if present. */
+  artist?: string;
+  /** True when at least one track carries usable lyric events. */
+  hasLyrics: boolean;
+  tracks: MIDITrackData[];
+  /** Index of the auto-detected melody track (-1 when no track has notes). */
+  melodyTrackIndex: number;
+}
+
+/** Decode MIDI text bytes: try strict UTF-8 first, fall back to latin1. */
+function decodeMidiText(bytes: number[]): string {
+  const arr = new Uint8Array(bytes);
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(arr);
+  } catch {
+    return new TextDecoder('latin1').decode(arr);
+  }
+}
+
+/** Read a Variable-Length Quantity starting at `offset`. Returns [value, newOffset]. */
+function readVLQ(view: DataView, offset: number, limit: number): [number, number] {
+  let value = 0;
+  let byte = 0;
+  let pos = offset;
+  do {
+    if (pos >= limit) break; // malformed — bail out with what we have
+    byte = view.getUint8(pos++);
+    value = (value << 7) | (byte & 0x7f);
+  } while (byte & 0x80);
+  return [value, pos];
+}
+
+/**
+ * Normalize a .kar syllable: strip `/`+`\` line markers and CR/LF, collapse
+ * whitespace runs — but PRESERVE a single leading/trailing space, because the
+ * UltraStar/.kar convention encodes word boundaries there ("lo " = word ends,
+ * "Sonn-" = hyphenated syllable, " lo" = new word starts).
+ */
+function cleanKaraokeSyllable(raw: string): { text: string; newLine: boolean } {
+  let text = raw;
+  let newLine = false;
+  // Leading `/` (new line) or `\` (clear screen) = line boundary in .kar convention.
+  if (/^[\\/]/.test(text)) {
+    newLine = true;
+    text = text.slice(1);
+  }
+  // CR/LF inside lyric events also mark line/paragraph boundaries.
+  if (/\r|\n/.test(text)) {
+    newLine = true;
+    text = text.replace(/[\r\n]+/g, ' ');
+  }
+  return { text: text.replace(/\s+/g, ' '), newLine };
 }
 
 export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | null {
@@ -164,24 +243,48 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
     const view = new DataView(arrayBuffer);
 
     // Verify MIDI header
+    if (arrayBuffer.byteLength < 14) return null;
     const header = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
     if (header !== 'MThd') return null;
 
+    const headerFormat = view.getUint16(8, false);
     const numTracks = view.getUint16(10, false);
-    const ticksPerBeat = view.getUint16(12, false);
+    const rawTicksPerBeat = view.getUint16(12, false);
+    if (numTracks === 0) return null;
 
-    const tracks: MIDIKaraokeData['tracks'] = [];
-    const rawNotes: Array<{ tick: number; duration: number; pitch: number; velocity: number }> = [];
-    const rawLyrics: Array<{ tick: number; text: string }> = [];
-    let tempo = 120;
+    // SMPTE timing (high bit set): linear ticks, tempo events are meaningless.
+    // fps is stored as a negative two's-complement byte in the high half.
+    let smpteMsPerTick = 0;
+    let ticksPerBeat = rawTicksPerBeat;
+    if (rawTicksPerBeat & 0x8000) {
+      const fps = 256 - (rawTicksPerBeat >> 8);
+      const ticksPerFrame = rawTicksPerBeat & 0xff;
+      if (fps > 0 && ticksPerFrame > 0) {
+        smpteMsPerTick = 1000 / (fps * ticksPerFrame);
+        ticksPerBeat = 0; // unused in SMPTE mode
+      } else {
+        ticksPerBeat = 480; // malformed SMPTE header — assume sane default
+      }
+    }
+    if (!smpteMsPerTick && !ticksPerBeat) ticksPerBeat = 480;
 
-    const activeNotes = new Map<string, { startTick: number; pitch: number; velocity: number }>();
+    // Per-track raw data. Notes/lyrics stay separate from text (0x01) events
+    // so .kar control entries (@T, @KMIDI …) never pollute the sung lyrics.
+    const rawTracks: Array<{
+      name?: string;
+      notes: Array<{ tick: number; duration: number; pitch: number; velocity: number; channel: number }>;
+      lyricEvents: Array<{ tick: number; text: string; newLine: boolean }>;
+      textEvents: Array<{ tick: number; text: string }>;
+    }> = [];
 
     // Track tempo changes so we can convert ticks→ms correctly even when
     // the tempo changes mid-song (common in .kar files with ritardando etc.)
     const tempoMap: Array<{ tick: number; microsPerBeat: number }> = [
       { tick: 0, microsPerBeat: 500000 }, // default 120 BPM
     ];
+    let initialTempo: number | null = null;
+
+    const activeNotes = new Map<string, { startTick: number; pitch: number; velocity: number }>();
 
     let offset = 14;
     for (let t = 0; t < numTracks; t++) {
@@ -189,6 +292,9 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       if (offset + 8 > arrayBuffer.byteLength) break;
 
       activeNotes.clear(); // Prevent cross-track note leaks on malformed files
+
+      const raw = { notes: [], lyricEvents: [], textEvents: [] };
+      rawTracks.push(raw); // push before parsing so indices stay aligned
 
       let trackEnd = offset; // default: skip to current position if parsing fails before trackEnd is set
       try {
@@ -198,64 +304,67 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
         const trackLength = view.getUint32(offset + 4, false);
         offset += 8;
 
-        const events: MIDIKaraokeData['tracks'][0]['events'] = [];
-        trackEnd = offset + trackLength;
+        trackEnd = Math.min(offset + trackLength, arrayBuffer.byteLength);
         let absoluteTick = 0;
         let runningStatus = 0;
 
         while (offset < trackEnd) {
           // Variable-length delta time
-          let delta = 0;
-          let byte: number;
-          do {
-            byte = view.getUint8(offset++);
-            delta = (delta << 7) | (byte & 0x7f);
-          } while (byte & 0x80);
-
+          const [delta, afterDelta] = readVLQ(view, offset, trackEnd);
+          offset = afterDelta;
           absoluteTick += delta;
 
           let eventType = view.getUint8(offset++);
-
           // Running Status handling
           if (eventType < 0x80) {
             if (runningStatus === 0) break; // malformed data — no valid running status yet
             offset--;
             eventType = runningStatus;
-          } else if (eventType >= 0x80 && eventType < 0xf0) {
+          } else if (eventType < 0xf0) {
             runningStatus = eventType;
           }
 
           if (eventType === 0xff) {
             // Meta event
             const metaType = view.getUint8(offset++);
-            // Decode VLQ (Variable-Length Quantity) for meta event length
-            let length = 0;
-            do {
-              byte = view.getUint8(offset++);
-              length = (length << 7) | (byte & 0x7f);
-            } while (byte & 0x80 && offset < trackEnd);
+            const [length, afterLen] = readVLQ(view, offset, trackEnd);
+            offset = afterLen;
+            const safeLength = Math.max(0, Math.min(length, arrayBuffer.byteLength - offset));
 
-            if (metaType === 0x01 || metaType === 0x05) {
-              // Text / Lyrics meta event
-              const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
-              const text = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
-              rawLyrics.push({ tick: absoluteTick, text: text.replace(/[\r\n]/g, ' ').trim() });
+            if (metaType === 0x01) {
+              // Text meta — @T title/artist info in .kar, but NEVER sung lyrics (0x05).
+              const text = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i))).replace(/[\r\n]+/g, ' ').trim();
+              if (text) raw.textEvents.push({ tick: absoluteTick, text });
+            } else if (metaType === 0x05) {
+              // Lyrics meta — the actual syllables
+              const text = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i)));
+              const { text: cleaned, newLine } = cleanKaraokeSyllable(text);
+              if (cleaned.trim()) {
+                raw.lyricEvents.push({ tick: absoluteTick, text: cleaned, newLine });
+              } else if (cleaned === ' ' && raw.lyricEvents.length > 0) {
+                // Whitespace-only event = word-end marker → attach the trailing
+                // space to the previous syllable instead of dropping it.
+                const prev = raw.lyricEvents[raw.lyricEvents.length - 1];
+                if (!/\s$/.test(prev.text)) prev.text += ' ';
+              }
             } else if (metaType === 0x51) {
               // Tempo
-              const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
-              tempo = 60000000 / microseconds;
-              tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
+              if (offset + 3 <= arrayBuffer.byteLength) {
+                const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
+                if (initialTempo === null) initialTempo = 60000000 / microseconds;
+                tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
+              }
             } else if (metaType === 0x03) {
               // Track name
-              const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
-              const name = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
-              tracks[t] = { ...tracks[t], name };
+              const name = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i))).replace(/[\r\n]+/g, ' ').trim();
+              if (name) raw.name = name;
             }
 
-            offset += length;
+            offset += safeLength;
           } else if (eventType === 0xf0 || eventType === 0xf7) {
-            // SysEx
-            do { byte = view.getUint8(offset++); } while (byte !== 0xf7 && offset < trackEnd);
+            // SysEx — length-prefixed in SMF, skip payload
+            const [length, afterLen] = readVLQ(view, offset, trackEnd);
+            offset = Math.min(afterLen + length, trackEnd);
           } else {
             // Channel message
             const channel = eventType & 0x0f;
@@ -264,11 +373,11 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
             switch (status) {
               case 0x80: { // Note Off
                 const note = view.getUint8(offset++);
-                view.getUint8(offset++); // velocity
+                if (offset < trackEnd) offset++; // velocity
                 const noteKey = `${channel}-${note}`;
                 const activeNote = activeNotes.get(noteKey);
                 if (activeNote) {
-                  rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
+                  raw.notes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity, channel });
                   activeNotes.delete(noteKey);
                 }
                 break;
@@ -280,7 +389,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
                 if (velocity === 0) {
                   const activeNote = activeNotes.get(noteKey);
                   if (activeNote) {
-                    rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
+                    raw.notes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity, channel });
                     activeNotes.delete(noteKey);
                   }
                 } else {
@@ -296,7 +405,9 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
           }
         }
 
-        tracks.push({ name: tracks[t]?.name || `Track ${t + 1}`, events });
+        // Resync: if malformed data pushed the cursor past the track boundary,
+        // snap it back so the NEXT MTrk header is read from the right position.
+        if (offset !== trackEnd) offset = trackEnd;
       } catch {
         // Malformed track data — skip this track and continue with next
         offset = trackEnd;
@@ -308,6 +419,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
     const tempoMapSorted = [...tempoMap].sort((a, b) => a.tick - b.tick);
 
     function tickToMs(tick: number): number {
+      if (smpteMsPerTick > 0) return tick * smpteMsPerTick;
       let ms = 0;
       for (let i = 0; i < tempoMapSorted.length; i++) {
         const entry = tempoMapSorted[i];
@@ -322,15 +434,109 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       return ms;
     }
 
+    // ── Title/artist from `@T` text meta events (Karaoke MIDI convention) ──
+    // First `@T` = title, second = artist; skip copyright-ish entries.
+    const titleEntries: string[] = [];
+    for (const raw of rawTracks) {
+      for (const ev of raw.textEvents) {
+        const match = ev.text.match(/^@T\s+(.*)$/i);
+        if (match && match[1].trim()) titleEntries.push(match[1].trim());
+      }
+    }
+    const infoEntries = titleEntries.filter(txt => !/^(?:\(c\)|\[c\]|©|copyright)/i.test(txt));
+    const title = infoEntries[0] || undefined;
+    const artist = infoEntries[1] || undefined;
+
+    // ── Per-track conversion + melody heuristics ──
+    // Syllable/note match tolerance: .kar lyric events sit at (or a few ticks
+    // before) the note they belong to, so a generous window works well.
+    const LYRIC_TOLERANCE_MS = 600;
+
+    const tracks: MIDITrackData[] = rawTracks.map((raw, idx) => {
+      const notes = raw.notes
+        .map(n => ({
+          startTimeMs: Math.round(tickToMs(n.tick)),
+          durationMs: Math.max(0, Math.round(tickToMs(n.tick + n.duration) - tickToMs(n.tick))),
+          pitch: n.pitch,
+          velocity: n.velocity,
+        }))
+        .sort((a, b) => a.startTimeMs - b.startTimeMs || a.pitch - b.pitch);
+
+      // Lyrics: prefer real 0x05 events. Fallback for odd files that store
+      // lyrics in 0x01 text events: use them only when they aren't `@` control
+      // entries and roughly match the note count.
+      let lyricSource: Array<{ tick: number; text: string; newLine: boolean }> = raw.lyricEvents;
+      if (lyricSource.length === 0) {
+        const candidates = raw.textEvents.filter(ev => !ev.text.startsWith('@'));
+        if (candidates.length > 0 && candidates.length >= Math.max(1, Math.floor(raw.notes.length * 0.5))) {
+          lyricSource = candidates.map(ev => {
+            const { text, newLine } = cleanKaraokeSyllable(ev.text);
+            return { tick: ev.tick, text, newLine };
+          }).filter(ev => ev.text.trim());
+        }
+      }
+      const lyrics: MIDILyricEvent[] = lyricSource
+        .map(l => ({ startTimeMs: Math.round(tickToMs(l.tick)), text: l.text, newLine: l.newLine }))
+        .sort((a, b) => a.startTimeMs - b.startTimeMs);
+
+      // Channels + drum detection (GM: channel 10 / index 9 = drums).
+      const channels = [...new Set(raw.notes.map(n => n.channel))].sort((a, b) => a - b);
+      const drumByName = /\b(drum|percuss|schlagz|bassdrum|snare)\b/i.test(raw.name || '');
+      const isDrum = drumByName || (channels.length > 0 && channels.every(c => c === 9));
+
+      // Lyric coverage: two-pointer proximity match (same algorithm as conversion).
+      let li = 0;
+      let matched = 0;
+      for (const n of notes) {
+        while (li < lyrics.length && lyrics[li].startTimeMs < n.startTimeMs - LYRIC_TOLERANCE_MS) li++;
+        if (li < lyrics.length && Math.abs(lyrics[li].startTimeMs - n.startTimeMs) <= LYRIC_TOLERANCE_MS) {
+          matched++;
+          li++;
+        }
+      }
+      const lyricCoverage = notes.length > 0 ? matched / notes.length : 0;
+
+      // Melody score: lyrics coverage dominates, then note count; drums excluded.
+      const melodyScore = isDrum
+        ? -1
+        : lyricCoverage * 100 + Math.min(notes.length, 500) / 5 + (raw.lyricEvents.length > 0 ? 20 : 0);
+
+      return {
+        index: idx,
+        name: raw.name || `Track ${idx + 1}`,
+        channels,
+        isDrum,
+        noteCount: notes.length,
+        lyricSyllableCount: lyrics.length,
+        lyricCoverage,
+        melodyScore,
+        notes,
+        lyrics,
+      };
+    });
+
+    // Auto-detected melody track: best-scoring non-drum track with notes;
+    // fall back to the track with the most notes when everything is drum-only-ish.
+    const usable = tracks.filter(tr => !tr.isDrum && tr.noteCount > 0);
+    let melodyTrackIndex = -1;
+    if (usable.length > 0) {
+      melodyTrackIndex = usable.reduce((best, tr) => (tr.melodyScore > best.melodyScore ? tr : best)).index;
+    } else {
+      const withNotes = tracks.filter(tr => tr.noteCount > 0);
+      if (withNotes.length > 0) {
+        melodyTrackIndex = withNotes.reduce((best, tr) => (tr.noteCount > best.noteCount ? tr : best)).index;
+      }
+    }
+
     return {
-      tempo, ticksPerBeat, tracks,
-      lyrics: rawLyrics.map(l => ({ startTimeMs: Math.round(tickToMs(l.tick)), text: l.text })),
-      notes: rawNotes.map(n => ({
-        startTimeMs: Math.round(tickToMs(n.tick)),
-        duration: Math.round(tickToMs(n.tick + n.duration) - tickToMs(n.tick)),
-        pitch: n.pitch,
-        velocity: n.velocity,
-      })),
+      tempo: initialTempo ?? 120,
+      ticksPerBeat: ticksPerBeat || 480,
+      headerFormat,
+      title,
+      artist,
+      hasLyrics: tracks.some(tr => tr.lyrics.length > 0),
+      tracks,
+      melodyTrackIndex,
     };
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -424,11 +630,17 @@ export function parseStepMania(data: string): StepManiaData | null {
 
 // ─── Convert to Song ─────────────────────────────────────────────────
 
+export interface ConvertToSongOptions {
+  /** MIDI: index of the track to import as melody (default: auto-detected melody track). */
+  midiTrackIndex?: number;
+}
+
 export function convertToSong(
   data: KaraokeMugenSong | MIDIKaraokeData | SingStarSongData | StepManiaData,
   format: DetectedFormat,
   audioUrl?: string,
   videoUrl?: string,
+  options?: ConvertToSongOptions,
 ): Partial<Song> {
   switch (format) {
     case 'karaoke-mugen': {
@@ -449,45 +661,69 @@ export function convertToSong(
         throw new Error('MIDI file has invalid ticksPerBeat or tempo — cannot calculate note timings.');
       }
 
-      // Build lyric lines from MIDI lyrics + notes (both already in ms)
+      // ── Track selection ──
+      // Explicit choice (from the track picker UI) → auto-detected melody track
+      // → first non-drum track with notes → any track with notes.
+      const track =
+        midi.tracks.find(tr => tr.index === options?.midiTrackIndex && tr.noteCount > 0) ??
+        midi.tracks.find(tr => tr.index === midi.melodyTrackIndex && tr.noteCount > 0) ??
+        midi.tracks.find(tr => !tr.isDrum && tr.noteCount > 0) ??
+        midi.tracks.find(tr => tr.noteCount > 0);
+      if (!track) {
+        throw new Error('MIDI file contains no note tracks — nothing to import.');
+      }
+
+      // Lyrics: from the selected track itself. When it carries none (e.g. a
+      // plain .mid melody track), borrow the track with the most lyric events —
+      // in .kar files those are time-aligned with the melody anyway.
+      let lyricEvents = track.lyrics;
+      if (lyricEvents.length === 0) {
+        const lyricTrack = [...midi.tracks]
+          .filter(tr => tr.lyrics.length > 0)
+          .sort((a, b) => b.lyrics.length - a.lyrics.length)[0];
+        if (lyricTrack) lyricEvents = lyricTrack.lyrics;
+      }
+
+      // ── Build lyric lines ──
+      // Line breaks: explicit .kar markers (`/`, `\`) win; long note gaps
+      // (≥ 2 s) act as fallback so lyric-less MIDIs still get sensible lines.
       const lyrics: LyricLine[] = [];
       let currentLineNotes: Note[] = [];
       let lineStartTime = 0;
       let lastEndTime = 0;
       const LINE_BREAK_MS = 2000;
+      const LYRIC_TOLERANCE_MS = 600;
 
-      // First pass: build notes with MIDI pitch → frequency
-      const midiNotes: Array<{ startTimeMs: number; durationMs: number; pitch: number; frequency: number }> = midi.notes.map(n => ({
-        startTimeMs: n.startTimeMs,
-        durationMs: n.duration,
-        pitch: n.pitch,
-        frequency: midiPitchToFrequency(n.pitch),
-      }));
+      const flushLine = () => {
+        if (currentLineNotes.length === 0) return;
+        const lastN = currentLineNotes[currentLineNotes.length - 1];
+        lyrics.push({
+          id: `line-${lyrics.length}`,
+          text: joinSyllables(currentLineNotes),
+          startTime: lineStartTime,
+          endTime: lastN.startTime + lastN.duration,
+          notes: currentLineNotes,
+        });
+        currentLineNotes = [];
+      };
 
-      // Match lyrics to notes by time proximity
-      let lyricIndex = 0;
-      for (const n of midiNotes) {
-        // Find closest lyric
+      // Two-pointer lyric matching: each note takes the nearest unassigned
+      // syllable within the tolerance window. Melismas (one syllable, several
+      // notes) correctly leave the trailing notes as '♪'.
+      let li = 0;
+      for (const n of track.notes) {
+        while (li < lyricEvents.length && lyricEvents[li].startTimeMs < n.startTimeMs - LYRIC_TOLERANCE_MS) li++;
+
         let lyricText = '♪';
-        if (lyricIndex < midi.lyrics.length) {
-          const lyricTimeMs = midi.lyrics[lyricIndex].startTimeMs;
-          if (Math.abs(n.startTimeMs - lyricTimeMs) < 500) {
-            lyricText = midi.lyrics[lyricIndex].text || '♪';
-            lyricIndex++;
-          }
+        let startNewLine = false;
+        if (li < lyricEvents.length && Math.abs(lyricEvents[li].startTimeMs - n.startTimeMs) <= LYRIC_TOLERANCE_MS) {
+          lyricText = lyricEvents[li].text || '♪';
+          startNewLine = lyricEvents[li].newLine;
+          li++;
         }
 
-        // Line break detection
-        if (currentLineNotes.length > 0 && n.startTimeMs - lastEndTime >= LINE_BREAK_MS) {
-          const lastN = currentLineNotes[currentLineNotes.length - 1];
-          lyrics.push({
-            id: `line-${lyrics.length}`,
-            text: currentLineNotes.map(nn => nn.lyric).join(' ').trim(),
-            startTime: lineStartTime,
-            endTime: lastN.startTime + lastN.duration,
-            notes: currentLineNotes,
-          });
-          currentLineNotes = [];
+        if (currentLineNotes.length > 0 && (startNewLine || n.startTimeMs - lastEndTime >= LINE_BREAK_MS)) {
+          flushLine();
         }
 
         if (currentLineNotes.length === 0) lineStartTime = n.startTimeMs;
@@ -495,7 +731,7 @@ export function convertToSong(
         currentLineNotes.push({
           id: `note-${lyrics.length}-${currentLineNotes.length}`,
           pitch: n.pitch,
-          frequency: n.frequency,
+          frequency: midiPitchToFrequency(n.pitch),
           startTime: n.startTimeMs,
           duration: n.durationMs,
           lyric: lyricText,
@@ -504,24 +740,14 @@ export function convertToSong(
         });
         lastEndTime = n.startTimeMs + n.durationMs;
       }
+      flushLine();
 
-      // Push last line
-      if (currentLineNotes.length > 0) {
-        const lastN = currentLineNotes[currentLineNotes.length - 1];
-        lyrics.push({
-          id: `line-${lyrics.length}`,
-          text: currentLineNotes.map(nn => nn.lyric).join(' ').trim(),
-          startTime: lineStartTime,
-          endTime: lastN.startTime + lastN.duration,
-          notes: currentLineNotes,
-        });
-      }
-
-      const lastNote = midiNotes[midiNotes.length - 1];
+      const lastNote = track.notes[track.notes.length - 1];
       const duration = lastNote ? lastNote.startTimeMs + lastNote.durationMs : 0;
 
       return {
-        title: 'MIDI Import',
+        title: midi.title, // undefined → caller falls back to the file name
+        artist: midi.artist, // undefined → caller falls back to "Unknown"
         bpm: Math.round(midi.tempo),
         duration,
         lyrics,
@@ -578,6 +804,28 @@ export function convertToSong(
 }
 
 // ─── Helper ──────────────────────────────────────────────────────────
+
+/**
+ * Join per-note syllables into a readable lyric line.
+ * UltraStar/.kar convention: syllables carry their own word-boundary markers
+ * ("lo " = trailing space ends the word, "Sonn-" = hyphenated syllable), so
+ * plain concatenation reconstructs the line. `♪` fillers get separated.
+ */
+function joinSyllables(notes: Note[]): string {
+  let text = '';
+  for (const n of notes) {
+    const syl = n.lyric ?? '';
+    if (!syl) continue;
+    if (!text) {
+      text = syl;
+    } else if (syl.includes('♪') && !/\s$/.test(text)) {
+      text += ' ' + syl;
+    } else {
+      text += syl;
+    }
+  }
+  return text.replace(/\s+/g, ' ').trim();
+}
 
 function generateNotesFromText(text: string, startTime: number, endTime: number): Note[] {
   const words = text.split(' ').filter(w => w.length > 0);

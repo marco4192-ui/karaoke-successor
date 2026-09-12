@@ -293,7 +293,8 @@ importFolderScan: {
 },
 importAlternateFormat: {
   formatDescriptions: {
-    midi: 'MIDI-Dateien mit eingebetteten Lyrics und Noten',
+    ultrastar: 'Klassisches UltraStar-.txt-Format (Noten, Lyrics, Metadaten)',
+    midi: 'Karaoke-MIDI (.kar) mit Lyrics & Noten — Melodie-Track wird erkannt',
     karaokeMugen: 'Karaoke Mugen JSON-Format',
     singStar: 'SingStar INI-Export-Format',
     stepMania: 'StepMania/StepFever Chart-Format',
@@ -315,6 +316,18 @@ importAlternateFormat: {
   addToLibrary: 'Zur Bibliothek hinzufügen',
   cancel: 'Abbrechen',
   failedToParse: 'Datei konnte nicht geparst werden.',
+  noNotes: 'Keine Noten in der MIDI-Datei gefunden.',
+  midiTrackSelect: 'Melodie-Track wählen',
+  midiTrackInfo: '{notes} Noten · {syllables} Silben · {coverage}% Lyric-Zuordnung',
+  midiMelodyBadge: 'Melodie',
+  midiDrumsBadge: 'Drums',
+  midiNoNotesTrack: 'keine Noten',
+  midiTracksFound: '{n} Tracks erkannt — „{melody}“ als Melodie-Track vorausgewählt.',
+  midiTracksFoundFallback: '{n} Tracks erkannt — keine Lyrics gefunden, „{melody}“ vorausgewählt.',
+  midiNoLyricsWarning: 'Keine Lyrics in dieser MIDI-Datei gefunden — Noten werden ohne Silben importiert.',
+  midiCreatePreview: 'Vorschau erstellen',
+  midiSongInfo: 'Erkannt: „{title}“ von {artist}',
+  midiMetaInfo: '{bpm} BPM · {tracks} Tracks',
 },
 editor: {
   title: 'Karaoke-Editor',
