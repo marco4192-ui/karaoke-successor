@@ -393,6 +393,8 @@ export const partyTranslations = {
     allLanguages: 'All Languages',
     releaseYear: '📅 Release Year',
     allYears: 'All Years',
+    releaseEra: '📅 Era',
+    allEras: 'All',
     filterLogic: '🔗 Filter Logic',
     combined: 'Combined (AND)',
     independent: 'Independent (OR)',

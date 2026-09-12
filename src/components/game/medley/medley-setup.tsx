@@ -25,6 +25,7 @@ import type {
 } from './medley-types';
 import { getDefaultSettings, generateTeamMatchups, teamSnippetCount, eliminationSnippetCount } from './medley-types';
 import { generateMedleySnippets, getAvailableGenres, getAvailableLanguages } from './medley-snippet-generator';
+import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -84,8 +85,17 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
   // Filters
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterLanguage, setFilterLanguage] = useState('all');
+  // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+  const [filterEra, setFilterEra] = useState('all');
   const availableGenres = useMemo(() => getAvailableGenres(allSongs), [allSongs]);
   const availableLanguages = useMemo(() => getAvailableLanguages(allSongs), [allSongs]);
+  const availableDecades = useMemo(() => getAvailableDecades(allSongs), [allSongs]);
+  // Era-filtered song pool (genre/language filtering happens inside
+  // generateMedleySnippets; era is applied here)
+  const eraFilteredSongs = useMemo(
+    () => (filterEra === 'all' ? allSongs : allSongs.filter(s => songMatchesEra(s, filterEra))),
+    [allSongs, filterEra]
+  );
 
   // ── Feature #2: Fetch companion profiles ──
   useEffect(() => {
@@ -382,7 +392,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
     };
 
     const songs = generateMedleySnippets(
-      allSongs, finalSnippetCount, settings.snippetDuration,
+      eraFilteredSongs, finalSnippetCount, settings.snippetDuration,
       finalSettings.genre, finalSettings.language,
     );
 
@@ -400,7 +410,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
     onStartGame(players, songs, finalSettings, matchups);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, onStartGame, playerInputModes, playerMobileClientIds, settings]);
+  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, filterEra, eraFilteredSongs, onStartGame, playerInputModes, playerMobileClientIds, settings]);
 
   // ── Render ──
   const selectStyle = {
@@ -555,6 +565,24 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 ))}
               </select>
             </div>
+            {availableDecades.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 text-sm">{t('medley.era')}</span>
+                <select
+                  value={filterEra}
+                  onChange={(e) => setFilterEra(e.target.value)}
+                  className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50"
+                  style={selectStyle}
+                >
+                  <option value="all" className="bg-gray-800 text-white">{t('medley.allEras')}</option>
+                  {availableDecades.map(d => (
+                    <option key={d} value={d} className="bg-gray-800 text-white">
+                      {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Snippet Duration */}

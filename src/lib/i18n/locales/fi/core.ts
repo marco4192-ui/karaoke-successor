@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: 'Kaikki artistit',
   filterByGenre: 'Suodata genren mukaan',
   filterByArtist: 'Suodata artistin mukaan',
+  filterByEra: 'Suodata aikakauden mukaan',
+  allEras: 'Kaikki aikakaudet',
   shuffle: 'Sekoita',
   noRepeat: 'Ei kertausta',
   repeatAll: 'Kertaa kaikki',

@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'Alla Språk',
   releaseYear: '📅 Utgivningsår',
   allYears: 'Alla år',
+  releaseEra: '📅 Era',
+  allEras: 'Alla',
   filterLogic: '🔗 Filterlogik',
   combined: 'Kombinerad (AND)',
   independent: 'Oberoende (OR)',

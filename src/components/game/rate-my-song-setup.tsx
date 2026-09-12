@@ -7,6 +7,7 @@
 import { useState, useMemo } from 'react';
 import { Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
+import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { RateMySongPlayMode, RateMySongDuration } from './rate-my-song-types';
 import type { RateMySongSetupScreenProps } from './rate-my-song-types';
@@ -67,6 +68,8 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
   const [songSelectionMode, setSongSelectionMode] = useState<'manual' | 'random'>('manual');
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
+  // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+  const [filterEra, setFilterEra] = useState('all');
 
   // Collect available genres
   const genres = useMemo(() => {
@@ -74,11 +77,15 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
     return ['all', ...Array.from(g).sort()];
   }, [allSongs]);
 
+  // Collect available eras (decades), ascending
+  const decades = useMemo(() => getAvailableDecades(allSongs), [allSongs]);
+
   // Filtered songs
   const filteredSongs = useMemo(() => {
     let songs = allSongs;
     if (filterGenre !== 'all') songs = songs.filter(s => s.genre?.toLowerCase().includes(filterGenre.toLowerCase()));
     if (filterDifficulty !== 'all') songs = songs.filter(s => s.difficulty === filterDifficulty);
+    if (filterEra !== 'all') songs = songs.filter(s => songMatchesEra(s, filterEra));
     if (songSearch.trim()) {
       const q = songSearch.toLowerCase();
       songs = songs.filter(s =>
@@ -87,10 +94,10 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
       );
     }
     return songs.slice(0, 50);
-  }, [allSongs, songSearch, filterGenre, filterDifficulty]);
+  }, [allSongs, songSearch, filterGenre, filterDifficulty, filterEra]);
 
   const pickRandom = () => {
-    const pool = filterGenre !== 'all' || filterDifficulty !== 'all' ? filteredSongs : allSongs;
+    const pool = filterGenre !== 'all' || filterDifficulty !== 'all' || filterEra !== 'all' ? filteredSongs : allSongs;
     if (pool.length === 0) return;
     const randomSong = pool[Math.floor(Math.random() * pool.length)];
     setSelectedSong(randomSong);
@@ -281,6 +288,21 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                     <option key={g} value={g}>{g === 'all' ? t('rateMySong.allGenres') : g}</option>
                   ))}
                 </select>
+                {decades.length > 0 && (
+                  <select
+                    value={filterEra}
+                    onChange={(e) => setFilterEra(e.target.value)}
+                    className="bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                    aria-label={t('library.eraFilter')}
+                  >
+                    <option value="all">{t('rateMySong.allEras')}</option>
+                    {decades.map(d => (
+                      <option key={d} value={d}>
+                        {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <select
                   value={filterDifficulty}
                   onChange={(e) => setFilterDifficulty(e.target.value as typeof filterDifficulty)}

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
+import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import type { MobileSong, GameMode, GameState, MobileView } from '../mobile-types';
 
 // ===================== Props =====================
@@ -94,6 +95,8 @@ export function MirrorLibraryLite({
     const searchRef = useRef<HTMLInputElement>(null);
     const [genreFilter, setGenreFilter] = useState('all');
     const [languageFilter, setLanguageFilter] = useState('all');
+    // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+    const [eraFilter, setEraFilter] = useState('all');
     const [filterViral, setFilterViral] = useState(false);
 
     // Lokaler Game-Mode (Single/Duell/Duett)
@@ -145,6 +148,10 @@ export function MirrorLibraryLite({
       if (languageFilter !== 'all') {
         result = result.filter((s) => s.language === languageFilter);
       }
+      // Era filter (decade bucket from the synced #YEAR: tag)
+      if (eraFilter !== 'all') {
+        result = result.filter((s) => songMatchesEra(s, eraFilter));
+      }
       if (isDuetMode) {
         result = result.filter(isLikelyDuet);
       }
@@ -160,10 +167,10 @@ export function MirrorLibraryLite({
       }
       // Nach Songtitel alphabetisch sortieren
       return [...result].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
-    }, [filteredSongs, genreFilter, languageFilter, isDuetMode, filterViral, gameState.viralSongIds]);
+    }, [filteredSongs, genreFilter, languageFilter, eraFilter, isDuetMode, filterViral, gameState.viralSongIds]);
 
-    // Extrahiere verfuegbare Genres und Sprachen
-    const { genres, languages } = useMemo(() => {
+    // Extrahiere verfuegbare Genres, Sprachen und Aeras (Jahrzehnte)
+    const { genres, languages, decades } = useMemo(() => {
       const gSet = new Set<string>();
       const lSet = new Set<string>();
       songs.forEach((s) => {
@@ -173,6 +180,7 @@ export function MirrorLibraryLite({
       return {
         genres: Array.from(gSet).sort(),
         languages: Array.from(lSet).sort(),
+        decades: getAvailableDecades(songs),
       };
     }, [songs]);
 
@@ -533,6 +541,24 @@ export function MirrorLibraryLite({
             <option value="all" className="bg-[#1a1a2e] text-white">Alle Sprachen</option>
             {languages.map((l) => (
               <option key={l} value={l} className="bg-[#1a1a2e] text-white">{l}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Aera-Filter (Jahrzehnt) als Dropdown — fuer Motto-Partys */}
+        {decades.length > 0 && (
+          <select
+            value={eraFilter}
+            onChange={(e) => { haptic(); setEraFilter(e.target.value); }}
+            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
+            style={dropdownStyle}
+            aria-label={t('library.eraFilter')}
+          >
+            <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allEras')}</option>
+            {decades.map((d) => (
+              <option key={d} value={d} className="bg-[#1a1a2e] text-white">
+                {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
+              </option>
             ))}
           </select>
         )}

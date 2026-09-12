@@ -18,6 +18,10 @@ interface HarmonizeEntry {
   languageConfidence: number;
   genreReason: string;
   languageReason: string;
+  /** False when the LLM did NOT return an entry for this song — the client
+   *  must then treat the song as NOT analyzed (no cache write, retry later)
+   *  instead of a fake "no change" verdict. */
+  analyzed: boolean;
 }
 
 interface HarmonizeRequest {
@@ -97,8 +101,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'No songs provided' }, { status: 400 });
     }
 
-    // Limit batch size to prevent token overflow
-    const batch = songs.slice(0, 50);
+    // Limit batch size to prevent token overflow. 15 instead of the old 50:
+    // with 50 songs per call the LLM regularly returned an incomplete JSON
+    // array (often only ~5 entries) — the missing songs were then wrongly
+    // treated as "no change". Smaller chunks keep the response complete and
+    // the client retries missing entries once (see harmonize-client).
+    const batch = songs.slice(0, 15);
 
     // Build a compact song list for the LLM prompt. Songs resolved by the
     // factual lookup (R6) carry their facts as hints so the AI doesn't have
@@ -197,8 +205,11 @@ Do NOT include any text outside the JSON array.`,
         artist: song.artist,
         currentGenre: song.genre,
         currentLanguage: song.language,
-        suggestedGenre: rawGenre ? canonicalizeGenre(rawGenre) : null,
-        suggestedLanguage: rawLanguage ? normalizeLanguageMixed(rawLanguage) : null,
+        // analyzed=false marks songs the LLM silently dropped — the client
+        // keeps them "unanalyzed" instead of caching a fake no-change.
+        analyzed: !!match,
+        suggestedGenre: match ? (rawGenre ? canonicalizeGenre(rawGenre) : null) : null,
+        suggestedLanguage: match ? (rawLanguage ? normalizeLanguageMixed(rawLanguage) : null) : null,
         genreConfidence: match?.genreConfidence ?? 0,
         languageConfidence: match?.languageConfidence ?? 0,
         genreReason: match?.genreReason ?? '',

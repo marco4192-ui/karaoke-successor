@@ -9,6 +9,8 @@ export type RepeatMode = 'none' | 'one' | 'all';
 export interface JukeboxFiltersState {
   filterGenre: string;
   filterArtist: string;
+  /** Era/decade filter (decade start year, e.g. '1980'; 'all' = no filter) */
+  filterEra: string;
   searchQuery: string;
   shuffle: boolean;
   repeat: RepeatMode;
@@ -56,6 +58,8 @@ export interface JukeboxPlaybackState {
 export interface JukeboxDerivedState {
   genres: string[];
   artists: string[];
+  /** Decade options ('1960','1980',…) — 'all' handled as first entry */
+  eras: string[];
   filteredSongs: Song[];
   upNext: Song[];
   // N9: Statistics
@@ -69,6 +73,7 @@ export interface JukeboxDerivedState {
 export interface JukeboxFilterSetters {
   setFilterGenre: (_g: string) => void;
   setFilterArtist: (_a: string) => void;
+  setFilterEra: (_e: string) => void;
   setSearchQuery: (_q: string) => void;
   setShuffle: (_s: boolean) => void;
   setRepeat: (_r: RepeatMode) => void;

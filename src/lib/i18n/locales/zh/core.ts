@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: '所有歌手',
   filterByGenre: '按风格筛选',
   filterByArtist: '按歌手筛选',
+  filterByEra: '按年代筛选',
+  allEras: '所有年代',
   shuffle: '随机播放',
   noRepeat: '不重复',
   repeatAll: '全部重复',

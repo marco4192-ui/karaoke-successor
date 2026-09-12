@@ -825,6 +825,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           duration: number;
           genre?: string;
           language?: string;
+          year?: number;
           coverImage?: string;
         }>;
         

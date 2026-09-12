@@ -97,21 +97,30 @@ export function useEditorHistory(initialLyrics: LyricLine[]): UseEditorHistoryRe
   }, []); // No dependencies needed — uses ref for historyIndex
 
   const undo = useCallback((): LyricLine[] | null => {
-    if (historyIndex > 0) {
+    // Guard against a desynced index (e.g. the history was reset by a song
+    // switch while historyIndex still pointed into the old stack) — the old
+    // code crashed with "Cannot read properties of undefined (reading 'lyrics')".
+    const entry = historyIndex > 0 ? history[historyIndex - 1] : undefined;
+    if (entry) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       setHasUnsavedChangesState(newIndex !== savedIndexRef.current);
-      return structuredClone(history[historyIndex - 1].lyrics);
+      return structuredClone(entry.lyrics);
+    }
+    if (history.length > 0 && historyIndex !== history.length - 1) {
+      // Re-sync the index instead of crashing
+      setHistoryIndex(history.length - 1);
     }
     return null;
   }, [historyIndex, history]);
 
   const redo = useCallback((): LyricLine[] | null => {
-    if (historyIndex < history.length - 1) {
+    const entry = historyIndex < history.length - 1 ? history[historyIndex + 1] : undefined;
+    if (entry) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       setHasUnsavedChangesState(newIndex !== savedIndexRef.current);
-      return structuredClone(history[historyIndex + 1].lyrics);
+      return structuredClone(entry.lyrics);
     }
     return null;
   }, [historyIndex, history]);

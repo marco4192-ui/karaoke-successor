@@ -92,13 +92,23 @@ describe('url-utils — streaming platform detection (Rutube / VK / Bilibili / N
   });
 
   describe('VK Video', () => {
-    it('isVkVideoUrl accepts video pages and embeds on both domains', () => {
+    it('isVkVideoUrl accepts video pages and embeds on all four VK domains', () => {
       expect(isVkVideoUrl('https://vk.com/video-22822305_456239528')).toBe(true);
       expect(isVkVideoUrl('https://vkvideo.ru/video-22822305_456239528')).toBe(true);
+      expect(isVkVideoUrl('https://vkvideo.com/video-22822305_456239528')).toBe(true);
+      expect(isVkVideoUrl('https://vk.ru/video-22822305_456239528')).toBe(true);
       expect(isVkVideoUrl('https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=abc')).toBe(true);
       expect(isVkVideoUrl('https://m.vk.com/video-22822305_456239528')).toBe(true);
+      expect(isVkVideoUrl('https://m.vkvideo.ru/video_ext.php?oid=1&id=2')).toBe(true);
       expect(isVkVideoUrl('https://vk.com/wall-22822305')).toBe(false);
       expect(isVkVideoUrl('https://evil.com/video_ext.php?oid=1')).toBe(false);
+      expect(isVkVideoUrl('https://notvk.com/video-123_456')).toBe(false);
+    });
+
+    it('isVkVideoUrl accepts protocol-relative URLs', () => {
+      expect(isVkVideoUrl('//vk.com/video_ext.php?oid=1&id=2&hash=abc')).toBe(true);
+      expect(isVkVideoUrl('//vkvideo.ru/video-22822305_456239528')).toBe(true);
+      expect(isVkVideoUrl('//evil.com/video_ext.php?oid=1')).toBe(false);
     });
 
     it('extracts oid/id/hash from video_ext.php Export URLs', () => {
@@ -108,7 +118,49 @@ describe('url-utils — streaming platform detection (Rutube / VK / Bilibili / N
         videoId: '456239528',
         hash: 'e592e431c98bc184',
         list: undefined,
+        embed: true,
       });
+    });
+
+    it('accepts hash-less video_ext.php embeds (VK embed dialog omits the hash)', () => {
+      const ref = extractVkVideoRef('https://vkvideo.ru/video_ext.php?oid=-123&id=456&hd=2');
+      expect(ref?.oid).toBe('-123');
+      expect(ref?.videoId).toBe('456');
+      expect(ref?.hash).toBeUndefined();
+      expect(ref?.embed).toBe(true);
+    });
+
+    it('parses a full iframe embed code without hash', () => {
+      const iframe = '<iframe src="https://vkvideo.ru/video_ext.php?oid=-49372827&id=456239295&hd=2" width="854" height="480" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" frameborder="0" allowfullscreen></iframe>';
+      expect(detectVideoPlatform(iframe)).toBe('vk');
+      const ref = extractVkVideoRef(iframe);
+      expect(ref?.oid).toBe('-49372827');
+      expect(ref?.videoId).toBe('456239295');
+      expect(ref?.hash).toBeUndefined();
+      expect(ref?.embed).toBe(true);
+    });
+
+    it('parses protocol-relative embed URLs', () => {
+      const ref = extractVkVideoRef('//vk.com/video_ext.php?oid=1&id=2&hash=abc');
+      expect(ref).toEqual({ oid: '1', videoId: '2', hash: 'abc', list: undefined, embed: true });
+    });
+
+    it('classifies watch links as VK without embed flag (player shows the error)', () => {
+      expect(detectVideoPlatform('https://vk.ru/video-123_456')).toBe('vk');
+      const ref = extractVkVideoRef('https://vk.ru/video-123_456');
+      expect(ref?.oid).toBe('-123');
+      expect(ref?.videoId).toBe('456');
+      expect(ref?.hash).toBeUndefined();
+      expect(ref?.embed).toBe(false);
+    });
+
+    it('parses iframe srcs on m.vkvideo.ru subdomains', () => {
+      const iframe = '<iframe src="https://m.vkvideo.ru/video_ext.php?oid=-9&id=8" width="854" height="480" frameborder="0" allowfullscreen></iframe>';
+      expect(detectVideoPlatform(iframe)).toBe('vk');
+      const ref = extractVkVideoRef(iframe);
+      expect(ref?.oid).toBe('-9');
+      expect(ref?.videoId).toBe('8');
+      expect(ref?.embed).toBe(true);
     });
 
     it('extracts ids from watch URLs (hash missing)', () => {
@@ -116,6 +168,7 @@ describe('url-utils — streaming platform detection (Rutube / VK / Bilibili / N
       expect(ref?.oid).toBe('-22822305');
       expect(ref?.videoId).toBe('456239528');
       expect(ref?.hash).toBeUndefined();
+      expect(ref?.embed).toBe(false);
     });
 
     it('extracts positive (user) owner ids', () => {

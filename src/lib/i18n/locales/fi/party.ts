@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'Kaikki kielet',
   releaseYear: '📅 Julkaisuvuosi',
   allYears: 'Kaikki vuodet',
+  releaseEra: '📅 Aikakausi',
+  allEras: 'Kaikki',
   filterLogic: '🔗 Suodatinlogiikka',
   combined: 'Yhdistetty (AND)',
   independent: 'Riippumaton (OR)',

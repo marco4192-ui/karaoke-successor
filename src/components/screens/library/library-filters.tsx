@@ -8,6 +8,7 @@ import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { CHRISTMAS_FILTER_VALUE } from '@/lib/seasonal';
+import { decadeShortLabel } from '@/lib/game/era-filter';
 
 interface LibraryFiltersProps {
   searchQuery: string;
@@ -19,6 +20,8 @@ interface LibraryFiltersProps {
   availableGenres: string[];
   availableLanguages: string[];
   availableYears: string[];
+  /** Decade options ('1960','1980',…) — 'all' handled via the first entry */
+  availableEras: string[];
   onSetViewMode: (_mode: LibraryViewMode) => void;
   onSetGroupBy: (_groupBy: LibraryGroupBy) => void;
   onClearFolder: () => void;
@@ -39,6 +42,7 @@ export function LibraryFilters({
   availableGenres,
   availableLanguages,
   availableYears,
+  availableEras,
   onSetViewMode,
   onSetGroupBy,
   onClearFolder,
@@ -155,6 +159,27 @@ export function LibraryFilters({
           </Select>
         </div>
         
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">{t('library.eraFilter')}</span>
+          <Select
+            value={settings.filterEra || 'all'}
+            onValueChange={(value) => setSettings(prev => ({ ...prev, filterEra: value }))}
+          >
+            <SelectTrigger className="w-[120px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableEras.map(e => (
+                <SelectItem key={e} value={e}>
+                  {e === 'all'
+                    ? t('library.allEras')
+                    : t('library.eraOption').replace('{decade}', decadeShortLabel(Number(e)))}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
         <button
           onClick={() => {
             const newValue = !settings.filterDuet;
@@ -187,10 +212,10 @@ export function LibraryFilters({
           <span>{t('libraryFilters.viralHits')}</span>
         </button>
         
-        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterYear !== 'all' || settings.filterDuet || settings.filterViral || startMode === 'duet') && (
+        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterYear !== 'all' || settings.filterEra !== 'all' || settings.filterDuet || settings.filterViral || startMode === 'duet') && (
           <button
             onClick={() => {
-              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterDuet: false, filterViral: false }));
+              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterEra: 'all', filterDuet: false, filterViral: false }));
               if (startMode === 'duet') {
                 onResetStartMode();
               }

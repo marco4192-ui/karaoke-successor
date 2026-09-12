@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'Все языки',
   releaseYear: '📅 Год выпуска',
   allYears: 'Все годы',
+  releaseEra: '📅 Эпоха',
+  allEras: 'Все',
   filterLogic: '🔗 Логика фильтра',
   combined: 'Совмещённый (И)',
   independent: 'Независимый (ИЛИ)',

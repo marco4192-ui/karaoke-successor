@@ -11,6 +11,7 @@ import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
+import { decadeShortLabel } from '@/lib/game/era-filter';
 import { ConnectionStatusBadge } from './connection-status-badge';
 import { useRovingFocus } from '@/hooks/use-roving-focus';
 import type { PlayerDeviceChoice } from './unified-party-setup.types';
@@ -155,6 +156,11 @@ interface SongFilterSectionProps {
   filterReleaseYear: string;
   availableYears: number[];
   onFilterReleaseYearChange: (_year: string) => void;
+  /** Era/decade filter (decade start year, e.g. '1980') */
+  filterEra: string;
+  /** Decade options (start years as strings, ascending, no 'all') */
+  availableDecades: string[];
+  onFilterEraChange: (_era: string) => void;
 }
 
 export function SongFilterSection({
@@ -171,9 +177,12 @@ export function SongFilterSection({
   filterReleaseYear,
   availableYears,
   onFilterReleaseYearChange,
+  filterEra,
+  availableDecades,
+  onFilterEraChange,
 }: SongFilterSectionProps) {
   const { t } = useTranslation();
-  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all';
+  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all' || filterEra !== 'all';
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -234,6 +243,23 @@ export function SongFilterSection({
             </select>
           </div>
 
+          {/* Era (Decade) Dropdown — for themed parties ("Motto-Party") */}
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.releaseEra')}</label>
+            <select
+              value={filterEra}
+              onChange={(e) => onFilterEraChange(e.target.value)}
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <option value="all">{t('unifiedSetup.allEras')}</option>
+              {availableDecades.map(d => (
+                <option key={d} value={d}>
+                  {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Combined Toggle */}
           <div className="min-w-[160px]">
             <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.filterLogic')}</label>
@@ -268,6 +294,7 @@ export function SongFilterSection({
                 onFilterGenreChange('all');
                 onFilterLanguageChange('all');
                 onFilterReleaseYearChange('all');
+                onFilterEraChange('all');
               }}
               className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white/60 hover:text-white transition-all"
               title={t('unifiedSetup.resetFilter')}

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand, Merge } from 'lucide-react';
+import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand, Merge, ArrowUpDown } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { Note, DuetPlayer } from '@/types/game';
@@ -21,6 +21,10 @@ interface ToolsPanelProps {
   onUpdateSelectedNote: (_updates: Partial<Note>) => void;
   /** Apply updates to ALL selected notes (type/player buttons in multi-select) */
   onUpdateSelection?: (_updates: Partial<Note>) => void;
+  /** Transpose the effective selection by ±semitones (coalesced undo) */
+  onTransposeSelection?: (_delta: number) => void;
+  /** Transpose ALL notes of the song by ±semitones (single undo step) */
+  onTransposeAll?: (_delta: number) => void;
   tapMode?: {
     isActive: boolean;
     isHolding: boolean;
@@ -30,6 +34,9 @@ interface ToolsPanelProps {
     resetSession: () => void;
   };
 }
+
+// Quick transpose steps (semitones) offered for selection and whole song
+const TRANSPOSE_STEPS = [-12, -1, 1, 12] as const;
 
 export function ToolsPanel({
   selectedNote,
@@ -42,6 +49,8 @@ export function ToolsPanel({
   onMergeNote,
   onUpdateSelectedNote,
   onUpdateSelection,
+  onTransposeSelection,
+  onTransposeAll,
   tapMode,
 }: ToolsPanelProps) {
   const { t } = useTranslation();
@@ -205,6 +214,61 @@ export function ToolsPanel({
             </SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Transpose — selection and whole song */}
+      <div className="p-4 border-b border-slate-700">
+        <h2 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+          <ArrowUpDown className="w-3.5 h-3.5" />
+          {t('editor.toolsPanel.transpose')}
+        </h2>
+
+        {/* Row 1: selection */}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs text-slate-400">{t('editor.toolsPanel.transposeSelection')}</span>
+          {selectedCount > 1 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-medium">
+              {selectedCount}×
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-4 gap-1.5 mb-3">
+          {TRANSPOSE_STEPS.map(delta => (
+            <Button
+              key={delta}
+              variant="outline"
+              size="sm"
+              disabled={!selectedNote || !onTransposeSelection}
+              onClick={() => onTransposeSelection?.(delta)}
+              title={`${t('editor.toolsPanel.transpose')} ${t('editor.toolsPanel.transposeSelection')}: ${delta > 0 ? `+${delta}` : delta} ${t('editor.toolsPanel.semitones')}`}
+              data-testid={`editor-tools-transpose-selection-${delta > 0 ? `plus-${delta}` : `minus-${Math.abs(delta)}`}`}
+              className="font-mono text-xs border-slate-600 text-slate-300 hover:border-cyan-500/60 hover:text-cyan-300 disabled:opacity-40"
+            >
+              {delta > 0 ? `+${delta}` : `${delta}`}
+            </Button>
+          ))}
+        </div>
+
+        {/* Row 2: all notes */}
+        <span className="block text-xs text-slate-400 mb-1.5">{t('editor.toolsPanel.transposeAll')}</span>
+        <div className="grid grid-cols-4 gap-1.5">
+          {TRANSPOSE_STEPS.map(delta => (
+            <Button
+              key={delta}
+              variant="outline"
+              size="sm"
+              disabled={!onTransposeAll}
+              onClick={() => onTransposeAll?.(delta)}
+              title={`${t('editor.toolsPanel.transpose')} ${t('editor.toolsPanel.transposeAll')}: ${delta > 0 ? `+${delta}` : delta} ${t('editor.toolsPanel.semitones')}`}
+              data-testid={`editor-tools-transpose-all-${delta > 0 ? `plus-${delta}` : `minus-${Math.abs(delta)}`}`}
+              className="font-mono text-xs border-slate-600 text-slate-300 hover:border-purple-500/60 hover:text-purple-300 disabled:opacity-40"
+            >
+              {delta > 0 ? `+${delta}` : `${delta}`}
+            </Button>
+          ))}
+        </div>
+
+        <p className="text-xs text-slate-600 mt-2">{t('editor.toolsPanel.transposeHint')}</p>
       </div>
 
       {/* Tap Note Placement Mode */}

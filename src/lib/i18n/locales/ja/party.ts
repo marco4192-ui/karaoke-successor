@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'すべての言語',
   releaseYear: '📅 リリース年',
   allYears: '全年代',
+  releaseEra: '📅 時代',
+  allEras: 'すべて',
   filterLogic: '🔗 フィルター論理',
   combined: '結合 (AND)',
   independent: '独立 (OR)',

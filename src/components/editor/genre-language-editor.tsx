@@ -139,12 +139,14 @@ export function GenreLanguageEditor({
         genre: customGenre || undefined,
         language: customLanguage || undefined,
       };
-      updateSong(updatedSong.id, updatedSong);
 
-      // Save to txt file using the unified save function
+      // TXT FIRST (1.a): write the txt BEFORE touching the library store.
+      // Only a successful txt write updates the library — a failed write
+      // leaves the song completely untouched (no "genre set but not in txt").
       const result = await saveSongToTxt(updatedSong);
 
       if (result.success) {
+        updateSong(updatedSong.id, updatedSong);
         setSaveMessage(`✅ ${result.message}`);
         onSaved?.();
       } else {

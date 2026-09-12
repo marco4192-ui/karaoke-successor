@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: '모든 아티스트',
   filterByGenre: '장르로 필터링',
   filterByArtist: '아티스트로 필터링',
+  filterByEra: '시대로 필터링',
+  allEras: '모든 시대',
   shuffle: '셔플',
   noRepeat: '반복 없음',
   repeatAll: '전체 반복',

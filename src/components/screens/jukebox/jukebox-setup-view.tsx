@@ -8,6 +8,7 @@ import { PlayIcon, MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { getPlaylists } from '@/lib/playlist-manager';
+import { decadeShortLabel } from '@/lib/game/era-filter';
 import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import type { UseJukeboxReturn } from './jukebox-types';
@@ -44,6 +45,14 @@ function MicVocalIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  );
+}
+
+function CalendarRangeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" />
     </svg>
   );
 }
@@ -386,7 +395,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               </div>
             )}
 
-            {/* Genre + Artist filters in a grid */}
+            {/* Genre + Artist + Era filters in a grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Genre Filter */}
               <div>
@@ -425,6 +434,29 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allArtists')}</option>
                   {j.artists.map(artist => (
                     <option key={artist} value={artist} className="bg-gray-800 text-white">{artist}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Era (Decade) Filter — for themed parties ("Motto-Party") */}
+              <div>
+                <label htmlFor="jukebox-era-select" className="text-sm text-white/60 mb-2 flex items-center gap-1.5">
+                  <CalendarRangeIcon className="w-3.5 h-3.5 text-cyan-400/70" />
+                  {t('jukeboxPlayer.filterByEra')}
+                </label>
+                <select
+                  id="jukebox-era-select"
+                  value={j.filterEra}
+                  onChange={(e) => j.setFilterEra(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/25 outline-none transition-all"
+                  style={selectStyle}
+                >
+                  {j.eras.map(era => (
+                    <option key={era} value={era} className="bg-gray-800 text-white">
+                      {era === 'all'
+                        ? t('jukeboxPlayer.allEras')
+                        : t('library.eraOption').replace('{decade}', decadeShortLabel(Number(era)))}
+                    </option>
                   ))}
                 </select>
               </div>

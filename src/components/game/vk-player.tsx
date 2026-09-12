@@ -32,9 +32,11 @@ import {
  *
  *   Commands sent before INITED are queued inside the SDK and flushed on init.
  *
- * The iframe src must be the FULL Export-URL from the VK video page
- * (…/video_ext.php?oid=…&id=…&hash=…) — the hash cannot be derived without
- * VK API credentials. A missing hash is surfaced as an error (code 101).
+ * The iframe src is built from the video_ext.php embed URL of the VK video
+ * page (…/video_ext.php?oid=…&id=…[&hash=…]). VK's current „Einbetten“
+ * dialog omits the hash for public videos — hash-less embeds play fine.
+ * Watch links (…/video-123_456) carry no hash and cannot be embedded at
+ * all; they are rejected with an inline explanation of what to paste.
  */
 
 // ── Minimal typings for the VK SDK (transcribed from the live SDK source) ──
@@ -80,7 +82,7 @@ declare global {
 }
 
 export interface VKPlayerProps extends ManualStartPlayerProps {
-  /** Full VK video URL (video_ext.php Export URL preferred — carries the hash). */
+  /** Full VK video URL — a video_ext.php embed URL (hash optional) or the complete iframe embed code. */
   videoUrl: string;
   videoGap?: number; // Offset in MILLISECONDS (positive = video starts AFTER audio)
   onReady?: () => void;
@@ -314,12 +316,14 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
       else onErrorRef.current?.(5);
     });
 
-    // Startup watchdog: an embed with an invalid/missing hash shows an error
-    // INSIDE the iframe and posts nothing. Surface it instead of hanging.
+    // Startup watchdog: a broken embed (removed/private video, geo block,
+    // network failure) shows an error INSIDE the iframe and posts nothing.
+    // Surface it instead of hanging — hash-less embeds are valid, so this is
+    // purely generic playback-failure detection.
     const watchdog = setTimeout(() => {
       if (cancelled) return;
       if (!initedRefSafe() || (isPlayingRef.current && lastVideoTimeRef.current <= 0 && !adActiveRef.current)) {
-        onErrorRef.current?.(vkRef.hash ? 5 : 101);
+        onErrorRef.current?.(5);
       }
     }, 14000);
     const initedRefSafe = () => playerRef.current?.getState() !== 'uninited';
@@ -383,14 +387,18 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
     } catch { /* ignore */ }
   }, [volume, inited]);
 
-  if (!vkRef || !vkRef.hash) {
+  // Watch links (…/video-123_456) carry no embed hash and cannot be
+  // embedded directly. Hash-less video_ext.php embeds — the output of VK's
+  // current „Einbetten → Code kopieren“ dialog — are valid for public
+  // videos and play fine, so only watch links are rejected here.
+  if (!vkRef || (!vkRef.embed && !vkRef.hash)) {
     // A watch URL without the embed hash cannot play — explain what to paste.
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-4" role="alert">
         <div className="text-center max-w-md">
           <p className="text-white/80 text-sm">
             {vkRef
-              ? 'VK: Dies ist ein Watch-Link ohne Embed-Hash. Kopiere auf der VK-Videoseite unter „Einbetten → Code kopieren“ den kompletten iframe-Code (oder die video_ext.php-URL mit &hash=…) und füge ihn hier ein — beides wird jetzt überall erkannt.'
+              ? 'VK: Watch-Links können nicht direkt eingebettet werden. Öffne das Video auf VK, klicke unter „Teilen → Einbetten“ auf „Code kopieren“ und füge den kompletten iframe-Code hier ein. (Hinweis: aktuelle VK-Einbettungscodes enthalten oft keinen Hash mehr — das ist okay und wird unterstützt.)'
               : 'VK: video ID not found in URL'}
           </p>
         </div>
@@ -398,7 +406,7 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
     );
   }
 
-  const embedSrc = `https://vk.com/video_ext.php?oid=${encodeURIComponent(vkRef.oid)}&id=${encodeURIComponent(vkRef.videoId)}&hash=${encodeURIComponent(vkRef.hash)}${vkRef.list ? `&list=${encodeURIComponent(vkRef.list)}` : ''}&js_api=1&hd=2`;
+  const embedSrc = `https://vk.com/video_ext.php?oid=${encodeURIComponent(vkRef.oid)}&id=${encodeURIComponent(vkRef.videoId)}${vkRef.hash ? `&hash=${encodeURIComponent(vkRef.hash)}` : ''}${vkRef.list ? `&list=${encodeURIComponent(vkRef.list)}` : ''}&js_api=1&hd=2`;
 
   return (
     <iframe

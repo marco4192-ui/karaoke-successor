@@ -91,7 +91,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   // Default filter settings (used as fallback and for the debounced baseline).
   const defaultSettings: LibrarySettings = {
     sortBy: 'title', sortOrder: 'asc', filterDifficulty: 'all',
-    filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterDuet: false, filterViral: false,
+    filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterEra: 'all', filterDuet: false, filterViral: false,
   };
 
   // Settings state with localStorage persistence.
@@ -219,7 +219,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   }, []);
 
   // --- Computed values ---
-  const { filteredSongs, availableGenres, availableLanguages, availableYears } = useLibraryFilters({
+  const { filteredSongs, availableGenres, availableLanguages, availableYears, availableEras } = useLibraryFilters({
     loadedSongs, searchQuery, settings: debouncedSettings, startMode: startOptions.mode,
     viralSongIds: viralCharts.viralSongIds,
   });
@@ -350,7 +350,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           settings={settings} setSettings={setSettings}
           viewMode={viewMode} groupBy={groupBy}
-          availableGenres={availableGenres} availableLanguages={availableLanguages} availableYears={availableYears}
+          availableGenres={availableGenres} availableLanguages={availableLanguages} availableYears={availableYears} availableEras={availableEras}
           onSetViewMode={(mode) => { if (mode !== 'folder') setSelectedPlaylist(null); setViewMode(mode); }}
           onSetGroupBy={setGroupBy} onClearFolder={handleClearFolder}
           folderBreadcrumb={folderBreadcrumb} onBreadcrumbClick={handleBreadcrumbClick}

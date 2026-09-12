@@ -88,6 +88,8 @@ export interface MobileSong {
   duration: number;
   genre?: string;
   language?: string;
+  /** Release year (#YEAR: tag) — used for the era/decade filter */
+  year?: number;
   coverImage?: string;
   isDuet?: boolean;
 }
@@ -218,10 +220,14 @@ export interface GameState {
     filterGenre?: string;
     filterLanguage?: string;
     filterReleaseYear?: string;
+    /** Era/decade filter (decade start year, e.g. '1980') */
+    filterEra?: string;
     filterCombined?: boolean;
     availableGenres?: string[];
     availableLanguages?: string[];
     availableYears?: number[];
+    /** Decade options (start years as strings, ascending) */
+    availableDecades?: string[];
     /** Shared mic (PTM): display name of the selected mic */
     selectedMicName?: string | null;
   } | null;

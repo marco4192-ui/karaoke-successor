@@ -13,6 +13,8 @@ export interface LibrarySettings {
   filterGenre: string;
   filterLanguage: string;
   filterYear: string;
+  /** Era/decade filter (decade start year as string, e.g. '1980'; '' = all) */
+  filterEra: string;
   filterDuet: boolean;
   filterViral: boolean;
 }

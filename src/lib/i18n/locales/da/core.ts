@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: 'Alle kunstnere',
   filterByGenre: 'Filtrér efter genre',
   filterByArtist: 'Filtrér efter kunstner',
+  filterByEra: 'Filtrér efter æra',
+  allEras: 'Alle æraer',
   shuffle: 'Bland',
   noRepeat: 'Ingen gentagelse',
   repeatAll: 'Gentag alle',

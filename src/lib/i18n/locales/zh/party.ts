@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: '所有语言',
   releaseYear: '📅 发行年份',
   allYears: '所有年份',
+  releaseEra: '📅 年代',
+  allEras: '全部',
   filterLogic: '🔗 筛选逻辑',
   combined: '组合（AND）',
   independent: '独立（OR）',

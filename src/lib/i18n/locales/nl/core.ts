@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: 'Alle artiesten',
   filterByGenre: 'Filteren op genre',
   filterByArtist: 'Filteren op artiest',
+  filterByEra: 'Filteren op tijdperk',
+  allEras: 'Alle tijdperken',
   shuffle: 'Shuffle',
   noRepeat: 'Niet herhalen',
   repeatAll: 'Alles herhalen',

@@ -270,6 +270,8 @@ export const coreTranslations = {
     allArtists: 'All Artists',
     filterByGenre: 'Filter by Genre',
     filterByArtist: 'Filter by Artist',
+    filterByEra: 'Filter by Era',
+    allEras: 'All Eras',
     shuffle: 'Shuffle',
     noRepeat: 'No Repeat',
     repeatAll: 'Repeat All',

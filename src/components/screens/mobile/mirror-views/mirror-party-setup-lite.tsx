@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { decadeShortLabel } from '@/lib/game/era-filter';
 
 // ===================== Props =====================
 
@@ -407,6 +408,8 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     const [filterGenre, setFilterGenre] = useState('all');
     const [filterLanguage, setFilterLanguage] = useState('all');
     const [filterReleaseYear, setFilterReleaseYear] = useState('all');
+    // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+    const [filterEra, setFilterEra] = useState('all');
     const [filterCombined, setFilterCombined] = useState(true);
 
     // ── LIVE SETUP MIRROR (user request item 7) ──────────────────────────
@@ -444,6 +447,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       const suFilterGenre = su.filterGenre;
       const suFilterLanguage = su.filterLanguage;
       const suFilterReleaseYear = su.filterReleaseYear;
+      const suFilterEra = su.filterEra;
       const suFilterCombined = su.filterCombined;
       const suSelectedMicId = su.selectedMicId;
       setSelectedPlayers(prev => (prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids));
@@ -467,6 +471,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       if (typeof suFilterGenre === 'string') setFilterGenre(prev => (prev === suFilterGenre ? prev : suFilterGenre));
       if (typeof suFilterLanguage === 'string') setFilterLanguage(prev => (prev === suFilterLanguage ? prev : suFilterLanguage));
       if (typeof suFilterReleaseYear === 'string') setFilterReleaseYear(prev => (prev === suFilterReleaseYear ? prev : suFilterReleaseYear));
+      if (typeof suFilterEra === 'string') setFilterEra(prev => (prev === suFilterEra ? prev : suFilterEra));
       if (typeof suFilterCombined === 'boolean') setFilterCombined(prev => (prev === suFilterCombined ? prev : suFilterCombined));
       if (suSelectedMicId !== undefined) {
         setSelectedMicId(prev => (prev === (suSelectedMicId ?? null) ? prev : (suSelectedMicId ?? null)));
@@ -494,6 +499,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           filterGenre,
           filterLanguage,
           filterReleaseYear,
+          filterEra,
           filterCombined,
           ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
         });
@@ -502,7 +508,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       return () => clearTimeout(timer);
     }, [
       selectedPlayers, difficulty, settings, deviceAssignments, micAssignments,
-      songSelection, filterGenre, filterLanguage, filterReleaseYear, filterCombined,
+      songSelection, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined,
       selectedMicId, modeKey, onSendDesktopCommand, deviceMode, desktopMics,
     ]);
 
@@ -620,11 +626,12 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         filterGenre,
         filterLanguage,
         filterReleaseYear,
+        filterEra,
         filterCombined,
         ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
       });
       onSendDesktopCommand(`party_apply_config:${config}`);
-    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, deviceAssignments, micAssignments, filterGenre, filterLanguage, filterReleaseYear, filterCombined, deviceMode, selectedMicId, desktopMics, t, onSendDesktopCommand]);
+    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, deviceAssignments, micAssignments, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined, deviceMode, selectedMicId, desktopMics, t, onSendDesktopCommand]);
 
     const label = tOr(t, modeInfo?.labelKey || '', modeInfo?.fallback || '');
     const canStart = modeInfo ? selectedPlayers.length >= modeInfo.minPlayers : false;
@@ -1107,6 +1114,23 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                 <option value="all">{tOr(t, 'unifiedSetup.allYears', 'Alle Jahre')}</option>
                 {(setup?.availableYears ?? []).map((y) => (
                   <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 mb-1 block px-1">
+                {tOr(t, 'unifiedSetup.releaseEra', 'Ära')}
+              </label>
+              <select
+                value={filterEra}
+                onChange={(e) => { haptic(); setFilterEra(e.target.value); }}
+                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+              >
+                <option value="all">{tOr(t, 'unifiedSetup.allEras', 'Alle')}</option>
+                {(setup?.availableDecades ?? []).map((d) => (
+                  <option key={d} value={d}>
+                    {tOr(t, 'library.eraOption', '{decade}s').replace('{decade}', decadeShortLabel(Number(d)))}
+                  </option>
                 ))}
               </select>
             </div>

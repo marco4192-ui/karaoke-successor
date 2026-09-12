@@ -611,6 +611,20 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
     }
   }, [effectiveSelection, applyLyrics, scheduleCommit]);
 
+  /** Transpose ALL notes in the song (ToolsPanel "Alle Noten"). ONE undo step. */
+  const handleTransposeAll = useCallback((delta: number) => {
+    const prev = currentSongRef.current;
+    if (prev.lyrics.every(line => line.notes.length === 0)) return;
+    const newLyrics = prev.lyrics.map(line => ({
+      ...line,
+      notes: line.notes.map(n => {
+        const pitch = Math.max(0, Math.min(127, n.pitch + delta));
+        return { ...n, pitch, frequency: midiPitchToFrequency(pitch) };
+      }),
+    }));
+    applyLyrics(newLyrics, 'push');
+  }, [applyLyrics]);
+
   /** Nudge all selected notes' start time (←/→, Shift = coarse). Coalesced undo per burst.
    *  Snaps to the beat grid when the magnet is enabled. */
   const handleNudge = useCallback((delta: number) => {
@@ -901,67 +915,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
         onTogglePanel={(panel) => setActivePanel(prev => (prev === panel ? 'none' : panel))}
       />
 
-      {/* ── Header dropdown panels (Metadata / Audio-Analysis / AI-Assistant) ──
-          Same expand-on-click pattern as the genre/language Tags shortcut. */}
-      {heavyMounted && activePanel !== 'none' && (
-        <div className="relative border-b border-slate-700 bg-slate-900/95 backdrop-blur-sm flex-shrink-0 z-30 shadow-lg" data-testid={`editor-header-panel-${activePanel}`}>
-          {/* Close button */}
-          <button
-            onClick={() => setActivePanel('none')}
-            className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors"
-            title={t('editor.header.closePanel')}
-            aria-label={t('editor.header.closePanel')}
-          >
-            <X className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-
-          {activePanel === 'metadata' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 lg:divide-x lg:divide-slate-700 h-[52vh] max-h-[520px] overflow-hidden">
-              <div className="h-full overflow-hidden border-b border-slate-700 lg:border-b-0">
-                <EditorSongInfoTab
-                  song={currentSong}
-                  allNotesCount={allNotes.length}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-              </div>
-              <div className="h-full overflow-hidden">
-                <EditorMetadataTab
-                  song={currentSong}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-              </div>
-            </div>
-          )}
-
-          {activePanel === 'analysis' && (
-            <div className="h-[52vh] max-h-[520px] overflow-y-auto">
-              <AudioAnalysisPanel
-                audioFilePath={analysisAudioPath}
-                onApplyNotes={handleApplyDetectedNotes}
-                onApplyBpm={handleApplyBpm}
-              />
-            </div>
-          )}
-
-          {activePanel === 'ai' && (
-            <div className="h-[52vh] max-h-[520px] overflow-y-auto">
-              <AIAssistantPanel
-                song={currentSong}
-                onSongUpdate={(updates) => {
-                  setSongInternal({ ...currentSongRef.current, ...updates });
-                  markDirty();
-                }}
-                onLyricsUpdate={(lyrics) => {
-                  applyLyrics(lyrics, 'push');
-                }}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* ── Left panel: Noten-Info/Werkzeuge (top) + Liedtext (bottom) ──
             Both sections are permanently visible, stacked with a horizontal
@@ -991,6 +944,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
                   onMergeNote={handleMergeNote}
                   onUpdateSelectedNote={updateSelectedNote}
                   onUpdateSelection={updateMultiSelected}
+                  onTransposeSelection={handleTranspose}
+                  onTransposeAll={handleTransposeAll}
                   tapMode={tapPlacement}
                 />
                 {selectedNote
@@ -1044,9 +999,78 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
               onCommitHistory={handleCommitHistory}
               onNoteAdd={handleNoteAdd}
               onLyricChange={handleLyricChange}
+              onTransposeNotes={handleTranspose}
             />
           )}
         </main>
+
+        {/* ── Header tab panels — right-side sliding sidebar ──
+            Metadata / Audio-Analysis / AI-Assistant dock to the right of the
+            editor body (same pattern as the genre/language panel) instead of a
+            top dropdown that squeezed the timeline. Content scrolls naturally
+            inside the aside. */}
+        {heavyMounted && activePanel !== 'none' && (
+          <aside
+            className="w-96 flex-shrink-0 overflow-y-auto border-l border-white/10 bg-slate-900/95 animate-in slide-in-from-right duration-300 editor-panel-scroll"
+            data-testid={`editor-header-panel-${activePanel}`}
+          >
+            {/* Small header row: panel title + close */}
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
+              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 truncate">
+                {activePanel === 'metadata'
+                  ? t('editor.header.panelMetadata')
+                  : activePanel === 'analysis'
+                    ? t('editor.header.panelAnalysis')
+                    : t('editor.header.panelAI')}
+              </h2>
+              <button
+                onClick={() => setActivePanel('none')}
+                className="p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors shrink-0"
+                title={t('editor.header.closePanel')}
+                aria-label={t('editor.header.closePanel')}
+              >
+                <X className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+            </div>
+
+            {activePanel === 'metadata' && (
+              <div className="grid grid-cols-1 divide-y divide-slate-700">
+                <EditorSongInfoTab
+                  song={currentSong}
+                  allNotesCount={allNotes.length}
+                  onSongChange={setSongInternal}
+                  onSetUnsavedChanges={() => markDirty()}
+                />
+                <EditorMetadataTab
+                  song={currentSong}
+                  onSongChange={setSongInternal}
+                  onSetUnsavedChanges={() => markDirty()}
+                />
+              </div>
+            )}
+
+            {activePanel === 'analysis' && (
+              <AudioAnalysisPanel
+                audioFilePath={analysisAudioPath}
+                onApplyNotes={handleApplyDetectedNotes}
+                onApplyBpm={handleApplyBpm}
+              />
+            )}
+
+            {activePanel === 'ai' && (
+              <AIAssistantPanel
+                song={currentSong}
+                onSongUpdate={(updates) => {
+                  setSongInternal({ ...currentSongRef.current, ...updates });
+                  markDirty();
+                }}
+                onLyricsUpdate={(lyrics) => {
+                  applyLyrics(lyrics, 'push');
+                }}
+              />
+            )}
+          </aside>
+        )}
       </div>
 
       {/* ── Boot overlay — shown while the heavy editor tree mounts/paints ── */}

@@ -152,6 +152,8 @@ export interface SongSummary {
   duration: number;
   genre?: string;
   language?: string;
+  /** Release year (#YEAR: tag) — used for the era/decade filter */
+  year?: number;
   coverImage?: string;
   isDuet?: boolean;
 }

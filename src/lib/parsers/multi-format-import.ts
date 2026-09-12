@@ -293,7 +293,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
       activeNotes.clear(); // Prevent cross-track note leaks on malformed files
 
-      const raw = { notes: [], lyricEvents: [], textEvents: [] };
+      const raw: { notes: { tick: number; duration: number; pitch: number; velocity: number; channel: number }[]; lyricEvents: { tick: number; text: string; newLine: boolean }[]; textEvents: { tick: number; text: string }[]; name?: string } = { notes: [], lyricEvents: [], textEvents: [] };
       rawTracks.push(raw); // push before parsing so indices stay aligned
 
       let trackEnd = offset; // default: skip to current position if parsing fails before trackEnd is set

@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: 'Все исполнители',
   filterByGenre: 'Фильтр по жанру',
   filterByArtist: 'Фильтр по исполнителю',
+  filterByEra: 'Фильтр по эпохе',
+  allEras: 'Все эпохи',
   shuffle: 'Перемешать',
   noRepeat: 'Без повтора',
   repeatAll: 'Повторить все',

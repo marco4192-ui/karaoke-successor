@@ -7,6 +7,7 @@ import { isDuetSong } from '@/components/screens/library/utils';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useDebouncedValue } from './use-debounce';
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { CHRISTMAS_FILTER_VALUE, isChristmasSong, isChristmasSeasonEnabled } from '@/lib/seasonal';
 
 interface UseLibraryFiltersParams {
@@ -86,6 +87,12 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
       }
     }
     
+    // Era filter (decade bucket from #YEAR:, e.g. '1980' = 1980-1989).
+    // AND-combined with the exact-year filter above for themed parties.
+    if (settings.filterEra && settings.filterEra !== 'all') {
+      songs = songs.filter(s => songMatchesEra(s, settings.filterEra));
+    }
+    
     // Duet filter - show only duet songs when enabled
     if (settings.filterDuet) {
       songs = songs.filter(s => isDuetSong(s));
@@ -156,5 +163,11 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return ['all', ...Array.from(years).sort((a, b) => b - a).map(String)];
   }, [loadedSongs]);
   
-  return { filteredSongs, availableGenres, availableLanguages, availableYears, isFilterStale };
+  // Get unique eras (decades) from loaded songs, ascending —
+  // derived dynamically so e.g. a 1948 song adds a '40s' entry
+  const availableEras = useMemo(() => {
+    return ['all', ...getAvailableDecades(loadedSongs)];
+  }, [loadedSongs]);
+  
+  return { filteredSongs, availableGenres, availableLanguages, availableYears, availableEras, isFilterStale };
 }

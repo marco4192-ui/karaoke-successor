@@ -8,7 +8,8 @@
  *                  OFFICIAL ad events (AD_START/AD_END) for embeds
  * - Vimeo          (vimeo.com, player.vimeo.com) — ad-free, official player.js SDK
  * - Rutube         (rutube.ru) — postMessage Player API (playStart/currentTime/changeState)
- * - VK Video       (vk.com, vkvideo.ru — incl. video_ext.php embeds with hash)
+ * - VK Video       (vk.com, vk.ru, vkvideo.ru, vkvideo.com — video_ext.php
+ *                  embeds; hash optional, VK's embed dialog omits it for public videos)
  * - Bilibili       (bilibili.com) — iframe only, verified t= start param, manual start gate
  * - Niconico       (nicovideo.jp) — unofficial jsapi=1 postMessage API
  * Plus direct video file URLs (MP4/WebM/…) handled by the HTML5 <video> element.
@@ -274,22 +275,31 @@ export function extractNiconicoId(url: string): string | null {
 
 /**
  * Check if a URL points to a VK video.
- * Matches vk.com / vkvideo.ru / m.vk.com video pages AND video_ext.php embeds.
+ * Matches video pages AND video_ext.php embeds on all four VK domains —
+ * vk.com / vk.ru / vkvideo.ru / vkvideo.com — including subdomains
+ * (m.vk.com, m.vkvideo.ru, …). Protocol-relative URLs (//vk.com/…) are
+ * accepted too (VK embed codes sometimes carry a scheme-less src).
  */
+const VK_VIDEO_HOSTS = ['vk.com', 'vk.ru', 'vkvideo.ru', 'vkvideo.com'] as const;
+
+function isVkVideoHost(host: string): boolean {
+  return VK_VIDEO_HOSTS.some(h => host === h || host.endsWith(`.${h}`));
+}
+
 export function isVkVideoUrl(url: string): boolean {
   if (!url) return false;
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.toLowerCase();
     const path = parsed.pathname.toLowerCase();
-    if ((host === 'vk.com' || host.endsWith('.vk.com') || host === 'vkvideo.ru' || host.endsWith('.vkvideo.ru'))
-        && (path.startsWith('/video') || path.startsWith('/video_ext.php'))) {
+    if (isVkVideoHost(host) && (path.startsWith('/video') || path.startsWith('/video_ext.php'))) {
       return true;
     }
     return false;
   } catch {
     const lower = url.toLowerCase();
-    return /^https?:\/\/([a-z0-9-]+\.)?(vk\.com|vkvideo\.ru)\/video(_ext\.php)?/i.test(lower);
+    // Also accepts protocol-relative URLs (//vk.com/…).
+    return /^(?:https?:)?\/\/([a-z0-9-]+\.)*(vk\.com|vk\.ru|vkvideo\.ru|vkvideo\.com)\/video(_ext\.php)?/i.test(lower);
   }
 }
 
@@ -298,20 +308,30 @@ export interface VkVideoRef {
   oid: string;
   /** Video id. */
   videoId: string;
-  /** Access hash — REQUIRED for embeds; only present in video_ext.php "Export" URLs. */
+  /** Access hash — OPTIONAL. VK's current „Einbetten“ dialog omits it for
+   *  public videos; hash-less video_ext.php embeds play fine in browsers.
+   *  Watch links never carry one (see `embed`). */
   hash?: string;
   /** Playlist id (optional, from the list= query param). */
   list?: string;
+  /** True when the URL is a video_ext.php embed URL (oid+id query params).
+   *  False for watch links (/video-123_456) — those cannot be embedded
+   *  directly and the player surfaces a „paste the embed code“ error. */
+  embed?: boolean;
 }
 
 /**
  * Extract a VK video reference from URL formats:
- * - https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=e592…  (Export/embed URL — hash present)
- * - https://vk.com/video-22822305_456239528                                    (watch URL — NO hash!)
- * - https://vkvideo.ru/video-22822305_456239528
+ * - https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=e592…  (embed URL — hash present, private videos)
+ * - https://vkvideo.ru/video_ext.php?oid=-49372827&id=456239295&hd=2     (hash-less embed — VALID, VK's current
+ *   „Einbetten → Code kopieren“ output for public videos)
+ * - //vk.com/video_ext.php?oid=1&id=2&hash=abc                            (protocol-relative embed src)
+ * - https://vk.com/video-22822305_456239528                              (watch URL — NO hash, `embed` false;
+ *   the player surfaces a „paste the embed code“ error for it)
  * - the raw iframe embed code (src is extracted first) and &amp;-escaped URLs
  * Returns null when no ids can be extracted. A missing hash is returned as
- * `hash: undefined` — the player surfaces a "paste the Export URL" error then.
+ * `hash: undefined` — valid for video_ext.php embeds, an error case for
+ * watch links (distinguish via the `embed` flag).
  */
 export function extractVkVideoRef(rawUrl: string): VkVideoRef | null {
   if (!rawUrl) return null;
@@ -320,14 +340,17 @@ export function extractVkVideoRef(rawUrl: string): VkVideoRef | null {
   let params: URLSearchParams | null = null;
   let path = '';
   try {
-    const parsed = new URL(url);
+    // Protocol-relative URLs (//vk.com/…) need a scheme for new URL()
+    const parseable = url.startsWith('//') ? `https:${url}` : url;
+    const parsed = new URL(parseable);
     path = parsed.pathname;
     params = parsed.searchParams;
   } catch {
     return null;
   }
 
-  // video_ext.php?oid=…&id=…&hash=…
+  // video_ext.php?oid=…&id=…[&hash=…] — VK's embed URL. The hash is only
+  // included for private videos now; public ones play without it.
   if (params) {
     const oid = params.get('oid');
     const id = params.get('id');
@@ -337,15 +360,17 @@ export function extractVkVideoRef(rawUrl: string): VkVideoRef | null {
         videoId: id,
         hash: params.get('hash') || undefined,
         list: params.get('list') || undefined,
+        embed: /video_ext\.php/i.test(path),
       };
     }
   }
 
-  // /video-12345_67890 (also /videos-12345 or query variants)
+  // /video-12345_67890 (also /videos-12345 or query variants) — watch URL,
+  // never carries an embed hash.
   const pathMatch = path.match(/^\/videos?(-?\d+)_(\d+)(?:\?|%3F|$)/i)
     ?? path.match(/^\/videos?(-?\d+)_(\d+)/i);
   if (pathMatch?.[1] && pathMatch?.[2]) {
-    return { oid: pathMatch[1], videoId: pathMatch[2] };
+    return { oid: pathMatch[1], videoId: pathMatch[2], embed: false };
   }
 
   return null;

@@ -3,10 +3,11 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Note, Song } from '@/types/game';
+import { midiToNoteName } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
 import { Waveform } from './waveform';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2 } from 'lucide-react';
+import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info } from 'lucide-react';
 import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -50,6 +51,8 @@ interface TimelineProps {
   onCommitHistory: () => void;
   onNoteAdd: (_startTime: number, _pitch: number) => void;
   onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
+  /** Transpose the current selection by ±semitones (wired to handleTranspose) */
+  onTransposeNotes?: (_delta: number) => void;
 }
 
 // Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
@@ -61,6 +64,9 @@ export const TAP_LINE_GAP_MS = 1400;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 10;
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Quick transpose steps offered in the note-details band (semitones)
+const TRANSPOSE_STEPS = [-12, -1, 1, 12] as const;
 
 /** One renderable pitch lane (combined mode = a single lane over all notes). */
 interface PitchLane {
@@ -94,7 +100,8 @@ export function Timeline({
   onNoteUpdate,
   onCommitHistory,
   onNoteAdd,
-  onLyricChange
+  onLyricChange,
+  onTransposeNotes
 }: TimelineProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,6 +121,27 @@ export function Timeline({
   // Duet split view — both vocal tracks on separate pitch ladders
   const [duetSplit, setDuetSplit] = useState(false);
 
+  // ── Viewport measurement (restored after db498381) ──
+  // The scroll content container is observed with a ResizeObserver so the
+  // pitch grid, waveform, minimap and note-details band adapt to the actually
+  // available space (default 1200×700 only until the first measurement).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setViewport(prev =>
+        Math.abs(prev.width - width) < 1 && Math.abs(prev.height - height) < 1
+          ? prev
+          : { width, height },
+      );
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
   // ── Layout constants ──────────────────────────────────────────
   const basePixelsPerSecond = 100;
   const pixelsPerSecond = basePixelsPerSecond * zoom;
@@ -122,6 +150,8 @@ export function Timeline({
   const lyricTrackHeight = 40;
   const waveformHeight = 60;
   const minimapHeight = 44;
+  // Height reserved for the note-details band between lyric track and minimap
+  const noteInfoHeight = 92;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
 
@@ -140,7 +170,7 @@ export function Timeline({
   // the timeline fits smaller screens (previously fixed 20px → 860px minimum
   // layout overflowed laptops).
   const notesAreaHeight = useMemo(() => {
-    return Math.max(200, viewport.height - waveformHeight - lyricTrackHeight - minimapHeight);
+    return Math.max(200, viewport.height - waveformHeight - lyricTrackHeight - noteInfoHeight - minimapHeight);
   }, [viewport.height]);
 
   const combinedPitchHeight = useMemo(() => {
@@ -241,6 +271,22 @@ export function Timeline({
   ]);
 
   const lanesTotalHeight = lanes.reduce((sum, l) => Math.max(sum, l.topOffset + l.height), 0);
+
+  // ── Selected-note details (rendered in the band below the lyric track) ──
+  const selectedDetailNote = useMemo(
+    () => (selectedNoteId ? allNotes.find(n => n.id === selectedNoteId) : undefined),
+    [allNotes, selectedNoteId],
+  );
+  const selectedLineIndex = useMemo(
+    () => (selectedNoteId ? song.lyrics.findIndex(line => line.notes.some(n => n.id === selectedNoteId)) : -1),
+    [song.lyrics, selectedNoteId],
+  );
+  const multiSelectCount = selectedNoteIds?.size ?? 0;
+  // Beat position — inverse of the UltraStar formula (beat n at GAP + n·15000/BPM)
+  const detailBeatDuration = 15000 / (song.bpm > 0 ? song.bpm : 120);
+  const detailBeat = selectedDetailNote
+    ? (selectedDetailNote.startTime - song.gap) / detailBeatDuration
+    : 0;
 
   // ── Beat snapping (YASS-style magnet) ──
   // Shared formula with the export/parser: beat n occurs at GAP + n * 15000/BPM
@@ -489,6 +535,14 @@ export function Timeline({
     const secs = seconds % 60;
     const millis = Math.floor((ms % 1000) / 10);
     return `${minutes}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(2, '0')}`;
+  };
+
+  // Format with full milliseconds (m:ss.mmm) for the note-details band
+  const formatTimeMs = (ms: number): string => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const millis = Math.round(ms % 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
   };
 
   return (
@@ -764,6 +818,154 @@ export function Timeline({
           />
         </div>
 
+        {/* ── Note details band ("Noten-Details") ──
+            Fills the former dead space between the lyric track and the pitch
+            minimap: stats of the selected note + quick transpose buttons.
+            Clicks are stopped so interacting with the band keeps the selection. */}
+        <div
+          className="absolute left-0 right-0 z-20 border-t border-slate-700 bg-slate-900/60 cursor-default overflow-hidden"
+          style={{
+            top: waveformHeight + lanesTotalHeight + lyricTrackHeight,
+            bottom: minimapHeight,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="editor-note-details-band"
+        >
+          <div className="h-full flex flex-col px-3 py-1.5 min-w-0">
+            {/* Header row: title + selection count + transpose buttons */}
+            <div className="flex items-center gap-2 shrink-0 min-w-0">
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
+                <Info className="w-3 h-3 text-cyan-400" aria-hidden />
+                {t('editor.noteDetails.title')}
+              </h3>
+              {multiSelectCount > 1 && (
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0"
+                  data-testid="editor-note-details-count"
+                >
+                  {multiSelectCount}× {t('editor.toolsPanel.notesSelected')}
+                </span>
+              )}
+              <div className="ml-auto flex items-center gap-1 shrink-0">
+                <span className="hidden md:inline text-[10px] text-slate-500 mr-1 whitespace-nowrap">
+                  {t('editor.noteDetails.transposeLabel')}
+                </span>
+                {TRANSPOSE_STEPS.map(delta => (
+                  <Button
+                    key={delta}
+                    size="sm"
+                    variant="outline"
+                    disabled={!selectedDetailNote}
+                    onClick={() => onTransposeNotes?.(delta)}
+                    title={`${t('editor.noteDetails.transposeLabel')}: ${delta > 0 ? `+${delta}` : delta}`}
+                    data-testid={`editor-note-transpose-${delta > 0 ? `plus-${delta}` : `minus-${Math.abs(delta)}`}`}
+                    className="h-7 px-2 text-xs font-mono border-slate-600 text-slate-300 hover:border-cyan-500/60 hover:text-cyan-300 disabled:opacity-40"
+                  >
+                    {delta > 0 ? `+${delta}` : `${delta}`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats chips for the primary/last-selected note */}
+            {selectedDetailNote ? (
+              <div className="flex-1 min-h-0 flex items-center gap-1.5 overflow-x-auto editor-panel-scroll mt-1">
+                <DetailChip
+                  label={t('editor.noteDetails.pitch')}
+                  testId="editor-note-details-pitch"
+                  value={
+                    <>
+                      <span className="text-cyan-300 font-semibold">{midiToNoteName(selectedDetailNote.pitch)}</span>
+                      <span className="text-slate-500 mx-1">·</span>
+                      <span>MIDI {selectedDetailNote.pitch}</span>
+                    </>
+                  }
+                />
+                <DetailChip
+                  label={t('editor.noteDetails.frequency')}
+                  testId="editor-note-details-frequency"
+                  value={`${selectedDetailNote.frequency.toFixed(1)} Hz`}
+                />
+                <DetailChip
+                  label={t('editor.noteDetails.text')}
+                  testId="editor-note-details-text"
+                  value={<span className="font-mono text-purple-300">{selectedDetailNote.lyric || '---'}</span>}
+                />
+                <DetailChip
+                  label={t('editor.noteDetails.position')}
+                  testId="editor-note-details-position"
+                  value={`${formatTimeMs(selectedDetailNote.startTime)} → ${formatTimeMs(selectedDetailNote.startTime + selectedDetailNote.duration)}`}
+                />
+                <DetailChip
+                  label={t('editor.noteDetails.duration')}
+                  testId="editor-note-details-duration"
+                  value={`${Math.round(selectedDetailNote.duration)} ms · ${(selectedDetailNote.duration / 1000).toFixed(2)} s`}
+                />
+                <DetailChip
+                  label={t('editor.noteDetails.beat')}
+                  testId="editor-note-details-beat"
+                  value={`#${detailBeat.toFixed(2)}`}
+                />
+                {selectedLineIndex >= 0 && (
+                  <DetailChip
+                    label={t('editor.noteDetails.line')}
+                    testId="editor-note-details-line"
+                    value={`#${selectedLineIndex + 1}`}
+                  />
+                )}
+                <DetailChip
+                  label={t('editor.noteDetails.type')}
+                  testId="editor-note-details-type"
+                  value={
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
+                        selectedDetailNote.isGolden
+                          ? 'bg-amber-500/15 text-amber-300 border-amber-400/30'
+                          : selectedDetailNote.isBonus
+                            ? 'bg-pink-500/15 text-pink-300 border-pink-400/30'
+                            : selectedDetailNote.isRap
+                              ? 'bg-slate-500/20 text-slate-300 border-slate-400/30'
+                              : 'bg-cyan-500/10 text-cyan-300 border-cyan-400/30',
+                      )}
+                    >
+                      {selectedDetailNote.isGolden
+                        ? t('editor.toolsPanel.golden')
+                        : selectedDetailNote.isBonus
+                          ? t('editor.toolsPanel.bonus')
+                          : selectedDetailNote.isRap
+                            ? t('editor.noteDetails.rap')
+                            : t('editor.toolsPanel.normal')}
+                    </span>
+                  }
+                />
+                {selectedDetailNote.player && (
+                  <DetailChip
+                    label={t('editor.noteTab.player')}
+                    testId="editor-note-details-player"
+                    value={
+                      <span
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
+                          selectedDetailNote.player === 'P2'
+                            ? 'bg-purple-500/15 text-purple-300 border-purple-400/30'
+                            : 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
+                        )}
+                      >
+                        {selectedDetailNote.player}
+                      </span>
+                    }
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-xs text-slate-600">
+                {t('editor.noteDetails.hint')}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Playhead — spans waveform + lanes + lyric track (minimap has its own) */}
         <div
           className={cn(
@@ -808,6 +1010,28 @@ export function Timeline({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Note details band chip — one compact stat (label + value)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DetailChip({ label, value, testId, title }: {
+  label: string;
+  value: React.ReactNode;
+  testId?: string;
+  title?: string;
+}) {
+  return (
+    <div
+      className="flex flex-col justify-center gap-0.5 px-2.5 py-1 rounded-md bg-slate-800/70 border border-slate-700 shrink-0"
+      title={title}
+      data-testid={testId}
+    >
+      <span className="text-[9px] uppercase tracking-wider text-slate-500 leading-none">{label}</span>
+      <span className="text-xs text-slate-100 font-medium leading-tight whitespace-nowrap">{value}</span>
     </div>
   );
 }

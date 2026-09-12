@@ -6,6 +6,7 @@ import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
 import { getPlaylistById } from '@/lib/playlist-manager';
+import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { getBool, getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
@@ -32,6 +33,8 @@ export function useJukebox(refs?: {
   // --- Filter / Config State ---
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterArtist, setFilterArtist] = useState<string>('');
+  // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+  const [filterEra, setFilterEra] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shuffle, setShuffle] = useState(true);
   const [repeat, setRepeat] = useState<RepeatMode>('all');
@@ -144,6 +147,9 @@ export function useJukebox(refs?: {
     return Array.from(artistSet).sort();
   }, [songs]);
 
+  // Era (decade) options derived from the library years, ascending
+  const eras = useMemo(() => ['all', ...getAvailableDecades(songs)], [songs]);
+
   // ==================== FILTER SONGS ====================
 
   const filteredSongs = useMemo(() => {
@@ -163,6 +169,10 @@ export function useJukebox(refs?: {
     // Artist filter
     if (filterArtist) {
       filtered = filtered.filter(s => s.artist === filterArtist);
+    }
+    // Era (decade) filter — matches songs whose year falls into the decade
+    if (filterEra !== 'all') {
+      filtered = filtered.filter(s => songMatchesEra(s, filterEra));
     }
     // Search query
     if (searchQuery) {
@@ -194,7 +204,7 @@ export function useJukebox(refs?: {
       }
     }
     return filtered;
-  }, [songs, filterGenre, filterArtist, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
+  }, [songs, filterGenre, filterArtist, filterEra, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
 
   // ==================== DERIVED STATE ====================
 
@@ -1054,9 +1064,9 @@ export function useJukebox(refs?: {
 
   return {
     // Filters
-    filterGenre, filterArtist, searchQuery, shuffle, repeat,
+    filterGenre, filterArtist, filterEra, searchQuery, shuffle, repeat,
     minDuration, maxDuration, maxSongs, timerMinutes, recentlyPlayedMinutes,
-    setFilterGenre, setFilterArtist, setSearchQuery,
+    setFilterGenre, setFilterArtist, setFilterEra, setSearchQuery,
     setShuffle: handleSetShuffle, setRepeat,
     setMinDuration, setMaxDuration, setMaxSongs, setTimerMinutes, setRecentlyPlayedMinutes,
     // Playback
@@ -1069,7 +1079,7 @@ export function useJukebox(refs?: {
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
     setIsAdPlaying, setYoutubeTime, setCurrentTime, setDuration,
     // Derived
-    genres, artists, filteredSongs, upNext,
+    genres, artists, eras, filteredSongs, upNext,
     songsPlayed, topGenres, topRequesters, timerRemaining,
     // Video queue (video breaks) + library playlists
     addVideoToQueue, addVideoListToQueue, removeQueueVideo, enqueueLibraryPlaylist,

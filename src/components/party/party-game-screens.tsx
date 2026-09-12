@@ -62,6 +62,7 @@ async function prepareNextMedleyRound(party: import('@/lib/game/party-store').Pa
       filters?.filterLanguage,
       filters?.filterCombined,
       filters?.filterReleaseYear,
+      filters?.filterEra,
     );
 
     // Exclude the current round's songs when enough alternatives exist.
@@ -424,6 +425,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         filterLanguage: s.filterLanguage ?? 'all',
         filterCombined: true,
         filterReleaseYear: 'all',
+        filterEra: 'all',
       });
     }
 

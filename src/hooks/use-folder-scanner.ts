@@ -587,6 +587,17 @@ export function useFolderScanner(): UseFolderScannerReturn {
         console.warn('[Settings] Failed to clear library cache:', e);
       }
 
+      // Also drop the harmonize suggestion cache (localStorage) — otherwise
+      // stale AI suggestions from BEFORE the reset survive and get re-applied
+      // to the freshly scanned library (was dead code before, never called).
+      try {
+        const { clearHarmonizeCache } = await import('@/lib/ai/harmonize-cache');
+        clearHarmonizeCache();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[Settings] Failed to clear harmonize cache:', e);
+      }
+
       setSongCount(0);
       setResetComplete(true);
 

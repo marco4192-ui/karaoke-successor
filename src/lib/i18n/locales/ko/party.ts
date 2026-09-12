@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: '모든 언어',
   releaseYear: '📅 발매 연도',
   allYears: '전체 연도',
+  releaseEra: '📅 시대',
+  allEras: '전체',
   filterLogic: '🔗 필터 논리',
   combined: '결합 (AND)',
   independent: '독립 (OR)',

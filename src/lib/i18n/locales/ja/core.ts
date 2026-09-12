@@ -253,6 +253,8 @@ jukeboxPlayer: {
   allArtists: 'すべてのアーティスト',
   filterByGenre: 'ジャンルで絞り込み',
   filterByArtist: 'アーティストで絞り込み',
+  filterByEra: '時代で絞り込み',
+  allEras: 'すべての時代',
   shuffle: 'シャッフル',
   noRepeat: 'リピートなし',
   repeatAll: '全曲リピート',

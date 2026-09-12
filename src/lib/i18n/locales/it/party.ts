@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'Tutte le Lingue',
   releaseYear: '📅 Anno di uscita',
   allYears: 'Tutti gli anni',
+  releaseEra: '📅 Epoca',
+  allEras: 'Tutte',
   filterLogic: '🔗 Logica Filtro',
   combined: 'Combinato (AND)',
   independent: 'Indipendente (OR)',

@@ -71,6 +71,9 @@ export interface HarmonizeStats {
   aiErrors: number;
   noChange: number;
   aborted: boolean;
+  /** Songs the AI could not analyze (incomplete/failed LLM response even
+   *  after one retry). They are NOT cached — a later run retries them. */
+  notAnalyzed: number;
 }
 
 export interface HarmonizeResult {
@@ -87,8 +90,11 @@ interface HarmonizeOptions {
 
 // ── Chunk sizes ──────────────────────────────────────────────────────────
 
-/** /api/harmonize caps at 50 songs per call. */
-const LLM_CHUNK_SIZE = 50;
+/** 12 songs per LLM call (route caps at 15). The old 50-per-call chunk made
+ * the LLM return incomplete JSON arrays (often only ~5 entries) — those songs
+ * were then wrongly treated as "no change". Small chunks keep responses
+ * complete; missing entries are retried once by callLlm. */
+const LLM_CHUNK_SIZE = 12;
 /** /api/music-lookup caps at 15 songs per call (MusicBrainz throttling). */
 const LOOKUP_CHUNK_SIZE = 12;
 
@@ -203,6 +209,44 @@ interface LlmSuggestion {
   languageConfidence: number;
   genreReason: string;
   languageReason: string;
+  /** False when the LLM dropped this entry — NOT a "no change" verdict. */
+  analyzed?: boolean;
+}
+
+/** One LLM call for a small chunk. Returns ONLY the songs the model actually
+ *  answered for (analyzed=true entries); dropped entries are absent. */
+async function callLlmChunk(
+  songs: Array<HarmonizeSong & { hintGenre?: string; hintSource?: string; hintYear?: number }>,
+  signal?: AbortSignal,
+): Promise<Map<string, LlmSuggestion>> {
+  const map = new Map<string, LlmSuggestion>();
+  try {
+    const res = await fetch('/api/harmonize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        songs: songs.map(s => ({
+          id: s.id, title: s.title, artist: s.artist,
+          genre: s.genre, language: s.language,
+          hintGenre: s.hintGenre ?? undefined,
+          hintSource: s.hintSource ?? undefined,
+          hintYear: s.hintYear ?? undefined,
+        })),
+      }),
+      signal,
+    });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.suggestions)) {
+      for (const s of data.suggestions as LlmSuggestion[]) {
+        if (s.songId && s.analyzed !== false) {
+          map.set(s.songId, s);
+        }
+      }
+    }
+  } catch {
+    // Network abort or route failure — chunk treated as unanswered
+  }
+  return map;
 }
 
 async function callLlm(
@@ -221,33 +265,19 @@ async function callLlm(
 
   for (const chunk of chunks) {
     if (options.signal?.aborted) break;
-    try {
-      const res = await fetch('/api/harmonize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          songs: chunk.map(s => ({
-            id: s.id, title: s.title, artist: s.artist,
-            genre: s.genre, language: s.language,
-            hintGenre: s.hintGenre ?? undefined,
-            hintSource: s.hintSource ?? undefined,
-            hintYear: s.hintYear ?? undefined,
-          })),
-        }),
-        signal: options.signal,
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.suggestions)) {
-        for (const s of data.suggestions as LlmSuggestion[]) {
-          map.set(s.songId, s);
-        }
-      } else {
-        errors++;
-      }
-    } catch {
-      if (options.signal?.aborted) break;
-      errors++;
+    const first = await callLlmChunk(chunk, options.signal);
+
+    // Retry once for entries the model dropped (incomplete JSON array)
+    const missing = chunk.filter(s => !first.has(s.id));
+    let combined = first;
+    if (missing.length > 0 && !options.signal?.aborted) {
+      const retry = await callLlmChunk(missing, options.signal);
+      combined = new Map([...first, ...retry]);
     }
+
+    for (const [id, s] of combined) map.set(id, s);
+    const stillMissing = chunk.filter(s => !combined.has(s.id));
+    if (stillMissing.length === chunk.length) errors++; // whole chunk failed
     done += chunk.length;
     options.onProgress?.({ phase: 'ai', done, total: songs.length });
   }
@@ -298,6 +328,7 @@ export async function harmonizeSongs(
     aiErrors: 0,
     noChange: 0,
     aborted: false,
+    notAnalyzed: 0,
   };
   const suggestions: HarmonizeSuggestion[] = [];
 
@@ -356,6 +387,17 @@ export async function harmonizeSongs(
 
       const fact = facts.get(song.id);
       const llm = llmMap.get(song.id);
+
+      // ── Unanalyzed songs (AI unavailable / incomplete response) ──
+      // A song that NEEDED the LLM but got no answer must NOT be cached as
+      // "no change" — that would freeze it as "done" even though nothing was
+      // ever analyzed (user complaint: songs treated as genre-set although
+      // the AI search never ran). Skip the cache, count it, retry next run.
+      const songNeededLlm = needsLlm(song, fact?.genre ?? null);
+      if (songNeededLlm && !llm && !fact) {
+        stats.notAnalyzed++;
+        continue;
+      }
 
       // Genre: factual fills EMPTY fields; LLM normalizes/fills the rest.
       // Both go through canonicalizeGenre (user item 12) so Deezer's "Dance
@@ -455,11 +497,15 @@ export async function harmonizeSongs(
 
   options.onProgress?.({ phase: 'done', done: inputSongs.length, total: inputSongs.length });
 
-  const success = stats.aiErrors === 0 || suggestions.length > 0;
+  const success = (stats.aiErrors === 0 && stats.notAnalyzed === 0) || suggestions.length > 0;
   return {
     success,
     suggestions,
     stats,
-    error: stats.aiErrors > 0 && suggestions.length === 0 ? 'AI analysis failed' : undefined,
+    error: stats.aiErrors > 0 || stats.notAnalyzed > 0
+      ? (suggestions.length === 0
+        ? 'AI analysis failed'
+        : `AI partially unavailable — ${stats.notAnalyzed} song(s) not analyzed`)
+      : undefined,
   };
 }

@@ -142,6 +142,8 @@ export function usePartySetup({
   const [filterLanguage, setFilterLanguage] = useState(initialDraft?.filterLanguage ?? 'all');
   const [filterCombined, setFilterCombined] = useState(initialDraft?.filterCombined ?? true);
   const [filterReleaseYear, setFilterReleaseYear] = useState(initialDraft?.filterReleaseYear ?? 'all');
+  // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+  const [filterEra, setFilterEra] = useState(initialDraft?.filterEra ?? 'all');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- songs.length is a proxy for songs identity change; songs itself would cause infinite loop
   const availableGenres = useMemo(() => getGenres(), [songs.length]);
@@ -149,8 +151,8 @@ export function usePartySetup({
   const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
 
   const filteredSongs = useMemo(() => {
-    return filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear);
-  }, [songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear]);
+    return filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra);
+  }, [songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra]);
 
   // Sync difficulty from global store
   useEffect(() => {
@@ -497,6 +499,7 @@ export function usePartySetup({
         filterLanguage,
         filterCombined,
         filterReleaseYear,
+        filterEra,
         ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
       } as GameModeSettingsMap[typeof gameMode],
       songSelection: option,
@@ -523,6 +526,7 @@ export function usePartySetup({
         filterLanguage,
         filterCombined,
         filterReleaseYear,
+        filterEra,
       });
     };
 
@@ -549,7 +553,7 @@ export function usePartySetup({
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, resolvedSong, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onVoteMode, derivedInputMode, config.sharedMic, selectedMicId, selectedMicName, onClearSelectedSong, onSaveDraft, deviceAssignments]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, resolvedSong, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra, onSelectLibrary, onVoteMode, derivedInputMode, config.sharedMic, selectedMicId, selectedMicName, onClearSelectedSong, onSaveDraft, deviceAssignments]);
 
   // ── "Ready to Play" — the single explicit start action for every party mode ──
   const handleReadyToPlay = useCallback(() => {
@@ -576,6 +580,7 @@ export function usePartySetup({
         filterLanguage,
         filterCombined,
         filterReleaseYear,
+        filterEra,
         ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
       } as GameModeSettingsMap[typeof gameMode],
       songSelection: songSelection!,
@@ -586,7 +591,7 @@ export function usePartySetup({
 
     setError(null);
     onStartGame(result);
-  }, [readyToPlay, selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, songSelection, resolvedSong, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onStartGame, derivedInputMode, config.sharedMic, selectedMicId, selectedMicName, songReady, devicesReady, deviceBlockReason]);
+  }, [readyToPlay, selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, songSelection, resolvedSong, filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra, onStartGame, derivedInputMode, config.sharedMic, selectedMicId, selectedMicName, songReady, devicesReady, deviceBlockReason]);
 
   // ── Remote companion config apply ──
   const handleSongSelectionRef = useRef(handleSongSelection);
@@ -638,6 +643,7 @@ export function usePartySetup({
       if (typeof detail.filterGenre === 'string') setFilterGenre(detail.filterGenre);
       if (typeof detail.filterLanguage === 'string') setFilterLanguage(detail.filterLanguage);
       if (typeof detail.filterReleaseYear === 'string') setFilterReleaseYear(detail.filterReleaseYear);
+      if (typeof detail.filterEra === 'string') setFilterEra(detail.filterEra);
       if (typeof detail.filterCombined === 'boolean') setFilterCombined(detail.filterCombined);
       // Apply shared mic (PTM: companion picks the mic dropdown)
       if (typeof detail.sharedMicId === 'string' && detail.sharedMicId) {
@@ -707,10 +713,12 @@ export function usePartySetup({
     filterLanguage,
     filterCombined,
     filterReleaseYear,
+    filterEra,
     setFilterGenre,
     setFilterLanguage,
     setFilterCombined,
     setFilterReleaseYear,
+    setFilterEra,
     availableGenres,
     availableLanguages,
     filteredSongs,

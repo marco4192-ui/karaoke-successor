@@ -129,6 +129,8 @@ interface BaseModeSettings {
   filterLanguage: string;
   filterCombined: boolean;
   filterReleaseYear: string;
+  /** Era/decade filter (decade start year, e.g. '1980'; 'all' = no filter) */
+  filterEra: string;
 }
 
 /** Pass the Mic — no extra config settings, shared mic support */
@@ -308,4 +310,6 @@ export interface PartySetupDraft {
   filterLanguage: string;
   filterCombined: boolean;
   filterReleaseYear: string;
+  /** Era/decade filter — optional for drafts saved before the era feature */
+  filterEra?: string;
 }

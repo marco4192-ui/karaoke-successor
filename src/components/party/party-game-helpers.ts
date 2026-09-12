@@ -69,6 +69,7 @@ export function buildGameSetupResult(params: {
       filterLanguage: 'all',
       filterCombined: true,
       filterReleaseYear: 'all',
+      filterEra: 'all',
       ...settings,
     },
     songSelection,

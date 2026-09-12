@@ -362,6 +362,8 @@ unifiedSetup: {
   allLanguages: 'Alle talen',
   releaseYear: '📅 Uitgavejaar',
   allYears: 'Alle jaren',
+  releaseEra: '📅 Tijdperk',
+  allEras: 'Alle',
   filterLogic: '🔗 Filterlogica',
   combined: 'Gecombineerd (EN)',
   independent: 'Onafhankelijk (OF)',

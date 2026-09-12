@@ -129,7 +129,11 @@ export function createVideoBreakSong(url: string, label?: string): Song | null {
   const isFile = !platform && isDirectVideoUrl(trimmed);
   if (!platform && !isFile) return null;
 
-  const normalizedUrl = /^https?:\/\//i.test(trimmed) || platform ? trimmed : `https://${trimmed}`;
+  // Protocol-relative srcs (//vk.com/…) become absolute https URLs; bare
+  // hostnames get a scheme only when platform detection already succeeded.
+  const normalizedUrl = trimmed.startsWith('//')
+    ? `https:${trimmed}`
+    : /^https?:\/\//i.test(trimmed) || platform ? trimmed : `https://${trimmed}`;
 
   const id = `${VIDEO_BREAK_ID_PREFIX}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
   const title = (label && label.trim()) || deriveTitle(trimmed, platform ?? 'file');
@@ -179,7 +183,8 @@ export function isSupportedVideoLink(url: string): boolean {
  *   https://… | Mein Titel                        URL + custom title
  *   Mein Titel | https://…                        title first
  *   <iframe src="https://…" …></iframe>           full embed code (VK etc.) —
- *                                                 reduced to its src URL
+ *                                                 reduced to its src URL;
+ *                                                 multi-line iframes work too
  *   #EXTINF:123,Mein Titel  (m3u) followed by URL  → title from EXTINF
  *   #…                                           comment (skipped)
  */
@@ -188,7 +193,17 @@ export function parseVideoLinkInput(input: string): ParsedVideoLink[] {
   const results: ParsedVideoLink[] = [];
   let pendingExtinfLabel: string | null = null;
 
-  for (const rawLine of input.split(/\r?\n/)) {
+  // Collapse (possibly multi-line) iframe embed snippets to their bare src
+  // URL BEFORE the line split — otherwise a src attribute that sits on its
+  // own line is lost (the split fragments the tag, and the per-line fallback
+  // below finds no src on the first fragment). Whole-block replacement keeps
+  // the src on the tag's first line; single-line iframes pass through the
+  // same path. Hash-less VK embed srcs are fine — classification happens later.
+  const prepared = input.includes('<')
+    ? input.replace(/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["'][^>]*>(?:\s*<\/iframe\s*>)?/gi, '$1')
+    : input;
+
+  for (const rawLine of prepared.split(/\r?\n/)) {
     let line = rawLine.trim();
     if (!line) continue;
 

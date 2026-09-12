@@ -96,19 +96,22 @@ export function AiHarmonizeCard({
         : Number(value);
     const updates: Partial<Song> = { [field]: normalized };
 
-    updateSong(songId, updates);
-    // Same persistence contract as the batch dialog: write #GENRE/#LANGUAGE/
-    // #YEAR to the source txt so a folder rescan doesn't wipe the change.
+    // TXT FIRST (1.a): the library is ONLY updated when the txt write
+    // succeeded. On failure the song stays untouched and the suggestion
+    // REMAINS OPEN for a retry — no more "genre set but not in the txt".
     const fileOk = await persistSongMetadataToTxt(songId, updates);
     if (!isMountedRef.current) return;
-    if (!fileOk.success) setFileErrors(prev => (prev ?? 0) + 1);
-
-    setSuggestions(prev => prev
-      .map(s => s.songId === songId
-        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
-        : s)
-      .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
-    onApplied();
+    if (fileOk.success) {
+      updateSong(songId, updates);
+      setSuggestions(prev => prev
+        .map(s => s.songId === songId
+          ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
+          : s)
+        .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
+      onApplied();
+    } else {
+      setFileErrors(prev => (prev ?? 0) + 1);
+    }
   }, [onApplied]);
 
   const handleApplyAll = useCallback(async () => {
@@ -118,6 +121,9 @@ export function AiHarmonizeCard({
     setApplyProgress({ done: 0, total: list.length });
     let failedFiles = 0;
     let processed = 0;
+    // TXT-first: songs whose txt could NOT be written stay in the list
+    // for a retry — the library is never updated without the txt write.
+    const failed: HarmonizeSuggestion[] = [];
 
     for (const s of list) {
       const updates: Partial<Song> = {};
@@ -133,9 +139,14 @@ export function AiHarmonizeCard({
       }
 
       if (Object.keys(updates).length > 0) {
-        updateSong(s.songId, updates);
+        // TXT FIRST (1.a): library update only on successful txt write
         const fileOk = await persistSongMetadataToTxt(s.songId, updates);
-        if (!fileOk.success) failedFiles++;
+        if (fileOk.success) {
+          updateSong(s.songId, updates);
+        } else {
+          failedFiles++;
+          failed.push(s);
+        }
       }
       processed++;
       if (!isMountedRef.current) return;
@@ -145,7 +156,7 @@ export function AiHarmonizeCard({
     if (!isMountedRef.current) return;
     setApplyProgress(null);
     setFileErrors(failedFiles > 0 ? failedFiles : null);
-    setSuggestions([]);
+    setSuggestions(failed);
     setShowWarning(false);
     onApplied();
   }, [suggestions, minConfidence, onApplied]);

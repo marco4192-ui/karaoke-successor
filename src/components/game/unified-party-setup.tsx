@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
-import { getYears } from '@/lib/game/song-library';
+import { getYears, getDecades } from '@/lib/game/song-library';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector } from './unified-party-setup.components';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
@@ -75,8 +75,8 @@ export function UnifiedPartySetup({
     savedMics, micCount,
     playersWithoutDevice, deviceBlockReason,
     selectedMicId, selectedMicName, setSelectedMicId, setSelectedMicName,
-    filterGenre, filterLanguage, filterCombined, filterReleaseYear,
-    setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear,
+    filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra,
+    setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear, setFilterEra,
     availableGenres, availableLanguages, filteredSongs,
   } = usePartySetup({
     gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode,
@@ -138,10 +138,12 @@ export function UnifiedPartySetup({
           filterGenre,
           filterLanguage,
           filterReleaseYear,
+          filterEra,
           filterCombined,
           availableGenres,
           availableLanguages,
           availableYears,
+          availableDecades,
         },
       };
       fetch('/api/mobile', {
@@ -155,12 +157,15 @@ export function UnifiedPartySetup({
   }, [
     selectedPlayers, deviceAssignments, micAssignments, difficulty, settings,
     songSelection, preSelectedSong, resolvedSong, filterGenre, filterLanguage,
-    filterReleaseYear, filterCombined, connectedKey, savedMics,
+    filterReleaseYear, filterEra, filterCombined, connectedKey, savedMics,
     selectedMicName, deviceMode,
   ]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableYears = useMemo(() => getYears(), [songs.length]);
+  // Era (decade) options for the era dropdown — derived from the library years
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const availableDecades = useMemo(() => getDecades(), [songs.length]);
 
   return (
     <div className="flex gap-4" data-focus-container="party-setup">
@@ -269,6 +274,9 @@ export function UnifiedPartySetup({
           filterReleaseYear={filterReleaseYear}
           availableYears={availableYears}
           onFilterReleaseYearChange={setFilterReleaseYear}
+          filterEra={filterEra}
+          availableDecades={availableDecades}
+          onFilterEraChange={setFilterEra}
         />
 
         {/* ── G. Song Selection ── */}

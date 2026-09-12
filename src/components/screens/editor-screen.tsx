@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache, loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
-import { StorageKeys, getString } from '@/lib/storage';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { GenreLanguageEditor } from '@/components/editor/genre-language-editor';
 import { AiHarmonizeCard } from '@/components/editor/ai-harmonize-card';
+import { RuleHarmonizeCard, RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
+import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -38,31 +39,47 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // rescan can take seconds and previously gave NO feedback at all.
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const refreshSongs = useCallback(async () => {
+    // LIGHT reload: invalidate the in-memory cache and re-read the persistent
+    // store (localStorage/IndexedDB). NO disk scan — this runs after every
+    // single batch apply and must stay fast/resource-friendly.
     setIsLibraryLoading(true);
     try {
-      // Invalidate cache and try Tauri rescan for fresh data from filesystem
       clearSongCache();
-      try {
-        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-          const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
-          // Use the REAL storage key ('karaoke-songs-folder') — the old keys
-          // ('songsFolder' / 'karaoke_songs_folder') never matched, so the rescan
-          // silently did nothing.
-          const songsFolder = getString(StorageKeys.SONGS_FOLDER)
-            || localStorage.getItem('songsFolder')
-            || localStorage.getItem('karaoke_songs_folder');
-          if (songsFolder) {
-            await scanSongsFolderTauri(songsFolder);
-          }
-        }
-      } catch {
-        // Non-Tauri environment or scan failed — just use cleared cache
-      }
       setSongs(getAllSongs());
     } finally {
       setIsLibraryLoading(false);
     }
   }, []);
+
+  // FULL reload (the "Neu laden" button): reconcile the library with the txt
+  // files on disk — genre/language/year/title/artist are reset to the TXT
+  // truth. This is what the user expects from a library reload: store-only
+  // or stale values (e.g. genre set although the txt has none) are corrected.
+  const refreshSongsWithReconcile = useCallback(async () => {
+    setIsLibraryLoading(true);
+    try {
+      try {
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+          const result = await reconcileLibraryFromFiles();
+          if (!result.skipped && (result.updated > 0 || result.removed > 0)) {
+            toast({
+              title: '🔄 ' + t('editor.reconcileTitle'),
+              description: t('editor.reconcileDone')
+                .replace('{updated}', String(result.updated))
+                .replace('{removed}', String(result.removed))
+                .replace('{scanned}', String(result.scanned)),
+            });
+          }
+        }
+      } catch {
+        // Non-Tauri environment or scan failed — fall back to the light reload
+      }
+      clearSongCache();
+      setSongs(getAllSongs());
+    } finally {
+      setIsLibraryLoading(false);
+    }
+  }, [t, toast]);
 
   // Item 4: when the editor opens before the app-level IndexedDB load has
   // finished, the sync getAllSongs() returns an empty/stale list and nothing
@@ -225,12 +242,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   );
 
   /**
-   * Select the NEXT batch of up to 50 filtered songs (in list order) that are
+   * Select the NEXT batch of up to 100 filtered songs (in list order) that are
    * not selected yet. Fewer available → all remaining get selected.
-   * (The old "select all" grabbed hundreds of songs at once — more than the
-   * 50-song batch processing limit, and far more than a user reviews.)
+   *
+   * Batch size raised 50 → 100 (user request 1.c): the pipeline chunks
+   * internally (12 per LLM call with per-chunk retry, 12 per factual lookup)
+   * with progress + abort, so larger selections stay reliable — the old
+   * "only ~5 songs came back" symptom was the LLM truncating 50-song
+   * responses, not a real batch limit (fixed in harmonize-client).
    */
-  const SELECT_BATCH_SIZE = 50;
+  const SELECT_BATCH_SIZE = 100;
   const selectNextBatch = useCallback(() => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -358,19 +379,22 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         : Number(value);
     const updates: Partial<Song> = { [field]: normalized };
 
-    updateSong(songId, updates);
+    // TXT FIRST (1.a): the library is ONLY updated when the txt write
+    // succeeded. On failure the song stays untouched and the suggestion
+    // REMAINS OPEN for a retry — no more "genre set but not in the txt".
     const fileOk = await persistMetadata(songId, updates);
-    if (!fileOk) {
+    if (fileOk) {
+      updateSong(songId, updates);
+      // Clear only the applied suggestion — the OTHER fields' suggestions stay
+      // pending in the dialog (previously the whole row vanished).
+      setBatchSuggestions(prev => prev
+        .map(s => s.songId === songId
+          ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
+          : s)
+        .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
+    } else {
       setBatchFileErrors(prev => (prev ?? 0) + 1);
     }
-
-    // Clear only the applied suggestion — the OTHER fields' suggestions stay
-    // pending in the dialog (previously the whole row vanished).
-    setBatchSuggestions(prev => prev
-      .map(s => s.songId === songId
-        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
-        : s)
-      .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
     refreshSongs();
   }, [refreshSongs, persistMetadata]);
 
@@ -388,6 +412,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setBatchFileErrors(0);
     let fileErrors = 0;
     let processed = 0;
+    // TXT-first: songs whose txt could NOT be written stay in the dialog
+    // so the user can retry them — nothing is silently dropped.
+    const failed: HarmonizeSuggestion[] = [];
 
     for (const s of list) {
       if (batchAbortRef.current) break;
@@ -405,9 +432,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       }
 
       if (Object.keys(updates).length > 0) {
-        updateSong(s.songId, updates);
+        // TXT FIRST (1.a): library update only on successful txt write
         const fileOk = await persistMetadata(s.songId, updates);
-        if (!fileOk) fileErrors++;
+        if (fileOk) {
+          updateSong(s.songId, updates);
+        } else {
+          fileErrors++;
+          failed.push(s);
+        }
       }
       processed++;
       setBatchApplyProgress({ done: processed, total: list.length });
@@ -415,11 +447,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
     setBatchApplyProgress(null);
     setBatchFileErrors(fileErrors > 0 ? fileErrors : null);
-    setBatchSuggestions([]);
+    if (failed.length > 0) {
+      // Keep the failed rows open for retry; only clean up on full success
+      setBatchSuggestions(failed);
+      setShowBatchDialog(true);
+    } else {
+      setBatchSuggestions([]);
+      setShowBatchDialog(false);
+      clearSelection();
+    }
     setBatchStats(null);
     setShowBatchWarning(false);
-    setShowBatchDialog(false);
-    clearSelection();
     refreshSongs();
   }, [batchSuggestions, minConfidence, clearSelection, refreshSongs, persistMetadata]);
 
@@ -570,6 +608,18 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                     </p>
                   )}
                 </div>
+
+                {/* AI-unavailable feedback: songs that could NOT be analyzed
+                    stay "without genre" and are retried on the next run —
+                    they must not look like a successful "no change". */}
+                {batchStats && batchStats.notAnalyzed > 0 && (
+                  <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2 mb-2" data-testid="editor-batch-not-analyzed">
+                    <span className="text-sm leading-none">⚠️</span>
+                    <p className="text-[10px] text-amber-200/90 flex-1">
+                      {t('editor.aiBatchNotAnalyzed').replace('{count}', String(batchStats.notAnalyzed))}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto space-y-2 mb-4">
                   {batchSuggestions.map(s => (
@@ -723,7 +773,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={refreshSongs}
+                onClick={refreshSongsWithReconcile}
                 variant="outline"
                 className="border-white/20"
                 title={t('editor.refreshTitle')}
@@ -933,6 +983,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 getLatestSong={() => latestSongRef.current ?? selectedSong}
               />
               <AiHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
+              <RuleHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
             </div>
           )}
         </div>
@@ -1016,6 +1067,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       )}
+
+      {/* Background rule-harmonization status pill (module singleton —
+          keeps running even when the sidebar is closed) */}
+      <RuleHarmonizeStatusBar t={t} />
 
       {/* Batch error toast */}
       {batchError && (

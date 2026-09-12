@@ -392,7 +392,7 @@ export function AlternateFormatTab({
       {/* Process button */}
       <Button
         onClick={handleProcess}
-        disabled={!songFile || !selectedFormat || isProcessing || (selectedFormat === 'midi' && midiData && selectedMidiTrack === null)}
+        disabled={!songFile || !selectedFormat || isProcessing || (selectedFormat === 'midi' && !!midiData && selectedMidiTrack === null)}
         className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
       >
         {isProcessing
