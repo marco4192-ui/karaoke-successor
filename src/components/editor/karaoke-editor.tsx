@@ -6,10 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/i18n/translations';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline, type NoteHistoryMode } from './timeline/timeline';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Music, FileText, Settings, BookOpen, Waves, Sparkles, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Music, BookOpen, X } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { midiPitchToFrequency } from '@/lib/utils';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
@@ -18,7 +16,7 @@ import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
 import { useTapNotePlacement } from '@/hooks/use-tap-note-placement';
-import { EditorHeader } from './editor-header';
+import { EditorHeader, type EditorHeaderPanel } from './editor-header';
 import { VideoSyncOverlay } from './video-sync-overlay';
 import { ToolsPanel } from './tools-panel';
 import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
@@ -65,13 +63,37 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
-  const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default
+  // Header dropdown panel (metadata / audio analysis / AI assistant)
+  const [activePanel, setActivePanel] = useState<EditorHeaderPanel>('none');
+  // ── First-mount boot overlay ──
+  // The editor's first render (Timeline with hundreds of notes, waveform
+  // decode, …) blocks the main thread for a while — a frozen blank screen.
+  // Two-stage mount: paint the loading overlay FIRST, mount the heavy tree in
+  // the next frame behind it, then reveal after it has painted.
+  const [heavyMounted, setHeavyMounted] = useState(false);
+  const [bootOverlayVisible, setBootOverlayVisible] = useState(true);
   // Cancel confirmation (unsaved changes guard)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   // Beat snapping (YASS-style magnet)
   const [snapEnabled, setSnapEnabled] = useState(false);
   // Video sync overlay (video + notes side by side, with timecode control)
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+
+  useEffect(() => {
+    // Mount the heavy editor tree one frame after the overlay painted.
+    const r1 = requestAnimationFrame(() => setHeavyMounted(true));
+    return () => cancelAnimationFrame(r1);
+  }, []);
+
+  useEffect(() => {
+    if (!heavyMounted) return;
+    // Heavy tree committed — give it two frames to paint, then reveal.
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => setBootOverlayVisible(false));
+    });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [heavyMounted]);
 
   // ── Authoritative song ref ──
   // All mutation handlers compute the next state from this ref (NOT from a
@@ -856,7 +878,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
   }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.relativeVideoPath, currentSong.youtubeUrl]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-white">
+    <div className="relative flex flex-col h-full bg-slate-950 text-white">
       <EditorHeader
         title={currentSong.title}
         artist={currentSong.artist}
@@ -875,81 +897,102 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
         hasVideo={hasVideo}
         showVideoOverlay={showVideoOverlay}
         onToggleVideoOverlay={() => setShowVideoOverlay(prev => !prev)}
+        activePanel={activePanel}
+        onTogglePanel={(panel) => setActivePanel(prev => (prev === panel ? 'none' : panel))}
       />
 
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        <ToolsPanel
-          selectedNote={selectedNote}
-          selectedCount={effectiveSelection.size}
-          currentTime={currentTime}
-          onAddNote={handleNoteAdd}
-          onDuplicateNote={duplicateNote}
-          onDeleteNote={handleSelectionDelete}
-          onSplitNote={handleNoteSplit}
-          onMergeNote={handleMergeNote}
-          onUpdateSelectedNote={updateSelectedNote}
-          onUpdateSelection={updateMultiSelected}
-          tapMode={tapPlacement}
-        />
-
-        <main className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Sidebar toggle button */}
+      {/* ── Header dropdown panels (Metadata / Audio-Analysis / AI-Assistant) ──
+          Same expand-on-click pattern as the genre/language Tags shortcut. */}
+      {heavyMounted && activePanel !== 'none' && (
+        <div className="relative border-b border-slate-700 bg-slate-900/95 backdrop-blur-sm flex-shrink-0 z-30 shadow-lg" data-testid={`editor-header-panel-${activePanel}`}>
+          {/* Close button */}
           <button
-            onClick={() => setShowSidebar(!showSidebar)}
+            onClick={() => setActivePanel('none')}
             className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors"
-            title={showSidebar ? t('editor.header.hidePanel') : t('editor.header.showPanel')}
+            title={t('editor.header.closePanel')}
+            aria-label={t('editor.header.closePanel')}
           >
-            {showSidebar
-              ? <PanelRightClose className="w-4 h-4 text-slate-400" />
-              : <PanelRightOpen className="w-4 h-4 text-slate-400" />
-            }
+            <X className="w-3.5 h-3.5 text-slate-400" />
           </button>
-          <Timeline
-            song={currentSong}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
-            selectedNoteId={selectedNoteId}
-            selectedNoteIds={selectedNoteIds}
-            snapEnabled={snapEnabled}
-            onToggleSnap={() => setSnapEnabled(prev => !prev)}
-            playbackRate={playbackRate}
-            onPlaybackRateChange={setPlaybackRate}
-            onTimeChange={handleTimeChange}
-            onPlayPause={handlePlayPause}
-            onNoteSelect={handleNoteSelect}
-            onNoteCtrlToggle={handleNoteCtrlToggle}
-            onNoteUpdate={handleNoteUpdate}
-            onCommitHistory={handleCommitHistory}
-            onNoteAdd={handleNoteAdd}
-            onLyricChange={handleLyricChange}
-          />
-        </main>
 
-        {showSidebar && (
-          <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
-            <Tabs defaultValue="note" className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700 rounded-none h-10">
-                <TabsTrigger value="note" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <Music className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="info" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <FileText className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="lyrics" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <BookOpen className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="analysis" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <Waves className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <Sparkles className="w-3 h-3" /> KI
-                </TabsTrigger>
-                <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <Settings className="w-3 h-3" />
-                </TabsTrigger>
-              </TabsList>
+          {activePanel === 'metadata' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 lg:divide-x lg:divide-slate-700 h-[52vh] max-h-[520px] overflow-hidden">
+              <div className="h-full overflow-hidden border-b border-slate-700 lg:border-b-0">
+                <EditorSongInfoTab
+                  song={currentSong}
+                  allNotesCount={allNotes.length}
+                  onSongChange={setSongInternal}
+                  onSetUnsavedChanges={() => markDirty()}
+                />
+              </div>
+              <div className="h-full overflow-hidden">
+                <EditorMetadataTab
+                  song={currentSong}
+                  onSongChange={setSongInternal}
+                  onSetUnsavedChanges={() => markDirty()}
+                />
+              </div>
+            </div>
+          )}
 
-              <TabsContent value="note" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+          {activePanel === 'analysis' && (
+            <div className="h-[52vh] max-h-[520px] overflow-y-auto">
+              <AudioAnalysisPanel
+                audioFilePath={analysisAudioPath}
+                onApplyNotes={handleApplyDetectedNotes}
+                onApplyBpm={handleApplyBpm}
+              />
+            </div>
+          )}
+
+          {activePanel === 'ai' && (
+            <div className="h-[52vh] max-h-[520px] overflow-y-auto">
+              <AIAssistantPanel
+                song={currentSong}
+                onSongUpdate={(updates) => {
+                  setSongInternal({ ...currentSongRef.current, ...updates });
+                  markDirty();
+                }}
+                onLyricsUpdate={(lyrics) => {
+                  applyLyrics(lyrics, 'push');
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* ── Left panel: Noten-Info/Werkzeuge (top) + Liedtext (bottom) ──
+            Both sections are permanently visible, stacked with a horizontal
+            divider and share the area (each scrolls independently). */}
+        {heavyMounted && (
+          <aside className="w-80 flex-shrink-0 bg-slate-900 border-r border-slate-700 flex flex-col min-h-0" data-testid="editor-left-panel">
+            {/* Section: Noten (tools + selected note details) */}
+            <section className="flex-1 min-h-0 flex flex-col border-b border-slate-700">
+              <div className="px-3 py-2 bg-slate-800/70 border-b border-slate-700 flex items-center gap-2 shrink-0">
+                <Music className="w-3.5 h-3.5 text-cyan-400" />
+                <h2 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">{t('editor.leftPanel.notes')}</h2>
+                {selectedNote && (
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-mono" data-testid="editor-selection-count">
+                    {effectiveSelection.size > 1 ? `${effectiveSelection.size}×` : `♪${selectedNote.pitch}`}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto editor-panel-scroll">
+                <ToolsPanel
+                  selectedNote={selectedNote}
+                  selectedCount={effectiveSelection.size}
+                  currentTime={currentTime}
+                  onAddNote={handleNoteAdd}
+                  onDuplicateNote={duplicateNote}
+                  onDeleteNote={handleSelectionDelete}
+                  onSplitNote={handleNoteSplit}
+                  onMergeNote={handleMergeNote}
+                  onUpdateSelectedNote={updateSelectedNote}
+                  onUpdateSelection={updateMultiSelected}
+                  tapMode={tapPlacement}
+                />
                 {selectedNote
                   ? <EditorNoteTab
                       selectedNote={selectedNote}
@@ -959,18 +1002,16 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
                     />
                   : <EditorNoteTabPlaceholder />
                 }
-              </TabsContent>
+              </div>
+            </section>
 
-              <TabsContent value="info" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-                <EditorSongInfoTab
-                  song={currentSong}
-                  allNotesCount={allNotes.length}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-              </TabsContent>
-
-              <TabsContent value="lyrics" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+            {/* Section: Liedtext */}
+            <section className="flex-1 min-h-0 flex flex-col">
+              <div className="px-3 py-2 bg-slate-800/70 border-b border-slate-700 flex items-center gap-2 shrink-0">
+                <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                <h2 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">{t('editor.leftPanel.lyrics')}</h2>
+              </div>
+              <div className="flex-1 min-h-0">
                 <EditorLyricsTab
                   song={currentSong}
                   currentTime={currentTime}
@@ -978,44 +1019,50 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
                   onNoteSelect={handleNoteSelect}
                   onTimeChange={handleTimeChange}
                 />
-              </TabsContent>
-
-              <TabsContent value="analysis" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-                <ScrollArea className="h-full">
-                  <AudioAnalysisPanel
-                    audioFilePath={analysisAudioPath}
-                    onApplyNotes={handleApplyDetectedNotes}
-                    onApplyBpm={handleApplyBpm}
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="ai" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-                <ScrollArea className="h-full">
-                  <AIAssistantPanel
-                    song={currentSong}
-                    onSongUpdate={(updates) => {
-                      setSongInternal({ ...currentSongRef.current, ...updates });
-                      markDirty();
-                    }}
-                    onLyricsUpdate={(lyrics) => {
-                      applyLyrics(lyrics, 'push');
-                    }}
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="metadata" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-                <EditorMetadataTab
-                  song={currentSong}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-              </TabsContent>
-            </Tabs>
+              </div>
+            </section>
           </aside>
         )}
+
+        <main className="flex-1 flex flex-col overflow-hidden relative">
+          {heavyMounted && (
+            <Timeline
+              song={currentSong}
+              currentTime={currentTime}
+              isPlaying={isPlaying}
+              selectedNoteId={selectedNoteId}
+              selectedNoteIds={selectedNoteIds}
+              snapEnabled={snapEnabled}
+              onToggleSnap={() => setSnapEnabled(prev => !prev)}
+              playbackRate={playbackRate}
+              onPlaybackRateChange={setPlaybackRate}
+              onTimeChange={handleTimeChange}
+              onPlayPause={handlePlayPause}
+              onNoteSelect={handleNoteSelect}
+              onNoteCtrlToggle={handleNoteCtrlToggle}
+              onNoteUpdate={handleNoteUpdate}
+              onCommitHistory={handleCommitHistory}
+              onNoteAdd={handleNoteAdd}
+              onLyricChange={handleLyricChange}
+            />
+          )}
+        </main>
       </div>
+
+      {/* ── Boot overlay — shown while the heavy editor tree mounts/paints ── */}
+      {bootOverlayVisible && (
+        <div className="absolute inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center gap-4" data-testid="editor-boot-overlay">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-2 border-cyan-500/25" />
+            <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-transparent border-t-cyan-400 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-2xl">🎹</div>
+          </div>
+          <div className="text-center max-w-xs">
+            <p className="text-white/85 text-sm font-medium">{t('editor.bootTitle')}</p>
+            <p className="text-white/40 text-xs mt-1 truncate">{currentSong.title} — {currentSong.artist}</p>
+          </div>
+        </div>
+      )}
 
       {currentSong.audioUrl && (
         <audio ref={audioRef} src={currentSong.audioUrl} onEnded={() => setIsPlaying(false)} />

@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Song } from '@/types/game';
 import { useTranslation } from '@/lib/i18n/translations';
+import { classifyVideoInput, getEffectiveVideoValue } from '@/lib/editor/video-classification';
 
 interface EditorMetadataTabProps {
   song: Song;
@@ -99,19 +100,26 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
           />
         </div>
 
-        {/* VIDEO File */}
+        {/* VIDEO File / URL — accepts local names, URLs and full embed codes */}
         <div className="space-y-2">
           <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO:</Label>
           <Input
             id="meta-video"
-            value={song.videoFile || ''}
+            value={getEffectiveVideoValue(song)}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, videoFile: e.target.value || undefined }));
+              // Classify into the correct Song field (platform URL, direct URL
+              // or local file) and CLEAR the other video fields — otherwise a
+              // stale platform URL would keep winning in generateUltraStarTxt
+              // and the new value would never reach the txt file.
+              onSongChange(prev => ({ ...prev, ...classifyVideoInput(e.target.value) }));
               onSetUnsavedChanges();
             }}
-            placeholder="video.mp4"
+            placeholder="video.mp4 · https://… · VK-Einbetten-Code"
             className="bg-slate-800 border-slate-600 h-8"
           />
+          <p className="text-[10px] text-slate-500">
+            {t('editor.metadataTab.videoHint')}
+          </p>
         </div>
 
         <Separator className="bg-slate-700" />

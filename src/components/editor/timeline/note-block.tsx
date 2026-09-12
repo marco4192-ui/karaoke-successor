@@ -40,7 +40,10 @@ export function NoteBlock({
   // Calculate position and dimensions
   const startX = (note.startTime / 1000) * pixelsPerSecond - scrollOffset;
   const width = Math.max(10, (note.duration / 1000) * pixelsPerSecond);
-  const y = (maxPitch - note.pitch) * pitchHeight;
+  // Thicker note bars: fill the lane as much as possible (0.9× + 3px,
+  // capped just under the lane height) and center vertically.
+  const noteHeight = Math.min(pitchHeight - 1, Math.round(pitchHeight * 0.9) + 3);
+  const y = (maxPitch - note.pitch) * pitchHeight + (pitchHeight - noteHeight) / 2;
 
   // Get note color based on type
   const getNoteColor = () => {
@@ -128,7 +131,7 @@ export function NoteBlock({
         left: `${startX}px`,
         top: `${y}px`,
         width: `${width}px`,
-        height: `${pitchHeight * 0.9}px`,
+        height: `${noteHeight}px`,
         boxShadow: isSelected
           ? `0 0 15px ${note.isGolden ? 'rgba(251, 191, 36, 0.5)' : 'rgba(34, 211, 238, 0.5)'}`
           : isPlayingNote
@@ -156,8 +159,11 @@ export function NoteBlock({
         />
       )}
 
-      {/* Lyric display (truncated) */}
-      <div className="px-1 py-0.5 text-xs font-medium truncate overflow-hidden whitespace-nowrap">
+      {/* Lyric display (truncated — smaller font on thin split-view lanes) */}
+      <div className={cn(
+        'px-1 py-0.5 font-medium truncate overflow-hidden whitespace-nowrap leading-none',
+        pitchHeight < 14 ? 'text-[9px]' : 'text-xs',
+      )}>
         {note.lyric}
       </div>
 

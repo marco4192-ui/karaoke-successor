@@ -326,14 +326,14 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
           <Button
             onClick={onNavigateToEditor}
             variant="outline"
-            className="border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-white/70 hover:text-cyan-400 transition-colors"
+            className="group bg-white/[0.06] border-white/[0.18] text-white/75 transition-all duration-200 hover:border-cyan-400/60 hover:bg-cyan-400/15 hover:text-cyan-300 hover:shadow-[0_0_18px_rgba(34,211,238,0.3)] active:scale-95 active:bg-cyan-400/25 focus-visible:ring-2 focus-visible:ring-cyan-400/60"
             data-testid="library-editor-button"
           >
-            <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-4 h-4 mr-1.5 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110 group-active:rotate-0 group-active:scale-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
             </svg>
             Editor
-            <kbd className="ml-2 text-[10px] text-white/40 bg-white/5 px-1.5 py-0.5 rounded">F10</kbd>
+            <kbd className="ml-2 text-[10px] text-white/45 bg-white/[0.05] px-1.5 py-0.5 rounded transition-colors group-hover:text-cyan-300/80 group-hover:bg-cyan-400/10">F10</kbd>
           </Button>
         )}
       </div>

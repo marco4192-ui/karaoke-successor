@@ -14,6 +14,7 @@ import { AiHarmonizeCard } from '@/components/editor/ai-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useToast } from '@/hooks/use-toast';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import {
   harmonizeSongs,
@@ -30,6 +31,7 @@ import {
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
   // Item 4: visible loading state for library (re)loads — the Tauri folder
@@ -216,8 +218,32 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     });
   }, []);
 
-  const selectAllFiltered = useCallback(() => {
-    setSelectedIds(new Set(filteredSongs.map(s => s.id)));
+  /** Songs in the current filter view that are NOT selected yet. */
+  const unselectedInFilter = useMemo(
+    () => filteredSongs.filter(s => !selectedIds.has(s.id)),
+    [filteredSongs, selectedIds],
+  );
+
+  /**
+   * Select the NEXT batch of up to 50 filtered songs (in list order) that are
+   * not selected yet. Fewer available → all remaining get selected.
+   * (The old "select all" grabbed hundreds of songs at once — more than the
+   * 50-song batch processing limit, and far more than a user reviews.)
+   */
+  const SELECT_BATCH_SIZE = 50;
+  const selectNextBatch = useCallback(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      let added = 0;
+      for (const s of filteredSongs) {
+        if (added >= SELECT_BATCH_SIZE) break;
+        if (!next.has(s.id)) {
+          next.add(s.id);
+          added++;
+        }
+      }
+      return next;
+    });
   }, [filteredSongs]);
 
   const clearSelection = useCallback(() => {
@@ -266,7 +292,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     // R3: ALL selected songs — no silent 50-song truncation. harmonizeSongs
     // chunks internally (50/LLM call, 12/lookup call) with progress.
     const selectedSongs = songs.filter(s => selectedIds.has(s.id));
-    if (selectedSongs.length === 0) return;
+    if (selectedSongs.length === 0) {
+      // Never a silent no-op — the user asked for suggestions.
+      toast({
+        title: `☑️ ${t('editor.aiBatchSelectFirstTitle')}`,
+        description: t('editor.aiBatchSelectFirstDesc'),
+      });
+      return;
+    }
 
     setBatchLoading(true);
     setBatchError(null);
@@ -303,7 +336,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       setBatchLoading(false);
       setBatchProgress(null);
     }
-  }, [songs, selectedIds, t, startLyricsWarmup]);
+  }, [songs, selectedIds, t, startLyricsWarmup, toast]);
 
   /**
    * Persist a metadata update to the song's SOURCE txt file.
@@ -428,6 +461,26 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
   }, [selectMode, toggleSongSelection, handleSelectSong]);
 
+  // ── Select-mode entry hint ("Wähle Songs aus") ──
+  // Entering AI-support mode right after using a filter needs an explicit
+  // prompt — previously nothing told the user that clicking songs is required
+  // before the (then invisible) suggest action appears.
+  const handleToggleSelectMode = useCallback(() => {
+    setSelectMode(prev => {
+      const next = !prev;
+      if (next) {
+        const filterLabel = filterMode === 'all'
+          ? t('editor.selectModeHintAll')
+          : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length));
+        toast({
+          title: `☑️ ${t('editor.selectModeHintTitle')}`,
+          description: `${filterLabel} ${t('editor.aiBatchHint')}`,
+        });
+      }
+      return next;
+    });
+  }, [filterMode, filteredSongs.length, t, toast]);
+
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.style.display = 'none';
   }, []);
@@ -456,6 +509,25 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="w-full h-full relative theme-container">
+      {/* ── Initial library loading overlay ──
+          First editor entry loads the library from IndexedDB, which can take
+          a moment — show a full-screen overlay instead of a half-rendered
+          screen. (The page RELOAD already had a spinner via the grid's empty
+          state; this covers the first client-side navigation too.) */}
+      {isLibraryLoading && songs.length === 0 && (
+        <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4" data-testid="editor-initial-loading">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full border-2 border-cyan-500/30" />
+            <div className="absolute inset-0 w-14 h-14 rounded-full border-2 border-transparent border-t-cyan-400 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-xl">🎼</div>
+          </div>
+          <div className="text-center">
+            <p className="text-white/80 text-sm font-medium">{t('editor.loadingLibraryTitle')}</p>
+            <p className="text-white/40 text-xs mt-1">{t('editor.loadingLibraryDesc')}</p>
+          </div>
+        </div>
+      )}
+
       {/* Loading Overlay */}
       {isLoadingLyrics && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -668,9 +740,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 )}
               </Button>
               <Button
-                onClick={() => setSelectMode(!selectMode)}
+                onClick={handleToggleSelectMode}
                 variant={selectMode ? 'default' : 'outline'}
-                className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white'}
+                className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white hover:bg-violet-500/15 hover:border-violet-400/50 hover:text-violet-300 transition-all active:scale-95'}
                 data-testid="editor-select-mode-toggle"
               >
                 {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ AI Support'}
@@ -873,14 +945,19 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             {selectedCount} {t('editor.aiBatchSelected')}
           </span>
           <div className="w-px h-6 bg-white/20" />
+          {/* Select the NEXT batch of ≤ 50 filtered songs (not yet selected).
+              Replaces the old "Show all"/select-all that grabbed every song. */}
           <Button
             size="sm"
             variant="outline"
-            onClick={selectAllFiltered}
-            className="border-white/20 text-white/80 hover:bg-white/10 text-xs h-8"
+            onClick={selectNextBatch}
+            disabled={unselectedInFilter.length === 0}
+            className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
             data-testid="editor-select-all-button"
           >
-            {t('editor.aiBatchSelectAll')}
+            {unselectedInFilter.length > SELECT_BATCH_SIZE
+              ? t('editor.aiBatchSelectNext').replace('{n}', String(SELECT_BATCH_SIZE))
+              : t('editor.aiBatchSelectRemaining').replace('{n}', String(unselectedInFilter.length))}
           </Button>
           <Button
             size="sm"
@@ -923,10 +1000,20 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      {/* Select mode hint when no songs selected */}
-      {selectMode && selectedCount === 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5 shadow-2xl animate-fade-in">
-          <p className="text-sm text-white/60">{t('editor.aiBatchHint')}</p>
+      {/* Select mode hint when no songs selected — prominent prompt with
+          the current filter context ("Wähle Songs aus") */}
+      {selectMode && selectedCount === 0 && !isLibraryLoading && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-violet-500/40 rounded-xl px-5 py-3 shadow-2xl animate-fade-in flex items-center gap-3" data-testid="editor-select-mode-hint">
+          <span className="text-xl">☑️</span>
+          <div>
+            <p className="text-sm text-white/90 font-medium">{t('editor.selectModeHintTitle')}</p>
+            <p className="text-xs text-white/50">
+              {filterMode === 'all'
+                ? t('editor.selectModeHintAll')
+                : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length))}
+              {' '}{t('editor.aiBatchHint')}
+            </p>
+          </div>
         </div>
       )}
 

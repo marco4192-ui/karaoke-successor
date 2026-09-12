@@ -19,7 +19,7 @@
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Difficulty, DuetPlayer } from '@/types/game';
-import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl, isDirectVideoUrl } from '@/lib/url-utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl, isDirectVideoUrl, normalizeVideoUrlInput } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
@@ -112,8 +112,12 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'VIDEO': {
             // Classify URL: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili,
-            // Niconico, direct video file, or local path
-            const videoValue = value.trim();
+            // Niconico, direct video file, or local path.
+            // The raw value may be a FULL iframe embed code (VK „Einbetten“)
+            // or an &amp;-escaped URL — normalizeVideoUrlInput reduces embed
+            // snippets to their src URL and unescapes entities BEFORE the
+            // startsWith('http') gate (an embed code would fail that check).
+            const videoValue = normalizeVideoUrlInput(value);
             if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
               if (isYouTubeUrl(videoValue)) {
                 // YouTube URL — store separately for YouTube player

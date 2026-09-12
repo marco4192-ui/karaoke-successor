@@ -386,12 +386,14 @@ export const VKPlayer = forwardRef<VKPlayerHandle, VKPlayerProps>(function VKPla
   if (!vkRef || !vkRef.hash) {
     // A watch URL without the embed hash cannot play — explain what to paste.
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-black/60" role="alert">
-        <p className="text-white/80 text-sm px-6 text-center max-w-md">
-          {vkRef
-            ? 'VK: missing embed hash — paste the full video_ext.php Export URL or the complete iframe embed code (Einbetten → code kopieren) from the VK video page'
-            : 'VK: video ID not found in URL'}
-        </p>
+      <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-4" role="alert">
+        <div className="text-center max-w-md">
+          <p className="text-white/80 text-sm">
+            {vkRef
+              ? 'VK: Dies ist ein Watch-Link ohne Embed-Hash. Kopiere auf der VK-Videoseite unter „Einbetten → Code kopieren“ den kompletten iframe-Code (oder die video_ext.php-URL mit &hash=…) und füge ihn hier ein — beides wird jetzt überall erkannt.'
+              : 'VK: video ID not found in URL'}
+          </p>
+        </div>
       </div>
     );
   }

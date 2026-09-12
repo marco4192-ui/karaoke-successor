@@ -45,8 +45,10 @@ export function ToolsPanel({
   tapMode,
 }: ToolsPanelProps) {
   const { t } = useTranslation();
+  // Rendered inside the editor's left panel ("Noten" section) — no <aside>/
+  // fixed width here, the parent section provides sizing and scrolling.
   return (
-    <aside className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col overflow-y-auto flex-shrink-0">
+    <div className="flex flex-col">
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
           {t('editor.toolsPanel.tools')}
@@ -250,7 +252,7 @@ export function ToolsPanel({
       </div>
 
       {/* Keyboard shortcuts reference */}
-      <div className="p-4 mt-auto">
+      <div className="p-4">
         <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.shortcuts')}</h2>
         <div className="space-y-1 text-xs text-slate-500">
           <div className="flex justify-between">
@@ -291,6 +293,6 @@ export function ToolsPanel({
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

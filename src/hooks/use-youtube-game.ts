@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import {
   detectVideoPlatform,
+  normalizeVideoUrlInput,
   platformAdLabel,
   MANUAL_START_PLATFORMS,
   type VideoPlatform,
@@ -95,11 +96,14 @@ export function useYouTubeGame({
   // ── Platform detection (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico) ──
   // Candidate URL fields in priority order — mirrors the historical
   // YouTube-only extraction (youtubeUrl → videoBackground → videoUrl).
+  // Values are NORMALIZED (iframe embed codes reduced to their src URL,
+  // &amp; entities unescaped) so a #VIDEO tag holding a full VK embed code
+  // reaches the players as a clean URL WITH the required hash.
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
   const videoBackground = effectiveSong?.videoBackground;
   const videoUrl = effectiveSong?.videoUrl;
 
-  const songPlatformUrl =
+  const rawPlatformUrl =
     songYoutubeUrl ||
     effectiveSong?.dailymotionUrl ||
     effectiveSong?.vimeoUrl ||
@@ -110,6 +114,7 @@ export function useYouTubeGame({
     (videoBackground && detectVideoPlatform(videoBackground) ? videoBackground : undefined) ||
     (videoUrl && detectVideoPlatform(videoUrl) ? videoUrl : undefined) ||
     null;
+  const songPlatformUrl = rawPlatformUrl ? normalizeVideoUrlInput(rawPlatformUrl) : null;
 
   // A custom YouTube override (user-pasted URL) always wins over the song's video.
   const customActive = !!customYoutubeId;

@@ -16,7 +16,9 @@
 import type { Song } from '@/types/game';
 import {
   detectVideoPlatform,
+  extractEmbedSrcUrl,
   isDirectVideoUrl,
+  normalizeVideoUrlInput,
   platformAdLabel,
   type VideoPlatform,
 } from '@/lib/url-utils';
@@ -27,28 +29,14 @@ export const VIDEO_BREAK_ID_PREFIX = 'videobreak-';
 /**
  * Extract the src URL from an iframe/embed HTML snippet.
  *
- * VK Video's „Einbetten" dialog hands users an <iframe src="…"> code (the
- * video_ext.php Export URL with the REQUIRED hash lives in the src attribute)
- * rather than a plain link — pasting that snippet used to be rejected as
- * "not a video link". Reducing it to its src URL accepts the full embed code
- * for every platform (VK, YouTube, Dailymotion, Vimeo, Rutube, …).
- * Returns null for plain-URL lines (no '<' → cheap fast path).
+ * Shared implementation lives in url-utils.ts (extractEmbedSrcUrl) — re-exported
+ * here for existing callers. Accepts the full VK „Einbetten“ iframe code (the
+ * REQUIRED hash lives in the src attribute) and multi-line snippets.
  */
-export function extractEmbedSrc(input: string): string | null {
-  if (!input || !input.includes('<')) return null;
-  // [^>]* also spans line breaks — multi-line attribute lists still match.
-  const iframeMatch = input.match(/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
-  if (iframeMatch?.[1]) return iframeMatch[1].trim();
-  const videoMatch = input.match(/<video\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
-  if (videoMatch?.[1]) return videoMatch[1].trim();
-  return null;
-}
+export const extractEmbedSrc = extractEmbedSrcUrl;
 
 /** Normalize any user input (single link OR full embed code) to a bare URL. */
-function normalizeVideoInput(raw: string): string {
-  const trimmed = raw.trim();
-  return extractEmbedSrc(trimmed) ?? trimmed;
-}
+const normalizeVideoInput = normalizeVideoUrlInput;
 
 /** A single parsed entry of a pasted/uploaded link list. */
 export interface ParsedVideoLink {
@@ -70,6 +58,8 @@ export function videoBreakPlatform(song: Song): NonNullable<VideoPlatform> | 'fi
 /**
  * Resolve the platform video URL of a song using the same priority chain as
  * the game (use-youtube-game.ts): youtubeUrl → … → videoBackground → videoUrl.
+ * Values are normalized (iframe embed codes reduced to their src URL, HTML
+ * entities unescaped) so a #VIDEO tag holding a full VK embed code works.
  * Returns null when the song has no streaming-platform video.
  */
 export function getSongPlatformVideo(song: Song | null | undefined): { platform: NonNullable<VideoPlatform>; url: string } | null {
@@ -87,8 +77,9 @@ export function getSongPlatformVideo(song: Song | null | undefined): { platform:
   ];
   for (const candidate of candidates) {
     if (!candidate) continue;
-    const platform = detectVideoPlatform(candidate);
-    if (platform) return { platform, url: candidate };
+    const normalized = normalizeVideoUrlInput(candidate);
+    const platform = detectVideoPlatform(normalized);
+    if (platform) return { platform, url: normalized };
   }
   return null;
 }

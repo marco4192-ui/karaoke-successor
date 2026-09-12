@@ -4,7 +4,7 @@ import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
 import { normalizeTxtContent } from '@/lib/utils';
-import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl } from '@/lib/url-utils';
+import { normalizeVideoUrlInput, detectVideoPlatform } from '@/lib/url-utils';
 
 // Parse UltraStar txt file for metadata (headers only)
 export function parseUltraStarMetadata(content: string): {
@@ -133,16 +133,20 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
       hasDuetHeader = true;
       p2Name = trimmedLine.substring(4).trim() || 'Player 2';
     } else if (trimmedLine.startsWith('#VIDEO:')) {
-      // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico)
-      const videoValue = trimmedLine.substring(7).trim();
+      // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico).
+      // The value may be a plain URL, a DIRECT video-file URL or even a full
+      // iframe embed code (VK „Einbetten“) — normalizeVideoUrlInput reduces
+      // embed snippets to their src URL and unescapes &amp; entities first.
+      const videoValue = normalizeVideoUrlInput(trimmedLine.substring(7));
       if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
-        if (isYouTubeUrl(videoValue)) youtubeUrl = videoValue;
-        else if (isDailymotionUrl(videoValue)) dailymotionUrl = videoValue;
-        else if (isVimeoUrl(videoValue)) vimeoUrl = videoValue;
-        else if (isRutubeUrl(videoValue)) rutubeUrl = videoValue;
-        else if (isVkVideoUrl(videoValue)) vkVideoUrl = videoValue;
-        else if (isBilibiliUrl(videoValue)) bilibiliUrl = videoValue;
-        else if (isNiconicoUrl(videoValue)) nicovideoUrl = videoValue;
+        const platform = detectVideoPlatform(videoValue);
+        if (platform === 'youtube') youtubeUrl = videoValue;
+        else if (platform === 'dailymotion') dailymotionUrl = videoValue;
+        else if (platform === 'vimeo') vimeoUrl = videoValue;
+        else if (platform === 'rutube') rutubeUrl = videoValue;
+        else if (platform === 'vk') vkVideoUrl = videoValue;
+        else if (platform === 'bilibili') bilibiliUrl = videoValue;
+        else if (platform === 'nicovideo') nicovideoUrl = videoValue;
         // Non-platform URLs are resolved via the scanned video FILE instead
       }
     } else if (trimmedLine.startsWith('#VIDEOGAP:')) {

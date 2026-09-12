@@ -957,6 +957,22 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Editor side/header panel slim scrollbar */
+.editor-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.editor-panel-scroll::-webkit-scrollbar { width: 6px; }
+.editor-panel-scroll::-webkit-scrollbar-track { background: transparent; }
+.editor-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 3px;
+}
+.editor-panel-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+}
+
 /* Reduced motion: stop decorative animations */
 @media (prefers-reduced-motion: reduce) {
   .eq-bar, .jukebox-vinyl, .jukebox-start-glow, .jukebox-shine,

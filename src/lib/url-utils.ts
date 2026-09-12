@@ -23,6 +23,57 @@ export const MANUAL_START_PLATFORMS: ReadonlyArray<NonNullable<VideoPlatform>> =
 /** Unified error codes for platform players (YouTube code space + extension). */
 export const VIDEO_ERROR_GEO = 1000;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Input normalization (embed codes & HTML entities)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Unescape the common HTML entities that appear in URLs pasted from web pages
+ * or embed dialogs (`&amp;` → `&`, `&quot;`, `&#38;`, …). A VK embed src copied
+ * from some pages arrives escaped — without this, `URLSearchParams` sees the
+ * param `amp;id` instead of `id` and every extractor fails.
+ */
+export function unescapeUrlEntities(input: string): string {
+  if (!input || !input.includes('&')) return input;
+  return input
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?38;/g, '&')
+    .replace(/&#0?35;/g, '#')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+/**
+ * Extract the src URL from an `<iframe src="…">` / `<video src="…">` embed
+ * snippet. VK Video's „Einbetten“ dialog hands users the full iframe code —
+ * the REQUIRED embed hash lives in the src attribute. The regex spans line
+ * breaks (multi-line attribute lists still match). Returns null for plain
+ * URL strings (fast path: no '<').
+ */
+export function extractEmbedSrcUrl(input: string): string | null {
+  if (!input || !input.includes('<')) return null;
+  const iframeMatch = input.match(/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
+  if (iframeMatch?.[1]) return iframeMatch[1].trim();
+  const videoMatch = input.match(/<video\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
+  if (videoMatch?.[1]) return videoMatch[1].trim();
+  return null;
+}
+
+/**
+ * Normalize ANY user-supplied video value (from a #VIDEO tag, an input field
+ * or the jukebox link box) to a bare, entity-unescaped URL:
+ *   `<iframe src="https://vk.com/video_ext.php?oid=…&amp;id=…&amp;hash=…" …></iframe>`
+ *     → `https://vk.com/video_ext.php?oid=…&id=…&hash=…`
+ * Plain URLs pass through (only entity-unescaped + trimmed).
+ */
+export function normalizeVideoUrlInput(input: string): string {
+  if (!input) return '';
+  const trimmed = input.trim();
+  const src = extractEmbedSrcUrl(trimmed) ?? trimmed;
+  return unescapeUrlEntities(src).trim();
+}
+
 /**
  * Check if a URL points to a YouTube video.
  * Matches youtube.com, youtu.be, music.youtube.com, and youtube-nocookie.com.
@@ -77,16 +128,20 @@ export function isVimeoUrl(url: string): boolean {
   }
 }
 
-/** Detect which streaming platform a URL belongs to (null = not a known platform). */
+/** Detect which streaming platform a URL belongs to (null = not a known platform).
+ *  Tolerates full iframe embed snippets and HTML-escaped URLs — the input is
+ *  normalized (src extracted, entities unescaped) before matching. */
 export function detectVideoPlatform(url: string | undefined | null): VideoPlatform {
   if (!url) return null;
-  if (isYouTubeUrl(url)) return 'youtube';
-  if (isDailymotionUrl(url)) return 'dailymotion';
-  if (isVimeoUrl(url)) return 'vimeo';
-  if (isRutubeUrl(url)) return 'rutube';
-  if (isVkVideoUrl(url)) return 'vk';
-  if (isBilibiliUrl(url)) return 'bilibili';
-  if (isNiconicoUrl(url)) return 'nicovideo';
+  const normalized = normalizeVideoUrlInput(url);
+  if (!normalized) return null;
+  if (isYouTubeUrl(normalized)) return 'youtube';
+  if (isDailymotionUrl(normalized)) return 'dailymotion';
+  if (isVimeoUrl(normalized)) return 'vimeo';
+  if (isRutubeUrl(normalized)) return 'rutube';
+  if (isVkVideoUrl(normalized)) return 'vk';
+  if (isBilibiliUrl(normalized)) return 'bilibili';
+  if (isNiconicoUrl(normalized)) return 'nicovideo';
   return null;
 }
 
@@ -254,10 +309,13 @@ export interface VkVideoRef {
  * - https://vk.com/video_ext.php?oid=-22822305&id=456239528&hash=e592…  (Export/embed URL — hash present)
  * - https://vk.com/video-22822305_456239528                                    (watch URL — NO hash!)
  * - https://vkvideo.ru/video-22822305_456239528
+ * - the raw iframe embed code (src is extracted first) and &amp;-escaped URLs
  * Returns null when no ids can be extracted. A missing hash is returned as
  * `hash: undefined` — the player surfaces a "paste the Export URL" error then.
  */
-export function extractVkVideoRef(url: string): VkVideoRef | null {
+export function extractVkVideoRef(rawUrl: string): VkVideoRef | null {
+  if (!rawUrl) return null;
+  const url = normalizeVideoUrlInput(rawUrl);
   if (!url) return null;
   let params: URLSearchParams | null = null;
   let path = '';

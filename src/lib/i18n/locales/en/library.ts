@@ -402,6 +402,16 @@ export const libraryTranslations = {
     aiBatchThresholdNote: "AI suggestions below {value}% confidence are skipped. Deezer/MusicBrainz facts and years are always applied.",
     aiBatchLookupPhase: "Factual lookup (Deezer/MusicBrainz)…",
     aiBatchAiPhase: "AI analysis…",
+    aiBatchSelectNext: 'Select next {n}',
+    aiBatchSelectRemaining: 'Select all remaining ({n})',
+    aiBatchSelectFirstTitle: 'Select songs first',
+    aiBatchSelectFirstDesc: 'Click songs to mark them before running AI suggestions.',
+    selectModeHintTitle: 'Select songs',
+    selectModeHintAll: 'All songs are selectable.',
+    selectModeHintFiltered: '{n} songs match the current filter.',
+    loadingLibraryTitle: 'Loading library…',
+    loadingLibraryDesc: 'Loading songs from storage.',
+    bootTitle: 'Loading editor…',
     loadMore: 'Load More',
     saving: 'Saving...',
     saveChanges: 'Save changes to TXT file',
@@ -410,6 +420,12 @@ export const libraryTranslations = {
     showMetadata: 'Show metadata',
     hideMetadata: 'Hide metadata',
     metadataPanelBtn: 'AI Assistant',
+
+    // Left panel (notes + lyrics sections)
+    leftPanel: {
+      notes: 'Notes & Tools',
+      lyrics: 'Lyrics',
+    },
 
     // Editor header
     header: {
@@ -421,6 +437,11 @@ export const libraryTranslations = {
       saveAndExit: 'Save & Exit',
       hidePanel: 'Hide panel',
       showPanel: 'Show panel',
+      panelMetadata: 'Metadata',
+      panelAnalysis: 'Audio Analysis',
+      panelAI: 'AI Assistant',
+      panelTags: 'Genre/Language',
+      closePanel: 'Close panel',
       cancelConfirmTitle: 'Unsaved changes',
       cancelConfirmDesc: 'Your changes have not been saved yet. What do you want to do?',
       cancelConfirmKeep: 'Keep editing',
@@ -534,6 +555,7 @@ export const libraryTranslations = {
       milliseconds: '(milliseconds)',
       songEndPlaceholder: 'Song end in ms',
       commaSeparatedTags: 'Comma-separated tags',
+      videoHint: 'File name, video URL or the full embed code (e.g. VK “Embed”) — all accepted.',
       duetPlayer1: '#P1: (Duet Player 1)',
       duetPlayer1Placeholder: 'Player 1 Name',
       duetPlayer2: '#P2: (Duet Player 2)',
@@ -683,6 +705,7 @@ export const libraryTranslations = {
     timeline: {
       noLyrics: 'No lyrics - double-click to add notes',
       snap: 'Snap to beat (magnet)',
+      duetSplit: 'Duet split view: both vocal tracks on separate pitch ladders',
     },
 
     // Editor core (shared)
