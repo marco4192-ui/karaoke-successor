@@ -323,6 +323,12 @@ const GENRE_ALIASES: Record<string, string> = {
   'opera': 'Classical', 'operette': 'Classical', 'klassik': 'Classical',
   'klassische musik': 'Classical', 'crossover classical': 'Classical',
 
+  // Disney (user request R4 — dedicated category, wins over Soundtrack)
+  'disney': 'Disney', 'walt disney': 'Disney', 'disney songs': 'Disney',
+  'disney classics': 'Disney', 'disney music': 'Disney',
+  'disney soundtrack': 'Disney', 'disney film': 'Disney',
+  'disney-park': 'Disney', 'walt-disney': 'Disney',
+
   // Children's
   'children': "Children's", 'kindermusik': "Children's", 'kinderlied': "Children's",
   'kinderlieder': "Children's", 'kids': "Children's", 'childrens': "Children's",

@@ -364,6 +364,8 @@ unifiedSetup: {
   allYears: 'Alle år',
   releaseEra: '📅 æra',
   allEras: 'Alle',
+  searchFilter: '🔍 Artist / Tittel',
+  searchFilterPlaceholder: 'ABBA, Mamma Mia, …',
   filterLogic: '🔗 Filterlogikk',
   combined: 'Kombinert (OG)',
   independent: 'Uavhengig (ELLER)',

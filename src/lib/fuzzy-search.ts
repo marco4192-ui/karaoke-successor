@@ -110,3 +110,94 @@ export function fuzzyMatch(query: string, text: string): boolean {
   return false;
 }
 
+/**
+ * Characters that separate words inside a text — shared by the scoring tiers
+ * of fuzzyScore() (same class fuzzyMatch uses for its word splitting).
+ */
+const WORD_SEPARATORS = /[\s\-–—_(),.:/]+/;
+
+/**
+ * Rank how well a query matches a text: 0 (no match) .. 100 (perfect match).
+ *
+ * The tiers deliberately mirror fuzzyMatch()'s strategy cascade so that
+ * everything fuzzyMatch() accepts receives a score > 0:
+ *
+ *   100                    query equals the whole text
+ *   95–99                  exact substring at the text start (coverage-scaled)
+ *   95                     exact substring at a word start
+ *   85–90                  exact substring inside a word (coverage-scaled)
+ *   75–79                  (fuzzy) word-prefix match, ≤ 1 edit (coverage-scaled)
+ *   40–70                  Levenshtein match against a single word
+ *                          (70 for 1 edit, −10 per additional edit)
+ *   15–38                  Levenshtein match against the full text (short texts)
+ *
+ * An empty (or whitespace-only) query scores 0, as does an empty text.
+ */
+export function fuzzyScore(query: string, text: string): number {
+  if (!query || !text) return 0;
+
+  const lowerQuery = query.toLowerCase().trim();
+  const lowerText = text.toLowerCase().trim();
+  if (lowerQuery.length === 0 || lowerText.length === 0) return 0;
+
+  // ── Tier 1–3: exact substring match (case-insensitive) ──
+  const idx = lowerText.indexOf(lowerQuery);
+  if (idx !== -1) {
+    if (lowerQuery.length === lowerText.length) return 100; // full equality
+    const coverage = lowerQuery.length / lowerText.length;
+    if (idx === 0) {
+      // Match at the very start of the text — best non-exact result
+      return 95 + Math.min(4, Math.round(coverage * 4));
+    }
+    if (WORD_SEPARATORS.test(lowerText[idx - 1])) {
+      // Match starts at a word boundary ("viva" in "Coldplay – Viva La Vida")
+      return 95;
+    }
+    // Match starts somewhere inside a word
+    return 85 + Math.min(5, Math.round(coverage * 5));
+  }
+
+  // Fuzzy tolerance — like fuzzyMatch(), only for queries of length >= 3
+  if (lowerQuery.length < 3) return 0;
+
+  const maxDist = getMaxDistance(lowerQuery.length);
+
+  // ── Tier 4–5: match against individual words ──
+  let best = 0;
+  const words = lowerText.split(WORD_SEPARATORS);
+  for (const word of words) {
+    if (word.length === 0) continue;
+    // Skip very short words (articles, prepositions) — same as fuzzyMatch()
+    if (word.length < 3) continue;
+
+    // Levenshtein against the whole word: "Koldplay" → "Coldplay"
+    const dist = levenshtein(lowerQuery, word);
+    if (dist > 0 && dist <= maxDist) {
+      best = Math.max(best, Math.max(40, 70 - (dist - 1) * 10));
+    }
+
+    // (Fuzzy) word prefix: "Coldp" is nearly the prefix of "Coldplay" —
+    // one extra character of tolerance, exactly like fuzzyMatch().
+    if (lowerQuery.length < word.length) {
+      const prefixDist = levenshtein(lowerQuery, word.substring(0, lowerQuery.length + 1));
+      if (prefixDist <= 1) {
+        const coverage = lowerQuery.length / word.length;
+        best = Math.max(best, 75 + Math.round(coverage * 5));
+      }
+    }
+  }
+  // Word matches (>= 40) always outrank the full-text tier below (<= 38)
+  if (best > 0) return best;
+
+  // ── Tier 6: match query against the full text (short titles/artists) ──
+  // Only if the text isn't much longer than the query — same guard as fuzzyMatch()
+  if (lowerText.length <= lowerQuery.length * 2.5) {
+    const fullDist = levenshtein(lowerQuery, lowerText);
+    if (fullDist > 0 && fullDist <= maxDist) {
+      return Math.max(15, 45 - fullDist * 7);
+    }
+  }
+
+  return 0;
+}
+

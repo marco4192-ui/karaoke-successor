@@ -3,14 +3,17 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlayIcon, MusicIcon } from '@/components/icons';
+import { Plus, ListPlus, Calendar, Video } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { decadeShortLabel } from '@/lib/game/era-filter';
 import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
+import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
 import {
   isVideoBreak,
@@ -86,24 +89,6 @@ function RepeatIcon({ className, one }: { className?: string; one?: boolean }) {
   );
 }
 
-function LinkIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </svg>
-  );
-}
-
-function ListIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  );
-}
-
 function PlayBadgeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -124,14 +109,41 @@ function formatPoolDuration(ms: number): string {
   return rest > 0 ? `~${hours} h ${rest} min` : `~${hours} h`;
 }
 
+/** Highlight the first case-insensitive occurrence of `query` inside `text`. */
+function highlightMatch(text: string, query: string): React.ReactNode {
+  const q = query.trim().toLowerCase();
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="text-cyan-300 font-semibold">{text.slice(idx, idx + q.length)}</span>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
+/** Platforms accepted by the video link field — mirrors the platforms that
+ *  createVideoBreakSong()/isSupportedVideoLink() detect, plus direct video
+ *  files (MP4/WebM/…). Proper names — no translation needed. */
+const SUPPORTED_VIDEO_PLATFORMS = [
+  'YouTube', 'Niconico', 'bilibili', 'VK Video', 'Vimeo', 'Dailymotion', 'Rutube', 'MP4/WebM',
+];
+
 // ==================== SETUP VIEW ====================
 
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoError, setVideoError] = useState('');
-  const [linkListText, setLinkListText] = useState('');
+  // All-round video link field: ONE or MANY links (one per line) — bare URLs,
+  // complete iframe embed codes (e.g. VK), „URL | Titel" pipes and m3u
+  // entries are all understood by parseVideoLinkInput().
+  const [videoLinksInput, setVideoLinksInput] = useState('');
+  const [videoLinksError, setVideoLinksError] = useState('');
   const [enqueueing, setEnqueueing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Search suggestion dropdown (local open state — Escape/outside click close)
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const searchWrapperRef = useRef<HTMLDivElement | null>(null);
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -171,38 +183,38 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
     }
   }, []);
 
-  // ── Video-Link: einzeln in die Warteschlange einreihen ──
-  // Unterstützt auch die „URL | Titel"-Syntax der Link-Liste.
-  const handleVideoSubmit = () => {
-    const raw = videoUrl.trim();
-    if (!raw) return;
-    const link = parseVideoLinkInput(raw)[0];
-    if (!link) {
-      setVideoError(t('jukeboxPlayer.videoLinkInvalid'));
+  // ── Video-Links: EIN Feld für einen oder viele Links ──
+  const parsedLinks = useMemo(() => parseVideoLinkInput(videoLinksInput), [videoLinksInput]);
+
+  const handleVideoLinksSubmit = () => {
+    if (!videoLinksInput.trim()) return;
+    const links = parsedLinks;
+    if (links.length === 0) {
+      setVideoLinksError(t('jukeboxPlayer.videoLinkInvalid'));
       return;
     }
-    setVideoError('');
-    setVideoUrl('');
-    const ok = j.addVideoToQueue(link.url, link.label);
-    if (ok) {
+    setVideoLinksError('');
+    if (links.length === 1) {
+      // Single valid link → same flow as the former video link field
+      const ok = j.addVideoToQueue(links[0].url, links[0].label);
+      if (ok) {
+        setVideoLinksInput('');
+        toast({
+          title: `🎬 ${t('jukeboxPlayer.videoLinkQueued')}`,
+          description: t('jukeboxPlayer.videoLinkHint'),
+        });
+      }
+      return;
+    }
+    // Multiple valid links → queue the whole list in order
+    const queued = j.addVideoListToQueue(links);
+    if (queued > 0) {
+      setVideoLinksInput('');
       toast({
-        title: `🎬 ${t('jukeboxPlayer.videoLinkQueued')}`,
+        title: `🎬 ${t('jukeboxPlayer.linkListQueued').replace('{n}', String(queued))}`,
         description: t('jukeboxPlayer.videoLinkHint'),
       });
     }
-  };
-
-  // ── Link-Liste: mehrere Links nacheinander abspielen ──
-  const parsedLinks = useMemo(() => parseVideoLinkInput(linkListText), [linkListText]);
-
-  const handleLinkListSubmit = () => {
-    if (parsedLinks.length === 0) return;
-    const queued = j.addVideoListToQueue(parsedLinks);
-    setLinkListText('');
-    toast({
-      title: `🎬 ${t('jukeboxPlayer.linkListQueued').replace('{n}', String(queued))}`,
-      description: t('jukeboxPlayer.videoLinkHint'),
-    });
   };
 
   const handleFileUpload = (file: File | undefined) => {
@@ -210,10 +222,52 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      setLinkListText(prev => (prev ? `${prev.trim()}\n${text}` : text));
+      setVideoLinksInput(prev => (prev ? `${prev.trim()}\n${text}` : text));
     };
     reader.readAsText(file);
   };
+
+  // ── Search suggestions: add a single song / add all ──
+  const handleAddSuggestion = async (song: Song) => {
+    const ok = await j.addSongToQueue(song);
+    if (ok) {
+      toast({
+        title: `🎵 ${t('jukeboxPlayer.addedToPlaylist')}`,
+        description: `${song.title} — ${song.artist}`,
+      });
+    } else if (j.playlist.some(s => s.id === song.id)) {
+      // Duplicate rejection (insertSongIntoQueue returns -1) — explicit
+      // feedback instead of a silent no-op
+      toast({
+        title: `ℹ️ ${t('jukeboxPlayer.alreadyInPlaylist')}`,
+        description: `${song.title} — ${song.artist}`,
+      });
+    }
+  };
+
+  const handleAddAllSuggestions = async () => {
+    const songsToAdd = j.searchSuggestions.map(s => s.song);
+    if (songsToAdd.length === 0) return;
+    const queued = await j.addSongsToQueue(songsToAdd);
+    if (queued > 0) {
+      const preview = songsToAdd.slice(0, 3).map(s => s.title).join(' · ');
+      toast({
+        title: `🎵 ${t('jukeboxPlayer.addedNToPlaylist').replace('{n}', String(queued))}`,
+        description: songsToAdd.length > 3 ? `${preview} …` : preview,
+      });
+    }
+  };
+
+  // Suggestion dropdown: close when clicking outside the search area
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // ── Library-Playlist direkt in der Jukebox abspielen ──
   const handleEnqueuePlaylist = async () => {
@@ -259,6 +313,13 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   };
 
   const hasSongs = j.filteredSongs.length > 0;
+
+  // Suggestion dropdown: visible while typing, with matches or a "no matches"
+  // hint (from 2 chars on). Escape / clicking outside sets suggestionsOpen=false.
+  const trimmedQuery = j.searchQuery.trim();
+  const showSuggestions = suggestionsOpen
+    && trimmedQuery !== ''
+    && (j.searchSuggestions.length > 0 || trimmedQuery.length >= 2);
 
   return (
     <div className="relative">
@@ -315,11 +376,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         </div>
       </section>
 
-      {/* ── Search ── */}
-      <div className="mb-6 group">
+      {/* ── Search + fuzzy suggestion dropdown ── */}
+      <div className="mb-6 group" ref={searchWrapperRef}>
         <div className="relative">
           <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-cyan-400 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-cyan-400 transition-colors z-10 pointer-events-none"
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden
           >
             <circle cx="11" cy="11" r="8" />
@@ -331,9 +392,79 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             type="text"
             placeholder={t('jukeboxPlayer.searchPlaceholder')}
             value={j.searchQuery}
-            onChange={(e) => j.setSearchQuery(e.target.value)}
+            onChange={(e) => { j.setSearchQuery(e.target.value); setSuggestionsOpen(true); }}
+            onFocus={() => setSuggestionsOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setSuggestionsOpen(false); }}
+            role="combobox"
+            aria-expanded={showSuggestions}
+            aria-haspopup="listbox"
+            aria-autocomplete="list"
+            aria-controls="jukebox-search-suggestions"
+            autoComplete="off"
             className="h-12 pl-12 pr-4 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/60 focus-visible:shadow-[0_0_30px_rgba(34,211,238,0.12)] transition-all"
           />
+          {showSuggestions && (
+            <div
+              id="jukebox-search-suggestions"
+              className="absolute left-0 right-0 top-full mt-2 z-40 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              {j.searchSuggestions.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-white/40" role="status">
+                  {t('jukeboxPlayer.searchNoMatches')}
+                </p>
+              ) : (
+                <>
+                  <div
+                    role="listbox"
+                    aria-label={t('jukeboxPlayer.searchSuggestions')}
+                    className="max-h-96 overflow-y-auto jukebox-queue-scroll py-1.5"
+                  >
+                    {j.searchSuggestions.map(({ song }) => (
+                      <div
+                        key={song.id}
+                        role="option"
+                        aria-selected={false}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors"
+                      >
+                        <span className="flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden bg-white/5 border border-white/10 shrink-0">
+                          {song.coverImage ? (
+                            <img src={song.coverImage} alt="" className="w-full h-full object-cover" loading="lazy" />
+                          ) : (
+                            <MusicIcon className="w-4 h-4 text-white/30" />
+                          )}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white/90 truncate">{highlightMatch(song.title, j.searchQuery)}</p>
+                          <p className="text-xs text-white/45 truncate">
+                            {song.artist}{song.year ? ` · ${song.year}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSuggestion(song)}
+                          aria-label={t('jukeboxPlayer.addToPlaylist')}
+                          title={t('jukeboxPlayer.addToPlaylist')}
+                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-500/50 outline-none transition-colors shrink-0"
+                        >
+                          <Plus className="w-4 h-4" aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-white/10 p-2">
+                    <button
+                      type="button"
+                      onClick={handleAddAllSuggestions}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm text-purple-300 hover:bg-purple-500/10 hover:text-purple-200 focus-visible:ring-2 focus-visible:ring-purple-500/50 outline-none transition-colors"
+                    >
+                      <ListPlus className="w-4 h-4" aria-hidden />
+                      {t('jukeboxPlayer.addAllToPlaylist').replace('{n}', String(j.searchSuggestions.length))}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -460,6 +591,27 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   ))}
                 </select>
               </div>
+
+              {/* Year Filter — exact year (finer than the era/decade filter) */}
+              <div>
+                <label htmlFor="jukebox-year-select" className="text-sm text-white/60 mb-2 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-amber-400/70" aria-hidden />
+                  {t('jukeboxPlayer.filterByYear')}
+                </label>
+                <select
+                  id="jukebox-year-select"
+                  value={j.filterYear}
+                  onChange={(e) => j.setFilterYear(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-amber-500/50 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/25 outline-none transition-all"
+                  style={selectStyle}
+                >
+                  {j.years.map(year => (
+                    <option key={year} value={year} className="bg-gray-800 text-white">
+                      {year === 'all' ? t('jukeboxPlayer.allYears') : year}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Playback options: Shuffle + Repeat */}
@@ -525,136 +677,111 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
           </CardContent>
         </Card>
 
-        {/* Video-Link + Link-Liste (rechte Spalte, gestapelt) */}
-        <div className="flex flex-col gap-6">
-          {/* ── Video-Link: einzelner Link mit Ton in die Warteschlange ── */}
-          <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-fuchsia-500/30 transition-colors">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-fuchsia-500/10 border border-fuchsia-400/25 shrink-0">
-                  <LinkIcon className="w-5 h-5 text-fuchsia-300" />
-                </span>
-                <div className="min-w-0">
-                  <CardTitle className="truncate">{t('jukeboxPlayer.videoLinkTitle')}</CardTitle>
-                  <CardDescription>{t('jukeboxPlayer.videoLinkDesc')}</CardDescription>
-                </div>
+        {/* ── Video-Links: EIN Allround-Feld für einzelne Links, Listen und Dateien ── */}
+        <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-fuchsia-500/30 transition-colors">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-fuchsia-500/10 border border-fuchsia-400/25 shrink-0">
+                <Video className="w-5 h-5 text-fuchsia-300" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <CardTitle className="truncate">{t('jukeboxPlayer.videoLinksTitle')}</CardTitle>
+                <CardDescription>{t('jukeboxPlayer.videoLinksDesc')}</CardDescription>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-2">
-                <div className="relative flex-1 group">
-                  <Input
-                    type="text"
-                    inputMode="url"
-                    placeholder={t('jukeboxPlayer.videoLinkPlaceholder')}
-                    value={videoUrl}
-                    onChange={(e) => { setVideoError(''); setVideoUrl(e.target.value); }}
-                    onKeyDown={(e) => e.key === 'Enter' && handleVideoSubmit()}
-                    aria-label={t('jukeboxPlayer.videoLinkTitle')}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-fuchsia-500/30 focus-visible:border-fuchsia-500/40 transition-all"
-                  />
-                </div>
-                <Button
-                  onClick={handleVideoSubmit}
-                  variant="outline"
-                  className="border-fuchsia-500/50 text-fuchsia-300 hover:bg-fuchsia-500/10 hover:text-fuchsia-200 shrink-0"
-                >
-                  {t('jukeboxPlayer.videoLinkAdd')}
-                </Button>
-              </div>
-              <p className="text-white/35 text-xs">{t('jukeboxPlayer.videoLinkHint')}</p>
-              {videoError && (
-                <p className="text-red-400 text-sm" role="alert">{videoError}</p>
-              )}
-              {/* Wartende Videos aus der laufenden Warteschlange */}
-              {queuedVideos.length > 0 && (
-                <div className="space-y-1.5 pt-1 border-t border-white/5">
-                  <p className="text-white/40 text-xs font-medium">{t('jukeboxPlayer.videoQueuedCount').replace('{n}', String(queuedVideos.length))}</p>
-                  <div className="max-h-40 overflow-y-auto jukebox-queue-scroll space-y-1 pr-1">
-                    {queuedVideos.map(v => (
-                      <div key={v.id} className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/5 px-2.5 py-1.5">
-                        <PlayBadgeIcon className="w-3.5 h-3.5 text-fuchsia-400/80 shrink-0" />
-                        <span className="flex-1 min-w-0 truncate text-xs text-white/70">{v.title}</span>
-                        <span className="text-[10px] text-white/35 shrink-0">{platformDisplayName(videoBreakPlatform(v))}</span>
-                        <button
-                          onClick={() => j.removeQueueVideo(v.id)}
-                          className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-                          aria-label={t('jukeboxPlayer.queueVideoRemove')}
-                          title={t('jukeboxPlayer.queueVideoRemove')}
-                        >
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* ── Link-Liste: viele Links nacheinander abspielen ── */}
-          <Card className="bg-white/[0.04] backdrop-blur-sm border-white/10 hover:border-purple-500/30 transition-colors">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-400/25 shrink-0">
-                  <ListIcon className="w-5 h-5 text-purple-300" />
-                </span>
-                <div className="min-w-0">
-                  <CardTitle className="truncate">{t('jukeboxPlayer.linkListTitle')}</CardTitle>
-                  <CardDescription>{t('jukeboxPlayer.linkListDesc')}</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <textarea
-                value={linkListText}
-                onChange={(e) => setLinkListText(e.target.value)}
-                placeholder={t('jukeboxPlayer.linkListPlaceholder')}
-                aria-label={t('jukeboxPlayer.linkListTitle')}
-                rows={4}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:ring-purple-500/30 focus:border-purple-500/40 outline-none transition-all resize-y jukebox-queue-scroll"
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
+              value={videoLinksInput}
+              onChange={(e) => { setVideoLinksError(''); setVideoLinksInput(e.target.value); }}
+              placeholder={t('jukeboxPlayer.videoLinksPlaceholder')}
+              aria-label={t('jukeboxPlayer.videoLinksTitle')}
+              rows={3}
+              className="min-h-[76px] bg-white/5 border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus-visible:ring-fuchsia-500/30 focus-visible:border-fuchsia-500/40 transition-all resize-y jukebox-queue-scroll"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={handleVideoLinksSubmit}
+                disabled={!videoLinksInput.trim()}
+                className="bg-gradient-to-r from-fuchsia-500/80 to-purple-500/80 hover:from-fuchsia-400 hover:to-purple-400 text-white border border-fuchsia-300/30 disabled:opacity-40"
+              >
+                <Plus className="w-4 h-4 mr-2" aria-hidden />
+                {t('jukeboxPlayer.videoLinksAdd')}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.text,.csv,.tsv,.m3u,.m3u8,.md,.markdown,.log,text/plain,text/csv"
+                onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }}
+                className="hidden"
+                aria-hidden
+                tabIndex={-1}
               />
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleLinkListSubmit}
-                  disabled={parsedLinks.length === 0}
-                  variant="outline"
-                  className="flex-1 border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200 disabled:opacity-40"
-                >
-                  <PlayBadgeIcon className="w-4 h-4 mr-2" />
-                  {t('jukeboxPlayer.linkListAdd')}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".txt,.m3u,.m3u8,.csv,.text,text/plain"
-                  onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }}
-                  className="hidden"
-                  aria-hidden
-                  tabIndex={-1}
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="outline"
-                  className="border-white/15 text-white/70 hover:bg-white/10 shrink-0"
-                  title={t('jukeboxPlayer.linkListFile')}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  <span className="hidden sm:inline ml-2">{t('jukeboxPlayer.linkListFile')}</span>
-                </Button>
-              </div>
-              {linkListText && (
-                <p className={`text-xs ${parsedLinks.length > 0 ? 'text-purple-300/70' : 'text-white/35'}`}>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="border-white/15 text-white/70 hover:bg-white/10 shrink-0"
+                title={t('jukeboxPlayer.linkListFile')}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span className="hidden sm:inline ml-2">{t('jukeboxPlayer.linkListFile')}</span>
+              </Button>
+              {videoLinksInput.trim() && (
+                <span className={`text-xs ${parsedLinks.length > 0 ? 'text-fuchsia-300/70' : 'text-white/35'}`}>
                   {t('jukeboxPlayer.linkListParsed').replace('{n}', String(parsedLinks.length))}
-                </p>
+                </span>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            {videoLinksError && (
+              <p className="text-red-400 text-sm" role="alert">{videoLinksError}</p>
+            )}
+            {/* Kurze Erklärung: unterstützte Plattformen + Hinweise */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                <span className="text-white/40 text-xs">{t('jukeboxPlayer.videoLinksSupported')}</span>
+                {SUPPORTED_VIDEO_PLATFORMS.map(platform => (
+                  <span
+                    key={platform}
+                    className="rounded-full bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-white/55 whitespace-nowrap"
+                  >
+                    {platform}
+                  </span>
+                ))}
+              </div>
+              <p className="text-white/35 text-xs">
+                {t('jukeboxPlayer.videoLinksSimpleHint')} {t('jukeboxPlayer.videoLinksVkNote')}
+              </p>
+              <p className="text-white/30 text-[11px]">{t('jukeboxPlayer.videoLinksFileTypes')}</p>
+            </div>
+            {/* Wartende Videos aus der laufenden Warteschlange */}
+            {queuedVideos.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-white/5">
+                <p className="text-white/40 text-xs font-medium">{t('jukeboxPlayer.videoQueuedCount').replace('{n}', String(queuedVideos.length))}</p>
+                <div className="max-h-40 overflow-y-auto jukebox-queue-scroll space-y-1 pr-1">
+                  {queuedVideos.map(v => (
+                    <div key={v.id} className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/5 px-2.5 py-1.5">
+                      <PlayBadgeIcon className="w-3.5 h-3.5 text-fuchsia-400/80 shrink-0" />
+                      <span className="flex-1 min-w-0 truncate text-xs text-white/70">{v.title}</span>
+                      <span className="text-[10px] text-white/35 shrink-0">{platformDisplayName(videoBreakPlatform(v))}</span>
+                      <button
+                        onClick={() => j.removeQueueVideo(v.id)}
+                        className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                        aria-label={t('jukeboxPlayer.queueVideoRemove')}
+                        title={t('jukeboxPlayer.queueVideoRemove')}
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* ── Start Button — #8 FIX: only one start button ── */}

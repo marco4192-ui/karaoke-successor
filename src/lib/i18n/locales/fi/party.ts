@@ -364,6 +364,8 @@ unifiedSetup: {
   allYears: 'Kaikki vuodet',
   releaseEra: '📅 Aikakausi',
   allEras: 'Kaikki',
+  searchFilter: '🔍 Esittäjä / Kappale',
+  searchFilterPlaceholder: 'ABBA, Mamma Mia, …',
   filterLogic: '🔗 Suodatinlogiikka',
   combined: 'Yhdistetty (AND)',
   independent: 'Riippumaton (OR)',

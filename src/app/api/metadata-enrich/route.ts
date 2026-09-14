@@ -39,7 +39,7 @@ const STANDARD_GENRES = [
   'Punk', 'Indie', 'Folk', 'Classical', 'Soundtrack', 'Musical',
   'Schlager', 'Deutsch-Pop', 'Volksmusik', 'K-Pop', 'J-Pop', 'Disco',
   'Reggaeton', 'House', 'Techno', 'Trance', 'Opera', 'Swing', 'Oldies',
-  'Gospel', 'Anime', 'Children', 'Christmas',
+  'Gospel', 'Anime', 'Children', 'Christmas', 'Disney',
 ];
 
 const STANDARD_LANGUAGES = [

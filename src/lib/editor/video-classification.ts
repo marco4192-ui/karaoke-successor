@@ -29,8 +29,19 @@ export function getEffectiveVideoValue(song: Song): string {
     || song.nicovideoUrl
     // Direct http(s) video URLs only — blob:/file paths are playback artifacts
     || (song.videoBackground && /^https?:\/\//i.test(song.videoBackground) ? song.videoBackground : '')
+    // Local video file WITHOUT a #VIDEO tag (R4 point 9): derive the REAL file
+    // name from the relative media path instead of showing the playback blob
+    // URL — "video.mp4", not "blob:https://…/7a3f-…"
+    || basenameOf(song.relativeVideoPath)
     || ''
   );
+}
+
+/** Last path segment ("Artist/Song/video.mp4" → "video.mp4"). */
+function basenameOf(path?: string): string {
+  if (!path) return '';
+  const parts = path.split(/[\\/]/);
+  return parts[parts.length - 1] || '';
 }
 
 /** All Song fields that together describe the video source. */

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
 import { Song } from '@/types/game';
 import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
 import { getPlaylistById } from '@/lib/playlist-manager';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
+import { fuzzyScore } from '@/lib/fuzzy-search';
 import { getBool, getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
-import type { UseJukeboxReturn } from './jukebox-types';
+import type { JukeboxSongSuggestion, UseJukeboxReturn } from './jukebox-types';
 import {
   createVideoBreakSong,
   getSongPlatformVideo,
@@ -35,6 +36,8 @@ export function useJukebox(refs?: {
   const [filterArtist, setFilterArtist] = useState<string>('');
   // Era/decade filter (decade start year, e.g. '1980') — for themed parties
   const [filterEra, setFilterEra] = useState<string>('all');
+  // Exact year filter (e.g. '1985') — finer than the era/decade filter
+  const [filterYear, setFilterYear] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shuffle, setShuffle] = useState(true);
   const [repeat, setRepeat] = useState<RepeatMode>('all');
@@ -150,6 +153,36 @@ export function useJukebox(refs?: {
   // Era (decade) options derived from the library years, ascending
   const eras = useMemo(() => ['all', ...getAvailableDecades(songs)], [songs]);
 
+  // Exact year options derived from the library years, newest first
+  const years = useMemo(() => {
+    const yearSet = new Set<number>();
+    songs.forEach(s => { if (s.year) yearSet.add(s.year); });
+    return ['all', ...Array.from(yearSet).sort((a, b) => b - a).map(String)];
+  }, [songs]);
+
+  // ==================== SEARCH SUGGESTIONS (fuzzy ranking) ====================
+
+  // Deferred query keeps typing smooth while the fuzzy scoring of the whole
+  // library catches up (React renders the input with the fresh value first).
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  /** Best fuzzy matches for the current search query (descending score, max 8). */
+  const searchSuggestions = useMemo<JukeboxSongSuggestion[]>(() => {
+    const q = deferredSearchQuery.trim();
+    if (!q) return [];
+    const scored: JukeboxSongSuggestion[] = [];
+    for (const song of songs) {
+      const score = Math.max(
+        fuzzyScore(q, song.title),
+        fuzzyScore(q, song.artist) * 0.98,
+        song.album ? fuzzyScore(q, song.album) * 0.9 : 0,
+      );
+      if (score > 0) scored.push({ song, score });
+    }
+    scored.sort((a, b) => b.score - a.score || a.song.title.localeCompare(b.song.title));
+    return scored.slice(0, 8);
+  }, [deferredSearchQuery, songs]);
+
   // ==================== FILTER SONGS ====================
 
   const filteredSongs = useMemo(() => {
@@ -173,6 +206,11 @@ export function useJukebox(refs?: {
     // Era (decade) filter — matches songs whose year falls into the decade
     if (filterEra !== 'all') {
       filtered = filtered.filter(s => songMatchesEra(s, filterEra));
+    }
+    // Year filter — exact year match (finer than the era/decade filter)
+    if (filterYear !== 'all') {
+      const year = parseInt(filterYear, 10);
+      filtered = filtered.filter(s => s.year === year);
     }
     // Search query
     if (searchQuery) {
@@ -204,7 +242,7 @@ export function useJukebox(refs?: {
       }
     }
     return filtered;
-  }, [songs, filterGenre, filterArtist, filterEra, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
+  }, [songs, filterGenre, filterArtist, filterEra, filterYear, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
 
   // ==================== DERIVED STATE ====================
 
@@ -424,6 +462,74 @@ export function useJukebox(refs?: {
     for (const link of links) {
       if (!link?.url?.trim()) continue;
       if (addVideoToQueueRef.current(link.url, link.label)) queued++;
+    }
+    return queued;
+  }, []);
+
+  // ==================== SONG QUEUE (search suggestions) ====================
+
+  /**
+   * Queue a library song following the same rules as addVideoToQueue():
+   * running jukebox → inserted after the last user song; idle jukebox →
+   * the song starts playing immediately (preparing it first so media URLs
+   * exist). Returns false for duplicates.
+   */
+  const addSongToQueue = useCallback(async (song: Song, requester?: string): Promise<boolean> => {
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // No queue at all → the song starts immediately
+      try {
+        const prepared = await prepareSong(song);
+        if (requester) songRequesterRef.current.set(prepared.id, requester);
+        manualIdsRef.current.add(prepared.id);
+        playlistRef.current = [prepared];
+        currentSongRef.current = prepared;
+        currentIndexRef.current = 0;
+        isPlayingRef.current = true;
+        setPlaylist([prepared]);
+        setCurrentIndex(0);
+        setCurrentSong(prepared);
+        setCurrentSongRequestedBy(requester ?? null);
+        setCurrentTime(0);
+        setDuration(prepared.duration ? prepared.duration / 1000 : 0);
+        setPlatformPaused(false);
+        setIsPlaying(true);
+        setSongsPlayed(prev => prev + 1);
+        return true;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.debug('[useJukebox] addSongToQueue failed:', error);
+        return false;
+      }
+    }
+
+    if (!running) {
+      // Stopped jukebox with an existing queue → the song becomes the next
+      // item and playback resumes with it right away.
+      const inserted = insertSongIntoQueue(song, requester);
+      if (inserted === -1) return false;
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → insert after the last user song (before the next random song)
+    return insertSongIntoQueue(song, requester) !== -1;
+  }, [insertSongIntoQueue, prepareSong]);
+
+  const addSongToQueueRef = useRef(addSongToQueue);
+  addSongToQueueRef.current = addSongToQueue;
+
+  /** Queue a list of library songs in order (search "add all").
+   *  Sequential awaits keep the order and make each insert visible to the
+   *  next call. Returns the number of successfully queued songs. */
+  const addSongsToQueue = useCallback(async (songsToQueue: Song[], requester?: string): Promise<number> => {
+    let queued = 0;
+    for (const song of songsToQueue) {
+      if (await addSongToQueueRef.current(song, requester)) queued++;
     }
     return queued;
   }, []);
@@ -1064,9 +1170,9 @@ export function useJukebox(refs?: {
 
   return {
     // Filters
-    filterGenre, filterArtist, filterEra, searchQuery, shuffle, repeat,
+    filterGenre, filterArtist, filterEra, filterYear, searchQuery, shuffle, repeat,
     minDuration, maxDuration, maxSongs, timerMinutes, recentlyPlayedMinutes,
-    setFilterGenre, setFilterArtist, setFilterEra, setSearchQuery,
+    setFilterGenre, setFilterArtist, setFilterEra, setFilterYear, setSearchQuery,
     setShuffle: handleSetShuffle, setRepeat,
     setMinDuration, setMaxDuration, setMaxSongs, setTimerMinutes, setRecentlyPlayedMinutes,
     // Playback
@@ -1079,10 +1185,12 @@ export function useJukebox(refs?: {
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
     setIsAdPlaying, setYoutubeTime, setCurrentTime, setDuration,
     // Derived
-    genres, artists, eras, filteredSongs, upNext,
+    genres, artists, eras, years, filteredSongs, upNext, searchSuggestions,
     songsPlayed, topGenres, topRequesters, timerRemaining,
     // Video queue (video breaks) + library playlists
     addVideoToQueue, addVideoListToQueue, removeQueueVideo, enqueueLibraryPlaylist,
+    // Song queue (search suggestions)
+    addSongToQueue, addSongsToQueue,
     // Actions
     startJukebox, stopJukebox, playNext, playPrevious,
     handleMediaEnd, toggleFullscreen, togglePlayPause,

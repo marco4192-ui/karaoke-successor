@@ -8,8 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users } from 'lucide-react';
 import type { Song } from '@/types/game';
-import { isYouTubeUrl } from '@/components/game/youtube-player';
 import { useTranslation } from '@/lib/i18n/translations';
+import { GENRES, LANGUAGES } from '@/lib/constants';
+import { classifyVideoInput, getEffectiveVideoValue } from '@/lib/editor/video-classification';
 
 interface EditorSongInfoTabProps {
   song: Song;
@@ -118,35 +119,26 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         <Separator className="bg-slate-700" />
 
-        {/* Video URL */}
+        {/* Video — the effective #VIDEO source (R4 point 9): shows the REAL
+            video file name for local videos (derived from the media path) and
+            the platform URL for streaming songs — never the playback blob URL. */}
         <div className="space-y-2">
           <Label htmlFor="song-video" className="text-slate-400 text-xs">{t('editor.songInfoTab.videoUrl')}</Label>
           <Input
             id="song-video"
             name="song-video"
-            value={song.videoBackground || song.youtubeUrl || ''}
+            value={getEffectiveVideoValue(song)}
             onChange={(e) => {
-              const url = e.target.value;
-              if (!url) {
-                // Clear both fields when URL is emptied
-                onSongChange(prev => ({
-                  ...prev,
-                  videoBackground: undefined,
-                  youtubeUrl: undefined,
-                }));
-              } else {
-                const isYt = isYouTubeUrl(url);
-                onSongChange(prev => ({
-                  ...prev,
-                  videoBackground: isYt ? undefined : url,
-                  youtubeUrl: isYt ? url : undefined,
-                }));
-              }
+              // Classify into the correct Song field (platform URL, direct URL
+              // or local file name) and CLEAR the other video fields — the
+              // same contract as the #VIDEO field in the metadata tab.
+              onSongChange(prev => ({ ...prev, ...classifyVideoInput(e.target.value) }));
               onSetUnsavedChanges();
             }}
             placeholder={t('editor.songInfoTab.videoUrlPlaceholder')}
             className="bg-slate-800 border-slate-600"
           />
+          <p className="text-[10px] text-slate-500">{t('editor.metadataTab.videoHint')}</p>
         </div>
 
         {/* Video Gap */}
@@ -170,7 +162,9 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         <Separator className="bg-slate-700" />
 
-        {/* Genre */}
+        {/* Genre — canonical GENRES list from constants.ts (single source of
+            truth, includes Disney). The old Genre/Language sidebar tab was
+            removed (R4 point 8) — this is the regular metadata editing spot. */}
         <div className="space-y-2">
           <Label htmlFor="song-genre" className="text-slate-400 text-xs">{t('editor.songInfoTab.genre')}</Label>
           <Select
@@ -184,30 +178,9 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               <SelectValue placeholder={t('editor.songInfoTab.genrePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Pop">Pop</SelectItem>
-              <SelectItem value="Rock">Rock</SelectItem>
-              <SelectItem value="Hip-Hop">Hip-Hop</SelectItem>
-              <SelectItem value="R&B">R&amp;B</SelectItem>
-              <SelectItem value="Country">Country</SelectItem>
-              <SelectItem value="Electronic">Electronic</SelectItem>
-              <SelectItem value="Dance">Dance</SelectItem>
-              <SelectItem value="Jazz">Jazz</SelectItem>
-              <SelectItem value="Blues">Blues</SelectItem>
-              <SelectItem value="Soul">Soul</SelectItem>
-              <SelectItem value="Funk">Funk</SelectItem>
-              <SelectItem value="Reggae">Reggae</SelectItem>
-              <SelectItem value="Latin">Latin</SelectItem>
-              <SelectItem value="Metal">Metal</SelectItem>
-              <SelectItem value="Punk">Punk</SelectItem>
-              <SelectItem value="Indie">Indie</SelectItem>
-              <SelectItem value="Folk">Folk</SelectItem>
-              <SelectItem value="Classical">Classical</SelectItem>
-              <SelectItem value="Soundtrack">Soundtrack</SelectItem>
-              <SelectItem value="Musical">Musical</SelectItem>
-              <SelectItem value="Schlager">Schlager</SelectItem>
-              <SelectItem value="Deutsch-Pop">Deutsch-Pop</SelectItem>
-              <SelectItem value="K-Pop">K-Pop</SelectItem>
-              <SelectItem value="J-Pop">J-Pop</SelectItem>
+              {GENRES.map(g => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Input
@@ -240,7 +213,8 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
           />
         </div>
 
-        {/* Language */}
+        {/* Language — canonical LANGUAGES list from constants.ts (English
+            names, consistent with the AI harmonize pipeline) */}
         <div className="space-y-2">
           <Label htmlFor="song-language" className="text-slate-400 text-xs">{t('editor.songInfoTab.language')}</Label>
           <Select
@@ -255,22 +229,9 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               <SelectValue placeholder={t('editor.songInfoTab.languagePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Deutsch">Deutsch</SelectItem>
-              <SelectItem value="Englisch">Englisch</SelectItem>
-              <SelectItem value="Spanisch">Spanisch</SelectItem>
-              <SelectItem value="Französisch">Französisch</SelectItem>
-              <SelectItem value="Italienisch">Italienisch</SelectItem>
-              <SelectItem value="Portugiesisch">Portugiesisch</SelectItem>
-              <SelectItem value="Japanisch">Japanisch</SelectItem>
-              <SelectItem value="Koreanisch">Koreanisch</SelectItem>
-              <SelectItem value="Chinesisch">Chinesisch</SelectItem>
-              <SelectItem value="Russisch">Russisch</SelectItem>
-              <SelectItem value="Niederländisch">Niederländisch</SelectItem>
-              <SelectItem value="Polnisch">Polnisch</SelectItem>
-              <SelectItem value="Türkisch">Türkisch</SelectItem>
-              <SelectItem value="Arabisch">Arabisch</SelectItem>
-              <SelectItem value="Schwedisch">Schwedisch</SelectItem>
-              <SelectItem value="Latein">Latein</SelectItem>
+              {LANGUAGES.map(l => (
+                <SelectItem key={l} value={l}>{l}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Input

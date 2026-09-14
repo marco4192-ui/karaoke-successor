@@ -9,6 +9,7 @@ import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from 
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
 // NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
@@ -508,21 +509,36 @@ export function getDecades(): string[] {
 // Optional releaseYear (exact year) and era (decade bucket, e.g. '1980' =
 // 1980-1989) filters are AND-combined with genre/language — for themed
 // parties ("Motto-Party": Genre=Pop + Era=80s).
+// Optional free-text `search` (artist/title, e.g. "ABBA") is applied FIRST
+// and AND-combined with every other filter. Matching is fuzzy (typos are
+// tolerated via Levenshtein — "Koldplay" still finds "Coldplay").
 export function filterSongs(
   songs: Song[],
   genre?: string,
   language?: string,
   combined?: boolean,
   releaseYear?: string,
-  era?: string
+  era?: string,
+  search?: string
 ): Song[] {
   const hasGenre = genre && genre !== 'all';
   const hasLanguage = language && language !== 'all';
   const hasYear = releaseYear && releaseYear !== 'all';
   const hasEra = era && era !== 'all';
+  const searchQuery = search?.trim() ?? '';
+  const hasSearch = searchQuery.length > 0;
 
   // No filters active
-  if (!hasGenre && !hasLanguage && !hasYear && !hasEra) return songs;
+  if (!hasGenre && !hasLanguage && !hasYear && !hasEra && !hasSearch) return songs;
+
+  // Free-text search (artist/title) — applied first so it ANDs with all
+  // other filters regardless of the combined/independent genre-language logic
+  let searchFiltered = songs;
+  if (hasSearch) {
+    searchFiltered = songs.filter(s =>
+      fuzzyMatch(searchQuery, s.title) || fuzzyMatch(searchQuery, s.artist)
+    );
+  }
 
   // Helper: check if a song's genre matches the filter genre
   // Handles comma-separated genres (e.g., "Soundtrack, K-Pop")
@@ -542,9 +558,9 @@ export function filterSongs(
   // Independent mode (combined=false): OR logic — songs matching either
   // genre or language are included. Year/era filters are applied in
   // addition (AND) — the early return previously skipped them (bug).
-  let filtered = songs;
+  let filtered = searchFiltered;
   if (combined === false && hasGenre && hasLanguage) {
-    filtered = songs.filter(s =>
+    filtered = searchFiltered.filter(s =>
       songGenreMatches(s, genre!) ||
       songLanguageMatches(s, language!)
     );

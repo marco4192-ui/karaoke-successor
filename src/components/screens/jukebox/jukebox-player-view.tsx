@@ -1074,7 +1074,7 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
             </h1>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <p className="text-white/60">
-                {j.isPlaying ? `${j.playlist.length} ${t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(j.playlist.length))}` : t('jukeboxPlayer.sitBackEnjoy')}
+                {j.isPlaying ? t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(j.playlist.length)) : t('jukeboxPlayer.sitBackEnjoy')}
               </p>
               {j.songsPlayed > 0 && (
                 <span className="text-white/40 text-sm tabular-nums">({j.songsPlayed} {t('jukeboxPlayer.songsPlayed')})</span>

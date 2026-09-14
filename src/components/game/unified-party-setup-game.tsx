@@ -4,6 +4,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
 import { PlayerProfile, Difficulty } from '@/types/game';
 import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
 import type { PartyGameConfig, SongSelectionOption, InputMode } from './unified-party-setup.types';
@@ -161,6 +163,9 @@ interface SongFilterSectionProps {
   /** Decade options (start years as strings, ascending, no 'all') */
   availableDecades: string[];
   onFilterEraChange: (_era: string) => void;
+  /** Free-text filter (artist/title, fuzzy-matched — e.g. "ABBA") */
+  filterSearch: string;
+  onFilterSearchChange: (_search: string) => void;
 }
 
 export function SongFilterSection({
@@ -180,9 +185,11 @@ export function SongFilterSection({
   filterEra,
   availableDecades,
   onFilterEraChange,
+  filterSearch,
+  onFilterSearchChange,
 }: SongFilterSectionProps) {
   const { t } = useTranslation();
-  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all' || filterEra !== 'all';
+  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all' || filterEra !== 'all' || filterSearch.trim() !== '';
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -197,6 +204,37 @@ export function SongFilterSection({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Free-text search (artist/title, fuzzy) — first control, full-width row above the dropdowns */}
+        <div className="mb-4">
+          <label htmlFor="party-filter-search" className="text-sm text-white/60 mb-1 block">
+            {t('unifiedSetup.searchFilter')}
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none" aria-hidden="true" />
+            <Input
+              id="party-filter-search"
+              type="text"
+              value={filterSearch}
+              onChange={(e) => onFilterSearchChange(e.target.value)}
+              placeholder={t('unifiedSetup.searchFilterPlaceholder')}
+              autoComplete="off"
+              data-testid="party-filter-search-input"
+              className="h-auto w-full bg-gray-800 border border-white/10 rounded-lg pl-9 pr-9 py-2 text-sm text-white placeholder:text-white/30 focus-visible:ring-cyan-400/50"
+            />
+            {filterSearch !== '' && (
+              <button
+                type="button"
+                onClick={() => onFilterSearchChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                aria-label={t('unifiedSetup.resetFilter')}
+                title={t('unifiedSetup.resetFilter')}
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-4 items-end">
           {/* Genre Dropdown */}
           <div className="flex-1 min-w-[180px]">
@@ -295,6 +333,7 @@ export function SongFilterSection({
                 onFilterLanguageChange('all');
                 onFilterReleaseYearChange('all');
                 onFilterEraChange('all');
+                onFilterSearchChange('');
               }}
               className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white/60 hover:text-white transition-all"
               title={t('unifiedSetup.resetFilter')}

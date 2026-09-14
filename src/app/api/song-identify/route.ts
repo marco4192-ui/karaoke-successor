@@ -102,7 +102,7 @@ Rules:
 - confidence should be 0-100 based on how certain you are
 - For language, ALWAYS use the full ENGLISH language name (e.g. "English", "German", "Spanish", "French", "Japanese", "Korean", "Chinese", "Russian", "Italian", "Portuguese") — NOT ISO codes, NOT native forms (no "Deutsch", "Español", "日本語")
 - If you cannot determine a field, set it to null
-- For genre, use ONE of these well-known genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, J-Pop, Schlager, Volksmusik, Singer-Songwriter, Reggae, Soul, Funk, Metal, Punk, Indie, Folk, Blues, Dance, Reggaeton, Afrobeats, Alternative, Children's
+- For genre, use ONE of these well-known genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, J-Pop, Schlager, Volksmusik, Singer-Songwriter, Reggae, Soul, Funk, Metal, Punk, Indie, Folk, Blues, Dance, Reggaeton, Afrobeats, Alternative, Children's, Disney. Disney songs (Disney animated/live-action movies, e.g. "Let It Go", "Hakuna Matata") get genre "Disney", NOT "Soundtrack" or "Musical".
 - Sub-genres should be normalized to their parent genre. Examples: "Synthpop" → "Pop", "Alternative Rock" → "Rock", "Deep House" → "Electronic", "Contemporary R&B" → "R&B", "Indie Folk" → "Folk", "Neo Soul" → "Soul"
 - For language detection from lyrics: look at the actual words used. Common indicators:
   - German: "ich", "du", "der", "die", "das", "und", "nicht", "ein", "ist", "mir"

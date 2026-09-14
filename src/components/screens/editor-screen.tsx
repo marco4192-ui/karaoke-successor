@@ -3,58 +3,64 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache, loadCustomSongsFromStorage } from '@/lib/game/song-library';
-import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
-import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { getAllSongs, getAllSongsAsync, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
-import { GenreLanguageEditor } from '@/components/editor/genre-language-editor';
-import { AiHarmonizeCard } from '@/components/editor/ai-harmonize-card';
-import { RuleHarmonizeCard, RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
-import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
+import { MetadataStudio } from '@/components/editor/metadata-studio';
+import { RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
-import {
-  harmonizeSongs,
-  HarmonizeSuggestion,
-  HarmonizeProgress,
-  HarmonizeStats,
-} from '@/lib/ai/harmonize-client';
-import {
-  SuggestionRow,
-  ConfidenceFilter,
-  fieldPassesThreshold,
-  countApplicableSongs,
-} from '@/components/editor/harmonize-shared';
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
+
+  // ── Initial load (R4 point 6): Ladescreen until songs AND covers are ready.
+  // The editor now uses the SAME loading path as the Library: getAllSongsAsync()
+  // eagerly restores cover URLs (Tauri: shared blobUrlCache; browser: media-db)
+  // — previously the editor restored covers itself in slow 20-song batches for
+  // only the first 100 songs, which is why covers visibly reloaded here.
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const songsWithCovers = await getAllSongsAsync();
+        if (!cancelled) setSongs(songsWithCovers);
+      } catch {
+        // Non-critical — the sync getAllSongs() snapshot stays
+      } finally {
+        if (!cancelled) setIsInitialLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Item 4: visible loading state for library (re)loads — the Tauri folder
   // rescan can take seconds and previously gave NO feedback at all.
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
-  const refreshSongs = useCallback(async () => {
-    // LIGHT reload: invalidate the in-memory cache and re-read the persistent
-    // store (localStorage/IndexedDB). NO disk scan — this runs after every
-    // single batch apply and must stay fast/resource-friendly.
-    setIsLibraryLoading(true);
-    try {
-      clearSongCache();
-      setSongs(getAllSongs());
-    } finally {
-      setIsLibraryLoading(false);
-    }
+  const refreshSongs = useCallback(() => {
+    // LIGHT reload: updateSong() keeps the in-memory customSongsCache (WITH the
+    // runtime blob/asset URLs) in sync — reading it back is instant and covers
+    // STAY VISIBLE. clearSongCache() must NOT be called here: it revokes the
+    // browser blob URLs the grid is displaying (covers would vanish + reload —
+    // the old "why do covers reload?" symptom).
+    setSongs(getAllSongs());
   }, []);
 
   // FULL reload (the "Neu laden" button): reconcile the library with the txt
   // files on disk — genre/language/year/title/artist are reset to the TXT
   // truth. This is what the user expects from a library reload: store-only
   // or stale values (e.g. genre set although the txt has none) are corrected.
+  // After the cache reset the covers are restored via the Library's async
+  // path (same data basis — R4 point 6).
   const refreshSongsWithReconcile = useCallback(async () => {
     setIsLibraryLoading(true);
     try {
@@ -74,116 +80,30 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       } catch {
         // Non-Tauri environment or scan failed — fall back to the light reload
       }
-      clearSongCache();
-      setSongs(getAllSongs());
+      const songsWithCovers = await getAllSongsAsync();
+      setSongs(songsWithCovers);
     } finally {
       setIsLibraryLoading(false);
     }
   }, [t, toast]);
 
-  // Item 4: when the editor opens before the app-level IndexedDB load has
-  // finished, the sync getAllSongs() returns an empty/stale list and nothing
-  // ever re-triggers it. Await the async load while the list is empty and
-  // refresh — with a visible loading indicator while it runs.
-  // (Deps are [songs.length]: once songs arrive the effect becomes a no-op;
-  // StrictMode double-mounts simply re-run the harmless load.)
-  useEffect(() => {
-    if (songs.length > 0) return; // already loaded — nothing to wait for
-    let cancelled = false;
-    setIsLibraryLoading(true);
-    loadCustomSongsFromStorage()
-      .catch(() => {})
-      .finally(() => {
-        if (cancelled) return;
-        setSongs(getAllSongs());
-        setIsLibraryLoading(false);
-      });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songs.length]);
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
-  const [showNewSongDialog, setShowNewSongDialog] = useState(false); // New song creation dialog
+  const [showNewSongDialog, setShowNewSongDialog] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50); // Lazy loading for song grid
 
-  // ── Multi-select state ──
+  // ── Multi-select state (R4 point 7: selection feeds the Metadata Studio) ──
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [batchSuggestions, setBatchSuggestions] = useState<HarmonizeSuggestion[]>([]);
-  const [batchLoading, setBatchLoading] = useState(false);
-  const [batchError, setBatchError] = useState<string | null>(null);
-  const [showBatchDialog, setShowBatchDialog] = useState(false);
-  const [showBatchWarning, setShowBatchWarning] = useState(false);
-  const batchAbortRef = useRef(false);
-  const lastProcessedSongsRef = useRef<Song[]>([]);
-  // Progress + file-error feedback for the batch apply (txt persistence)
-  const [batchApplyProgress, setBatchApplyProgress] = useState<{ done: number; total: number } | null>(null);
-  const [batchFileErrors, setBatchFileErrors] = useState<number | null>(null);
 
-  // R3/R6 pipeline progress (factual lookup + LLM chunks) + stats
-  const [batchProgress, setBatchProgress] = useState<HarmonizeProgress | null>(null);
-  const [batchStats, setBatchStats] = useState<HarmonizeStats | null>(null);
-  // R4: minimum confidence threshold for apply-all (AI guesses only)
-  const [minConfidence, setMinConfidence] = useState(70);
-  // R1: lyrics warm-up (pre-loads lyrics so the apply loop never blocks on
-  // per-song file reads)
-  const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
-  const warmupPromiseRef = useRef<Promise<void> | null>(null);
-
-  // Abort in-flight batch operations when the screen unmounts
-  useEffect(() => {
-    return () => { batchAbortRef.current = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Restore cover URLs for Tauri ──
-  // On Tauri, song.coverImage may be a relative path (e.g. "Covers/song.jpg") that
-  // doesn't resolve in the browser. ensureSongUrls() converts these to proper
-  // asset://localhost/ URLs. On browser, ensureSongUrls() returns immediately.
-  useEffect(() => {
-    if (songs.length === 0) return;
-    if (songs === lastProcessedSongsRef.current) return;
-    lastProcessedSongsRef.current = songs;
-    let cancelled = false;
-
-    const restoreCovers = async () => {
-      try {
-        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
-        const BATCH_SIZE = 20;
-        const updates = new Map<string, Song>();
-
-        // DO-NOT-CHANGE: Only restore cover URLs for the first 100 songs.
-        // Processing ALL songs (even invisible ones) causes thousands of filesystem
-        // I/O calls on Tauri that freeze the editor UI for several seconds.
-        // 100 songs is enough for the initial viewport + a generous scroll buffer.
-        const songsToProcess = songs.slice(0, 100);
-        for (let i = 0; i < songsToProcess.length; i += BATCH_SIZE) {
-          if (cancelled) return;
-          const batch = songsToProcess.slice(i, i + BATCH_SIZE);
-          const results = await Promise.all(batch.map(song => ensureSongUrls(song)));
-
-          for (let j = 0; j < results.length; j++) {
-            // Only keep songs whose cover URL actually changed
-            if (results[j].coverImage !== batch[j].coverImage) {
-              updates.set(batch[j].id, results[j]);
-            }
-          }
-        }
-
-        if (cancelled || updates.size === 0) return;
-        setSongs(prev => prev.map(song => updates.get(song.id) ?? song));
-      } catch (err) {
-        // Non-critical — covers will just show the 🎵 fallback emoji
-        // eslint-disable-next-line no-console
-        console.warn('[EditorScreen] Failed to restore cover URLs:', err);
-      }
-    };
-
-    restoreCovers();
-    return () => { cancelled = true; };
-  }, [songs]);
+  // ── Metadata Studio (R4 points 7+8: merged AI Harmonize + Rule Harmonize
+  // + AI Suggest, placed in the editor library; the old Genre/Language
+  // sidebar tab is gone — regular metadata editing covers it) ──
+  const [studioOpen, setStudioOpen] = useState(false);
+  /** Incremented each time the select bar opens the studio → re-focuses the
+   *  "selection" scope even when it was already selected. */
+  const [studioSelectionFocus, setStudioSelectionFocus] = useState(0);
 
   // Reset visibleCount when filters change
   useEffect(() => { setVisibleCount(50); }, [filterMode, searchQuery]);
@@ -245,11 +165,11 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
    * Select the NEXT batch of up to 100 filtered songs (in list order) that are
    * not selected yet. Fewer available → all remaining get selected.
    *
-   * Batch size raised 50 → 100 (user request 1.c): the pipeline chunks
-   * internally (12 per LLM call with per-chunk retry, 12 per factual lookup)
-   * with progress + abort, so larger selections stay reliable — the old
-   * "only ~5 songs came back" symptom was the LLM truncating 50-song
-   * responses, not a real batch limit (fixed in harmonize-client).
+   * Batch size 100: the pipeline chunks internally (12 per LLM call with
+   * per-chunk retry, 12 per factual lookup) with progress + abort, so larger
+   * selections stay reliable — the old "only ~5 songs came back" symptom was
+   * the LLM truncating 50-song responses, not a real batch limit (fixed in
+   * harmonize-client).
    */
   const SELECT_BATCH_SIZE = 100;
   const selectNextBatch = useCallback(() => {
@@ -269,197 +189,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
-    setBatchSuggestions([]);
-    setBatchError(null);
-    setBatchStats(null);
-    setBatchProgress(null);
   }, []);
 
   const selectedCount = selectedIds.size;
-
-  // ── R1: lyrics warm-up ──
-  // Pre-loads lyrics (IndexedDB → file fallback) with limited concurrency
-  // so the batch apply loop writes txt files without per-song cold reads.
-  // Started in parallel with the AI call — by the time the dialog shows, the
-  // cache is usually warm.
-  const startLyricsWarmup = useCallback((list: Song[]) => {
-    const total = list.length;
-    if (total === 0) return;
-    let index = 0;
-    let done = 0;
-    setWarmupProgress({ done: 0, total });
-
-    const worker = async () => {
-      while (index < total) {
-        const song = list[index++];
-        try {
-          await getSongByIdWithLyrics(song.id);
-        } catch {
-          // Non-fatal — the apply loop retries per song and reports file errors
-        }
-        done++;
-        setWarmupProgress({ done, total });
-      }
-    };
-
-    const workers = Array.from({ length: Math.min(4, total) }, () => worker());
-    warmupPromiseRef.current = Promise.all(workers).then(() => {
-      setWarmupProgress(null);
-    });
-  }, []);
-
-  // ── Batch AI Suggest (R2 cache → R6 factual lookup → LLM, chunked R3) ──
-  const handleBatchSuggest = useCallback(async () => {
-    // R3: ALL selected songs — no silent 50-song truncation. harmonizeSongs
-    // chunks internally (50/LLM call, 12/lookup call) with progress.
-    const selectedSongs = songs.filter(s => selectedIds.has(s.id));
-    if (selectedSongs.length === 0) {
-      // Never a silent no-op — the user asked for suggestions.
-      toast({
-        title: `☑️ ${t('editor.aiBatchSelectFirstTitle')}`,
-        description: t('editor.aiBatchSelectFirstDesc'),
-      });
-      return;
-    }
-
-    setBatchLoading(true);
-    setBatchError(null);
-    setBatchSuggestions([]);
-    setBatchFileErrors(null);
-    setBatchStats(null);
-    batchAbortRef.current = false;
-
-    // R1: warm the lyrics cache while the AI thinks
-    startLyricsWarmup(selectedSongs);
-
-    try {
-      const result = await harmonizeSongs(
-        selectedSongs.map(s => ({
-          id: s.id, title: s.title, artist: s.artist,
-          genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
-        })),
-        { onProgress: setBatchProgress },
-      );
-      if (batchAbortRef.current) return;
-      setBatchProgress(null);
-
-      if (result.success || result.suggestions.length > 0) {
-        setBatchSuggestions(result.suggestions);
-        setBatchStats(result.stats);
-        setShowBatchDialog(true);
-      } else {
-        setBatchError(result.error || t('editor.aiBatchError'));
-      }
-    } catch (e) {
-      if (batchAbortRef.current) return;
-      setBatchError(e instanceof Error ? e.message : 'Network error');
-    } finally {
-      setBatchLoading(false);
-      setBatchProgress(null);
-    }
-  }, [songs, selectedIds, t, startLyricsWarmup, toast]);
-
-  /**
-   * Persist a metadata update to the song's SOURCE txt file.
-   * Shared module — the card uses the same contract.
-   */
-  const persistMetadata = useCallback(async (songId: string, updates: Partial<Song>): Promise<boolean> => {
-    const result = await persistSongMetadataToTxt(songId, updates);
-    return result.success;
-  }, []);
-
-  const handleBatchApplySingle = useCallback(async (songId: string, field: 'genre' | 'language' | 'year', value: string | number) => {
-    // Normalize to the app's canonical naming (English language names,
-    // title-cased genres) — factual sources are pre-normalized, LLM output
-    // is normalized here as a safety net.
-    const normalized = field === 'genre'
-      ? normalizeGenreName(String(value))
-      : field === 'language'
-        ? normalizeLanguage(String(value))
-        : Number(value);
-    const updates: Partial<Song> = { [field]: normalized };
-
-    // TXT FIRST (1.a): the library is ONLY updated when the txt write
-    // succeeded. On failure the song stays untouched and the suggestion
-    // REMAINS OPEN for a retry — no more "genre set but not in the txt".
-    const fileOk = await persistMetadata(songId, updates);
-    if (fileOk) {
-      updateSong(songId, updates);
-      // Clear only the applied suggestion — the OTHER fields' suggestions stay
-      // pending in the dialog (previously the whole row vanished).
-      setBatchSuggestions(prev => prev
-        .map(s => s.songId === songId
-          ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
-          : s)
-        .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
-    } else {
-      setBatchFileErrors(prev => (prev ?? 0) + 1);
-    }
-    refreshSongs();
-  }, [refreshSongs, persistMetadata]);
-
-  const handleBatchApplyAll = useCallback(async () => {
-    const list = batchSuggestions;
-    if (list.length === 0) return;
-
-    // R1: make sure the lyrics warm-up finished — the apply loop then writes
-    // txt files from the warm cache instead of hitting cold file reads.
-    if (warmupPromiseRef.current) {
-      try { await warmupPromiseRef.current; } catch { /* warmup is best-effort */ }
-    }
-
-    setBatchApplyProgress({ done: 0, total: list.length });
-    setBatchFileErrors(0);
-    let fileErrors = 0;
-    let processed = 0;
-    // TXT-first: songs whose txt could NOT be written stay in the dialog
-    // so the user can retry them — nothing is silently dropped.
-    const failed: HarmonizeSuggestion[] = [];
-
-    for (const s of list) {
-      if (batchAbortRef.current) break;
-      const updates: Partial<Song> = {};
-      // R4: apply-all respects the confidence threshold — but factual
-      // sources (Deezer/MusicBrainz) and years are exempt (verified data).
-      if (s.suggestedGenre && fieldPassesThreshold('genre', s, minConfidence)) {
-        updates.genre = normalizeGenreName(s.suggestedGenre);
-      }
-      if (s.suggestedLanguage && fieldPassesThreshold('language', s, minConfidence)) {
-        updates.language = normalizeLanguage(s.suggestedLanguage);
-      }
-      if (s.suggestedYear && s.suggestedYear !== s.currentYear) {
-        updates.year = s.suggestedYear;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        // TXT FIRST (1.a): library update only on successful txt write
-        const fileOk = await persistMetadata(s.songId, updates);
-        if (fileOk) {
-          updateSong(s.songId, updates);
-        } else {
-          fileErrors++;
-          failed.push(s);
-        }
-      }
-      processed++;
-      setBatchApplyProgress({ done: processed, total: list.length });
-    }
-
-    setBatchApplyProgress(null);
-    setBatchFileErrors(fileErrors > 0 ? fileErrors : null);
-    if (failed.length > 0) {
-      // Keep the failed rows open for retry; only clean up on full success
-      setBatchSuggestions(failed);
-      setShowBatchDialog(true);
-    } else {
-      setBatchSuggestions([]);
-      setShowBatchDialog(false);
-      clearSelection();
-    }
-    setBatchStats(null);
-    setShowBatchWarning(false);
-    refreshSongs();
-  }, [batchSuggestions, minConfidence, clearSelection, refreshSongs, persistMetadata]);
 
   // Handle song selection - load lyrics from IndexedDB/filesystem if needed
   const handleSelectSong = useCallback(async (song: Song) => {
@@ -500,9 +232,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   }, [selectMode, toggleSongSelection, handleSelectSong]);
 
   // ── Select-mode entry hint ("Wähle Songs aus") ──
-  // Entering AI-support mode right after using a filter needs an explicit
-  // prompt — previously nothing told the user that clicking songs is required
-  // before the (then invisible) suggest action appears.
+  // Entering selection mode right after using a filter needs an explicit
+  // prompt — the Metadata Studio (selection scope) needs songs picked first.
   const handleToggleSelectMode = useCallback(() => {
     setSelectMode(prev => {
       const next = !prev;
@@ -529,30 +260,22 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     setSelectedSong(null);
   };
 
-  // ── Latest song state from the KaraokeEditor (fixes stale saves in the genre panel) ──
-  const latestSongRef = useRef<Song | null>(null);
-  const handleSongSync = useCallback((song: Song) => {
-    latestSongRef.current = song;
+  /** Open the Metadata Studio focused on the current selection. */
+  const openStudioWithSelection = useCallback(() => {
+    setStudioOpen(true);
+    setStudioSelectionFocus(c => c + 1);
+    // Scroll the studio into view (it sits above the grid)
+    requestAnimationFrame(() => {
+      document.querySelector('[data-testid="metadata-studio"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }, []);
-
-  // Incremented when an external panel saved the current state → the
-  // KaraokeEditor resets its unsaved-changes indicator accordingly.
-  const [externalSaveCount, setExternalSaveCount] = useState(0);
-
-  const handleSongMetadataUpdate = (updates: Partial<Song>) => {
-    if (selectedSong) {
-      setSelectedSong({ ...selectedSong, ...updates } as Song);
-    }
-  };
 
   return (
     <div className="w-full h-full relative theme-container">
-      {/* ── Initial library loading overlay ──
-          First editor entry loads the library from IndexedDB, which can take
-          a moment — show a full-screen overlay instead of a half-rendered
-          screen. (The page RELOAD already had a spinner via the grid's empty
-          state; this covers the first client-side navigation too.) */}
-      {isLibraryLoading && songs.length === 0 && (
+      {/* ── Initial loading screen (R4 point 6) ──
+          Shown on the FIRST editor open until songs AND their covers are
+          imported/visible — same async loading path as the Library. */}
+      {isInitialLoading && (
         <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4" data-testid="editor-initial-loading">
           <div className="relative">
             <div className="w-14 h-14 rounded-full border-2 border-cyan-500/30" />
@@ -561,7 +284,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           </div>
           <div className="text-center">
             <p className="text-white/80 text-sm font-medium">{t('editor.loadingLibraryTitle')}</p>
-            <p className="text-white/40 text-xs mt-1">{t('editor.loadingLibraryDesc')}</p>
+            <p className="text-white/40 text-xs mt-1">{t('editor.loadingCoversDesc')}</p>
           </div>
         </div>
       )}
@@ -572,193 +295,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           <div className="bg-slate-800 rounded-lg p-6 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-white">{t('editor.loadingLyrics')}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Batch AI Suggest Dialog */}
-      {showBatchDialog && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-lg w-full mx-4 max-h-[80vh] flex flex-col shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">🤖</span>
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-white font-semibold text-sm">{t('editor.aiBatchSuggestTitle')}</h3>
-                <p className="text-white/60 text-xs truncate">{t('editor.aiBatchSuggestDesc')}</p>
-              </div>
-            </div>
-
-            {batchSuggestions.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center py-8">
-                <p className="text-white/50 text-sm">{t('editor.aiBatchNoSuggestions')}</p>
-              </div>
-            ) : (
-              <>
-                {/* R4: confidence threshold filter — AI guesses only */}
-                <div className="flex items-center justify-between gap-2 flex-wrap pb-2 mb-2 border-b border-white/10">
-                  <ConfidenceFilter value={minConfidence} onChange={setMinConfidence} t={t} />
-                  {batchStats && (
-                    <p className="text-[10px] text-white/40 truncate">
-                      {t('editor.aiBatchStatsLine')
-                        .replace('{cache}', String(batchStats.fromCache))
-                        .replace('{facts}', String(batchStats.factualHits))
-                        .replace('{ai}', String(batchStats.total - batchStats.fromCache))}
-                    </p>
-                  )}
-                </div>
-
-                {/* AI-unavailable feedback: songs that could NOT be analyzed
-                    stay "without genre" and are retried on the next run —
-                    they must not look like a successful "no change". */}
-                {batchStats && batchStats.notAnalyzed > 0 && (
-                  <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2 mb-2" data-testid="editor-batch-not-analyzed">
-                    <span className="text-sm leading-none">⚠️</span>
-                    <p className="text-[10px] text-amber-200/90 flex-1">
-                      {t('editor.aiBatchNotAnalyzed').replace('{count}', String(batchStats.notAnalyzed))}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex-1 overflow-y-auto space-y-2 mb-4">
-                  {batchSuggestions.map(s => (
-                    <SuggestionRow
-                      key={s.songId}
-                      suggestion={s}
-                      minConfidence={minConfidence}
-                      onApply={(songId, field, value) => handleBatchApplySingle(songId, field, value)}
-                    />
-                  ))}
-                </div>
-
-                {/* R1: lyrics warm-up indicator */}
-                {warmupProgress && (
-                  <div className="flex items-center gap-2 text-[11px] text-white/50 pb-2">
-                    <span>📖</span>
-                    <span className="font-mono tabular-nums">
-                      {t('editor.aiBatchWarmup')
-                        .replace('{current}', String(warmupProgress.done))
-                        .replace('{total}', String(warmupProgress.total))}
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-
-            <div className="flex gap-2 pt-2 border-t border-white/10">
-              <Button
-                variant="outline"
-                onClick={() => { setShowBatchDialog(false); }}
-                className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                data-testid="editor-batch-close-button"
-              >
-                {t('editor.aiBatchClose')}
-              </Button>
-              {batchSuggestions.length > 0 && (
-                <Button
-                  onClick={() => setShowBatchWarning(true)}
-                  disabled={countApplicableSongs(batchSuggestions, minConfidence) === 0}
-                  className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs disabled:opacity-40"
-                  data-testid="editor-batch-apply-button"
-                >
-                  {t('editor.aiApplyAll')} ({countApplicableSongs(batchSuggestions, minConfidence)}
-                    {countApplicableSongs(batchSuggestions, minConfidence) !== batchSuggestions.length
-                      ? `/${batchSuggestions.length}`
-                      : ''})
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Batch Apply Warning Dialog */}
-      {showBatchWarning && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-          <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">⚠️</span>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-sm">{t('editor.aiHarmonizeWarnTitle')}</h3>
-                <p className="text-white/60 text-xs mt-0.5">{t('editor.aiHarmonizeWarnSubtitle')}</p>
-              </div>
-            </div>
-
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-white/70 space-y-2">
-              <p>{t('editor.aiHarmonizeWarn1')}</p>
-              <ul className="list-disc list-inside space-y-1 text-white/60">
-                <li>{t('editor.aiHarmonizeWarn2')}</li>
-                <li>{t('editor.aiHarmonizeWarn3')}</li>
-                <li>{t('editor.aiHarmonizeWarn4')}</li>
-              </ul>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-white/50">
-              <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{countApplicableSongs(batchSuggestions, minConfidence)}</span>
-              <span>{t('editor.aiHarmonizeWarnCount')}</span>
-            </div>
-
-            {/* R4: threshold note in the warning */}
-            <div className="flex items-center gap-2 text-[11px] text-white/50 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
-              <span>🛡️</span>
-              <span>
-                {t('editor.aiBatchThresholdNote').replace('{value}', String(minConfidence))}
-              </span>
-            </div>
-
-            {/* Progress while writing the txt files */}
-            {batchApplyProgress && (
-              <div className="flex items-center gap-3 text-xs text-white/70">
-                <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <span className="font-mono tabular-nums">
-                  {t('editor.aiBatchSavingFiles')
-                    .replace('{current}', String(batchApplyProgress.done))
-                    .replace('{total}', String(batchApplyProgress.total))}
-                </span>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              <Button
-                variant="outline"
-                onClick={() => setShowBatchWarning(false)}
-                disabled={!!batchApplyProgress}
-                className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                data-testid="editor-batch-warning-cancel-button"
-              >
-                {t('editor.aiHarmonizeWarnCancel')}
-              </Button>
-              <Button
-                onClick={handleBatchApplyAll}
-                disabled={!!batchApplyProgress}
-                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
-                data-testid="editor-batch-warning-confirm-button"
-              >
-                {batchApplyProgress
-                  ? `${batchApplyProgress.done}/${batchApplyProgress.total}`
-                  : t('editor.aiHarmonizeWarnConfirm')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* File persistence warning — library updated but txt could not be written */}
-      {batchFileErrors !== null && (
-        <div className="fixed bottom-4 right-4 z-[70] max-w-sm bg-gray-900 border border-amber-500/40 rounded-xl p-3 shadow-2xl" data-testid="editor-batch-file-error">
-          <div className="flex items-start gap-2">
-            <span className="text-lg leading-none">⚠️</span>
-            <p className="text-xs text-amber-200/90">
-              {t('editor.aiBatchFileErrors').replace('{count}', String(batchFileErrors))}
-            </p>
-            <button
-              onClick={() => setBatchFileErrors(null)}
-              className="ml-1 text-white/40 hover:text-white/80 text-xs"
-              aria-label={t('editor.aiBatchClose')}
-            >✕</button>
           </div>
         </div>
       )}
@@ -795,7 +331,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white hover:bg-violet-500/15 hover:border-violet-400/50 hover:text-violet-300 transition-all active:scale-95'}
                 data-testid="editor-select-mode-toggle"
               >
-                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ AI Support'}
+                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ ' + t('editor.enterSelectMode')}
               </Button>
               <Button onClick={onBack} variant="outline" className="border-white/20" data-testid="editor-back-button">
                 ← {t('editor.back')}
@@ -852,6 +388,22 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               </Button>
             </div>
           </div>
+
+          {/* ── Metadata Studio (R4 points 7+8) ──
+              Merged AI Harmonize + Rule Harmonize + AI Suggest hub. The old
+              Genre/Language sidebar tab is removed — genre/language/year are
+              edited via the regular metadata panel of a song. */}
+          {!isInitialLoading && (
+            <MetadataStudio
+              songs={songs}
+              selectedIds={selectedIds}
+              open={studioOpen}
+              onToggle={() => setStudioOpen(prev => !prev)}
+              selectionFocusToken={studioSelectionFocus}
+              onApplied={refreshSongs}
+              t={t}
+            />
+          )}
 
           {/* Songs Grid */}
           {isLibraryLoading && filteredSongs.length === 0 && (
@@ -947,7 +499,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
-          {filteredSongs.length === 0 && (
+          {filteredSongs.length === 0 && !isInitialLoading && (
             <div className="text-center py-12 text-white/40">
               <div className="text-4xl mb-2">📝</div>
               <p>{t('editor.noSongsFound')}</p>
@@ -959,33 +511,12 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         <div className="flex h-full">
           {/* Editor - Full width */}
           <div className="flex-1 min-w-0 overflow-hidden relative">
-            {/* Metadata panel toggle is now in the header */}
             <KaraokeEditor
               song={selectedSong}
               onSave={handleSave}
               onCancel={() => setSelectedSong(null)}
-              onSongSync={handleSongSync}
-              externalSaveCount={externalSaveCount}
-              showMetadataPanel={showMetadataPanel}
-              onToggleMetadataPanel={() => setShowMetadataPanel(prev => !prev)}
             />
           </div>
-
-          {/* Right Sidebar - Genre/Language Editor - Collapsible */}
-          {showMetadataPanel && (
-            <div className="w-80 flex-shrink-0 overflow-y-auto border-l border-white/10 p-4 space-y-4">
-              <GenreLanguageEditor
-                key={selectedSong?.id ?? 'none'}
-                song={selectedSong}
-                onUpdate={handleSongMetadataUpdate}
-                onSaved={() => { refreshSongs(); setExternalSaveCount(c => c + 1); }}
-                t={t}
-                getLatestSong={() => latestSongRef.current ?? selectedSong}
-              />
-              <AiHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
-              <RuleHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
-            </div>
-          )}
         </div>
       )}
 
@@ -996,8 +527,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             {selectedCount} {t('editor.aiBatchSelected')}
           </span>
           <div className="w-px h-6 bg-white/20" />
-          {/* Select the NEXT batch of ≤ 50 filtered songs (not yet selected).
-              Replaces the old "Show all"/select-all that grabbed every song. */}
+          {/* Select the NEXT batch of ≤ 100 filtered songs (not yet selected). */}
           <Button
             size="sm"
             variant="outline"
@@ -1019,41 +549,23 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           >
             {t('editor.aiBatchClear')}
           </Button>
+          {/* R4 point 7: the old separate "🤖 KI-Vorschlag" button merged into
+              the Metadata Studio — this opens it focused on the selection. */}
           <Button
             size="sm"
-            onClick={handleBatchSuggest}
-            disabled={batchLoading}
+            onClick={openStudioWithSelection}
             className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs h-8 gap-1.5"
             data-testid="editor-batch-suggest-button"
           >
-            {batchLoading ? (
-              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span>🤖</span>
-            )}
-            {batchProgress
-              ? `${batchProgress.phase === 'lookup' ? '🔎' : '🤖'} ${batchProgress.done}/${batchProgress.total}`
-              : t('editor.aiBatchSuggestBtn')}
+            <span>🎛️</span>
+            {t('editor.studioTitle')}
           </Button>
-        </div>
-      )}
-
-      {/* Pipeline progress pill — shows factual lookup / AI chunk progress */}
-      {batchLoading && batchProgress && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-violet-500/40 rounded-full px-4 py-2 shadow-2xl flex items-center gap-2">
-          <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-white/80 whitespace-nowrap">
-            {batchProgress.phase === 'lookup'
-              ? t('editor.aiBatchLookupPhase')
-              : t('editor.aiBatchAiPhase')}
-          </span>
-          <span className="text-xs text-white/50 font-mono tabular-nums">{batchProgress.done}/{batchProgress.total}</span>
         </div>
       )}
 
       {/* Select mode hint when no songs selected — prominent prompt with
           the current filter context ("Wähle Songs aus") */}
-      {selectMode && selectedCount === 0 && !isLibraryLoading && (
+      {selectMode && selectedCount === 0 && !isLibraryLoading && !isInitialLoading && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-violet-500/40 rounded-xl px-5 py-3 shadow-2xl animate-fade-in flex items-center gap-3" data-testid="editor-select-mode-hint">
           <span className="text-xl">☑️</span>
           <div>
@@ -1069,17 +581,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       )}
 
       {/* Background rule-harmonization status pill (module singleton —
-          keeps running even when the sidebar is closed) */}
+          keeps running even when the studio is closed) */}
       <RuleHarmonizeStatusBar t={t} />
-
-      {/* Batch error toast */}
-      {batchError && (
-        <div className="fixed top-4 right-4 z-50 bg-red-500/90 backdrop-blur-sm text-white rounded-lg px-4 py-3 text-sm shadow-xl max-w-sm">
-          <p className="font-medium">{t('editor.aiBatchError')}</p>
-          <p className="text-white/80 text-xs mt-1">{batchError}</p>
-          <button onClick={() => setBatchError(null)} className="absolute top-2 right-2 text-white/60 hover:text-white" data-testid="editor-batch-error-close-button" aria-label="Close error">✕</button>
-        </div>
-      )}
 
       {/* New Song Dialog */}
       {showNewSongDialog && (

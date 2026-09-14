@@ -131,6 +131,8 @@ interface BaseModeSettings {
   filterReleaseYear: string;
   /** Era/decade filter (decade start year, e.g. '1980'; 'all' = no filter) */
   filterEra: string;
+  /** Free-text filter (artist/title, fuzzy-matched; '' = no filter) */
+  filterSearch: string;
 }
 
 /** Pass the Mic — no extra config settings, shared mic support */
@@ -312,4 +314,6 @@ export interface PartySetupDraft {
   filterReleaseYear: string;
   /** Era/decade filter — optional for drafts saved before the era feature */
   filterEra?: string;
+  /** Free-text filter (artist/title, fuzzy) — optional for drafts saved before the search feature */
+  filterSearch?: string;
 }

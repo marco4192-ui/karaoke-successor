@@ -31,13 +31,6 @@ interface KaraokeEditorProps {
   song: Song;
   onSave: (_song: Song) => void;
   onCancel: () => void;
-  /** Streams the latest editor song state to the parent (keeps side panels from saving stale lyrics) */
-  onSongSync?: (_song: Song) => void;
-  /** Increments whenever an external component (e.g. genre panel) saved the current state */
-  externalSaveCount?: number;
-  /** Metadata side panel (genre/language editor) visibility */
-  showMetadataPanel?: boolean;
-  onToggleMetadataPanel?: () => void;
 }
 
 // Max time gap between consecutive tap notes before a new lyric line starts
@@ -55,7 +48,7 @@ function finalizeLine(line: LyricLine): LyricLine {
   };
 }
 
-export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync, externalSaveCount = 0, showMetadataPanel = false, onToggleMetadataPanel }: KaraokeEditorProps) {
+export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
   const { t } = useTranslation();
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
@@ -158,20 +151,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
     pushHistory, undo: historyUndo, redo: historyRedo,
     canUndo, canRedo, hasUnsavedChanges, markDirty, markSaved,
   } = useEditorHistory(initialSong.lyrics);
-
-  // External save acknowledgment (genre panel saved the current state)
-  const externalSaveRef = useRef(externalSaveCount);
-  useEffect(() => {
-    if (externalSaveCount !== externalSaveRef.current) {
-      externalSaveRef.current = externalSaveCount;
-      markSaved();
-    }
-  }, [externalSaveCount, markSaved]);
-
-  // Stream the latest song state to the parent (for the side panels)
-  useEffect(() => {
-    onSongSync?.(currentSong);
-  }, [currentSong, onSongSync]);
 
   const {
     isPlaying, currentTime, audioRef,
@@ -906,8 +885,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongSync,
         onCancel={requestCancel}
         onSave={handleSave}
         onSaveOnly={handleSaveOnly}
-        showMetadataPanel={showMetadataPanel}
-        onToggleMetadataPanel={onToggleMetadataPanel}
         hasVideo={hasVideo}
         showVideoOverlay={showVideoOverlay}
         onToggleVideoOverlay={() => setShowVideoOverlay(prev => !prev)}

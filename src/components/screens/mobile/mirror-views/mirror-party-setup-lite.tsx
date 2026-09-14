@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { decadeShortLabel } from '@/lib/game/era-filter';
+import { Search, X } from 'lucide-react';
 
 // ===================== Props =====================
 
@@ -411,6 +412,8 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     // Era/decade filter (decade start year, e.g. '1980') — for themed parties
     const [filterEra, setFilterEra] = useState('all');
     const [filterCombined, setFilterCombined] = useState(true);
+    // Free-text filter (artist/title, fuzzy) — mirrors the desktop Song Filter search
+    const [filterSearch, setFilterSearch] = useState('');
 
     // ── LIVE SETUP MIRROR (user request item 7) ──────────────────────────
     // Desktop-pushed setup state — the mirror renders and edits the SAME
@@ -449,6 +452,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       const suFilterReleaseYear = su.filterReleaseYear;
       const suFilterEra = su.filterEra;
       const suFilterCombined = su.filterCombined;
+      const suFilterSearch = su.filterSearch;
       const suSelectedMicId = su.selectedMicId;
       setSelectedPlayers(prev => (prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids));
       if (suDifficulty) setDifficulty(prev => (prev === suDifficulty ? prev : suDifficulty));
@@ -473,6 +477,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       if (typeof suFilterReleaseYear === 'string') setFilterReleaseYear(prev => (prev === suFilterReleaseYear ? prev : suFilterReleaseYear));
       if (typeof suFilterEra === 'string') setFilterEra(prev => (prev === suFilterEra ? prev : suFilterEra));
       if (typeof suFilterCombined === 'boolean') setFilterCombined(prev => (prev === suFilterCombined ? prev : suFilterCombined));
+      if (typeof suFilterSearch === 'string') setFilterSearch(prev => (prev === suFilterSearch ? prev : suFilterSearch));
       if (suSelectedMicId !== undefined) {
         setSelectedMicId(prev => (prev === (suSelectedMicId ?? null) ? prev : (suSelectedMicId ?? null)));
       }
@@ -501,6 +506,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           filterReleaseYear,
           filterEra,
           filterCombined,
+          filterSearch,
           ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
         });
         onSendDesktopCommand(`party_apply_config:${config}`);
@@ -508,7 +514,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       return () => clearTimeout(timer);
     }, [
       selectedPlayers, difficulty, settings, deviceAssignments, micAssignments,
-      songSelection, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined,
+      songSelection, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined, filterSearch,
       selectedMicId, modeKey, onSendDesktopCommand, deviceMode, desktopMics,
     ]);
 
@@ -628,10 +634,11 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         filterReleaseYear,
         filterEra,
         filterCombined,
+        filterSearch,
         ...(deviceMode === 'shared-mic' && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: desktopMics.find(m => m.id === selectedMicId)?.name } : {}),
       });
       onSendDesktopCommand(`party_apply_config:${config}`);
-    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, deviceAssignments, micAssignments, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined, deviceMode, selectedMicId, desktopMics, t, onSendDesktopCommand]);
+    }, [modeInfo, modeKey, selectedPlayers, difficulty, settings, inputMode, deviceAssignments, micAssignments, filterGenre, filterLanguage, filterReleaseYear, filterEra, filterCombined, filterSearch, deviceMode, selectedMicId, desktopMics, t, onSendDesktopCommand]);
 
     const label = tOr(t, modeInfo?.labelKey || '', modeInfo?.fallback || '');
     const canStart = modeInfo ? selectedPlayers.length >= modeInfo.minPlayers : false;
@@ -1072,6 +1079,34 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             {tOr(t, 'unifiedSetup.songFilter', 'Song-Filter')}
           </SectionHeader>
           <div className="flex flex-col gap-2.5">
+            {/* Free-text search (artist/title, fuzzy) — first control, like the desktop */}
+            <div>
+              <label htmlFor="mirror-party-filter-search" className="text-[11px] text-white/40 mb-1 block px-1">
+                {tOr(t, 'unifiedSetup.searchFilter', '🔍 Suche')}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none" aria-hidden="true" />
+                <input
+                  id="mirror-party-filter-search"
+                  type="text"
+                  value={filterSearch}
+                  onChange={(e) => { haptic(); setFilterSearch(e.target.value); }}
+                  placeholder={tOr(t, 'unifiedSetup.searchFilterPlaceholder', 'Interpret oder Titel…')}
+                  autoComplete="off"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-cyan-400/40"
+                />
+                {filterSearch !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => { haptic(); setFilterSearch(''); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 active:scale-95 text-white/50 transition-all"
+                    aria-label={tOr(t, 'unifiedSetup.resetFilter', 'Filter zurücksetzen')}
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
             <div>
               <label className="text-[11px] text-white/40 mb-1 block px-1">
                 {tOr(t, 'unifiedSetup.genre', 'Genre')}

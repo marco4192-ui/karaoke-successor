@@ -6,11 +6,20 @@ export type RepeatMode = 'none' | 'one' | 'all';
 
 // --- Sub-Interfaces for cleaner separation (#27) ---
 
+/** One entry of the fuzzy-ranked search suggestion dropdown. */
+export interface JukeboxSongSuggestion {
+  song: Song;
+  /** Fuzzy match score (0..100) — higher ranks first. */
+  score: number;
+}
+
 export interface JukeboxFiltersState {
   filterGenre: string;
   filterArtist: string;
   /** Era/decade filter (decade start year, e.g. '1980'; 'all' = no filter) */
   filterEra: string;
+  /** Exact year filter (e.g. '1985'; 'all' = no filter) */
+  filterYear: string;
   searchQuery: string;
   shuffle: boolean;
   repeat: RepeatMode;
@@ -60,8 +69,12 @@ export interface JukeboxDerivedState {
   artists: string[];
   /** Decade options ('1960','1980',…) — 'all' handled as first entry */
   eras: string[];
+  /** Exact year options ('1998','1985',… newest first) — 'all' handled as first entry */
+  years: string[];
   filteredSongs: Song[];
   upNext: Song[];
+  /** Best fuzzy matches for the current search query (descending score, max 8) */
+  searchSuggestions: JukeboxSongSuggestion[];
   // N9: Statistics
   songsPlayed: number;
   topGenres: { genre: string; count: number }[];
@@ -74,6 +87,7 @@ export interface JukeboxFilterSetters {
   setFilterGenre: (_g: string) => void;
   setFilterArtist: (_a: string) => void;
   setFilterEra: (_e: string) => void;
+  setFilterYear: (_y: string) => void;
   setSearchQuery: (_q: string) => void;
   setShuffle: (_s: boolean) => void;
   setRepeat: (_r: RepeatMode) => void;
@@ -112,6 +126,15 @@ export interface JukeboxVideoQueueActions {
   enqueueLibraryPlaylist: (_playlistId: string) => Promise<boolean>;
 }
 
+export interface JukeboxSongQueueActions {
+  /** Queue a library song (e.g. from the search suggestions) following the
+   *  same rules as video links: running jukebox → after the last user song;
+   *  idle jukebox → plays immediately. Returns false for duplicates. */
+  addSongToQueue: (_song: Song, _requester?: string) => Promise<boolean>;
+  /** Queue a list of library songs in order. Returns the number queued. */
+  addSongsToQueue: (_songs: Song[], _requester?: string) => Promise<number>;
+}
+
 export interface JukeboxPlayerActions {
   startJukebox: () => void;
   stopJukebox: () => void;
@@ -133,6 +156,7 @@ export interface UseJukeboxReturn extends
   JukeboxFilterSetters,
   JukeboxPlaybackSetters,
   JukeboxVideoQueueActions,
+  JukeboxSongQueueActions,
   JukeboxPlayerActions {
   /** Full song library (all loaded songs) */
   songs: Song[];

@@ -364,6 +364,8 @@ unifiedSetup: {
   allYears: '所有年份',
   releaseEra: '📅 年代',
   allEras: '全部',
+  searchFilter: '🔍 歌手 / 歌名',
+  searchFilterPlaceholder: 'ABBA、Mamma Mia、…',
   filterLogic: '🔗 筛选逻辑',
   combined: '组合（AND）',
   independent: '独立（OR）',

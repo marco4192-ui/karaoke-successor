@@ -223,6 +223,8 @@ export interface GameState {
     /** Era/decade filter (decade start year, e.g. '1980') */
     filterEra?: string;
     filterCombined?: boolean;
+    /** Free-text filter (artist/title, fuzzy-matched — e.g. "ABBA") */
+    filterSearch?: string;
     availableGenres?: string[];
     availableLanguages?: string[];
     availableYears?: number[];

@@ -79,6 +79,8 @@ Common normalizations (sub-genres → parent genre):
 - "Rock'n'Roll" (any spelling), "Blues Rock", "Alternative" → "Rock"
 - "Heavy Metal", "Death Metal", "Black Metal", "Thrash Metal" → "Metal"
 - "Children's", "Kindermusik", "Kinderlied" → "Children's"
+- "Disney", "Walt Disney", "Disney Songs", "Disney Classics", "Disney Soundtrack" → "Disney" (keep as Disney, NOT Soundtrack — dedicated karaoke category)
+- Disney movie songs (e.g. from Frozen, Lion King, Aladdin, Moana) → "Disney"
 
 Language detection hints:
 - Artist names ending in common patterns: "-ovic", "-ova" → Slavic language; "-sson", "-sen" → Scandinavian

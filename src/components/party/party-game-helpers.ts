@@ -70,6 +70,7 @@ export function buildGameSetupResult(params: {
       filterCombined: true,
       filterReleaseYear: 'all',
       filterEra: 'all',
+      filterSearch: '',
       ...settings,
     },
     songSelection,
@@ -97,8 +98,9 @@ export function pickRandomVotingSongs(
   filterCombined: boolean = true,
   filterReleaseYear: string = 'all',
   count: number = 3,
+  filterSearch?: string,
 ): Song[] {
   const songs = getNonDuetSongs();
-  const filtered = filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear);
+  const filtered = filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, 'all', filterSearch);
   return shuffleArray(filtered).slice(0, count);
 }

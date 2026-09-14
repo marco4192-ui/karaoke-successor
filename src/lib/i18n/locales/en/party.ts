@@ -395,6 +395,8 @@ export const partyTranslations = {
     allYears: 'All Years',
     releaseEra: '📅 Era',
     allEras: 'All',
+    searchFilter: '🔍 Artist / Title',
+    searchFilterPlaceholder: 'ABBA, Mamma Mia, …',
     filterLogic: '🔗 Filter Logic',
     combined: 'Combined (AND)',
     independent: 'Independent (OR)',

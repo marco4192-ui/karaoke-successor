@@ -364,6 +364,8 @@ unifiedSetup: {
   allYears: 'Все годы',
   releaseEra: '📅 Эпоха',
   allEras: 'Все',
+  searchFilter: '🔍 Исполнитель / Название',
+  searchFilterPlaceholder: 'ABBA, Mamma Mia, …',
   filterLogic: '🔗 Логика фильтра',
   combined: 'Совмещённый (И)',
   independent: 'Независимый (ИЛИ)',

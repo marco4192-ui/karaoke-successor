@@ -15,9 +15,9 @@ function getFilteredSongs(): Song[] {
   const allSongs = getNonDuetSongs();
   // Read filter settings from storage (same way unified-party-setup stores them)
   // filterEra is optional — older persisted filters simply have no era filter
-  const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string; filterEra?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
-  if (filters.filterGenre || filters.filterLanguage || filters.filterCombined || filters.filterReleaseYear || filters.filterEra) {
-    return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined === 'true', filters.filterReleaseYear, filters.filterEra);
+  const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string; filterEra?: string; filterSearch?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
+  if (filters.filterGenre || filters.filterLanguage || filters.filterCombined || filters.filterReleaseYear || filters.filterEra || filters.filterSearch) {
+    return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined === 'true', filters.filterReleaseYear, filters.filterEra, filters.filterSearch);
   }
   return allSongs;
 }
@@ -169,6 +169,6 @@ export async function preparePtmNextSong(
 }
 
 // Store/retrieve song filters for next-round song selection
-export function storeSongFilters(filters: { filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string; filterEra?: string }) {
+export function storeSongFilters(filters: { filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string; filterEra?: string; filterSearch?: string }) {
   setJson(StorageKeys.PTM_SONG_FILTERS, filters);
 }

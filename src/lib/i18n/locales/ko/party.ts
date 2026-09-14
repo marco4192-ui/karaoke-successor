@@ -364,6 +364,8 @@ unifiedSetup: {
   allYears: '전체 연도',
   releaseEra: '📅 시대',
   allEras: '전체',
+  searchFilter: '🔍 아티스트 / 제목',
+  searchFilterPlaceholder: 'ABBA, Mamma Mia, …',
   filterLogic: '🔗 필터 논리',
   combined: '결합 (AND)',
   independent: '독립 (OR)',

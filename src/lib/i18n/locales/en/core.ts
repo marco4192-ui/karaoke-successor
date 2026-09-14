@@ -344,6 +344,26 @@ export const coreTranslations = {
     enqueuePlaylistDesc: 'Plays exactly this playlist in the jukebox — or appends it when something is already playing',
     enqueuePlaylistRunning: 'Queue it',
     playlistQueued: 'Playlist queued!',
+    // ── Year filter ──
+    filterByYear: 'Filter by Year',
+    allYears: 'All Years',
+    // ── Search suggestions (fuzzy ranking) ──
+    searchSuggestions: 'Suggestions',
+    searchNoMatches: 'No matches',
+    addToPlaylist: 'Add to playlist',
+    addAllToPlaylist: 'Add all ({n})',
+    addedToPlaylist: 'Added to playlist!',
+    addedNToPlaylist: '{n} songs added to the playlist!',
+    alreadyInPlaylist: 'Already in the playlist',
+    // ── All-round video link field (one or many links) ──
+    videoLinksTitle: 'Video Links',
+    videoLinksDesc: 'One or many links — one per line — play back to back',
+    videoLinksPlaceholder: 'One link per line — optionally with title: https://… | My title',
+    videoLinksAdd: 'Add',
+    videoLinksSupported: 'All major video platforms are supported:',
+    videoLinksSimpleHint: 'Just paste the link',
+    videoLinksVkNote: '(for VK Video the embed code is required)',
+    videoLinksFileTypes: 'Supported files: TXT, CSV, TSV, M3U/M3U8, MD, LOG',
   },
 
     songPool: 'Song Pool',

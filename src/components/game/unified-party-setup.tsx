@@ -77,6 +77,7 @@ export function UnifiedPartySetup({
     selectedMicId, selectedMicName, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined, filterReleaseYear, filterEra,
     setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear, setFilterEra,
+    filterSearch, setFilterSearch,
     availableGenres, availableLanguages, filteredSongs,
   } = usePartySetup({
     gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode,
@@ -140,6 +141,7 @@ export function UnifiedPartySetup({
           filterReleaseYear,
           filterEra,
           filterCombined,
+          filterSearch,
           availableGenres,
           availableLanguages,
           availableYears,
@@ -157,7 +159,7 @@ export function UnifiedPartySetup({
   }, [
     selectedPlayers, deviceAssignments, micAssignments, difficulty, settings,
     songSelection, preSelectedSong, resolvedSong, filterGenre, filterLanguage,
-    filterReleaseYear, filterEra, filterCombined, connectedKey, savedMics,
+    filterReleaseYear, filterEra, filterCombined, filterSearch, connectedKey, savedMics,
     selectedMicName, deviceMode,
   ]);
 
@@ -277,6 +279,8 @@ export function UnifiedPartySetup({
           filterEra={filterEra}
           availableDecades={availableDecades}
           onFilterEraChange={setFilterEra}
+          filterSearch={filterSearch}
+          onFilterSearchChange={setFilterSearch}
         />
 
         {/* ── G. Song Selection ── */}

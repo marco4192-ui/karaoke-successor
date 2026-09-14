@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  Save, Undo, Redo, CheckCircle, AlertCircle, Tags, MonitorPlay,
+  Save, Undo, Redo, CheckCircle, AlertCircle, MonitorPlay,
   Settings, Waves, Sparkles,
 } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
@@ -27,9 +27,6 @@ interface EditorHeaderProps {
   onCancel: () => void;
   onSave: () => void;           // Save & close (original behaviour)
   onSaveOnly?: () => void;      // Save only, stay in editor
-  /** Metadata side panel (genre/language editor) visibility */
-  showMetadataPanel?: boolean;
-  onToggleMetadataPanel?: () => void;
   /** Video sync overlay toggle (only shown when the song has a video) */
   hasVideo?: boolean;
   showVideoOverlay?: boolean;
@@ -52,8 +49,6 @@ export function EditorHeader({
   onCancel,
   onSave,
   onSaveOnly,
-  showMetadataPanel = false,
-  onToggleMetadataPanel,
   hasVideo = false,
   showVideoOverlay = false,
   onToggleVideoOverlay,
@@ -141,26 +136,6 @@ export function EditorHeader({
           <Sparkles className="w-4 h-4" />,
           t('editor.header.panelAI'),
           'editor-panel-ai-toggle',
-        )}
-
-        {/* Genre/Sprache side panel (Tags shortcut) */}
-        {onToggleMetadataPanel && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleMetadataPanel}
-            title={t(showMetadataPanel ? 'editor.hideMetadata' : 'editor.showMetadata')}
-            className={cn(
-              'gap-1.5 h-8 px-2.5',
-              showMetadataPanel
-                ? 'text-purple-400 bg-purple-500/15 hover:bg-purple-500/25 hover:text-purple-300'
-                : 'text-slate-400 hover:text-white hover:bg-white/10',
-            )}
-            data-testid="editor-metadata-toggle"
-          >
-            <Tags className="w-4 h-4" />
-            <span className="hidden xl:inline text-xs font-medium">{t('editor.header.panelTags')}</span>
-          </Button>
         )}
 
         {/* Video sync overlay toggle — sync notes with the song's video */}

@@ -63,6 +63,7 @@ async function prepareNextMedleyRound(party: import('@/lib/game/party-store').Pa
       filters?.filterCombined,
       filters?.filterReleaseYear,
       filters?.filterEra,
+      filters?.filterSearch,
     );
 
     // Exclude the current round's songs when enough alternatives exist.
@@ -572,7 +573,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               // Next-round vote: picking a song returns DIRECTLY into the PTM
               // game (intro phase) with the same players — no setup detour.
               const filters = party.unifiedSetupResult?.settings;
-              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
+              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined, 'all', 3, filters?.filterSearch);
               party.setVotingSongs(suggested);
               party.setNextRoundPick('ptm');
               setScreen('song-voting');
@@ -762,7 +763,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               }
             } else if (targetScreen === 'song-voting') {
               const filters = party.unifiedSetupResult?.settings;
-              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
+              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined, 'all', 3, filters?.filterSearch);
               party.setVotingSongs(suggested);
               party.setNextRoundPick('cptm');
               setScreen('song-voting');
