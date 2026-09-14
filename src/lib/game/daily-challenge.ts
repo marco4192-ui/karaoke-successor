@@ -27,14 +27,23 @@ interface DailyChallengeEntry {
   accuracy: number;
   combo: number;
   perfectNotesCount: number;
+  /** Extended metrics for the wider daily type pool (optional — old entries default to 0). */
+  goldenNotesCount?: number;
+  notesHit?: number;
+  notesMissed?: number;
+  tickAccuracy?: number;
+  /** Difficulty the player selected for this attempt. */
+  difficulty?: string;
   completedAt: number;
   rank: number;
 }
 
 interface DailyChallengeData {
   date: string;
-  type: 'score' | 'accuracy' | 'combo' | 'perfect_notes';
+  type: DailyChallengeType;
   target: number;
+  /** Difficulty the target was scaled for (display copies only — storage keeps the normal base). */
+  difficulty?: DailyDifficulty;
   seed: number;
   entries: DailyChallengeEntry[];
   totalParticipants: number;
@@ -74,8 +83,17 @@ export interface PlayerBestResult {
   accuracy: number;
   combo: number;
   perfectNotes: number;
+  /** Extended metrics for the wider daily type pool. */
+  goldenNotes?: number;
+  notesHit?: number;
+  notesMissed?: number;
+  tickAccuracy?: number;
   completedAt: number;
-  targetMet: boolean; // whether the challenge target was achieved
+  targetMet: boolean; // whether the challenge target was achieved (at any difficulty)
+  /** Difficulty selected for this best attempt. */
+  difficulty?: DailyDifficulty;
+  /** All difficulty levels whose target was met today (union across all attempts). */
+  metDifficulties?: DailyDifficulty[];
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +185,296 @@ export const XP_REWARDS = {
 
 /** (#4) XP awarded when the weekly challenge target is met. */
 export const WEEKLY_XP_REWARD = 250;
+
+// ---------------------------------------------------------------------------
+// Daily Challenge — difficulty levels & type registry
+// ---------------------------------------------------------------------------
+
+/** selectable difficulty for the daily challenge — independent of the global game difficulty */
+export type DailyDifficulty = 'easy' | 'normal' | 'hard' | 'very_hard' | 'insane';
+
+/** result metric a daily type is evaluated against */
+export type DailyMetricKey =
+  | 'score'
+  | 'accuracy'
+  | 'tickAccuracy'
+  | 'maxCombo'
+  | 'perfectNotesCount'
+  | 'goldenNotesCount'
+  | 'notesHit'
+  | 'notesMissed';
+
+/** additional side condition a daily type requires besides the scaled target */
+export interface DailyGate {
+  metricKey: DailyMetricKey;
+  op: '>=' | '<=';
+  value: number;
+}
+
+/** static definition of one daily challenge variant */
+export interface DailyTypeDefinition {
+  id: string;
+  icon: string;
+  nameKey: string;
+  /** description with `{n}` placeholder for the (difficulty- and level-scaled) target */
+  descriptionKey: string;
+  metricKey: DailyMetricKey;
+  /** 'max' = higher is better, 'min' = lower is better (e.g. missed notes) */
+  direction: 'max' | 'min';
+  /** base target per difficulty (before level scaling) */
+  targets: Record<DailyDifficulty, number>;
+  /** upper bound after level scaling (percent metrics: 99) */
+  cap?: number;
+  /** difficulty-independent side conditions */
+  gates?: DailyGate[];
+}
+
+/** The 22 daily challenge variants. The first four keep their legacy ids/targets. */
+const DAILY_TYPE_LIST = [
+  {
+    id: 'score', icon: '🎵',
+    nameKey: 'dailyTypes.score.name', descriptionKey: 'dailyTypes.score.description', metricKey: 'score', direction: 'max',
+    targets: { easy: 5500, normal: 8000, hard: 9500, very_hard: 11000, insane: 12500 },
+  },
+  {
+    id: 'accuracy', icon: '🎯',
+    nameKey: 'dailyTypes.accuracy.name', descriptionKey: 'dailyTypes.accuracy.description', metricKey: 'accuracy', direction: 'max', cap: 99,
+    targets: { easy: 75, normal: 85, hard: 90, very_hard: 93, insane: 96 },
+  },
+  {
+    id: 'combo', icon: '⚡',
+    nameKey: 'dailyTypes.combo.name', descriptionKey: 'dailyTypes.combo.description', metricKey: 'maxCombo', direction: 'max',
+    targets: { easy: 30, normal: 50, hard: 75, very_hard: 100, insane: 150 },
+  },
+  {
+    id: 'perfect_notes', icon: '💎',
+    nameKey: 'dailyTypes.perfect_notes.name', descriptionKey: 'dailyTypes.perfect_notes.description', metricKey: 'perfectNotesCount', direction: 'max',
+    targets: { easy: 10, normal: 20, hard: 35, very_hard: 50, insane: 75 },
+  },
+  {
+    id: 'golden_notes', icon: '✨',
+    nameKey: 'dailyTypes.golden_notes.name', descriptionKey: 'dailyTypes.golden_notes.description', metricKey: 'goldenNotesCount', direction: 'max',
+    targets: { easy: 4, normal: 8, hard: 12, very_hard: 16, insane: 22 },
+  },
+  {
+    id: 'notes_hit', icon: '🎶',
+    nameKey: 'dailyTypes.notes_hit.name', descriptionKey: 'dailyTypes.notes_hit.description', metricKey: 'notesHit', direction: 'max',
+    targets: { easy: 80, normal: 150, hard: 250, very_hard: 350, insane: 500 },
+  },
+  {
+    id: 'tick_accuracy', icon: '🎚️',
+    nameKey: 'dailyTypes.tick_accuracy.name', descriptionKey: 'dailyTypes.tick_accuracy.description', metricKey: 'tickAccuracy', direction: 'max', cap: 99,
+    targets: { easy: 70, normal: 80, hard: 86, very_hard: 90, insane: 94 },
+  },
+  {
+    id: 'clean_song', icon: '🧼',
+    nameKey: 'dailyTypes.clean_song.name', descriptionKey: 'dailyTypes.clean_song.description', metricKey: 'notesMissed', direction: 'min',
+    targets: { easy: 25, normal: 12, hard: 7, very_hard: 4, insane: 2 },
+  },
+  {
+    id: 'comeback', icon: '🔄',
+    nameKey: 'dailyTypes.comeback.name', descriptionKey: 'dailyTypes.comeback.description', metricKey: 'maxCombo', direction: 'max',
+    targets: { easy: 30, normal: 40, hard: 55, very_hard: 70, insane: 90 },
+    gates: [{ metricKey: 'notesMissed', op: '>=', value: 10 }],
+  },
+  {
+    id: 'sharpshooter', icon: '🎺',
+    nameKey: 'dailyTypes.sharpshooter.name', descriptionKey: 'dailyTypes.sharpshooter.description', metricKey: 'accuracy', direction: 'max', cap: 99,
+    targets: { easy: 82, normal: 88, hard: 91, very_hard: 94, insane: 97 },
+    gates: [{ metricKey: 'notesHit', op: '>=', value: 60 }],
+  },
+  {
+    id: 'combo_master', icon: '🔗',
+    nameKey: 'dailyTypes.combo_master.name', descriptionKey: 'dailyTypes.combo_master.description', metricKey: 'maxCombo', direction: 'max',
+    targets: { easy: 40, normal: 60, hard: 85, very_hard: 110, insane: 160 },
+    gates: [{ metricKey: 'accuracy', op: '>=', value: 75 }],
+  },
+  {
+    id: 'perfect_storm', icon: '💫',
+    nameKey: 'dailyTypes.perfect_storm.name', descriptionKey: 'dailyTypes.perfect_storm.description', metricKey: 'perfectNotesCount', direction: 'max',
+    targets: { easy: 12, normal: 18, hard: 28, very_hard: 40, insane: 60 },
+    gates: [{ metricKey: 'goldenNotesCount', op: '>=', value: 5 }],
+  },
+  {
+    id: 'endurance', icon: '🏃',
+    nameKey: 'dailyTypes.endurance.name', descriptionKey: 'dailyTypes.endurance.description', metricKey: 'notesHit', direction: 'max',
+    targets: { easy: 150, normal: 250, hard: 350, very_hard: 450, insane: 600 },
+    gates: [{ metricKey: 'maxCombo', op: '>=', value: 40 }],
+  },
+  {
+    id: 'golden_groove', icon: '🌟',
+    nameKey: 'dailyTypes.golden_groove.name', descriptionKey: 'dailyTypes.golden_groove.description', metricKey: 'goldenNotesCount', direction: 'max',
+    targets: { easy: 6, normal: 10, hard: 14, very_hard: 18, insane: 24 },
+    gates: [{ metricKey: 'accuracy', op: '>=', value: 85 }],
+  },
+  {
+    id: 'precision', icon: '🎯',
+    nameKey: 'dailyTypes.precision.name', descriptionKey: 'dailyTypes.precision.description', metricKey: 'tickAccuracy', direction: 'max', cap: 99,
+    targets: { easy: 75, normal: 85, hard: 89, very_hard: 92, insane: 95 },
+    gates: [{ metricKey: 'notesHit', op: '>=', value: 50 }],
+  },
+  {
+    id: 'flawless_finale', icon: '🌈',
+    nameKey: 'dailyTypes.flawless_finale.name', descriptionKey: 'dailyTypes.flawless_finale.description', metricKey: 'accuracy', direction: 'max', cap: 99,
+    targets: { easy: 85, normal: 90, hard: 93, very_hard: 95, insane: 97 },
+    gates: [{ metricKey: 'notesMissed', op: '<=', value: 8 }],
+  },
+  {
+    id: 'score_sniper', icon: '🎸',
+    nameKey: 'dailyTypes.score_sniper.name', descriptionKey: 'dailyTypes.score_sniper.description', metricKey: 'score', direction: 'max',
+    targets: { easy: 6000, normal: 8500, hard: 10000, very_hard: 11500, insane: 13000 },
+    gates: [{ metricKey: 'accuracy', op: '>=', value: 85 }],
+  },
+  {
+    id: 'combo_race', icon: '🚀',
+    nameKey: 'dailyTypes.combo_race.name', descriptionKey: 'dailyTypes.combo_race.description', metricKey: 'maxCombo', direction: 'max',
+    targets: { easy: 50, normal: 70, hard: 95, very_hard: 120, insane: 170 },
+    gates: [{ metricKey: 'notesHit', op: '>=', value: 100 }],
+  },
+  {
+    id: 'perfect_pitch', icon: '🎤',
+    nameKey: 'dailyTypes.perfect_pitch.name', descriptionKey: 'dailyTypes.perfect_pitch.description', metricKey: 'perfectNotesCount', direction: 'max',
+    targets: { easy: 10, normal: 16, hard: 25, very_hard: 35, insane: 50 },
+    gates: [{ metricKey: 'accuracy', op: '>=', value: 90 }],
+  },
+  {
+    id: 'golden_fingers', icon: '🤌',
+    nameKey: 'dailyTypes.golden_fingers.name', descriptionKey: 'dailyTypes.golden_fingers.description', metricKey: 'goldenNotesCount', direction: 'max',
+    targets: { easy: 4, normal: 6, hard: 9, very_hard: 12, insane: 16 },
+    gates: [{ metricKey: 'perfectNotesCount', op: '>=', value: 15 }],
+  },
+  {
+    id: 'steady_hand', icon: '✋',
+    nameKey: 'dailyTypes.steady_hand.name', descriptionKey: 'dailyTypes.steady_hand.description', metricKey: 'notesMissed', direction: 'min',
+    targets: { easy: 15, normal: 8, hard: 5, very_hard: 3, insane: 1 },
+    gates: [{ metricKey: 'notesHit', op: '>=', value: 80 }],
+  },
+  {
+    id: 'titan', icon: '👑',
+    nameKey: 'dailyTypes.titan.name', descriptionKey: 'dailyTypes.titan.description', metricKey: 'score', direction: 'max',
+    targets: { easy: 7000, normal: 9000, hard: 10500, very_hard: 12000, insane: 14000 },
+    gates: [{ metricKey: 'maxCombo', op: '>=', value: 60 }],
+  },
+] as const satisfies readonly DailyTypeDefinition[];
+
+/** all valid daily challenge type ids */
+export type DailyChallengeType = (typeof DAILY_TYPE_LIST)[number]['id'];
+
+/** ordered list of all daily type ids (used for the per-day hash selection) */
+export const DAILY_TYPE_IDS: readonly DailyChallengeType[] = DAILY_TYPE_LIST.map(d => d.id);
+
+/** lookup registry for daily type definitions */
+export const DAILY_TYPES: Readonly<Record<DailyChallengeType, DailyTypeDefinition>> =
+  Object.fromEntries(DAILY_TYPE_LIST.map(d => [d.id, d as DailyTypeDefinition])) as
+  Record<DailyChallengeType, DailyTypeDefinition>;
+
+/** selectable difficulty levels for the daily challenge */
+export const DAILY_DIFFICULTIES: ReadonlyArray<{
+  id: DailyDifficulty;
+  icon: string;
+  labelKey: string;
+  /** XP multiplier applied to the base challenge-complete reward */
+  xpMultiplier: number;
+}> = [
+  { id: 'easy', icon: '🟢', labelKey: 'dailyChallengeScreen.difficultyEasy', xpMultiplier: 0.5 },
+  { id: 'normal', icon: '🟡', labelKey: 'dailyChallengeScreen.difficultyNormal', xpMultiplier: 1 },
+  { id: 'hard', icon: '🟠', labelKey: 'dailyChallengeScreen.difficultyHard', xpMultiplier: 1.5 },
+  { id: 'very_hard', icon: '🔴', labelKey: 'dailyChallengeScreen.difficultyVeryHard', xpMultiplier: 2.25 },
+  { id: 'insane', icon: '💀', labelKey: 'dailyChallengeScreen.difficultyInsane', xpMultiplier: 3 },
+];
+
+/** Returns the definition of a daily type (falls back to 'score' for unknown/legacy ids). */
+export function getDailyType(type: string): DailyTypeDefinition {
+  return (DAILY_TYPES as Record<string, DailyTypeDefinition | undefined>)[type] ?? DAILY_TYPES.score;
+}
+
+/** metrics accepted by daily submissions (superset of the classic four) */
+export interface DailyResultMetrics {
+  score: number;
+  accuracy: number;
+  tickAccuracy?: number;
+  combo: number; // max combo
+  perfectNotesCount?: number;
+  goldenNotesCount?: number;
+  notesHit?: number;
+  notesMissed?: number;
+}
+
+/** Extract the challenge-relevant metric from a result. */
+export function extractDailyMetric(type: string, m: DailyResultMetrics): number {
+  return metricByKey(getDailyType(type).metricKey, m);
+}
+
+/** Read a single metric off a result by its key (tick accuracy falls back to note accuracy). */
+function metricByKey(key: DailyMetricKey, m: DailyResultMetrics): number {
+  switch (key) {
+    case 'score': return m.score;
+    case 'accuracy': return m.accuracy;
+    case 'tickAccuracy': return m.tickAccuracy ?? m.accuracy;
+    case 'maxCombo': return m.combo;
+    case 'perfectNotesCount': return m.perfectNotesCount ?? 0;
+    case 'goldenNotesCount': return m.goldenNotesCount ?? 0;
+    case 'notesHit': return m.notesHit ?? 0;
+    case 'notesMissed': return m.notesMissed ?? 0;
+  }
+}
+
+/** Check the (difficulty-independent) gate conditions of a daily type. */
+export function checkDailyGates(type: string, m: DailyResultMetrics): boolean {
+  const gates = getDailyType(type).gates;
+  if (!gates) return true;
+  return gates.every(g => {
+    const value = metricByKey(g.metricKey, m);
+    return g.op === '>=' ? value >= g.value : value <= g.value;
+  });
+}
+
+/**
+ * Compute the effective target for a daily type at a given difficulty,
+ * including the slight level scaling (max +25 % at level 100).
+ * 'min' types (missed notes) tighten with level instead of loosening.
+ */
+export function getDailyTargetFor(type: string, difficulty: DailyDifficulty, level?: number): number {
+  const def = getDailyType(type);
+  const base = def.targets[difficulty] ?? def.targets.normal;
+  if (level === undefined || level <= 1) return base;
+  const scale = 1 + Math.min(0.25, level * 0.0025);
+  if (def.direction === 'min') {
+    return Math.max(1, Math.round(base / scale));
+  }
+  const scaled = Math.round(base * scale);
+  return def.cap !== undefined ? Math.min(def.cap, scaled) : scaled;
+}
+
+/** Outcome of a daily attempt against all difficulty levels. */
+export interface DailyAttemptEvaluation {
+  metric: number;
+  gatesPass: boolean;
+  /** difficulties whose target this attempt met (empty when gates failed) */
+  met: DailyDifficulty[];
+}
+
+/** Evaluate an attempt against a daily type: metric, gates, and met difficulties. */
+export function evaluateDailyAttempt(type: string, m: DailyResultMetrics, level?: number): DailyAttemptEvaluation {
+  const def = getDailyType(type);
+  const metric = extractDailyMetric(type, m);
+  const gatesPass = checkDailyGates(type, m);
+  const met: DailyDifficulty[] = [];
+  if (gatesPass && Number.isFinite(metric)) {
+    for (const d of DAILY_DIFFICULTIES) {
+      const target = getDailyTargetFor(type, d.id, level);
+      if (def.direction === 'min' ? metric <= target : metric >= target) {
+        met.push(d.id);
+      }
+    }
+  }
+  return { metric, gatesPass, met };
+}
+
+/** XP multiplier of a difficulty level (unknown → 1). */
+export function getDailyDifficultyMultiplier(difficulty?: string): number {
+  return DAILY_DIFFICULTIES.find(d => d.id === difficulty)?.xpMultiplier ?? 1;
+}
 
 // Badge definitions
 export const DAILY_BADGES: Record<string, Omit<DailyBadge, 'unlockedAt'>> = {
@@ -440,19 +748,19 @@ function getMondayISO(date: Date): string {
 // Daily Challenge — core
 // ---------------------------------------------------------------------------
 
-/** Base targets (before level scaling). */
-const DAILY_BASE_TARGETS = { score: 8000, accuracy: 85, combo: 50, perfect_notes: 20 };
-
 /**
  * Generate (or load) the daily challenge.
- * When `level` is provided the returned target is scaled via {@link getTargetForLevel}.
- * The stored leaderboard always uses the base (unscaled) target.
+ * The challenge type is picked deterministically from the date hash across
+ * all 22 registered types — the stored entry (if any) always wins so the type
+ * stays stable within a day.
+ *
+ * When `level`/`difficulty` are provided the returned target is scaled for that
+ * player/difficulty ({@link getDailyTargetFor}). The stored leaderboard always
+ * uses the base (normal, unscaled) target.
  */
-export function getDailyChallenge(level?: number): DailyChallengeData {
+export function getDailyChallenge(level?: number, difficulty: DailyDifficulty = 'normal'): DailyChallengeData {
   const today = todayISO();
-  const types: Array<'score' | 'accuracy' | 'combo' | 'perfect_notes'> =
-    ['score', 'accuracy', 'combo', 'perfect_notes'];
-  const type = types[hashString(today) % types.length];
+  const type = DAILY_TYPE_IDS[hashString(today) % DAILY_TYPE_IDS.length];
 
   // Try to load existing leaderboard
   const stored = getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
@@ -461,35 +769,30 @@ export function getDailyChallenge(level?: number): DailyChallengeData {
     try {
       challenge = JSON.parse(stored);
     } catch {
-      challenge = {
-        date: today,
-        type,
-        target: DAILY_BASE_TARGETS[type],
-        seed: hashString(today),
-        entries: [],
-        totalParticipants: 0,
-      };
+      challenge = createEmptyDailyChallenge(today, type);
     }
   } else {
-    challenge = {
-      date: today,
-      type,
-      target: DAILY_BASE_TARGETS[type],
-      seed: hashString(today),
-      entries: [],
-      totalParticipants: 0,
-    };
+    challenge = createEmptyDailyChallenge(today, type);
   }
 
-  // Apply level scaling to the returned copy only
-  if (level !== undefined) {
-    return {
-      ...challenge,
-      target: getTargetForLevel(challenge.target, level),
-    };
-  }
+  // Apply difficulty + level scaling to the returned copy only
+  return {
+    ...challenge,
+    difficulty,
+    target: getDailyTargetFor(challenge.type, difficulty, level),
+  };
+}
 
-  return challenge;
+/** Fresh (empty) daily challenge payload for a date/type. */
+function createEmptyDailyChallenge(date: string, type: DailyChallengeType): DailyChallengeData {
+  return {
+    date,
+    type,
+    target: getDailyType(type).targets.normal,
+    seed: hashString(date),
+    entries: [],
+    totalParticipants: 0,
+  };
 }
 
 /** (#2) Scale a base challenge target up slightly with player level (max +25 % at level 100). */
@@ -597,9 +900,11 @@ export function savePlayerBestResult(playerId: string, result: PlayerBestResult)
  *
  * Side-effects:
  * - Updates the daily leaderboard
- * - Recalculates streak & XP (including streak-break penalty)
+ * - Recalculates streak & XP (including streak-break penalty) — only when the
+ *   target is met at the selected difficulty
  * - Awards badges
- * - Saves the player's best result for today (#1)
+ * - Saves the player's best result for today (#1) including which difficulty
+ *   levels were met
  */
 export function submitChallengeResult(
   player: {
@@ -608,55 +913,58 @@ export function submitChallengeResult(
     avatar?: string;
     color: string;
   },
-  result: {
-    score: number;
-    accuracy: number;
-    combo: number;
-    perfectNotesCount?: number;
-  }
+  result: DailyResultMetrics,
+  options?: { difficulty?: DailyDifficulty; level?: number },
 ): {
   challenge: DailyChallengeData;
   stats: PlayerDailyStats;
   xpEarned: number;
   newBadges: DailyBadge[];
   rank: number;
+  targetMet: boolean;
+  metDifficulties: DailyDifficulty[];
 } {
-  // Always load with base target (no level scaling) for leaderboard consistency
+  const difficulty: DailyDifficulty = options?.difficulty ?? 'normal';
+  const level = options?.level;
+  // Always load with base target (no scaling) for leaderboard consistency
   const challenge = getDailyChallenge();
+  const typeDef = getDailyType(challenge.type);
   // Per-player stats: streaks, XP, badges and completions are attributed to
   // the profile that actually played the challenge.
   const stats = getPlayerDailyStats(player.id);
   const today = todayISO();
-  let xpEarned: number = XP_REWARDS.CHALLENGE_COMPLETE;
+  const difficultyMultiplier = getDailyDifficultyMultiplier(difficulty);
+  // XP starts at 0 — it is only earned when the target is met at the selected
+  // difficulty AND this is the player's first qualifying completion today.
+  let xpEarned = 0;
   const newBadges: DailyBadge[] = [];
 
-  // Determine the metric for comparison based on challenge type
-  const sortMetric = (entry: DailyChallengeEntry): number => {
-    switch (challenge.type) {
-      case 'accuracy': return entry.accuracy;
-      case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.perfectNotesCount;
-      default: return entry.score;
-    }
-  };
-  const resultMetric = (): number => {
-    switch (challenge.type) {
-      case 'accuracy': return result.accuracy;
-      case 'combo': return result.combo;
-      case 'perfect_notes': return result.perfectNotesCount ?? 0;
-      default: return result.score;
-    }
-  };
+  // Evaluate the attempt against the challenge type (metric + gates + difficulties)
+  const evaluation = evaluateDailyAttempt(challenge.type, result, level);
+  const targetMet = evaluation.met.includes(difficulty);
+
+  // Entry metrics are direction-agnostic raw values
+  const sortMetric = (entry: DailyChallengeEntry): number =>
+    extractDailyMetric(challenge.type, entryToMetrics(entry));
+  const resultMetric = (): number => evaluation.metric;
 
   // Check if already completed today
   const existingEntry = challenge.entries.find(e => e.playerId === player.id);
   if (existingEntry) {
     // Update if the challenge-type-specific metric improved
-    if (resultMetric() > sortMetric(existingEntry)) {
+    const better = typeDef.direction === 'min'
+      ? resultMetric() < sortMetric(existingEntry)
+      : resultMetric() > sortMetric(existingEntry);
+    if (better) {
       existingEntry.score = result.score;
       existingEntry.accuracy = result.accuracy;
       existingEntry.combo = result.combo;
       existingEntry.perfectNotesCount = result.perfectNotesCount ?? 0;
+      existingEntry.goldenNotesCount = result.goldenNotesCount ?? 0;
+      existingEntry.notesHit = result.notesHit ?? 0;
+      existingEntry.notesMissed = result.notesMissed ?? 0;
+      existingEntry.tickAccuracy = result.tickAccuracy;
+      existingEntry.difficulty = difficulty;
       existingEntry.completedAt = Date.now();
     }
   } else {
@@ -670,15 +978,23 @@ export function submitChallengeResult(
       accuracy: result.accuracy,
       combo: result.combo,
       perfectNotesCount: result.perfectNotesCount ?? 0,
+      goldenNotesCount: result.goldenNotesCount ?? 0,
+      notesHit: result.notesHit ?? 0,
+      notesMissed: result.notesMissed ?? 0,
+      tickAccuracy: result.tickAccuracy,
+      difficulty,
       completedAt: Date.now(),
       rank: 0,
     });
     challenge.totalParticipants++;
   }
 
-  // Sort by the challenge type's metric descending, then by playerId for deterministic tiebreaker
+  // Sort by the challenge type's metric (direction-aware), then by playerId
+  // for a deterministic tiebreaker
   challenge.entries.sort((a, b) => {
-    const diff = sortMetric(b) - sortMetric(a);
+    const diff = typeDef.direction === 'min'
+      ? sortMetric(a) - sortMetric(b)
+      : sortMetric(b) - sortMetric(a);
     if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
@@ -688,10 +1004,12 @@ export function submitChallengeResult(
 
   const playerRank = challenge.entries.find(e => e.playerId === player.id)?.rank || 0;
 
-  // Calculate XP bonuses
-  if (stats.lastCompletedDate !== today) {
+  // XP, streak and completions are only awarded when the target is met at the
+  // selected difficulty — and only on the first qualifying completion today.
+  if (targetMet && stats.lastCompletedDate !== today) {
     // First completion today
     stats.totalCompleted++;
+    xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
 
     // Streak calculation (shared helper)
     const streak = advanceStreak(stats, xpEarned);
@@ -755,10 +1073,10 @@ export function submitChallengeResult(
       newBadges.push(badge);
     }
 
-    // Perfect challenge bonus: 100% accuracy on an accuracy challenge.
+    // Perfect challenge bonus: 100% accuracy on an accuracy-metric challenge.
     // PERFECT_ACCURACY (99.5, not 100) accounts for floating-point arithmetic
     // where tick-based scoring can produce values like 99.999999999.
-    if (challenge.type === 'accuracy' && result.accuracy >= PERFECT_ACCURACY) {
+    if (typeDef.metricKey === 'accuracy' && evaluation.gatesPass && result.accuracy >= PERFECT_ACCURACY) {
       xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
     }
 
@@ -780,8 +1098,9 @@ export function submitChallengeResult(
     updateQuestProgress('dailyCompleted', 1, player.id);
 
   } else {
-    // Same-day replay — no XP/streak, but still check rank-based badges
-    // in case the player improved their score and moved into top 3 or #1
+    // Same-day replay or target not met — no XP/streak, but still check
+    // rank-based badges in case the player improved their metric and moved
+    // into top 3 or #1
   }
 
   // Rank-based badges: checked on EVERY submission (not just first completion)
@@ -808,33 +1127,51 @@ export function submitChallengeResult(
   saveDailyChallenge(challenge);
   savePlayerDailyStats(stats, player.id);
 
-  // (#1) Compute target check before saving completion flag
-  const currentMetric = resultMetric();
-  const targetMet = currentMetric >= challenge.target;
-
   // Legacy shared completion flag — kept in sync for backward compatibility.
-  // Per-player completion is derived from the best result's targetMet flag.
+  // Per-player completion is derived from the best result's met difficulties.
   setJson(DAILY_CHALLENGE_KEY, {
     date: today,
-    completed: targetMet,
+    completed: evaluation.met.length > 0,
     streak: stats.currentStreak,
   });
 
-  // (#1) Save best result for this player today
+  // (#1) Save best result for this player today — metrics update when the
+  // type metric improved; met difficulties are always merged (union).
   const existingBest = getPlayerBestResult(player.id);
-  if (!existingBest || currentMetric > getBestMetric(existingBest, challenge.type)) {
+  const mergedMet = Array.from(new Set([
+    ...(existingBest?.metDifficulties ?? []),
+    ...evaluation.met,
+  ]));
+  const improved = !existingBest || (() => {
+    const prev = getBestMetric(existingBest, challenge.type);
+    return typeDef.direction === 'min' ? evaluation.metric < prev : evaluation.metric > prev;
+  })();
+  if (improved) {
     savePlayerBestResult(player.id, {
       playerId: player.id,
       score: result.score,
       accuracy: result.accuracy,
       combo: result.combo,
       perfectNotes: result.perfectNotesCount ?? 0,
+      goldenNotes: result.goldenNotesCount ?? 0,
+      notesHit: result.notesHit ?? 0,
+      notesMissed: result.notesMissed ?? 0,
+      tickAccuracy: result.tickAccuracy,
       completedAt: Date.now(),
-      targetMet,
+      targetMet: mergedMet.length > 0,
+      difficulty,
+      metDifficulties: mergedMet,
+    });
+  } else if (mergedMet.length > (existingBest?.metDifficulties?.length ?? 0)) {
+    // Metric did not improve, but new difficulties were met — persist the union
+    savePlayerBestResult(player.id, {
+      ...(existingBest as PlayerBestResult),
+      targetMet: true,
+      metDifficulties: mergedMet,
     });
   }
 
-  return { challenge, stats, xpEarned, newBadges, rank: playerRank };
+  return { challenge, stats, xpEarned, newBadges, rank: playerRank, targetMet, metDifficulties: mergedMet };
 }
 
 // ---------------------------------------------------------------------------
@@ -843,12 +1180,35 @@ export function submitChallengeResult(
 
 /** Extract the challenge-type metric from a PlayerBestResult for comparison. */
 function getBestMetric(best: PlayerBestResult, type: DailyChallengeData['type']): number {
-  switch (type) {
+  switch (getDailyType(type).metricKey) {
     case 'accuracy': return best.accuracy;
-    case 'combo': return best.combo;
-    case 'perfect_notes': return best.perfectNotes;
+    case 'tickAccuracy': return best.tickAccuracy ?? best.accuracy;
+    case 'maxCombo': return best.combo;
+    case 'perfectNotesCount': return best.perfectNotes;
+    case 'goldenNotesCount': return best.goldenNotes ?? 0;
+    case 'notesHit': return best.notesHit ?? 0;
+    case 'notesMissed': return best.notesMissed ?? 0;
     default: return best.score;
   }
+}
+
+/** Public variant of {@link getBestMetric} for UI rendering (best-attempt box). */
+export function getBestResultMetric(best: PlayerBestResult, type: string): number {
+  return getBestMetric(best, type as DailyChallengeType);
+}
+
+/** Adapt a leaderboard entry to the DailyResultMetrics shape (old entries default to 0). */
+function entryToMetrics(entry: DailyChallengeEntry): DailyResultMetrics {
+  return {
+    score: entry.score,
+    accuracy: entry.accuracy,
+    tickAccuracy: entry.tickAccuracy,
+    combo: entry.combo,
+    perfectNotesCount: entry.perfectNotesCount,
+    goldenNotesCount: entry.goldenNotesCount,
+    notesHit: entry.notesHit,
+    notesMissed: entry.notesMissed,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -860,43 +1220,57 @@ function getBestMetric(best: PlayerBestResult, type: DailyChallengeData['type'])
  *
  * The co-op result uses the AVERAGE of both players' metrics.
  * XP is awarded to both players (added to the shared global stats once).
- * Daily completion is only awarded if the AVERAGE meets the target.
+ * Daily completion is only awarded if the AVERAGE meets the target at the
+ * selected difficulty.
  */
 export function submitCoopChallengeResult(
   players: Array<{ id: string; name: string; avatar?: string; color: string }>,
-  results: Array<{ score: number; accuracy: number; combo: number; perfectNotesCount?: number }>,
-): { challenge: DailyChallengeData; xpEarned: number; newBadges: DailyBadge[] } {
+  results: Array<DailyResultMetrics>,
+  options?: { difficulty?: DailyDifficulty; level?: number },
+): { challenge: DailyChallengeData; xpEarned: number; newBadges: DailyBadge[]; targetMet: boolean; metDifficulties: DailyDifficulty[] } {
   if (players.length < 2 || results.length < 2) {
     throw new Error('Co-op requires at least 2 players and 2 results');
   }
 
+  const difficulty: DailyDifficulty = options?.difficulty ?? 'normal';
+  const level = options?.level;
   const challenge = getDailyChallenge();
+  const typeDef = getDailyType(challenge.type);
   const today = todayISO();
   const newBadges: DailyBadge[] = [];
+  const difficultyMultiplier = getDailyDifficultyMultiplier(difficulty);
 
   // Average all players' metrics
   const avgScore = results.reduce((s, r) => s + r.score, 0) / results.length;
   const avgAccuracy = results.reduce((s, r) => s + r.accuracy, 0) / results.length;
   const avgCombo = results.reduce((s, r) => s + r.combo, 0) / results.length;
   const avgPerfectNotes = results.reduce((s, r) => s + (r.perfectNotesCount ?? 0), 0) / results.length;
+  const avgGoldenNotes = results.reduce((s, r) => s + (r.goldenNotesCount ?? 0), 0) / results.length;
+  const avgNotesHit = results.reduce((s, r) => s + (r.notesHit ?? 0), 0) / results.length;
+  const avgNotesMissed = results.reduce((s, r) => s + (r.notesMissed ?? 0), 0) / results.length;
+  const avgTickAccuracy = results.some(r => r.tickAccuracy !== undefined)
+    ? results.reduce((s, r) => s + (r.tickAccuracy ?? r.accuracy), 0) / results.length
+    : undefined;
+
+  const avgMetrics: DailyResultMetrics = {
+    score: avgScore,
+    accuracy: avgAccuracy,
+    tickAccuracy: avgTickAccuracy,
+    combo: avgCombo,
+    perfectNotesCount: avgPerfectNotes,
+    goldenNotesCount: avgGoldenNotes,
+    notesHit: avgNotesHit,
+    notesMissed: avgNotesMissed,
+  };
+
+  // Evaluate the averaged attempt (metric + gates + met difficulties)
+  const evaluation = evaluateDailyAttempt(challenge.type, avgMetrics, level);
+  const targetMet = evaluation.met.includes(difficulty);
 
   // Determine challenge-type metric from the average
-  const sortMetric = (entry: DailyChallengeEntry): number => {
-    switch (challenge.type) {
-      case 'accuracy': return entry.accuracy;
-      case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.perfectNotesCount;
-      default: return entry.score;
-    }
-  };
-  const avgMetric = (): number => {
-    switch (challenge.type) {
-      case 'accuracy': return avgAccuracy;
-      case 'combo': return avgCombo;
-      case 'perfect_notes': return avgPerfectNotes;
-      default: return avgScore;
-    }
-  };
+  const sortMetric = (entry: DailyChallengeEntry): number =>
+    extractDailyMetric(challenge.type, entryToMetrics(entry));
+  const avgMetric = (): number => evaluation.metric;
 
   // Add entries for each player with averaged metrics
   for (let i = 0; i < players.length; i++) {
@@ -904,11 +1278,19 @@ export function submitCoopChallengeResult(
     const existing = challenge.entries.find(e => e.playerId === p.id);
 
     if (existing) {
-      if (avgMetric() > sortMetric(existing)) {
+      const better = typeDef.direction === 'min'
+        ? avgMetric() < sortMetric(existing)
+        : avgMetric() > sortMetric(existing);
+      if (better) {
         existing.score = avgScore;
         existing.accuracy = avgAccuracy;
         existing.combo = avgCombo;
         existing.perfectNotesCount = avgPerfectNotes;
+        existing.goldenNotesCount = avgGoldenNotes;
+        existing.notesHit = avgNotesHit;
+        existing.notesMissed = avgNotesMissed;
+        existing.tickAccuracy = avgTickAccuracy;
+        existing.difficulty = difficulty;
         existing.completedAt = Date.now();
       }
     } else {
@@ -921,6 +1303,11 @@ export function submitCoopChallengeResult(
         accuracy: avgAccuracy,
         combo: avgCombo,
         perfectNotesCount: avgPerfectNotes,
+        goldenNotesCount: avgGoldenNotes,
+        notesHit: avgNotesHit,
+        notesMissed: avgNotesMissed,
+        tickAccuracy: avgTickAccuracy,
+        difficulty,
         completedAt: Date.now(),
         rank: 0,
       });
@@ -928,9 +1315,11 @@ export function submitCoopChallengeResult(
     }
   }
 
-  // Sort and rank
+  // Sort and rank (direction-aware)
   challenge.entries.sort((a, b) => {
-    const diff = sortMetric(b) - sortMetric(a);
+    const diff = typeDef.direction === 'min'
+      ? sortMetric(a) - sortMetric(b)
+      : sortMetric(b) - sortMetric(a);
     if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
@@ -944,9 +1333,8 @@ export function submitCoopChallengeResult(
     ...players.map(p => challenge.entries.find(e => e.playerId === p.id)?.rank ?? Infinity),
   );
 
-  // Award XP if average meets the challenge target
+  // Award XP if average meets the target at the selected difficulty
   let xpEarned = 0;
-  const targetMet = avgMetric() >= challenge.target;
 
   for (const p of players) {
     const stats = getPlayerDailyStats(p.id);
@@ -962,8 +1350,8 @@ export function submitCoopChallengeResult(
       if (p === players[0]) newBadges.push(badge);
     }
 
-    if (targetMet) {
-      const playerXP = XP_REWARDS.CHALLENGE_COMPLETE;
+    if (targetMet && stats.lastCompletedDate !== today) {
+      const playerXP = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
       const streak = advanceStreak(stats, playerXP);
       const earned = Math.max(0, playerXP + streak.xpAdjustment + streak.streakBonusXP);
       stats.totalXP += earned;
@@ -991,29 +1379,50 @@ export function submitCoopChallengeResult(
     savePlayerDailyStats(stats, p.id);
   }
 
-  if (targetMet && xpEarned === 0) xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
+  if (targetMet && xpEarned === 0) xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
 
   saveDailyChallenge(challenge);
 
-  // (#1) Save best results for each co-op player — only if better than existing best
+  // (#1) Save best results for each co-op player — metrics when better,
+  // met difficulties always merged (union)
   const coopMetric = avgMetric();
   for (let i = 0; i < players.length; i++) {
     const existingBest = getPlayerBestResult(players[i].id);
-    if (!existingBest || coopMetric > getBestMetric(existingBest, challenge.type)) {
+    const mergedMet = Array.from(new Set([
+      ...(existingBest?.metDifficulties ?? []),
+      ...evaluation.met,
+    ]));
+    const better = !existingBest || (() => {
+      const prev = getBestMetric(existingBest, challenge.type);
+      return typeDef.direction === 'min' ? coopMetric < prev : coopMetric > prev;
+    })();
+    if (better) {
       savePlayerBestResult(players[i].id, {
         playerId: players[i].id,
         score: avgScore,
         accuracy: avgAccuracy,
         combo: avgCombo,
         perfectNotes: avgPerfectNotes,
+        goldenNotes: avgGoldenNotes,
+        notesHit: avgNotesHit,
+        notesMissed: avgNotesMissed,
+        tickAccuracy: avgTickAccuracy,
         completedAt: Date.now(),
-        targetMet,
+        targetMet: mergedMet.length > 0,
+        difficulty,
+        metDifficulties: mergedMet,
+      });
+    } else if (mergedMet.length > (existingBest?.metDifficulties?.length ?? 0)) {
+      savePlayerBestResult(players[i].id, {
+        ...(existingBest as PlayerBestResult),
+        targetMet: true,
+        metDifficulties: mergedMet,
       });
     }
   }
 
-  // Mark challenge completed if target met
-  if (targetMet) {
+  // Mark challenge completed if any difficulty target met
+  if (evaluation.met.length > 0) {
     setJson(DAILY_CHALLENGE_KEY, {
       date: today,
       completed: true,
@@ -1021,7 +1430,7 @@ export function submitCoopChallengeResult(
     });
   }
 
-  return { challenge, xpEarned, newBadges };
+  return { challenge, xpEarned, newBadges, targetMet, metDifficulties: evaluation.met };
 }
 
 // ---------------------------------------------------------------------------
@@ -1406,11 +1815,14 @@ export function getActiveQuests(playerId?: string): Array<QuestDefinition & Ques
 // ---------------------------------------------------------------------------
 
 /** Check if the daily challenge has been completed today (per player when a playerId is given). */
-export function isChallengeCompletedToday(playerId?: string): boolean {
+export function isChallengeCompletedToday(playerId?: string, difficulty?: DailyDifficulty): boolean {
   if (playerId) {
     // Per-player completion is derived from today's best result
     const best = getPlayerBestResult(playerId);
-    if (best) return best.targetMet;
+    if (best) {
+      if (difficulty) return best.metDifficulties?.includes(difficulty) ?? false;
+      return (best.metDifficulties?.length ?? 0) > 0 || best.targetMet;
+    }
   }
   // Legacy shared flag (also the fallback for pre-per-player data)
   const stored = getItem(DAILY_CHALLENGE_KEY);
@@ -1425,6 +1837,17 @@ export function isChallengeCompletedToday(playerId?: string): boolean {
     }
   }
   return false;
+}
+
+/** All difficulty levels the player has met today (for the ✓ chips in the UI). */
+export function getCompletedDifficultiesToday(playerId?: string): DailyDifficulty[] {
+  if (!playerId) return [];
+  const best = getPlayerBestResult(playerId);
+  if (!best || !best.metDifficulties) {
+    // Legacy entries: a stored targetMet counts as 'normal' met
+    return best?.targetMet ? ['normal'] : [];
+  }
+  return best.metDifficulties.filter(d => DAILY_DIFFICULTIES.some(x => x.id === d));
 }
 
 /**

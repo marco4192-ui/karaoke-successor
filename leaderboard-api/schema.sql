@@ -106,8 +106,9 @@ CREATE TABLE `ks_daily_results` (
   `id`             BIGINT        NOT NULL AUTO_INCREMENT,
   `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
   `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
-  `challenge_type` ENUM('score','accuracy','combo','perfect_notes') NOT NULL COMMENT 'Daily challenge variant',
-  `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric: score points / accuracy % / combo / perfect notes',
+  `challenge_type` VARCHAR(40)   NOT NULL                 COMMENT 'Daily challenge variant (22-type pool)',
+  `difficulty`     VARCHAR(12)   NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane',
+  `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric (higher = better, except min types: clean_song, steady_hand)',
   `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
   `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
   `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -184,8 +185,9 @@ DELIMITER ;
 --   `id`             BIGINT        NOT NULL AUTO_INCREMENT,
 --   `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
 --   `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
---   `challenge_type` ENUM('score','accuracy','combo','perfect_notes') NOT NULL COMMENT 'Daily challenge variant',
---   `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric: score points / accuracy % / combo / perfect notes',
+--   `challenge_type` VARCHAR(40)   NOT NULL                 COMMENT 'Daily challenge variant (22-type pool)',
+--   `difficulty`     VARCHAR(12)   NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane',
+--   `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric (higher = better, except min types: clean_song, steady_hand)',
 --   `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
 --   `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
 --   `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -194,6 +196,16 @@ DELIMITER ;
 --   KEY `idx_date` (`challenge_date`),
 --   CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Migration: widen an existing ENUM ks_daily_results table to the
+-- 22-type pool + difficulty column (for installations that created
+-- the table with the old ENUM variant). ENUM → VARCHAR keeps all
+-- existing rows; the difficulty default preserves old submissions:
+-- -----------------------------------------------------------
+-- ALTER TABLE `ks_daily_results`
+--   MODIFY `challenge_type` VARCHAR(40) NOT NULL COMMENT 'Daily challenge variant (22-type pool)',
+--   ADD COLUMN `difficulty` VARCHAR(12) NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane' AFTER `challenge_type`;
 
 -- -----------------------------------------------------------
 -- Migration: Add the online-accounts table to an existing v3.1

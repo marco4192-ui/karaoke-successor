@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StorageKeys, setJson, setItem } from '@/lib/storage';
+import { StorageKeys, setJson, setItem, getItem } from '@/lib/storage';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getAllSongs } from '@/lib/game/song-library';
@@ -14,10 +14,16 @@ import {
   getXPLevel,
   getTimeUntilReset,
   isChallengeCompletedToday,
+  getCompletedDifficultiesToday,
   XP_REWARDS,
   DAILY_BADGES,
   getPlayerBestResult,
-  getTargetForLevel,
+  getBestResultMetric,
+  getDailyType,
+  getDailyTargetFor,
+  getDailyDifficultyMultiplier,
+  DAILY_DIFFICULTIES,
+  type DailyDifficulty,
   getWeeklyChallenge,
   isWeeklyChallengeCompletedToday,
   getTimeUntilWeeklyReset,
@@ -52,6 +58,17 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // View player for the progress section at the bottom (pure viewing — does NOT change the active profile)
   const [viewPlayerId, setViewPlayerId] = useState<string | null>(activeProfileId ?? null);
 
+  // Selected daily difficulty — independent of the global game difficulty.
+  // Persisted so the choice survives across sessions.
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>(() => {
+    const stored = getItem('karaoke_daily_difficulty');
+    return DAILY_DIFFICULTIES.some(d => d.id === stored) ? (stored as DailyDifficulty) : 'normal';
+  });
+  const changeDifficulty = (difficulty: DailyDifficulty) => {
+    setSelectedDifficulty(difficulty);
+    setItem('karaoke_daily_difficulty', difficulty);
+  };
+
   // Three song choices for daily challenge
   const [songChoices, setSongChoices] = useState<Song[]>([]);
 
@@ -79,16 +96,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   const levelInfo = getXPLevel(viewProfileXP);
 
   // Check if the CHALLENGE player (first selected player) has completed today's
-  // challenge — the completion state gates the play UI for that player.
+  // challenge at the SELECTED difficulty — the completion state gates the play
+  // UI for that player. Each difficulty is tracked separately.
   const challengePlayerId = selectedPlayerIds[0] || viewProfile?.id;
-  const completedToday = challengePlayerId ? isChallengeCompletedToday(challengePlayerId) : false;
+  const completedToday = challengePlayerId ? isChallengeCompletedToday(challengePlayerId, selectedDifficulty) : false;
+  const metDifficulties = challengePlayerId ? getCompletedDifficultiesToday(challengePlayerId) : [];
+  const allDifficultiesDone = metDifficulties.length >= DAILY_DIFFICULTIES.length;
 
   // Per-player stats of the view player
   const playerStats = getPlayerDailyStats(viewProfile?.id);
 
-  // Challenge is generated with the level of the first selected player (or view player)
+  // Challenge is generated with the level of the first selected player (or view
+  // player) AND the selected daily difficulty — switching either updates the
+  // target immediately.
   const scalingProfile = profiles.find(p => p.id === selectedPlayerIds[0]) || viewProfile;
-  const challenge = getDailyChallenge(scalingProfile?.level || 1);
+  const challenge = getDailyChallenge(scalingProfile?.level || 1, selectedDifficulty);
+  const typeDef = getDailyType(challenge.type);
+  const challengeXP = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * getDailyDifficultyMultiplier(selectedDifficulty));
   const timeLeft = getTimeUntilReset();
 
   // Generate song choices when challenge is not completed
@@ -131,29 +155,41 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOnlineBoard is stable (useCallback with no deps)
   }, [activeTab, boardSource]);
 
-  // Challenge descriptions
-  const challengeDescriptions: Record<string, string> = {
-    score: t('dailyChallengeScreen.challengeScore').replace('{n}', challenge.target.toLocaleString()),
-    accuracy: t('dailyChallengeScreen.challengeAccuracy').replace('{n}', challenge.target.toString()),
-    combo: t('dailyChallengeScreen.challengeCombo').replace('{n}', challenge.target.toString()),
-    perfect_notes: t('dailyChallengeScreen.challengePerfect').replace('{n}', challenge.target.toString()),
-  };
+  // Challenge description comes from the type registry — the {n} placeholder
+  // is filled with the CURRENT target (difficulty + level scaled), so the text
+  // updates the moment the difficulty is switched.
+  const challengeDescription = t(typeDef.descriptionKey).replace('{n}', formatDailyValue(typeDef.metricKey, challenge.target));
 
-  // Sort leaderboard by the challenge-type-specific metric, not by raw score.
-  const sortMetric = (entry: typeof challenge.entries[0]): number => {
-    switch (challenge.type) {
-      case 'accuracy': return entry.accuracy;
-      case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.perfectNotesCount;
-      default: return entry.score;
-    }
-  };
+  // Sort leaderboard by the challenge-type metric (direction-aware).
+  const sortMetric = (entry: typeof challenge.entries[0]): number =>
+    getBestResultMetric({
+      playerId: entry.playerId,
+      score: entry.score,
+      accuracy: entry.accuracy,
+      combo: entry.combo,
+      perfectNotes: entry.perfectNotesCount,
+      goldenNotes: entry.goldenNotesCount,
+      notesHit: entry.notesHit,
+      notesMissed: entry.notesMissed,
+      tickAccuracy: entry.tickAccuracy,
+      completedAt: entry.completedAt,
+      targetMet: false,
+    }, challenge.type);
   const sortedLeaderboard = [...challenge.entries].sort((a, b) => {
     const metricA = sortMetric(a);
     const metricB = sortMetric(b);
-    if (metricB !== metricA) return metricB - metricA;
+    const diff = typeDef.direction === 'min' ? metricA - metricB : metricB - metricA;
+    if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
+
+  /** Format a metric value for display (percent types get one decimal + %). */
+  function formatDailyValue(metricKey: string, value: number): string {
+    if (metricKey === 'accuracy' || metricKey === 'tickAccuracy') {
+      return `${Number.isInteger(value) ? value : value.toFixed(1)}%`;
+    }
+    return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  }
 
   // Toggle player selection (max 2)
   const togglePlayer = (profileId: string) => {
@@ -185,11 +221,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       startedAt: Date.now(),
       gameMode: selectedPlayerIds.length >= 2 ? evaluationMode : 'single',
       playerIds: selectedPlayerIds,
+      difficulty: selectedDifficulty,
     });
 
     const gameMode: GameMode = selectedPlayerIds.length >= 2 ? 'duel' : 'standard';
     onPlayChallenge(song, { gameMode, playerIds: selectedPlayerIds });
-  }, [selectedPlayerIds, evaluationMode, profiles, setActiveProfile, setPlayers, addPlayer, onPlayChallenge]);
+  }, [selectedPlayerIds, selectedDifficulty, evaluationMode, profiles, setActiveProfile, setPlayers, addPlayer, onPlayChallenge]);
 
   // Handler: play a specific song with a selected challenge mode
   const handlePlayModeSong = useCallback((song: Song) => {
@@ -199,13 +236,30 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     onPlayChallenge(song);
   }, [selectedMode, onPlayChallenge]);
 
-  // Metric label for the online board entries
+  // Metric label for a daily type (board value captions)
   const metricLabel = (type: string): string => {
-    switch (type) {
+    switch (getDailyType(type).metricKey) {
       case 'accuracy': return '%';
-      case 'combo': return t('dailyChallengeScreen.comboLabel');
-      case 'perfect_notes': return t('dailyChallengeScreen.perfectNotesLabel');
+      case 'tickAccuracy': return t('dailyChallengeScreen.tickAccuracyLabel');
+      case 'maxCombo': return t('dailyChallengeScreen.comboLabel');
+      case 'perfectNotesCount': return t('dailyChallengeScreen.perfectNotesLabel');
+      case 'goldenNotesCount': return t('dailyChallengeScreen.goldenNotesLabel');
+      case 'notesHit': return t('dailyChallengeScreen.notesHitLabel');
+      case 'notesMissed': return t('dailyChallengeScreen.missedNotesLabel');
       default: return t('dailyChallengeScreen.points');
+    }
+  };
+
+  // Difficulty chip styling per level
+  const difficultyChipClass = (id: DailyDifficulty, active: boolean): string => {
+    const base = 'flex-1 min-w-[92px] sm:min-w-0 px-2.5 py-2 rounded-lg text-xs font-medium transition-all border flex items-center justify-center gap-1.5';
+    if (!active) return `${base} bg-white/5 border-white/10 text-white/70 hover:bg-white/10`;
+    switch (id) {
+      case 'easy': return `${base} bg-green-500/20 border-green-500 text-green-300 ring-1 ring-green-400/50`;
+      case 'normal': return `${base} bg-yellow-500/20 border-yellow-500 text-yellow-300 ring-1 ring-yellow-400/50`;
+      case 'hard': return `${base} bg-orange-500/20 border-orange-500 text-orange-300 ring-1 ring-orange-400/50`;
+      case 'very_hard': return `${base} bg-red-500/20 border-red-500 text-red-300 ring-1 ring-red-400/50`;
+      case 'insane': return `${base} bg-fuchsia-500/20 border-fuchsia-500 text-fuchsia-300 ring-1 ring-fuchsia-400/50`;
     }
   };
 
@@ -240,27 +294,60 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       {activeTab === 'challenge' && (
         <Card className={`bg-white/5 border-white/10 mb-6 ${completedToday && viewProfile ? 'ring-2 ring-green-500' : ''}`}>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{completedToday ? t('dailyChallengeScreen.challengeComplete') : t('dailyChallengeScreen.todayChallenge')}</span>
+            <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                <span className="text-2xl" aria-hidden>{typeDef.icon}</span>
+                <span>{completedToday ? t('dailyChallengeScreen.challengeComplete') : t(typeDef.nameKey)}</span>
+              </span>
               <Badge variant="outline" className="border-cyan-500 text-cyan-400">
-                +{XP_REWARDS.CHALLENGE_COMPLETE} XP
+                +{challengeXP} XP{getDailyDifficultyMultiplier(selectedDifficulty) !== 1 ? ` (×${getDailyDifficultyMultiplier(selectedDifficulty)})` : ''}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg mb-2">{challengeDescriptions[challenge.type] || t('dailyChallengeScreen.completeChallenge')}</p>
+            {/* ── Difficulty selector — independent of the global game difficulty.
+                Switching updates target, description and XP instantly. ── */}
+            <div className="mb-4">
+              <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.difficultyLabel')}</label>
+              <div className="flex gap-2 flex-wrap" role="group" aria-label={t('dailyChallengeScreen.difficultyLabel')}>
+                {DAILY_DIFFICULTIES.map((d) => {
+                  const done = metDifficulties.includes(d.id);
+                  const active = selectedDifficulty === d.id;
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => changeDifficulty(d.id)}
+                      aria-pressed={active}
+                      title={done ? t('dailyChallengeScreen.difficultyDoneHint') : `${t(d.labelKey)} — ×${d.xpMultiplier} XP`}
+                      className={difficultyChipClass(d.id, active)}
+                    >
+                      <span aria-hidden>{d.icon}</span>
+                      <span>{t(d.labelKey)}</span>
+                      {done && <span className="text-green-400 font-bold" aria-label={t('dailyChallengeScreen.difficultyDoneHint')}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              {allDifficultiesDone && (
+                <p className="text-xs text-green-400 mt-2">{t('dailyChallengeScreen.allDifficultiesDone')}</p>
+              )}
+            </div>
+
+            <p className="text-lg mb-2">{challengeDescription}</p>
 
             {/* Dynamic Difficulty Indicator */}
             {viewProfileLevel > 1 && (
               <div className="text-xs text-purple-400/60 mb-4">
-                {t('dailyChallengeScreen.dynamicDifficulty').replace('{n}', getTargetForLevel(challenge.target, 1).toString()).replace('{m}', challenge.target.toString())}
+                {t('dailyChallengeScreen.dynamicDifficulty')
+                  .replace('{n}', formatDailyValue(typeDef.metricKey, getDailyTargetFor(challenge.type, selectedDifficulty)))
+                  .replace('{m}', formatDailyValue(typeDef.metricKey, challenge.target))}
               </div>
             )}
 
             <div className="mb-4 p-4 bg-white/5 rounded-lg">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
-                <span className="font-medium">{challenge.target.toLocaleString()}</span>
+                <span className="font-medium">{formatDailyValue(typeDef.metricKey, challenge.target)}</span>
               </div>
               <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
                 <div
@@ -274,30 +361,32 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             {!completedToday && selectedPlayerIds[0] && (() => {
               const best = getPlayerBestResult(selectedPlayerIds[0]);
               if (!best) return null;
-              const metricLabels: Record<string, string> = {
-                score: t('dailyChallengeScreen.points'),
-                accuracy: '%',
-                combo: 'Combo',
-                perfect_notes: '',
-              };
-              const currentMetric = challenge.type === 'score' ? best.score
-                : challenge.type === 'accuracy' ? best.accuracy
-                : challenge.type === 'combo' ? best.combo
-                : best.perfectNotes;
+              const currentMetric = getBestResultMetric(best, challenge.type);
               const target = challenge.target;
-              const pct = Math.min(100, Math.round((currentMetric / target) * 100));
-              const suffix = metricLabels[challenge.type] || '';
+              const pct = typeDef.direction === 'min'
+                ? (currentMetric <= target ? 100 : Math.min(99, Math.round((target / Math.max(1, currentMetric)) * 100)))
+                : Math.min(100, Math.round((currentMetric / target) * 100));
+              const suffix = typeDef.metricKey === 'accuracy' || typeDef.metricKey === 'tickAccuracy' ? '%' : '';
+              const remaining = typeDef.direction === 'min'
+                ? Math.max(0, currentMetric - target)
+                : Math.max(0, target - currentMetric);
 
               return (
                 <div className="mb-4 p-3 bg-white/5 rounded-lg">
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="text-white/60">{t('dailyChallengeScreen.bestResult')}</span>
-                    <span className="font-medium text-cyan-400">{currentMetric}{suffix} / {target}{suffix}</span>
+                    <span className="font-medium text-cyan-400">
+                      {formatDailyValue(typeDef.metricKey, currentMetric)} / {formatDailyValue(typeDef.metricKey, target)}{suffix && !formatDailyValue(typeDef.metricKey, target).includes('%') ? suffix : ''}
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <div className="text-xs text-white/40 mt-1">{pct}% — {pct >= 100 ? t('dailyChallengeScreen.challengeComplete') : `${target - currentMetric} more to go!`}</div>
+                  <div className="text-xs text-white/40 mt-1">
+                    {pct >= 100
+                      ? t('dailyChallengeScreen.challengeComplete')
+                      : t(typeDef.direction === 'min' ? 'dailyChallengeScreen.remainingFewer' : 'dailyChallengeScreen.remainingMore').replace('{n}', remaining.toLocaleString())}
+                  </div>
                 </div>
               );
             })()}
@@ -646,18 +735,18 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-lg">
-                            {challenge.type === 'score' ? entry.score.toLocaleString() :
-                             challenge.type === 'accuracy' ? `${entry.accuracy}%` :
-                             challenge.type === 'combo' ? entry.combo.toString() :
-                             entry.perfectNotesCount.toString()}
+                          <div className="font-bold text-lg flex items-center gap-2 justify-end">
+                            {formatDailyValue(typeDef.metricKey, sortMetric(entry))}
+                            {entry.difficulty && DAILY_DIFFICULTIES.some(d => d.id === entry.difficulty) && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 text-white/60"
+                                title={t(DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.labelKey)}
+                              >
+                                {DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.icon}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-xs text-white/40">
-                            {challenge.type === 'score' ? t('dailyChallengeScreen.points') :
-                             challenge.type === 'accuracy' ? 'Accuracy' :
-                             challenge.type === 'combo' ? 'Max Combo' :
-                             'Perfect Notes'}
-                          </div>
+                          <div className="text-xs text-white/40">{metricLabel(challenge.type)}</div>
                         </div>
                       </div>
                     ))}
@@ -719,7 +808,17 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                           <div className="text-xs text-white/60">{metricLabel(entry.challenge_type)}</div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-lg">{entry.metric_value.toLocaleString()}</div>
+                          <div className="font-bold text-lg flex items-center gap-2 justify-end">
+                            {formatDailyValue(getDailyType(entry.challenge_type).metricKey, entry.metric_value)}
+                            {entry.difficulty && DAILY_DIFFICULTIES.some(d => d.id === entry.difficulty) && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 text-white/60"
+                                title={t(DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.labelKey)}
+                              >
+                                {DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.icon}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -217,8 +217,9 @@ async function submitDailyResult(params: {
   challengeType: SubmitDailyResultPayload['challenge_type'];
   metricValue: number;
   xpEarned: number;
+  difficulty?: SubmitDailyResultPayload['difficulty'];
 }): Promise<{ ok: boolean; sync_code?: string }> {
-  const { profile, challengeDate, challengeType, metricValue, xpEarned } = params;
+  const { profile, challengeDate, challengeType, metricValue, xpEarned, difficulty } = params;
   if (profile.storageMode === 'local') {
     return { ok: false };
   }
@@ -236,6 +237,7 @@ async function submitDailyResult(params: {
     challenge_type: challengeType,
     metric_value: Math.round(metricValue * 100) / 100,
     xp_earned: xpEarned,
+    difficulty,
   };
   const result = await request<{ ok: boolean }>('/daily', {
     method: 'POST',

@@ -10,6 +10,9 @@ import {
   submitWeeklyChallengeResult,
   getPlayerDailyStats,
   updateQuestProgress,
+  extractDailyMetric,
+  type DailyDifficulty,
+  type DailyResultMetrics,
 } from '@/lib/game/daily-challenge';
 import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
@@ -311,12 +314,24 @@ export function usePostGameProcessing({
               removeItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
 
               const selectedIds: string[] = Array.isArray(parsed.playerIds) ? parsed.playerIds : [];
+              // Difficulty selected on the daily screen (independent of the
+              // global game difficulty) — drives target + XP multiplier.
+              const dailyDifficulty: DailyDifficulty =
+                ['easy', 'normal', 'hard', 'very_hard', 'insane'].includes(parsed.difficulty)
+                  ? parsed.difficulty
+                  : 'normal';
               const p1 = toIdentity(profile);
-              const p1Result = {
+              // Fresh level read — the daily targets scale slightly with level
+              const freshLevel = useGameStore.getState().profiles.find(p => p.id === profile.id)?.level ?? profile.level ?? 1;
+              const p1Result: DailyResultMetrics = {
                 score: playerResult.score,
                 accuracy: playerResult.accuracy,
+                tickAccuracy: playerResult.tickAccuracy,
                 combo: playerResult.maxCombo,
                 perfectNotesCount: playerResult.perfectNotesCount,
+                goldenNotesCount: playerResult.goldenNotesCount,
+                notesHit: playerResult.notesHit,
+                notesMissed: playerResult.notesMissed,
               };
 
               // Resolve the second player: second selected profile, or the
@@ -324,41 +339,44 @@ export function usePostGameProcessing({
               const secondSelectedId = selectedIds.find(id => id !== profile.id);
               const secondProfile = (secondSelectedId && profiles.find(p => p.id === secondSelectedId)) || p2Profile;
 
-              // Challenge-type metric helper (score/accuracy/combo/perfect notes)
-              const metricOf = (type: string, r: { score: number; accuracy: number; combo: number; perfectNotesCount?: number }) => {
-                switch (type) {
-                  case 'accuracy': return r.accuracy;
-                  case 'combo': return r.combo;
-                  case 'perfect_notes': return r.perfectNotesCount ?? 0;
-                  default: return r.score;
-                }
-              };
+              // Challenge-type metric helper (any daily metric key)
+              const metricOf = (type: string, r: DailyResultMetrics) =>
+                extractDailyMetric(type, r);
 
               if (parsed.gameMode === 'coop' && player2Result && secondProfile) {
                 // Team evaluation: the average of both players counts
+                const avg = (a: number, b: number) => (a + b) / 2;
+                const p2Result: DailyResultMetrics = {
+                  score: player2Result.score,
+                  accuracy: player2Result.accuracy,
+                  tickAccuracy: player2Result.tickAccuracy,
+                  combo: player2Result.maxCombo,
+                  perfectNotesCount: player2Result.perfectNotesCount,
+                  goldenNotesCount: player2Result.goldenNotesCount,
+                  notesHit: player2Result.notesHit,
+                  notesMissed: player2Result.notesMissed,
+                };
+                const avgResult: DailyResultMetrics = {
+                  score: avg(p1Result.score, p2Result.score),
+                  accuracy: avg(p1Result.accuracy, p2Result.accuracy),
+                  tickAccuracy: p1Result.tickAccuracy !== undefined || p2Result.tickAccuracy !== undefined
+                    ? avg(p1Result.tickAccuracy ?? p1Result.accuracy, p2Result.tickAccuracy ?? p2Result.accuracy)
+                    : undefined,
+                  combo: avg(p1Result.combo, p2Result.combo),
+                  perfectNotesCount: avg(p1Result.perfectNotesCount ?? 0, p2Result.perfectNotesCount ?? 0),
+                  goldenNotesCount: avg(p1Result.goldenNotesCount ?? 0, p2Result.goldenNotesCount ?? 0),
+                  notesHit: avg(p1Result.notesHit ?? 0, p2Result.notesHit ?? 0),
+                  notesMissed: avg(p1Result.notesMissed ?? 0, p2Result.notesMissed ?? 0),
+                };
                 const coopResult = submitCoopChallengeResult(
                   [p1, toIdentity(secondProfile)],
-                  [
-                    p1Result,
-                    {
-                      score: player2Result.score,
-                      accuracy: player2Result.accuracy,
-                      combo: player2Result.maxCombo,
-                      perfectNotesCount: player2Result.perfectNotesCount,
-                    },
-                  ],
+                  [p1Result, p2Result],
+                  { difficulty: dailyDifficulty, level: freshLevel },
                 );
                 dailyXPEarned += coopResult.xpEarned;
 
                 // Online daily board: submit the team average (fire-and-forget)
                 if (onlineEnabled && profile.storageMode !== 'local') {
-                  const avg = (a: number, b: number) => (a + b) / 2;
-                  const avgResult = {
-                    score: avg(playerResult.score, player2Result.score),
-                    accuracy: avg(playerResult.accuracy, player2Result.accuracy),
-                    combo: avg(playerResult.maxCombo, player2Result.maxCombo),
-                    perfectNotesCount: avg(playerResult.perfectNotesCount ?? 0, player2Result.perfectNotesCount ?? 0),
-                  };
                   const type = coopResult.challenge.type;
                   const todayISO = new Date().toISOString().slice(0, 10);
                   onlineDailySubmission = () => {
@@ -369,6 +387,7 @@ export function usePostGameProcessing({
                         challengeType: type,
                         metricValue: metricOf(type, avgResult),
                         xpEarned: coopResult.xpEarned,
+                        difficulty: dailyDifficulty,
                       }),
                     ).then((res) => {
                       if (res.sync_code) updateProfile(profile.id, { syncCode: res.sync_code });
@@ -377,7 +396,7 @@ export function usePostGameProcessing({
                 }
               } else {
                 // Individual evaluation for each selected player
-                const r1 = submitChallengeResult(p1, p1Result);
+                const r1 = submitChallengeResult(p1, p1Result, { difficulty: dailyDifficulty, level: freshLevel });
                 dailyXPEarned += r1.xpEarned;
 
                 // Online daily board for P1 (fire-and-forget)
@@ -392,6 +411,7 @@ export function usePostGameProcessing({
                         challengeType: type,
                         metricValue: metricOf(type, p1Result),
                         xpEarned: r1.xpEarned,
+                        difficulty: dailyDifficulty,
                       }),
                     ).then((res) => {
                       if (res.sync_code) updateProfile(profile.id, { syncCode: res.sync_code });
@@ -403,9 +423,13 @@ export function usePostGameProcessing({
                   const r2 = submitChallengeResult(toIdentity(secondProfile), {
                     score: player2Result.score,
                     accuracy: player2Result.accuracy,
+                    tickAccuracy: player2Result.tickAccuracy,
                     combo: player2Result.maxCombo,
                     perfectNotesCount: player2Result.perfectNotesCount,
-                  });
+                    goldenNotesCount: player2Result.goldenNotesCount,
+                    notesHit: player2Result.notesHit,
+                    notesMissed: player2Result.notesMissed,
+                  }, { difficulty: dailyDifficulty, level: freshLevel });
                   dailyXPEarned += r2.xpEarned;
                 }
               }

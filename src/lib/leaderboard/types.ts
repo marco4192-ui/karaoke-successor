@@ -120,7 +120,20 @@ export interface ProfileSyncDownload {
 }
 
 // ── Daily challenge (online board) ───────────────────────
-export type DailyChallengeType = 'score' | 'accuracy' | 'combo' | 'perfect_notes';
+/**
+ * Daily challenge variant. The 4 legacy ids plus the 18 newer types of the
+ * expanded daily pool — the server stores this as VARCHAR and validates
+ * against its own allow-list.
+ */
+export type DailyChallengeType =
+  | 'score' | 'accuracy' | 'combo' | 'perfect_notes'
+  | 'golden_notes' | 'notes_hit' | 'tick_accuracy' | 'clean_song' | 'comeback'
+  | 'sharpshooter' | 'combo_master' | 'perfect_storm' | 'endurance'
+  | 'golden_groove' | 'precision' | 'flawless_finale' | 'score_sniper'
+  | 'combo_race' | 'perfect_pitch' | 'golden_fingers' | 'steady_hand' | 'titan';
+
+/** Daily difficulty level selected for the attempt */
+export type DailyDifficultyLevel = 'easy' | 'normal' | 'hard' | 'very_hard' | 'insane';
 
 /** Payload for POST /daily — submit a daily challenge result */
 export interface SubmitDailyResultPayload {
@@ -130,10 +143,12 @@ export interface SubmitDailyResultPayload {
   /** Challenge date (YYYY-MM-DD, local time of the client) */
   challenge_date: string;
   challenge_type: DailyChallengeType;
-  /** The challenge-relevant metric: score / accuracy% / combo / perfect notes */
+  /** The challenge-relevant metric (higher = better for max types, lower = better for min types) */
   metric_value: number;
   /** XP earned locally for this challenge (informational) */
   xp_earned: number;
+  /** Difficulty the player selected for this attempt */
+  difficulty?: DailyDifficultyLevel;
 }
 
 /** One entry of the online daily leaderboard (GET /daily?date=…) */
@@ -145,6 +160,8 @@ export interface OnlineDailyEntry {
   country_code: string | null;
   challenge_type: DailyChallengeType;
   metric_value: number;
+  /** Difficulty of the attempt that produced this entry (informational) */
+  difficulty?: DailyDifficultyLevel;
   created_at: string;
 }
 

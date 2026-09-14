@@ -49,7 +49,7 @@ $T_ACCOUNTS = tbl('accounts');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.2.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.3.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
@@ -499,6 +499,39 @@ function songBoard(string $hash, string $TP, string $TS): void {
 // ============================================================
 // DAILY CHALLENGE
 // ============================================================
+
+/**
+ * Valid daily challenge types (must match the client's DAILY_TYPE_LIST).
+ * 'max' bound = plausibility ceiling for metric_value,
+ * 'dir'      = ranking direction ('min' = lower is better, e.g. missed notes).
+ */
+function dailyTypeMeta(): array {
+    return [
+        'score'           => ['max' => 100000, 'dir' => 'max'],
+        'accuracy'        => ['max' => 100,    'dir' => 'max'],
+        'combo'           => ['max' => 5000,   'dir' => 'max'],
+        'perfect_notes'   => ['max' => 5000,   'dir' => 'max'],
+        'golden_notes'    => ['max' => 2000,   'dir' => 'max'],
+        'notes_hit'       => ['max' => 5000,   'dir' => 'max'],
+        'tick_accuracy'   => ['max' => 100,    'dir' => 'max'],
+        'clean_song'      => ['max' => 5000,   'dir' => 'min'],
+        'comeback'        => ['max' => 5000,   'dir' => 'max'],
+        'sharpshooter'    => ['max' => 100,    'dir' => 'max'],
+        'combo_master'    => ['max' => 5000,   'dir' => 'max'],
+        'perfect_storm'   => ['max' => 5000,   'dir' => 'max'],
+        'endurance'       => ['max' => 5000,   'dir' => 'max'],
+        'golden_groove'   => ['max' => 2000,   'dir' => 'max'],
+        'precision'       => ['max' => 100,    'dir' => 'max'],
+        'flawless_finale' => ['max' => 100,    'dir' => 'max'],
+        'score_sniper'    => ['max' => 100000, 'dir' => 'max'],
+        'combo_race'      => ['max' => 5000,   'dir' => 'max'],
+        'perfect_pitch'   => ['max' => 5000,   'dir' => 'max'],
+        'golden_fingers'  => ['max' => 2000,   'dir' => 'max'],
+        'steady_hand'     => ['max' => 5000,   'dir' => 'min'],
+        'titan'           => ['max' => 100000, 'dir' => 'max'],
+    ];
+}
+
 function routeDaily(array $parts, string $method, string $TP, string $TD): void {
     if ($method === 'POST' && !isset($parts[1])) { submitDaily($TP, $TD); return; }
     if ($method === 'GET'  && !isset($parts[1])) { dailyBoard($TP, $TD); return; }
@@ -511,10 +544,15 @@ function submitDaily(string $TP, string $TD): void {
     $uid  = clean((string)$d['profile_uid']);
     $type = clean((string)$d['challenge_type']);
     $date = clean((string)$d['challenge_date']);
+    $diff = clean((string)($d['difficulty'] ?? 'normal'));
 
     if (!isValidUUID($uid)) err('Invalid profile_uid');
-    if (!in_array($type, ['score','accuracy','combo','perfect_notes'])) {
-        err('challenge_type: score|accuracy|combo|perfect_notes');
+    $types = dailyTypeMeta();
+    if (!isset($types[$type])) {
+        err('challenge_type: unknown daily challenge variant');
+    }
+    if (!in_array($diff, ['easy','normal','hard','very_hard','insane'], true)) {
+        err('difficulty: easy|normal|hard|very_hard|insane');
     }
     if (!isValidDateString($date)) err('Invalid challenge_date (YYYY-MM-DD)');
 
@@ -528,8 +566,7 @@ function submitDaily(string $TP, string $TD): void {
 
     if (!is_numeric($d['metric_value'])) err('metric_value must be a number');
     $mv = round((float)$d['metric_value'], 2);
-    $maxByType = ['score' => 100000, 'accuracy' => 100, 'combo' => 5000, 'perfect_notes' => 5000];
-    if ($mv < 0 || $mv > $maxByType[$type]) err("metric_value out of range for challenge_type $type");
+    if ($mv < 0 || $mv > $types[$type]['max']) err("metric_value out of range for challenge_type $type");
 
     $xp = max(0, min(100000, (int)($d['xp_earned'] ?? 0)));
 
@@ -539,14 +576,21 @@ function submitDaily(string $TP, string $TD): void {
     $p->execute([$uid]);
     if (!(int)$p->fetchColumn()) err('Profile opted out');
 
-    // UPSERT: same day + type keeps the better metric_value
+    // UPSERT: same day + type keeps the better metric_value —
+    // 'max' types keep the higher value, 'min' types (missed notes)
+    // keep the lower one. xp follows the winning attempt; difficulty
+    // reflects the latest submission (informational only).
+    $better = ($types[$type]['dir'] === 'min')
+        ? "IF(VALUES(`metric_value`) < `metric_value`, VALUES(`metric_value`), `metric_value`)"
+        : "IF(VALUES(`metric_value`) > `metric_value`, VALUES(`metric_value`), `metric_value`)";
     db()->prepare("INSERT INTO `$TD`
-            (`profile_uid`,`challenge_date`,`challenge_type`,`metric_value`,`xp_earned`)
-           VALUES (?,?,?,?,?)
+            (`profile_uid`,`challenge_date`,`challenge_type`,`difficulty`,`metric_value`,`xp_earned`)
+           VALUES (?,?,?,?,?,?)
            ON DUPLICATE KEY UPDATE
-               `metric_value` = IF(VALUES(`metric_value`) > `metric_value`, VALUES(`metric_value`), `metric_value`),
-               `xp_earned`    = IF(VALUES(`metric_value`) > `metric_value`, VALUES(`xp_earned`), `xp_earned`)")
-        ->execute([$uid, $date, $type, $mv, $xp]);
+               `metric_value` = $better,
+               `xp_earned`    = IF(VALUES(`metric_value`) = `metric_value` AND VALUES(`xp_earned`) > `xp_earned`, VALUES(`xp_earned`), `xp_earned`),
+               `difficulty`   = VALUES(`difficulty`)")
+        ->execute([$uid, $date, $type, $diff, $mv, $xp]);
 
     json(['ok' => true]);
 }
@@ -555,13 +599,14 @@ function dailyBoard(string $TP, string $TD): void {
     $date = clean((string)($_GET['date'] ?? date('Y-m-d')));
     if (!isValidDateString($date)) err('Invalid date (YYYY-MM-DD)');
     $limit = max(1, min((int)($_GET['limit'] ?? 100), 100));
+    $types = dailyTypeMeta();
 
-    // One day of results is small (the unique key caps it at 4 rows per
-    // profile); the SQL bound is only a hard safety cap — the per-type
-    // Top-N cut and rank computation happen in PHP. ENUM ordering follows
-    // the declaration order (score, accuracy, combo, perfect_notes).
+    // One day of results is small (the unique key caps it at 22 rows per
+    // profile — one per type); the SQL bound is only a hard safety cap.
+    // Ranking per type happens in PHP so 'min' types (missed notes) can
+    // sort ascending while everything else sorts descending.
     $sql = "SELECT
-        r.`profile_uid`, r.`challenge_type`, r.`metric_value`, r.`created_at`,
+        r.`profile_uid`, r.`challenge_type`, r.`difficulty`, r.`metric_value`, r.`created_at`,
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TD` r JOIN `$TP` p ON r.`profile_uid` = p.`profile_uid`
@@ -572,21 +617,36 @@ function dailyBoard(string $TP, string $TD): void {
     $stmt->execute([$date]);
     $rows = $stmt->fetchAll();
 
-    $board = []; $seen = [];
+    // Group rows per challenge type, then rank each group by direction
+    $groups = [];
     foreach ($rows as $row) {
-        $t = $row['challenge_type'];
-        $seen[$t] = ($seen[$t] ?? 0) + 1;
-        if ($seen[$t] > $limit) continue; // per-type Top-N
-        $board[] = [
-            'rank'           => $seen[$t],
-            'profile_uid'    => $row['profile_uid'],
-            'display_name'   => $row['display_name'],
-            'color'          => $row['color'],
-            'country_code'   => $row['country_code'],
-            'challenge_type' => $t,
-            'metric_value'   => (float)$row['metric_value'],
-            'created_at'     => str_replace(' ', 'T', (string)$row['created_at']),
-        ];
+        $groups[$row['challenge_type']][] = $row;
+    }
+
+    $board = [];
+    foreach ($groups as $t => $group) {
+        $dir = $types[$t]['dir'] ?? 'max';
+        usort($group, function (array $a, array $b) use ($dir): int {
+            if ((float)$a['metric_value'] === (float)$b['metric_value']) return 0;
+            $cmp = (float)$a['metric_value'] <=> (float)$b['metric_value'];
+            return $dir === 'min' ? $cmp : -$cmp;
+        });
+        $seen = 0;
+        foreach ($group as $row) {
+            $seen++;
+            if ($seen > $limit) break; // per-type Top-N
+            $board[] = [
+                'rank'           => $seen,
+                'profile_uid'    => $row['profile_uid'],
+                'display_name'   => $row['display_name'],
+                'color'          => $row['color'],
+                'country_code'   => $row['country_code'],
+                'challenge_type' => $t,
+                'difficulty'     => $row['difficulty'],
+                'metric_value'   => (float)$row['metric_value'],
+                'created_at'     => str_replace(' ', 'T', (string)$row['created_at']),
+            ];
+        }
     }
     json(['date' => $date, 'leaderboard' => $board]);
 }

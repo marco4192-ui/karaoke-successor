@@ -114,32 +114,50 @@ without proof are accepted but stored as unverified.
 ## Daily challenge
 
 The daily-challenge board stores one result per profile, date, and
-challenge type (`score`, `accuracy`, `combo`, `perfect_notes`). Resubmitting
-the same day + type keeps the better `metric_value` (upsert — the stored
-`xp_earned` follows the winning attempt). The challenge date must be the
-client's local day, never in the future and at most 7 days back.
+challenge type. The type pool has **22 variants** — the 4 classic ones
+(`score`, `accuracy`, `combo`, `perfect_notes`) plus 18 newer types
+(`golden_notes`, `notes_hit`, `tick_accuracy`, `clean_song`, `comeback`,
+`sharpshooter`, `combo_master`, `perfect_storm`, `endurance`,
+`golden_groove`, `precision`, `flawless_finale`, `score_sniper`,
+`combo_race`, `perfect_pitch`, `golden_fingers`, `steady_hand`, `titan`).
+The daily screen also offers 5 selectable difficulty levels
+(`easy`, `normal`, `hard`, `very_hard`, `insane`) — the difficulty changes
+the target the player must reach, never the achieved metric itself, so
+entries from different difficulties remain comparable on the board.
+
+Resubmitting the same day + type keeps the better `metric_value` (upsert —
+the stored `xp_earned` follows the winning attempt). For **min-direction
+types** (`clean_song`, `steady_hand` — "miss at most N notes") *lower* is
+better: the upsert keeps the lower value and the board ranks them
+ascending. The challenge date must be the client's local day, never in
+the future and at most 7 days back.
 
 ```
 POST /daily   { "profile_uid": "uuid-v4", "sync_code": "AB12CD34",
                 "challenge_date": "2026-09-14", "challenge_type": "score",
-                "metric_value": 8450, "xp_earned": 120 }
+                "difficulty": "hard",
+                "metric_value": 8450, "xp_earned": 150 }
             → { "ok": true }
 
 GET  /daily?date=2026-09-14&limit=100
             → { "date": "2026-09-14", "leaderboard": [ {
                   "rank": 1, "profile_uid": "…", "display_name": "…",
                   "color": "#8B5CF6", "country_code": "DE",
-                  "challenge_type": "score", "metric_value": 9820.5,
+                  "challenge_type": "score", "difficulty": "hard",
+                  "metric_value": 9820.5,
                   "created_at": "2026-09-14T18:30:00" } ] }
 ```
 
-Metric bounds per type: `score` ≤ 100 000, `accuracy` ≤ 100, `combo` ≤ 5000,
-`perfect_notes` ≤ 5000 (values are rounded to 2 decimals). `xp_earned` is
-informational and clamped to 0…100 000. The board is public (GET needs no
-API key) and returns all challenge types of that date, ranked **within each
-type** by `metric_value` DESC; `limit` (default 100, max 100) applies per
-type. As everywhere else, profiles with `show_on_board = 0` are excluded
-and `country_code` is `null` when `show_country = 0`.
+Metric bounds per type: `score`/`score_sniper`/`titan` ≤ 100 000,
+`accuracy`-family and `tick_accuracy`-family ≤ 100, combo-family and
+note-count types ≤ 5000, golden-note types ≤ 2000 (values are rounded to
+2 decimals). `difficulty` is informational (default `normal`).
+`xp_earned` is informational and clamped to 0…100 000. The board is
+public (GET needs no API key) and returns all challenge types of that
+date, ranked **within each type** by direction (`metric_value` DESC for
+max types, ASC for the two min types); `limit` (default 100, max 100)
+applies per type. As everywhere else, profiles with `show_on_board = 0`
+are excluded and `country_code` is `null` when `show_country = 0`.
 
 ## Online accounts (app-only login)
 
