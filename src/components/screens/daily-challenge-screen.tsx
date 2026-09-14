@@ -1267,11 +1267,11 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span>{quest.icon}</span>
-                          <span className="font-medium text-sm">{t(`dailyQuests.${quest.id}.name`)}</span>
+                          <span className="font-medium text-sm">{t(quest.nameKey) || quest.name}</span>
                         </div>
                         <span className="text-xs text-cyan-400">+{quest.reward.xp} XP</span>
                       </div>
-                      <div className="text-xs text-white/50 mb-2">{t(`dailyQuests.${quest.id}.description`)}</div>
+                      <div className="text-xs text-white/50 mb-2">{t(quest.descriptionKey) || quest.description}</div>
                       <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className={`h-full ${quest.completed ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`} style={{ width: `${pct}%` }} />
                       </div>

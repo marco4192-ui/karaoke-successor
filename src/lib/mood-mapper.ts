@@ -3,13 +3,16 @@
 
 import type { MobileSong } from '@/components/screens/mobile/mobile-types';
 
+// Mood categories reference the canonical MAIN genres only (@/lib/constants GENRES):
+// 'Jazz' is subsumed by 'R&B', 'Hip-Hop' by 'Rap', Dance/EDM/Reggaeton by
+// 'Electronic'/'Latin' — legacy genre strings are normalized on import.
 export const MOOD_CATEGORIES = [
-  { id: 'party', label: 'Party', icon: '🎉', genres: ['Pop', 'Dance', 'EDM', 'Hip Hop', 'Rap', 'Reggaeton', 'Latin'] },
-  { id: 'chill', label: 'Chill', icon: '😌', genres: ['Jazz', 'R&B', 'Soul', 'Lo-Fi', 'Indie', 'Folk', 'Acoustic'] },
-  { id: 'power', label: 'Power', icon: '⚡', genres: ['Rock', 'Metal', 'Punk', 'Hard Rock', 'Alternative'] },
-  { id: 'romantic', label: 'Romantic', icon: '💕', genres: ['Ballad', 'Love', 'Romantic', 'R&B', 'Soul'] },
-  { id: 'classic', label: 'Classic', icon: '🎵', genres: ['Classic Rock', 'Oldies', '80s', '90s', 'Schlager', 'Volksmusik'] },
-  { id: 'fun', label: 'Fun', icon: '🤪', genres: ['Musical', 'Disney', 'Anime', 'Children', 'Novelty', 'Comedy'] },
+  { id: 'party', label: 'Party', icon: '🎉', genres: ['Pop', 'Electronic', 'Rap', 'Latin'] },
+  { id: 'chill', label: 'Chill', icon: '😌', genres: ['R&B', 'Soul', 'Folk', 'Blues'] },
+  { id: 'power', label: 'Power', icon: '⚡', genres: ['Rock', 'Metal', 'Punk'] },
+  { id: 'romantic', label: 'Romantic', icon: '💕', genres: ['R&B', 'Soul', 'Musical'] },
+  { id: 'classic', label: 'Classic', icon: '🎵', genres: ['Classical', 'Schlager', 'Volksmusik'] },
+  { id: 'fun', label: 'Fun', icon: '🤪', genres: ['Musical', 'Disney', "Children's"] },
 ] as const;
 
 export type MoodId = (typeof MOOD_CATEGORIES)[number]['id'];

@@ -291,14 +291,14 @@ const GENRE_ALIASES: Record<string, string> = {
   'contemporary r&b': 'R&B', 'neo soul': 'Soul', 'new jack swing': 'R&B',
   'rhythm and blues': 'R&B', 'r&b/soul': 'R&B', 'motown': 'Soul',
 
-  // Hip-Hop family
-  'rap': 'Hip-Hop', 'hip hop': 'Hip-Hop', 'trap': 'Hip-Hop',
-  'gangsta rap': 'Hip-Hop', 'old school rap': 'Hip-Hop', 'drill': 'Hip-Hop',
-  'west coast hip-hop': 'Hip-Hop', 'east coast hip-hop': 'Hip-Hop',
+  // Rap family (main category — 'Hip-Hop' stays as an alias of 'Rap')
+  'rap': 'Rap', 'hip hop': 'Rap', 'hip-hop': 'Rap', 'hiphop': 'Rap',
+  'trap': 'Rap', 'gangsta rap': 'Rap', 'old school rap': 'Rap', 'drill': 'Rap',
+  'west coast hip-hop': 'Rap', 'east coast hip-hop': 'Rap',
 
-  // Jazz / Blues family
-  'vocal jazz': 'Jazz', 'smooth jazz': 'Jazz', 'bebop': 'Jazz',
-  'swing': 'Jazz', 'big band': 'Jazz', 'jazz fusion': 'Jazz',
+  // Jazz subsumed by 'R&B' (main-category harmonization — jazz is no main category)
+  'jazz': 'R&B', 'vocal jazz': 'R&B', 'smooth jazz': 'R&B', 'bebop': 'R&B',
+  'swing': 'R&B', 'big band': 'R&B', 'jazz fusion': 'R&B',
   'delta blues': 'Blues', 'electric blues': 'Blues', 'rhythm and blues blues': 'Blues',
 
   // Country / Folk family
@@ -344,7 +344,7 @@ const GENRE_ALIASES: Record<string, string> = {
   'traditional pop': 'Pop', 'variété française': 'Pop', 'variete francaise': 'Pop',
   'singer/songwriter': 'Folk', 'world': 'Folk', 'world music': 'Folk',
   'new age': 'Classical', 'gregorian': 'Classical', 'gregorian chant': 'Classical',
-  'easy listening': 'Jazz',
+  'easy listening': 'R&B',
 
   // Regional pop families (kept distinct per harmonization hints)
   'j-rock': 'Rock', 'jpop': 'J-Pop', 'kpop': 'K-Pop', 'k-pop': 'K-Pop',

@@ -60,7 +60,7 @@ export const THEMES: Theme[] = [
     noteStyle: 'rounded',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 8,
-    genres: ['electronic', 'hip-hop', 'pop'],
+    genres: ['electronic', 'rap', 'pop'],
     mood: 'energetic',
     particleEffect: 'sparkle',
     backgroundAnimation: 'particles',

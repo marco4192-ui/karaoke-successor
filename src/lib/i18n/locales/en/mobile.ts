@@ -734,6 +734,7 @@ export const mobileTranslations = {
       shape_rating5: 'Five-Star Find',
       shape_diff_easy: 'Gentle Breeze',
       shape_diff_hard: 'Spice Sprint',
+      duo_day: 'Duet Day',
     },
     patterns: {
       score: 'Score {n}+ points in a single song',
@@ -798,6 +799,7 @@ export const mobileTranslations = {
       recentlyAdded: 'Sing a song added within the last 60 days and reach {n}+ accuracy',
       songRating: 'Sing a {rating}-star song and reach {n}+ accuracy',
       songDifficulty: 'Sing a {difficulty} song and reach {n}+ accuracy',
+      duo_day: 'Sing a duet together with at least 2 singers and reach {n}+ accuracy',
     },
   },
 

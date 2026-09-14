@@ -699,6 +699,7 @@ dailyTypes: {
       shape_rating5: 'Fünf-Sterne-Fund',
       shape_diff_easy: 'Sanfte Brise',
       shape_diff_hard: 'Schärfster Sprint',
+      duo_day: 'Duett-Tag',
     },
     patterns: {
       score: 'Erziele {n}+ Punkte in einem Song',
@@ -763,6 +764,7 @@ dailyTypes: {
       recentlyAdded: 'Sing ein in den letzten 60 Tagen hinzugefügtes Lied und erreiche {n}+ Genauigkeit',
       songRating: 'Sing ein {rating}-Sterne-Lied und erreiche {n}+ Genauigkeit',
       songDifficulty: 'Sing ein Lied der Schwierigkeit „{difficulty}“ und erreiche {n}+ Genauigkeit',
+      duo_day: 'Sing ein Duett mit mindestens 2 Sängern gemeinsam und erreiche {n}+ Genauigkeit',
     },
     tierBronze: 'Bronze',
     tierSilver: 'Silber',

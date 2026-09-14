@@ -122,6 +122,22 @@ function normalizeLanguage(value?: string): string {
   return LANGUAGE_ALIASES[v] ?? v;
 }
 
+/** genre aliases for category matching — keeps legacy library data compatible
+ *  with the harmonized main categories ('Hip-Hop' → 'Rap', 'Jazz' → 'R&B'). */
+const GENRE_MATCH_ALIASES: Record<string, string> = {
+  'hip-hop': 'rap', 'hip hop': 'rap', 'hiphop': 'rap', 'trap': 'rap',
+  'jazz': 'r&b', 'vocal jazz': 'r&b', 'smooth jazz': 'r&b', 'bebop': 'r&b',
+  'swing': 'r&b', 'big band': 'r&b', 'jazz fusion': 'r&b',
+  'dance': 'electronic', 'edm': 'electronic', 'disco': 'electronic',
+  'indie': 'pop', 'gospel': 'soul', 'opera': 'classical',
+};
+
+function normalizeGenre(value?: string): string {
+  if (!value) return '';
+  const v = value.trim().toLowerCase();
+  return GENRE_MATCH_ALIASES[v] ?? v;
+}
+
 /** Evaluate a categorical requirement against the sung song's metadata. */
 export function matchesDailyCategory(
   category: DailyCategory,
@@ -131,7 +147,7 @@ export function matchesDailyCategory(
   if (!song) return false;
   switch (category.field) {
     case 'genre':
-      return (song.genre ?? '').trim().toLowerCase() === String(category.value).toLowerCase();
+      return normalizeGenre(song.genre) === normalizeGenre(String(category.value));
     case 'language':
       return normalizeLanguage(song.language) === normalizeLanguage(String(category.value));
     case 'languageNot':
@@ -496,11 +512,11 @@ export const DAILY_TYPE_LIST: readonly DailyTypeDefinition[] = [
   cat('genre_rock', '🎸', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Rock' }, { nameParams: { genre: 'Rock' }, descriptionParams: { genre: 'Rock' } }),
   cat('genre_metal', '🤘', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Metal' }, { nameParams: { genre: 'Metal' }, descriptionParams: { genre: 'Metal' } }),
   cat('genre_punk', '🧷', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Punk' }, { nameParams: { genre: 'Punk' }, descriptionParams: { genre: 'Punk' } }),
-  cat('genre_hiphop', '🎧', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Hip-Hop' }, { nameParams: { genre: 'Hip-Hop' }, descriptionParams: { genre: 'Hip-Hop' } }),
+  cat('genre_rap', '🎧', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Rap' }, { nameParams: { genre: 'Rap' }, descriptionParams: { genre: 'Rap' } }),
   cat('genre_rnb', '🎶', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'R&B' }, { nameParams: { genre: 'R&B' }, descriptionParams: { genre: 'R&B' } }),
   cat('genre_soul', '❤️', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Soul' }, { nameParams: { genre: 'Soul' }, descriptionParams: { genre: 'Soul' } }),
   cat('genre_funk', '🕺', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Funk' }, { nameParams: { genre: 'Funk' }, descriptionParams: { genre: 'Funk' } }),
-  cat('genre_jazz', '🎺', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Jazz' }, { nameParams: { genre: 'Jazz' }, descriptionParams: { genre: 'Jazz' } }),
+  cat('duo_day', '👫', 'dailyTypes.names.duo_day', 'dailyTypes.patterns.duo_day', { field: 'coopPartner' }),
   cat('genre_blues', '🎷', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Blues' }, { nameParams: { genre: 'Blues' }, descriptionParams: { genre: 'Blues' } }),
   cat('genre_folk', '🪕', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Folk' }, { nameParams: { genre: 'Folk' }, descriptionParams: { genre: 'Folk' } }),
   cat('genre_country', '🤠', NAME_P.genre, CAT_P.genre, { field: 'genre', value: 'Country' }, { nameParams: { genre: 'Country' }, descriptionParams: { genre: 'Country' } }),
@@ -902,11 +918,11 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wcat('w_genre_pop', '🎤', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Pop' }, SUM_SONGS, { nameParams: { genre: 'Pop' }, descriptionParams: { genre: 'Pop' } }),
   wcat('w_genre_rock', '🎸', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Rock' }, SUM_SONGS, { nameParams: { genre: 'Rock' }, descriptionParams: { genre: 'Rock' } }),
   wcat('w_genre_metal', '🤘', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Metal' }, SUM_SONGS, { nameParams: { genre: 'Metal' }, descriptionParams: { genre: 'Metal' } }),
-  wcat('w_genre_hiphop', '🎧', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Hip-Hop' }, SUM_SONGS, { nameParams: { genre: 'Hip-Hop' }, descriptionParams: { genre: 'Hip-Hop' } }),
+  wcat('w_genre_rap', '🎧', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Rap' }, SUM_SONGS, { nameParams: { genre: 'Rap' }, descriptionParams: { genre: 'Rap' } }),
   wcat('w_genre_schlager', '🎊', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Schlager' }, SUM_SONGS, { nameParams: { genre: 'Schlager' }, descriptionParams: { genre: 'Schlager' } }),
   wcat('w_genre_disney', '🏰', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Disney' }, SUM_SONGS, { nameParams: { genre: 'Disney' }, descriptionParams: { genre: 'Disney' } }),
   wcat('w_genre_musical', '🎭', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Musical' }, SUM_SONGS, { nameParams: { genre: 'Musical' }, descriptionParams: { genre: 'Musical' } }),
-  wcat('w_genre_jazz', '🎺', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Jazz' }, SUM_SONGS, { nameParams: { genre: 'Jazz' }, descriptionParams: { genre: 'Jazz' } }),
+  wcat('w_genre_rnb', '🎶', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'R&B' }, SUM_SONGS, { nameParams: { genre: 'R&B' }, descriptionParams: { genre: 'R&B' } }),
   wcat('w_genre_country', '🤠', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Country' }, SUM_SONGS, { nameParams: { genre: 'Country' }, descriptionParams: { genre: 'Country' } }),
   wcat('w_genre_latin', '💃', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'Latin' }, SUM_SONGS, { nameParams: { genre: 'Latin' }, descriptionParams: { genre: 'Latin' } }),
   wcat('w_genre_kpop', '💖', WNAME_P.genre, WP.genreSum, { field: 'genre', value: 'K-Pop' }, SUM_SONGS, { nameParams: { genre: 'K-Pop' }, descriptionParams: { genre: 'K-Pop' } }),

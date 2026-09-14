@@ -67,7 +67,8 @@ Common normalizations (sub-genres → parent genre):
 - "Trance", "Drum and Bass", "Dubstep", "Deep House", "Techno", "House", "Ambient" → "Electronic"
 - "Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" (keep as Schlager, NOT Pop — it's a distinct German genre)
 - "K-Pop", "J-Pop" → keep as-is (canonical); "J-Rock" → "Rock"
-- "Vocal Jazz", "Smooth Jazz", "Bebop" → "Jazz"
+- "Vocal Jazz", "Smooth Jazz", "Bebop", "Swing", "Big Band" → "R&B" (jazz is subsumed by R&B — no separate Jazz main category)
+- "Hip-Hop", "Rap", "Trap", "Drill", "Gangsta Rap" → "Rap" (the main category; no separate Hip-Hop)
 - "Country Pop", "Outlaw Country", "Bro-Country" → "Country"
 - "Indie Folk", "Folk Rock", "Americana", "Bluegrass" → "Folk"
 - "Post-Punk", "Emo", "Screamo", "Gothic Rock" → "Punk" or "Rock"
@@ -75,7 +76,7 @@ Common normalizations (sub-genres → parent genre):
 - "Afrobeats", "Afro Pop" → "Pop"; "Amapiano" → "Electronic"
 - "Singer-Songwriter", "Chanson", "Liedermacher" → "Folk"
 - "Disco" → "Electronic"; "Gospel" → "Soul"; "Ballad", "Adult Contemporary", "Traditional Pop" → "Pop"
-- "World", "World Music" → "Folk"; "New Age", "Gregorian" → "Classical"; "Easy Listening" → "Jazz"
+- "World", "World Music" → "Folk"; "New Age", "Gregorian" → "Classical"; "Easy Listening" → "R&B"
 - "Rock'n'Roll" (any spelling), "Blues Rock", "Alternative" → "Rock"
 - "Heavy Metal", "Death Metal", "Black Metal", "Thrash Metal" → "Metal"
 - "Children's", "Kindermusik", "Kinderlied" → "Children's"

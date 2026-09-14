@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
+import { GENRES } from '@/lib/constants';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -33,14 +34,9 @@ interface EnrichResponse {
 
 // ── Standard genre/language lists ────────────────────────────────────
 
-const STANDARD_GENRES = [
-  'Pop', 'Rock', 'Hip-Hop', 'R&B', 'Country', 'Electronic', 'Dance',
-  'Jazz', 'Blues', 'Soul', 'Funk', 'Reggae', 'Latin', 'Metal',
-  'Punk', 'Indie', 'Folk', 'Classical', 'Soundtrack', 'Musical',
-  'Schlager', 'Deutsch-Pop', 'Volksmusik', 'K-Pop', 'J-Pop', 'Disco',
-  'Reggaeton', 'House', 'Techno', 'Trance', 'Opera', 'Swing', 'Oldies',
-  'Gospel', 'Anime', 'Children', 'Christmas', 'Disney',
-];
+// Genres: the canonical MAIN-category list from @/lib/constants (user item 12 —
+// Genre Harmonization). Jazz is subsumed by R&B, Hip-Hop by Rap; Dance/Disco/
+// House/Techno/Trance fall under Electronic. Single source of truth.
 
 const STANDARD_LANGUAGES = [
   'Englisch', 'Deutsch', 'Spanisch', 'Französisch', 'Italienisch',
@@ -247,7 +243,7 @@ function buildEnrichPrompt(): string {
 
 VERANTWORTUNG: Du bekommst eine Liste von Songs mit fehlenden Metadaten. Bestimme das richtige Genre und die Sprache basierend auf Titel, Künstler und deinem musikalischen Wissen.
 
-STANDARD-GENRES: ${STANDARD_GENRES.join(', ')}
+STANDARD-GENRES: ${GENRES.join(', ')}
 STANDARD-SPRACHEN (Deutsch): ${STANDARD_LANGUAGES.join(', ')}
 
 Regeln:
@@ -272,12 +268,12 @@ function buildHarmonizePrompt(): string {
 
 VERANTWORTUNG: Spezielle, ungültige oder nicht-standard Einträge wie "Bubblegum Pop", "Korean (romanized)", "Alternative Rock" oder "Pop Rock" sollen auf den bestmöglichen Standardwert zurückgeführt werden.
 
-STANDARD-GENRES: ${STANDARD_GENRES.join(', ')}
+STANDARD-GENRES: ${GENRES.join(', ')}
 STANDARD-SPRACHEN (Deutsch): ${STANDARD_LANGUAGES.join(', ')}
 
 Regeln:
 - Wähle den BESTPASSENDEN Standardwert für jeden Eintrag.
-- "Bubblegum Pop" → "Pop", "Indie Rock" → "Rock" oder "Indie", "Korean (romanized)" → "Koreanisch"
+- "Bubblegum Pop" → "Pop", "Indie Rock" → "Rock", "Jazz"/"Swing" → "R&B", "Hip-Hop" → "Rap", "Korean (romanized)" → "Koreanisch"
 - Wenn der aktuelle Wert bereits ein Standardwert ist und korrekt, KEINEN Vorschlag machen.
 - Wenn Genre UND Sprache korrigiert werden müssen, gib beide im selben Objekt an.
 - reason: Kurze Erklärung der Korrektur (z.B. "Bubblegum Pop → Pop").
