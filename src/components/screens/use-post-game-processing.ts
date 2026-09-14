@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { StorageKeys, getItem, removeItem } from '@/lib/storage';
+import { StorageKeys, getItem, removeItem, setItem } from '@/lib/storage';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import {
@@ -58,19 +58,56 @@ function toIdentity(profile: PlayerProfile): PlayerIdentity {
   return { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color };
 }
 
+/** Game modes that count as "party" games (shared by isPartyMode and the party counter). */
+const PARTY_GAME_MODES = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'];
+
 /** Count duet games from the highscore history for a player. */
 function countDuetGames(highscores: HighscoreEntry[], playerId: string): number {
   return highscores.filter(h => h.playerId === playerId && h.gameMode === 'duet').length;
 }
 
-/** Count games finished today from the recent scores (including this one). */
-function countGamesToday(recentScores: Array<{ date: number }> | undefined): number {
-  if (!recentScores || recentScores.length === 0) return 1;
+/** Count party games from the highscore history for a player. */
+function countPartyGames(highscores: HighscoreEntry[], playerId: string): number {
+  return highscores.filter(h => h.playerId === playerId && PARTY_GAME_MODES.includes(h.gameMode)).length;
+}
+
+/** Count games finished today from the highscore history for a player. */
+function countGamesToday(highscores: HighscoreEntry[], playerId: string): number {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const startTime = start.getTime();
-  const endTime = startTime + 86_400_000;
-  return recentScores.filter(r => r.date >= startTime && r.date < endTime).length + 1;
+  return highscores.filter(h => h.playerId === playerId && h.playedAt >= startTime).length;
+}
+
+/**
+ * Per-profile achievement counters that cannot be derived from the existing
+ * stores (highscores prune old entries by score, and duel wins are never
+ * persisted as such). Stored as one small JSON blob per profile.
+ */
+interface AchievementCounters {
+  duelsWon: number;
+}
+
+const ACHIEVEMENT_COUNTERS_PREFIX = 'achievement_counters_';
+
+function getAchievementCounters(profileId: string): AchievementCounters {
+  try {
+    const raw = getItem(ACHIEVEMENT_COUNTERS_PREFIX + profileId);
+    if (!raw) return { duelsWon: 0 };
+    const parsed = JSON.parse(raw) as Partial<AchievementCounters> | null;
+    const duelsWon = parsed?.duelsWon;
+    return { duelsWon: typeof duelsWon === 'number' && Number.isFinite(duelsWon) ? duelsWon : 0 };
+  } catch {
+    return { duelsWon: 0 };
+  }
+}
+
+function bumpAchievementCounter(profileId: string, key: keyof AchievementCounters): void {
+  try {
+    const counters = getAchievementCounters(profileId);
+    counters[key] += 1;
+    setItem(ACHIEVEMENT_COUNTERS_PREFIX + profileId, JSON.stringify(counters));
+  } catch { /* non-critical */ }
 }
 
 /** Per-game result fields needed for the achievement context. */
@@ -85,6 +122,23 @@ interface AchievementResultContext {
   isDuelWin: boolean;
 }
 
+/** Extra per-game data needed for the achievement context (per player). */
+interface AchievementExtras {
+  isBlindMode: boolean;
+  playbackRate: number;
+  hadComeback: boolean;
+  /** Genre of the song just played (feeds the genre/Disney counters). */
+  songGenre?: string;
+  /** Song XP that will be awarded to this profile right after the check (level projection). */
+  pendingXP: number;
+  /**
+   * True when this player's highscore entry for the current game has NOT been
+   * saved yet (P2 in duel/duet/competitive modes — it is saved after the
+   * check), so highscore-derived counters must add the current game manually.
+   */
+  countsCurrentGame: boolean;
+}
+
 /**
  * Build the full achievement-check context for a specific profile.
  * Daily-system counters are read AFTER the daily submission so that e.g.
@@ -96,11 +150,28 @@ function buildAchievementContext(
   extendedStats: ReturnType<typeof getExtendedStats>,
   result: AchievementResultContext,
   gameState: GameState,
-  extras: { isBlindMode: boolean; playbackRate: number; hadComeback: boolean },
+  extras: AchievementExtras,
 ) {
   const dailyStats = getPlayerDailyStats(profile.id);
   const genreStats = profile.stats?.genreStats ?? {};
-  const isPartyMode = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'].includes(gameState.gameMode);
+  const isPartyMode = PARTY_GAME_MODES.includes(gameState.gameMode);
+
+  // The game just played is not part of the persisted progression stats yet —
+  // add it so cumulative counters reflect it immediately.
+  const currentGenre = extras.songGenre?.trim() || undefined;
+
+  // Genre coverage: union of per-profile genre stats, the global progression
+  // genre counters, and the song just played.
+  const genreSet = new Set<string>([
+    ...Object.keys(genreStats),
+    ...Object.keys(extendedStats.genrePlayCount),
+  ]);
+  if (currentGenre) genreSet.add(currentGenre);
+
+  // Level projection: current profile XP plus the song XP that is awarded
+  // right after the check (daily/weekly rewards are already applied before).
+  const freshProfile = useGameStore.getState().profiles.find(p => p.id === profile.id);
+  const projectedXP = Math.max(0, freshProfile?.xp ?? profile.xp ?? 0) + Math.max(0, extras.pendingXP);
 
   return {
     score: result.score,
@@ -112,20 +183,29 @@ function buildAchievementContext(
     notesMissed: result.notesMissed,
     gameMode: gameState.gameMode,
     difficulty: gameState.difficulty,
-    totalSongsCompleted: extendedStats.songsCompleted,
-    totalGamesPlayed: extendedStats.totalSessions,
+    totalSongsCompleted: extendedStats.songsCompleted + 1,
+    totalGamesPlayed: extendedStats.totalSessions + 1,
     totalGoldenNotes: extendedStats.totalGoldenNotesHit + result.goldenNotes,
     totalPerfectNotes: extendedStats.totalPerfectNotes + result.perfectNotes,
     // Daily-system counters (per profile)
     dailyCompletions: dailyStats.totalCompleted,
     dailyStreak: dailyStats.currentStreak,
     weeklyCompletions: dailyStats.weeklyCompletedTotal ?? 0,
-    // Profile-derived counters
-    duetGames: countDuetGames(highscores, profile.id),
-    genreCount: Object.keys(genreStats).length,
-    disneyGames: genreStats['Disney']?.games ?? 0,
-    gamesToday: countGamesToday(profile.stats?.recentScores),
+    bestStreak: dailyStats.longestStreak ?? 0,
+    // Profile-derived counters (P2's own highscore entry is saved after the
+    // check — add the current game manually in that case)
+    duetGames: countDuetGames(highscores, profile.id) + (extras.countsCurrentGame && gameState.gameMode === 'duet' ? 1 : 0),
+    genreCount: genreSet.size,
+    disneyGames: Math.max(genreStats['Disney']?.games ?? 0, extendedStats.genrePlayCount['Disney'] ?? 0)
+      + (currentGenre === 'Disney' ? 1 : 0),
+    gamesToday: countGamesToday(highscores, profile.id) + (extras.countsCurrentGame ? 1 : 0),
     hourOfDay: new Date().getHours(),
+    dayOfWeek: new Date().getDay(),
+    // Level projection (per profile)
+    level: getLevelForXP(projectedXP).level,
+    // localStorage-backed per-profile counters
+    duelsWon: getAchievementCounters(profile.id).duelsWon,
+    partyGames: countPartyGames(highscores, profile.id) + (extras.countsCurrentGame && isPartyMode ? 1 : 0),
     // Special flags
     isPartyMode,
     isDuelWin: result.isDuelWin,
@@ -382,7 +462,19 @@ export function usePostGameProcessing({
           isBlindMode: results.isBlindMode ?? false,
           playbackRate: results.playbackRate ?? 1.0,
           hadComeback: results.hadComeback ?? false,
+          songGenre: song.genre,
         };
+
+        // Duel wins are not persisted anywhere else — track them per profile
+        // (before the check so this win counts immediately).
+        if (isDuelWin) bumpAchievementCounter(profile.id, 'duelsWon');
+
+        // P1's highscore entry (saved above) already includes this game;
+        // project the song XP that is awarded further below for level checks.
+        const p1SongXP = calculateSongXP(
+          playerResult.score, playerResult.accuracy, playerResult.maxCombo,
+          perfectNotes, goldenNotes, gameState.challengeMode,
+        );
         const p1Context = buildAchievementContext(
           profile, highscores, currentExtendedStats,
           {
@@ -395,7 +487,7 @@ export function usePostGameProcessing({
             notesMissed: playerResult.notesMissed,
             isDuelWin,
           },
-          gameState, achievementExtras,
+          gameState, { ...achievementExtras, pendingXP: p1SongXP, countsCurrentGame: false },
         );
         const achievementResult = checkAndUnlockAchievements(
           profile.achievements.map(a => a.id),
@@ -420,6 +512,17 @@ export function usePostGameProcessing({
         if (player2Result && p2Profile && isMultiplayerMode && p2Profile.id !== profile.id) {
           const p2PerfectNotes = estimatePerfectNotes(player2Result.notesHit, player2Result.rating);
           const p2IsDuelWin = isDuel && playerResult.score < player2Result.score;
+
+          // Track P2's duel win before the check so it counts immediately.
+          if (p2IsDuelWin) bumpAchievementCounter(p2Profile.id, 'duelsWon');
+
+          // P2's highscore entry is saved AFTER this check — the context must
+          // add the current game manually (duet/party/games-today counters).
+          // Their song XP (awarded below) is projected for level checks.
+          const p2SongXP = calculateSongXP(
+            player2Result.score, player2Result.accuracy, player2Result.maxCombo,
+            p2PerfectNotes, player2Result.goldenNotesCount || 0, undefined,
+          );
           const p2Context = buildAchievementContext(
             p2Profile, highscores, currentExtendedStats,
             {
@@ -432,7 +535,7 @@ export function usePostGameProcessing({
               notesMissed: player2Result.notesMissed,
               isDuelWin: p2IsDuelWin,
             },
-            gameState, achievementExtras,
+            gameState, { ...achievementExtras, pendingXP: p2SongXP, countsCurrentGame: true },
           );
           const p2AchievementResult = checkAndUnlockAchievements(
             p2Profile.achievements.map(a => a.id),

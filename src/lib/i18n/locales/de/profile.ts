@@ -33,6 +33,37 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Bestimme, ob dieses Profil am Online-Leaderboard teilnimmt oder nur lokal gespeichert wird. Jederzeit änderbar.',
   },
+  countrySearch: 'Land suchen…',
+  noCountryFound: 'Kein Land gefunden',
+  popularCountries: 'Beliebt',
+  allCountries: 'Alle Länder',
+},
+profileAuth: {
+  accountTitle: 'Online-Konto (optional)',
+  accountDesc: 'Hinterlege E-Mail und Passwort, um das Profil auf einem anderen Gerät wiederzuladen. Die Anmeldung ist ausschließlich in der Karaoke-App möglich — es gibt keinen Web-Login.',
+  email: 'E-Mail',
+  emailPlaceholder: 'deine@email.com',
+  emailInvalid: 'Bitte gib eine gültige E-Mail-Adresse ein',
+  emailTaken: 'Diese E-Mail ist bereits registriert',
+  password: 'Passwort',
+  passwordPlaceholder: 'Mindestens 8 Zeichen',
+  passwordRepeat: 'Passwort wiederholen',
+  passwordsDontMatch: 'Die Passwörter stimmen nicht überein',
+  passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen lang sein',
+  registerFailed: 'Online-Konto konnte nicht erstellt werden',
+  loginTitle: 'Online-Profil laden',
+  loginDesc: 'Gib E-Mail und Passwort deines Online-Profils ein, um es auf diesem Gerät zu laden.',
+  loginButton: 'Anmelden & Profil laden',
+  loginFailed: 'Anmeldung fehlgeschlagen — bitte prüfe E-Mail und Passwort',
+  loginSuccess: 'Profil „{n}“ erfolgreich geladen!',
+  noSnapshot: 'Noch keine synchronisierten Profildaten auf dem Server gefunden',
+  emailNote: 'Wird nur für die Anmeldung verwendet — niemals öffentlich angezeigt',
+  changePassword: 'Passwort ändern',
+  currentPassword: 'Aktuelles Passwort',
+  newPassword: 'Neues Passwort',
+  passwordChanged: 'Passwort erfolgreich geändert',
+  passwordChangeFailed: 'Passwort konnte nicht geändert werden',
+  hasAccount: 'Online-Konto ✓',
 },
 characterScreen: {
   title: 'Profil',
@@ -59,6 +90,7 @@ characterScreen: {
   showQrCode: 'QR-Code anzeigen',
   leaderboardParticipation: 'Leaderboard-Teilnahme',
   leaderboardParticipationDesc: 'Nimm am Online-Leaderboard teil und teile deine Scores mit anderen Spielern',
+  loadProfile: 'Online-Profil laden',
 },
 characterCard: {
   connected: 'Verbunden',
@@ -273,6 +305,240 @@ achievements: {
   marathon_singer: {
     name: 'Marathon-Sänger',
     description: 'Spiele 5 Spiele an einem einzigen Tag',
+  },
+
+  // ── 100-Erfolge-Erweiterung ──
+  score_9800: {
+    name: 'Ultra-Star',
+    description: 'Erziele über 9.800 Punkte',
+  },
+  score_9900: {
+    name: 'Jenseits der Perfektion',
+    description: 'Erziele über 9.900 Punkte',
+  },
+  combo_300: {
+    name: 'Combo-Titan',
+    description: 'Erreiche eine 300-Note-Combo',
+  },
+  combo_500: {
+    name: 'Combo-Unsterblicher',
+    description: 'Erreiche eine 500-Note-Combo',
+  },
+  accuracy_92: {
+    name: 'Feinjustierung',
+    description: 'Erziele über 92% Genauigkeit',
+  },
+  accuracy_94: {
+    name: 'Studioreif',
+    description: 'Erziele über 94% Genauigkeit',
+  },
+  accuracy_96: {
+    name: 'Scharfschütze',
+    description: 'Erziele über 96% Genauigkeit',
+  },
+  accuracy_97: {
+    name: 'Laserpräzision',
+    description: 'Erziele über 97% Genauigkeit',
+  },
+  accuracy_98: {
+    name: 'Virtuose',
+    description: 'Erziele über 98% Genauigkeit',
+  },
+  perfect_75: {
+    name: 'Perfekte 75',
+    description: 'Triff 75 perfekte Noten in einem einzigen Song',
+  },
+  perfect_100: {
+    name: 'Perfekte Hundert',
+    description: 'Triff 100 perfekte Noten in einem einzigen Song',
+  },
+  perfect_150: {
+    name: 'Perfekter Sturm',
+    description: 'Triff 150 perfekte Noten in einem einzigen Song',
+  },
+  golden_30: {
+    name: 'Goldene Flut',
+    description: 'Triff 30 goldene Noten in einem einzigen Song',
+  },
+  golden_40: {
+    name: 'Goldene Sinfonie',
+    description: 'Triff 40 goldene Noten in einem einzigen Song',
+  },
+  perfect_500: {
+    name: 'Perfekte Maschine',
+    description: 'Triff insgesamt 500 perfekte Noten',
+  },
+  perfect_1000: {
+    name: 'Präzisions-Powerhouse',
+    description: 'Triff insgesamt 1.000 perfekte Noten',
+  },
+  perfect_5000: {
+    name: 'Perfekte Lawine',
+    description: 'Triff insgesamt 5.000 perfekte Noten',
+  },
+  perfect_10000: {
+    name: 'Perfekte Zehntausend',
+    description: 'Triff insgesamt 10.000 perfekte Noten',
+  },
+  golden_250: {
+    name: 'Goldene Ernte',
+    description: 'Triff insgesamt 250 goldene Noten',
+  },
+  golden_1000: {
+    name: 'Goldener Wolkenbruch',
+    description: 'Triff insgesamt 1.000 goldene Noten',
+  },
+  golden_5000: {
+    name: 'Midas-Stimme',
+    description: 'Triff insgesamt 5.000 goldene Noten',
+  },
+  songs_250: {
+    name: 'Songbuch-Veteran',
+    description: 'Schließe 250 Songs ab',
+  },
+  songs_500: {
+    name: 'Halbtausend-Club',
+    description: 'Schließe 500 Songs ab',
+  },
+  songs_1000: {
+    name: 'Tausend-Song-Legende',
+    description: 'Schließe 1.000 Songs ab',
+  },
+  games_50: {
+    name: 'Vielsänger',
+    description: 'Spiele 50 Spiele',
+  },
+  games_100: {
+    name: 'Jahrhundert-Club',
+    description: 'Spiele 100 Spiele',
+  },
+  games_250: {
+    name: 'Arcade-Stammgast',
+    description: 'Spiele 250 Spiele',
+  },
+  games_500: {
+    name: 'Marathon-Maniac',
+    description: 'Spiele 500 Spiele',
+  },
+  level_25: {
+    name: 'Erfahrener Sänger',
+    description: 'Erreiche Level 25',
+  },
+  level_50: {
+    name: 'Elite-Sänger',
+    description: 'Erreiche Level 50',
+  },
+  level_100: {
+    name: 'Level-100-Legende',
+    description: 'Erreiche Level 100',
+  },
+  daily_100: {
+    name: 'Daily-Centurio',
+    description: 'Schließe 100 tägliche Herausforderungen ab',
+  },
+  daily_250: {
+    name: 'Daily-Fanatiker',
+    description: 'Schließe 250 tägliche Herausforderungen ab',
+  },
+  daily_500: {
+    name: 'Daily-Unsterblicher',
+    description: 'Schließe 500 tägliche Herausforderungen ab',
+  },
+  streak_60: {
+    name: 'Eiserner Wille',
+    description: 'Halte eine 60-tägige Daily-Serie',
+  },
+  streak_100: {
+    name: 'Hundert-Tage-Held',
+    description: 'Halte eine 100-tägige Daily-Serie',
+  },
+  streak_180: {
+    name: 'Halbjahr-Hingabe',
+    description: 'Halte eine 180-tägige Daily-Serie',
+  },
+  streak_365: {
+    name: 'Jahres-Legende',
+    description: 'Halte eine 365-tägige Daily-Serie',
+  },
+  weekly_15: {
+    name: 'Wochen-Fels',
+    description: 'Schließe 15 wöchentliche Herausforderungen ab',
+  },
+  weekly_30: {
+    name: 'Wochen-Pfeiler',
+    description: 'Schließe 30 wöchentliche Herausforderungen ab',
+  },
+  weekly_52: {
+    name: 'Jahr der Wochen',
+    description: 'Schließe 52 wöchentliche Herausforderungen ab',
+  },
+  encore_10: {
+    name: 'Zugabe!',
+    description: 'Spiele 10 Spiele an einem einzigen Tag',
+  },
+  duets_25: {
+    name: 'Duett-Verehrer',
+    description: 'Singe 25 Duette',
+  },
+  duets_50: {
+    name: 'Dynamisches Duo',
+    description: 'Singe 50 Duette',
+  },
+  duets_100: {
+    name: 'Duett-Jahrhundert',
+    description: 'Singe 100 Duette',
+  },
+  duels_5: {
+    name: 'Duellant',
+    description: 'Gewinne 5 Duelle',
+  },
+  duels_10: {
+    name: 'Duell-Meister',
+    description: 'Gewinne 10 Duelle',
+  },
+  duels_25: {
+    name: 'Duell-Overlord',
+    description: 'Gewinne 25 Duelle',
+  },
+  party_10: {
+    name: 'Partytier',
+    description: 'Spiele 10 Party-Spiele',
+  },
+  party_25: {
+    name: 'Seele der Party',
+    description: 'Spiele 25 Party-Spiele',
+  },
+  party_50: {
+    name: 'Party-Legende',
+    description: 'Spiele 50 Party-Spiele',
+  },
+  disney_25: {
+    name: 'Disney-Enthusiast',
+    description: 'Singe 25 Disney-Songs',
+  },
+  disney_50: {
+    name: 'Es war einmal ein Song',
+    description: 'Singe 50 Disney-Songs',
+  },
+  genres_8: {
+    name: 'Genre-Wanderer',
+    description: 'Singe Songs aus 8 verschiedenen Genres',
+  },
+  genres_10: {
+    name: 'Genre-Kenner',
+    description: 'Singe Songs aus 10 verschiedenen Genres',
+  },
+  clean_sheet: {
+    name: 'Weiße Weste',
+    description: 'Beende einen Song mit 50+ Noten und null Fehlern',
+  },
+  weekend_singer: {
+    name: 'Wochenend-Sänger',
+    description: 'Beende einen Song am Samstag oder Sonntag',
+  },
+  lunch_break: {
+    name: 'Mittagspause',
+    description: 'Beende einen Song zwischen 12 und 14 Uhr',
   },
 },
 achievementsScreen: {

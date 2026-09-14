@@ -5,13 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
-import { COUNTRY_OPTIONS } from './country-options';
+import { CountryPicker } from './country-picker';
 
 export interface CreateProfileOptions {
   storageMode: 'online' | 'local';
   country: string;
   privacy: { showOnLeaderboard: boolean; showPhoto: boolean; showCountry: boolean };
+  /** Optional online-account credentials (email + password login). */
+  auth?: { email: string; password: string };
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 interface CreateCharacterFormProps {
   onCreate: (_name: string, _avatarUrl: string, _options: CreateProfileOptions) => void;
@@ -32,6 +36,11 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
     showPhoto: true,
     showCountry: true,
   });
+  // Online account credentials (optional email + password login)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordRepeat, setPasswordRepeat] = useState('');
+  const [touchedAuth, setTouchedAuth] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,17 +54,29 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
     }
   };
 
+  const wantsAccount = onlineEnabled && storageMode === 'online' && email.trim().length > 0;
+  const emailValid = EMAIL_RE.test(email.trim());
+  const passwordValid = password.length >= 8;
+  const passwordsMatch = password === passwordRepeat && password.length > 0;
+  const authValid = !wantsAccount || (emailValid && passwordValid && passwordsMatch);
+
   const handleCreate = () => {
-    if (newName.trim()) {
+    setTouchedAuth(true);
+    if (newName.trim() && authValid) {
       onCreate(newName.trim(), avatarUrl, {
         storageMode,
         country: selectedCountry,
         privacy: privacySettings,
+        auth: wantsAccount ? { email: email.trim().toLowerCase(), password } : undefined,
       });
       setNewName('');
       setAvatarUrl('');
       setSelectedCountry('');
       setStorageMode('local');
+      setEmail('');
+      setPassword('');
+      setPasswordRepeat('');
+      setTouchedAuth(false);
       setPrivacySettings({ showOnLeaderboard: true, showPhoto: true, showCountry: true });
     }
   };
@@ -95,23 +116,12 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
               onChange={(e) => setNewName(e.target.value)}
               className="bg-white/5 border-white/10 text-white"
             />
-            <select
+
+            {/* ── Country: searchable picker with flags for ALL countries ── */}
+            <CountryPicker
               value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              className="w-full bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer"
-              style={{
-                colorScheme: 'dark',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.5rem center',
-                backgroundSize: '1.5em 1.5em'
-              }}
-            >
-              <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('profile.countryOptional')}</option>
-              {COUNTRY_OPTIONS.map(c => (
-                <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedCountry}
+            />
 
             {/* ── Profile storage mode: Online or Local (free choice, no force) ── */}
             {onlineEnabled && (
@@ -158,6 +168,51 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
               </div>
             )}
 
+            {/* ── Optional online account: email + password for cross-device login ── */}
+            {onlineEnabled && storageMode === 'online' && (
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2">
+                <div className="text-sm font-medium text-purple-300 flex items-center gap-2">
+                  🔐 {t('profileAuth.accountTitle')}
+                </div>
+                <p className="text-xs text-white/40">{t('profileAuth.accountDesc')}</p>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder={t('profileAuth.emailPlaceholder')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  aria-label={t('profileAuth.email')}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={t('profileAuth.passwordPlaceholder')}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-label={t('profileAuth.password')}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={t('profileAuth.passwordRepeat')}
+                  value={passwordRepeat}
+                  onChange={(e) => setPasswordRepeat(e.target.value)}
+                  aria-label={t('profileAuth.passwordRepeat')}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                {touchedAuth && wantsAccount && !authValid && (
+                  <div className="text-xs text-red-400 space-y-0.5">
+                    {!emailValid && <div>{t('profileAuth.emailInvalid')}</div>}
+                    {!passwordValid && <div>{t('profileAuth.passwordTooShort')}</div>}
+                    {passwordValid && !passwordsMatch && <div>{t('profileAuth.passwordsDontMatch')}</div>}
+                  </div>
+                )}
+                <p className="text-[11px] text-white/30">{t('profileAuth.emailNote')}</p>
+              </div>
+            )}
+
             {onlineEnabled && storageMode === 'online' && (
               <div className="flex flex-wrap gap-3">
                 <label className="flex items-center gap-2 cursor-pointer text-sm">
@@ -181,7 +236,11 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
               </div>
             )}
             <div className="flex gap-2">
-              <Button onClick={handleCreate} disabled={!newName.trim()} className="bg-gradient-to-r from-cyan-500 to-purple-500">
+              <Button
+                onClick={handleCreate}
+                disabled={!newName.trim() || (touchedAuth && !authValid)}
+                className="bg-gradient-to-r from-cyan-500 to-purple-500"
+              >
                 {t('profile.create')}
               </Button>
               <Button onClick={onCancel} variant="outline" className="border-white/20">

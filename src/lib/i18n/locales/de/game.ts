@@ -499,6 +499,255 @@ achievements: {
     name: 'Marathon-Sänger',
     description: 'Spiele 5 Spiele an einem einzigen Tag',
   },
+
+  // ── 100-Erfolge-Erweiterung ──
+  score9800: {
+    name: 'Ultra-Star',
+    description: 'Erreiche über 9.800 Punkte',
+  },
+  score9900: {
+    name: 'Jenseits der Perfektion',
+    description: 'Erreiche über 9.900 Punkte',
+    rewardTitle: 'Jenseits der Perfektion',
+  },
+  combo300: {
+    name: 'Combo-Titan',
+    description: 'Erreiche eine 300er-Kombo',
+  },
+  combo500: {
+    name: 'Combo-Unsterblicher',
+    description: 'Erreiche eine 500er-Kombo',
+    rewardTitle: 'Combo-Unsterblicher',
+  },
+  accuracy92: {
+    name: 'Feinjustierung',
+    description: 'Erreiche über 92% Genauigkeit',
+  },
+  accuracy94: {
+    name: 'Studioreif',
+    description: 'Erreiche über 94% Genauigkeit',
+  },
+  accuracy96: {
+    name: 'Scharfschütze',
+    description: 'Erreiche über 96% Genauigkeit',
+  },
+  accuracy97: {
+    name: 'Laserpräzision',
+    description: 'Erreiche über 97% Genauigkeit',
+  },
+  accuracy98: {
+    name: 'Virtuose',
+    description: 'Erreiche über 98% Genauigkeit',
+  },
+  perfect75: {
+    name: 'Perfekte 75',
+    description: 'Triff 75 perfekte Noten in einem einzigen Lied',
+  },
+  perfect100: {
+    name: 'Perfekte Hundert',
+    description: 'Triff 100 perfekte Noten in einem einzigen Lied',
+  },
+  perfect150: {
+    name: 'Perfekter Sturm',
+    description: 'Triff 150 perfekte Noten in einem einzigen Lied',
+  },
+  golden30: {
+    name: 'Goldene Flut',
+    description: 'Triff 30 goldene Noten in einem einzigen Lied',
+  },
+  golden40: {
+    name: 'Goldene Sinfonie',
+    description: 'Triff 40 goldene Noten in einem einzigen Lied',
+  },
+  perfect500: {
+    name: 'Perfekte Maschine',
+    description: 'Triff insgesamt 500 perfekte Noten',
+  },
+  perfect1000: {
+    name: 'Präzisions-Powerhouse',
+    description: 'Triff insgesamt 1.000 perfekte Noten',
+  },
+  perfect5000: {
+    name: 'Perfekte Lawine',
+    description: 'Triff insgesamt 5.000 perfekte Noten',
+  },
+  perfect10000: {
+    name: 'Perfekte Zehntausend',
+    description: 'Triff insgesamt 10.000 perfekte Noten',
+    rewardTitle: 'Perfekte Zehntausend',
+  },
+  golden250: {
+    name: 'Goldene Ernte',
+    description: 'Triff insgesamt 250 goldene Noten',
+  },
+  golden1000: {
+    name: 'Goldener Wolkenbruch',
+    description: 'Triff insgesamt 1.000 goldene Noten',
+  },
+  golden5000: {
+    name: 'Midas-Stimme',
+    description: 'Triff insgesamt 5.000 goldene Noten',
+    rewardTitle: 'Midas-Stimme',
+  },
+  songs250: {
+    name: 'Songbuch-Veteran',
+    description: 'Beende 250 Lieder',
+  },
+  songs500: {
+    name: 'Halbtausend-Club',
+    description: 'Beende 500 Lieder',
+  },
+  songs1000: {
+    name: 'Tausend-Song-Legende',
+    description: 'Beende 1.000 Lieder',
+    rewardTitle: 'Tausend-Song-Legende',
+  },
+  games50: {
+    name: 'Vielsänger',
+    description: 'Spiele 50 Spiele',
+  },
+  games100: {
+    name: 'Jahrhundert-Club',
+    description: 'Spiele 100 Spiele',
+  },
+  games250: {
+    name: 'Arcade-Stammgast',
+    description: 'Spiele 250 Spiele',
+  },
+  games500: {
+    name: 'Marathon-Maniac',
+    description: 'Spiele 500 Spiele',
+    rewardTitle: 'Marathon-Maniac',
+  },
+  level25: {
+    name: 'Erfahrener Sänger',
+    description: 'Erreiche Level 25',
+  },
+  level50: {
+    name: 'Elite-Sänger',
+    description: 'Erreiche Level 50',
+    rewardTitle: 'Elite-Sänger',
+  },
+  level100: {
+    name: 'Level-100-Legende',
+    description: 'Erreiche Level 100',
+    rewardTitle: 'Level-100-Legende',
+  },
+  daily100: {
+    name: 'Daily-Centurio',
+    description: 'Schließe 100 tägliche Herausforderungen ab',
+  },
+  daily250: {
+    name: 'Daily-Fanatiker',
+    description: 'Schließe 250 tägliche Herausforderungen ab',
+  },
+  daily500: {
+    name: 'Daily-Unsterblicher',
+    description: 'Schließe 500 tägliche Herausforderungen ab',
+    rewardTitle: 'Daily-Unsterblicher',
+  },
+  streak60: {
+    name: 'Eiserner Wille',
+    description: 'Halte eine 60-tägige Daily-Serie',
+  },
+  streak100: {
+    name: 'Hundert-Tage-Held',
+    description: 'Halte eine 100-tägige Daily-Serie',
+  },
+  streak180: {
+    name: 'Halbjahr-Hingabe',
+    description: 'Halte eine 180-tägige Daily-Serie',
+    rewardTitle: 'Halbjahr-Hingabe',
+  },
+  streak365: {
+    name: 'Jahres-Legende',
+    description: 'Halte eine 365-tägige Daily-Serie',
+    rewardTitle: 'Jahres-Legende',
+  },
+  weekly15: {
+    name: 'Wochen-Fels',
+    description: 'Schließe 15 wöchentliche Herausforderungen ab',
+  },
+  weekly30: {
+    name: 'Wochen-Pfeiler',
+    description: 'Schließe 30 wöchentliche Herausforderungen ab',
+  },
+  weekly52: {
+    name: 'Jahr der Wochen',
+    description: 'Schließe 52 wöchentliche Herausforderungen ab',
+    rewardTitle: 'Jahr der Wochen',
+  },
+  encore10: {
+    name: 'Zugabe!',
+    description: 'Spiele 10 Spiele an einem einzigen Tag',
+  },
+  duets25: {
+    name: 'Duett-Verehrer',
+    description: 'Singe 25 Duette',
+  },
+  duets50: {
+    name: 'Dynamisches Duo',
+    description: 'Singe 50 Duette',
+  },
+  duets100: {
+    name: 'Duett-Jahrhundert',
+    description: 'Singe 100 Duette',
+    rewardTitle: 'Duett-Jahrhundert',
+  },
+  duels5: {
+    name: 'Duellant',
+    description: 'Gewinne 5 Duelle',
+  },
+  duels10: {
+    name: 'Duell-Meister',
+    description: 'Gewinne 10 Duelle',
+  },
+  duels25: {
+    name: 'Duell-Overlord',
+    description: 'Gewinne 25 Duelle',
+    rewardTitle: 'Duell-Overlord',
+  },
+  party10: {
+    name: 'Partytier',
+    description: 'Spiele 10 Partyspiele',
+  },
+  party25: {
+    name: 'Seele der Party',
+    description: 'Spiele 25 Partyspiele',
+  },
+  party50: {
+    name: 'Party-Legende',
+    description: 'Spiele 50 Partyspiele',
+  },
+  disney25: {
+    name: 'Disney-Enthusiast',
+    description: 'Singe 25 Disney-Lieder',
+  },
+  disney50: {
+    name: 'Es war einmal ein Song',
+    description: 'Singe 50 Disney-Lieder',
+    rewardTitle: 'Disney-Royalty',
+  },
+  genres8: {
+    name: 'Genre-Wanderer',
+    description: 'Singe Lieder aus 8 verschiedenen Genres',
+  },
+  genres10: {
+    name: 'Genre-Kenner',
+    description: 'Singe Lieder aus 10 verschiedenen Genres',
+  },
+  cleanSheet: {
+    name: 'Weiße Weste',
+    description: 'Beende ein Lied mit 50+ Noten und null Fehlern',
+  },
+  weekendSinger: {
+    name: 'Wochenend-Sänger',
+    description: 'Beende ein Lied am Samstag oder Sonntag',
+  },
+  lunchBreak: {
+    name: 'Mittagspause',
+    description: 'Beende ein Lied zwischen 12 und 14 Uhr',
+  },
 },
 ranks: {
   beginner: {

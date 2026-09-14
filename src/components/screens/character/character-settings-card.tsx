@@ -8,7 +8,7 @@ import { GlobeIcon, CloudUploadIcon } from '@/components/icons';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile } from '@/types/game';
-import { COUNTRY_OPTIONS } from './country-options';
+import { CountryPicker } from './country-picker';
 import { ProfileSyncSection } from './profile-sync-section';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
@@ -138,23 +138,11 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white"
                 />
-                <select
+                <CountryPicker
                   value={editCountry}
-                  onChange={(e) => setEditCountry(e.target.value)}
-                  className="w-full bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer"
-                  style={{
-                    colorScheme: 'dark',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundSize: '1.5em 1.5em'
-                  }}
-                >
-                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('profile.countryOptional')}</option>
-                  {COUNTRY_OPTIONS.map(c => (
-                    <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
-                  ))}
-                </select>
+                  onChange={setEditCountry}
+                  compact
+                />
                 <div className="flex gap-2">
                   <Button 
                     onClick={saveEditedCharacter} 
@@ -286,23 +274,12 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/50">{t('characterScreen.selectCountry')}:</span>
-                <select
+                <CountryPicker
                   value={profile.country || ''}
-                  onChange={(e) => handleUpdateCountry(e.target.value)}
-                  className="bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer min-w-[160px]"
-                  style={{ 
-                    colorScheme: 'dark',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, 
-                    backgroundRepeat: 'no-repeat', 
-                    backgroundPosition: 'right 0.5rem center', 
-                    backgroundSize: '1.2em 1.2em' 
-                  }}
-                >
-                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('characterScreen.selectCountry')}</option>
-                  {COUNTRY_OPTIONS.map(c => (
-                    <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
-                  ))}
-                </select>
+                  onChange={handleUpdateCountry}
+                  compact
+                  className="min-w-[180px] max-w-[280px]"
+                />
               </div>
               
               <div className="flex flex-wrap gap-2">
