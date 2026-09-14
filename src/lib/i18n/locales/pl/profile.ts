@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Brak zdjęcia',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Miejsce zapisu profilu',
+    local: 'Tylko lokalnie',
+    localDesc: 'Wszystkie dane pozostają na tym urządzeniu — bez tabeli wyników online i bez synchronizacji.',
+    online: 'Profil online',
+    onlineDesc: 'Dołącz do tabeli wyników online, synchronizuj między urządzeniami i dziel się codziennymi wynikami.',
+    localShort: 'Lokalnie',
+    onlineShort: 'Online',
+    settingsDesc: 'Zdecyduj, czy ten profil dołącza do tabeli wyników online, czy pozostaje tylko lokalny. Można zmienić w każdej chwili.',
+  },
 },
 characterScreen: {
   title: 'Profil',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Mistrz ciemności',
     description: 'Ukończ utwór w trybie Ślepego Karaoke',
   },
+  daily_starter: {
+    name: 'Dzienny Debiutant',
+    description: 'Ukończ swoje pierwsze dzienne wyzwanie',
+  },
+  daily_regular: {
+    name: 'Dzienny Bywalec',
+    description: 'Ukończ 10 dziennych wyzwań',
+  },
+  daily_devoted: {
+    name: 'Dzienny Zapaleniec',
+    description: 'Ukończ 50 dziennych wyzwań',
+  },
+  streak_week: {
+    name: 'W Ogniu',
+    description: 'Utrzymaj 7-dniową dzienną serię',
+  },
+  streak_month: {
+    name: 'Niepowstrzymany',
+    description: 'Utrzymaj 30-dniową dzienną serię',
+  },
+  weekly_warrior: {
+    name: 'Wojownik Tygodnia',
+    description: 'Ukończ 5 tygodniowych wyzwań',
+  },
+  accuracy_95: {
+    name: 'Precyzyjny Wokalista',
+    description: 'Osiągnij ponad 95% celności',
+  },
+  golden_rush: {
+    name: 'Gorączka Złota',
+    description: 'Traf 20 złotych nut w jednej piosence',
+  },
+  golden_hundred: {
+    name: 'Złoty Centurion',
+    description: 'Traf łącznie 100 złotych nut',
+  },
+  perfect_fifty: {
+    name: 'Perfekcyjna Pięćdziesiątka',
+    description: 'Traf 50 perfekcyjnych nut w jednej piosence',
+  },
+  lightning_lips: {
+    name: 'Błyskawiczne Usta',
+    description: 'Ukończ piosenkę z prędkością 2x',
+  },
+  duet_harmony: {
+    name: 'Idealna Harmonia',
+    description: 'Zaśpiewaj 10 duetów',
+  },
+  genre_explorer: {
+    name: 'Odkrywca Gatunków',
+    description: 'Zaśpiewaj piosenki z 5 różnych gatunków',
+  },
+  disney_fan: {
+    name: 'Fan Disneya',
+    description: 'Zaśpiewaj 10 piosenek Disneya',
+  },
+  night_owl: {
+    name: 'Nocna Sowa',
+    description: 'Ukończ piosenkę między północą a 4 rano',
+  },
+  early_bird: {
+    name: 'Ranny Ptak',
+    description: 'Ukończ piosenkę przed 8 rano',
+  },
+  marathon_singer: {
+    name: 'Maratończyk Śpiewu',
+    description: 'Zagraj 5 gier w ciągu jednego dnia',
+  },
 },
 achievementsScreen: {
   title: '🏆 Osiągnięcia',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Zablokowane',
+  viewPlayer: 'Osiągnięcia gracza',
+  viewingOther: 'Widzisz osiągnięcia gracza {n}. Każdy gracz odblokowuje własne osiągnięcia.',
+  noMatches: 'Żadne osiągnięcia nie pasują do tych filtrów',
 },
 badgeNames: {
   'first-challenge': 'Pierwsze kroki',

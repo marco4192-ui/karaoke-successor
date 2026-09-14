@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Ei kuvaa',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Profiilin tallennus',
+    local: 'Vain paikallisesti',
+    localDesc: 'Kaikki tiedot pysyvät tällä laitteella — ei verkon tulostaulukkoa, ei synkronointia.',
+    online: 'Verkkoprofiili',
+    onlineDesc: 'Liity verkon tulostaulukkoon, synkronoi laitteiden välillä ja jaa päivittäisiä tuloksia.',
+    localShort: 'Paikallinen',
+    onlineShort: 'Verkko',
+    settingsDesc: 'Päätä, liittyykö tämä profiili verkon tulostaulukkoon vai pysyykö vain paikallisena. Voit vaihtaa milloin tahansa.',
+  },
 },
 characterScreen: {
   title: 'Profiili',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Sokea mestari',
     description: 'Suorita kappale sokeassa karaoke -tilassa',
   },
+  daily_starter: {
+    name: 'Dailyn aloittelija',
+    description: 'Suorita ensimmäinen päivittäinen haasteesi',
+  },
+  daily_regular: {
+    name: 'Dailyn vakiokävijä',
+    description: 'Suorita 10 päivittäistä haastetta',
+  },
+  daily_devoted: {
+    name: 'Dailyn omistautuja',
+    description: 'Suorita 50 päivittäistä haastetta',
+  },
+  streak_week: {
+    name: 'Liekeissä',
+    description: 'Pidä yllä 7 päivän päivittäisputki',
+  },
+  streak_month: {
+    name: 'Pysäyttämätön',
+    description: 'Pidä yllä 30 päivän päivittäisputki',
+  },
+  weekly_warrior: {
+    name: 'Viikkosoturi',
+    description: 'Suorita 5 viikoittaista haastetta',
+  },
+  accuracy_95: {
+    name: 'Tarkkuuslaulaja',
+    description: 'Saa yli 95% tarkkuuden',
+  },
+  golden_rush: {
+    name: 'Kultaryntäys',
+    description: 'Osu 20 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  golden_hundred: {
+    name: 'Kultainen centurio',
+    description: 'Osu yhteensä 100 kultaiseen nuottiin',
+  },
+  perfect_fifty: {
+    name: 'Täydelliset viisikymmentä',
+    description: 'Osu 50 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  lightning_lips: {
+    name: 'Salamahuulet',
+    description: 'Suorita kappale 2x nopeudella',
+  },
+  duet_harmony: {
+    name: 'Täydellinen harmonia',
+    description: 'Laula 10 duettoa',
+  },
+  genre_explorer: {
+    name: 'Genretutkija',
+    description: 'Laula kappaleita viidestä eri genrestä',
+  },
+  disney_fan: {
+    name: 'Disney-fani',
+    description: 'Laula 10 Disney-kappaletta',
+  },
+  night_owl: {
+    name: 'Iltapöllö',
+    description: 'Suorita kappale keskiyön ja kello 4:n välillä',
+  },
+  early_bird: {
+    name: 'Aamuvirkku',
+    description: 'Suorita kappale ennen kello 8:aa',
+  },
+  marathon_singer: {
+    name: 'Maratonlaulaja',
+    description: 'Pelaa 5 peliä yhden päivän aikana',
+  },
 },
 achievementsScreen: {
   title: '🏆 Saavutukset',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Lukittu',
+  viewPlayer: 'Pelaajan saavutukset',
+  viewingOther: 'Katsot pelaajan {n} saavutuksia. Jokainen pelaaja avaa omat saavutuksensa.',
+  noMatches: 'Mikään saavutus ei vastaa näitä suodattimia',
 },
 badgeNames: {
   'first-challenge': 'Ensimmäiset askeleet',

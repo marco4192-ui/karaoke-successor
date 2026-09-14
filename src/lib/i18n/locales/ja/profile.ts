@@ -23,6 +23,16 @@ profile: {
   noPhoto: '写真なし',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'プロフィールの保存方法',
+    local: 'ローカルのみ',
+    localDesc: 'すべてのデータはこの端末にのみ保存されます — オンラインランキングも同期もありません。',
+    online: 'オンラインプロフィール',
+    onlineDesc: 'オンラインランキングに参加して、端末間で同期し、デイリーの結果を共有できます。',
+    localShort: 'ローカル',
+    onlineShort: 'オンライン',
+    settingsDesc: 'このプロフィールをオンラインランキングに参加させるか、ローカルのみにするかを選択できます。いつでも変更可能です。',
+  },
 },
 characterScreen: {
   title: 'プロファイル',
@@ -196,6 +206,74 @@ achievements: {
     name: 'ブラインドマスター',
     description: 'ブラインドカラオケモードで曲を完了',
   },
+  daily_starter: {
+    name: 'デイリー入門者',
+    description: '初めてのデイリーチャレンジを完了する',
+  },
+  daily_regular: {
+    name: 'デイリー常連',
+    description: 'デイリーチャレンジを10回完了する',
+  },
+  daily_devoted: {
+    name: 'デイリーの申し子',
+    description: 'デイリーチャレンジを50回完了する',
+  },
+  streak_week: {
+    name: '絶好調',
+    description: 'デイリー連続記録を7日維持する',
+  },
+  streak_month: {
+    name: '止まらない',
+    description: 'デイリー連続記録を30日維持する',
+  },
+  weekly_warrior: {
+    name: 'ウィークリーウォリアー',
+    description: 'ウィークリーチャレンジを5回完了する',
+  },
+  accuracy_95: {
+    name: '精密歌手',
+    description: '精度95%以上を達成する',
+  },
+  golden_rush: {
+    name: 'ゴールドラッシュ',
+    description: '1曲でゴールデンノートを20個ヒットする',
+  },
+  golden_hundred: {
+    name: 'ゴールデンセンチュリオン',
+    description: 'ゴールデンノートを通算100個ヒットする',
+  },
+  perfect_fifty: {
+    name: 'パーフェクト50',
+    description: '1曲でパーフェクトノートを50個ヒットする',
+  },
+  lightning_lips: {
+    name: '稲妻の唇',
+    description: '2倍速で曲を完了する',
+  },
+  duet_harmony: {
+    name: '完璧なハーモニー',
+    description: 'デュエットを10曲歌う',
+  },
+  genre_explorer: {
+    name: 'ジャンル探検家',
+    description: '5つの異なるジャンルの曲を歌う',
+  },
+  disney_fan: {
+    name: 'ディズニーファン',
+    description: 'ディズニーの曲を10曲歌う',
+  },
+  night_owl: {
+    name: '夜更かしの達人',
+    description: '深夜0時から午前4時の間に曲を完了する',
+  },
+  early_bird: {
+    name: '早起きの達人',
+    description: '午前8時前に曲を完了する',
+  },
+  marathon_singer: {
+    name: 'マラソンシンガー',
+    description: '1日に5回プレイする',
+  },
 },
 achievementsScreen: {
   title: '🏆 実績',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'ロック中',
+  viewPlayer: 'プレイヤーの実績',
+  viewingOther: '{n}さんの実績を表示しています。実績はプレイヤーごとに解放されます。',
+  noMatches: 'このフィルターに一致する実績はありません',
 },
 badgeNames: {
   'first-challenge': 'ファーストステップ',

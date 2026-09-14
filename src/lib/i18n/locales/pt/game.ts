@@ -430,6 +430,75 @@ achievements: {
     description: 'Complete uma música no modo Karaokê Cego',
     rewardTitle: 'Mestre Cego',
   },
+  dailyStarter: {
+    name: 'Estreante Diário',
+    description: 'Completa o teu primeiro desafio diário',
+  },
+  dailyRegular: {
+    name: 'Habitual Diário',
+    description: 'Completa 10 desafios diários',
+  },
+  dailyDevoted: {
+    name: 'Dedicado Diário',
+    description: 'Completa 50 desafios diários',
+  },
+  streakWeek: {
+    name: 'Em Chamas',
+    description: 'Mantém uma sequência diária de 7 dias',
+  },
+  streakMonth: {
+    name: 'Imparável',
+    description: 'Mantém uma sequência diária de 30 dias',
+    rewardTitle: 'Imparável',
+  },
+  weeklyWarrior: {
+    name: 'Guerreiro Semanal',
+    description: 'Completa 5 desafios semanais',
+  },
+  precisionSinger: {
+    name: 'Cantor de Precisão',
+    description: 'Obtém mais de 95% de precisão',
+  },
+  goldenRush: {
+    name: 'Corrida ao Ouro',
+    description: 'Acerta 20 notas douradas numa única música',
+  },
+  goldenCenturion: {
+    name: 'Centurião Dourado',
+    description: 'Acerta 100 notas douradas no total',
+  },
+  perfectFifty: {
+    name: 'Cinquenta Perfeitas',
+    description: 'Acerta 50 notas perfeitas numa única música',
+  },
+  lightningLips: {
+    name: 'Lábios Relâmpago',
+    description: 'Completa uma música a 2x de velocidade',
+  },
+  perfectHarmony: {
+    name: 'Harmonia Perfeita',
+    description: 'Canta 10 duetos',
+  },
+  genreExplorer: {
+    name: 'Explorador de Géneros',
+    description: 'Canta músicas de 5 géneros diferentes',
+  },
+  disneyFan: {
+    name: 'Fã de Disney',
+    description: 'Canta 10 músicas Disney',
+  },
+  nightOwl: {
+    name: 'Coruja Noturna',
+    description: 'Termina uma música entre a meia-noite e as 4 da manhã',
+  },
+  earlyBird: {
+    name: 'Madrugador',
+    description: 'Termina uma música antes das 8 da manhã',
+  },
+  marathonSinger: {
+    name: 'Cantor Maratonista',
+    description: 'Joga 5 partidas num só dia',
+  },
 },
 ranks: {
   beginner: {

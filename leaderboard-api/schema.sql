@@ -3,6 +3,7 @@
 -- Copyright-safe: No song titles/artists/lyrics stored.
 -- Songs are identified solely by a SHA-256 fingerprint hash.
 -- Anti-cheat: proof verification columns added.
+-- v3: Daily-challenge online board (ks_daily_results) added.
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -14,6 +15,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- profile_uid is a UUID set by the client app.
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `ks_scores`;
+DROP TABLE IF EXISTS `ks_daily_results`;
 DROP TABLE IF EXISTS `ks_profiles`;
 
 CREATE TABLE `ks_profiles` (
@@ -90,6 +92,27 @@ CREATE TABLE `ks_scores` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
+-- Table: ks_daily_results
+-- Daily-challenge online board. One row per
+-- (profile_uid, challenge_date, challenge_type): replaying the same
+-- challenge on the same day keeps the BEST metric_value (upsert).
+-- -----------------------------------------------------------
+CREATE TABLE `ks_daily_results` (
+  `id`             BIGINT        NOT NULL AUTO_INCREMENT,
+  `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
+  `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
+  `challenge_type` ENUM('score','accuracy','combo','perfect_notes') NOT NULL COMMENT 'Daily challenge variant',
+  `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric: score points / accuracy % / combo / perfect notes',
+  `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
+  `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
+  `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_profile_date_type` (`profile_uid`, `challenge_date`, `challenge_type`),
+  KEY `idx_date` (`challenge_date`),
+  CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
 -- Stored Procedure: Update cached profile stats after score
 -- -----------------------------------------------------------
 DELIMITER //
@@ -117,5 +140,25 @@ DELIMITER ;
 -- ALTER TABLE `ks_scores` ADD COLUMN `fingerprint_version` ENUM('v1','v2') NOT NULL DEFAULT 'v1' AFTER `ac_reject_reason`;
 -- ALTER TABLE `ks_scores` ADD KEY `idx_song_hash_v2` (`song_hash_v2`);
 -- ALTER TABLE `ks_scores` ADD KEY `idx_verified` (`verified`);
+
+-- -----------------------------------------------------------
+-- Migration: Add the daily-challenge table to an existing v3
+-- installation (fresh installs already got it above — run only
+-- ONE of the two, never both):
+-- -----------------------------------------------------------
+-- CREATE TABLE IF NOT EXISTS `ks_daily_results` (
+--   `id`             BIGINT        NOT NULL AUTO_INCREMENT,
+--   `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
+--   `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
+--   `challenge_type` ENUM('score','accuracy','combo','perfect_notes') NOT NULL COMMENT 'Daily challenge variant',
+--   `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric: score points / accuracy % / combo / perfect notes',
+--   `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
+--   `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
+--   `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`id`),
+--   UNIQUE KEY `uq_profile_date_type` (`profile_uid`, `challenge_date`, `challenge_type`),
+--   KEY `idx_date` (`challenge_date`),
+--   CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

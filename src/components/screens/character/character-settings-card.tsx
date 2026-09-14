@@ -241,8 +241,46 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
           )}
         </div>
 
-        {/* Country & Privacy */}
+        {/* ── Profile storage mode: Online or Local (switchable later) ── */}
         {onlineEnabled && (
+          <div className="pt-3 border-t border-white/10">
+            <h4 className="text-sm font-medium text-white/60 mb-1">{t('profile.storageMode.title')}</h4>
+            <p className="text-xs text-white/40 mb-3">{t('profile.storageMode.settingsDesc')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={() => updateProfile(profile.id, { storageMode: 'local' })}
+                aria-pressed={(profile.storageMode ?? 'online') === 'local'}
+                className={`p-3 rounded-lg text-left transition-all border ${
+                  (profile.storageMode ?? 'online') === 'local'
+                    ? 'bg-cyan-500/15 border-cyan-500/60 ring-1 ring-cyan-400/40'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <span>💾</span> {t('profile.storageMode.local')}
+                </div>
+                <div className="text-xs text-white/50 mt-1">{t('profile.storageMode.localDesc')}</div>
+              </button>
+              <button
+                onClick={() => updateProfile(profile.id, { storageMode: 'online' })}
+                aria-pressed={profile.storageMode === 'online'}
+                className={`p-3 rounded-lg text-left transition-all border ${
+                  profile.storageMode === 'online'
+                    ? 'bg-purple-500/15 border-purple-500/60 ring-1 ring-purple-400/40'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <span>🌐</span> {t('profile.storageMode.online')}
+                </div>
+                <div className="text-xs text-white/50 mt-1">{t('profile.storageMode.onlineDesc')}</div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Country & Privacy — only relevant for online profiles */}
+        {onlineEnabled && (profile.storageMode ?? 'online') !== 'local' && (
           <div className="pt-3 border-t border-white/10">
             <h4 className="text-sm font-medium text-white/60 mb-3">{t('characterScreen.countryAndPrivacy')}</h4>
             <div className="flex flex-wrap gap-4 items-center">
@@ -290,8 +328,8 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
           </div>
         )}
 
-        {/* Profile Sync Section */}
-        {onlineEnabled && (
+        {/* Profile Sync Section — only for online profiles */}
+        {onlineEnabled && (profile.storageMode ?? 'online') !== 'local' && (
           <div className="pt-3 border-t border-white/10">
             <h4 className="text-sm font-medium text-white/60 mb-3 flex items-center gap-2">
               <CloudUploadIcon className="w-4 h-4" /> {t('profileSync.title')}

@@ -430,6 +430,75 @@ achievements: {
     description: 'Voltooi een nummer in Blinde modus',
     rewardTitle: 'Blindemeester',
   },
+  dailyStarter: {
+    name: 'Dagelijkse Starter',
+    description: 'Voltooi je eerste dagelijkse uitdaging',
+  },
+  dailyRegular: {
+    name: 'Dagelijkse Stamgast',
+    description: 'Voltooi 10 dagelijkse uitdagingen',
+  },
+  dailyDevoted: {
+    name: 'Dagelijkse Toegewijde',
+    description: 'Voltooi 50 dagelijkse uitdagingen',
+  },
+  streakWeek: {
+    name: 'In Vuur en Vlam',
+    description: 'Houd een dagelijkse reeks van 7 dagen aan',
+  },
+  streakMonth: {
+    name: 'Onstuitbaar',
+    description: 'Houd een dagelijkse reeks van 30 dagen aan',
+    rewardTitle: 'Onstuitbaar',
+  },
+  weeklyWarrior: {
+    name: 'Weekkrijger',
+    description: 'Voltooi 5 wekelijkse uitdagingen',
+  },
+  precisionSinger: {
+    name: 'Precisiezanger',
+    description: 'Behaal meer dan 95% nauwkeurigheid',
+  },
+  goldenRush: {
+    name: 'Goudkoorts',
+    description: 'Raak 20 gouden noten in één nummer',
+  },
+  goldenCenturion: {
+    name: 'Gouden Centurio',
+    description: 'Raak in totaal 100 gouden noten',
+  },
+  perfectFifty: {
+    name: 'Perfecte Vijftig',
+    description: 'Raak 50 perfecte noten in één nummer',
+  },
+  lightningLips: {
+    name: 'Bliksemlippen',
+    description: 'Voltooi een nummer op 2x snelheid',
+  },
+  perfectHarmony: {
+    name: 'Perfecte Harmonie',
+    description: 'Zing 10 duetten',
+  },
+  genreExplorer: {
+    name: 'Genre-ontdekker',
+    description: 'Zing nummers van 5 verschillende genres',
+  },
+  disneyFan: {
+    name: 'Disney-fan',
+    description: 'Zing 10 Disney-nummers',
+  },
+  nightOwl: {
+    name: 'Nachtuil',
+    description: 'Voltooi een nummer tussen middernacht en 4 uur in de nacht',
+  },
+  earlyBird: {
+    name: 'Vroege Vogel',
+    description: 'Voltooi een nummer vóór 8 uur in de ochtend',
+  },
+  marathonSinger: {
+    name: 'Marathonzanger',
+    description: 'Speel 5 spellen op één dag',
+  },
 },
 ranks: {
   beginner: {

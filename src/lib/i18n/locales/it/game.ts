@@ -430,6 +430,75 @@ achievements: {
     description: 'Completa una canzone in modalità Karaoke Cieco',
     rewardTitle: 'Maestro Cieco',
   },
+  dailyStarter: {
+    name: 'Esordiente Quotidiano',
+    description: 'Completa la tua prima sfida quotidiana',
+  },
+  dailyRegular: {
+    name: 'Frequentatore Quotidiano',
+    description: 'Completa 10 sfide quotidiane',
+  },
+  dailyDevoted: {
+    name: 'Devoto Quotidiano',
+    description: 'Completa 50 sfide quotidiane',
+  },
+  streakWeek: {
+    name: 'In Fiamme',
+    description: 'Mantieni una serie quotidiana di 7 giorni',
+  },
+  streakMonth: {
+    name: 'Inarrestabile',
+    description: 'Mantieni una serie quotidiana di 30 giorni',
+    rewardTitle: 'Inarrestabile',
+  },
+  weeklyWarrior: {
+    name: 'Guerriero Settimanale',
+    description: 'Completa 5 sfide settimanali',
+  },
+  precisionSinger: {
+    name: 'Cantante di Precisione',
+    description: 'Ottieni oltre il 95% di precisione',
+  },
+  goldenRush: {
+    name: 'Febbre dell\'Oro',
+    description: 'Colpisci 20 note dorate in una sola canzone',
+  },
+  goldenCenturion: {
+    name: 'Centurione Dorato',
+    description: 'Colpisci 100 note dorate in totale',
+  },
+  perfectFifty: {
+    name: 'Cinquanta Perfette',
+    description: 'Colpisci 50 note perfette in una sola canzone',
+  },
+  lightningLips: {
+    name: 'Labbra Fulminee',
+    description: 'Completa una canzone a velocità 2x',
+  },
+  perfectHarmony: {
+    name: 'Armonia Perfetta',
+    description: 'Canta 10 duetti',
+  },
+  genreExplorer: {
+    name: 'Esploratore di Generi',
+    description: 'Canta canzoni di 5 generi diversi',
+  },
+  disneyFan: {
+    name: 'Fan di Disney',
+    description: 'Canta 10 canzoni Disney',
+  },
+  nightOwl: {
+    name: 'Gufo Notturno',
+    description: 'Termina una canzone tra mezzanotte e le 4 del mattino',
+  },
+  earlyBird: {
+    name: 'Mattiniero',
+    description: 'Termina una canzone prima delle 8 del mattino',
+  },
+  marathonSinger: {
+    name: 'Cantante Maratoneta',
+    description: 'Gioca 5 partite in un solo giorno',
+  },
 },
 ranks: {
   beginner: {

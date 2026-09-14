@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Нет фото',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Хранение профиля',
+    local: 'Только локально',
+    localDesc: 'Все данные остаются на этом устройстве — без онлайн-таблицы лидеров и синхронизации.',
+    online: 'Онлайн-профиль',
+    onlineDesc: 'Участвуйте в онлайн-таблице лидеров, синхронизируйте устройства и делитесь ежедневными результатами.',
+    localShort: 'Локально',
+    onlineShort: 'Онлайн',
+    settingsDesc: 'Решите, будет ли этот профиль участвовать в онлайн-таблице лидеров или останется только локальным. Можно изменить в любой момент.',
+  },
 },
 characterScreen: {
   title: 'Профиль',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Мастер слепого режима',
     description: 'Заверши песню в режиме «Слепое караоке»',
   },
+  daily_starter: {
+    name: 'Дейли-новичок',
+    description: 'Заверши свой первый ежедневный вызов',
+  },
+  daily_regular: {
+    name: 'Дейли-завсегдатай',
+    description: 'Заверши 10 ежедневных вызовов',
+  },
+  daily_devoted: {
+    name: 'Дейли-фанат',
+    description: 'Заверши 50 ежедневных вызовов',
+  },
+  streak_week: {
+    name: 'В огне',
+    description: 'Поддерживай ежедневную серию в 7 дней',
+  },
+  streak_month: {
+    name: 'Неудержимый',
+    description: 'Поддерживай ежедневную серию в 30 дней',
+  },
+  weekly_warrior: {
+    name: 'Воин недели',
+    description: 'Заверши 5 еженедельных вызовов',
+  },
+  accuracy_95: {
+    name: 'Точный вокалист',
+    description: 'Набери точность выше 95%',
+  },
+  golden_rush: {
+    name: 'Золотая лихорадка',
+    description: 'Попади в 20 золотых нот за одну песню',
+  },
+  golden_hundred: {
+    name: 'Золотой центурион',
+    description: 'Попади в 100 золотых нот за всё время',
+  },
+  perfect_fifty: {
+    name: 'Идеальные полсотни',
+    description: 'Попади в 50 идеальных нот за одну песню',
+  },
+  lightning_lips: {
+    name: 'Молниеносные губы',
+    description: 'Заверши песню на скорости 2x',
+  },
+  duet_harmony: {
+    name: 'Идеальная гармония',
+    description: 'Спой 10 дуэтов',
+  },
+  genre_explorer: {
+    name: 'Исследователь жанров',
+    description: 'Спой песни из 5 разных жанров',
+  },
+  disney_fan: {
+    name: 'Фанат Disney',
+    description: 'Спой 10 песен Disney',
+  },
+  night_owl: {
+    name: 'Ночная сова',
+    description: 'Заверши песню между полуночью и 4 часами утра',
+  },
+  early_bird: {
+    name: 'Ранняя пташка',
+    description: 'Заверши песню до 8 часов утра',
+  },
+  marathon_singer: {
+    name: 'Марафонский певец',
+    description: 'Сыграй 5 игр за один день',
+  },
 },
 achievementsScreen: {
   title: '🏆 Достижения',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Заблокировано',
+  viewPlayer: 'Достижения игрока',
+  viewingOther: 'Вы просматриваете достижения игрока {n}. Каждый игрок открывает собственные достижения.',
+  noMatches: 'Нет достижений, соответствующих этим фильтрам',
 },
 badgeNames: {
   'first-challenge': 'Первые шаги',

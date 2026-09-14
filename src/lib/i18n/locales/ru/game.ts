@@ -430,6 +430,75 @@ achievements: {
     description: 'Выполните песню в режиме караоке вслепую',
     rewardTitle: 'Мастер вслепую',
   },
+  dailyStarter: {
+    name: 'Дейли-новичок',
+    description: 'Заверши свой первый ежедневный вызов',
+  },
+  dailyRegular: {
+    name: 'Дейли-завсегдатай',
+    description: 'Заверши 10 ежедневных вызовов',
+  },
+  dailyDevoted: {
+    name: 'Дейли-фанат',
+    description: 'Заверши 50 ежедневных вызовов',
+  },
+  streakWeek: {
+    name: 'В огне',
+    description: 'Поддерживай ежедневную серию в 7 дней',
+  },
+  streakMonth: {
+    name: 'Неудержимый',
+    description: 'Поддерживай ежедневную серию в 30 дней',
+    rewardTitle: 'Неудержимый',
+  },
+  weeklyWarrior: {
+    name: 'Воин недели',
+    description: 'Заверши 5 еженедельных вызовов',
+  },
+  precisionSinger: {
+    name: 'Точный вокалист',
+    description: 'Набери точность выше 95%',
+  },
+  goldenRush: {
+    name: 'Золотая лихорадка',
+    description: 'Попади в 20 золотых нот за одну песню',
+  },
+  goldenCenturion: {
+    name: 'Золотой центурион',
+    description: 'Попади в 100 золотых нот за всё время',
+  },
+  perfectFifty: {
+    name: 'Идеальные полсотни',
+    description: 'Попади в 50 идеальных нот за одну песню',
+  },
+  lightningLips: {
+    name: 'Молниеносные губы',
+    description: 'Заверши песню на скорости 2x',
+  },
+  perfectHarmony: {
+    name: 'Идеальная гармония',
+    description: 'Спой 10 дуэтов',
+  },
+  genreExplorer: {
+    name: 'Исследователь жанров',
+    description: 'Спой песни из 5 разных жанров',
+  },
+  disneyFan: {
+    name: 'Фанат Disney',
+    description: 'Спой 10 песен Disney',
+  },
+  nightOwl: {
+    name: 'Ночная сова',
+    description: 'Заверши песню между полуночью и 4 часами утра',
+  },
+  earlyBird: {
+    name: 'Ранняя пташка',
+    description: 'Заверши песню до 8 часов утра',
+  },
+  marathonSinger: {
+    name: 'Марафонский певец',
+    description: 'Сыграй 5 игр за один день',
+  },
 },
 ranks: {
   beginner: {

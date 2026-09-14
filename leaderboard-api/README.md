@@ -57,6 +57,8 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code` |
 | GET | `/leaderboard/song/{hash}?game_type=s|d&limit=N` | Per-song Top N |
 | GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
+| POST | `/daily` | Submit daily-challenge result (upsert — best metric wins) — requires profile `sync_code` |
+| GET | `/daily?date=YYYY-MM-DD&limit=N` | Daily-challenge board for a date (all challenge types, ranked per type) |
 
 ## Profile sync (cross-device)
 
@@ -105,6 +107,36 @@ points-per-tick re-computation. Points-per-tick is re-computed from the
 claimed tick counts under the client scoring model
 (`tickPool = 70% (or 80% without golden notes) of max_score`). Scores
 without proof are accepted but stored as unverified.
+
+## Daily challenge
+
+The daily-challenge board stores one result per profile, date, and
+challenge type (`score`, `accuracy`, `combo`, `perfect_notes`). Resubmitting
+the same day + type keeps the better `metric_value` (upsert — the stored
+`xp_earned` follows the winning attempt). The challenge date must be the
+client's local day, never in the future and at most 7 days back.
+
+```
+POST /daily   { "profile_uid": "uuid-v4", "sync_code": "AB12CD34",
+                "challenge_date": "2026-09-14", "challenge_type": "score",
+                "metric_value": 8450, "xp_earned": 120 }
+            → { "ok": true }
+
+GET  /daily?date=2026-09-14&limit=100
+            → { "date": "2026-09-14", "leaderboard": [ {
+                  "rank": 1, "profile_uid": "…", "display_name": "…",
+                  "color": "#8B5CF6", "country_code": "DE",
+                  "challenge_type": "score", "metric_value": 9820.5,
+                  "created_at": "2026-09-14T18:30:00" } ] }
+```
+
+Metric bounds per type: `score` ≤ 100 000, `accuracy` ≤ 100, `combo` ≤ 5000,
+`perfect_notes` ≤ 5000 (values are rounded to 2 decimals). `xp_earned` is
+informational and clamped to 0…100 000. The board is public (GET needs no
+API key) and returns all challenge types of that date, ranked **within each
+type** by `metric_value` DESC; `limit` (default 100, max 100) applies per
+type. As everywhere else, profiles with `show_on_board = 0` are excluded
+and `country_code` is `null` when `show_country = 0`.
 
 ## Privacy
 

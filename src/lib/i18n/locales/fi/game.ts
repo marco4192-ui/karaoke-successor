@@ -430,6 +430,75 @@ achievements: {
     description: 'Suorita kappale Sokko-tilassa',
     rewardTitle: 'Sokkomestari',
   },
+  dailyStarter: {
+    name: 'Dailyn aloittelija',
+    description: 'Suorita ensimmäinen päivittäinen haasteesi',
+  },
+  dailyRegular: {
+    name: 'Dailyn vakiokävijä',
+    description: 'Suorita 10 päivittäistä haastetta',
+  },
+  dailyDevoted: {
+    name: 'Dailyn omistautuja',
+    description: 'Suorita 50 päivittäistä haastetta',
+  },
+  streakWeek: {
+    name: 'Liekeissä',
+    description: 'Pidä yllä 7 päivän päivittäisputki',
+  },
+  streakMonth: {
+    name: 'Pysäyttämätön',
+    description: 'Pidä yllä 30 päivän päivittäisputki',
+    rewardTitle: 'Pysäyttämätön',
+  },
+  weeklyWarrior: {
+    name: 'Viikkosoturi',
+    description: 'Suorita 5 viikoittaista haastetta',
+  },
+  precisionSinger: {
+    name: 'Tarkkuuslaulaja',
+    description: 'Saa yli 95% tarkkuuden',
+  },
+  goldenRush: {
+    name: 'Kultaryntäys',
+    description: 'Osu 20 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  goldenCenturion: {
+    name: 'Kultainen centurio',
+    description: 'Osu yhteensä 100 kultaiseen nuottiin',
+  },
+  perfectFifty: {
+    name: 'Täydelliset viisikymmentä',
+    description: 'Osu 50 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  lightningLips: {
+    name: 'Salamahuulet',
+    description: 'Suorita kappale 2x nopeudella',
+  },
+  perfectHarmony: {
+    name: 'Täydellinen harmonia',
+    description: 'Laula 10 duettoa',
+  },
+  genreExplorer: {
+    name: 'Genretutkija',
+    description: 'Laula kappaleita viidestä eri genrestä',
+  },
+  disneyFan: {
+    name: 'Disney-fani',
+    description: 'Laula 10 Disney-kappaletta',
+  },
+  nightOwl: {
+    name: 'Iltapöllö',
+    description: 'Suorita kappale keskiyön ja kello 4:n välillä',
+  },
+  earlyBird: {
+    name: 'Aamuvirkku',
+    description: 'Suorita kappale ennen kello 8:aa',
+  },
+  marathonSinger: {
+    name: 'Maratonlaulaja',
+    description: 'Pelaa 5 peliä yhden päivän aikana',
+  },
 },
 ranks: {
   beginner: {

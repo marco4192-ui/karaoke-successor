@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Pas de photo',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Stockage du profil',
+    local: 'Local uniquement',
+    localDesc: 'Toutes les données restent sur cet appareil — pas de classement en ligne, pas de synchronisation.',
+    online: 'Profil en ligne',
+    onlineDesc: 'Rejoins le classement en ligne, synchronise tes appareils et partage tes résultats quotidiens.',
+    localShort: 'Local',
+    onlineShort: 'En ligne',
+    settingsDesc: 'Décide si ce profil rejoint le classement en ligne ou reste uniquement local. Modifiable à tout moment.',
+  },
 },
 characterScreen: {
   title: 'Profil',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Master du Blind',
     description: 'Termine une chanson en mode Blind Karaoke',
   },
+  daily_starter: {
+    name: 'Débutant du Quotidien',
+    description: 'Termine ton premier défi quotidien',
+  },
+  daily_regular: {
+    name: 'Habitué du Quotidien',
+    description: 'Termine 10 défis quotidiens',
+  },
+  daily_devoted: {
+    name: 'Fidèle du Quotidien',
+    description: 'Termine 50 défis quotidiens',
+  },
+  streak_week: {
+    name: 'En Feu',
+    description: 'Garde une série quotidienne de 7 jours',
+  },
+  streak_month: {
+    name: 'Imparable',
+    description: 'Garde une série quotidienne de 30 jours',
+  },
+  weekly_warrior: {
+    name: 'Guerrier Hebdo',
+    description: 'Termine 5 défis hebdomadaires',
+  },
+  accuracy_95: {
+    name: 'Chanteur de Précision',
+    description: 'Dépasse les 95% de précision',
+  },
+  golden_rush: {
+    name: 'Ruée vers l\'Or',
+    description: 'Touche 20 notes dorées en une seule chanson',
+  },
+  golden_hundred: {
+    name: 'Centurion Doré',
+    description: 'Touche 100 notes dorées au total',
+  },
+  perfect_fifty: {
+    name: 'Cinquante Parfaites',
+    description: 'Touche 50 notes parfaites en une seule chanson',
+  },
+  lightning_lips: {
+    name: 'Lèvres de l\'Éclair',
+    description: 'Termine une chanson à une vitesse 2x',
+  },
+  duet_harmony: {
+    name: 'Harmonie Parfaite',
+    description: 'Chante 10 duos',
+  },
+  genre_explorer: {
+    name: 'Explorateur de Genres',
+    description: 'Chante des chansons de 5 genres différents',
+  },
+  disney_fan: {
+    name: 'Fan de Disney',
+    description: 'Chante 10 chansons Disney',
+  },
+  night_owl: {
+    name: 'Chouette Nocturne',
+    description: 'Termine une chanson entre minuit et 4 heures du matin',
+  },
+  early_bird: {
+    name: 'Lève-tôt',
+    description: 'Termine une chanson avant 8 heures du matin',
+  },
+  marathon_singer: {
+    name: 'Chanteur Marathonien',
+    description: 'Joue 5 parties en une seule journée',
+  },
 },
 achievementsScreen: {
   title: '🏆 Succès',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Verrouillé',
+  viewPlayer: 'Succès de',
+  viewingOther: 'Tu regardes les succès de {n}. Chaque joueur débloque ses propres succès.',
+  noMatches: 'Aucun succès ne correspond à ces filtres',
 },
 badgeNames: {
   'first-challenge': 'Premiers Pas',

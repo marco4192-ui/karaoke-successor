@@ -7,7 +7,7 @@ import { useGameStore } from '@/lib/game/store';
 import { GlobeIcon, PlusIcon, UserIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { CharacterCard } from './character/character-card';
-import { CreateCharacterForm } from './character/create-character-form';
+import { CreateCharacterForm, type CreateProfileOptions } from './character/create-character-form';
 import { PlayerProgressionCard } from './character/player-progression-card';
 import { CharacterSettingsCard } from './character/character-settings-card';
 
@@ -68,12 +68,12 @@ export function CharacterScreen() {
 
   const handleCreate = (
     name: string, avatarUrl: string,
-    country: string, privacy: { showOnLeaderboard: boolean; showPhoto: boolean; showCountry: boolean },
+    options: CreateProfileOptions,
   ) => {
-    const profile = createProfile(name, avatarUrl || undefined);
-    updateProfile(profile.id, {
-      country: country || undefined,
-      privacy,
+    const profile = createProfile(name, avatarUrl || undefined, {
+      storageMode: options.storageMode,
+      country: options.country || undefined,
+      privacy: options.privacy,
     });
     setShowCreateForm(false);
     setSelectedProfileId(profile.id);

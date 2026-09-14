@@ -430,6 +430,75 @@ achievements: {
     description: 'Avsluta en låt i Blint läge',
     rewardTitle: 'Blind mästare',
   },
+  dailyStarter: {
+    name: 'Daglig nybörjare',
+    description: 'Fullfölj din första dagliga utmaning',
+  },
+  dailyRegular: {
+    name: 'Daglig stammis',
+    description: 'Fullfölj 10 dagliga utmaningar',
+  },
+  dailyDevoted: {
+    name: 'Dagligt hängiven',
+    description: 'Fullfölj 50 dagliga utmaningar',
+  },
+  streakWeek: {
+    name: 'Eld och lågor',
+    description: 'Håll en 7-dagars daglig svit',
+  },
+  streakMonth: {
+    name: 'Ohejdbar',
+    description: 'Håll en 30-dagars daglig svit',
+    rewardTitle: 'Ohejdbar',
+  },
+  weeklyWarrior: {
+    name: 'Veckokrigare',
+    description: 'Fullfölj 5 veckoutmaningar',
+  },
+  precisionSinger: {
+    name: 'Precisionssångare',
+    description: 'Få över 95% precision',
+  },
+  goldenRush: {
+    name: 'Guldrush',
+    description: 'Träffa 20 gyllene toner i en enda låt',
+  },
+  goldenCenturion: {
+    name: 'Gyllene centurio',
+    description: 'Träffa totalt 100 gyllene toner',
+  },
+  perfectFifty: {
+    name: 'Perfekta femtio',
+    description: 'Träffa 50 perfekta toner i en enda låt',
+  },
+  lightningLips: {
+    name: 'Blixtläppar',
+    description: 'Fullfölj en låt med 2x hastighet',
+  },
+  perfectHarmony: {
+    name: 'Perfekt harmoni',
+    description: 'Sjung 10 duetter',
+  },
+  genreExplorer: {
+    name: 'Genreutforskare',
+    description: 'Sjung låtar från 5 olika genrer',
+  },
+  disneyFan: {
+    name: 'Disney-fan',
+    description: 'Sjung 10 Disney-låtar',
+  },
+  nightOwl: {
+    name: 'Nattuggla',
+    description: 'Fullfölj en låt mellan midnatt och klockan 04',
+  },
+  earlyBird: {
+    name: 'Morgonfågel',
+    description: 'Fullfölj en låt före klockan 08',
+  },
+  marathonSinger: {
+    name: 'Marathonsångare',
+    description: 'Spela 5 spel på en enda dag',
+  },
 },
 ranks: {
   beginner: {

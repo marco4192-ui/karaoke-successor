@@ -23,7 +23,17 @@ export const profileTranslations = {
     photoUploaded: 'Photo uploaded',
     noPhoto: 'No photo',
     privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-    privacyHintDesc: 'You can opt out at any time in Profile Settings.'
+    privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+    storageMode: {
+      title: 'Profile storage',
+      local: 'Local only',
+      localDesc: 'All data stays on this device — no online leaderboard, no sync.',
+      online: 'Online profile',
+      onlineDesc: 'Join the online leaderboard, sync across devices and share daily results.',
+      localShort: 'Local',
+      onlineShort: 'Online',
+      settingsDesc: 'Decide whether this profile joins the online leaderboard or stays local only. Changeable at any time.',
+    },
   },
 
   characterScreen: {
@@ -127,7 +137,24 @@ export const profileTranslations = {
     shower_singer: { name: 'Shower Singer', description: 'Score less than 20% on a song' },
     comeback_king: { name: 'Comeback King', description: 'Get a combo of 50+ after missing 10 notes' },
     speed_demon: { name: 'Speed Demon', description: 'Complete a song at 1.5x speed' },
-    blind_master: { name: 'Blind Master', description: 'Complete a song in Blind Karaoke mode' }
+    blind_master: { name: 'Blind Master', description: 'Complete a song in Blind Karaoke mode' },
+    daily_starter: { name: 'Daily Starter', description: 'Complete your first daily challenge' },
+    daily_regular: { name: 'Daily Regular', description: 'Complete 10 daily challenges' },
+    daily_devoted: { name: 'Daily Devoted', description: 'Complete 50 daily challenges' },
+    streak_week: { name: 'On Fire', description: 'Keep a 7-day daily streak' },
+    streak_month: { name: 'Unstoppable', description: 'Keep a 30-day daily streak' },
+    weekly_warrior: { name: 'Weekly Warrior', description: 'Complete 5 weekly challenges' },
+    accuracy_95: { name: 'Precision Singer', description: 'Get over 95% accuracy' },
+    golden_rush: { name: 'Golden Rush', description: 'Hit 20 golden notes in a single song' },
+    golden_hundred: { name: 'Golden Centurion', description: 'Hit 100 golden notes in total' },
+    perfect_fifty: { name: 'Perfect Fifty', description: 'Hit 50 perfect notes in a single song' },
+    lightning_lips: { name: 'Lightning Lips', description: 'Complete a song at 2x speed' },
+    duet_harmony: { name: 'Perfect Harmony', description: 'Sing 10 duets' },
+    genre_explorer: { name: 'Genre Explorer', description: 'Sing songs from 5 different genres' },
+    disney_fan: { name: 'Disney Fan', description: 'Sing 10 Disney songs' },
+    night_owl: { name: 'Night Owl', description: 'Finish a song between midnight and 4 AM' },
+    early_bird: { name: 'Early Bird', description: 'Finish a song before 8 AM' },
+    marathon_singer: { name: 'Marathon Singer', description: 'Play 5 games in a single day' }
   },
 
   achievementsScreen: {
@@ -144,7 +171,10 @@ export const profileTranslations = {
       special: 'special'
     },
     plusXp: '+{n} XP',
-    locked: 'Locked'
+    locked: 'Locked',
+    viewPlayer: 'Achievements of',
+    viewingOther: 'You are viewing {n}\'s achievements. Every player unlocks their own achievements.',
+    noMatches: 'No achievements match these filters'
   },
 
   badgeNames: {

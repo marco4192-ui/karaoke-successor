@@ -23,6 +23,16 @@ profile: {
   noPhoto: '사진 없음',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: '프로필 저장 방식',
+    local: '로컬만',
+    localDesc: '모든 데이터는 이 기기에만 저장됩니다 — 온라인 리더보드나 동기화 없음.',
+    online: '온라인 프로필',
+    onlineDesc: '온라인 리더보드에 참여하고, 기기 간 동기화와 데일리 결과 공유를 이용하세요.',
+    localShort: '로컬',
+    onlineShort: '온라인',
+    settingsDesc: '이 프로필을 온라인 리더보드에 참여시킬지 로컬에만 저장할지 결정하세요. 언제든 변경할 수 있습니다.',
+  },
 },
 characterScreen: {
   title: '프로필',
@@ -196,6 +206,74 @@ achievements: {
     name: '블라인드 마스터',
     description: '블라인드 가라오케 모드로 곡 완주',
   },
+  daily_starter: {
+    name: '데일리 입문자',
+    description: '첫 데일리 챌린지 완주하기',
+  },
+  daily_regular: {
+    name: '데일리 단골',
+    description: '데일리 챌린지 10회 완주하기',
+  },
+  daily_devoted: {
+    name: '데일리 헌신자',
+    description: '데일리 챌린지 50회 완주하기',
+  },
+  streak_week: {
+    name: '불타는 열정',
+    description: '7일 연속 데일리 기록 유지하기',
+  },
+  streak_month: {
+    name: '멈출 수 없음',
+    description: '30일 연속 데일리 기록 유지하기',
+  },
+  weekly_warrior: {
+    name: '위클리 워리어',
+    description: '주간 챌린지 5회 완주하기',
+  },
+  accuracy_95: {
+    name: '정밀 가수',
+    description: '정확도 95% 초과 달성하기',
+  },
+  golden_rush: {
+    name: '골든 러시',
+    description: '한 곡에서 골든 노트 20개 히트하기',
+  },
+  golden_hundred: {
+    name: '골든 센츄리온',
+    description: '골든 노트 총 100개 히트하기',
+  },
+  perfect_fifty: {
+    name: '퍼펙트 50',
+    description: '한 곡에서 퍼펙트 노트 50개 히트하기',
+  },
+  lightning_lips: {
+    name: '번개 입술',
+    description: '2배속으로 곡 완주하기',
+  },
+  duet_harmony: {
+    name: '완벽한 하모니',
+    description: '듀엣 10곡 부르기',
+  },
+  genre_explorer: {
+    name: '장르 탐험가',
+    description: '5가지 다른 장르의 곡 부르기',
+  },
+  disney_fan: {
+    name: '디즈니 팬',
+    description: '디즈니 곡 10곡 부르기',
+  },
+  night_owl: {
+    name: '밤샘의 달인',
+    description: '자정부터 새벽 4시 사이에 곡 완주하기',
+  },
+  early_bird: {
+    name: '아침형 인간',
+    description: '오전 8시 이전에 곡 완주하기',
+  },
+  marathon_singer: {
+    name: '마라톤 가수',
+    description: '하루에 게임 5판 플레이하기',
+  },
 },
 achievementsScreen: {
   title: '🏆 업적',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: '잠김',
+  viewPlayer: '플레이어의 업적',
+  viewingOther: '{n}님의 업적을 보고 있습니다. 각 플레이어는 자신만의 업적을 해금합니다.',
+  noMatches: '이 필터에 맞는 업적이 없습니다',
 },
 badgeNames: {
   'first-challenge': '첫 걸음',

@@ -430,6 +430,75 @@ achievements: {
     description: '在盲打卡拉OK模式中完成一首歌',
     rewardTitle: '盲打大师',
   },
+  dailyStarter: {
+    name: '每日新手',
+    description: '完成你的第一个每日挑战',
+  },
+  dailyRegular: {
+    name: '每日常客',
+    description: '完成10个每日挑战',
+  },
+  dailyDevoted: {
+    name: '每日狂热',
+    description: '完成50个每日挑战',
+  },
+  streakWeek: {
+    name: '火力全开',
+    description: '保持连续7天的每日挑战记录',
+  },
+  streakMonth: {
+    name: '势不可挡',
+    description: '保持连续30天的每日挑战记录',
+    rewardTitle: '势不可挡',
+  },
+  weeklyWarrior: {
+    name: '每周战士',
+    description: '完成5个每周挑战',
+  },
+  precisionSinger: {
+    name: '精准歌手',
+    description: '获得超过95%的准确率',
+  },
+  goldenRush: {
+    name: '黄金热潮',
+    description: '在一首歌中命中20个黄金音符',
+  },
+  goldenCenturion: {
+    name: '黄金百夫长',
+    description: '累计命中100个黄金音符',
+  },
+  perfectFifty: {
+    name: '完美五十',
+    description: '在一首歌中命中50个完美音符',
+  },
+  lightningLips: {
+    name: '闪电之唇',
+    description: '以2倍速完成一首歌',
+  },
+  perfectHarmony: {
+    name: '完美和声',
+    description: '演唱10首对唱歌曲',
+  },
+  genreExplorer: {
+    name: '流派探索者',
+    description: '演唱5种不同流派的歌曲',
+  },
+  disneyFan: {
+    name: '迪士尼粉丝',
+    description: '演唱10首迪士尼歌曲',
+  },
+  nightOwl: {
+    name: '夜猫子',
+    description: '在午夜至凌晨4点之间完成一首歌',
+  },
+  earlyBird: {
+    name: '早起的鸟儿',
+    description: '在早上8点前完成一首歌',
+  },
+  marathonSinger: {
+    name: '马拉松歌手',
+    description: '在一天内游玩5局游戏',
+  },
 },
 ranks: {
   beginner: {

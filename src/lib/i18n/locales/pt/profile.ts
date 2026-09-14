@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Sem foto',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Armazenamento do perfil',
+    local: 'Apenas local',
+    localDesc: 'Todos os dados ficam neste dispositivo — sem classificação online, sem sincronização.',
+    online: 'Perfil online',
+    onlineDesc: 'Junta-te à classificação online, sincroniza entre dispositivos e partilha os resultados diários.',
+    localShort: 'Local',
+    onlineShort: 'Online',
+    settingsDesc: 'Decide se este perfil se junta à classificação online ou fica apenas local. Podes mudar quando quiseres.',
+  },
 },
 characterScreen: {
   title: 'Perfil',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Mestre às Cegas',
     description: 'Complete uma música no modo Karaoke às Cegas',
   },
+  daily_starter: {
+    name: 'Estreante Diário',
+    description: 'Completa o teu primeiro desafio diário',
+  },
+  daily_regular: {
+    name: 'Habitual Diário',
+    description: 'Completa 10 desafios diários',
+  },
+  daily_devoted: {
+    name: 'Dedicado Diário',
+    description: 'Completa 50 desafios diários',
+  },
+  streak_week: {
+    name: 'Em Chamas',
+    description: 'Mantém uma sequência diária de 7 dias',
+  },
+  streak_month: {
+    name: 'Imparável',
+    description: 'Mantém uma sequência diária de 30 dias',
+  },
+  weekly_warrior: {
+    name: 'Guerreiro Semanal',
+    description: 'Completa 5 desafios semanais',
+  },
+  accuracy_95: {
+    name: 'Cantor de Precisão',
+    description: 'Obtém mais de 95% de precisão',
+  },
+  golden_rush: {
+    name: 'Corrida ao Ouro',
+    description: 'Acerta 20 notas douradas numa única música',
+  },
+  golden_hundred: {
+    name: 'Centurião Dourado',
+    description: 'Acerta 100 notas douradas no total',
+  },
+  perfect_fifty: {
+    name: 'Cinquenta Perfeitas',
+    description: 'Acerta 50 notas perfeitas numa única música',
+  },
+  lightning_lips: {
+    name: 'Lábios Relâmpago',
+    description: 'Completa uma música a 2x de velocidade',
+  },
+  duet_harmony: {
+    name: 'Harmonia Perfeita',
+    description: 'Canta 10 duetos',
+  },
+  genre_explorer: {
+    name: 'Explorador de Géneros',
+    description: 'Canta músicas de 5 géneros diferentes',
+  },
+  disney_fan: {
+    name: 'Fã de Disney',
+    description: 'Canta 10 músicas Disney',
+  },
+  night_owl: {
+    name: 'Coruja Noturna',
+    description: 'Termina uma música entre a meia-noite e as 4 da manhã',
+  },
+  early_bird: {
+    name: 'Madrugador',
+    description: 'Termina uma música antes das 8 da manhã',
+  },
+  marathon_singer: {
+    name: 'Cantor Maratonista',
+    description: 'Joga 5 partidas num só dia',
+  },
 },
 achievementsScreen: {
   title: '🏆 Conquistas',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Bloqueado',
+  viewPlayer: 'Conquistas de',
+  viewingOther: 'Estás a ver as conquistas de {n}. Cada jogador desbloqueia as suas próprias conquistas.',
+  noMatches: 'Nenhuma conquista corresponde a estes filtros',
 },
 badgeNames: {
   'first-challenge': 'Primeiros Passos',

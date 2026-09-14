@@ -4,12 +4,22 @@ import { useState, useEffect, useRef } from 'react';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
+import {
+  submitChallengeResult,
+  submitCoopChallengeResult,
+  submitWeeklyChallengeResult,
+  getPlayerDailyStats,
+  updateQuestProgress,
+} from '@/lib/game/daily-challenge';
 import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
 import { recordSongPlay } from '@/lib/playlist-manager';
-import type { PlayerProfile, GameResult, Song, GameState } from '@/types/game';
+import { useGameStore } from '@/lib/game/store';
+import type { PlayerProfile, GameResult, Song, GameState, HighscoreEntry, Achievement } from '@/types/game';
 
-// Helper: calculate XP and update a player's profile with new level
+// Helper: calculate XP and update a player's profile with new level.
+// Always reads the CURRENT xp from the store so that XP added by other
+// steps in the same effect (e.g. daily/weekly rewards) is never overwritten.
 function awardXPToProfile(
   profile: PlayerProfile,
   score: number,
@@ -29,10 +39,102 @@ function awardXPToProfile(
     goldenNotes,
     challengeMode,
   );
-  const currentXP = profile.xp || 0;
+  const freshProfile = useGameStore.getState().profiles.find(p => p.id === profile.id);
+  const currentXP = freshProfile?.xp ?? profile.xp ?? 0;
   const newXP = currentXP + xp;
   const levelInfo = getLevelForXP(newXP);
   updateFn(profile.id, { xp: newXP, level: levelInfo.level });
+}
+
+/** Lightweight player identity used for daily submissions. */
+interface PlayerIdentity {
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+}
+
+function toIdentity(profile: PlayerProfile): PlayerIdentity {
+  return { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color };
+}
+
+/** Count duet games from the highscore history for a player. */
+function countDuetGames(highscores: HighscoreEntry[], playerId: string): number {
+  return highscores.filter(h => h.playerId === playerId && h.gameMode === 'duet').length;
+}
+
+/** Count games finished today from the recent scores (including this one). */
+function countGamesToday(recentScores: Array<{ date: number }> | undefined): number {
+  if (!recentScores || recentScores.length === 0) return 1;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const startTime = start.getTime();
+  const endTime = startTime + 86_400_000;
+  return recentScores.filter(r => r.date >= startTime && r.date < endTime).length + 1;
+}
+
+/** Per-game result fields needed for the achievement context. */
+interface AchievementResultContext {
+  score: number;
+  accuracy: number;
+  maxCombo: number;
+  perfectNotes: number;
+  goldenNotes: number;
+  notesHit: number;
+  notesMissed: number;
+  isDuelWin: boolean;
+}
+
+/**
+ * Build the full achievement-check context for a specific profile.
+ * Daily-system counters are read AFTER the daily submission so that e.g.
+ * "complete your first daily challenge" unlocks immediately.
+ */
+function buildAchievementContext(
+  profile: PlayerProfile,
+  highscores: HighscoreEntry[],
+  extendedStats: ReturnType<typeof getExtendedStats>,
+  result: AchievementResultContext,
+  gameState: GameState,
+  extras: { isBlindMode: boolean; playbackRate: number; hadComeback: boolean },
+) {
+  const dailyStats = getPlayerDailyStats(profile.id);
+  const genreStats = profile.stats?.genreStats ?? {};
+  const isPartyMode = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'].includes(gameState.gameMode);
+
+  return {
+    score: result.score,
+    accuracy: result.accuracy,
+    maxCombo: result.maxCombo,
+    perfectNotes: result.perfectNotes,
+    goldenNotes: result.goldenNotes,
+    notesHit: result.notesHit,
+    notesMissed: result.notesMissed,
+    gameMode: gameState.gameMode,
+    difficulty: gameState.difficulty,
+    totalSongsCompleted: extendedStats.songsCompleted,
+    totalGamesPlayed: extendedStats.totalSessions,
+    totalGoldenNotes: extendedStats.totalGoldenNotesHit + result.goldenNotes,
+    totalPerfectNotes: extendedStats.totalPerfectNotes + result.perfectNotes,
+    // Daily-system counters (per profile)
+    dailyCompletions: dailyStats.totalCompleted,
+    dailyStreak: dailyStats.currentStreak,
+    weeklyCompletions: dailyStats.weeklyCompletedTotal ?? 0,
+    // Profile-derived counters
+    duetGames: countDuetGames(highscores, profile.id),
+    genreCount: Object.keys(genreStats).length,
+    disneyGames: genreStats['Disney']?.games ?? 0,
+    gamesToday: countGamesToday(profile.stats?.recentScores),
+    hourOfDay: new Date().getHours(),
+    // Special flags
+    isPartyMode,
+    isDuelWin: result.isDuelWin,
+    isPassTheMic: gameState.gameMode === 'pass-the-mic',
+    isBlindMode: extras.isBlindMode,
+    isSpeedMode: extras.playbackRate >= 1.5,
+    playbackRate: extras.playbackRate,
+    hadComeback: extras.hadComeback,
+  };
 }
 
 export interface UsePostGameProcessingParams {
@@ -41,7 +143,7 @@ export interface UsePostGameProcessingParams {
   activeProfileId: string | null;
   profiles: PlayerProfile[];
   gameState: GameState;
-  addHighscore: (entry: Omit<import('@/types/game').HighscoreEntry, 'id' | 'playedAt' | 'rankTitle'>) => import('@/types/game').HighscoreEntry;
+  addHighscore: (entry: Omit<HighscoreEntry, 'id' | 'playedAt' | 'rankTitle'>) => HighscoreEntry;
   onlineEnabled: boolean;
   updateProfile: (id: string, updates: Partial<PlayerProfile>) => void;
   t: (key: string) => string;
@@ -50,10 +152,12 @@ export interface UsePostGameProcessingParams {
 /**
  * Handles all post-game processing:
  * - Saving highscores (P1 and P2)
- * - Checking and unlocking achievements
+ * - Checking and unlocking achievements (P1 AND P2 with their own profiles)
  * - Updating player progression (XP, level, rank)
- * - Daily challenge submission
- * - Global leaderboard upload
+ * - Daily challenge submission with per-player attribution (1-2 selected players)
+ * - Daily/weekly XP rewards are applied to the profile XP
+ * - Quest progress (including previously dead perfect-notes/challenge-mode quests)
+ * - Global leaderboard upload (only for online profiles)
  */
 export function usePostGameProcessing({
   results,
@@ -100,49 +204,207 @@ export function usePostGameProcessing({
         });
         savedToHighscoreRef.current = true;
 
+        // Read fresh highscores (including this game) for the duet-games achievement counter
+        const highscores = useGameStore.getState().highscores;
+
         // Record song play for Recently Played & Most Played system playlists
         recordSongPlay(song.id);
 
-        // Also get P2 result early — needed for achievement checking (isDuelWin) below
+        // Also get P2 result early — needed for daily submission & achievement checking
         const player2Result = results.players[1];
         const isMultiplayerMode = ['duel', 'duet', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
+        const p2Profile = player2Result?.playerId ? profiles.find(p => p.id === player2Result.playerId) : undefined;
+        const isDuelWin = isDuel && !!player2Result && playerResult.score > player2Result.score;
 
-        // CHECK AND UNLOCK ACHIEVEMENTS
-        const currentExtendedStats = getExtendedStats();
+        // ── DAILY CHALLENGE SUBMISSION (before achievements so that daily
+        //    counters reflect this game immediately) ──
+        // If this game was started from the daily challenge screen, submit the
+        // result — attributed to the 1-2 players selected there.
+        let dailyXPEarned = 0;
+        let onlineDailySubmission: (() => void) | null = null;
+        try {
+          const dailyFlag = getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
+          if (dailyFlag) {
+            const parsed = JSON.parse(dailyFlag);
+            if (parsed.active) {
+              // Clear the flag first to avoid double-submission
+              removeItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
+
+              const selectedIds: string[] = Array.isArray(parsed.playerIds) ? parsed.playerIds : [];
+              const p1 = toIdentity(profile);
+              const p1Result = {
+                score: playerResult.score,
+                accuracy: playerResult.accuracy,
+                combo: playerResult.maxCombo,
+                perfectNotesCount: playerResult.perfectNotesCount,
+              };
+
+              // Resolve the second player: second selected profile, or the
+              // P2 profile of the running game as fallback.
+              const secondSelectedId = selectedIds.find(id => id !== profile.id);
+              const secondProfile = (secondSelectedId && profiles.find(p => p.id === secondSelectedId)) || p2Profile;
+
+              // Challenge-type metric helper (score/accuracy/combo/perfect notes)
+              const metricOf = (type: string, r: { score: number; accuracy: number; combo: number; perfectNotesCount?: number }) => {
+                switch (type) {
+                  case 'accuracy': return r.accuracy;
+                  case 'combo': return r.combo;
+                  case 'perfect_notes': return r.perfectNotesCount ?? 0;
+                  default: return r.score;
+                }
+              };
+
+              if (parsed.gameMode === 'coop' && player2Result && secondProfile) {
+                // Team evaluation: the average of both players counts
+                const coopResult = submitCoopChallengeResult(
+                  [p1, toIdentity(secondProfile)],
+                  [
+                    p1Result,
+                    {
+                      score: player2Result.score,
+                      accuracy: player2Result.accuracy,
+                      combo: player2Result.maxCombo,
+                      perfectNotesCount: player2Result.perfectNotesCount,
+                    },
+                  ],
+                );
+                dailyXPEarned += coopResult.xpEarned;
+
+                // Online daily board: submit the team average (fire-and-forget)
+                if (onlineEnabled && profile.storageMode !== 'local') {
+                  const avg = (a: number, b: number) => (a + b) / 2;
+                  const avgResult = {
+                    score: avg(playerResult.score, player2Result.score),
+                    accuracy: avg(playerResult.accuracy, player2Result.accuracy),
+                    combo: avg(playerResult.maxCombo, player2Result.maxCombo),
+                    perfectNotesCount: avg(playerResult.perfectNotesCount ?? 0, player2Result.perfectNotesCount ?? 0),
+                  };
+                  const type = coopResult.challenge.type;
+                  const todayISO = new Date().toISOString().slice(0, 10);
+                  onlineDailySubmission = () => {
+                    import('@/lib/api/leaderboard-service').then(({ leaderboardService }) =>
+                      leaderboardService.submitDailyResult({
+                        profile,
+                        challengeDate: todayISO,
+                        challengeType: type,
+                        metricValue: metricOf(type, avgResult),
+                        xpEarned: coopResult.xpEarned,
+                      }),
+                    ).then((res) => {
+                      if (res.sync_code) updateProfile(profile.id, { syncCode: res.sync_code });
+                    }).catch(() => { /* non-critical */ });
+                  };
+                }
+              } else {
+                // Individual evaluation for each selected player
+                const r1 = submitChallengeResult(p1, p1Result);
+                dailyXPEarned += r1.xpEarned;
+
+                // Online daily board for P1 (fire-and-forget)
+                if (onlineEnabled && profile.storageMode !== 'local') {
+                  const type = r1.challenge.type;
+                  const todayISO = new Date().toISOString().slice(0, 10);
+                  onlineDailySubmission = () => {
+                    import('@/lib/api/leaderboard-service').then(({ leaderboardService }) =>
+                      leaderboardService.submitDailyResult({
+                        profile,
+                        challengeDate: todayISO,
+                        challengeType: type,
+                        metricValue: metricOf(type, p1Result),
+                        xpEarned: r1.xpEarned,
+                      }),
+                    ).then((res) => {
+                      if (res.sync_code) updateProfile(profile.id, { syncCode: res.sync_code });
+                    }).catch(() => { /* non-critical */ });
+                  };
+                }
+
+                if (secondProfile && player2Result) {
+                  const r2 = submitChallengeResult(toIdentity(secondProfile), {
+                    score: player2Result.score,
+                    accuracy: player2Result.accuracy,
+                    combo: player2Result.maxCombo,
+                    perfectNotesCount: player2Result.perfectNotesCount,
+                  });
+                  dailyXPEarned += r2.xpEarned;
+                }
+              }
+
+              // Weekly challenge tracks best scores across the week —
+              // submitted for every selected player with their own result
+              const w1 = submitWeeklyChallengeResult(p1, p1Result, 'score');
+              dailyXPEarned += w1.xpEarned;
+              if (secondProfile && player2Result) {
+                const w2 = submitWeeklyChallengeResult(toIdentity(secondProfile), {
+                  score: player2Result.score,
+                  accuracy: player2Result.accuracy,
+                  combo: player2Result.maxCombo,
+                  perfectNotesCount: player2Result.perfectNotesCount,
+                }, 'score');
+                dailyXPEarned += w2.xpEarned;
+              }
+            }
+          }
+        } catch {
+          // Ignore daily challenge submission errors — not critical
+        }
+
+        // Fire the online daily board submission (after local persistence)
+        onlineDailySubmission?.();
+
+        // Apply daily/weekly XP rewards to the profile that played.
+        // Note: the song XP below reads the fresh store value too, so the
+        // order of both awards does not matter.
+        if (dailyXPEarned > 0) {
+          const fresh = useGameStore.getState().profiles.find(p => p.id === profile.id);
+          if (fresh) {
+            const newXP = (fresh.xp || 0) + dailyXPEarned;
+            const levelInfo = getLevelForXP(newXP);
+            updateProfile(profile.id, { xp: newXP, level: levelInfo.level });
+          }
+        }
+
+        // ── QUEST PROGRESS (per player) ──
+        // Wire up previously untracked quest counters so all quests can progress
         const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
         const goldenNotes = playerResult.goldenNotesCount || 0;
-        const isDuelWin = isDuel && player2Result && playerResult.score > player2Result.score;
-        const isPartyMode = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'].includes(gameState.gameMode);
-        const isPassTheMic = gameState.gameMode === 'pass-the-mic';
-        const achievementResult = checkAndUnlockAchievements(
-          profile.achievements.map(a => a.id),
+        try {
+          updateQuestProgress('perfectNotesTotal', perfectNotes, profile.id);
+          updateQuestProgress('totalSongsCompleted', 1, profile.id);
+          if (gameState.challengeMode) {
+            updateQuestProgress('challengeModesPlayed', 1, profile.id);
+          }
+        } catch { /* non-critical */ }
+
+        // ── ACHIEVEMENTS: P1 (active profile) ──
+        const currentExtendedStats = getExtendedStats();
+        const achievementExtras = {
+          isBlindMode: results.isBlindMode ?? false,
+          playbackRate: results.playbackRate ?? 1.0,
+          hadComeback: results.hadComeback ?? false,
+        };
+        const p1Context = buildAchievementContext(
+          profile, highscores, currentExtendedStats,
           {
             score: playerResult.score,
             accuracy: playerResult.accuracy,
             maxCombo: playerResult.maxCombo,
             perfectNotes,
-            goldenNotes: playerResult.goldenNotesCount || 0,
+            goldenNotes,
             notesHit: playerResult.notesHit,
             notesMissed: playerResult.notesMissed,
-            gameMode: gameState.gameMode,
-            difficulty: gameState.difficulty,
-            totalSongsCompleted: currentExtendedStats.songsCompleted,
-            totalGamesPlayed: currentExtendedStats.totalSessions,
-            totalGoldenNotes: currentExtendedStats.totalGoldenNotesHit + (playerResult.goldenNotesCount || 0),
-            totalPerfectNotes: currentExtendedStats.totalPerfectNotes + perfectNotes,
-            isPartyMode,
             isDuelWin,
-            isPassTheMic,
-            isBlindMode: results.isBlindMode ?? false,
-            isSpeedMode: (results.playbackRate ?? 1.0) >= 1.5,
-            playbackRate: results.playbackRate ?? 1.0,
-            hadComeback: results.hadComeback ?? false,
           },
+          gameState, achievementExtras,
+        );
+        const achievementResult = checkAndUnlockAchievements(
+          profile.achievements.map(a => a.id),
+          p1Context,
         );
 
         // Add newly unlocked achievements to profile
         if (achievementResult.newlyUnlocked.length > 0) {
-          const newAchievements = achievementResult.newlyUnlocked.map(a => ({
+          const newAchievements: Achievement[] = achievementResult.newlyUnlocked.map(a => ({
             id: a.id,
             name: a.name,
             description: a.description,
@@ -154,37 +416,78 @@ export function usePostGameProcessing({
           });
         }
 
-        // Save P2 highscore for duel/competitive modes if P2 has a registered profile
-        if (player2Result && player2Result.playerId && isMultiplayerMode) {
-          const p2Profile = profiles.find(p => p.id === player2Result.playerId);
-          if (p2Profile) {
-            addHighscore({
-              playerId: p2Profile.id,
-              playerName: p2Profile.name,
-              playerAvatar: p2Profile.avatar,
-              playerColor: p2Profile.color,
-              songId: song.id,
-              songTitle: song.title,
-              artist: song.artist,
+        // ── ACHIEVEMENTS: P2 (duel/duet/competitive modes with a registered profile) ──
+        if (player2Result && p2Profile && isMultiplayerMode && p2Profile.id !== profile.id) {
+          const p2PerfectNotes = estimatePerfectNotes(player2Result.notesHit, player2Result.rating);
+          const p2IsDuelWin = isDuel && playerResult.score < player2Result.score;
+          const p2Context = buildAchievementContext(
+            p2Profile, highscores, currentExtendedStats,
+            {
               score: player2Result.score,
               accuracy: player2Result.accuracy,
               maxCombo: player2Result.maxCombo,
-              difficulty: gameState.difficulty,
-              gameMode: gameState.gameMode,
-              rating: player2Result.rating,
+              perfectNotes: p2PerfectNotes,
+              goldenNotes: player2Result.goldenNotesCount || 0,
+              notesHit: player2Result.notesHit,
+              notesMissed: player2Result.notesMissed,
+              isDuelWin: p2IsDuelWin,
+            },
+            gameState, achievementExtras,
+          );
+          const p2AchievementResult = checkAndUnlockAchievements(
+            p2Profile.achievements.map(a => a.id),
+            p2Context,
+          );
+          if (p2AchievementResult.newlyUnlocked.length > 0) {
+            const newAchievements: Achievement[] = p2AchievementResult.newlyUnlocked.map(a => ({
+              id: a.id,
+              name: a.name,
+              description: a.description,
+              icon: a.icon,
+              unlockedAt: Date.now(),
+            }));
+            updateProfile(p2Profile.id, {
+              achievements: [...p2Profile.achievements, ...newAchievements],
             });
-
-            // Update P2 profile XP
-            awardXPToProfile(
-              p2Profile, player2Result.score, player2Result.accuracy, player2Result.maxCombo,
-              player2Result.notesHit, player2Result.goldenNotesCount || 0, player2Result.rating,
-              undefined, updateProfile,
-            );
           }
         }
 
+        // Save P2 highscore for duel/competitive modes if P2 has a registered profile
+        if (player2Result && player2Result.playerId && isMultiplayerMode && p2Profile) {
+          addHighscore({
+            playerId: p2Profile.id,
+            playerName: p2Profile.name,
+            playerAvatar: p2Profile.avatar,
+            playerColor: p2Profile.color,
+            songId: song.id,
+            songTitle: song.title,
+            artist: song.artist,
+            score: player2Result.score,
+            accuracy: player2Result.accuracy,
+            maxCombo: player2Result.maxCombo,
+            difficulty: gameState.difficulty,
+            gameMode: gameState.gameMode,
+            rating: player2Result.rating,
+          });
+
+          // Update P2 profile XP
+          awardXPToProfile(
+            p2Profile, player2Result.score, player2Result.accuracy, player2Result.maxCombo,
+            player2Result.notesHit, player2Result.goldenNotesCount || 0, player2Result.rating,
+            undefined, updateProfile,
+          );
+
+          // Quest progress for P2 as well
+          try {
+            updateQuestProgress('perfectNotesTotal', estimatePerfectNotes(player2Result.notesHit, player2Result.rating), p2Profile.id);
+            updateQuestProgress('totalSongsCompleted', 1, p2Profile.id);
+            if (gameState.challengeMode) {
+              updateQuestProgress('challengeModesPlayed', 1, p2Profile.id);
+            }
+          } catch { /* non-critical */ }
+        }
+
         // UPDATE PLAYER PROGRESSION (XP, Level, Rank, Titles)
-        // Reuse currentExtendedStats from above — avoids redundant getExtendedStats() call
         const xpResult = updateStatsAfterGame(currentExtendedStats, {
           songId: song.id,
           songTitle: song.title,
@@ -208,53 +511,9 @@ export function usePostGameProcessing({
           gameState.challengeMode, updateProfile,
         );
 
-        // DAILY CHALLENGE SUBMISSION
-        // If this game was started from the daily challenge screen, submit the result
-        try {
-          const dailyFlag = getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
-          if (dailyFlag) {
-            const parsed = JSON.parse(dailyFlag);
-            if (parsed.active) {
-              // Clear the flag first to avoid double-submission
-              removeItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
-              // Submit the challenge result (async, fire-and-forget — it persists to localStorage internally)
-              import('@/lib/game/daily-challenge').then(({ submitChallengeResult, submitCoopChallengeResult, submitWeeklyChallengeResult }) => {
-                // Co-op daily challenge: requires ≥2 player results
-                if (parsed.gameMode === 'coop' && player2Result) {
-                  const p2Profile = profiles.find(p => p.id === player2Result.playerId);
-                  submitCoopChallengeResult(
-                    [
-                      { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
-                      { id: player2Result.playerId || 'p2', name: p2Profile?.name || 'P2', color: p2Profile?.color || '#4ECDC4' },
-                    ],
-                    [
-                      { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
-                      { score: player2Result.score, accuracy: player2Result.accuracy, combo: player2Result.maxCombo, perfectNotesCount: player2Result.perfectNotesCount },
-                    ],
-                  );
-                } else {
-                  submitChallengeResult(
-                    { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
-                    { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
-                  );
-                }
-
-                // Also submit to weekly challenge if the metric type matches
-                // The weekly challenge tracks best scores across the week
-                submitWeeklyChallengeResult(
-                  { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
-                  { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
-                  'score',
-                );
-              }).catch(() => {});
-            }
-          }
-        } catch {
-          // Ignore daily challenge submission errors — not critical
-        }
-
-        // Upload to global leaderboard if enabled and player allows it
-        if (onlineEnabled && (profile.privacy?.showOnLeaderboard ?? true)) {
+        // Upload to global leaderboard — only for ONLINE profiles that opted in
+        const isOnlineProfile = profile.storageMode !== 'local';
+        if (onlineEnabled && isOnlineProfile && (profile.privacy?.showOnLeaderboard ?? true)) {
           setUploadStatus('uploading');
           setIsVerified(undefined);
 

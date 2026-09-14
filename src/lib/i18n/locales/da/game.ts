@@ -430,6 +430,75 @@ achievements: {
     description: 'Færdiggør en sang i Blind-tilstand',
     rewardTitle: 'Blind mester',
   },
+  dailyStarter: {
+    name: 'Daglig begynder',
+    description: 'Gennemfør din første daglige udfordring',
+  },
+  dailyRegular: {
+    name: 'Daglig stammis',
+    description: 'Gennemfør 10 daglige udfordringer',
+  },
+  dailyDevoted: {
+    name: 'Daglig hengiven',
+    description: 'Gennemfør 50 daglige udfordringer',
+  },
+  streakWeek: {
+    name: 'Ild og flamme',
+    description: 'Oprethold en 7-dages daglig streak',
+  },
+  streakMonth: {
+    name: 'Ustoppelig',
+    description: 'Oprethold en 30-dages daglig streak',
+    rewardTitle: 'Ustoppelig',
+  },
+  weeklyWarrior: {
+    name: 'Ugekriger',
+    description: 'Gennemfør 5 ugentlige udfordringer',
+  },
+  precisionSinger: {
+    name: 'Præcisionssanger',
+    description: 'Få over 95% præcision',
+  },
+  goldenRush: {
+    name: 'Guldrush',
+    description: 'Ram 20 gyldne noder i én enkelt sang',
+  },
+  goldenCenturion: {
+    name: 'Gylden centurion',
+    description: 'Ram i alt 100 gyldne noder',
+  },
+  perfectFifty: {
+    name: 'Perfekte halvtreds',
+    description: 'Ram 50 perfekte noder i én enkelt sang',
+  },
+  lightningLips: {
+    name: 'Lynlæber',
+    description: 'Gennemfør en sang med 2x hastighed',
+  },
+  perfectHarmony: {
+    name: 'Perfekt harmoni',
+    description: 'Syng 10 duetter',
+  },
+  genreExplorer: {
+    name: 'Genreudforsker',
+    description: 'Syng sange fra 5 forskellige genrer',
+  },
+  disneyFan: {
+    name: 'Disney-fan',
+    description: 'Syng 10 Disney-sange',
+  },
+  nightOwl: {
+    name: 'Natugle',
+    description: 'Gennemfør en sang mellem midnat og kl. 4',
+  },
+  earlyBird: {
+    name: 'Morgenfugl',
+    description: 'Gennemfør en sang før kl. 8',
+  },
+  marathonSinger: {
+    name: 'Marathonsanger',
+    description: 'Spil 5 spil på én enkelt dag',
+  },
 },
 ranks: {
   beginner: {

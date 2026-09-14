@@ -170,6 +170,54 @@ mit eigenem Punkte-Maßstab werden ohne Proof eingereicht und als
 (`src/__tests__/leaderboard-anticheat.test.ts`) bricht den Build, falls
 Client- und Server-Formel auseinanderlaufen.
 
+### Daily-Challenge-Online-Leaderboard (neu)
+
+Die tägliche Herausforderung hat jetzt einen eigenen Online-Bereich.
+Datenbankseitig kommt die Tabelle `ks_daily_results` dazu:
+
+| Feld | Inhalt |
+|---|---|
+| `profile_uid` + `challenge_date` + `challenge_type` | Eindeutig pro Spieler, Tag und Challenge-Typ (Upsert: der bessere Wert gewinnt) |
+| `metric_value` | Der challenge-relevante Wert: Punkte / Genauigkeit % / Combo / perfekte Noten |
+| `xp_earned` | Lokal verdiente XP (informativ) |
+
+Zwei neue Endpunkte:
+
+- **`POST /daily`** (API-Key + Sync-Code): reicht ein Tagesergebnis ein.
+  Validierung: Datum darf nicht in der Zukunft und max. 7 Tage zurück liegen;
+  plausibilitätsgeprüfte Wertgrenzen pro Typ (Score ≤ 100.000, Accuracy ≤ 100,
+  Combo ≤ 5.000, Perfect Notes ≤ 5.000). Uploads für unsichtbare Profile
+  (`show_on_board=0`) werden abgelehnt. Team-Ergebnisse (Koop-Daily) reichen
+  den Durchschnitt beider Spieler ein.
+- **`GET /daily?date=YYYY-MM-DD&limit=100`** (öffentlich): Tages-Rangliste,
+  gruppiert und gerankt pro Challenge-Typ nach `metric_value` absteigend.
+
+In der App: Daily → Tab „Rangliste" → Umschalter **Lokal / Online**. Lokal
+funktioniert immer offline; Online lädt die Tagesliste vom Server und zeigt
+bei Nichterreichbarkeit eine klare Meldung mit Retry-Button. Die Einreichung
+läuft automatisch im Hintergrund nach jedem Daily-Spiel — allerdings **nur
+für Online-Profile** (siehe nächster Abschnitt).
+
+### Online-Spieler-Profile (optional, ohne Zwang)
+
+Jedes Profil entscheidet selbst, wo es lebt — wählbar **bei der Anlage** und
+jederzeit in den Profileinstellungen änderbar (`storageMode`):
+
+- **💾 Nur lokal:** Alle Daten (Scores, Fortschritt, Achievements, Dailys)
+  bleiben ausschließlich auf dem Gerät. Keine Registrierung auf dem Server,
+  keine Uploads, keine Sync-Möglichkeit. Auf der Profil-Karte als
+  „Lokal"-Badge sichtbar.
+- **🌐 Online-Profil:** Teilnahme am Online-Leaderboard, Daily-Online-Board,
+  geräteübergreifender Profil-Sync per Sync-Code. Die bestehenden
+  Datenschutz-Flags (`show_on_board`, `show_country`, `show_photo`)
+  feinsteuern die Sichtbarkeit weiterhin.
+
+Technisch: Der Client sendet Scores/Dailies nur, wenn
+`profile.storageMode !== 'local'`. Bestehende (Alt-)Profile ohne Feld gelten
+weiterhin als Online, damit kein bisheriges Verhalten bricht. Neue Profile
+werden standardmäßig als „Nur lokal" vorgeschlagen (Privatsphäre zuerst),
+lassen sich aber mit einem Klick auf Online stellen.
+
 ---
 
 ## 5. App-Build konfigurieren

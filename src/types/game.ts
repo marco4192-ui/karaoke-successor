@@ -154,6 +154,14 @@ export interface PlayerProfile {
     showPhoto: boolean;
     showCountry: boolean;
   };
+  /**
+   * Profile storage mode (optional online profiles, introduced in the
+   * profile renovation). 'online' = registered on the leaderboard server
+   * (scores, daily results, cross-device sync). 'local' = everything stays
+   * on this device only. Undefined = legacy profiles (treated as 'online'
+   * to preserve existing behaviour).
+   */
+  storageMode?: 'online' | 'local';
   // Profile sync
   syncCode?: string; // 8-character code for cross-device sync
   syncUid?: string; // server-side profile_uid this sync code belongs to (differs from local id)

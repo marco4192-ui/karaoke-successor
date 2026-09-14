@@ -23,6 +23,16 @@ profile: {
   noPhoto: '无照片',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: '档案存储方式',
+    local: '仅本地',
+    localDesc: '所有数据仅保留在本设备上 — 没有在线排行榜,也没有同步。',
+    online: '在线档案',
+    onlineDesc: '加入在线排行榜、跨设备同步并分享每日成绩。',
+    localShort: '本地',
+    onlineShort: '在线',
+    settingsDesc: '决定此档案是加入在线排行榜还是仅保存在本地。可随时更改。',
+  },
 },
 characterScreen: {
   title: '档案',
@@ -196,6 +206,74 @@ achievements: {
     name: '盲唱大师',
     description: '在盲唱 K 歌模式下完成一首歌',
   },
+  daily_starter: {
+    name: '每日新手',
+    description: '完成你的第一个每日挑战',
+  },
+  daily_regular: {
+    name: '每日常客',
+    description: '完成10个每日挑战',
+  },
+  daily_devoted: {
+    name: '每日狂热',
+    description: '完成50个每日挑战',
+  },
+  streak_week: {
+    name: '火力全开',
+    description: '保持连续7天的每日挑战记录',
+  },
+  streak_month: {
+    name: '势不可挡',
+    description: '保持连续30天的每日挑战记录',
+  },
+  weekly_warrior: {
+    name: '每周战士',
+    description: '完成5个每周挑战',
+  },
+  accuracy_95: {
+    name: '精准歌手',
+    description: '获得超过95%的准确率',
+  },
+  golden_rush: {
+    name: '黄金热潮',
+    description: '在一首歌中命中20个黄金音符',
+  },
+  golden_hundred: {
+    name: '黄金百夫长',
+    description: '累计命中100个黄金音符',
+  },
+  perfect_fifty: {
+    name: '完美五十',
+    description: '在一首歌中命中50个完美音符',
+  },
+  lightning_lips: {
+    name: '闪电之唇',
+    description: '以2倍速完成一首歌',
+  },
+  duet_harmony: {
+    name: '完美和声',
+    description: '演唱10首对唱歌曲',
+  },
+  genre_explorer: {
+    name: '流派探索者',
+    description: '演唱5种不同流派的歌曲',
+  },
+  disney_fan: {
+    name: '迪士尼粉丝',
+    description: '演唱10首迪士尼歌曲',
+  },
+  night_owl: {
+    name: '夜猫子',
+    description: '在午夜至凌晨4点之间完成一首歌',
+  },
+  early_bird: {
+    name: '早起的鸟儿',
+    description: '在早上8点前完成一首歌',
+  },
+  marathon_singer: {
+    name: '马拉松歌手',
+    description: '在一天内游玩5局游戏',
+  },
 },
 achievementsScreen: {
   title: '🏆 成就',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} 经验值',
   locked: '未解锁',
+  viewPlayer: '玩家成就',
+  viewingOther: '你正在查看 {n} 的成就。每位玩家都会解锁自己的成就。',
+  noMatches: '没有符合这些筛选条件的成就',
 },
 badgeNames: {
   'first-challenge': '第一步',

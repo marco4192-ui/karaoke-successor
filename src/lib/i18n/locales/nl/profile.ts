@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Geen foto',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Profielopslag',
+    local: 'Alleen lokaal',
+    localDesc: 'Alle gegevens blijven op dit apparaat — geen online ranglijst, geen synchronisatie.',
+    online: 'Onlineprofiel',
+    onlineDesc: 'Doe mee aan de online ranglijst, synchroniseer tussen apparaten en deel dagelijkse resultaten.',
+    localShort: 'Lokaal',
+    onlineShort: 'Online',
+    settingsDesc: 'Bepaal of dit profiel meedoet aan de online ranglijst of alleen lokaal blijft. Altijd aan te passen.',
+  },
 },
 characterScreen: {
   title: 'Profiel',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Blind Master',
     description: 'Voltooi een nummer in Blind Karaoke-modus',
   },
+  daily_starter: {
+    name: 'Dagelijkse Starter',
+    description: 'Voltooi je eerste dagelijkse uitdaging',
+  },
+  daily_regular: {
+    name: 'Dagelijkse Stamgast',
+    description: 'Voltooi 10 dagelijkse uitdagingen',
+  },
+  daily_devoted: {
+    name: 'Dagelijkse Toegewijde',
+    description: 'Voltooi 50 dagelijkse uitdagingen',
+  },
+  streak_week: {
+    name: 'In Vuur en Vlam',
+    description: 'Houd een dagelijkse reeks van 7 dagen aan',
+  },
+  streak_month: {
+    name: 'Onstuitbaar',
+    description: 'Houd een dagelijkse reeks van 30 dagen aan',
+  },
+  weekly_warrior: {
+    name: 'Weekkrijger',
+    description: 'Voltooi 5 wekelijkse uitdagingen',
+  },
+  accuracy_95: {
+    name: 'Precisiezanger',
+    description: 'Behaal meer dan 95% nauwkeurigheid',
+  },
+  golden_rush: {
+    name: 'Goudkoorts',
+    description: 'Raak 20 gouden noten in één nummer',
+  },
+  golden_hundred: {
+    name: 'Gouden Centurio',
+    description: 'Raak in totaal 100 gouden noten',
+  },
+  perfect_fifty: {
+    name: 'Perfecte Vijftig',
+    description: 'Raak 50 perfecte noten in één nummer',
+  },
+  lightning_lips: {
+    name: 'Bliksemlippen',
+    description: 'Voltooi een nummer op 2x snelheid',
+  },
+  duet_harmony: {
+    name: 'Perfecte Harmonie',
+    description: 'Zing 10 duetten',
+  },
+  genre_explorer: {
+    name: 'Genre-ontdekker',
+    description: 'Zing nummers van 5 verschillende genres',
+  },
+  disney_fan: {
+    name: 'Disney-fan',
+    description: 'Zing 10 Disney-nummers',
+  },
+  night_owl: {
+    name: 'Nachtuil',
+    description: 'Voltooi een nummer tussen middernacht en 4 uur in de nacht',
+  },
+  early_bird: {
+    name: 'Vroege Vogel',
+    description: 'Voltooi een nummer vóór 8 uur in de ochtend',
+  },
+  marathon_singer: {
+    name: 'Marathonzanger',
+    description: 'Speel 5 spellen op één dag',
+  },
 },
 achievementsScreen: {
   title: '🏆 Prestaties',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Vergrendeld',
+  viewPlayer: 'Prestaties van',
+  viewingOther: 'Je bekijkt de prestaties van {n}. Elke speler ontgrendelt zijn eigen prestaties.',
+  noMatches: 'Geen prestaties voldoen aan deze filters',
 },
 badgeNames: {
   'first-challenge': 'Eerste Stappen',

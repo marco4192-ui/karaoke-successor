@@ -430,6 +430,75 @@ achievements: {
     description: 'Beende ein Lied im Blind-Karaoke-Modus',
     rewardTitle: 'Blind-Meister',
   },
+  dailyStarter: {
+    name: 'Täglich-Einsteiger',
+    description: 'Schließe deine erste tägliche Herausforderung ab',
+  },
+  dailyRegular: {
+    name: 'Täglich-Dauerbrenner',
+    description: 'Schließe 10 tägliche Herausforderungen ab',
+  },
+  dailyDevoted: {
+    name: 'Täglich-Hingabe',
+    description: 'Schließe 50 tägliche Herausforderungen ab',
+  },
+  streakWeek: {
+    name: 'In Brand',
+    description: 'Halte eine 7-tägige Daily-Serie',
+  },
+  streakMonth: {
+    name: 'Unaufhaltsam',
+    description: 'Halte eine 30-tägige Daily-Serie',
+    rewardTitle: 'Unaufhaltsam',
+  },
+  weeklyWarrior: {
+    name: 'Wochen-Krieger',
+    description: 'Schließe 5 wöchentliche Herausforderungen ab',
+  },
+  precisionSinger: {
+    name: 'Präzisionssänger',
+    description: 'Erreiche über 95% Genauigkeit',
+  },
+  goldenRush: {
+    name: 'Goldrausch',
+    description: 'Triff 20 goldene Noten in einem einzigen Lied',
+  },
+  goldenCenturion: {
+    name: 'Goldener Centurio',
+    description: 'Triff insgesamt 100 goldene Noten',
+  },
+  perfectFifty: {
+    name: 'Perfekte Fünfzig',
+    description: 'Triff 50 perfekte Noten in einem einzigen Lied',
+  },
+  lightningLips: {
+    name: 'Blitzlippen',
+    description: 'Beende ein Lied mit 2-facher Geschwindigkeit',
+  },
+  perfectHarmony: {
+    name: 'Perfekte Harmonie',
+    description: 'Singe 10 Duette',
+  },
+  genreExplorer: {
+    name: 'Genre-Entdecker',
+    description: 'Singe Lieder aus 5 verschiedenen Genres',
+  },
+  disneyFan: {
+    name: 'Disney-Fan',
+    description: 'Singe 10 Disney-Lieder',
+  },
+  nightOwl: {
+    name: 'Nachteule',
+    description: 'Beende ein Lied zwischen Mitternacht und 4 Uhr morgens',
+  },
+  earlyBird: {
+    name: 'Frühaufsteher',
+    description: 'Beende ein Lied vor 8 Uhr morgens',
+  },
+  marathonSinger: {
+    name: 'Marathon-Sänger',
+    description: 'Spiele 5 Spiele an einem einzigen Tag',
+  },
 },
 ranks: {
   beginner: {

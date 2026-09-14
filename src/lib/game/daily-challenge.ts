@@ -10,7 +10,7 @@
 
 import { getRankForXP } from './player-progression';
 import { PERFECT_ACCURACY } from './progression-levels';
-import { StorageKeys, getItem, getJson, setJson } from '@/lib/storage';
+import { StorageKeys, getItem, getJson, setJson, setItem } from '@/lib/storage';
 import type { Language } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/translations';
 
@@ -49,6 +49,8 @@ interface PlayerDailyStats {
   badges: DailyBadge[];
   weeklyProgress: number[]; // 7 days of completion
   lastWeekStart: string | null; // ISO date of Monday of current week, for weekly reset
+  /** Cumulative number of weekly challenges completed (per player, for achievements). */
+  weeklyCompletedTotal?: number;
 }
 
 interface DailyBadge {
@@ -341,6 +343,8 @@ export function getLocalizedStreakMilestone(streakDays: number, language?: Langu
 const DAILY_CHALLENGE_KEY = StorageKeys.DAILY_CHALLENGE;
 const DAILY_LEADERBOARD_KEY = StorageKeys.DAILY_LEADERBOARD_PREFIX;
 const PLAYER_DAILY_STATS_KEY = StorageKeys.PLAYER_DAILY_STATS;
+/** Flag: legacy shared daily stats have been migrated to a profile. */
+const PLAYER_DAILY_STATS_MIGRATED_KEY = 'karaoke_player_daily_stats_migrated';
 
 /** (#1) localStorage key for per-player best results. */
 const PLAYER_BEST_RESULTS_KEY = 'karaoke_daily_best_results';
@@ -512,14 +516,48 @@ const DEFAULT_PLAYER_DAILY_STATS: PlayerDailyStats = {
   badges: [],
   weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
   lastWeekStart: null,
+  weeklyCompletedTotal: 0,
 };
 
-export function getPlayerDailyStats(): PlayerDailyStats {
-  return getJson<PlayerDailyStats>(PLAYER_DAILY_STATS_KEY, DEFAULT_PLAYER_DAILY_STATS);
+/** Storage key for a player's daily stats (per-profile since the profile renovation). */
+function playerDailyStatsKey(playerId?: string): string {
+  return playerId ? `${PLAYER_DAILY_STATS_KEY}_${playerId}` : PLAYER_DAILY_STATS_KEY;
 }
 
-function savePlayerDailyStats(stats: PlayerDailyStats): void {
-  setJson(PLAYER_DAILY_STATS_KEY, stats);
+/** Storage key for a player's quest stats/progress (per-profile). */
+function questStatsKey(playerId?: string): string {
+  return playerId ? `${QUEST_STATS_KEY}_${playerId}` : QUEST_STATS_KEY;
+}
+
+function questProgressKey(playerId?: string): string {
+  return playerId ? `${QUEST_PROGRESS_KEY}_${playerId}` : QUEST_PROGRESS_KEY;
+}
+
+export function getPlayerDailyStats(playerId?: string): PlayerDailyStats {
+  const key = playerDailyStatsKey(playerId);
+  const existing = getJson<PlayerDailyStats | null>(key, null);
+  if (existing) return existing;
+
+  if (playerId) {
+    // Legacy migration: the first profile to read after the per-player update
+    // inherits the old shared stats (streaks/badges earned before this change).
+    // Everyone else starts with a clean slate.
+    if (!getItem(PLAYER_DAILY_STATS_MIGRATED_KEY)) {
+      const legacy = getJson<PlayerDailyStats | null>(PLAYER_DAILY_STATS_KEY, null);
+      setItem(PLAYER_DAILY_STATS_MIGRATED_KEY, '1');
+      if (legacy) {
+        setJson(key, legacy);
+        return legacy;
+      }
+    }
+    return { ...DEFAULT_PLAYER_DAILY_STATS, badges: [] };
+  }
+
+  return getJson<PlayerDailyStats>(key, DEFAULT_PLAYER_DAILY_STATS);
+}
+
+function savePlayerDailyStats(stats: PlayerDailyStats, playerId?: string): void {
+  setJson(playerDailyStatsKey(playerId), stats);
 }
 
 // ---------------------------------------------------------------------------
@@ -585,7 +623,9 @@ export function submitChallengeResult(
 } {
   // Always load with base target (no level scaling) for leaderboard consistency
   const challenge = getDailyChallenge();
-  const stats = getPlayerDailyStats();
+  // Per-player stats: streaks, XP, badges and completions are attributed to
+  // the profile that actually played the challenge.
+  const stats = getPlayerDailyStats(player.id);
   const today = todayISO();
   let xpEarned: number = XP_REWARDS.CHALLENGE_COMPLETE;
   const newBadges: DailyBadge[] = [];
@@ -737,7 +777,7 @@ export function submitChallengeResult(
     stats.totalXP += xpEarned;
 
     // (#5) Update quest stats for daily challenge completion
-    updateQuestProgress('dailyCompleted', 1);
+    updateQuestProgress('dailyCompleted', 1, player.id);
 
   } else {
     // Same-day replay — no XP/streak, but still check rank-based badges
@@ -766,14 +806,14 @@ export function submitChallengeResult(
 
   // Save data
   saveDailyChallenge(challenge);
-  savePlayerDailyStats(stats);
+  savePlayerDailyStats(stats, player.id);
 
   // (#1) Compute target check before saving completion flag
   const currentMetric = resultMetric();
   const targetMet = currentMetric >= challenge.target;
 
-  // Sync completion flag — only mark completed if the target was actually met
-  // (isChallengeCompletedToday reads from DAILY_CHALLENGE_KEY, not the leaderboard)
+  // Legacy shared completion flag — kept in sync for backward compatibility.
+  // Per-player completion is derived from the best result's targetMet flag.
   setJson(DAILY_CHALLENGE_KEY, {
     date: today,
     completed: targetMet,
@@ -831,7 +871,6 @@ export function submitCoopChallengeResult(
   }
 
   const challenge = getDailyChallenge();
-  const stats = getPlayerDailyStats();
   const today = todayISO();
   const newBadges: DailyBadge[] = [];
 
@@ -899,53 +938,62 @@ export function submitCoopChallengeResult(
     entry.rank = index + 1;
   });
 
-  // Check if the best rank among co-op players earns badges
+  // Check if the best rank among co-op players earns badges — XP, streak and
+  // badges are applied to EACH co-op player's own per-player stats.
   const bestRank = Math.min(
     ...players.map(p => challenge.entries.find(e => e.playerId === p.id)?.rank ?? Infinity),
   );
 
-  if (bestRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
-    const badge: DailyBadge = { ...DAILY_BADGES['champion'], unlockedAt: Date.now() };
-    stats.badges.push(badge);
-    newBadges.push(badge);
-  }
-  if (bestRank <= 3 && !stats.badges.some(b => b.id === 'top-3')) {
-    const badge: DailyBadge = { ...DAILY_BADGES['top-3'], unlockedAt: Date.now() };
-    stats.badges.push(badge);
-    newBadges.push(badge);
-  }
-
   // Award XP if average meets the challenge target
   let xpEarned = 0;
   const targetMet = avgMetric() >= challenge.target;
-  if (targetMet) {
-    xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
 
-    // Streak calculation (shared helper)
-    const streak = advanceStreak(stats, xpEarned);
-    xpEarned = Math.max(0, xpEarned + streak.xpAdjustment + streak.streakBonusXP);
-    stats.totalXP += xpEarned;
-    stats.lastCompletedDate = today;
-    stats.totalCompleted++;
+  for (const p of players) {
+    const stats = getPlayerDailyStats(p.id);
 
-    // Update weekly progress — reset at week boundary
-    const coopNow = new Date();
-    const coopWeekStartISO = getMondayISO(coopNow);
-
-    if (stats.lastWeekStart !== coopWeekStartISO) {
-      stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
-      stats.lastWeekStart = coopWeekStartISO;
+    if (bestRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
+      const badge: DailyBadge = { ...DAILY_BADGES['champion'], unlockedAt: Date.now() };
+      stats.badges.push(badge);
+      if (p === players[0]) newBadges.push(badge);
     }
-    // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
-    const coopWeekIndex = getMondayIndex(coopNow);
-    stats.weeklyProgress[coopWeekIndex] = 1;
+    if (bestRank <= 3 && !stats.badges.some(b => b.id === 'top-3')) {
+      const badge: DailyBadge = { ...DAILY_BADGES['top-3'], unlockedAt: Date.now() };
+      stats.badges.push(badge);
+      if (p === players[0]) newBadges.push(badge);
+    }
 
-    // (#5) Update quest stats for daily challenge completion
-    updateQuestProgress('dailyCompleted', 1);
+    if (targetMet) {
+      const playerXP = XP_REWARDS.CHALLENGE_COMPLETE;
+      const streak = advanceStreak(stats, playerXP);
+      const earned = Math.max(0, playerXP + streak.xpAdjustment + streak.streakBonusXP);
+      stats.totalXP += earned;
+      stats.lastCompletedDate = today;
+      stats.totalCompleted++;
+
+      // Update weekly progress — reset at week boundary
+      const coopNow = new Date();
+      const coopWeekStartISO = getMondayISO(coopNow);
+
+      if (stats.lastWeekStart !== coopWeekStartISO) {
+        stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
+        stats.lastWeekStart = coopWeekStartISO;
+      }
+      // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
+      const coopWeekIndex = getMondayIndex(coopNow);
+      stats.weeklyProgress[coopWeekIndex] = 1;
+
+      // (#5) Update quest stats for daily challenge completion
+      updateQuestProgress('dailyCompleted', 1, p.id);
+
+      if (p === players[0]) xpEarned = earned;
+    }
+
+    savePlayerDailyStats(stats, p.id);
   }
 
+  if (targetMet && xpEarned === 0) xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
+
   saveDailyChallenge(challenge);
-  savePlayerDailyStats(stats);
 
   // (#1) Save best results for each co-op player — only if better than existing best
   const coopMetric = avgMetric();
@@ -969,7 +1017,7 @@ export function submitCoopChallengeResult(
     setJson(DAILY_CHALLENGE_KEY, {
       date: today,
       completed: true,
-      streak: stats.currentStreak,
+      streak: getPlayerDailyStats(players[0].id).currentStreak,
     });
   }
 
@@ -1119,12 +1167,13 @@ export function submitWeeklyChallengeResult(
   // Award XP if target is met for the first time
   if (!alreadyQualified && metric >= challenge.target) {
     xpEarned = WEEKLY_XP_REWARD;
-    const stats = getPlayerDailyStats();
+    const stats = getPlayerDailyStats(player.id);
     stats.totalXP += xpEarned;
-    savePlayerDailyStats(stats);
+    stats.weeklyCompletedTotal = (stats.weeklyCompletedTotal ?? 0) + 1;
+    savePlayerDailyStats(stats, player.id);
 
     // (#5) Update quest stats for weekly challenge completion
-    updateQuestProgress('weeklyCompleted', 1);
+    updateQuestProgress('weeklyCompleted', 1, player.id);
   }
 
   saveWeeklyChallenge(challenge);
@@ -1190,12 +1239,16 @@ const DEFAULT_QUEST_STATS: StoredQuestStats = {
  * - `dailyCompleted` resets at the start of each new day.
  * - `weeklyCompleted` resets at the start of each new week (Monday).
  */
-export function getPlayerQuestStats(): PlayerQuestStats {
+export function getPlayerQuestStats(playerId?: string): PlayerQuestStats {
   const today = todayISO();
   const weekStart = getMondayISO(new Date());
 
-  const stored = getJson<StoredQuestStats>(QUEST_STATS_KEY, DEFAULT_QUEST_STATS);
-  const stats = { ...stored };
+  let stored = getJson<StoredQuestStats | null>(questStatsKey(playerId), null);
+  if (!stored && playerId) {
+    // Read-only fallback to the legacy shared quest stats (pre per-player tracking)
+    stored = getJson<StoredQuestStats | null>(QUEST_STATS_KEY, null);
+  }
+  const stats = { ...DEFAULT_QUEST_STATS, ...(stored ?? {}) } as StoredQuestStats;
 
   let dirty = false;
 
@@ -1214,7 +1267,7 @@ export function getPlayerQuestStats(): PlayerQuestStats {
   }
 
   // Only persist when a reset actually occurred
-  if (dirty) setJson(QUEST_STATS_KEY, stats);
+  if (dirty) setJson(questStatsKey(playerId), stats);
 
   // Return clean PlayerQuestStats (strip internal fields)
   const { _lastDailyReset: _, _lastWeeklyReset: __, ...clean } = stats;
@@ -1222,8 +1275,12 @@ export function getPlayerQuestStats(): PlayerQuestStats {
 }
 
 /** Get progress for a specific quest. */
-export function getQuestProgress(questId: string): QuestProgress {
-  const all = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+export function getQuestProgress(questId: string, playerId?: string): QuestProgress {
+  let all = getJson<Record<string, QuestProgress>>(questProgressKey(playerId), {});
+  if (playerId && Object.keys(all).length === 0) {
+    // Read-only fallback to the legacy shared quest progress
+    all = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  }
   return all[questId] ?? { questId, currentProgress: 0, completed: false };
 }
 
@@ -1237,8 +1294,8 @@ export function getQuestProgress(questId: string): QuestProgress {
  * - `'perfectNotesTotal'` — after hitting a perfect note
  * - `'totalSongsCompleted'` — after completing any song
  */
-export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: number): void {
-  const questStats = getPlayerQuestStats();
+export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: number, playerId?: string): void {
+  const questStats = getPlayerQuestStats(playerId);
   const newValue = questStats[checkField] + amount;
 
   // Use questStats directly — avoid a redundant second read that could race with a daily/weekly reset
@@ -1246,10 +1303,13 @@ export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: 
   const weekStart = getMondayISO(new Date());
   const stored: StoredQuestStats = { ...DEFAULT_QUEST_STATS, ...questStats, _lastDailyReset: today, _lastWeeklyReset: weekStart };
   stored[checkField] = newValue;
-  setJson(QUEST_STATS_KEY, stored);
+  setJson(questStatsKey(playerId), stored);
 
   // Update progress for any quests tracking this field
-  const allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  let allProgress = getJson<Record<string, QuestProgress>>(questProgressKey(playerId), {});
+  if (playerId && Object.keys(allProgress).length === 0) {
+    allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  }
   let progressDirty = false;
 
   for (const quest of DAILY_QUESTS) {
@@ -1267,30 +1327,33 @@ export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: 
   }
 
   // Only write quest progress if something actually changed
-  if (progressDirty) setJson(QUEST_PROGRESS_KEY, allProgress);
+  if (progressDirty) setJson(questProgressKey(playerId), allProgress);
 }
 
 /**
  * Claim the reward for a completed quest.
  * Returns `{ xp, badge? }` if successfully claimed, or throws if not eligible.
  */
-export function claimQuestReward(questId: string): { xp: number; badge?: DailyBadge } {
+export function claimQuestReward(questId: string, playerId?: string): { xp: number; badge?: DailyBadge } {
   const quest = DAILY_QUESTS.find(q => q.id === questId);
   if (!quest) throw new Error(`Unknown quest: ${questId}`);
 
-  const progress = getQuestProgress(questId);
+  const progress = getQuestProgress(questId, playerId);
   if (!progress.completed) throw new Error('Quest not yet completed');
   if (progress.claimedAt) throw new Error('Reward already claimed');
 
   // Mark as claimed
-  const allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  let allProgress = getJson<Record<string, QuestProgress>>(questProgressKey(playerId), {});
+  if (playerId && Object.keys(allProgress).length === 0) {
+    allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  }
   allProgress[questId] = { ...progress, claimedAt: Date.now() };
-  setJson(QUEST_PROGRESS_KEY, allProgress);
+  setJson(questProgressKey(playerId), allProgress);
 
   // Award XP to player stats
-  const stats = getPlayerDailyStats();
+  const stats = getPlayerDailyStats(playerId);
   stats.totalXP += quest.reward.xp;
-  savePlayerDailyStats(stats);
+  savePlayerDailyStats(stats, playerId);
 
   // Optionally create a badge
   let badge: DailyBadge | undefined;
@@ -1307,7 +1370,7 @@ export function claimQuestReward(questId: string): { xp: number; badge?: DailyBa
 
     if (!stats.badges.some(b => b.id === badge!.id)) {
       stats.badges.push(badge);
-      savePlayerDailyStats(stats);
+      savePlayerDailyStats(stats, playerId);
     }
   }
 
@@ -1318,11 +1381,11 @@ export function claimQuestReward(questId: string): { xp: number; badge?: DailyBa
  * Returns all active (defined) quests with their current progress.
  * Useful for rendering a quest list in the UI.
  */
-export function getActiveQuests(): Array<QuestDefinition & QuestProgress> {
-  const questStats = getPlayerQuestStats();
+export function getActiveQuests(playerId?: string): Array<QuestDefinition & QuestProgress> {
+  const questStats = getPlayerQuestStats(playerId);
 
   return DAILY_QUESTS.map(quest => {
-    const progress = getQuestProgress(quest.id);
+    const progress = getQuestProgress(quest.id, playerId);
     // Use the live stat value for currentProgress (not the snapshotted one)
     const liveValue = questStats[quest.checkProgress as keyof PlayerQuestStats];
     const currentProgress = Math.min(liveValue, quest.target);
@@ -1342,8 +1405,14 @@ export function getActiveQuests(): Array<QuestDefinition & QuestProgress> {
 // Utility functions
 // ---------------------------------------------------------------------------
 
-/** Check if the daily challenge has been completed today. */
-export function isChallengeCompletedToday(): boolean {
+/** Check if the daily challenge has been completed today (per player when a playerId is given). */
+export function isChallengeCompletedToday(playerId?: string): boolean {
+  if (playerId) {
+    // Per-player completion is derived from today's best result
+    const best = getPlayerBestResult(playerId);
+    if (best) return best.targetMet;
+  }
+  // Legacy shared flag (also the fallback for pre-per-player data)
   const stored = getItem(DAILY_CHALLENGE_KEY);
   if (stored) {
     try {

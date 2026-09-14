@@ -430,6 +430,75 @@ achievements: {
     description: '블라인드 노래방 모드로 곡 완료',
     rewardTitle: '블라인드 마스터',
   },
+  dailyStarter: {
+    name: '데일리 입문자',
+    description: '첫 데일리 챌린지 완주하기',
+  },
+  dailyRegular: {
+    name: '데일리 단골',
+    description: '데일리 챌린지 10회 완주하기',
+  },
+  dailyDevoted: {
+    name: '데일리 헌신자',
+    description: '데일리 챌린지 50회 완주하기',
+  },
+  streakWeek: {
+    name: '불타는 열정',
+    description: '7일 연속 데일리 기록 유지하기',
+  },
+  streakMonth: {
+    name: '멈출 수 없음',
+    description: '30일 연속 데일리 기록 유지하기',
+    rewardTitle: '멈출 수 없음',
+  },
+  weeklyWarrior: {
+    name: '위클리 워리어',
+    description: '주간 챌린지 5회 완주하기',
+  },
+  precisionSinger: {
+    name: '정밀 가수',
+    description: '정확도 95% 초과 달성하기',
+  },
+  goldenRush: {
+    name: '골든 러시',
+    description: '한 곡에서 골든 노트 20개 히트하기',
+  },
+  goldenCenturion: {
+    name: '골든 센츄리온',
+    description: '골든 노트 총 100개 히트하기',
+  },
+  perfectFifty: {
+    name: '퍼펙트 50',
+    description: '한 곡에서 퍼펙트 노트 50개 히트하기',
+  },
+  lightningLips: {
+    name: '번개 입술',
+    description: '2배속으로 곡 완주하기',
+  },
+  perfectHarmony: {
+    name: '완벽한 하모니',
+    description: '듀엣 10곡 부르기',
+  },
+  genreExplorer: {
+    name: '장르 탐험가',
+    description: '5가지 다른 장르의 곡 부르기',
+  },
+  disneyFan: {
+    name: '디즈니 팬',
+    description: '디즈니 곡 10곡 부르기',
+  },
+  nightOwl: {
+    name: '밤샘의 달인',
+    description: '자정부터 새벽 4시 사이에 곡 완주하기',
+  },
+  earlyBird: {
+    name: '아침형 인간',
+    description: '오전 8시 이전에 곡 완주하기',
+  },
+  marathonSinger: {
+    name: '마라톤 가수',
+    description: '하루에 게임 5판 플레이하기',
+  },
 },
 ranks: {
   beginner: {

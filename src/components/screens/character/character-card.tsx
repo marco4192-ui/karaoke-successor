@@ -74,6 +74,18 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
           {rank?.icon} {t('playerProgression.lv').replace('{n}', String(level?.level || 1))}
         </div>
 
+        {/* Storage mode badge: online profile vs. local-only profile */}
+        <div
+          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full mb-1 ${
+            (profile.storageMode ?? 'online') === 'local'
+              ? 'bg-cyan-500/20 text-cyan-300'
+              : 'bg-purple-500/20 text-purple-300'
+          }`}
+          title={(profile.storageMode ?? 'online') === 'local' ? t('profile.storageMode.local') : t('profile.storageMode.online')}
+        >
+          {(profile.storageMode ?? 'online') === 'local' ? `💾 ${t('profile.storageMode.localShort')}` : `🌐 ${t('profile.storageMode.onlineShort')}`}
+        </div>
+
         {/* Connection marker — below level display instead of overlaying avatar */}
         {isClaimedByCompanion && (
           <div className="text-[10px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1" title={claimedByDevice ? t('characterCard.connectedWith').replace('{n}', claimedByDevice) : t('characterCard.connected')}>

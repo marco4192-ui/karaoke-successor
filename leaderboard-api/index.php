@@ -19,6 +19,8 @@
  *   GET    /scores/batch?hashes=..    Batch-fetch leaderboards for multiple song hashes
  *   GET    /leaderboard/song/{hash}   Per-song leaderboard (Top N)
  *   GET    /leaderboard/global        Global player ranking
+ *   POST   /daily                     Submit daily-challenge result (requires profile sync_code)
+ *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type)
  */
 
 require_once __DIR__ . '/config.php';
@@ -33,13 +35,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 // Table names (with prefix)
 $T_PROFILES = tbl('profiles');
 $T_SCORES   = tbl('scores');
+$T_DAILY    = tbl('daily_results');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.0.0', 'copyright_safe' => true, 'anti_cheat' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.1.0', 'copyright_safe' => true, 'anti_cheat' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
+        'daily'       => routeDaily($parts, $method, $T_PROFILES, $T_DAILY),
         default       => err('Not found', 404),
     };
 } catch (PDOException $e) {
@@ -482,6 +486,101 @@ function songBoard(string $hash, string $TP, string $TS): void {
 }
 
 // ============================================================
+// DAILY CHALLENGE
+// ============================================================
+function routeDaily(array $parts, string $method, string $TP, string $TD): void {
+    if ($method === 'POST' && !isset($parts[1])) { submitDaily($TP, $TD); return; }
+    if ($method === 'GET'  && !isset($parts[1])) { dailyBoard($TP, $TD); return; }
+    err('Not found', 404);
+}
+
+function submitDaily(string $TP, string $TD): void {
+    $d = body();
+    requireFields($d, ['profile_uid','challenge_date','challenge_type','metric_value']);
+    $uid  = clean((string)$d['profile_uid']);
+    $type = clean((string)$d['challenge_type']);
+    $date = clean((string)$d['challenge_date']);
+
+    if (!isValidUUID($uid)) err('Invalid profile_uid');
+    if (!in_array($type, ['score','accuracy','combo','perfect_notes'])) {
+        err('challenge_type: score|accuracy|combo|perfect_notes');
+    }
+    if (!isValidDateString($date)) err('Invalid challenge_date (YYYY-MM-DD)');
+
+    // The challenge day must be current: no future dates, at most 7 days
+    // back (allows late submission after offline play, blocks history
+    // stuffing). ISO dates compare correctly as strings.
+    $today    = date('Y-m-d');
+    $earliest = date('Y-m-d', strtotime('-7 days'));
+    if ($date > $today)    err('challenge_date is in the future');
+    if ($date < $earliest) err('challenge_date too old (max 7 days back)');
+
+    if (!is_numeric($d['metric_value'])) err('metric_value must be a number');
+    $mv = round((float)$d['metric_value'], 2);
+    $maxByType = ['score' => 100000, 'accuracy' => 100, 'combo' => 5000, 'perfect_notes' => 5000];
+    if ($mv < 0 || $mv > $maxByType[$type]) err("metric_value out of range for challenge_type $type");
+
+    $xp = max(0, min(100000, (int)($d['xp_earned'] ?? 0)));
+
+    // Profile must exist, be owned by the caller (sync_code), and opted in
+    requireOwnership($uid, $d, $TP);
+    $p = db()->prepare("SELECT `show_on_board` FROM `$TP` WHERE `profile_uid` = ?");
+    $p->execute([$uid]);
+    if (!(int)$p->fetchColumn()) err('Profile opted out');
+
+    // UPSERT: same day + type keeps the better metric_value
+    db()->prepare("INSERT INTO `$TD`
+            (`profile_uid`,`challenge_date`,`challenge_type`,`metric_value`,`xp_earned`)
+           VALUES (?,?,?,?,?)
+           ON DUPLICATE KEY UPDATE
+               `metric_value` = IF(VALUES(`metric_value`) > `metric_value`, VALUES(`metric_value`), `metric_value`),
+               `xp_earned`    = IF(VALUES(`metric_value`) > `metric_value`, VALUES(`xp_earned`), `xp_earned`)")
+        ->execute([$uid, $date, $type, $mv, $xp]);
+
+    json(['ok' => true]);
+}
+
+function dailyBoard(string $TP, string $TD): void {
+    $date = clean((string)($_GET['date'] ?? date('Y-m-d')));
+    if (!isValidDateString($date)) err('Invalid date (YYYY-MM-DD)');
+    $limit = max(1, min((int)($_GET['limit'] ?? 100), 100));
+
+    // One day of results is small (the unique key caps it at 4 rows per
+    // profile); the SQL bound is only a hard safety cap — the per-type
+    // Top-N cut and rank computation happen in PHP. ENUM ordering follows
+    // the declaration order (score, accuracy, combo, perfect_notes).
+    $sql = "SELECT
+        r.`profile_uid`, r.`challenge_type`, r.`metric_value`, r.`created_at`,
+        p.`display_name`, p.`color`,
+        IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
+        FROM `$TD` r JOIN `$TP` p ON r.`profile_uid` = p.`profile_uid`
+        WHERE r.`challenge_date` = ? AND p.`show_on_board` = 1
+        ORDER BY r.`challenge_type` ASC, r.`metric_value` DESC, r.`created_at` ASC
+        LIMIT " . (MAX_LEADERBOARD_ENTRIES * 8);
+    $stmt = db()->prepare($sql);
+    $stmt->execute([$date]);
+    $rows = $stmt->fetchAll();
+
+    $board = []; $seen = [];
+    foreach ($rows as $row) {
+        $t = $row['challenge_type'];
+        $seen[$t] = ($seen[$t] ?? 0) + 1;
+        if ($seen[$t] > $limit) continue; // per-type Top-N
+        $board[] = [
+            'rank'           => $seen[$t],
+            'profile_uid'    => $row['profile_uid'],
+            'display_name'   => $row['display_name'],
+            'color'          => $row['color'],
+            'country_code'   => $row['country_code'],
+            'challenge_type' => $t,
+            'metric_value'   => (float)$row['metric_value'],
+            'created_at'     => str_replace(' ', 'T', (string)$row['created_at']),
+        ];
+    }
+    json(['date' => $date, 'leaderboard' => $board]);
+}
+
+// ============================================================
 // HELPERS
 // ============================================================
 function songRank(string $TS, string $TP, string $hash, string $gt, int $score): int {
@@ -491,4 +590,10 @@ function songRank(string $TS, string $TP, string $hash, string $gt, int $score):
     $stmt = db()->prepare($sql);
     $stmt->execute([$hash, $gt, $score]);
     return (int)$stmt->fetchColumn();
+}
+
+/** Validate that a YYYY-MM-DD string is a real calendar date. */
+function isValidDateString(string $s): bool {
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $s, $m)) return false;
+    return checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
 }

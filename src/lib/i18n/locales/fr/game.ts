@@ -430,6 +430,75 @@ achievements: {
     description: 'Complétez une chanson en mode Karaoké Aveugle',
     rewardTitle: 'Maître Aveugle',
   },
+  dailyStarter: {
+    name: 'Débutant du Quotidien',
+    description: 'Termine ton premier défi quotidien',
+  },
+  dailyRegular: {
+    name: 'Habitué du Quotidien',
+    description: 'Termine 10 défis quotidiens',
+  },
+  dailyDevoted: {
+    name: 'Fidèle du Quotidien',
+    description: 'Termine 50 défis quotidiens',
+  },
+  streakWeek: {
+    name: 'En Feu',
+    description: 'Garde une série quotidienne de 7 jours',
+  },
+  streakMonth: {
+    name: 'Imparable',
+    description: 'Garde une série quotidienne de 30 jours',
+    rewardTitle: 'Imparable',
+  },
+  weeklyWarrior: {
+    name: 'Guerrier Hebdo',
+    description: 'Termine 5 défis hebdomadaires',
+  },
+  precisionSinger: {
+    name: 'Chanteur de Précision',
+    description: 'Dépasse les 95% de précision',
+  },
+  goldenRush: {
+    name: 'Ruée vers l\'Or',
+    description: 'Touche 20 notes dorées en une seule chanson',
+  },
+  goldenCenturion: {
+    name: 'Centurion Doré',
+    description: 'Touche 100 notes dorées au total',
+  },
+  perfectFifty: {
+    name: 'Cinquante Parfaites',
+    description: 'Touche 50 notes parfaites en une seule chanson',
+  },
+  lightningLips: {
+    name: 'Lèvres de l\'Éclair',
+    description: 'Termine une chanson à une vitesse 2x',
+  },
+  perfectHarmony: {
+    name: 'Harmonie Parfaite',
+    description: 'Chante 10 duos',
+  },
+  genreExplorer: {
+    name: 'Explorateur de Genres',
+    description: 'Chante des chansons de 5 genres différents',
+  },
+  disneyFan: {
+    name: 'Fan de Disney',
+    description: 'Chante 10 chansons Disney',
+  },
+  nightOwl: {
+    name: 'Chouette Nocturne',
+    description: 'Termine une chanson entre minuit et 4 heures du matin',
+  },
+  earlyBird: {
+    name: 'Lève-tôt',
+    description: 'Termine une chanson avant 8 heures du matin',
+  },
+  marathonSinger: {
+    name: 'Chanteur Marathonien',
+    description: 'Joue 5 parties en une seule journée',
+  },
 },
 ranks: {
   beginner: {

@@ -1400,12 +1400,14 @@ export default function KaraokeZERO() {
         {screen === 'settings' && <SettingsScreen />}
         {screen === 'jukebox' && <JukeboxScreen />}
         {screen === 'achievements' && <AchievementsScreen />}
-        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => {
+        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song, options) => {
           // Look up the stored challenge mode ID and map it to a built-in game mode
           const challengeId = getItem(StorageKeys.CHALLENGE_MODE);
           if (challengeId) removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
-          setGameMode(mappedMode || 'standard');
+          // The daily screen can pass its own game mode (solo / duel with 1-2
+          // selected players) which takes precedence over challenge modes.
+          setGameMode(options?.gameMode || mappedMode || 'standard');
           setChallengeMode(challengeId || undefined);
           setSong(song);
           setScreen('game');

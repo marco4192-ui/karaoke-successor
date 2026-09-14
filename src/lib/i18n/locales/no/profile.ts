@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Ingen bilde',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Profillagring',
+    local: 'Kun lokalt',
+    localDesc: 'Alle data forblir på denne enheten — ingen online ledertavle, ingen synkronisering.',
+    online: 'Online-profil',
+    onlineDesc: 'Bli med på online-ledertavlen, synkroniser på tvers av enheter og del daglige resultater.',
+    localShort: 'Lokal',
+    onlineShort: 'Online',
+    settingsDesc: 'Bestem om denne profilen skal delta i online-ledertavlen eller kun være lokal. Kan endres når som helst.',
+  },
 },
 characterScreen: {
   title: 'Profil',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Blind-mester',
     description: 'Fullfør en sang i Blind karaoke-modus',
   },
+  daily_starter: {
+    name: 'Daglig nybegynner',
+    description: 'Fullfør din første daglige utfordring',
+  },
+  daily_regular: {
+    name: 'Daglig stamgjest',
+    description: 'Fullfør 10 daglige utfordringer',
+  },
+  daily_devoted: {
+    name: 'Daglig dedikert',
+    description: 'Fullfør 50 daglige utfordringer',
+  },
+  streak_week: {
+    name: 'I fyr og flamme',
+    description: 'Hold en 7-dagers daglig streak',
+  },
+  streak_month: {
+    name: 'Ustoppelig',
+    description: 'Hold en 30-dagers daglig streak',
+  },
+  weekly_warrior: {
+    name: 'Ukekriger',
+    description: 'Fullfør 5 ukentlige utfordringer',
+  },
+  accuracy_95: {
+    name: 'Presisjonssanger',
+    description: 'Få over 95% presisjon',
+  },
+  golden_rush: {
+    name: 'Gullrush',
+    description: 'Treff 20 gylne toner i én enkelt sang',
+  },
+  golden_hundred: {
+    name: 'Gyllen centurion',
+    description: 'Treff totalt 100 gylne toner',
+  },
+  perfect_fifty: {
+    name: 'Perfekte femti',
+    description: 'Treff 50 perfekte toner i én enkelt sang',
+  },
+  lightning_lips: {
+    name: 'Lynlepper',
+    description: 'Fullfør en sang med 2x hastighet',
+  },
+  duet_harmony: {
+    name: 'Perfekt harmoni',
+    description: 'Syng 10 duetter',
+  },
+  genre_explorer: {
+    name: 'Sjangerutforsker',
+    description: 'Syng sanger fra 5 forskjellige sjangere',
+  },
+  disney_fan: {
+    name: 'Disney-fan',
+    description: 'Syng 10 Disney-sanger',
+  },
+  night_owl: {
+    name: 'Nattugle',
+    description: 'Fullfør en sang mellom midnatt og klokken 04',
+  },
+  early_bird: {
+    name: 'Morgenfugl',
+    description: 'Fullfør en sang før klokken 08',
+  },
+  marathon_singer: {
+    name: 'Maratonsanger',
+    description: 'Spill 5 spill på én enkelt dag',
+  },
 },
 achievementsScreen: {
   title: '🏆 Prestasjoner',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Låst',
+  viewPlayer: 'Prestasjoner for',
+  viewingOther: 'Du ser prestasjonene til {n}. Hver spiller låser opp sine egne prestasjoner.',
+  noMatches: 'Ingen prestasjoner samsvarer med disse filtrene',
 },
 badgeNames: {
   'first-challenge': 'Første Skritt',

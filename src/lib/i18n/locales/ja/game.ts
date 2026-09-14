@@ -430,6 +430,75 @@ achievements: {
     description: 'ブラインドカラオケモードで曲を完了',
     rewardTitle: 'ブラインドマスター',
   },
+  dailyStarter: {
+    name: 'デイリー入門者',
+    description: '初めてのデイリーチャレンジを完了する',
+  },
+  dailyRegular: {
+    name: 'デイリー常連',
+    description: 'デイリーチャレンジを10回完了する',
+  },
+  dailyDevoted: {
+    name: 'デイリーの申し子',
+    description: 'デイリーチャレンジを50回完了する',
+  },
+  streakWeek: {
+    name: '絶好調',
+    description: 'デイリー連続記録を7日維持する',
+  },
+  streakMonth: {
+    name: '止まらない',
+    description: 'デイリー連続記録を30日維持する',
+    rewardTitle: '止まらない',
+  },
+  weeklyWarrior: {
+    name: 'ウィークリーウォリアー',
+    description: 'ウィークリーチャレンジを5回完了する',
+  },
+  precisionSinger: {
+    name: '精密歌手',
+    description: '精度95%以上を達成する',
+  },
+  goldenRush: {
+    name: 'ゴールドラッシュ',
+    description: '1曲でゴールデンノートを20個ヒットする',
+  },
+  goldenCenturion: {
+    name: 'ゴールデンセンチュリオン',
+    description: 'ゴールデンノートを通算100個ヒットする',
+  },
+  perfectFifty: {
+    name: 'パーフェクト50',
+    description: '1曲でパーフェクトノートを50個ヒットする',
+  },
+  lightningLips: {
+    name: '稲妻の唇',
+    description: '2倍速で曲を完了する',
+  },
+  perfectHarmony: {
+    name: '完璧なハーモニー',
+    description: 'デュエットを10曲歌う',
+  },
+  genreExplorer: {
+    name: 'ジャンル探検家',
+    description: '5つの異なるジャンルの曲を歌う',
+  },
+  disneyFan: {
+    name: 'ディズニーファン',
+    description: 'ディズニーの曲を10曲歌う',
+  },
+  nightOwl: {
+    name: '夜更かしの達人',
+    description: '深夜0時から午前4時の間に曲を完了する',
+  },
+  earlyBird: {
+    name: '早起きの達人',
+    description: '午前8時前に曲を完了する',
+  },
+  marathonSinger: {
+    name: 'マラソンシンガー',
+    description: '1日に5回プレイする',
+  },
 },
 ranks: {
   beginner: {

@@ -430,6 +430,75 @@ achievements: {
     description: 'Ukończ utwór w trybie ślepego karaoke',
     rewardTitle: 'Mistrz ślepych',
   },
+  dailyStarter: {
+    name: 'Dzienny Debiutant',
+    description: 'Ukończ swoje pierwsze dzienne wyzwanie',
+  },
+  dailyRegular: {
+    name: 'Dzienny Bywalec',
+    description: 'Ukończ 10 dziennych wyzwań',
+  },
+  dailyDevoted: {
+    name: 'Dzienny Zapaleniec',
+    description: 'Ukończ 50 dziennych wyzwań',
+  },
+  streakWeek: {
+    name: 'W Ogniu',
+    description: 'Utrzymaj 7-dniową dzienną serię',
+  },
+  streakMonth: {
+    name: 'Niepowstrzymany',
+    description: 'Utrzymaj 30-dniową dzienną serię',
+    rewardTitle: 'Niepowstrzymany',
+  },
+  weeklyWarrior: {
+    name: 'Wojownik Tygodnia',
+    description: 'Ukończ 5 tygodniowych wyzwań',
+  },
+  precisionSinger: {
+    name: 'Precyzyjny Wokalista',
+    description: 'Osiągnij ponad 95% celności',
+  },
+  goldenRush: {
+    name: 'Gorączka Złota',
+    description: 'Traf 20 złotych nut w jednej piosence',
+  },
+  goldenCenturion: {
+    name: 'Złoty Centurion',
+    description: 'Traf łącznie 100 złotych nut',
+  },
+  perfectFifty: {
+    name: 'Perfekcyjna Pięćdziesiątka',
+    description: 'Traf 50 perfekcyjnych nut w jednej piosence',
+  },
+  lightningLips: {
+    name: 'Błyskawiczne Usta',
+    description: 'Ukończ piosenkę z prędkością 2x',
+  },
+  perfectHarmony: {
+    name: 'Idealna Harmonia',
+    description: 'Zaśpiewaj 10 duetów',
+  },
+  genreExplorer: {
+    name: 'Odkrywca Gatunków',
+    description: 'Zaśpiewaj piosenki z 5 różnych gatunków',
+  },
+  disneyFan: {
+    name: 'Fan Disneya',
+    description: 'Zaśpiewaj 10 piosenek Disneya',
+  },
+  nightOwl: {
+    name: 'Nocna Sowa',
+    description: 'Ukończ piosenkę między północą a 4 rano',
+  },
+  earlyBird: {
+    name: 'Ranny Ptak',
+    description: 'Ukończ piosenkę przed 8 rano',
+  },
+  marathonSinger: {
+    name: 'Maratończyk Śpiewu',
+    description: 'Zagraj 5 gier w ciągu jednego dnia',
+  },
 },
 ranks: {
   beginner: {

@@ -13,7 +13,11 @@ interface AchievementDefinition {
   category: 'performance' | 'social' | 'progression' | 'special';
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   requirement: {
-    type: 'score' | 'combo' | 'accuracy' | 'games' | 'songs' | 'perfect' | 'golden' | 'special';
+    type: 'score' | 'combo' | 'accuracy' | 'games' | 'songs' | 'perfect' | 'golden' | 'special'
+      // Daily-system counters (per profile)
+      | 'daily' | 'streak' | 'weekly'
+      // Profile-derived counters
+      | 'duet' | 'genre' | 'disney' | 'gamesToday';
     value: number;
     cumulative?: boolean;
   };
@@ -333,6 +337,216 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     requirement: { type: 'special', value: 6 },
     reward: { xp: 150, title: 'Blind Master', titleKey: 'achievements.blindMaster.rewardTitle' },
   },
+
+  // ── Daily & Weekly Challenge Achievements (profile renovation) ──
+  {
+    id: 'daily_starter',
+    name: 'Daily Starter',
+    nameKey: 'achievements.dailyStarter.name',
+    description: 'Complete your first daily challenge',
+    descriptionKey: 'achievements.dailyStarter.description',
+    icon: '📅',
+    category: 'progression',
+    rarity: 'common',
+    requirement: { type: 'daily', value: 1 },
+    reward: { xp: 20 },
+  },
+  {
+    id: 'daily_regular',
+    name: 'Daily Regular',
+    nameKey: 'achievements.dailyRegular.name',
+    description: 'Complete 10 daily challenges',
+    descriptionKey: 'achievements.dailyRegular.description',
+    icon: '🗓️',
+    category: 'progression',
+    rarity: 'uncommon',
+    requirement: { type: 'daily', value: 10 },
+    reward: { xp: 75 },
+  },
+  {
+    id: 'daily_devoted',
+    name: 'Daily Devoted',
+    nameKey: 'achievements.dailyDevoted.name',
+    description: 'Complete 50 daily challenges',
+    descriptionKey: 'achievements.dailyDevoted.description',
+    icon: '🏅',
+    category: 'progression',
+    rarity: 'rare',
+    requirement: { type: 'daily', value: 50 },
+    reward: { xp: 200 },
+  },
+  {
+    id: 'streak_week',
+    name: 'On Fire',
+    nameKey: 'achievements.streakWeek.name',
+    description: 'Keep a 7-day daily streak',
+    descriptionKey: 'achievements.streakWeek.description',
+    icon: '🔥',
+    category: 'progression',
+    rarity: 'rare',
+    requirement: { type: 'streak', value: 7 },
+    reward: { xp: 150 },
+  },
+  {
+    id: 'streak_month',
+    name: 'Unstoppable',
+    nameKey: 'achievements.streakMonth.name',
+    description: 'Keep a 30-day daily streak',
+    descriptionKey: 'achievements.streakMonth.description',
+    icon: '⚡',
+    category: 'progression',
+    rarity: 'epic',
+    requirement: { type: 'streak', value: 30 },
+    reward: { xp: 500, title: 'Unstoppable', titleKey: 'achievements.streakMonth.rewardTitle' },
+  },
+  {
+    id: 'weekly_warrior',
+    name: 'Weekly Warrior',
+    nameKey: 'achievements.weeklyWarrior.name',
+    description: 'Complete 5 weekly challenges',
+    descriptionKey: 'achievements.weeklyWarrior.description',
+    icon: '📆',
+    category: 'progression',
+    rarity: 'rare',
+    requirement: { type: 'weekly', value: 5 },
+    reward: { xp: 150 },
+  },
+
+  // ── Extended Performance Achievements ──
+  {
+    id: 'accuracy_95',
+    name: 'Precision Singer',
+    nameKey: 'achievements.precisionSinger.name',
+    description: 'Get over 95% accuracy',
+    descriptionKey: 'achievements.precisionSinger.description',
+    icon: '🎯',
+    category: 'performance',
+    rarity: 'epic',
+    requirement: { type: 'accuracy', value: 95 },
+    reward: { xp: 200 },
+  },
+  {
+    id: 'golden_rush',
+    name: 'Golden Rush',
+    nameKey: 'achievements.goldenRush.name',
+    description: 'Hit 20 golden notes in a single song',
+    descriptionKey: 'achievements.goldenRush.description',
+    icon: '✨',
+    category: 'performance',
+    rarity: 'rare',
+    requirement: { type: 'golden', value: 20 },
+    reward: { xp: 100 },
+  },
+  {
+    id: 'golden_hundred',
+    name: 'Golden Centurion',
+    nameKey: 'achievements.goldenCenturion.name',
+    description: 'Hit 100 golden notes in total',
+    descriptionKey: 'achievements.goldenCenturion.description',
+    icon: '💫',
+    category: 'performance',
+    rarity: 'epic',
+    requirement: { type: 'golden', value: 100, cumulative: true },
+    reward: { xp: 250 },
+  },
+  {
+    id: 'perfect_fifty',
+    name: 'Perfect Fifty',
+    nameKey: 'achievements.perfectFifty.name',
+    description: 'Hit 50 perfect notes in a single song',
+    descriptionKey: 'achievements.perfectFifty.description',
+    icon: '💎',
+    category: 'performance',
+    rarity: 'rare',
+    requirement: { type: 'perfect', value: 50 },
+    reward: { xp: 100 },
+  },
+  {
+    id: 'lightning_lips',
+    name: 'Lightning Lips',
+    nameKey: 'achievements.lightningLips.name',
+    description: 'Complete a song at 2x speed',
+    descriptionKey: 'achievements.lightningLips.description',
+    icon: '⚡',
+    category: 'special',
+    rarity: 'epic',
+    requirement: { type: 'special', value: 7 },
+    reward: { xp: 200 },
+  },
+
+  // ── Social & Variety Achievements ──
+  {
+    id: 'duet_harmony',
+    name: 'Perfect Harmony',
+    nameKey: 'achievements.perfectHarmony.name',
+    description: 'Sing 10 duets',
+    descriptionKey: 'achievements.perfectHarmony.description',
+    icon: '🤝',
+    category: 'social',
+    rarity: 'uncommon',
+    requirement: { type: 'duet', value: 10 },
+    reward: { xp: 75 },
+  },
+  {
+    id: 'genre_explorer',
+    name: 'Genre Explorer',
+    nameKey: 'achievements.genreExplorer.name',
+    description: 'Sing songs from 5 different genres',
+    descriptionKey: 'achievements.genreExplorer.description',
+    icon: '🌍',
+    category: 'progression',
+    rarity: 'uncommon',
+    requirement: { type: 'genre', value: 5 },
+    reward: { xp: 75 },
+  },
+  {
+    id: 'disney_fan',
+    name: 'Disney Fan',
+    nameKey: 'achievements.disneyFan.name',
+    description: 'Sing 10 Disney songs',
+    descriptionKey: 'achievements.disneyFan.description',
+    icon: '🏰',
+    category: 'special',
+    rarity: 'uncommon',
+    requirement: { type: 'disney', value: 10 },
+    reward: { xp: 100 },
+  },
+  {
+    id: 'night_owl',
+    name: 'Night Owl',
+    nameKey: 'achievements.nightOwl.name',
+    description: 'Finish a song between midnight and 4 AM',
+    descriptionKey: 'achievements.nightOwl.description',
+    icon: '🦉',
+    category: 'special',
+    rarity: 'uncommon',
+    requirement: { type: 'special', value: 8 },
+    reward: { xp: 50 },
+  },
+  {
+    id: 'early_bird',
+    name: 'Early Bird',
+    nameKey: 'achievements.earlyBird.name',
+    description: 'Finish a song before 8 AM',
+    descriptionKey: 'achievements.earlyBird.description',
+    icon: '🐦',
+    category: 'special',
+    rarity: 'uncommon',
+    requirement: { type: 'special', value: 9 },
+    reward: { xp: 50 },
+  },
+  {
+    id: 'marathon_singer',
+    name: 'Marathon Singer',
+    nameKey: 'achievements.marathonSinger.name',
+    description: 'Play 5 games in a single day',
+    descriptionKey: 'achievements.marathonSinger.description',
+    icon: '🏃',
+    category: 'progression',
+    rarity: 'rare',
+    requirement: { type: 'gamesToday', value: 5 },
+    reward: { xp: 150 },
+  },
 ];
 
 // ===================== LOCALIZATION HELPERS =====================
@@ -367,6 +581,16 @@ interface AchievementGameContext {
   totalGamesPlayed: number;
   totalGoldenNotes: number;
   totalPerfectNotes: number;
+  // Daily-system counters (per profile)
+  dailyCompletions: number;
+  dailyStreak: number;
+  weeklyCompletions: number;
+  // Profile-derived counters
+  duetGames: number;
+  genreCount: number;
+  disneyGames: number;
+  gamesToday: number;
+  hourOfDay: number;
   // Special flags
   isPartyMode: boolean;
   isDuelWin: boolean;
@@ -471,6 +695,29 @@ function meetsRequirement(def: AchievementDefinition, ctx: AchievementGameContex
     case 'games':
       return ctx.totalGamesPlayed >= value;
 
+    // --- Daily-system counters (per profile) ---
+    case 'daily':
+      return ctx.dailyCompletions >= value;
+
+    case 'streak':
+      return ctx.dailyStreak >= value;
+
+    case 'weekly':
+      return ctx.weeklyCompletions >= value;
+
+    // --- Profile-derived counters ---
+    case 'duet':
+      return ctx.duetGames >= value;
+
+    case 'genre':
+      return ctx.genreCount >= value;
+
+    case 'disney':
+      return ctx.disneyGames >= value;
+
+    case 'gamesToday':
+      return ctx.gamesToday >= value;
+
     // --- Special one-shot checks ---
     case 'special':
       switch (def.id) {
@@ -484,8 +731,14 @@ function meetsRequirement(def: AchievementDefinition, ctx: AchievementGameContex
           return ctx.hadComeback;
         case 'speed_demon':
           return ctx.playbackRate >= 1.5;
+        case 'lightning_lips':
+          return ctx.playbackRate >= 2.0;
         case 'blind_master':
           return ctx.isBlindMode;
+        case 'night_owl':
+          return ctx.hourOfDay >= 0 && ctx.hourOfDay < 4;
+        case 'early_bird':
+          return ctx.hourOfDay >= 4 && ctx.hourOfDay < 8;
         default:
           return false;
       }

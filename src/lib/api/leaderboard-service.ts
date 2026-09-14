@@ -9,6 +9,7 @@ import type {
   SubmitScorePayload, SubmitScoreResult, GlobalLeaderboardEntry,
   LeaderboardGameType, ScoreProofPackage,
   ProfileSyncDownload, ProfileSyncUpload,
+  SubmitDailyResultPayload, OnlineDailyEntry,
 } from '@/lib/leaderboard/types';
 import {
   generateSongHash, generateSongHashV2, songNotesFromSong,
@@ -201,6 +202,57 @@ async function fetchGlobalLeaderboard(
   return result.leaderboard;
 }
 
+// ── Daily challenge leaderboard (online board) ───────────
+
+/**
+ * Submit a daily challenge result to the online board.
+ * Requires an online profile with a sync code; failures are
+ * non-critical (the local board always works offline).
+ * Returns the sync code when one had to be generated so the
+ * caller can persist it on the profile.
+ */
+async function submitDailyResult(params: {
+  profile: PlayerProfile;
+  challengeDate: string;
+  challengeType: SubmitDailyResultPayload['challenge_type'];
+  metricValue: number;
+  xpEarned: number;
+}): Promise<{ ok: boolean; sync_code?: string }> {
+  const { profile, challengeDate, challengeType, metricValue, xpEarned } = params;
+  if (profile.storageMode === 'local') {
+    return { ok: false };
+  }
+  let syncCode = profile.syncCode;
+  if (!syncCode) {
+    // Register on the fly so the daily result has a home on the server
+    const registered = await registerProfile(profile).catch(() => null);
+    syncCode = registered?.sync_code;
+    if (!syncCode) return { ok: false };
+  }
+  const payload: SubmitDailyResultPayload = {
+    profile_uid: profile.syncUid || profile.id,
+    sync_code: syncCode,
+    challenge_date: challengeDate,
+    challenge_type: challengeType,
+    metric_value: Math.round(metricValue * 100) / 100,
+    xp_earned: xpEarned,
+  };
+  const result = await request<{ ok: boolean }>('/daily', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return { ok: result.ok, sync_code: profile.syncCode ? undefined : syncCode };
+}
+
+/** Fetch the online daily leaderboard for a date (default: today). */
+async function fetchDailyLeaderboard(date?: string): Promise<OnlineDailyEntry[]> {
+  const d = date || new Date().toISOString().slice(0, 10);
+  const result = await request<{ leaderboard: OnlineDailyEntry[] }>(
+    `/daily?date=${encodeURIComponent(d)}&limit=100`
+  );
+  return result.leaderboard;
+}
+
 // ── Export singleton ────────────────────────────────────
 
 /**
@@ -248,6 +300,9 @@ export const leaderboardService = {
   submitScore,
   fetchSongLeaderboard,
   fetchGlobalLeaderboard,
+  // Daily challenge online board
+  submitDailyResult,
+  fetchDailyLeaderboard,
   // Backward-compatible aliases used by UI components
   getSongLeaderboard: fetchSongLeaderboard,
   getGlobalLeaderboard: fetchGlobalLeaderboard,

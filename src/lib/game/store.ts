@@ -61,7 +61,11 @@ interface GameStore {
   resetGame: () => void;
 
   // Profile actions
-  createProfile: (_name: string, _avatar?: string) => PlayerProfile;
+  createProfile: (_name: string, _avatar?: string, _options?: {
+    storageMode?: 'online' | 'local';
+    country?: string;
+    privacy?: PlayerProfile['privacy'];
+  }) => PlayerProfile;
   updateProfile: (_id: string, _updates: Partial<PlayerProfile>) => void;
   deleteProfile: (_id: string) => void;
   setActiveProfile: (_id: string | null) => void;
@@ -97,6 +101,9 @@ function createDefaultPlayerProfile(overrides: {
   name: string;
   avatar?: string;
   color: string;
+  storageMode?: 'online' | 'local';
+  country?: string;
+  privacy?: PlayerProfile['privacy'];
 }): PlayerProfile {
   return {
     ...overrides,
@@ -319,12 +326,15 @@ export const useGameStore = create<GameStore>()(
           },
         })),
 
-      createProfile: (name, avatar) => {
+      createProfile: (name, avatar, options) => {
         const profile = createDefaultPlayerProfile({
           id: crypto.randomUUID(),
           name,
           avatar,
           color: PLAYER_COLORS[get().profiles.length % PLAYER_COLORS.length],
+          storageMode: options?.storageMode,
+          country: options?.country,
+          privacy: options?.privacy,
         });
 
         set((state) => ({

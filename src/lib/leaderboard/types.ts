@@ -119,6 +119,35 @@ export interface ProfileSyncDownload {
   updated_at: string;
 }
 
+// ── Daily challenge (online board) ───────────────────────
+export type DailyChallengeType = 'score' | 'accuracy' | 'combo' | 'perfect_notes';
+
+/** Payload for POST /daily — submit a daily challenge result */
+export interface SubmitDailyResultPayload {
+  profile_uid: string;
+  /** Ownership token of the profile — required by the server */
+  sync_code: string;
+  /** Challenge date (YYYY-MM-DD, local time of the client) */
+  challenge_date: string;
+  challenge_type: DailyChallengeType;
+  /** The challenge-relevant metric: score / accuracy% / combo / perfect notes */
+  metric_value: number;
+  /** XP earned locally for this challenge (informational) */
+  xp_earned: number;
+}
+
+/** One entry of the online daily leaderboard (GET /daily?date=…) */
+export interface OnlineDailyEntry {
+  rank: number;
+  profile_uid: string;
+  display_name: string;
+  color: string;
+  country_code: string | null;
+  challenge_type: DailyChallengeType;
+  metric_value: number;
+  created_at: string;
+}
+
 // ── API error ─────────────────────────────────────────────
 export interface ApiError {
   error: boolean;

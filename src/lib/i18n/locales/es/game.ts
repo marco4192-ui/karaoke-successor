@@ -430,6 +430,75 @@ achievements: {
     description: 'Completa una canción en modo Karaoke Ciego',
     rewardTitle: 'Maestro Ciego',
   },
+  dailyStarter: {
+    name: 'Novato Diario',
+    description: 'Completa tu primer reto diario',
+  },
+  dailyRegular: {
+    name: 'Habitual Diario',
+    description: 'Completa 10 retos diarios',
+  },
+  dailyDevoted: {
+    name: 'Devoto Diario',
+    description: 'Completa 50 retos diarios',
+  },
+  streakWeek: {
+    name: 'En Llamas',
+    description: 'Mantén una racha diaria de 7 días',
+  },
+  streakMonth: {
+    name: 'Imparable',
+    description: 'Mantén una racha diaria de 30 días',
+    rewardTitle: 'Imparable',
+  },
+  weeklyWarrior: {
+    name: 'Guerrero Semanal',
+    description: 'Completa 5 retos semanales',
+  },
+  precisionSinger: {
+    name: 'Cantante de Precisión',
+    description: 'Consigue más del 95% de precisión',
+  },
+  goldenRush: {
+    name: 'Fiebre del Oro',
+    description: 'Acierta 20 notas doradas en una sola canción',
+  },
+  goldenCenturion: {
+    name: 'Centurión Dorado',
+    description: 'Acierta 100 notas doradas en total',
+  },
+  perfectFifty: {
+    name: 'Cincuenta Perfectas',
+    description: 'Acierta 50 notas perfectas en una sola canción',
+  },
+  lightningLips: {
+    name: 'Labios Relámpago',
+    description: 'Completa una canción a velocidad 2x',
+  },
+  perfectHarmony: {
+    name: 'Armonía Perfecta',
+    description: 'Canta 10 dúos',
+  },
+  genreExplorer: {
+    name: 'Explorador de Géneros',
+    description: 'Canta canciones de 5 géneros diferentes',
+  },
+  disneyFan: {
+    name: 'Fan de Disney',
+    description: 'Canta 10 canciones de Disney',
+  },
+  nightOwl: {
+    name: 'Búho Nocturno',
+    description: 'Termina una canción entre medianoche y las 4 de la madrugada',
+  },
+  earlyBird: {
+    name: 'Madrugador',
+    description: 'Termina una canción antes de las 8 de la mañana',
+  },
+  marathonSinger: {
+    name: 'Cantante Maratoniano',
+    description: 'Juega 5 partidas en un solo día',
+  },
 },
 ranks: {
   beginner: {

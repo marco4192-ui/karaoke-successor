@@ -23,6 +23,16 @@ profile: {
   noPhoto: 'Nessuna foto',
   privacyHint: 'Your scores will be uploaded to the global leaderboard.',
   privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  storageMode: {
+    title: 'Archiviazione del profilo',
+    local: 'Solo locale',
+    localDesc: 'Tutti i dati restano su questo dispositivo — nessuna classifica online, nessuna sincronizzazione.',
+    online: 'Profilo online',
+    onlineDesc: 'Unisciti alla classifica online, sincronizza tra dispositivi e condividi i risultati giornalieri.',
+    localShort: 'Locale',
+    onlineShort: 'Online',
+    settingsDesc: 'Decidi se questo profilo si unisce alla classifica online o resta solo locale. Modificabile in qualsiasi momento.',
+  },
 },
 characterScreen: {
   title: 'Profilo',
@@ -196,6 +206,74 @@ achievements: {
     name: 'Master alla cieca',
     description: 'Completa una canzone in modalità Karaoke alla cieca',
   },
+  daily_starter: {
+    name: 'Esordiente Quotidiano',
+    description: 'Completa la tua prima sfida quotidiana',
+  },
+  daily_regular: {
+    name: 'Frequentatore Quotidiano',
+    description: 'Completa 10 sfide quotidiane',
+  },
+  daily_devoted: {
+    name: 'Devoto Quotidiano',
+    description: 'Completa 50 sfide quotidiane',
+  },
+  streak_week: {
+    name: 'In Fiamme',
+    description: 'Mantieni una serie quotidiana di 7 giorni',
+  },
+  streak_month: {
+    name: 'Inarrestabile',
+    description: 'Mantieni una serie quotidiana di 30 giorni',
+  },
+  weekly_warrior: {
+    name: 'Guerriero Settimanale',
+    description: 'Completa 5 sfide settimanali',
+  },
+  accuracy_95: {
+    name: 'Cantante di Precisione',
+    description: 'Ottieni oltre il 95% di precisione',
+  },
+  golden_rush: {
+    name: 'Febbre dell\'Oro',
+    description: 'Colpisci 20 note dorate in una sola canzone',
+  },
+  golden_hundred: {
+    name: 'Centurione Dorato',
+    description: 'Colpisci 100 note dorate in totale',
+  },
+  perfect_fifty: {
+    name: 'Cinquanta Perfette',
+    description: 'Colpisci 50 note perfette in una sola canzone',
+  },
+  lightning_lips: {
+    name: 'Labbra Fulminee',
+    description: 'Completa una canzone a velocità 2x',
+  },
+  duet_harmony: {
+    name: 'Armonia Perfetta',
+    description: 'Canta 10 duetti',
+  },
+  genre_explorer: {
+    name: 'Esploratore di Generi',
+    description: 'Canta canzoni di 5 generi diversi',
+  },
+  disney_fan: {
+    name: 'Fan di Disney',
+    description: 'Canta 10 canzoni Disney',
+  },
+  night_owl: {
+    name: 'Gufo Notturno',
+    description: 'Termina una canzone tra mezzanotte e le 4 del mattino',
+  },
+  early_bird: {
+    name: 'Mattiniero',
+    description: 'Termina una canzone prima delle 8 del mattino',
+  },
+  marathon_singer: {
+    name: 'Cantante Maratoneta',
+    description: 'Gioca 5 partite in un solo giorno',
+  },
 },
 achievementsScreen: {
   title: '🏆 Obiettivi',
@@ -212,6 +290,9 @@ achievementsScreen: {
   },
   plusXp: '+{n} XP',
   locked: 'Bloccato',
+  viewPlayer: 'Obiettivi di',
+  viewingOther: 'Stai visualizzando gli obiettivi di {n}. Ogni giocatore sblocca i propri obiettivi.',
+  noMatches: 'Nessun obiettivo corrisponde a questi filtri',
 },
 badgeNames: {
   'first-challenge': 'Primi Passi',
