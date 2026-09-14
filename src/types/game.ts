@@ -165,6 +165,12 @@ export interface PlayerProfile {
   // Profile sync
   syncCode?: string; // 8-character code for cross-device sync
   syncUid?: string; // server-side profile_uid this sync code belongs to (differs from local id)
+  /**
+   * Login e-mail of the optional online account (app-only login, e-mail +
+   * password). Only the address is stored locally — never the password.
+   * Used to offer "change password" and to show the linked account.
+   */
+  authEmail?: string;
   // Active status for party mode
   isActive?: boolean; // When false, profile won't appear in party mode selections
 }

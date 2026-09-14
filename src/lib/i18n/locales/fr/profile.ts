@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'En ligne',
     settingsDesc: 'Décide si ce profil rejoint le classement en ligne ou reste uniquement local. Modifiable à tout moment.',
   },
+  countrySearch: 'Rechercher un pays…',
+  noCountryFound: 'Aucun pays trouvé',
+  popularCountries: 'Populaires',
+  allCountries: 'Tous les pays',
+},
+profileAuth: {
+  accountTitle: 'Compte en ligne (facultatif)',
+  accountDesc: 'Enregistre un e-mail et un mot de passe pour pouvoir charger ce profil sur un autre appareil. La connexion n\'est possible que dans l\'app de karaoké — il n\'y a pas de connexion web.',
+  email: 'E-mail',
+  emailPlaceholder: 'votre@email.com',
+  emailInvalid: 'Saisis une adresse e-mail valide',
+  emailTaken: 'Cette adresse e-mail est déjà enregistrée',
+  password: 'Mot de passe',
+  passwordPlaceholder: 'Au moins 8 caractères',
+  passwordRepeat: 'Répéter le mot de passe',
+  passwordsDontMatch: 'Les mots de passe ne correspondent pas',
+  passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères',
+  registerFailed: 'Impossible de créer le compte en ligne',
+  loginTitle: 'Charger le profil en ligne',
+  loginDesc: 'Saisis l\'e-mail et le mot de passe de ton profil en ligne pour le charger sur cet appareil.',
+  loginButton: 'Se connecter et charger le profil',
+  loginFailed: 'Connexion échouée — vérifie l\'e-mail et le mot de passe',
+  loginSuccess: 'Profil "{n}" chargé avec succès !',
+  noSnapshot: 'Aucune donnée de profil synchronisée trouvée sur le serveur pour le moment',
+  emailNote: 'Utilisé uniquement pour la connexion — jamais affiché publiquement',
+  changePassword: 'Changer le mot de passe',
+  currentPassword: 'Mot de passe actuel',
+  newPassword: 'Nouveau mot de passe',
+  passwordChanged: 'Mot de passe modifié avec succès',
+  passwordChangeFailed: 'Impossible de changer le mot de passe',
+  hasAccount: 'Compte en ligne ✓',
+  registrationPending: 'Création du compte en ligne…',
+  registrationSuccess: 'Compte en ligne créé — tu peux maintenant te connecter sur n\'importe quel appareil',
+  registrationSuccessTitle: '🔐 Compte en ligne',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profil',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Afficher le QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Charger le Profil en Ligne',
 },
 characterCard: {
   connected: 'Connecté',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Chanteur Marathonien',
     description: 'Joue 5 parties en une seule journée',
+  },
+
+  // ── Extension à 100 succès ──
+  score_9800: {
+    name: 'Étoile Ultra',
+    description: 'Dépasse les 9 800 points',
+  },
+  score_9900: {
+    name: 'Au-Delà de la Perfection',
+    description: 'Dépasse les 9 900 points',
+  },
+  combo_300: {
+    name: 'Titan du Combo',
+    description: 'Atteins un combo de 300 notes',
+  },
+  combo_500: {
+    name: 'Combo Immortel',
+    description: 'Atteins un combo de 500 notes',
+  },
+  accuracy_92: {
+    name: 'Réglage Fin',
+    description: 'Dépasse les 92% de précision',
+  },
+  accuracy_94: {
+    name: 'Qualité Studio',
+    description: 'Dépasse les 94% de précision',
+  },
+  accuracy_96: {
+    name: 'Tireur d\'Élite',
+    description: 'Dépasse les 96% de précision',
+  },
+  accuracy_97: {
+    name: 'Précision Laser',
+    description: 'Dépasse les 97% de précision',
+  },
+  accuracy_98: {
+    name: 'Virtuose',
+    description: 'Dépasse les 98% de précision',
+  },
+  perfect_75: {
+    name: 'Soixante-Quinze Parfaites',
+    description: 'Obtiens 75 notes parfaites en une seule chanson',
+  },
+  perfect_100: {
+    name: 'Cent Parfaites',
+    description: 'Obtiens 100 notes parfaites en une seule chanson',
+  },
+  perfect_150: {
+    name: 'Tempête Parfaite',
+    description: 'Obtiens 150 notes parfaites en une seule chanson',
+  },
+  golden_30: {
+    name: 'Marée Dorée',
+    description: 'Touche 30 notes dorées en une seule chanson',
+  },
+  golden_40: {
+    name: 'Symphonie Dorée',
+    description: 'Touche 40 notes dorées en une seule chanson',
+  },
+  perfect_500: {
+    name: 'Machine Parfaite',
+    description: 'Touche 500 notes parfaites au total',
+  },
+  perfect_1000: {
+    name: 'Canon de Précision',
+    description: 'Touche 1 000 notes parfaites au total',
+  },
+  perfect_5000: {
+    name: 'Avalanche Parfaite',
+    description: 'Touche 5 000 notes parfaites au total',
+  },
+  perfect_10000: {
+    name: 'Dix Mille Parfaites',
+    description: 'Touche 10 000 notes parfaites au total',
+  },
+  golden_250: {
+    name: 'Récolte Dorée',
+    description: 'Touche 250 notes dorées au total',
+  },
+  golden_1000: {
+    name: 'Averse Dorée',
+    description: 'Touche 1 000 notes dorées au total',
+  },
+  golden_5000: {
+    name: 'Voix de Midas',
+    description: 'Touche 5 000 notes dorées au total',
+  },
+  songs_250: {
+    name: 'Vétéran du Répertoire',
+    description: 'Termine 250 chansons',
+  },
+  songs_500: {
+    name: 'Club des Cinq Cents',
+    description: 'Termine 500 chansons',
+  },
+  songs_1000: {
+    name: 'Légende des Mille Chansons',
+    description: 'Termine 1 000 chansons',
+  },
+  games_50: {
+    name: 'Chanteur Assidu',
+    description: 'Joue 50 parties',
+  },
+  games_100: {
+    name: 'Club des Cent',
+    description: 'Joue 100 parties',
+  },
+  games_250: {
+    name: 'Habitué de la Salle d\'Arcade',
+    description: 'Joue 250 parties',
+  },
+  games_500: {
+    name: 'Maniaque du Marathon',
+    description: 'Joue 500 parties',
+  },
+  level_25: {
+    name: 'Chanteur Averti',
+    description: 'Atteins le niveau 25',
+  },
+  level_50: {
+    name: 'Vocaliste d\'Élite',
+    description: 'Atteins le niveau 50',
+  },
+  level_100: {
+    name: 'Légende Niveau 100',
+    description: 'Atteins le niveau 100',
+  },
+  daily_100: {
+    name: 'Centurion du Quotidien',
+    description: 'Termine 100 défis quotidiens',
+  },
+  daily_250: {
+    name: 'Acharné du Quotidien',
+    description: 'Termine 250 défis quotidiens',
+  },
+  daily_500: {
+    name: 'Immortel du Quotidien',
+    description: 'Termine 500 défis quotidiens',
+  },
+  streak_60: {
+    name: 'Volonté de Fer',
+    description: 'Garde une série quotidienne de 60 jours',
+  },
+  streak_100: {
+    name: 'Héros des Cent Jours',
+    description: 'Garde une série quotidienne de 100 jours',
+  },
+  streak_180: {
+    name: 'Dévotion Semi-Annuelle',
+    description: 'Garde une série quotidienne de 180 jours',
+  },
+  streak_365: {
+    name: 'Légende Annuelle',
+    description: 'Garde une série quotidienne de 365 jours',
+  },
+  weekly_15: {
+    name: 'Valeur Sûre Hebdo',
+    description: 'Termine 15 défis hebdomadaires',
+  },
+  weekly_30: {
+    name: 'Pilier Hebdo',
+    description: 'Termine 30 défis hebdomadaires',
+  },
+  weekly_52: {
+    name: 'Une Année de Semaines',
+    description: 'Termine 52 défis hebdomadaires',
+  },
+  encore_10: {
+    name: 'Rappel !',
+    description: 'Joue 10 parties en une seule journée',
+  },
+  duets_25: {
+    name: 'Dévoué aux Duos',
+    description: 'Chante 25 duos',
+  },
+  duets_50: {
+    name: 'Duo Dynamique',
+    description: 'Chante 50 duos',
+  },
+  duets_100: {
+    name: 'Centurion des Duos',
+    description: 'Chante 100 duos',
+  },
+  duels_5: {
+    name: 'Duelliste',
+    description: 'Gagne 5 duels',
+  },
+  duels_10: {
+    name: 'Maître du Duel',
+    description: 'Gagne 10 duels',
+  },
+  duels_25: {
+    name: 'Seigneur du Duel',
+    description: 'Gagne 25 duels',
+  },
+  party_10: {
+    name: 'Bête de Fête',
+    description: 'Joue à 10 parties en mode fête',
+  },
+  party_25: {
+    name: 'Âme de la Fête',
+    description: 'Joue à 25 parties en mode fête',
+  },
+  party_50: {
+    name: 'Légende de la Fête',
+    description: 'Joue à 50 parties en mode fête',
+  },
+  disney_25: {
+    name: 'Passionné de Disney',
+    description: 'Chante 25 chansons Disney',
+  },
+  disney_50: {
+    name: 'Il Était une Chanson',
+    description: 'Chante 50 chansons Disney',
+  },
+  genres_8: {
+    name: 'Vagabond des Genres',
+    description: 'Chante des chansons de 8 genres différents',
+  },
+  genres_10: {
+    name: 'Fin Connaisseur des Genres',
+    description: 'Chante des chansons de 10 genres différents',
+  },
+  clean_sheet: {
+    name: 'Zéro Faute',
+    description: 'Termine une chanson avec 50+ notes et zéro erreur',
+  },
+  weekend_singer: {
+    name: 'Chanteur du Week-End',
+    description: 'Termine une chanson un samedi ou un dimanche',
+  },
+  lunch_break: {
+    name: 'Pause Déjeuner',
+    description: 'Termine une chanson entre 12h et 14h',
   },
 },
 achievementsScreen: {

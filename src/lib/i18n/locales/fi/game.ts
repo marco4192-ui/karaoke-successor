@@ -499,6 +499,255 @@ achievements: {
     name: 'Maratonlaulaja',
     description: 'Pelaa 5 peliä yhden päivän aikana',
   },
+
+  // ── Laajennus 100 saavutukseen ──
+  score9800: {
+    name: 'Ultratähti',
+    description: 'Saa yli 9 800 pistettä',
+  },
+  score9900: {
+    name: 'Täydellisyyden tuolla puolen',
+    description: 'Saa yli 9 900 pistettä',
+    rewardTitle: 'Täydellisyyden tuolla puolen',
+  },
+  combo300: {
+    name: 'Kombotitaani',
+    description: 'Saa 300 nuotin kombo',
+  },
+  combo500: {
+    name: 'Kuolematon kombo',
+    description: 'Saa 500 nuotin kombo',
+    rewardTitle: 'Kuolematon kombo',
+  },
+  accuracy92: {
+    name: 'Hienosäätö',
+    description: 'Saa yli 92% tarkkuuden',
+  },
+  accuracy94: {
+    name: 'Studiolaatu',
+    description: 'Saa yli 94% tarkkuuden',
+  },
+  accuracy96: {
+    name: 'Tarkka-ampuja',
+    description: 'Saa yli 96% tarkkuuden',
+  },
+  accuracy97: {
+    name: 'Lasertarkkuus',
+    description: 'Saa yli 97% tarkkuuden',
+  },
+  accuracy98: {
+    name: 'Virtuoosi',
+    description: 'Saa yli 98% tarkkuuden',
+  },
+  perfect75: {
+    name: 'Täydelliset seitsemänkymmentäviisi',
+    description: 'Osu 75 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  perfect100: {
+    name: 'Täydellinen sata',
+    description: 'Osu 100 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  perfect150: {
+    name: 'Täydellinen myrsky',
+    description: 'Osu 150 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  golden30: {
+    name: 'Kultainen vuorovesi',
+    description: 'Osu 30 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  golden40: {
+    name: 'Kultainen sinfonia',
+    description: 'Osu 40 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  perfect500: {
+    name: 'Täydellinen kone',
+    description: 'Osu yhteensä 500 täydelliseen nuottiin',
+  },
+  perfect1000: {
+    name: 'Tarkkuusvoimala',
+    description: 'Osu yhteensä 1 000 täydelliseen nuottiin',
+  },
+  perfect5000: {
+    name: 'Täydellinen lumivyöry',
+    description: 'Osu yhteensä 5 000 täydelliseen nuottiin',
+  },
+  perfect10000: {
+    name: 'Täydelliset kymmenen tuhatta',
+    description: 'Osu yhteensä 10 000 täydelliseen nuottiin',
+    rewardTitle: 'Täydelliset kymmenen tuhatta',
+  },
+  golden250: {
+    name: 'Kultainen sato',
+    description: 'Osu yhteensä 250 kultaiseen nuottiin',
+  },
+  golden1000: {
+    name: 'Kultainen kaatosade',
+    description: 'Osu yhteensä 1 000 kultaiseen nuottiin',
+  },
+  golden5000: {
+    name: 'Midas-ääni',
+    description: 'Osu yhteensä 5 000 kultaiseen nuottiin',
+    rewardTitle: 'Midas-ääni',
+  },
+  songs250: {
+    name: 'Laulukirjan konkari',
+    description: 'Suorita 250 kappaletta',
+  },
+  songs500: {
+    name: 'Puolentuhannen klubi',
+    description: 'Suorita 500 kappaletta',
+  },
+  songs1000: {
+    name: 'Tuhannen kappaleen legenda',
+    description: 'Suorita 1 000 kappaletta',
+    rewardTitle: 'Tuhannen kappaleen legenda',
+  },
+  games50: {
+    name: 'Säännöllinen laulaja',
+    description: 'Pelaa 50 peliä',
+  },
+  games100: {
+    name: 'Sataklubi',
+    description: 'Pelaa 100 peliä',
+  },
+  games250: {
+    name: 'Pelihallin vakio',
+    description: 'Pelaa 250 peliä',
+  },
+  games500: {
+    name: 'Maratonmaniakki',
+    description: 'Pelaa 500 peliä',
+    rewardTitle: 'Maratonmaniakki',
+  },
+  level25: {
+    name: 'Kokenut laulaja',
+    description: 'Saavuta taso 25',
+  },
+  level50: {
+    name: 'Eliittilaulaja',
+    description: 'Saavuta taso 50',
+    rewardTitle: 'Eliittilaulaja',
+  },
+  level100: {
+    name: 'Tason 100 legenda',
+    description: 'Saavuta taso 100',
+    rewardTitle: 'Tason 100 legenda',
+  },
+  daily100: {
+    name: 'Dailyn centurio',
+    description: 'Suorita 100 päivittäistä haastetta',
+  },
+  daily250: {
+    name: 'Dailyn sisukas',
+    description: 'Suorita 250 päivittäistä haastetta',
+  },
+  daily500: {
+    name: 'Dailyn kuolematon',
+    description: 'Suorita 500 päivittäistä haastetta',
+    rewardTitle: 'Dailyn kuolematon',
+  },
+  streak60: {
+    name: 'Rautatahto',
+    description: 'Pidä yllä 60 päivän päivittäisputki',
+  },
+  streak100: {
+    name: 'Sadan päivän sankari',
+    description: 'Pidä yllä 100 päivän päivittäisputki',
+  },
+  streak180: {
+    name: 'Puolen vuoden omistautuminen',
+    description: 'Pidä yllä 180 päivän päivittäisputki',
+    rewardTitle: 'Puolen vuoden omistautuminen',
+  },
+  streak365: {
+    name: 'Vuoden legenda',
+    description: 'Pidä yllä 365 päivän päivittäisputki',
+    rewardTitle: 'Vuoden legenda',
+  },
+  weekly15: {
+    name: 'Viikkovakio',
+    description: 'Suorita 15 viikoittaista haastetta',
+  },
+  weekly30: {
+    name: 'Viikon pylväs',
+    description: 'Suorita 30 viikoittaista haastetta',
+  },
+  weekly52: {
+    name: 'Vuoden viikot',
+    description: 'Suorita 52 viikoittaista haastetta',
+    rewardTitle: 'Vuoden viikot',
+  },
+  encore10: {
+    name: 'Encore!',
+    description: 'Pelaa 10 peliä yhden päivän aikana',
+  },
+  duets25: {
+    name: 'Dueton omistautuja',
+    description: 'Laula 25 duettoa',
+  },
+  duets50: {
+    name: 'Dynaaminen duo',
+    description: 'Laula 50 duettoa',
+  },
+  duets100: {
+    name: 'Sata duettoa',
+    description: 'Laula 100 duettoa',
+    rewardTitle: 'Sata duettoa',
+  },
+  duels5: {
+    name: 'Kaksintaistelija',
+    description: 'Voita 5 kaksintaistelua',
+  },
+  duels10: {
+    name: 'Kaksintaistelun mestari',
+    description: 'Voita 10 kaksintaistelua',
+  },
+  duels25: {
+    name: 'Kaksintaistelun valtias',
+    description: 'Voita 25 kaksintaistelua',
+    rewardTitle: 'Kaksintaistelun valtias',
+  },
+  party10: {
+    name: 'Bile-eläin',
+    description: 'Pelaa 10 juhlapeliä',
+  },
+  party25: {
+    name: 'Bileiden sielu',
+    description: 'Pelaa 25 juhlapeliä',
+  },
+  party50: {
+    name: 'Bilelegenda',
+    description: 'Pelaa 50 juhlapeliä',
+  },
+  disney25: {
+    name: 'Disney-entusiasti',
+    description: 'Laula 25 Disney-kappaletta',
+  },
+  disney50: {
+    name: 'Olipa kerran laulu',
+    description: 'Laula 50 Disney-kappaletta',
+    rewardTitle: 'Disneyn kuningasperhe',
+  },
+  genres8: {
+    name: 'Genrevaeltaja',
+    description: 'Laula kappaleita 8:sta eri genrestä',
+  },
+  genres10: {
+    name: 'Genreasiantuntija',
+    description: 'Laula kappaleita 10:stä eri genrestä',
+  },
+  cleanSheet: {
+    name: 'Nollapeli',
+    description: 'Suorita kappale, jossa on 50+ nuottia eikä yhtään hutia',
+  },
+  weekendSinger: {
+    name: 'Viikonloppulaulaja',
+    description: 'Suorita kappale lauantaina tai sunnuntaina',
+  },
+  lunchBreak: {
+    name: 'Lounastauko',
+    description: 'Suorita kappale kello 12:n ja 14:n välisenä aikana',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Mikrofoni',
   survived: 'Selvisi',
   visualSettings: 'Visuaaliset asetukset',
-  title: 'Battle Royale',
-  playersLabel: 'pelaajaa',
-  timeLeft: '{n} sekuntia jäljellä tällä kierroksella',
 },
 blind: {
   title: 'Sokea karaoke',

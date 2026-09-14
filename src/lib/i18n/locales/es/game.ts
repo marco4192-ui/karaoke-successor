@@ -499,6 +499,255 @@ achievements: {
     name: 'Cantante Maratoniano',
     description: 'Juega 5 partidas en un solo día',
   },
+
+  // ── Ampliación a 100 logros ──
+  score9800: {
+    name: 'Estrella Ultra',
+    description: 'Puntúa más de 9,800 puntos',
+  },
+  score9900: {
+    name: 'Más Allá de la Perfección',
+    description: 'Puntúa más de 9,900 puntos',
+    rewardTitle: 'Más Allá de la Perfección',
+  },
+  combo300: {
+    name: 'Titán del Combo',
+    description: 'Logra un combo de 300 notas',
+  },
+  combo500: {
+    name: 'Combo Inmortal',
+    description: 'Logra un combo de 500 notas',
+    rewardTitle: 'Combo Inmortal',
+  },
+  accuracy92: {
+    name: 'Afinación Fina',
+    description: 'Consigue más del 92% de precisión',
+  },
+  accuracy94: {
+    name: 'Calidad de Estudio',
+    description: 'Consigue más del 94% de precisión',
+  },
+  accuracy96: {
+    name: 'Tirador Certero',
+    description: 'Consigue más del 96% de precisión',
+  },
+  accuracy97: {
+    name: 'Precisión Láser',
+    description: 'Consigue más del 97% de precisión',
+  },
+  accuracy98: {
+    name: 'Virtuoso',
+    description: 'Consigue más del 98% de precisión',
+  },
+  perfect75: {
+    name: 'Setenta y Cinco Perfectas',
+    description: 'Acierta 75 notas perfectas en una sola canción',
+  },
+  perfect100: {
+    name: 'Centuria Perfecta',
+    description: 'Acierta 100 notas perfectas en una sola canción',
+  },
+  perfect150: {
+    name: 'Tormenta Perfecta',
+    description: 'Acierta 150 notas perfectas en una sola canción',
+  },
+  golden30: {
+    name: 'Marea Dorada',
+    description: 'Acierta 30 notas doradas en una sola canción',
+  },
+  golden40: {
+    name: 'Sinfonía Dorada',
+    description: 'Acierta 40 notas doradas en una sola canción',
+  },
+  perfect500: {
+    name: 'Máquina Perfecta',
+    description: 'Acierta 500 notas perfectas en total',
+  },
+  perfect1000: {
+    name: 'Potencia de Precisión',
+    description: 'Acierta 1,000 notas perfectas en total',
+  },
+  perfect5000: {
+    name: 'Avalancha Perfecta',
+    description: 'Acierta 5,000 notas perfectas en total',
+  },
+  perfect10000: {
+    name: 'Diez Mil Perfectas',
+    description: 'Acierta 10,000 notas perfectas en total',
+    rewardTitle: 'Diez Mil Perfectas',
+  },
+  golden250: {
+    name: 'Cosecha Dorada',
+    description: 'Acierta 250 notas doradas en total',
+  },
+  golden1000: {
+    name: 'Diluvio Dorado',
+    description: 'Acierta 1,000 notas doradas en total',
+  },
+  golden5000: {
+    name: 'Voz de Midas',
+    description: 'Acierta 5,000 notas doradas en total',
+    rewardTitle: 'Voz de Midas',
+  },
+  songs250: {
+    name: 'Veterano del Cancionero',
+    description: 'Completa 250 canciones',
+  },
+  songs500: {
+    name: 'Club del Medio Millar',
+    description: 'Completa 500 canciones',
+  },
+  songs1000: {
+    name: 'Leyenda de las Mil Canciones',
+    description: 'Completa 1,000 canciones',
+    rewardTitle: 'Leyenda de las Mil Canciones',
+  },
+  games50: {
+    name: 'Cantante Frecuente',
+    description: 'Juega 50 partidas',
+  },
+  games100: {
+    name: 'Club de la Centena',
+    description: 'Juega 100 partidas',
+  },
+  games250: {
+    name: 'Asiduo del Arcade',
+    description: 'Juega 250 partidas',
+  },
+  games500: {
+    name: 'Maníaco del Maratón',
+    description: 'Juega 500 partidas',
+    rewardTitle: 'Maníaco del Maratón',
+  },
+  level25: {
+    name: 'Cantante Veterano',
+    description: 'Alcanza el nivel 25',
+  },
+  level50: {
+    name: 'Vocalista de Élite',
+    description: 'Alcanza el nivel 50',
+    rewardTitle: 'Vocalista de Élite',
+  },
+  level100: {
+    name: 'Leyenda del Nivel 100',
+    description: 'Alcanza el nivel 100',
+    rewardTitle: 'Leyenda del Nivel 100',
+  },
+  daily100: {
+    name: 'Centurión Diario',
+    description: 'Completa 100 retos diarios',
+  },
+  daily250: {
+    name: 'Incondicional Diario',
+    description: 'Completa 250 retos diarios',
+  },
+  daily500: {
+    name: 'Inmortal Diario',
+    description: 'Completa 500 retos diarios',
+    rewardTitle: 'Inmortal Diario',
+  },
+  streak60: {
+    name: 'Voluntad de Hierro',
+    description: 'Mantén una racha diaria de 60 días',
+  },
+  streak100: {
+    name: 'Héroe de los Cien Días',
+    description: 'Mantén una racha diaria de 100 días',
+  },
+  streak180: {
+    name: 'Devoción de Medio Año',
+    description: 'Mantén una racha diaria de 180 días',
+    rewardTitle: 'Devoción de Medio Año',
+  },
+  streak365: {
+    name: 'Leyenda Anual',
+    description: 'Mantén una racha diaria de 365 días',
+    rewardTitle: 'Leyenda Anual',
+  },
+  weekly15: {
+    name: 'Incondicional Semanal',
+    description: 'Completa 15 retos semanales',
+  },
+  weekly30: {
+    name: 'Pilar Semanal',
+    description: 'Completa 30 retos semanales',
+  },
+  weekly52: {
+    name: 'Un Año de Semanas',
+    description: 'Completa 52 retos semanales',
+    rewardTitle: 'Un Año de Semanas',
+  },
+  encore10: {
+    name: '¡Bis!',
+    description: 'Juega 10 partidas en un solo día',
+  },
+  duets25: {
+    name: 'Devoto del Dúo',
+    description: 'Canta 25 dúos',
+  },
+  duets50: {
+    name: 'Dúo Dinámico',
+    description: 'Canta 50 dúos',
+  },
+  duets100: {
+    name: 'Centuria de Dúos',
+    description: 'Canta 100 dúos',
+    rewardTitle: 'Centuria de Dúos',
+  },
+  duels5: {
+    name: 'Duelista',
+    description: 'Gana 5 duelos',
+  },
+  duels10: {
+    name: 'Maestro del Duelo',
+    description: 'Gana 10 duelos',
+  },
+  duels25: {
+    name: 'Señor del Duelo',
+    description: 'Gana 25 duelos',
+    rewardTitle: 'Señor del Duelo',
+  },
+  party10: {
+    name: 'Animal de Fiesta',
+    description: 'Juega 10 partidas de fiesta',
+  },
+  party25: {
+    name: 'El Alma de la Fiesta',
+    description: 'Juega 25 partidas de fiesta',
+  },
+  party50: {
+    name: 'Leyenda de la Fiesta',
+    description: 'Juega 50 partidas de fiesta',
+  },
+  disney25: {
+    name: 'Entusiasta de Disney',
+    description: 'Canta 25 canciones de Disney',
+  },
+  disney50: {
+    name: 'Érase una Vez una Canción',
+    description: 'Canta 50 canciones de Disney',
+    rewardTitle: 'Realeza de Disney',
+  },
+  genres8: {
+    name: 'Errante de Géneros',
+    description: 'Canta canciones de 8 géneros diferentes',
+  },
+  genres10: {
+    name: 'Aficionado a los Géneros',
+    description: 'Canta canciones de 10 géneros diferentes',
+  },
+  cleanSheet: {
+    name: 'Portería a Cero',
+    description: 'Termina una canción con 50+ notas y cero fallos',
+  },
+  weekendSinger: {
+    name: 'Cantante de Fin de Semana',
+    description: 'Termina una canción en sábado o domingo',
+  },
+  lunchBreak: {
+    name: 'Descanso para Comer',
+    description: 'Termina una canción entre las 12 y las 14',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Mic',
   survived: 'Superviviente',
   visualSettings: 'Ajustes visuales',
-  title: 'Battle Royale',
-  playersLabel: 'jugadores',
-  timeLeft: 'Quedan {n} segundos en esta ronda',
 },
 blind: {
   title: 'Karaoke a Ciegas',

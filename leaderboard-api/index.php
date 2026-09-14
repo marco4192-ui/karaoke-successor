@@ -21,6 +21,15 @@
  *   GET    /leaderboard/global        Global player ranking
  *   POST   /daily                     Submit daily-challenge result (requires profile sync_code)
  *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type)
+ *   POST   /auth/register             Link an e-mail + password account to a profile (requires profile sync_code)
+ *   POST   /auth/login                App-only login: verify e-mail + password, returns the profile's sync_code
+ *   POST   /auth/password             Change account password (requires current password)
+ *
+ * Auth notes: accounts exist so a profile can be loaded on another device.
+ * There is NO web login: the API returns JSON only, never HTML, uses no
+ * sessions/cookies, and every request requires the X-API-Key header that
+ * only the karaoke app ships. Passwords are stored as bcrypt hashes;
+ * 5 consecutive failed logins lock an account for 15 minutes.
  */
 
 require_once __DIR__ . '/config.php';
@@ -36,14 +45,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 $T_PROFILES = tbl('profiles');
 $T_SCORES   = tbl('scores');
 $T_DAILY    = tbl('daily_results');
+$T_ACCOUNTS = tbl('accounts');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.1.0', 'copyright_safe' => true, 'anti_cheat' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.2.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
         'daily'       => routeDaily($parts, $method, $T_PROFILES, $T_DAILY),
+        'auth'        => routeAuth($parts, $method, $T_PROFILES, $T_ACCOUNTS),
         default       => err('Not found', 404),
     };
 } catch (PDOException $e) {
@@ -596,4 +607,177 @@ function songRank(string $TS, string $TP, string $hash, string $gt, int $score):
 function isValidDateString(string $s): bool {
     if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $s, $m)) return false;
     return checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
+}
+
+// ============================================================
+// AUTH (app-only online accounts: e-mail + password)
+// ============================================================
+function routeAuth(array $parts, string $method, string $TP, string $TA): void {
+    $action = $parts[1] ?? null;
+    if ($method === 'POST' && $action === 'register') { authRegister($TP, $TA); return; }
+    if ($method === 'POST' && $action === 'login')    { authLogin($TP, $TA);    return; }
+    if ($method === 'POST' && $action === 'password') { authPassword($TP, $TA); return; }
+    err('Not found', 404);
+}
+
+/** Normalize an e-mail for storage/lookup: trim + lowercase. */
+function normalizeEmail($raw): string {
+    return strtolower(trim(clean((string)$raw)));
+}
+
+/** Validate the shared password policy (8-128 chars). */
+function assertPasswordPolicy(string $pw): void {
+    $len = strlen($pw);
+    if ($len < 8 || $len > 128) err('Password must be 8-128 characters');
+}
+
+/**
+ * POST /auth/register — link an e-mail + password account to a profile.
+ * The caller must prove ownership of the profile via its sync_code.
+ * Exactly one account per profile and vice versa.
+ */
+function authRegister(string $TP, string $TA): void {
+    $d = body();
+    requireFields($d, ['email', 'password', 'sync_code']);
+    $email = normalizeEmail($d['email']);
+    $pw    = (string)$d['password'];
+    $code  = strtoupper(clean((string)$d['sync_code']));
+    if (!isValidSyncCode($code)) err('Invalid sync_code (8 chars A-Z0-9)');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254) {
+        err('Invalid e-mail address');
+    }
+    assertPasswordPolicy($pw);
+
+    // The sync_code must belong to an existing profile (ownership proof)
+    $cur = db()->prepare("SELECT `profile_uid` FROM `$TP` WHERE `sync_code` = ?");
+    $cur->execute([$code]);
+    $uid = $cur->fetchColumn();
+    if ($uid === false || $uid === null) err('Profile not found', 404);
+
+    // One account per e-mail
+    $dup = db()->prepare("SELECT 1 FROM `$TA` WHERE `email` = ?");
+    $dup->execute([$email]);
+    if ($dup->fetchColumn()) err('E-mail already registered', 409);
+
+    // One account per profile
+    $dup2 = db()->prepare("SELECT 1 FROM `$TA` WHERE `profile_uid` = ?");
+    $dup2->execute([$uid]);
+    if ($dup2->fetchColumn()) err('Profile already linked to an account', 409);
+
+    $hash = password_hash($pw, PASSWORD_BCRYPT);
+    if ($hash === false) err('Could not hash password', 500);
+    db()->prepare("INSERT INTO `$TA` (`email`,`password_hash`,`profile_uid`) VALUES (?,?,?)")
+        ->execute([$email, $hash, $uid]);
+    json(['ok' => true, 'profile_uid' => $uid]);
+}
+
+/** Fetch an account row by e-mail. */
+function fetchAccount(string $email, string $TA): array|null {
+    $cur = db()->prepare(
+        "SELECT `id`,`password_hash`,`profile_uid`,`failed_attempts`,`locked_until`
+         FROM `$TA` WHERE `email` = ?"
+    );
+    $cur->execute([$email]);
+    $row = $cur->fetch();
+    return $row === false ? null : $row;
+}
+
+/** True when the account is currently locked out. */
+function isLocked(array $acc): bool {
+    return $acc['locked_until'] !== null
+        && strtotime((string)$acc['locked_until']) !== false
+        && strtotime((string)$acc['locked_until']) > time();
+}
+
+/** Count a failed attempt; lock for 15 minutes from the 5th failure on. */
+function countFailedLogin(array $acc, string $TA): void {
+    $fails  = (int)$acc['failed_attempts'] + 1;
+    $locked = $fails >= 5 ? date('Y-m-d H:i:s', time() + 900) : null;
+    db()->prepare("UPDATE `$TA` SET `failed_attempts` = ?, `locked_until` = ? WHERE `id` = ?")
+        ->execute([$fails, $locked, $acc['id']]);
+}
+
+/** Reset the failure counters after a successful login. */
+function resetFailedLogin(array $acc, string $TA): void {
+    if ((int)$acc['failed_attempts'] !== 0 || $acc['locked_until'] !== null) {
+        db()->prepare("UPDATE `$TA` SET `failed_attempts` = 0, `locked_until` = NULL WHERE `id` = ?")
+            ->execute([$acc['id']]);
+    }
+}
+
+// Fixed bcrypt hash of an unguessable random string. Verifying against it
+// keeps the timing of "unknown e-mail" answers identical to wrong passwords
+// (blunts user enumeration).
+const AUTH_DUMMY_HASH = '$2y$10$Xk5ZbG9QhU3wJmRtYs8CeOuNqPfLdAzWxVbKnMgSjHqEiCyT1oUa4m';
+
+/**
+ * POST /auth/login — verify e-mail + password. On success the profile's
+ * sync_code is returned so the client can pull its sync snapshot via the
+ * existing GET /profiles/sync/{code} endpoint (same trust level: the
+ * password is bound 1:1 to that profile). Responses are deliberately
+ * generic to avoid e-mail enumeration.
+ */
+function authLogin(string $TP, string $TA): void {
+    $d = body();
+    requireFields($d, ['email', 'password']);
+    $email = normalizeEmail($d['email']);
+    $pw    = (string)$d['password'];
+
+    $acc = fetchAccount($email, $TA);
+    if ($acc === null) {
+        password_verify($pw, AUTH_DUMMY_HASH); // equalize timing
+        usleep(300000);
+        err('Invalid e-mail or password', 401);
+    }
+    if (isLocked($acc)) {
+        err('Too many failed attempts — try again later', 429);
+    }
+    if (!password_verify($pw, (string)$acc['password_hash'])) {
+        countFailedLogin($acc, $TA);
+        usleep(300000);
+        err('Invalid e-mail or password', 401);
+    }
+    resetFailedLogin($acc, $TA);
+
+    $cur = db()->prepare("SELECT `sync_code` FROM `$TP` WHERE `profile_uid` = ?");
+    $cur->execute([$acc['profile_uid']]);
+    $code = $cur->fetchColumn();
+    if ($code === false || $code === null) err('Profile not found', 404);
+
+    json(['ok' => true, 'profile_uid' => $acc['profile_uid'], 'sync_code' => (string)$code]);
+}
+
+/**
+ * POST /auth/password — change the account password. Requires the current
+ * password; failure counting/lockout works exactly like login.
+ */
+function authPassword(string $TP, string $TA): void {
+    $d = body();
+    requireFields($d, ['email', 'current_password', 'new_password']);
+    $email = normalizeEmail($d['email']);
+    $curPw = (string)$d['current_password'];
+    $newPw = (string)$d['new_password'];
+    assertPasswordPolicy($newPw);
+
+    $acc = fetchAccount($email, $TA);
+    if ($acc === null) {
+        password_verify($curPw, AUTH_DUMMY_HASH);
+        usleep(300000);
+        err('Invalid e-mail or password', 401);
+    }
+    if (isLocked($acc)) {
+        err('Too many failed attempts — try again later', 429);
+    }
+    if (!password_verify($curPw, (string)$acc['password_hash'])) {
+        countFailedLogin($acc, $TA);
+        usleep(300000);
+        err('Invalid e-mail or password', 401);
+    }
+    resetFailedLogin($acc, $TA);
+
+    $hash = password_hash($newPw, PASSWORD_BCRYPT);
+    if ($hash === false) err('Could not hash password', 500);
+    db()->prepare("UPDATE `$TA` SET `password_hash` = ? WHERE `id` = ?")
+        ->execute([$hash, $acc['id']]);
+    json(['ok' => true]);
 }

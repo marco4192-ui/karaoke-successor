@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Verkko',
     settingsDesc: 'Päätä, liittyykö tämä profiili verkon tulostaulukkoon vai pysyykö vain paikallisena. Voit vaihtaa milloin tahansa.',
   },
+  countrySearch: 'Hae maata…',
+  noCountryFound: 'Maata ei löytynyt',
+  popularCountries: 'Suosituimmat',
+  allCountries: 'Kaikki maat',
+},
+profileAuth: {
+  accountTitle: 'Verkkotili (valinnainen)',
+  accountDesc: 'Tallenna sähköposti ja salasana, jotta voit ladata tämän profiilin toiselle laitteelle. Kirjautuminen on mahdollista vain karaoke-sovelluksessa — verkkokirjautumista ei ole.',
+  email: 'Sähköposti',
+  emailPlaceholder: 'sähköpostisi@esimerkki.fi',
+  emailInvalid: 'Syötä kelvollinen sähköpostiosoite',
+  emailTaken: 'Tämä sähköposti on jo rekisteröity',
+  password: 'Salasana',
+  passwordPlaceholder: 'Vähintään 8 merkkiä',
+  passwordRepeat: 'Toista salasana',
+  passwordsDontMatch: 'Salasanat eivät täsmää',
+  passwordTooShort: 'Salasanan on oltava vähintään 8 merkkiä pitkä',
+  registerFailed: 'Verkkotiliä ei voitu luoda',
+  loginTitle: 'Lataa verkkoprofiili',
+  loginDesc: 'Syötä verkkoprofiilisi sähköposti ja salasana ladataksesi sen tälle laitteelle.',
+  loginButton: 'Kirjaudu sisään ja lataa profiili',
+  loginFailed: 'Kirjautuminen epäonnistui — tarkista sähköposti ja salasana',
+  loginSuccess: 'Profiili "{n}" ladattu onnistuneesti!',
+  noSnapshot: 'Palvelimelta ei löytynyt vielä synkronoituja profiilitietoja',
+  emailNote: 'Käytetään vain kirjautumiseen — ei näytetä julkisesti',
+  changePassword: 'Vaihda salasana',
+  currentPassword: 'Nykyinen salasana',
+  newPassword: 'Uusi salasana',
+  passwordChanged: 'Salasana vaihdettu onnistuneesti',
+  passwordChangeFailed: 'Salasanan vaihtaminen epäonnistui',
+  hasAccount: 'Verkkotili ✓',
+  registrationPending: 'Luodaan verkkotiliä…',
+  registrationSuccess: 'Verkkotili luotu — voit nyt kirjautua sisään millä tahansa laitteella',
+  registrationSuccessTitle: '🔐 Verkkotili',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profiili',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Näytä QR-koodi',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Lataa verkkoprofiili',
 },
 characterCard: {
   connected: 'Yhdistetty',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Maratonlaulaja',
     description: 'Pelaa 5 peliä yhden päivän aikana',
+  },
+
+  // ── Laajennus 100 saavutukseen ──
+  score_9800: {
+    name: 'Ultratähti',
+    description: 'Saa yli 9 800 pistettä',
+  },
+  score_9900: {
+    name: 'Täydellisyyden tuolla puolen',
+    description: 'Saa yli 9 900 pistettä',
+  },
+  combo_300: {
+    name: 'Kombotitaani',
+    description: 'Saa 300 nuotin kombo',
+  },
+  combo_500: {
+    name: 'Kuolematon kombo',
+    description: 'Saa 500 nuotin kombo',
+  },
+  accuracy_92: {
+    name: 'Hienosäätö',
+    description: 'Saa yli 92% tarkkuuden',
+  },
+  accuracy_94: {
+    name: 'Studiolaatu',
+    description: 'Saa yli 94% tarkkuuden',
+  },
+  accuracy_96: {
+    name: 'Tarkka-ampuja',
+    description: 'Saa yli 96% tarkkuuden',
+  },
+  accuracy_97: {
+    name: 'Lasertarkkuus',
+    description: 'Saa yli 97% tarkkuuden',
+  },
+  accuracy_98: {
+    name: 'Virtuoosi',
+    description: 'Saa yli 98% tarkkuuden',
+  },
+  perfect_75: {
+    name: 'Täydelliset seitsemänkymmentäviisi',
+    description: 'Osu 75 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  perfect_100: {
+    name: 'Täydellinen sata',
+    description: 'Osu 100 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  perfect_150: {
+    name: 'Täydellinen myrsky',
+    description: 'Osu 150 täydelliseen nuottiin yhdessä kappaleessa',
+  },
+  golden_30: {
+    name: 'Kultainen vuorovesi',
+    description: 'Osu 30 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  golden_40: {
+    name: 'Kultainen sinfonia',
+    description: 'Osu 40 kultaiseen nuottiin yhdessä kappaleessa',
+  },
+  perfect_500: {
+    name: 'Täydellinen kone',
+    description: 'Osu yhteensä 500 täydelliseen nuottiin',
+  },
+  perfect_1000: {
+    name: 'Tarkkuusvoimala',
+    description: 'Osu yhteensä 1 000 täydelliseen nuottiin',
+  },
+  perfect_5000: {
+    name: 'Täydellinen lumivyöry',
+    description: 'Osu yhteensä 5 000 täydelliseen nuottiin',
+  },
+  perfect_10000: {
+    name: 'Täydelliset kymmenen tuhatta',
+    description: 'Osu yhteensä 10 000 täydelliseen nuottiin',
+  },
+  golden_250: {
+    name: 'Kultainen sato',
+    description: 'Osu yhteensä 250 kultaiseen nuottiin',
+  },
+  golden_1000: {
+    name: 'Kultainen kaatosade',
+    description: 'Osu yhteensä 1 000 kultaiseen nuottiin',
+  },
+  golden_5000: {
+    name: 'Midas-ääni',
+    description: 'Osu yhteensä 5 000 kultaiseen nuottiin',
+  },
+  songs_250: {
+    name: 'Laulukirjan konkari',
+    description: 'Suorita 250 kappaletta',
+  },
+  songs_500: {
+    name: 'Puolentuhannen klubi',
+    description: 'Suorita 500 kappaletta',
+  },
+  songs_1000: {
+    name: 'Tuhannen kappaleen legenda',
+    description: 'Suorita 1 000 kappaletta',
+  },
+  games_50: {
+    name: 'Säännöllinen laulaja',
+    description: 'Pelaa 50 peliä',
+  },
+  games_100: {
+    name: 'Sataklubi',
+    description: 'Pelaa 100 peliä',
+  },
+  games_250: {
+    name: 'Pelihallin vakio',
+    description: 'Pelaa 250 peliä',
+  },
+  games_500: {
+    name: 'Maratonmaniakki',
+    description: 'Pelaa 500 peliä',
+  },
+  level_25: {
+    name: 'Kokenut laulaja',
+    description: 'Saavuta taso 25',
+  },
+  level_50: {
+    name: 'Eliittilaulaja',
+    description: 'Saavuta taso 50',
+  },
+  level_100: {
+    name: 'Tason 100 legenda',
+    description: 'Saavuta taso 100',
+  },
+  daily_100: {
+    name: 'Dailyn centurio',
+    description: 'Suorita 100 päivittäistä haastetta',
+  },
+  daily_250: {
+    name: 'Dailyn sisukas',
+    description: 'Suorita 250 päivittäistä haastetta',
+  },
+  daily_500: {
+    name: 'Dailyn kuolematon',
+    description: 'Suorita 500 päivittäistä haastetta',
+  },
+  streak_60: {
+    name: 'Rautatahto',
+    description: 'Pidä yllä 60 päivän päivittäisputki',
+  },
+  streak_100: {
+    name: 'Sadan päivän sankari',
+    description: 'Pidä yllä 100 päivän päivittäisputki',
+  },
+  streak_180: {
+    name: 'Puolen vuoden omistautuminen',
+    description: 'Pidä yllä 180 päivän päivittäisputki',
+  },
+  streak_365: {
+    name: 'Vuoden legenda',
+    description: 'Pidä yllä 365 päivän päivittäisputki',
+  },
+  weekly_15: {
+    name: 'Viikkovakio',
+    description: 'Suorita 15 viikoittaista haastetta',
+  },
+  weekly_30: {
+    name: 'Viikon pylväs',
+    description: 'Suorita 30 viikoittaista haastetta',
+  },
+  weekly_52: {
+    name: 'Vuoden viikot',
+    description: 'Suorita 52 viikoittaista haastetta',
+  },
+  encore_10: {
+    name: 'Encore!',
+    description: 'Pelaa 10 peliä yhden päivän aikana',
+  },
+  duets_25: {
+    name: 'Dueton omistautuja',
+    description: 'Laula 25 duettoa',
+  },
+  duets_50: {
+    name: 'Dynaaminen duo',
+    description: 'Laula 50 duettoa',
+  },
+  duets_100: {
+    name: 'Sata duettoa',
+    description: 'Laula 100 duettoa',
+  },
+  duels_5: {
+    name: 'Kaksintaistelija',
+    description: 'Voita 5 kaksintaistelua',
+  },
+  duels_10: {
+    name: 'Kaksintaistelun mestari',
+    description: 'Voita 10 kaksintaistelua',
+  },
+  duels_25: {
+    name: 'Kaksintaistelun valtias',
+    description: 'Voita 25 kaksintaistelua',
+  },
+  party_10: {
+    name: 'Bile-eläin',
+    description: 'Pelaa 10 juhlapeliä',
+  },
+  party_25: {
+    name: 'Bileiden sielu',
+    description: 'Pelaa 25 juhlapeliä',
+  },
+  party_50: {
+    name: 'Bilelegenda',
+    description: 'Pelaa 50 juhlapeliä',
+  },
+  disney_25: {
+    name: 'Disney-entusiasti',
+    description: 'Laula 25 Disney-kappaletta',
+  },
+  disney_50: {
+    name: 'Olipa kerran laulu',
+    description: 'Laula 50 Disney-kappaletta',
+  },
+  genres_8: {
+    name: 'Genrevaeltaja',
+    description: 'Laula kappaleita 8:sta eri genrestä',
+  },
+  genres_10: {
+    name: 'Genreasiantuntija',
+    description: 'Laula kappaleita 10:stä eri genrestä',
+  },
+  clean_sheet: {
+    name: 'Nollapeli',
+    description: 'Suorita kappale, jossa on 50+ nuottia eikä yhtään hutia',
+  },
+  weekend_singer: {
+    name: 'Viikonloppulaulaja',
+    description: 'Suorita kappale lauantaina tai sunnuntaina',
+  },
+  lunch_break: {
+    name: 'Lounastauko',
+    description: 'Suorita kappale kello 12:n ja 14:n välisenä aikana',
   },
 },
 achievementsScreen: {

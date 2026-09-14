@@ -499,6 +499,255 @@ achievements: {
     name: 'Marathonzanger',
     description: 'Speel 5 spellen op één dag',
   },
+
+  // ── 100-prestaties-uitbreiding ──
+  score9800: {
+    name: 'Ultraster',
+    description: 'Score meer dan 9.800 punten',
+  },
+  score9900: {
+    name: 'Voorbij perfectie',
+    description: 'Score meer dan 9.900 punten',
+    rewardTitle: 'Voorbij perfectie',
+  },
+  combo300: {
+    name: 'Combo-titan',
+    description: 'Behaal een combo van 300 noten',
+  },
+  combo500: {
+    name: 'Onsterfelijke combo',
+    description: 'Behaal een combo van 500 noten',
+    rewardTitle: 'Onsterfelijke combo',
+  },
+  accuracy92: {
+    name: 'Fijnafstelling',
+    description: 'Behaal meer dan 92% nauwkeurigheid',
+  },
+  accuracy94: {
+    name: 'Studiokwaliteit',
+    description: 'Behaal meer dan 94% nauwkeurigheid',
+  },
+  accuracy96: {
+    name: 'Scherpschutter',
+    description: 'Behaal meer dan 96% nauwkeurigheid',
+  },
+  accuracy97: {
+    name: 'Laserprecisie',
+    description: 'Behaal meer dan 97% nauwkeurigheid',
+  },
+  accuracy98: {
+    name: 'Virtuoos',
+    description: 'Behaal meer dan 98% nauwkeurigheid',
+  },
+  perfect75: {
+    name: 'Perfecte vijfenzeventig',
+    description: 'Raak 75 perfecte noten in één nummer',
+  },
+  perfect100: {
+    name: 'Perfecte honderd',
+    description: 'Raak 100 perfecte noten in één nummer',
+  },
+  perfect150: {
+    name: 'Perfecte storm',
+    description: 'Raak 150 perfecte noten in één nummer',
+  },
+  golden30: {
+    name: 'Gouden vloed',
+    description: 'Raak 30 gouden noten in één nummer',
+  },
+  golden40: {
+    name: 'Gouden symfonie',
+    description: 'Raak 40 gouden noten in één nummer',
+  },
+  perfect500: {
+    name: 'Perfecte machine',
+    description: 'Raak in totaal 500 perfecte noten',
+  },
+  perfect1000: {
+    name: 'Precisie-krachtpatser',
+    description: 'Raak in totaal 1.000 perfecte noten',
+  },
+  perfect5000: {
+    name: 'Perfecte lawine',
+    description: 'Raak in totaal 5.000 perfecte noten',
+  },
+  perfect10000: {
+    name: 'Perfecte tienduizend',
+    description: 'Raak in totaal 10.000 perfecte noten',
+    rewardTitle: 'Perfecte tienduizend',
+  },
+  golden250: {
+    name: 'Gouden oogst',
+    description: 'Raak in totaal 250 gouden noten',
+  },
+  golden1000: {
+    name: 'Gouden stortbui',
+    description: 'Raak in totaal 1.000 gouden noten',
+  },
+  golden5000: {
+    name: 'Midas-stem',
+    description: 'Raak in totaal 5.000 gouden noten',
+    rewardTitle: 'Midas-stem',
+  },
+  songs250: {
+    name: 'Songboek-veteraan',
+    description: 'Voltooi 250 nummers',
+  },
+  songs500: {
+    name: 'Vijfhonderd-club',
+    description: 'Voltooi 500 nummers',
+  },
+  songs1000: {
+    name: 'Duizend-nummer-legende',
+    description: 'Voltooi 1.000 nummers',
+    rewardTitle: 'Duizend-nummer-legende',
+  },
+  games50: {
+    name: 'Regelmatige zanger',
+    description: 'Speel 50 spellen',
+  },
+  games100: {
+    name: 'Honderd-club',
+    description: 'Speel 100 spellen',
+  },
+  games250: {
+    name: 'Arcade-stamgast',
+    description: 'Speel 250 spellen',
+  },
+  games500: {
+    name: 'Marathonmaniak',
+    description: 'Speel 500 spellen',
+    rewardTitle: 'Marathonmaniak',
+  },
+  level25: {
+    name: 'Ervaren zanger',
+    description: 'Bereik niveau 25',
+  },
+  level50: {
+    name: 'Elite-zanger',
+    description: 'Bereik niveau 50',
+    rewardTitle: 'Elite-zanger',
+  },
+  level100: {
+    name: 'Niveau-100-legende',
+    description: 'Bereik niveau 100',
+    rewardTitle: 'Niveau-100-legende',
+  },
+  daily100: {
+    name: 'Dagelijkse centurio',
+    description: 'Voltooi 100 dagelijkse uitdagingen',
+  },
+  daily250: {
+    name: 'Dagelijkse diehard',
+    description: 'Voltooi 250 dagelijkse uitdagingen',
+  },
+  daily500: {
+    name: 'Dagelijkse onsterfelijke',
+    description: 'Voltooi 500 dagelijkse uitdagingen',
+    rewardTitle: 'Dagelijkse onsterfelijke',
+  },
+  streak60: {
+    name: 'IJzeren wil',
+    description: 'Houd een dagelijkse reeks van 60 dagen aan',
+  },
+  streak100: {
+    name: 'Honderd-dagen-held',
+    description: 'Houd een dagelijkse reeks van 100 dagen aan',
+  },
+  streak180: {
+    name: 'Halfjaar-toewijding',
+    description: 'Houd een dagelijkse reeks van 180 dagen aan',
+    rewardTitle: 'Halfjaar-toewijding',
+  },
+  streak365: {
+    name: 'Jaarlijkse legende',
+    description: 'Houd een dagelijkse reeks van 365 dagen aan',
+    rewardTitle: 'Jaarlijkse legende',
+  },
+  weekly15: {
+    name: 'Wekelijkse rots',
+    description: 'Voltooi 15 wekelijkse uitdagingen',
+  },
+  weekly30: {
+    name: 'Wekelijkse pijler',
+    description: 'Voltooi 30 wekelijkse uitdagingen',
+  },
+  weekly52: {
+    name: 'Jaar van weken',
+    description: 'Voltooi 52 wekelijkse uitdagingen',
+    rewardTitle: 'Jaar van weken',
+  },
+  encore10: {
+    name: 'Toegift!',
+    description: 'Speel 10 spellen op één dag',
+  },
+  duets25: {
+    name: 'Duet-liefhebber',
+    description: 'Zing 25 duetten',
+  },
+  duets50: {
+    name: 'Dynamisch duo',
+    description: 'Zing 50 duetten',
+  },
+  duets100: {
+    name: 'Eeuw van duetten',
+    description: 'Zing 100 duetten',
+    rewardTitle: 'Eeuw van duetten',
+  },
+  duels5: {
+    name: 'Duellist',
+    description: 'Win 5 duels',
+  },
+  duels10: {
+    name: 'Duel-meester',
+    description: 'Win 10 duels',
+  },
+  duels25: {
+    name: 'Duel-overheerser',
+    description: 'Win 25 duels',
+    rewardTitle: 'Duel-overheerser',
+  },
+  party10: {
+    name: 'Feestbeest',
+    description: 'Speel 10 feestspellen',
+  },
+  party25: {
+    name: 'Ziel van het feest',
+    description: 'Speel 25 feestspellen',
+  },
+  party50: {
+    name: 'Feestlegende',
+    description: 'Speel 50 feestspellen',
+  },
+  disney25: {
+    name: 'Disney-liefhebber',
+    description: 'Zing 25 Disney-nummers',
+  },
+  disney50: {
+    name: 'Er was eens een nummer',
+    description: 'Zing 50 Disney-nummers',
+    rewardTitle: 'Disney-adel',
+  },
+  genres8: {
+    name: 'Genre-zwerver',
+    description: 'Zing nummers van 8 verschillende genres',
+  },
+  genres10: {
+    name: 'Genre-kenner',
+    description: 'Zing nummers van 10 verschillende genres',
+  },
+  cleanSheet: {
+    name: 'De nul houden',
+    description: 'Voltooi een nummer met 50+ noten en nul missers',
+  },
+  weekendSinger: {
+    name: 'Weekendzanger',
+    description: 'Voltooi een nummer op zaterdag of zondag',
+  },
+  lunchBreak: {
+    name: 'Lunchpauze',
+    description: 'Voltooi een nummer tussen 12 en 14 uur',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Microfoon',
   survived: 'Overleeft',
   visualSettings: 'Visuele instellingen',
-  title: 'Battle Royale',
-  playersLabel: 'spelers',
-  timeLeft: 'Nog {n} seconden in deze ronde',
 },
 blind: {
   title: 'Blind Karaoke',

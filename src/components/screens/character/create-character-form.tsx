@@ -40,7 +40,6 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordRepeat, setPasswordRepeat] = useState('');
-  const [touchedAuth, setTouchedAuth] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +60,6 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
   const authValid = !wantsAccount || (emailValid && passwordValid && passwordsMatch);
 
   const handleCreate = () => {
-    setTouchedAuth(true);
     if (newName.trim() && authValid) {
       onCreate(newName.trim(), avatarUrl, {
         storageMode,
@@ -76,7 +74,6 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
       setEmail('');
       setPassword('');
       setPasswordRepeat('');
-      setTouchedAuth(false);
       setPrivacySettings({ showOnLeaderboard: true, showPhoto: true, showCountry: true });
     }
   };
@@ -202,7 +199,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
                   aria-label={t('profileAuth.passwordRepeat')}
                   className="bg-white/5 border-white/10 text-white"
                 />
-                {touchedAuth && wantsAccount && !authValid && (
+                {(wantsAccount && !authValid && (email.trim().length > 3 || password.length > 0)) && (
                   <div className="text-xs text-red-400 space-y-0.5">
                     {!emailValid && <div>{t('profileAuth.emailInvalid')}</div>}
                     {!passwordValid && <div>{t('profileAuth.passwordTooShort')}</div>}
@@ -238,7 +235,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
             <div className="flex gap-2">
               <Button
                 onClick={handleCreate}
-                disabled={!newName.trim() || (touchedAuth && !authValid)}
+                disabled={!newName.trim() || (wantsAccount && !authValid)}
                 className="bg-gradient-to-r from-cyan-500 to-purple-500"
               >
                 {t('profile.create')}

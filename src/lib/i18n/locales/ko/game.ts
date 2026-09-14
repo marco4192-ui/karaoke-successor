@@ -499,6 +499,255 @@ achievements: {
     name: '마라톤 가수',
     description: '하루에 게임 5판 플레이하기',
   },
+
+  // ── 100 업적 확장 ──
+  score9800: {
+    name: '울트라 스타',
+    description: '9,800점 이상 획득',
+  },
+  score9900: {
+    name: '완벽을 넘어서',
+    description: '9,900점 이상 획득',
+    rewardTitle: '완벽을 넘어서',
+  },
+  combo300: {
+    name: '콤보 타이탄',
+    description: '300음 콤보 달성',
+  },
+  combo500: {
+    name: '불멸의 콤보',
+    description: '500음 콤보 달성',
+    rewardTitle: '불멸의 콤보',
+  },
+  accuracy92: {
+    name: '미세 조정',
+    description: '정확도 92% 초과 달성',
+  },
+  accuracy94: {
+    name: '스튜디오 퀄리티',
+    description: '정확도 94% 초과 달성',
+  },
+  accuracy96: {
+    name: '명사수',
+    description: '정확도 96% 초과 달성',
+  },
+  accuracy97: {
+    name: '레이저 정밀도',
+    description: '정확도 97% 초과 달성',
+  },
+  accuracy98: {
+    name: '거장',
+    description: '정확도 98% 초과 달성',
+  },
+  perfect75: {
+    name: '퍼펙트 75',
+    description: '한 곡에서 퍼펙트 노트 75개 히트하기',
+  },
+  perfect100: {
+    name: '퍼펙트 100',
+    description: '한 곡에서 퍼펙트 노트 100개 히트하기',
+  },
+  perfect150: {
+    name: '퍼펙트 스톰',
+    description: '한 곡에서 퍼펙트 노트 150개 히트하기',
+  },
+  golden30: {
+    name: '골든 타이드',
+    description: '한 곡에서 골든 노트 30개 히트하기',
+  },
+  golden40: {
+    name: '골든 심포니',
+    description: '한 곡에서 골든 노트 40개 히트하기',
+  },
+  perfect500: {
+    name: '퍼펙트 머신',
+    description: '퍼펙트 노트 총 500개 히트하기',
+  },
+  perfect1000: {
+    name: '정밀의 화신',
+    description: '퍼펙트 노트 총 1,000개 히트하기',
+  },
+  perfect5000: {
+    name: '퍼펙트 아발란체',
+    description: '퍼펙트 노트 총 5,000개 히트하기',
+  },
+  perfect10000: {
+    name: '퍼펙트 만 개',
+    description: '퍼펙트 노트 총 10,000개 히트하기',
+    rewardTitle: '퍼펙트 만 개',
+  },
+  golden250: {
+    name: '황금 수확',
+    description: '골든 노트 총 250개 히트하기',
+  },
+  golden1000: {
+    name: '황금 소나기',
+    description: '골든 노트 총 1,000개 히트하기',
+  },
+  golden5000: {
+    name: '미다스의 목소리',
+    description: '골든 노트 총 5,000개 히트하기',
+    rewardTitle: '미다스의 목소리',
+  },
+  songs250: {
+    name: '레퍼토리 베테랑',
+    description: '250곡 완주',
+  },
+  songs500: {
+    name: '500곡 클럽',
+    description: '500곡 완주',
+  },
+  songs1000: {
+    name: '천곡 전설',
+    description: '1,000곡 완주',
+    rewardTitle: '천곡 전설',
+  },
+  games50: {
+    name: '단골 가수',
+    description: '50게임 플레이',
+  },
+  games100: {
+    name: '100클럽',
+    description: '100게임 플레이',
+  },
+  games250: {
+    name: '오락실 단골',
+    description: '250게임 플레이',
+  },
+  games500: {
+    name: '마라톤 광신도',
+    description: '500게임 플레이',
+    rewardTitle: '마라톤 광신도',
+  },
+  level25: {
+    name: '노련한 가수',
+    description: '레벨 25 달성',
+  },
+  level50: {
+    name: '엘리트 보컬리스트',
+    description: '레벨 50 달성',
+    rewardTitle: '엘리트 보컬리스트',
+  },
+  level100: {
+    name: '레벨 100 전설',
+    description: '레벨 100 달성',
+    rewardTitle: '레벨 100 전설',
+  },
+  daily100: {
+    name: '데일리 센츄리온',
+    description: '데일리 챌린지 100회 완주하기',
+  },
+  daily250: {
+    name: '데일리 강골',
+    description: '데일리 챌린지 250회 완주하기',
+  },
+  daily500: {
+    name: '불멸의 데일리',
+    description: '데일리 챌린지 500회 완주하기',
+    rewardTitle: '불멸의 데일리',
+  },
+  streak60: {
+    name: '철의 의지',
+    description: '60일 연속 데일리 기록 유지하기',
+  },
+  streak100: {
+    name: '백일 영웅',
+    description: '100일 연속 데일리 기록 유지하기',
+  },
+  streak180: {
+    name: '반년의 헌신',
+    description: '180일 연속 데일리 기록 유지하기',
+    rewardTitle: '반년의 헌신',
+  },
+  streak365: {
+    name: '연간 전설',
+    description: '365일 연속 데일리 기록 유지하기',
+    rewardTitle: '연간 전설',
+  },
+  weekly15: {
+    name: '위클리 충신',
+    description: '주간 챌린지 15회 완주하기',
+  },
+  weekly30: {
+    name: '위클리의 기둥',
+    description: '주간 챌린지 30회 완주하기',
+  },
+  weekly52: {
+    name: '일 년치 위클리',
+    description: '주간 챌린지 52회 완주하기',
+    rewardTitle: '일 년치 위클리',
+  },
+  encore10: {
+    name: '앙코르!',
+    description: '하루에 게임 10판 플레이하기',
+  },
+  duets25: {
+    name: '듀엣 애호가',
+    description: '듀엣 25곡 부르기',
+  },
+  duets50: {
+    name: '다이내믹 듀오',
+    description: '듀엣 50곡 부르기',
+  },
+  duets100: {
+    name: '듀엣 100',
+    description: '듀엣 100곡 부르기',
+    rewardTitle: '듀엣 100',
+  },
+  duels5: {
+    name: '결투자',
+    description: '듀얼 5회 승리하기',
+  },
+  duels10: {
+    name: '듀얼 마스터',
+    description: '듀얼 10회 승리하기',
+  },
+  duels25: {
+    name: '듀얼 제왕',
+    description: '듀얼 25회 승리하기',
+    rewardTitle: '듀얼 제왕',
+  },
+  party10: {
+    name: '파티 동물',
+    description: '파티 게임 10회 플레이하기',
+  },
+  party25: {
+    name: '분위기 메이커',
+    description: '파티 게임 25회 플레이하기',
+  },
+  party50: {
+    name: '파티 레전드',
+    description: '파티 게임 50회 플레이하기',
+  },
+  disney25: {
+    name: '디즈니 애호가',
+    description: '디즈니 곡 25곡 부르기',
+  },
+  disney50: {
+    name: '옛날 옛적에',
+    description: '디즈니 곡 50곡 부르기',
+    rewardTitle: '디즈니 왕족',
+  },
+  genres8: {
+    name: '장르 방랑자',
+    description: '8가지 다른 장르의 곡 부르기',
+  },
+  genres10: {
+    name: '장르 통',
+    description: '10가지 다른 장르의 곡 부르기',
+  },
+  cleanSheet: {
+    name: '무실점',
+    description: '50음 이상 놓침 없이 곡 완주하기',
+  },
+  weekendSinger: {
+    name: '주말 가수',
+    description: '토요일 또는 일요일에 곡 완주하기',
+  },
+  lunchBreak: {
+    name: '점심시간',
+    description: '낮 12시부터 오후 2시 사이에 곡 완주하기',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: '마이크',
   survived: '생존',
   visualSettings: '화면 설정',
-  title: '배틀 로얄',
-  playersLabel: '플레이어',
-  timeLeft: '이번 라운드 {n}초 남음',
 },
 blind: {
   title: '블라인드 카라오케',

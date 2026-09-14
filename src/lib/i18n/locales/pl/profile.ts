@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Zdecyduj, czy ten profil dołącza do tabeli wyników online, czy pozostaje tylko lokalny. Można zmienić w każdej chwili.',
   },
+  countrySearch: 'Szukaj kraju…',
+  noCountryFound: 'Nie znaleziono kraju',
+  popularCountries: 'Popularne',
+  allCountries: 'Wszystkie kraje',
+},
+profileAuth: {
+  accountTitle: 'Konto online (opcjonalnie)',
+  accountDesc: 'Zapisz adres e-mail i hasło, aby móc wczytać ten profil na innym urządzeniu. Logowanie jest możliwe tylko w aplikacji karaoke — nie ma logowania przez przeglądarkę.',
+  email: 'E-mail',
+  emailPlaceholder: 'twoj@email.com',
+  emailInvalid: 'Podaj prawidłowy adres e-mail',
+  emailTaken: 'Ten adres e-mail jest już zarejestrowany',
+  password: 'Hasło',
+  passwordPlaceholder: 'Co najmniej 8 znaków',
+  passwordRepeat: 'Powtórz hasło',
+  passwordsDontMatch: 'Hasła nie są identyczne',
+  passwordTooShort: 'Hasło musi mieć co najmniej 8 znaków',
+  registerFailed: 'Nie udało się utworzyć konta online',
+  loginTitle: 'Wczytaj profil online',
+  loginDesc: 'Wprowadź e-mail i hasło swojego profilu online, aby wczytać go na tym urządzeniu.',
+  loginButton: 'Zaloguj się i wczytaj profil',
+  loginFailed: 'Logowanie nieudane — sprawdź e-mail i hasło',
+  loginSuccess: 'Profil „{n}” wczytany pomyślnie!',
+  noSnapshot: 'Na serwerze nie znaleziono jeszcze zsynchronizowanych danych profilu',
+  emailNote: 'Używane tylko do logowania — nigdy nie jest pokazywane publicznie',
+  changePassword: 'Zmień hasło',
+  currentPassword: 'Obecne hasło',
+  newPassword: 'Nowe hasło',
+  passwordChanged: 'Hasło zostało zmienione',
+  passwordChangeFailed: 'Nie udało się zmienić hasła',
+  hasAccount: 'Konto online ✓',
+  registrationPending: 'Tworzenie konta online…',
+  registrationSuccess: 'Konto online utworzone — możesz się teraz zalogować na dowolnym urządzeniu',
+  registrationSuccessTitle: '🔐 Konto online',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profil',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Pokaż QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Wczytaj profil online',
 },
 characterCard: {
   connected: 'Połączono',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Maratończyk Śpiewu',
     description: 'Zagraj 5 gier w ciągu jednego dnia',
+  },
+
+  // ── Rozszerzenie do 100 osiągnięć ──
+  score_9800: {
+    name: 'Ultragwiazda',
+    description: 'Zdobądź ponad 9800 punktów',
+  },
+  score_9900: {
+    name: 'Poza perfekcją',
+    description: 'Zdobądź ponad 9900 punktów',
+  },
+  combo_300: {
+    name: 'Tytan kombosów',
+    description: 'Zdobądź 300-nutowe kombo',
+  },
+  combo_500: {
+    name: 'Nieśmiertelne kombo',
+    description: 'Zdobądź 500-nutowe kombo',
+  },
+  accuracy_92: {
+    name: 'Dostrojenie',
+    description: 'Uzyskaj ponad 92% celności',
+  },
+  accuracy_94: {
+    name: 'Jakość studyjna',
+    description: 'Uzyskaj ponad 94% celności',
+  },
+  accuracy_96: {
+    name: 'Snajper',
+    description: 'Uzyskaj ponad 96% celności',
+  },
+  accuracy_97: {
+    name: 'Laserowa precyzja',
+    description: 'Uzyskaj ponad 97% celności',
+  },
+  accuracy_98: {
+    name: 'Wirtuoz',
+    description: 'Uzyskaj ponad 98% celności',
+  },
+  perfect_75: {
+    name: 'Perfekcyjne 75',
+    description: 'Traf 75 perfekcyjnych nut w jednym utworze',
+  },
+  perfect_100: {
+    name: 'Perfekcyjna setka',
+    description: 'Traf 100 perfekcyjnych nut w jednym utworze',
+  },
+  perfect_150: {
+    name: 'Perfekcyjna burza',
+    description: 'Traf 150 perfekcyjnych nut w jednym utworze',
+  },
+  golden_30: {
+    name: 'Złota fala',
+    description: 'Traf 30 złotych nut w jednym utworze',
+  },
+  golden_40: {
+    name: 'Złota symfonia',
+    description: 'Traf 40 złotych nut w jednym utworze',
+  },
+  perfect_500: {
+    name: 'Perfekcyjna maszyna',
+    description: 'Traf łącznie 500 perfekcyjnych nut',
+  },
+  perfect_1000: {
+    name: 'Potęga precyzji',
+    description: 'Traf łącznie 1000 perfekcyjnych nut',
+  },
+  perfect_5000: {
+    name: 'Perfekcyjna lawina',
+    description: 'Traf łącznie 5000 perfekcyjnych nut',
+  },
+  perfect_10000: {
+    name: 'Perfekcyjne dziesięć tysięcy',
+    description: 'Traf łącznie 10 000 perfekcyjnych nut',
+  },
+  golden_250: {
+    name: 'Złote żniwa',
+    description: 'Traf łącznie 250 złotych nut',
+  },
+  golden_1000: {
+    name: 'Złota ulewa',
+    description: 'Traf łącznie 1000 złotych nut',
+  },
+  golden_5000: {
+    name: 'Głos Midasa',
+    description: 'Traf łącznie 5000 złotych nut',
+  },
+  songs_250: {
+    name: 'Weteran śpiewnika',
+    description: 'Ukończ 250 utworów',
+  },
+  songs_500: {
+    name: 'Klub pół tysiąca',
+    description: 'Ukończ 500 utworów',
+  },
+  songs_1000: {
+    name: 'Legenda tysiąca utworów',
+    description: 'Ukończ 1000 utworów',
+  },
+  games_50: {
+    name: 'Częsty śpiewak',
+    description: 'Zagraj 50 gier',
+  },
+  games_100: {
+    name: 'Klub setki',
+    description: 'Zagraj 100 gier',
+  },
+  games_250: {
+    name: 'Bywalec Arcade',
+    description: 'Zagraj 250 gier',
+  },
+  games_500: {
+    name: 'Maniak maratonów',
+    description: 'Zagraj 500 gier',
+  },
+  level_25: {
+    name: 'Wprawiony wokalista',
+    description: 'Osiągnij poziom 25',
+  },
+  level_50: {
+    name: 'Elitarny wokalista',
+    description: 'Osiągnij poziom 50',
+  },
+  level_100: {
+    name: 'Legenda poziomu 100',
+    description: 'Osiągnij poziom 100',
+  },
+  daily_100: {
+    name: 'Dzienny centurion',
+    description: 'Ukończ 100 dziennych wyzwań',
+  },
+  daily_250: {
+    name: 'Dzienny fanatyk',
+    description: 'Ukończ 250 dziennych wyzwań',
+  },
+  daily_500: {
+    name: 'Dzienny nieśmiertelny',
+    description: 'Ukończ 500 dziennych wyzwań',
+  },
+  streak_60: {
+    name: 'Żelazna wola',
+    description: 'Utrzymaj 60-dniową dzienną serię',
+  },
+  streak_100: {
+    name: 'Bohater stu dni',
+    description: 'Utrzymaj 100-dniową dzienną serię',
+  },
+  streak_180: {
+    name: 'Półroczne oddanie',
+    description: 'Utrzymaj 180-dniową dzienną serię',
+  },
+  streak_365: {
+    name: 'Legenda roku',
+    description: 'Utrzymaj 365-dniową dzienną serię',
+  },
+  weekly_15: {
+    name: 'Tygodniowy twardziel',
+    description: 'Ukończ 15 tygodniowych wyzwań',
+  },
+  weekly_30: {
+    name: 'Tygodniowy filar',
+    description: 'Ukończ 30 tygodniowych wyzwań',
+  },
+  weekly_52: {
+    name: 'Rok tygodni',
+    description: 'Ukończ 52 tygodniowe wyzwania',
+  },
+  encore_10: {
+    name: 'Bis!',
+    description: 'Zagraj 10 gier w ciągu jednego dnia',
+  },
+  duets_25: {
+    name: 'Wielbiciel duetów',
+    description: 'Zaśpiewaj 25 duetów',
+  },
+  duets_50: {
+    name: 'Dynamiczne duo',
+    description: 'Zaśpiewaj 50 duetów',
+  },
+  duets_100: {
+    name: 'Duetowa setka',
+    description: 'Zaśpiewaj 100 duetów',
+  },
+  duels_5: {
+    name: 'Duelant',
+    description: 'Wygraj 5 duelów',
+  },
+  duels_10: {
+    name: 'Mistrz duelów',
+    description: 'Wygraj 10 duelów',
+  },
+  duels_25: {
+    name: 'Władca duelów',
+    description: 'Wygraj 25 duelów',
+  },
+  party_10: {
+    name: 'Imprezowicz',
+    description: 'Zagraj w 10 gier imprezowych',
+  },
+  party_25: {
+    name: 'Dusza towarzystwa',
+    description: 'Zagraj w 25 gier imprezowych',
+  },
+  party_50: {
+    name: 'Legenda imprez',
+    description: 'Zagraj w 50 gier imprezowych',
+  },
+  disney_25: {
+    name: 'Entuzjasta Disneya',
+    description: 'Zaśpiewaj 25 piosenek Disneya',
+  },
+  disney_50: {
+    name: 'Dawno, dawno temu piosenka',
+    description: 'Zaśpiewaj 50 piosenek Disneya',
+  },
+  genres_8: {
+    name: 'Wędrowiec gatunków',
+    description: 'Zaśpiewaj piosenki z 8 różnych gatunków',
+  },
+  genres_10: {
+    name: 'Koneser gatunków',
+    description: 'Zaśpiewaj piosenki z 10 różnych gatunków',
+  },
+  clean_sheet: {
+    name: 'Czyste konto',
+    description: 'Ukończ utwór z ponad 50 nutami i bez ani jednego pudła',
+  },
+  weekend_singer: {
+    name: 'Weekendowy śpiewak',
+    description: 'Ukończ utwór w sobotę lub niedzielę',
+  },
+  lunch_break: {
+    name: 'Przerwa na obiad',
+    description: 'Ukończ utwór między godziną 12 a 14',
   },
 },
 achievementsScreen: {

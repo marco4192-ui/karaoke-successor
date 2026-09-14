@@ -59,6 +59,9 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
 | POST | `/daily` | Submit daily-challenge result (upsert — best metric wins) — requires profile `sync_code` |
 | GET | `/daily?date=YYYY-MM-DD&limit=N` | Daily-challenge board for a date (all challenge types, ranked per type) |
+| POST | `/auth/register` | Link an e-mail + password account to a profile — requires profile `sync_code` |
+| POST | `/auth/login` | App-only login: verify e-mail + password → returns `profile_uid` + `sync_code` |
+| POST | `/auth/password` | Change account password — requires `current_password` |
 
 ## Profile sync (cross-device)
 
@@ -137,6 +140,47 @@ API key) and returns all challenge types of that date, ranked **within each
 type** by `metric_value` DESC; `limit` (default 100, max 100) applies per
 type. As everywhere else, profiles with `show_on_board = 0` are excluded
 and `country_code` is `null` when `show_country = 0`.
+
+## Online accounts (app-only login)
+
+Online accounts let a player load their profile on another device or
+location with **e-mail + password**. Accounts are strictly optional —
+the sync-code flow keeps working without one.
+
+**There is no web login.** The API speaks JSON only (never HTML), uses no
+sessions and no cookies, and every request — including `/auth/login` —
+requires the `X-API-Key` header that only the karaoke app ships. A plain
+browser cannot authenticate.
+
+Security properties:
+
+- Passwords stored as **bcrypt** hashes (`password_hash()`), never in clear text
+- 1 account ↔ 1 profile (both directions unique)
+- Registration requires the profile's `sync_code` (ownership proof)
+- Login responses are generic (`Invalid e-mail or password`) to prevent e-mail enumeration; unknown e-mails run through a dummy bcrypt verify so timing matches
+- Brute-force lockout: 5 consecutive failed logins lock the account for 15 minutes
+- Server rate limit (60 req/min per IP) applies on top
+
+```
+POST /auth/register  { "email": "singer@example.com", "password": "••••••••",
+                       "sync_code": "AB12CD34" }
+                    → { "ok": true, "profile_uid": "uuid-v4" }
+                    409 when the e-mail or profile is already linked
+
+POST /auth/login     { "email": "singer@example.com", "password": "••••••••" }
+                    → { "ok": true, "profile_uid": "uuid-v4", "sync_code": "AB12CD34" }
+                    401 invalid credentials · 429 locked (5 fails = 15 min)
+
+POST /auth/password  { "email": "singer@example.com",
+                       "current_password": "••••••••", "new_password": "••••••••" }
+                    → { "ok": true }
+```
+
+After a successful login the client receives the profile's `sync_code` and
+can pull the full profile + highscores snapshot via the existing
+`GET /profiles/sync/{code}` endpoint (same trust level: the password is
+bound 1:1 to that profile). E-mail addresses are used for login only and
+never appear on any public leaderboard.
 
 ## Privacy
 

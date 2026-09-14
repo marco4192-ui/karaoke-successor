@@ -64,6 +64,10 @@ profileAuth: {
   passwordChanged: 'Passwort erfolgreich geändert',
   passwordChangeFailed: 'Passwort konnte nicht geändert werden',
   hasAccount: 'Online-Konto ✓',
+  registrationPending: 'Online-Konto wird erstellt…',
+  registrationSuccess: 'Online-Konto erstellt — du kannst dich jetzt auf jedem Gerät anmelden',
+  registrationSuccessTitle: '🔐 Online-Konto',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profil',

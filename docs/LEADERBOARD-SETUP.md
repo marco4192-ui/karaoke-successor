@@ -218,6 +218,42 @@ weiterhin als Online, damit kein bisheriges Verhalten bricht. Neue Profile
 werden standardmäßig als „Nur lokal" vorgeschlagen (Privatsphäre zuerst),
 lassen sich aber mit einem Klick auf Online stellen.
 
+### Online-Konto: E-Mail + Passwort (App-Only-Login)
+
+Wer sein Online-Profil an einem **anderen Standort/Gerät** laden möchte,
+kann optional ein Online-Konto hinterlegen — direkt bei der Profilanlage
+(E-Mail + Passwort, Passwort ≥ 8 Zeichen) oder implicit über den
+Login-Dialog im Profil-Screen.
+
+**Wichtig (Anforderung):** Es gibt **keinen Web-Login**. Die API spricht
+ausschließlich JSON (nie HTML), nutzt keine Sessions/Cookies, und **jede**
+Anfrage — auch `/auth/login` — erfordert den `X-API-Key`, den nur die
+Karaoke-App mitbringt. Ein Browser kann sich nicht anmelden.
+
+| Endpoint | Zweck |
+|----------|-------|
+| `POST /auth/register` | Konto an Profil knüpfen (benötigt `sync_code` als Eigentumsnachweis) |
+| `POST /auth/login` | E-Mail + Passwort prüfen → liefert `profile_uid` + `sync_code` |
+| `POST /auth/password` | Passwort ändern (benötigt aktuelles Passwort) |
+
+Sicherheit:
+- Passwörter als **bcrypt**-Hashes gespeichert, nie im Klartext
+- 1 Konto ↔ 1 Profil (beidseitig eindeutig)
+- Generische Fehlermeldungen (`Invalid e-mail or password`) + Dummy-Verify
+  gegen E-Mail-Enumeration
+- **Brute-Force-Sperre:** 5 Fehlversuche = 15 Minuten gesperrt
+- IP-Rate-Limit (60 Req/min) greift zusätzlich
+
+Client-Flow: Registrierung läuft im Hintergrund nach der Profilanlage
+(Toast-Feedback); danach wird automatisch ein erster Sync-Snapshot
+hochgeladen, damit der erste Login woanders sofort Daten findet. Login im
+Profil-Screen → „Online-Profil laden" → importiert Profil + Highscores.
+In den Profileinstellungen kann das Passwort jederzeit geändert werden.
+
+**Server-Migration (einmalig):** Tabelle `ks_accounts` anlegen — entweder
+`schema.sql` komplett neu importieren oder nur den auskommentierten
+`CREATE TABLE IF NOT EXISTS`-Block am Ende der Datei ausführen.
+
 ---
 
 ## 5. App-Build konfigurieren

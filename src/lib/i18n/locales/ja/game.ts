@@ -499,6 +499,255 @@ achievements: {
     name: 'マラソンシンガー',
     description: '1日に5回プレイする',
   },
+
+  // ── 100実績拡張 ──
+  score9800: {
+    name: 'ウルトラスター',
+    description: '9,800ポイント以上を獲得',
+  },
+  score9900: {
+    name: '完璧を超えて',
+    description: '9,900ポイント以上を獲得',
+    rewardTitle: '完璧を超えて',
+  },
+  combo300: {
+    name: 'コンボタイタン',
+    description: '300ノートコンボを達成',
+  },
+  combo500: {
+    name: '不死のコンボ',
+    description: '500ノートコンボを達成',
+    rewardTitle: '不死のコンボ',
+  },
+  accuracy92: {
+    name: 'ファインチューニング',
+    description: '精度92%以上を達成',
+  },
+  accuracy94: {
+    name: 'スタジオクオリティ',
+    description: '精度94%以上を達成',
+  },
+  accuracy96: {
+    name: 'シャープシューター',
+    description: '精度96%以上を達成',
+  },
+  accuracy97: {
+    name: '百発百中',
+    description: '精度97%以上を達成',
+  },
+  accuracy98: {
+    name: '名手',
+    description: '精度98%以上を達成',
+  },
+  perfect75: {
+    name: 'パーフェクト75',
+    description: '1曲でパーフェクトノートを75個ヒットする',
+  },
+  perfect100: {
+    name: 'パーフェクト100',
+    description: '1曲でパーフェクトノートを100個ヒットする',
+  },
+  perfect150: {
+    name: 'パーフェクトストーム',
+    description: '1曲でパーフェクトノートを150個ヒットする',
+  },
+  golden30: {
+    name: 'ゴールデンタイド',
+    description: '1曲でゴールデンノートを30個ヒットする',
+  },
+  golden40: {
+    name: 'ゴールデンシンフォニー',
+    description: '1曲でゴールデンノートを40個ヒットする',
+  },
+  perfect500: {
+    name: 'パーフェクトマシン',
+    description: 'パーフェクトノートを通算500個ヒットする',
+  },
+  perfect1000: {
+    name: '精密の化身',
+    description: 'パーフェクトノートを通算1,000個ヒットする',
+  },
+  perfect5000: {
+    name: 'パーフェクトアバランチ',
+    description: 'パーフェクトノートを通算5,000個ヒットする',
+  },
+  perfect10000: {
+    name: 'パーフェクト一万',
+    description: 'パーフェクトノートを通算10,000個ヒットする',
+    rewardTitle: 'パーフェクト一万',
+  },
+  golden250: {
+    name: '黄金の収穫',
+    description: 'ゴールデンノートを通算250個ヒットする',
+  },
+  golden1000: {
+    name: '黄金の豪雨',
+    description: 'ゴールデンノートを通算1,000個ヒットする',
+  },
+  golden5000: {
+    name: 'ミダスの歌声',
+    description: 'ゴールデンノートを通算5,000個ヒットする',
+    rewardTitle: 'ミダスの歌声',
+  },
+  songs250: {
+    name: 'レパートリーのベテラン',
+    description: '250曲を完了',
+  },
+  songs500: {
+    name: '500曲クラブ',
+    description: '500曲を完了',
+  },
+  songs1000: {
+    name: '千曲伝説',
+    description: '1,000曲を完了',
+    rewardTitle: '千曲伝説',
+  },
+  games50: {
+    name: '常連シンガー',
+    description: '50ゲームプレイ',
+  },
+  games100: {
+    name: 'センチュリークラブ',
+    description: '100ゲームプレイ',
+  },
+  games250: {
+    name: 'アーケード常連',
+    description: '250ゲームプレイ',
+  },
+  games500: {
+    name: 'マラソンマニアック',
+    description: '500ゲームプレイ',
+    rewardTitle: 'マラソンマニアック',
+  },
+  level25: {
+    name: '熟練シンガー',
+    description: 'レベル25に到達',
+  },
+  level50: {
+    name: 'エリートボーカリスト',
+    description: 'レベル50に到達',
+    rewardTitle: 'エリートボーカリスト',
+  },
+  level100: {
+    name: 'レベル100レジェンド',
+    description: 'レベル100に到達',
+    rewardTitle: 'レベル100レジェンド',
+  },
+  daily100: {
+    name: 'デイリーセンチュリオン',
+    description: 'デイリーチャレンジを100回完了する',
+  },
+  daily250: {
+    name: 'デイリーの鉄人',
+    description: 'デイリーチャレンジを250回完了する',
+  },
+  daily500: {
+    name: '不滅のデイリー',
+    description: 'デイリーチャレンジを500回完了する',
+    rewardTitle: '不滅のデイリー',
+  },
+  streak60: {
+    name: '鉄の意志',
+    description: 'デイリー連続記録を60日維持する',
+  },
+  streak100: {
+    name: '百日ヒーロー',
+    description: 'デイリー連続記録を100日維持する',
+  },
+  streak180: {
+    name: '半年の献身',
+    description: 'デイリー連続記録を180日維持する',
+    rewardTitle: '半年の献身',
+  },
+  streak365: {
+    name: '年間レジェンド',
+    description: 'デイリー連続記録を365日維持する',
+    rewardTitle: '年間レジェンド',
+  },
+  weekly15: {
+    name: 'ウィークリーの重鎮',
+    description: 'ウィークリーチャレンジを15回完了する',
+  },
+  weekly30: {
+    name: 'ウィークリーの柱',
+    description: 'ウィークリーチャレンジを30回完了する',
+  },
+  weekly52: {
+    name: '一年分のウィークリー',
+    description: 'ウィークリーチャレンジを52回完了する',
+    rewardTitle: '一年分のウィークリー',
+  },
+  encore10: {
+    name: 'アンコール！',
+    description: '1日に10ゲームプレイする',
+  },
+  duets25: {
+    name: 'デュエット愛好家',
+    description: 'デュエットを25曲歌う',
+  },
+  duets50: {
+    name: 'ダイナミックデュオ',
+    description: 'デュエットを50曲歌う',
+  },
+  duets100: {
+    name: 'デュエットセンチュリオン',
+    description: 'デュエットを100曲歌う',
+    rewardTitle: 'デュエットセンチュリオン',
+  },
+  duels5: {
+    name: 'デュエリスト',
+    description: 'デュエルで5回勝利する',
+  },
+  duels10: {
+    name: 'デュエルマスター',
+    description: 'デュエルで10回勝利する',
+  },
+  duels25: {
+    name: 'デュエルの覇王',
+    description: 'デュエルで25回勝利する',
+    rewardTitle: 'デュエルの覇王',
+  },
+  party10: {
+    name: 'パーティーアニマル',
+    description: 'パーティーゲームを10回プレイする',
+  },
+  party25: {
+    name: 'パーティーの花形',
+    description: 'パーティーゲームを25回プレイする',
+  },
+  party50: {
+    name: 'パーティーレジェンド',
+    description: 'パーティーゲームを50回プレイする',
+  },
+  disney25: {
+    name: 'ディズニー愛好家',
+    description: 'ディズニーの曲を25曲歌う',
+  },
+  disney50: {
+    name: 'むかしむかしの歌',
+    description: 'ディズニーの曲を50曲歌う',
+    rewardTitle: 'ディズニーの王族',
+  },
+  genres8: {
+    name: 'ジャンル放浪者',
+    description: '8つの異なるジャンルの曲を歌う',
+  },
+  genres10: {
+    name: 'ジャンル通',
+    description: '10の異なるジャンルの曲を歌う',
+  },
+  cleanSheet: {
+    name: '無失点',
+    description: '50ノート以上でミスゼロのまま曲を完了する',
+  },
+  weekendSinger: {
+    name: 'ウィークエンドシンガー',
+    description: '土曜日または日曜日に曲を完了する',
+  },
+  lunchBreak: {
+    name: 'ランチブレイク',
+    description: '12時から14時の間に曲を完了する',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'マイク',
   survived: '生存',
   visualSettings: 'ビジュアル設定',
-  title: 'バトルロイヤル',
-  playersLabel: 'プレイヤー',
-  timeLeft: 'このラウンドは残り{n}秒',
 },
 blind: {
   title: 'ブラインド・カラオケ',

@@ -4,15 +4,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
-import { GlobeIcon, PlusIcon, UserIcon } from '@/components/icons';
+import { GlobeIcon, PlusIcon, UserIcon, CloudDownloadIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from './character/character-card';
 import { CreateCharacterForm, type CreateProfileOptions } from './character/create-character-form';
 import { PlayerProgressionCard } from './character/player-progression-card';
 import { CharacterSettingsCard } from './character/character-settings-card';
+import { OnlineLoginDialog } from './character/online-login-dialog';
 
 export function CharacterScreen() {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const {
     profiles, createProfile, updateProfile, deleteProfile,
     activeProfileId, setActiveProfile,
@@ -21,6 +24,7 @@ export function CharacterScreen() {
   } = useGameStore();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // ── Track which characters are claimed by connected companions ──
@@ -66,6 +70,13 @@ export function CharacterScreen() {
     return () => window.removeEventListener('remote-profile-toggle', handleRemoteToggle);
   }, [updateProfile]);
 
+  /**
+   * Create a new profile. When the user filled in online-account fields,
+   * the account (e-mail + password) is registered on the server in the
+   * background — the profile itself is usable immediately. authEmail is
+   * only stored on the profile once the registration actually succeeded
+   * (so the "online account ✓" badge never lies).
+   */
   const handleCreate = (
     name: string, avatarUrl: string,
     options: CreateProfileOptions,
@@ -77,6 +88,38 @@ export function CharacterScreen() {
     });
     setShowCreateForm(false);
     setSelectedProfileId(profile.id);
+
+    // Background registration of the optional online account
+    if (options.auth && options.storageMode === 'online' && onlineEnabled) {
+      toast({ title: t('profileAuth.registrationSuccessTitle'), description: t('profileAuth.registrationPending') });
+      void (async () => {
+        try {
+          const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+          const result = await leaderboardService.registerAccount({
+            profile,
+            email: options.auth!.email,
+            password: options.auth!.password,
+          });
+          if (result.ok) {
+            updateProfile(profile.id, {
+              ...(result.sync_code ? { syncCode: result.sync_code } : {}),
+              authEmail: options.auth!.email,
+            });
+            toast({ title: t('profileAuth.registrationSuccessTitle'), description: t('profileAuth.registrationSuccess') });
+          } else {
+            const reason = /already registered/i.test(result.error || '')
+              ? t('profileAuth.emailTaken')
+              : /already linked/i.test(result.error || '')
+                ? t('profileAuth.registerFailed')
+                : t('profileAuth.registerFailed');
+            toast({ title: `⚠️ ${t('profileAuth.registerFailed')}`, description: reason });
+          }
+        } catch (err) {
+          console.error('Account registration error:', err); // eslint-disable-line no-console
+          toast({ title: `⚠️ ${t('profileAuth.registerFailed')}`, description: t('profileAuth.registerFailed') });
+        }
+      })();
+    }
   };
 
   return (
@@ -121,6 +164,17 @@ export function CharacterScreen() {
         
         <div className="flex-1" />
         
+        {onlineEnabled && (
+          <Button
+            onClick={() => setShowLoginDialog(true)}
+            variant="outline"
+            className="gap-2 border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+          >
+            <CloudDownloadIcon className="w-4 h-4" />
+            {t('profileAuth.loginTitle')}
+          </Button>
+        )}
+        
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="bg-gradient-to-r from-cyan-500 to-purple-500 gap-2"
@@ -138,6 +192,12 @@ export function CharacterScreen() {
           onlineEnabled={onlineEnabled}
         />
       )}
+
+      {/* Online login (load a profile from another location) */}
+      <OnlineLoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+      />
 
       {/* Character List */}
       <div className="mb-6">

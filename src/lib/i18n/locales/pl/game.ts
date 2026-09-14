@@ -499,6 +499,255 @@ achievements: {
     name: 'Maratończyk Śpiewu',
     description: 'Zagraj 5 gier w ciągu jednego dnia',
   },
+
+  // ── Rozszerzenie do 100 osiągnięć ──
+  score9800: {
+    name: 'Ultragwiazda',
+    description: 'Zdobądź ponad 9800 punktów',
+  },
+  score9900: {
+    name: 'Poza perfekcją',
+    description: 'Zdobądź ponad 9900 punktów',
+    rewardTitle: 'Poza perfekcją',
+  },
+  combo300: {
+    name: 'Tytan kombosów',
+    description: 'Zdobądź 300-nutowe kombo',
+  },
+  combo500: {
+    name: 'Nieśmiertelne kombo',
+    description: 'Zdobądź 500-nutowe kombo',
+    rewardTitle: 'Nieśmiertelne kombo',
+  },
+  accuracy92: {
+    name: 'Dostrojenie',
+    description: 'Uzyskaj ponad 92% celności',
+  },
+  accuracy94: {
+    name: 'Jakość studyjna',
+    description: 'Uzyskaj ponad 94% celności',
+  },
+  accuracy96: {
+    name: 'Snajper',
+    description: 'Uzyskaj ponad 96% celności',
+  },
+  accuracy97: {
+    name: 'Laserowa precyzja',
+    description: 'Uzyskaj ponad 97% celności',
+  },
+  accuracy98: {
+    name: 'Wirtuoz',
+    description: 'Uzyskaj ponad 98% celności',
+  },
+  perfect75: {
+    name: 'Perfekcyjne 75',
+    description: 'Traf 75 perfekcyjnych nut w jednym utworze',
+  },
+  perfect100: {
+    name: 'Perfekcyjna setka',
+    description: 'Traf 100 perfekcyjnych nut w jednym utworze',
+  },
+  perfect150: {
+    name: 'Perfekcyjna burza',
+    description: 'Traf 150 perfekcyjnych nut w jednym utworze',
+  },
+  golden30: {
+    name: 'Złota fala',
+    description: 'Traf 30 złotych nut w jednym utworze',
+  },
+  golden40: {
+    name: 'Złota symfonia',
+    description: 'Traf 40 złotych nut w jednym utworze',
+  },
+  perfect500: {
+    name: 'Perfekcyjna maszyna',
+    description: 'Traf łącznie 500 perfekcyjnych nut',
+  },
+  perfect1000: {
+    name: 'Potęga precyzji',
+    description: 'Traf łącznie 1000 perfekcyjnych nut',
+  },
+  perfect5000: {
+    name: 'Perfekcyjna lawina',
+    description: 'Traf łącznie 5000 perfekcyjnych nut',
+  },
+  perfect10000: {
+    name: 'Perfekcyjne dziesięć tysięcy',
+    description: 'Traf łącznie 10 000 perfekcyjnych nut',
+    rewardTitle: 'Perfekcyjne dziesięć tysięcy',
+  },
+  golden250: {
+    name: 'Złote żniwa',
+    description: 'Traf łącznie 250 złotych nut',
+  },
+  golden1000: {
+    name: 'Złota ulewa',
+    description: 'Traf łącznie 1000 złotych nut',
+  },
+  golden5000: {
+    name: 'Głos Midasa',
+    description: 'Traf łącznie 5000 złotych nut',
+    rewardTitle: 'Głos Midasa',
+  },
+  songs250: {
+    name: 'Weteran śpiewnika',
+    description: 'Ukończ 250 utworów',
+  },
+  songs500: {
+    name: 'Klub pół tysiąca',
+    description: 'Ukończ 500 utworów',
+  },
+  songs1000: {
+    name: 'Legenda tysiąca utworów',
+    description: 'Ukończ 1000 utworów',
+    rewardTitle: 'Legenda tysiąca utworów',
+  },
+  games50: {
+    name: 'Częsty śpiewak',
+    description: 'Zagraj 50 gier',
+  },
+  games100: {
+    name: 'Klub setki',
+    description: 'Zagraj 100 gier',
+  },
+  games250: {
+    name: 'Bywalec Arcade',
+    description: 'Zagraj 250 gier',
+  },
+  games500: {
+    name: 'Maniak maratonów',
+    description: 'Zagraj 500 gier',
+    rewardTitle: 'Maniak maratonów',
+  },
+  level25: {
+    name: 'Wprawiony wokalista',
+    description: 'Osiągnij poziom 25',
+  },
+  level50: {
+    name: 'Elitarny wokalista',
+    description: 'Osiągnij poziom 50',
+    rewardTitle: 'Elitarny wokalista',
+  },
+  level100: {
+    name: 'Legenda poziomu 100',
+    description: 'Osiągnij poziom 100',
+    rewardTitle: 'Legenda poziomu 100',
+  },
+  daily100: {
+    name: 'Dzienny centurion',
+    description: 'Ukończ 100 dziennych wyzwań',
+  },
+  daily250: {
+    name: 'Dzienny fanatyk',
+    description: 'Ukończ 250 dziennych wyzwań',
+  },
+  daily500: {
+    name: 'Dzienny nieśmiertelny',
+    description: 'Ukończ 500 dziennych wyzwań',
+    rewardTitle: 'Dzienny nieśmiertelny',
+  },
+  streak60: {
+    name: 'Żelazna wola',
+    description: 'Utrzymaj 60-dniową dzienną serię',
+  },
+  streak100: {
+    name: 'Bohater stu dni',
+    description: 'Utrzymaj 100-dniową dzienną serię',
+  },
+  streak180: {
+    name: 'Półroczne oddanie',
+    description: 'Utrzymaj 180-dniową dzienną serię',
+    rewardTitle: 'Półroczne oddanie',
+  },
+  streak365: {
+    name: 'Legenda roku',
+    description: 'Utrzymaj 365-dniową dzienną serię',
+    rewardTitle: 'Legenda roku',
+  },
+  weekly15: {
+    name: 'Tygodniowy twardziel',
+    description: 'Ukończ 15 tygodniowych wyzwań',
+  },
+  weekly30: {
+    name: 'Tygodniowy filar',
+    description: 'Ukończ 30 tygodniowych wyzwań',
+  },
+  weekly52: {
+    name: 'Rok tygodni',
+    description: 'Ukończ 52 tygodniowe wyzwania',
+    rewardTitle: 'Rok tygodni',
+  },
+  encore10: {
+    name: 'Bis!',
+    description: 'Zagraj 10 gier w ciągu jednego dnia',
+  },
+  duets25: {
+    name: 'Wielbiciel duetów',
+    description: 'Zaśpiewaj 25 duetów',
+  },
+  duets50: {
+    name: 'Dynamiczne duo',
+    description: 'Zaśpiewaj 50 duetów',
+  },
+  duets100: {
+    name: 'Duetowa setka',
+    description: 'Zaśpiewaj 100 duetów',
+    rewardTitle: 'Duetowa setka',
+  },
+  duels5: {
+    name: 'Duelant',
+    description: 'Wygraj 5 duelów',
+  },
+  duels10: {
+    name: 'Mistrz duelów',
+    description: 'Wygraj 10 duelów',
+  },
+  duels25: {
+    name: 'Władca duelów',
+    description: 'Wygraj 25 duelów',
+    rewardTitle: 'Władca duelów',
+  },
+  party10: {
+    name: 'Imprezowicz',
+    description: 'Zagraj w 10 gier imprezowych',
+  },
+  party25: {
+    name: 'Dusza towarzystwa',
+    description: 'Zagraj w 25 gier imprezowych',
+  },
+  party50: {
+    name: 'Legenda imprez',
+    description: 'Zagraj w 50 gier imprezowych',
+  },
+  disney25: {
+    name: 'Entuzjasta Disneya',
+    description: 'Zaśpiewaj 25 piosenek Disneya',
+  },
+  disney50: {
+    name: 'Dawno, dawno temu piosenka',
+    description: 'Zaśpiewaj 50 piosenek Disneya',
+    rewardTitle: 'Arystokracja Disneya',
+  },
+  genres8: {
+    name: 'Wędrowiec gatunków',
+    description: 'Zaśpiewaj piosenki z 8 różnych gatunków',
+  },
+  genres10: {
+    name: 'Koneser gatunków',
+    description: 'Zaśpiewaj piosenki z 10 różnych gatunków',
+  },
+  cleanSheet: {
+    name: 'Czyste konto',
+    description: 'Ukończ utwór z ponad 50 nutami i bez ani jednego pudła',
+  },
+  weekendSinger: {
+    name: 'Weekendowy śpiewak',
+    description: 'Ukończ utwór w sobotę lub niedzielę',
+  },
+  lunchBreak: {
+    name: 'Przerwa na obiad',
+    description: 'Ukończ utwór między godziną 12 a 14',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Mikrofon',
   survived: 'Przeżył',
   visualSettings: 'Ustawienia graficzne',
-  title: 'Battle Royale',
-  playersLabel: 'graczy',
-  timeLeft: 'Pozostało {n} sekund w tej rundzie',
 },
 blind: {
   title: 'Karaoke w ciemno',

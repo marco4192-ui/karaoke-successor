@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Bestäm om den här profilen ska delta i online-topplistan eller endast vara lokal. Kan ändras när som helst.',
   },
+  countrySearch: 'Sök land…',
+  noCountryFound: 'Inget land hittades',
+  popularCountries: 'Populära',
+  allCountries: 'Alla länder',
+},
+profileAuth: {
+  accountTitle: 'Online-konto (valfritt)',
+  accountDesc: 'Spara en e-post och ett lösenord så att du kan ladda den här profilen på en annan enhet. Inloggning är bara möjlig i karaokeappen — det finns ingen webbinloggning.',
+  email: 'E-post',
+  emailPlaceholder: 'din@email.com',
+  emailInvalid: 'Ange en giltig e-postadress',
+  emailTaken: 'Den här e-posten är redan registrerad',
+  password: 'Lösenord',
+  passwordPlaceholder: 'Minst 8 tecken',
+  passwordRepeat: 'Upprepa lösenordet',
+  passwordsDontMatch: 'Lösenorden matchar inte',
+  passwordTooShort: 'Lösenordet måste vara minst 8 tecken långt',
+  registerFailed: 'Det gick inte att skapa online-kontot',
+  loginTitle: 'Ladda online-profil',
+  loginDesc: 'Ange e-post och lösenord för din online-profil för att ladda den på den här enheten.',
+  loginButton: 'Logga in och ladda profil',
+  loginFailed: 'Inloggningen misslyckades — kontrollera e-post och lösenord',
+  loginSuccess: 'Profilen "{n}" har laddats!',
+  noSnapshot: 'Inga synkroniserade profildata hittades på servern ännu',
+  emailNote: 'Används endast för inloggning — visas aldrig offentligt',
+  changePassword: 'Byt lösenord',
+  currentPassword: 'Nuvarande lösenord',
+  newPassword: 'Nytt lösenord',
+  passwordChanged: 'Lösenordet har ändrats',
+  passwordChangeFailed: 'Det gick inte att ändra lösenordet',
+  hasAccount: 'Online-konto ✓',
+  registrationPending: 'Skapar online-kontot…',
+  registrationSuccess: 'Online-konto skapat — du kan nu logga in på valfri enhet',
+  registrationSuccessTitle: '🔐 Online-konto',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profil',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Visa QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Ladda online-profil',
 },
 characterCard: {
   connected: 'Ansluten',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Marathonsångare',
     description: 'Spela 5 spel på en enda dag',
+  },
+
+  // ── Utbyggnad till 100 prestationer ──
+  score_9800: {
+    name: 'Ultrastjärna',
+    description: 'Få över 9 800 poäng',
+  },
+  score_9900: {
+    name: 'Bortom perfektion',
+    description: 'Få över 9 900 poäng',
+  },
+  combo_300: {
+    name: 'Kombotitan',
+    description: 'Få en 300-noters kombo',
+  },
+  combo_500: {
+    name: 'Odödlig kombo',
+    description: 'Få en 500-noters kombo',
+  },
+  accuracy_92: {
+    name: 'Finjustering',
+    description: 'Få över 92% noggrannhet',
+  },
+  accuracy_94: {
+    name: 'Studiokvalitet',
+    description: 'Få över 94% noggrannhet',
+  },
+  accuracy_96: {
+    name: 'Prickskytten',
+    description: 'Få över 96% noggrannhet',
+  },
+  accuracy_97: {
+    name: 'Laserprecision',
+    description: 'Få över 97% noggrannhet',
+  },
+  accuracy_98: {
+    name: 'Virtuos',
+    description: 'Få över 98% noggrannhet',
+  },
+  perfect_75: {
+    name: 'Perfekta sjuttiofem',
+    description: 'Träffa 75 perfekta toner i en enda låt',
+  },
+  perfect_100: {
+    name: 'Perfekta hundra',
+    description: 'Träffa 100 perfekta toner i en enda låt',
+  },
+  perfect_150: {
+    name: 'Perfekt storm',
+    description: 'Träffa 150 perfekta toner i en enda låt',
+  },
+  golden_30: {
+    name: 'Guldflod',
+    description: 'Träffa 30 guldnoter i en enda låt',
+  },
+  golden_40: {
+    name: 'Guldsymfoni',
+    description: 'Träffa 40 guldnoter i en enda låt',
+  },
+  perfect_500: {
+    name: 'Perfekt maskin',
+    description: 'Träffa totalt 500 perfekta toner',
+  },
+  perfect_1000: {
+    name: 'Precisionskraftverk',
+    description: 'Träffa totalt 1 000 perfekta toner',
+  },
+  perfect_5000: {
+    name: 'Perfekt lavin',
+    description: 'Träffa totalt 5 000 perfekta toner',
+  },
+  perfect_10000: {
+    name: 'Perfekta tiotusen',
+    description: 'Träffa totalt 10 000 perfekta toner',
+  },
+  golden_250: {
+    name: 'Guldskörd',
+    description: 'Träffa totalt 250 guldnoter',
+  },
+  golden_1000: {
+    name: 'Guldskyfall',
+    description: 'Träffa totalt 1 000 guldnoter',
+  },
+  golden_5000: {
+    name: 'Midas-stämma',
+    description: 'Träffa totalt 5 000 guldnoter',
+  },
+  songs_250: {
+    name: 'Sångboksveteran',
+    description: 'Fullfölj 250 låtar',
+  },
+  songs_500: {
+    name: 'Halvtusenklubben',
+    description: 'Fullfölj 500 låtar',
+  },
+  songs_1000: {
+    name: 'Tusenlåtslegend',
+    description: 'Fullfölj 1 000 låtar',
+  },
+  games_50: {
+    name: 'Flitig sångare',
+    description: 'Spela 50 spel',
+  },
+  games_100: {
+    name: 'Hundraklubben',
+    description: 'Spela 100 spel',
+  },
+  games_250: {
+    name: 'Stammis i arkaden',
+    description: 'Spela 250 spel',
+  },
+  games_500: {
+    name: 'Marathongalning',
+    description: 'Spela 500 spel',
+  },
+  level_25: {
+    name: 'Erfaren sångare',
+    description: 'Nå nivå 25',
+  },
+  level_50: {
+    name: 'Elitsångare',
+    description: 'Nå nivå 50',
+  },
+  level_100: {
+    name: 'Nivå 100-legend',
+    description: 'Nå nivå 100',
+  },
+  daily_100: {
+    name: 'Daglig centurio',
+    description: 'Fullfölj 100 dagliga utmaningar',
+  },
+  daily_250: {
+    name: 'Daglig fanatiker',
+    description: 'Fullfölj 250 dagliga utmaningar',
+  },
+  daily_500: {
+    name: 'Daglig odödlig',
+    description: 'Fullfölj 500 dagliga utmaningar',
+  },
+  streak_60: {
+    name: 'Järnvilja',
+    description: 'Håll en 60-dagars daglig svit',
+  },
+  streak_100: {
+    name: 'Hundradagarhjälte',
+    description: 'Håll en 100-dagars daglig svit',
+  },
+  streak_180: {
+    name: 'Halvårs hängivenhet',
+    description: 'Håll en 180-dagars daglig svit',
+  },
+  streak_365: {
+    name: 'Årlig legend',
+    description: 'Håll en 365-dagars daglig svit',
+  },
+  weekly_15: {
+    name: 'Pålitlig veckokämpe',
+    description: 'Fullfölj 15 veckoutmaningar',
+  },
+  weekly_30: {
+    name: 'Veckans pelare',
+    description: 'Fullfölj 30 veckoutmaningar',
+  },
+  weekly_52: {
+    name: 'Ett år av veckor',
+    description: 'Fullfölj 52 veckoutmaningar',
+  },
+  encore_10: {
+    name: 'Om igen!',
+    description: 'Spela 10 spel på en enda dag',
+  },
+  duets_25: {
+    name: 'Duettentusiast',
+    description: 'Sjung 25 duetter',
+  },
+  duets_50: {
+    name: 'Dynamiskt duo',
+    description: 'Sjung 50 duetter',
+  },
+  duets_100: {
+    name: 'Duetthundra',
+    description: 'Sjung 100 duetter',
+  },
+  duels_5: {
+    name: 'Duellant',
+    description: 'Vinn 5 dueller',
+  },
+  duels_10: {
+    name: 'Duellmästare',
+    description: 'Vinn 10 dueller',
+  },
+  duels_25: {
+    name: 'Duellhärskare',
+    description: 'Vinn 25 dueller',
+  },
+  party_10: {
+    name: 'Festprisse',
+    description: 'Spela 10 partyspel',
+  },
+  party_25: {
+    name: 'Festens mittpunkt',
+    description: 'Spela 25 partyspel',
+  },
+  party_50: {
+    name: 'Festlegend',
+    description: 'Spela 50 partyspel',
+  },
+  disney_25: {
+    name: 'Disney-entusiast',
+    description: 'Sjung 25 Disney-låtar',
+  },
+  disney_50: {
+    name: 'Det var en gång en sång',
+    description: 'Sjung 50 Disney-låtar',
+  },
+  genres_8: {
+    name: 'Genrevandrare',
+    description: 'Sjung låtar från 8 olika genrer',
+  },
+  genres_10: {
+    name: 'Genrekännare',
+    description: 'Sjung låtar från 10 olika genrer',
+  },
+  clean_sheet: {
+    name: 'Håll nollan',
+    description: 'Fullfölj en låt med 50+ noter och noll missar',
+  },
+  weekend_singer: {
+    name: 'Helgsångare',
+    description: 'Fullfölj en låt på en lördag eller söndag',
+  },
+  lunch_break: {
+    name: 'Lunchrast',
+    description: 'Fullfölj en låt mellan klockan 12 och 14',
   },
 },
 achievementsScreen: {

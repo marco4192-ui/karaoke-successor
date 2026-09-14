@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Онлайн',
     settingsDesc: 'Решите, будет ли этот профиль участвовать в онлайн-таблице лидеров или останется только локальным. Можно изменить в любой момент.',
   },
+  countrySearch: 'Поиск страны…',
+  noCountryFound: 'Страна не найдена',
+  popularCountries: 'Популярные',
+  allCountries: 'Все страны',
+},
+profileAuth: {
+  accountTitle: 'Онлайн-аккаунт (необязательно)',
+  accountDesc: 'Сохраните e-mail и пароль, чтобы загрузить этот профиль на другом устройстве. Вход возможен только внутри приложения для караоке — веб-версии для входа нет.',
+  email: 'E-mail',
+  emailPlaceholder: 'vash@email.com',
+  emailInvalid: 'Пожалуйста, введите корректный адрес e-mail',
+  emailTaken: 'Этот e-mail уже зарегистрирован',
+  password: 'Пароль',
+  passwordPlaceholder: 'Не менее 8 символов',
+  passwordRepeat: 'Повторите пароль',
+  passwordsDontMatch: 'Пароли не совпадают',
+  passwordTooShort: 'Пароль должен содержать не менее 8 символов',
+  registerFailed: 'Не удалось создать онлайн-аккаунт',
+  loginTitle: 'Загрузить онлайн-профиль',
+  loginDesc: 'Введите e-mail и пароль вашего онлайн-профиля, чтобы загрузить его на это устройство.',
+  loginButton: 'Войти и загрузить профиль',
+  loginFailed: 'Не удалось войти — проверьте e-mail и пароль',
+  loginSuccess: 'Профиль «{n}» успешно загружен!',
+  noSnapshot: 'Синхронизированные данные профиля на сервере пока не найдены',
+  emailNote: 'Используется только для входа — никогда не показывается публично',
+  changePassword: 'Сменить пароль',
+  currentPassword: 'Текущий пароль',
+  newPassword: 'Новый пароль',
+  passwordChanged: 'Пароль успешно изменён',
+  passwordChangeFailed: 'Не удалось изменить пароль',
+  hasAccount: 'Онлайн-аккаунт ✓',
+  registrationPending: 'Создание онлайн-аккаунта…',
+  registrationSuccess: 'Онлайн-аккаунт создан — теперь вы можете войти на любом устройстве',
+  registrationSuccessTitle: '🔐 Онлайн-аккаунт',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Профиль',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Показать QR-код',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Загрузить онлайн-профиль',
 },
 characterCard: {
   connected: 'Подключён',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Марафонский певец',
     description: 'Сыграй 5 игр за один день',
+  },
+
+  // ── Расширение до 100 достижений ──
+  score_9800: {
+    name: 'Сверхзвезда',
+    description: 'Наберите более 9800 очков',
+  },
+  score_9900: {
+    name: 'За пределами совершенства',
+    description: 'Наберите более 9900 очков',
+  },
+  combo_300: {
+    name: 'Титан комбо',
+    description: 'Наберите комбо из 300 нот',
+  },
+  combo_500: {
+    name: 'Бессмертное комбо',
+    description: 'Наберите комбо из 500 нот',
+  },
+  accuracy_92: {
+    name: 'Тонкая настройка',
+    description: 'Достигните точности более 92%',
+  },
+  accuracy_94: {
+    name: 'Студийное качество',
+    description: 'Достигните точности более 94%',
+  },
+  accuracy_96: {
+    name: 'Снайпер',
+    description: 'Достигните точности более 96%',
+  },
+  accuracy_97: {
+    name: 'Лазерная точность',
+    description: 'Достигните точности более 97%',
+  },
+  accuracy_98: {
+    name: 'Виртуоз',
+    description: 'Достигните точности более 98%',
+  },
+  perfect_75: {
+    name: 'Идеальные 75',
+    description: 'Попадите в 75 идеальных нот за одну песню',
+  },
+  perfect_100: {
+    name: 'Идеальная сотня',
+    description: 'Попадите в 100 идеальных нот за одну песню',
+  },
+  perfect_150: {
+    name: 'Идеальный шторм',
+    description: 'Попадите в 150 идеальных нот за одну песню',
+  },
+  golden_30: {
+    name: 'Золотой прилив',
+    description: 'Попадите в 30 золотых нот за одну песню',
+  },
+  golden_40: {
+    name: 'Золотая симфония',
+    description: 'Попадите в 40 золотых нот за одну песню',
+  },
+  perfect_500: {
+    name: 'Идеальная машина',
+    description: 'Попадите в 500 идеальных нот за всё время',
+  },
+  perfect_1000: {
+    name: 'Мощь точности',
+    description: 'Попадите в 1000 идеальных нот за всё время',
+  },
+  perfect_5000: {
+    name: 'Идеальная лавина',
+    description: 'Попадите в 5000 идеальных нот за всё время',
+  },
+  perfect_10000: {
+    name: 'Идеальные десять тысяч',
+    description: 'Попадите в 10 000 идеальных нот за всё время',
+  },
+  golden_250: {
+    name: 'Золотой урожай',
+    description: 'Попадите в 250 золотых нот за всё время',
+  },
+  golden_1000: {
+    name: 'Золотой ливень',
+    description: 'Попадите в 1000 золотых нот за всё время',
+  },
+  golden_5000: {
+    name: 'Голос Мидаса',
+    description: 'Попадите в 5000 золотых нот за всё время',
+  },
+  songs_250: {
+    name: 'Ветеран песенника',
+    description: 'Завершите 250 песен',
+  },
+  songs_500: {
+    name: 'Клуб полутысячи',
+    description: 'Завершите 500 песен',
+  },
+  songs_1000: {
+    name: 'Легенда тысячи песен',
+    description: 'Завершите 1000 песен',
+  },
+  games_50: {
+    name: 'Постоянный певец',
+    description: 'Сыграйте 50 партий',
+  },
+  games_100: {
+    name: 'Клуб сотни',
+    description: 'Сыграйте 100 партий',
+  },
+  games_250: {
+    name: 'Завсегдатай аркады',
+    description: 'Сыграйте 250 партий',
+  },
+  games_500: {
+    name: 'Марафонский маньяк',
+    description: 'Сыграйте 500 партий',
+  },
+  level_25: {
+    name: 'Опытный певец',
+    description: 'Достигните уровня 25',
+  },
+  level_50: {
+    name: 'Элитный вокалист',
+    description: 'Достигните уровня 50',
+  },
+  level_100: {
+    name: 'Легенда уровня 100',
+    description: 'Достигните уровня 100',
+  },
+  daily_100: {
+    name: 'Дейли-центурион',
+    description: 'Завершите 100 ежедневных вызовов',
+  },
+  daily_250: {
+    name: 'Дейли-фанатик',
+    description: 'Завершите 250 ежедневных вызовов',
+  },
+  daily_500: {
+    name: 'Дейли-бессмертный',
+    description: 'Завершите 500 ежедневных вызовов',
+  },
+  streak_60: {
+    name: 'Железная воля',
+    description: 'Поддерживайте ежедневную серию в 60 дней',
+  },
+  streak_100: {
+    name: 'Герой ста дней',
+    description: 'Поддерживайте ежедневную серию в 100 дней',
+  },
+  streak_180: {
+    name: 'Полгода преданности',
+    description: 'Поддерживайте ежедневную серию в 180 дней',
+  },
+  streak_365: {
+    name: 'Легенда года',
+    description: 'Поддерживайте ежедневную серию в 365 дней',
+  },
+  weekly_15: {
+    name: 'Еженедельная опора',
+    description: 'Завершите 15 еженедельных вызовов',
+  },
+  weekly_30: {
+    name: 'Еженедельный столп',
+    description: 'Завершите 30 еженедельных вызовов',
+  },
+  weekly_52: {
+    name: 'Год недель',
+    description: 'Завершите 52 еженедельных вызова',
+  },
+  encore_10: {
+    name: 'На бис!',
+    description: 'Сыграйте 10 партий за один день',
+  },
+  duets_25: {
+    name: 'Поклонник дуэтов',
+    description: 'Спойте 25 дуэтов',
+  },
+  duets_50: {
+    name: 'Динамичный дуэт',
+    description: 'Спойте 50 дуэтов',
+  },
+  duets_100: {
+    name: 'Сотня дуэтов',
+    description: 'Спойте 100 дуэтов',
+  },
+  duels_5: {
+    name: 'Дуэлянт',
+    description: 'Выиграйте 5 дуэлей',
+  },
+  duels_10: {
+    name: 'Мастер дуэлей',
+    description: 'Выиграйте 10 дуэлей',
+  },
+  duels_25: {
+    name: 'Повелитель дуэлей',
+    description: 'Выиграйте 25 дуэлей',
+  },
+  party_10: {
+    name: 'Тусовщик',
+    description: 'Сыграйте в 10 партийных игр',
+  },
+  party_25: {
+    name: 'Душа компании',
+    description: 'Сыграйте в 25 партийных игр',
+  },
+  party_50: {
+    name: 'Легенда вечеринок',
+    description: 'Сыграйте в 50 партийных игр',
+  },
+  disney_25: {
+    name: 'Энтузиаст Disney',
+    description: 'Спойте 25 песен Disney',
+  },
+  disney_50: {
+    name: 'Жила-была песня',
+    description: 'Спойте 50 песен Disney',
+  },
+  genres_8: {
+    name: 'Странник жанров',
+    description: 'Спойте песни из 8 разных жанров',
+  },
+  genres_10: {
+    name: 'Знаток жанров',
+    description: 'Спойте песни из 10 разных жанров',
+  },
+  clean_sheet: {
+    name: 'Игра на ноль',
+    description: 'Завершите песню с 50+ нотами и нулём промахов',
+  },
+  weekend_singer: {
+    name: 'Певец выходного дня',
+    description: 'Завершите песню в субботу или воскресенье',
+  },
+  lunch_break: {
+    name: 'Обеденный перерыв',
+    description: 'Завершите песню между 12 и 14 часами',
   },
 },
 achievementsScreen: {

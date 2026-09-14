@@ -499,6 +499,255 @@ achievements: {
     name: '马拉松歌手',
     description: '在一天内游玩5局游戏',
   },
+
+  // ── 100 成就扩展 ──
+  score9800: {
+    name: '至尊之星',
+    description: '得分超过 9,800 分',
+  },
+  score9900: {
+    name: '超越完美',
+    description: '得分超过 9,900 分',
+    rewardTitle: '超越完美',
+  },
+  combo300: {
+    name: '连击泰坦',
+    description: '达成 300 连击',
+  },
+  combo500: {
+    name: '不朽连击',
+    description: '达成 500 连击',
+    rewardTitle: '不朽连击',
+  },
+  accuracy92: {
+    name: '精细调校',
+    description: '准确率超过 92%',
+  },
+  accuracy94: {
+    name: '录音室品质',
+    description: '准确率超过 94%',
+  },
+  accuracy96: {
+    name: '神射手',
+    description: '准确率超过 96%',
+  },
+  accuracy97: {
+    name: '激光精度',
+    description: '准确率超过 97%',
+  },
+  accuracy98: {
+    name: '歌艺大师',
+    description: '准确率超过 98%',
+  },
+  perfect75: {
+    name: '完美七十五',
+    description: '在一首歌中获得 75 个完美音符',
+  },
+  perfect100: {
+    name: '完美一百',
+    description: '在一首歌中获得 100 个完美音符',
+  },
+  perfect150: {
+    name: '完美风暴',
+    description: '在一首歌中获得 150 个完美音符',
+  },
+  golden30: {
+    name: '金色浪潮',
+    description: '在一首歌中命中 30 个金色音符',
+  },
+  golden40: {
+    name: '金色交响',
+    description: '在一首歌中命中 40 个金色音符',
+  },
+  perfect500: {
+    name: '完美机器',
+    description: '累计命中 500 个完美音符',
+  },
+  perfect1000: {
+    name: '精准强者',
+    description: '累计命中 1,000 个完美音符',
+  },
+  perfect5000: {
+    name: '完美雪崩',
+    description: '累计命中 5,000 个完美音符',
+  },
+  perfect10000: {
+    name: '完美一万',
+    description: '累计命中 10,000 个完美音符',
+    rewardTitle: '完美一万',
+  },
+  golden250: {
+    name: '金色丰收',
+    description: '累计命中 250 个金色音符',
+  },
+  golden1000: {
+    name: '金色骤雨',
+    description: '累计命中 1,000 个金色音符',
+  },
+  golden5000: {
+    name: '点金之嗓',
+    description: '累计命中 5,000 个金色音符',
+    rewardTitle: '点金之嗓',
+  },
+  songs250: {
+    name: '曲库老将',
+    description: '完成 250 首歌',
+  },
+  songs500: {
+    name: '五百俱乐部',
+    description: '完成 500 首歌',
+  },
+  songs1000: {
+    name: '千曲传奇',
+    description: '完成 1,000 首歌',
+    rewardTitle: '千曲传奇',
+  },
+  games50: {
+    name: '常客歌手',
+    description: '游玩 50 场游戏',
+  },
+  games100: {
+    name: '百场俱乐部',
+    description: '游玩 100 场游戏',
+  },
+  games250: {
+    name: '街机常客',
+    description: '游玩 250 场游戏',
+  },
+  games500: {
+    name: '马拉松狂人',
+    description: '游玩 500 场游戏',
+    rewardTitle: '马拉松狂人',
+  },
+  level25: {
+    name: '实力唱将',
+    description: '达到 25 级',
+  },
+  level50: {
+    name: '精英歌手',
+    description: '达到 50 级',
+    rewardTitle: '精英歌手',
+  },
+  level100: {
+    name: '百级传奇',
+    description: '达到 100 级',
+    rewardTitle: '百级传奇',
+  },
+  daily100: {
+    name: '每日百夫长',
+    description: '完成 100 个每日挑战',
+  },
+  daily250: {
+    name: '每日铁杆',
+    description: '完成 250 个每日挑战',
+  },
+  daily500: {
+    name: '每日不朽',
+    description: '完成 500 个每日挑战',
+    rewardTitle: '每日不朽',
+  },
+  streak60: {
+    name: '钢铁意志',
+    description: '保持连续 60 天的每日挑战记录',
+  },
+  streak100: {
+    name: '百日英雄',
+    description: '保持连续 100 天的每日挑战记录',
+  },
+  streak180: {
+    name: '半年坚守',
+    description: '保持连续 180 天的每日挑战记录',
+    rewardTitle: '半年坚守',
+  },
+  streak365: {
+    name: '年度传奇',
+    description: '保持连续 365 天的每日挑战记录',
+    rewardTitle: '年度传奇',
+  },
+  weekly15: {
+    name: '每周中坚',
+    description: '完成 15 个每周挑战',
+  },
+  weekly30: {
+    name: '每周支柱',
+    description: '完成 30 个每周挑战',
+  },
+  weekly52: {
+    name: '五十二周之年',
+    description: '完成 52 个每周挑战',
+    rewardTitle: '五十二周之年',
+  },
+  encore10: {
+    name: '安可！',
+    description: '在一天内游玩 10 场游戏',
+  },
+  duets25: {
+    name: '对唱爱好者',
+    description: '演唱 25 首对唱歌曲',
+  },
+  duets50: {
+    name: '黄金搭档',
+    description: '演唱 50 首对唱歌曲',
+  },
+  duets100: {
+    name: '对唱百曲',
+    description: '演唱 100 首对唱歌曲',
+    rewardTitle: '对唱百曲',
+  },
+  duels5: {
+    name: '决斗者',
+    description: '赢得 5 场对决',
+  },
+  duels10: {
+    name: '对决大师',
+    description: '赢得 10 场对决',
+  },
+  duels25: {
+    name: '对决霸主',
+    description: '赢得 25 场对决',
+    rewardTitle: '对决霸主',
+  },
+  party10: {
+    name: '派对动物',
+    description: '游玩 10 场派对游戏',
+  },
+  party25: {
+    name: '派对灵魂',
+    description: '游玩 25 场派对游戏',
+  },
+  party50: {
+    name: '派对传奇',
+    description: '游玩 50 场派对游戏',
+  },
+  disney25: {
+    name: '迪士尼发烧友',
+    description: '演唱 25 首迪士尼歌曲',
+  },
+  disney50: {
+    name: '从前有首歌',
+    description: '演唱 50 首迪士尼歌曲',
+    rewardTitle: '迪士尼皇室',
+  },
+  genres8: {
+    name: '流派漫游者',
+    description: '演唱 8 种不同流派的歌曲',
+  },
+  genres10: {
+    name: '流派行家',
+    description: '演唱 10 种不同流派的歌曲',
+  },
+  cleanSheet: {
+    name: '零失误',
+    description: '完成一首超过 50 个音符且零失误的歌曲',
+  },
+  weekendSinger: {
+    name: '周末歌手',
+    description: '在周六或周日完成一首歌',
+  },
+  lunchBreak: {
+    name: '午休时光',
+    description: '在中午 12 点到下午 2 点之间完成一首歌',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: '麦克风',
   survived: '存活',
   visualSettings: '视觉设置',
-  title: '大乱斗',
-  playersLabel: '玩家',
-  timeLeft: '本轮还剩 {n} 秒',
 },
 blind: {
   title: '盲唱卡拉OK',

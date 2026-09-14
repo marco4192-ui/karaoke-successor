@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Beslut, om denne profil skal deltage i online-ranglisten eller kun være lokal. Kan altid ændres.',
   },
+  countrySearch: 'Søg land…',
+  noCountryFound: 'Intet land fundet',
+  popularCountries: 'Populære',
+  allCountries: 'Alle lande',
+},
+profileAuth: {
+  accountTitle: 'Onlinekonto (valgfrit)',
+  accountDesc: 'Gem en e-mail og en adgangskode, så du kan indlæse denne profil på en anden enhed. Login er kun muligt inde i karaoke-appen — der er ingen web-login.',
+  email: 'E-mail',
+  emailPlaceholder: 'din@email.com',
+  emailInvalid: 'Indtast en gyldig e-mailadresse',
+  emailTaken: 'Denne e-mail er allerede registreret',
+  password: 'Adgangskode',
+  passwordPlaceholder: 'Mindst 8 tegn',
+  passwordRepeat: 'Gentag adgangskode',
+  passwordsDontMatch: 'Adgangskoderne er ikke ens',
+  passwordTooShort: 'Adgangskoden skal være på mindst 8 tegn',
+  registerFailed: 'Onlinekontoen kunne ikke oprettes',
+  loginTitle: 'Indlæs onlineprofil',
+  loginDesc: 'Indtast e-mail og adgangskode til din onlineprofil for at indlæse den på denne enhed.',
+  loginButton: 'Log ind og indlæs profil',
+  loginFailed: 'Login mislykkedes — tjek e-mail og adgangskode',
+  loginSuccess: 'Profilen "{n}" blev indlæst!',
+  noSnapshot: 'Ingen synkroniserede profildata er fundet på serveren endnu',
+  emailNote: 'Bruges kun til login — vises aldrig offentligt',
+  changePassword: 'Skift adgangskode',
+  currentPassword: 'Nuværende adgangskode',
+  newPassword: 'Ny adgangskode',
+  passwordChanged: 'Adgangskoden blev ændret',
+  passwordChangeFailed: 'Adgangskoden kunne ikke ændres',
+  hasAccount: 'Onlinekonto ✓',
+  registrationPending: 'Opretter onlinekontoen…',
+  registrationSuccess: 'Onlinekonto oprettet — du kan nu logge ind på enhver enhed',
+  registrationSuccessTitle: '🔐 Onlinekonto',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profil',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Vis QR-kode',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Indlæs onlineprofil',
 },
 characterCard: {
   connected: 'Forbundet',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Marathonsanger',
     description: 'Spil 5 spil på én enkelt dag',
+  },
+
+  // ── Udvidelse til 100 præstationer ──
+  score_9800: {
+    name: 'Ultra-stjerne',
+    description: 'Score over 9.800 point',
+  },
+  score_9900: {
+    name: 'Hinsides perfektion',
+    description: 'Score over 9.900 point',
+  },
+  combo_300: {
+    name: 'Kombo-titan',
+    description: 'Opnå en 300-nodes kombo',
+  },
+  combo_500: {
+    name: 'Kombo-udødelig',
+    description: 'Opnå en 500-nodes kombo',
+  },
+  accuracy_92: {
+    name: 'Finjustering',
+    description: 'Få over 92% præcision',
+  },
+  accuracy_94: {
+    name: 'Studiokvalitet',
+    description: 'Få over 94% præcision',
+  },
+  accuracy_96: {
+    name: 'Skarpskytte',
+    description: 'Få over 96% præcision',
+  },
+  accuracy_97: {
+    name: 'Laserpræcision',
+    description: 'Få over 97% præcision',
+  },
+  accuracy_98: {
+    name: 'Virtuos',
+    description: 'Få over 98% præcision',
+  },
+  perfect_75: {
+    name: 'Perfekte femoghalvfjerds',
+    description: 'Ram 75 perfekte noder i én enkelt sang',
+  },
+  perfect_100: {
+    name: 'Perfekt centurion',
+    description: 'Ram 100 perfekte noder i én enkelt sang',
+  },
+  perfect_150: {
+    name: 'Perfekt storm',
+    description: 'Ram 150 perfekte noder i én enkelt sang',
+  },
+  golden_30: {
+    name: 'Gylden tidevand',
+    description: 'Ram 30 gyldne noder i én enkelt sang',
+  },
+  golden_40: {
+    name: 'Gylden symfoni',
+    description: 'Ram 40 gyldne noder i én enkelt sang',
+  },
+  perfect_500: {
+    name: 'Perfekt maskine',
+    description: 'Ram i alt 500 perfekte noder',
+  },
+  perfect_1000: {
+    name: 'Præcisionskanon',
+    description: 'Ram i alt 1.000 perfekte noder',
+  },
+  perfect_5000: {
+    name: 'Perfekt lavine',
+    description: 'Ram i alt 5.000 perfekte noder',
+  },
+  perfect_10000: {
+    name: 'Perfekte titusinde',
+    description: 'Ram i alt 10.000 perfekte noder',
+  },
+  golden_250: {
+    name: 'Gylden høst',
+    description: 'Ram i alt 250 gyldne noder',
+  },
+  golden_1000: {
+    name: 'Gylden skybrud',
+    description: 'Ram i alt 1.000 gyldne noder',
+  },
+  golden_5000: {
+    name: 'Midas-stemme',
+    description: 'Ram i alt 5.000 gyldne noder',
+  },
+  songs_250: {
+    name: 'Sangbogs-veteran',
+    description: 'Gennemfør 250 sange',
+  },
+  songs_500: {
+    name: 'Halvtusind-klubben',
+    description: 'Gennemfør 500 sange',
+  },
+  songs_1000: {
+    name: 'Tusindsangs-legende',
+    description: 'Gennemfør 1.000 sange',
+  },
+  games_50: {
+    name: 'Hyppig sanger',
+    description: 'Spil 50 spil',
+  },
+  games_100: {
+    name: 'Hundrede-klubben',
+    description: 'Spil 100 spil',
+  },
+  games_250: {
+    name: 'Arkade-stammis',
+    description: 'Spil 250 spil',
+  },
+  games_500: {
+    name: 'Marathon-maniak',
+    description: 'Spil 500 spil',
+  },
+  level_25: {
+    name: 'Erfaren sanger',
+    description: 'Nå niveau 25',
+  },
+  level_50: {
+    name: 'Elite-vokalist',
+    description: 'Nå niveau 50',
+  },
+  level_100: {
+    name: 'Niveau 100-legende',
+    description: 'Nå niveau 100',
+  },
+  daily_100: {
+    name: 'Daglig centurion',
+    description: 'Gennemfør 100 daglige udfordringer',
+  },
+  daily_250: {
+    name: 'Daglig fanatiker',
+    description: 'Gennemfør 250 daglige udfordringer',
+  },
+  daily_500: {
+    name: 'Daglig udødelig',
+    description: 'Gennemfør 500 daglige udfordringer',
+  },
+  streak_60: {
+    name: 'Jernvilje',
+    description: 'Oprethold en 60-dages daglig streak',
+  },
+  streak_100: {
+    name: 'Hundrede dages helt',
+    description: 'Oprethold en 100-dages daglig streak',
+  },
+  streak_180: {
+    name: 'Halvårs-hengivenhed',
+    description: 'Oprethold en 180-dages daglig streak',
+  },
+  streak_365: {
+    name: 'Årlig legende',
+    description: 'Oprethold en 365-dages daglig streak',
+  },
+  weekly_15: {
+    name: 'Ugentlig trofast',
+    description: 'Gennemfør 15 ugentlige udfordringer',
+  },
+  weekly_30: {
+    name: 'Ugentlig søjle',
+    description: 'Gennemfør 30 ugentlige udfordringer',
+  },
+  weekly_52: {
+    name: 'Et år af uger',
+    description: 'Gennemfør 52 ugentlige udfordringer',
+  },
+  encore_10: {
+    name: 'Ekstranummer!',
+    description: 'Spil 10 spil på én enkelt dag',
+  },
+  duets_25: {
+    name: 'Duet-hengiven',
+    description: 'Syng 25 duetter',
+  },
+  duets_50: {
+    name: 'Dynamisk duo',
+    description: 'Syng 50 duetter',
+  },
+  duets_100: {
+    name: 'Duet-centurion',
+    description: 'Syng 100 duetter',
+  },
+  duels_5: {
+    name: 'Duelist',
+    description: 'Vind 5 dueller',
+  },
+  duels_10: {
+    name: 'Duel-ekspert',
+    description: 'Vind 10 dueller',
+  },
+  duels_25: {
+    name: 'Duel-overherre',
+    description: 'Vind 25 dueller',
+  },
+  party_10: {
+    name: 'Festdyr',
+    description: 'Spil 10 party-spil',
+  },
+  party_25: {
+    name: 'Festens midtpunkt',
+    description: 'Spil 25 party-spil',
+  },
+  party_50: {
+    name: 'Fest-legende',
+    description: 'Spil 50 party-spil',
+  },
+  disney_25: {
+    name: 'Disney-entusiast',
+    description: 'Syng 25 Disney-sange',
+  },
+  disney_50: {
+    name: 'Der var engang en sang',
+    description: 'Syng 50 Disney-sange',
+  },
+  genres_8: {
+    name: 'Genre-vandrer',
+    description: 'Syng sange fra 8 forskellige genrer',
+  },
+  genres_10: {
+    name: 'Genre-kender',
+    description: 'Syng sange fra 10 forskellige genrer',
+  },
+  clean_sheet: {
+    name: 'Holdt nullet',
+    description: 'Gennemfør en sang med 50+ noder og ingen misser',
+  },
+  weekend_singer: {
+    name: 'Weekend-sanger',
+    description: 'Gennemfør en sang på en lørdag eller søndag',
+  },
+  lunch_break: {
+    name: 'Frokostpause',
+    description: 'Gennemfør en sang mellem kl. 12 og 14',
   },
 },
 achievementsScreen: {

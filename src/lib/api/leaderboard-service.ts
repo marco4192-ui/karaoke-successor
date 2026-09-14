@@ -294,6 +294,97 @@ async function downloadProfileByCode(code: string): Promise<ProfileSyncDownload 
   }
 }
 
+// ── Online accounts (app-only login: e-mail + password) ──
+
+/**
+ * Link an e-mail + password account to a profile (register). Registers
+ * the profile on the server first when it has no sync code yet, then
+ * creates the account and immediately uploads a first sync snapshot so
+ * the very first login on another device already finds data.
+ * Returns the sync code when one had to be generated.
+ */
+async function registerAccount(params: {
+  profile: PlayerProfile;
+  email: string;
+  password: string;
+}): Promise<{ ok: boolean; sync_code?: string; error?: string }> {
+  const { profile, email, password } = params;
+  let syncCode = profile.syncCode;
+  if (!syncCode) {
+    const registered = await registerProfile(profile).catch(() => null);
+    syncCode = registered?.sync_code;
+    if (!syncCode) return { ok: false, error: 'Profile registration failed' };
+  }
+  try {
+    await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, sync_code: syncCode }),
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+  // Upload an initial snapshot so the first login elsewhere works
+  await uploadProfile({ ...profile, syncCode }, null).catch(() => null);
+  return { ok: true, sync_code: profile.syncCode ? undefined : syncCode };
+}
+
+/**
+ * App-only login: verify e-mail + password and download the linked
+ * profile snapshot. Returns null on invalid credentials or when no
+ * snapshot exists yet (the caller distinguishes via the hasSnapshot flag
+ * of the thrown-free result — invalid login vs. missing snapshot are both
+ * surfaced as ok:false with a reason).
+ */
+async function loginWithAccount(
+  email: string,
+  password: string,
+): Promise<
+  { ok: true; snapshot: ProfileSyncDownload & { profile: PlayerProfile } }
+  | { ok: false; reason: 'invalid' | 'noSnapshot' }
+> {
+  let login: { profile_uid: string; sync_code: string };
+  try {
+    login = await request<{ profile_uid: string; sync_code: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    return { ok: false, reason: 'invalid' };
+  }
+  const snapshot = await downloadProfileByCode(login.sync_code);
+  if (!snapshot?.profile) return { ok: false, reason: 'noSnapshot' };
+  // Enrich the snapshot with the login data so the imported profile is
+  // immediately usable for further syncs.
+  const profile: PlayerProfile = {
+    ...snapshot.profile,
+    syncCode: login.sync_code,
+    syncUid: login.profile_uid,
+    authEmail: email.trim().toLowerCase(),
+  };
+  return { ok: true, snapshot: { ...snapshot, profile } };
+}
+
+/** Change the password of an online account (requires the current one). */
+async function changeAccountPassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await request('/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export const leaderboardService = {
   testConnection,
   registerProfile,
@@ -309,4 +400,8 @@ export const leaderboardService = {
   // Profile sync (cross-device backup)
   uploadProfile,
   downloadProfileByCode,
+  // Online accounts (app-only login)
+  registerAccount,
+  loginWithAccount,
+  changeAccountPassword,
 };

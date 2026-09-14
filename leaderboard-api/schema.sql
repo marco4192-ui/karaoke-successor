@@ -4,6 +4,9 @@
 -- Songs are identified solely by a SHA-256 fingerprint hash.
 -- Anti-cheat: proof verification columns added.
 -- v3: Daily-challenge online board (ks_daily_results) added.
+-- v3.2: App-only online accounts (ks_accounts) added: e-mail + bcrypt
+--       password login to load a profile on another device. There is NO
+--       web login — the API speaks JSON only and requires the X-API-Key.
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -16,6 +19,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `ks_scores`;
 DROP TABLE IF EXISTS `ks_daily_results`;
+DROP TABLE IF EXISTS `ks_accounts`;
+DROP TABLE IF EXISTS `ks_profile_sync`;
 DROP TABLE IF EXISTS `ks_profiles`;
 
 CREATE TABLE `ks_profiles` (
@@ -113,6 +118,35 @@ CREATE TABLE `ks_daily_results` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
+-- Table: ks_accounts
+-- App-only online accounts (e-mail + password login).
+-- Purpose: load an online profile on another device / location.
+--   email: lowercase, unique. Never shown publicly anywhere.
+--   password_hash: bcrypt (password_hash()).
+--   profile_uid: the linked profile — exactly one account per profile
+--     and one profile per account (both enforced by unique keys).
+--   failed_attempts / locked_until: brute-force lockout
+--     (5 consecutive failures = 15 minutes lock).
+-- Security: the API has no HTML endpoints, no sessions and no cookies;
+--   every request (including /auth/login) requires the X-API-Key header
+--   that only the karaoke app ships. A browser cannot log in.
+-- -----------------------------------------------------------
+CREATE TABLE `ks_accounts` (
+  `id`              BIGINT       NOT NULL AUTO_INCREMENT,
+  `email`           VARCHAR(254) NOT NULL                COMMENT 'Lowercase login e-mail (app-only)',
+  `password_hash`   VARCHAR(255) NOT NULL                COMMENT 'bcrypt hash',
+  `profile_uid`     VARCHAR(36)  NOT NULL                COMMENT 'Linked ks_profiles.profile_uid',
+  `failed_attempts` INT          NOT NULL DEFAULT 0      COMMENT 'Consecutive failed logins (lockout counter)',
+  `locked_until`    DATETIME     NULL     DEFAULT NULL   COMMENT 'Lockout expiry (15 min after 5 fails)',
+  `created_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_email` (`email`),
+  UNIQUE KEY `uq_account_profile` (`profile_uid`),
+  CONSTRAINT `fk_account_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
 -- Stored Procedure: Update cached profile stats after score
 -- -----------------------------------------------------------
 DELIMITER //
@@ -159,6 +193,26 @@ DELIMITER ;
 --   UNIQUE KEY `uq_profile_date_type` (`profile_uid`, `challenge_date`, `challenge_type`),
 --   KEY `idx_date` (`challenge_date`),
 --   CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Migration: Add the online-accounts table to an existing v3.1
+-- installation (fresh installs already got it above — run only
+-- ONE of the two, never both):
+-- -----------------------------------------------------------
+-- CREATE TABLE IF NOT EXISTS `ks_accounts` (
+--   `id`              BIGINT       NOT NULL AUTO_INCREMENT,
+--   `email`           VARCHAR(254) NOT NULL,
+--   `password_hash`   VARCHAR(255) NOT NULL,
+--   `profile_uid`     VARCHAR(36)  NOT NULL,
+--   `failed_attempts` INT          NOT NULL DEFAULT 0,
+--   `locked_until`    DATETIME     NULL DEFAULT NULL,
+--   `created_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   `updated_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`id`),
+--   UNIQUE KEY `uq_email` (`email`),
+--   UNIQUE KEY `uq_account_profile` (`profile_uid`),
+--   CONSTRAINT `fk_account_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

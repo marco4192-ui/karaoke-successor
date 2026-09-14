@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Bepaal of dit profiel meedoet aan de online ranglijst of alleen lokaal blijft. Altijd aan te passen.',
   },
+  countrySearch: 'Land zoeken…',
+  noCountryFound: 'Geen land gevonden',
+  popularCountries: 'Populair',
+  allCountries: 'Alle landen',
+},
+profileAuth: {
+  accountTitle: 'Online account (optioneel)',
+  accountDesc: 'Sla een e-mailadres en wachtwoord op, zodat je dit profiel op een ander apparaat kunt laden. Inloggen kan alleen binnen de karaoke-app — er is geen weblogin.',
+  email: 'E-mail',
+  emailPlaceholder: 'jouw@email.com',
+  emailInvalid: 'Voer een geldig e-mailadres in',
+  emailTaken: 'Dit e-mailadres is al geregistreerd',
+  password: 'Wachtwoord',
+  passwordPlaceholder: 'Minimaal 8 tekens',
+  passwordRepeat: 'Herhaal wachtwoord',
+  passwordsDontMatch: 'De wachtwoorden komen niet overeen',
+  passwordTooShort: 'Het wachtwoord moet minimaal 8 tekens lang zijn',
+  registerFailed: 'Het online account kon niet worden aangemaakt',
+  loginTitle: 'Onlineprofiel laden',
+  loginDesc: 'Voer het e-mailadres en wachtwoord van je onlineprofiel in om het op dit apparaat te laden.',
+  loginButton: 'Inloggen & profiel laden',
+  loginFailed: 'Inloggen mislukt — controleer je e-mailadres en wachtwoord',
+  loginSuccess: 'Profiel "{n}" succesvol geladen!',
+  noSnapshot: 'Er zijn nog geen gesynchroniseerde profielgegevens op de server gevonden',
+  emailNote: 'Wordt alleen gebruikt om in te loggen — nooit openbaar getoond',
+  changePassword: 'Wachtwoord wijzigen',
+  currentPassword: 'Huidig wachtwoord',
+  newPassword: 'Nieuw wachtwoord',
+  passwordChanged: 'Wachtwoord succesvol gewijzigd',
+  passwordChangeFailed: 'Het wachtwoord kon niet worden gewijzigd',
+  hasAccount: 'Online account ✓',
+  registrationPending: 'Online account wordt aangemaakt…',
+  registrationSuccess: 'Online account aangemaakt — je kunt nu op elk apparaat inloggen',
+  registrationSuccessTitle: '🔐 Online account',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profiel',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'QR Code tonen',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Onlineprofiel laden',
 },
 characterCard: {
   connected: 'Verbonden',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Marathonzanger',
     description: 'Speel 5 spellen op één dag',
+  },
+
+  // ── 100-prestaties-uitbreiding ──
+  score_9800: {
+    name: 'Ultraster',
+    description: 'Score meer dan 9.800 punten',
+  },
+  score_9900: {
+    name: 'Voorbij perfectie',
+    description: 'Score meer dan 9.900 punten',
+  },
+  combo_300: {
+    name: 'Combo-titan',
+    description: 'Behaal een combo van 300 noten',
+  },
+  combo_500: {
+    name: 'Onsterfelijke combo',
+    description: 'Behaal een combo van 500 noten',
+  },
+  accuracy_92: {
+    name: 'Fijnafstelling',
+    description: 'Behaal meer dan 92% nauwkeurigheid',
+  },
+  accuracy_94: {
+    name: 'Studiokwaliteit',
+    description: 'Behaal meer dan 94% nauwkeurigheid',
+  },
+  accuracy_96: {
+    name: 'Scherpschutter',
+    description: 'Behaal meer dan 96% nauwkeurigheid',
+  },
+  accuracy_97: {
+    name: 'Laserprecisie',
+    description: 'Behaal meer dan 97% nauwkeurigheid',
+  },
+  accuracy_98: {
+    name: 'Virtuoos',
+    description: 'Behaal meer dan 98% nauwkeurigheid',
+  },
+  perfect_75: {
+    name: 'Perfecte vijfenzeventig',
+    description: 'Raak 75 perfecte noten in één nummer',
+  },
+  perfect_100: {
+    name: 'Perfecte honderd',
+    description: 'Raak 100 perfecte noten in één nummer',
+  },
+  perfect_150: {
+    name: 'Perfecte storm',
+    description: 'Raak 150 perfecte noten in één nummer',
+  },
+  golden_30: {
+    name: 'Gouden vloed',
+    description: 'Raak 30 gouden noten in één nummer',
+  },
+  golden_40: {
+    name: 'Gouden symfonie',
+    description: 'Raak 40 gouden noten in één nummer',
+  },
+  perfect_500: {
+    name: 'Perfecte machine',
+    description: 'Raak in totaal 500 perfecte noten',
+  },
+  perfect_1000: {
+    name: 'Precisie-krachtpatser',
+    description: 'Raak in totaal 1.000 perfecte noten',
+  },
+  perfect_5000: {
+    name: 'Perfecte lawine',
+    description: 'Raak in totaal 5.000 perfecte noten',
+  },
+  perfect_10000: {
+    name: 'Perfecte tienduizend',
+    description: 'Raak in totaal 10.000 perfecte noten',
+  },
+  golden_250: {
+    name: 'Gouden oogst',
+    description: 'Raak in totaal 250 gouden noten',
+  },
+  golden_1000: {
+    name: 'Gouden stortbui',
+    description: 'Raak in totaal 1.000 gouden noten',
+  },
+  golden_5000: {
+    name: 'Midas-stem',
+    description: 'Raak in totaal 5.000 gouden noten',
+  },
+  songs_250: {
+    name: 'Songboek-veteraan',
+    description: 'Voltooi 250 nummers',
+  },
+  songs_500: {
+    name: 'Vijfhonderd-club',
+    description: 'Voltooi 500 nummers',
+  },
+  songs_1000: {
+    name: 'Duizend-nummer-legende',
+    description: 'Voltooi 1.000 nummers',
+  },
+  games_50: {
+    name: 'Regelmatige zanger',
+    description: 'Speel 50 spellen',
+  },
+  games_100: {
+    name: 'Honderd-club',
+    description: 'Speel 100 spellen',
+  },
+  games_250: {
+    name: 'Arcade-stamgast',
+    description: 'Speel 250 spellen',
+  },
+  games_500: {
+    name: 'Marathonmaniak',
+    description: 'Speel 500 spellen',
+  },
+  level_25: {
+    name: 'Ervaren zanger',
+    description: 'Bereik niveau 25',
+  },
+  level_50: {
+    name: 'Elite-zanger',
+    description: 'Bereik niveau 50',
+  },
+  level_100: {
+    name: 'Niveau-100-legende',
+    description: 'Bereik niveau 100',
+  },
+  daily_100: {
+    name: 'Dagelijkse centurio',
+    description: 'Voltooi 100 dagelijkse uitdagingen',
+  },
+  daily_250: {
+    name: 'Dagelijkse diehard',
+    description: 'Voltooi 250 dagelijkse uitdagingen',
+  },
+  daily_500: {
+    name: 'Dagelijkse onsterfelijke',
+    description: 'Voltooi 500 dagelijkse uitdagingen',
+  },
+  streak_60: {
+    name: 'IJzeren wil',
+    description: 'Houd een dagelijkse reeks van 60 dagen aan',
+  },
+  streak_100: {
+    name: 'Honderd-dagen-held',
+    description: 'Houd een dagelijkse reeks van 100 dagen aan',
+  },
+  streak_180: {
+    name: 'Halfjaar-toewijding',
+    description: 'Houd een dagelijkse reeks van 180 dagen aan',
+  },
+  streak_365: {
+    name: 'Jaarlijkse legende',
+    description: 'Houd een dagelijkse reeks van 365 dagen aan',
+  },
+  weekly_15: {
+    name: 'Wekelijkse rots',
+    description: 'Voltooi 15 wekelijkse uitdagingen',
+  },
+  weekly_30: {
+    name: 'Wekelijkse pijler',
+    description: 'Voltooi 30 wekelijkse uitdagingen',
+  },
+  weekly_52: {
+    name: 'Jaar van weken',
+    description: 'Voltooi 52 wekelijkse uitdagingen',
+  },
+  encore_10: {
+    name: 'Toegift!',
+    description: 'Speel 10 spellen op één dag',
+  },
+  duets_25: {
+    name: 'Duet-liefhebber',
+    description: 'Zing 25 duetten',
+  },
+  duets_50: {
+    name: 'Dynamisch duo',
+    description: 'Zing 50 duetten',
+  },
+  duets_100: {
+    name: 'Eeuw van duetten',
+    description: 'Zing 100 duetten',
+  },
+  duels_5: {
+    name: 'Duellist',
+    description: 'Win 5 duels',
+  },
+  duels_10: {
+    name: 'Duel-meester',
+    description: 'Win 10 duels',
+  },
+  duels_25: {
+    name: 'Duel-overheerser',
+    description: 'Win 25 duels',
+  },
+  party_10: {
+    name: 'Feestbeest',
+    description: 'Speel 10 feestspellen',
+  },
+  party_25: {
+    name: 'Ziel van het feest',
+    description: 'Speel 25 feestspellen',
+  },
+  party_50: {
+    name: 'Feestlegende',
+    description: 'Speel 50 feestspellen',
+  },
+  disney_25: {
+    name: 'Disney-liefhebber',
+    description: 'Zing 25 Disney-nummers',
+  },
+  disney_50: {
+    name: 'Er was eens een nummer',
+    description: 'Zing 50 Disney-nummers',
+  },
+  genres_8: {
+    name: 'Genre-zwerver',
+    description: 'Zing nummers van 8 verschillende genres',
+  },
+  genres_10: {
+    name: 'Genre-kenner',
+    description: 'Zing nummers van 10 verschillende genres',
+  },
+  clean_sheet: {
+    name: 'De nul houden',
+    description: 'Voltooi een nummer met 50+ noten en nul missers',
+  },
+  weekend_singer: {
+    name: 'Weekendzanger',
+    description: 'Voltooi een nummer op zaterdag of zondag',
+  },
+  lunch_break: {
+    name: 'Lunchpauze',
+    description: 'Voltooi een nummer tussen 12 en 14 uur',
   },
 },
 achievementsScreen: {

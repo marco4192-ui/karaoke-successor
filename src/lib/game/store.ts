@@ -65,11 +65,14 @@ interface GameStore {
     storageMode?: 'online' | 'local';
     country?: string;
     privacy?: PlayerProfile['privacy'];
+    authEmail?: string;
   }) => PlayerProfile;
   updateProfile: (_id: string, _updates: Partial<PlayerProfile>) => void;
   deleteProfile: (_id: string) => void;
   setActiveProfile: (_id: string | null) => void;
   importProfileFromMobile: (_mobileProfile: { id: string; name: string; avatar?: string; color: string }) => PlayerProfile;
+  /** Import a full profile downloaded from the server (online login). */
+  importOnlineProfile: (_profile: PlayerProfile) => PlayerProfile;
 
   // Queue actions
   addToQueue: (_song: Song, _playerId: string, _playerName: string, _options?: {
@@ -104,6 +107,7 @@ function createDefaultPlayerProfile(overrides: {
   storageMode?: 'online' | 'local';
   country?: string;
   privacy?: PlayerProfile['privacy'];
+  authEmail?: string;
 }): PlayerProfile {
   return {
     ...overrides,
@@ -335,6 +339,7 @@ export const useGameStore = create<GameStore>()(
           storageMode: options?.storageMode,
           country: options?.country,
           privacy: options?.privacy,
+          authEmail: options?.authEmail,
         });
 
         set((state) => ({
@@ -360,6 +365,31 @@ export const useGameStore = create<GameStore>()(
 
       setActiveProfile: (id) =>
         set({ activeProfileId: id }),
+
+      importOnlineProfile: (downloaded) => {
+        const { profiles } = get();
+        const existing = profiles.find(p => p.id === downloaded.id);
+        if (existing) {
+          // Keep local-only state the server snapshot cannot know about
+          const merged: PlayerProfile = {
+            ...existing,
+            ...downloaded,
+            isActive: existing.isActive,
+          };
+          set((state) => ({
+            profiles: state.profiles.map(p => (p.id === downloaded.id ? merged : p)),
+          }));
+          return merged;
+        }
+        const imported: PlayerProfile = {
+          ...downloaded,
+          isActive: true,
+        };
+        set((state) => ({
+          profiles: [...state.profiles, imported],
+        }));
+        return imported;
+      },
 
       importProfileFromMobile: (mobileProfile) => {
         const { profiles } = get();

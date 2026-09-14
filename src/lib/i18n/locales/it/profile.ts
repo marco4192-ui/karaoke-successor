@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'Online',
     settingsDesc: 'Decidi se questo profilo si unisce alla classifica online o resta solo locale. Modificabile in qualsiasi momento.',
   },
+  countrySearch: 'Cerca paese…',
+  noCountryFound: 'Nessun paese trovato',
+  popularCountries: 'Popolari',
+  allCountries: 'Tutti i paesi',
+},
+profileAuth: {
+  accountTitle: 'Account online (facoltativo)',
+  accountDesc: 'Salva un\'e-mail e una password per poter caricare questo profilo su un altro dispositivo. L\'accesso è possibile solo all\'interno dell\'app di karaoke — non esiste un login web.',
+  email: 'E-mail',
+  emailPlaceholder: 'tua@email.com',
+  emailInvalid: 'Inserisci un indirizzo e-mail valido',
+  emailTaken: 'Questa e-mail è già registrata',
+  password: 'Password',
+  passwordPlaceholder: 'Almeno 8 caratteri',
+  passwordRepeat: 'Ripeti password',
+  passwordsDontMatch: 'Le password non coincidono',
+  passwordTooShort: 'La password deve contenere almeno 8 caratteri',
+  registerFailed: 'Impossibile creare l\'account online',
+  loginTitle: 'Carica profilo online',
+  loginDesc: 'Inserisci l\'e-mail e la password del tuo profilo online per caricarlo su questo dispositivo.',
+  loginButton: 'Accedi e carica profilo',
+  loginFailed: 'Accesso non riuscito — controlla e-mail e password',
+  loginSuccess: 'Profilo "{n}" caricato con successo!',
+  noSnapshot: 'Nessun dato profilo sincronizzato trovato sul server',
+  emailNote: 'Usata solo per l\'accesso — mai mostrata pubblicamente',
+  changePassword: 'Cambia password',
+  currentPassword: 'Password attuale',
+  newPassword: 'Nuova password',
+  passwordChanged: 'Password modificata con successo',
+  passwordChangeFailed: 'Impossibile cambiare la password',
+  hasAccount: 'Account online ✓',
+  registrationPending: 'Creazione dell\'account online…',
+  registrationSuccess: 'Account online creato — ora puoi accedere da qualsiasi dispositivo',
+  registrationSuccessTitle: '🔐 Account online',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'Profilo',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'Mostra QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'Carica Profilo Online',
 },
 characterCard: {
   connected: 'Connesso',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'Cantante Maratoneta',
     description: 'Gioca 5 partite in un solo giorno',
+  },
+
+  // ── Espansione a 100 obiettivi ──
+  score_9800: {
+    name: 'Stella Ultra',
+    description: 'Ottieni più di 9.800 punti',
+  },
+  score_9900: {
+    name: 'Oltre la Perfezione',
+    description: 'Ottieni più di 9.900 punti',
+  },
+  combo_300: {
+    name: 'Titano della Combo',
+    description: 'Raggiungi una combo di 300 note',
+  },
+  combo_500: {
+    name: 'Combo Immortale',
+    description: 'Raggiungi una combo di 500 note',
+  },
+  accuracy_92: {
+    name: 'Messa a Punto',
+    description: 'Ottieni più del 92% di precisione',
+  },
+  accuracy_94: {
+    name: 'Qualità da Studio',
+    description: 'Ottieni più del 94% di precisione',
+  },
+  accuracy_96: {
+    name: 'Tiratore Scelto',
+    description: 'Ottieni più del 96% di precisione',
+  },
+  accuracy_97: {
+    name: 'Precisione Laser',
+    description: 'Ottieni più del 97% di precisione',
+  },
+  accuracy_98: {
+    name: 'Virtuoso',
+    description: 'Ottieni più del 98% di precisione',
+  },
+  perfect_75: {
+    name: 'Settantacinque Perfette',
+    description: 'Colpisci 75 note perfette in una sola canzone',
+  },
+  perfect_100: {
+    name: 'Centuria Perfetta',
+    description: 'Colpisci 100 note perfette in una sola canzone',
+  },
+  perfect_150: {
+    name: 'Tempesta Perfetta',
+    description: 'Colpisci 150 note perfette in una sola canzone',
+  },
+  golden_30: {
+    name: 'Marea Dorata',
+    description: 'Colpisci 30 note dorate in una sola canzone',
+  },
+  golden_40: {
+    name: 'Sinfonia Dorata',
+    description: 'Colpisci 40 note dorate in una sola canzone',
+  },
+  perfect_500: {
+    name: 'Macchina Perfetta',
+    description: 'Colpisci 500 note perfette in totale',
+  },
+  perfect_1000: {
+    name: 'Cannone di Precisione',
+    description: 'Colpisci 1.000 note perfette in totale',
+  },
+  perfect_5000: {
+    name: 'Valanga Perfetta',
+    description: 'Colpisci 5.000 note perfette in totale',
+  },
+  perfect_10000: {
+    name: 'Diecimila Perfette',
+    description: 'Colpisci 10.000 note perfette in totale',
+  },
+  golden_250: {
+    name: 'Raccolto Dorato',
+    description: 'Colpisci 250 note dorate in totale',
+  },
+  golden_1000: {
+    name: 'Diluvio Dorato',
+    description: 'Colpisci 1.000 note dorate in totale',
+  },
+  golden_5000: {
+    name: 'Voce di Mida',
+    description: 'Colpisci 5.000 note dorate in totale',
+  },
+  songs_250: {
+    name: 'Veterano del Repertorio',
+    description: 'Completa 250 canzoni',
+  },
+  songs_500: {
+    name: 'Club dei Cinquecento',
+    description: 'Completa 500 canzoni',
+  },
+  songs_1000: {
+    name: 'Leggenda delle Mille Canzoni',
+    description: 'Completa 1.000 canzoni',
+  },
+  games_50: {
+    name: 'Cantante Frequente',
+    description: 'Gioca 50 partite',
+  },
+  games_100: {
+    name: 'Club del Centinaio',
+    description: 'Gioca 100 partite',
+  },
+  games_250: {
+    name: 'Habitué della Sala Giochi',
+    description: 'Gioca 250 partite',
+  },
+  games_500: {
+    name: 'Maniaco della Maratona',
+    description: 'Gioca 500 partite',
+  },
+  level_25: {
+    name: 'Cantante Esperto',
+    description: 'Raggiungi il livello 25',
+  },
+  level_50: {
+    name: 'Cantante d\'Élite',
+    description: 'Raggiungi il livello 50',
+  },
+  level_100: {
+    name: 'Leggenda di Livello 100',
+    description: 'Raggiungi il livello 100',
+  },
+  daily_100: {
+    name: 'Centurione Quotidiano',
+    description: 'Completa 100 sfide quotidiane',
+  },
+  daily_250: {
+    name: 'Fanatico Quotidiano',
+    description: 'Completa 250 sfide quotidiane',
+  },
+  daily_500: {
+    name: 'Immortale Quotidiano',
+    description: 'Completa 500 sfide quotidiane',
+  },
+  streak_60: {
+    name: 'Volontà di Ferro',
+    description: 'Mantieni una serie quotidiana di 60 giorni',
+  },
+  streak_100: {
+    name: 'Eroe dei Cento Giorni',
+    description: 'Mantieni una serie quotidiana di 100 giorni',
+  },
+  streak_180: {
+    name: 'Devozione di Mezzo Anno',
+    description: 'Mantieni una serie quotidiana di 180 giorni',
+  },
+  streak_365: {
+    name: 'Leggenda Annuale',
+    description: 'Mantieni una serie quotidiana di 365 giorni',
+  },
+  weekly_15: {
+    name: 'Incondizionato Settimanale',
+    description: 'Completa 15 sfide settimanali',
+  },
+  weekly_30: {
+    name: 'Pilastro Settimanale',
+    description: 'Completa 30 sfide settimanali',
+  },
+  weekly_52: {
+    name: 'Un Anno di Settimane',
+    description: 'Completa 52 sfide settimanali',
+  },
+  encore_10: {
+    name: 'Bis!',
+    description: 'Gioca 10 partite in un solo giorno',
+  },
+  duets_25: {
+    name: 'Devoto dei Duetti',
+    description: 'Canta 25 duetti',
+  },
+  duets_50: {
+    name: 'Duo Dinamico',
+    description: 'Canta 50 duetti',
+  },
+  duets_100: {
+    name: 'Centuria di Duetti',
+    description: 'Canta 100 duetti',
+  },
+  duels_5: {
+    name: 'Duellante',
+    description: 'Vinci 5 duelli',
+  },
+  duels_10: {
+    name: 'Maestro del Duello',
+    description: 'Vinci 10 duelli',
+  },
+  duels_25: {
+    name: 'Signore del Duello',
+    description: 'Vinci 25 duelli',
+  },
+  party_10: {
+    name: 'Animale da Festa',
+    description: 'Gioca a 10 partite in modalità festa',
+  },
+  party_25: {
+    name: 'Anima della Festa',
+    description: 'Gioca a 25 partite in modalità festa',
+  },
+  party_50: {
+    name: 'Leggenda della Festa',
+    description: 'Gioca a 50 partite in modalità festa',
+  },
+  disney_25: {
+    name: 'Appassionato di Disney',
+    description: 'Canta 25 canzoni Disney',
+  },
+  disney_50: {
+    name: 'C\'era una Volta una Canzone',
+    description: 'Canta 50 canzoni Disney',
+  },
+  genres_8: {
+    name: 'Vagabondo dei Generi',
+    description: 'Canta canzoni di 8 generi diversi',
+  },
+  genres_10: {
+    name: 'Esperto di Generi',
+    description: 'Canta canzoni di 10 generi diversi',
+  },
+  clean_sheet: {
+    name: 'Porta Inviolata',
+    description: 'Termina una canzone con 50+ note e zero errori',
+  },
+  weekend_singer: {
+    name: 'Cantante del Weekend',
+    description: 'Termina una canzone di sabato o domenica',
+  },
+  lunch_break: {
+    name: 'Pausa Pranzo',
+    description: 'Termina una canzone tra le 12 e le 14',
   },
 },
 achievementsScreen: {

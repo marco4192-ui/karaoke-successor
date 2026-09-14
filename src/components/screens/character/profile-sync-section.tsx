@@ -129,6 +129,15 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           </code>
         </div>
       )}
+
+      {profile.authEmail && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-white/50">🔐 {t('profileAuth.hasAccount')}</span>
+          <span className="px-2 py-0.5 bg-purple-500/15 text-purple-300 rounded truncate" title={profile.authEmail}>
+            {profile.authEmail}
+          </span>
+        </div>
+      )}
       
       <div className="flex flex-wrap gap-2">
         <Button
@@ -177,6 +186,113 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           message.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {profile.authEmail && (
+        <AccountPasswordSection email={profile.authEmail} />
+      )}
+    </div>
+  );
+}
+
+/** Change-password UI for profiles linked to an online account. */
+function AccountPasswordSection({ email }: { email: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [newPwRepeat, setNewPwRepeat] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const valid = currentPw.length > 0 && newPw.length >= 8 && newPw === newPwRepeat;
+
+  const handleChangePassword = async () => {
+    if (!valid || isSaving) return;
+    setIsSaving(true);
+    setMsg(null);
+    try {
+      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+      const result = await leaderboardService.changeAccountPassword(email, currentPw, newPw);
+      if (result.ok) {
+        setMsg({ type: 'success', text: t('profileAuth.passwordChanged') });
+        setCurrentPw('');
+        setNewPw('');
+        setNewPwRepeat('');
+      } else {
+        setMsg({ type: 'error', text: t('profileAuth.passwordChangeFailed') });
+      }
+    } catch {
+      setMsg({ type: 'error', text: t('profileAuth.passwordChangeFailed') });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="pt-1">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="text-[11px] text-purple-300/80 hover:text-purple-200 transition-colors underline underline-offset-2"
+      >
+        🔑 {t('profileAuth.changePassword')}
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
+          <Input
+            type="password"
+            autoComplete="current-password"
+            placeholder={t('profileAuth.currentPassword')}
+            value={currentPw}
+            onChange={(e) => setCurrentPw(e.target.value)}
+            aria-label={t('profileAuth.currentPassword')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          <Input
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('profileAuth.newPassword')}
+            value={newPw}
+            onChange={(e) => setNewPw(e.target.value)}
+            aria-label={t('profileAuth.newPassword')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          <Input
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('profileAuth.passwordRepeat')}
+            value={newPwRepeat}
+            onChange={(e) => setNewPwRepeat(e.target.value)}
+            aria-label={t('profileAuth.passwordRepeat')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          {newPw.length > 0 && newPw.length < 8 && (
+            <div className="text-[11px] text-red-400">{t('profileAuth.passwordTooShort')}</div>
+          )}
+          {newPw.length >= 8 && newPwRepeat.length > 0 && newPw !== newPwRepeat && (
+            <div className="text-[11px] text-red-400">{t('profileAuth.passwordsDontMatch')}</div>
+          )}
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={() => void handleChangePassword()}
+              disabled={!valid || isSaving}
+              className="h-7 text-xs bg-purple-500 hover:bg-purple-600"
+            >
+              {isSaving && <div className="w-3 h-3 border border-white/70 border-t-transparent rounded-full animate-spin mr-1" />}
+              {t('profileAuth.changePassword')}
+            </Button>
+          </div>
+          {msg && (
+            <div className={`text-[11px] p-2 rounded ${
+              msg.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+            }`}>
+              {msg.text}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -33,6 +33,41 @@ profile: {
     onlineShort: 'オンライン',
     settingsDesc: 'このプロフィールをオンラインランキングに参加させるか、ローカルのみにするかを選択できます。いつでも変更可能です。',
   },
+  countrySearch: '国を検索…',
+  noCountryFound: '国が見つかりません',
+  popularCountries: '人気',
+  allCountries: 'すべての国',
+},
+profileAuth: {
+  accountTitle: 'オンラインアカウント（任意）',
+  accountDesc: 'メールアドレスとパスワードを保存すると、このプロフィールを別のデバイスで読み込めるようになります。ログインはカラオケアプリ内でのみ可能で、ウェブログインはありません。',
+  email: 'メールアドレス',
+  emailPlaceholder: 'your@email.com',
+  emailInvalid: '有効なメールアドレスを入力してください',
+  emailTaken: 'このメールアドレスは既に登録されています',
+  password: 'パスワード',
+  passwordPlaceholder: '8文字以上',
+  passwordRepeat: 'パスワードを再入力',
+  passwordsDontMatch: 'パスワードが一致しません',
+  passwordTooShort: 'パスワードは8文字以上である必要があります',
+  registerFailed: 'オンラインアカウントを作成できませんでした',
+  loginTitle: 'オンラインプロフィールを読み込む',
+  loginDesc: 'オンラインプロフィールのメールアドレスとパスワードを入力して、このデバイスに読み込みます。',
+  loginButton: 'ログインして読み込む',
+  loginFailed: 'ログインに失敗しました。メールアドレスとパスワードをご確認ください',
+  loginSuccess: 'プロフィール「{n}」を読み込みました！',
+  noSnapshot: 'サーバー上に同期されたプロフィールデータはまだありません',
+  emailNote: 'ログイン専用です。公開されることはありません',
+  changePassword: 'パスワード変更',
+  currentPassword: '現在のパスワード',
+  newPassword: '新しいパスワード',
+  passwordChanged: 'パスワードを変更しました',
+  passwordChangeFailed: 'パスワードを変更できませんでした',
+  hasAccount: 'オンラインアカウント ✓',
+  registrationPending: 'オンラインアカウントを作成中…',
+  registrationSuccess: 'オンラインアカウントを作成しました。どのデバイスでもログインできます',
+  registrationSuccessTitle: '🔐 オンラインアカウント',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: 'プロファイル',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: 'QRコードを表示',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: 'オンラインプロフィールを読み込む',
 },
 characterCard: {
   connected: '接続済み',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: 'マラソンシンガー',
     description: '1日に5回プレイする',
+  },
+
+  // ── 100実績拡張 ──
+  score_9800: {
+    name: 'ウルトラスター',
+    description: '9,800ポイント以上を獲得',
+  },
+  score_9900: {
+    name: '完璧を超えて',
+    description: '9,900ポイント以上を獲得',
+  },
+  combo_300: {
+    name: 'コンボタイタン',
+    description: '300ノートコンボを達成',
+  },
+  combo_500: {
+    name: '不死のコンボ',
+    description: '500ノートコンボを達成',
+  },
+  accuracy_92: {
+    name: 'ファインチューニング',
+    description: '精度92%以上を達成',
+  },
+  accuracy_94: {
+    name: 'スタジオクオリティ',
+    description: '精度94%以上を達成',
+  },
+  accuracy_96: {
+    name: 'シャープシューター',
+    description: '精度96%以上を達成',
+  },
+  accuracy_97: {
+    name: '百発百中',
+    description: '精度97%以上を達成',
+  },
+  accuracy_98: {
+    name: '名手',
+    description: '精度98%以上を達成',
+  },
+  perfect_75: {
+    name: 'パーフェクト75',
+    description: '1曲でパーフェクトノートを75個ヒットする',
+  },
+  perfect_100: {
+    name: 'パーフェクト100',
+    description: '1曲でパーフェクトノートを100個ヒットする',
+  },
+  perfect_150: {
+    name: 'パーフェクトストーム',
+    description: '1曲でパーフェクトノートを150個ヒットする',
+  },
+  golden_30: {
+    name: 'ゴールデンタイド',
+    description: '1曲でゴールデンノートを30個ヒットする',
+  },
+  golden_40: {
+    name: 'ゴールデンシンフォニー',
+    description: '1曲でゴールデンノートを40個ヒットする',
+  },
+  perfect_500: {
+    name: 'パーフェクトマシン',
+    description: 'パーフェクトノートを通算500個ヒットする',
+  },
+  perfect_1000: {
+    name: '精密の化身',
+    description: 'パーフェクトノートを通算1,000個ヒットする',
+  },
+  perfect_5000: {
+    name: 'パーフェクトアバランチ',
+    description: 'パーフェクトノートを通算5,000個ヒットする',
+  },
+  perfect_10000: {
+    name: 'パーフェクト一万',
+    description: 'パーフェクトノートを通算10,000個ヒットする',
+  },
+  golden_250: {
+    name: '黄金の収穫',
+    description: 'ゴールデンノートを通算250個ヒットする',
+  },
+  golden_1000: {
+    name: '黄金の豪雨',
+    description: 'ゴールデンノートを通算1,000個ヒットする',
+  },
+  golden_5000: {
+    name: 'ミダスの歌声',
+    description: 'ゴールデンノートを通算5,000個ヒットする',
+  },
+  songs_250: {
+    name: 'レパートリーのベテラン',
+    description: '250曲を完了',
+  },
+  songs_500: {
+    name: '500曲クラブ',
+    description: '500曲を完了',
+  },
+  songs_1000: {
+    name: '千曲伝説',
+    description: '1,000曲を完了',
+  },
+  games_50: {
+    name: '常連シンガー',
+    description: '50ゲームプレイ',
+  },
+  games_100: {
+    name: 'センチュリークラブ',
+    description: '100ゲームプレイ',
+  },
+  games_250: {
+    name: 'アーケード常連',
+    description: '250ゲームプレイ',
+  },
+  games_500: {
+    name: 'マラソンマニアック',
+    description: '500ゲームプレイ',
+  },
+  level_25: {
+    name: '熟練シンガー',
+    description: 'レベル25に到達',
+  },
+  level_50: {
+    name: 'エリートボーカリスト',
+    description: 'レベル50に到達',
+  },
+  level_100: {
+    name: 'レベル100レジェンド',
+    description: 'レベル100に到達',
+  },
+  daily_100: {
+    name: 'デイリーセンチュリオン',
+    description: 'デイリーチャレンジを100回完了する',
+  },
+  daily_250: {
+    name: 'デイリーの鉄人',
+    description: 'デイリーチャレンジを250回完了する',
+  },
+  daily_500: {
+    name: '不滅のデイリー',
+    description: 'デイリーチャレンジを500回完了する',
+  },
+  streak_60: {
+    name: '鉄の意志',
+    description: 'デイリー連続記録を60日維持する',
+  },
+  streak_100: {
+    name: '百日ヒーロー',
+    description: 'デイリー連続記録を100日維持する',
+  },
+  streak_180: {
+    name: '半年の献身',
+    description: 'デイリー連続記録を180日維持する',
+  },
+  streak_365: {
+    name: '年間レジェンド',
+    description: 'デイリー連続記録を365日維持する',
+  },
+  weekly_15: {
+    name: 'ウィークリーの重鎮',
+    description: 'ウィークリーチャレンジを15回完了する',
+  },
+  weekly_30: {
+    name: 'ウィークリーの柱',
+    description: 'ウィークリーチャレンジを30回完了する',
+  },
+  weekly_52: {
+    name: '一年分のウィークリー',
+    description: 'ウィークリーチャレンジを52回完了する',
+  },
+  encore_10: {
+    name: 'アンコール！',
+    description: '1日に10ゲームプレイする',
+  },
+  duets_25: {
+    name: 'デュエット愛好家',
+    description: 'デュエットを25曲歌う',
+  },
+  duets_50: {
+    name: 'ダイナミックデュオ',
+    description: 'デュエットを50曲歌う',
+  },
+  duets_100: {
+    name: 'デュエットセンチュリオン',
+    description: 'デュエットを100曲歌う',
+  },
+  duels_5: {
+    name: 'デュエリスト',
+    description: 'デュエルで5回勝利する',
+  },
+  duels_10: {
+    name: 'デュエルマスター',
+    description: 'デュエルで10回勝利する',
+  },
+  duels_25: {
+    name: 'デュエルの覇王',
+    description: 'デュエルで25回勝利する',
+  },
+  party_10: {
+    name: 'パーティーアニマル',
+    description: 'パーティーゲームを10回プレイする',
+  },
+  party_25: {
+    name: 'パーティーの花形',
+    description: 'パーティーゲームを25回プレイする',
+  },
+  party_50: {
+    name: 'パーティーレジェンド',
+    description: 'パーティーゲームを50回プレイする',
+  },
+  disney_25: {
+    name: 'ディズニー愛好家',
+    description: 'ディズニーの曲を25曲歌う',
+  },
+  disney_50: {
+    name: 'むかしむかしの歌',
+    description: 'ディズニーの曲を50曲歌う',
+  },
+  genres_8: {
+    name: 'ジャンル放浪者',
+    description: '8つの異なるジャンルの曲を歌う',
+  },
+  genres_10: {
+    name: 'ジャンル通',
+    description: '10の異なるジャンルの曲を歌う',
+  },
+  clean_sheet: {
+    name: '無失点',
+    description: '50ノート以上でミスゼロのまま曲を完了する',
+  },
+  weekend_singer: {
+    name: 'ウィークエンドシンガー',
+    description: '土曜日または日曜日に曲を完了する',
+  },
+  lunch_break: {
+    name: 'ランチブレイク',
+    description: '12時から14時の間に曲を完了する',
   },
 },
 achievementsScreen: {

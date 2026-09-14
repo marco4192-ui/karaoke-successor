@@ -33,6 +33,41 @@ profile: {
     onlineShort: '在线',
     settingsDesc: '决定此档案是加入在线排行榜还是仅保存在本地。可随时更改。',
   },
+  countrySearch: '搜索国家…',
+  noCountryFound: '未找到国家',
+  popularCountries: '热门',
+  allCountries: '所有国家',
+},
+profileAuth: {
+  accountTitle: '在线账号（可选）',
+  accountDesc: '保存电子邮箱和密码，即可在其他设备上加载此档案。登录仅可在卡拉OK应用内进行——没有网页登录。',
+  email: '电子邮箱',
+  emailPlaceholder: '你的@email.com',
+  emailInvalid: '请输入有效的电子邮箱地址',
+  emailTaken: '该电子邮箱已被注册',
+  password: '密码',
+  passwordPlaceholder: '至少 8 个字符',
+  passwordRepeat: '再次输入密码',
+  passwordsDontMatch: '两次输入的密码不一致',
+  passwordTooShort: '密码至少需要 8 个字符',
+  registerFailed: '无法创建在线账号',
+  loginTitle: '加载在线档案',
+  loginDesc: '输入在线档案的电子邮箱和密码，即可在此设备上加载。',
+  loginButton: '登录并加载档案',
+  loginFailed: '登录失败——请检查电子邮箱和密码',
+  loginSuccess: '档案“{n}”加载成功！',
+  noSnapshot: '服务器上尚未找到已同步的档案数据',
+  emailNote: '仅用于登录——绝不会公开显示',
+  changePassword: '修改密码',
+  currentPassword: '当前密码',
+  newPassword: '新密码',
+  passwordChanged: '密码修改成功',
+  passwordChangeFailed: '无法修改密码',
+  hasAccount: '在线账号 ✓',
+  registrationPending: '正在创建在线账号…',
+  registrationSuccess: '在线账号创建成功——你现在可以在任何设备上登录',
+  registrationSuccessTitle: '🔐 在线账号',
+  loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
   title: '档案',
@@ -59,6 +94,7 @@ characterScreen: {
   showQrCode: '显示二维码',
   leaderboardParticipation: 'Leaderboard Participation',
   leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  loadProfile: '加载在线档案',
 },
 characterCard: {
   connected: '已连接',
@@ -273,6 +309,240 @@ achievements: {
   marathon_singer: {
     name: '马拉松歌手',
     description: '在一天内游玩5局游戏',
+  },
+
+  // ── 100 成就扩展 ──
+  score_9800: {
+    name: '至尊之星',
+    description: '得分超过 9,800 分',
+  },
+  score_9900: {
+    name: '超越完美',
+    description: '得分超过 9,900 分',
+  },
+  combo_300: {
+    name: '连击泰坦',
+    description: '达成 300 连击',
+  },
+  combo_500: {
+    name: '不朽连击',
+    description: '达成 500 连击',
+  },
+  accuracy_92: {
+    name: '精细调校',
+    description: '准确率超过 92%',
+  },
+  accuracy_94: {
+    name: '录音室品质',
+    description: '准确率超过 94%',
+  },
+  accuracy_96: {
+    name: '神射手',
+    description: '准确率超过 96%',
+  },
+  accuracy_97: {
+    name: '激光精度',
+    description: '准确率超过 97%',
+  },
+  accuracy_98: {
+    name: '歌艺大师',
+    description: '准确率超过 98%',
+  },
+  perfect_75: {
+    name: '完美七十五',
+    description: '在一首歌中获得 75 个完美音符',
+  },
+  perfect_100: {
+    name: '完美一百',
+    description: '在一首歌中获得 100 个完美音符',
+  },
+  perfect_150: {
+    name: '完美风暴',
+    description: '在一首歌中获得 150 个完美音符',
+  },
+  golden_30: {
+    name: '金色浪潮',
+    description: '在一首歌中命中 30 个金色音符',
+  },
+  golden_40: {
+    name: '金色交响',
+    description: '在一首歌中命中 40 个金色音符',
+  },
+  perfect_500: {
+    name: '完美机器',
+    description: '累计命中 500 个完美音符',
+  },
+  perfect_1000: {
+    name: '精准强者',
+    description: '累计命中 1,000 个完美音符',
+  },
+  perfect_5000: {
+    name: '完美雪崩',
+    description: '累计命中 5,000 个完美音符',
+  },
+  perfect_10000: {
+    name: '完美一万',
+    description: '累计命中 10,000 个完美音符',
+  },
+  golden_250: {
+    name: '金色丰收',
+    description: '累计命中 250 个金色音符',
+  },
+  golden_1000: {
+    name: '金色骤雨',
+    description: '累计命中 1,000 个金色音符',
+  },
+  golden_5000: {
+    name: '点金之嗓',
+    description: '累计命中 5,000 个金色音符',
+  },
+  songs_250: {
+    name: '曲库老将',
+    description: '完成 250 首歌',
+  },
+  songs_500: {
+    name: '五百俱乐部',
+    description: '完成 500 首歌',
+  },
+  songs_1000: {
+    name: '千曲传奇',
+    description: '完成 1,000 首歌',
+  },
+  games_50: {
+    name: '常客歌手',
+    description: '游玩 50 场游戏',
+  },
+  games_100: {
+    name: '百场俱乐部',
+    description: '游玩 100 场游戏',
+  },
+  games_250: {
+    name: '街机常客',
+    description: '游玩 250 场游戏',
+  },
+  games_500: {
+    name: '马拉松狂人',
+    description: '游玩 500 场游戏',
+  },
+  level_25: {
+    name: '实力唱将',
+    description: '达到 25 级',
+  },
+  level_50: {
+    name: '精英歌手',
+    description: '达到 50 级',
+  },
+  level_100: {
+    name: '百级传奇',
+    description: '达到 100 级',
+  },
+  daily_100: {
+    name: '每日百夫长',
+    description: '完成 100 个每日挑战',
+  },
+  daily_250: {
+    name: '每日铁杆',
+    description: '完成 250 个每日挑战',
+  },
+  daily_500: {
+    name: '每日不朽',
+    description: '完成 500 个每日挑战',
+  },
+  streak_60: {
+    name: '钢铁意志',
+    description: '保持连续 60 天的每日挑战记录',
+  },
+  streak_100: {
+    name: '百日英雄',
+    description: '保持连续 100 天的每日挑战记录',
+  },
+  streak_180: {
+    name: '半年坚守',
+    description: '保持连续 180 天的每日挑战记录',
+  },
+  streak_365: {
+    name: '年度传奇',
+    description: '保持连续 365 天的每日挑战记录',
+  },
+  weekly_15: {
+    name: '每周中坚',
+    description: '完成 15 个每周挑战',
+  },
+  weekly_30: {
+    name: '每周支柱',
+    description: '完成 30 个每周挑战',
+  },
+  weekly_52: {
+    name: '五十二周之年',
+    description: '完成 52 个每周挑战',
+  },
+  encore_10: {
+    name: '安可！',
+    description: '在一天内游玩 10 场游戏',
+  },
+  duets_25: {
+    name: '对唱爱好者',
+    description: '演唱 25 首对唱歌曲',
+  },
+  duets_50: {
+    name: '黄金搭档',
+    description: '演唱 50 首对唱歌曲',
+  },
+  duets_100: {
+    name: '对唱百曲',
+    description: '演唱 100 首对唱歌曲',
+  },
+  duels_5: {
+    name: '决斗者',
+    description: '赢得 5 场对决',
+  },
+  duels_10: {
+    name: '对决大师',
+    description: '赢得 10 场对决',
+  },
+  duels_25: {
+    name: '对决霸主',
+    description: '赢得 25 场对决',
+  },
+  party_10: {
+    name: '派对动物',
+    description: '游玩 10 场派对游戏',
+  },
+  party_25: {
+    name: '派对灵魂',
+    description: '游玩 25 场派对游戏',
+  },
+  party_50: {
+    name: '派对传奇',
+    description: '游玩 50 场派对游戏',
+  },
+  disney_25: {
+    name: '迪士尼发烧友',
+    description: '演唱 25 首迪士尼歌曲',
+  },
+  disney_50: {
+    name: '从前有首歌',
+    description: '演唱 50 首迪士尼歌曲',
+  },
+  genres_8: {
+    name: '流派漫游者',
+    description: '演唱 8 种不同流派的歌曲',
+  },
+  genres_10: {
+    name: '流派行家',
+    description: '演唱 10 种不同流派的歌曲',
+  },
+  clean_sheet: {
+    name: '零失误',
+    description: '完成一首超过 50 个音符且零失误的歌曲',
+  },
+  weekend_singer: {
+    name: '周末歌手',
+    description: '在周六或周日完成一首歌',
+  },
+  lunch_break: {
+    name: '午休时光',
+    description: '在中午 12 点到下午 2 点之间完成一首歌',
   },
 },
 achievementsScreen: {

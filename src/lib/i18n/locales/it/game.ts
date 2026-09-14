@@ -499,6 +499,255 @@ achievements: {
     name: 'Cantante Maratoneta',
     description: 'Gioca 5 partite in un solo giorno',
   },
+
+  // ── Espansione a 100 obiettivi ──
+  score9800: {
+    name: 'Stella Ultra',
+    description: 'Segna più di 9.800 punti',
+  },
+  score9900: {
+    name: 'Oltre la Perfezione',
+    description: 'Segna più di 9.900 punti',
+    rewardTitle: 'Oltre la Perfezione',
+  },
+  combo300: {
+    name: 'Titano della Combo',
+    description: 'Raggiungi una combo di 300 note',
+  },
+  combo500: {
+    name: 'Combo Immortale',
+    description: 'Raggiungi una combo di 500 note',
+    rewardTitle: 'Combo Immortale',
+  },
+  accuracy92: {
+    name: 'Messa a Punto',
+    description: 'Ottieni oltre il 92% di precisione',
+  },
+  accuracy94: {
+    name: 'Qualità da Studio',
+    description: 'Ottieni oltre il 94% di precisione',
+  },
+  accuracy96: {
+    name: 'Tiratore Scelto',
+    description: 'Ottieni oltre il 96% di precisione',
+  },
+  accuracy97: {
+    name: 'Precisione Laser',
+    description: 'Ottieni oltre il 97% di precisione',
+  },
+  accuracy98: {
+    name: 'Virtuoso',
+    description: 'Ottieni oltre il 98% di precisione',
+  },
+  perfect75: {
+    name: 'Settantacinque Perfette',
+    description: 'Colpisci 75 note perfette in una sola canzone',
+  },
+  perfect100: {
+    name: 'Centuria Perfetta',
+    description: 'Colpisci 100 note perfette in una sola canzone',
+  },
+  perfect150: {
+    name: 'Tempesta Perfetta',
+    description: 'Colpisci 150 note perfette in una sola canzone',
+  },
+  golden30: {
+    name: 'Marea Dorata',
+    description: 'Colpisci 30 note dorate in una sola canzone',
+  },
+  golden40: {
+    name: 'Sinfonia Dorata',
+    description: 'Colpisci 40 note dorate in una sola canzone',
+  },
+  perfect500: {
+    name: 'Macchina Perfetta',
+    description: 'Colpisci 500 note perfette in totale',
+  },
+  perfect1000: {
+    name: 'Cannone di Precisione',
+    description: 'Colpisci 1.000 note perfette in totale',
+  },
+  perfect5000: {
+    name: 'Valanga Perfetta',
+    description: 'Colpisci 5.000 note perfette in totale',
+  },
+  perfect10000: {
+    name: 'Diecimila Perfette',
+    description: 'Colpisci 10.000 note perfette in totale',
+    rewardTitle: 'Diecimila Perfette',
+  },
+  golden250: {
+    name: 'Raccolto Dorato',
+    description: 'Colpisci 250 note dorate in totale',
+  },
+  golden1000: {
+    name: 'Diluvio Dorato',
+    description: 'Colpisci 1.000 note dorate in totale',
+  },
+  golden5000: {
+    name: 'Voce di Mida',
+    description: 'Colpisci 5.000 note dorate in totale',
+    rewardTitle: 'Voce di Mida',
+  },
+  songs250: {
+    name: 'Veterano del Repertorio',
+    description: 'Completa 250 canzoni',
+  },
+  songs500: {
+    name: 'Club dei Cinquecento',
+    description: 'Completa 500 canzoni',
+  },
+  songs1000: {
+    name: 'Leggenda delle Mille Canzoni',
+    description: 'Completa 1.000 canzoni',
+    rewardTitle: 'Leggenda delle Mille Canzoni',
+  },
+  games50: {
+    name: 'Cantante Frequente',
+    description: 'Gioca 50 partite',
+  },
+  games100: {
+    name: 'Club del Centinaio',
+    description: 'Gioca 100 partite',
+  },
+  games250: {
+    name: 'Habitué della Sala Giochi',
+    description: 'Gioca 250 partite',
+  },
+  games500: {
+    name: 'Maniaco della Maratona',
+    description: 'Gioca 500 partite',
+    rewardTitle: 'Maniaco della Maratona',
+  },
+  level25: {
+    name: 'Cantante Esperto',
+    description: 'Raggiungi il livello 25',
+  },
+  level50: {
+    name: 'Cantante d\'Élite',
+    description: 'Raggiungi il livello 50',
+    rewardTitle: 'Cantante d\'Élite',
+  },
+  level100: {
+    name: 'Leggenda di Livello 100',
+    description: 'Raggiungi il livello 100',
+    rewardTitle: 'Leggenda di Livello 100',
+  },
+  daily100: {
+    name: 'Centurione Quotidiano',
+    description: 'Completa 100 sfide quotidiane',
+  },
+  daily250: {
+    name: 'Fanatico Quotidiano',
+    description: 'Completa 250 sfide quotidiane',
+  },
+  daily500: {
+    name: 'Immortale Quotidiano',
+    description: 'Completa 500 sfide quotidiane',
+    rewardTitle: 'Immortale Quotidiano',
+  },
+  streak60: {
+    name: 'Volontà di Ferro',
+    description: 'Mantieni una serie quotidiana di 60 giorni',
+  },
+  streak100: {
+    name: 'Eroe dei Cento Giorni',
+    description: 'Mantieni una serie quotidiana di 100 giorni',
+  },
+  streak180: {
+    name: 'Devozione di Mezzo Anno',
+    description: 'Mantieni una serie quotidiana di 180 giorni',
+    rewardTitle: 'Devozione di Mezzo Anno',
+  },
+  streak365: {
+    name: 'Leggenda Annuale',
+    description: 'Mantieni una serie quotidiana di 365 giorni',
+    rewardTitle: 'Leggenda Annuale',
+  },
+  weekly15: {
+    name: 'Incondizionato Settimanale',
+    description: 'Completa 15 sfide settimanali',
+  },
+  weekly30: {
+    name: 'Pilastro Settimanale',
+    description: 'Completa 30 sfide settimanali',
+  },
+  weekly52: {
+    name: 'Un Anno di Settimane',
+    description: 'Completa 52 sfide settimanali',
+    rewardTitle: 'Un Anno di Settimane',
+  },
+  encore10: {
+    name: 'Bis!',
+    description: 'Gioca 10 partite in un solo giorno',
+  },
+  duets25: {
+    name: 'Devoto dei Duetti',
+    description: 'Canta 25 duetti',
+  },
+  duets50: {
+    name: 'Duo Dinamico',
+    description: 'Canta 50 duetti',
+  },
+  duets100: {
+    name: 'Centuria di Duetti',
+    description: 'Canta 100 duetti',
+    rewardTitle: 'Centuria di Duetti',
+  },
+  duels5: {
+    name: 'Duellante',
+    description: 'Vinci 5 duelli',
+  },
+  duels10: {
+    name: 'Maestro del Duello',
+    description: 'Vinci 10 duelli',
+  },
+  duels25: {
+    name: 'Signore del Duello',
+    description: 'Vinci 25 duelli',
+    rewardTitle: 'Signore del Duello',
+  },
+  party10: {
+    name: 'Animale da Festa',
+    description: 'Gioca 10 partite in modalità festa',
+  },
+  party25: {
+    name: 'Anima della Festa',
+    description: 'Gioca 25 partite in modalità festa',
+  },
+  party50: {
+    name: 'Leggenda della Festa',
+    description: 'Gioca 50 partite in modalità festa',
+  },
+  disney25: {
+    name: 'Appassionato di Disney',
+    description: 'Canta 25 canzoni Disney',
+  },
+  disney50: {
+    name: 'C\'era una Volta una Canzone',
+    description: 'Canta 50 canzoni Disney',
+    rewardTitle: 'Famiglia Reale Disney',
+  },
+  genres8: {
+    name: 'Vagabondo dei Generi',
+    description: 'Canta canzoni di 8 generi diversi',
+  },
+  genres10: {
+    name: 'Esperto di Generi',
+    description: 'Canta canzoni di 10 generi diversi',
+  },
+  cleanSheet: {
+    name: 'Porta Inviolata',
+    description: 'Termina una canzone con 50+ note e zero errori',
+  },
+  weekendSinger: {
+    name: 'Cantante del Weekend',
+    description: 'Termina una canzone di sabato o domenica',
+  },
+  lunchBreak: {
+    name: 'Pausa Pranzo',
+    description: 'Termina una canzone tra le 12 e le 14',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Micro',
   survived: 'Sopravvissuto',
   visualSettings: 'Impostazioni visive',
-  title: 'Battle Royale',
-  playersLabel: 'giocatori',
-  timeLeft: '{n} secondi rimasti in questo round',
 },
 blind: {
   title: 'Karaoke alla Cieca',

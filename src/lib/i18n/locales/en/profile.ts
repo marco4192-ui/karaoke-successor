@@ -66,6 +66,10 @@ export const profileTranslations = {
     passwordChanged: 'Password changed successfully',
     passwordChangeFailed: 'Could not change the password',
     hasAccount: 'Online account ✓',
+    registrationPending: 'Creating the online account…',
+    registrationSuccess: 'Online account created — you can now log in on any device',
+    registrationSuccessTitle: '🔐 Online account',
+    loginSuccessTitle: '✅ {n}',
   },
 
   characterScreen: {

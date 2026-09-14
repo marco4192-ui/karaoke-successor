@@ -499,6 +499,255 @@ achievements: {
     name: 'Maratonsanger',
     description: 'Spill 5 spill på én enkelt dag',
   },
+
+  // ── Utvidelse til 100 prestasjoner ──
+  score9800: {
+    name: 'Ultrastjerne',
+    description: 'Få over 9 800 poeng',
+  },
+  score9900: {
+    name: 'Forbi det perfekte',
+    description: 'Få over 9 900 poeng',
+    rewardTitle: 'Forbi det perfekte',
+  },
+  combo300: {
+    name: 'Kombotitan',
+    description: 'Få en 300 notes kombinasjon',
+  },
+  combo500: {
+    name: 'Udødelig kombo',
+    description: 'Få en 500 notes kombinasjon',
+    rewardTitle: 'Udødelig kombo',
+  },
+  accuracy92: {
+    name: 'Finstilling',
+    description: 'Få over 92% presisjon',
+  },
+  accuracy94: {
+    name: 'Studiokvalitet',
+    description: 'Få over 94% presisjon',
+  },
+  accuracy96: {
+    name: 'Skarpskytter',
+    description: 'Få over 96% presisjon',
+  },
+  accuracy97: {
+    name: 'Laserpresisjon',
+    description: 'Få over 97% presisjon',
+  },
+  accuracy98: {
+    name: 'Virtuos',
+    description: 'Få over 98% presisjon',
+  },
+  perfect75: {
+    name: 'Perfekte syttifem',
+    description: 'Treff 75 perfekte toner i én enkelt sang',
+  },
+  perfect100: {
+    name: 'Perfekte hundre',
+    description: 'Treff 100 perfekte toner i én enkelt sang',
+  },
+  perfect150: {
+    name: 'Perfekt storm',
+    description: 'Treff 150 perfekte toner i én enkelt sang',
+  },
+  golden30: {
+    name: 'Gullflod',
+    description: 'Treff 30 gullnoter i én enkelt sang',
+  },
+  golden40: {
+    name: 'Gullsymfoni',
+    description: 'Treff 40 gullnoter i én enkelt sang',
+  },
+  perfect500: {
+    name: 'Perfekt maskin',
+    description: 'Treff totalt 500 perfekte toner',
+  },
+  perfect1000: {
+    name: 'Presisjonskraftsentrum',
+    description: 'Treff totalt 1 000 perfekte toner',
+  },
+  perfect5000: {
+    name: 'Perfekt snøras',
+    description: 'Treff totalt 5 000 perfekte toner',
+  },
+  perfect10000: {
+    name: 'Perfekte titusen',
+    description: 'Treff totalt 10 000 perfekte toner',
+    rewardTitle: 'Perfekte titusen',
+  },
+  golden250: {
+    name: 'Gullhøst',
+    description: 'Treff totalt 250 gullnoter',
+  },
+  golden1000: {
+    name: 'Gullregn',
+    description: 'Treff totalt 1 000 gullnoter',
+  },
+  golden5000: {
+    name: 'Midas-stemme',
+    description: 'Treff totalt 5 000 gullnoter',
+    rewardTitle: 'Midas-stemme',
+  },
+  songs250: {
+    name: 'Sangbok-veteran',
+    description: 'Fullfør 250 sanger',
+  },
+  songs500: {
+    name: 'Halvtusen-klubben',
+    description: 'Fullfør 500 sanger',
+  },
+  songs1000: {
+    name: 'Tusen-sang-legende',
+    description: 'Fullfør 1 000 sanger',
+    rewardTitle: 'Tusen-sang-legende',
+  },
+  games50: {
+    name: 'Hyppig sanger',
+    description: 'Spill 50 spill',
+  },
+  games100: {
+    name: 'Hundre-klubben',
+    description: 'Spill 100 spill',
+  },
+  games250: {
+    name: 'Arcade-stamgjest',
+    description: 'Spill 250 spill',
+  },
+  games500: {
+    name: 'Maratonmaniac',
+    description: 'Spill 500 spill',
+    rewardTitle: 'Maratonmaniac',
+  },
+  level25: {
+    name: 'Erfaren sanger',
+    description: 'Nå nivå 25',
+  },
+  level50: {
+    name: 'Elitesanger',
+    description: 'Nå nivå 50',
+    rewardTitle: 'Elitesanger',
+  },
+  level100: {
+    name: 'Nivå 100-legende',
+    description: 'Nå nivå 100',
+    rewardTitle: 'Nivå 100-legende',
+  },
+  daily100: {
+    name: 'Daglig centurion',
+    description: 'Fullfør 100 daglige utfordringer',
+  },
+  daily250: {
+    name: 'Daglig diehard',
+    description: 'Fullfør 250 daglige utfordringer',
+  },
+  daily500: {
+    name: 'Daglig udødelig',
+    description: 'Fullfør 500 daglige utfordringer',
+    rewardTitle: 'Daglig udødelig',
+  },
+  streak60: {
+    name: 'Jernvilje',
+    description: 'Hold en 60-dagers daglig streak',
+  },
+  streak100: {
+    name: 'Hundre dagers helt',
+    description: 'Hold en 100-dagers daglig streak',
+  },
+  streak180: {
+    name: 'Et halvt års hengivenhet',
+    description: 'Hold en 180-dagers daglig streak',
+    rewardTitle: 'Et halvt års hengivenhet',
+  },
+  streak365: {
+    name: 'Årlig legende',
+    description: 'Hold en 365-dagers daglig streak',
+    rewardTitle: 'Årlig legende',
+  },
+  weekly15: {
+    name: 'Ukentlig støttespiller',
+    description: 'Fullfør 15 ukentlige utfordringer',
+  },
+  weekly30: {
+    name: 'Ukentlig bærebjelke',
+    description: 'Fullfør 30 ukentlige utfordringer',
+  },
+  weekly52: {
+    name: 'Et år med uker',
+    description: 'Fullfør 52 ukentlige utfordringer',
+    rewardTitle: 'Et år med uker',
+  },
+  encore10: {
+    name: 'Om igjen!',
+    description: 'Spill 10 spill på én enkelt dag',
+  },
+  duets25: {
+    name: 'Duett-entusiast',
+    description: 'Syng 25 duetter',
+  },
+  duets50: {
+    name: 'Dynamisk duo',
+    description: 'Syng 50 duetter',
+  },
+  duets100: {
+    name: 'Duett-hundre',
+    description: 'Syng 100 duetter',
+    rewardTitle: 'Duett-hundre',
+  },
+  duels5: {
+    name: 'Duelant',
+    description: 'Vinn 5 dueler',
+  },
+  duels10: {
+    name: 'Duel-mester',
+    description: 'Vinn 10 dueler',
+  },
+  duels25: {
+    name: 'Duel-overherre',
+    description: 'Vinn 25 dueler',
+    rewardTitle: 'Duel-overherre',
+  },
+  party10: {
+    name: 'Festdyr',
+    description: 'Spill 10 partyspill',
+  },
+  party25: {
+    name: 'Sjelen i selskapet',
+    description: 'Spill 25 partyspill',
+  },
+  party50: {
+    name: 'Fest-legende',
+    description: 'Spill 50 partyspill',
+  },
+  disney25: {
+    name: 'Disney-entusiast',
+    description: 'Syng 25 Disney-sanger',
+  },
+  disney50: {
+    name: 'Det var en gang en sang',
+    description: 'Syng 50 Disney-sanger',
+    rewardTitle: 'Disney-kongelige',
+  },
+  genres8: {
+    name: 'Sjangervandrer',
+    description: 'Syng sanger fra 8 forskjellige sjangere',
+  },
+  genres10: {
+    name: 'Sjangerkjenner',
+    description: 'Syng sanger fra 10 forskjellige sjangere',
+  },
+  cleanSheet: {
+    name: 'Ren bols',
+    description: 'Fullfør en sang med 50+ noter og null bommer',
+  },
+  weekendSinger: {
+    name: 'Helgesanger',
+    description: 'Fullfør en sang på lørdag eller søndag',
+  },
+  lunchBreak: {
+    name: 'Lunsjpause',
+    description: 'Fullfør en sang mellom klokken 12 og 14',
+  },
 },
 ranks: {
   beginner: {
@@ -684,9 +933,6 @@ battleRoyale: {
   micError: 'Mikrofon',
   survived: 'Overlevde',
   visualSettings: 'Visuelle innstillinger',
-  title: 'Battle Royale',
-  playersLabel: 'spillere',
-  timeLeft: '{n} sekunder igjen av denne runden',
 },
 blind: {
   title: 'Blindkaraoke',
