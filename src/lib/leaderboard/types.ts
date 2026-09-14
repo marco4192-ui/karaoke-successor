@@ -125,12 +125,7 @@ export interface ProfileSyncDownload {
  * expanded daily pool — the server stores this as VARCHAR and validates
  * against its own allow-list.
  */
-export type DailyChallengeType =
-  | 'score' | 'accuracy' | 'combo' | 'perfect_notes'
-  | 'golden_notes' | 'notes_hit' | 'tick_accuracy' | 'clean_song' | 'comeback'
-  | 'sharpshooter' | 'combo_master' | 'perfect_storm' | 'endurance'
-  | 'golden_groove' | 'precision' | 'flawless_finale' | 'score_sniper'
-  | 'combo_race' | 'perfect_pitch' | 'golden_fingers' | 'steady_hand' | 'titan';
+export type DailyChallengeType = string;
 
 /** Daily difficulty level selected for the attempt */
 export type DailyDifficultyLevel = 'easy' | 'normal' | 'hard' | 'very_hard' | 'insane';

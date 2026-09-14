@@ -14,6 +14,8 @@ import {
   type DailyDifficulty,
   type DailyResultMetrics,
 } from '@/lib/game/daily-challenge';
+import type { DailySongContext } from '@/lib/game/challenge-pools';
+import { processChallengeModeResult } from '@/lib/game/challenge-mode-progress';
 import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
 import { recordSongPlay } from '@/lib/playlist-manager';
@@ -305,6 +307,32 @@ export function usePostGameProcessing({
         // result — attributed to the 1-2 players selected there.
         let dailyXPEarned = 0;
         let onlineDailySubmission: (() => void) | null = null;
+
+        // Song metadata context — drives category challenges (genre/language/…)
+        const appLanguage = (typeof window !== 'undefined'
+          ? localStorage.getItem('karaoke-language') ?? 'en'
+          : 'en');
+        const songContext: DailySongContext = {
+          title: song.title,
+          artist: song.artist,
+          genre: song.genre,
+          language: song.language,
+          year: song.year,
+          durationMs: song.duration,
+          bpm: song.bpm,
+          rating: song.rating,
+          difficulty: song.difficulty,
+          lastPlayed: song.lastPlayed,
+          dateAdded: song.dateAdded,
+          playerCount: results.players.length,
+        };
+        // Weekly difficulty — selected in the weekly tab (independent selector)
+        const weeklyDifficultyRaw = getItem('karaoke_weekly_difficulty');
+        const weeklyDifficulty: DailyDifficulty =
+          ['easy', 'normal', 'hard', 'very_hard', 'insane'].includes(weeklyDifficultyRaw ?? '')
+            ? (weeklyDifficultyRaw as DailyDifficulty)
+            : 'normal';
+
         try {
           const dailyFlag = getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
           if (dailyFlag) {
@@ -320,6 +348,8 @@ export function usePostGameProcessing({
                 ['easy', 'normal', 'hard', 'very_hard', 'insane'].includes(parsed.difficulty)
                   ? parsed.difficulty
                   : 'normal';
+              // Which of the 5 daily slots this game counts for
+              const dailySlot: number = Number.isInteger(parsed.slot) ? (parsed.slot as number) : 0;
               const p1 = toIdentity(profile);
               // Fresh level read — the daily targets scale slightly with level
               const freshLevel = useGameStore.getState().profiles.find(p => p.id === profile.id)?.level ?? profile.level ?? 1;
@@ -332,6 +362,8 @@ export function usePostGameProcessing({
                 goldenNotesCount: playerResult.goldenNotesCount,
                 notesHit: playerResult.notesHit,
                 notesMissed: playerResult.notesMissed,
+                song: songContext,
+                appLanguage,
               };
 
               // Resolve the second player: second selected profile, or the
@@ -371,7 +403,7 @@ export function usePostGameProcessing({
                 const coopResult = submitCoopChallengeResult(
                   [p1, toIdentity(secondProfile)],
                   [p1Result, p2Result],
-                  { difficulty: dailyDifficulty, level: freshLevel },
+                  { difficulty: dailyDifficulty, level: freshLevel, slot: dailySlot },
                 );
                 dailyXPEarned += coopResult.xpEarned;
 
@@ -396,7 +428,7 @@ export function usePostGameProcessing({
                 }
               } else {
                 // Individual evaluation for each selected player
-                const r1 = submitChallengeResult(p1, p1Result, { difficulty: dailyDifficulty, level: freshLevel });
+                const r1 = submitChallengeResult(p1, p1Result, { difficulty: dailyDifficulty, level: freshLevel, slot: dailySlot });
                 dailyXPEarned += r1.xpEarned;
 
                 // Online daily board for P1 (fire-and-forget)
@@ -429,29 +461,78 @@ export function usePostGameProcessing({
                     goldenNotesCount: player2Result.goldenNotesCount,
                     notesHit: player2Result.notesHit,
                     notesMissed: player2Result.notesMissed,
-                  }, { difficulty: dailyDifficulty, level: freshLevel });
+                  }, { difficulty: dailyDifficulty, level: freshLevel, slot: dailySlot });
                   dailyXPEarned += r2.xpEarned;
                 }
               }
 
-              // Weekly challenge tracks best scores across the week —
-              // submitted for every selected player with their own result
-              const w1 = submitWeeklyChallengeResult(p1, p1Result, 'score');
-              dailyXPEarned += w1.xpEarned;
-              if (secondProfile && player2Result) {
-                const w2 = submitWeeklyChallengeResult(toIdentity(secondProfile), {
-                  score: player2Result.score,
-                  accuracy: player2Result.accuracy,
-                  combo: player2Result.maxCombo,
-                  perfectNotesCount: player2Result.perfectNotesCount,
-                }, 'score');
-                dailyXPEarned += w2.xpEarned;
-              }
             }
           }
         } catch {
           // Ignore daily challenge submission errors — not critical
         }
+
+        // ── WEEKLY CHALLENGE SUBMISSION (every song counts toward the
+        //    week's 5 slots — best-of-week and cumulative types) ──
+        try {
+          const freshLevelW = useGameStore.getState().profiles.find(p => p.id === profile.id)?.level ?? profile.level ?? 1;
+          const weeklyResult: DailyResultMetrics = {
+            score: playerResult.score,
+            accuracy: playerResult.accuracy,
+            tickAccuracy: playerResult.tickAccuracy,
+            combo: playerResult.maxCombo,
+            perfectNotesCount: playerResult.perfectNotesCount,
+            goldenNotesCount: playerResult.goldenNotesCount,
+            notesHit: playerResult.notesHit,
+            notesMissed: playerResult.notesMissed,
+            song: songContext,
+            appLanguage,
+          };
+          const w1 = submitWeeklyChallengeResult(toIdentity(profile), weeklyResult, {
+            difficulty: weeklyDifficulty,
+            level: freshLevelW,
+          });
+          dailyXPEarned += w1.xpEarned;
+
+          if (player2Result && p2Profile && p2Profile.id !== profile.id && isMultiplayerMode) {
+            const w2 = submitWeeklyChallengeResult(toIdentity(p2Profile), {
+              score: player2Result.score,
+              accuracy: player2Result.accuracy,
+              tickAccuracy: player2Result.tickAccuracy,
+              combo: player2Result.maxCombo,
+              perfectNotesCount: player2Result.perfectNotesCount,
+              goldenNotesCount: player2Result.goldenNotesCount,
+              notesHit: player2Result.notesHit,
+              notesMissed: player2Result.notesMissed,
+              song: songContext,
+              appLanguage,
+            }, { difficulty: weeklyDifficulty, level: p2Profile.level ?? 1 });
+            dailyXPEarned += w2.xpEarned;
+          }
+        } catch {
+          // Ignore weekly challenge submission errors — not critical
+        }
+
+        // ── CHALLENGE MODE COMPLETION (chain unlocks) ──
+        try {
+          if (gameState.challengeMode) {
+            processChallengeModeResult(
+              gameState.challengeMode,
+              {
+                score: playerResult.score,
+                accuracy: playerResult.accuracy,
+                maxCombo: playerResult.maxCombo,
+                perfectNotes: estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
+                goldenNotes: playerResult.goldenNotesCount || 0,
+                notesHit: playerResult.notesHit,
+                notesMissed: playerResult.notesMissed,
+              },
+              profile.id,
+              songContext,
+              appLanguage,
+            );
+          }
+        } catch { /* non-critical */ }
 
         // Fire the online daily board submission (after local persistence)
         onlineDailySubmission?.();

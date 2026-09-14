@@ -86,6 +86,19 @@ export interface ChallengeModifier {
   descriptionKey?: string;
 }
 
+/** what a challenge mode requires to count as COMPLETED (not just played) */
+export interface ChallengeCompletionTarget {
+  metric: 'notesHit' | 'perfectNotes' | 'goldenNotes' | 'score' | 'accuracy' | 'maxCombo' | 'notesMissed' | 'categoryMatch';
+  /** 'min' = at least this value, 'max' = at most this value */
+  direction: 'min' | 'max';
+  value: number;
+}
+
+export interface ChallengeRequirement {
+  type: 'min_level' | 'min_songs' | 'achievement' | 'rank' | 'challenge_completed';
+  value: number | string;
+}
+
 export interface ChallengeMode {
   id: string;
   name: string;
@@ -98,11 +111,10 @@ export interface ChallengeMode {
   xpReward: number;
   timeLimit?: number; // seconds
   requirements?: ChallengeRequirement[];
-}
-
-interface ChallengeRequirement {
-  type: 'min_level' | 'min_songs' | 'achievement' | 'rank';
-  value: number | string;
+  /** target that must be met for the mode to count as completed (unlocks chains) */
+  completionTarget?: ChallengeCompletionTarget;
+  /** optional categorical song requirement (genre / language / decade / …) */
+  category?: { field: string; value?: string | number };
 }
 
 export const CHALLENGE_MODES: ChallengeMode[] = [
@@ -227,6 +239,560 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
     xpReward: 1000,
     timeLimit: 180,
     requirements: [{ type: 'min_level', value: 25 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 7000 },
+  },
+
+  // ═══ 52 NEW CHALLENGE MODES — chains, level gates, song categories ═══
+
+  // ── Note chain: 50 → 100 → 200 → 350 → 500 correct notes in one song ──
+  {
+    id: 'note-novice',
+    name: 'Note Novice', nameKey: 'challenges.noteNovice.name',
+    description: 'Hit 50+ correct notes in a single song', descriptionKey: 'challenges.noteNovice.description',
+    icon: '🐣', difficulty: 'easy', modifiers: [], xpReward: 120,
+    completionTarget: { metric: 'notesHit', direction: 'min', value: 50 },
+  },
+  {
+    id: 'note-apprentice',
+    name: 'Note Apprentice', nameKey: 'challenges.noteApprentice.name',
+    description: 'Hit 100+ correct notes in a single song', descriptionKey: 'challenges.noteApprentice.description',
+    icon: '📗', difficulty: 'medium', modifiers: [], xpReward: 200,
+    requirements: [{ type: 'challenge_completed', value: 'note-novice' }],
+    completionTarget: { metric: 'notesHit', direction: 'min', value: 100 },
+  },
+  {
+    id: 'note-adept',
+    name: 'Note Adept', nameKey: 'challenges.noteAdept.name',
+    description: 'Hit 200+ correct notes in a single song', descriptionKey: 'challenges.noteAdept.description',
+    icon: '📘', difficulty: 'hard', modifiers: [], xpReward: 320,
+    requirements: [{ type: 'challenge_completed', value: 'note-apprentice' }, { type: 'min_level', value: 5 }],
+    completionTarget: { metric: 'notesHit', direction: 'min', value: 200 },
+  },
+  {
+    id: 'note-virtuoso',
+    name: 'Note Virtuoso', nameKey: 'challenges.noteVirtuoso.name',
+    description: 'Hit 350+ correct notes in a single song', descriptionKey: 'challenges.noteVirtuoso.description',
+    icon: '📕', difficulty: 'hard', modifiers: [], xpReward: 450,
+    requirements: [{ type: 'challenge_completed', value: 'note-adept' }],
+    completionTarget: { metric: 'notesHit', direction: 'min', value: 350 },
+  },
+  {
+    id: 'note-legend',
+    name: 'Note Legend', nameKey: 'challenges.noteLegend.name',
+    description: 'Hit 500+ correct notes in a single song', descriptionKey: 'challenges.noteLegend.description',
+    icon: '🛡️', difficulty: 'extreme', modifiers: [], xpReward: 700,
+    requirements: [{ type: 'challenge_completed', value: 'note-virtuoso' }, { type: 'min_level', value: 20 }],
+    completionTarget: { metric: 'notesHit', direction: 'min', value: 500 },
+  },
+
+  // ── Combo chain: 30 → 60 → 100 → 175 ──
+  {
+    id: 'combo-cadet',
+    name: 'Combo Cadet', nameKey: 'challenges.comboCadet.name',
+    description: 'Reach a 30+ note combo in a single song', descriptionKey: 'challenges.comboCadet.description',
+    icon: '🎯', difficulty: 'easy', modifiers: [], xpReward: 120,
+    completionTarget: { metric: 'maxCombo', direction: 'min', value: 30 },
+  },
+  {
+    id: 'combo-captain',
+    name: 'Combo Captain', nameKey: 'challenges.comboCaptain.name',
+    description: 'Reach a 60+ note combo in a single song', descriptionKey: 'challenges.comboCaptain.description',
+    icon: '🎖️', difficulty: 'medium', modifiers: [], xpReward: 220,
+    requirements: [{ type: 'challenge_completed', value: 'combo-cadet' }],
+    completionTarget: { metric: 'maxCombo', direction: 'min', value: 60 },
+  },
+  {
+    id: 'combo-commander',
+    name: 'Combo Commander', nameKey: 'challenges.comboCommander.name',
+    description: 'Reach a 100+ note combo in a single song', descriptionKey: 'challenges.comboCommander.description',
+    icon: '🚩', difficulty: 'hard', modifiers: [], xpReward: 380,
+    requirements: [{ type: 'challenge_completed', value: 'combo-captain' }],
+    completionTarget: { metric: 'maxCombo', direction: 'min', value: 100 },
+  },
+  {
+    id: 'combo-colossus',
+    name: 'Combo Colossus', nameKey: 'challenges.comboColossus.name',
+    description: 'Reach a 175+ note combo in a single song', descriptionKey: 'challenges.comboColossus.description',
+    icon: '🗿', difficulty: 'extreme', modifiers: [], xpReward: 650,
+    requirements: [{ type: 'challenge_completed', value: 'combo-commander' }, { type: 'min_level', value: 15 }],
+    completionTarget: { metric: 'maxCombo', direction: 'min', value: 175 },
+  },
+
+  // ── Perfect notes chain: 25 → 50 → 100 ──
+  {
+    id: 'perfect-path',
+    name: 'Perfect Path', nameKey: 'challenges.perfectPath.name',
+    description: 'Hit 25+ perfect notes in a single song', descriptionKey: 'challenges.perfectPath.description',
+    icon: '💠', difficulty: 'easy', modifiers: [], xpReward: 140,
+    completionTarget: { metric: 'perfectNotes', direction: 'min', value: 25 },
+  },
+  {
+    id: 'perfect-pilgrim',
+    name: 'Perfect Pilgrim', nameKey: 'challenges.perfectPilgrim.name',
+    description: 'Hit 50+ perfect notes in a single song', descriptionKey: 'challenges.perfectPilgrim.description',
+    icon: '🧭', difficulty: 'medium', modifiers: [], xpReward: 260,
+    requirements: [{ type: 'challenge_completed', value: 'perfect-path' }],
+    completionTarget: { metric: 'perfectNotes', direction: 'min', value: 50 },
+  },
+  {
+    id: 'perfect-prophet',
+    name: 'Perfect Prophet', nameKey: 'challenges.perfectProphet.name',
+    description: 'Hit 100+ perfect notes in a single song', descriptionKey: 'challenges.perfectProphet.description',
+    icon: '🔮', difficulty: 'extreme', modifiers: [], xpReward: 600,
+    requirements: [{ type: 'challenge_completed', value: 'perfect-pilgrim' }, { type: 'min_level', value: 20 }],
+    completionTarget: { metric: 'perfectNotes', direction: 'min', value: 100 },
+  },
+
+  // ── Golden notes chain: 3 → 6 → 12 ──
+  {
+    id: 'gold-panner',
+    name: 'Gold Panner', nameKey: 'challenges.goldPanner.name',
+    description: 'Hit 3+ golden notes in a single song', descriptionKey: 'challenges.goldPanner.description',
+    icon: '⛏️', difficulty: 'easy', modifiers: [], xpReward: 130,
+    completionTarget: { metric: 'goldenNotes', direction: 'min', value: 3 },
+  },
+  {
+    id: 'gold-miner',
+    name: 'Gold Miner', nameKey: 'challenges.goldMiner.name',
+    description: 'Hit 6+ golden notes in a single song', descriptionKey: 'challenges.goldMiner.description',
+    icon: '⛏️', difficulty: 'medium', modifiers: [], xpReward: 240,
+    requirements: [{ type: 'challenge_completed', value: 'gold-panner' }],
+    completionTarget: { metric: 'goldenNotes', direction: 'min', value: 6 },
+  },
+  {
+    id: 'gold-baron',
+    name: 'Gold Baron', nameKey: 'challenges.goldBaron.name',
+    description: 'Hit 12+ golden notes in a single song', descriptionKey: 'challenges.goldBaron.description',
+    icon: '👑', difficulty: 'extreme', modifiers: [], xpReward: 550,
+    requirements: [{ type: 'challenge_completed', value: 'gold-miner' }, { type: 'min_level', value: 12 }],
+    completionTarget: { metric: 'goldenNotes', direction: 'min', value: 12 },
+  },
+
+  // ── Clean run chain: ≤20 → ≤8 → ≤3 → 0 misses ──
+  {
+    id: 'clean-cut',
+    name: 'Clean Cut', nameKey: 'challenges.cleanCut.name',
+    description: 'Miss at most 20 notes in a single song', descriptionKey: 'challenges.cleanCut.description',
+    icon: '🧼', difficulty: 'easy', modifiers: [], xpReward: 130,
+    completionTarget: { metric: 'notesMissed', direction: 'max', value: 20 },
+  },
+  {
+    id: 'spotless',
+    name: 'Spotless', nameKey: 'challenges.spotless.name',
+    description: 'Miss at most 8 notes in a single song', descriptionKey: 'challenges.spotless.description',
+    icon: '🧽', difficulty: 'medium', modifiers: [], xpReward: 250,
+    requirements: [{ type: 'challenge_completed', value: 'clean-cut' }],
+    completionTarget: { metric: 'notesMissed', direction: 'max', value: 8 },
+  },
+  {
+    id: 'surgical',
+    name: 'Surgical Precision', nameKey: 'challenges.surgical.name',
+    description: 'Miss at most 3 notes in a single song', descriptionKey: 'challenges.surgical.description',
+    icon: '🏥', difficulty: 'hard', modifiers: [], xpReward: 420,
+    requirements: [{ type: 'challenge_completed', value: 'spotless' }, { type: 'min_level', value: 8 }],
+    completionTarget: { metric: 'notesMissed', direction: 'max', value: 3 },
+  },
+  {
+    id: 'flawless-mirror',
+    name: 'Flawless Mirror', nameKey: 'challenges.flawlessMirror.name',
+    description: 'Miss ZERO notes in a single song', descriptionKey: 'challenges.flawlessMirror.description',
+    icon: '🪞', difficulty: 'extreme', modifiers: [], xpReward: 900,
+    requirements: [{ type: 'challenge_completed', value: 'surgical' }, { type: 'min_level', value: 25 }],
+    completionTarget: { metric: 'notesMissed', direction: 'max', value: 0 },
+  },
+
+  // ── Score chain: 5000 → 7500 → 9500 → 11500 ──
+  {
+    id: 'score-scout',
+    name: 'Score Scout', nameKey: 'challenges.scoreScout.name',
+    description: 'Score 5,000+ points in a single song', descriptionKey: 'challenges.scoreScout.description',
+    icon: '🔎', difficulty: 'easy', modifiers: [], xpReward: 130,
+    completionTarget: { metric: 'score', direction: 'min', value: 5000 },
+  },
+  {
+    id: 'score-scholar',
+    name: 'Score Scholar', nameKey: 'challenges.scoreScholar.name',
+    description: 'Score 7,500+ points in a single song', descriptionKey: 'challenges.scoreScholar.description',
+    icon: '🎓', difficulty: 'medium', modifiers: [], xpReward: 240,
+    requirements: [{ type: 'challenge_completed', value: 'score-scout' }],
+    completionTarget: { metric: 'score', direction: 'min', value: 7500 },
+  },
+  {
+    id: 'score-sensei',
+    name: 'Score Sensei', nameKey: 'challenges.scoreSensei.name',
+    description: 'Score 9,500+ points in a single song', descriptionKey: 'challenges.scoreSensei.description',
+    icon: '🥋', difficulty: 'hard', modifiers: [], xpReward: 400,
+    requirements: [{ type: 'challenge_completed', value: 'score-scholar' }],
+    completionTarget: { metric: 'score', direction: 'min', value: 9500 },
+  },
+  {
+    id: 'score-titan',
+    name: 'Score Titan', nameKey: 'challenges.scoreTitan.name',
+    description: 'Score 11,500+ points in a single song', descriptionKey: 'challenges.scoreTitan.description',
+    icon: '🗿', difficulty: 'extreme', modifiers: [], xpReward: 700,
+    requirements: [{ type: 'challenge_completed', value: 'score-sensei' }, { type: 'min_level', value: 18 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 11500 },
+  },
+
+  // ── Speed chain ──
+  {
+    id: 'speed-demon-plus',
+    name: 'Speed Demon+', nameKey: 'challenges.speedDemonPlus.name',
+    description: '1.75x speed — for lightning lungs!', descriptionKey: 'challenges.speedDemonPlus.description',
+    icon: '💫', difficulty: 'hard',
+    modifiers: [{ type: 'double_speed', value: 1.75, description: 'Song plays at 1.75x speed', descriptionKey: 'modifiers.doubleSpeed.description' }],
+    xpReward: 450, timeLimit: 180,
+    requirements: [{ type: 'challenge_completed', value: 'speed-demon' }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6000 },
+  },
+  {
+    id: 'lightning-lungs',
+    name: 'Lightning Lungs', nameKey: 'challenges.lightningLungs.name',
+    description: '2x speed — absolutely breathless!', descriptionKey: 'challenges.lightningLungs.description',
+    icon: '⚡', difficulty: 'extreme',
+    modifiers: [{ type: 'double_speed', value: 2, description: 'Song plays at 2x speed', descriptionKey: 'modifiers.doubleSpeed.description' }],
+    xpReward: 800, timeLimit: 150,
+    requirements: [{ type: 'challenge_completed', value: 'speed-demon-plus' }, { type: 'min_level', value: 30 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 5500 },
+  },
+  {
+    id: 'turbo-memory',
+    name: 'Turbo Memory', nameKey: 'challenges.turboMemory.name',
+    description: '1.25x speed AND 35% missing words!', descriptionKey: 'challenges.turboMemory.description',
+    icon: '🌪️', difficulty: 'extreme',
+    modifiers: [
+      { type: 'double_speed', value: 1.25, description: '1.25x speed', descriptionKey: 'modifiers.doubleSpeed.shortDescription' },
+      { type: 'missing_words', value: 35, description: '35% of words are hidden', descriptionKey: 'modifiers.missingWords.description' },
+    ],
+    xpReward: 650,
+    requirements: [{ type: 'challenge_completed', value: 'memory-lane' }, { type: 'min_level', value: 12 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6000 },
+  },
+  {
+    id: 'mind-palace',
+    name: 'Mind Palace', nameKey: 'challenges.mindPalace.name',
+    description: '50% of the words are hidden — pure memory!', descriptionKey: 'challenges.mindPalace.description',
+    icon: '🏛️', difficulty: 'extreme',
+    modifiers: [{ type: 'missing_words', value: 50, description: '50% of words are hidden', descriptionKey: 'modifiers.missingWords.description' }],
+    xpReward: 700,
+    requirements: [{ type: 'challenge_completed', value: 'memory-lane' }, { type: 'min_level', value: 20 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6500 },
+  },
+
+  // ── Blind chain ──
+  {
+    id: 'blindfold-bard',
+    name: 'Blindfold Bard', nameKey: 'challenges.blindfoldBard.name',
+    description: 'No lyrics AND 20% missing words', descriptionKey: 'challenges.blindfoldBard.description',
+    icon: '🎭', difficulty: 'extreme',
+    modifiers: [
+      { type: 'no_lyrics', description: 'Lyrics are hidden', descriptionKey: 'modifiers.noLyrics.description' },
+      { type: 'missing_words', value: 20, description: '20% of words are hidden', descriptionKey: 'modifiers.missingWords.description' },
+    ],
+    xpReward: 620,
+    requirements: [{ type: 'challenge_completed', value: 'blind-audition' }, { type: 'min_level', value: 10 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 5500 },
+  },
+  {
+    id: 'phantom-karaoke',
+    name: 'Phantom of Karaoke', nameKey: 'challenges.phantomKaraoke.name',
+    description: 'Fully blind AND 1.25x speed — the phantom salutes you!', descriptionKey: 'challenges.phantomKaraoke.description',
+    icon: '🎩', difficulty: 'extreme',
+    modifiers: [
+      { type: 'no_lyrics', description: 'No lyrics', descriptionKey: 'modifiers.noLyrics.shortDescription' },
+      { type: 'no_pitch_guide', description: 'No pitch guide', descriptionKey: 'modifiers.noPitchGuide.shortDescription' },
+      { type: 'double_speed', value: 1.25, description: '1.25x speed', descriptionKey: 'modifiers.doubleSpeed.shortDescription' },
+    ],
+    xpReward: 950, timeLimit: 180,
+    requirements: [{ type: 'challenge_completed', value: 'blind-master' }, { type: 'min_level', value: 25 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6000 },
+  },
+
+  // ── Pitch chain ──
+  {
+    id: 'pitch-climber',
+    name: 'Pitch Climber', nameKey: 'challenges.pitchClimber.name',
+    description: 'Song transposed +5 semitones — climb that melody!', descriptionKey: 'challenges.pitchClimber.description',
+    icon: '🧗', difficulty: 'hard',
+    modifiers: [{ type: 'pitch_shift', value: 5, description: 'Pitch shifted by 5 semitones', descriptionKey: 'modifiers.pitchShift.description' }],
+    xpReward: 400,
+    requirements: [{ type: 'challenge_completed', value: 'pitch-shift' }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6000 },
+  },
+  {
+    id: 'pitch-diver',
+    name: 'Pitch Diver', nameKey: 'challenges.pitchDiver.name',
+    description: 'Song transposed -4 semitones — dive deep!', descriptionKey: 'challenges.pitchDiver.description',
+    icon: '🤿', difficulty: 'hard',
+    modifiers: [{ type: 'pitch_shift', value: -4, description: 'Pitch shifted by -4 semitones', descriptionKey: 'modifiers.pitchShift.description' }],
+    xpReward: 400,
+    requirements: [{ type: 'challenge_completed', value: 'pitch-shift' }],
+    completionTarget: { metric: 'score', direction: 'min', value: 6000 },
+  },
+  {
+    id: 'octave-odyssey',
+    name: 'Octave Odyssey', nameKey: 'challenges.octaveOdyssey.name',
+    description: 'Song transposed +7 semitones — a whole octave of pain!', descriptionKey: 'challenges.octaveOdyssey.description',
+    icon: '🌊', difficulty: 'extreme',
+    modifiers: [{ type: 'pitch_shift', value: 7, description: 'Pitch shifted by 7 semitones', descriptionKey: 'modifiers.pitchShift.description' }],
+    xpReward: 750,
+    requirements: [{ type: 'challenge_completed', value: 'pitch-climber' }, { type: 'min_level', value: 22 }],
+    completionTarget: { metric: 'score', direction: 'min', value: 5000 },
+  },
+
+  // ── Slow-motion fun ──
+  {
+    id: 'turtle-tempo',
+    name: 'Turtle Tempo', nameKey: 'challenges.turtleTempo.name',
+    description: '0.5x speed — savor every single note', descriptionKey: 'challenges.turtleTempo.description',
+    icon: '🐢', difficulty: 'easy',
+    modifiers: [{ type: 'half_speed', value: 0.5, description: 'Song plays at 0.5x speed', descriptionKey: 'modifiers.halfSpeed.description' }],
+    xpReward: 110,
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'sloth-serenade',
+    name: 'Sloth Serenade', nameKey: 'challenges.slothSerenade.name',
+    description: '0.6x speed AND no pitch guide — relaxed but blind', descriptionKey: 'challenges.slothSerenade.description',
+    icon: '🦥', difficulty: 'medium',
+    modifiers: [
+      { type: 'half_speed', value: 0.6, description: 'Song plays at 0.6x speed', descriptionKey: 'modifiers.halfSpeed.description' },
+      { type: 'no_pitch_guide', description: 'Pitch guide is hidden', descriptionKey: 'modifiers.noPitchGuide.description' },
+    ],
+    xpReward: 280,
+    requirements: [{ type: 'challenge_completed', value: 'turtle-tempo' }],
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
+  },
+
+  // ── Golden / perfect extremes ──
+  {
+    id: 'golden-gauntlet',
+    name: 'Golden Gauntlet', nameKey: 'challenges.goldenGauntlet.name',
+    description: 'Only golden notes count — and you need 80%+ accuracy', descriptionKey: 'challenges.goldenGauntlet.description',
+    icon: '🥊', difficulty: 'extreme',
+    modifiers: [{ type: 'golden_only', description: 'Only golden notes count', descriptionKey: 'modifiers.goldenOnly.description' }],
+    xpReward: 700,
+    requirements: [{ type: 'challenge_completed', value: 'golden-hunter' }, { type: 'min_level', value: 15 }],
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 80 },
+  },
+  {
+    id: 'perfectionist-prime',
+    name: 'Perfectionist Prime', nameKey: 'challenges.perfectionistPrime.name',
+    description: 'Only perfect notes count — hit 100+ of them!', descriptionKey: 'challenges.perfectionistPrime.description',
+    icon: '💎', difficulty: 'extreme',
+    modifiers: [{ type: 'perfect_only', description: 'Only perfect hits give points', descriptionKey: 'modifiers.perfectOnly.description' }],
+    xpReward: 850,
+    requirements: [{ type: 'challenge_completed', value: 'perfectionist' }, { type: 'min_level', value: 20 }],
+    completionTarget: { metric: 'perfectNotes', direction: 'min', value: 100 },
+  },
+
+  // ── Accuracy ladder: 80 → 88 → 93 → 97% ──
+  {
+    id: 'ballad-barometer',
+    name: 'Ballad Barometer', nameKey: 'challenges.balladBarometer.name',
+    description: 'Finish a song with 80%+ accuracy', descriptionKey: 'challenges.balladBarometer.description',
+    icon: '🎵', difficulty: 'easy', modifiers: [], xpReward: 140,
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 80 },
+  },
+  {
+    id: 'tone-tuner',
+    name: 'Tone Tuner', nameKey: 'challenges.toneTuner.name',
+    description: 'Finish a song with 88%+ accuracy', descriptionKey: 'challenges.toneTuner.description',
+    icon: '🎚️', difficulty: 'medium', modifiers: [], xpReward: 260,
+    requirements: [{ type: 'challenge_completed', value: 'ballad-barometer' }],
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 88 },
+  },
+  {
+    id: 'harmony-hunter',
+    name: 'Harmony Hunter', nameKey: 'challenges.harmonyHunter.name',
+    description: 'Finish a song with 93%+ accuracy', descriptionKey: 'challenges.harmonyHunter.description',
+    icon: '🎼', difficulty: 'hard', modifiers: [], xpReward: 420,
+    requirements: [{ type: 'challenge_completed', value: 'tone-tuner' }],
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 93 },
+  },
+  {
+    id: 'pitch-perfect-paragon',
+    name: 'Pitch-Perfect Paragon', nameKey: 'challenges.pitchPerfectParagon.name',
+    description: 'Finish a song with 97%+ accuracy', descriptionKey: 'challenges.pitchPerfectParagon.description',
+    icon: '😇', difficulty: 'extreme', modifiers: [], xpReward: 800,
+    requirements: [{ type: 'challenge_completed', value: 'harmony-hunter' }, { type: 'min_level', value: 20 }],
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 97 },
+  },
+
+  // ── Genre & song-category modes ──
+  {
+    id: 'country-crooner',
+    name: 'Country Crooner', nameKey: 'challenges.countryCrooner.name',
+    description: 'Sing a Country song with 70%+ accuracy', descriptionKey: 'challenges.countryCrooner.description',
+    icon: '🤠', difficulty: 'medium', modifiers: [], xpReward: 220,
+    category: { field: 'genre', value: 'Country' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'rock-renaissance',
+    name: 'Rock Renaissance', nameKey: 'challenges.rockRenaissance.name',
+    description: 'Sing a Rock song with 72%+ accuracy', descriptionKey: 'challenges.rockRenaissance.description',
+    icon: '🎸', difficulty: 'medium', modifiers: [], xpReward: 220,
+    category: { field: 'genre', value: 'Rock' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 72 },
+  },
+  {
+    id: 'metal-marauder',
+    name: 'Metal Marauder', nameKey: 'challenges.metalMarauder.name',
+    description: 'Sing a Metal song with 75%+ accuracy', descriptionKey: 'challenges.metalMarauder.description',
+    icon: '🤘', difficulty: 'hard', modifiers: [], xpReward: 380,
+    requirements: [{ type: 'challenge_completed', value: 'rock-renaissance' }],
+    category: { field: 'genre', value: 'Metal' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
+  },
+  {
+    id: 'disco-dazzler',
+    name: 'Disco Dazzler', nameKey: 'challenges.discoDazzler.name',
+    description: 'Sing a song from the 1970s with 70%+ accuracy', descriptionKey: 'challenges.discoDazzler.description',
+    icon: '🪩', difficulty: 'medium', modifiers: [], xpReward: 230,
+    category: { field: 'decade', value: 1970 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'synthwave-sailor',
+    name: 'Synthwave Sailor', nameKey: 'challenges.synthwaveSailor.name',
+    description: 'Sing a song from the 1980s with 78%+ accuracy', descriptionKey: 'challenges.synthwaveSailor.description',
+    icon: '🌆', difficulty: 'hard', modifiers: [], xpReward: 360,
+    requirements: [{ type: 'challenge_completed', value: 'disco-dazzler' }],
+    category: { field: 'decade', value: 1980 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 78 },
+  },
+  {
+    id: 'latin-flare',
+    name: 'Latin Flare', nameKey: 'challenges.latinFlare.name',
+    description: 'Sing a Latin song with 70%+ accuracy', descriptionKey: 'challenges.latinFlare.description',
+    icon: '💃', difficulty: 'medium', modifiers: [], xpReward: 230,
+    category: { field: 'genre', value: 'Latin' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'kpop-connoisseur',
+    name: 'K-Pop Connoisseur', nameKey: 'challenges.kpopConnoisseur.name',
+    description: 'Sing a K-Pop song with 78%+ accuracy', descriptionKey: 'challenges.kpopConnoisseur.description',
+    icon: '🎤', difficulty: 'hard', modifiers: [], xpReward: 340,
+    requirements: [{ type: 'min_level', value: 8 }],
+    category: { field: 'genre', value: 'K-Pop' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 78 },
+  },
+  {
+    id: 'deutschland-dreams',
+    name: 'Deutschland Dreams', nameKey: 'challenges.deutschlandDreams.name',
+    description: 'Sing a German-language song with 72%+ accuracy', descriptionKey: 'challenges.deutschlandDreams.description',
+    icon: '🇩🇪', difficulty: 'medium', modifiers: [], xpReward: 230,
+    category: { field: 'language', value: 'German' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 72 },
+  },
+  {
+    id: 'polyglot-practice',
+    name: 'Polyglot Practice', nameKey: 'challenges.polyglotPractice.name',
+    description: 'Sing a song that is NOT in English with 70%+ accuracy', descriptionKey: 'challenges.polyglotPractice.description',
+    icon: '🗣️', difficulty: 'hard', modifiers: [], xpReward: 320,
+    category: { field: 'languageNot', value: 'English' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'musical-maestro',
+    name: 'Musical Maestro', nameKey: 'challenges.musicalMaestro.name',
+    description: 'Sing a Musical song with 75%+ accuracy', descriptionKey: 'challenges.musicalMaestro.description',
+    icon: '🎭', difficulty: 'hard', modifiers: [], xpReward: 340,
+    category: { field: 'genre', value: 'Musical' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
+  },
+  {
+    id: 'disney-dream',
+    name: 'Disney Dream', nameKey: 'challenges.disneyDream.name',
+    description: 'Sing a Disney song with 75%+ accuracy', descriptionKey: 'challenges.disneyDream.description',
+    icon: '🏰', difficulty: 'medium', modifiers: [], xpReward: 240,
+    category: { field: 'genre', value: 'Disney' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
+  },
+
+  // ── Song-shape modes ──
+  {
+    id: 'marathoner',
+    name: 'Marathoner', nameKey: 'challenges.marathoner.name',
+    description: 'Sing a 5+ minute song with 75%+ accuracy', descriptionKey: 'challenges.marathoner.description',
+    icon: '🏃', difficulty: 'extreme', modifiers: [], xpReward: 550,
+    requirements: [{ type: 'min_level', value: 10 }],
+    category: { field: 'durationMinMinutes', value: 5 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
+  },
+  {
+    id: 'sprint-singer',
+    name: 'Sprint Singer', nameKey: 'challenges.sprintSinger.name',
+    description: 'Sing a song under 3 minutes with 80%+ accuracy', descriptionKey: 'challenges.sprintSinger.description',
+    icon: '🏁', difficulty: 'easy', modifiers: [], xpReward: 150,
+    category: { field: 'durationMaxMinutes', value: 3 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 80 },
+  },
+  {
+    id: 'fresh-finders',
+    name: 'Fresh Finders', nameKey: 'challenges.freshFinders.name',
+    description: 'Sing a song you have NEVER sung before — 68%+ accuracy', descriptionKey: 'challenges.freshFinders.description',
+    icon: '🔍', difficulty: 'easy', modifiers: [], xpReward: 160,
+    category: { field: 'freshSong' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 68 },
+  },
+  {
+    id: 'love-guru',
+    name: 'Love Guru', nameKey: 'challenges.loveGuru.name',
+    description: 'Sing a song with "love" in the title — 72%+ accuracy', descriptionKey: 'challenges.loveGuru.description',
+    icon: '💗', difficulty: 'easy', modifiers: [], xpReward: 160,
+    category: { field: 'titleContains', value: 'love' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 72 },
+  },
+  {
+    id: 'one-hit-wonder',
+    name: 'One-Word Wonder', nameKey: 'challenges.oneWordWonder.name',
+    description: 'Sing a one-word-title song with 72%+ accuracy', descriptionKey: 'challenges.oneWordWonder.description',
+    icon: '💬', difficulty: 'easy', modifiers: [], xpReward: 160,
+    category: { field: 'oneWordTitle' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 72 },
+  },
+  {
+    id: 'duo-dynamo',
+    name: 'Duo Dynamo', nameKey: 'challenges.duoDynamo.name',
+    description: 'Sing a song with a featured artist — 70%+ accuracy', descriptionKey: 'challenges.duoDynamo.description',
+    icon: '🤝', difficulty: 'easy', modifiers: [], xpReward: 150,
+    category: { field: 'featuredArtist' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'band-battle',
+    name: 'Band Battle', nameKey: 'challenges.bandBattle.name',
+    description: 'Sing a song by a band or duo — 72%+ accuracy', descriptionKey: 'challenges.bandBattle.description',
+    icon: '👥', difficulty: 'easy', modifiers: [], xpReward: 150,
+    category: { field: 'bandArtist' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 72 },
+  },
+  {
+    id: 'question-quest',
+    name: 'Question Quest', nameKey: 'challenges.questionQuest.name',
+    description: 'Sing a song with a "?" in the title — 70%+ accuracy', descriptionKey: 'challenges.questionQuest.description',
+    icon: '❓', difficulty: 'easy', modifiers: [], xpReward: 150,
+    category: { field: 'questionTitle' },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'pulse-racer',
+    name: 'Pulse Racer', nameKey: 'challenges.pulseRacer.name',
+    description: 'Sing a 140+ BPM song with 70%+ accuracy', descriptionKey: 'challenges.pulseRacer.description',
+    icon: '🥁', difficulty: 'medium', modifiers: [], xpReward: 240,
+    category: { field: 'bpmMin', value: 140 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 70 },
+  },
+  {
+    id: 'slow-groove',
+    name: 'Slow Groove', nameKey: 'challenges.slowGroove.name',
+    description: 'Sing a ≤90 BPM song with 75%+ accuracy', descriptionKey: 'challenges.slowGroove.description',
+    icon: '🐢', difficulty: 'easy', modifiers: [], xpReward: 170,
+    category: { field: 'bpmMax', value: 90 },
+    completionTarget: { metric: 'accuracy', direction: 'min', value: 75 },
   },
 ];
 

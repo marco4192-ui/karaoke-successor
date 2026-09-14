@@ -13,6 +13,25 @@ import { PERFECT_ACCURACY } from './progression-levels';
 import { StorageKeys, getItem, getJson, setJson, setItem } from '@/lib/storage';
 import type { Language } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/translations';
+import {
+  DAILY_TYPE_LIST,
+  WEEKLY_TYPE_LIST,
+  matchesDailyCategory,
+  type DailySongContext,
+  type DailyDifficulty,
+  type DailyTypeDefinition,
+  type WeeklyTypeDefinition,
+} from './challenge-pools';
+
+// Re-export the pool types so existing importers keep working.
+export type {
+  DailyTypeDefinition,
+  WeeklyTypeDefinition,
+  DailyCategory,
+  DailyCategoryField,
+  DailySongContext,
+  DailyDifficulty,
+} from './challenge-pools';
 
 // ---------------------------------------------------------------------------
 // Interfaces — Daily Challenge
@@ -34,6 +53,10 @@ interface DailyChallengeEntry {
   tickAccuracy?: number;
   /** Difficulty the player selected for this attempt. */
   difficulty?: string;
+  /** How many of today's 5 daily slots this player has completed. */
+  slotsCompletedToday?: number;
+  /** Today's daily badge tier for this player (bronze/silver/gold). */
+  dailyBadge?: 'bronze' | 'silver' | 'gold';
   completedAt: number;
   rank: number;
 }
@@ -60,6 +83,24 @@ interface PlayerDailyStats {
   lastWeekStart: string | null; // ISO date of Monday of current week, for weekly reset
   /** Cumulative number of weekly challenges completed (per player, for achievements). */
   weeklyCompletedTotal?: number;
+}
+
+/** Per-player progress on today's 5 daily challenge slots. */
+export interface PlayerDailySlotProgress {
+  date: string;
+  /** slot indices (0–4) completed today at ANY difficulty */
+  completedSlots: number[];
+  /** per-slot union of met difficulties across all attempts today */
+  metBySlot: Record<string, DailyDifficulty[]>;
+}
+
+/** Per-player progress on this week's 5 weekly challenge slots. */
+export interface PlayerWeeklySlotProgress {
+  /** week key: `${year}-W${weekNumber}` */
+  weekKey: string;
+  completedSlots: number[];
+  /** per-slot union of met difficulties across the week */
+  metBySlot: Record<string, DailyDifficulty[]>;
 }
 
 interface DailyBadge {
@@ -94,6 +135,8 @@ export interface PlayerBestResult {
   difficulty?: DailyDifficulty;
   /** All difficulty levels whose target was met today (union across all attempts). */
   metDifficulties?: DailyDifficulty[];
+  /** Which daily slot this best attempt was achieved on. */
+  slot?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,17 +149,21 @@ interface WeeklyChallengeEntry {
   playerName: string;
   playerAvatar?: string;
   playerColor: string;
-  metric: number; // the challenge-relevant metric value
+  /** which weekly slot (0–4) this submission counts towards */
+  slot: number;
+  /** raw metric value of this submission (aggregated per type) */
+  metric: number;
+  /** difficulty selected for this submission */
+  difficulty?: DailyDifficulty;
   completedAt: number;
 }
 
-/** Weekly challenge data — resets every Monday. */
+/** Weekly challenge data — resets every Monday. Five slots, unlocked in sequence. */
 export interface WeeklyChallengeData {
   weekNumber: number;
   year: number;
-  type: 'score' | 'accuracy' | 'combo' | 'songs_completed';
-  target: number;
-  description: string;
+  /** the five weekly challenge types for this week (slot → type id) */
+  slots: Array<{ slot: number; type: string }>;
   entries: WeeklyChallengeEntry[];
 }
 
@@ -190,10 +237,9 @@ export const WEEKLY_XP_REWARD = 250;
 // Daily Challenge — difficulty levels & type registry
 // ---------------------------------------------------------------------------
 
-/** selectable difficulty for the daily challenge — independent of the global game difficulty */
-export type DailyDifficulty = 'easy' | 'normal' | 'hard' | 'very_hard' | 'insane';
+// NOTE: DailyDifficulty now lives in challenge-pools.ts and is re-exported above.
 
-/** result metric a daily type is evaluated against */
+/** result metric a daily/weekly type is evaluated against */
 export type DailyMetricKey =
   | 'score'
   | 'accuracy'
@@ -202,193 +248,45 @@ export type DailyMetricKey =
   | 'perfectNotesCount'
   | 'goldenNotesCount'
   | 'notesHit'
-  | 'notesMissed';
+  | 'notesMissed'
+  | 'category_match'
+  | 'songsCompleted';
 
-/** additional side condition a daily type requires besides the scaled target */
+/** additional side condition a daily/weekly type requires besides the scaled target */
 export interface DailyGate {
   metricKey: DailyMetricKey;
   op: '>=' | '<=';
   value: number;
 }
 
-/** static definition of one daily challenge variant */
-export interface DailyTypeDefinition {
-  id: string;
-  icon: string;
-  nameKey: string;
-  /** description with `{n}` placeholder for the (difficulty- and level-scaled) target */
-  descriptionKey: string;
-  metricKey: DailyMetricKey;
-  /** 'max' = higher is better, 'min' = lower is better (e.g. missed notes) */
-  direction: 'max' | 'min';
-  /** base target per difficulty (before level scaling) */
-  targets: Record<DailyDifficulty, number>;
-  /** upper bound after level scaling (percent metrics: 99) */
-  cap?: number;
-  /** difficulty-independent side conditions */
-  gates?: DailyGate[];
-}
-
-/** The 22 daily challenge variants. The first four keep their legacy ids/targets. */
-const DAILY_TYPE_LIST = [
-  {
-    id: 'score', icon: '🎵',
-    nameKey: 'dailyTypes.score.name', descriptionKey: 'dailyTypes.score.description', metricKey: 'score', direction: 'max',
-    targets: { easy: 5500, normal: 8000, hard: 9500, very_hard: 11000, insane: 12500 },
-  },
-  {
-    id: 'accuracy', icon: '🎯',
-    nameKey: 'dailyTypes.accuracy.name', descriptionKey: 'dailyTypes.accuracy.description', metricKey: 'accuracy', direction: 'max', cap: 99,
-    targets: { easy: 75, normal: 85, hard: 90, very_hard: 93, insane: 96 },
-  },
-  {
-    id: 'combo', icon: '⚡',
-    nameKey: 'dailyTypes.combo.name', descriptionKey: 'dailyTypes.combo.description', metricKey: 'maxCombo', direction: 'max',
-    targets: { easy: 30, normal: 50, hard: 75, very_hard: 100, insane: 150 },
-  },
-  {
-    id: 'perfect_notes', icon: '💎',
-    nameKey: 'dailyTypes.perfect_notes.name', descriptionKey: 'dailyTypes.perfect_notes.description', metricKey: 'perfectNotesCount', direction: 'max',
-    targets: { easy: 10, normal: 20, hard: 35, very_hard: 50, insane: 75 },
-  },
-  {
-    id: 'golden_notes', icon: '✨',
-    nameKey: 'dailyTypes.golden_notes.name', descriptionKey: 'dailyTypes.golden_notes.description', metricKey: 'goldenNotesCount', direction: 'max',
-    targets: { easy: 4, normal: 8, hard: 12, very_hard: 16, insane: 22 },
-  },
-  {
-    id: 'notes_hit', icon: '🎶',
-    nameKey: 'dailyTypes.notes_hit.name', descriptionKey: 'dailyTypes.notes_hit.description', metricKey: 'notesHit', direction: 'max',
-    targets: { easy: 80, normal: 150, hard: 250, very_hard: 350, insane: 500 },
-  },
-  {
-    id: 'tick_accuracy', icon: '🎚️',
-    nameKey: 'dailyTypes.tick_accuracy.name', descriptionKey: 'dailyTypes.tick_accuracy.description', metricKey: 'tickAccuracy', direction: 'max', cap: 99,
-    targets: { easy: 70, normal: 80, hard: 86, very_hard: 90, insane: 94 },
-  },
-  {
-    id: 'clean_song', icon: '🧼',
-    nameKey: 'dailyTypes.clean_song.name', descriptionKey: 'dailyTypes.clean_song.description', metricKey: 'notesMissed', direction: 'min',
-    targets: { easy: 25, normal: 12, hard: 7, very_hard: 4, insane: 2 },
-  },
-  {
-    id: 'comeback', icon: '🔄',
-    nameKey: 'dailyTypes.comeback.name', descriptionKey: 'dailyTypes.comeback.description', metricKey: 'maxCombo', direction: 'max',
-    targets: { easy: 30, normal: 40, hard: 55, very_hard: 70, insane: 90 },
-    gates: [{ metricKey: 'notesMissed', op: '>=', value: 10 }],
-  },
-  {
-    id: 'sharpshooter', icon: '🎺',
-    nameKey: 'dailyTypes.sharpshooter.name', descriptionKey: 'dailyTypes.sharpshooter.description', metricKey: 'accuracy', direction: 'max', cap: 99,
-    targets: { easy: 82, normal: 88, hard: 91, very_hard: 94, insane: 97 },
-    gates: [{ metricKey: 'notesHit', op: '>=', value: 60 }],
-  },
-  {
-    id: 'combo_master', icon: '🔗',
-    nameKey: 'dailyTypes.combo_master.name', descriptionKey: 'dailyTypes.combo_master.description', metricKey: 'maxCombo', direction: 'max',
-    targets: { easy: 40, normal: 60, hard: 85, very_hard: 110, insane: 160 },
-    gates: [{ metricKey: 'accuracy', op: '>=', value: 75 }],
-  },
-  {
-    id: 'perfect_storm', icon: '💫',
-    nameKey: 'dailyTypes.perfect_storm.name', descriptionKey: 'dailyTypes.perfect_storm.description', metricKey: 'perfectNotesCount', direction: 'max',
-    targets: { easy: 12, normal: 18, hard: 28, very_hard: 40, insane: 60 },
-    gates: [{ metricKey: 'goldenNotesCount', op: '>=', value: 5 }],
-  },
-  {
-    id: 'endurance', icon: '🏃',
-    nameKey: 'dailyTypes.endurance.name', descriptionKey: 'dailyTypes.endurance.description', metricKey: 'notesHit', direction: 'max',
-    targets: { easy: 150, normal: 250, hard: 350, very_hard: 450, insane: 600 },
-    gates: [{ metricKey: 'maxCombo', op: '>=', value: 40 }],
-  },
-  {
-    id: 'golden_groove', icon: '🌟',
-    nameKey: 'dailyTypes.golden_groove.name', descriptionKey: 'dailyTypes.golden_groove.description', metricKey: 'goldenNotesCount', direction: 'max',
-    targets: { easy: 6, normal: 10, hard: 14, very_hard: 18, insane: 24 },
-    gates: [{ metricKey: 'accuracy', op: '>=', value: 85 }],
-  },
-  {
-    id: 'precision', icon: '🎯',
-    nameKey: 'dailyTypes.precision.name', descriptionKey: 'dailyTypes.precision.description', metricKey: 'tickAccuracy', direction: 'max', cap: 99,
-    targets: { easy: 75, normal: 85, hard: 89, very_hard: 92, insane: 95 },
-    gates: [{ metricKey: 'notesHit', op: '>=', value: 50 }],
-  },
-  {
-    id: 'flawless_finale', icon: '🌈',
-    nameKey: 'dailyTypes.flawless_finale.name', descriptionKey: 'dailyTypes.flawless_finale.description', metricKey: 'accuracy', direction: 'max', cap: 99,
-    targets: { easy: 85, normal: 90, hard: 93, very_hard: 95, insane: 97 },
-    gates: [{ metricKey: 'notesMissed', op: '<=', value: 8 }],
-  },
-  {
-    id: 'score_sniper', icon: '🎸',
-    nameKey: 'dailyTypes.score_sniper.name', descriptionKey: 'dailyTypes.score_sniper.description', metricKey: 'score', direction: 'max',
-    targets: { easy: 6000, normal: 8500, hard: 10000, very_hard: 11500, insane: 13000 },
-    gates: [{ metricKey: 'accuracy', op: '>=', value: 85 }],
-  },
-  {
-    id: 'combo_race', icon: '🚀',
-    nameKey: 'dailyTypes.combo_race.name', descriptionKey: 'dailyTypes.combo_race.description', metricKey: 'maxCombo', direction: 'max',
-    targets: { easy: 50, normal: 70, hard: 95, very_hard: 120, insane: 170 },
-    gates: [{ metricKey: 'notesHit', op: '>=', value: 100 }],
-  },
-  {
-    id: 'perfect_pitch', icon: '🎤',
-    nameKey: 'dailyTypes.perfect_pitch.name', descriptionKey: 'dailyTypes.perfect_pitch.description', metricKey: 'perfectNotesCount', direction: 'max',
-    targets: { easy: 10, normal: 16, hard: 25, very_hard: 35, insane: 50 },
-    gates: [{ metricKey: 'accuracy', op: '>=', value: 90 }],
-  },
-  {
-    id: 'golden_fingers', icon: '🤌',
-    nameKey: 'dailyTypes.golden_fingers.name', descriptionKey: 'dailyTypes.golden_fingers.description', metricKey: 'goldenNotesCount', direction: 'max',
-    targets: { easy: 4, normal: 6, hard: 9, very_hard: 12, insane: 16 },
-    gates: [{ metricKey: 'perfectNotesCount', op: '>=', value: 15 }],
-  },
-  {
-    id: 'steady_hand', icon: '✋',
-    nameKey: 'dailyTypes.steady_hand.name', descriptionKey: 'dailyTypes.steady_hand.description', metricKey: 'notesMissed', direction: 'min',
-    targets: { easy: 15, normal: 8, hard: 5, very_hard: 3, insane: 1 },
-    gates: [{ metricKey: 'notesHit', op: '>=', value: 80 }],
-  },
-  {
-    id: 'titan', icon: '👑',
-    nameKey: 'dailyTypes.titan.name', descriptionKey: 'dailyTypes.titan.description', metricKey: 'score', direction: 'max',
-    targets: { easy: 7000, normal: 9000, hard: 10500, very_hard: 12000, insane: 14000 },
-    gates: [{ metricKey: 'maxCombo', op: '>=', value: 60 }],
-  },
-] as const satisfies readonly DailyTypeDefinition[];
+/** The 200 daily challenge variants now live in challenge-pools.ts. */
+// (DAILY_TYPE_LIST is imported from ./challenge-pools)
 
 /** all valid daily challenge type ids */
-export type DailyChallengeType = (typeof DAILY_TYPE_LIST)[number]['id'];
+export type DailyChallengeType = string;
 
 /** ordered list of all daily type ids (used for the per-day hash selection) */
-export const DAILY_TYPE_IDS: readonly DailyChallengeType[] = DAILY_TYPE_LIST.map(d => d.id);
+export const DAILY_TYPE_IDS: readonly string[] = DAILY_TYPE_LIST.map(d => d.id);
 
 /** lookup registry for daily type definitions */
-export const DAILY_TYPES: Readonly<Record<DailyChallengeType, DailyTypeDefinition>> =
-  Object.fromEntries(DAILY_TYPE_LIST.map(d => [d.id, d as DailyTypeDefinition])) as
-  Record<DailyChallengeType, DailyTypeDefinition>;
+export const DAILY_TYPES: Readonly<Record<string, DailyTypeDefinition>> =
+  Object.fromEntries(DAILY_TYPE_LIST.map(d => [d.id, d]));
 
-/** selectable difficulty levels for the daily challenge */
-export const DAILY_DIFFICULTIES: ReadonlyArray<{
-  id: DailyDifficulty;
-  icon: string;
-  labelKey: string;
-  /** XP multiplier applied to the base challenge-complete reward */
-  xpMultiplier: number;
-}> = [
-  { id: 'easy', icon: '🟢', labelKey: 'dailyChallengeScreen.difficultyEasy', xpMultiplier: 0.5 },
-  { id: 'normal', icon: '🟡', labelKey: 'dailyChallengeScreen.difficultyNormal', xpMultiplier: 1 },
-  { id: 'hard', icon: '🟠', labelKey: 'dailyChallengeScreen.difficultyHard', xpMultiplier: 1.5 },
-  { id: 'very_hard', icon: '🔴', labelKey: 'dailyChallengeScreen.difficultyVeryHard', xpMultiplier: 2.25 },
-  { id: 'insane', icon: '💀', labelKey: 'dailyChallengeScreen.difficultyInsane', xpMultiplier: 3 },
-];
+/** lookup registry for the weekly type definitions (100 variants). */
+export const WEEKLY_TYPES: Readonly<Record<string, WeeklyTypeDefinition>> =
+  Object.fromEntries(WEEKLY_TYPE_LIST.map(d => [d.id, d]));
+
+/** Returns the definition of a weekly type (falls back to the first entry for unknown ids). */
+export function getWeeklyType(type: string): WeeklyTypeDefinition {
+  return WEEKLY_TYPES[type] ?? WEEKLY_TYPE_LIST[0];
+}
 
 /** Returns the definition of a daily type (falls back to 'score' for unknown/legacy ids). */
 export function getDailyType(type: string): DailyTypeDefinition {
   return (DAILY_TYPES as Record<string, DailyTypeDefinition | undefined>)[type] ?? DAILY_TYPES.score;
 }
 
-/** metrics accepted by daily submissions (superset of the classic four) */
+/** metrics accepted by daily/weekly submissions (superset of the classic four) */
 export interface DailyResultMetrics {
   score: number;
   accuracy: number;
@@ -398,6 +296,12 @@ export interface DailyResultMetrics {
   goldenNotesCount?: number;
   notesHit?: number;
   notesMissed?: number;
+  /** whether the sung song matched the challenge's category requirement (0/1) */
+  categoryMatch?: number;
+  /** song metadata context for category evaluation */
+  song?: DailySongContext;
+  /** current app language (for 'atypical language' challenges) */
+  appLanguage?: string;
 }
 
 /** Extract the challenge-relevant metric from a result. */
@@ -416,17 +320,54 @@ function metricByKey(key: DailyMetricKey, m: DailyResultMetrics): number {
     case 'goldenNotesCount': return m.goldenNotesCount ?? 0;
     case 'notesHit': return m.notesHit ?? 0;
     case 'notesMissed': return m.notesMissed ?? 0;
+    case 'category_match': return m.categoryMatch ?? (m.song ? 0 : 0);
+    case 'songsCompleted': return 1;
   }
 }
 
-/** Check the (difficulty-independent) gate conditions of a daily type. */
+/** Check the (difficulty-independent) gate + category conditions of a daily type. */
 export function checkDailyGates(type: string, m: DailyResultMetrics): boolean {
-  const gates = getDailyType(type).gates;
+  const def = getDailyType(type);
+  // Category requirement: the sung song's metadata must match.
+  if (def.category) {
+    const matched = m.categoryMatch !== undefined
+      ? m.categoryMatch >= 1
+      : matchesDailyCategory(def.category, m.song, m.appLanguage);
+    if (!matched) return false;
+  }
+  const gates = def.gates;
   if (!gates) return true;
   return gates.every(g => {
     const value = metricByKey(g.metricKey, m);
     return g.op === '>=' ? value >= g.value : value <= g.value;
   });
+}
+
+/** Check gates for a weekly type (same semantics as daily gates). */
+export function checkWeeklyGates(type: string, m: DailyResultMetrics): boolean {
+  const def = getWeeklyType(type);
+  if (def.category) {
+    const matched = m.categoryMatch !== undefined
+      ? m.categoryMatch >= 1
+      : matchesDailyCategory(def.category, m.song, m.appLanguage);
+    if (!matched) return false;
+  }
+  const gates = def.gates;
+  if (!gates) return true;
+  return gates.every(g => {
+    const value = metricByKey(g.metricKey, m);
+    return g.op === '>=' ? value >= g.value : value <= g.value;
+  });
+}
+
+/** Extract the challenge-relevant metric for a weekly type. */
+export function extractWeeklyMetric(type: string, m: DailyResultMetrics): number {
+  const def = getWeeklyType(type);
+  if (def.metricKey === 'category_match') {
+    if (m.categoryMatch !== undefined) return m.categoryMatch;
+    return def.category ? (matchesDailyCategory(def.category, m.song, m.appLanguage) ? 1 : 0) : 0;
+  }
+  return metricByKey(def.metricKey, m);
 }
 
 /**
@@ -474,6 +415,64 @@ export function evaluateDailyAttempt(type: string, m: DailyResultMetrics, level?
 /** XP multiplier of a difficulty level (unknown → 1). */
 export function getDailyDifficultyMultiplier(difficulty?: string): number {
   return DAILY_DIFFICULTIES.find(d => d.id === difficulty)?.xpMultiplier ?? 1;
+}
+
+/** selectable difficulty levels for daily AND weekly challenges (shared). */
+export const DAILY_DIFFICULTIES: ReadonlyArray<{
+  id: DailyDifficulty;
+  icon: string;
+  labelKey: string;
+  /** XP multiplier applied to the base challenge-complete reward */
+  xpMultiplier: number;
+}> = [
+  { id: 'easy', icon: '🟢', labelKey: 'dailyChallengeScreen.difficultyEasy', xpMultiplier: 0.5 },
+  { id: 'normal', icon: '🟡', labelKey: 'dailyChallengeScreen.difficultyNormal', xpMultiplier: 1 },
+  { id: 'hard', icon: '🟠', labelKey: 'dailyChallengeScreen.difficultyHard', xpMultiplier: 1.5 },
+  { id: 'very_hard', icon: '🔴', labelKey: 'dailyChallengeScreen.difficultyVeryHard', xpMultiplier: 2.25 },
+  { id: 'insane', icon: '💀', labelKey: 'dailyChallengeScreen.difficultyInsane', xpMultiplier: 3 },
+];
+
+/** Difficulty levels for the weekly challenge — same five tiers as the daily. */
+export const WEEKLY_DIFFICULTIES = DAILY_DIFFICULTIES;
+
+/** Number of daily challenge slots per day (bronze 1 / silver 3 / gold 5). */
+export const DAILY_SLOTS_PER_DAY = 5;
+
+/** Number of weekly challenge slots per week (bronze 1 / silver 3 / gold 5). */
+export const WEEKLY_SLOTS_PER_WEEK = 5;
+
+/** Badge tier thresholds shared by daily and weekly slots. */
+export const SLOT_BADGE_TIERS = [
+  { tier: 'bronze', slots: 1 },
+  { tier: 'silver', slots: 3 },
+  { tier: 'gold', slots: 5 },
+] as const;
+
+/** Bonus XP for completing daily slots 2–5 (index 0 = slot 2, …). Scaled by difficulty. */
+export const DAILY_SLOT_XP_BONUS = [125, 150, 175, 200] as const;
+
+/** XP for completing weekly slots 1–5. Scaled by difficulty. */
+export const WEEKLY_SLOT_XP = [250, 300, 350, 400, 500] as const;
+
+/** Interpolate a challenge pattern text: replaces {n} with the formatted target
+ *  plus any static params ({genre}, {m}, …). */
+export function interpolateChallengeText(
+  text: string,
+  params: Record<string, string> | undefined,
+  target: number,
+  metricKey: string,
+): string {
+  const isPercent = metricKey === 'accuracy' || metricKey === 'tickAccuracy';
+  const formatted = isPercent
+    ? `${Number.isInteger(target) ? target : target.toFixed(1)}%`
+    : target.toLocaleString();
+  let out = text.replace(/\{n\}/g, formatted);
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      out = out.replaceAll(`{${key}}`, value);
+    }
+  }
+  return out;
 }
 
 // Badge definitions
@@ -557,6 +556,54 @@ export const DAILY_BADGES: Record<string, Omit<DailyBadge, 'unlockedAt'>> = {
     icon: '🌟',
     description: 'Maintain a 365-day streak',
     descriptionKey: 'dailyChallenge.badges.yearlyLegend.description',
+  },
+  'daily-bronze': {
+    id: 'daily-bronze',
+    name: 'Daily Bronze',
+    nameKey: 'dailyChallenge.badges.dailyBronze.name',
+    icon: '🥉',
+    description: 'Complete 1 daily challenge in one day',
+    descriptionKey: 'dailyChallenge.badges.dailyBronze.description',
+  },
+  'daily-silver': {
+    id: 'daily-silver',
+    name: 'Daily Silver',
+    nameKey: 'dailyChallenge.badges.dailySilver.name',
+    icon: '🥈',
+    description: 'Complete 3 daily challenges in one day',
+    descriptionKey: 'dailyChallenge.badges.dailySilver.description',
+  },
+  'daily-gold': {
+    id: 'daily-gold',
+    name: 'Daily Gold',
+    nameKey: 'dailyChallenge.badges.dailyGold.name',
+    icon: '🥇',
+    description: 'Complete all 5 daily challenges in one day',
+    descriptionKey: 'dailyChallenge.badges.dailyGold.description',
+  },
+  'weekly-bronze': {
+    id: 'weekly-bronze',
+    name: 'Weekly Bronze',
+    nameKey: 'dailyChallenge.badges.weeklyBronze.name',
+    icon: '🎗️',
+    description: 'Complete 1 weekly challenge in one week',
+    descriptionKey: 'dailyChallenge.badges.weeklyBronze.description',
+  },
+  'weekly-silver': {
+    id: 'weekly-silver',
+    name: 'Weekly Silver',
+    nameKey: 'dailyChallenge.badges.weeklySilver.name',
+    icon: '🏅',
+    description: 'Complete 3 weekly challenges in one week',
+    descriptionKey: 'dailyChallenge.badges.weeklySilver.description',
+  },
+  'weekly-gold': {
+    id: 'weekly-gold',
+    name: 'Weekly Gold',
+    nameKey: 'dailyChallenge.badges.weeklyGold.name',
+    icon: '🏆',
+    description: 'Complete all 5 weekly challenges in one week',
+    descriptionKey: 'dailyChallenge.badges.weeklyGold.description',
   },
 };
 
@@ -660,6 +707,12 @@ const PLAYER_BEST_RESULTS_KEY = 'karaoke_daily_best_results';
 /** (#4) localStorage key prefix for weekly challenge data. */
 const WEEKLY_CHALLENGE_KEY_PREFIX = 'karaoke_weekly_challenge_';
 
+/** localStorage key prefix for per-player daily slot progress. */
+const DAILY_SLOT_PROGRESS_KEY = 'karaoke_daily_slot_progress_';
+
+/** localStorage key prefix for per-player weekly slot progress. */
+const WEEKLY_SLOT_PROGRESS_KEY = 'karaoke_weekly_slot_progress_';
+
 /** (#5) localStorage key for quest progress map. */
 const QUEST_PROGRESS_KEY = 'karaoke_quest_progress';
 
@@ -748,39 +801,130 @@ function getMondayISO(date: Date): string {
 // Daily Challenge — core
 // ---------------------------------------------------------------------------
 
-/**
- * Generate (or load) the daily challenge.
- * The challenge type is picked deterministically from the date hash across
- * all 22 registered types — the stored entry (if any) always wins so the type
- * stays stable within a day.
- *
- * When `level`/`difficulty` are provided the returned target is scaled for that
- * player/difficulty ({@link getDailyTargetFor}). The stored leaderboard always
- * uses the base (normal, unscaled) target.
- */
-export function getDailyChallenge(level?: number, difficulty: DailyDifficulty = 'normal'): DailyChallengeData {
-  const today = todayISO();
-  const type = DAILY_TYPE_IDS[hashString(today) % DAILY_TYPE_IDS.length];
+// ---------------------------------------------------------------------------
+// Daily Challenge — slot system (5 slots per day, sequential unlock)
+// ---------------------------------------------------------------------------
 
-  // Try to load existing leaderboard
+/**
+ * The 5 daily challenge slots for today. Types are picked deterministically
+ * from the date hash across all 200 registered types (distinct per day).
+ * If a legacy stored leaderboard for today already has a type, slot 0 adopts
+ * it so old data stays consistent.
+ */
+export function getDailySlots(): Array<{ slot: number; type: string }> {
+  const today = todayISO();
+  const picked: string[] = [];
+
+  // Legacy compatibility: a stored leaderboard for today keeps its type in slot 0.
+  const stored = getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as DailyChallengeData;
+      if (parsed?.type && DAILY_TYPES[parsed.type]) picked.push(parsed.type);
+    } catch { /* ignore corrupt data */ }
+  }
+
+  let salt = 0;
+  while (picked.length < DAILY_SLOTS_PER_DAY) {
+    const type = DAILY_TYPE_IDS[hashString(`${today}:${salt}`) % DAILY_TYPE_IDS.length];
+    if (!picked.includes(type)) picked.push(type);
+    salt++;
+  }
+
+  return picked.map((type, slot) => ({ slot, type }));
+}
+
+/** The player's current daily slot progress (resets on a new day). */
+export function getPlayerDailySlotProgress(playerId?: string): PlayerDailySlotProgress {
+  const key = playerId ? `${DAILY_SLOT_PROGRESS_KEY}${playerId}` : DAILY_SLOT_PROGRESS_KEY;
+  const stored = getJson<PlayerDailySlotProgress | null>(key, null);
+  const today = todayISO();
+  if (stored && stored.date === today) return stored;
+  return { date: today, completedSlots: [], metBySlot: {} };
+}
+
+/** Persist the player's daily slot progress. */
+function savePlayerDailySlotProgress(progress: PlayerDailySlotProgress, playerId?: string): void {
+  const key = playerId ? `${DAILY_SLOT_PROGRESS_KEY}${playerId}` : DAILY_SLOT_PROGRESS_KEY;
+  setJson(key, progress);
+}
+
+/** Whether a daily slot is unlocked for the player (slot 0 always, others need the previous one). */
+export function isDailySlotUnlocked(slot: number, playerId?: string): boolean {
+  if (slot <= 0) return true;
+  const progress = getPlayerDailySlotProgress(playerId);
+  return progress.completedSlots.includes(slot - 1);
+}
+
+/** The first unlocked-but-uncompleted daily slot for the player (null when all 5 are done). */
+export function getActiveDailySlot(playerId?: string): number | null {
+  const progress = getPlayerDailySlotProgress(playerId);
+  for (let slot = 0; slot < DAILY_SLOTS_PER_DAY; slot++) {
+    if (!progress.completedSlots.includes(slot)) return slot;
+  }
+  return null;
+}
+
+/** Which badge tier the player has reached today ('none' when no slot is completed). */
+export function getDailyBadgeTierToday(playerId?: string): 'none' | 'bronze' | 'silver' | 'gold' {
+  const count = getPlayerDailySlotProgress(playerId).completedSlots.length;
+  if (count >= 5) return 'gold';
+  if (count >= 3) return 'silver';
+  if (count >= 1) return 'bronze';
+  return 'none';
+}
+
+/** Which badge tier the player has reached this week ('none' when no slot is completed). */
+export function getWeeklyBadgeTierThisWeek(playerId?: string): 'none' | 'bronze' | 'silver' | 'gold' {
+  const count = getPlayerWeeklySlotProgress(playerId).completedSlots.length;
+  if (count >= 5) return 'gold';
+  if (count >= 3) return 'silver';
+  if (count >= 1) return 'bronze';
+  return 'none';
+}
+
+/**
+ * Generate (or load) the daily challenge leaderboard data — slot-aware.
+ * `slot` selects which of the 5 daily slots to evaluate; `level`/`difficulty`
+ * scale the returned target for display.
+ */
+export function getDailyChallengeForSlot(
+  slot: number,
+  level?: number,
+  difficulty: DailyDifficulty = 'normal',
+): DailyChallengeData {
+  const today = todayISO();
+  const slots = getDailySlots();
+  const type = slots[Math.min(Math.max(0, slot), slots.length - 1)]?.type ?? 'score';
+
+  // Load (or create) the shared leaderboard for today — `type` is slot 0's type
   const stored = getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
   let challenge: DailyChallengeData;
   if (stored) {
     try {
       challenge = JSON.parse(stored);
     } catch {
-      challenge = createEmptyDailyChallenge(today, type);
+      challenge = createEmptyDailyChallenge(today, getDailySlots()[0].type);
     }
   } else {
-    challenge = createEmptyDailyChallenge(today, type);
+    challenge = createEmptyDailyChallenge(today, getDailySlots()[0].type);
   }
 
-  // Apply difficulty + level scaling to the returned copy only
+  // Return the requested slot's view with scaled target
   return {
     ...challenge,
+    type,
     difficulty,
-    target: getDailyTargetFor(challenge.type, difficulty, level),
+    target: getDailyTargetFor(type, difficulty, level),
   };
+}
+
+/**
+ * Legacy wrapper: returns slot 0's challenge (used by older UIs and the
+ * best-result helpers). Prefer {@link getDailyChallengeForSlot}.
+ */
+export function getDailyChallenge(level?: number, difficulty: DailyDifficulty = 'normal'): DailyChallengeData {
+  return getDailyChallengeForSlot(0, level, difficulty);
 }
 
 /** Fresh (empty) daily challenge payload for a date/type. */
@@ -892,19 +1036,21 @@ export function savePlayerBestResult(playerId: string, result: PlayerBestResult)
 }
 
 // ---------------------------------------------------------------------------
-// Submit a challenge result (single-player)
+// Submit a challenge result (single-player) — slot-aware
 // ---------------------------------------------------------------------------
 
 /**
- * Submit a single-player challenge result.
+ * Submit a single-player challenge result for a daily slot.
+ *
+ * `options.slot` selects which of the 5 daily slots this attempt counts for
+ * (defaults to the player's active = first open slot).
  *
  * Side-effects:
- * - Updates the daily leaderboard
- * - Recalculates streak & XP (including streak-break penalty) — only when the
- *   target is met at the selected difficulty
- * - Awards badges
- * - Saves the player's best result for today (#1) including which difficulty
- *   levels were met
+ * - Updates the daily leaderboard (slots completed today + badge tier)
+ * - Records slot progress; awards slot XP on first completion per slot
+ * - Streak/first-completion logic runs on the first slot completed today
+ * - Awards badges (including daily bronze/silver/gold tier badges)
+ * - Saves the player's best result for today including met difficulties
  */
 export function submitChallengeResult(
   player: {
@@ -914,47 +1060,47 @@ export function submitChallengeResult(
     color: string;
   },
   result: DailyResultMetrics,
-  options?: { difficulty?: DailyDifficulty; level?: number },
+  options?: { difficulty?: DailyDifficulty; level?: number; slot?: number },
 ): {
   challenge: DailyChallengeData;
+  slot: number;
+  slotType: string;
   stats: PlayerDailyStats;
   xpEarned: number;
   newBadges: DailyBadge[];
   rank: number;
   targetMet: boolean;
   metDifficulties: DailyDifficulty[];
+  slotCompleted: boolean;
 } {
   const difficulty: DailyDifficulty = options?.difficulty ?? 'normal';
   const level = options?.level;
+  const slots = getDailySlots();
+  const slot = Math.min(Math.max(0, options?.slot ?? getActiveDailySlot(player.id) ?? 0), slots.length - 1);
+  const slotType = slots[slot].type;
+  const typeDef = getDailyType(slotType);
+
   // Always load with base target (no scaling) for leaderboard consistency
   const challenge = getDailyChallenge();
-  const typeDef = getDailyType(challenge.type);
-  // Per-player stats: streaks, XP, badges and completions are attributed to
-  // the profile that actually played the challenge.
   const stats = getPlayerDailyStats(player.id);
+  const slotProgress = getPlayerDailySlotProgress(player.id);
   const today = todayISO();
   const difficultyMultiplier = getDailyDifficultyMultiplier(difficulty);
-  // XP starts at 0 — it is only earned when the target is met at the selected
-  // difficulty AND this is the player's first qualifying completion today.
   let xpEarned = 0;
   const newBadges: DailyBadge[] = [];
 
-  // Evaluate the attempt against the challenge type (metric + gates + difficulties)
-  const evaluation = evaluateDailyAttempt(challenge.type, result, level);
+  // Evaluate the attempt against the slot's challenge type
+  const evaluation = evaluateDailyAttempt(slotType, result, level);
   const targetMet = evaluation.met.includes(difficulty);
 
-  // Entry metrics are direction-agnostic raw values
-  const sortMetric = (entry: DailyChallengeEntry): number =>
+  // ── Leaderboard entry update ──
+  const entrySortMetric = (entry: DailyChallengeEntry): number =>
     extractDailyMetric(challenge.type, entryToMetrics(entry));
-  const resultMetric = (): number => evaluation.metric;
-
-  // Check if already completed today
   const existingEntry = challenge.entries.find(e => e.playerId === player.id);
   if (existingEntry) {
-    // Update if the challenge-type-specific metric improved
     const better = typeDef.direction === 'min'
-      ? resultMetric() < sortMetric(existingEntry)
-      : resultMetric() > sortMetric(existingEntry);
+      ? evaluation.metric < extractDailyMetric(slotType, entryToMetrics(existingEntry))
+      : evaluation.metric > extractDailyMetric(slotType, entryToMetrics(existingEntry));
     if (better) {
       existingEntry.score = result.score;
       existingEntry.accuracy = result.accuracy;
@@ -968,7 +1114,6 @@ export function submitChallengeResult(
       existingEntry.completedAt = Date.now();
     }
   } else {
-    // Add new entry
     challenge.entries.push({
       playerId: player.id,
       playerName: player.name,
@@ -989,32 +1134,48 @@ export function submitChallengeResult(
     challenge.totalParticipants++;
   }
 
-  // Sort by the challenge type's metric (direction-aware), then by playerId
-  // for a deterministic tiebreaker
+  // ── Slot progress + XP ──
+  const alreadyCompleted = slotProgress.completedSlots.includes(slot);
+  const slotCompleted = targetMet && !alreadyCompleted;
+  if (slotCompleted) {
+    slotProgress.completedSlots.push(slot);
+  }
+  // Merge met difficulties per slot (union across attempts)
+  const prevMet = slotProgress.metBySlot[String(slot)] ?? [];
+  slotProgress.metBySlot[String(slot)] = Array.from(new Set([...prevMet, ...evaluation.met]));
+
+  if (slotCompleted) {
+    // Slot XP: slot 0 keeps the classic reward incl. streak/rank bonuses;
+    // slots 1–4 award the escalating slot bonus (× difficulty multiplier).
+    if (slot === 0) {
+      xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
+    } else {
+      xpEarned = Math.round(DAILY_SLOT_XP_BONUS[Math.min(slot - 1, DAILY_SLOT_XP_BONUS.length - 1)] * difficultyMultiplier);
+    }
+  }
+
+  // Rank (computed after entry sort below — placeholder for badge checks)
+  // Sort: slots completed today desc, then slot-0 metric (direction-aware)
+  const entrySlots = (e: DailyChallengeEntry): number => e.slotsCompletedToday ?? 0;
   challenge.entries.sort((a, b) => {
+    const slotDiff = entrySlots(b) - entrySlots(a);
+    if (slotDiff !== 0) return slotDiff;
     const diff = typeDef.direction === 'min'
-      ? sortMetric(a) - sortMetric(b)
-      : sortMetric(b) - sortMetric(a);
+      ? entrySortMetric(a) - entrySortMetric(b)
+      : entrySortMetric(b) - entrySortMetric(a);
     if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
-  challenge.entries.forEach((entry, index) => {
-    entry.rank = index + 1;
-  });
-
+  challenge.entries.forEach((entry, index) => { entry.rank = index + 1; });
   const playerRank = challenge.entries.find(e => e.playerId === player.id)?.rank || 0;
 
-  // XP, streak and completions are only awarded when the target is met at the
-  // selected difficulty — and only on the first qualifying completion today.
-  if (targetMet && stats.lastCompletedDate !== today) {
-    // First completion today
-    stats.totalCompleted++;
-    xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
-
-    // Streak calculation (shared helper)
+  // Streak + first completion logic: runs when this is the player's FIRST
+  // completed slot today (regardless of which slot it is).
+  if (slotCompleted && stats.lastCompletedDate !== today) {
     const streak = advanceStreak(stats, xpEarned);
     xpEarned = Math.max(0, xpEarned + streak.xpAdjustment + streak.streakBonusXP);
     stats.lastCompletedDate = today;
+    stats.totalCompleted++;
 
     // Top 3 bonus
     if (playerRank <= 3 && playerRank >= 1) {
@@ -1023,7 +1184,28 @@ export function submitChallengeResult(
       xpEarned += XP_REWARDS.TOP_10_BONUS;
     }
 
-    // Check for streak milestones
+    // Update weekly progress — reset at week boundary
+    const now = new Date();
+    const weekStartISO = getMondayISO(now);
+    if (stats.lastWeekStart !== weekStartISO) {
+      stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
+      stats.lastWeekStart = weekStartISO;
+    }
+    stats.weeklyProgress[getMondayIndex(now)] = 1;
+
+    updateQuestProgress('dailyCompleted', 1, player.id);
+  } else if (slotCompleted) {
+    // Additional slot on the same day — still counts as a completed daily
+    stats.totalCompleted++;
+  }
+
+  // Perfect challenge bonus: 100% accuracy on an accuracy-metric challenge.
+  if (slotCompleted && typeDef.metricKey === 'accuracy' && evaluation.gatesPass && result.accuracy >= PERFECT_ACCURACY) {
+    xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
+  }
+
+  // Streak milestones (checked whenever a slot completes and the streak grew)
+  if (slotCompleted) {
     const milestone = XP_REWARDS.STREAK_MILESTONES[stats.currentStreak as keyof typeof XP_REWARDS.STREAK_MILESTONES];
     if (milestone) {
       xpEarned += milestone.xp;
@@ -1043,110 +1225,79 @@ export function submitChallengeResult(
       }
     }
 
-    // Check for first challenge badge
+    // First challenge badge
     if (stats.totalCompleted === 1 && !stats.badges.some(b => b.id === 'first-challenge')) {
-      const badge: DailyBadge = {
-        ...DAILY_BADGES['first-challenge'],
-        unlockedAt: Date.now(),
-      };
+      const badge: DailyBadge = { ...DAILY_BADGES['first-challenge'], unlockedAt: Date.now() };
+      stats.badges.push(badge);
+      newBadges.push(badge);
+    }
+    // 30 completions badge
+    if (stats.totalCompleted >= 30 && !stats.badges.some(b => b.id === 'dedicated')) {
+      const badge: DailyBadge = { ...DAILY_BADGES['dedicated'], unlockedAt: Date.now() };
       stats.badges.push(badge);
       newBadges.push(badge);
     }
 
-    // Check for 30 completions badge
-    if (stats.totalCompleted === 30 && !stats.badges.some(b => b.id === 'dedicated')) {
-      const badge: DailyBadge = {
-        ...DAILY_BADGES['dedicated'],
-        unlockedAt: Date.now(),
-      };
+    // Daily tier badges: bronze (1), silver (3), gold (5 slots today)
+    const tier = getDailyBadgeTierToday(player.id);
+    const tierBadgeId = tier === 'gold' ? 'daily-gold' : tier === 'silver' ? 'daily-silver' : tier === 'bronze' ? 'daily-bronze' : null;
+    if (tierBadgeId && !stats.badges.some(b => b.id === tierBadgeId)) {
+      const badge: DailyBadge = { ...DAILY_BADGES[tierBadgeId], unlockedAt: Date.now() };
       stats.badges.push(badge);
       newBadges.push(badge);
     }
-
-    // Check for legendary badge
-    if (stats.totalXP + xpEarned >= 10000 && !stats.badges.some(b => b.id === 'legendary')) {
-      const badge: DailyBadge = {
-        ...DAILY_BADGES['legendary'],
-        unlockedAt: Date.now(),
-      };
-      stats.badges.push(badge);
-      newBadges.push(badge);
-    }
-
-    // Perfect challenge bonus: 100% accuracy on an accuracy-metric challenge.
-    // PERFECT_ACCURACY (99.5, not 100) accounts for floating-point arithmetic
-    // where tick-based scoring can produce values like 99.999999999.
-    if (typeDef.metricKey === 'accuracy' && evaluation.gatesPass && result.accuracy >= PERFECT_ACCURACY) {
-      xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
-    }
-
-    // Update weekly progress — reset at week boundary
-    const now = new Date();
-    const weekStartISO = getMondayISO(now);
-
-    if (stats.lastWeekStart !== weekStartISO) {
-      stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
-      stats.lastWeekStart = weekStartISO;
-    }
-    // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
-    const weekIndex = getMondayIndex(now);
-    stats.weeklyProgress[weekIndex] = 1;
-
-    stats.totalXP += xpEarned;
-
-    // (#5) Update quest stats for daily challenge completion
-    updateQuestProgress('dailyCompleted', 1, player.id);
-
-  } else {
-    // Same-day replay or target not met — no XP/streak, but still check
-    // rank-based badges in case the player improved their metric and moved
-    // into top 3 or #1
   }
 
-  // Rank-based badges: checked on EVERY submission (not just first completion)
-  // so a same-day score improvement that moves the player into #1 or top 3
-  // still awards the corresponding badge.
+  // Legendary badge (checked on every qualifying submission)
+  if (stats.totalXP + xpEarned >= 10000 && !stats.badges.some(b => b.id === 'legendary')) {
+    const badge: DailyBadge = { ...DAILY_BADGES['legendary'], unlockedAt: Date.now() };
+    stats.badges.push(badge);
+    newBadges.push(badge);
+  }
+
+  // Rank-based badges: checked on EVERY submission
   if (playerRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
-    const badge: DailyBadge = {
-      ...DAILY_BADGES['champion'],
-      unlockedAt: Date.now(),
-    };
+    const badge: DailyBadge = { ...DAILY_BADGES['champion'], unlockedAt: Date.now() };
     stats.badges.push(badge);
     newBadges.push(badge);
   }
   if (playerRank <= 3 && !stats.badges.some(b => b.id === 'top-3')) {
-    const badge: DailyBadge = {
-      ...DAILY_BADGES['top-3'],
-      unlockedAt: Date.now(),
-    };
+    const badge: DailyBadge = { ...DAILY_BADGES['top-3'], unlockedAt: Date.now() };
     stats.badges.push(badge);
     newBadges.push(badge);
   }
 
-  // Save data
+  // Persist slot progress on the entry + stats
+  const playerEntry = challenge.entries.find(e => e.playerId === player.id);
+  if (playerEntry) {
+    playerEntry.slotsCompletedToday = slotProgress.completedSlots.length;
+    const tier = getDailyBadgeTierToday(player.id);
+    playerEntry.dailyBadge = tier === 'none' ? undefined : tier;
+  }
+
+  stats.totalXP += xpEarned;
   saveDailyChallenge(challenge);
   savePlayerDailyStats(stats, player.id);
+  savePlayerDailySlotProgress(slotProgress, player.id);
 
-  // Legacy shared completion flag — kept in sync for backward compatibility.
-  // Per-player completion is derived from the best result's met difficulties.
+  // Legacy shared completion flag
   setJson(DAILY_CHALLENGE_KEY, {
     date: today,
-    completed: evaluation.met.length > 0,
+    completed: Object.values(slotProgress.metBySlot).some(m => m.length > 0),
     streak: stats.currentStreak,
   });
 
-  // (#1) Save best result for this player today — metrics update when the
-  // type metric improved; met difficulties are always merged (union).
+  // Best result for today (kept for the best-attempt box; tagged with the slot)
   const existingBest = getPlayerBestResult(player.id);
   const mergedMet = Array.from(new Set([
     ...(existingBest?.metDifficulties ?? []),
     ...evaluation.met,
   ]));
-  const improved = !existingBest || (() => {
-    const prev = getBestMetric(existingBest, challenge.type);
+  const betterBest = !existingBest || (() => {
+    const prev = getBestMetric(existingBest, slotType);
     return typeDef.direction === 'min' ? evaluation.metric < prev : evaluation.metric > prev;
   })();
-  if (improved) {
+  if (betterBest) {
     savePlayerBestResult(player.id, {
       playerId: player.id,
       score: result.score,
@@ -1161,9 +1312,9 @@ export function submitChallengeResult(
       targetMet: mergedMet.length > 0,
       difficulty,
       metDifficulties: mergedMet,
+      slot,
     });
   } else if (mergedMet.length > (existingBest?.metDifficulties?.length ?? 0)) {
-    // Metric did not improve, but new difficulties were met — persist the union
     savePlayerBestResult(player.id, {
       ...(existingBest as PlayerBestResult),
       targetMet: true,
@@ -1171,7 +1322,7 @@ export function submitChallengeResult(
     });
   }
 
-  return { challenge, stats, xpEarned, newBadges, rank: playerRank, targetMet, metDifficulties: mergedMet };
+  return { challenge, slot, slotType, stats, xpEarned, newBadges, rank: playerRank, targetMet, metDifficulties: mergedMet, slotCompleted };
 }
 
 // ---------------------------------------------------------------------------
@@ -1212,30 +1363,31 @@ function entryToMetrics(entry: DailyChallengeEntry): DailyResultMetrics {
 }
 
 // ---------------------------------------------------------------------------
-// (#6) Co-op Challenge Submission
+// (#6) Co-op Challenge Submission — slot-aware
 // ---------------------------------------------------------------------------
 
 /**
- * Submit a co-op (2-player) challenge result.
+ * Submit a co-op (2-player) challenge result for a daily slot.
  *
  * The co-op result uses the AVERAGE of both players' metrics.
- * XP is awarded to both players (added to the shared global stats once).
- * Daily completion is only awarded if the AVERAGE meets the target at the
- * selected difficulty.
+ * XP is awarded to both players; slot progress is recorded for both.
  */
 export function submitCoopChallengeResult(
   players: Array<{ id: string; name: string; avatar?: string; color: string }>,
   results: Array<DailyResultMetrics>,
-  options?: { difficulty?: DailyDifficulty; level?: number },
-): { challenge: DailyChallengeData; xpEarned: number; newBadges: DailyBadge[]; targetMet: boolean; metDifficulties: DailyDifficulty[] } {
+  options?: { difficulty?: DailyDifficulty; level?: number; slot?: number },
+): { challenge: DailyChallengeData; xpEarned: number; newBadges: DailyBadge[]; targetMet: boolean; metDifficulties: DailyDifficulty[]; slotCompleted: boolean } {
   if (players.length < 2 || results.length < 2) {
     throw new Error('Co-op requires at least 2 players and 2 results');
   }
 
   const difficulty: DailyDifficulty = options?.difficulty ?? 'normal';
   const level = options?.level;
+  const slots = getDailySlots();
+  const slot = Math.min(Math.max(0, options?.slot ?? 0), slots.length - 1);
+  const slotType = slots[slot].type;
+  const typeDef = getDailyType(slotType);
   const challenge = getDailyChallenge();
-  const typeDef = getDailyType(challenge.type);
   const today = todayISO();
   const newBadges: DailyBadge[] = [];
   const difficultyMultiplier = getDailyDifficultyMultiplier(difficulty);
@@ -1251,6 +1403,9 @@ export function submitCoopChallengeResult(
   const avgTickAccuracy = results.some(r => r.tickAccuracy !== undefined)
     ? results.reduce((s, r) => s + (r.tickAccuracy ?? r.accuracy), 0) / results.length
     : undefined;
+  const coopSong = results[0].song;
+  const appLanguage = results[0].appLanguage;
+  const categoryMatch = results[0].categoryMatch;
 
   const avgMetrics: DailyResultMetrics = {
     score: avgScore,
@@ -1261,26 +1416,23 @@ export function submitCoopChallengeResult(
     goldenNotesCount: avgGoldenNotes,
     notesHit: avgNotesHit,
     notesMissed: avgNotesMissed,
+    song: coopSong,
+    appLanguage,
+    categoryMatch,
   };
 
-  // Evaluate the averaged attempt (metric + gates + met difficulties)
-  const evaluation = evaluateDailyAttempt(challenge.type, avgMetrics, level);
+  // Evaluate the averaged attempt
+  const evaluation = evaluateDailyAttempt(slotType, avgMetrics, level);
   const targetMet = evaluation.met.includes(difficulty);
 
-  // Determine challenge-type metric from the average
-  const sortMetric = (entry: DailyChallengeEntry): number =>
-    extractDailyMetric(challenge.type, entryToMetrics(entry));
-  const avgMetric = (): number => evaluation.metric;
-
-  // Add entries for each player with averaged metrics
+  // Add/update entries for each player
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
     const existing = challenge.entries.find(e => e.playerId === p.id);
-
     if (existing) {
       const better = typeDef.direction === 'min'
-        ? avgMetric() < sortMetric(existing)
-        : avgMetric() > sortMetric(existing);
+        ? evaluation.metric < extractDailyMetric(slotType, entryToMetrics(existing))
+        : evaluation.metric > extractDailyMetric(slotType, entryToMetrics(existing));
       if (better) {
         existing.score = avgScore;
         existing.accuracy = avgAccuracy;
@@ -1315,29 +1467,35 @@ export function submitCoopChallengeResult(
     }
   }
 
-  // Sort and rank (direction-aware)
+  // Sort entries (slots today desc, then metric)
   challenge.entries.sort((a, b) => {
-    const diff = typeDef.direction === 'min'
-      ? sortMetric(a) - sortMetric(b)
-      : sortMetric(b) - sortMetric(a);
+    const slotDiff = (b.slotsCompletedToday ?? 0) - (a.slotsCompletedToday ?? 0);
+    if (slotDiff !== 0) return slotDiff;
+    const mA = extractDailyMetric(challenge.type, entryToMetrics(a));
+    const mB = extractDailyMetric(challenge.type, entryToMetrics(b));
+    const diff = typeDef.direction === 'min' ? mA - mB : mB - mA;
     if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
-  challenge.entries.forEach((entry, index) => {
-    entry.rank = index + 1;
-  });
-
-  // Check if the best rank among co-op players earns badges — XP, streak and
-  // badges are applied to EACH co-op player's own per-player stats.
+  challenge.entries.forEach((entry, index) => { entry.rank = index + 1; });
   const bestRank = Math.min(
     ...players.map(p => challenge.entries.find(e => e.playerId === p.id)?.rank ?? Infinity),
   );
 
-  // Award XP if average meets the target at the selected difficulty
   let xpEarned = 0;
+  let anySlotCompleted = false;
 
   for (const p of players) {
     const stats = getPlayerDailyStats(p.id);
+    const slotProgress = getPlayerDailySlotProgress(p.id);
+    const alreadyCompleted = slotProgress.completedSlots.includes(slot);
+    const slotCompleted = targetMet && !alreadyCompleted;
+    if (slotCompleted) {
+      slotProgress.completedSlots.push(slot);
+      anySlotCompleted = true;
+    }
+    const prevMet = slotProgress.metBySlot[String(slot)] ?? [];
+    slotProgress.metBySlot[String(slot)] = Array.from(new Set([...prevMet, ...evaluation.met]));
 
     if (bestRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
       const badge: DailyBadge = { ...DAILY_BADGES['champion'], unlockedAt: Date.now() };
@@ -1350,55 +1508,69 @@ export function submitCoopChallengeResult(
       if (p === players[0]) newBadges.push(badge);
     }
 
-    if (targetMet && stats.lastCompletedDate !== today) {
-      const playerXP = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
-      const streak = advanceStreak(stats, playerXP);
-      const earned = Math.max(0, playerXP + streak.xpAdjustment + streak.streakBonusXP);
-      stats.totalXP += earned;
-      stats.lastCompletedDate = today;
+    let playerXP = 0;
+    if (slotCompleted) {
+      playerXP = slot === 0
+        ? Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier)
+        : Math.round(DAILY_SLOT_XP_BONUS[Math.min(slot - 1, DAILY_SLOT_XP_BONUS.length - 1)] * difficultyMultiplier);
+
+      if (stats.lastCompletedDate !== today) {
+        const streak = advanceStreak(stats, playerXP);
+        playerXP = Math.max(0, playerXP + streak.xpAdjustment + streak.streakBonusXP);
+        stats.lastCompletedDate = today;
+
+        const coopNow = new Date();
+        const coopWeekStartISO = getMondayISO(coopNow);
+        if (stats.lastWeekStart !== coopWeekStartISO) {
+          stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
+          stats.lastWeekStart = coopWeekStartISO;
+        }
+        stats.weeklyProgress[getMondayIndex(coopNow)] = 1;
+
+        updateQuestProgress('dailyCompleted', 1, p.id);
+      }
       stats.totalCompleted++;
 
-      // Update weekly progress — reset at week boundary
-      const coopNow = new Date();
-      const coopWeekStartISO = getMondayISO(coopNow);
-
-      if (stats.lastWeekStart !== coopWeekStartISO) {
-        stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
-        stats.lastWeekStart = coopWeekStartISO;
+      // Daily tier badges
+      const tier = slotProgress.completedSlots.length >= 5 ? 'gold'
+        : slotProgress.completedSlots.length >= 3 ? 'silver'
+        : slotProgress.completedSlots.length >= 1 ? 'bronze' : 'none';
+      const tierBadgeId = tier === 'gold' ? 'daily-gold' : tier === 'silver' ? 'daily-silver' : tier === 'bronze' ? 'daily-bronze' : null;
+      if (tierBadgeId && !stats.badges.some(b => b.id === tierBadgeId)) {
+        const badge: DailyBadge = { ...DAILY_BADGES[tierBadgeId], unlockedAt: Date.now() };
+        stats.badges.push(badge);
+        if (p === players[0]) newBadges.push(badge);
       }
-      // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
-      const coopWeekIndex = getMondayIndex(coopNow);
-      stats.weeklyProgress[coopWeekIndex] = 1;
+    }
 
-      // (#5) Update quest stats for daily challenge completion
-      updateQuestProgress('dailyCompleted', 1, p.id);
+    stats.totalXP += playerXP;
+    if (p === players[0]) xpEarned = playerXP;
 
-      if (p === players[0]) xpEarned = earned;
+    const playerEntry = challenge.entries.find(e => e.playerId === p.id);
+    if (playerEntry) {
+      playerEntry.slotsCompletedToday = slotProgress.completedSlots.length;
+      const tier = slotProgress.completedSlots.length >= 5 ? 'gold'
+        : slotProgress.completedSlots.length >= 3 ? 'silver'
+        : slotProgress.completedSlots.length >= 1 ? 'bronze' : 'none';
+      playerEntry.dailyBadge = tier === 'none' ? undefined : tier;
     }
 
     savePlayerDailyStats(stats, p.id);
-  }
+    savePlayerDailySlotProgress(slotProgress, p.id);
 
-  if (targetMet && xpEarned === 0) xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
-
-  saveDailyChallenge(challenge);
-
-  // (#1) Save best results for each co-op player — metrics when better,
-  // met difficulties always merged (union)
-  const coopMetric = avgMetric();
-  for (let i = 0; i < players.length; i++) {
-    const existingBest = getPlayerBestResult(players[i].id);
+    // Best result per player
+    const existingBest = getPlayerBestResult(p.id);
     const mergedMet = Array.from(new Set([
       ...(existingBest?.metDifficulties ?? []),
       ...evaluation.met,
     ]));
     const better = !existingBest || (() => {
-      const prev = getBestMetric(existingBest, challenge.type);
-      return typeDef.direction === 'min' ? coopMetric < prev : coopMetric > prev;
+      const prev = getBestMetric(existingBest, slotType);
+      return typeDef.direction === 'min' ? evaluation.metric < prev : evaluation.metric > prev;
     })();
     if (better) {
-      savePlayerBestResult(players[i].id, {
-        playerId: players[i].id,
+      savePlayerBestResult(p.id, {
+        playerId: p.id,
         score: avgScore,
         accuracy: avgAccuracy,
         combo: avgCombo,
@@ -1411,9 +1583,10 @@ export function submitCoopChallengeResult(
         targetMet: mergedMet.length > 0,
         difficulty,
         metDifficulties: mergedMet,
+        slot,
       });
     } else if (mergedMet.length > (existingBest?.metDifficulties?.length ?? 0)) {
-      savePlayerBestResult(players[i].id, {
+      savePlayerBestResult(p.id, {
         ...(existingBest as PlayerBestResult),
         targetMet: true,
         metDifficulties: mergedMet,
@@ -1421,7 +1594,10 @@ export function submitCoopChallengeResult(
     }
   }
 
-  // Mark challenge completed if any difficulty target met
+  if (targetMet && xpEarned === 0) xpEarned = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * difficultyMultiplier);
+
+  saveDailyChallenge(challenge);
+
   if (evaluation.met.length > 0) {
     setJson(DAILY_CHALLENGE_KEY, {
       date: today,
@@ -1430,92 +1606,153 @@ export function submitCoopChallengeResult(
     });
   }
 
-  return { challenge, xpEarned, newBadges, targetMet, metDifficulties: evaluation.met };
+  return { challenge, xpEarned, newBadges, targetMet, metDifficulties: evaluation.met, slotCompleted: anySlotCompleted };
 }
 
 // ---------------------------------------------------------------------------
-// (#4) Weekly Challenge System
+// (#4) Weekly Challenge System — 100 types, 5 slots, 5 difficulty levels
 // ---------------------------------------------------------------------------
 
-/** Base targets for weekly challenges (before level scaling). */
-const WEEKLY_BASE_TARGETS: Record<WeeklyChallengeData['type'], number> = {
-  score: 7500,
-  accuracy: 90,
-  combo: 75,
-  songs_completed: 3,
-};
+/** Storage key for the current week's weekly challenge data. */
+function weeklyStorageKey(weekNumber: number, year: number): string {
+  return `${WEEKLY_CHALLENGE_KEY_PREFIX}${weekNumber}_${year}`;
+}
 
-/** Human-readable descriptions for each weekly challenge type. */
-const WEEKLY_DESCRIPTIONS: Record<WeeklyChallengeData['type'], string> = {
-  score: 'Score {target} points in a single song',
-  accuracy: 'Achieve {target}% accuracy in a single song',
-  combo: 'Hit a {target}-note combo in a single song',
-  songs_completed: 'Complete {target} songs this week',
-};
+/** The current ISO week key used for per-player weekly progress. */
+function currentWeekKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-W${getISOWeek(now)}`;
+}
 
 /** Save weekly challenge data to localStorage. */
 function saveWeeklyChallenge(data: WeeklyChallengeData): void {
-  setJson(`${WEEKLY_CHALLENGE_KEY_PREFIX}${data.weekNumber}_${data.year}`, data);
+  setJson(weeklyStorageKey(data.weekNumber, data.year), data);
 }
 
 /**
- * Get (or generate) the current weekly challenge.
- * When `level` is provided the returned target is scaled via {@link getTargetForLevel}.
- * The stored challenge always uses the base target.
+ * The 5 weekly challenge slots for the current week. Types are picked
+ * deterministically from the week hash across all 100 registered weekly
+ * types (distinct within the week).
  */
-export function getWeeklyChallenge(level?: number): WeeklyChallengeData {
+export function getWeeklySlots(): Array<{ slot: number; type: string }> {
   const now = new Date();
   const weekNumber = getISOWeek(now);
   const year = now.getFullYear();
-  const storageKey = `${WEEKLY_CHALLENGE_KEY_PREFIX}${weekNumber}_${year}`;
+  const seed = `${year}-${weekNumber}`;
+  const picked: string[] = [];
+  let salt = 0;
+  while (picked.length < WEEKLY_SLOTS_PER_WEEK) {
+    const type = WEEKLY_TYPE_LIST[hashString(`${seed}:${salt}`) % WEEKLY_TYPE_LIST.length].id;
+    if (!picked.includes(type)) picked.push(type);
+    salt++;
+  }
+  return picked.map((type, slot) => ({ slot, type }));
+}
+
+/**
+ * Get (or generate) the current weekly challenge data. The five slot types
+ * are stored so they stay stable within the week.
+ */
+export function getWeeklyChallenge(): WeeklyChallengeData {
+  const now = new Date();
+  const weekNumber = getISOWeek(now);
+  const year = now.getFullYear();
+  const storageKey = weeklyStorageKey(weekNumber, year);
 
   const stored = getJson<WeeklyChallengeData | null>(storageKey, null);
-  if (stored && stored.weekNumber === weekNumber && stored.year === year) {
-    if (level !== undefined) {
-      return {
-        ...stored,
-        target: getTargetForLevel(stored.target, level),
-      };
-    }
+  if (stored && stored.weekNumber === weekNumber && stored.year === year && Array.isArray(stored.slots) && stored.slots.length > 0) {
     return stored;
   }
-
-  // Generate a new weekly challenge seeded by ISO week
-  const seed = `${year}-${weekNumber}`;
-  const types: Array<WeeklyChallengeData['type']> =
-    ['score', 'accuracy', 'combo', 'songs_completed'];
-  const type = types[hashString(seed) % types.length];
-  const baseTarget = WEEKLY_BASE_TARGETS[type];
 
   const challenge: WeeklyChallengeData = {
     weekNumber,
     year,
-    type,
-    target: baseTarget,
-    description: WEEKLY_DESCRIPTIONS[type].replace('{target}', String(baseTarget)),
+    slots: getWeeklySlots(),
     entries: [],
   };
-
   saveWeeklyChallenge(challenge);
-
-  if (level !== undefined) {
-    return {
-      ...challenge,
-      target: getTargetForLevel(challenge.target, level),
-    };
-  }
   return challenge;
 }
 
 /**
- * Submit a result to the weekly challenge.
+ * Display helper: the weekly slot's type + target scaled for level/difficulty.
+ * 'best' types return the best-single-song target, 'sum' types the weekly total.
+ */
+export function getWeeklyChallengeForSlot(
+  slot: number,
+  level?: number,
+  difficulty: DailyDifficulty = 'normal',
+): { slot: number; type: string; target: number; def: WeeklyTypeDefinition } {
+  const slots = getWeeklyChallenge().slots;
+  const entry = slots[Math.min(Math.max(0, slot), slots.length - 1)];
+  const def = getWeeklyType(entry.type);
+  const base = def.targets[difficulty] ?? def.targets.normal;
+  let target = base;
+  if (level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
+    const scale = 1 + Math.min(0.25, level * 0.0025);
+    target = Math.round(base * scale);
+    if (def.cap !== undefined) target = Math.min(def.cap, target);
+  }
+  return { slot: entry.slot, type: entry.type, target, def };
+}
+
+/** The player's current weekly slot progress (resets on a new week). */
+export function getPlayerWeeklySlotProgress(playerId?: string): PlayerWeeklySlotProgress {
+  const key = playerId ? `${WEEKLY_SLOT_PROGRESS_KEY}${playerId}` : WEEKLY_SLOT_PROGRESS_KEY;
+  const stored = getJson<PlayerWeeklySlotProgress | null>(key, null);
+  const weekKey = currentWeekKey();
+  if (stored && stored.weekKey === weekKey) return stored;
+  return { weekKey, completedSlots: [], metBySlot: {} };
+}
+
+/** Persist the player's weekly slot progress. */
+function savePlayerWeeklySlotProgress(progress: PlayerWeeklySlotProgress, playerId?: string): void {
+  const key = playerId ? `${WEEKLY_SLOT_PROGRESS_KEY}${playerId}` : WEEKLY_SLOT_PROGRESS_KEY;
+  setJson(key, progress);
+}
+
+/** Whether a weekly slot is unlocked (slot 0 always, others need the previous one). */
+export function isWeeklySlotUnlocked(slot: number, playerId?: string): boolean {
+  if (slot <= 0) return true;
+  const progress = getPlayerWeeklySlotProgress(playerId);
+  return progress.completedSlots.includes(slot - 1);
+}
+
+/** The first unlocked-but-uncompleted weekly slot (null when all 5 are done). */
+export function getActiveWeeklySlot(playerId?: string): number | null {
+  const progress = getPlayerWeeklySlotProgress(playerId);
+  for (let slot = 0; slot < WEEKLY_SLOTS_PER_WEEK; slot++) {
+    if (!progress.completedSlots.includes(slot)) return slot;
+  }
+  return null;
+}
+
+/** Compute a player's aggregated metric for a weekly slot from all their entries. */
+function weeklyAggregatedMetric(
+  data: WeeklyChallengeData,
+  playerId: string,
+  slot: number,
+  type: string,
+): number {
+  const def = getWeeklyType(type);
+  const playerEntries = data.entries.filter(e => e.playerId === playerId && e.slot === slot);
+  if (playerEntries.length === 0) return 0;
+  if (def.aggregation === 'sum') {
+    return playerEntries.reduce((sum, e) => sum + e.metric, 0);
+  }
+  // best — direction-aware
+  return def.direction === 'min'
+    ? Math.min(...playerEntries.map(e => e.metric))
+    : Math.max(...playerEntries.map(e => e.metric));
+}
+
+/**
+ * Submit a result to the weekly challenge system.
  *
- * The `challengeType` determines which metric is extracted from `result`.
- * XP is only awarded when the metric meets the weekly challenge's base target
- * and the player has not already qualified this week.
- *
- * For `songs_completed`, submissions are cumulative — each call counts as one
- * additional song completed this week.
+ * The submission is evaluated against ALL unlocked-but-uncompleted weekly
+ * slots: 'best' types update when the single-song metric improves, 'sum'
+ * types accumulate. A slot completes when its aggregated metric reaches the
+ * target at the selected difficulty.
  */
 export function submitWeeklyChallengeResult(
   player: {
@@ -1524,69 +1761,90 @@ export function submitWeeklyChallengeResult(
     avatar?: string;
     color: string;
   },
-  result: {
-    score: number;
-    accuracy: number;
-    combo: number;
-    perfectNotesCount?: number;
-  },
-  challengeType: WeeklyChallengeData['type'],
-): { challenge: WeeklyChallengeData; xpEarned: number } {
-  // Load with base target (no level scaling) for consistent comparisons
+  result: DailyResultMetrics,
+  options?: { difficulty?: DailyDifficulty; level?: number },
+): { challenge: WeeklyChallengeData; xpEarned: number; completedSlots: number[]; newBadges: DailyBadge[] } {
+  const difficulty: DailyDifficulty = options?.difficulty ?? 'normal';
+  const level = options?.level;
   const challenge = getWeeklyChallenge();
+  const progress = getPlayerWeeklySlotProgress(player.id);
+  const stats = getPlayerDailyStats(player.id);
+  const difficultyMultiplier = getDailyDifficultyMultiplier(difficulty);
+  const newBadges: DailyBadge[] = [];
   let xpEarned = 0;
+  const completedSlots: number[] = [];
 
-  // Only process if the submitted type matches the weekly challenge type
-  if (challengeType !== challenge.type) {
-    return { challenge, xpEarned: 0 };
+  for (const slotEntry of challenge.slots) {
+    const slot = slotEntry.slot;
+    if (progress.completedSlots.includes(slot)) continue;
+    if (slot > 0 && !progress.completedSlots.includes(slot - 1)) continue; // still locked
+
+    const def = getWeeklyType(slotEntry.type);
+
+    // Gates + category must pass for this submission to count for the slot
+    const gatesPass = checkWeeklyGates(slotEntry.type, result);
+    if (!gatesPass) continue;
+
+    const metric = extractWeeklyMetric(slotEntry.type, result);
+    if (!Number.isFinite(metric) || metric <= 0) continue;
+
+    // Record the submission
+    challenge.entries.push({
+      playerId: player.id,
+      playerName: player.name,
+      playerAvatar: player.avatar,
+      playerColor: player.color,
+      slot,
+      metric,
+      difficulty,
+      completedAt: Date.now(),
+    });
+
+    // Evaluate against all difficulties (union across the week)
+    const aggregated = weeklyAggregatedMetric(challenge, player.id, slot, slotEntry.type);
+    const met: DailyDifficulty[] = [];
+    for (const d of DAILY_DIFFICULTIES) {
+      let target = def.targets[d.id] ?? def.targets.normal;
+      if (level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
+        const scale = 1 + Math.min(0.25, level * 0.0025);
+        target = Math.round(target * scale);
+        if (def.cap !== undefined) target = Math.min(def.cap, target);
+      }
+      if (def.direction === 'min' ? aggregated <= target : aggregated >= target) {
+        met.push(d.id);
+      }
+    }
+    const prevMet = progress.metBySlot[String(slot)] ?? [];
+    progress.metBySlot[String(slot)] = Array.from(new Set([...prevMet, ...met]));
+
+    // Slot completion at the selected difficulty
+    if (met.includes(difficulty)) {
+      progress.completedSlots.push(slot);
+      completedSlots.push(slot);
+      xpEarned += Math.round(WEEKLY_SLOT_XP[Math.min(slot, WEEKLY_SLOT_XP.length - 1)] * difficultyMultiplier);
+      stats.weeklyCompletedTotal = (stats.weeklyCompletedTotal ?? 0) + 1;
+
+      updateQuestProgress('weeklyCompleted', 1, player.id);
+
+      // Weekly tier badges: bronze (1), silver (3), gold (5 slots this week)
+      const tier = progress.completedSlots.length >= 5 ? 'gold'
+        : progress.completedSlots.length >= 3 ? 'silver'
+        : progress.completedSlots.length >= 1 ? 'bronze' : 'none';
+      const tierBadgeId = tier === 'gold' ? 'weekly-gold' : tier === 'silver' ? 'weekly-silver' : tier === 'bronze' ? 'weekly-bronze' : null;
+      if (tierBadgeId && !stats.badges.some(b => b.id === tierBadgeId)) {
+        const badge: DailyBadge = { ...DAILY_BADGES[tierBadgeId], unlockedAt: Date.now() };
+        stats.badges.push(badge);
+        newBadges.push(badge);
+      }
+    }
   }
 
-  // Player's existing entries this week
-  const playerEntries = challenge.entries.filter(e => e.playerId === player.id);
-  const alreadyQualified = playerEntries.some(e => e.metric >= challenge.target);
-
-  // Calculate metric
-  let metric: number;
-  switch (challengeType) {
-    case 'score':
-      metric = result.score;
-      break;
-    case 'accuracy':
-      metric = result.accuracy;
-      break;
-    case 'combo':
-      metric = result.combo;
-      break;
-    case 'songs_completed':
-      // Cumulative: count existing entries + 1
-      metric = playerEntries.length + 1;
-      break;
-  }
-
-  // Add entry
-  challenge.entries.push({
-    playerId: player.id,
-    playerName: player.name,
-    playerAvatar: player.avatar,
-    playerColor: player.color,
-    metric,
-    completedAt: Date.now(),
-  });
-
-  // Award XP if target is met for the first time
-  if (!alreadyQualified && metric >= challenge.target) {
-    xpEarned = WEEKLY_XP_REWARD;
-    const stats = getPlayerDailyStats(player.id);
-    stats.totalXP += xpEarned;
-    stats.weeklyCompletedTotal = (stats.weeklyCompletedTotal ?? 0) + 1;
-    savePlayerDailyStats(stats, player.id);
-
-    // (#5) Update quest stats for weekly challenge completion
-    updateQuestProgress('weeklyCompleted', 1, player.id);
-  }
-
+  stats.totalXP += xpEarned;
+  savePlayerDailyStats(stats, player.id);
+  savePlayerWeeklySlotProgress(progress, player.id);
   saveWeeklyChallenge(challenge);
-  return { challenge, xpEarned };
+
+  return { challenge, xpEarned, completedSlots, newBadges };
 }
 
 /**
@@ -1598,9 +1856,8 @@ export function isWeeklyChallengeCompletedToday(playerId: string): boolean {
   const now = new Date();
   const weekNumber = getISOWeek(now);
   const year = now.getFullYear();
-  const storageKey = `${WEEKLY_CHALLENGE_KEY_PREFIX}${weekNumber}_${year}`;
 
-  const stored = getJson<WeeklyChallengeData | null>(storageKey, null);
+  const stored = getJson<WeeklyChallengeData | null>(weeklyStorageKey(weekNumber, year), null);
   if (!stored) return false;
 
   return stored.entries.some(
@@ -1817,7 +2074,13 @@ export function getActiveQuests(playerId?: string): Array<QuestDefinition & Ques
 /** Check if the daily challenge has been completed today (per player when a playerId is given). */
 export function isChallengeCompletedToday(playerId?: string, difficulty?: DailyDifficulty): boolean {
   if (playerId) {
-    // Per-player completion is derived from today's best result
+    // Slot-aware: any daily slot completed today (at the given difficulty when provided)
+    const progress = getPlayerDailySlotProgress(playerId);
+    if (progress.completedSlots.length > 0) {
+      if (!difficulty) return true;
+      return Object.values(progress.metBySlot).some(m => m.includes(difficulty));
+    }
+    // Legacy fallback: today's best result
     const best = getPlayerBestResult(playerId);
     if (best) {
       if (difficulty) return best.metDifficulties?.includes(difficulty) ?? false;
@@ -1839,15 +2102,28 @@ export function isChallengeCompletedToday(playerId?: string, difficulty?: DailyD
   return false;
 }
 
-/** All difficulty levels the player has met today (for the ✓ chips in the UI). */
+/** All difficulty levels the player has met today across ALL slots (for the ✓ chips in the UI). */
 export function getCompletedDifficultiesToday(playerId?: string): DailyDifficulty[] {
   if (!playerId) return [];
+  const progress = getPlayerDailySlotProgress(playerId);
+  const fromSlots = Object.values(progress.metBySlot).flat();
+  if (fromSlots.length > 0) {
+    return Array.from(new Set(fromSlots)).filter(d => DAILY_DIFFICULTIES.some(x => x.id === d));
+  }
+  // Legacy fallback: today's best result
   const best = getPlayerBestResult(playerId);
   if (!best || !best.metDifficulties) {
     // Legacy entries: a stored targetMet counts as 'normal' met
     return best?.targetMet ? ['normal'] : [];
   }
   return best.metDifficulties.filter(d => DAILY_DIFFICULTIES.some(x => x.id === d));
+}
+
+/** All difficulty levels met for a SPECIFIC daily slot today (empty when not met). */
+export function getSlotMetDifficulties(playerId: string | undefined, slot: number): DailyDifficulty[] {
+  if (!playerId) return [];
+  const progress = getPlayerDailySlotProgress(playerId);
+  return (progress.metBySlot[String(slot)] ?? []).filter(d => DAILY_DIFFICULTIES.some(x => x.id === d));
 }
 
 /**

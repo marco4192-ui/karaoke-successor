@@ -9,42 +9,91 @@ import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getAllSongs } from '@/lib/game/song-library';
 import {
-  getDailyChallenge,
-  getPlayerDailyStats,
+  getDailySlots,
+  getPlayerDailySlotProgress,
+  getDailyChallengeForSlot,
   getXPLevel,
   getTimeUntilReset,
   isChallengeCompletedToday,
   getCompletedDifficultiesToday,
+  getSlotMetDifficulties,
   XP_REWARDS,
   DAILY_BADGES,
   getPlayerBestResult,
   getBestResultMetric,
   getDailyType,
+  getWeeklyType,
   getDailyTargetFor,
   getDailyDifficultyMultiplier,
   DAILY_DIFFICULTIES,
-  type DailyDifficulty,
-  getWeeklyChallenge,
+  DAILY_SLOTS_PER_DAY,
+  WEEKLY_SLOTS_PER_WEEK,
+  WEEKLY_SLOT_XP,
+  DAILY_SLOT_XP_BONUS,
+  interpolateChallengeText,
+  isDailySlotUnlocked,
+  getActiveDailySlot,
+  getDailyBadgeTierToday,
+  getWeeklySlots,
+  getWeeklyChallengeForSlot,
+  getPlayerWeeklySlotProgress,
+  isWeeklySlotUnlocked,
+  getActiveWeeklySlot,
+  getWeeklyBadgeTierThisWeek,
   isWeeklyChallengeCompletedToday,
   getTimeUntilWeeklyReset,
-  WEEKLY_XP_REWARD,
   getActiveQuests,
   claimQuestReward,
+  getPlayerDailyStats,
+  type DailyDifficulty,
+  type DailyTypeDefinition,
+  type WeeklyTypeDefinition,
 } from '@/lib/game/daily-challenge';
+import { matchesDailyCategory, type DailySongContext } from '@/lib/game/challenge-pools';
 import {
   CHALLENGE_MODES,
   getChallengeRequirementStatus,
   createCustomChallenge,
   AVAILABLE_MODIFIERS,
 } from '@/lib/game/player-progression';
+import { getCompletedChallengeModes } from '@/lib/game/challenge-mode-progress';
 import { getExtendedStats } from '@/lib/game/player-progression';
 import { Song, GameMode } from '@/types/game';
 import { shuffleArray } from '@/lib/utils';
 import type { OnlineDailyEntry } from '@/lib/leaderboard/types';
 
+/** Map a library Song to the category-evaluation context. */
+function songToContext(song: Song, playerCount = 1): DailySongContext {
+  return {
+    title: song.title,
+    artist: song.artist,
+    genre: song.genre,
+    language: song.language,
+    year: song.year,
+    durationMs: song.duration,
+    bpm: song.bpm,
+    rating: song.rating,
+    difficulty: song.difficulty,
+    lastPlayed: song.lastPlayed,
+    dateAdded: song.dateAdded,
+    playerCount,
+  };
+}
+
+/** Localized display name of a daily/weekly type (interpolates nameParams). */
+function typeName(def: DailyTypeDefinition | WeeklyTypeDefinition, t: (key: string) => string): string {
+  let name = t(def.nameKey);
+  if (def.nameParams) {
+    for (const [key, value] of Object.entries(def.nameParams)) {
+      name = name.replaceAll(`{${key}}`, value);
+    }
+  }
+  return name;
+}
+
 // ===================== DAILY CHALLENGE SCREEN =====================
 export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song, _options?: { gameMode?: GameMode; playerIds?: string[] }) => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { profiles, activeProfileId, setActiveProfile, addPlayer, setPlayers } = useGameStore();
   const [activeTab, setActiveTab] = useState<'challenge' | 'weekly' | 'modes' | 'leaderboard' | 'badges'>('challenge');
 
@@ -59,7 +108,6 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   const [viewPlayerId, setViewPlayerId] = useState<string | null>(activeProfileId ?? null);
 
   // Selected daily difficulty — independent of the global game difficulty.
-  // Persisted so the choice survives across sessions.
   const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>(() => {
     const stored = getItem('karaoke_daily_difficulty');
     return DAILY_DIFFICULTIES.some(d => d.id === stored) ? (stored as DailyDifficulty) : 'normal';
@@ -69,8 +117,20 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     setItem('karaoke_daily_difficulty', difficulty);
   };
 
-  // Three song choices for daily challenge
-  const [songChoices, setSongChoices] = useState<Song[]>([]);
+  // Selected weekly difficulty — separate selector, also independent of the global difficulty.
+  const [weeklyDifficulty, setWeeklyDifficulty] = useState<DailyDifficulty>(() => {
+    const stored = getItem('karaoke_weekly_difficulty');
+    return DAILY_DIFFICULTIES.some(d => d.id === stored) ? (stored as DailyDifficulty) : 'normal';
+  });
+  const changeWeeklyDifficulty = (difficulty: DailyDifficulty) => {
+    setWeeklyDifficulty(difficulty);
+    setItem('karaoke_weekly_difficulty', difficulty);
+  };
+
+  // Which daily slot is targeted for play (defaults to the active slot)
+  const [selectedSlot, setSelectedSlot] = useState<number>(0);
+  // Song choice regeneration key (shuffle button)
+  const [songRefreshKey, setSongRefreshKey] = useState(0);
 
   // Challenge Mixer state
   const [mixerSelected, setMixerSelected] = useState<string[]>([]);
@@ -80,6 +140,9 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
 
   // Song choices for selected challenge mode
   const [modeSongChoices, setModeSongChoices] = useState<Song[]>([]);
+
+  // Challenge modes difficulty filter
+  const [modeFilter, setModeFilter] = useState<'all' | 'easy' | 'medium' | 'hard' | 'extreme'>('all');
 
   // Online daily leaderboard state
   const [boardSource, setBoardSource] = useState<'local' | 'online'>('local');
@@ -95,31 +158,67 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   const viewProfileLevel = viewProfile?.level || 1;
   const levelInfo = getXPLevel(viewProfileXP);
 
-  // Check if the CHALLENGE player (first selected player) has completed today's
-  // challenge at the SELECTED difficulty — the completion state gates the play
-  // UI for that player. Each difficulty is tracked separately.
+  // ── Daily slot data ──
+  const dailySlots = useMemo(() => getDailySlots(), []);
   const challengePlayerId = selectedPlayerIds[0] || viewProfile?.id;
+  const slotProgress = challengePlayerId ? getPlayerDailySlotProgress(challengePlayerId) : { date: '', completedSlots: [], metBySlot: {} };
+  const activeSlot = challengePlayerId ? getActiveDailySlot(challengePlayerId) : 0;
+  // The selected play slot defaults to the active (first open) slot
+  const playSlot = slotProgress.completedSlots.includes(selectedSlot) ? (activeSlot ?? selectedSlot) : selectedSlot;
   const completedToday = challengePlayerId ? isChallengeCompletedToday(challengePlayerId, selectedDifficulty) : false;
   const metDifficulties = challengePlayerId ? getCompletedDifficultiesToday(challengePlayerId) : [];
   const allDifficultiesDone = metDifficulties.length >= DAILY_DIFFICULTIES.length;
+  const dailyBadgeTier = challengePlayerId ? getDailyBadgeTierToday(challengePlayerId) : 'none';
+
+  // ── Weekly slot data ──
+  const weeklySlots = useMemo(() => getWeeklySlots(), []);
+  const weeklyProgress = challengePlayerId ? getPlayerWeeklySlotProgress(challengePlayerId) : { weekKey: '', completedSlots: [], metBySlot: {} };
+  const weeklyBadgeTier = challengePlayerId ? getWeeklyBadgeTierThisWeek(challengePlayerId) : 'none';
+  const weeklyCompletedToday = viewProfile ? isWeeklyChallengeCompletedToday(viewProfile.id) : false;
+  const weeklyReset = getTimeUntilWeeklyReset();
 
   // Per-player stats of the view player
   const playerStats = getPlayerDailyStats(viewProfile?.id);
 
-  // Challenge is generated with the level of the first selected player (or view
-  // player) AND the selected daily difficulty — switching either updates the
-  // target immediately.
+  // The challenge of the currently played slot — regenerated on every render so
+  // difficulty/player changes update the target instantly.
   const scalingProfile = profiles.find(p => p.id === selectedPlayerIds[0]) || viewProfile;
-  const challenge = getDailyChallenge(scalingProfile?.level || 1, selectedDifficulty);
+  const challenge = getDailyChallengeForSlot(playSlot, scalingProfile?.level || 1, selectedDifficulty);
   const typeDef = getDailyType(challenge.type);
-  const challengeXP = Math.round(XP_REWARDS.CHALLENGE_COMPLETE * getDailyDifficultyMultiplier(selectedDifficulty));
+  const challengeXP = Math.round((playSlot === 0 ? XP_REWARDS.CHALLENGE_COMPLETE : DAILY_SLOT_XP_BONUS[Math.min(playSlot - 1, DAILY_SLOT_XP_BONUS.length - 1)]) * getDailyDifficultyMultiplier(selectedDifficulty));
   const timeLeft = getTimeUntilReset();
 
-  // Generate song choices when challenge is not completed
+  // Keep the selected slot valid (follows the active slot until the user picks another)
   useEffect(() => {
+    if (activeSlot !== null && slotProgress.completedSlots.includes(selectedSlot)) {
+      setSelectedSlot(activeSlot);
+    }
+  }, [activeSlot, selectedSlot, slotProgress.completedSlots]);
+
+  // Song choices for the played slot — category slots get MATCHING songs
+  const songChoices = useMemo(() => {
     const songs = getAllSongs();
-    setSongChoices(shuffleArray(songs).slice(0, 3));
-  }, [completedToday]);
+    const slotType = dailySlots[playSlot]?.type ?? 'score';
+    const def = getDailyType(slotType);
+    if (def.category && songs.length > 0) {
+      const matching = songs.filter(s => matchesDailyCategory(def.category!, songToContext(s), language));
+      if (matching.length >= 3) return shuffleArray(matching).slice(0, 3);
+      if (matching.length > 0) return matching;
+      // No matching song in the library — offer random songs (challenge can't complete, but show hint)
+      return shuffleArray(songs).slice(0, 3);
+    }
+    return shuffleArray(songs).slice(0, 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- regenerate on slot/difficulty/refresh change
+  }, [playSlot, songRefreshKey, language, dailySlots]);
+
+  // Whether the current slot's category has no matching song in the library
+  const slotCategoryEmpty = useMemo(() => {
+    const songs = getAllSongs();
+    const slotType = dailySlots[playSlot]?.type ?? 'score';
+    const def = getDailyType(slotType);
+    if (!def.category) return false;
+    return !songs.some(s => matchesDailyCategory(def.category!, songToContext(s), language));
+  }, [playSlot, language, dailySlots]);
 
   // Keep the view player valid when profiles change
   useEffect(() => {
@@ -144,10 +243,6 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     }
   }, []);
 
-  // Load online daily leaderboard when the online tab is opened.
-  // NOTE: intentionally NOT re-triggered by state changes — the button and
-  // this effect (on tab switch) are the only entry points, so a failed load
-  // keeps its error state until the user explicitly retries.
   useEffect(() => {
     if (activeTab === 'leaderboard' && boardSource === 'online') {
       loadOnlineBoard();
@@ -155,12 +250,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOnlineBoard is stable (useCallback with no deps)
   }, [activeTab, boardSource]);
 
-  // Challenge description comes from the type registry — the {n} placeholder
-  // is filled with the CURRENT target (difficulty + level scaled), so the text
-  // updates the moment the difficulty is switched.
-  const challengeDescription = t(typeDef.descriptionKey).replace('{n}', formatDailyValue(typeDef.metricKey, challenge.target));
+  // Live-updating challenge description for the played slot
+  const challengeDescription = interpolateChallengeText(
+    t(typeDef.descriptionKey), typeDef.descriptionParams, challenge.target, typeDef.metricKey,
+  );
 
-  // Sort leaderboard by the challenge-type metric (direction-aware).
+  // Sort leaderboard by slots completed today, then by slot-0 metric (direction-aware).
   const sortMetric = (entry: typeof challenge.entries[0]): number =>
     getBestResultMetric({
       playerId: entry.playerId,
@@ -176,6 +271,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       targetMet: false,
     }, challenge.type);
   const sortedLeaderboard = [...challenge.entries].sort((a, b) => {
+    const slotDiff = (b.slotsCompletedToday ?? 0) - (a.slotsCompletedToday ?? 0);
+    if (slotDiff !== 0) return slotDiff;
     const metricA = sortMetric(a);
     const metricB = sortMetric(b);
     const diff = typeDef.direction === 'min' ? metricA - metricB : metricB - metricA;
@@ -222,11 +319,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       gameMode: selectedPlayerIds.length >= 2 ? evaluationMode : 'single',
       playerIds: selectedPlayerIds,
       difficulty: selectedDifficulty,
+      slot: playSlot,
     });
 
     const gameMode: GameMode = selectedPlayerIds.length >= 2 ? 'duel' : 'standard';
     onPlayChallenge(song, { gameMode, playerIds: selectedPlayerIds });
-  }, [selectedPlayerIds, selectedDifficulty, evaluationMode, profiles, setActiveProfile, setPlayers, addPlayer, onPlayChallenge]);
+  }, [selectedPlayerIds, selectedDifficulty, playSlot, evaluationMode, profiles, setActiveProfile, setPlayers, addPlayer, onPlayChallenge]);
 
   // Handler: play a specific song with a selected challenge mode
   const handlePlayModeSong = useCallback((song: Song) => {
@@ -263,6 +361,24 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     }
   };
 
+  // Badge tier chip styling
+  const tierChipClass = (tier: 'bronze' | 'silver' | 'gold', reached: boolean): string => {
+    const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all';
+    if (!reached) return `${base} bg-white/5 border-white/10 text-white/40`;
+    switch (tier) {
+      case 'bronze': return `${base} bg-amber-700/30 border-amber-600 text-amber-300 ring-1 ring-amber-500/50`;
+      case 'silver': return `${base} bg-gray-400/20 border-gray-300 text-gray-100 ring-1 ring-gray-300/50`;
+      case 'gold': return `${base} bg-yellow-500/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/60`;
+    }
+  };
+
+  const TIER_ICONS: Record<string, string> = { bronze: '🥉', silver: '🥈', gold: '🥇' };
+  const TIER_LABEL_KEYS: Record<string, string> = {
+    bronze: 'dailyChallengeScreen.tierBronze',
+    silver: 'dailyChallengeScreen.tierSilver',
+    gold: 'dailyChallengeScreen.tierGold',
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-6 text-center">
@@ -290,25 +406,34 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         ))}
       </div>
 
-      {/* ── Tab content (action area) ── */}
+      {/* ══ TAB: Daily Challenges (5 slots) ══ */}
       {activeTab === 'challenge' && (
-        <Card className={`bg-white/5 border-white/10 mb-6 ${completedToday && viewProfile ? 'ring-2 ring-green-500' : ''}`}>
-          <CardHeader>
-            <CardTitle className="flex flex-wrap items-center justify-between gap-3">
-              <span className="flex items-center gap-2">
-                <span className="text-2xl" aria-hidden>{typeDef.icon}</span>
-                <span>{completedToday ? t('dailyChallengeScreen.challengeComplete') : t(typeDef.nameKey)}</span>
-              </span>
-              <Badge variant="outline" className="border-cyan-500 text-cyan-400">
-                +{challengeXP} XP{getDailyDifficultyMultiplier(selectedDifficulty) !== 1 ? ` (×${getDailyDifficultyMultiplier(selectedDifficulty)})` : ''}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* ── Difficulty selector — independent of the global game difficulty.
-                Switching updates target, description and XP instantly. ── */}
-            <div className="mb-4">
-              <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.difficultyLabel')}</label>
+        <div className="space-y-4 mb-6">
+          {/* ── Difficulty selector — independent of the global game difficulty.
+              Switching updates targets, descriptions and XP of ALL slots instantly. ── */}
+          <Card className="bg-white/5 border-white/10">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <label className="text-sm text-white/60">{t('dailyChallengeScreen.difficultyLabel')}</label>
+                {/* Badge tier progress today */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40">{t('dailyChallengeScreen.tierProgressToday')}</span>
+                  {(['bronze', 'silver', 'gold'] as const).map((tier) => {
+                    const thresholds = { bronze: 1, silver: 3, gold: 5 } as const;
+                    const reached = slotProgress.completedSlots.length >= thresholds[tier];
+                    return (
+                      <span key={tier} className={tierChipClass(tier, reached)} title={`${t(TIER_LABEL_KEYS[tier])} — ${thresholds[tier]}`}>
+                        <span aria-hidden>{TIER_ICONS[tier]}</span>
+                        <span>{thresholds[tier]}</span>
+                        {reached && <span className="text-green-400 font-bold">✓</span>}
+                      </span>
+                    );
+                  })}
+                  <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                    {slotProgress.completedSlots.length}/5
+                  </Badge>
+                </div>
+              </div>
               <div className="flex gap-2 flex-wrap" role="group" aria-label={t('dailyChallengeScreen.difficultyLabel')}>
                 {DAILY_DIFFICULTIES.map((d) => {
                   const done = metDifficulties.includes(d.id);
@@ -331,212 +456,413 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               {allDifficultiesDone && (
                 <p className="text-xs text-green-400 mt-2">{t('dailyChallengeScreen.allDifficultiesDone')}</p>
               )}
-            </div>
+            </CardContent>
+          </Card>
 
-            <p className="text-lg mb-2">{challengeDescription}</p>
-
-            {/* Dynamic Difficulty Indicator */}
-            {viewProfileLevel > 1 && (
-              <div className="text-xs text-purple-400/60 mb-4">
-                {t('dailyChallengeScreen.dynamicDifficulty')
-                  .replace('{n}', formatDailyValue(typeDef.metricKey, getDailyTargetFor(challenge.type, selectedDifficulty)))
-                  .replace('{m}', formatDailyValue(typeDef.metricKey, challenge.target))}
-              </div>
-            )}
-
-            <div className="mb-4 p-4 bg-white/5 rounded-lg">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
-                <span className="font-medium">{formatDailyValue(typeDef.metricKey, challenge.target)}</span>
-              </div>
-              <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all ${completedToday ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
-                  style={{ width: completedToday ? '100%' : '0%' }}
-                />
-              </div>
-            </div>
-
-            {/* Best result of the first selected player (when not completed) */}
-            {!completedToday && selectedPlayerIds[0] && (() => {
-              const best = getPlayerBestResult(selectedPlayerIds[0]);
-              if (!best) return null;
-              const currentMetric = getBestResultMetric(best, challenge.type);
-              const target = challenge.target;
-              const pct = typeDef.direction === 'min'
-                ? (currentMetric <= target ? 100 : Math.min(99, Math.round((target / Math.max(1, currentMetric)) * 100)))
-                : Math.min(100, Math.round((currentMetric / target) * 100));
-              const suffix = typeDef.metricKey === 'accuracy' || typeDef.metricKey === 'tickAccuracy' ? '%' : '';
-              const remaining = typeDef.direction === 'min'
-                ? Math.max(0, currentMetric - target)
-                : Math.max(0, target - currentMetric);
-
+          {/* ── The 5 daily slots ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {dailySlots.slice(0, DAILY_SLOTS_PER_DAY).map((slotData) => {
+              const def = getDailyType(slotData.type);
+              const unlocked = isDailySlotUnlocked(slotData.slot, challengePlayerId);
+              const completed = slotProgress.completedSlots.includes(slotData.slot);
+              const slotMet = challengePlayerId ? getSlotMetDifficulties(challengePlayerId, slotData.slot) : [];
+              const target = getDailyTargetFor(slotData.type, selectedDifficulty, scalingProfile?.level || 1);
+              const isPlaySlot = playSlot === slotData.slot;
+              const slotXP = Math.round((slotData.slot === 0 ? XP_REWARDS.CHALLENGE_COMPLETE : DAILY_SLOT_XP_BONUS[Math.min(slotData.slot - 1, DAILY_SLOT_XP_BONUS.length - 1)]) * getDailyDifficultyMultiplier(selectedDifficulty));
               return (
-                <div className="mb-4 p-3 bg-white/5 rounded-lg">
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-white/60">{t('dailyChallengeScreen.bestResult')}</span>
-                    <span className="font-medium text-cyan-400">
-                      {formatDailyValue(typeDef.metricKey, currentMetric)} / {formatDailyValue(typeDef.metricKey, target)}{suffix && !formatDailyValue(typeDef.metricKey, target).includes('%') ? suffix : ''}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="text-xs text-white/40 mt-1">
-                    {pct >= 100
-                      ? t('dailyChallengeScreen.challengeComplete')
-                      : t(typeDef.direction === 'min' ? 'dailyChallengeScreen.remainingFewer' : 'dailyChallengeScreen.remainingMore').replace('{n}', remaining.toLocaleString())}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ── Mandatory player selection (1–2 players) ── */}
-            <div className="mb-4">
-              <label className="text-sm text-white/60 mb-2 block">
-                {t('dailyChallengeScreen.selectChallengePlayers')} <span className="text-cyan-400">*</span>
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {activeProfiles.map((profile) => {
-                  const isSelected = selectedPlayerIds.includes(profile.id);
-                  const slot = selectedPlayerIds.indexOf(profile.id);
-                  return (
-                    <button
-                      key={profile.id}
-                      onClick={() => togglePlayer(profile.id)}
-                      aria-pressed={isSelected}
-                      className={`flex items-center gap-2 p-2.5 rounded-lg transition-all border ${
-                        isSelected
-                          ? 'bg-cyan-500/20 border-cyan-500 text-white ring-1 ring-cyan-400/50'
-                          : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10'
-                      }`}
-                    >
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ backgroundColor: profile.color }}
-                      >
-                        {profile.avatar ? (
-                          <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          profile.name?.[0] || '?'
-                        )}
+                <Card
+                  key={slotData.slot}
+                  className={`bg-white/5 border-white/10 transition-all cursor-pointer ${
+                    completed ? 'ring-2 ring-green-500 border-green-500/30'
+                    : isPlaySlot ? 'ring-2 ring-cyan-500'
+                    : unlocked ? 'hover:border-cyan-500/50'
+                    : 'opacity-50'
+                  }`}
+                  onClick={() => unlocked && setSelectedSlot(slotData.slot)}
+                >
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-2xl flex-shrink-0" aria-hidden>{def.icon}</span>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{slotData.slot + 1}. {typeName(def, t)}</div>
+                          <div className="text-xs text-white/50 truncate">
+                            {interpolateChallengeText(t(def.descriptionKey), def.descriptionParams, target, def.metricKey)}
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-sm truncate flex-1 text-left">{profile.name}</span>
-                      {isSelected && (
-                        <span className="text-[10px] font-bold text-cyan-300 flex-shrink-0">
-                          {slot === 0 ? 'P1' : 'P2'}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {completed ? (
+                          <Badge className="bg-green-500/20 text-green-300 border border-green-500/40">✓ {t('dailyChallengeScreen.slotDone')}</Badge>
+                        ) : !unlocked ? (
+                          <Badge variant="outline" className="border-white/20 text-white/40">🔒 {t('dailyChallengeScreen.slotLocked')}</Badge>
+                        ) : isPlaySlot ? (
+                          <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">▶ {t('dailyChallengeScreen.slotActive')}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-white/20 text-white/60">{t('dailyChallengeScreen.slotOpen')}</Badge>
+                        )}
+                        <span className="text-[10px] text-cyan-400/80">+{slotXP} XP</span>
+                      </div>
+                    </div>
+                    {/* Target + difficulty checkmarks for this slot */}
+                    <div className="flex items-center justify-between text-xs text-white/50">
+                      <span>
+                        {t('dailyChallengeScreen.target')}: <span className="text-white/80 font-medium">{formatDailyValue(def.metricKey, target)}</span>
+                      </span>
+                      {slotMet.length > 0 && (
+                        <span className="flex gap-0.5">
+                          {DAILY_DIFFICULTIES.map(d => (
+                            <span key={d.id} title={t(d.labelKey)} className={slotMet.includes(d.id) ? '' : 'opacity-20'}>{d.icon}</span>
+                          ))}
                         </span>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* ── Play area for the selected slot ── */}
+          <Card className={`bg-white/5 border-white/10 ${completedToday ? 'ring-1 ring-green-500/40' : ''}`}>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <span className="text-2xl" aria-hidden>{typeDef.icon}</span>
+                  <span>{playSlot + 1}. {typeName(typeDef, t)}</span>
+                </span>
+                <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                  +{challengeXP} XP{getDailyDifficultyMultiplier(selectedDifficulty) !== 1 ? ` (×${getDailyDifficultyMultiplier(selectedDifficulty)})` : ''}
+                </Badge>
+              </CardTitle>
+              <CardDescription>{challengeDescription}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {slotCategoryEmpty && (
+                <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300">
+                  {t('dailyChallengeScreen.noMatchingSongs')}
+                </div>
+              )}
+
+              <div className="mb-4 p-4 bg-white/5 rounded-lg">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
+                  <span className="font-medium">{formatDailyValue(typeDef.metricKey, challenge.target)}</span>
+                </div>
+                <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${completedToday ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
+                    style={{ width: completedToday ? '100%' : '0%' }}
+                  />
+                </div>
+              </div>
+
+              {/* Best result of the first selected player (same slot) */}
+              {selectedPlayerIds[0] && (() => {
+                const best = getPlayerBestResult(selectedPlayerIds[0]);
+                if (!best || best.slot !== playSlot) return null;
+                const currentMetric = getBestResultMetric(best, challenge.type);
+                const target = challenge.target;
+                const pct = typeDef.direction === 'min'
+                  ? (currentMetric <= target ? 100 : Math.min(99, Math.round((target / Math.max(1, currentMetric)) * 100)))
+                  : Math.min(100, Math.round((currentMetric / target) * 100));
+                const remaining = typeDef.direction === 'min'
+                  ? Math.max(0, currentMetric - target)
+                  : Math.max(0, target - currentMetric);
+
+                return (
+                  <div className="mb-4 p-3 bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-white/60">{t('dailyChallengeScreen.bestResult')}</span>
+                      <span className="font-medium text-cyan-400">
+                        {formatDailyValue(typeDef.metricKey, currentMetric)} / {formatDailyValue(typeDef.metricKey, target)}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="text-xs text-white/40 mt-1">
+                      {pct >= 100
+                        ? t('dailyChallengeScreen.challengeComplete')
+                        : t(typeDef.direction === 'min' ? 'dailyChallengeScreen.remainingFewer' : 'dailyChallengeScreen.remainingMore').replace('{n}', remaining.toLocaleString())}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── Mandatory player selection (1–2 players) ── */}
+              <div className="mb-4">
+                <label className="text-sm text-white/60 mb-2 block">
+                  {t('dailyChallengeScreen.selectChallengePlayers')} <span className="text-cyan-400">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {activeProfiles.map((profile) => {
+                    const isSelected = selectedPlayerIds.includes(profile.id);
+                    const slot = selectedPlayerIds.indexOf(profile.id);
+                    return (
+                      <button
+                        key={profile.id}
+                        onClick={() => togglePlayer(profile.id)}
+                        aria-pressed={isSelected}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg transition-all border ${
+                          isSelected
+                            ? 'bg-cyan-500/20 border-cyan-500 text-white ring-1 ring-cyan-400/50'
+                            : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10'
+                        }`}
+                      >
+                        <div
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ backgroundColor: profile.color }}
+                        >
+                          {profile.avatar ? (
+                            <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            profile.name?.[0] || '?'
+                          )}
+                        </div>
+                        <span className="text-sm truncate flex-1 text-left">{profile.name}</span>
+                        {isSelected && (
+                          <span className="text-[10px] font-bold text-cyan-300 flex-shrink-0">
+                            {slot === 0 ? 'P1' : 'P2'}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedPlayerIds.length === 0 && (
+                  <p className="text-xs text-amber-400/80 mt-2">{t('dailyChallengeScreen.selectChallengePlayersHint')}</p>
+                )}
+
+                {/* Evaluation mode when two players are selected */}
+                {selectedPlayerIds.length >= 2 && (
+                  <div className="mt-3">
+                    <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.evaluationMode')}</label>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={evaluationMode === 'duel' ? 'default' : 'outline'}
+                        onClick={() => setEvaluationMode('duel')}
+                        className={evaluationMode === 'duel' ? 'bg-purple-500' : 'border-white/20'}
+                      >
+                        {t('dailyChallengeScreen.evaluationDuel')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={evaluationMode === 'coop' ? 'default' : 'outline'}
+                        onClick={() => setEvaluationMode('coop')}
+                        className={evaluationMode === 'coop' ? 'bg-green-500' : 'border-white/20'}
+                      >
+                        {t('dailyChallengeScreen.evaluationTeam')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Three song choices for the slot */}
+              {selectedPlayerIds.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm text-white/60">{t('dailyChallengeScreen.selectSong')}</label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-white/20 h-7 px-2 text-xs"
+                      onClick={() => setSongRefreshKey(k => k + 1)}
+                      title={t('dailyChallengeScreen.shuffleSongs')}
+                    >
+                      🔄 {t('dailyChallengeScreen.shuffleSongs')}
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {songChoices.map((song, idx) => (
+                      <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlaySong(song)}>
+                        <CardContent className="pt-3 pb-3">
+                          <div className="text-sm font-medium text-white truncate">{song.title}</div>
+                          <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {song.genre && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.genre}</span>}
+                            {song.language && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.language}</span>}
+                            {song.duration && <span className="text-xs text-white/40">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</span>}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-white/60">
+                  {t('dailyChallengeScreen.resetsIn')} {timeLeft.hours}h {timeLeft.minutes}m
+                </div>
+                {dailyBadgeTier !== 'none' && (
+                  <div className="text-sm text-yellow-400">{TIER_ICONS[dailyBadgeTier]} {t(TIER_LABEL_KEYS[dailyBadgeTier])}</div>
+                )}
+              </div>
+
+              {playerStats.currentStreak > 0 && (
+                <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <div className="text-sm text-orange-400">
+                    {t('dailyChallengeScreen.streakBonus').replace('{n}', (XP_REWARDS.STREAK_BONUS_BASE * playerStats.currentStreak).toString()).replace('{m}', playerStats.currentStreak.toString())}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ══ TAB: Weekly Challenges (5 slots, own difficulty) ══ */}
+      {activeTab === 'weekly' && (
+        <div className="space-y-4 mb-6">
+          {/* Weekly difficulty selector — independent from daily + global */}
+          <Card className="bg-white/5 border-white/10">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <label className="text-sm text-white/60">{t('dailyChallengeScreen.weeklyDifficultyLabel')}</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40">{t('dailyChallengeScreen.tierProgressWeek')}</span>
+                  {(['bronze', 'silver', 'gold'] as const).map((tier) => {
+                    const thresholds = { bronze: 1, silver: 3, gold: 5 } as const;
+                    const reached = weeklyProgress.completedSlots.length >= thresholds[tier];
+                    return (
+                      <span key={tier} className={tierChipClass(tier, reached)} title={`${t(TIER_LABEL_KEYS[tier])} — ${thresholds[tier]}`}>
+                        <span aria-hidden>{tier === 'bronze' ? '🎗️' : tier === 'silver' ? '🏅' : '🏆'}</span>
+                        <span>{thresholds[tier]}</span>
+                        {reached && <span className="text-green-400 font-bold">✓</span>}
+                      </span>
+                    );
+                  })}
+                  <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                    {weeklyProgress.completedSlots.length}/5
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap" role="group" aria-label={t('dailyChallengeScreen.weeklyDifficultyLabel')}>
+                {DAILY_DIFFICULTIES.map((d) => {
+                  const active = weeklyDifficulty === d.id;
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => changeWeeklyDifficulty(d.id)}
+                      aria-pressed={active}
+                      title={`${t(d.labelKey)} — ×${d.xpMultiplier} XP`}
+                      className={difficultyChipClass(d.id, active)}
+                    >
+                      <span aria-hidden>{d.icon}</span>
+                      <span>{t(d.labelKey)}</span>
                     </button>
                   );
                 })}
               </div>
-              {selectedPlayerIds.length === 0 && (
-                <p className="text-xs text-amber-400/80 mt-2">{t('dailyChallengeScreen.selectChallengePlayersHint')}</p>
-              )}
-
-              {/* Evaluation mode when two players are selected */}
-              {selectedPlayerIds.length >= 2 && (
-                <div className="mt-3">
-                  <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.evaluationMode')}</label>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant={evaluationMode === 'duel' ? 'default' : 'outline'}
-                      onClick={() => setEvaluationMode('duel')}
-                      className={evaluationMode === 'duel' ? 'bg-purple-500' : 'border-white/20'}
-                    >
-                      {t('dailyChallengeScreen.evaluationDuel')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={evaluationMode === 'coop' ? 'default' : 'outline'}
-                      onClick={() => setEvaluationMode('coop')}
-                      className={evaluationMode === 'coop' ? 'bg-green-500' : 'border-white/20'}
-                    >
-                      {t('dailyChallengeScreen.evaluationTeam')}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Three song choices — only playable with at least one selected player */}
-            {selectedPlayerIds.length > 0 && (
-              <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.selectSong')}</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {songChoices.map((song, idx) => (
-                    <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlaySong(song)}>
-                      <CardContent className="pt-3 pb-3">
-                        <div className="text-sm font-medium text-white truncate">{song.title}</div>
-                        <div className="text-xs text-white/50 truncate">{song.artist}</div>
-                        {song.duration && <div className="text-xs text-white/40 mt-1">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</div>}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-white/60">
-                {t('dailyChallengeScreen.resetsIn')} {timeLeft.hours}h {timeLeft.minutes}m
-              </div>
-              {completedToday && (
-                <div className="text-sm text-green-400">✓ {t('dailyChallengeScreen.challengeComplete')}</div>
-              )}
-            </div>
-
-            {!completedToday && playerStats.currentStreak > 0 && (
-              <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                <div className="text-sm text-orange-400">
-                  {t('dailyChallengeScreen.streakBonus').replace('{n}', (XP_REWARDS.STREAK_BONUS_BASE * playerStats.currentStreak).toString()).replace('{m}', playerStats.currentStreak.toString())}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Weekly Challenge Tab */}
-      {activeTab === 'weekly' && (() => {
-        const weekly = getWeeklyChallenge(viewProfileLevel);
-        const weeklyCompleted = viewProfile ? isWeeklyChallengeCompletedToday(viewProfile.id) : false;
-        const weeklyReset = getTimeUntilWeeklyReset();
-        return (
-          <Card className={`bg-white/5 border-white/10 mb-6 ${weeklyCompleted ? 'ring-2 ring-green-500' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{weeklyCompleted ? t('dailyChallengeScreen.challengeComplete') : t('dailyChallengeScreen.weeklyChallenge')}</span>
-                <Badge variant="outline" className="border-cyan-500 text-cyan-400">+{WEEKLY_XP_REWARD} XP</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg mb-4">{weekly.description}</p>
-              <div className="flex items-center justify-between text-sm text-white/60">
-                <span>{t('dailyChallengeScreen.target')}: {weekly.target}</span>
-                <span>{t('dailyChallengeScreen.resetsIn')} {weeklyReset.days}d {weeklyReset.hours}h</span>
+              <div className="mt-3 text-xs text-white/50">
+                {t('dailyChallengeScreen.weeklyCountsAutomatically')} · {t('dailyChallengeScreen.resetsIn')} {weeklyReset.days}d {weeklyReset.hours}h
               </div>
             </CardContent>
           </Card>
-        );
-      })()}
 
-      {/* Challenge Modes Tab */}
+          {/* The 5 weekly slots */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {weeklySlots.slice(0, WEEKLY_SLOTS_PER_WEEK).map((slotData) => {
+              const slotInfo = getWeeklyChallengeForSlot(slotData.slot, viewProfileLevel, weeklyDifficulty);
+              const def = slotInfo.def;
+              const unlocked = isWeeklySlotUnlocked(slotData.slot, challengePlayerId);
+              const completed = weeklyProgress.completedSlots.includes(slotData.slot);
+              const slotXP = Math.round(WEEKLY_SLOT_XP[Math.min(slotData.slot, WEEKLY_SLOT_XP.length - 1)] * getDailyDifficultyMultiplier(weeklyDifficulty));
+              return (
+                <Card
+                  key={slotData.slot}
+                  className={`bg-white/5 transition-all ${
+                    completed ? 'ring-2 ring-green-500 border-green-500/30'
+                    : unlocked ? 'border-white/10 hover:border-cyan-500/50'
+                    : 'border-white/10 opacity-50'
+                  }`}
+                >
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-2xl flex-shrink-0" aria-hidden>{def.icon}</span>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{slotData.slot + 1}. {typeName(def, t)}</div>
+                          <div className="text-xs text-white/50">
+                            {interpolateChallengeText(t(def.descriptionKey), def.descriptionParams, slotInfo.target, def.metricKey)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {completed ? (
+                          <Badge className="bg-green-500/20 text-green-300 border border-green-500/40">✓ {t('dailyChallengeScreen.slotDone')}</Badge>
+                        ) : !unlocked ? (
+                          <Badge variant="outline" className="border-white/20 text-white/40">🔒 {t('dailyChallengeScreen.slotLocked')}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-cyan-500/40 text-cyan-300">{t('dailyChallengeScreen.slotOpen')}</Badge>
+                        )}
+                        <span className="text-[10px] text-cyan-400/80">+{slotXP} XP</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-white/50">
+                      <span>
+                        {t('dailyChallengeScreen.target')}: <span className="text-white/80 font-medium">{formatDailyValue(def.metricKey, slotInfo.target)}</span>
+                      </span>
+                      <span className="text-white/30">{def.aggregation === 'sum' ? t('dailyChallengeScreen.weeklySumType') : t('dailyChallengeScreen.weeklyBestType')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="bg-white/5 border-white/10">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/60">{t('dailyChallengeScreen.weeklyHintTitle')}</span>
+                <span className={`text-white/60 ${weeklyBadgeTier !== 'none' ? 'text-yellow-400' : ''}`}>
+                  {weeklyBadgeTier !== 'none' && (weeklyBadgeTier === 'gold' ? '🏆 ' : weeklyBadgeTier === 'silver' ? '🏅 ' : '🎗️ ')}
+                  {weeklyCompletedToday ? t('dailyChallengeScreen.challengeComplete') : t('dailyChallengeScreen.weeklyPlayHint')}
+                </span>
+              </div>
+              <p className="text-xs text-white/40 mt-2">{t('dailyChallengeScreen.weeklyUnlockHint')}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ══ TAB: Challenge Modes (71 modes, filter + completion) ══ */}
       {activeTab === 'modes' && (
         <div className="space-y-4 mb-6">
           <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle>{t('dailyChallengeScreen.challengeModes')}</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+                <span>{t('dailyChallengeScreen.challengeModes')} ({CHALLENGE_MODES.length})</span>
+                {/* Difficulty filter */}
+                <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10">
+                  {(['all', 'easy', 'medium', 'hard', 'extreme'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setModeFilter(f)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                        modeFilter === f ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      {f === 'all' ? t('dailyChallengeScreen.filterAll') : f.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </CardTitle>
               <CardDescription>{t('dailyChallengeScreen.specialModifiers')}</CardDescription>
             </CardHeader>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {CHALLENGE_MODES.map((mode) => {
+            {CHALLENGE_MODES
+              .filter(mode => modeFilter === 'all' || mode.difficulty === modeFilter)
+              .map((mode) => {
               // Check if the player meets the challenge requirements
               const extendedStats = getExtendedStats();
+              const completedModes = getCompletedChallengeModes(viewProfile?.id);
+              const isCompleted = completedModes.includes(mode.id);
               const requirementStatus = getChallengeRequirementStatus(
                 mode.id,
                 viewProfileLevel,
@@ -544,6 +870,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                 extendedStats.unlockedTitles,
                 extendedStats.totalXP,
                 t,
+                completedModes,
               );
               const locked = requirementStatus !== null;
               const isSelected = selectedMode?.id === mode.id;
@@ -556,6 +883,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     isSelected ? 'ring-2 ring-cyan-500 cursor-pointer hover:bg-white/10' :
                     'cursor-pointer hover:bg-white/10'
                   } ${
+                    isCompleted ? 'border-green-500/40' :
                     mode.difficulty === 'extreme' ? 'border-red-500/30' :
                     mode.difficulty === 'hard' ? 'border-orange-500/30' :
                     mode.difficulty === 'medium' ? 'border-yellow-500/30' : 'border-green-500/30'
@@ -567,10 +895,15 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       setSelectedMode(null);
                       setModeSongChoices([]);
                     } else {
-                      // Select mode and generate song choices
+                      // Select mode and generate song choices (category modes get matching songs)
                       setSelectedMode(mode);
                       const songs = getAllSongs();
-                      setModeSongChoices(shuffleArray(songs).slice(0, 3));
+                      if (mode.category) {
+                        const matching = songs.filter(s => matchesDailyCategory(mode.category as { field: never; value?: string | number }, songToContext(s), language));
+                        setModeSongChoices((matching.length >= 3 ? shuffleArray(matching).slice(0, 3) : matching.length > 0 ? matching : shuffleArray(songs).slice(0, 3)));
+                      } else {
+                        setModeSongChoices(shuffleArray(songs).slice(0, 3));
+                      }
                     }
                   }}
                 >
@@ -578,11 +911,26 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     {locked && (
                       <div className="absolute top-2 right-2 text-lg" title={requirementStatus || ''}>🔒</div>
                     )}
+                    {isCompleted && !locked && (
+                      <div className="absolute top-2 right-2 text-lg" title={t('dailyChallengeScreen.modeCompleted')}>✅</div>
+                    )}
                     <div className="text-3xl mb-2">{mode.icon}</div>
                     <h4 className="font-bold text-white mb-1">{t(mode.nameKey)}</h4>
                     <p className="text-xs text-white/60 mb-3 line-clamp-2">{t(mode.descriptionKey)}</p>
                     {locked && requirementStatus && (
                       <p className="text-xs text-red-400 mb-2">{requirementStatus}</p>
+                    )}
+                    {mode.completionTarget && !locked && (
+                      <p className="text-[10px] text-white/40 mb-2">
+                        🎯 {t('dailyChallengeScreen.modeTarget')}: {mode.completionTarget.direction === 'min' ? '≥' : '≤'}{
+                          mode.completionTarget.metric === 'accuracy' ? `${mode.completionTarget.value}%` : mode.completionTarget.value.toLocaleString()
+                        } {mode.completionTarget.metric === 'notesHit' ? t('dailyChallengeScreen.notesHitLabel')
+                          : mode.completionTarget.metric === 'perfectNotes' ? t('dailyChallengeScreen.perfectNotesLabel')
+                          : mode.completionTarget.metric === 'goldenNotes' ? t('dailyChallengeScreen.goldenNotesLabel')
+                          : mode.completionTarget.metric === 'maxCombo' ? t('dailyChallengeScreen.comboLabel')
+                          : mode.completionTarget.metric === 'notesMissed' ? t('dailyChallengeScreen.missedNotesLabel')
+                          : t('dailyChallengeScreen.points')}
+                      </p>
                     )}
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className={`text-xs ${
@@ -668,7 +1016,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </div>
       )}
 
-      {/* Leaderboard Tab */}
+      {/* ══ TAB: Leaderboard ══ */}
       {activeTab === 'leaderboard' && (
         <Card className="bg-white/5 border-white/10 mb-6">
           <CardHeader>
@@ -729,9 +1077,16 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                           </div>
                         )}
                         <div className="flex-1">
-                          <div className="font-medium">{entry.playerName}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {entry.playerName}
+                            {entry.dailyBadge && (
+                              <span title={t(TIER_LABEL_KEYS[entry.dailyBadge])} aria-label={t(TIER_LABEL_KEYS[entry.dailyBadge])}>
+                                {entry.dailyBadge === 'gold' ? '🥇' : entry.dailyBadge === 'silver' ? '🥈' : '🥉'}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-white/60">
-                            {t('dailyChallengeScreen.accuracyMaxCombo').replace('{n}', entry.combo.toString())}
+                            {t('dailyChallengeScreen.slotsCompletedLabel').replace('{n}', String(entry.slotsCompletedToday ?? 0))}
                           </div>
                         </div>
                         <div className="text-right">
@@ -830,13 +1185,35 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </Card>
       )}
 
-      {/* Badges Tab */}
+      {/* ══ TAB: Badges ══ */}
       {activeTab === 'badges' && (
         <Card className="bg-white/5 border-white/10 mb-6">
           <CardHeader>
             <CardTitle>{t('dailyChallengeScreen.yourBadges')} ({playerStats.badges.length})</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Today's + this week's tier progress */}
+            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                <div className="text-xs text-white/50 mb-2">{t('dailyChallengeScreen.tierProgressToday')}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-700 to-yellow-400 transition-all" style={{ width: `${(slotProgress.completedSlots.length / 5) * 100}%` }} />
+                  </div>
+                  <span className="text-xs text-white/60">{slotProgress.completedSlots.length}/5</span>
+                </div>
+              </div>
+              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                <div className="text-xs text-white/50 mb-2">{t('dailyChallengeScreen.tierProgressWeek')}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${(weeklyProgress.completedSlots.length / 5) * 100}%` }} />
+                  </div>
+                  <span className="text-xs text-white/60">{weeklyProgress.completedSlots.length}/5</span>
+                </div>
+              </div>
+            </div>
+
             {playerStats.badges.length === 0 ? (
               <div className="text-center py-8 text-white/40">
                 <div className="text-4xl mb-2">🎖️</div>
@@ -865,7 +1242,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 opacity-50">
                 {Object.values(DAILY_BADGES)
                   .filter(b => !playerStats.badges.some(pb => pb.id === b.id))
-                  .slice(0, 6)
+                  .slice(0, 9)
                   .map((badge) => (
                     <div
                       key={badge.id}

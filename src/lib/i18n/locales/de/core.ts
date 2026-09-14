@@ -430,6 +430,12 @@ dailyChallenge: {
       name: 'Jahres-Legende',
       description: 'Halte eine 365-Tage-Streak',
     },
+      dailyBronze: { name: 'Daily-Bronze', description: 'Schließe 1 Daily Challenge an einem Tag ab' },
+      dailySilver: { name: 'Daily-Silber', description: 'Schließe 3 Daily Challenges an einem Tag ab' },
+      dailyGold: { name: 'Daily-Gold', description: 'Schließe alle 5 Daily Challenges an einem Tag ab' },
+      weeklyBronze: { name: 'Weekly-Bronze', description: 'Schließe 1 Weekly Challenge in einer Woche ab' },
+      weeklySilver: { name: 'Weekly-Silber', description: 'Schließe 3 Weekly Challenges in einer Woche ab' },
+      weeklyGold: { name: 'Weekly-Gold', description: 'Schließe alle 5 Weekly Challenges in einer Woche ab' },
   },
   quests: {
     dailyDouble: {
@@ -461,6 +467,29 @@ dailyChallenge: {
     centuryChampion: 'Jahrhundert-Champion',
     yearlyLegend: 'Jahres-Legende',
   },
+  // --- Daily Badges (Grid-Anzeige, Kebab-Case-IDs) ---
+  dailyBadges: {
+    'first-challenge': { name: 'Erste Schritte', description: 'Schließe deine erste Daily Challenge ab' },
+    'week-warrior': { name: 'Wochen-Krieger', description: 'Halte eine 7-Tage-Serie' },
+    'fortnight-fighter': { name: 'Vierzehn-Tage-Kämpfer', description: 'Halte eine 14-Tage-Serie' },
+    'monthly-master': { name: 'Monats-Meister', description: 'Halte eine 30-Tage-Serie' },
+    'top-3': { name: 'Podiumsplatz', description: 'Beende eine Daily Challenge in den Top 3' },
+    'champion': { name: 'Daily-Champion', description: 'Gewinne eine Daily Challenge' },
+    'dedicated': { name: 'Fleißiger Sänger', description: 'Schließe 30 Daily Challenges ab' },
+    'legendary': { name: 'Legendärer Status', description: 'Erreiche 10.000 Gesamt-XP' },
+    'century-champion': { name: 'Jahrhundert-Champion', description: 'Halte eine 100-Tage-Serie' },
+    'yearly-legend': { name: 'Jahres-Legende', description: 'Halte eine 365-Tage-Serie' },
+    'daily-bronze': { name: 'Daily-Bronze', description: 'Schließe 1 Daily Challenge an einem Tag ab' },
+    'daily-silver': { name: 'Daily-Silber', description: 'Schließe 3 Daily Challenges an einem Tag ab' },
+    'daily-gold': { name: 'Daily-Gold', description: 'Schließe alle 5 Daily Challenges an einem Tag ab' },
+    'weekly-bronze': { name: 'Weekly-Bronze', description: 'Schließe 1 Weekly Challenge in einer Woche ab' },
+    'weekly-silver': { name: 'Weekly-Silber', description: 'Schließe 3 Weekly Challenges in einer Woche ab' },
+    'weekly-gold': { name: 'Weekly-Gold', description: 'Schließe alle 5 Weekly Challenges in einer Woche ab' },
+    'explorer': { name: 'Challenge-Entdecker', description: 'Spiele 5 verschiedene Challenge-Modi' },
+    'songbird': { name: 'Singvogel', description: 'Schließe 10 Songs insgesamt ab' },
+    'weekly-warrior': { name: 'Wochen-Krieger', description: 'Schließe 3 Weekly Challenges ab' },
+  },
+
 },
 desktopChat: {
   title: 'Chat',

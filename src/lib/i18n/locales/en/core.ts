@@ -424,6 +424,12 @@ export const coreTranslations = {
       legendaryStatus: { name: 'Legendary Status', description: 'Reach 10,000 total XP' },
       centuryChampion: { name: 'Century Champion', description: 'Maintain a 100-day streak' },
       yearlyLegend: { name: 'Yearly Legend', description: 'Maintain a 365-day streak' },
+      dailyBronze: { name: 'Daily Bronze', description: 'Complete 1 daily challenge in one day' },
+      dailySilver: { name: 'Daily Silver', description: 'Complete 3 daily challenges in one day' },
+      dailyGold: { name: 'Daily Gold', description: 'Complete all 5 daily challenges in one day' },
+      weeklyBronze: { name: 'Weekly Bronze', description: 'Complete 1 weekly challenge in one week' },
+      weeklySilver: { name: 'Weekly Silver', description: 'Complete 3 weekly challenges in one week' },
+      weeklyGold: { name: 'Weekly Gold', description: 'Complete all 5 weekly challenges in one week' },
     },
     quests: {
       dailyDouble: { name: 'Daily Double', description: 'Complete 2 daily challenges today' },
@@ -440,6 +446,29 @@ export const coreTranslations = {
       centuryChampion: 'Century Champion',
       yearlyLegend: 'Yearly Legend',
     },
+  },
+
+  // --- Daily Badges (grid display, kebab-case ids) ---
+  dailyBadges: {
+    'first-challenge': { name: 'First Steps', description: 'Complete your first daily challenge' },
+    'week-warrior': { name: 'Week Warrior', description: 'Maintain a 7-day streak' },
+    'fortnight-fighter': { name: 'Fortnight Fighter', description: 'Maintain a 14-day streak' },
+    'monthly-master': { name: 'Monthly Master', description: 'Maintain a 30-day streak' },
+    'top-3': { name: 'Podium Finish', description: 'Finish in top 3 of a daily challenge' },
+    'champion': { name: 'Daily Champion', description: 'Win a daily challenge' },
+    'dedicated': { name: 'Dedicated Singer', description: 'Complete 30 daily challenges' },
+    'legendary': { name: 'Legendary Status', description: 'Reach 10,000 total XP' },
+    'century-champion': { name: 'Century Champion', description: 'Maintain a 100-day streak' },
+    'yearly-legend': { name: 'Yearly Legend', description: 'Maintain a 365-day streak' },
+    'daily-bronze': { name: 'Daily Bronze', description: 'Complete 1 daily challenge in one day' },
+    'daily-silver': { name: 'Daily Silver', description: 'Complete 3 daily challenges in one day' },
+    'daily-gold': { name: 'Daily Gold', description: 'Complete all 5 daily challenges in one day' },
+    'weekly-bronze': { name: 'Weekly Bronze', description: 'Complete 1 weekly challenge in one week' },
+    'weekly-silver': { name: 'Weekly Silver', description: 'Complete 3 weekly challenges in one week' },
+    'weekly-gold': { name: 'Weekly Gold', description: 'Complete all 5 weekly challenges in one week' },
+    'explorer': { name: 'Challenge Explorer', description: 'Play 5 different challenge modes' },
+    'songbird': { name: 'Songbird', description: 'Complete 10 songs total' },
+    'weekly-warrior': { name: 'Weekly Warrior', description: 'Complete 3 weekly challenges' },
   },
 
     desktopChat: {

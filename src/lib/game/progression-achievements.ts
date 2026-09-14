@@ -38,6 +38,7 @@ export function getChallengeRequirementStatus(
   unlockedTitles: string[],
   totalXP?: number,
   translate?: (key: string) => string,
+  completedModes?: string[],
 ): string | null {
   const mode = CHALLENGE_MODES.find(m => m.id === challengeId);
   if (!mode || !mode.requirements) return null;
@@ -65,6 +66,19 @@ export function getChallengeRequirementStatus(
             : `Requires achievement: ${req.value}`;
         }
         break;
+      case 'challenge_completed': {
+        const requiredModeId = req.value as string;
+        if (completedModes && !completedModes.includes(requiredModeId)) {
+          const requiredMode = CHALLENGE_MODES.find(m => m.id === requiredModeId);
+          const requiredName = requiredMode
+            ? (translate && requiredMode.nameKey ? translate(requiredMode.nameKey) : requiredMode.name)
+            : requiredModeId;
+          return translate
+            ? translate('challenges.requirements.challengeCompleted').replace('{name}', requiredName)
+            : `Complete "${requiredName}" first`;
+        }
+        break;
+      }
       case 'rank': {
         if (totalXP === undefined) {
           return translate
