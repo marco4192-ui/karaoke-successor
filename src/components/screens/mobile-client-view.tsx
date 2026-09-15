@@ -58,7 +58,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [isTransitioning] = useState(false);
 
   // Connection
-  const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
+  const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup, sendPitch } = useMobileConnection({
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
     onGameStateUpdate: (_state) => {
@@ -71,9 +71,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     onSongEnd: () => { data.loadGameResults(); data.loadQueue(); },
   });
 
-  // Pitch detection
+  // Pitch detection — prefers the Socket.IO push path (sendPitch) for
+  // instant delivery to the desktop; HTTP batch_pitch stays as fallback.
   const { isListening, currentPitch, startMicrophone, stopMicrophone } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
+    sendSocketPitch: sendPitch,
   });
 
   // Data (songs, queue, jukebox, results, partners)

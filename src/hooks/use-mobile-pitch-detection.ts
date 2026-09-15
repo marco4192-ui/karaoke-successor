@@ -10,6 +10,19 @@ interface UseMobilePitchDetectionOptions {
   isPlaying: boolean;
   songEnded: boolean;
   onError?: (_message: string) => void;
+  /** Optional Socket.IO push path (from useMobileConnection.sendPitch).
+   *  Preferred over the HTTP batch: frames arrive at the desktop instantly
+   *  instead of via the 200ms batch flush + host polling chain. Returns true
+   *  when the frame was emitted; false → fall back to HTTP. */
+  sendSocketPitch?: (_frame: {
+    frequency: number | null;
+    note: number | null;
+    clarity: number;
+    volume: number;
+    timestamp?: number;
+    isSinging?: boolean;
+    singingConfidence?: number;
+  }) => boolean;
 }
 
 export function useMobilePitchDetection({
@@ -17,6 +30,7 @@ export function useMobilePitchDetection({
   isPlaying,
   songEnded,
   onError,
+  sendSocketPitch,
 }: UseMobilePitchDetectionOptions) {
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState<PitchData>({ frequency: null, note: null, volume: 0 });
@@ -47,6 +61,17 @@ export function useMobilePitchDetection({
   const useFallbackRef = useRef(false); // fall back to single pitch if batch fails
   const lastPitchSendRef = useRef<number>(0); // used only in fallback mode
   const PITCH_SEND_INTERVAL = 50;
+
+  // === Socket.IO push path (preferred) ===
+  // Throttled to ~30 Hz — the YIN analysis window is ~93 ms, so higher rates
+  // carry no additional information. Kept in a ref so the rAF loop always
+  // uses the latest callback without re-starting the microphone.
+  const sendSocketPitchRef = useRef(sendSocketPitch);
+  useEffect(() => {
+    sendSocketPitchRef.current = sendSocketPitch;
+  }, [sendSocketPitch]);
+  const lastSocketPitchSendRef = useRef<number>(0);
+  const SOCKET_PITCH_SEND_INTERVAL = 33; // ~30 Hz
 
   // Refs for values consumed inside the requestAnimationFrame loop.
   // Without these, detectPitch would capture stale snapshots of
@@ -272,6 +297,22 @@ export function useMobilePitchDetection({
             isSinging,
             singingConfidence,
           };
+
+          // Preferred path: Socket.IO push (~30 Hz). The server writes the
+          // frame into the SAME latestPitchData store the HTTP batch uses,
+          // so every HTTP-polling consumer keeps working unchanged. When the
+          // socket is down, sendPitch returns false → HTTP fallback below.
+          if (
+            sendSocketPitchRef.current &&
+            now - lastSocketPitchSendRef.current >= SOCKET_PITCH_SEND_INTERVAL
+          ) {
+            const sent = sendSocketPitchRef.current(frame);
+            if (sent) {
+              lastSocketPitchSendRef.current = now;
+              animationFrameRef.current = requestAnimationFrame(detectPitch);
+              return;
+            }
+          }
 
           if (useFallbackRef.current) {
             // Fallback: individual POST per frame (throttled to ~20 req/sec)

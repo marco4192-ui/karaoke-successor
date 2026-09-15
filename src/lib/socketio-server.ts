@@ -35,6 +35,13 @@ let io: SocketIOServer | null = null;
 /** Connected Desktop host socket (there should only be one) */
 let hostSocket: HostSocket | null = null;
 
+/** Desktop sockets subscribed to live pitch pushes (the Socket.IO pitch feed).
+ *  Deliberately separate from hostSocket: pitch streaming must never
+ *  interfere with command routing, which stays bound to the single
+ *  hostSocket. The pitch-feed sockets register via 'host:pitch-subscribe'
+ *  and do NOT emit 'host:register'. */
+const pitchFeedSockets = new Set<Socket>();
+
 /** Map of companion clientId → socket for direct messaging */
 const companionSockets = new Map<string, CompanionSocket>();
 
@@ -197,33 +204,73 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       console.log(`[Socket.IO] Command from companion: ${command.type} (${command.fromClientName})`);
     });
 
-    socket.on('companion:pitch', (data: { frequency: number; clarity: number; volume: number }) => {
+    socket.on('host:pitch-subscribe', () => {
+      // Desktop wants live pitch pushes (Socket.IO pitch feed).
+      // NOTE: this socket must NOT emit 'host:register' — command routing
+      // stays exclusive to the registered host socket.
+      pitchFeedSockets.add(socket);
+      socket.emit('host:pitch-subscribed', { companionCount: companionSockets.size });
+      // eslint-disable-next-line no-console
+      console.log(`[Socket.IO] Pitch feed subscriber: ${socket.id} (${pitchFeedSockets.size} total)`);
+    });
+
+    socket.on('companion:pitch', (data: {
+      frequency: number | null;
+      note?: number | null;
+      clarity: number;
+      volume: number;
+      timestamp?: number;
+      isSinging?: boolean;
+      singingConfidence?: number;
+    }) => {
       // Companion sends pitch data → store in shared state
       const companionSocket = socket as CompanionSocket;
       const clientId = companionSocket._clientId;
       if (!clientId) return;
 
-      // Validate pitch data
-      const frequency = Math.max(20, Math.min(2000, data.frequency || 0));
+      // Validate pitch data (same rules as the HTTP batch_pitch handler —
+      // frequency is null when the phone detects no pitch, e.g. silence)
+      const frequency = (typeof data.frequency === 'number' && Number.isFinite(data.frequency))
+        ? Math.max(20, Math.min(2000, data.frequency))
+        : null;
+      const note = (typeof data.note === 'number' && Number.isFinite(data.note)) ? data.note : null;
       const clarity = Math.max(0, Math.min(1, data.clarity || 0));
       const volume = Math.max(0, Math.min(1, data.volume || 0));
 
-      latestPitchData.set(clientId, {
+      const frame = {
         frequency,
+        note,
         clarity,
         volume,
-        note: 0, // Note not provided via WebSocket, computed on Desktop side
-        timestamp: Date.now(),
-      });
+        timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
+        isSinging: data.isSinging,
+        singingConfidence: data.singingConfidence,
+      };
 
-      // Push to Desktop host instantly (no more polling for pitch!)
-      if (hostSocket) {
-        hostSocket.emit('pitch', {
+      // Same store the HTTP batch_pitch handler writes to — every
+      // HTTP-polling consumer keeps working without any migration.
+      latestPitchData.set(clientId, frame);
+
+      // Parity with the HTTP handler: keep the client record fresh so the
+      // /clients list (hasPitch indicator) reflects streaming phones.
+      const client = mobileClients.get(clientId);
+      if (client) {
+        client.lastActivity = Date.now();
+        client.pitchData = frame;
+        mobileClients.set(clientId, client);
+      }
+
+      // Push to every subscribed desktop socket instantly (no polling!)
+      if (pitchFeedSockets.size > 0) {
+        const push = {
           clientId,
-          code: mobileClients.get(clientId)?.connectionCode || '',
-          data: { frequency, clarity, volume, timestamp: Date.now() },
-          profile: mobileClients.get(clientId)?.profile || null,
-        });
+          code: client?.connectionCode || '',
+          data: frame,
+          profile: client?.profile || null,
+        };
+        for (const feedSocket of pitchFeedSockets) {
+          feedSocket.emit('pitch', push);
+        }
       }
     });
 
@@ -241,6 +288,8 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
     // ─── Disconnect ───
     socket.on('disconnect', (reason) => {
+      // Pitch feed sockets can disconnect independently of the host socket
+      pitchFeedSockets.delete(socket);
       if ((socket as HostSocket)._isHost) {
         // eslint-disable-next-line no-console
         console.log(`[Socket.IO] Desktop host disconnected: ${socket.id} (${reason})`);

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { GamePhase } from './cptm-types';
+import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
 
 // ===================== CONSTANTS =====================
 
@@ -48,7 +49,30 @@ export function useCompanionPitchPolling(
       return;
     }
 
+    // ── Socket.IO pitch feed (preferred): instant per-profile pushes ──
+    // Updates the same cache the HTTP poll fills. The poll below remains as
+    // fallback watchdog + stale eviction — fetching is skipped while socket
+    // frames arrive fresh (< 400 ms). Eviction still runs on fetch cycles
+    // only (socket events never evict, matching the HTTP semantics).
+    let lastSocketPitchAt = 0;
+    const unsubPitchFeed = subscribePitchFeed((event) => {
+      const profileId = event.profile?.id;
+      const d = event.data;
+      if (!profileId || !d) return;
+      lastSocketPitchAt = Date.now();
+      companionPitchCacheRef.current.set(profileId, {
+        note: d.note ?? null,
+        frequency: d.frequency ?? null,
+        clarity: d.clarity ?? 0,
+        volume: d.volume ?? 0,
+        isSinging: d.isSinging ?? false,
+        lastUpdated: Date.now(),
+      });
+    });
+
     const pollCompanionPitch = async () => {
+      // Watchdog: skip the HTTP fetch while the socket feed is fresh
+      if (Date.now() - lastSocketPitchAt < 400) return;
       if (companionAbortRef.current) companionAbortRef.current.abort();
       companionAbortRef.current = new AbortController();
 
@@ -97,6 +121,7 @@ export function useCompanionPitchPolling(
     companionPollRef.current = setInterval(pollCompanionPitch, COMPANION_POLL_MS);
 
     return () => {
+      unsubPitchFeed();
       if (companionPollRef.current) {
         clearInterval(companionPollRef.current);
         companionPollRef.current = null;

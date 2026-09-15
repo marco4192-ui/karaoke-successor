@@ -296,10 +296,24 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   }, []);
 
   // ─── Send pitch data via Socket.IO ───
-  const sendPitch = useCallback((pitch: { frequency: number; clarity: number; volume: number }) => {
+  // Full frame (same shape as the HTTP batch_pitch payload). Returns true
+  // when the frame was emitted over the socket; false when the socket is
+  // down, so the caller (use-mobile-pitch-detection) can fall back to the
+  // HTTP batch path.
+  const sendPitch = useCallback((pitch: {
+    frequency: number | null;
+    note: number | null;
+    clarity: number;
+    volume: number;
+    timestamp?: number;
+    isSinging?: boolean;
+    singingConfidence?: number;
+  }): boolean => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('companion:pitch', pitch);
+      return true;
     }
+    return false;
   }, []);
 
   // Internal reconnect function — bypasses the isConnecting guard.

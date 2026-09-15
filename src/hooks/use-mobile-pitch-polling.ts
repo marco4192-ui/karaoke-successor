@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
 
 export interface MobilePitchData {
   frequency: number | null;
@@ -44,12 +45,39 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     // Exponential backoff: when no companion is connected, poll less frequently
     let pollDelay = 100;
 
+    // ── Socket.IO pitch feed (preferred): instant pushes, no polling chain ──
+    // Mirrors the HTTP path's pitches[0] semantics: the FIRST companion that
+    // streams pitch during this song wins (same order the server's getpitch
+    // Map iteration would produce). The HTTP poll below stays as a fallback
+    // watchdog — skipped while socket frames arrive fresh (< 400 ms).
+    let lastSocketPitchAt = 0;
+    let firstSocketClientId: string | null = null;
+    const unsubPitchFeed = subscribePitchFeed((event) => {
+      if (aborted) return;
+      if (firstSocketClientId === null) firstSocketClientId = event.clientId;
+      if (event.clientId !== firstSocketClientId) return;
+      lastSocketPitchAt = Date.now();
+      const pitchData = event.data;
+      // Dedup on the meaningful fields only (excluding the ever-changing
+      // timestamp) so silence doesn't cause 30 useless re-renders per second.
+      const serialized = JSON.stringify({
+        f: pitchData.frequency, n: pitchData.note, v: pitchData.volume,
+      });
+      if (serialized !== lastPitchRef.current) {
+        lastPitchRef.current = serialized;
+        setMobilePitch(pitchData);
+      }
+      setHasMobileClient(true);
+    });
+
     const startPolling = () => {
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(pollMobilePitch, pollDelay);
     };
 
     const pollMobilePitch = async () => {
+      // Watchdog: skip the HTTP poll while the socket feed is fresh
+      if (Date.now() - lastSocketPitchAt < 400) return;
       // Cancel any in-flight request from the previous poll
       if (abortController) {
         abortController.abort();
@@ -101,6 +129,7 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     // Clear backoff timer on cleanup
     return () => {
       aborted = true;
+      unsubPitchFeed();
       if (pollInterval) clearInterval(pollInterval);
       if (abortController) abortController.abort();
     };

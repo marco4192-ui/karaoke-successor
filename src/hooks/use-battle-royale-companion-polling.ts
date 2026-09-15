@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 import { BattleRoyaleGame, BattleRoyalePlayer } from '@/lib/game/battle-royale';
+import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
 
 interface CompanionPitchEntry {
   note: number | null;
@@ -79,7 +80,38 @@ export function useBattleRoyaleCompanionPolling({
 
     let abortController: AbortController | null = null;
 
+    // ── Socket.IO pitch feed (preferred): instant per-profile pushes ──
+    // Updates the same cache the HTTP poll fills, honoring Fix 18 (only
+    // ACTIVE, non-eliminated players get cached). The poll below remains as
+    // fallback watchdog + stale eviction — fetching is skipped while socket
+    // frames arrive fresh (< 400 ms).
+    let lastSocketPitchAt = 0;
+    const unsubPitchFeed = subscribePitchFeed((event) => {
+      const profileId = event.profile?.id;
+      const d = event.data;
+      if (!profileId || !d) return;
+
+      // Fix 18 parity: re-filter active companions at event time
+      const activeCompanionIds = new Set(
+        playersRef.current
+          .filter(p => p.playerType === 'companion' && !p.eliminated)
+          .map(p => p.id),
+      );
+      if (!activeCompanionIds.has(profileId)) return;
+
+      lastSocketPitchAt = Date.now();
+      companionPitchCacheRef.current.set(profileId, {
+        note: d.note ?? null,
+        frequency: d.frequency ?? null,
+        accuracy: 0,
+        isSinging: d.isSinging,
+        lastUpdated: Date.now(),
+      });
+    });
+
     const pollCompanionPitch = async () => {
+      // Watchdog: skip the HTTP fetch while the socket feed is fresh
+      if (Date.now() - lastSocketPitchAt < 400) return;
       // Cancel any in-flight request
       if (abortController) abortController.abort();
       abortController = new AbortController();
@@ -152,6 +184,7 @@ export function useBattleRoyaleCompanionPolling({
     companionPollRef.current = setInterval(pollCompanionPitch, 200);
 
     return () => {
+      unsubPitchFeed();
       if (companionPollRef.current) {
         clearInterval(companionPollRef.current);
         companionPollRef.current = null;

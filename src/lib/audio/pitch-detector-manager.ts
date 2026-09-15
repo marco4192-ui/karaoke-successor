@@ -1,6 +1,7 @@
 import { PitchDetectionResult, Difficulty } from '@/types/game';
 import { PitchDetector } from './pitch-detector';
 import { registerCleanup } from '@/lib/utils/app-cleanup';
+import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
 
 // ===================== PITCH DETECTOR MANAGER =====================
 // Manages multiple PitchDetector instances for multi-player karaoke
@@ -17,6 +18,11 @@ interface ManagedPlayer {
   detector: PitchDetector | null;
   mobileClientId?: string;
   pollingInterval?: ReturnType<typeof setInterval>;
+  /** Unsubscribe for the Socket.IO pitch feed (mobile players only). */
+  pitchFeedUnsubscribe?: () => void;
+  /** Timestamp of the last frame received via the Socket.IO pitch feed.
+   *  Used as a watchdog: while fresh (< 400 ms), the HTTP poll is skipped. */
+  lastSocketPitchAt?: number;
   stereoChannel?: number;  // 0=left, 1=right for stereo split mode
   /** For shared-mic players: the shared AudioContext + MediaStreamSource
    *  are created once by the first player. Subsequent players reuse them
@@ -256,10 +262,13 @@ export class PitchDetectorManager {
       }
     }
 
-    // Clear polling interval for mobile players
+    // Clear polling interval and socket feed subscription for mobile players
     if (player.pollingInterval) {
       clearInterval(player.pollingInterval);
     }
+    player.pitchFeedUnsubscribe?.();
+    player.pitchFeedUnsubscribe = undefined;
+    player.lastSocketPitchAt = 0;
 
     this.players.delete(playerId);
   }
@@ -285,6 +294,9 @@ export class PitchDetectorManager {
         clearInterval(player.pollingInterval);
         player.pollingInterval = undefined;
       }
+      player.pitchFeedUnsubscribe?.();
+      player.pitchFeedUnsubscribe = undefined;
+      player.lastSocketPitchAt = 0;
     });
   }
 
@@ -301,7 +313,29 @@ export class PitchDetectorManager {
       clearInterval(player.pollingInterval);
     }
 
+    // Socket.IO pitch feed: instant per-frame pushes for this player's phone
+    // (no 100 ms polling delay, no 200 ms phone-side batch flush). The HTTP
+    // poll below stays as a fallback watchdog — it is skipped while fresh
+    // socket frames arrive.
+    player.pitchFeedUnsubscribe?.();
+    player.lastSocketPitchAt = 0;
+    player.pitchFeedUnsubscribe = subscribePitchFeed((event) => {
+      if (event.clientId !== mobileClientId) return;
+      player.lastSocketPitchAt = Date.now();
+      this.callbacks?.onPitchDetected(playerId, {
+        frequency: event.data.frequency,
+        note: event.data.note,
+        rawNote: event.data.note,
+        clarity: event.data.clarity || 0,
+        volume: event.data.volume || 0,
+        isSinging: event.data.isSinging,
+        singingConfidence: event.data.singingConfidence,
+      });
+    });
+
     player.pollingInterval = setInterval(async () => {
+      // Watchdog: skip the HTTP poll while the socket feed delivers fresh frames
+      if (player.lastSocketPitchAt && Date.now() - player.lastSocketPitchAt < 400) return;
       try {
         const response = await fetch('/api/mobile?action=getpitch');
         const data = await response.json();

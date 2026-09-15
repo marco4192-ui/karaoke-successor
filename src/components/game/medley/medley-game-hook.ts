@@ -651,10 +651,22 @@ export function useMedleyGame({
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction, finalizeSnippetScores]);
 
   // ── Game loop ──
+  // rAF-driven (same pattern as use-ptm-time-tracking.ts): the media clock is
+  // read every display frame and currentTimeMs syncs at ~40 fps (25 ms), so
+  // the note highway GLIDES instead of stepping at the old 50 ms interval
+  // (20 fps — the choppiest mode in the app). Scoring, event sync and
+  // forceRender keep their original 50 ms cadence, keeping per-second React
+  // work identical to the previous setInterval implementation.
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
 
-    const loop = setInterval(() => {
+    let rafId = 0;
+    let lastTimeSync = 0; // 25 ms cadence — smooth currentTimeMs for the highway
+    let lastTick = 0;     // 50 ms cadence — scoring / events / transitions
+
+    const loop = () => {
+      rafId = requestAnimationFrame(loop);
+
       // Don't advance while paused
       if (audio.isPausedRef.current) return;
 
@@ -678,7 +690,18 @@ export function useMedleyGame({
       const effectiveStart = audio.effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
       const effectiveEnd = audio.effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
       const snippetTime = songTimeMs - effectiveStart;
-      setCurrentTimeMs(snippetTime);
+
+      const perfNow = performance.now();
+
+      // ── Smooth time sync (~40 fps) — this is what makes the notes glide ──
+      if (perfNow - lastTimeSync >= 25) {
+        lastTimeSync = perfNow;
+        setCurrentTimeMs(snippetTime);
+      }
+
+      // ── Full logic tick (50 ms — original cadence) ──
+      if (perfNow - lastTick < 50) return;
+      lastTick = perfNow;
 
       // Check snippet end
       if (songTimeMs >= effectiveEnd) {
@@ -779,9 +802,10 @@ export function useMedleyGame({
 
       // Keep display state in sync with ref mutations for live score updates
       forceRender();
-    }, 50);
+    };
 
-    return () => clearInterval(loop);
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult, finalizeSnippetScores]);
 
