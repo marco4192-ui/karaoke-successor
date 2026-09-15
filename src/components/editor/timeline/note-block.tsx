@@ -16,7 +16,7 @@ interface NoteBlockProps {
   maxPitch: number;
   pitchHeight: number;
   onClick: (noteId: string, _event: React.MouseEvent) => void;
-  onDragStart: (noteId: string, _startX: number, type: 'move' | 'resize-left' | 'resize-right') => void;
+  onDragStart: (noteId: string, _startX: number, _startY: number, type: 'move' | 'resize-left' | 'resize-right') => void;
   onDoubleClick?: (noteId: string) => void;
 }
 
@@ -45,17 +45,28 @@ export function NoteBlock({
   const noteHeight = Math.min(pitchHeight - 1, Math.round(pitchHeight * 0.9) + 3);
   const y = (maxPitch - note.pitch) * pitchHeight + (pitchHeight - noteHeight) / 2;
 
-  // Get note color based on type
+  // Get note color based on type ( : normal, * golden, F freestyle, R rap, G golden rap )
   const getNoteColor = () => {
+    // Golden (incl. golden rap 'G') — amber with an emerald ring for G
     if (note.isGolden) {
       return {
         bg: 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400',
-        border: 'border-yellow-400',
-        shadow: 'shadow-yellow-400/50',
+        border: note.isRap ? 'border-emerald-400' : 'border-yellow-400',
+        shadow: note.isRap ? 'shadow-emerald-400/50' : 'shadow-yellow-400/50',
         text: 'text-yellow-900'
       };
     }
-    if (note.isBonus) {
+    // Rap ('R') — emerald (timing counts, pitch ignored)
+    if (note.isRap) {
+      return {
+        bg: 'bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500',
+        border: 'border-emerald-400',
+        shadow: 'shadow-emerald-400/50',
+        text: 'text-emerald-950'
+      };
+    }
+    // Freestyle ('F', legacy isBonus) — pink (any noise counts)
+    if (note.isFreestyle || note.isBonus) {
       return {
         bg: 'bg-gradient-to-r from-pink-500 via-rose-400 to-pink-500',
         border: 'border-pink-400',
@@ -63,7 +74,7 @@ export function NoteBlock({
         text: 'text-white'
       };
     }
-    // Duet colors
+    // Voice colors (duet/trio/quartet)
     if (note.player === 'P1') {
       return {
         bg: 'bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-600',
@@ -80,6 +91,22 @@ export function NoteBlock({
         text: 'text-white'
       };
     }
+    if (note.player === 'P4') {
+      return {
+        bg: 'bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600',
+        border: 'border-orange-400',
+        shadow: 'shadow-orange-400/50',
+        text: 'text-white'
+      };
+    }
+    if (note.player === 'P8') {
+      return {
+        bg: 'bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600',
+        border: 'border-rose-400',
+        shadow: 'shadow-rose-400/50',
+        text: 'text-white'
+      };
+    }
     // Default cyan
     return {
       bg: 'bg-gradient-to-r from-cyan-700 via-cyan-600 to-cyan-700',
@@ -93,7 +120,7 @@ export function NoteBlock({
 
   const handleMouseDown = useCallback((e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     e.stopPropagation();
-    onDragStart(note.id, e.clientX, type);
+    onDragStart(note.id, e.clientX, e.clientY, type);
   }, [note.id, onDragStart]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -200,7 +227,7 @@ export function NoteBlock({
       {/* Selection indicator */}
       {isSelected && (
         <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-lg flex items-center justify-center">
-          <div className={cn('w-2 h-2 rounded-full', note.isGolden ? 'bg-yellow-500' : 'bg-cyan-500')} />
+          <div className={cn('w-2 h-2 rounded-full', note.isGolden ? 'bg-yellow-500' : note.isRap ? 'bg-emerald-500' : (note.isFreestyle || note.isBonus) ? 'bg-pink-500' : 'bg-cyan-500')} />
         </div>
       )}
 

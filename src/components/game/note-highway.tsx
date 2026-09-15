@@ -243,7 +243,7 @@ const NoteBlock = React.memo(function NoteBlock({
         'tick-fill-singstar',
         accuracy,
         note.isGolden || false,
-        note.isBonus || false,
+        note.isFreestyle || note.isBonus || false,
         notePerfSamples,
         note.pitch,
         pitchStats,
@@ -256,6 +256,7 @@ const NoteBlock = React.memo(function NoteBlock({
         noteTint,
         renderMode,
         flatFill,
+        note.isRap || false,
       );
 
   return (

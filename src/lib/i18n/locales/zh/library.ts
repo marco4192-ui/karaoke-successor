@@ -508,6 +508,8 @@ editor: {
     duetMode: '二重唱模式',
     player1Name: '玩家1名称',
     player2Name: '玩家2名称',
+    player3Name: '玩家 3 名称',
+    player4Name: '玩家 4 名称',
     duration: '时长：',
     notes: '音符：',
     lines: '行数：',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: '玩家1名称',
     duetPlayer2: '#P2：（二重唱玩家2）',
     duetPlayer2Placeholder: '玩家2名称',
+    duetPlayer3: '#P4: (玩家 3 — 三重唱)',
+    duetPlayer4: '#P8: (玩家 4 — 四重唱)',
     tagsPlaceholder: '标签1, 标签2, 标签3',
   },
   lyricsTab: {

@@ -6,8 +6,60 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export type GameMode = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online' | 'rate-my-song';
 
-// Duet Mode - Player assignment for lyrics
-export type DuetPlayer = 'P1' | 'P2' | 'both';
+// Duet/Multi-voice Mode - Player assignment for lyrics.
+// UltraStar uses a BITMASK for the player tags in trio/quartet songs:
+//   P1 = player 1 (bit 1), P2 = player 2 (bit 2),
+//   P4 = player 3 (bit 4), P8 = player 4 (bit 8)
+export type DuetPlayer = 'P1' | 'P2' | 'P4' | 'P8' | 'both';
+
+/** The four player tags in singing order (P4 = 3rd voice, P8 = 4th voice). */
+export const PLAYER_TAGS = ['P1', 'P2', 'P4', 'P8'] as const;
+
+/** Map a player tag to its 1-based singer number (P4 → 3, P8 → 4). */
+export function getPlayerNumber(player: DuetPlayer): number {
+  switch (player) {
+    case 'P1': return 1;
+    case 'P2': return 2;
+    case 'P4': return 3;
+    case 'P8': return 4;
+    default: return 0;
+  }
+}
+
+/** The five UltraStar note types (bonus notes no longer exist). */
+export type NoteType = 'normal' | 'golden' | 'freestyle' | 'rap' | 'rapGolden';
+
+/** The TXT type character for each note type. */
+export const NOTE_TYPE_CHARS: Record<NoteType, ':' | '*' | 'F' | 'R' | 'G'> = {
+  normal: ':',
+  golden: '*',
+  freestyle: 'F',
+  rap: 'R',
+  rapGolden: 'G',
+};
+
+/** Read the semantic note type of a note (legacy isBonus counts as freestyle). */
+export function getNoteType(note: Pick<Note, 'isGolden' | 'isRap' | 'isFreestyle' | 'isBonus'>): NoteType {
+  if (note.isRap) return note.isGolden ? 'rapGolden' : 'rap';
+  if (note.isGolden) return 'golden';
+  if (note.isFreestyle || note.isBonus) return 'freestyle';
+  return 'normal';
+}
+
+/** Flags payload for a note type (used when creating/changing notes). */
+export function noteTypeFlags(type: NoteType): { isGolden: boolean; isRap: boolean; isFreestyle: boolean; isBonus: boolean } {
+  return {
+    isGolden: type === 'golden' || type === 'rapGolden',
+    isRap: type === 'rap' || type === 'rapGolden',
+    isFreestyle: type === 'freestyle',
+    isBonus: false, // legacy field — bonus notes no longer exist, kept for old data
+  };
+}
+
+/** True when the note is a freestyle note (any noise counts, pitch irrelevant). */
+export function isFreestyleNote(note: Pick<Note, 'isFreestyle' | 'isBonus'>): boolean {
+  return Boolean(note.isFreestyle || note.isBonus);
+}
 
 export interface Note {
   id: string;
@@ -16,9 +68,11 @@ export interface Note {
   startTime: number; // milliseconds from song start
   duration: number; // milliseconds
   lyric: string;
+  /** @deprecated Bonus notes no longer exist — legacy data only; treat as freestyle. */
   isBonus: boolean;
-  isGolden: boolean; // Star power note
-  isRap?: boolean; // Rap note ('R'/'G' types in UltraStar)
+  isGolden: boolean; // Star power note ('*' / 'G')
+  isRap?: boolean; // Rap note ('R'/'G' types in UltraStar) — timing counts, pitch ignored
+  isFreestyle?: boolean; // Freestyle note ('F') — any noise counts, pitch ignored
   player?: DuetPlayer; // For duet mode - which player sings this note
   analysisConfidence?: number; // 0-1 confidence from pitch analysis (editor-only, not serialized)
 }
@@ -81,9 +135,10 @@ export interface Song {
     startTime: number;
     duration: number;
   };
-  // Duet mode support
-  isDuet?: boolean; // True if this is a duet song
-  duetPlayerNames?: [string, string]; // Optional names for P1/P2 (e.g., ["Artist", "Featuring"])
+  // Duet/multi-voice mode support
+  isDuet?: boolean; // True if this is a multi-voice song (duet/trio/quartet)
+  /** Optional voice names, index 0-3 → P1/P2/P4/P8 (e.g., ["Artist", "Featuring"]). */
+  duetPlayerNames?: string[];
   duetPlayerColors?: [string, string]; // Optional colors for P1/P2
   // UltraStar TXT Metadata (editable in editor)
   version?: string; // #VERSION: - format version

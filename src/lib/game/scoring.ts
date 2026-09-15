@@ -230,16 +230,36 @@ export function calculateScoringMetadata(
 
 // ===================== TICK-BASED SCORING =====================
 
+/** How a note's ticks are evaluated. */
+export type TickNoteKind = 'normal' | 'freestyle' | 'rap';
+
 /**
  * Evaluate a single tick during note playback.
+ *
+ * Note kinds (UltraStar types F/R/G):
+ * - 'normal':   pitch accuracy decides — the classic evaluation.
+ * - 'freestyle' (F): pitch is IRRELEVANT — any vocal noise counts as a full
+ *   hit ("points as long as you make sounds"), silence is a miss (no penalty
+ *   beyond the lost points — handled combo-neutral in runScoringPass).
+ * - 'rap' (R / G): rhythm decides, pitch is ignored — vocal activity on the
+ *   beat counts as a hit. The tick grid IS the timing check: only rapping
+ *   AT the tick times fills the note.
  */
 export function evaluateTick(
   sungNote: number,
   targetNote: number,
-  difficulty: Difficulty
+  difficulty: Difficulty,
+  noteKind: TickNoteKind = 'normal',
 ): TickEvaluation {
   if (!Number.isFinite(sungNote)) {
     return { accuracy: 0, isHit: false, displayType: 'Miss' };
+  }
+
+  // Freestyle & rap: no pitch check — any detected voice is a full hit.
+  // (Freestyle passages are for shouts/spoken parts, rap is scored on
+  // rhythm — the tick timing provides the rhythmic gating.)
+  if (noteKind === 'freestyle' || noteKind === 'rap') {
+    return { accuracy: 1, isHit: true, displayType: 'Perfect' };
   }
 
   const settings = DIFFICULTY_SETTINGS[difficulty];

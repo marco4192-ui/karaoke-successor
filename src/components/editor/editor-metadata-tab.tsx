@@ -236,42 +236,43 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
 
         <Separator className="bg-slate-700" />
 
-        {/* P1 / P2 Names for Duet */}
-        <div className="space-y-2">
-          <Label htmlFor="meta-p1" className="text-slate-400 text-xs">{t('editor.metadataTab.duetPlayer1')}</Label>
-          <Input
-            id="meta-p1"
-            value={song.duetPlayerNames?.[0] || ''}
-            onChange={(e) => {
-              onSongChange(prev => ({
-                ...prev,
-                isDuet: true,
-                duetPlayerNames: [e.target.value, prev.duetPlayerNames?.[1] || 'Player 2']
-              }));
-              onSetUnsavedChanges();
-            }}
-            placeholder={t('editor.metadataTab.duetPlayer1Placeholder')}
-            className="bg-slate-800 border-slate-600 h-8"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="meta-p2" className="text-slate-400 text-xs">{t('editor.metadataTab.duetPlayer2')}</Label>
-          <Input
-            id="meta-p2"
-            value={song.duetPlayerNames?.[1] || ''}
-            onChange={(e) => {
-              onSongChange(prev => ({
-                ...prev,
-                isDuet: true,
-                duetPlayerNames: [prev.duetPlayerNames?.[0] || 'Player 1', e.target.value]
-              }));
-              onSetUnsavedChanges();
-            }}
-            placeholder={t('editor.metadataTab.duetPlayer2Placeholder')}
-            className="bg-slate-800 border-slate-600 h-8"
-          />
-        </div>
+        {/* Voice names — P1/P2 (duet) plus P4/P8 for trio/quartet songs.
+            The extra inputs only appear when the song actually has 3rd/4th
+            voice notes (P4/P8 tags), so classic duets stay compact. */}
+        {(['P1', 'P2', 'P4', 'P8'] as const).map((tag, idx) => {
+          // P1/P2 inputs are always shown (classic duet); P4/P8 only when used
+          const hasVoice = idx < 2
+            || song.lyrics.some(line => line.notes.some(n => n.player === tag));
+          if (!hasVoice) return null;
+          const label = idx === 0 ? t('editor.metadataTab.duetPlayer1')
+            : idx === 1 ? t('editor.metadataTab.duetPlayer2')
+              : idx === 2 ? t('editor.metadataTab.duetPlayer3')
+                : t('editor.metadataTab.duetPlayer4');
+          const setVoiceName = (value: string) => {
+            onSongChange(prev => {
+              const names = [...(prev.duetPlayerNames ?? ['Player 1', 'Player 2', '', ''])];
+              while (names.length < 4) names.push('');
+              names[idx] = value;
+              return { ...prev, isDuet: true, duetPlayerNames: names };
+            });
+            onSetUnsavedChanges();
+          };
+          return (
+            <div key={tag} className="space-y-2">
+              <Label htmlFor={`meta-${tag.toLowerCase()}`} className="text-slate-400 text-xs">
+                {label}
+                {idx >= 2 && <span className="ml-1.5 text-[10px] text-slate-600 font-mono">#{tag}</span>}
+              </Label>
+              <Input
+                id={`meta-${tag.toLowerCase()}`}
+                value={song.duetPlayerNames?.[idx] || ''}
+                onChange={(e) => setVoiceName(e.target.value)}
+                placeholder={t('editor.metadataTab.duetPlayer1Placeholder')}
+                className="bg-slate-800 border-slate-600 h-8"
+              />
+            </div>
+          );
+        })}
       </div>
     </ScrollArea>
   );

@@ -2,14 +2,16 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { Note, Song } from '@/types/game';
-import { midiToNoteName } from '@/types/game';
+import type { Note, Song, NoteType, DuetPlayer } from '@/types/game';
+import { midiToNoteName, getNoteType, noteTypeFlags, NOTE_TYPE_CHARS } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
 import { Waveform } from './waveform';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info } from 'lucide-react';
+import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info, ChevronUp } from 'lucide-react';
 import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { useTranslation } from '@/lib/i18n/translations';
 import { snapTimeToBeat } from '@/lib/editor/beat-utils';
@@ -51,8 +53,6 @@ interface TimelineProps {
   onCommitHistory: () => void;
   onNoteAdd: (_startTime: number, _pitch: number) => void;
   onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
-  /** Transpose the current selection by ±semitones (wired to handleTranspose) */
-  onTransposeNotes?: (_delta: number) => void;
 }
 
 // Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
@@ -65,8 +65,14 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 10;
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
 
-// Quick transpose steps offered in the note-details band (semitones)
-const TRANSPOSE_STEPS = [-12, -1, 1, 12] as const;
+/** All five note types with their TXT chars, for the DropUp menu. */
+const NOTE_TYPE_OPTIONS: Array<{ value: NoteType; char: string; }> = [
+  { value: 'normal', char: ':' },
+  { value: 'golden', char: '*' },
+  { value: 'freestyle', char: 'F' },
+  { value: 'rap', char: 'R' },
+  { value: 'rapGolden', char: 'G' },
+];
 
 /** One renderable pitch lane (combined mode = a single lane over all notes). */
 interface PitchLane {
@@ -100,8 +106,7 @@ export function Timeline({
   onNoteUpdate,
   onCommitHistory,
   onNoteAdd,
-  onLyricChange,
-  onTransposeNotes
+  onLyricChange
 }: TimelineProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -112,8 +117,11 @@ export function Timeline({
   const [dragState, setDragState] = useState<{
     noteId: string;
     startX: number;
+    startY: number;
     type: 'move' | 'resize-left' | 'resize-right';
     originalNote: Note;
+    /** Pitch height of the lane the note lives in (vertical → pitch dragging). */
+    pitchHeight: number;
     moved: boolean;
   } | null>(null);
   // Viewport size (measured via ResizeObserver → responsive pitch grid)
@@ -151,20 +159,30 @@ export function Timeline({
   const waveformHeight = 60;
   const minimapHeight = 44;
   // Height reserved for the note-details band between lyric track and minimap
-  const noteInfoHeight = 92;
+  // (R7: now contains the primary input fields — Lyric / Pitch / Start / Duration
+  // plus the type DropUp — so it needs a little more room than the old chips)
+  const noteInfoHeight = 108;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
 
-  // Notes per player (split view). Unassigned notes count as P1.
+  // Notes per voice (split view). Unassigned notes count as the first voice.
   const allNotes = useMemo(() => {
     return song.lyrics.flatMap(line => line.notes);
   }, [song.lyrics]);
   const hasPlayerNotes = useMemo(
-    () => allNotes.some(n => n.player === 'P1' || n.player === 'P2'),
+    () => allNotes.some(n => n.player === 'P1' || n.player === 'P2' || n.player === 'P4' || n.player === 'P8'),
     [allNotes],
   );
-  const p1Notes = useMemo(() => allNotes.filter(n => n.player !== 'P2'), [allNotes]);
-  const p2Notes = useMemo(() => allNotes.filter(n => n.player === 'P2'), [allNotes]);
+  // Voices present in the song, in singing order (P1, P2, P4=3rd, P8=4th)
+  const presentVoices = useMemo(() => {
+    const voices: Array<'P1' | 'P2' | 'P4' | 'P8'> = [];
+    for (const tag of ['P1', 'P2', 'P4', 'P8'] as const) {
+      if (allNotes.some(n => n.player === tag)) voices.push(tag);
+    }
+    return voices;
+  }, [allNotes]);
+  // Voice-tagged notes (P1/P2/P4/P8) — used by the split-view lanes below.
+  // Unassigned/'both' notes belong to the P1 lane.
 
   // Responsive pitch lane height: adapt to the available container height so
   // the timeline fits smaller screens (previously fixed 20px → 860px minimum
@@ -177,8 +195,12 @@ export function Timeline({
     return Math.max(12, Math.min(22, Math.floor(notesAreaHeight / VISIBLE_PITCH_RANGE)));
   }, [notesAreaHeight]);
   const splitPitchHeight = useMemo(() => {
-    return Math.max(10, Math.min(22, Math.floor((notesAreaHeight / 2) / SPLIT_PITCH_RANGE)));
-  }, [notesAreaHeight]);
+    const laneCount = Math.max(2, presentVoices.length || 2);
+    // 2 voices keep the classic 2-octave lanes; 3-4 voices get 1 octave each
+    // so all lanes fit into the available area.
+    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : 12;
+    return Math.max(8, Math.min(22, Math.floor((notesAreaHeight / laneCount) / rangePerLane)));
+  }, [notesAreaHeight, presentVoices.length]);
 
   // ── Calculate center pitch from song's notes ──
   // The center pitch is the median of all note pitches, snapped to the nearest
@@ -216,9 +238,6 @@ export function Timeline({
   }, [song.id, allNotes, centerOfNotes]);
 
   // ── Lane definitions (combined = 1 lane over everything; split = 2 lanes) ──
-  const p1BaseCenter = useMemo(() => centerOfNotes(p1Notes), [p1Notes, centerOfNotes]);
-  const p2BaseCenter = useMemo(() => centerOfNotes(p2Notes), [p2Notes, centerOfNotes]);
-
   const lanes: PitchLane[] = useMemo(() => {
     if (!duetSplit || !hasPlayerNotes) {
       const timelineHeight = VISIBLE_PITCH_RANGE * combinedPitchHeight;
@@ -232,42 +251,51 @@ export function Timeline({
         pitchHeight: combinedPitchHeight,
       }];
     }
-    const laneHeight = SPLIT_PITCH_RANGE * splitPitchHeight;
+
+    // ── Split view: one lane per voice (duet = 2, trio = 3, quartet = 4) ──
+    // P1 is ALWAYS the first lane — unassigned/'both' notes live there. When
+    // only stray P2/P4/P8 notes exist (no explicit P1), the P1 lane still
+    // shows so unassigned notes don't get swallowed by another voice's lane.
+    const laneVoices: Array<'P1' | 'P2' | 'P4' | 'P8'> = presentVoices.includes('P1')
+      ? presentVoices
+      : ['P1', ...presentVoices];
+    const laneCount = Math.max(2, laneVoices.length);
+    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : 12;
+    const laneHeight = rangePerLane * splitPitchHeight;
     const clampSplitCenter = (center: number) => {
-      const minAllowed = TOTAL_MIN_PITCH + SPLIT_PITCH_RANGE / 2;
-      const maxAllowed = TOTAL_MAX_PITCH - SPLIT_PITCH_RANGE / 2;
+      const minAllowed = TOTAL_MIN_PITCH + rangePerLane / 2;
+      const maxAllowed = TOTAL_MAX_PITCH - rangePerLane / 2;
       return Math.max(minAllowed, Math.min(maxAllowed, center));
     };
-    const p1Center = clampSplitCenter(p1BaseCenter + splitCenterOffset);
-    const p2Center = clampSplitCenter(p2BaseCenter + splitCenterOffset);
-    return [
-      {
-        key: 'p1',
-        badge: song.duetPlayerNames?.[0] || 'P1',
-        badgeClass: 'text-cyan-300 bg-cyan-500/15 border-cyan-400/30',
-        notes: p1Notes,
-        topOffset: 0,
+
+    const badgeStyles: Record<string, string> = {
+      P1: 'text-cyan-300 bg-cyan-500/15 border-cyan-400/30',
+      P2: 'text-purple-300 bg-purple-500/15 border-purple-400/30',
+      P4: 'text-orange-300 bg-orange-500/15 border-orange-400/30',
+      P8: 'text-rose-300 bg-rose-500/15 border-rose-400/30',
+    };
+    const voiceNameIndex: Record<string, number> = { P1: 0, P2: 1, P4: 2, P8: 3 };
+
+    return laneVoices.map((tag, i) => {
+      const laneNotes = tag === 'P1'
+        ? allNotes.filter(n => n.player === 'P1' || (!n.player || n.player === 'both'))
+        : allNotes.filter(n => n.player === tag);
+      const center = clampSplitCenter(centerOfNotes(laneNotes) + splitCenterOffset);
+      return {
+        key: tag,
+        badge: song.duetPlayerNames?.[voiceNameIndex[tag]] || tag,
+        badgeClass: badgeStyles[tag],
+        notes: laneNotes,
+        topOffset: i * (laneHeight + 4),
         height: laneHeight,
-        minPitch: p1Center - SPLIT_PITCH_RANGE / 2,
-        maxPitch: p1Center + SPLIT_PITCH_RANGE / 2,
+        minPitch: center - rangePerLane / 2,
+        maxPitch: center + rangePerLane / 2,
         pitchHeight: splitPitchHeight,
-      },
-      {
-        key: 'p2',
-        badge: song.duetPlayerNames?.[1] || 'P2',
-        badgeClass: 'text-purple-300 bg-purple-500/15 border-purple-400/30',
-        notes: p2Notes,
-        topOffset: laneHeight + 4,
-        height: laneHeight,
-        minPitch: p2Center - SPLIT_PITCH_RANGE / 2,
-        maxPitch: p2Center + SPLIT_PITCH_RANGE / 2,
-        pitchHeight: splitPitchHeight,
-      },
-    ];
+      };
+    });
   }, [
     duetSplit, hasPlayerNotes, allNotes, combinedPitchHeight, pitchScrollCenter,
-    splitPitchHeight, p1BaseCenter, p2BaseCenter, splitCenterOffset, p1Notes, p2Notes,
-    song.duetPlayerNames,
+    splitPitchHeight, splitCenterOffset, song.duetPlayerNames, presentVoices, centerOfNotes,
   ]);
 
   const lanesTotalHeight = lanes.reduce((sum, l) => Math.max(sum, l.topOffset + l.height), 0);
@@ -402,13 +430,24 @@ export function Timeline({
 
       if (dragState) {
         const deltaX = e.clientX - dragState.startX;
-        if (Math.abs(deltaX) > 1) dragState.moved = true;
+        const deltaY = e.clientY - dragState.startY;
+        if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) dragState.moved = true;
         const deltaTime = (deltaX / pixelsPerSecond) * 1000;
 
         if (dragState.type === 'move') {
-          onNoteUpdate(dragState.noteId, {
-            startTime: snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime))
-          }, 'live');
+          // 2D move: horizontal = time, vertical = pitch (R7 task 4 —
+          // notes are draggable in height with the mouse). One semitone per
+          // lane row; clamp to the MIDI range. Frequency follows automatically.
+          const updates: Partial<Note> = {
+            startTime: snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime)),
+          };
+          if (dragState.pitchHeight > 0) {
+            const pitchDelta = Math.round(-deltaY / dragState.pitchHeight);
+            if (pitchDelta !== 0) {
+              updates.pitch = Math.max(0, Math.min(127, dragState.originalNote.pitch + pitchDelta));
+            }
+          }
+          onNoteUpdate(dragState.noteId, updates, 'live');
         } else if (dragState.type === 'resize-left') {
           const newStart = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
           const newDuration = dragState.originalNote.duration - (newStart - dragState.originalNote.startTime);
@@ -447,13 +486,15 @@ export function Timeline({
     }
   }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate, onCommitHistory, snapTime]);
 
-  // Handle note drag start
-  const handleNoteDragStart = useCallback((noteId: string, startX: number, type: 'move' | 'resize-left' | 'resize-right') => {
+  // Handle note drag start — captures the lane's pitch height so vertical
+  // mouse movement maps to semitone steps during the drag.
+  const handleNoteDragStart = useCallback((noteId: string, startX: number, startY: number, type: 'move' | 'resize-left' | 'resize-right') => {
     const note = allNotes.find(n => n.id === noteId);
     if (note) {
-      setDragState({ noteId, startX, type, originalNote: { ...note }, moved: false });
+      const lane = lanes.find(l => l.notes.some(n => n.id === noteId));
+      setDragState({ noteId, startX, startY, type, originalNote: { ...note }, pitchHeight: lane?.pitchHeight ?? 12, moved: false });
     }
-  }, [allNotes]);
+  }, [allNotes, lanes]);
 
   // Handle note click — Ctrl/Cmd+Click toggles the multi-selection (YASS-style)
   const handleNoteClick = useCallback((noteId: string, event: React.MouseEvent) => {
@@ -769,7 +810,7 @@ export function Timeline({
               )}
 
               {/* Lane divider (between split lanes) */}
-              {lane.key === 'p1' && (
+              {lane.key !== 'combined' && lanes[lanes.length - 1]?.key !== lane.key && (
                 <div className="absolute left-0 right-0 bottom-0 h-px bg-slate-600 z-10 pointer-events-none" />
               )}
 
@@ -819,11 +860,14 @@ export function Timeline({
         </div>
 
         {/* ── Note details band ("Noten-Details") ──
-            Fills the former dead space between the lyric track and the pitch
-            minimap: stats of the selected note + quick transpose buttons.
+            R7 redesign: the input fields from the old left-panel note tab
+            live HERE now — Lyric, Pitch (MIDI), Start (ms) and Duration (ms)
+            are the primary editing surface, plus a DropUp menu for the note
+            type (opens upward — the band sits at the bottom of the screen).
+            Non-duplicate info (frequency, beat, line, voice) stays as chips.
             Clicks are stopped so interacting with the band keeps the selection. */}
         <div
-          className="absolute left-0 right-0 z-20 border-t border-slate-700 bg-slate-900/60 cursor-default overflow-hidden"
+          className="absolute left-0 right-0 z-20 border-t border-slate-700 bg-slate-900/70 cursor-default overflow-hidden"
           style={{
             top: waveformHeight + lanesTotalHeight + lyricTrackHeight,
             bottom: minimapHeight,
@@ -832,7 +876,7 @@ export function Timeline({
           data-testid="editor-note-details-band"
         >
           <div className="h-full flex flex-col px-3 py-1.5 min-w-0">
-            {/* Header row: title + selection count + transpose buttons */}
+            {/* Header row: title + selection count */}
             <div className="flex items-center gap-2 shrink-0 min-w-0">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
                 <Info className="w-3 h-3 text-cyan-400" aria-hidden />
@@ -843,121 +887,21 @@ export function Timeline({
                   className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0"
                   data-testid="editor-note-details-count"
                 >
-                  {multiSelectCount}× {t('editor.toolsPanel.notesSelected')}
+                  {multiSelectCount}× {t('editor.shortcuts.addNote')}
                 </span>
               )}
-              <div className="ml-auto flex items-center gap-1 shrink-0">
-                <span className="hidden md:inline text-[10px] text-slate-500 mr-1 whitespace-nowrap">
-                  {t('editor.noteDetails.transposeLabel')}
-                </span>
-                {TRANSPOSE_STEPS.map(delta => (
-                  <Button
-                    key={delta}
-                    size="sm"
-                    variant="outline"
-                    disabled={!selectedDetailNote}
-                    onClick={() => onTransposeNotes?.(delta)}
-                    title={`${t('editor.noteDetails.transposeLabel')}: ${delta > 0 ? `+${delta}` : delta}`}
-                    data-testid={`editor-note-transpose-${delta > 0 ? `plus-${delta}` : `minus-${Math.abs(delta)}`}`}
-                    className="h-7 px-2 text-xs font-mono border-slate-600 text-slate-300 hover:border-cyan-500/60 hover:text-cyan-300 disabled:opacity-40"
-                  >
-                    {delta > 0 ? `+${delta}` : `${delta}`}
-                  </Button>
-                ))}
-              </div>
             </div>
 
-            {/* Stats chips for the primary/last-selected note */}
             {selectedDetailNote ? (
-              <div className="flex-1 min-h-0 flex items-center gap-1.5 overflow-x-auto editor-panel-scroll mt-1">
-                <DetailChip
-                  label={t('editor.noteDetails.pitch')}
-                  testId="editor-note-details-pitch"
-                  value={
-                    <>
-                      <span className="text-cyan-300 font-semibold">{midiToNoteName(selectedDetailNote.pitch)}</span>
-                      <span className="text-slate-500 mx-1">·</span>
-                      <span>MIDI {selectedDetailNote.pitch}</span>
-                    </>
-                  }
-                />
-                <DetailChip
-                  label={t('editor.noteDetails.frequency')}
-                  testId="editor-note-details-frequency"
-                  value={`${selectedDetailNote.frequency.toFixed(1)} Hz`}
-                />
-                <DetailChip
-                  label={t('editor.noteDetails.text')}
-                  testId="editor-note-details-text"
-                  value={<span className="font-mono text-purple-300">{selectedDetailNote.lyric || '---'}</span>}
-                />
-                <DetailChip
-                  label={t('editor.noteDetails.position')}
-                  testId="editor-note-details-position"
-                  value={`${formatTimeMs(selectedDetailNote.startTime)} → ${formatTimeMs(selectedDetailNote.startTime + selectedDetailNote.duration)}`}
-                />
-                <DetailChip
-                  label={t('editor.noteDetails.duration')}
-                  testId="editor-note-details-duration"
-                  value={`${Math.round(selectedDetailNote.duration)} ms · ${(selectedDetailNote.duration / 1000).toFixed(2)} s`}
-                />
-                <DetailChip
-                  label={t('editor.noteDetails.beat')}
-                  testId="editor-note-details-beat"
-                  value={`#${detailBeat.toFixed(2)}`}
-                />
-                {selectedLineIndex >= 0 && (
-                  <DetailChip
-                    label={t('editor.noteDetails.line')}
-                    testId="editor-note-details-line"
-                    value={`#${selectedLineIndex + 1}`}
-                  />
-                )}
-                <DetailChip
-                  label={t('editor.noteDetails.type')}
-                  testId="editor-note-details-type"
-                  value={
-                    <span
-                      className={cn(
-                        'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
-                        selectedDetailNote.isGolden
-                          ? 'bg-amber-500/15 text-amber-300 border-amber-400/30'
-                          : selectedDetailNote.isBonus
-                            ? 'bg-pink-500/15 text-pink-300 border-pink-400/30'
-                            : selectedDetailNote.isRap
-                              ? 'bg-slate-500/20 text-slate-300 border-slate-400/30'
-                              : 'bg-cyan-500/10 text-cyan-300 border-cyan-400/30',
-                      )}
-                    >
-                      {selectedDetailNote.isGolden
-                        ? t('editor.toolsPanel.golden')
-                        : selectedDetailNote.isBonus
-                          ? t('editor.toolsPanel.bonus')
-                          : selectedDetailNote.isRap
-                            ? t('editor.noteDetails.rap')
-                            : t('editor.toolsPanel.normal')}
-                    </span>
-                  }
-                />
-                {selectedDetailNote.player && (
-                  <DetailChip
-                    label={t('editor.noteTab.player')}
-                    testId="editor-note-details-player"
-                    value={
-                      <span
-                        className={cn(
-                          'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
-                          selectedDetailNote.player === 'P2'
-                            ? 'bg-purple-500/15 text-purple-300 border-purple-400/30'
-                            : 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
-                        )}
-                      >
-                        {selectedDetailNote.player}
-                      </span>
-                    }
-                  />
-                )}
-              </div>
+              <NoteDetailsInputs
+                key={selectedDetailNote.id}
+                note={selectedDetailNote}
+                beat={detailBeat}
+                lineIndex={selectedLineIndex}
+                onNoteUpdate={onNoteUpdate}
+                onLyricChange={onLyricChange}
+                onCommitHistory={onCommitHistory}
+              />
             ) : (
               <div className="flex-1 flex items-center justify-center text-xs text-slate-600">
                 {t('editor.noteDetails.hint')}
@@ -1032,6 +976,248 @@ function DetailChip({ label, value, testId, title }: {
     >
       <span className="text-[9px] uppercase tracking-wider text-slate-500 leading-none">{label}</span>
       <span className="text-xs text-slate-100 font-medium leading-tight whitespace-nowrap">{value}</span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Note details inputs — the PRIMARY editing surface for the selected note.
+// Lives in the band below the timeline (R7 task 2.3): Lyric, Pitch (MIDI),
+// Start (ms), Duration (ms) as standard inputs with up/down steppers, plus
+// a DropUp (opens upward) to pick the note type.
+// Non-duplicate info stays as compact chips: frequency, beat, line, voice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Parses a number input safely — null for empty/invalid (skip the update). */
+function parseNum(value: string): number | null {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function NoteDetailsInputs({
+  note,
+  beat,
+  lineIndex,
+  onNoteUpdate,
+  onLyricChange,
+  onCommitHistory,
+}: {
+  note: Note;
+  beat: number;
+  lineIndex: number;
+  onNoteUpdate: (_noteId: string, _updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
+  onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
+  onCommitHistory: () => void;
+}) {
+  const { t } = useTranslation();
+
+  // Local drafts — number inputs must not fight the user mid-typing.
+  // key={note.id} on the component resets drafts when the selection changes.
+  const [lyricDraft, setLyricDraft] = useState(note.lyric);
+  const [pitchDraft, setPitchDraft] = useState(String(note.pitch));
+  const [startDraft, setStartDraft] = useState(String(Math.round(note.startTime)));
+  const [durationDraft, setDurationDraft] = useState(String(Math.round(note.duration)));
+
+  // Keep drafts in sync when the note is changed externally (drag, undo, …)
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync drafts on external note changes
+  useEffect(() => {
+    setLyricDraft(note.lyric);
+    setPitchDraft(String(note.pitch));
+    setStartDraft(String(Math.round(note.startTime)));
+    setDurationDraft(String(Math.round(note.duration)));
+  }, [note.id, note.lyric, note.pitch, note.startTime, note.duration]);
+
+  const noteType = getNoteType(note);
+
+  const stopKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setLyricDraft(note.lyric);
+      setPitchDraft(String(note.pitch));
+      setStartDraft(String(Math.round(note.startTime)));
+      setDurationDraft(String(Math.round(note.duration)));
+      e.currentTarget.blur();
+    }
+    e.stopPropagation();
+  };
+
+  const labelClass = 'text-[9px] uppercase tracking-wider text-slate-500 leading-none mb-0.5 block';
+  const inputClass = 'h-7 bg-slate-800 border-slate-600 text-xs text-slate-100 px-1.5 font-mono';
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col justify-center gap-1 min-w-0">
+      {/* Inputs row — the standard editing fields with up/down steppers */}
+      <div className="flex items-end gap-2 min-w-0 flex-wrap">
+        {/* Note type — DropUp (opens upward; the band sits at the screen bottom) */}
+        <div className="shrink-0">
+          <span className={labelClass}>{t('editor.noteDetails.type')}</span>
+          <Select
+            value={noteType}
+            onValueChange={(value: NoteType) => onNoteUpdate(note.id, noteTypeFlags(value), 'push')}
+          >
+            <SelectTrigger
+              className="h-7 w-auto min-w-[118px] gap-1 bg-slate-800 border-slate-600 text-xs px-2"
+              data-testid="editor-note-details-type"
+              aria-label={t('editor.noteDetails.type')}
+            >
+              <span className="font-mono font-bold text-slate-400">{NOTE_TYPE_CHARS[noteType]}</span>
+              <SelectValue />
+              <ChevronUp className="w-3 h-3 text-slate-500" />
+            </SelectTrigger>
+            <SelectContent side="top" position="popper">
+              {NOTE_TYPE_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-bold w-3 text-center">{opt.char}</span>
+                    {t(`editor.noteType.${opt.value}`)}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Lyric */}
+        <div className="flex-1 min-w-[120px]">
+          <label htmlFor="band-lyric" className={labelClass}>{t('editor.noteTab.lyric')}</label>
+          <Input
+            id="band-lyric"
+            value={lyricDraft}
+            onChange={(e) => {
+              setLyricDraft(e.target.value);
+              onLyricChange(note.id, e.target.value, 'live');
+            }}
+            onBlur={() => {
+              if (lyricDraft.trim() === '' || lyricDraft === note.lyric) onCommitHistory();
+              else onLyricChange(note.id, lyricDraft.trim(), 'push');
+            }}
+            onKeyDown={stopKeys}
+            className="h-7 bg-slate-800 border-slate-600 text-xs text-slate-100 px-1.5"
+            data-testid="editor-note-details-lyric"
+          />
+        </div>
+
+        {/* Pitch (MIDI) — typing + up/down steppers; note name beside */}
+        <div className="shrink-0">
+          <label htmlFor="band-pitch" className={labelClass}>{t('editor.noteDetails.pitch')}</label>
+          <div className="flex items-center gap-1.5">
+            <Input
+              id="band-pitch"
+              type="number"
+              min={0}
+              max={127}
+              step={1}
+              value={pitchDraft}
+              onChange={(e) => {
+                setPitchDraft(e.target.value);
+                const pitch = parseNum(e.target.value);
+                if (pitch === null) return;
+                onNoteUpdate(note.id, { pitch: Math.max(0, Math.min(127, Math.round(pitch))) }, 'live');
+              }}
+              onBlur={() => {
+                setPitchDraft(String(note.pitch));
+                onCommitHistory();
+              }}
+              onKeyDown={stopKeys}
+              className={cn(inputClass, 'w-16')}
+              data-testid="editor-note-details-pitch"
+            />
+            <span className="text-cyan-400 font-mono text-xs font-semibold whitespace-nowrap pb-0.5" data-testid="editor-note-details-pitch-name">
+              {midiToNoteName(note.pitch)}
+            </span>
+          </div>
+        </div>
+
+        {/* Start time (ms) */}
+        <div className="shrink-0">
+          <label htmlFor="band-start" className={labelClass}>{t('editor.noteTab.startTime')}</label>
+          <Input
+            id="band-start"
+            type="number"
+            min={0}
+            step={25}
+            value={startDraft}
+            onChange={(e) => {
+              setStartDraft(e.target.value);
+              const startTime = parseNum(e.target.value);
+              if (startTime === null) return;
+              onNoteUpdate(note.id, { startTime: Math.max(0, Math.round(startTime)) }, 'live');
+            }}
+            onBlur={() => {
+              setStartDraft(String(Math.round(note.startTime)));
+              onCommitHistory();
+            }}
+            onKeyDown={stopKeys}
+            className={cn(inputClass, 'w-24')}
+            data-testid="editor-note-details-start"
+          />
+        </div>
+
+        {/* Duration (ms) */}
+        <div className="shrink-0">
+          <label htmlFor="band-duration" className={labelClass}>{t('editor.noteTab.duration')}</label>
+          <Input
+            id="band-duration"
+            type="number"
+            min={50}
+            step={25}
+            value={durationDraft}
+            onChange={(e) => {
+              setDurationDraft(e.target.value);
+              const duration = parseNum(e.target.value);
+              if (duration === null) return;
+              onNoteUpdate(note.id, { duration: Math.max(50, Math.round(duration)) }, 'live');
+            }}
+            onBlur={() => {
+              setDurationDraft(String(Math.round(note.duration)));
+              onCommitHistory();
+            }}
+            onKeyDown={stopKeys}
+            className={cn(inputClass, 'w-24')}
+            data-testid="editor-note-details-duration"
+          />
+        </div>
+      </div>
+
+      {/* Non-duplicate info — kept as compact chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto editor-panel-scroll">
+        <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-frequency">
+          {t('editor.noteDetails.frequency')}: <span className="text-slate-300 font-mono">{note.frequency.toFixed(1)} Hz</span>
+        </span>
+        <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-beat">
+          {t('editor.noteDetails.beat')}: <span className="text-slate-300 font-mono">#{beat.toFixed(2)}</span>
+        </span>
+        {lineIndex >= 0 && (
+          <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-line">
+            {t('editor.noteDetails.line')}: <span className="text-slate-300 font-mono">#{lineIndex + 1}</span>
+          </span>
+        )}
+        {note.player && note.player !== 'both' && (
+          <span
+            className={cn(
+              'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
+              note.player === 'P1'
+                ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                : note.player === 'P2'
+                  ? 'bg-purple-500/15 text-purple-300 border-purple-400/30'
+                  : note.player === 'P4'
+                    ? 'bg-orange-500/15 text-orange-300 border-orange-400/30'
+                    : 'bg-rose-500/15 text-rose-300 border-rose-400/30',
+            )}
+            data-testid="editor-note-details-player"
+          >
+            {note.player}
+          </span>
+        )}
+        {note.isFreestyle && (
+          <span className="text-[10px] text-pink-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.freestyleHint')}</span>
+        )}
+        {note.isRap && !note.isGolden && (
+          <span className="text-[10px] text-emerald-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.rapHint')}</span>
+        )}
+      </div>
     </div>
   );
 }

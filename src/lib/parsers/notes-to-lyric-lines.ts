@@ -2,7 +2,7 @@
 // This is the SINGLE source of truth for converting raw parsed notes into LyricLine[] format.
 // Used by: song-library.ts, tauri-file-storage.ts, ultrastar-parser.ts
 
-import { Note, LyricLine, midiToFrequency } from '@/types/game';
+import { Note, LyricLine, midiToFrequency, PLAYER_TAGS, type DuetPlayer } from '@/types/game';
 
 interface ParsedNote {
   type: string;
@@ -10,7 +10,7 @@ interface ParsedNote {
   duration: number;
   pitch: number;
   lyric: string;
-  player?: 'P1' | 'P2' | 'both';
+  player?: 'P1' | 'P2' | 'P4' | 'P8' | 'both';
 }
 
 /**
@@ -42,10 +42,12 @@ function hasBreakBetween(
  * - A hyphen "-" as lyric text on a note is just normal text, NOT a line break
  * - 8+ beat gap between notes = automatic line break (fallback)
  *
- * DUET HANDLING:
- * - When notes have P1/P2 player markers, notes are split into separate groups
- * - Each player gets its own set of lyric lines with correct text
- * - This prevents text duplication from merged P1+P2 notes
+ * MULTI-VOICE (DUET/TRIO/QUARTET) HANDLING:
+ * - When notes carry P1/P2/P4/P8 player markers, notes are split into
+ *   separate groups per voice (P4 = player 3, P8 = player 4 — UltraStar
+ *   trio/quartet bitmask tags)
+ * - Each voice gets its own set of lyric lines with correct text
+ * - This prevents text duplication from merged voice notes
  */
 export function convertNotesToLyricLines(
   notes: ParsedNote[],
@@ -56,26 +58,43 @@ export function convertNotesToLyricLines(
   const beatDuration = 15000 / bpm;
   const MIDI_BASE_OFFSET = 48;
 
-  // Check if any note has a P1/P2 player marker — indicates a duet song
-  const hasPlayerMarkers = notes.some(n => n.player === 'P1' || n.player === 'P2');
+  // Check which voices are present — any marker makes it a multi-voice song
+  const presentVoices = new Set<string>();
+  for (const n of notes) {
+    if (n.player && n.player !== 'both') presentVoices.add(n.player);
+  }
 
-  if (!hasPlayerMarkers) {
-    // Single-player / no duet markers — build lines from all notes together (original logic)
+  if (presentVoices.size === 0) {
+    // Single-player / no voice markers — build lines from all notes together (original logic)
     return buildLinesFromNotes(notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap);
   }
 
-  // Duet mode: build separate lines for P1 and P2, then merge into one array.
-  // Each player's lines contain only their own text, preventing duplication.
-  // Notes without explicit player assignment go to P1 (first player).
-  // 'both' notes are assigned to P1 only to prevent duplicate lyric lines.
-  const p1Notes = notes.filter(n => n.player === 'P1' || n.player === 'both' || !n.player);
-  const p2Notes = notes.filter(n => n.player === 'P2');
+  if (presentVoices.size === 1) {
+    // Only one marked voice — keep that voice tag on its lines (a stray single
+    // marker must not silently strip the voice assignment), no per-voice split
+    // needed. Notes without assignment join the marked voice.
+    const only = [...presentVoices][0] as DuetPlayer;
+    return buildLinesFromNotes(
+      notes.map(n => (n.player && n.player !== 'both' ? n : { ...n, player: only })),
+      lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap,
+    );
+  }
 
-  const p1Lines = buildLinesFromNotes(p1Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P1');
-  const p2Lines = buildLinesFromNotes(p2Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P2');
+  // Multi-voice: build separate lines per voice, then merge into one array.
+  // Each voice's lines contain only their own text, preventing duplication.
+  // Notes without explicit player assignment go to the FIRST voice.
+  // 'both' notes are assigned to the first voice only to prevent duplicate lyric lines.
+  const voices = PLAYER_TAGS.filter(tag => presentVoices.has(tag));
+  const firstVoice = voices[0];
+
+  const allLines: LyricLine[] = [];
+  for (const voice of voices) {
+    const voiceNotes = notes.filter(n => n.player === voice || (voice === firstVoice && (n.player === 'both' || !n.player)));
+    allLines.push(...buildLinesFromNotes(voiceNotes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, voice));
+  }
 
   // Merge and sort by startTime so lines appear in chronological order
-  return [...p1Lines, ...p2Lines].sort((a, b) => a.startTime - b.startTime);
+  return allLines.sort((a, b) => a.startTime - b.startTime);
 }
 
 /**
@@ -88,7 +107,7 @@ function buildLinesFromNotes(
   beatDuration: number,
   midiBaseOffset: number,
   gap: number,
-  playerTarget?: 'P1' | 'P2',
+  playerTarget?: DuetPlayer,
 ): LyricLine[] {
   const lyricLines: LyricLine[] = [];
   let currentLineNotes: Note[] = [];
@@ -109,7 +128,8 @@ function buildLinesFromNotes(
       startTime: Math.round(startTime),
       duration: Math.round(duration),
       lyric: note.lyric,
-      isBonus: note.type === 'F',
+      isBonus: false, // legacy — 'F' is a FREESTYLE note now, not a bonus note
+      isFreestyle: note.type === 'F',
       isGolden: note.type === '*' || note.type === 'G',
       isRap: note.type === 'R' || note.type === 'G',
       player: playerTarget || note.player,

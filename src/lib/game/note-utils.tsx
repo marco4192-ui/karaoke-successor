@@ -9,6 +9,7 @@ import {
   hexToRgbaPrefix,
   SEALED_GOLD_COLOR,
   SEALED_BONUS_COLOR,
+  SEALED_RAP_COLOR,
   DEFAULT_SEALED_HIT_COLOR,
   EXACT_NOTE_COLORS,
 } from '@/lib/game/note-color-profiles';
@@ -75,6 +76,7 @@ export function getNoteDisplayStyleClasses(
   _displayStyle: string,
   _accuracy: number = 1,
   isGolden: boolean = false,
+  /** Freestyle note ('F', formerly mislabeled "bonus") — magenta semantics. */
   isBonus: boolean = false,
   performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>,
   targetPitch?: number,
@@ -95,6 +97,8 @@ export function getNoteDisplayStyleClasses(
   renderMode: NoteRenderMode = 'modern',
   /** Flat mode: the ONE uniform fill colour (defaults to BR cyan) */
   flatFill?: string,
+  /** Rap note ('R'/'G' without golden) — emerald timing semantics. Golden rap keeps gold. */
+  isRap: boolean = false,
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -127,16 +131,18 @@ export function getNoteDisplayStyleClasses(
   if (renderMode === 'flat') {
     const fillColor = isGolden
       ? SEALED_GOLD_COLOR
-      : isBonus
-        ? SEALED_BONUS_COLOR
-        : (flatFill || FLAT_NOTE_FILL_COLOR);
+      : isRap
+        ? SEALED_RAP_COLOR
+        : isBonus
+          ? SEALED_BONUS_COLOR
+          : (flatFill || FLAT_NOTE_FILL_COLOR);
     const fillPercent = Math.round(clampedFill * 1000) / 10;
     return {
       additionalClasses: 'overflow-hidden',
       inlineStyle: {
         backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(120, 160, 200, 0.04) 100%)',
         backgroundColor: 'rgba(100, 130, 160, 0.08)',
-        border: `1.5px solid ${isGolden ? 'rgba(250, 204, 21, 0.55)' : isBonus ? 'rgba(232, 121, 249, 0.55)' : 'rgba(255, 255, 255, 0.16)'}`,
+        border: `1.5px solid ${isGolden ? 'rgba(250, 204, 21, 0.55)' : isRap ? 'rgba(0, 230, 118, 0.55)' : isBonus ? 'rgba(232, 121, 249, 0.55)' : 'rgba(255, 255, 255, 0.16)'}`,
         boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.2)',
         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
       },
@@ -208,34 +214,45 @@ export function getNoteDisplayStyleClasses(
   const isExact = displayMode === 'exact';
 
   const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
-  const isSpecialNote = isGolden || isBonus;
+  const isSpecialNote = isGolden || isBonus || isRap;
   // Sealed: no per-quality colours at all — one uniform hit colour
-  // (golden notes seal in gold, bonus notes in magenta to preserve semantics).
+  // (golden notes seal in gold, rap notes in emerald, freestyle in magenta).
   const sealedHit = isSealed
-    ? (isGolden ? SEALED_GOLD_COLOR : isBonus ? SEALED_BONUS_COLOR : getSealedHitColor())
+    ? (isGolden ? SEALED_GOLD_COLOR : isRap ? SEALED_RAP_COLOR : isBonus ? SEALED_BONUS_COLOR : getSealedHitColor())
     : null;
   const hitColors = sealedHit
     ? null
     : isExact && !isSpecialNote
       ? EXACT_NOTE_COLORS.hitColors
-      : resolveNoteColors(profile, isGolden, isBonus).hitColors;
+      : resolveNoteColors(profile, isGolden, isBonus, isRap).hitColors;
   const hitGlows = sealedHit
     ? null
     : isExact && !isSpecialNote
       ? EXACT_NOTE_COLORS.hitGlows
-      : resolveNoteColors(profile, isGolden, isBonus).hitGlows;
+      : resolveNoteColors(profile, isGolden, isBonus, isRap).hitGlows;
   const glowTint = sealedHit
     ? hexToRgbaPrefix(sealedHit)
     : isExact && !isSpecialNote
       ? EXACT_NOTE_COLORS.glowTint
-      : resolveNoteColors(profile, isGolden, isBonus).glowTint;
+      : resolveNoteColors(profile, isGolden, isBonus, isRap).glowTint;
   const missGap       = 'rgba(255, 255, 255, 0.02)';
   const missGapBorder = 'rgba(255, 255, 255, 0.05)';
   // Per-singer tint (Medley): the unsung track shows the snippet singer's
   // color so all players can sing against one clearly-owned note stream.
   const tint        = playerTint && playerTint.startsWith('#') ? playerTint : null;
-  const unreachedBg = tint ? hexWithAlpha(tint, 0.22) : 'rgba(255, 255, 255, 0.08)';
-  const unreachedBdr = tint ? hexWithAlpha(tint, 0.45) : 'rgba(255, 255, 255, 0.14)';
+  // Type pre-recognition (R7): the UNREACHED track carries a soft type tint
+  // so singers can SEE what's coming — gold (golden), emerald (rap),
+  // magenta (freestyle) — before the sing line reaches the note.
+  const typeTintBg  = isGolden ? 'rgba(250, 204, 21, 0.15)'
+    : isRap ? 'rgba(0, 230, 118, 0.15)'
+      : isBonus ? 'rgba(255, 77, 158, 0.15)'
+        : null;
+  const typeTintBdr = isGolden ? 'rgba(250, 204, 21, 0.42)'
+    : isRap ? 'rgba(0, 230, 118, 0.42)'
+      : isBonus ? 'rgba(255, 77, 158, 0.42)'
+        : null;
+  const unreachedBg = tint ? hexWithAlpha(tint, 0.22) : (typeTintBg ?? 'rgba(255, 255, 255, 0.08)');
+  const unreachedBdr = tint ? hexWithAlpha(tint, 0.45) : (typeTintBdr ?? 'rgba(255, 255, 255, 0.14)');
   // Sealed neutral track: modes without performance data (PTM/CPTM lanes)
   // must NOT render "missed" red — no samples simply means "no data".
   const hasAnySamples = samples.length > 0;
@@ -914,9 +931,12 @@ export function getMultiPlayerNoteOverlay(
 /**
  * Calculate note background classes based on note type and color profile
  */
-export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean): string {
+export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean, isRap: boolean = false): string {
   if (isGolden) {
     return 'bg-gradient-to-r from-yellow-400 to-orange-500';
+  }
+  if (isRap) {
+    return 'bg-gradient-to-r from-emerald-400 to-green-500';
   }
   if (isBonus) {
     return 'bg-gradient-to-r from-pink-500 to-purple-500';
@@ -958,6 +978,7 @@ export interface NotePositionData {
   lyric: string;
   isGolden: boolean;
   isBonus: boolean;
+  isRap?: boolean;
 }
 
 /**

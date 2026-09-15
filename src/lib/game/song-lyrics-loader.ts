@@ -142,10 +142,10 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   const cleanContent = normalizeTxtContent(content);
 
   const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
-  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
+  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' | 'P4' | 'P8' }> = [];
   const lineBreakBeats = new Set<number>();
 
-  let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let currentPlayer: 'P1' | 'P2' | 'P4' | 'P8' | undefined = undefined;
   let noteLineCount = 0;
 
   for (const line of lines) {
@@ -171,7 +171,7 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
 
     const duetPrefix = matchDuetNotePrefix(trimmedLine);
     let noteLine = trimmedLine;
-    let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
+    let notePlayer: 'P1' | 'P2' | 'P4' | 'P8' | undefined = currentPlayer;
     if (duetPrefix) {
       notePlayer = duetPrefix.player;
       noteLine = duetPrefix.rest;
@@ -190,7 +190,8 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   if (noteLineCount === 0 && lines.length > 0) {
     const nonHeaderLines = lines.filter(l => {
       const t = l.trim();
-      return t.length > 0 && !t.startsWith('#') && t !== 'E' && t !== 'P1' && t !== 'P2' && t !== 'P1:' && t !== 'P2:' && !t.startsWith('-');
+      return t.length > 0 && !t.startsWith('#') && t !== 'E' &&
+        !/^(P\s*[1248])\s*:?$/.test(t) && !t.startsWith('-');
     });
     const sampleLines = nonHeaderLines.slice(0, 5).map(l => `"${l.substring(0, 100)}"`);
     // eslint-disable-next-line no-console
@@ -230,7 +231,7 @@ function createFallbackLyrics(lines: string[]): LyricLine[] {
     const trimmed = line.trim();
     // Skip headers, control lines, and empty lines
     if (!trimmed || trimmed.startsWith('#') || trimmed === 'E' ||
-        trimmed === 'P1' || trimmed === 'P2' || trimmed.startsWith('-')) {
+        /^(P\s*[1248])\s*:?$/.test(trimmed) || trimmed.startsWith('-')) {
       continue;
     }
     // Skip lines that look like UltraStar notes (even if regex didn't match)

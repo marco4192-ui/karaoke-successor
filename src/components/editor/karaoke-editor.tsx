@@ -7,7 +7,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline, type NoteHistoryMode } from './timeline/timeline';
 import { Button } from '@/components/ui/button';
-import { Music, BookOpen, X } from 'lucide-react';
+import { BookOpen, X } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { midiPitchToFrequency } from '@/lib/utils';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
@@ -17,15 +17,16 @@ import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
 import { useTapNotePlacement } from '@/hooks/use-tap-note-placement';
 import { EditorHeader, type EditorHeaderPanel } from './editor-header';
+import { EditorSubHeader } from './editor-sub-header';
+import { ShortcutsPanel } from './shortcuts-panel';
 import { VideoSyncOverlay } from './video-sync-overlay';
-import { ToolsPanel } from './tools-panel';
-import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
 import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
 import { EditorLyricsTab } from './editor-lyrics-tab';
 import { AudioAnalysisPanel } from './audio-analysis-panel';
 import { AIAssistantPanel } from './panels/ai-assistant-panel';
 import type { DetectedNote } from '@/hooks/use-audio-analysis';
+import { noteTypeFlags, type NoteType, type DuetPlayer } from '@/types/game';
 
 interface KaraokeEditorProps {
   song: Song;
@@ -54,6 +55,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
   // Multi-selection (YASS-style Ctrl+Click); primary selection is always included
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
+  // R7 2.2: note type used for NEW notes (default Normal). Selecting a type in
+  // the sub-header ALSO re-types the current selection (dual-purpose control).
+  const [activeNoteType, setActiveNoteType] = useState<NoteType>('normal');
+  const activeNoteTypeRef = useRef<NoteType>('normal');
+  useEffect(() => { activeNoteTypeRef.current = activeNoteType; }, [activeNoteType]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   // Header dropdown panel (metadata / audio analysis / AI assistant)
@@ -391,12 +397,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     return [...lyrics, newLine].sort((a, b) => a.startTime - b.startTime);
   }, []);
 
+  /** R7 2.2: creates a note with the ACTIVE note type (sub-header segmented
+   *  control). The type flags map 1:1 to the UltraStar TXT characters. */
   const handleNoteAdd = useCallback((startTime: number, pitch: number) => {
+    const type = activeNoteTypeRef.current;
     const newNote: Note = {
       id: uuidv4(), pitch,
       frequency: midiPitchToFrequency(pitch),
       startTime, duration: 500, lyric: '---',
-      isBonus: false, isGolden: false
+      ...noteTypeFlags(type),
     };
     const newLyrics = insertNote(currentSongRef.current.lyrics, newNote, false);
     applyLyrics(newLyrics, 'push');
@@ -534,10 +543,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setSelectedNoteId(noteId); // clicked note becomes the primary selection
   }, []);
 
-  const updateSelectedNote = useCallback((updates: Partial<Note>, mode: NoteHistoryMode = 'push') => {
-    if (selectedNoteId) handleNoteUpdate(selectedNoteId, updates, mode);
-  }, [selectedNoteId, handleNoteUpdate]);
-
   // ── YASS-style editing operations ──
 
   /** Apply an update to ALL selected notes in one history step (type/player). */
@@ -564,6 +569,25 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     });
     if (touched) applyLyrics(newLyrics, 'push');
   }, [effectiveSelection, applyLyrics]);
+
+  /** R7 2.2: sub-header type click — sets the add-default AND, when notes are
+   *  selected, changes the selected notes' type in one history step. */
+  const handleSelectNoteType = useCallback((type: NoteType) => {
+    setActiveNoteType(type);
+    if (effectiveSelection.size > 0) {
+      updateMultiSelected(noteTypeFlags(type));
+    }
+  }, [effectiveSelection, updateMultiSelected]);
+
+  /** Sub-header Add button — new note at the playhead with the active type. */
+  const handleAddFromToolbar = useCallback(() => {
+    handleNoteAdd(Math.round(currentTimeRef.current), selectedNote?.pitch ?? 60);
+  }, [handleNoteAdd, selectedNote]);
+
+  /** Sub-header voice dropdown — assign P1/P2/P4/P8 to the selection. */
+  const handlePlayerChange = useCallback((player: DuetPlayer | undefined) => {
+    updateMultiSelected({ player });
+  }, [updateMultiSelected]);
 
   /** Transpose all selected notes (↑/↓, Shift = octave). Coalesced undo per burst. */
   const handleTranspose = useCallback((delta: number) => {
@@ -712,9 +736,29 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsavedChanges]);
 
+  /** Duplicate keeps the source note's type (not the active toolbar type). */
   const duplicateNote = useCallback(() => {
-    if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
-  }, [selectedNote, handleNoteAdd]);
+    if (selectedNote) {
+      const prev = currentSongRef.current;
+      const newNote: Note = {
+        id: uuidv4(),
+        pitch: selectedNote.pitch,
+        frequency: selectedNote.frequency,
+        startTime: selectedNote.startTime + selectedNote.duration + 100,
+        duration: selectedNote.duration,
+        lyric: selectedNote.lyric,
+        isBonus: selectedNote.isBonus,
+        isFreestyle: selectedNote.isFreestyle,
+        isGolden: selectedNote.isGolden,
+        isRap: selectedNote.isRap,
+        player: selectedNote.player,
+      };
+      const newLyrics = insertNote(prev.lyrics, newNote, false);
+      applyLyrics(newLyrics, 'push');
+      setSelectedNoteId(newNote.id);
+      setSelectedNoteIds(new Set([newNote.id]));
+    }
+  }, [selectedNote, applyLyrics, insertNote]);
 
   const handleNoteSplit = useCallback(() => {
     if (!selectedNote) return;
@@ -892,51 +936,33 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         onTogglePanel={(panel) => setActivePanel(prev => (prev === panel ? 'none' : panel))}
       />
 
+      {/* ── Sub-Header (R7): note tools + note type + voice + transpose + tap ──
+          Everything note-related from the old left side panel, now directly
+          above the pitch lanes — always visible, never nested. */}
+      {heavyMounted && (
+        <EditorSubHeader
+          activeNoteType={activeNoteType}
+          onSelectNoteType={handleSelectNoteType}
+          selectedCount={effectiveSelection.size}
+          selectedPlayer={selectedNote?.player}
+          onAddNote={handleAddFromToolbar}
+          onDuplicateNote={duplicateNote}
+          onDeleteNote={handleSelectionDelete}
+          onSplitNote={handleNoteSplit}
+          onMergeNote={handleMergeNote}
+          onPlayerChange={handlePlayerChange}
+          onTransposeAll={handleTransposeAll}
+          tapMode={tapPlacement}
+        />
+      )}
+
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* ── Left panel: Noten-Info/Werkzeuge (top) + Liedtext (bottom) ──
-            Both sections are permanently visible, stacked with a horizontal
-            divider and share the area (each scrolls independently). */}
+        {/* ── Left panel: Liedtext (top) + Shortcuts (bottom) ──
+            R7: the lyrics box moved UP (primary reference while editing),
+            the dissolved "Notes & Tools" panel lives on as the compact
+            Shortcuts reference below. */}
         {heavyMounted && (
           <aside className="w-80 flex-shrink-0 bg-slate-900 border-r border-slate-700 flex flex-col min-h-0" data-testid="editor-left-panel">
-            {/* Section: Noten (tools + selected note details) */}
-            <section className="flex-1 min-h-0 flex flex-col border-b border-slate-700">
-              <div className="px-3 py-2 bg-slate-800/70 border-b border-slate-700 flex items-center gap-2 shrink-0">
-                <Music className="w-3.5 h-3.5 text-cyan-400" />
-                <h2 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">{t('editor.leftPanel.notes')}</h2>
-                {selectedNote && (
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-mono" data-testid="editor-selection-count">
-                    {effectiveSelection.size > 1 ? `${effectiveSelection.size}×` : `♪${selectedNote.pitch}`}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto editor-panel-scroll">
-                <ToolsPanel
-                  selectedNote={selectedNote}
-                  selectedCount={effectiveSelection.size}
-                  currentTime={currentTime}
-                  onAddNote={handleNoteAdd}
-                  onDuplicateNote={duplicateNote}
-                  onDeleteNote={handleSelectionDelete}
-                  onSplitNote={handleNoteSplit}
-                  onMergeNote={handleMergeNote}
-                  onUpdateSelectedNote={updateSelectedNote}
-                  onUpdateSelection={updateMultiSelected}
-                  onTransposeSelection={handleTranspose}
-                  onTransposeAll={handleTransposeAll}
-                  tapMode={tapPlacement}
-                />
-                {selectedNote
-                  ? <EditorNoteTab
-                      selectedNote={selectedNote}
-                      onUpdateSelectedNote={updateSelectedNote}
-                      onCommitHistory={handleCommitHistory}
-                      onScheduleCommit={scheduleCommit}
-                    />
-                  : <EditorNoteTabPlaceholder />
-                }
-              </div>
-            </section>
-
             {/* Section: Liedtext */}
             <section className="flex-1 min-h-0 flex flex-col">
               <div className="px-3 py-2 bg-slate-800/70 border-b border-slate-700 flex items-center gap-2 shrink-0">
@@ -951,6 +977,13 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                   onNoteSelect={handleNoteSelect}
                   onTimeChange={handleTimeChange}
                 />
+              </div>
+            </section>
+
+            {/* Section: Shortcuts (renamed, punchier labels) */}
+            <section className="flex-shrink-0 max-h-[46%] min-h-0 flex flex-col border-t border-slate-700">
+              <div className="flex-1 min-h-0 overflow-y-auto editor-panel-scroll">
+                <ShortcutsPanel />
               </div>
             </section>
           </aside>
@@ -976,7 +1009,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               onCommitHistory={handleCommitHistory}
               onNoteAdd={handleNoteAdd}
               onLyricChange={handleLyricChange}
-              onTransposeNotes={handleTranspose}
             />
           )}
         </main>

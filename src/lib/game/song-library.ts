@@ -98,22 +98,8 @@ export function getNonDuetSongs(): Song[] {
     if (s.isDuet === true) return false;
     if (s.title && /\[\s*duet\s*\]/i.test(s.title)) return false;
     if (s.title && /\(\s*duet\s*\)/i.test(s.title)) return false;
-    if (s.lyrics && s.lyrics.length > 0) {
-      let hasP1 = false;
-      let hasP2 = false;
-      for (const line of s.lyrics) {
-        if (line.player === 'P1') hasP1 = true;
-        if (line.player === 'P2') hasP2 = true;
-        if (hasP1 && hasP2) return false;
-        if (line.notes) {
-          for (const note of line.notes) {
-            if (note.player === 'P1') hasP1 = true;
-            if (note.player === 'P2') hasP2 = true;
-            if (hasP1 && hasP2) return false;
-          }
-        }
-      }
-    }
+    // Any two distinct voices (P1/P2/P4/P8) make a multi-voice song
+    if (s.lyrics && s.lyrics.length > 0 && lyricsIndicateDuet(s.lyrics)) return false;
     return true;
   });
 }

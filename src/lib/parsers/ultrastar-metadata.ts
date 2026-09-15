@@ -70,7 +70,7 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   previewStart?: number;
   previewDuration?: number;
   isDuet?: boolean;
-  duetPlayerNames?: [string, string];
+  duetPlayerNames?: string[];
   youtubeUrl?: string;
   dailymotionUrl?: string;
   vimeoUrl?: string;
@@ -95,8 +95,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   let previewStart: number | undefined;
   let previewDuration: number | undefined;
   let hasDuetHeader = false;
-  let p1Name: string | undefined;
-  let p2Name: string | undefined;
+  // Voice names, index 0-3 → P1/P2/P4/P8 (P4 = 3rd voice, P8 = 4th voice).
+  // #P3 is accepted as a positional alias for the 3rd voice.
+  const voiceNames: string[] = [];
+  const headerNameIndex: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 2, P8: 3 };
   let youtubeUrl: string | undefined;
   let dailymotionUrl: string | undefined;
   let vimeoUrl: string | undefined;
@@ -105,10 +107,10 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   let bilibiliUrl: string | undefined;
   let nicovideoUrl: string | undefined;
   let videoGap: number | undefined;
-  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
+  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' | 'P4' | 'P8' }> = [];
   const lineBreakBeats = new Set<number>();
 
-  let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let currentPlayer: 'P1' | 'P2' | 'P4' | 'P8' | undefined = undefined;
 
   for (const line of lines) {
     // Use trimmed version for header parsing (header values should be trimmed)
@@ -126,12 +128,11 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
     } else if (trimmedLine.startsWith('#PREVIEWDURATION:')) {
       const val = parseFloat(trimmedLine.substring(16));
       previewDuration = isNaN(val) ? undefined : val;
-    } else if (trimmedLine.startsWith('#P1:')) {
+    } else if (/^#P[1248]:/.test(trimmedLine)) {
       hasDuetHeader = true;
-      p1Name = trimmedLine.substring(4).trim() || 'Player 1';
-    } else if (trimmedLine.startsWith('#P2:')) {
-      hasDuetHeader = true;
-      p2Name = trimmedLine.substring(4).trim() || 'Player 2';
+      const tag = trimmedLine.substring(1, trimmedLine.indexOf(':'));
+      const idx = headerNameIndex[tag] ?? 0;
+      voiceNames[idx] = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim() || `Player ${idx + 1}`;
     } else if (trimmedLine.startsWith('#VIDEO:')) {
       // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico).
       // The value may be a plain URL, a DIRECT video-file URL or even a full
@@ -202,11 +203,11 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
   // Use the shared converter to build lyric lines (handles duet P1/P2 separation)
   const lyricLines = convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 
-  // Duet detection: header tags (#P1/#P2) OR body markers with notes for
-  // BOTH players (a stray P1 marker alone is not a duet).
+  // Multi-voice detection: header tags (#P1/#P2/#P4/#P8) OR body markers with
+  // notes for at least TWO voices (a stray P1 marker alone is not a duet).
   const isDuet = hasDuetHeader || notesHaveBothPlayers(notes);
-  const duetPlayerNames: [string, string] | undefined = isDuet
-    ? [p1Name || 'Player 1', p2Name || 'Player 2']
+  const duetPlayerNames: string[] | undefined = isDuet
+    ? [0, 1, 2, 3].map(i => voiceNames[i] || `Player ${i + 1}`)
     : undefined;
 
   return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet, duetPlayerNames, youtubeUrl, dailymotionUrl, vimeoUrl, rutubeUrl, vkVideoUrl, bilibiliUrl, nicovideoUrl, videoGap };

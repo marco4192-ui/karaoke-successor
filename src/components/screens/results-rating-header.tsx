@@ -13,7 +13,7 @@ interface ResultsRatingHeaderProps {
   player2Result: PlayerResultEntry | null;
   activeProfileName: string;
   player2ProfileName?: string;
-  duetPlayerNames?: [string, string];
+  duetPlayerNames?: string[];
   /** Translated fallback label, e.g. "Player" */
   playerLabel: string;
   /** Translated draw label */

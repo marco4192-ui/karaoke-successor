@@ -95,7 +95,7 @@ interface NoteBlockProps {
 }
 
 const NoteBlock = React.memo(function NoteBlock({ data, noteShape, windowHeight }: NoteBlockProps) {
-  const backgroundClass = getNoteBackgroundClasses(data.isGolden, data.isBonus);
+  const backgroundClass = getNoteBackgroundClasses(data.isGolden, data.isBonus, data.isRap);
   const boxShadow = getNoteBoxShadow(data.isActive, data.isGolden);
   
   return (
@@ -270,7 +270,8 @@ export const NoteLane = React.memo(function NoteLane({
           isPast,
           lyric: note.lyric,
           isGolden: note.isGolden || false,
-          isBonus: note.isBonus || false,
+          isBonus: note.isFreestyle || note.isBonus || false,
+          isRap: note.isRap || false,
         });
       }
     }

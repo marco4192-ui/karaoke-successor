@@ -136,7 +136,7 @@ export function songNotesFromSong(song: Song): RawNote[] {
     const lineNotes = line.notes || [];
     for (const n of lineNotes) {
       allNotes.push({
-        type: n.isGolden ? '*' : n.isBonus ? 'F' : ':',
+        type: n.isRap ? (n.isGolden ? 'G' : 'R') : n.isGolden ? '*' : (n.isFreestyle || n.isBonus) ? 'F' : ':',
         startBeat: Math.round(n.startTime / (60000 / (song.bpm * 4 || 120))),
         duration: Math.round(n.duration / (60000 / (song.bpm * 4 || 120))),
         pitch: n.pitch - 48,

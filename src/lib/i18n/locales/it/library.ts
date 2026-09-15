@@ -508,6 +508,8 @@ editor: {
     duetMode: 'Modalità Duetto',
     player1Name: 'Nome Giocatore 1',
     player2Name: 'Nome Giocatore 2',
+    player3Name: 'Nome Giocatore 3',
+    player4Name: 'Nome Giocatore 4',
     duration: 'Durata:',
     notes: 'Note:',
     lines: 'Righe:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: 'Nome Giocatore 1',
     duetPlayer2: '#P2: (Duetto Giocatore 2)',
     duetPlayer2Placeholder: 'Nome Giocatore 2',
+    duetPlayer3: '#P4: (Giocatore 3 — terzetto)',
+    duetPlayer4: '#P8: (Giocatore 4 — quartetto)',
     tagsPlaceholder: 'tag1, tag2, tag3',
   },
   lyricsTab: {

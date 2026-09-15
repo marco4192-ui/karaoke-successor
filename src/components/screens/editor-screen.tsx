@@ -163,16 +163,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   );
 
   /**
-   * Select the NEXT batch of up to 100 filtered songs (in list order) that are
+   * Select the NEXT batch of up to 20 filtered songs (in list order) that are
    * not selected yet. Fewer available → all remaining get selected.
    *
-   * Batch size 100: the pipeline chunks internally (12 per LLM call with
-   * per-chunk retry, 12 per factual lookup) with progress + abort, so larger
-   * selections stay reliable — the old "only ~5 songs came back" symptom was
-   * the LLM truncating 50-song responses, not a real batch limit (fixed in
-   * harmonize-client).
+   * Batch size 20 (R7): matches the Metadata Studio's MEASURED recommendation
+   * — the factual lookup (MusicBrainz) throttles at ~1 req/s (~5 s/song worst
+   * case), so 20 songs ≈ 2 minutes per run. The button label always shows the
+   * actual number of songs it will pick, so "select all remaining" surprises
+   * (and 100-song runs with very long waits) can no longer happen.
    */
-  const SELECT_BATCH_SIZE = 100;
+  const SELECT_BATCH_SIZE = 20;
   const selectNextBatch = useCallback(() => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -245,21 +245,21 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // ── Select-mode entry hint ("Wähle Songs aus") ──
   // Entering selection mode right after using a filter needs an explicit
   // prompt — the Metadata Studio (selection scope) needs songs picked first.
+  // NOTE: the toast must fire OUTSIDE the setSelectMode updater — calling it
+  // inside would setState (Toaster) during React's render phase.
   const handleToggleSelectMode = useCallback(() => {
-    setSelectMode(prev => {
-      const next = !prev;
-      if (next) {
-        const filterLabel = filterMode === 'all'
-          ? t('editor.selectModeHintAll')
-          : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length));
-        toast({
-          title: `☑️ ${t('editor.selectModeHintTitle')}`,
-          description: `${filterLabel} ${t('editor.aiBatchHint')}`,
-        });
-      }
-      return next;
-    });
-  }, [filterMode, filteredSongs.length, t, toast]);
+    const next = !selectMode;
+    setSelectMode(next);
+    if (next) {
+      const filterLabel = filterMode === 'all'
+        ? t('editor.selectModeHintAll')
+        : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length));
+      toast({
+        title: `☑️ ${t('editor.selectModeHintTitle')}`,
+        description: `${filterLabel} ${t('editor.aiBatchHint')}`,
+      });
+    }
+  }, [selectMode, filterMode, filteredSongs.length, t, toast]);
 
   // ── Demo sample song (sandbox testing — user request "Muster-Song") ──
   const [isCreatingDemo, setIsCreatingDemo] = useState(false);
@@ -584,7 +584,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             {selectedCount} {t('editor.aiBatchSelected')}
           </span>
           <div className="w-px h-6 bg-white/20" />
-          {/* Select the NEXT batch of ≤ 100 filtered songs (not yet selected). */}
+          {/* Select the NEXT batch of ≤ 20 filtered songs (not yet selected) —
+              always shows the actual count it will pick (never "all remaining
+              at once", matching the studio's 20-song recommendation). */}
           <Button
             size="sm"
             variant="outline"
@@ -593,9 +595,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
             data-testid="editor-select-all-button"
           >
-            {unselectedInFilter.length > SELECT_BATCH_SIZE
-              ? t('editor.aiBatchSelectNext').replace('{n}', String(SELECT_BATCH_SIZE))
-              : t('editor.aiBatchSelectRemaining').replace('{n}', String(unselectedInFilter.length))}
+            {t('editor.aiBatchSelectNext').replace('{n}', String(Math.min(SELECT_BATCH_SIZE, unselectedInFilter.length)))}
           </Button>
           <Button
             size="sm"

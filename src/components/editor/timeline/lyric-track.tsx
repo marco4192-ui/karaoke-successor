@@ -105,9 +105,12 @@ export function LyricTrack({
               <span className={cn(
                 'text-xs text-slate-300 truncate px-1',
                 note.isGolden && 'text-yellow-400',
-                note.isBonus && 'text-pink-400',
+                !note.isGolden && note.isRap && 'text-emerald-400',
+                (note.isFreestyle || note.isBonus) && 'text-pink-400',
                 note.player === 'P1' && 'text-cyan-400',
-                note.player === 'P2' && 'text-purple-400'
+                note.player === 'P2' && 'text-purple-400',
+                note.player === 'P4' && 'text-orange-400',
+                note.player === 'P8' && 'text-rose-400'
               )}>
                 {note.lyric || '—'}
               </span>

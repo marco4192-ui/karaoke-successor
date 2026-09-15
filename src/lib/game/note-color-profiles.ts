@@ -190,7 +190,7 @@ export const GOLDEN_OVERRIDES = {
   glowTint: 'rgba(255, 193, 7,',
 };
 
-/** Bonus-note overrides applied ON TOP of any profile */
+/** Freestyle-note overrides applied ON TOP of any profile (formerly bonus). */
 export const BONUS_OVERRIDES = {
   hitColors: { Perfect: '#FF0066', Great: '#FF3399', Good: '#FF0055', Okay: '#AA0044' },
   hitGlows: {
@@ -202,16 +202,31 @@ export const BONUS_OVERRIDES = {
   glowTint: 'rgba(255, 20, 147,',
 };
 
+/** Rap-note overrides applied ON TOP of any profile — emerald timing bars. */
+export const RAP_OVERRIDES = {
+  hitColors: { Perfect: '#00E676', Great: '#00C853', Good: '#00A844', Okay: '#008E38' },
+  hitGlows: {
+    Perfect: '0 0 10px #00E676, 0 0 20px rgba(0,230,118,.5)',
+    Great:   '0 0 8px #00C853, 0 0 16px rgba(0,200,83,.4)',
+    Good:    '0 0 6px #00A844, 0 0 12px rgba(0,168,68,.35)',
+    Okay:    '0 0 4px #008E38',
+  },
+  glowTint: 'rgba(0, 230, 118,',
+};
+
 /**
  * Resolve the effective color set for a given profile + note type.
- * Golden and bonus notes always use their special palette regardless of profile.
+ * Golden (incl. golden rap) notes always use the gold palette, then rap and
+ * freestyle notes get their own palette regardless of profile.
  */
 export function resolveNoteColors(
   profile: NoteColorProfile,
   isGolden: boolean,
   isBonus: boolean,
+  isRap: boolean = false,
 ) {
   if (isGolden) return GOLDEN_OVERRIDES;
+  if (isRap) return RAP_OVERRIDES;
   if (isBonus) return BONUS_OVERRIDES;
   return {
     hitColors: profile.hitColors,
@@ -243,8 +258,11 @@ export const SEALED_MISS_COLOR = '#FF4141';
 /** Golden notes are sealed in gold (preserves the 2x-points semantics). */
 export const SEALED_GOLD_COLOR = '#FFD34A';
 
-/** Bonus notes are sealed in magenta (preserves the special-note semantics). */
+/** Freestyle notes are sealed in magenta (any noise counts — formerly "bonus"). */
 export const SEALED_BONUS_COLOR = '#FF4D9E';
+
+/** Rap notes are sealed in emerald (timing counts, pitch ignored). */
+export const SEALED_RAP_COLOR = '#00E676';
 
 /** Preset swatches offered in the options (plus free colour picker). */
 export const SEALED_HIT_COLOR_PRESETS: string[] = [

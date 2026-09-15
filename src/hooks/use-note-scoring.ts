@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DIFFICULTY_SETTINGS, Note, LyricLine, Player, PitchDetectionResult } from '@/types/game';
-import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState, evaluateTick } from '@/lib/game/scoring';
+import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState, evaluateTick, type TickNoteKind } from '@/lib/game/scoring';
+import { isFreestyleNote } from '@/types/game';
 import { runScoringPass, BlindScoringState } from '@/lib/game/run-scoring-pass';
 import {
   MAX_SAMPLES_PER_NOTE,
@@ -13,6 +14,13 @@ import {
   UseNoteScoringOptions,
   UseNoteScoringReturn,
 } from '@/lib/game/scoring-types';
+
+/** Note kind for tick evaluation — freestyle/rap notes ignore pitch. */
+function visualNoteKind(note: Pick<Note, 'isRap' | 'isFreestyle' | 'isBonus'>): TickNoteKind {
+  if (note.isRap) return 'rap';
+  if (isFreestyleNote(note)) return 'freestyle';
+  return 'normal';
+}
 
 /**
  * Custom hook for note scoring and hit detection
@@ -183,7 +191,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           lastVisualSungPitchRef.current = sungPitchRaw;
         }
 
-        const tick = evaluateTick(sungPitch!, activeNote.pitch, difficulty);
+        const tick = evaluateTick(sungPitch!, activeNote.pitch, difficulty, visualNoteKind(activeNote));
         accuracy = tick.accuracy;
         hit = tick.isHit;
       } else {
@@ -249,7 +257,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       let accuracy = 0;
       let hit = false;
       if (hasPitch) {
-        const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty);
+        const tick = evaluateTick(sungPitch, activeNote.pitch, difficulty, visualNoteKind(activeNote));
         accuracy = tick.accuracy;
         hit = tick.isHit;
       }

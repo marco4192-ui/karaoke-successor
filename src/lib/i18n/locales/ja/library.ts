@@ -508,6 +508,8 @@ editor: {
     duetMode: 'デュエットモード',
     player1Name: 'プレイヤー1名',
     player2Name: 'プレイヤー2名',
+    player3Name: 'プレイヤー3の名前',
+    player4Name: 'プレイヤー4の名前',
     duration: '再生時間:',
     notes: '音符:',
     lines: '行:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: 'プレイヤー1名',
     duetPlayer2: '#P2: (デュエットプレイヤー2)',
     duetPlayer2Placeholder: 'プレイヤー2名',
+    duetPlayer3: '#P4: (プレイヤー3 — トリオ)',
+    duetPlayer4: '#P8: (プレイヤー4 — カルテット)',
     tagsPlaceholder: 'タグ1, タグ2, タグ3',
   },
   lyricsTab: {

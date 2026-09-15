@@ -508,6 +508,8 @@ editor: {
     duetMode: 'Режим дуэта',
     player1Name: 'Имя игрока 1',
     player2Name: 'Имя игрока 2',
+    player3Name: 'Имя игрока 3',
+    player4Name: 'Имя игрока 4',
     duration: 'Длительность:',
     notes: 'Ноты:',
     lines: 'Строки:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: 'Имя игрока 1',
     duetPlayer2: '#P2: (Игрок дуэта 2)',
     duetPlayer2Placeholder: 'Имя игрока 2',
+    duetPlayer3: '#P4: (Игрок 3 — трио)',
+    duetPlayer4: '#P8: (Игрок 4 — квартет)',
     tagsPlaceholder: 'тег1, тег2, тег3',
   },
   lyricsTab: {

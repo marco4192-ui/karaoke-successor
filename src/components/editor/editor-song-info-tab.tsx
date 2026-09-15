@@ -285,34 +285,38 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
           {song.isDuet && song.duetPlayerNames && (
             <div className="space-y-2 pl-2">
-              <div className="space-y-1">
-                <Label className="text-slate-500 text-xs">{t('editor.songInfoTab.player1Name')}</Label>
-                <Input
-                  value={song.duetPlayerNames[0]}
-                  onChange={(e) => {
-                    onSongChange(prev => ({
-                      ...prev,
-                      duetPlayerNames: [e.target.value, prev.duetPlayerNames?.[1] || t('editor.songInfoTab.player2')]
-                    }));
-                    onSetUnsavedChanges();
-                  }}
-                  className="bg-slate-800 border-slate-600 h-8"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-slate-500 text-xs">{t('editor.songInfoTab.player2Name')}</Label>
-                <Input
-                  value={song.duetPlayerNames[1]}
-                  onChange={(e) => {
-                    onSongChange(prev => ({
-                      ...prev,
-                      duetPlayerNames: [prev.duetPlayerNames?.[0] || t('editor.songInfoTab.player1'), e.target.value]
-                    }));
-                    onSetUnsavedChanges();
-                  }}
-                  className="bg-slate-800 border-slate-600 h-8"
-                />
-              </div>
+              {([0, 1, 2, 3] as const).map(idx => {
+                // P1/P2 always; P4/P8 (3rd/4th voice) only when the song has notes for them
+                const tag = (['P1', 'P2', 'P4', 'P8'] as const)[idx];
+                const hasVoice = idx < 2
+                  || song.lyrics.some(line => line.notes.some(n => n.player === tag));
+                if (!hasVoice) return null;
+                const label = idx === 0 ? t('editor.songInfoTab.player1Name')
+                  : idx === 1 ? t('editor.songInfoTab.player2Name')
+                    : idx === 2 ? t('editor.songInfoTab.player3Name')
+                      : t('editor.songInfoTab.player4Name');
+                return (
+                  <div key={tag} className="space-y-1">
+                    <Label className="text-slate-500 text-xs">
+                      {label}
+                      {idx >= 2 && <span className="ml-1.5 text-[10px] text-slate-600 font-mono">#{tag}</span>}
+                    </Label>
+                    <Input
+                      value={song.duetPlayerNames?.[idx] || ''}
+                      onChange={(e) => {
+                        onSongChange(prev => {
+                          const names = [...(prev.duetPlayerNames || ['Player 1', 'Player 2', '', ''])];
+                          while (names.length < 4) names.push('');
+                          names[idx] = e.target.value;
+                          return { ...prev, duetPlayerNames: names };
+                        });
+                        onSetUnsavedChanges();
+                      }}
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

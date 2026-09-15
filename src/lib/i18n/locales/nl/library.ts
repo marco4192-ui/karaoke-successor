@@ -508,6 +508,8 @@ editor: {
     duetMode: 'Duetmodus',
     player1Name: 'Naam speler 1',
     player2Name: 'Naam speler 2',
+    player3Name: 'Naam Speler 3',
+    player4Name: 'Naam Speler 4',
     duration: 'Duur:',
     notes: 'Noten:',
     lines: 'Regels:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: 'Naam speler 1',
     duetPlayer2: '#P2: (Duet Speler 2)',
     duetPlayer2Placeholder: 'Naam speler 2',
+    duetPlayer3: '#P4: (Speler 3 — trio)',
+    duetPlayer4: '#P8: (Speler 4 — kwartet)',
     tagsPlaceholder: 'tag1, tag2, tag3',
   },
   lyricsTab: {

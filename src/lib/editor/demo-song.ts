@@ -4,8 +4,9 @@
  * Creates ONE small, fully self-contained song so the editor's optics and
  * function can be tested without importing anything:
  *
- *  - 24 notes across 3 lyric lines (C-major run up / down / arpeggio)
- *  - 2 golden notes + 1 rap note (editor note-type testing)
+ *  - 26 notes across 4 lyric lines (C-major run up / down / arpeggio)
+ *  - ALL FIVE note types: Normal (:), Golden (*), Freestyle (F), Rap (R)
+ *    and Golden Rap (G) — one showcase line for the R7 note-type system
  *  - a synthesized WAV whose tones match the note pitches EXACTLY — press
  *    play in the editor and you hear the melody you see
  *  - genre/language/year intentionally EMPTY → perfect test subject for the
@@ -106,8 +107,8 @@ function generateWavBlob(tones: Tone[], totalDurationMs: number): Blob {
 const BEAT = 600;        // ms per beat (BPM 100)
 const NOTE_LEN = 540;    // note length with a small gap between notes
 
-/** [pitch(MIDI), isGolden, isRap] — 8 syllables per line. */
-type Syllable = [number, boolean?, boolean?];
+/** [pitch(MIDI), isGolden, isRap, isFreestyle] — syllable with optional flags. */
+type Syllable = [number, boolean?, boolean?, boolean?];
 
 const LINE_1: Array<[Syllable, string]> = [
   [[60], 'Sing'], [[62], 'ing'], [[64], 'a'], [[66], 'sim'],
@@ -121,14 +122,20 @@ const LINE_3: Array<[Syllable, string]> = [
   [[60], 'oh'], [[64], 'what'], [[67], 'a'], [[72], 'tune'],
   [[71], 'the'], [[69], 'e'], [[67], 'di'], [[62, false, true], 'tor'],
 ];
+// Line 4 showcases ALL note types: Normal(:) Freestyle(F) Rap(R) Golden(*) GoldenRap(G)
+const LINE_4: Array<[Syllable, string]> = [
+  [[60], 'nor'], [[62], 'mal'], [[64, false, false, true], 'free'], [[66, false, false, true], 'style'],
+  [[67, false, true], 'rap'], [[69, true, true], 'gold'], [[71, true, true], 'rap'], [[72, true], 'star'],
+];
 
 const LINES: Array<{ syllables: typeof LINE_1; startMs: number; text: string }> = [
   { syllables: LINE_1, startMs: 1000, text: 'Singing a simple melody' },
   { syllables: LINE_2, startMs: 7000, text: 'Sandbox serenade for me today' },
   { syllables: LINE_3, startMs: 13000, text: 'Oh what a tune — the editor' },
+  { syllables: LINE_4, startMs: 19000, text: 'Normal · Freestyle · Rap · Golden Rap · Golden' },
 ];
 
-const TOTAL_DURATION_MS = 20000;
+const TOTAL_DURATION_MS = 26000;
 
 function buildLyrics(): { lyrics: LyricLine[]; tones: Tone[] } {
   const lyrics: LyricLine[] = [];
@@ -138,7 +145,7 @@ function buildLyrics(): { lyrics: LyricLine[]; tones: Tone[] } {
   for (const line of LINES) {
     const notes: Note[] = [];
     line.syllables.forEach(([syllable, text], i) => {
-      const [pitch, isGolden, isRap] = syllable;
+      const [pitch, isGolden, isRap, isFreestyle] = syllable;
       const startTime = line.startMs + i * BEAT;
       const freq = midiToFreq(pitch);
       tones.push({ freq, startTime, duration: NOTE_LEN });
@@ -152,6 +159,7 @@ function buildLyrics(): { lyrics: LyricLine[]; tones: Tone[] } {
         isBonus: false,
         isGolden: !!isGolden,
         isRap: !!isRap,
+        isFreestyle: !!isFreestyle,
       });
     });
     lyrics.push({

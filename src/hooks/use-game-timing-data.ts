@@ -87,12 +87,20 @@ export function useGameTimingData({
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
-    // Determine if notes have explicit P1/P2 markers — needed before the forEach below
+    // Determine if notes have explicit voice markers (P1/P2/P4/P8) — needed
+    // before the forEach below.
+    // Trio/quartet songs carry the extra voices as P4 (3rd) / P8 (4th). With
+    // two singers available, those extra voices are sung by BOTH players
+    // (like 'both' notes) — every note stays visible, singable and no voice
+    // is silently dropped.
     const sortedLines = [...src.lyrics]
       .filter(line => line && Array.isArray(line.notes))
       .sort((a, b) => a.startTime - b.startTime);
     if (sortedLines.length === 0) return null;
-    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
+    const hasExplicitPlayerMarkers = sortedLines.some(
+      line => line.player === 'P1' || line.player === 'P2' || line.player === 'P4' || line.player === 'P8'
+        || line.notes.some(n => n.player === 'P1' || n.player === 'P2' || n.player === 'P4' || n.player === 'P8'),
+    );
 
     sortedLines.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
@@ -101,12 +109,13 @@ export function useGameTimingData({
 
         if (isDuetMode) {
           if (hasExplicitPlayerMarkers) {
-            // P1 notes only for player 1, P2 notes only for player 2
-            // Notes with player 'both' are sung by BOTH players
-            if (note.player === 'P1' || note.player === 'both') {
+            // P1 notes only for player 1, P2 notes only for player 2.
+            // 'both' notes AND extra trio/quartet voices (P4/P8) are sung by
+            // BOTH players — with two mics, extra voices act as join-in parts.
+            if (note.player === 'P1' || note.player === 'both' || note.player === 'P4' || note.player === 'P8') {
               p1Notes.push(noteWithLine);
             }
-            if (note.player === 'P2' || note.player === 'both') {
+            if (note.player === 'P2' || note.player === 'both' || note.player === 'P4' || note.player === 'P8') {
               p2Notes.push(noteWithLine);
             }
           } else {
@@ -123,12 +132,16 @@ export function useGameTimingData({
     p2Notes.sort((a, b) => a.startTime - b.startTime);
 
     const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
+      if (hasExplicitPlayerMarkers) {
+        return line.player === 'P1' || line.player === 'both' || line.player === 'P4' || line.player === 'P8';
+      }
       return true;
     });
 
     const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
+      if (hasExplicitPlayerMarkers) {
+        return line.player === 'P2' || line.player === 'both' || line.player === 'P4' || line.player === 'P8';
+      }
       return true;
     });
 

@@ -508,6 +508,8 @@ editor: {
     duetMode: '듀엣 모드',
     player1Name: '플레이어 1 이름',
     player2Name: '플레이어 2 이름',
+    player3Name: '플레이어 3 이름',
+    player4Name: '플레이어 4 이름',
     duration: '길이:',
     notes: '노트:',
     lines: '줄:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: '플레이어 1 이름',
     duetPlayer2: '#P2: (듀엣 플레이어 2)',
     duetPlayer2Placeholder: '플레이어 2 이름',
+    duetPlayer3: '#P4: (플레이어 3 — 트리오)',
+    duetPlayer4: '#P8: (플레이어 4 — 카르텟)',
     tagsPlaceholder: '태그1, 태그2, 태그3',
   },
   lyricsTab: {

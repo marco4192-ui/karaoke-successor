@@ -508,6 +508,8 @@ editor: {
     duetMode: 'Duetto-tila',
     player1Name: 'Pelaajan 1 nimi',
     player2Name: 'Pelaajan 2 nimi',
+    player3Name: 'Pelaaja 3:n nimi',
+    player4Name: 'Pelaaja 4:n nimi',
     duration: 'Kesto:',
     notes: 'Nuotit:',
     lines: 'Rivit:',
@@ -530,6 +532,8 @@ editor: {
     duetPlayer1Placeholder: 'Pelaajan 1 nimi',
     duetPlayer2: '#P2: (Duetto Pelaaja 2)',
     duetPlayer2Placeholder: 'Pelaajan 2 nimi',
+    duetPlayer3: '#P4: (Pelaaja 3 — trio)',
+    duetPlayer4: '#P8: (Pelaaja 4 — kvartetto)',
     tagsPlaceholder: 'tägi1, tägi2, tägi3',
   },
   lyricsTab: {

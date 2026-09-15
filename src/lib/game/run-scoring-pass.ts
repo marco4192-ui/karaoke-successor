@@ -10,7 +10,7 @@
  * the ratio of earned progress to max possible progress.
  */
 
-import { Difficulty, Note, LyricLine } from '@/types/game';
+import { Difficulty, Note, LyricLine, isFreestyleNote } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
@@ -19,6 +19,7 @@ import {
   NoteProgress,
   ScoringMetadata,
   ComboScoringState,
+  type TickNoteKind,
 } from '@/lib/game/scoring';
 import type { ScoreEvent, ScoringPassResult } from '@/lib/game/scoring-types';
 
@@ -115,7 +116,11 @@ export function runScoringPass(
       const tickInterval = beatDurationMs;
 
       if (timeSinceLastEval >= tickInterval) {
-        const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
+        // Note kind for F/R/G notes — pitch is irrelevant for freestyle/rap
+        const noteKind: TickNoteKind = note.isRap
+          ? 'rap'
+          : isFreestyleNote(note) ? 'freestyle' : 'normal';
+        const tickResult = evaluateTick(detectedNote, note.pitch, difficulty, noteKind);
 
         noteProgress.ticksEvaluated++;
         noteProgress.lastEvaluatedTime = currentTime;
@@ -162,9 +167,15 @@ export function runScoringPass(
       if (progress && !progress.isComplete) {
         progress.isComplete = true;
 
+        // Freestyle notes are penalty-free: silence only forfeits the points,
+        // it never counts as a missed note ("no minus points, you always get
+        // points as long as you make sounds"). Rap notes count normally —
+        // rhythm/timing is the challenge there.
+        const freestyleNote = isFreestyleNote(note);
+
         if (progress.ticksHit > 0) {
           notesHitDelta++;
-        } else {
+        } else if (!freestyleNote) {
           notesMissedDelta++;
         }
         hasUpdates = true;
@@ -187,6 +198,9 @@ export function runScoringPass(
             if (comboState.comboNotes > comboState.maxComboNotes) {
               comboState.maxComboNotes = comboState.comboNotes;
             }
+          } else if (freestyleNote) {
+            // Freestyle notes are combo-NEUTRAL when silent — no penalty for
+            // optional shout/spoken passages, the streak simply continues.
           } else {
             // Note missed for combo — reset streak
             comboState.comboNotes = 0;

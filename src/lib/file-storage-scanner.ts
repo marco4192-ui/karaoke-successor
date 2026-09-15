@@ -293,10 +293,10 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   const cleanContent = normalizeTxtContent(content);
 
   const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
-  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
+  const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' | 'P4' | 'P8' }> = [];
   const lineBreakBeats = new Set<number>();
 
-  let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let currentPlayer: 'P1' | 'P2' | 'P4' | 'P8' | undefined = undefined;
 
   for (const line of lines) {
     // IMPORTANT: Use trimStart() — NOT trim() — to preserve trailing spaces on note lyrics.
@@ -321,7 +321,7 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
 
     const duetPrefix = matchDuetNotePrefix(trimmedLine);
     let noteLine = trimmedLine;
-    let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
+    let notePlayer: 'P1' | 'P2' | 'P4' | 'P8' | undefined = currentPlayer;
     if (duetPrefix) {
       notePlayer = duetPrefix.player;
       noteLine = duetPrefix.rest;

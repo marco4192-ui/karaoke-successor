@@ -151,7 +151,9 @@ export function useEditorKeyboardShortcuts({
                 lyric: typeof parsed.lyric === 'string' ? parsed.lyric : undefined,
                 isGolden: Boolean(parsed.isGolden),
                 isBonus: Boolean(parsed.isBonus),
-                player: parsed.player === 'P1' || parsed.player === 'P2' ? parsed.player : undefined,
+                isFreestyle: Boolean(parsed.isFreestyle),
+                isRap: Boolean(parsed.isRap),
+                player: parsed.player === 'P1' || parsed.player === 'P2' || parsed.player === 'P4' || parsed.player === 'P8' ? parsed.player : undefined,
               });
             }
           } catch {
