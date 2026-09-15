@@ -8,6 +8,7 @@ import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { MetadataStudio } from '@/components/editor/metadata-studio';
+import { createDemoSong } from '@/lib/editor/demo-song';
 import { RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
@@ -205,7 +206,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       try {
         const songWithLyrics = await getSongByIdWithLyrics(song.id);
         if (songWithLyrics && songWithLyrics.lyrics && songWithLyrics.lyrics.length > 0) {
-          setSelectedSong(songWithLyrics);
+          // MERGE instead of replace: the passed song comes from the restored
+          // library array (getAllSongsAsync) and carries live blob URLs for
+          // audio/video/cover; the cache lookup in getSongByIdWithLyrics does
+          // NOT. Taking the loaded object 1:1 dropped the restored audio
+          // (editor had no <audio> element after a reload).
+          setSelectedSong({
+            ...songWithLyrics,
+            audioUrl: song.audioUrl || songWithLyrics.audioUrl,
+            videoBackground: song.videoBackground || songWithLyrics.videoBackground,
+            coverImage: song.coverImage || songWithLyrics.coverImage,
+          });
         } else {
           // eslint-disable-next-line no-console
           console.warn('[EditorScreen] Failed to load song with lyrics');
@@ -249,6 +260,31 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       return next;
     });
   }, [filterMode, filteredSongs.length, t, toast]);
+
+  // ── Demo sample song (sandbox testing — user request "Muster-Song") ──
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false);
+  const handleCreateDemoSong = useCallback(async () => {
+    setIsCreatingDemo(true);
+    try {
+      const song = await createDemoSong();
+      toast({
+        title: `🎵 ${t('editor.demoSongCreatedTitle')}`,
+        description: t('editor.demoSongCreatedDesc'),
+      });
+      // Refresh the library so the missing-metadata counters update immediately
+      refreshSongs();
+      // Open the fresh demo song directly in the editor for immediate testing
+      setSelectedSong(song);
+    } catch (e) {
+      toast({
+        title: '⚠️',
+        description: e instanceof Error ? e.message : t('editor.demoSongError'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingDemo(false);
+    }
+  }, [t, toast, refreshSongs]);
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.style.display = 'none';
@@ -325,13 +361,21 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                   <>🔄 {t('editor.refreshBtn')}</>
                 )}
               </Button>
+              {/* Demo sample song — sandbox testing (user request). The old
+                  header "Select Songs" button moved INTO the Metadata Studio
+                  (next to Run) — it only serves the studio flow. */}
               <Button
-                onClick={handleToggleSelectMode}
-                variant={selectMode ? 'default' : 'outline'}
-                className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white hover:bg-violet-500/15 hover:border-violet-400/50 hover:text-violet-300 transition-all active:scale-95'}
-                data-testid="editor-select-mode-toggle"
+                onClick={handleCreateDemoSong}
+                variant="outline"
+                disabled={isCreatingDemo}
+                className="border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/15 hover:border-cyan-300 transition-all"
+                title={t('editor.demoSongButtonTitle')}
+                data-testid="editor-demo-song-button"
               >
-                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ ' + t('editor.enterSelectMode')}
+                {isCreatingDemo ? (
+                  <span className="inline-block w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                ) : '🧪'}
+                {' '}{t('editor.demoSongButton')}
               </Button>
               <Button onClick={onBack} variant="outline" className="border-white/20" data-testid="editor-back-button">
                 ← {t('editor.back')}
@@ -400,6 +444,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               open={studioOpen}
               onToggle={() => setStudioOpen(prev => !prev)}
               selectionFocusToken={studioSelectionFocus}
+              selectMode={selectMode}
+              onToggleSelectMode={handleToggleSelectMode}
               onApplied={refreshSongs}
               t={t}
             />
@@ -504,6 +550,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <div className="text-4xl mb-2">📝</div>
               <p>{t('editor.noSongsFound')}</p>
               <p className="text-sm">{t('editor.noSongsDesc')}</p>
+              <Button
+                onClick={handleCreateDemoSong}
+                disabled={isCreatingDemo}
+                className="mt-4 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
+                data-testid="editor-demo-song-empty-button"
+              >
+                {isCreatingDemo ? (
+                  <span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2" />
+                ) : '🧪'}
+                {' '}{t('editor.demoSongButton')}
+              </Button>
             </div>
           )}
         </div>

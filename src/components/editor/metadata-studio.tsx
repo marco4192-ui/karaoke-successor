@@ -58,9 +58,29 @@ interface MetadataStudioProps {
   onToggle: () => void;
   /** Incremented when opened from the select bar → re-focus the "selection" scope. */
   selectionFocusToken?: number;
+  /** Select mode is live (song cards show checkboxes) — the Select-Songs
+   *  button inside the studio toggles it (user request: the button belongs
+   *  to the studio, placed next to Run). */
+  selectMode: boolean;
+  onToggleSelectMode: () => void;
   onApplied: () => void;
   t: (key: string) => string;
 }
+
+/**
+ * Recommended batch size for the AI pipeline (user request: real measured
+ * value, not a good-will number).
+ *
+ * Measured in THIS sandbox (full 12-song chunks):
+ *  - factual lookup (MusicBrainz ~1 req/s + Deezer): ~65 s per 12 songs ≈ 5.4 s/song
+ *  - LLM analysis:                                  ~8.5 s per 12 songs ≈ 0.7 s/song
+ *  - txt apply:                                     ~0.1 s/song
+ * ⇒ worst case ≈ 6 s per song (fill-missing with empty genre/year/language).
+ * 20 songs ≈ 2 min worst case — the accepted waiting-time ceiling.
+ */
+export const STUDIO_RECOMMENDED_BATCH = 20;
+/** Worst-case seconds per song for the estimated-time display. */
+const SECONDS_PER_SONG_WORST_CASE = 6;
 
 /** Subscribe to the singleton rule-harmonizer background job state. */
 function useRuleHarmonizerState(): RuleHarmonizeJobState {
@@ -79,6 +99,8 @@ export function MetadataStudio({
   open,
   onToggle,
   selectionFocusToken = 0,
+  selectMode,
+  onToggleSelectMode,
   onApplied,
   t,
 }: MetadataStudioProps) {
@@ -108,6 +130,23 @@ export function MetadataStudio({
   const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
   const warmupPromiseRef = useRef<Promise<void> | null>(null);
   const isMountedRef = useRef(true);
+
+  // ── Run-job control (loading banner: phase, elapsed, abort) ──
+  const abortRef = useRef<AbortController | null>(null);
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  /** Big-batch confirmation pending (AI modes above the recommended size). */
+  const [confirmBigBatch, setConfirmBigBatch] = useState(false);
+
+  // 1 Hz elapsed-time ticker while the analysis job runs
+  useEffect(() => {
+    if (runStartedAt === null) return;
+    setElapsedSec(Math.round((Date.now() - runStartedAt) / 1000));
+    const id = window.setInterval(() => {
+      setElapsedSec(Math.round((Date.now() - runStartedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [runStartedAt]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -188,14 +227,8 @@ export function MetadataStudio({
   }, []);
 
   // ── Run (AI modes) ──
-  const handleRun = useCallback(async () => {
-    if (runSubset.length === 0) {
-      setError(scope === 'selection'
-        ? t('editor.aiBatchSelectFirstDesc')
-        : t('editor.studioNothingToFill'));
-      return;
-    }
 
+  const handleRun = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     setSuggestions([]);
@@ -203,6 +236,10 @@ export function MetadataStudio({
     setLocalAppliedInfo(null);
     setStats(null);
     setProgress(null);
+    setRunStartedAt(Date.now());
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     if (writeTarget === 'txt') startLyricsWarmup(runSubset);
 
@@ -212,10 +249,17 @@ export function MetadataStudio({
           id: s.id, title: s.title, artist: s.artist,
           genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
         })),
-        { onProgress: setProgress },
+        { onProgress: setProgress, signal: controller.signal },
       );
       if (!isMountedRef.current) return;
       setProgress(null);
+
+      if (result.stats.aborted) {
+        // User cancelled — neutral state, no error banner
+        setSuggestions([]);
+        setStats(null);
+        return;
+      }
 
       const filtered = filterSuggestions(result.suggestions);
       if (result.success || filtered.length > 0) {
@@ -226,14 +270,40 @@ export function MetadataStudio({
       }
     } catch (e) {
       if (!isMountedRef.current) return;
+      if (controller.signal.aborted) return; // aborted fetch — not an error
       setError(e instanceof Error ? e.message : t('editor.aiAssistant.networkError'));
     } finally {
+      abortRef.current = null;
       if (isMountedRef.current) {
         setIsLoading(false);
         setProgress(null);
+        setRunStartedAt(null);
       }
     }
-  }, [runSubset, scope, writeTarget, startLyricsWarmup, filterSuggestions, t]);
+  }, [runSubset, writeTarget, startLyricsWarmup, filterSuggestions, t]);
+
+  /** User-facing Run click: guards empty selection + big batches first. */
+  const handleRunClick = useCallback(() => {
+    if (runSubset.length === 0) {
+      setError(scope === 'selection'
+        ? t('editor.aiBatchSelectFirstDesc')
+        : t('editor.studioNothingToFill'));
+      return;
+    }
+    // Large batches need an explicit confirmation with the measured
+    // worst-case estimate — prevents accidental multi-minute runs (user
+    // request: no killer runs).
+    if (runSubset.length > STUDIO_RECOMMENDED_BATCH) {
+      setConfirmBigBatch(true);
+      return;
+    }
+    void handleRun();
+  }, [runSubset, scope, t, handleRun]);
+
+  /** Cancel the running analysis job (orderly abort after the current chunk). */
+  const handleAbortRun = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   // ── Apply (single field row ✓) ──
   const handleApplySingle = useCallback(async (
@@ -411,6 +481,18 @@ export function MetadataStudio({
           ? <ChevronDown className="w-4 h-4 text-violet-300 flex-shrink-0" />
           : <ChevronRight className="w-4 h-4 text-violet-300 flex-shrink-0" />}
         <span className="text-sm font-semibold text-white/90">🎛️ {t('editor.studioTitle')}</span>
+        {/* Job running while collapsed → obvious spinner so the user knows
+            the analysis is still in progress (no silent waiting) */}
+        {!open && (isLoading || ruleRunning) && (
+          <span className="flex items-center gap-1.5 text-[10px] text-violet-300 font-mono whitespace-nowrap">
+            <span className="inline-block w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+            {ruleRunning
+              ? `${ruleJob.done}/${ruleJob.total}`
+              : progress
+                ? `${progress.done}/${progress.total}`
+                : '…'}
+          </span>
+        )}
         <span className="text-[10px] text-white/40 truncate hidden sm:inline">
           {t('editor.studioDesc')}
         </span>
@@ -487,11 +569,27 @@ export function MetadataStudio({
 
           {/* ── Run / progress ── */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Select-Songs button — moved INTO the studio (user request:
+                it only serves the studio, so it lives next to Run). */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onToggleSelectMode}
+              className={selectMode
+                ? 'bg-violet-500 hover:bg-violet-400 border-violet-500 text-white font-semibold text-xs'
+                : 'border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 text-xs'}
+              data-testid="studio-select-songs"
+            >
+              {selectMode
+                ? `✕ ${t('editor.exitSelectMode')}`
+                : `☑️ ${t('editor.enterSelectMode')}${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
+            </Button>
+
             {mode === 'rule' ? (
               <Button
                 size="sm"
                 onClick={handleRuleStart}
-                disabled={ruleRunning || rulePlan.length === 0 || !!applyProgress}
+                disabled={ruleRunning || rulePlan.length === 0 || !!applyProgress || selectedIds.size === 0}
                 className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs"
                 data-testid="studio-rule-start"
               >
@@ -504,51 +602,95 @@ export function MetadataStudio({
             ) : (
               <Button
                 size="sm"
-                onClick={handleRun}
-                disabled={isLoading || noFieldsSelected || (scope === 'selection' && selectedIds.size === 0)}
+                onClick={handleRunClick}
+                disabled={isLoading || noFieldsSelected || selectedIds.size === 0}
+                title={selectedIds.size === 0 ? t('editor.studioRunNeedsSelection') : undefined}
                 className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
                 data-testid="studio-run"
               >
                 {isLoading ? (
                   <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
                 ) : null}
-                {isLoading && progress
-                  ? `${progress.phase === 'lookup' ? '🔎' : '🤖'} ${progress.done}/${progress.total}`
-                  : isLoading
-                    ? t('editor.aiHarmonizeLoading')
-                    : t('editor.studioStart')}
-                {!isLoading && mode === 'fill' && runSubset.length > 0 && (
+                {t('editor.studioStart')}
+                {!isLoading && mode === 'fill' && runSubset.length > 0 && selectedIds.size > 0 && (
                   <span className="opacity-70">({runSubset.length})</span>
                 )}
               </Button>
             )}
 
-            {/* Selection scope without selection → explicit hint */}
-            {scope === 'selection' && selectedIds.size === 0 && (
-              <p className="text-[11px] text-amber-300/80">☑️ {t('editor.aiBatchSelectFirstDesc')}</p>
+            {/* No selection yet → explicit hint next to the greyed Run */}
+            {selectedIds.size === 0 && (
+              <p className="text-[11px] text-amber-300/80">☑️ {t('editor.studioRunNeedsSelection')}</p>
             )}
             {noFieldsSelected && (
               <p className="text-[11px] text-amber-300/80">{t('editor.studioNoFields')}</p>
             )}
-
-            {/* Rule background job progress */}
-            {ruleRunning && (
-              <div className="flex-1 min-w-[140px] flex items-center gap-2">
-                <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-cyan-400 transition-all duration-200"
-                    style={{ width: `${ruleJob.total > 0 ? Math.round((ruleJob.done / ruleJob.total) * 100) : 0}%` }}
-                  />
-                </div>
-                <button
-                  onClick={() => ruleHarmonizer.abort()}
-                  className="text-[10px] px-2 py-0.5 rounded border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors whitespace-nowrap"
-                >
-                  {t('editor.ruleHarmonizeAbort')}
-                </button>
-              </div>
-            )}
           </div>
+
+          {/* ── Measured batch-size recommendation (real timings, see
+              STUDIO_RECOMMENDED_BATCH above) ── */}
+          {mode !== 'rule' && (
+            <p className="text-[10px] text-white/40 leading-relaxed" data-testid="studio-batch-hint">
+              💡 {t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}
+            </p>
+          )}
+
+          {/* ── Loading banner (obvious loading screen while the pipeline
+              runs — phase, progress bar, elapsed time, cancel) ── */}
+          {(isLoading || ruleRunning) && (
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/[0.07] p-3 space-y-2.5" data-testid="studio-loading-banner">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="inline-block w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span className="text-xs font-semibold text-violet-200">
+                  {ruleRunning
+                    ? t('editor.ruleHarmonizeStart')
+                    : progress
+                      ? t(progress.phase === 'lookup' ? 'editor.studioPhaseLookup' : 'editor.studioPhaseAi')
+                      : t('editor.studioPhaseCache')}
+                </span>
+                <span className="ml-auto font-mono text-[11px] text-white/50 tabular-nums">
+                  {ruleRunning
+                    ? `${ruleJob.done}/${ruleJob.total}`
+                    : progress
+                      ? `${progress.done}/${progress.total}`
+                      : '…'}
+                  {isLoading && runStartedAt !== null && ` · ${elapsedSec}s`}
+                </span>
+                {isLoading && (
+                  <button
+                    onClick={handleAbortRun}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors whitespace-nowrap"
+                    data-testid="studio-cancel-job"
+                  >
+                    {t('editor.studioCancelJob')}
+                  </button>
+                )}
+                {ruleRunning && (
+                  <button
+                    onClick={() => ruleHarmonizer.abort()}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors whitespace-nowrap"
+                  >
+                    {t('editor.ruleHarmonizeAbort')}
+                  </button>
+                )}
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-300"
+                  style={{
+                    width: ruleRunning
+                      ? `${ruleJob.total > 0 ? Math.round((ruleJob.done / ruleJob.total) * 100) : 0}%`
+                      : progress && progress.total > 0
+                        ? `${Math.round((progress.done / progress.total) * 100)}%`
+                        : '8%',
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-white/40">
+                {t('editor.studioLoadingHint')}
+              </p>
+            </div>
+          )}
 
           {/* ── Error / stats / local-applied feedback ── */}
           {error && (
@@ -709,6 +851,50 @@ export function MetadataStudio({
                     {applyProgress
                       ? `${applyProgress.done}/${applyProgress.total}`
                       : t('editor.aiHarmonizeWarnConfirm')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Big-batch confirmation (run with more songs than the measured
+              recommendation → explicit time estimate before the job starts) ── */}
+          {confirmBigBatch && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+              <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl" data-testid="studio-big-batch-dialog">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl">⏳</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-sm">{t('editor.studioBigBatchTitle')}</h3>
+                    <p className="text-white/60 text-xs mt-0.5">
+                      {t('editor.studioBigBatchDesc')
+                        .replace('{n}', String(runSubset.length))
+                        .replace('{min}', String(Math.max(1, Math.ceil(runSubset.length * SECONDS_PER_SONG_WORST_CASE / 60))))}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-[11px] text-white/60 space-y-1.5">
+                  <p>{t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}</p>
+                  <p className="text-white/40">{t('editor.studioBigBatchTip')}</p>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmBigBatch(false)}
+                    className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
+                  >
+                    {t('editor.aiHarmonizeWarnCancel')}
+                  </Button>
+                  <Button
+                    onClick={() => { setConfirmBigBatch(false); void handleRun(); }}
+                    className="flex-1 bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
+                    data-testid="studio-big-batch-confirm"
+                  >
+                    {t('editor.studioBigBatchConfirm')}
                   </Button>
                 </div>
               </div>

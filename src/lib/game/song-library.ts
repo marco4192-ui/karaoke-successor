@@ -288,7 +288,12 @@ function saveCustomSongs(songs: Song[]): void {
     return {
       ...s,
       storedTxt: s.storedTxt,
-      storedMedia: false,
+      // Keep the storedMedia flag: it marks that the audio/video blobs live
+      // in the media IndexedDB — getAllSongsAsync needs it after a reload to
+      // restore the blob URLs (e.g. the sandbox demo song). Forcing false
+      // here killed that restore path. Blob URLs themselves are stripped
+      // below regardless.
+      storedMedia: s.storedMedia,
       baseFolder: s.baseFolder,
       audioUrl: s.audioUrl && !s.audioUrl.startsWith('blob:') ? s.audioUrl : undefined,
       videoBackground: s.videoBackground && !s.videoBackground.startsWith('blob:') ? s.videoBackground : undefined,
@@ -347,7 +352,7 @@ function saveToLocalStorage(songs: Song[]): void {
         relativeCoverPath: s.relativeCoverPath,
         relativeTxtPath: s.relativeTxtPath,
         storedTxt: s.storedTxt,
-        storedMedia: false,
+        storedMedia: s.storedMedia,
         isDuet: s.isDuet,
         hasEmbeddedAudio: s.hasEmbeddedAudio,
         youtubeUrl: s.youtubeUrl,
