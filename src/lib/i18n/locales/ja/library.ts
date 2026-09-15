@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'タップモード（スペースキー）で音符を挿入。音節は自動的に割り当てられます。',
     linesCount: '行',
     notesCount: '音符',
-    clickWordHint: '単語をクリックして音符にジャンプ',
+    clickWordHint: 'クリックで選択 · ダブルクリックで音符へジャンプ',
     syllablesUnassigned: '{count}音節が未割り当て',
     allSyllablesAssigned: '全{count}音節が割り当て済み',
     emptyLine: '（空行）',

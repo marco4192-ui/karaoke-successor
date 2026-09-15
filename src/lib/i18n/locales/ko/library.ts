@@ -542,7 +542,7 @@ editor: {
     tapModeHint: '탭 모드(스페이스바)를 사용하여 노트를 삽입하세요. 음절이 자동으로 할당됩니다.',
     linesCount: '줄',
     notesCount: '노트',
-    clickWordHint: '단어를 클릭하여 노트로 이동',
+    clickWordHint: '클릭하여 선택 · 더블 클릭으로 노트로 이동',
     syllablesUnassigned: '{count}개의 음절이 아직 할당되지 않음',
     allSyllablesAssigned: '모든 {count}개의 음절이 할당됨',
     emptyLine: '(빈 줄)',

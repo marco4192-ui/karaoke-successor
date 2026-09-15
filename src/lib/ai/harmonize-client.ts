@@ -88,6 +88,31 @@ interface HarmonizeOptions {
   signal?: AbortSignal;
 }
 
+// ── AI availability probe (prevents doomed LLM calls) ──────────────────
+
+/** On machines without .z-ai-config (e.g. the packaged desktop app) every
+ * /api/harmonize call fails with 503 — spamming the console and wasting
+ * round-trips. We probe /api/ai-status once per run and skip the LLM phase
+ * entirely when the AI service is unavailable. Factual lookups still run
+ * (MusicBrainz/Deezer are free and keyless). */
+let aiAvailableCache: { value: boolean; checkedAt: number } | null = null;
+const AI_STATUS_TTL_MS = 60_000;
+
+async function isAiAvailable(): Promise<boolean> {
+  if (aiAvailableCache && Date.now() - aiAvailableCache.checkedAt < AI_STATUS_TTL_MS) {
+    return aiAvailableCache.value;
+  }
+  try {
+    const res = await fetch('/api/ai-status');
+    const data = await res.json();
+    aiAvailableCache = { value: data.available === true, checkedAt: Date.now() };
+  } catch {
+    // Probe failed (offline?) — assume unavailable, don't waste LLM calls.
+    aiAvailableCache = { value: false, checkedAt: Date.now() };
+  }
+  return aiAvailableCache.value;
+}
+
 // ── Chunk sizes ──────────────────────────────────────────────────────────
 
 /** 12 songs per LLM call (route caps at 15). The old 50-per-call chunk made
@@ -375,10 +400,17 @@ export async function harmonizeSongs(
 
     let llmMap = new Map<string, LlmSuggestion>();
     if (llmSongs.length > 0 && !options.signal?.aborted) {
-      const result = await callLlm(llmSongs, options);
-      llmMap = result.map;
-      stats.aiCalls = Math.ceil(llmSongs.length / LLM_CHUNK_SIZE);
-      stats.aiErrors = result.errors;
+      // Skip the whole LLM phase when the AI service is unavailable — no
+      // doomed 503 requests, no console spam. Affected songs count as
+      // notAnalyzed (they are NOT cached) and are retried on the next run.
+      if (await isAiAvailable()) {
+        const result = await callLlm(llmSongs, options);
+        llmMap = result.map;
+        stats.aiCalls = Math.ceil(llmSongs.length / LLM_CHUNK_SIZE);
+        stats.aiErrors = result.errors;
+      } else {
+        stats.aiErrors = 1; // signals "AI unavailable" in the result error
+      }
     }
 
     // 4. Merge everything per song + write cache
@@ -508,4 +540,10 @@ export async function harmonizeSongs(
         : `AI partially unavailable — ${stats.notAnalyzed} song(s) not analyzed`)
       : undefined,
   };
+}
+
+/** Reset the AI-availability cache (e.g. after the user configured the
+ *  AI service — the settings screen calls this when re-testing). */
+export function resetAiAvailabilityCache(): void {
+  aiAvailableCache = null;
 }

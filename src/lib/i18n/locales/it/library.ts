@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Usa la modalità tap (barra spaziatrice) per inserire le note. Le sillabe vengono assegnate automaticamente.',
     linesCount: 'Righe',
     notesCount: 'Note',
-    clickWordHint: 'Clicca su una parola per saltare alla nota',
+    clickWordHint: 'Clic seleziona · doppio clic salta alla nota',
     syllablesUnassigned: '{count} sillabe non ancora assegnate',
     allSyllablesAssigned: 'Tutte le {count} sillabe assegnate',
     emptyLine: '(riga vuota)',

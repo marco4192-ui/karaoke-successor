@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Käytä napautustilaa (välilyönti) lisätäksesi nuotteja. Tavut liitetään automaattisesti.',
     linesCount: 'Rivit',
     notesCount: 'Nuotit',
-    clickWordHint: 'Napsauta sanaa hypätäksesi nuottiin',
+    clickWordHint: 'Napsautus valitsee · kaksoisnapsautus hyppää nuottiin',
     syllablesUnassigned: '{count} tavua ei ole vielä liitetty',
     allSyllablesAssigned: 'Kaikki {count} tavua liitetty',
     emptyLine: '(tyhjä rivi)',

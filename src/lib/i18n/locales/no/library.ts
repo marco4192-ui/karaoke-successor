@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Bruk trykk-modus (mellomromstast) for å sette inn noter. Stavelser tildeles automatisk.',
     linesCount: 'Linjer',
     notesCount: 'Noter',
-    clickWordHint: 'Klikk på et ord for å hoppe til noten',
+    clickWordHint: 'Klikk merker · dobbeltklikk hopper til noten',
     syllablesUnassigned: '{count} stavelser er ikke tildelt ennå',
     allSyllablesAssigned: 'Alle {count} stavelser tildelt',
     emptyLine: '(tom linje)',

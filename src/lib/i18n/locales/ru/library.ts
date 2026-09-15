@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Используйте режим Tap (пробел) для вставки нот. Слоги назначаются автоматически.',
     linesCount: 'Строки',
     notesCount: 'Нот',
-    clickWordHint: 'Нажмите на слово, чтобы перейти к ноте',
+    clickWordHint: 'Клик — выбрать · двойной клик — перейти к ноте',
     syllablesUnassigned: '{count} слогов ещё не назначено',
     allSyllablesAssigned: 'Все {count} слогов назначены',
     emptyLine: '(пустая строка)',

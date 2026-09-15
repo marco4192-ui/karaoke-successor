@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Użyj trybu Tap (spacja), aby wstawić nuty. Sylaby są przypisywane automatycznie.',
     linesCount: 'Linie',
     notesCount: 'Nuty',
-    clickWordHint: 'Kliknij na słowo, aby przejść do nuty',
+    clickWordHint: 'Klik zaznacza · dwuklik przechodzi do nuty',
     syllablesUnassigned: '{count} sylab nie przypisanych',
     allSyllablesAssigned: 'Wszystkie {count} sylab przypisanych',
     emptyLine: '(pusta linia)',

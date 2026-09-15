@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Usa el modo tap (barra espaciadora) para insertar notas. Las sílabas se asignan automáticamente.',
     linesCount: 'Líneas',
     notesCount: 'Notas',
-    clickWordHint: 'Haz clic en una palabra para saltar a la nota',
+    clickWordHint: 'Clic selecciona · doble clic salta a la nota',
     syllablesUnassigned: '{count} sílabas sin asignar aún',
     allSyllablesAssigned: 'Todas las {count} sílabas asignadas',
     emptyLine: '(línea vacía)',

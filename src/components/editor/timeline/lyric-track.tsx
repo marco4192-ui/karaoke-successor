@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { Note } from '@/types/game';
@@ -10,55 +10,43 @@ interface LyricTrackProps {
   pixelsPerSecond: number;
   scrollOffset: number;
   height: number;
-  onLyricChange: (_noteId: string, _newLyric: string) => void;
+  /** Single click on a lyric → select the note (marks it + details band). */
+  onLyricSelect: (_noteId: string) => void;
+  /** Double-click on a lyric → jump the piano roll to the note
+   *  (horizontal centering + pitch-centering of the lane). */
+  onLyricJump: (_note: Note) => void;
   selectedNoteId?: string;
 }
 
+/**
+ * Lyric track below the pitch lanes.
+ *
+ * Interactions (user request):
+ *  - Click          → select/mark the lyric (and its note — the details band
+ *                     below is the primary editing surface for the text).
+ *  - Double-click   → jump to the note on the pitch ladder: the timeline
+ *                     scrolls horizontally to the note and centers its pitch.
+ *
+ * The old double-click inline editing was replaced by this jump — lyric
+ * text is edited in the note-details band (see NoteDetailsInputs), which is
+ * the intended primary editing surface.
+ */
 export function LyricTrack({
   notes,
   pixelsPerSecond,
   scrollOffset,
   height,
-  onLyricChange,
+  onLyricSelect,
+  onLyricJump,
   selectedNoteId
 }: LyricTrackProps) {
   const { t } = useTranslation();
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Focus input when editing starts
-  useEffect(() => {
-    if (editingNoteId && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editingNoteId]);
-
-  const handleDoubleClick = useCallback((note: Note) => {
-    setEditingNoteId(note.id);
-    setEditValue(note.lyric);
-  }, []);
-
-  const handleBlur = useCallback(() => {
-    if (editingNoteId && editValue.trim()) {
-      onLyricChange(editingNoteId, editValue.trim());
-    }
-    setEditingNoteId(null);
-  }, [editingNoteId, editValue, onLyricChange]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleBlur();
-    } else if (e.key === 'Escape') {
-      setEditingNoteId(null);
-    }
-    // Stop propagation to prevent timeline shortcuts
-    e.stopPropagation();
-  }, [handleBlur]);
+  const jumpHint = t('editor.timeline.lyricJumpHint');
+  // Double-Enter (like double-click) within 400 ms → jump to the note
+  const lastEnterRef = useRef<{ noteId: string; at: number }>({ noteId: '', at: 0 });
 
   return (
-    <div 
+    <div
       className="relative w-full bg-slate-900/50 border-t border-slate-700"
       style={{ height }}
     >
@@ -66,56 +54,78 @@ export function LyricTrack({
       {notes.map((note) => {
         const startX = (note.startTime / 1000) * pixelsPerSecond - scrollOffset;
         const width = Math.max(20, (note.duration / 1000) * pixelsPerSecond);
-        
+
         // Don't render if completely off-screen
         if (startX + width < -100 || startX > window.innerWidth + 100) {
           return null;
         }
 
-        const isEditing = editingNoteId === note.id;
         const isSelected = selectedNoteId === note.id;
 
         return (
           <div
             key={note.id}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isSelected}
+            title={jumpHint}
             className={cn(
-              'absolute top-1 bottom-1 flex items-center justify-center',
-              'rounded transition-all duration-100',
-              isSelected && 'ring-1 ring-cyan-400',
-              isEditing ? 'bg-slate-800 ring-2 ring-purple-400' : 'bg-slate-800/50 hover:bg-slate-800'
+              'absolute top-1 bottom-1 flex items-center justify-center cursor-pointer select-none',
+              'rounded transition-all duration-100 outline-none',
+              'focus-visible:ring-2 focus-visible:ring-cyan-300',
+              isSelected
+                ? 'bg-slate-800 ring-2 ring-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.35)]'
+                : 'bg-slate-800/50 hover:bg-slate-800 hover:ring-1 hover:ring-slate-500'
             )}
             style={{
               left: `${startX}px`,
               width: `${width}px`
             }}
-            onDoubleClick={() => handleDoubleClick(note)}
+            onClick={(e) => {
+              // Never let the click bubble to the container (would deselect)
+              e.stopPropagation();
+              onLyricSelect(note.id);
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onLyricJump(note);
+            }}
+            onKeyDown={(e) => {
+              // Keyboard support mirrors the mouse: Enter/Space selects,
+              // Enter pressed twice quickly (double-click analog) jumps.
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.key === ' ') {
+                  onLyricSelect(note.id);
+                  return;
+                }
+                const last = lastEnterRef.current;
+                const now = Date.now();
+                if (last.noteId === note.id && now - last.at < 400) {
+                  lastEnterRef.current = { noteId: '', at: 0 };
+                  onLyricJump(note);
+                } else {
+                  lastEnterRef.current = { noteId: note.id, at: now };
+                  onLyricSelect(note.id);
+                }
+              }
+            }}
           >
-            {isEditing ? (
-              <input
-                ref={inputRef}
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                className="w-full h-full bg-transparent text-center text-white text-sm px-1 outline-none"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span className={cn(
-                'text-xs text-slate-300 truncate px-1',
-                note.isGolden && 'text-yellow-400',
-                !note.isGolden && note.isRap && 'text-emerald-400',
-                (note.isFreestyle || note.isBonus) && 'text-pink-400',
-                note.player === 'P1' && 'text-cyan-400',
-                note.player === 'P2' && 'text-purple-400',
-                // R8: match the sub-header dropdown (P4 = emerald, P8 = orange)
-                note.player === 'P4' && 'text-emerald-400',
-                note.player === 'P8' && 'text-orange-400'
-              )}>
-                {note.lyric || '—'}
-              </span>
-            )}
+            <span className={cn(
+              'text-xs truncate px-1',
+              isSelected ? 'text-white' : 'text-slate-300',
+              note.isGolden && 'text-yellow-400',
+              !note.isGolden && note.isRap && 'text-emerald-400',
+              (note.isFreestyle || note.isBonus) && 'text-pink-400',
+              note.player === 'P1' && 'text-cyan-400',
+              note.player === 'P2' && 'text-purple-400',
+              // R8: match the sub-header dropdown (P4 = emerald, P8 = orange)
+              note.player === 'P4' && 'text-emerald-400',
+              note.player === 'P8' && 'text-orange-400'
+            )}>
+              {note.lyric || '—'}
+            </span>
           </div>
         );
       })}

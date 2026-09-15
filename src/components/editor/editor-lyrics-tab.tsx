@@ -14,6 +14,9 @@ interface EditorLyricsTabProps {
   selectedNoteId?: string;
   onNoteSelect: (_noteId: string | undefined) => void;
   onTimeChange: (_time: number) => void;
+  /** Double-click on a word → jump the timeline to the note on the pitch
+   *  ladder (horizontal centering + pitch-centering of the lane). */
+  onNoteJump: (_note: Note) => void;
 }
 
 /**
@@ -32,9 +35,11 @@ export function EditorLyricsTab({
   selectedNoteId,
   onNoteSelect,
   onTimeChange,
+  onNoteJump,
 }: EditorLyricsTabProps) {
   const activeLineRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const jumpHint = t('editor.lyricsTab.jumpHint');
 
   // Count how many syllables have been assigned to notes
   const assignedNoteCount = useMemo(() => {
@@ -251,6 +256,10 @@ export function EditorLyricsTab({
                                 e.stopPropagation();
                                 handleWordClick(note);
                               }}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                onNoteJump(note);
+                              }}
                               className={cn(
                                 'text-sm px-0.5 rounded transition-all duration-100',
                                 !isSelected && !isActiveNote && 'text-slate-300 hover:text-white hover:bg-slate-700/50',
@@ -258,7 +267,7 @@ export function EditorLyricsTab({
                                 isSelected && 'text-white bg-purple-500/30 ring-1 ring-purple-400',
                                 'cursor-pointer'
                               )}
-                              title={`${note.lyric} | ${Math.round(note.startTime / 1000)}s | Pitch: ${note.pitch}`}
+                              title={`${note.lyric} | ${Math.round(note.startTime / 1000)}s | Pitch: ${note.pitch} — ${jumpHint}`}
                             >
                               {displayText || '\u00A0'}
                             </span>

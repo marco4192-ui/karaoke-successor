@@ -642,7 +642,8 @@ export const libraryTranslations = {
       tapModeHint: 'Use tap mode (spacebar) to insert notes. Syllables are assigned automatically.',
       linesCount: 'Lines',
       notesCount: 'Notes',
-      clickWordHint: 'Click on a word to jump to the note',
+      clickWordHint: 'Click to select · double-click to jump to the note',
+      jumpHint: 'Double-click: jump to the note on the pitch ladder',
       syllablesUnassigned: '{count} syllables not yet assigned',
       allSyllablesAssigned: 'All {count} syllables assigned',
       emptyLine: '(empty line)',
@@ -854,6 +855,7 @@ export const libraryTranslations = {
       noLyrics: 'No lyrics - double-click to add notes',
       snap: 'Snap to beat (magnet)',
       duetSplit: 'Duet split view: both vocal tracks on separate pitch ladders',
+      lyricJumpHint: 'Click: select · Double-click: jump to the note on the pitch ladder',
     },
 
     // Editor core (shared)

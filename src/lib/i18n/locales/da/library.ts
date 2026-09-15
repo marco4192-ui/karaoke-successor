@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Brug tap-tilstand (mellemrumstast) for at indsætte noder. Stavelser tildeles automatisk.',
     linesCount: 'Linjer',
     notesCount: 'Noder',
-    clickWordHint: 'Klik på et ord for at hoppe til noden',
+    clickWordHint: 'Klik markerer · dobbeltklik hopper til noden',
     syllablesUnassigned: '{count} stavelser er endnu ikke tildelt',
     allSyllablesAssigned: 'Alle {count} stavelser tildelt',
     emptyLine: '(tom linje)',

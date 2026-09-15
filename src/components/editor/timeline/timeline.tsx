@@ -52,6 +52,11 @@ interface TimelineProps {
   onCommitHistory: () => void;
   onNoteAdd: (_startTime: number, _pitch: number) => void;
   onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
+  /** Jump command from the lyrics panel (left sidebar): double-click on a
+   *  word scrolls/centers the timeline on that note. `nonce` makes repeated
+   *  jumps to the SAME note retrigger (new object identity alone is not
+   *  enough when parents memoize the command). */
+  noteJumpCommand?: { noteId: string; nonce: number } | null;
 }
 
 // Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
@@ -105,7 +110,8 @@ export function Timeline({
   onNoteUpdate,
   onCommitHistory,
   onNoteAdd,
-  onLyricChange
+  onLyricChange,
+  noteJumpCommand
 }: TimelineProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -506,6 +512,47 @@ export function Timeline({
     }
   }, [onNoteSelect, onNoteCtrlToggle]);
 
+  // ── Jump-to-note (shared by lyric-track double-click + lyrics panel) ──
+  // Brings a note into view: horizontally centered in the viewport, vertically
+  // centered on its pitch (combined view: move the pitch center; split view:
+  // shift the shared lane offset so all lanes stay aligned).
+  const jumpToNoteInView = useCallback((note: Note) => {
+    // Horizontal: center the note in the visible area
+    const noteCenterX = ((note.startTime + note.duration / 2) / 1000) * pixelsPerSecond;
+    const visibleWidth = viewport.width - LEFT_GUTTER;
+    const maxScroll = Math.max(0, totalWidth - viewport.width + LEFT_GUTTER);
+    const targetScroll = Math.max(0, Math.min(maxScroll, noteCenterX - visibleWidth / 2));
+    setScrollOffset(targetScroll);
+
+    // Vertical: center the note's pitch in its lane
+    const lane = lanes.find(l => l.notes.some(n => n.id === note.id));
+    if (duetSplit && hasPlayerNotes && lane) {
+      // Split view — shift the shared offset by the delta between the note's
+      // pitch and its lane's current center (keeps all lanes aligned).
+      const laneCenter = (lane.minPitch + lane.maxPitch) / 2;
+      setSplitCenterOffset(prev => prev + (note.pitch - laneCenter));
+    } else {
+      setPitchScrollCenter(clampCenter(note.pitch));
+    }
+  }, [pixelsPerSecond, viewport.width, totalWidth, lanes, duetSplit, hasPlayerNotes, clampCenter]);
+
+  // Lyric track: double-click on a lyric → select + jump to the note.
+  // The note-details band below remains the primary editing surface.
+  const handleLyricJump = useCallback((note: Note) => {
+    onNoteSelect(note.id);
+    jumpToNoteInView(note);
+  }, [onNoteSelect, jumpToNoteInView]);
+
+  // Lyrics panel (left sidebar): double-click fires a jump command through
+  // the parent — {noteId, nonce} so repeated jumps to the same note retrigger.
+  const lastJumpNonceRef = useRef(0);
+  useEffect(() => {
+    if (!noteJumpCommand || noteJumpCommand.nonce === lastJumpNonceRef.current) return;
+    lastJumpNonceRef.current = noteJumpCommand.nonce;
+    const note = allNotes.find(n => n.id === noteJumpCommand.noteId);
+    if (note) jumpToNoteInView(note);
+  }, [noteJumpCommand, allNotes, jumpToNoteInView]);
+
   // ── Zoom controls (presets 25%…1000%) ──
   const handleZoomIn = useCallback(() => {
     const next = ZOOM_PRESETS.find(z => z > zoom + 0.001) ?? MAX_ZOOM;
@@ -838,7 +885,8 @@ export function Timeline({
             pixelsPerSecond={pixelsPerSecond}
             scrollOffset={scrollOffset}
             height={lyricTrackHeight}
-            onLyricChange={onLyricChange}
+            onLyricSelect={onNoteSelect}
+            onLyricJump={handleLyricJump}
             selectedNoteId={selectedNoteId}
           />
         </div>

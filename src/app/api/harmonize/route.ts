@@ -126,7 +126,10 @@ export async function POST(request: NextRequest) {
     try {
       zai = await ZAI.create();
     } catch {
-      return NextResponse.json({ success: false, error: 'Failed to initialize AI service' }, { status: 500 });
+      // Missing .z-ai-config (e.g. packaged desktop app / machines without
+      // the ZAI credentials) — 503 "service unavailable", NOT a server error.
+      // Same contract as metadata-enrich / lyrics-suggestions / song-identify.
+      return NextResponse.json({ success: false, error: 'AI-Dienst nicht verfügbar' }, { status: 503 });
     }
     const completion = await zai.chat.completions.create({
       messages: [

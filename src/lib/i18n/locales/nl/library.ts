@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Gebruik tap-modus (spatiebalk) om noten in te voegen. Lettergrepen worden automatisch toegewezen.',
     linesCount: 'Regels',
     notesCount: 'Noten',
-    clickWordHint: 'Klik op een woord om naar de noot te springen',
+    clickWordHint: 'Klik selecteert · dubbelklik springt naar de noot',
     syllablesUnassigned: '{count} lettergrepen nog niet toegewezen',
     allSyllablesAssigned: 'Alle {count} lettergrepen toegewezen',
     emptyLine: '(lege regel)',

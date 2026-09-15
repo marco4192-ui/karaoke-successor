@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Använd tryckläge (mellanslag) för att infoga noter. Stavelser tilldelas automatiskt.',
     linesCount: 'Rader',
     notesCount: 'Noter',
-    clickWordHint: 'Klicka på ett ord för att hoppa till noten',
+    clickWordHint: 'Klick markerar · dubbelklick hoppar till noten',
     syllablesUnassigned: '{count} stavelser ännu inte tilldelade',
     allSyllablesAssigned: 'Alla {count} stavelser tilldelade',
     emptyLine: '(tom rad)',

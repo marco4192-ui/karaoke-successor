@@ -532,6 +532,17 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setSelectedNoteIds(noteId ? new Set([noteId]) : new Set());
   }, []);
 
+  // ── Double-click on a lyrics word → jump the timeline to the note ──
+  // The command pattern ({noteId, nonce}) flows into the Timeline, which owns
+  // the scroll/pitch-center state; the nonce makes repeated jumps to the same
+  // note retrigger. Selection happens here (also covers the first click).
+  const [noteJumpCommand, setNoteJumpCommand] = useState<{ noteId: string; nonce: number } | null>(null);
+  const handleNoteJump = useCallback((note: Note) => {
+    setSelectedNoteId(note.id);
+    setSelectedNoteIds(new Set([note.id]));
+    setNoteJumpCommand({ noteId: note.id, nonce: Date.now() });
+  }, []);
+
   /** Ctrl+Click: toggle a note in the multi-selection (YASS-style). */
   const handleNoteCtrlToggle = useCallback((noteId: string) => {
     setSelectedNoteIds(prev => {
@@ -959,6 +970,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                   selectedNoteId={selectedNoteId}
                   onNoteSelect={handleNoteSelect}
                   onTimeChange={handleTimeChange}
+                  onNoteJump={handleNoteJump}
                 />
               </div>
             </section>
@@ -1016,6 +1028,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                 onCommitHistory={handleCommitHistory}
                 onNoteAdd={handleNoteAdd}
                 onLyricChange={handleLyricChange}
+                noteJumpCommand={noteJumpCommand}
               />
             )}
           </main>

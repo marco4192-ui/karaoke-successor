@@ -542,7 +542,7 @@ editor: {
     tapModeHint: 'Utilisez le mode tap (barre d\'espace) pour insérer des notes. Les syllabes sont assignées automatiquement.',
     linesCount: 'Lignes',
     notesCount: 'Notes',
-    clickWordHint: 'Cliquez sur un mot pour accéder à la note',
+    clickWordHint: 'Clic : sélectionner · double-clic : aller à la note',
     syllablesUnassigned: '{count} syllabes non encore assignées',
     allSyllablesAssigned: 'Toutes les {count} syllabes sont assignées',
     emptyLine: '(ligne vide)',

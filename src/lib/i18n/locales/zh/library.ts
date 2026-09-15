@@ -542,7 +542,7 @@ editor: {
     tapModeHint: '使用打拍模式（空格键）插入音符。音节自动分配。',
     linesCount: '行数',
     notesCount: '音符数',
-    clickWordHint: '点击词语跳转到对应音符',
+    clickWordHint: '单击选择 · 双击跳转到音符',
     syllablesUnassigned: '{count}个音节尚未分配',
     allSyllablesAssigned: '所有{count}个音节已分配',
     emptyLine: '（空行）',
