@@ -180,8 +180,19 @@ export function SingingDeviceAssignment({
   const flexibleNoFixedMic = mode === 'flexible' && micCount >= 2;
   const singleMic = mode === 'flexible' && micCount === 1 ? savedMics[0] : null;
 
-  // Mic ids currently taken (assigned to a player)
-  const usedMicIds = new Set(Object.keys(micAssignments));
+  // Mic ids currently taken — ONLY by players selected for THIS game.
+  // (User report: remembered mic choices of players who are NOT playing
+  // used to grey out their mics for everyone else. The persisted preferences
+  // of unselected players are intentionally kept (auto-restore feature) but
+  // must not block the current session.)
+  const usedMicIds = new Set(
+    Object.entries(micAssignments)
+      .filter(([, pid]) =>
+        selectedPlayers.includes(pid) &&
+        // A selected player singing via companion doesn't hold a mic either
+        deviceAssignments[pid] !== 'companion')
+      .map(([micId]) => micId),
+  );
   const companionCount = selectedPlayers.filter(pid => deviceAssignments[pid] === 'companion').length;
   const micPlayerCount = selectedPlayers.length - companionCount;
 

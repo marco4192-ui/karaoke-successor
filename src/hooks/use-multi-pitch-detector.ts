@@ -35,6 +35,7 @@ import {
   PitchDetectorManager, 
   getPitchDetectorManager, 
 } from '@/lib/audio/pitch-detector';
+import { resolveMicDeviceId } from '@/lib/audio/mic-device-resolver';
 import type { PitchDetectionResult } from '@/types/game';
 import { Difficulty } from '@/types/game';
 
@@ -185,7 +186,10 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         if (p.type === 'mobile' && p.mobileClientId) {
           mobilePlayers.push(p);
         } else if (p.type === 'local') {
-          const key = deviceKey(p.deviceId || undefined);
+          // Group by the RESOLVED device id so the internal id (`mic-…`) and
+          // a real deviceId referring to the same physical device share one
+          // stream / AudioContext.
+          const key = deviceKey(resolveMicDeviceId(p.deviceId || undefined));
           if (!deviceGroups.has(key)) deviceGroups.set(key, []);
           deviceGroups.get(key)!.push(p);
         }
@@ -196,7 +200,10 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       for (const [, groupPlayers] of deviceGroups) {
         for (const playerConfig of groupPlayers) {
           try {
-            const deviceId = playerConfig.deviceId || undefined;
+            // Resolve internal mic-manager ids (`mic-<ts>-…`) to REAL browser
+            // deviceIds — an unresolved id would make getUserMedia throw
+            // OverconstrainedError and silently fall back to the default mic.
+            const deviceId = resolveMicDeviceId(playerConfig.deviceId || undefined);
             const success = await manager.addLocalPlayer(playerConfig.playerId, deviceId, playerConfig.stereoChannel);
             if (!success) {
               setErrors(prev => {
@@ -301,8 +308,9 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     try {
       if (config.type === 'local') {
-        // Normalize deviceId: treat empty string same as undefined (use default mic)
-        const deviceId = config.deviceId || undefined;
+        // Normalize deviceId: treat empty string same as undefined (use default mic);
+        // internal mic-manager ids are resolved to real browser deviceIds.
+        const deviceId = resolveMicDeviceId(config.deviceId || undefined);
         const success = await managerRef.current.addLocalPlayer(config.playerId, deviceId, config.stereoChannel);
         if (success) {
           pitchesRef.current.set(config.playerId, null);

@@ -167,7 +167,13 @@ export function createMedleyTickScoringState(): MedleyTickScoringState {
  * Medley scoring is now **tick-based** (10,000 total points across all ticks),
  * matching the normal game scoring. Golden note ticks earn 2× points.
  *
- * @returns Object with `points`, `hit`, and `accuracy` for the current tick.
+ * A `throttled: true` result means "NOT evaluated — still inside the beat
+ * interval". Callers must treat it as a no-op: no miss, no combo reset, no
+ * miss sample for the note fill. (Previously the throttled return looked
+ * like a full Miss, which painted regular gaps into long notes and reset
+ * the combo on every intermediate tick.)
+ *
+ * @returns Object with `points`, `hit`, `accuracy`, `throttled` for the current tick.
  */
 export function evaluateMedleyTick(
   pitchNote: number,
@@ -177,16 +183,16 @@ export function evaluateMedleyTick(
   beatDuration: number,
   state: MedleyTickScoringState,
   scoringMeta: ScoringMetadata | null,
-): { points: number; hit: boolean; accuracy: number; displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss' } {
+): { points: number; hit: boolean; accuracy: number; throttled: boolean; displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss' } {
   const activeNote = findActiveNoteFlat(notes, currentTime);
 
   if (!activeNote) {
-    return { points: 0, hit: false, accuracy: 0, displayType: 'Miss' };
+    return { points: 0, hit: false, accuracy: 0, throttled: false, displayType: 'Miss' };
   }
 
   // Throttle to one evaluation per beat duration
   if (currentTime - state.lastEvalTime < beatDuration) {
-    return { points: 0, hit: false, accuracy: 0, displayType: 'Miss' };
+    return { points: 0, hit: false, accuracy: 0, throttled: true, displayType: 'Miss' };
   }
   state.lastEvalTime = currentTime;
 
@@ -195,13 +201,13 @@ export function evaluateMedleyTick(
   state.ticksEvaluated++;
 
   if (!result.isHit) {
-    return { points: 0, hit: false, accuracy: 0, displayType: result.displayType };
+    return { points: 0, hit: false, accuracy: 0, throttled: false, displayType: result.displayType };
   }
 
   state.ticksHit++;
 
   if (!scoringMeta) {
-    return { points: 0, hit: true, accuracy: result.accuracy, displayType: result.displayType };
+    return { points: 0, hit: true, accuracy: result.accuracy, throttled: false, displayType: result.displayType };
   }
 
   // Golden notes use goldenPointsPerTick (2× base) when available
@@ -211,7 +217,7 @@ export function evaluateMedleyTick(
   const points = Math.max(1, Math.round(result.accuracy * ppt));
   state.accumulatedPoints += points;
 
-  return { points, hit: true, accuracy: result.accuracy, displayType: result.displayType };
+  return { points, hit: true, accuracy: result.accuracy, throttled: false, displayType: result.displayType };
 }
 
 

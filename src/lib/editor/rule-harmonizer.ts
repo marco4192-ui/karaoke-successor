@@ -17,7 +17,7 @@
  */
 
 import { Song } from '@/types/game';
-import { canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
+import { canonicalizeGenre, isUnmappableGenre } from '@/lib/parsers/meta-normalizer';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { updateSong } from '@/lib/game/song-library';
 
@@ -27,6 +27,16 @@ export interface RuleHarmonizeItem {
   artist: string;
   currentGenre: string;
   newGenre: string;
+}
+
+/** A song whose genre carries no usable genre information ("AI", "Oldies",
+ *  "A Cappella", "Female Vocals", "TV"…) — never auto-mapped; the Metadata
+ *  Studio shows these in a manual correction list with a genre dropdown. */
+export interface ManualGenreReviewItem {
+  songId: string;
+  title: string;
+  artist: string;
+  currentGenre: string;
 }
 
 export interface RuleHarmonizeJobState {
@@ -57,6 +67,28 @@ export function planRuleHarmonization(songs: Song[]): RuleHarmonizeItem[] {
         artist: s.artist,
         currentGenre: s.genre,
         newGenre: canonical,
+      });
+    }
+  }
+  return items;
+}
+
+/**
+ * Songs whose genre is a known pseudo-genre ("AI", "Oldies", "A Cappella"…)
+ * — impossible to auto-map logically. Surfaced for MANUAL correction in the
+ * Metadata Studio (title + artist + current genre + main-genre dropdown).
+ * Pure, synchronous, no I/O.
+ */
+export function planManualGenreReview(songs: Song[]): ManualGenreReviewItem[] {
+  const items: ManualGenreReviewItem[] = [];
+  for (const s of songs) {
+    if (!s.genre) continue;
+    if (isUnmappableGenre(s.genre)) {
+      items.push({
+        songId: s.id,
+        title: s.title,
+        artist: s.artist,
+        currentGenre: s.genre,
       });
     }
   }

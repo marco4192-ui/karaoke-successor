@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChatCompletion } from '@/lib/ai/ai-provider';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { GENRES } from '@/lib/constants';
 
@@ -85,9 +85,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnrichRes
       return NextResponse.json({ success: false, error: 'Mode must be "enrich" or "harmonize"' }, { status: 400 });
     }
 
-    let zai;
+    // Provider probe (built-in ZAI or custom OpenAI-compatible endpoint):
+    // fail fast with 503 when the AI service is unavailable.
     try {
-      zai = await ZAI.create();
+      await aiChatCompletion([{ role: 'user', content: 'ping' }], { temperature: 0, timeoutMs: 20_000 });
     } catch {
       return NextResponse.json({ success: false, error: 'AI-Dienst nicht verfügbar' }, { status: 503 });
     }
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnrichRes
     // Process in batches
     for (let i = 0; i < songs.length; i += BATCH_SIZE) {
       const batch = songs.slice(i, i + BATCH_SIZE);
-      const batchSuggestions = await processBatch(zai, batch, mode);
+      const batchSuggestions = await processBatch(batch, mode);
       allSuggestions.push(...batchSuggestions);
     }
 
@@ -118,7 +119,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnrichRes
  * Process a batch of songs through the LLM.
  */
 async function processBatch(
-  zai: Awaited<ReturnType<typeof ZAI.create>>,
   songs: SongInfo[],
   mode: 'enrich' | 'harmonize'
 ): Promise<Suggestion[]> {
@@ -144,17 +144,16 @@ async function processBatch(
   if (!songsDescription) return []; // All songs already complete (enrich mode)
 
   const completion = await withRetry<string>(async () => {
-    const c = await zai.chat.completions.create({
-      messages: [
+    const content: string = await aiChatCompletion(
+      [
         { role: 'system', content: systemPrompt },
         {
           role: 'user',
           content: `Songs:\n${songsDescription}`,
         },
       ],
-      temperature: 0.2,
-    });
-    const content: string = c.choices?.[0]?.message?.content || '';
+      { temperature: 0.2 },
+    );
     if (!content) throw new Error('Leere LLM-Antwort');
     return content;
   });

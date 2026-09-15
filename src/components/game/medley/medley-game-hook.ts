@@ -22,10 +22,10 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
 import { shouldSkipPitch, createMedleyTickScoringState, evaluateMedleyTick, type MedleyTickScoringState } from '@/lib/game/party-scoring';
-import { calculateScoringMetadata, type ScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata, evaluateTick, type TickNoteKind, type ScoringMetadata } from '@/lib/game/scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
-import { EMPTY_PLAYER_SCORE } from '@/types/game';
+import { EMPTY_PLAYER_SCORE, isFreestyleNote } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
   MedleyGamePhase, MedleyRoundResult, MedleyScoringEvent,
@@ -287,6 +287,8 @@ export function useMedleyGame({
       medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
     }
     snippetScoringMetaRef.current = null;
+    // Vibrato filter references the previous snippet's pitch context — reset
+    lastVisualSungPitchRef.current = new Map();
     // Also clear the per-note performance samples: each snippet has its own
     // notes (keys may repeat across snippets via the `note-{startTime}`
     // fallback), so stale fills/wrong-note marks must not bleed into the
@@ -433,6 +435,21 @@ export function useMedleyGame({
     // Tick-based scoring awards points immediately — nothing to finalize at snippet end.
   }, []);
 
+  // ── Visual sample vibrato filter (per player) ──
+  // Same approach as the normal game / PTM: samples that only jitter around
+  // the last accepted pitch (±0.5 semitones, typical vibrato) are SNAPPED to
+  // it but still RECORDED — steady singing renders as a continuous fill
+  // instead of regular every-other-tick gaps.
+  const lastVisualSungPitchRef = useRef<Map<string, number | null>>(new Map());
+  const VIBRATO_THRESHOLD_SEMITONES = 0.5;
+
+  /** Note kind for visual tick evaluation — freestyle/rap ignore pitch. */
+  const visualKind = (note: Note): TickNoteKind => {
+    if (note.isRap) return 'rap';
+    if (isFreestyleNote(note)) return 'freestyle';
+    return 'normal';
+  };
+
   // ── Score a single player based on THEIR pitch result (tick-based: 10,000 total points) ──
   const scorePlayer = useCallback((
     playerId: string,
@@ -463,9 +480,17 @@ export function useMedleyGame({
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];
 
-    // Lazy-compute scoring metadata for this snippet (only once per snippet change)
+    // Find the note the singline is currently passing — used BOTH for the
+    // point evaluation and the visual fill samples below.
+    const activeNoteForPerf = audio.snippetNotes.find(
+      n => absTime >= n.startTime && absTime < n.startTime + n.duration,
+    );
+
+    // Lazy-compute scoring metadata for this snippet (only once per snippet
+    // change) — MUST happen before the point evaluation below so the first
+    // scored tick of a snippet already sees valid pointsPerTick.
     if (lastSnippetIdxForMetaRef.current !== currentSnippetIdx && audio.snippetNotes.length > 0) {
-      const beatDuration = audio.beatDurationRef.current || 500;
+      const metaBeat = audio.beatDurationRef.current || 500;
       const notesForMeta = audio.snippetNotes.map(n => ({
         duration: n.duration,
         isGolden: n.isGolden ?? false,
@@ -477,29 +502,49 @@ export function useMedleyGame({
       const perSnippetBudget = medleySongs.length > 0
         ? Math.round(10000 / medleySongs.length)
         : 10000;
-      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, beatDuration, 'medium', perSnippetBudget);
+      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, metaBeat, 'medium', perSnippetBudget);
       lastSnippetIdxForMetaRef.current = currentSnippetIdx;
     }
 
-    // Tick-based scoring: evaluate pitch against active note
+    // ── Beat-throttled POINT evaluation (the 10,000-point budget assumes
+    // exactly one scored tick per beat — see calculateScoringMetadata).
     const beatDuration = audio.beatDurationRef.current || 500;
     const result = evaluateMedleyTick(
       pitch.note, absTime, audio.snippetNotes, effectiveDiff, beatDuration, tickState, snippetScoringMetaRef.current,
     );
 
-    // Unified HUD: record a performance sample for the active note so the
-    // NoteHighway shows colored tick fills + wrong-singing marks like other modes.
-    const activeNoteForPerf = audio.snippetNotes.find(
-      n => absTime >= n.startTime && absTime < n.startTime + n.duration,
-    );
+    // ── Visual fill samples (high-rate, NO scoring side effects).
+    // Recorded for EVERY call (~50ms loop cadence) so the note fill stays
+    // continuous, exactly like use-note-scoring's sampleVisualTicks in the
+    // normal game. Beat-throttled ticks evaluate directly via evaluateTick
+    // instead of reusing the (Miss-looking) throttled point result — that
+    // mismatch was the source of the regular gaps in long notes.
     if (activeNoteForPerf) {
       const perfNoteId = activeNoteForPerf.id || `note-${activeNoteForPerf.startTime}`;
+
+      // Vibrato snap per player (see lastVisualSungPitchRef above)
+      let sungPitch: number | null = pitch.note;
+      const lastAccepted = lastVisualSungPitchRef.current.get(playerId) ?? null;
+      if (lastAccepted !== null) {
+        let wrapped = Math.abs(pitch.note - lastAccepted) % 12;
+        if (wrapped > 6) wrapped = 12 - wrapped;
+        if (wrapped < VIBRATO_THRESHOLD_SEMITONES) {
+          sungPitch = lastAccepted;
+        } else {
+          lastVisualSungPitchRef.current.set(playerId, pitch.note);
+        }
+      } else {
+        lastVisualSungPitchRef.current.set(playerId, pitch.note);
+      }
+
+      const visualTick = evaluateTick(sungPitch, activeNoteForPerf.pitch, effectiveDiff, visualKind(activeNoteForPerf));
+
       let perfSamples = notePerformanceRef.current.get(perfNoteId);
       if (!perfSamples) {
         perfSamples = [];
         notePerformanceRef.current.set(perfNoteId, perfSamples);
       }
-      perfSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit, sungPitch: pitch.note, playerColor: p.color });
+      perfSamples.push({ time: absTime, accuracy: visualTick.accuracy, hit: visualTick.isHit, sungPitch, playerColor: p.color });
       if (perfSamples.length > 100) {
         notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
       }
@@ -516,10 +561,17 @@ export function useMedleyGame({
         playerSamples = [];
         playerPerfMap.set(perfNoteId, playerSamples);
       }
-      playerSamples.push({ time: absTime, accuracy: result.accuracy, hit: result.hit, sungPitch: pitch.note, playerColor: p.color });
+      playerSamples.push({ time: absTime, accuracy: visualTick.accuracy, hit: visualTick.isHit, sungPitch, playerColor: p.color });
       if (playerSamples.length > 100) {
         playerPerfMap.set(perfNoteId, playerSamples.slice(-100));
       }
+    }
+
+    // ── Throttled tick: points/combo/miss were NOT evaluated — treat as
+    // no-op (the visual sample above already covered the display).
+    if (result.throttled) {
+      playersRef.current[pIdx] = { ...p };
+      return;
     }
 
     if (result.points > 0) {
@@ -1088,17 +1140,32 @@ export function useMedleyGame({
     : 0;
 
   // ── Get current lyric line ──
+  // Mirrors the normal game's line selection (single-player-lyrics.tsx):
+  //  1. The line whose [startTime, endTime] contains the current time — a
+  //     line STOPS being current when its LAST note ends, not when the next
+  //     line's first note begins.
+  //  2. During the gap after a line ended: the NEXT line already shows when
+  //     its start is within the 2s preview window ("flüssig" — the singer
+  //     can read ahead during pauses, same behaviour as all other modes).
+  // Previously the window extended to the NEXT line's first note, so the
+  // old line lingered through the whole instrumental gap and switched only
+  // at the next note onset (user report: "Zeile wechselt erst mit Beginn
+  // der ersten Note").
   const currentLyricLine = useMemo(() => {
     if (!audio.snippetLyrics.length || !currentSnippet) return null;
     const absoluteTime = currentSnippet.startTime + currentTimeMs;
-    for (let i = 0; i < audio.snippetLyrics.length; i++) {
-      const line = audio.snippetLyrics[i];
-      const nextLine = audio.snippetLyrics[i + 1];
-      if (absoluteTime >= line.startTime && (!nextLine || absoluteTime < nextLine.startTime)) {
-        return line;
-      }
-    }
-    return null;
+
+    // 1) Active line (startTime..endTime, endTime = end of the last note)
+    const active = audio.snippetLyrics.find(
+      line => absoluteTime >= line.startTime && absoluteTime <= line.endTime,
+    );
+    if (active) return active;
+
+    // 2) Gap → next line within the preview window (2s, like the normal game)
+    const upcoming = audio.snippetLyrics.find(
+      line => line.startTime > absoluteTime && line.startTime - absoluteTime <= 2000,
+    );
+    return upcoming ?? null;
   }, [currentTimeMs, audio.snippetLyrics, currentSnippet]);
 
   // Current matchup (team mode)

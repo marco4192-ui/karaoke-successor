@@ -228,8 +228,11 @@ export function usePartySetup({
           if (preferredMicId && loadSavedMics().some(m => m.id === preferredMicId)) {
             setMicAssignments(prevMic => {
               const updated = { ...prevMic };
-              // Don't overwrite if this mic is already taken by another selected player
-              if (!updated[preferredMicId]) {
+              // Don't steal the mic from another SELECTED player — but a
+              // remembered assignment held by a player who is NOT part of
+              // this game is stale and gets reclaimed (user report).
+              const holder = updated[preferredMicId];
+              if (!holder || !prev.includes(holder) || holder === playerId) {
                 updated[preferredMicId] = playerId;
                 persistMicAssignments(updated);
               }
@@ -436,7 +439,16 @@ export function usePartySetup({
     // device while a configured mic stays unused (looks like "only 3 mics
     // accepted" with 4 mics connected). Track used mic ids and pick the first
     // FREE configured mic for auto-assigned players.
-    const usedMicIds = new Set(Object.keys(micAssignments));
+    // User report ("geblockte Mics"): only mics held by SELECTED, mic-singing
+    // players count as used — remembered choices of players who are NOT in
+    // this game (or sing via companion) must not block auto-assignment.
+    const usedMicIds = new Set(
+      Object.entries(micAssignments)
+        .filter(([, pid]) =>
+          selectedPlayers.includes(pid) &&
+          deviceAssignments[pid] !== 'companion')
+        .map(([micId]) => micId),
+    );
 
     return selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);

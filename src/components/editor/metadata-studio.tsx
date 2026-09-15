@@ -40,9 +40,11 @@ import {
 } from '@/components/editor/harmonize-shared';
 import {
   planRuleHarmonization,
+  planManualGenreReview,
   ruleHarmonizer,
   RuleHarmonizeJobState,
 } from '@/lib/editor/rule-harmonizer';
+import { GENRES } from '@/lib/constants';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
@@ -188,6 +190,56 @@ export function MetadataStudio({
     () => (mode === 'rule' ? planRuleHarmonization(scopeSongs) : []),
     [mode, scopeSongs],
   );
+
+  /** Manual review plan (rule mode): songs with pseudo-genres ("AI",
+   *  "Oldies", "A Cappella", "TV"…) that no logical rule can map. */
+  const manualReview = useMemo(
+    () => (mode === 'rule' ? planManualGenreReview(scopeSongs) : []),
+    [mode, scopeSongs],
+  );
+  /** user's genre pick per song (songId → main genre) in the correction list. */
+  const [manualPicks, setManualPicks] = useState<Record<string, string>>({});
+  const [manualApplyProgress, setManualApplyProgress] = useState<{ done: number; total: number } | null>(null);
+
+  /** Apply the manual genre corrections (same write path as the rule job:
+   *  txt-first when txt is the target, else game-local). */
+  const handleApplyManualPicks = useCallback(async () => {
+    const picks = manualReview.filter(item => manualPicks[item.songId]);
+    if (picks.length === 0) return;
+    setManualApplyProgress({ done: 0, total: picks.length });
+    let done = 0;
+    let applied = 0;
+    for (const item of picks) {
+      const updates: Partial<Song> = { genre: manualPicks[item.songId] };
+      try {
+        if (writeTarget === 'txt') {
+          const result = await persistSongMetadataToTxt(item.songId, updates);
+          if (result.success) {
+            updateSong(item.songId, updates);
+            applied++;
+          }
+        } else {
+          updateSong(item.songId, updates);
+          applied++;
+        }
+      } catch { /* counted as not applied */ }
+      done++;
+      if (!isMountedRef.current) return;
+      setManualApplyProgress({ done, total: picks.length });
+      await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
+    }
+    // Drop the corrected rows from the list
+    setManualPicks(prev => {
+      const next = { ...prev };
+      for (const item of picks) delete next[item.songId];
+      return next;
+    });
+    setManualApplyProgress(null);
+    if (isMountedRef.current && applied > 0) {
+      setLocalAppliedInfo(prev => prev == null ? applied : prev + applied);
+      onApplied();
+    }
+  }, [manualReview, manualPicks, writeTarget, onApplied]);
 
   const ruleJob = useRuleHarmonizerState();
   const ruleRunning = ruleJob.status === 'running';
@@ -565,6 +617,69 @@ export function MetadataStudio({
           )}
           {mode === 'rule' && rulePlan.length === 0 && !ruleRunning && (
             <p className="text-[11px] text-white/40">✅ {t('editor.ruleHarmonizeNothing')}</p>
+          )}
+
+          {/* ── Manual genre correction list (rule mode) ──
+              Songs with pseudo-genres ("AI", "Oldies", "A Cappella", "TV"…)
+              that no logical rule can map. The user picks the correct main
+              genre per song from the 23-genre dropdown, then applies. */}
+          {mode === 'rule' && manualReview.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="studio-manual-review">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-amber-300 font-medium">
+                  ✋ {t('editor.manualReviewCount').replace('{count}', String(manualReview.length))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-white/40 tabular-nums">
+                    {Object.keys(manualPicks).filter(k => manualReview.some(m => m.songId === k)).length}/{manualReview.length}
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={manualApplyProgress !== null || Object.values(manualPicks).length === 0}
+                    onClick={handleApplyManualPicks}
+                    className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
+                    data-testid="studio-manual-apply"
+                  >
+                    {manualApplyProgress
+                      ? `${manualApplyProgress.done}/${manualApplyProgress.total}`
+                      : t('editor.manualReviewApply')}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualReviewDesc')}</p>
+              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1" data-testid="studio-manual-review-list">
+                {manualReview.map(item => (
+                  <div
+                    key={item.songId}
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5"
+                  >
+                    {/* Title + Artist */}
+                    <div className="flex-1 min-w-[140px] sm:min-w-[200px]">
+                      <p className="text-[11px] text-white/85 font-medium truncate" title={item.title}>{item.title}</p>
+                      <p className="text-[10px] text-white/40 truncate" title={item.artist}>{item.artist}</p>
+                    </div>
+                    {/* Current (pseudo) genre */}
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-amber-200/90 whitespace-nowrap">
+                      {item.currentGenre}
+                    </span>
+                    <span className="text-white/30 text-[10px]">→</span>
+                    {/* Main genre dropdown (23 genres) */}
+                    <select
+                      value={manualPicks[item.songId] ?? ''}
+                      onChange={e => setManualPicks(prev => ({ ...prev, [item.songId]: e.target.value }))}
+                      className="bg-gray-800 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white focus:border-amber-500 focus:outline-none min-w-[110px]"
+                      aria-label={`${t('editor.manualReviewApply')}: ${item.title}`}
+                      data-testid={`studio-manual-select-${item.songId}`}
+                    >
+                      <option value="">{t('editor.manualReviewChoose')}</option>
+                      {GENRES.map(g => (
+                        <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* ── Run / progress ── */}

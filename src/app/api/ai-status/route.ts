@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { getAiProviderConfig, probeAiProvider } from '@/lib/ai/ai-provider';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
 /**
@@ -52,15 +52,9 @@ async function probeAiAvailability(): Promise<boolean> {
   if (statusCache && Date.now() - statusCache.checkedAt < CACHE_TTL_MS) {
     return statusCache.available;
   }
-  let available = false;
-  try {
-    await ZAI.create();
-    available = true;
-  } catch {
-    available = false;
-  }
-  statusCache = { available, checkedAt: Date.now() };
-  return available;
+  const result = await probeAiProvider();
+  statusCache = { available: result.available, checkedAt: Date.now() };
+  return result.available;
 }
 
 export async function GET(request: NextRequest) {
@@ -69,10 +63,16 @@ export async function GET(request: NextRequest) {
   }
 
   const available = await probeAiAvailability();
+  const config = getAiProviderConfig();
   return NextResponse.json({
     success: true,
     available,
+    provider: config.provider,
     // Human-readable hint for the UI
-    reason: available ? null : 'AI-Dienst nicht konfiguriert (.z-ai-config fehlt)',
+    reason: available
+      ? null
+      : config.provider === 'openai'
+        ? 'Eigener AI-Endpunkt nicht erreichbar (Settings → KI-Dienst prüfen)'
+        : 'AI-Dienst nicht konfiguriert (.z-ai-config fehlt — alternativer KI-Dienst in Settings → KI-Dienst einrichtbar)',
   });
 }

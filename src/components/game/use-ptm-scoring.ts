@@ -97,10 +97,6 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
 
-  // Separate throttle counters for different log messages.
-  const noPitchLogCooldownRef = useRef(0);
-  const skipPitchLogCooldownRef = useRef(0);
-
   // Read currentTime from a ref inside the callback to avoid recreating
   // the RAF loop ~40 times/sec (currentTime changes every frame).
   const currentTimeRef = useRef(currentTime);
@@ -195,30 +191,12 @@ export function usePtmScoring({
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
 
-    if (!pitchResult) {
-      noPitchLogCooldownRef.current++;
-      if (noPitchLogCooldownRef.current <= 1) {
-        // eslint-disable-next-line no-console
-        console.warn('[PTM-Scoring] scoreCurrentPlayer() called but pitchResult is null — pitch detector may not be initialized');
-      }
-      return;
-    }
-    noPitchLogCooldownRef.current = 0;
+    // No pitch result yet (mic still initializing after a handoff) or silent
+    // input between notes — both are NORMAL during play, not warnings. The
+    // visual sampler below keeps recording miss samples for the fill display.
+    if (!pitchResult) return;
 
-    if (shouldSkipPitch(pitchResult, difficulty)) {
-      if (skipPitchLogCooldownRef.current <= 0) {
-        // eslint-disable-next-line no-console
-        console.warn('[PTM-Scoring] shouldSkipPitch=true:',
-          !pitchResult.frequency || pitchResult.note === null ? 'no frequency/note' :
-          pitchResult.volume < (difficulty === 'easy' ? 0.02 : difficulty === 'medium' ? 0.04 : 0.06)
-            ? `volume too low (${pitchResult.volume?.toFixed(4)})` :
-          pitchResult.isSinging === false ? 'isSinging=false (vocal detector rejected)' :
-          'unknown');
-      }
-      skipPitchLogCooldownRef.current = 1;
-      return;
-    }
-    skipPitchLogCooldownRef.current = 0;
+    if (shouldSkipPitch(pitchResult, difficulty)) return;
 
     const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
@@ -246,12 +224,6 @@ export function usePtmScoring({
     playersRef.current[idx] = { ...p };
     forceRender();
   }, [pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
-
-  // Reset log cooldowns when scoring restarts (e.g., phase or isPlaying changes)
-  useEffect(() => {
-    noPitchLogCooldownRef.current = 0;
-    skipPitchLogCooldownRef.current = 0;
-  }, [phase, isPlaying]);
 
   // ── Game loop: score during playing (visual sampling every frame) ──
   useEffect(() => {

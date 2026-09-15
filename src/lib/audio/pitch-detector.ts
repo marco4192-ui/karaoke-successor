@@ -309,6 +309,12 @@ export class PitchDetector {
     }
   }
 
+  /** Whether the detection loop is currently running (used by callers to
+   *  decide whether a mic switch may skip the re-init cycle entirely). */
+  isDetectorListening(): boolean {
+    return this.isListening;
+  }
+
   start(callback: (_result: PitchDetectionResult) => void): void {
     if (!this.analyser || !this.buffer) {
       // eslint-disable-next-line no-console

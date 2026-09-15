@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk'; // NOTE: Uses ZAI SDK defaults (model, endpoint, etc.)
+import { aiChatCompletion } from '@/lib/ai/ai-provider'; // provider-aware (ZAI or custom OpenAI-compatible)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { withRetry, isRateLimitError } from '@/app/api/lib/retry';
 import { GENRES } from '@/lib/constants';
@@ -60,12 +60,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
       );
     }
 
-    let zai;
+    // Provider probe — 503 when neither the built-in ZAI SDK nor a
+    // configured custom endpoint is available.
     try {
-      zai = await ZAI.create();
+      await aiChatCompletion([{ role: 'user', content: 'ping' }], { temperature: 0, timeoutMs: 20_000 });
     } catch (initError) {
       // eslint-disable-next-line no-console
-      console.error('[SongIdentify] Failed to initialize ZAI SDK:', initError);
+      console.error('[SongIdentify] AI provider unavailable:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
         { status: 503 }
@@ -82,8 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
     // Use LLM to extract metadata directly (faster than web search)
     try {
       const completion = await withRetry<string>(async (): Promise<string> => {
-        const c = await zai.chat.completions.create({
-          messages: [
+        const content = await aiChatCompletion([
             {
               role: 'system',
               content: `You are a music metadata expert. Extract song metadata from the provided filename or lyrics.
@@ -124,11 +124,8 @@ Rules:
 
 Extract the song metadata and return ONLY the JSON object.`,
             },
-          ],
-          temperature: 0.3,
-        });
+        ], { temperature: 0.3 });
 
-        const content: string = c.choices?.[0]?.message?.content || '';
         if (!content) throw new Error('Empty LLM response');
         return content;
       });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiImageGeneration } from '@/lib/ai/ai-provider'; // provider-aware (ZAI or custom OpenAI-compatible)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { withRetry } from '@/app/api/lib/retry';
 
@@ -74,17 +74,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
     const safeTitle = sanitize(body.title);
     const safeArtist = sanitize(body.artist);
 
-    let zai;
-    try {
-      zai = await ZAI.create();
-    } catch (initError) {
-      // eslint-disable-next-line no-console
-      console.error('[CoverGenerate] Failed to initialize ZAI SDK:', initError);
-      return NextResponse.json(
-        { success: false, error: 'AI service unavailable' },
-        { status: 503 }
-      );
-    }
+    // (Provider availability is checked implicitly by the generation call
+    // below — a missing .z-ai-config or unreachable custom endpoint throws
+    // and maps to 503.)
 
     // Build the prompt for cover art generation
     const genre = body.genre?.toLowerCase() || 'pop';
@@ -110,12 +102,7 @@ Design requirements:
     // Generate the image (with retry on failure)
     try {
       const base64Image = await withRetry(async () => {
-        const imageResponse = await zai.images.generations.create({
-          prompt,
-          size: '1024x1024',
-        });
-
-        const img = imageResponse.data?.[0]?.base64;
+        const img = await aiImageGeneration(prompt, '1024x1024');
         if (!img) throw new Error('Empty image response');
         return img;
       });

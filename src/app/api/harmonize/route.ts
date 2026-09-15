@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChatCompletion } from '@/lib/ai/ai-provider';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { GENRES, LANGUAGES } from '@/lib/constants';
 import { canonicalizeGenre, normalizeLanguageMixed } from '@/lib/parsers/meta-normalizer';
@@ -122,20 +122,13 @@ export async function POST(request: NextRequest) {
       return `${i + 1}. "${s.artist}" - "${s.title}" [Genre: ${s.genre || '(none)'}, Language: ${s.language || '(none)'}]${factPart}`;
     }).join('\n');
 
-    let zai;
+    let content: string;
     try {
-      zai = await ZAI.create();
-    } catch {
-      // Missing .z-ai-config (e.g. packaged desktop app / machines without
-      // the ZAI credentials) — 503 "service unavailable", NOT a server error.
-      // Same contract as metadata-enrich / lyrics-suggestions / song-identify.
-      return NextResponse.json({ success: false, error: 'AI-Dienst nicht verfügbar' }, { status: 503 });
-    }
-    const completion = await zai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: `You are a music metadata harmonization assistant. Your job is to analyze a list of songs with their current genre and language tags, then suggest normalized/standardized values.
+      content = await aiChatCompletion(
+        [
+          {
+            role: 'system',
+            content: `You are a music metadata harmonization assistant. Your job is to analyze a list of songs with their current genre and language tags, then suggest normalized/standardized values.
 
 RULES:
 1. Only suggest changes where the current value is missing, misspelled, overly specific, or inconsistent.
@@ -163,16 +156,20 @@ Example output:
 [{"index":1,"suggestedGenre":"Pop","suggestedLanguage":"English","genreConfidence":85,"languageConfidence":95,"genreReason":"Artist is known pop act","languageReason":"English lyrics confirmed"}]
 
 Do NOT include any text outside the JSON array.`,
-        },
-        {
-          role: 'user',
-          content: `Please analyze and harmonize these ${batch.length} songs:\n\n${songList}`,
-        },
-      ],
-      temperature: 0.1,
-    });
-
-    const content = completion.choices[0]?.message?.content;
+          },
+          {
+            role: 'user',
+            content: `Please analyze and harmonize these ${batch.length} songs:\n\n${songList}`,
+          },
+        ],
+        { temperature: 0.1 },
+      );
+    } catch {
+      // Provider unavailable (missing .z-ai-config on e.g. the packaged
+      // desktop app, or an unreachable custom endpoint) — 503 "service
+      // unavailable", NOT a server error. Same contract as the other AI routes.
+      return NextResponse.json({ success: false, error: 'AI-Dienst nicht verfügbar' }, { status: 503 });
+    }
     if (!content) {
       return NextResponse.json({ success: false, error: 'Empty response from AI' });
     }

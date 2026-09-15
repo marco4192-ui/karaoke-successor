@@ -324,6 +324,10 @@ export default function KaraokeZERO() {
       party.setMedleySettings(null);
       party.setMedleyMatches([]);
       party.setMedleySeriesHistory([]);
+      // User report ("Mode terminieren"): selectedGameMode must go too —
+      // otherwise Library song picks re-enter the aborted Medley Contest.
+      party.setSelectedGameMode(null);
+      party.setUnifiedSetupResult(null);
       party.setIsSongPlaying(false);
       setScreen('party');
       return;

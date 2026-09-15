@@ -266,7 +266,7 @@ const GENRE_ALIASES: Record<string, string> = {
 
   // Rock family
   'alternative rock': 'Rock', 'classic rock': 'Rock', 'progressive rock': 'Rock',
-  'prog rock': 'Rock', 'punk rock': 'Rock', 'hard rock': 'Rock',
+  'prog rock': 'Rock', 'hard rock': 'Rock',
   'grunge': 'Rock', 'soft rock': 'Rock', 'arena rock': 'Rock',
   'indie rock': 'Rock', 'folk rock': 'Folk', 'gothic rock': 'Rock',
   'post-grunge': 'Rock', 'glam rock': 'Rock', 'psychedelic rock': 'Rock',
@@ -350,7 +350,64 @@ const GENRE_ALIASES: Record<string, string> = {
   'j-rock': 'Rock', 'jpop': 'J-Pop', 'kpop': 'K-Pop', 'k-pop': 'K-Pop',
   'afrobeats': 'Pop', 'afro pop': 'Pop',
   'chanson': 'Folk', 'canzone': 'Pop', 'italopop': 'Pop', 'volkslied': 'Volksmusik',
+
+  // ── User library round ("Rule-based Harmonize: dünne Datenbasis") ──
+  // ~90 distinct genre tags from the user's actual library, mapped to the 23
+  // main genres with logical parent rules. Hyphen spellings are written as
+  // they appear in the library; the canonicalizeGenre lookup ALSO tries the
+  // hyphen↔space variant, so both spellings resolve.
+  'punk rock': 'Punk', // was Rock — punk is the logical parent (matches pop punk → Punk)
+  'dance-pop': 'Pop', 'dance-punk': 'Punk', 'pop-punk': 'Punk', 'pop-rock': 'Pop',
+
+  'alternative folk': 'Folk', 'alternative metal': 'Metal', 'alternative pop': 'Pop',
+  'alternative r&b': 'R&B',
+  'après-ski': 'Schlager', 'apres-ski': 'Schlager', 'ballermann': 'Schlager',
+  'italo schlager': 'Schlager', 'german pop': 'Pop',
+  'britpop': 'Rock', 'shoegaze': 'Rock', 'melodic rock': 'Rock', 'synth-rock': 'Rock',
+  'industrial metal': 'Metal', 'progressive metal': 'Metal', 'nu-metal': 'Metal',
+  'garage punk': 'Punk', 'general punk': 'Punk', 'post-hardcore': 'Punk',
+  'post-punk revival': 'Punk', 'hardcore': 'Punk',
+  'rap-rock': 'Rock', 'hyperpop': 'Pop',
+  'bossa': 'Latin', 'bossa nova': 'Latin', 'reguetón': 'Latin', 'regueton': 'Latin',
+  'electric': 'Electronic', 'electronica': 'Electronic', 'eurobeat': 'Electronic',
+  'french house': 'Electronic', 'funky house': 'Electronic', 'italo house': 'Electronic',
+  'italo-disco': 'Electronic', 'hardstyle': 'Electronic', 'happy hardcore': 'Electronic',
+  'memestep': 'Electronic', 'trip hop': 'Electronic',
+  'folk-pop': 'Folk', 'free jazz': 'R&B', 'psychedelic soul': 'Soul',
+  'urban': 'R&B',
 };
+
+/**
+ * Pseudo-genres that carry NO usable genre information (vocal style, era,
+ * source medium, descriptor, AI tag…). They are deliberately NOT auto-mapped:
+ * the rule harmonizer surfaces them in the manual correction list instead
+ * (user request: "bei solchen Unstimmigkeiten eine Liste auswerfen und eine
+ * manuelle Korrektur anbieten").
+ */
+const UNMAPPABLE_GENRE_KEYS = new Set([
+  'a cappella', 'acapella', 'ai', 'a.i.', 'oldies', 'female vocals',
+  'male vocals', 'tv', 'television', 'comedy', 'christmas', 'xmas',
+  'holiday', 'indie', 'unknown', 'other', 'misc', 'various',
+  'sonstiges', 'unbekannt', 'n/a', 'none',
+]);
+
+/** True when the genre is a known pseudo-genre (vocal style / era / medium)
+ *  that must be corrected MANUALLY instead of via alias rules. */
+export function isUnmappableGenre(raw: string): boolean {
+  const key = normalizeGenreLookupKey(raw);
+  if (!key) return false;
+  return UNMAPPABLE_GENRE_KEYS.has(key) || UNMAPPABLE_GENRE_KEYS.has(key.replace(/-/g, ' '));
+}
+
+/** Normalize a genre string into the alias-table key form: lowercase,
+ *  dashes unified to plain hyphens, whitespace collapsed. */
+function normalizeGenreLookupKey(value: string): string {
+  return value
+    .replace(/[\u2010-\u2015]/g, '-') // unicode dashes → hyphen
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 /**
  * Canonicalize a genre value (user item 12 — Genre Harmonization):
@@ -374,8 +431,14 @@ export function canonicalizeGenre(raw: string): string {
     value = value.split(/[,;]/)[0].trim();
   }
 
-  const key = value.toLowerCase();
-  const canonical = GENRE_ALIASES[key];
+  // Alias lookup with hyphen↔space variants: "Dance-Pop" and "Dance Pop"
+  // resolve to the same alias entry (user library uses both spellings —
+  // previously hyphenated tags fell through the map untouched).
+  const key = normalizeGenreLookupKey(value);
+  const canonical =
+    GENRE_ALIASES[key] ??
+    GENRE_ALIASES[key.replace(/-/g, ' ')] ??
+    GENRE_ALIASES[key.replace(/ /g, '-')];
   if (canonical) return canonical;
 
   // Exact canonical match (case-insensitive) → proper casing

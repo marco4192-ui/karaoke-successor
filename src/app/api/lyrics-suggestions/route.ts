@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk'; // NOTE: Uses ZAI SDK defaults (model, endpoint, etc.)
+import { aiChatCompletion } from '@/lib/ai/ai-provider'; // provider-aware (ZAI or custom OpenAI-compatible)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { withRetry } from '@/app/api/lib/retry';
 
@@ -39,12 +39,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<LyricsSug
       );
     }
 
-    let zai;
+    // Provider probe — 503 when neither the built-in ZAI SDK nor a
+    // configured custom endpoint is available.
     try {
-      zai = await ZAI.create();
+      await aiChatCompletion([{ role: 'user', content: 'ping' }], { temperature: 0, timeoutMs: 20_000 });
     } catch (initError) {
       // eslint-disable-next-line no-console
-      console.error('[LyricsSuggestions] Failed to initialize ZAI SDK:', initError);
+      console.error('[LyricsSuggestions] AI provider unavailable:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
         { status: 503 }
@@ -62,8 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LyricsSug
       const lineCount = body.lyrics.length;
 
       const analysisResponse = await withRetry(async () => {
-        const c = await zai.chat.completions.create({
-          messages: [
+        const content = await aiChatCompletion([
             {
               role: 'system',
               content: `You are a lyrics expert and proofreader. Analyze the provided song lyrics for:
@@ -102,11 +102,8 @@ Rules:
 
 Return ONLY the JSON object. Focus only on real errors, not style.`,
             },
-          ],
-          temperature: 0.1,
-        });
+        ], { temperature: 0.1 });
 
-        const content = c.choices?.[0]?.message?.content;
         if (!content) throw new Error('Empty LLM response');
         return content;
       });

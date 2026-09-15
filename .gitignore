@@ -93,3 +93,6 @@ leaderboard-api/config.local.php
 worklog.md
 dev.log
 public/qa-tones.wav
+
+# Local AI provider config (Settings → KI-Dienst)
+ai-provider.json

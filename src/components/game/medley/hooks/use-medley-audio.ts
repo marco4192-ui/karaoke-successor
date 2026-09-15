@@ -158,6 +158,37 @@ export function useMedleyAudio({
     }
   }, []);
 
+  // ── Background video sync helpers (user report: async video) ──
+  // The VISIBLE background video (videoRef → GameBackground <video>) runs on
+  // its own clock: it starts at 0:00 whenever its src is (re)loaded while the
+  // audio seeks straight into the snippet. These helpers keep it glued to the
+  // song position, honouring the song's videoGap offset like the normal game
+  // (use-media-playback.ts: video.currentTime = start - videoGap).
+  const bgVideoGapMsRef = useRef(0);
+
+  const syncBackgroundVideo = useCallback((snippetStartMs: number, targetTimeMs?: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const gapSec = (bgVideoGapMsRef.current || 0) / 1000;
+    const targetSec = Math.max(0, ((targetTimeMs ?? snippetStartMs) / 1000) - gapSec);
+    const seek = () => {
+      try {
+        if (Math.abs(video.currentTime - targetSec) > 0.05) {
+          video.currentTime = targetSec;
+        }
+        video.muted = true; // audio comes from the audio element
+        video.play().catch(() => { /* autoplay guard — GameBackground retries via isPlaying */ });
+      } catch {
+        /* seeking an unloaded video can throw — the drift loop retries */
+      }
+    };
+    if (video.readyState >= 1) {
+      seek();
+    } else {
+      video.addEventListener('loadedmetadata', seek, { once: true });
+    }
+  }, []);
+
   // ── Pause / Resume sync ──
   // Only reacts to explicit pause dialog toggles (user clicks pause/resume).
   // Does NOT interfere with the centralized "play on phase" effect.
@@ -177,12 +208,15 @@ export function useMedleyAudio({
         console.log('[Medley] Resuming playback after user pause');
         audioRef.current.currentTime = (currentSnippet.startTime + currentTimeMs) / 1000;
         audioRef.current.play().catch(() => {});
+        // Keep the background video glued to the resume position too
+        syncBackgroundVideo(currentSnippet.startTime, currentSnippet.startTime + currentTimeMs);
       } else if (fallbackVideoRef.current && fallbackVideoRef.current.paused && fallbackVideoRef.current.readyState >= 2 && currentSnippet) {
         fallbackVideoRef.current.currentTime = (currentSnippet.startTime + currentTimeMs) / 1000;
         fallbackVideoRef.current.play().catch(() => {});
+        syncBackgroundVideo(currentSnippet.startTime, currentSnippet.startTime + currentTimeMs);
       }
     }
-  }, [pauseDialogAction, phase, currentSnippet, currentTimeMs]);
+  }, [pauseDialogAction, phase, currentSnippet, currentTimeMs, syncBackgroundVideo]);
 
   // ── Prepare snippet audio + notes + video ──
   // Loads audio directly (sets src + waits for canplay) to avoid race condition
@@ -224,6 +258,8 @@ export function useMedleyAudio({
 
         // Store fully restored song for GameBackground usage
         setRestoredSong(preparedWithLyrics);
+        // Background video gap (sync target: videoPos = songPos - videoGap)
+        bgVideoGapMsRef.current = preparedWithLyrics.videoGap || 0;
 
         // Determine effective snippet range — may need repositioning if lyrics
         // were empty when generateMedleySnippets ran (it fell back to 10s).
@@ -423,6 +459,13 @@ export function useMedleyAudio({
     console.log('[Medley] Playing media for snippet', currentSnippetIdx);
     const effectiveStart = effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
     media.currentTime = effectiveStart / 1000;
+
+    // ── Background video sync (user report: "Video läuft asynchron") ──
+    // The visible background video (videoRef → GameBackground) is a SEPARATE
+    // element from the audio source — nothing else seeks it, so it used to
+    // start at 0:00 while the audio jumped into the middle of the song.
+    // Seek it to the same snippet position (minus videoGap) and start it.
+    syncBackgroundVideo(effectiveStart);
     // Apply active voice modifier playback rate
     const modDef = VOICE_MODIFIERS.find(m => m.id === activeModifier);
     if (modDef) media.playbackRate = modDef.playbackRate;
@@ -444,6 +487,51 @@ export function useMedleyAudio({
       audioRef.current.playbackRate = 1.0;
     }
   }, [activeModifier]);
+
+  // ── Background video drift correction (runs while a snippet plays) ──
+  // Even after the initial seek, the background <video> and the audio clock
+  // drift apart over time (different decoders/buffers) — and voice modifiers
+  // change the audio rate. Every 1500ms we compare the video position with
+  // the ACTUAL playing media (audio element or fallback video) and re-seek
+  // when the drift exceeds ~350ms. Cheap: two property reads per interval.
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
+
+    const interval = setInterval(() => {
+      if (isPausedRef.current || isPreparingRef.current) return;
+
+      const media = playingMediaRef.current;
+      const video = videoRef.current;
+      if (!media || !video || media.paused || video.paused) return;
+      if (video.readyState < 2 || media.readyState < 2) return;
+
+      // Never compare the background video against ITSELF (video-as-audio
+      // fallback uses a separate element, so this is always a cross-check).
+      if (video === media) return;
+
+      // Match the playback rate first (voice modifiers) — otherwise a rate
+      // difference would build drift faster than the corrector removes it.
+      if (video.playbackRate !== media.playbackRate) {
+        video.playbackRate = media.playbackRate;
+      }
+
+      const gapSec = (bgVideoGapMsRef.current || 0) / 1000;
+      const expectedSec = Math.max(0, media.currentTime - gapSec);
+      const drift = video.currentTime - expectedSec;
+      if (Math.abs(drift) > 0.35) {
+        try {
+          video.currentTime = expectedSec;
+          // eslint-disable-next-line no-console
+          console.log(`[Medley] Background video re-synced (drift ${drift.toFixed(2)}s)`);
+        } catch {
+          /* seek during decode can throw — retried next interval */
+        }
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isPlaying, currentSnippet?.song.id, currentSnippetIdx]);
 
   return {
     audioRef,
