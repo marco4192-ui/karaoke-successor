@@ -91,19 +91,21 @@ export function NoteBlock({
         text: 'text-white'
       };
     }
+    // R8: voice colors match the sub-header dropdown — P4 (3rd voice) =
+    // emerald, P8 (4th voice) = orange (previously orange/rose).
     if (note.player === 'P4') {
       return {
-        bg: 'bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600',
-        border: 'border-orange-400',
-        shadow: 'shadow-orange-400/50',
+        bg: 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600',
+        border: 'border-emerald-400',
+        shadow: 'shadow-emerald-400/50',
         text: 'text-white'
       };
     }
     if (note.player === 'P8') {
       return {
-        bg: 'bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600',
-        border: 'border-rose-400',
-        shadow: 'shadow-rose-400/50',
+        bg: 'bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600',
+        border: 'border-orange-400',
+        shadow: 'shadow-orange-400/50',
         text: 'text-white'
       };
     }
@@ -120,6 +122,10 @@ export function NoteBlock({
 
   const handleMouseDown = useCallback((e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     e.stopPropagation();
+    // R8: Ctrl/Cmd+Click toggles the multi-selection — never starts a drag.
+    // Previously a 1–2 px hand tremor while Ctrl+Clicking moved the note
+    // (live update) which felt like "the multi-select doesn't work".
+    if (e.ctrlKey || e.metaKey) return;
     onDragStart(note.id, e.clientX, e.clientY, type);
   }, [note.id, onDragStart]);
 
@@ -149,7 +155,9 @@ export function NoteBlock({
         colors.text,
         'border-2',
         isSelected && 'ring-2 ring-white ring-offset-1 ring-offset-transparent',
-        isMultiSelected && !isSelected && 'ring-1 ring-cyan-300/80 ring-offset-1 ring-offset-transparent',
+        // R8: multi-selection gets a clearly visible ring (was ring-1 /80 —
+        // too faint to notice, which made Ctrl+Click feel broken)
+        isMultiSelected && !isSelected && 'ring-2 ring-cyan-300 ring-offset-1 ring-offset-transparent brightness-110',
         isPlayingNote && 'ring-2 ring-green-400 ring-offset-1 ring-offset-transparent scale-[1.02] brightness-125',
         isHovered && !isPlayingNote && 'brightness-110',
         (isSelected || isPlayingNote || isMultiSelected) && 'z-10'
@@ -229,6 +237,11 @@ export function NoteBlock({
         <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-lg flex items-center justify-center">
           <div className={cn('w-2 h-2 rounded-full', note.isGolden ? 'bg-yellow-500' : note.isRap ? 'bg-emerald-500' : (note.isFreestyle || note.isBonus) ? 'bg-pink-500' : 'bg-cyan-500')} />
         </div>
+      )}
+
+      {/* Multi-selection indicator (Ctrl+Click) — cyan corner dot */}
+      {isMultiSelected && !isSelected && (
+        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-md pointer-events-none" />
       )}
 
       {/* Golden note sparkle effect */}

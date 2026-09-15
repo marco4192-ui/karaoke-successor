@@ -936,31 +936,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         onTogglePanel={(panel) => setActivePanel(prev => (prev === panel ? 'none' : panel))}
       />
 
-      {/* ── Sub-Header (R7): note tools + note type + voice + transpose + tap ──
-          Everything note-related from the old left side panel, now directly
-          above the pitch lanes — always visible, never nested. */}
-      {heavyMounted && (
-        <EditorSubHeader
-          activeNoteType={activeNoteType}
-          onSelectNoteType={handleSelectNoteType}
-          selectedCount={effectiveSelection.size}
-          selectedPlayer={selectedNote?.player}
-          onAddNote={handleAddFromToolbar}
-          onDuplicateNote={duplicateNote}
-          onDeleteNote={handleSelectionDelete}
-          onSplitNote={handleNoteSplit}
-          onMergeNote={handleMergeNote}
-          onPlayerChange={handlePlayerChange}
-          onTransposeAll={handleTransposeAll}
-          tapMode={tapPlacement}
-        />
-      )}
-
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* ── Left panel: Liedtext (top) + Shortcuts (bottom) ──
             R7: the lyrics box moved UP (primary reference while editing),
             the dissolved "Notes & Tools" panel lives on as the compact
-            Shortcuts reference below. */}
+            Shortcuts reference below.
+            R8 (3.1): the panel now starts directly below the editor header —
+            it inherits the full height the sub-header used to occupy, so the
+            lyrics box grew by that strip at the top. */}
         {heavyMounted && (
           <aside className="w-80 flex-shrink-0 bg-slate-900 border-r border-slate-700 flex flex-col min-h-0" data-testid="editor-left-panel">
             {/* Section: Liedtext */}
@@ -980,8 +963,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               </div>
             </section>
 
-            {/* Section: Shortcuts (renamed, punchier labels) */}
-            <section className="flex-shrink-0 max-h-[46%] min-h-0 flex flex-col border-t border-slate-700">
+            {/* Section: Shortcuts (renamed, punchier labels — R8: compacted) */}
+            <section className="flex-shrink-0 max-h-[40%] min-h-0 flex flex-col border-t border-slate-700">
               <div className="flex-1 min-h-0 overflow-y-auto editor-panel-scroll">
                 <ShortcutsPanel />
               </div>
@@ -989,29 +972,54 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           </aside>
         )}
 
-        <main className="flex-1 flex flex-col overflow-hidden relative">
+        {/* ── Middle column (R8/3): the sub-header sits flush above the
+            timeline — it starts at the same left edge as the pitch ladder,
+            shortening mouse paths between tools and notes. ── */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* ── Sub-Header (R7): note tools + note type + voice + transpose + tap ──
+              Everything note-related from the old left side panel, now directly
+              above the pitch lanes — always visible, never nested. */}
           {heavyMounted && (
-            <Timeline
-              song={currentSong}
-              currentTime={currentTime}
-              isPlaying={isPlaying}
-              selectedNoteId={selectedNoteId}
-              selectedNoteIds={selectedNoteIds}
-              snapEnabled={snapEnabled}
-              onToggleSnap={() => setSnapEnabled(prev => !prev)}
-              playbackRate={playbackRate}
-              onPlaybackRateChange={setPlaybackRate}
-              onTimeChange={handleTimeChange}
-              onPlayPause={handlePlayPause}
-              onNoteSelect={handleNoteSelect}
-              onNoteCtrlToggle={handleNoteCtrlToggle}
-              onNoteUpdate={handleNoteUpdate}
-              onCommitHistory={handleCommitHistory}
-              onNoteAdd={handleNoteAdd}
-              onLyricChange={handleLyricChange}
+            <EditorSubHeader
+              activeNoteType={activeNoteType}
+              onSelectNoteType={handleSelectNoteType}
+              selectedCount={effectiveSelection.size}
+              selectedPlayer={selectedNote?.player}
+              onAddNote={handleAddFromToolbar}
+              onDuplicateNote={duplicateNote}
+              onDeleteNote={handleSelectionDelete}
+              onSplitNote={handleNoteSplit}
+              onMergeNote={handleMergeNote}
+              onPlayerChange={handlePlayerChange}
+              onTransposeAll={handleTransposeAll}
+              tapMode={tapPlacement}
             />
           )}
-        </main>
+
+          <main className="flex-1 flex flex-col overflow-hidden relative">
+            {heavyMounted && (
+              <Timeline
+                song={currentSong}
+                currentTime={currentTime}
+                isPlaying={isPlaying}
+                selectedNoteId={selectedNoteId}
+                selectedNoteIds={selectedNoteIds}
+                snapEnabled={snapEnabled}
+                onToggleSnap={() => setSnapEnabled(prev => !prev)}
+                playbackRate={playbackRate}
+                onPlaybackRateChange={setPlaybackRate}
+                onTimeChange={handleTimeChange}
+                onPlayPause={handlePlayPause}
+                onNoteSelect={handleNoteSelect}
+                onNoteCtrlToggle={handleNoteCtrlToggle}
+                onNoteUpdate={handleNoteUpdate}
+                onCommitHistory={handleCommitHistory}
+                onNoteAdd={handleNoteAdd}
+                onLyricChange={handleLyricChange}
+              />
+            )}
+          </main>
+        </div>
 
         {/* ── Header tab panels — right-side sliding sidebar ──
             Metadata / Audio-Analysis / AI-Assistant dock to the right of the

@@ -789,6 +789,7 @@ export const libraryTranslations = {
       duration: 'Duration',
       frequency: 'Frequency',
       hint: 'Select a note to see details',
+      selectedCount: '{count} selected',
       transposeLabel: 'Transpose (semitone)',
       rap: 'Rap',
       freestyleHint: 'Freestyle: pitch doesn\u2019t matter — any sound counts',

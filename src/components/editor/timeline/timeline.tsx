@@ -6,7 +6,6 @@ import type { Note, Song, NoteType, DuetPlayer } from '@/types/game';
 import { midiToNoteName, getNoteType, noteTypeFlags, NOTE_TYPE_CHARS } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
-import { Waveform } from './waveform';
 import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info, ChevronUp } from 'lucide-react';
 import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
@@ -156,12 +155,12 @@ export function Timeline({
   const TOTAL_MIN_PITCH = 24; // C1
   const TOTAL_MAX_PITCH = 96; // C7 (6-octave total range)
   const lyricTrackHeight = 40;
-  const waveformHeight = 60;
   const minimapHeight = 44;
-  // Height reserved for the note-details band between lyric track and minimap
-  // (R7: now contains the primary input fields — Lyric / Pitch / Start / Duration
-  // plus the type DropUp — so it needs a little more room than the old chips)
-  const noteInfoHeight = 108;
+  // Height reserved for the note-details band between lyric track and minimap.
+  // R8: the useless pitch-graph strip above the lanes was removed — its 60 px
+  // go 1:1 into this band (108 → 168), so the pitch ladder keeps its size and
+  // just moves up while the primary input fields get roomier controls.
+  const noteInfoHeight = 168;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
 
@@ -188,7 +187,7 @@ export function Timeline({
   // the timeline fits smaller screens (previously fixed 20px → 860px minimum
   // layout overflowed laptops).
   const notesAreaHeight = useMemo(() => {
-    return Math.max(200, viewport.height - waveformHeight - lyricTrackHeight - noteInfoHeight - minimapHeight);
+    return Math.max(200, viewport.height - lyricTrackHeight - noteInfoHeight - minimapHeight);
   }, [viewport.height]);
 
   const combinedPitchHeight = useMemo(() => {
@@ -268,11 +267,12 @@ export function Timeline({
       return Math.max(minAllowed, Math.min(maxAllowed, center));
     };
 
+    // R8: voice colors match the sub-header dropdown (P3 = emerald, P4 = orange)
     const badgeStyles: Record<string, string> = {
       P1: 'text-cyan-300 bg-cyan-500/15 border-cyan-400/30',
       P2: 'text-purple-300 bg-purple-500/15 border-purple-400/30',
-      P4: 'text-orange-300 bg-orange-500/15 border-orange-400/30',
-      P8: 'text-rose-300 bg-rose-500/15 border-rose-400/30',
+      P4: 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30',
+      P8: 'text-orange-300 bg-orange-500/15 border-orange-400/30',
     };
     const voiceNameIndex: Record<string, number> = { P1: 0, P2: 1, P4: 2, P8: 3 };
 
@@ -406,7 +406,7 @@ export function Timeline({
     if (!rect) return;
 
     const clickX = e.clientX - rect.left - LEFT_GUTTER + scrollOffset;
-    const clickY = e.clientY - rect.top - waveformHeight - lane.topOffset;
+    const clickY = e.clientY - rect.top - lane.topOffset;
 
     const clickedTime = (clickX / pixelsPerSecond) * 1000;
     const clickedPitch = Math.round(lane.maxPitch - (clickY / lane.pitchHeight));
@@ -733,33 +733,17 @@ export function Timeline({
         onWheel={handleScroll}
         onClick={handleTimelineClick}
       >
-        {/* Waveform (viewport-sized canvas — only the visible window is rendered) */}
-        {song.audioUrl && (
-          <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: waveformHeight }}>
-            <div className="ml-8" style={{ height: waveformHeight }}>
-              <Waveform
-                audioUrl={song.audioUrl}
-                width={Math.max(1, viewport.width - LEFT_GUTTER)}
-                height={waveformHeight}
-                pixelsPerSecond={pixelsPerSecond}
-                scrollOffset={scrollOffset}
-                notes={allNotes}
-                selectedNoteId={selectedNoteId}
-                onSeek={onTimeChange}
-                onNoteAdd={onNoteAdd}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Notes area — one lane (combined) or two lanes (duet split) */}
+        {/* Notes area (R8: the pitch-graph/waveform strip that used to sit here
+            was removed — the pitch ladder starts directly at the top now, right
+            below the transport bar / sub-header) — one lane (combined) or up to
+            four lanes (duet/trio/quartet split) */}
         <div
           className="absolute left-0 right-0"
           style={{
-            top: waveformHeight,
+            top: 0,
             height: lanesTotalHeight,
           }}
-        >
+>
           {lanes.map(lane => (
             <div
               key={lane.key}
@@ -845,10 +829,10 @@ export function Timeline({
         <div
           className="absolute left-0 right-0 ml-8"
           style={{
-            top: waveformHeight + lanesTotalHeight,
+            top: lanesTotalHeight,
             height: lyricTrackHeight
           }}
-        >
+>
           <LyricTrack
             notes={allNotes}
             pixelsPerSecond={pixelsPerSecond}
@@ -864,18 +848,20 @@ export function Timeline({
             live HERE now — Lyric, Pitch (MIDI), Start (ms) and Duration (ms)
             are the primary editing surface, plus a DropUp menu for the note
             type (opens upward — the band sits at the bottom of the screen).
+            R8: the band inherits the full height of the removed pitch graph —
+            roomier inputs, compact chips.
             Non-duplicate info (frequency, beat, line, voice) stays as chips.
             Clicks are stopped so interacting with the band keeps the selection. */}
         <div
           className="absolute left-0 right-0 z-20 border-t border-slate-700 bg-slate-900/70 cursor-default overflow-hidden"
           style={{
-            top: waveformHeight + lanesTotalHeight + lyricTrackHeight,
+            top: lanesTotalHeight + lyricTrackHeight,
             bottom: minimapHeight,
           }}
           onClick={(e) => e.stopPropagation()}
           data-testid="editor-note-details-band"
         >
-          <div className="h-full flex flex-col px-3 py-1.5 min-w-0">
+          <div className="h-full flex flex-col px-3 py-2 min-w-0">
             {/* Header row: title + selection count */}
             <div className="flex items-center gap-2 shrink-0 min-w-0">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
@@ -887,7 +873,7 @@ export function Timeline({
                   className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0"
                   data-testid="editor-note-details-count"
                 >
-                  {multiSelectCount}× {t('editor.shortcuts.addNote')}
+                  {t('editor.noteDetails.selectedCount').replace('{count}', String(multiSelectCount))}
                 </span>
               )}
             </div>
@@ -1043,8 +1029,11 @@ function NoteDetailsInputs({
     e.stopPropagation();
   };
 
-  const labelClass = 'text-[9px] uppercase tracking-wider text-slate-500 leading-none mb-0.5 block';
-  const inputClass = 'h-7 bg-slate-800 border-slate-600 text-xs text-slate-100 px-1.5 font-mono';
+  // R8: the band got the pitch-graph's 60 px — inputs grow from h-7 to h-9
+  // (text-sm) so the primary editing surface is comfortable to hit with the
+  // mouse. The lyric field lost ⅔ of its width: notes carry syllables, not prose.
+  const labelClass = 'text-[10px] uppercase tracking-wider text-slate-500 leading-none mb-1 block';
+  const inputClass = 'h-9 bg-slate-800 border-slate-600 text-sm text-slate-100 px-2 font-mono';
 
   return (
     <div className="flex-1 min-h-0 flex flex-col justify-center gap-1 min-w-0">
@@ -1058,13 +1047,13 @@ function NoteDetailsInputs({
             onValueChange={(value: NoteType) => onNoteUpdate(note.id, noteTypeFlags(value), 'push')}
           >
             <SelectTrigger
-              className="h-7 w-auto min-w-[118px] gap-1 bg-slate-800 border-slate-600 text-xs px-2"
+              className="h-9 w-auto min-w-[130px] gap-1.5 bg-slate-800 border-slate-600 text-sm px-2.5"
               data-testid="editor-note-details-type"
               aria-label={t('editor.noteDetails.type')}
             >
               <span className="font-mono font-bold text-slate-400">{NOTE_TYPE_CHARS[noteType]}</span>
               <SelectValue />
-              <ChevronUp className="w-3 h-3 text-slate-500" />
+              <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
             </SelectTrigger>
             <SelectContent side="top" position="popper">
               {NOTE_TYPE_OPTIONS.map(opt => (
@@ -1079,8 +1068,8 @@ function NoteDetailsInputs({
           </Select>
         </div>
 
-        {/* Lyric */}
-        <div className="flex-1 min-w-[120px]">
+        {/* Lyric — R8: narrowed to ⅓ (notes carry syllables, not prose). Was flex-1. */}
+        <div className="shrink-0 w-40">
           <label htmlFor="band-lyric" className={labelClass}>{t('editor.noteTab.lyric')}</label>
           <Input
             id="band-lyric"
@@ -1094,7 +1083,7 @@ function NoteDetailsInputs({
               else onLyricChange(note.id, lyricDraft.trim(), 'push');
             }}
             onKeyDown={stopKeys}
-            className="h-7 bg-slate-800 border-slate-600 text-xs text-slate-100 px-1.5"
+            className="h-9 bg-slate-800 border-slate-600 text-sm text-slate-100 px-2"
             data-testid="editor-note-details-lyric"
           />
         </div>
@@ -1121,10 +1110,10 @@ function NoteDetailsInputs({
                 onCommitHistory();
               }}
               onKeyDown={stopKeys}
-              className={cn(inputClass, 'w-16')}
+              className={cn(inputClass, 'w-20')}
               data-testid="editor-note-details-pitch"
             />
-            <span className="text-cyan-400 font-mono text-xs font-semibold whitespace-nowrap pb-0.5" data-testid="editor-note-details-pitch-name">
+            <span className="text-cyan-400 font-mono text-sm font-semibold whitespace-nowrap pb-1" data-testid="editor-note-details-pitch-name">
               {midiToNoteName(note.pitch)}
             </span>
           </div>
@@ -1150,7 +1139,7 @@ function NoteDetailsInputs({
               onCommitHistory();
             }}
             onKeyDown={stopKeys}
-            className={cn(inputClass, 'w-24')}
+            className={cn(inputClass, 'w-28')}
             data-testid="editor-note-details-start"
           />
         </div>
@@ -1175,22 +1164,22 @@ function NoteDetailsInputs({
               onCommitHistory();
             }}
             onKeyDown={stopKeys}
-            className={cn(inputClass, 'w-24')}
+            className={cn(inputClass, 'w-28')}
             data-testid="editor-note-details-duration"
           />
         </div>
       </div>
 
       {/* Non-duplicate info — kept as compact chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto editor-panel-scroll">
-        <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-frequency">
+      <div className="flex items-center gap-2 overflow-x-auto editor-panel-scroll">
+        <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-frequency">
           {t('editor.noteDetails.frequency')}: <span className="text-slate-300 font-mono">{note.frequency.toFixed(1)} Hz</span>
         </span>
-        <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-beat">
+        <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-beat">
           {t('editor.noteDetails.beat')}: <span className="text-slate-300 font-mono">#{beat.toFixed(2)}</span>
         </span>
         {lineIndex >= 0 && (
-          <span className="text-[10px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-line">
+          <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-line">
             {t('editor.noteDetails.line')}: <span className="text-slate-300 font-mono">#{lineIndex + 1}</span>
           </span>
         )}
@@ -1203,8 +1192,8 @@ function NoteDetailsInputs({
                 : note.player === 'P2'
                   ? 'bg-purple-500/15 text-purple-300 border-purple-400/30'
                   : note.player === 'P4'
-                    ? 'bg-orange-500/15 text-orange-300 border-orange-400/30'
-                    : 'bg-rose-500/15 text-rose-300 border-rose-400/30',
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
+                    : 'bg-orange-500/15 text-orange-300 border-orange-400/30',
             )}
             data-testid="editor-note-details-player"
           >
@@ -1212,10 +1201,10 @@ function NoteDetailsInputs({
           </span>
         )}
         {note.isFreestyle && (
-          <span className="text-[10px] text-pink-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.freestyleHint')}</span>
+          <span className="text-[11px] text-pink-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.freestyleHint')}</span>
         )}
         {note.isRap && !note.isGolden && (
-          <span className="text-[10px] text-emerald-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.rapHint')}</span>
+          <span className="text-[11px] text-emerald-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.rapHint')}</span>
         )}
       </div>
     </div>
@@ -1316,6 +1305,8 @@ function PitchMinimap({
       const h = 2.5;
       if (note.player === 'P2') ctx.fillStyle = 'rgba(168, 85, 247, 0.85)';
       else if (note.player === 'P1') ctx.fillStyle = 'rgba(34, 211, 238, 0.85)';
+      else if (note.player === 'P4') ctx.fillStyle = 'rgba(16, 185, 129, 0.85)'; // emerald — matches dropdown
+      else if (note.player === 'P8') ctx.fillStyle = 'rgba(249, 115, 22, 0.85)'; // orange — matches dropdown
       else if (note.isGolden) ctx.fillStyle = 'rgba(251, 191, 36, 0.9)';
       else if (note.isBonus) ctx.fillStyle = 'rgba(236, 72, 153, 0.85)';
       else ctx.fillStyle = 'rgba(6, 182, 212, 0.8)';

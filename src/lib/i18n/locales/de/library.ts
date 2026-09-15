@@ -747,6 +747,7 @@ editor: {
     duration: 'Dauer',
     frequency: 'Frequenz',
     hint: 'Note auswählen, um Details zu sehen',
+    selectedCount: '{count} ausgewählt',
     transposeLabel: 'Transponieren (Halbton)',
     rap: 'Rap',
     freestyleHint: 'Freestyle: Tonhöhe egal — Geräusche genügen',

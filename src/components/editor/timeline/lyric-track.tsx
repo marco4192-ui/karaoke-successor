@@ -109,8 +109,9 @@ export function LyricTrack({
                 (note.isFreestyle || note.isBonus) && 'text-pink-400',
                 note.player === 'P1' && 'text-cyan-400',
                 note.player === 'P2' && 'text-purple-400',
-                note.player === 'P4' && 'text-orange-400',
-                note.player === 'P8' && 'text-rose-400'
+                // R8: match the sub-header dropdown (P4 = emerald, P8 = orange)
+                note.player === 'P4' && 'text-emerald-400',
+                note.player === 'P8' && 'text-orange-400'
               )}>
                 {note.lyric || '—'}
               </span>

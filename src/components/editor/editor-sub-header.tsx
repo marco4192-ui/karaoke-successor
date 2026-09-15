@@ -239,28 +239,32 @@ export function EditorSubHeader({
         </SelectContent>
       </Select>
 
-      {/* ── Transpose all notes (reduced to ±1 — per-note moves via drag/↑↓) ── */}
+      {/* ── Transpose all notes (reduced to ±1 — per-note moves via drag/↑↓).
+          R8: music symbols in front — ♭ (flat) = down a semitone,
+          ♯ (sharp) = up a semitone, matching the classic notation. ── */}
       <div className="flex items-center gap-0.5 rounded-lg bg-slate-800/80 border border-slate-700 p-0.5">
         <ArrowUpDown className="w-3 h-3 text-slate-500 mx-1 hidden xl:block" aria-hidden />
         <Button
           size="sm"
           variant="ghost"
           onClick={() => onTransposeAll(-1)}
-          title={`${t('editor.subHeader.transposeAll')}: −1`}
+          title={`${t('editor.subHeader.transposeAll')}: ♭ −1`}
+          aria-label={`${t('editor.subHeader.transposeAll')}: ♭ −1`}
           data-testid="editor-sub-transpose-all-minus-1"
-          className="h-7 px-2 font-mono text-xs text-slate-300 hover:text-purple-300 hover:bg-purple-500/15"
+          className="h-7 px-2 font-mono text-xs text-slate-300 hover:text-purple-300 hover:bg-purple-500/15 gap-1"
         >
-          −1
+          <span className="text-slate-400" aria-hidden>♭</span>−1
         </Button>
         <Button
           size="sm"
           variant="ghost"
           onClick={() => onTransposeAll(1)}
-          title={`${t('editor.subHeader.transposeAll')}: +1`}
+          title={`${t('editor.subHeader.transposeAll')}: ♯ +1`}
+          aria-label={`${t('editor.subHeader.transposeAll')}: ♯ +1`}
           data-testid="editor-sub-transpose-all-plus-1"
-          className="h-7 px-2 font-mono text-xs text-slate-300 hover:text-purple-300 hover:bg-purple-500/15"
+          className="h-7 px-2 font-mono text-xs text-slate-300 hover:text-purple-300 hover:bg-purple-500/15 gap-1"
         >
-          +1
+          <span className="text-slate-400" aria-hidden>♯</span>+1
         </Button>
       </div>
 
