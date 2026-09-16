@@ -1013,3 +1013,41 @@ export function getMultiMicrophoneManager(): MultiMicrophoneManager {
   return multiMicManagerInstance;
 }
 
+/**
+ * Best-effort: remove ONE saved mic entry (by internal id) from the
+ * persisted MULTI_MIC_CONFIG. Called by mic-device-resolver's liveness
+ * validation when a stored deviceId is no longer connected (mic unplugged
+ * or re-plugged with a new browser deviceId) — a stale entry would make
+ * getUserMedia throw OverconstrainedError and silently fall back to the
+ * default mic.
+ *
+ * Deliberately operates on localStorage only — NOT on a live manager
+ * instance: the singleton's in-memory assignedMics only contains devices
+ * that were restore-able/connected (restoreMics skips dead ones), so a
+ * saveConfig() through it could silently drop OTHER saved entries. A live
+ * manager may still hold the stale entry in memory until reload; if its
+ * next saveConfig() resurrects the entry, the resolver simply prunes again
+ * (it warns only once per internal id per session).
+ *
+ * Returns true when the persisted entry was found and removed.
+ */
+export function removeSavedMicConfigEntry(micId: string): boolean {
+  try {
+    const raw = getItem(StorageKeys.MULTI_MIC_CONFIG);
+    if (!raw) return false;
+    const config = JSON.parse(raw) as {
+      assignedMics?: Array<{ id?: string }>;
+    };
+    if (!Array.isArray(config?.assignedMics)) return false;
+    const next = config.assignedMics.filter(mic => mic?.id !== micId);
+    if (next.length === config.assignedMics.length) return false;
+    config.assignedMics = next;
+    setJson(StorageKeys.MULTI_MIC_CONFIG, config);
+    return true;
+  } catch {
+    // Non-critical: the entry stays persisted; the resolver prunes again on
+    // the next stale detection.
+    return false;
+  }
+}
+

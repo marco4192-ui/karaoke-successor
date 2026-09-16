@@ -5,6 +5,7 @@ import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, G
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { StorageKeys, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
+import { isMicIdConnected } from '@/lib/audio/mic-device-resolver';
 import { t } from '@/lib/i18n/locales';
 
 /** Saved mic entry shape from MULTI_MIC_CONFIG */
@@ -128,6 +129,32 @@ export function usePartySetup({
       else removeItem(StorageKeys.PTM_SHARED_MIC_NAME);
     } catch { /* ignore */ }
   }, [selectedMicId, selectedMicName]);
+
+  // ── Liveness re-validation of the persisted shared-mic choice ──
+  // PTM_SHARED_MIC_ID can go stale: unplugging / re-plugging a mic usually
+  // yields a NEW browser deviceId, so the saved internal id no longer points
+  // at a connected device. Instead of restoring (and rendering) a dead
+  // placeholder selection that would silently sing on the default mic,
+  // validate the restored choice once on mount and clear it when the device
+  // is gone. Fresh in-session choices (initialDraft) are trusted as-is.
+  useEffect(() => {
+    if (!selectedMicId || initialDraft?.selectedMicId) return;
+    let cancelled = false;
+    isMicIdConnected(selectedMicId).then(connected => {
+      if (cancelled || connected) return;
+      // Stale: clear the restored choice (the persist effect above removes
+      // the localStorage keys; the explicit removals are belt-and-braces).
+      setSelectedMicId(null);
+      setSelectedMicName(null);
+      removeItem(StorageKeys.PTM_SHARED_MIC_ID);
+      removeItem(StorageKeys.PTM_SHARED_MIC_NAME);
+      // The liveness check pruned the dead entry from MULTI_MIC_CONFIG —
+      // re-sync the saved-mic list so the dropdown stops offering it.
+      setSavedMics(loadSavedMics());
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot mount validation of the restored value (state setters + loaders are stable)
+  }, []);
 
   // ── Song selection state ──
   // The chosen song-selection method ('random' | 'library' | 'vote' | 'medley').
