@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Toutes les difficultés réalisées aujourd\'hui — impressionnant !',
   remainingMore: 'Encore {n} nécessaire !',
   remainingFewer: '{n} de moins nécessaire !',
+  dailyActiveStartHint: 'Les défis quotidiens se lancent ici activement : touchez un emplacement, choisissez des joueurs et chantez. Chanter normalement compte automatiquement pour les défis hebdomadaires.',
+  slotStart: 'Commencer',
+  slotLockedHint: 'Terminez d\'abord l\'emplacement {n} pour débloquer ce défi.',
+  slotDoneHint: 'Cet emplacement est déjà réussi aujourd\'hui — essayez une difficulté supérieure ou un autre emplacement.',
 },
 
 dailyTypes: {

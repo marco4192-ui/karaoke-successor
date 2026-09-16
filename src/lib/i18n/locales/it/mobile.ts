@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Tutte le difficoltà completate oggi — notevole!',
   remainingMore: 'Ancora {n} da raggiungere!',
   remainingFewer: '{n} in meno del necessario!',
+  dailyActiveStartHint: 'Le sfide giornaliere si avviano qui attivamente: tocca uno slot, scegli i giocatori e canta un brano. Giocare normalmente conta automaticamente per le sfide settimanali.',
+  slotStart: 'Avvia',
+  slotLockedHint: 'Completa prima lo slot {n} per sbloccare questa sfida.',
+  slotDoneHint: 'Questo slot è già completato oggi — prova una difficoltà più alta o un altro slot.',
 },
 
 dailyTypes: {

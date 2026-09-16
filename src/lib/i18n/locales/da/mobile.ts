@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Alle sværhedsgrader gennemført i dag — imponerende!',
   remainingMore: '{n} mere skal til!',
   remainingFewer: '{n} færre skal til!',
+  dailyActiveStartHint: 'Daglige udfordringer skal startes aktivt her: tryk på en brik, vælg spillere og syng en sang. Almindelig sang tæller automatisk til ugeudfordringerne.',
+  slotStart: 'Start',
+  slotLockedHint: 'Klargør først brik {n} for at låse denne udfordring op.',
+  slotDoneHint: 'Denne brik er allerede klaret i dag — prøv en højere sværhedsgrad eller en anden brik.',
 },
 
 dailyTypes: {

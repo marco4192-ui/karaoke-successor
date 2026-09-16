@@ -547,6 +547,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Alle vanskelighetsgrader fullført i dag — imponerende!',
   remainingMore: '{n} mer igjen!',
   remainingFewer: '{n} færre trengs!',
+  dailyActiveStartHint: 'Daglige utfordringer må startes aktivt her: trykk på en plass, velg spillere og syng en sang. Vanlig sang teller automatisk for ukentlige utfordringer.',
+  slotStart: 'Start',
+  slotLockedHint: 'Fullfør først plass {n} for å låse opp denne utfordringen.',
+  slotDoneHint: 'Denne plassen er allerede fullført i dag — prøv et høyere vanskelighetsnivå eller en annen plass.',
 },
 
 dailyTypes: {

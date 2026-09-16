@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 ¡Todas las dificultades completadas hoy — impresionante!',
   remainingMore: '¡Faltan {n} más!',
   remainingFewer: '¡{n} menos de lo necesario!',
+  dailyActiveStartHint: 'Los desafíos diarios deben iniciarse aquí activamente: toca un hueco, elige jugadores y canta una canción. Jugar con normalidad cuenta automáticamente para los semanales.',
+  slotStart: 'Empezar',
+  slotLockedHint: 'Completa primero el hueco {n} para desbloquear este desafío.',
+  slotDoneHint: 'Este hueco ya está completado hoy — prueba una dificultad más alta u otro hueco.',
 },
 
 dailyTypes: {

@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Kaikki vaikeustasot suoritettu tänään — vaikuttavaa!',
   remainingMore: '{n} lisää tarvitaan!',
   remainingFewer: '{n} vähemmän riittää!',
+  dailyActiveStartHint: 'Päivittäiset haasteet käynnistetään tässä itse: napauta paikkaa, valitse pelaajat ja laula kappale. Tavallinen pelaaminen lasketaan automaattisesti viikkohaasteisiin.',
+  slotStart: 'Aloita',
+  slotLockedHint: 'Suorita ensin paikka {n} avataksesi tämän haasteen.',
+  slotDoneHint: 'Tämä paikka on jo suoritettu tänään — kokeile vaikeampaa tasoa tai toista paikkaa.',
 },
 
 dailyTypes: {

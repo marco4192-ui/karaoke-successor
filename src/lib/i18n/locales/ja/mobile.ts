@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 本日すべての難易度を達成 — 素晴らしい！',
   remainingMore: 'あと{n}必要！',
   remainingFewer: '必要数が{n}少ない！',
+  dailyActiveStartHint: 'デイリーチャレンジはここから自分で開始します：スロットをタップし、プレイヤーを選んで歌唱しましょう。通常プレイはウィークリーチャレンジに自動的にカウントされます。',
+  slotStart: '開始',
+  slotLockedHint: 'このチャレンジを解放するには、先にスロット{n}をクリアしてください。',
+  slotDoneHint: 'このスロットは今日すでにクリア済みです — より高い難易度や別のスロットを試してみましょう。',
 },
 
 dailyTypes: {

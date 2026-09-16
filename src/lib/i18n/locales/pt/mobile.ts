@@ -547,6 +547,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Todas as dificuldades concluídas hoje — impressionante!',
   remainingMore: 'Ainda faltam {n}!',
   remainingFewer: '{n} a menos do que o necessário!',
+  dailyActiveStartHint: 'Os desafios diários devem ser iniciados aqui ativamente: toque num espaço, escolha jogadores e cante uma música. Jogar normalmente conta automaticamente para os desafios semanais.',
+  slotStart: 'Iniciar',
+  slotLockedHint: 'Complete primeiro o espaço {n} para desbloquear este desafio.',
+  slotDoneHint: 'Este espaço já está concluído hoje — experimente uma dificuldade maior ou outro espaço.',
 },
 
 dailyTypes: {

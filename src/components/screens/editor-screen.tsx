@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, getAllSongsAsync, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
@@ -8,7 +8,6 @@ import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { MetadataStudio } from '@/components/editor/metadata-studio';
-import { createDemoSong } from '@/lib/editor/demo-song';
 import { RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
@@ -261,31 +260,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
   }, [selectMode, filterMode, filteredSongs.length, t, toast]);
 
-  // ── Demo sample song (sandbox testing — user request "Muster-Song") ──
-  const [isCreatingDemo, setIsCreatingDemo] = useState(false);
-  const handleCreateDemoSong = useCallback(async () => {
-    setIsCreatingDemo(true);
-    try {
-      const song = await createDemoSong();
-      toast({
-        title: `🎵 ${t('editor.demoSongCreatedTitle')}`,
-        description: t('editor.demoSongCreatedDesc'),
-      });
-      // Refresh the library so the missing-metadata counters update immediately
-      refreshSongs();
-      // Open the fresh demo song directly in the editor for immediate testing
-      setSelectedSong(song);
-    } catch (e) {
-      toast({
-        title: '⚠️',
-        description: e instanceof Error ? e.message : t('editor.demoSongError'),
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCreatingDemo(false);
-    }
-  }, [t, toast, refreshSongs]);
-
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.style.display = 'none';
   }, []);
@@ -360,22 +334,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 ) : (
                   <>🔄 {t('editor.refreshBtn')}</>
                 )}
-              </Button>
-              {/* Demo sample song — sandbox testing (user request). The old
-                  header "Select Songs" button moved INTO the Metadata Studio
-                  (next to Run) — it only serves the studio flow. */}
-              <Button
-                onClick={handleCreateDemoSong}
-                variant="outline"
-                disabled={isCreatingDemo}
-                className="border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/15 hover:border-cyan-300 transition-all"
-                title={t('editor.demoSongButtonTitle')}
-                data-testid="editor-demo-song-button"
-              >
-                {isCreatingDemo ? (
-                  <span className="inline-block w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                ) : '🧪'}
-                {' '}{t('editor.demoSongButton')}
               </Button>
               <Button onClick={onBack} variant="outline" className="border-white/20" data-testid="editor-back-button">
                 ← {t('editor.back')}
@@ -550,17 +508,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <div className="text-4xl mb-2">📝</div>
               <p>{t('editor.noSongsFound')}</p>
               <p className="text-sm">{t('editor.noSongsDesc')}</p>
-              <Button
-                onClick={handleCreateDemoSong}
-                disabled={isCreatingDemo}
-                className="mt-4 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
-                data-testid="editor-demo-song-empty-button"
-              >
-                {isCreatingDemo ? (
-                  <span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2" />
-                ) : '🧪'}
-                {' '}{t('editor.demoSongButton')}
-              </Button>
             </div>
           )}
         </div>

@@ -546,6 +546,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 오늘 모든 난이도 완료 — 대단해요!',
   remainingMore: '{n} 더 필요해요!',
   remainingFewer: '{n} 덜 필요해요!',
+  dailyActiveStartHint: '데일리 챌린지는 여기서 직접 시작해야 합니다: 슬롯을 누르고 플레이어를 선택한 뒤 노래하세요. 일반 플레이는 위클리 챌린지에 자동으로 반영됩니다.',
+  slotStart: '시작',
+  slotLockedHint: '이 챌린지를 잠금 해제하려면 먼저 슬롯 {n}을(를) 완료하세요.',
+  slotDoneHint: '이 슬롯은 오늘 이미 완료했습니다 — 더 높은 난이도나 다른 슬롯을 시도해 보세요.',
 },
 
 dailyTypes: {

@@ -581,6 +581,10 @@ export const mobileTranslations = {
     filterAll: 'All',
     modeCompleted: 'Completed',
     modeTarget: 'Complete',
+    dailyActiveStartHint: 'Daily challenges must be started here actively: tap a slot, pick players, sing a song. Regular play counts toward the weeklies automatically.',
+    slotStart: 'Start',
+    slotLockedHint: 'Complete slot {n} first to unlock this challenge.',
+    slotDoneHint: 'This slot is already done today — try a higher difficulty or another slot.',
   },
 
   dailyTypes: {

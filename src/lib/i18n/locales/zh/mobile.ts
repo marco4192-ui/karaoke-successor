@@ -547,6 +547,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 今日已完成所有难度 — 令人惊叹！',
   remainingMore: '还差{n}！',
   remainingFewer: '少{n}即可！',
+  dailyActiveStartHint: '每日挑战需要在这里主动开始：点击一个槽位、选择玩家、演唱歌曲。正常演唱会自动计入每周挑战。',
+  slotStart: '开始',
+  slotLockedHint: '请先完成槽位 {n} 才能解锁此挑战。',
+  slotDoneHint: '这个槽位今天已完成 — 试试更高难度或其他槽位。',
 },
 
 dailyTypes: {

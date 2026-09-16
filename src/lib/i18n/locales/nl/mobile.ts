@@ -547,6 +547,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Alle moeilijkheidsgraden vandaag voltooid — indrukwekkend!',
   remainingMore: 'Nog {n} te gaan!',
   remainingFewer: '{n} minder nodig!',
+  dailyActiveStartHint: 'Dagelijkse uitdagingen start je hier actief: tik op een slot, kies spelers en zing een nummer. Gewoon zingen telt automatisch voor de wekelijkse uitdagingen.',
+  slotStart: 'Starten',
+  slotLockedHint: 'Voltooi eerst slot {n} om deze uitdaging te ontgrendelen.',
+  slotDoneHint: 'Dit slot is vandaag al voltooid — probeer een hogere moeilijkheidsgraad of een ander slot.',
 },
 
 dailyTypes: {

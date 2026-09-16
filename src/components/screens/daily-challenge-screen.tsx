@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { StorageKeys, setJson, setItem, getItem } from '@/lib/storage';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -94,8 +95,48 @@ function typeName(def: DailyTypeDefinition | WeeklyTypeDefinition, t: (key: stri
 // ===================== DAILY CHALLENGE SCREEN =====================
 export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song, _options?: { gameMode?: GameMode; playerIds?: string[] }) => void }) {
   const { t, language } = useTranslation();
+  const { toast } = useToast();
   const { profiles, activeProfileId, setActiveProfile, addPlayer, setPlayers } = useGameStore();
   const [activeTab, setActiveTab] = useState<'challenge' | 'weekly' | 'modes' | 'leaderboard' | 'badges'>('challenge');
+
+  // ── Slot activation UX: clicking a slot card selects it, scrolls the play
+  //    area into view and briefly highlights it so the action is visible. ──
+  const playAreaRef = useRef<HTMLDivElement>(null);
+  const [playAreaHighlighted, setPlayAreaHighlighted] = useState(false);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Which daily slot is targeted for play (defaults to the active slot)
+  const [selectedSlot, setSelectedSlot] = useState<number>(0);
+
+  /** Select a daily slot and guide the user to the play area (players + songs). */
+  const activateSlot = useCallback((slot: number, unlocked: boolean, completed: boolean) => {
+    if (!unlocked) {
+      toast({
+        title: `🔒 ${t('dailyChallengeScreen.slotLocked')}`,
+        description: t('dailyChallengeScreen.slotLockedHint').replace('{n}', String(slot)),
+      });
+      return;
+    }
+    if (completed) {
+      toast({
+        title: `✅ ${t('dailyChallengeScreen.slotDone')}`,
+        description: t('dailyChallengeScreen.slotDoneHint'),
+      });
+      return;
+    }
+    setSelectedSlot(slot);
+    // Scroll the play area into view + brief highlight pulse so the click has a clear effect
+    requestAnimationFrame(() => {
+      playAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setPlayAreaHighlighted(true);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => setPlayAreaHighlighted(false), 2000);
+    });
+  }, [t]);
+
+  // Clean up the highlight timer on unmount
+  useEffect(() => () => {
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+  }, []);
 
   // Player selection for the daily challenge (1–2 players, mandatory)
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(
@@ -127,8 +168,6 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     setItem('karaoke_weekly_difficulty', difficulty);
   };
 
-  // Which daily slot is targeted for play (defaults to the active slot)
-  const [selectedSlot, setSelectedSlot] = useState<number>(0);
   // Song choice regeneration key (shuffle button)
   const [songRefreshKey, setSongRefreshKey] = useState(0);
 
@@ -409,6 +448,13 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       {/* ══ TAB: Daily Challenges (5 slots) ══ */}
       {activeTab === 'challenge' && (
         <div className="space-y-4 mb-6">
+          {/* ── How dailies work: they must be started HERE (unlike the
+              weeklies, which count every song automatically). ── */}
+          <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-xs text-cyan-200/90 flex items-start gap-2" data-testid="daily-start-hint">
+            <span className="text-base leading-none mt-0.5" aria-hidden>ℹ️</span>
+            <span>{t('dailyChallengeScreen.dailyActiveStartHint')}</span>
+          </div>
+
           {/* ── Difficulty selector — independent of the global game difficulty.
               Switching updates targets, descriptions and XP of ALL slots instantly. ── */}
           <Card className="bg-white/5 border-white/10">
@@ -472,13 +518,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               return (
                 <Card
                   key={slotData.slot}
-                  className={`bg-white/5 border-white/10 transition-all cursor-pointer ${
-                    completed ? 'ring-2 ring-green-500 border-green-500/30'
-                    : isPlaySlot ? 'ring-2 ring-cyan-500'
-                    : unlocked ? 'hover:border-cyan-500/50'
-                    : 'opacity-50'
+                  className={`bg-white/5 border-white/10 transition-all ${
+                    completed ? 'ring-2 ring-green-500 border-green-500/30 cursor-pointer'
+                    : isPlaySlot ? 'ring-2 ring-cyan-500 cursor-pointer'
+                    : unlocked ? 'hover:border-cyan-500/50 cursor-pointer hover:bg-white/10'
+                    : 'cursor-not-allowed opacity-50'
                   }`}
-                  onClick={() => unlocked && setSelectedSlot(slotData.slot)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${slotData.slot + 1}. ${typeName(def, t)}`}
+                  data-testid={`daily-slot-card-${slotData.slot}`}
+                  onClick={() => activateSlot(slotData.slot, unlocked, completed)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      activateSlot(slotData.slot, unlocked, completed);
+                    }
+                  }}
                 >
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -517,6 +573,20 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                         </span>
                       )}
                     </div>
+                    {/* Explicit start affordance — jumps to the play area below */}
+                    {unlocked && !completed && (
+                      <Button
+                        size="sm"
+                        className="mt-3 w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-semibold"
+                        data-testid={`daily-slot-start-${slotData.slot}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          activateSlot(slotData.slot, unlocked, completed);
+                        }}
+                      >
+                        ▶ {t('dailyChallengeScreen.slotStart')}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -524,7 +594,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           </div>
 
           {/* ── Play area for the selected slot ── */}
-          <Card className={`bg-white/5 border-white/10 ${completedToday ? 'ring-1 ring-green-500/40' : ''}`}>
+          <div ref={playAreaRef} className="scroll-mt-4" data-testid="daily-play-area">
+          <Card className={`bg-white/5 border-white/10 transition-all duration-700 ${completedToday ? 'ring-1 ring-green-500/40' : ''} ${playAreaHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''}`}>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center justify-between gap-3">
                 <span className="flex items-center gap-2">
@@ -711,6 +782,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
       )}
 

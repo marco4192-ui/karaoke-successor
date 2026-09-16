@@ -547,6 +547,10 @@ dailyChallengeScreen: {
   allDifficultiesDone: '🎉 Alla svårighetsgrader klara idag — imponerande!',
   remainingMore: '{n} kvar att gå!',
   remainingFewer: '{n} färre behövs!',
+  dailyActiveStartHint: 'Dagliga utmaningar måste startas aktivt här: tryck på en lucka, välj spelare och sjung en låt. Vanlig sång räknas automatiskt för veckoutmaningarna.',
+  slotStart: 'Starta',
+  slotLockedHint: 'Klara först lucka {n} för att låsa upp denna utmaning.',
+  slotDoneHint: 'Denna lucka är redan klar idag — testa en svårare nivå eller en annan lucka.',
 },
 
 dailyTypes: {
