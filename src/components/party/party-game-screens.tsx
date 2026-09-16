@@ -510,21 +510,17 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           }}
           onEndGame={() => {
             // User report: leaving a party mode via BACK must TERMINATE it.
-            // Previously only the song/segments were cleared — selectedGameMode
-            // survived, so picking a song in the Library afterwards re-entered
-            // the (supposedly ended) Pass-the-Mic mode. Full reset (force=true
-            // is for exactly this explicit user leave path).
-            const hasSeriesHistory = party.passTheMicSeriesHistory.length > 0;
-            const lastMode = party.selectedGameMode;
+            // Round 2 of this fix: the previous version still called
+            // setGameMode('pass-the-mic') for series with history — but
+            // resetGame() deliberately PRESERVES the game-store gameMode, so
+            // that stale 'pass-the-mic' survived the party reset and every
+            // Library song pick afterwards started a broken "pass-the-mic"
+            // GameScreen (the ended mode re-routed the pick). Back ALWAYS
+            // terminates now: full party reset + game store back to standard.
             party.resetPartyState(true);
-            // Restore just what the navigation decision needs (mode already
-            // captured above; series history length decides the target screen)
-            if (hasSeriesHistory && lastMode) {
-              setGameMode('pass-the-mic');
-              setScreen('library');
-            } else {
-              setScreen('party-setup');
-            }
+            resetGame();
+            setGameMode('standard');
+            setScreen('party-setup');
           }}
           onNavigate={async (targetScreen) => {
             // Handle special PTM next-song navigation
@@ -694,11 +690,22 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onEndGame={() => {
             // TERMINATE the mode (user report): back = full party reset, no
             // lingering selectedGameMode that would re-route Library picks.
+            // resetGame+standard also clears the game-store gameMode that the
+            // start handler set (resetGame alone preserves it by design).
             party.resetPartyState(true);
+            resetGame();
+            setGameMode('standard');
             setScreen('home');
           }}
           onBack={() => {
-            party.setBattleRoyaleGame(null);
+            // Round-setup BACK used to only clear battleRoyaleGame —
+            // selectedGameMode survived, so the party stayed "active"
+            // (Library picks re-routed to party setup, ESC re-opened the
+            // leave dialog). Back here terminates too (user report: back
+            // must end the mode).
+            party.resetPartyState(true);
+            resetGame();
+            setGameMode('standard');
             setScreen('party');
           }}
         />
@@ -717,13 +724,15 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           }}
           onEndGame={() => {
             // TERMINATE the mode (user report): back = full party reset.
-            const hasSeriesHistory = party.cptmSeriesHistory.length > 0;
+            // Round 2: the old hasSeriesHistory branch routed to the Library
+            // WITHOUT clearing the game-store gameMode — cptm-series.ts sets
+            // 'companion-singalong' there, and resetGame() preserves gameMode,
+            // so Library picks afterwards started a broken companion-mode
+            // GameScreen. Terminate unconditionally now.
             party.resetPartyState(true);
-            if (hasSeriesHistory) {
-              setScreen('library');
-            } else {
-              setScreen('party-setup');
-            }
+            resetGame();
+            setGameMode('standard');
+            setScreen('party-setup');
           }}
           onNavigate={async (targetScreen) => {
             // Handle next-song navigation (same pattern as PtM)
@@ -817,7 +826,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // used to leave selectedGameMode='medley' set — the Library then
             // re-routed every song pick back INTO the Medley Contest. The
             // forced reset terminates the whole party context.
+            // Round 2: also clear the GAME-STORE gameMode — resetGame()
+            // preserves it by design, and a stale party mode there re-routes
+            // Library picks into a broken GameScreen after the reset.
             party.resetPartyState(true);
+            resetGame();
+            setGameMode('standard');
             setScreen('home');
           }}
           // Fix 7: "Next Round" regenerates a snippet list with DIFFERENT
@@ -833,8 +847,14 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           modeType='missing-words'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode
+            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
+            // Round 2: resetGame+standard clears the game-store gameMode too
+            // (onPlayMatch sets 'missing-words' there and resetGame preserves
+            // it — stale party modes re-route Library picks into a broken
+            // GameScreen).
             party.resetPartyState(true);
+            resetGame();
+            setGameMode('standard');
             setScreen('home');
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
@@ -901,8 +921,14 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           modeType='blind'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode
+            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
+            // Round 2: resetGame+standard clears the game-store gameMode too
+            // (onPlayMatch sets 'blind' there and resetGame preserves it —
+            // stale party modes re-route Library picks into a broken
+            // GameScreen).
             party.resetPartyState(true);
+            resetGame();
+            setGameMode('standard');
             setScreen('home');
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
@@ -1058,8 +1084,13 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             <RateMySongSeriesResultsScreen
               seriesHistory={party.rateMySongSeriesHistory}
               onEnd={() => {
-                // TERMINATE the mode (user report): full reset incl. selectedGameMode
+                // TERMINATE the mode (user report): full reset incl. selectedGameMode.
+                // Round 2: resetGame+standard also clears the game-store
+                // gameMode ('rate-my-song' — set by the start handler and
+                // preserved by resetGame, re-routing Library picks).
                 party.resetPartyState(true);
+                resetGame();
+                setGameMode('standard');
                 setRateMySongResult(null);
                 setRateMySongSeriesRound(1);
                 setScreen('home');
@@ -1098,8 +1129,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setScreen('party-setup');
             }}
             onEnd={() => {
-              // TERMINATE the mode (user report): full reset incl. selectedGameMode
+              // TERMINATE the mode (user report): full reset incl. selectedGameMode.
+              // Round 2: resetGame+standard also clears the game-store gameMode
+              // ('rate-my-song' — preserved by resetGame, re-routing picks).
               party.resetPartyState(true);
+              resetGame();
+              setGameMode('standard');
               setRateMySongResult(null);
               setRateMySongSeriesRound(1);
               setScreen('home');

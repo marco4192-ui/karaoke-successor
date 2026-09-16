@@ -715,7 +715,18 @@ export default function KaraokeZERO() {
       } catch { /* non-critical */ }
       // Navigate to library screen with the song selected
       // The library screen will show the party setup overlay which auto-starts
-      const currentMode = party.selectedGameMode || useGameStore.getState().gameState.gameMode;
+      // SAFETY NET (same as the inline onSelectSong): a party-only game-store
+      // mode with NO active party (selectedGameMode === null) is stale —
+      // resetGame() preserves gameMode, so it would survive a party reset and
+      // re-route this companion pick into a broken GameScreen. Clamp to standard.
+      const rawRemoteMode = party.selectedGameMode || useGameStore.getState().gameState.gameMode;
+      const REMOTE_PARTY_ONLY_MODES = new Set([
+        'pass-the-mic', 'companion-singalong', 'rate-my-song',
+        'missing-words', 'blind', 'medley', 'battle-royale', 'tournament',
+      ]);
+      const currentMode = !party.selectedGameMode && REMOTE_PARTY_ONLY_MODES.has(rawRemoteMode)
+        ? 'standard'
+        : rawRemoteMode;
       resetGame();
       if (currentMode && currentMode !== 'standard') {
         setGameMode(currentMode);
@@ -1247,7 +1258,24 @@ export default function KaraokeZERO() {
               // (e.g. 'duel' or 'duet') across the resetGame() call.
               // IMPORTANT: Prefer explicitGameMode passed from the caller
               // over the store value to avoid timing/race conditions.
-              const currentMode = explicitGameMode || useGameStore.getState().gameState.gameMode;
+              // SAFETY NET (user report "Mode terminieren", round 2):
+              // resetGame() deliberately PRESERVES the game-store gameMode —
+              // so a party mode set by a start handler ('pass-the-mic',
+              // 'companion-singalong', 'rate-my-song', …) survives even a
+              // party.resetPartyState(true) unless the exit path ALSO called
+              // setGameMode('standard'). With no active party
+              // (selectedGameMode === null) such a mode is ALWAYS stale and
+              // would re-route this Library pick into a broken GameScreen —
+              // clamp it to 'standard'. Legit library modes ('standard',
+              // 'duel', 'duet') pass through unchanged.
+              const rawMode = explicitGameMode || useGameStore.getState().gameState.gameMode;
+              const PARTY_ONLY_MODES = new Set([
+                'pass-the-mic', 'companion-singalong', 'rate-my-song',
+                'missing-words', 'blind', 'medley', 'battle-royale', 'tournament',
+              ]);
+              const currentMode = !party.selectedGameMode && PARTY_ONLY_MODES.has(rawMode)
+                ? 'standard'
+                : rawMode;
 
               // ── Unified party flow: picking a song from the library NEVER
               // starts the game. The song is stored and the user returns to

@@ -36,8 +36,7 @@
  * returned unchanged (previous behaviour, never breaks the working case).
  */
 
-import { StorageKeys, getJsonOptional } from '@/lib/storage';
-import { removeSavedMicConfigEntry } from '@/lib/audio/microphone-manager';
+import { StorageKeys, getItem, setJson, getJsonOptional } from '@/lib/storage';
 
 interface SavedMicEntry {
   id: string;
@@ -119,6 +118,32 @@ function refreshConnectedDeviceIds(force = false): void {
   if (!force && Date.now() - connectedRefreshAttemptAt < CONNECTED_TTL_MS) return;
   connectedRefreshInFlight = true;
   void enumerateAndUpdateConnected();
+}
+
+/**
+ * Best-effort prune of one mic entry from the persisted MULTI_MIC_CONFIG.
+ * Implemented LOCALLY (same storage key + shape as microphone-manager's
+ * saveConfig) — importing the manager here created a circular dependency
+ * (microphone-manager → mic-device-resolver → microphone-manager), which
+ * Turbopack breaks with "Export … doesn't exist in target module".
+ * Pure localStorage surgery; other entries are preserved.
+ */
+function pruneSavedMicConfigEntry(micId: string): boolean {
+  try {
+    const raw = getItem(StorageKeys.MULTI_MIC_CONFIG);
+    if (!raw) return false;
+    const config = JSON.parse(raw) as SavedMicConfig;
+    if (!Array.isArray(config?.assignedMics)) return false;
+    const next = config.assignedMics.filter(mic => mic?.id !== micId);
+    if (next.length === config.assignedMics.length) return false;
+    config.assignedMics = next;
+    setJson(StorageKeys.MULTI_MIC_CONFIG, config);
+    return true;
+  } catch {
+    // Non-critical: the entry stays persisted; we prune again on the next
+    // stale detection.
+    return false;
+  }
 }
 
 /** Keep the connected set fresh across hotplug events (bound once). */
@@ -216,7 +241,7 @@ export function resolveMicDeviceId(
   // new id). Prune the entry so it cannot resurrect, fall back to the
   // default mic and warn ONCE per internal id per session.
   cache.delete(micId);
-  removeSavedMicConfigEntry(micId); // best-effort persisted prune
+  pruneSavedMicConfigEntry(micId); // best-effort persisted prune
   refreshConnectedDeviceIds(true); // re-verify device list for the next call
   if (!warnedStaleMicIds.has(micId)) {
     warnedStaleMicIds.add(micId);

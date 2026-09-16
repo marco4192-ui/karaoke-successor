@@ -289,6 +289,8 @@ export function useMedleyGame({
     snippetScoringMetaRef.current = null;
     // Vibrato filter references the previous snippet's pitch context — reset
     lastVisualSungPitchRef.current = new Map();
+    // Dropout-bridge timestamps are snippet-relative too (absTime restarts)
+    lastVisualValidAtRef.current = new Map();
     // Also clear the per-note performance samples: each snippet has its own
     // notes (keys may repeat across snippets via the `note-{startTime}`
     // fallback), so stale fills/wrong-note marks must not bleed into the
@@ -443,6 +445,23 @@ export function useMedleyGame({
   const lastVisualSungPitchRef = useRef<Map<string, number | null>>(new Map());
   const VIBRATO_THRESHOLD_SEMITONES = 0.5;
 
+  // ROUND 2 (user report: regular gaps in long steady notes): timestamp of
+  // each player's last VALID detection (non-null + above the volume gate).
+  // The multi-pitch pipeline stores every 60 Hz detector frame INCLUDING
+  // note:null dropouts (noise gate / volume gate / no-YIN frames) — unlike
+  // the normal game, whose ~40 fps state sync overwrites single-frame
+  // dropouts before sampling. Bridging dropouts for 150 ms reproduces that
+  // low-pass behaviour: steady tones keep painting hit samples (continuous
+  // fill), real silence (>150 ms) correctly renders miss samples. Also
+  // covers companion players on the 100 ms HTTP polling fallback.
+  const lastVisualValidAtRef = useRef<Map<string, number>>(new Map());
+  const VISUAL_DROPOUT_BRIDGE_MS = 150;
+
+  // Long sustained notes (medley snippets often hold 10s+ tones) need more
+  // than 100 samples at 50 ms cadence — the old cap made the head of every
+  // note >5 s render as empty (= Miss) segments. 400 covers 20 s.
+  const MAX_NOTE_PERF_SAMPLES = 400;
+
   /** Note kind for visual tick evaluation — freestyle/rap ignore pitch. */
   const visualKind = (note: Note): TickNoteKind => {
     if (note.isRap) return 'rap';
@@ -456,25 +475,15 @@ export function useMedleyGame({
     pitch: PitchDetectionResult | null,
     absTime: number,
   ) => {
-    if (!pitch) return;
     // Skip eliminated players
     const player = playersRef.current.find(p => p.id === playerId);
     if (player?.isEliminated) return;
+    if (!currentSnippet) return;
 
     // Use dynamic difficulty for pitch filtering when available
     const effectiveDiff = settings.dynamicDifficulty
       ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
       : settings.difficulty;
-    if (shouldSkipPitch(pitch, effectiveDiff)) return;
-    if (!currentSnippet) return;
-    if (pitch.note == null) return;
-
-    // Get or create per-player tick scoring state
-    let tickState = medleyTickScoringStatesRef.current.get(playerId);
-    if (!tickState) {
-      tickState = createMedleyTickScoringState();
-      medleyTickScoringStatesRef.current.set(playerId, tickState);
-    }
 
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
@@ -485,6 +494,96 @@ export function useMedleyGame({
     const activeNoteForPerf = audio.snippetNotes.find(
       n => absTime >= n.startTime && absTime < n.startTime + n.duration,
     );
+
+    // ── ROUND 2: visual fill samples FIRST, on EVERY call, decoupled from
+    // the scoring gates below. The old order (!pitch / shouldSkipPitch /
+    // pitch.note == null early-returns BEFORE sampling) meant every detector
+    // dropout left a 50 ms HOLE in the note fill — and the renderer paints
+    // empty segments as Miss, so steady tones showed regular “Aussetzer”
+    // (user report). Now: bridge short dropouts (≤150 ms, see
+    // lastVisualValidAtRef) with the last accepted pitch; record explicit
+    // miss samples only for real silence. The POINT evaluation below keeps
+    // its original gating unchanged.
+    if (activeNoteForPerf) {
+      const perfNoteId = activeNoteForPerf.id || `note-${activeNoteForPerf.startTime}`;
+
+      // Resolve the visual pitch: fresh detection if valid, else the held
+      // pitch while inside the bridge window, else null (miss).
+      const pitchIsValid = !!pitch && pitch.note != null && !shouldSkipPitch(pitch, effectiveDiff);
+      let sungPitch: number | null;
+      if (pitchIsValid && pitch?.note != null) {
+        sungPitch = pitch.note;
+        // Vibrato snap per player (see lastVisualSungPitchRef above)
+        const lastAccepted = lastVisualSungPitchRef.current.get(playerId) ?? null;
+        if (lastAccepted !== null) {
+          let wrapped = Math.abs(pitch.note - lastAccepted) % 12;
+          if (wrapped > 6) wrapped = 12 - wrapped;
+          if (wrapped < VIBRATO_THRESHOLD_SEMITONES) {
+            sungPitch = lastAccepted;
+          } else {
+            lastVisualSungPitchRef.current.set(playerId, pitch.note);
+          }
+        } else {
+          lastVisualSungPitchRef.current.set(playerId, pitch.note);
+        }
+        lastVisualValidAtRef.current.set(playerId, absTime);
+      } else {
+        const lastValidAt = lastVisualValidAtRef.current.get(playerId) ?? -Infinity;
+        const held = lastVisualSungPitchRef.current.get(playerId) ?? null;
+        sungPitch = held !== null && absTime - lastValidAt <= VISUAL_DROPOUT_BRIDGE_MS
+          ? held
+          : null;
+      }
+
+      // Evaluate — freestyle/rap notes ignore pitch, null records a miss
+      // (same semantics as the normal game's sampleVisualTicks).
+      let accuracy = 0;
+      let isHit = false;
+      if (sungPitch !== null) {
+        const visualTick = evaluateTick(sungPitch, activeNoteForPerf.pitch, effectiveDiff, visualKind(activeNoteForPerf));
+        accuracy = visualTick.accuracy;
+        isHit = visualTick.isHit;
+      }
+
+      let perfSamples = notePerformanceRef.current.get(perfNoteId);
+      if (!perfSamples) {
+        perfSamples = [];
+        notePerformanceRef.current.set(perfNoteId, perfSamples);
+      }
+      perfSamples.push({ time: absTime, accuracy, hit: isHit, sungPitch, playerColor: p.color });
+      if (perfSamples.length > MAX_NOTE_PERF_SAMPLES) {
+        notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-MAX_NOTE_PERF_SAMPLES));
+      }
+
+      // Multi-player strips (Fix 6): the same sample, bucketed into the
+      // singer's own map so their strip renders hits/misses in their color.
+      let playerPerfMap = notePerformanceByPlayerRef.current.get(playerId);
+      if (!playerPerfMap) {
+        playerPerfMap = new Map();
+        notePerformanceByPlayerRef.current.set(playerId, playerPerfMap);
+      }
+      let playerSamples = playerPerfMap.get(perfNoteId);
+      if (!playerSamples) {
+        playerSamples = [];
+        playerPerfMap.set(perfNoteId, playerSamples);
+      }
+      playerSamples.push({ time: absTime, accuracy, hit: isHit, sungPitch, playerColor: p.color });
+      if (playerSamples.length > MAX_NOTE_PERF_SAMPLES) {
+        playerPerfMap.set(perfNoteId, playerSamples.slice(-MAX_NOTE_PERF_SAMPLES));
+      }
+    }
+
+    // ── Scoring gates (POINTS only — the visual samples above already ran) ──
+    if (!pitch) return;
+    if (shouldSkipPitch(pitch, effectiveDiff)) return;
+    if (pitch.note == null) return;
+
+    // Get or create per-player tick scoring state
+    let tickState = medleyTickScoringStatesRef.current.get(playerId);
+    if (!tickState) {
+      tickState = createMedleyTickScoringState();
+      medleyTickScoringStatesRef.current.set(playerId, tickState);
+    }
 
     // Lazy-compute scoring metadata for this snippet (only once per snippet
     // change) — MUST happen before the point evaluation below so the first
@@ -512,60 +611,6 @@ export function useMedleyGame({
     const result = evaluateMedleyTick(
       pitch.note, absTime, audio.snippetNotes, effectiveDiff, beatDuration, tickState, snippetScoringMetaRef.current,
     );
-
-    // ── Visual fill samples (high-rate, NO scoring side effects).
-    // Recorded for EVERY call (~50ms loop cadence) so the note fill stays
-    // continuous, exactly like use-note-scoring's sampleVisualTicks in the
-    // normal game. Beat-throttled ticks evaluate directly via evaluateTick
-    // instead of reusing the (Miss-looking) throttled point result — that
-    // mismatch was the source of the regular gaps in long notes.
-    if (activeNoteForPerf) {
-      const perfNoteId = activeNoteForPerf.id || `note-${activeNoteForPerf.startTime}`;
-
-      // Vibrato snap per player (see lastVisualSungPitchRef above)
-      let sungPitch: number | null = pitch.note;
-      const lastAccepted = lastVisualSungPitchRef.current.get(playerId) ?? null;
-      if (lastAccepted !== null) {
-        let wrapped = Math.abs(pitch.note - lastAccepted) % 12;
-        if (wrapped > 6) wrapped = 12 - wrapped;
-        if (wrapped < VIBRATO_THRESHOLD_SEMITONES) {
-          sungPitch = lastAccepted;
-        } else {
-          lastVisualSungPitchRef.current.set(playerId, pitch.note);
-        }
-      } else {
-        lastVisualSungPitchRef.current.set(playerId, pitch.note);
-      }
-
-      const visualTick = evaluateTick(sungPitch, activeNoteForPerf.pitch, effectiveDiff, visualKind(activeNoteForPerf));
-
-      let perfSamples = notePerformanceRef.current.get(perfNoteId);
-      if (!perfSamples) {
-        perfSamples = [];
-        notePerformanceRef.current.set(perfNoteId, perfSamples);
-      }
-      perfSamples.push({ time: absTime, accuracy: visualTick.accuracy, hit: visualTick.isHit, sungPitch, playerColor: p.color });
-      if (perfSamples.length > 100) {
-        notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
-      }
-
-      // Multi-player strips (Fix 6): the same sample, bucketed into the
-      // singer's own map so their strip renders hits/misses in their color.
-      let playerPerfMap = notePerformanceByPlayerRef.current.get(playerId);
-      if (!playerPerfMap) {
-        playerPerfMap = new Map();
-        notePerformanceByPlayerRef.current.set(playerId, playerPerfMap);
-      }
-      let playerSamples = playerPerfMap.get(perfNoteId);
-      if (!playerSamples) {
-        playerSamples = [];
-        playerPerfMap.set(perfNoteId, playerSamples);
-      }
-      playerSamples.push({ time: absTime, accuracy: visualTick.accuracy, hit: visualTick.isHit, sungPitch, playerColor: p.color });
-      if (playerSamples.length > 100) {
-        playerPerfMap.set(perfNoteId, playerSamples.slice(-100));
-      }
-    }
 
     // ── Throttled tick: points/combo/miss were NOT evaluated — treat as
     // no-op (the visual sample above already covered the display).
@@ -1153,7 +1198,11 @@ export function useMedleyGame({
   // der ersten Note").
   const currentLyricLine = useMemo(() => {
     if (!audio.snippetLyrics.length || !currentSnippet) return null;
-    const absoluteTime = currentSnippet.startTime + currentTimeMs;
+    // ROUND 2: use the EFFECTIVE (possibly repositioned) snippet start — the
+    // same time base as the game loop (effectiveSnippetRef). The original
+    // currentSnippet.startTime made every line switch offset by the
+    // reposition delta when lyrics needed repositioning.
+    const absoluteTime = audio.effectiveStartMs + currentTimeMs;
 
     // 1) Active line (startTime..endTime, endTime = end of the last note)
     const active = audio.snippetLyrics.find(
@@ -1166,7 +1215,7 @@ export function useMedleyGame({
       line => line.startTime > absoluteTime && line.startTime - absoluteTime <= 2000,
     );
     return upcoming ?? null;
-  }, [currentTimeMs, audio.snippetLyrics, currentSnippet]);
+  }, [currentTimeMs, audio.snippetLyrics, currentSnippet, audio.effectiveStartMs]);
 
   // Current matchup (team mode)
   const currentMatchup = isTeam && currentSnippetIdx < matchups.length

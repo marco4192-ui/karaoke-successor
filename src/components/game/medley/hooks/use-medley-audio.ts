@@ -43,6 +43,10 @@ export interface UseMedleyAudioReturn {
   audioError: string | null;
   restoredSong: Song | null;
   mediaReady: boolean;
+  /** Reactive mirror of effectiveSnippetRef.startTime (repositioned snippets
+   *  shift the time base — consumers like currentLyricLine must match the
+   *  game loop's effective start, not the original snippet start). */
+  effectiveStartMs: number;
   snippetNotes: Note[];
   snippetLyrics: LyricLine[];
   // Actions
@@ -91,6 +95,14 @@ export function useMedleyAudio({
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Effective snippet range (may differ from currentSnippet after repositioning)
   const effectiveSnippetRef = useRef<{ startTime: number; endTime: number } | null>(null);
+  // ROUND 2 (user report: lyric lines switch at the wrong time): reactive
+  // mirror of effectiveSnippetRef.startTime. The game loop always derives
+  // time from the EFFECTIVE (repositioned) start, but currentLyricLine used
+  // the ORIGINAL currentSnippet.startTime — for repositioned snippets (no
+  // lyric overlap at generation time) every line switch was offset by the
+  // reposition delta for the whole snippet. Consumers that must match the
+  // loop's time base read this state instead of guessing.
+  const [effectiveStartMs, setEffectiveStartMs] = useState<number>(0);
 
   // ── Ref to track the currently playing media (audio or fallback video)
   // so we can cancel the fallback timer when real media starts.
@@ -295,6 +307,7 @@ export function useMedleyAudio({
           }
         }
         effectiveSnippetRef.current = { startTime: snippetStart, endTime: snippetEnd };
+        setEffectiveStartMs(snippetStart);
 
         // Extract notes within effective snippet range
         const notes: Note[] = [];
@@ -365,6 +378,16 @@ export function useMedleyAudio({
                 console.warn('[Medley] Delayed play after load failed:', e);
               });
               playWhenReadyRef.current = false;
+              // ROUND 2 (user report “Video läuft asynchron”): this delayed
+              // path — NOT the play effect — is the one that actually starts
+              // playback for every snippet after the first (the play effect
+              // bails at !media.paused). It used to skip the background
+              // video sync entirely, so the GameBackground video (remounted
+              // per song, starting at 0:00) ran async until the 1.5s drift
+              // corrector kicked in. Sync it HERE and register the media for
+              // the drift corrector.
+              playingMediaRef.current = audio;
+              syncBackgroundVideo(snippetStart);
             }
           }
         } else if (prepared.videoBackground) {
@@ -407,6 +430,11 @@ export function useMedleyAudio({
                 console.warn('[Medley] Delayed video play after load failed:', e);
               });
               playWhenReadyRef.current = false;
+              // ROUND 2: same as the audio path — register the fallback video
+              // as the playing media (drift-corrector reference) and sync the
+              // VISIBLE background video to the snippet position.
+              playingMediaRef.current = video;
+              syncBackgroundVideo(snippetStart);
             }
           } else {
             setAudioError(t('medley.noAudioAvailable'));
@@ -435,11 +463,17 @@ export function useMedleyAudio({
     if (lastPlayPhaseRef.current === dedupKey) return;
     lastPlayPhaseRef.current = dedupKey;
 
-    // Determine primary media element: audio if ready, else video fallback
+    // Determine primary media element: audio if ready, else video fallback.
+    // ROUND 2: require audio.src — the <audio> element persists across
+    // snippets, so for a video-only song it keeps mediaReady=true from a
+    // PREVIOUS snippet while having NO src. The old check picked the empty
+    // <audio>, its play() failed and playingMediaRef pointed at a dead
+    // element → the drift corrector no-op'd and the background video never
+    // synced for video-as-audio songs.
     const audio = audioRef.current;
     const fallbackVideo = fallbackVideoRef.current;
     const useVideoAsAudio = !audio?.src && fallbackVideo?.src && fallbackVideo?.readyState >= 2;
-    const media = (audio && mediaReadyRef.current) ? audio : (useVideoAsAudio ? fallbackVideo : null);
+    const media = (audio?.src && mediaReadyRef.current) ? audio : (useVideoAsAudio ? fallbackVideo : null);
 
     if (!media) {
       // Neither audio nor video ready — set flag to play when canplay fires
@@ -548,6 +582,7 @@ export function useMedleyAudio({
     audioError,
     restoredSong,
     mediaReady,
+    effectiveStartMs,
     snippetNotes,
     snippetLyrics,
     cancelFallbackTimer,
