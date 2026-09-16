@@ -96,10 +96,15 @@ export function usePtmMedley({
     };
   }, [isMedleyMode, phase, currentSegmentIndex, ptmMedleySnippets]);
 
-  // ── Medley mode: seek to snippet start when segment changes ──
+  // ── Medley mode: on segment change, ensure the persistent media element
+  //    plays this snippet's source, then seek to the snippet start ──
   const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canplayHandlerRef = useRef<{ handler: () => void; media: HTMLMediaElement } | null>(null);
+  // Last snippet whose source was (imperatively) loaded into the persistent
+  // <audio> element — distinguishes real snippet handoffs from mere effect
+  // re-runs (isPlaying toggles) so pause/resume never restarts the media.
+  const lastLoadedSnippetRef = useRef<MedleySnippet | null>(null);
 
   useEffect(() => {
     if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
@@ -120,6 +125,38 @@ export function usePtmMedley({
         }, 200);
         medleyRetryTimerRef.current = retryTimer;
         return;
+      }
+
+      // ── Persistent audio element: load THIS snippet's source deterministically ──
+      // The <audio> element is no longer remounted per snippet (the per-song
+      // key was removed), so React reuses the same DOM element across player
+      // handoffs. When the SNIPPET changes we set src + load() imperatively —
+      // but only when the element is not already on track for this snippet,
+      // and never on mere isPlaying toggles (pause/resume re-run this effect
+      // too and must not restart the media):
+      //   • different url (or nothing usable yet) → src + load() resets
+      //     readyState synchronously, so the canplay-wait below observes the
+      //     NEW resource deterministically instead of racing the async
+      //     attribute-change reload.
+      //   • same url but errored (the error-retry path may re-pick the same
+      //     file) → load() resets the error and re-attempts. The old
+      //     remount-per-song wiring got this reset for free.
+      //   • same url, already loading or ready → no reload: an in-flight load
+      //     is never aborted, and a ready element makes the handoff a gapless
+      //     seek (the countdown preload of snippet 0 at game start stays
+      //     intact too).
+      const isNewSnippet = lastLoadedSnippetRef.current !== currentSnippet;
+      lastLoadedSnippetRef.current = currentSnippet;
+      const snippetAudioEl = audioRef.current;
+      const snippetAudioUrl = currentSnippet.song.audioUrl;
+      if (isNewSnippet && snippetAudioEl && snippetAudioUrl) {
+        const sameUrl = snippetAudioEl.getAttribute('src') === snippetAudioUrl;
+        const onTrack = sameUrl && !snippetAudioEl.error &&
+          (snippetAudioEl.readyState >= 2 || snippetAudioEl.networkState === HTMLMediaElement.NETWORK_LOADING);
+        if (!onTrack) {
+          snippetAudioEl.src = snippetAudioUrl;
+          snippetAudioEl.load();
+        }
       }
 
       const seekAndPlay = () => {

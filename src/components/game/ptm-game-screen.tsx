@@ -110,10 +110,15 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
-      {/* Audio Element */}
+      {/* Audio Element — PERSISTENT across medley snippets (no per-song key!).
+          Keying by song id remounted the element at every PTM player handoff:
+          each new snippet had to load + canplay + seek from scratch before
+          play() could start — the audible handoff stutter. The same element
+          now survives snippet switches; React swaps the src attribute (which
+          restarts the media load per spec) and use-ptm-medley.ts waits for
+          canplay and seeks to the snippet start on the persistent element. */}
       {g.audioSong?.audioUrl && (
         <audio
-          key={g.audioSong.id}
           ref={g.audioRef}
           src={g.audioSong.audioUrl}
           className="hidden"
