@@ -184,6 +184,14 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     ): Promise<boolean> => {
       if (!element) return Promise.resolve(false);
 
+      // False-positive guard: if the element is already playable, canplay has
+      // fired before this listener attached (fast/cached media, or the effect
+      // re-ran after restoredSong changed identity without changing the src).
+      // Resolve immediately instead of waiting 5s for an event that never comes.
+      if (element.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        return Promise.resolve(true);
+      }
+
       return new Promise((resolve) => {
         let settled = false;
         const abortController = new AbortController();
@@ -240,8 +248,17 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         }
       }
 
-      // For streaming-platform videos (YouTube/Dailymotion/Vimeo), just need a small delay for the player iframe/SDK to initialize
-      if (effectiveSongBase.youtubeUrl || effectiveSongBase.dailymotionUrl || effectiveSongBase.vimeoUrl) {
+      // For streaming-platform videos (YouTube/Dailymotion/Vimeo/Rutube/VK/
+      // Bilibili/Niconico), just need a small delay for the player iframe/SDK to initialize
+      if (
+        effectiveSongBase.youtubeUrl ||
+        effectiveSongBase.dailymotionUrl ||
+        effectiveSongBase.vimeoUrl ||
+        effectiveSongBase.rutubeUrl ||
+        effectiveSongBase.vkVideoUrl ||
+        effectiveSongBase.bilibiliUrl ||
+        effectiveSongBase.nicovideoUrl
+      ) {
         anyMedia = true;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -251,9 +268,15 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       // Mark as loaded — proceed regardless of individual media load failures.
       // If a timeout occurred, log the warning but still proceed.
       // The game should not hang because of a single media file failure.
-      if (!anyMedia || !audioReady || !videoReady) {
+      // NOTE: `!anyMedia` (no waitable media at all — e.g. a song whose only
+      // video source is a platform not counted above) is NOT a failure:
+      // nothing was waited for, so resolve silently (debug level only).
+      if (!audioReady || !videoReady) {
         // eslint-disable-next-line no-console
         console.warn('[GameScreen] Media load had failures, proceeding anyway after timeout');
+      } else if (!anyMedia) {
+        // eslint-disable-next-line no-console
+        console.debug('[GameScreen] No waitable media for this song, proceeding immediately');
       }
       setMediaLoaded(true);
     };

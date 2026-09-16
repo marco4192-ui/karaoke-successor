@@ -85,8 +85,10 @@ export class PitchDetectorManager {
       // Creating multiple AudioContexts from the same MediaStream fails in
       // Tauri/WebKit. Instead we create a NEW AnalyserNode from the shared
       // source and let a lightweight "proxy" PitchDetector read from it.
+      // NOTE: This is EXPECTED in normal multi-mic games (e.g. every stereo-split
+      // partner pair resolves to the same deviceId) — debug, not a warning.
       // eslint-disable-next-line no-console
-      console.warn(
+      console.debug(
         `[PitchDetectorManager] Player "${playerId}" shares the same device (key=${JSON.stringify(deviceId ?? undefined)}) as an existing player. Reusing shared AudioContext.`
       );
 

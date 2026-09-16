@@ -587,9 +587,13 @@ export function usePtmGameLogic({
   const startGame = async () => {
     const songToCheck = notesSource || (isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong);
     if (!songToCheck?.lyrics || songToCheck.lyrics.length === 0) {
+      // Lyrics may legitimately not be in memory yet (async IndexedDB load).
+      // Reload first and only warn if the reload ALSO comes up empty —
+      // otherwise this fires on every normal game start.
       // eslint-disable-next-line no-console
-      console.warn('[PTM] No lyrics loaded, attempting reload...');
+      console.debug('[PTM] No lyrics loaded, attempting reload...');
       const fallbackSrc = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
+      let lyricsReloaded = false;
       try {
         const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
         if (!fallbackSrc) return;
@@ -597,8 +601,13 @@ export function usePtmGameLogic({
         if (songWithLyrics?.lyrics?.length) {
           fallbackLyricsRef.current = songWithLyrics.lyrics;
           forceRender();
+          lyricsReloaded = true;
         }
       } catch { /* non-critical */ }
+      if (!lyricsReloaded) {
+        // eslint-disable-next-line no-console
+        console.warn('[PTM] No lyrics available after reload attempt, continuing without lyrics');
+      }
     }
 
     setPhase('countdown');
