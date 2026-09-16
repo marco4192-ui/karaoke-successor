@@ -45,7 +45,8 @@ import {
   RuleHarmonizeJobState,
 } from '@/lib/editor/rule-harmonizer';
 import { GENRES } from '@/lib/constants';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
 export type StudioMode = 'fill' | 'harmonize' | 'rule';
@@ -191,15 +192,144 @@ export function MetadataStudio({
     [mode, scopeSongs],
   );
 
+  /** Session-scoped skip set (user feedback: harmonize must also run WITHOUT
+   *  an assignment — skipped songs keep their pseudo-genre for now). */
+  const [skippedManualIds, setSkippedManualIds] = useState<ReadonlySet<string>>(new Set());
+
   /** Manual review plan (rule mode): songs with pseudo-genres ("AI",
-   *  "Oldies", "A Cappella", "TV"…) that no logical rule can map. */
-  const manualReview = useMemo(
-    () => (mode === 'rule' ? planManualGenreReview(scopeSongs) : []),
-    [mode, scopeSongs],
+   *  "Oldies", "A Cappella", "TV"…) that no logical rule can map — minus the
+   *  session-skipped ones (kept as-is, user feedback point 2). */
+  const manualReview = useMemo(() => {
+    if (mode !== 'rule') return [];
+    return planManualGenreReview(scopeSongs).filter(m => !skippedManualIds.has(m.songId));
+  }, [mode, scopeSongs, skippedManualIds]);
+  /** Songs the user skipped this session (info line + restore link). */
+  const skippedManualCount = useMemo(
+    () => skippedManualIds.size,
+    [skippedManualIds],
   );
   /** user's genre pick per song (songId → main genre) in the correction list. */
   const [manualPicks, setManualPicks] = useState<Record<string, string>>({});
   const [manualApplyProgress, setManualApplyProgress] = useState<{ done: number; total: number } | null>(null);
+
+  /** Full song lookup for the manual-review preview (items only carry
+   *  title/artist/genre — playback needs the media URLs). */
+  const songById = useMemo(() => {
+    const map = new Map<string, Song>();
+    for (const s of songs) map.set(s.id, s);
+    return map;
+  }, [songs]);
+
+  // ── Manual-review audio preview ──
+  // Lets the user LISTEN to a song before picking a main genre (user request:
+  // a title alone doesn't reveal the genre of "Comedy"/"AI"/"Oldies" songs,
+  // and researching each one externally isn't practical).
+  const [manualPreviewId, setManualPreviewId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewStopTimerRef = useRef<number | null>(null);
+  /** Generation counter — invalidates in-flight async previews after stop. */
+  const previewGenRef = useRef(0);
+
+  const stopManualPreview = useCallback(() => {
+    previewGenRef.current++;
+    if (previewStopTimerRef.current !== null) {
+      window.clearTimeout(previewStopTimerRef.current);
+      previewStopTimerRef.current = null;
+    }
+    const audio = previewAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load(); // release media resources
+      previewAudioRef.current = null;
+    }
+    setManualPreviewId(null);
+  }, []);
+
+  /** Play / stop a 30-second preview of a manual-review song. Audio-URL
+   *  first (restored via ensureSongUrls in Tauri), video container fallback
+   *  (mp4/webm audio track plays fine in an <audio> element). */
+  const toggleManualPreview = useCallback(async (songId: string) => {
+    if (manualPreviewId === songId) {
+      stopManualPreview();
+      return; // toggle off
+    }
+    stopManualPreview();
+    const generation = previewGenRef.current;
+    const song = songById.get(songId);
+    if (!song) return;
+
+    let target = song;
+    if (!target.audioUrl) {
+      try { target = await ensureSongUrls(song); } catch { /* keep original */ }
+    }
+    if (generation !== previewGenRef.current) return; // cancelled meanwhile
+
+    const src = target.audioUrl || target.videoUrl || target.videoBackground;
+    if (!src) return;
+
+    const audio = new Audio();
+    audio.volume = 0.5;
+    audio.src = src;
+    previewAudioRef.current = audio;
+
+    const startTime = target.previewStart && target.previewStart > 0
+      ? target.previewStart
+      : target.preview?.startTime
+        ? target.preview.startTime / 1000
+        : 0;
+
+    const startPlay = () => {
+      if (generation !== previewGenRef.current || previewAudioRef.current !== audio) return;
+      try {
+        if (startTime > 0 && Number.isFinite(audio.duration) && audio.duration >= startTime) {
+          audio.currentTime = startTime;
+        }
+      } catch { /* seeking unsupported — play from 0 */ }
+      audio.play().catch(() => {
+        if (previewAudioRef.current === audio) stopManualPreview();
+      });
+    };
+    audio.addEventListener('loadedmetadata', startPlay, { once: true });
+    audio.addEventListener('ended', () => {
+      if (previewAudioRef.current !== audio) return;
+      previewAudioRef.current = null;
+      if (previewStopTimerRef.current !== null) {
+        window.clearTimeout(previewStopTimerRef.current);
+        previewStopTimerRef.current = null;
+      }
+      setManualPreviewId(null);
+    });
+
+    setManualPreviewId(songId);
+
+    // Auto-stop after the preview window (same default as the library preview)
+    const durationSec = target.previewDuration && target.previewDuration > 0
+      ? target.previewDuration
+      : target.preview?.duration
+        ? target.preview.duration / 1000
+        : 30;
+    previewStopTimerRef.current = window.setTimeout(() => stopManualPreview(), durationSec * 1000);
+  }, [manualPreviewId, songById, stopManualPreview]);
+
+  // Release audio resources when the studio unmounts
+  useEffect(() => () => stopManualPreview(), [stopManualPreview]);
+
+  /** Skip one manual-review song (keeps its genre as-is for this session). */
+  const skipManualSong = useCallback((songId: string) => {
+    setSkippedManualIds(prev => {
+      const next = new Set(prev);
+      next.add(songId);
+      return next;
+    });
+    setManualPicks(prev => {
+      if (!(songId in prev)) return prev;
+      const next = { ...prev };
+      delete next[songId];
+      return next;
+    });
+    if (manualPreviewId === songId) stopManualPreview();
+  }, [manualPreviewId, stopManualPreview]);
 
   /** Apply the manual genre corrections (same write path as the rule job:
    *  txt-first when txt is the target, else game-local). */
@@ -622,9 +752,13 @@ export function MetadataStudio({
           {/* ── Manual genre correction list (rule mode) ──
               Songs with pseudo-genres ("AI", "Oldies", "A Cappella", "TV"…)
               that no logical rule can map. The user picks the correct main
-              genre per song from the 23-genre dropdown, then applies. */}
-          {mode === 'rule' && manualReview.length > 0 && (
+              genre per song from the 23-genre dropdown, then applies — or
+              skips them (kept as-is). Rendered as long as there are open
+              items OR skipped ones (so the restore link stays reachable
+              even after "Skip all"). */}
+          {mode === 'rule' && (manualReview.length > 0 || skippedManualCount > 0) && (
             <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="studio-manual-review">
+              {manualReview.length > 0 && (<>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] text-amber-300 font-medium">
                   ✋ {t('editor.manualReviewCount').replace('{count}', String(manualReview.length))}
@@ -633,6 +767,25 @@ export function MetadataStudio({
                   <span className="text-[10px] text-white/40 tabular-nums">
                     {Object.keys(manualPicks).filter(k => manualReview.some(m => m.songId === k)).length}/{manualReview.length}
                   </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={manualReview.length === 0 || manualApplyProgress !== null}
+                    onClick={() => {
+                      stopManualPreview();
+                      setSkippedManualIds(prev => {
+                        const next = new Set(prev);
+                        for (const m of manualReview) next.add(m.songId);
+                        return next;
+                      });
+                      setManualPicks({});
+                    }}
+                    className="h-7 px-3 border-white/20 text-white/70 hover:bg-white/10 hover:text-white text-[11px]"
+                    title={t('editor.manualReviewSkipAllHint')}
+                    data-testid="studio-manual-skip-all"
+                  >
+                    ⏭️ {t('editor.manualReviewSkipAll')}
+                  </Button>
                   <Button
                     size="sm"
                     disabled={manualApplyProgress !== null || Object.values(manualPicks).length === 0}
@@ -647,37 +800,93 @@ export function MetadataStudio({
                 </div>
               </div>
               <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualReviewDesc')}</p>
-              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1" data-testid="studio-manual-review-list">
-                {manualReview.map(item => (
-                  <div
-                    key={item.songId}
-                    className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5"
+              </>)}
+              {skippedManualCount > 0 && (
+                <p className="text-[10px] text-white/35 flex items-center gap-2 flex-wrap" data-testid="studio-manual-skipped-info">
+                  <span>⏭️ {t('editor.manualReviewSkippedInfo').replace('{count}', String(skippedManualCount))}</span>
+                  <button
+                    onClick={() => setSkippedManualIds(new Set())}
+                    className="underline underline-offset-2 hover:text-white/70 text-white/50 transition-colors"
+                    data-testid="studio-manual-restore"
                   >
-                    {/* Title + Artist */}
-                    <div className="flex-1 min-w-[140px] sm:min-w-[200px]">
-                      <p className="text-[11px] text-white/85 font-medium truncate" title={item.title}>{item.title}</p>
-                      <p className="text-[10px] text-white/40 truncate" title={item.artist}>{item.artist}</p>
-                    </div>
-                    {/* Current (pseudo) genre */}
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-amber-200/90 whitespace-nowrap">
-                      {item.currentGenre}
-                    </span>
-                    <span className="text-white/30 text-[10px]">→</span>
-                    {/* Main genre dropdown (23 genres) */}
-                    <select
-                      value={manualPicks[item.songId] ?? ''}
-                      onChange={e => setManualPicks(prev => ({ ...prev, [item.songId]: e.target.value }))}
-                      className="bg-gray-800 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white focus:border-amber-500 focus:outline-none min-w-[110px]"
-                      aria-label={`${t('editor.manualReviewApply')}: ${item.title}`}
-                      data-testid={`studio-manual-select-${item.songId}`}
+                    {t('editor.manualReviewRestore')}
+                  </button>
+                </p>
+              )}
+              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1" data-testid="studio-manual-review-list">
+                {manualReview.map(item => {
+                  const previewSong = songById.get(item.songId);
+                  const hasAudio = !!(previewSong && (
+                    previewSong.audioUrl || previewSong.relativeAudioPath || previewSong.storedMedia
+                    || previewSong.videoUrl || previewSong.videoBackground || previewSong.relativeVideoPath
+                  ));
+                  const isPlaying = manualPreviewId === item.songId;
+                  return (
+                    <div
+                      key={item.songId}
+                      className={`flex flex-wrap sm:flex-nowrap items-center gap-2 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
+                        isPlaying ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
+                      }`}
                     >
-                      <option value="">{t('editor.manualReviewChoose')}</option>
-                      {GENRES.map(g => (
-                        <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+                      {/* Listen-before-you-assign preview (user feedback point 1) */}
+                      <button
+                        onClick={() => void toggleManualPreview(item.songId)}
+                        disabled={!hasAudio}
+                        className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
+                          isPlaying
+                            ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
+                            : hasAudio
+                              ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
+                              : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
+                        }`}
+                        title={!hasAudio
+                          ? t('editor.manualReviewNoAudio')
+                          : isPlaying
+                            ? t('editor.manualReviewStopPreview')
+                            : t('editor.manualReviewPlay')}
+                        aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${item.title}`}
+                        data-testid={`studio-manual-play-${item.songId}`}
+                      >
+                        {isPlaying
+                          ? <Square className="w-3 h-3" />
+                          : <Play className="w-3 h-3 ml-0.5" />}
+                      </button>
+                      {/* Title + Artist */}
+                      <div className="flex-1 min-w-[140px] sm:min-w-[200px]">
+                        <p className="text-[11px] text-white/85 font-medium truncate" title={item.title}>{item.title}</p>
+                        <p className="text-[10px] text-white/40 truncate" title={item.artist}>{item.artist}</p>
+                      </div>
+                      {/* Current (pseudo) genre */}
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-amber-200/90 whitespace-nowrap">
+                        {item.currentGenre}
+                      </span>
+                      <span className="text-white/30 text-[10px]">→</span>
+                      {/* Main genre dropdown (23 genres) */}
+                      <select
+                        value={manualPicks[item.songId] ?? ''}
+                        onChange={e => setManualPicks(prev => ({ ...prev, [item.songId]: e.target.value }))}
+                        className="bg-gray-800 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white focus:border-amber-500 focus:outline-none min-w-[110px]"
+                        aria-label={`${t('editor.manualReviewApply')}: ${item.title}`}
+                        data-testid={`studio-manual-select-${item.songId}`}
+                      >
+                        <option value="">{t('editor.manualReviewChoose')}</option>
+                        {GENRES.map(g => (
+                          <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
+                        ))}
+                      </select>
+                      {/* Skip — keep this song's genre as-is (user feedback point 2) */}
+                      <button
+                        onClick={() => skipManualSong(item.songId)}
+                        className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                        title={t('editor.manualReviewSkip')}
+                        aria-label={`${t('editor.manualReviewSkip')}: ${item.title}`}
+                        data-testid={`studio-manual-skip-${item.songId}`}
+                      >
+                        <SkipForward className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
