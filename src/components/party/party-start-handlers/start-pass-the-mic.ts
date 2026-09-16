@@ -4,6 +4,7 @@ import type { PassTheMicSettings } from '@/components/game/ptm-types';
 import type { GameModeSettingsMap } from '@/components/game/unified-party-setup.types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
+import { generateBalancedPartySegments } from '@/components/game/party-segments';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
@@ -102,7 +103,11 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
     } catch { /* non-critical — game view has its own URL restoration */ }
 
     const playerCount = result.players.length || 2;
-    const segments = generatePassTheMicSegments(songWithUrls, playerCount, s.segmentDuration);
+    // Vocal-share balanced segments: every segment contains the same amount
+    // of singable material (note time) instead of equal wall-clock slices —
+    // instrumental intro/bridge/outro segments previously left players
+    // with almost no chance to score.
+    const segments = generateBalancedPartySegments(songWithUrls, playerCount, s.segmentDuration);
     if (segments.length === 0) {
       toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortRetry'), variant: 'destructive' });
       return;
@@ -154,38 +159,4 @@ function toPassTheMicSettings(
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
-}
-
-// Auto segment duration: 20-60s, at least 2 segments per player, equal segments per player
-function generatePassTheMicSegments(song: Song, playerCount: number, explicitDuration?: number): PassTheMicSegment[] {
-  const MIN_SONG_MS = 60_000; // Exclude songs shorter than 60s
-  if (song.duration < MIN_SONG_MS) return [];
-
-  const MIN_SEG_S = 20;
-  const MAX_SEG_S = 60;
-  const MIN_SEGS_PER_PLAYER = 2;
-
-  const durationMs = song.duration;
-  const rawAuto = Math.ceil(durationMs / (playerCount * MIN_SEGS_PER_PLAYER * 1000));
-  const clampedAuto = Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, rawAuto));
-  const segDur = explicitDuration
-    ? Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, explicitDuration))
-    : clampedAuto;
-  const segDurMs = segDur * 1000;
-
-  // Round up to ensure every player gets the same number of segments
-  const rawCount = Math.ceil(durationMs / segDurMs);
-  const segCount = Math.max(playerCount, rawCount);
-  // Adjust segment duration so all segments fit evenly
-  const adjustedDurMs = durationMs / segCount;
-
-  const segments: PassTheMicSegment[] = [];
-  for (let i = 0; i < segCount; i++) {
-    segments.push({
-      startTime: Math.round(i * adjustedDurMs),
-      endTime: Math.round((i + 1) * adjustedDurMs),
-      playerId: null,
-    });
-  }
-  return segments;
 }

@@ -320,6 +320,11 @@ const GENRE_ALIASES: Record<string, string> = {
   'musicals': 'Musical', 'showtunes': 'Musical', 'broadway': 'Musical',
   'film music': 'Soundtrack', 'movie soundtrack': 'Soundtrack',
   'game soundtrack': 'Soundtrack', 'score': 'Soundtrack', 'filmscore': 'Soundtrack',
+  // TV = TV themes / series tunes → Soundtrack in the widest sense (user
+  // decision: "technisch geht es bei TV um TV Themes und das sind ja
+  // Soundtracks im weitesten Sinn")
+  'tv': 'Soundtrack', 'television': 'Soundtrack', 'tv theme': 'Soundtrack',
+  'tv themes': 'Soundtrack', 'tv-tunes': 'Soundtrack', 'tvtunes': 'Soundtrack',
   'opera': 'Classical', 'operette': 'Classical', 'klassik': 'Classical',
   'klassische musik': 'Classical', 'crossover classical': 'Classical',
 
@@ -378,17 +383,44 @@ const GENRE_ALIASES: Record<string, string> = {
 };
 
 /**
+ * Seasonal easter-egg genres ("Christmas", "Weihnachten", "Xmas", "Noël"…).
+ *
+ * These are PROTECTED from every form of harmonization: the December-only
+ * 🎄 library filter recognizes songs partly via the genre field
+ * (CHRISTMAS_GENRE_PATTERN in src/lib/seasonal.ts). Mapping "Christmas" →
+ * "Pop" would silently remove those songs from the seasonal filter and
+ * thereby break the easter egg (user decision, harmonize feedback round).
+ * The pattern mirrors seasonal.ts so both stay in sync.
+ */
+const SEASONAL_GENRE_PATTERN = /(christmas|x-?mas|weihnacht|no[eë]l|navidad|natale)/i;
+
+/** True when the genre is a seasonal easter-egg genre that must NEVER be
+ *  changed by harmonization (auto alias rules AND manual review list). */
+export function isSeasonalProtectedGenre(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return false;
+  // Only the bare seasonal value is protected — combined values like
+  // "Christmas Pop" are still normal genre data and may be harmonized.
+  return SEASONAL_GENRE_PATTERN.test(normalizeGenreLookupKey(trimmed))
+       && !/[,/]/.test(trimmed);
+}
+
+/**
  * Pseudo-genres that carry NO usable genre information (vocal style, era,
  * source medium, descriptor, AI tag…). They are deliberately NOT auto-mapped:
  * the rule harmonizer surfaces them in the manual correction list instead
  * (user request: "bei solchen Unstimmigkeiten eine Liste auswerfen und eine
  * manuelle Korrektur anbieten").
+ *
+ * Seasonal genres (Christmas…) are NOT in this list — they are protected
+ * entirely (see isSeasonalProtectedGenre) and must not even show up in the
+ * manual correction list, otherwise applying a correction would break the
+ * December easter egg.
  */
 const UNMAPPABLE_GENRE_KEYS = new Set([
   'a cappella', 'acapella', 'ai', 'a.i.', 'oldies', 'female vocals',
-  'male vocals', 'tv', 'television', 'comedy', 'christmas', 'xmas',
-  'holiday', 'indie', 'unknown', 'other', 'misc', 'various',
-  'sonstiges', 'unbekannt', 'n/a', 'none',
+  'male vocals', 'comedy', 'holiday', 'indie', 'unknown', 'other',
+  'misc', 'various', 'sonstiges', 'unbekannt', 'n/a', 'none',
 ]);
 
 /** True when the genre is a known pseudo-genre (vocal style / era / medium)

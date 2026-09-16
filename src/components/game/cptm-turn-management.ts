@@ -153,12 +153,26 @@ export function useCptmTurnManagement(
       return;
     }
 
-    // Build a pool with equal appearances per player, then shuffle
+    // Build a pool with equal appearances per player, then shuffle.
+    //
+    // Fairness: the +1 extras (when segCount % players !== 0) go to a RANDOM
+    // subset of players — previously players[0..remainder-1] (always the
+    // first-listed players) systematically received the extra segment, so
+    // the same players were "up" more often in every single round.
     const baseRepeats = Math.floor(segCount / players.length);
     const remainder = segCount % players.length;
+    const extraFor = new Set<number>();
+    if (remainder > 0) {
+      const indices = players.map((_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      for (let i = 0; i < remainder; i++) extraFor.add(indices[i]);
+    }
     const pool: number[] = [];
     for (let p = 0; p < players.length; p++) {
-      const count = baseRepeats + (p < remainder ? 1 : 0);
+      const count = baseRepeats + (extraFor.has(p) ? 1 : 0);
       for (let r = 0; r < count; r++) pool.push(p);
     }
 

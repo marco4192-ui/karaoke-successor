@@ -347,7 +347,6 @@ export function useCptmGameLogic({
     allNotes,
     segments: initialSegments,
     currentSegmentIndex,
-    bpm: notesSource?.bpm ?? null,
     forceRender,
   });
 

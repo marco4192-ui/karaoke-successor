@@ -55,14 +55,14 @@ interface UsePtmScoringOptions {
   currentSegmentIndex: number;
   /** All notes (from usePtmNoteData) — used to find segment notes */
   allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  /** BPM for beat duration calculation */
-  bpm: number | null;
   playersRef: React.RefObject<PtmPlayer[]>;
   forceRender: () => void;
 }
 
 /**
  * Extract notes that fall within a time range from a flat notes array.
+ * Durations are CLIPPED to the segment so notes spanning a boundary
+ * contribute their exact share to each segment's point pool.
  */
 function getNotesInRange(
   allNotes: Array<{ startTime: number; duration: number }>,
@@ -74,7 +74,11 @@ function getNotesInRange(
     const noteEnd = note.startTime + note.duration;
     // Note overlaps with segment if it starts before segment end AND ends after segment start
     if (note.startTime < endTime && noteEnd > startTime) {
-      result.push({ duration: note.duration, isGolden: (note as Note).isGolden ?? false });
+      const clippedDuration = Math.min(noteEnd, endTime) - Math.max(note.startTime, startTime);
+      result.push({
+        duration: Math.max(1, clippedDuration),
+        isGolden: (note as Note).isGolden ?? false,
+      });
     }
   }
   return result;
@@ -91,11 +95,22 @@ export function usePtmScoring({
   segments,
   currentSegmentIndex,
   allNotes,
-  bpm,
   playersRef,
   forceRender,
 }: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
+
+  // ── Scoring dead-zone fix (medley snippets) ──
+  // Each medley snippet is a DIFFERENT file: when the segment switches, the
+  // media seeks to the snippet position and the song clock JUMPS — often
+  // BACKWARDS. The stale lastEvalTimeRef then throttled every evaluation
+  // ("time - lastEval < 250ms" with time far behind lastEval) until the new
+  // snippet's clock caught up with the old one — entire snippets scored
+  // NOTHING while the player was singing. Reset on segment change and on
+  // any backwards clock jump so the first evaluation is immediate.
+  useEffect(() => {
+    lastEvalTimeRef.current = 0;
+  }, [currentSegmentIndex]);
 
   // Read currentTime from a ref inside the callback to avoid recreating
   // the RAF loop ~40 times/sec (currentTime changes every frame).
@@ -104,14 +119,21 @@ export function usePtmScoring({
 
   // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
   // This ensures each player can earn up to 2,000 points across THEIR ticks.
+  //
+  // Party tick grid: evaluations run on a FIXED 250 ms grid
+  // (SCORING_THROTTLE_MS), so the point pool is normalized over the same
+  // grid. The previous BPM-beat normalization made the earnable maximum
+  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of the
+  // 2,000 points (8 evals/s vs 16 beat-ticks/s), at 60 BPM it paid all of
+  // them. In medley mode (one song per snippet, different tempos) that gave
+  // players on fast songs systematically fewer points for identical singing.
   const scoringMeta = useMemo((): ScoringMetadata | null => {
     const segment = segments[currentSegmentIndex];
     if (!segment || allNotes.length === 0) return null;
     const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
     if (segmentNotes.length === 0) return null;
-    const beatDuration = bpm ? 15000 / bpm : 500;
-    return calculateScoringMetadata(segmentNotes, beatDuration, 'medium', PTM_MAX_POINTS);
-  }, [segments, currentSegmentIndex, allNotes, bpm]);
+    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', PTM_MAX_POINTS);
+  }, [segments, currentSegmentIndex, allNotes]);
 
   // ── Visual note performance map (mutated in place; consumed fresh by
   // NoteHighway on every currentTime-driven render — same pattern as
@@ -201,6 +223,9 @@ export function usePtmScoring({
     const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
 
+    // Backwards clock jump (media seek / snippet replacement) — reset so
+    // the throttle never blocks the new snippet (see comment above).
+    if (time < lastEvalTimeRef.current) lastEvalTimeRef.current = 0;
     if (time - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
     lastEvalTimeRef.current = time;
 

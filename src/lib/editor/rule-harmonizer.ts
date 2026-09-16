@@ -17,7 +17,7 @@
  */
 
 import { Song } from '@/types/game';
-import { canonicalizeGenre, isUnmappableGenre } from '@/lib/parsers/meta-normalizer';
+import { canonicalizeGenre, isUnmappableGenre, isSeasonalProtectedGenre } from '@/lib/parsers/meta-normalizer';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { updateSong } from '@/lib/game/song-library';
 
@@ -59,6 +59,9 @@ export function planRuleHarmonization(songs: Song[]): RuleHarmonizeItem[] {
   const items: RuleHarmonizeItem[] = [];
   for (const s of songs) {
     if (!s.genre) continue;
+    // Seasonal easter-egg genres ("Christmas", "Weihnachten"…) are never
+    // auto-mapped — the December-only 🎄 filter relies on the genre value.
+    if (isSeasonalProtectedGenre(s.genre)) continue;
     const canonical = canonicalizeGenre(s.genre);
     if (canonical && canonical !== s.genre) {
       items.push({
@@ -83,6 +86,10 @@ export function planManualGenreReview(songs: Song[]): ManualGenreReviewItem[] {
   const items: ManualGenreReviewItem[] = [];
   for (const s of songs) {
     if (!s.genre) continue;
+    // Seasonal easter-egg genres are excluded here too: a manual correction
+    // (e.g. "Christmas" → "Pop") would remove the song from the December
+    // 🎄 filter and thereby break the easter egg. They are intentional.
+    if (isSeasonalProtectedGenre(s.genre)) continue;
     if (isUnmappableGenre(s.genre)) {
       items.push({
         songId: s.id,

@@ -33,7 +33,9 @@ const MAX_VISUAL_SAMPLES_PER_NOTE = 80;
 
 // ===================== HELPERS =====================
 
-/** Extract notes overlapping a time range from a flat notes array. */
+/** Extract notes overlapping a time range from a flat notes array.
+ *  Durations are CLIPPED to the segment so notes spanning a boundary
+ *  contribute their exact share to each segment's point pool. */
 function getNotesInRange(
   allNotes: Array<{ startTime: number; duration: number }>,
   startTime: number,
@@ -43,7 +45,11 @@ function getNotesInRange(
   for (const note of allNotes) {
     const noteEnd = note.startTime + note.duration;
     if (note.startTime < endTime && noteEnd > startTime) {
-      result.push({ duration: note.duration, isGolden: (note as Note).isGolden ?? false });
+      const clippedDuration = Math.min(noteEnd, endTime) - Math.max(note.startTime, startTime);
+      result.push({
+        duration: Math.max(1, clippedDuration),
+        isGolden: (note as Note).isGolden ?? false,
+      });
     }
   }
   return result;
@@ -66,8 +72,6 @@ export interface CptmScoringParams {
   segments: CptmSegment[];
   /** Current segment index */
   currentSegmentIndex: number;
-  /** BPM for beat duration */
-  bpm: number | null;
   forceRender: () => void;
 }
 
@@ -97,11 +101,17 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
     allNotes,
     segments,
     currentSegmentIndex,
-    bpm,
     forceRender,
   } = params;
 
   const lastEvalTimeRef = useRef(0);
+
+  // Reset the eval throttle on segment changes so the first evaluation of
+  // every segment is immediate (fairness: no player loses scoring time at
+  // their segment start; matches the PTM scoring hook).
+  useEffect(() => {
+    lastEvalTimeRef.current = 0;
+  }, [currentSegmentIndex]);
 
   // ── Visual note performance map (mutated in place; consumed fresh by
   // NoteHighway on every currentTime-driven render) ──
@@ -162,14 +172,21 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
   currentTimeRef.current = currentTime;
 
   // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
+  //
+  // Party tick grid: evaluations run on a FIXED 250 ms grid
+  // (SCORING_THROTTLE_MS), so the point pool is normalized over the same
+  // grid. The previous BPM-beat normalization made the earnable maximum
+  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of the
+  // 2,000 points (8 evals/s vs 16 beat-ticks/s). Every segment now pays
+  // the full 2,000 points for perfect singing, independent of tempo and
+  // note density (fairness between players).
   const scoringMeta = useMemo((): ScoringMetadata | null => {
     const segment = segments[currentSegmentIndex];
     if (!segment || allNotes.length === 0) return null;
     const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
     if (segmentNotes.length === 0) return null;
-    const beatDuration = bpm ? 15000 / bpm : 500;
-    return calculateScoringMetadata(segmentNotes, beatDuration, 'medium', CPTM_MAX_POINTS);
-  }, [segments, currentSegmentIndex, allNotes, bpm]);
+    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', CPTM_MAX_POINTS);
+  }, [segments, currentSegmentIndex, allNotes]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
@@ -199,6 +216,9 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
     const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
 
+    // Backwards clock jump (media seek) — reset so the throttle never
+    // blocks evaluation after the jump.
+    if (time < lastEvalTimeRef.current) lastEvalTimeRef.current = 0;
     if (time - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
     lastEvalTimeRef.current = time;
 

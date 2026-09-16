@@ -316,7 +316,6 @@ export function usePtmGameLogic({
     segments: initialSegments,
     currentSegmentIndex,
     allNotes,
-    bpm: notesSource?.bpm ?? null,
     playersRef,
     forceRender,
   });
@@ -508,7 +507,25 @@ export function usePtmGameLogic({
     const interval = setInterval(() => {
       if (Math.random() < 0.003) {
         const currentIndex = currentPlayerIndexRef.current;
-        const next = (currentIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
+        // Fairness: hand the surprise segment to the player with the FEWEST
+        // completed segments so far (ties → random) instead of a uniformly
+        // random player — random targets stacked extra turns on the same
+        // players, skewing both singing time and point chances.
+        const roster = playersRef.current;
+        let candidates: number[] = [];
+        let minSung = Infinity;
+        for (let i = 0; i < roster.length; i++) {
+          if (i === currentIndex) continue;
+          const sung = roster[i].segmentsSung;
+          if (sung < minSung) {
+            minSung = sung;
+            candidates = [i];
+          } else if (sung === minSung) {
+            candidates.push(i);
+          }
+        }
+        if (candidates.length === 0) return;
+        const next = candidates[Math.floor(Math.random() * candidates.length)];
         playersRef.current[currentIndex].segmentsSung++;
         setCurrentPlayerIndex(next);
         showTransitionText(next);
