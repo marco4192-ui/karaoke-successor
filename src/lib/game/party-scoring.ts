@@ -16,6 +16,21 @@ import {
   ScoringMetadata,
 } from './scoring';
 
+// ===================== SCORING BUDGET =====================
+
+/**
+ * Max points ONE player can earn across the WHOLE song in party modes
+ * (PTM + CPTM) — NOT per segment.
+ *
+ * Fairness rule: a player who happens to sing an extra segment (when the
+ * segment count doesn't divide evenly) must not gain extra earning
+ * potential. The per-song budget is split evenly over the segments
+ * assigned to that player — 3 segments ⇒ ~667 per segment, 2 segments ⇒
+ * 1,000 per segment. Everyone tops out at exactly 2,000 for the song,
+ * so victory is decided by HOW WELL you sing, never by HOW OFTEN.
+ */
+export const PARTY_MAX_POINTS_PER_PLAYER = 2000;
+
 // ===================== TYPES =====================
 
 /** Minimal pitch input expected by the scoring functions. */

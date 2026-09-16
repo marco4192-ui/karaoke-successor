@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Song, Note, LyricLine, Difficulty } from '@/types/game';
-import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
+import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
 import type { CptmPlayer, CptmSegment } from './cptm-types';
 import type { CompanionPitchEntry } from './cptm-companion-polling';
@@ -11,9 +11,6 @@ import type { CompanionPitchEntry } from './cptm-companion-polling';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
-
-/** Max points per player in CPTM mode */
-const CPTM_MAX_POINTS = 2000;
 
 // ── Visual note performance samples (note-hit display) ─────────────
 export interface CptmVisualSample {
@@ -81,9 +78,13 @@ export interface CptmScoringParams {
  * Runs a scoring RAF loop that evaluates the current player's pitch
  * (from the companion pitch cache) against active notes.
  *
- * CPTM scoring: each player can earn max 2,000 points, distributed across
- * the ticks in THEIR segments. The scoring metadata (pointsPerTick) is
- * computed from the notes within the current segment only.
+ * CPTM scoring: 2,000 points is the TOTAL budget each player can earn for
+ * the WHOLE song — split evenly over the segments assigned to them (a
+ * player with 3 segments earns max ~667 per segment, one with 2 segments
+ * max 1,000 — everyone tops out at exactly 2,000, so an extra segment
+ * never means extra earning potential). The scoring metadata
+ * (pointsPerTick) is computed from the notes within the current segment
+ * only, scaled to that player's per-segment share of the budget.
  *
  * Also produces a visual notePerformance map (hit/miss samples per note)
  * so the NoteHighway renders the Singstar-style fill and Aussetzer gaps.
@@ -171,22 +172,45 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
-  // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
+  // ── Per-player song budget ──
+  // 2,000 points is the TOTAL each player can earn for the whole song
+  // (NOT per segment): the budget is split evenly over the segments
+  // assigned to the CURRENT player. A player with an extra segment thus
+  // earns smaller per-segment points — everyone tops out at 2,000, so an
+  // extra segment never decides the winner (fairness fix: the previous
+  // per-segment 2,000 gave extra-segment players up to 2,000 more
+  // potential than everyone else).
+  const playerSegmentCount = useMemo(() => {
+    const player = playersRef.current[currentPlayerIndex];
+    if (!player) return 1;
+    let count = segments.filter(s => s.playerId === player.id).length;
+    // Defensive takeover guard (CPTM is deterministic, but if the current
+    // segment ever belongs to another player, it counts as an EXTRA
+    // partial segment for the current singer — same rule as PTM).
+    const seg = segments[currentSegmentIndex];
+    if (seg && seg.playerId !== player.id) count += 1;
+    return Math.max(1, count);
+  }, [segments, currentSegmentIndex, currentPlayerIndex, playersRef]);
+
+  const segmentMaxPoints = PARTY_MAX_POINTS_PER_PLAYER / playerSegmentCount;
+
+  // Compute scoring metadata from the CURRENT PLAYER's segment notes only,
+  // scaled to their per-segment share of the 2,000-point song budget.
   //
   // Party tick grid: evaluations run on a FIXED 250 ms grid
   // (SCORING_THROTTLE_MS), so the point pool is normalized over the same
   // grid. The previous BPM-beat normalization made the earnable maximum
-  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of the
-  // 2,000 points (8 evals/s vs 16 beat-ticks/s). Every segment now pays
-  // the full 2,000 points for perfect singing, independent of tempo and
-  // note density (fairness between players).
+  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of its
+  // budget (8 evals/s vs 16 beat-ticks/s). Every segment now pays its full
+  // budget share for perfect singing, independent of tempo and note
+  // density (fairness between players).
   const scoringMeta = useMemo((): ScoringMetadata | null => {
     const segment = segments[currentSegmentIndex];
     if (!segment || allNotes.length === 0) return null;
     const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
     if (segmentNotes.length === 0) return null;
-    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', CPTM_MAX_POINTS);
-  }, [segments, currentSegmentIndex, allNotes]);
+    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', segmentMaxPoints);
+  }, [segments, currentSegmentIndex, allNotes, segmentMaxPoints]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;

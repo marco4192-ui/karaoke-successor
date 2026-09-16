@@ -2,23 +2,24 @@
  * Sub-hook: scoring RAF loop for Pass-the-Mic mode.
  * Evaluates pitch accuracy on each animation frame and updates player scores.
  *
- * PTM scoring: each player can earn max 2,000 points, distributed across
- * the ticks in THEIR segments. The scoring metadata (pointsPerTick) is
- * computed from the notes within the current segment only.
+ * PTM scoring: 2,000 points is the TOTAL budget each player can earn for
+ * the WHOLE song — split evenly over the segments assigned to them. A
+ * player singing 3 segments earns max ~667 per segment, a player singing
+ * 2 segments max 1,000 — everyone tops out at exactly 2,000, so an extra
+ * segment never means extra earning potential. The scoring metadata
+ * (pointsPerTick) is computed from the notes within the current segment
+ * only, scaled to that player's per-segment share of the budget.
  */
 'use client';
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Song, PitchDetectionResult, Difficulty, Note, LyricLine } from '@/types/game';
 import type { PtmPlayer, PtmSegment } from './ptm-types';
-import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
+import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 export const SCORING_THROTTLE_MS = 250;
-
-/** Max points per player in PTM mode */
-const PTM_MAX_POINTS = 2000;
 
 // ── Visual note performance samples (note-hit display) ──────────────
 // Same shape as the standard game's notePerformance map: per-note
@@ -117,23 +118,45 @@ export function usePtmScoring({
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
-  // Compute scoring metadata from the CURRENT PLAYER's segment notes only.
-  // This ensures each player can earn up to 2,000 points across THEIR ticks.
+  // ── Per-player song budget ──
+  // 2,000 points is the TOTAL each player can earn for the whole song
+  // (NOT per segment): the budget is split evenly over the segments
+  // assigned to the CURRENT player. A player with an extra segment thus
+  // earns smaller per-segment points — everyone tops out at 2,000, so an
+  // extra segment never decides the winner (fairness fix: the previous
+  // per-segment 2,000 gave extra-segment players up to 2,000 more
+  // potential than everyone else).
+  const playerSegmentCount = useMemo(() => {
+    const player = playersRef.current?.[currentPlayerIndex];
+    if (!player) return 1;
+    let count = segments.filter(s => s.playerId === player.id).length;
+    // Random-switch takeover: the current segment belongs to another
+    // player — it is an EXTRA (partial) segment for the current singer,
+    // so it shrinks their per-segment budget instead of adding potential.
+    const seg = segments[currentSegmentIndex];
+    if (seg && seg.playerId !== player.id) count += 1;
+    return Math.max(1, count);
+  }, [segments, currentSegmentIndex, currentPlayerIndex, playersRef]);
+
+  const segmentMaxPoints = PARTY_MAX_POINTS_PER_PLAYER / playerSegmentCount;
+
+  // Compute scoring metadata from the CURRENT PLAYER's segment notes only,
+  // scaled to their per-segment share of the 2,000-point song budget.
   //
   // Party tick grid: evaluations run on a FIXED 250 ms grid
   // (SCORING_THROTTLE_MS), so the point pool is normalized over the same
   // grid. The previous BPM-beat normalization made the earnable maximum
-  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of the
-  // 2,000 points (8 evals/s vs 16 beat-ticks/s), at 60 BPM it paid all of
-  // them. In medley mode (one song per snippet, different tempos) that gave
+  // tempo-dependent — at 120 BPM a perfect segment only paid ~half of its
+  // budget (8 evals/s vs 16 beat-ticks/s), at 60 BPM it paid all of it.
+  // In medley mode (one song per snippet, different tempos) that gave
   // players on fast songs systematically fewer points for identical singing.
   const scoringMeta = useMemo((): ScoringMetadata | null => {
     const segment = segments[currentSegmentIndex];
     if (!segment || allNotes.length === 0) return null;
     const segmentNotes = getNotesInRange(allNotes, segment.startTime, segment.endTime);
     if (segmentNotes.length === 0) return null;
-    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', PTM_MAX_POINTS);
-  }, [segments, currentSegmentIndex, allNotes]);
+    return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', segmentMaxPoints);
+  }, [segments, currentSegmentIndex, allNotes, segmentMaxPoints]);
 
   // ── Visual note performance map (mutated in place; consumed fresh by
   // NoteHighway on every currentTime-driven render — same pattern as

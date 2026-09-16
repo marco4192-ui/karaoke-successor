@@ -2,6 +2,7 @@
 
 import type { PtmPlayer } from '@/components/game/ptm-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 
 interface PtmHudPlayerScoreProps {
   players: PtmPlayer[];
@@ -12,11 +13,17 @@ interface PtmHudPlayerScoreProps {
  * Top-center "Now Singing" card + team score chip (Pattern C).
  * Glassmorphism panel with a player-color glow so it stays readable over
  * any background; the active player's color frames the avatar.
+ *
+ * The live score is shown against the player's 2,000-point SONG budget
+ * (fairness: everyone tops out at 2,000 no matter how many segments they
+ * sing) with a slim progress bar toward that budget.
  */
 export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreProps) {
   const { t } = useTranslation();
   const teamScore = players.reduce((sum, p) => sum + p.score, 0);
   const accent = currentPlayer?.color ?? '#22d3ee';
+  const score = currentPlayer?.score ?? 0;
+  const budgetPct = Math.max(0, Math.min(100, (score / PARTY_MAX_POINTS_PER_PLAYER) * 100));
 
   return (
     <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-start gap-2 pt-2">
@@ -52,8 +59,23 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
             <div className="text-base font-bold truncate" style={{ color: accent }}>
               {currentPlayer?.name ?? ''}
             </div>
-            <div className="text-2xl font-bold text-cyan-300 mt-0.5" style={{ textShadow: '0 0 12px rgba(34,211,238,0.5)' }}>
-              {(currentPlayer?.score ?? 0).toLocaleString()}
+            <div className="text-2xl font-bold text-cyan-300 mt-0.5 leading-none" style={{ textShadow: '0 0 12px rgba(34,211,238,0.5)' }}>
+              {score.toLocaleString()}
+              <span className="text-sm font-semibold text-white/40"> / {PARTY_MAX_POINTS_PER_PLAYER.toLocaleString()}</span>
+            </div>
+            {/* Budget progress — fills toward the player's 2,000-point song maximum */}
+            <div
+              className="h-1.5 rounded-full mt-1.5 bg-white/15 overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={PARTY_MAX_POINTS_PER_PLAYER}
+              aria-valuenow={Math.min(PARTY_MAX_POINTS_PER_PLAYER, Math.round(score))}
+              aria-label={t('passTheMic.nowSinging')}
+            >
+              <div
+                className="h-full rounded-full transition-[width] duration-300 ease-out"
+                style={{ width: `${budgetPct}%`, backgroundColor: accent, boxShadow: `0 0 6px ${accent}90` }}
+              />
             </div>
           </div>
         </div>

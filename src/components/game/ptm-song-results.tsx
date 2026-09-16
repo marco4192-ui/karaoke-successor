@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useRecordPartySession } from '@/hooks/use-record-party-session';
+import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 // ===================== TYPES =====================
@@ -149,8 +150,9 @@ export function PtmSongResults({
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-xl font-bold text-cyan-400">
+                  <div className="text-xl font-bold text-cyan-400 tabular-nums">
                     {player.score.toLocaleString()}
+                    <span className="text-xs font-semibold text-white/30"> / {PARTY_MAX_POINTS_PER_PLAYER.toLocaleString()}</span>
                   </div>
                   <div className="text-xs text-white/40">
                     {t('passTheMic.cumulative').replace('{n}', cumScore.toLocaleString())}

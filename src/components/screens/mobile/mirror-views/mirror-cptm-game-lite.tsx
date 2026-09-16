@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 
 // ===================== Props =====================
 
@@ -178,6 +179,7 @@ export function MirrorCptmGameLite({
                 </div>
                 <span className="text-sm font-semibold tabular-nums text-white shrink-0 ml-2">
                   {p.score.toLocaleString()}
+                  <span className="text-[10px] font-medium text-white/30"> / {PARTY_MAX_POINTS_PER_PLAYER.toLocaleString()}</span>
                 </span>
               </div>
             ))}

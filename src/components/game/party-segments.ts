@@ -18,9 +18,11 @@
  *     switches never spin, and drop boundaries that would squeeze the tail
  *  4. Fallback: no note data → classic equal time slices
  *
- * Combined with the per-segment 2,000-point normalization in the scoring
- * hooks (fixed 250 ms party tick grid), every player now gets both the same
- * amount of singing AND the same earnable maximum.
+ * Combined with the per-player 2,000-point SONG budget in the scoring
+ * hooks (fixed 250 ms party tick grid, budget split evenly over each
+ * player's segments), every player now gets both the same amount of
+ * singing AND the same earnable maximum — an extra segment never means
+ * extra earning potential.
  */
 
 import type { Song } from '@/types/game';

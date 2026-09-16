@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { PtmPlayer } from '@/components/game/ptm-types';
+import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 
 interface PtmPlayerRankingProps {
   players: PtmPlayer[];
@@ -59,13 +60,31 @@ export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRanki
                   {player.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="flex flex-col min-w-0">
-                <span className={`text-xs font-medium truncate max-w-[80px] ${isActive ? 'text-white' : 'text-white/50'}`}>
+              <div className="flex flex-col min-w-0 w-24">
+                <span className={`text-xs font-medium truncate ${isActive ? 'text-white' : 'text-white/50'}`}>
                   {player.name ?? ''}
                 </span>
-                <span className={`text-[10px] ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
-                  {String(player.score ?? 0).toLocaleString()} pts
+                <span className={`text-[10px] tabular-nums ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
+                  {String(player.score ?? 0).toLocaleString()}
+                  <span className="text-white/20"> / {PARTY_MAX_POINTS_PER_PLAYER.toLocaleString()}</span>
                 </span>
+                {/* Budget bar — progress toward the player's 2,000-point song maximum */}
+                <div
+                  className="h-1 rounded-full mt-1 bg-white/10 overflow-hidden"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={PARTY_MAX_POINTS_PER_PLAYER}
+                  aria-valuenow={Math.min(PARTY_MAX_POINTS_PER_PLAYER, Math.round(player.score ?? 0))}
+                  aria-label={player.name}
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-300 ease-out"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, ((player.score ?? 0) / PARTY_MAX_POINTS_PER_PLAYER) * 100))}%`,
+                      backgroundColor: player.color,
+                    }}
+                  />
+                </div>
               </div>
               {/* Combo for active player */}
               {isActive && (player.combo ?? 0) > 1 && (
