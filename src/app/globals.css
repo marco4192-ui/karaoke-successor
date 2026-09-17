@@ -698,6 +698,14 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Battle Royale (user rule 6.4): blinking red X on a just-eliminated
+   player's card — ~0.45s per blink, played 6 times (~2.7s), then the card
+   stays permanently grayed out. */
+@keyframes brElimBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.1; transform: scale(0.8); }
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

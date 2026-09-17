@@ -27,7 +27,9 @@ interface UseBattleRoyaleRoundHandlersParams {
   getRandomSongs: (_count: number, _excludeIds?: string[]) => Song[];
   /** Resolve a song by id (used for the host-voted first-round song) */
   getSongById: (_id: string) => Song | null;
-  setShowElimination: (_show: boolean) => void;
+  /** Consumes the pre-fetched next song (warmed during the last seconds of
+   *  the previous round) so the round transition needs no loading pause. */
+  consumePrefetchedSong: () => Song | null;
 }
 
 interface UseBattleRoyaleRoundHandlersReturn {
@@ -50,7 +52,12 @@ interface UseBattleRoyaleRoundHandlersReturn {
 
 /**
  * Manages round lifecycle: starting rounds, ending rounds with elimination,
- * voting phase, grand finale intro, and the elimination animation timer.
+ * voting phase and grand finale intro.
+ *
+ * User rule 6.4: eliminations NO LONGER interrupt the game — no fullscreen
+ * black overlay, no new countdown. The eliminated player is marked inline on
+ * their player card (blinking red X → grayed out, rendered by PlayingView)
+ * and the next round starts immediately.
  */
 export function useBattleRoyaleRoundHandlers({
   game,
@@ -63,7 +70,7 @@ export function useBattleRoyaleRoundHandlers({
   getRandomSong,
   getRandomSongs,
   getSongById,
-  setShowElimination,
+  consumePrefetchedSong,
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
   const [eliminationPhase] = useState<null | 'eliminating' | 'survivor-flash'>(null);
@@ -146,7 +153,15 @@ export function useBattleRoyaleRoundHandlers({
     const updatedGame = endRoundAndEliminate(currentGame);
     gameRef.current = updatedGame; // Update ref immediately so game loop sees new status
 
-    // Check if we just entered grand finale (2 players remain + bestOf > 1)
+    // Game over → winner view (no further rounds)
+    if (updatedGame.winner || updatedGame.status === 'completed') {
+      onUpdateGameRef.current(updatedGame);
+      roundEndingRef.current = false;
+      return;
+    }
+
+    // Check if we just entered grand finale (2 players remain + bestOf > 1):
+    // keep the finale intro flow (its own full-screen presentation).
     if (
       !currentGame.isGrandFinale &&
       updatedGame.isGrandFinale &&
@@ -155,57 +170,37 @@ export function useBattleRoyaleRoundHandlers({
       const withFinale = enterGrandFinale(updatedGame);
       gameRef.current = withFinale; // Update ref immediately so game loop sees new status
       onUpdateGameRef.current(withFinale);
-      setShowElimination(true);
 
       if (roundEndTimerRef.current !== null) {
         clearTimeout(roundEndTimerRef.current);
       }
+      // Brief pause so the eliminated player's card can blink (6.4), then
+      // the grand finale intro takes over.
       roundEndTimerRef.current = setTimeout(() => {
         roundEndTimerRef.current = null;
         if (!mountedRef.current) return;
-        setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
         gameRef.current = advanced;
         // DO-NOT-CHANGE: Skip intermediate 'setup' status — same fix as normal flow.
-        // handleStartRound sets status directly to 'countdown'.
+        // handleStartRound sets status directly to 'playing'/'countdown'.
         roundEndingRef.current = false;
         handleStartRoundRef.current();
-      }, 4000);
+      }, 2500);
       return;
     }
 
-    onUpdateGameRef.current(updatedGame);
-    // DO-NOT-CHANGE: Simplified elimination: show lightweight overlay (red X + player name)
-    // for 2.5 seconds, then advance to next round. The old two-phase animation
-    // (eliminating → survivor-flash) was replaced by a single screen-level overlay
-    // in battle-royale-screen.tsx. eliminationPhase state is no longer used.
-    setShowElimination(true);
-
-    if (roundEndTimerRef.current !== null) {
-      clearTimeout(roundEndTimerRef.current);
-    }
-    if (survivorFlashTimerRef.current !== null) {
-      clearTimeout(survivorFlashTimerRef.current);
-    }
-    roundEndTimerRef.current = setTimeout(() => {
-      roundEndTimerRef.current = null;
-      if (!mountedRef.current) return;
-      if (updatedGame.winner) {
-        setShowElimination(false);
-        return;
-      }
-      const nextGame = advanceToNextRound(updatedGame);
-      gameRef.current = nextGame;
-      // DO-NOT-CHANGE: Do NOT call onUpdateGameRef here. handleStartRound
-      // sets status directly to 'countdown', skipping the intermediate
-      // 'setup' status that would cause RoundSetupView to flash.
-      // React 18 batches the state updates, so only 'countdown' renders.
-      setShowElimination(false);
-      roundEndingRef.current = false;
-      handleStartRoundRef.current();
-    }, 2500);
+    // ── Normal elimination (user rule 6.4): NO interruption ──
+    // No fullscreen overlay, no 2.5s wait, no new countdown. The eliminated
+    // player is marked on their card by PlayingView (blinking red X →
+    // grayed out) while the next round starts immediately. Only the store
+    // commit from handleStartRound renders — the intermediate 'elimination'
+    // and 'setup' statuses never hit the screen (no RoundSetupView flash).
+    const advanced = advanceToNextRound(updatedGame);
+    gameRef.current = advanced;
+    roundEndingRef.current = false;
+    handleStartRoundRef.current();
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
-  }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
+  }, [stopPitch, audioRef, videoRef, audioHasPlayedRef]);
 
   useEffect(() => {
     handleRoundEndRef.current = handleRoundEnd;
@@ -268,14 +263,17 @@ export function useBattleRoyaleRoundHandlers({
       // Fall through to random if not enough songs for voting
     }
 
-    const song = hostVotedFirstSong ?? getRandomSong(excludeIds);
+    // Prefer the pre-fetched song (warmed in the last seconds of the previous
+    // round — same exclusion rules) so the transition needs no loading pause.
+    const song = hostVotedFirstSong ?? consumePrefetchedSong() ?? getRandomSong(excludeIds);
     if (!song) {
       // eslint-disable-next-line no-console
       console.error('[BattleRoyale] No playable songs found.');
       return;
     }
 
-    // #1 Medley Mode: pick additional songs for snippets
+    // #1 Medley Mode: pick additional songs for snippets (fixed 30s each —
+    // startRound derives the snippet count from the round budget)
     if (currentGame.settings.medleyMode && currentGame.settings.medleySnippets > 1) {
       const medleyExcludes = [...excludeIds, song.id];
       const medleySongs = getRandomSongs(currentGame.settings.medleySnippets - 1, medleyExcludes).filter(s => s.lyrics && s.lyrics.length > 0);
@@ -286,11 +284,13 @@ export function useBattleRoyaleRoundHandlers({
       const updatedGame = startRound(currentGame, song.id, song.title, allSnippets);
       onUpdateGameRef.current(updatedGame);
     } else {
-      const updatedGame = startRound(currentGame, song.id, song.title);
+      // Full-song round (user rule 6.3): pass the song length so the round
+      // timer follows the song, not the configured roundDuration.
+      const updatedGame = startRound(currentGame, song.id, song.title, undefined, song.duration / 1000);
       onUpdateGameRef.current(updatedGame);
     }
   // Stable deps: removed game and onUpdateGame — read from refs instead
-  }, [getRandomSong, getRandomSongs, getSongById]);
+  }, [getRandomSong, getRandomSongs, getSongById, consumePrefetchedSong]);
 
   useEffect(() => {
     handleStartRoundRef.current = handleStartRound;
@@ -321,10 +321,14 @@ export function useBattleRoyaleRoundHandlers({
       const started = startRound(updatedGame, songId, songName, allSnippets);
       onUpdateGameRef.current(started);
     } else {
-      const started = startRound(updatedGame, songId, songName);
+      // Full-song round (user rule 6.3) — timer follows the song length.
+      const votedSong = getSongById(songId);
+      const started = startRound(updatedGame, songId, songName, undefined, votedSong?.duration
+        ? votedSong.duration / 1000
+        : undefined);
       onUpdateGameRef.current(started);
     }
-  }, [getRandomSongs]);
+  }, [getRandomSongs, getSongById]);
 
   const handleGrandFinaleIntroComplete = useCallback(() => {
     const advanced = advanceToNextRound(gameRef.current);

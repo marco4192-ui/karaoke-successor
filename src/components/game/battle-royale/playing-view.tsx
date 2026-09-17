@@ -134,6 +134,24 @@ export function PlayingView({
   // V3: "GO!" overlay state
   const [showGoOverlay, setShowGoOverlay] = useState(false);
 
+  // ── User rule 6.4: recently eliminated player ──
+  // When a new round starts, the player eliminated in the PREVIOUS round
+  // gets a blinking red X on their card for ~2.7s (CSS brElimBlink), then
+  // stays permanently grayed out. No fullscreen overlay, no countdown.
+  const [blinkEliminatedId, setBlinkEliminatedId] = useState<string | null>(null);
+  const blinkRoundRef = useRef(game.currentRound);
+  useEffect(() => {
+    if (game.currentRound === blinkRoundRef.current) return;
+    blinkRoundRef.current = game.currentRound;
+    // rounds are 1-based; the finished round is the second-to-last entry
+    const finishedRound = game.rounds[game.rounds.length - 2];
+    const elimId = finishedRound?.eliminatedPlayerId ?? null;
+    if (!elimId) return;
+    setBlinkEliminatedId(elimId);
+    const timer = setTimeout(() => setBlinkEliminatedId(null), 2700);
+    return () => clearTimeout(timer);
+  }, [game.currentRound, game.rounds]);
+
   // Fix 15 (webcam): BR does not render the webcam background layer (or its
   // quick controls) by default — a live webcam feed + processing costs real
   // CPU during 4-player rounds. It is only mounted when the user explicitly
@@ -516,6 +534,8 @@ export function PlayingView({
             const danger = isDanger(player);
             const lowest = isLowest(player);
             const eliminated = player.eliminated;
+            // 6.4: blinking-X phase right after the elimination became visible
+            const justEliminated = eliminated && blinkEliminatedId === player.id;
             const isBounty = bountyPlayerId === player.id;
             const isLeader = !eliminated && sortedPlayers[0]?.id === player.id && sortedPlayers[0]?.score > 0;
 
@@ -536,7 +556,9 @@ export function PlayingView({
                 key={player.id}
                 className={`
                   relative flex items-center gap-1.5 rounded-lg p-1.5 transition-all duration-500
-                  ${eliminated
+                  ${justEliminated
+                    ? 'bg-red-500/25 border-2 border-red-500 shadow-lg shadow-red-500/30'
+                    : eliminated
                     ? 'bg-white/5 grayscale opacity-30 scale-90 pointer-events-none'
                     : danger
                       ? 'bg-red-500/20 border-2 border-red-500 animate-pulse scale-105 shadow-lg shadow-red-500/30'
@@ -650,10 +672,20 @@ export function PlayingView({
                   </div>
                 </div>
 
-                {/* Eliminated overlay */}
+                {/* Eliminated overlay — 6.4: blinking red X right after the
+                    elimination (brElimBlink keyframes, 6 × 0.45s), static
+                    faded X afterwards. */}
                 {eliminated && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-xl text-red-500/60">✕</div>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div
+                      className={justEliminated
+                        ? 'text-3xl font-black text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.9)]'
+                        : 'text-xl text-red-500/60'}
+                      style={justEliminated ? { animation: 'brElimBlink 0.45s ease-in-out 6' } : undefined}
+                      aria-label={justEliminated ? `${player.name}: Eliminated` : undefined}
+                    >
+                      ✕
+                    </div>
                   </div>
                 )}
               </div>

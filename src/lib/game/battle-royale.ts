@@ -365,11 +365,18 @@ export function calculateSnippetDuration(totalDuration: number, snippetCount: nu
 
 // ==================== ROUND MANAGEMENT ====================
 
+/** Fixed length of one medley snippet in seconds (user rule 6.3). */
+const MEDLEY_SNIPPET_SECONDS = 30;
+
 export function startRound(
   game: BattleRoyaleGame,
   songId: string,
   songName: string,
-  medleySnippets?: Array<{ songId: string; songName: string }>
+  medleySnippets?: Array<{ songId: string; songName: string }>,
+  /** Full song length in seconds — random/vote rounds play the COMPLETE
+   *  song (user rule 6.3), so the round timer must follow the song, not the
+   *  configured roundDuration. */
+  songDurationSec?: number
 ): BattleRoyaleGame {
   if (game.status !== 'setup') return game;
 
@@ -382,8 +389,9 @@ export function startRound(
   // Calculate effective difficulty (#7)
   const effectiveDifficulty = getEffectiveDifficulty(game.settings, game.currentRound + 1);
 
-  // Calculate effective round duration (#8)
-  const duration = getEffectiveRoundDuration(
+  // Calculate effective base duration (#8) — for medley rounds this is the
+  // ROUND BUDGET the snippet count is derived from.
+  const baseDuration = getEffectiveRoundDuration(
     game.settings,
     game.currentRound + 1,
     activePlayers.length,
@@ -393,27 +401,47 @@ export function startRound(
   // Determine round type
   // Note: 'short' and 'full' round types currently have no behavioral difference in game logic;
   // they exist for potential future UI/display customization.
+  const isMedleyRound = game.settings.medleyMode && !!medleySnippets && medleySnippets.length > 1;
   let roundType: BattleRoyaleRound['roundType'] = 'short';
   if (isGrandFinaleRound) {
     roundType = 'grand-finale';
-  } else if (game.settings.medleyMode && medleySnippets && medleySnippets.length > 1) {
+  } else if (isMedleyRound) {
     roundType = 'medley';
-  } else if (isFinalRound) {
+  } else {
+    // random / vote rounds play the FULL song (user rule 6.3)
     roundType = 'full';
   }
 
-  // Build medley snippet list if applicable (#1)
+  // Round duration:
+  //  • medley → fixed 30s snippets, count derived from the base budget
+  //    (60s ⇒ 2 snippets, 90s ⇒ 3, … capped at 6)
+  //  • random/vote → the song's own length (+5s tail buffer so the audio
+  //    'ended' event never races the round timer)
+  //  • fallback (no duration known) → the configured base duration
+  let duration: number;
   const snippetList: MedleySnippet[] = [];
   const currentSnippetIndex = 0;
-  if (roundType === 'medley' && medleySnippets) {
-    const snippetDuration = calculateSnippetDuration(duration, medleySnippets.length);
-    for (const snippet of medleySnippets) {
+  if (isMedleyRound && medleySnippets) {
+    // Medley selection plays snippets in EVERY round — including grand
+    // finale rounds (which keep their 'grand-finale' roundType for the UI).
+    const snippetCount = Math.max(2, Math.min(6, Math.floor(baseDuration / MEDLEY_SNIPPET_SECONDS)));
+    for (const snippet of medleySnippets.slice(0, snippetCount)) {
       snippetList.push({
         songId: snippet.songId,
         songName: snippet.songName,
-        duration: snippetDuration,
+        duration: MEDLEY_SNIPPET_SECONDS,
       });
     }
+    // Duration follows the snippets ACTUALLY used (pool may be smaller than
+    // the planned count) — never a longer round than there are snippets for.
+    duration = Math.max(1, snippetList.length) * MEDLEY_SNIPPET_SECONDS;
+  } else if (songDurationSec && songDurationSec > 0) {
+    // +5s tail buffer: the audio 'ended' event never races the round timer,
+    // and PlayingView's 3s fade-out only starts AFTER the song is over
+    // (never dampening the song's own final second).
+    duration = Math.ceil(songDurationSec) + 5;
+  } else {
+    duration = baseDuration;
   }
 
   // Calculate bounty target (#6)
@@ -466,12 +494,15 @@ export function startRound(
     players: updatedPlayers,
     rounds: [...game.rounds, round],
     currentRound: game.currentRound + 1,
-    // DO-NOT-CHANGE: Start in 'countdown' status instead of 'playing' to give
-    // the media loading hook time to buffer audio/video. The countdown timer in
-    // use-battle-royale-game.ts will auto-transition to 'playing' when it
-    // reaches 0. Without this, background videos start delayed because the
-    // browser hasn't had time to buffer enough frames before play() is called.
-    status: 'countdown',
+    // DO-NOT-CHANGE (amended, user rule 6.4): Round 1 still starts in
+    // 'countdown' — the countdown gives the media loading hook time to
+    // buffer audio/video before play() is called at game start. Every
+    // FOLLOWING round starts DIRECTLY in 'playing': eliminations must not
+    // interrupt the game (no blackscreen, no new countdown). The media hook
+    // gates playback on mediaLoaded, so the next song starts as soon as it
+    // is buffered; the eliminated player's card shows the blinking-X →
+    // grayed-out treatment in the meantime.
+    status: game.rounds.length >= 1 ? 'playing' : 'countdown',
     effectiveDifficulty,
     bountyPlayerId,
 

@@ -59,7 +59,6 @@ interface UseBattleRoyaleGameParams {
 }
 
 interface UseBattleRoyaleGameReturn {
-  showElimination: boolean;
   stats: ReturnType<typeof getBattleRoyaleStats>;
   sortedPlayers: BattleRoyalePlayer[];
   activePlayers: BattleRoyalePlayer[];
@@ -95,7 +94,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const onUpdateGameRef = useRef(onUpdateGame);
   onUpdateGameRef.current = onUpdateGame;
 
-  const [showElimination, setShowElimination] = useState(false);
   const stats = useMemo(() => getBattleRoyaleStats(game), [game]);
 
   const sortedPlayers = useMemo(() => getPlayersByScore(game), [game]);
@@ -233,6 +231,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // saves per-tick array pushes AND a Map copy + setState every ~100ms (a
   // full PlayingView re-render) in the most performance-critical mode.
   const prefetchAudioRef = useRef<HTMLAudioElement | null>(null);
+  /** Pre-fetched next song (warmed during the last seconds of a round) —
+   *  consumed by handleStartRound via consumePrefetchedSong. Declared here
+   *  (before the round handlers) because the consume callback closes over it. */
+  const prefetchedSongRef = useRef<Song | null>(null);
+  /** Store-write throttling (user rule 6.1): scores accumulate here between
+   *  throttled store writes — see the game loop for the full rationale. */
+  const pendingScoredGameRef = useRef<BattleRoyaleGame | null>(null);
+  const lastStoreWriteRef = useRef(0);
 
   // ── Countdown state (V3) ───────────────────────────────────────────
   // DO-NOT-CHANGE: countdown is derived synchronously from game.status to avoid
@@ -258,6 +264,23 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return () => clearTimeout(timer);
   }, [countdown, game.status]);
 
+  // ── Scoring window (user rule 6.2: "sehr wenig Punkte") ─────────────
+  // The 10,000-point budget used to be spread over the ENTIRE song's notes,
+  // but a round only ever plays a slice of it (round duration or medley
+  // snippet) — so players could only ever reach a fraction of the tick pool.
+  // The metadata is now computed over the notes inside the ACTUAL play
+  // window only, which puts per-tick points on par with a regular game of
+  // that length. BR plays songs from position 0, so the window is simply
+  // [0, windowMs).
+  const playWindowMs = useMemo(() => {
+    if (game.medleySnippetList.length > 0) {
+      return (getCurrentMedleySnippet(game)?.duration ?? 30) * 1000;
+    }
+    const round = game.rounds[game.rounds.length - 1];
+    return round && round.duration > 0 ? round.duration * 1000 : 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- rounds/snippets only change on transitions
+  }, [game.medleySnippetList, game.currentSnippetIndex, game.rounds, game.currentRound]);
+
   // ── Pre-compute timing data for scoring ────────────────────────────
   const timingData = useMemo(() => {
     if (!currentSong || currentSong.lyrics.length === 0) return null;
@@ -269,10 +292,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     });
     allNotes.sort((a, b) => a.startTime - b.startTime);
     const beatDurationMs = currentSong.bpm ? 15000 / currentSong.bpm : 500;
-    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
+    // 6.2: window-restricted metadata (see playWindowMs above). Fall back to
+    // the full song when the window has (almost) no notes (long intro) so the
+    // pool never degenerates.
+    const windowNotes = playWindowMs > 0
+      ? allNotes.filter(n => n.startTime < playWindowMs)
+      : allNotes;
+    const metaNotes = windowNotes.length >= 4 ? windowNotes : allNotes;
+    const scoringMetadata = calculateScoringMetadata(metaNotes, beatDurationMs);
     const pitchStats = calculatePitchStats(allNotes);
     return { allNotes, beatDuration: beatDurationMs, scoringMetadata, pitchStats };
-  }, [currentSong]);
+  }, [currentSong, playWindowMs]);
 
   // ── Visible notes ref (updated every frame) ────────────────────────
   const visibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
@@ -322,6 +352,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [songs]);
 
   // ── Round Handlers ────────────────────────────────────────────────
+  // Consume the pre-fetched song so the next round starts without a loading
+  // pause (the media was already warmed during the previous round's tail).
+  const consumePrefetchedSong = useCallback((): Song | null => {
+    const song = prefetchedSongRef.current;
+    prefetchedSongRef.current = null;
+    return song;
+  }, []);
+
   const {
     handleRoundEnd,
     handleStartRound,
@@ -345,7 +383,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     getRandomSong,
     getRandomSongs,
     getSongById,
-    setShowElimination,
+    consumePrefetchedSong,
   });
 
   // Keep gameRefRef in sync with gameRef from round handlers
@@ -514,7 +552,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [game.status, mediaLoaded, currentSong]);
 
   // ── Pre-fetch next song during last 5 seconds of round ──
-  const prefetchedSongRef = useRef<Song | null>(null);
   const prefetchedMediaRef = useRef<{ audioUrl?: string; videoUrl?: string } | null>(null);
 
   useEffect(() => {
@@ -522,7 +559,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       game.status !== 'playing' ||
       roundTimeLeft > 5 ||
       roundTimeLeft === 0 ||
-      game.settings.songSelection === 'vote' // can't pre-pick in voting mode
+      game.settings.songSelection === 'vote' || // can't pre-pick in voting mode
+      game.settings.medleyMode // medley rounds bundle several fresh snippets
     ) return;
 
     // Only pre-fetch once per round
@@ -575,14 +613,28 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, roundTimeLeft, songs, game.recentlyPlayedSongIds, game.settings.songSelection]);
 
-  // Clear prefetch ref when round changes
+  // Clear prefetch + pending score accumulation when the round changes —
+  // a stale pendingScoredGameRef from the PREVIOUS round would otherwise be
+  // resurrected by the next game-loop tick (old players/rounds bleeding
+  // into the new round). The round handlers already committed the fresh
+  // post-elimination game (including the final scores via gameRef).
   useEffect(() => {
     prefetchedSongRef.current = null;
     prefetchedMediaRef.current = null;
+    pendingScoredGameRef.current = null;
   }, [game.currentRound]);
 
   // ── Game Loop for simultaneous per-player scoring ──────────────────
   const startGameLoopRef = useRef<() => void>(() => {});
+
+  // ── Store-write throttling (user rule 6.1: stutter even without 4 mics) ──
+  // Every scoring tick used to push the whole game object into the party
+  // store (~10 Hz), re-rendering the entire party tree — the visible hitch
+  // of the note highway whenever singing was evaluated. Scores now
+  // accumulate in a ref and the store is written at most every 400 ms.
+  // gameRef is kept fresh on EVERY tick (plain ref assignment, no render),
+  // so round-end handlers (elimination) still see the very latest scores.
+  const STORE_WRITE_INTERVAL_MS = 400;
 
   const startGameLoop = useCallback(() => {
     const TICK_INTERVAL = 100;
@@ -623,7 +675,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
 
-        let batchedGame = gameRef.current;
+        // Resume from the not-yet-flushed accumulation (never lose scores
+        // to a throttled store write), else from the latest game ref.
+        let batchedGame = pendingScoredGameRef.current ?? gameRef.current;
         let scoreChanged = false;
 
         const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
@@ -716,8 +770,25 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         // (Item 3: note-performance state sync removed — the BR note highway
         // renders the flat fill from the sing line alone; no samples exist.)
 
-        if (scoreChanged && mountedRef.current && !roundEndingRef.current) {
-          onUpdateGameRef.current(batchedGame);
+        if (scoreChanged) {
+          // Accumulate + keep gameRef current WITHOUT re-rendering (plain ref
+          // assignment) — round-end handlers read gameRef and must see these
+          // scores even if the throttled store write hasn't happened yet.
+          pendingScoredGameRef.current = batchedGame;
+          gameRef.current = batchedGame;
+        }
+        // Throttled store write (6.1): at most every 400 ms — the party tree
+        // re-renders ~2.5×/s instead of ~10×/s while singing is evaluated.
+        const nowWrite = performance.now();
+        if (
+          pendingScoredGameRef.current &&
+          nowWrite - lastStoreWriteRef.current >= STORE_WRITE_INTERVAL_MS &&
+          mountedRef.current &&
+          !roundEndingRef.current
+        ) {
+          lastStoreWriteRef.current = nowWrite;
+          onUpdateGameRef.current(pendingScoredGameRef.current);
+          pendingScoredGameRef.current = null;
         }
       }
 
@@ -743,7 +814,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, []);
 
   return {
-    showElimination,
     stats,
     sortedPlayers,
     activePlayers,
