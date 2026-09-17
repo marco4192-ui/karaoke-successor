@@ -17,7 +17,11 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
   // Construct proper MedleySettings from PTM context.
   if (result.songSelection === 'medley') {
     const snippetDuration = 30; // fixed 30s per snippet
-    const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
+    // FIXED player-based snippet plan (user rule): 2–4 players → every
+    // player sings TWO 30s snippets (playerCount × 2); from 5 players up →
+    // ONE 30s snippet each (playerCount). No more opaque clamping.
+    const playerCount = result.players.length;
+    const snippetCount = playerCount <= 4 ? playerCount * 2 : playerCount;
     const medleySnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
 
     // Pre-restore URLs AND lyrics for all snippet songs (needed for

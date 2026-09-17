@@ -107,7 +107,9 @@ export async function preparePtmNextSong(
 
     case 'medley': {
       const snippetDuration = 30;
-      const snippetCount = Math.max(3, Math.min(playerCount * 2, 10));
+      // FIXED player-based snippet plan (user rule, mirrors
+      // start-pass-the-mic.ts): 2–4 players → 2 snippets each, 5+ → 1 each.
+      const snippetCount = playerCount <= 4 ? playerCount * 2 : playerCount;
       const rawSnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
 
       if (rawSnippets.length === 0) {

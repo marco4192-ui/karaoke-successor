@@ -63,10 +63,17 @@ export function usePtmMedley({
   audioSong: Song | null;
   handleMediaError: () => void;
   isRetryingSnippet: boolean;
+  /** Stale-clock guard: true only after the persistent media element was
+   *  seeked to the CURRENT snippet's start. The time-based segment switch
+   *  must not run before that — the audio clock still shows the PREVIOUS
+   *  song's position ("medley cascade" bug: a stale position beyond the new
+   *  segment's end burned through all remaining segments within a second). */
+  medleyClockArmedRef: React.RefObject<boolean>;
 } {
   const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
   const [isRetryingSnippet, setIsRetryingSnippet] = useState(false);
   const isRetryingRef = useRef(false);
+  const medleyClockArmedRef = useRef(false);
 
   // ── Stale-snippet guard (user report: "Zombie-Noten") ──
   // A medley game always has segments.length === snippets.length (both are
@@ -177,6 +184,20 @@ export function usePtmMedley({
     medleyRetryTimerRef.current = null;
     medleyCanplayTimerRef.current = null;
 
+    // ── SYNCHRONOUS stale-clock disarm (MUST run in the effect body, NOT in
+    //    the rAF below!) ──
+    // This effect is registered BEFORE the segment-switch effect in
+    // ptm-game-hook.ts, so within the commit that follows a segment advance
+    // it runs FIRST. Disarming here guarantees the switch effect (same
+    // commit, still seeing the PREVIOUS song's audio clock) is blocked
+    // before it can cascade through further segments. The old rAF placement
+    // disarmed only AFTER paint — one commit too late.
+    const isNewSnippet = lastLoadedSnippetRef.current !== currentSnippet;
+    lastLoadedSnippetRef.current = currentSnippet;
+    if (isNewSnippet) {
+      medleyClockArmedRef.current = false;
+    }
+
     // Background video sync target for this snippet (videoGap of ITS song)
     bgVideoGapMsRef.current = currentSnippet.song.videoGap || 0;
 
@@ -188,6 +209,7 @@ export function usePtmMedley({
           const m2 = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
           if (m2 && isPlaying) {
             m2.currentTime = currentSnippet.startTime / 1000;
+            medleyClockArmedRef.current = true;
             m2.play().catch(() => {});
             syncBackgroundVideo(currentSnippet.startTime);
           }
@@ -214,8 +236,8 @@ export function usePtmMedley({
       //     is never aborted, and a ready element makes the handoff a gapless
       //     seek (the countdown preload of snippet 0 at game start stays
       //     intact too).
-      const isNewSnippet = lastLoadedSnippetRef.current !== currentSnippet;
-      lastLoadedSnippetRef.current = currentSnippet;
+      // (isNewSnippet was computed SYNCHRONOUSLY in the effect body above —
+      // the stale-clock disarm must not wait for this rAF.)
       const snippetAudioEl = audioRef.current;
       const snippetAudioUrl = currentSnippet.song.audioUrl;
       if (isNewSnippet && snippetAudioEl && snippetAudioUrl) {
@@ -231,6 +253,9 @@ export function usePtmMedley({
       const seekAndPlay = () => {
         if (unmountGuardRef.current) return;
         media.currentTime = currentSnippet.startTime / 1000;
+        // Clock now belongs to THIS snippet's song — time-based segment
+        // switching may run again (see medleyClockArmedRef doc above).
+        medleyClockArmedRef.current = true;
         if (isPlaying) {
           media.play().catch(() => {});
           // Keep the VISIBLE background video glued to the snippet position
@@ -365,5 +390,5 @@ export function usePtmMedley({
     })();
   }, [isMedleyMode, phase, currentSegmentIndex, recordRound, setIsPlaying, setPhase, segmentSwitchHandledRef, fallbackLyricsRef, unmountGuardRef]);
 
-  return { isMedleyMode, currentSnippet, audioSong, handleMediaError, isRetryingSnippet };
+  return { isMedleyMode, currentSnippet, audioSong, handleMediaError, isRetryingSnippet, medleyClockArmedRef };
 }

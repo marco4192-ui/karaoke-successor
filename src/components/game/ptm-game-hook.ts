@@ -251,6 +251,7 @@ export function usePtmGameLogic({
     audioSong,
     handleMediaError,
     isRetryingSnippet,
+    medleyClockArmedRef,
   } = usePtmMedley({
     phase,
     isPlaying,
@@ -458,6 +459,17 @@ export function usePtmGameLogic({
   const TRANSITION_LEAD_TIME = 2000;
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSegment) return;
+
+    // ── Medley stale-clock guard (user report: "nur 2 Medleys gespielt, 3.
+    //    Spieler aufgerufen, Spiel 1 s später regular beendet") ──
+    //    While the persistent <audio> still holds the PREVIOUS snippet's
+    //    song, currentTime reflects that song's position. A stale position
+    //    beyond the NEW segment's end instantly "switched" through every
+    //    remaining segment (one per render commit) and ended the game.
+    //    The medley sub-hook arms the clock only after it seeked the media
+    //    to the current snippet's start — until then this effect must not
+    //    evaluate any boundary.
+    if (isMedleyMode && !medleyClockArmedRef.current) return;
 
     const schedule = scheduleRef.current;
     if (!schedule.length) return;
