@@ -216,30 +216,32 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   // ===================== FULLSCREEN GAMEPLAY (countdown + playing) =====================
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
-      {/* ── Audio Element ── */}
-      {g.effectiveSong.audioUrl && (
+      {/* ── Audio Element — PERSISTENT across medley snippets (no per-song
+          key, same wiring as PTM). The medley sub-hook swaps the src and
+          seeks per snippet; a remount-per-song would reload + canplay + seek
+          at every player handoff (audible stutter). ── */}
+      {g.audioSong?.audioUrl && (
         <audio
-          key={g.effectiveSong.id}
           ref={g.audioRef}
-          src={g.effectiveSong.audioUrl}
+          src={g.audioSong.audioUrl}
           className="hidden"
           onEnded={g.handleMediaEnded}
-          onError={() => {}}
+          onError={g.handleMedleyMediaError}
           preload="auto"
         />
       )}
 
       {/* ── Hidden Video Element for embedded audio (fallback) ── */}
-      {!g.effectiveSong.audioUrl && g.effectiveSong.videoBackground && (
+      {!g.audioSong?.audioUrl && g.audioSong?.videoBackground && (
         <video
-          key={`video-${g.effectiveSong.id}`}
+          key={`video-${g.audioSong.id}`}
           ref={g.videoRef}
-          src={g.effectiveSong.videoBackground}
+          src={g.audioSong.videoBackground}
           className="hidden"
           muted={false}
           playsInline
           onEnded={g.handleMediaEnded}
-          onError={() => {}}
+          onError={g.handleMedleyMediaError}
           preload="auto"
         />
       )}
@@ -248,7 +250,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
       <div className="absolute inset-0 overflow-hidden">
         {/* Background */}
         <GameBackground
-          effectiveSong={g.effectiveSong}
+          effectiveSong={g.audioSong ?? g.effectiveSong}
           showBackgroundVideo={g.showBackgroundVideo}
           useAnimatedBackground={g.useAnimatedBackground}
           isYouTube={false}
@@ -262,7 +264,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           onYoutubeTimeUpdate={() => {}}
           onAdStart={() => {}}
           onAdEnd={() => {}}
-          onVideoEnded={g.handleMediaEnded}
+          onVideoEnded={g.handleBackgroundVideoEnded}
           onVideoCanPlay={() => {}}
           onYoutubeError={() => {}}
         />

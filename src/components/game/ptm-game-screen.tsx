@@ -166,7 +166,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           onYoutubeTimeUpdate={g.onYoutubeTimeUpdate}
           onAdStart={g.handleAdStart}
           onAdEnd={g.handleAdEnd}
-          onVideoEnded={g.handleMediaEnded}
+          onVideoEnded={g.handleBackgroundVideoEnded}
           // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
           onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
           onYoutubeError={() => {}}

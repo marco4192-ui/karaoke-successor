@@ -253,6 +253,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             snippetLyrics={state.snippetLyrics}
             currentLyricLine={currentLyricLine}
             currentTimeMs={state.currentTimeMs}
+            effectiveStartMs={state.effectiveStartMs}
             playersDisplay={playersDisplay}
             snippetProgress={snippetProgress}
             totalProgress={totalProgress}

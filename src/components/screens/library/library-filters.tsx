@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LibrarySettings, LibraryViewMode, LibraryGroupBy } from './types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { CHRISTMAS_FILTER_VALUE } from '@/lib/seasonal';
@@ -136,7 +137,7 @@ export function LibraryFilters({
             </SelectTrigger>
             <SelectContent>
               {availableLanguages.map(l => (
-                <SelectItem key={l} value={l}>{l === 'all' ? t('libraryFilters.allLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</SelectItem>
+                <SelectItem key={l} value={l}>{l === 'all' ? t('libraryFilters.allLanguages') : l === LANGUAGE_FILTER_OTHERS ? t('libraryFilters.othersLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</SelectItem>
               ))}
             </SelectContent>
           </Select>

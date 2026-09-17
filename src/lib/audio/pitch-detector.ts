@@ -322,6 +322,18 @@ export class PitchDetector {
       return;
     }
 
+    // ZOMBIE-LOOP GUARD: if a detect() chain is already running, calling
+    // detect() again would start a SECOND self-rescheduling rAF chain —
+    // this.animationFrame only ever holds the LATEST frame id, so stop()
+    // can no longer cancel the older chain(s). Every unguarded start()
+    // added a permanent extra 60 Hz loop (observed as growing CPU load and
+    // duplicated callbacks after repeated mic handoffs). Swapping the
+    // callback is all an already-listening detector needs.
+    if (this.isListening) {
+      this.onPitchDetected = callback;
+      return;
+    }
+
     this.onPitchDetected = callback;
     this.isListening = true;
     this.pitchStabilizer.reset();

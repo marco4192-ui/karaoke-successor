@@ -17,7 +17,7 @@
  */
 
 import { Song } from '@/types/game';
-import { canonicalizeGenre, isUnmappableGenre, isSeasonalProtectedGenre } from '@/lib/parsers/meta-normalizer';
+import { canonicalizeGenre, isUnmappableGenre, isSeasonalProtectedGenre, normalizeLanguageMixed } from '@/lib/parsers/meta-normalizer';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import { updateSong } from '@/lib/game/song-library';
 
@@ -25,8 +25,13 @@ export interface RuleHarmonizeItem {
   songId: string;
   title: string;
   artist: string;
+  /** Which metadata field this item writes. */
+  field: 'genre' | 'language';
   currentGenre: string;
   newGenre: string;
+  /** Language values (only set for field === 'language'). */
+  currentLanguage: string;
+  newLanguage: string;
 }
 
 /** A song whose genre carries no usable genre information ("AI", "Oldies",
@@ -68,8 +73,40 @@ export function planRuleHarmonization(songs: Song[]): RuleHarmonizeItem[] {
         songId: s.id,
         title: s.title,
         artist: s.artist,
+        field: 'genre',
         currentGenre: s.genre,
         newGenre: canonical,
+        currentLanguage: '',
+        newLanguage: '',
+      });
+    }
+  }
+  return items;
+}
+
+/**
+ * Compute the LANGUAGE harmonization plan (pure, synchronous, no I/O):
+ * every song whose #LANGUAGE: changes under normalizeLanguageMixed() —
+ * parenthetical additions stripped ("English (US)" → "English"), alias
+ * mapping ("deutsch" → "German"), separators unified to "/"
+ * ("de+en" → "German/English"). The FILTER logic later shows such a song
+ * under BOTH languages (see lib/game/language-filter.ts).
+ */
+export function planRuleLanguageHarmonization(songs: Song[]): RuleHarmonizeItem[] {
+  const items: RuleHarmonizeItem[] = [];
+  for (const s of songs) {
+    if (!s.language) continue;
+    const canonical = normalizeLanguageMixed(s.language);
+    if (canonical && canonical !== s.language) {
+      items.push({
+        songId: s.id,
+        title: s.title,
+        artist: s.artist,
+        field: 'language',
+        currentGenre: '',
+        newGenre: '',
+        currentLanguage: s.language,
+        newLanguage: canonical,
       });
     }
   }
@@ -163,7 +200,9 @@ class RuleHarmonizer {
 
       try {
         // TXT FIRST — only touch the library when the txt write succeeded
-        const updates: Partial<Song> = { genre: item.newGenre };
+        const updates: Partial<Song> = item.field === 'language'
+          ? { language: item.newLanguage }
+          : { genre: item.newGenre };
         const result = await persistSongMetadataToTxt(item.songId, updates);
         if (result.success) {
           updateSong(item.songId, updates);

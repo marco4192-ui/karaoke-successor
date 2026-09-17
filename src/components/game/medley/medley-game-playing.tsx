@@ -51,6 +51,14 @@ interface MedleyPlayingProps {
   snippetLyrics: LyricLine[];
   currentLyricLine: LyricLine | null;
   currentTimeMs: number;
+  /**
+   * EFFECTIVE (possibly repositioned) snippet start in absolute song time.
+   * currentTimeMs is relative to THIS value (see the game loop in
+   * medley-game-hook), so all absolute render math must use it — using
+   * currentSnippet.startTime instead offsets the note highway from the
+   * audio whenever the snippet got repositioned (lyrics had no overlap).
+   */
+  effectiveStartMs?: number;
   playersDisplay: MedleyPlayer[];
   snippetProgress: number;
   totalProgress: number;
@@ -95,6 +103,7 @@ export function MedleyPlayingUI({
   snippetLyrics,
   currentLyricLine,
   currentTimeMs,
+  effectiveStartMs,
   playersDisplay,
   snippetProgress,
   totalProgress,
@@ -176,7 +185,13 @@ export function MedleyPlayingUI({
   const pitchStats = useMemo(() => calculatePitchStats(snippetNotes), [snippetNotes]);
 
   // ── Compute visible notes (same logic as useGameTimingData) ──
-  const absoluteTime = currentSnippet.startTime + currentTimeMs;
+  // ROUND 3 (user report “asynchrones Musik/Text”): must mirror the game
+  // loop's effective (repositioned) start, NOT currentSnippet.startTime —
+  // the two diverge whenever the prepare step repositioned the snippet
+  // because its original range had no lyric overlap. currentLyricLine
+  // (main hook) already uses effectiveStartMs; the note highway used the
+  // raw snippet start, so notes + sing line ran offset from audio/lyrics.
+  const absoluteTime = (effectiveStartMs ?? currentSnippet.startTime) + currentTimeMs;
   const visibleNotes = useMemo(
     () => getVisibleNotes(notesWithLine, absoluteTime, NOTE_WINDOW),
     [notesWithLine, absoluteTime],

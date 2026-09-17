@@ -19,6 +19,7 @@ import { getPlaylists } from '@/lib/playlist-manager';
 import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
 import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
+import { JukeboxPlaylistBrowser } from './jukebox-playlist-browser';
 import { getSongPlatformVideo, isVideoBreak, parseVideoLinkInput, videoBreakPlatform, platformDisplayName } from './video-break';
 import { EqualizerBars, VinylDisc } from './jukebox-visuals';
 
@@ -353,10 +354,22 @@ function PoolSelector({ j }: { j: UseJukeboxReturn }) {
 
   const playlists = getPlaylists().filter(p => !p.isSystem);
 
-  if (playlists.length === 0) return null;
-
+  // Always render the browser button (user item 8) — even with zero playlists
+  // the dialog explains that none exist yet. The pool select only makes sense
+  // when there is something to select.
   return (
     <div className="flex items-center gap-2">
+      {/* Playlist-Browser (user item 8): view existing playlists incl. their
+          songs and add them to the jukebox queue — next to the pool select. */}
+      <JukeboxPlaylistBrowser
+        songs={j.songs}
+        onEnqueue={j.enqueueLibraryPlaylist}
+        onSelectPool={handleChange}
+        activePlaylistId={selectedPlaylistId}
+        triggerClassName="h-9 px-3 rounded-xl"
+      />
+      {playlists.length > 0 && (
+        <>
       <select
         value={selectedPlaylistId}
         onChange={(e) => handleChange(e.target.value)}
@@ -398,6 +411,8 @@ function PoolSelector({ j }: { j: UseJukeboxReturn }) {
         )}
         <span className="hidden sm:inline">{enqueueState === 'done' ? t('jukeboxPlayer.playlistQueued') : t('jukeboxPlayer.enqueuePlaylistRunning')}</span>
       </button>
+        </>
+      )}
     </div>
   );
 }

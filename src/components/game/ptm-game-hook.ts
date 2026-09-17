@@ -112,6 +112,8 @@ interface PtmGameHookReturn {
   togglePause: () => void;
   handleEndSong: () => void;
   handleMediaEnded: () => void;
+  /** Decorative background-video end — never ends a (medley) game. */
+  handleBackgroundVideoEnded: () => void;
   handleMediaError: () => void;
   isRetryingSnippet: boolean;
   handleContinue: () => void;
@@ -255,6 +257,10 @@ export function usePtmGameLogic({
     isYouTube,
     effectiveSong,
     currentSegmentIndex,
+    // Stale-snippet guard: medley games are built 1:1 (one segment per
+    // snippet) — a count mismatch means leftover snippets from a previous
+    // round and the game must run as a normal single song.
+    segmentCount: initialSegments.length,
     fallbackLyricsRef,
     unmountGuardRef,
     audioRef,
@@ -689,11 +695,19 @@ export function usePtmGameLogic({
         : 0;
 
       requestAnimationFrame(() => {
+        // Background-video seek target honours the song's videoGap — same
+        // rule as the normal game (use-media-playback.ts) and the medley
+        // contest (use-medley-audio.ts). Without it every videoGap song ran
+        // its background video permanently offset (user report: async
+        // music/video in PTM medley).
+        const bgVideoSeekTo = (audioRef.current && videoRef.current && videoRef.current !== audioRef.current && !isYouTube)
+          ? Math.max(0, seekTo - ((effectiveSong?.videoGap || 0) / 1000))
+          : seekTo;
         if (audioRef.current) {
           audioRef.current.currentTime = seekTo;
           audioRef.current.play().catch(() => {});
           if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
-            videoRef.current.currentTime = seekTo;
+            videoRef.current.currentTime = bgVideoSeekTo;
             videoRef.current.play().catch(() => {});
           }
         } else if (videoRef.current && !isYouTube) {
@@ -765,16 +779,58 @@ export function usePtmGameLogic({
     setPhase('song-results');
   }, [recordRound, audioRef, videoRef]);
 
-  // ── Shared handler for audio/video/background end ──
+  // ── Shared handler for audio/video end ──
+  // MEDLEY-AWARE (user report: only 2-3 of 10 snippets played, only 3 of 6
+  // players sang): in medley mode a media 'ended' event may NOT end the game —
+  // the persistent <audio> holds the snippet's FULL song file, so 'ended'
+  // fires when the file ends slightly before the segment boundary (metadata
+  // duration mismatch), and the decorative background <video> (a separate,
+  // often SHORTER file) firing 'ended' ended the whole game mid-medley. The
+  // segment schedule is authoritative: a primary-media end ADVANCES to the
+  // next snippet; only the LAST segment may end the game.
   const handleMediaEnded = useCallback(() => {
-    if (phase === 'playing') {
-      if (roundRecordedRef.current) return;
-      roundRecordedRef.current = true;
-      setIsPlaying(false);
-      recordRound();
-      setPhase('song-results');
+    if (phase !== 'playing') return;
+    if (roundRecordedRef.current) return;
+
+    if (isMedleyMode) {
+      const isLast = currentSegmentIndex >= initialSegments.length - 1;
+      if (!isLast) {
+        // Suppress the time-based segment effect for this segment (its
+        // condition can never fire — the media clock stopped at the file
+        // end below the segment boundary) and perform the handoff manually.
+        segmentSwitchHandledRef.current = true;
+        const schedule = scheduleRef.current;
+        const currentEntry = schedule[currentSegmentIndex];
+        if (currentEntry && playersRef.current[currentEntry.playerIndex]) {
+          playersRef.current[currentEntry.playerIndex].segmentsSung++;
+        }
+        const nextSegIdx = currentSegmentIndex + 1;
+        const nextEntry = schedule[nextSegIdx];
+        setCurrentSegmentIndex(nextSegIdx);
+        setCurrentPlayerIndex(nextEntry?.playerIndex ?? currentPlayerIndexRef.current);
+        setTransitionVisible(false);
+        forceRender();
+        return;
+      }
     }
-  }, [phase, recordRound]);
+
+    roundRecordedRef.current = true;
+    setIsPlaying(false);
+    recordRound();
+    setPhase('song-results');
+  }, [phase, recordRound, isMedleyMode, currentSegmentIndex, initialSegments.length, setCurrentPlayerIndex, forceRender]);
+
+  // ── Decorative background-video end (GameBackground onVideoEnded) ──
+  // The visible background video is a SEPARATE file that is routinely
+  // shorter than the audio (or starts offset via videoGap) — its 'ended'
+  // event must never end the game. Only when NO separate <audio> drives
+  // playback (video-as-audio fallback, where videoRef IS the primary media)
+  // does a video end mean the song/segment actually ended.
+  const handleBackgroundVideoEnded = useCallback(() => {
+    if (isMedleyMode) return; // segment schedule is authoritative in medley
+    if (audioRef.current?.src) return; // separate audio drives the game
+    handleMediaEnded();
+  }, [isMedleyMode, audioRef, handleMediaEnded]);
 
   return {
     // Phase
@@ -804,6 +860,8 @@ export function usePtmGameLogic({
     handleAdStart,
     handleAdEnd,
     onYoutubeTimeUpdate: setYoutubeTime,
+    /** Decorative background-video end — never ends a (medley) game. */
+    handleBackgroundVideoEnded,
 
     // Game state
     isPlaying,

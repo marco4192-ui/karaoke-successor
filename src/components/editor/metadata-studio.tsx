@@ -40,6 +40,7 @@ import {
 } from '@/components/editor/harmonize-shared';
 import {
   planRuleHarmonization,
+  planRuleLanguageHarmonization,
   planManualGenreReview,
   ruleHarmonizer,
   RuleHarmonizeJobState,
@@ -186,11 +187,22 @@ export function MetadataStudio({
     return scopeSongs;
   }, [scopeSongs, mode, fields]);
 
-  /** Rule plan (pure + synchronous, genre only). */
+  /** Rule plan (pure + synchronous): GENRE harmonization (alias mapping,
+   *  parenthetical stripping, comma-splitting) plus LANGUAGE harmonization
+   *  (parentheses stripped, aliases mapped, separators unified to "/") —
+   *  the language rules mirror the genre pipeline (user item 6). */
   const rulePlan = useMemo(
-    () => (mode === 'rule' ? planRuleHarmonization(scopeSongs) : []),
+    () => (mode === 'rule'
+      ? [...planRuleHarmonization(scopeSongs), ...planRuleLanguageHarmonization(scopeSongs)]
+      : []),
     [mode, scopeSongs],
   );
+  /** Plan breakdown for the info line (🎸 genres / 🌐 languages). */
+  const ruleGenrePlanCount = useMemo(
+    () => (mode === 'rule' ? planRuleHarmonization(scopeSongs).length : 0),
+    [mode, scopeSongs],
+  );
+  const ruleLanguagePlanCount = rulePlan.length - ruleGenrePlanCount;
 
   /** Session-scoped skip set (user feedback: harmonize must also run WITHOUT
    *  an assignment — skipped songs keep their pseudo-genre for now). */
@@ -373,6 +385,16 @@ export function MetadataStudio({
 
   const ruleJob = useRuleHarmonizerState();
   const ruleRunning = ruleJob.status === 'running';
+  /** Completion banner (user item 7): stays visible after the job finishes
+   *  so it is IMMEDIATELY obvious the harmonization ran — dismissed
+   *  manually, auto-reset whenever a new job starts. */
+  const [ruleDoneDismissed, setRuleDoneDismissed] = useState(false);
+  useEffect(() => {
+    if (ruleJob.status === 'running') setRuleDoneDismissed(false);
+  }, [ruleJob.status]);
+  const ruleDoneVisible =
+    (ruleJob.status === 'done' || ruleJob.status === 'aborted') &&
+    ruleJob.total > 0 && !ruleDoneDismissed;
 
   /** Null out fields the user deselected; in fill mode keep only empty fields. */
   const filterSuggestions = useCallback((
@@ -594,7 +616,10 @@ export function MetadataStudio({
       setApplyProgress({ done: 0, total: rulePlan.length });
       let done = 0;
       for (const item of rulePlan) {
-        updateSong(item.songId, { genre: item.newGenre });
+        // Field-aware: genre items write genre, language items language.
+        updateSong(item.songId, item.field === 'language'
+          ? { language: item.newLanguage }
+          : { genre: item.newGenre });
         done++;
         if (!isMountedRef.current) return;
         setApplyProgress({ done, total: rulePlan.length });
@@ -730,13 +755,31 @@ export function MetadataStudio({
             <div className="space-y-1.5">
               <p className="text-[11px] text-cyan-300/80 font-medium">
                 {t('editor.ruleHarmonizeCount').replace('{count}', String(rulePlan.length))}
+                <span className="text-white/40 font-normal">
+                  {' '}(🎸 {ruleGenrePlanCount} · 🌐 {ruleLanguagePlanCount})
+                </span>
               </p>
+              {/* Non-harmonizable remainder (user item 7): songs the rules
+                  can NEVER fix (pseudo-genres) — always visible so the user
+                  immediately sees what stays untouched. */}
+              {manualReview.length > 0 && (
+                <p className="text-[10px] text-amber-300/80">
+                  ⚠️ {t('editor.ruleHarmonizeNotFixable').replace('{count}', String(manualReview.length))}
+                </p>
+              )}
               <div className="max-h-32 overflow-y-auto space-y-1 pr-1 text-[10px] font-mono" data-testid="studio-rule-preview">
                 {rulePreview.map(item => (
-                  <div key={item.songId} className="flex items-center gap-1.5 text-white/50">
-                    <span className="truncate flex-1" title={`${item.artist} — ${item.title}`}>{item.currentGenre}</span>
+                  <div key={`${item.field}-${item.songId}`} className="flex items-center gap-1.5 text-white/50">
+                    <span className="flex-shrink-0" title={item.field === 'language' ? 'Sprache' : 'Genre'}>
+                      {item.field === 'language' ? '🌐' : '🎸'}
+                    </span>
+                    <span className="truncate flex-1" title={`${item.artist} — ${item.title}`}>
+                      {item.field === 'language' ? item.currentLanguage : item.currentGenre}
+                    </span>
                     <span className="text-white/30">→</span>
-                    <span className="text-cyan-300 truncate">{item.newGenre}</span>
+                    <span className="text-cyan-300 truncate">
+                      {item.field === 'language' ? item.newLanguage : item.newGenre}
+                    </span>
                   </div>
                 ))}
                 {rulePlan.length > rulePreview.length && (
@@ -746,7 +789,14 @@ export function MetadataStudio({
             </div>
           )}
           {mode === 'rule' && rulePlan.length === 0 && !ruleRunning && (
-            <p className="text-[11px] text-white/40">✅ {t('editor.ruleHarmonizeNothing')}</p>
+            <div className="space-y-1">
+              <p className="text-[11px] text-white/40">✅ {t('editor.ruleHarmonizeNothing')}</p>
+              {manualReview.length > 0 && (
+                <p className="text-[10px] text-amber-300/80">
+                  ⚠️ {t('editor.ruleHarmonizeNotFixable').replace('{count}', String(manualReview.length))}
+                </p>
+              )}
+            </div>
           )}
 
           {/* ── Manual genre correction list (rule mode) ──
@@ -913,7 +963,7 @@ export function MetadataStudio({
               <Button
                 size="sm"
                 onClick={handleRuleStart}
-                disabled={ruleRunning || rulePlan.length === 0 || !!applyProgress || selectedIds.size === 0}
+                disabled={ruleRunning || rulePlan.length === 0 || !!applyProgress || (scope === 'selection' && selectedIds.size === 0)}
                 className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs"
                 data-testid="studio-rule-start"
               >
@@ -942,8 +992,11 @@ export function MetadataStudio({
               </Button>
             )}
 
-            {/* No selection yet → explicit hint next to the greyed Run */}
-            {selectedIds.size === 0 && (
+            {/* No selection yet → explicit hint next to the greyed Run.
+                Rule mode with scope 'all' needs NO selection (the plan covers
+                every song) — showing the hint there made the disabled Run
+                feel like "nothing happens" (user item 7). */}
+            {selectedIds.size === 0 && (mode !== 'rule' || scope === 'selection') && (
               <p className="text-[11px] text-amber-300/80">☑️ {t('editor.studioRunNeedsSelection')}</p>
             )}
             {noFieldsSelected && (
@@ -1013,6 +1066,38 @@ export function MetadataStudio({
               <p className="text-[10px] text-white/40">
                 {t('editor.studioLoadingHint')}
               </p>
+            </div>
+          )}
+
+          {/* ── Rule-harmonization completion banner (user item 7) ──
+              Persistent green feedback after the background job finished,
+              so a finished harmonization is recognizable at a glance. */}
+          {ruleDoneVisible && (
+            <div
+              className={`flex items-center gap-2 rounded-lg p-2 border ${
+                ruleJob.status === 'done'
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-amber-500/10 border-amber-500/30'
+              }`}
+              data-testid="studio-rule-done"
+            >
+              <span className="text-sm leading-none">{ruleJob.status === 'done' ? '✅' : '⏹️'}</span>
+              <p className={`text-[10px] flex-1 ${ruleJob.status === 'done' ? 'text-emerald-200/90' : 'text-amber-200/90'}`}>
+                {ruleJob.status === 'done'
+                  ? t('editor.ruleHarmonizeDone')
+                      .replace('{done}', String(ruleJob.done))
+                      .replace('{errors}', String(ruleJob.errors))
+                  : t('editor.ruleHarmonizeAborted')
+                      .replace('{done}', String(ruleJob.done))
+                      .replace('{total}', String(ruleJob.total))}
+              </p>
+              <button
+                onClick={() => setRuleDoneDismissed(true)}
+                className="text-white/40 hover:text-white/80 text-xs"
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
             </div>
           )}
 

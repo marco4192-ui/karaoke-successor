@@ -201,9 +201,9 @@ export function normalizeLanguage(raw: string): string {
 
 /**
  * Language separators that indicate a genuinely multilingual song.
- * "German/English", "de+en", "Französisch & Englisch".
+ * "German/English", "de+en", "Französisch & Englisch", "German, English".
  */
-const LANGUAGE_SEPARATORS = /\s*[\/+&]\s*/;
+const LANGUAGE_SEPARATORS = /\s*[/+&,]\s*/;
 
 /**
  * Normalize a language value that may describe a MULTILINGUAL song.

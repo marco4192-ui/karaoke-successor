@@ -7,6 +7,7 @@ import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, cl
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { getBigLanguages, getLanguageFilterEntries, songMatchesLanguageFilter } from './language-filter';
 import { lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
@@ -463,18 +464,14 @@ export function getGenres(): string[] {
   return Array.from(genres).sort();
 }
 
-// Get unique languages (normalized)
+// Get unique languages (normalized) — shared language-filter rules:
+// multilingual songs ("German/English") appear under EVERY language, never
+// as a combined entry; languages with < 5 songs collapse into "Others"
+// (auto-promoted to their own entry once they reach 5). See
+// lib/game/language-filter.ts.
 export function getLanguages(): string[] {
   const songs = getAllSongs();
-  const languages = new Set<string>();
-
-  songs.forEach(song => {
-    if (song.language) {
-      languages.add(normalizeLanguage(song.language));
-    }
-  });
-
-  return Array.from(languages).sort();
+  return getLanguageFilterEntries(songs, false);
 }
 
 // Get unique release years (for filtering)
@@ -540,11 +537,12 @@ export function filterSongs(
     return parts.some(g => normalizeGenreName(g).toLowerCase() === normalizedFilter);
   };
 
-  // Helper: check if a song's language matches the filter language
-  const songLanguageMatches = (song: Song, filterLanguage: string): boolean => {
-    if (!song.language) return false;
-    return normalizeLanguage(song.language) === normalizeLanguage(filterLanguage);
-  };
+  // Helper: check if a song's language matches the filter language —
+  // multilingual songs match EVERY listed language; "Others" matches any
+  // language below the 5-song own-entry threshold (shared rules).
+  const bigLanguages = getBigLanguages(songs);
+  const songLanguageMatches = (song: Song, filterLanguage: string): boolean =>
+    songMatchesLanguageFilter(song, filterLanguage, bigLanguages);
 
   // Independent mode (combined=false): OR logic — songs matching either
   // genre or language are included. Year/era filters are applied in

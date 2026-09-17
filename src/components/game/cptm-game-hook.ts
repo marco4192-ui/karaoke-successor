@@ -16,6 +16,7 @@ import { useCompanionPitchPolling } from './cptm-companion-polling';
 import { useCptmScoring } from './cptm-scoring';
 import { useCptmTurnManagement, sendCompanionTurnSignal, buildCptmPlayerInfo } from './cptm-turn-management';
 import { useCptmSeries } from './cptm-series';
+import { usePtmMedley } from './use-ptm-medley';
 
 // ===================== CONSTANTS =====================
 
@@ -44,6 +45,9 @@ interface CptmGameHookReturn {
   mediaLoaded: boolean;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  /** Song whose audio actually plays (current medley snippet in medley mode). */
+  audioSong: Song | null;
+  isMedleyMode: boolean;
   isPlaying: boolean;
   currentTime: number;
 
@@ -80,6 +84,11 @@ interface CptmGameHookReturn {
   requestEndSongEarly: () => void;
   handleEndSong: () => void;
   handleMediaEnded: () => void;
+  /** Decorative background-video end — never ends a (medley) game. */
+  handleBackgroundVideoEnded: () => void;
+  /** Medley media-error recovery (retry with a replacement snippet). */
+  handleMedleyMediaError: () => void;
+  isRetryingMedleySnippet: boolean;
   handleContinue: () => void;
   handleEndSeries: () => void;
   handleEndSeriesComplete: () => void;
@@ -212,6 +221,41 @@ export function useCptmGameLogic({
   });
 
   // ═══════════════════════════════════════════════════════
+  // ── SUB-HOOK: Medley mode (same engine as PTM) ──
+  // CPTM medley rounds store their snippets in the shared ptmMedleySnippets
+  // party-store slot (see party-game-screens 'ptm-next-medley'), but the
+  // CPTM game hook never READ them — the game played the FIRST snippet's
+  // song for all segments while the segment schedule pointed into OTHER
+  // songs (user item: check the PTM tasks for CPTM too). Reusing the PTM
+  // medley sub-hook gives CPTM the same persistent-<audio> snippet handoff,
+  // videoGap-aware background-video sync and drift correction.
+  // ═══════════════════════════════════════════════════════
+  const cptmSegmentSwitchHandledRef = useRef(false);
+  const {
+    isMedleyMode,
+    currentSnippet: cptmCurrentSnippet,
+    audioSong,
+    handleMediaError: handleMedleyMediaError,
+    isRetryingSnippet: isRetryingMedleySnippet,
+  } = usePtmMedley({
+    phase,
+    isPlaying,
+    isYouTube: false,
+    effectiveSong,
+    currentSegmentIndex,
+    segmentCount: initialSegments.length,
+    fallbackLyricsRef,
+    unmountGuardRef,
+    audioRef,
+    videoRef,
+    recordRound: () => recordRound(),
+    setPhase,
+    setIsPlaying,
+    segmentSwitchHandledRef: cptmSegmentSwitchHandledRef,
+    forceRender,
+  });
+
+  // ═══════════════════════════════════════════════════════
   // ── SUB-HOOK: Companion pitch polling ──
   // ═══════════════════════════════════════════════════════
   const companionPitchCacheRef = useCompanionPitchPolling(phase, isPlaying);
@@ -291,18 +335,21 @@ export function useCptmGameLogic({
     return () => { cancelled = true; };
   }, [effectiveSong, forceRender]);
 
-  // ── Build notesSource from effectiveSong (with fallback lyrics) ──
+  // ── Build notesSource from the AUDIO song (with fallback lyrics) ──
+  // In medley mode the audio song is the CURRENT SNIPPET's song — notes and
+  // lyrics must follow what is actually audible, not the initial pick.
   const fallbackRef = useRef(fallbackLyricsRef.current);
   fallbackRef.current = fallbackLyricsRef.current;
+  const notesSong = audioSong ?? effectiveSong;
   const notesSource = useMemo(() => {
-    if (!effectiveSong) return null;
-    if (effectiveSong.lyrics && effectiveSong.lyrics.length > 0) return effectiveSong;
+    if (!notesSong) return null;
+    if (notesSong.lyrics && notesSong.lyrics.length > 0) return notesSong;
     if (fallbackRef.current && fallbackRef.current.length > 0) {
-      return { ...effectiveSong, lyrics: fallbackRef.current };
+      return { ...notesSong, lyrics: fallbackRef.current };
     }
-    return effectiveSong;
+    return notesSong;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- fallbackRef.current is intentionally read inside useMemo for async-loaded lyrics
-  }, [effectiveSong, fallbackRef.current]);
+  }, [notesSong, fallbackRef.current]);
 
   // ── Pre-compute note data for highway ──
   const { allNotes, sortedLines } = useMemo(() => {
@@ -479,15 +526,25 @@ export function useCptmGameLogic({
     }
 
     requestAnimationFrame(() => {
+      // Medley: snippet 0 starts mid-song — seek to its start (the medley
+      // sub-hook also seeks on its first effect run; this covers the race
+      // where play() starts before that effect fires). Non-medley: 0.
+      const seekTo = isMedleyMode && cptmCurrentSnippet
+        ? cptmCurrentSnippet.startTime / 1000
+        : 0;
+      // Background video honours the song's videoGap (see PTM/normal game).
+      const bgVideoSeekTo = (audioRef.current && videoRef.current && videoRef.current !== audioRef.current)
+        ? Math.max(0, seekTo - ((notesSong?.videoGap || 0) / 1000))
+        : seekTo;
       if (audioRef.current) {
-        audioRef.current.currentTime = 0;
+        audioRef.current.currentTime = seekTo;
         audioRef.current.play().catch(() => {});
         if (videoRef.current && videoRef.current !== audioRef.current && videoRef.current.paused) {
-          videoRef.current.currentTime = 0;
+          videoRef.current.currentTime = bgVideoSeekTo;
           videoRef.current.play().catch(() => {});
         }
       } else if (videoRef.current) {
-        videoRef.current.currentTime = 0;
+        videoRef.current.currentTime = seekTo;
         videoRef.current.play().catch(() => {});
       } else {
         // Media element not ready yet — retry shortly
@@ -497,10 +554,10 @@ export function useCptmGameLogic({
           countdownRetryRef.current = null;
           if (unmountGuardRef.current) return;
           if (audioRef.current) {
-            audioRef.current.currentTime = 0;
+            audioRef.current.currentTime = seekTo;
             audioRef.current.play().catch(() => {});
           } else if (videoRef.current) {
-            videoRef.current.currentTime = 0;
+            videoRef.current.currentTime = seekTo;
             videoRef.current.play().catch(() => {});
           }
         }, 300);
@@ -564,7 +621,26 @@ export function useCptmGameLogic({
   }, [recordRound, audioRef, videoRef]);
 
   // ── Shared handler for audio/video end ──
+  // MEDLEY-AWARE (user item: check the PTM tasks for CPTM too): in medley
+  // mode a media 'ended' event may NOT end the game. The persistent <audio>
+  // holds the snippet's FULL song file — 'ended' fires when the file ends
+  // slightly before the segment boundary (duration mismatch), and the
+  // decorative background <video> is a separate, often shorter file. CPTM's
+  // time tracking has a WALL-CLOCK FALLBACK that keeps advancing currentTime
+  // when no media plays, so the segment schedule stays authoritative: the
+  // turn-management effect performs the switch to the next snippet (which
+  // loads + plays its own media) and ends the game after the LAST segment.
   const handleMediaEnded = useCallback(() => {
+    if (phase === 'playing' && isMedleyMode) {
+      // Primary media hit its file end before the segment boundary. The
+      // wall-clock fallback would crawl to the boundary in real time — jump
+      // the clock there instead; the turn-management effect performs the
+      // segment switch (which loads + plays the NEXT snippet's media) and
+      // ends the game after the LAST segment.
+      const seg = initialSegments[currentSegmentIndex];
+      if (seg) setCurrentTime(seg.endTime);
+      return;
+    }
     if (phase === 'playing') {
       if (roundRecordedRef.current) return;
       roundRecordedRef.current = true;
@@ -573,7 +649,16 @@ export function useCptmGameLogic({
       setPhase('song-results');
       sendCompanionTurnSignal(null, null, null, false);
     }
-  }, [phase, recordRound]);
+  }, [phase, recordRound, isMedleyMode, initialSegments, currentSegmentIndex]);
+
+  // ── Decorative background-video end (GameBackground onVideoEnded) ──
+  // Never ends a medley game (segment schedule is authoritative); in a
+  // normal song only meaningful when the video IS the primary media.
+  const handleBackgroundVideoEnded = useCallback(() => {
+    if (isMedleyMode) return;
+    if (audioRef.current?.src) return; // separate audio drives the game
+    handleMediaEnded();
+  }, [isMedleyMode, audioRef, handleMediaEnded]);
 
   // ── Return ──
   return {
@@ -586,6 +671,8 @@ export function useCptmGameLogic({
     mediaLoaded,
     audioRef,
     videoRef,
+    audioSong,
+    isMedleyMode,
     isPlaying,
     currentTime,
 
@@ -620,6 +707,9 @@ export function useCptmGameLogic({
     requestEndSongEarly,
     handleEndSong,
     handleMediaEnded,
+    handleBackgroundVideoEnded,
+    handleMedleyMediaError,
+    isRetryingMedleySnippet,
     handleContinue,
     handleEndSeries,
     handleEndSeriesComplete,

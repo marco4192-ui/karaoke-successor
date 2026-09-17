@@ -28,6 +28,7 @@ import { generateMedleySnippets, getAvailableGenres, getAvailableLanguages } fro
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import { useTranslation } from '@/lib/i18n/translations';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
 import { ToggleSwitch, InputModeToggle } from './medley-setup-components';
@@ -560,7 +561,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               >
                 {availableLanguages.map(l => (
                   <option key={l} value={l} className="bg-gray-800 text-white">
-                    {l === 'all' ? t('medley.allLanguages') : (LANGUAGE_NAMES[l as Language] || l)}
+                    {l === 'all' ? t('medley.allLanguages') : l === LANGUAGE_FILTER_OTHERS ? t('libraryFilters.othersLanguages') : (LANGUAGE_NAMES[l as Language] || l)}
                   </option>
                 ))}
               </select>

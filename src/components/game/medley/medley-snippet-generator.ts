@@ -17,6 +17,7 @@
  */
 
 import type { Song, LyricLine } from '@/types/game';
+import { getLanguageFilterEntries } from '@/lib/game/language-filter';
 import type { MedleySong } from './medley-types';
 
 /** ms per beat for UltraStar timing */
@@ -254,9 +255,8 @@ export function getAvailableGenres(songs: Song[]): string[] {
 }
 
 export function getAvailableLanguages(songs: Song[]): string[] {
-  const langs = new Set<string>();
-  for (const s of songs) {
-    if (s.language) langs.add(s.language);
-  }
-  return ['all', ...Array.from(langs).sort()];
+  // Shared language-filter rules: multilingual songs appear under EVERY
+  // language (never as a combined entry); languages with < 5 songs collapse
+  // into "Others". See lib/game/language-filter.ts.
+  return getLanguageFilterEntries(songs, true);
 }

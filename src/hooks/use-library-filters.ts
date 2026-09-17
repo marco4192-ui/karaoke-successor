@@ -6,7 +6,8 @@ import { LibrarySettings, StartOptions } from '@/components/screens/library/type
 import { isDuetSong } from '@/components/screens/library/utils';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useDebouncedValue } from './use-debounce';
-import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { getBigLanguages, getLanguageFilterEntries, songMatchesLanguageFilter } from '@/lib/game/language-filter';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { CHRISTMAS_FILTER_VALUE, isChristmasSong, isChristmasSeasonEnabled } from '@/lib/seasonal';
 
@@ -35,6 +36,11 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
   // while the filter/sort computation runs at lower priority.
   const deferredQuery = useDeferredValue(debouncedQuery);
   const isFilterStale = deferredQuery !== debouncedQuery;
+
+  // Languages with ≥ 5 songs (shared language-filter rules — used for the
+  // "Others" bucket matching below and declared BEFORE the filter that
+  // consumes it).
+  const bigLanguages = useMemo(() => getBigLanguages(loadedSongs), [loadedSongs]);
 
   const filteredSongs = useMemo(() => {
     let songs = loadedSongs;
@@ -70,13 +76,11 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
       });
     }
     
-    // Language filter - reads from #Language: tag in txt files (normalized)
+    // Language filter - shared rules: a multilingual song ("German/English")
+    // matches EVERY listed language; "Others" matches languages below the
+    // 5-song own-entry threshold.
     if (settings.filterLanguage && settings.filterLanguage !== 'all') {
-      const normalizedFilter = normalizeLanguage(settings.filterLanguage);
-      songs = songs.filter(s => {
-        if (!s.language) return false;
-        return normalizeLanguage(s.language) === normalizedFilter;
-      });
+      songs = songs.filter(s => songMatchesLanguageFilter(s, settings.filterLanguage!, bigLanguages));
     }
     
     // Year filter
@@ -128,7 +132,7 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     });
     
     return songs;
-  }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds]);
+  }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds, bigLanguages]);
   
   // Get unique genres from loaded songs (read from #Genre: in txt files, normalized).
   // In December the seasonal 🎄 Christmas entry is injected right after "all".
@@ -147,14 +151,14 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     ];
   }, [loadedSongs, xmasSeason]);
   
-  // Get unique languages from loaded songs (read from #Language: in txt files, normalized)
-  const availableLanguages = useMemo(() => {
-    const langSet = new Set<string>();
-    loadedSongs.forEach(s => {
-      if (s.language) langSet.add(normalizeLanguage(s.language));
-    });
-    return ['all', ...Array.from(langSet).sort()];
-  }, [loadedSongs]);
+  // Get unique languages from loaded songs — shared language-filter rules:
+  // multilingual songs ("German/English") appear under EVERY language (never
+  // as a combined entry) and languages with < 5 songs collapse into "Others"
+  // (auto-promoted once they reach 5). See lib/game/language-filter.ts.
+  const availableLanguages = useMemo(
+    () => getLanguageFilterEntries(loadedSongs, true),
+    [loadedSongs],
+  );
   
   // Get unique years from loaded songs
   const availableYears = useMemo(() => {

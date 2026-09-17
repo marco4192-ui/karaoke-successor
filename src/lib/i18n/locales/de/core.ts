@@ -327,6 +327,15 @@ jukeboxPlayer: {
   enqueuePlaylistDesc: 'Spielt genau diese Playlist in der Jukebox — oder reiht sie hinten ein, wenn bereits etwas läuft',
   enqueuePlaylistRunning: 'In Warteschlange',
   playlistQueued: 'Playlist eingeordnet!',
+  // ── Playlist-Browser (Playlists ansehen + zur Jukebox hinzufügen) ──
+  browsePlaylists: 'Playlists ansehen',
+  browsePlaylistsTitle: '📋 Playlists',
+  browsePlaylistsEmpty: 'Noch keine Playlists vorhanden — erstelle eine in der Bibliothek.',
+  browsePlaylistsSongs: '{count} Songs',
+  browsePlaylistsSetPool: 'Als Pool setzen',
+  browsePlaylistsQueue: 'Zur Jukebox hinzufügen',
+  browsePlaylistsQueuedToast: 'Playlist zur Jukebox hinzugefügt!',
+
   // ── Jahres-Filter ──
   filterByYear: 'Nach Jahr filtern',
   allYears: 'Alle Jahre',

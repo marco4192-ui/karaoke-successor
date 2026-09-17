@@ -11,6 +11,7 @@ import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
 import type { PartyGameConfig, SongSelectionOption, InputMode } from './unified-party-setup.types';
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { decadeShortLabel } from '@/lib/game/era-filter';
@@ -261,7 +262,7 @@ export function SongFilterSection({
             >
               <option value="all">{t('unifiedSetup.allLanguages')}</option>
               {availableLanguages.map(l => (
-                <option key={l} value={l}>{LANGUAGE_NAMES[l as Language] || l}</option>
+                <option key={l} value={l}>{l === LANGUAGE_FILTER_OTHERS ? t('libraryFilters.othersLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</option>
               ))}
             </select>
           </div>

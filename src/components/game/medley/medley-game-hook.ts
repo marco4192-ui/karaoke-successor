@@ -89,6 +89,8 @@ interface MedleyGameState {
   isPreparingNextRound: boolean;
   currentTimeMs: number;
   isPlaying: boolean;
+  /** Effective (possibly repositioned) snippet start — absolute-time consumers must use this. */
+  effectiveStartMs: number;
   restoredSong: Song | null;
 
   // Players (display copy)
@@ -509,7 +511,16 @@ export function useMedleyGame({
 
       // Resolve the visual pitch: fresh detection if valid, else the held
       // pitch while inside the bridge window, else null (miss).
-      const pitchIsValid = !!pitch && pitch.note != null && !shouldSkipPitch(pitch, effectiveDiff);
+      // ROUND 3 (user report: Aussetzer STILL in medley, never in single
+      // player): single player's sampleVisualTicks and PTM's visual sampler
+      // accept ANY frame the detector reported a pitch for
+      // (note != null && frequency != null) — they apply NO volume gate to
+      // the VISUAL fill. shouldSkipPitch's volumeThreshold gate here dropped
+      // quiet-but-valid frames (soft singing / mic distance), which the
+      // renderer painted as miss segments → the reported regular gaps.
+      // Volume gating now applies to the POINT path ONLY — exactly like
+      // single player (checkNoteHits gates points, sampleVisualTicks doesn't).
+      const pitchIsValid = !!pitch && pitch.note != null && pitch.frequency != null;
       let sungPitch: number | null;
       if (pitchIsValid && pitch?.note != null) {
         sungPitch = pitch.note;
@@ -1249,6 +1260,9 @@ export function useMedleyGame({
     isPreparingNextRound,
     currentTimeMs,
     isPlaying,
+    // Effective (possibly repositioned) snippet start — the note highway and
+    // all absolute-time consumers must use this instead of snippet.startTime.
+    effectiveStartMs: audio.effectiveStartMs,
     restoredSong: audio.restoredSong,
     showBackgroundVideo,
     useAnimatedBackground,

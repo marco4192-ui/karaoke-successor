@@ -15,6 +15,7 @@ import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
+import { JukeboxPlaylistBrowser } from './jukebox-playlist-browser';
 import {
   isVideoBreak,
   parseVideoLinkInput,
@@ -495,10 +496,21 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             {/* Playlist-Auswahl + direkter Playlist-Start */}
             {playlists.length > 0 && (
               <div>
-                <label htmlFor="jukebox-playlist-select" className="text-sm text-white/60 mb-2 flex items-center gap-1.5">
-                  <ListMusicIcon className="w-3.5 h-3.5 text-cyan-400/70" />
-                  {t('jukeboxPlayer.playlist')}
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label htmlFor="jukebox-playlist-select" className="text-sm text-white/60 flex items-center gap-1.5">
+                    <ListMusicIcon className="w-3.5 h-3.5 text-cyan-400/70" />
+                    {t('jukeboxPlayer.playlist')}
+                  </label>
+                  {/* Playlist-Browser (user item 8): bestehende Playlists
+                      ansehen (inkl. Songs) und zur Jukebox hinzufügen. */}
+                  <JukeboxPlaylistBrowser
+                    songs={j.songs}
+                    onEnqueue={j.enqueueLibraryPlaylist}
+                    onSelectPool={handlePlaylistSelect}
+                    activePlaylistId={selectedPlaylistId}
+                    triggerClassName="h-7 px-2.5 text-[11px] rounded-lg"
+                  />
+                </div>
                 <select
                   id="jukebox-playlist-select"
                   value={selectedPlaylistId}

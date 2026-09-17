@@ -1287,6 +1287,15 @@ export default function KaraokeZERO() {
                 // players/settings — no setup detour. ──
                 if (party.nextRoundPick === 'ptm') {
                   party.setNextRoundPick(null);
+                  // ZOMBIE-NOTES FIX (user report, PTM + Library selection):
+                  // a previous medley round left ptmMedleySnippets populated.
+                  // Without this clear, the Library-picked single song ran
+                  // with isMedleyMode=true — every player switch loaded
+                  // another STALE snippet (notes from old songs piling up,
+                  // "Zombie-Noten" that never cleared). The 'random' next-song
+                  // path already clears this (party-game-screens.tsx) — the
+                  // Library path is the leak.
+                  party.setPtmMedleySnippets([]);
                   const playerCount = party.passTheMicPlayers?.length || 2;
                   const segments = generatePtmSegments(
                     song.duration,
@@ -1302,6 +1311,10 @@ export default function KaraokeZERO() {
                 }
                 if (party.nextRoundPick === 'cptm') {
                   party.setNextRoundPick(null);
+                  // ZOMBIE-NOTES FIX — same leak as the PTM branch above:
+                  // clear stale medley snippets from a previous round so the
+                  // Library-picked CPTM song runs as a single song.
+                  party.setPtmMedleySnippets([]);
                   const playerCount = party.cptmPlayers?.length || 2;
                   const segments = generatePtmSegments(
                     song.duration,

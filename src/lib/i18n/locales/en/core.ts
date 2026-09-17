@@ -344,6 +344,15 @@ export const coreTranslations = {
     enqueuePlaylistDesc: 'Plays exactly this playlist in the jukebox — or appends it when something is already playing',
     enqueuePlaylistRunning: 'Queue it',
     playlistQueued: 'Playlist queued!',
+    // ── Playlist browser (view playlists + add to jukebox) ──
+    browsePlaylists: 'Browse playlists',
+    browsePlaylistsTitle: '📋 Playlists',
+    browsePlaylistsEmpty: 'No playlists yet — create one in the library.',
+    browsePlaylistsSongs: '{count} songs',
+    browsePlaylistsSetPool: 'Set as pool',
+    browsePlaylistsQueue: 'Add to jukebox',
+    browsePlaylistsQueuedToast: 'Playlist added to the jukebox!',
+
     // ── Year filter ──
     filterByYear: 'Filter by Year',
     allYears: 'All Years',
