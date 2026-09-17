@@ -107,6 +107,11 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // Which daily slot is targeted for play (defaults to the active slot)
   const [selectedSlot, setSelectedSlot] = useState<number>(0);
 
+  // Weekly tab: same scroll+highlight mechanics for the weekly play area
+  const weeklyPlayAreaRef = useRef<HTMLDivElement>(null);
+  const [weeklyHighlighted, setWeeklyHighlighted] = useState(false);
+  const weeklyHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /** Select a daily slot and guide the user to the play area (players + songs). */
   const activateSlot = useCallback((slot: number, unlocked: boolean, completed: boolean) => {
     if (!unlocked) {
@@ -133,20 +138,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     });
   }, [t]);
 
-  // Clean up the highlight timer on unmount
+  // Clean up the highlight timers on unmount
   useEffect(() => () => {
     if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    if (weeklyHighlightTimerRef.current) clearTimeout(weeklyHighlightTimerRef.current);
   }, []);
 
-  // Player selection for the daily challenge (1–2 players, mandatory)
-  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(
-    activeProfileId ? [activeProfileId] : [],
-  );
+  // ── STEP 1: player selection (1–2 players) — deliberately starts EMPTY so
+  //    the guided flow (player → challenge → song) always begins at the top.
+  //    The FIRST selected player owns the statistics section at the bottom.
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   // Evaluation mode when two players are selected: duel (individual) or team (average)
   const [evaluationMode, setEvaluationMode] = useState<'duel' | 'coop'>('duel');
 
-  // View player for the progress section at the bottom (pure viewing — does NOT change the active profile)
-  const [viewPlayerId, setViewPlayerId] = useState<string | null>(activeProfileId ?? null);
+  // Weekly tab: the slot picked for playing (unfolds the song selection)
+  const [selectedWeeklySlot, setSelectedWeeklySlot] = useState<number | null>(null);
+  // Weekly song choices regeneration key (shuffle button)
+  const [weeklySongRefreshKey, setWeeklySongRefreshKey] = useState(0);
 
   // Selected daily difficulty — independent of the global game difficulty.
   const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>(() => {
@@ -191,15 +199,17 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
 
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
-  // View player for the bottom progress section (falls back to active profile)
-  const viewProfile = profiles.find(p => p.id === (viewPlayerId ?? activeProfileId)) || activeProfiles[0];
+  // The FIRST selected player owns the bottom progress/statistics section —
+  // no separate statistics player switcher (single source of truth).
+  const viewProfile = profiles.find(p => p.id === selectedPlayerIds[0]);
   const viewProfileXP = viewProfile?.xp || 0;
   const viewProfileLevel = viewProfile?.level || 1;
   const levelInfo = getXPLevel(viewProfileXP);
+  const hasPlayer = selectedPlayerIds.length > 0;
 
   // ── Daily slot data ──
   const dailySlots = useMemo(() => getDailySlots(), []);
-  const challengePlayerId = selectedPlayerIds[0] || viewProfile?.id;
+  const challengePlayerId = selectedPlayerIds[0];
   const slotProgress = challengePlayerId ? getPlayerDailySlotProgress(challengePlayerId) : { date: '', completedSlots: [], metBySlot: {} };
   const activeSlot = challengePlayerId ? getActiveDailySlot(challengePlayerId) : 0;
   // The selected play slot defaults to the active (first open) slot
@@ -221,7 +231,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
 
   // The challenge of the currently played slot — regenerated on every render so
   // difficulty/player changes update the target instantly.
-  const scalingProfile = profiles.find(p => p.id === selectedPlayerIds[0]) || viewProfile;
+  const scalingProfile = viewProfile;
   const challenge = getDailyChallengeForSlot(playSlot, scalingProfile?.level || 1, selectedDifficulty);
   const typeDef = getDailyType(challenge.type);
   const challengeXP = Math.round((playSlot === 0 ? XP_REWARDS.CHALLENGE_COMPLETE : DAILY_SLOT_XP_BONUS[Math.min(playSlot - 1, DAILY_SLOT_XP_BONUS.length - 1)]) * getDailyDifficultyMultiplier(selectedDifficulty));
@@ -259,12 +269,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     return !songs.some(s => matchesDailyCategory(def.category!, songToContext(s), language));
   }, [playSlot, language, dailySlots]);
 
-  // Keep the view player valid when profiles change
-  useEffect(() => {
-    if (viewPlayerId && !profiles.some(p => p.id === viewPlayerId)) {
-      setViewPlayerId(activeProfileId ?? activeProfiles[0]?.id ?? null);
+  // Weekly tab: song choices for the selected weekly slot — category-based
+  // weekly types (genre/decade/language sums) get MATCHING songs.
+  const weeklySongChoices = useMemo(() => {
+    if (selectedWeeklySlot === null) return [] as Song[];
+    const slotInfo = getWeeklyChallengeForSlot(selectedWeeklySlot, viewProfileLevel, weeklyDifficulty);
+    const songs = getAllSongs();
+    if (songs.length === 0) return [];
+    const cat = slotInfo.def.category;
+    if (cat) {
+      const matching = songs.filter(s => matchesDailyCategory(cat, songToContext(s), language));
+      if (matching.length >= 3) return shuffleArray(matching).slice(0, 3);
+      if (matching.length > 0) return matching;
+      return shuffleArray(songs).slice(0, 3);
     }
-  }, [profiles, viewPlayerId, activeProfileId, activeProfiles]);
+    return shuffleArray(songs).slice(0, 3);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- regenerate on slot/difficulty/refresh change
+  }, [selectedWeeklySlot, weeklySongRefreshKey, language, weeklyDifficulty, viewProfileLevel]);
 
   // Load online daily leaderboard when the online tab is opened
   const loadOnlineBoard = useCallback(async () => {
@@ -365,13 +386,65 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     onPlayChallenge(song, { gameMode, playerIds: selectedPlayerIds });
   }, [selectedPlayerIds, selectedDifficulty, playSlot, evaluationMode, profiles, setActiveProfile, setPlayers, addPlayer, onPlayChallenge]);
 
-  // Handler: play a specific song with a selected challenge mode
+  /** Shared bootstrap: make the FIRST selected player the active profile
+   *  (and optionally a second player for duel-style games). */
+  const setupGamePlayers = useCallback((secondPlayer: boolean) => {
+    if (selectedPlayerIds.length === 0) return false;
+    setActiveProfile(selectedPlayerIds[0]);
+    const ids = secondPlayer ? selectedPlayerIds : selectedPlayerIds.slice(0, 1);
+    const players = ids
+      .map(id => profiles.find(p => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => !!p && p.isActive !== false);
+    setPlayers([]);
+    players.forEach(p => addPlayer(p));
+    return true;
+  }, [selectedPlayerIds, profiles, setActiveProfile, setPlayers, addPlayer]);
+
+  // Handler (weekly tab): play a song toward the weekly challenges. Weekly
+  // slots count EVERY sung song automatically — no daily flag is needed, the
+  // post-game processor submits each result to the weekly engine.
+  const handlePlayWeeklySong = useCallback((song: Song) => {
+    if (!setupGamePlayers(true)) return;
+    const gameMode: GameMode = selectedPlayerIds.length >= 2 ? 'duel' : 'standard';
+    onPlayChallenge(song, { gameMode, playerIds: selectedPlayerIds });
+  }, [setupGamePlayers, selectedPlayerIds, onPlayChallenge]);
+
+  // Handler (weekly tab): pick a weekly slot — unfolds the song selection
+  const activateWeeklySlot = useCallback((slot: number, unlocked: boolean, completed: boolean) => {
+    if (!unlocked) {
+      toast({
+        title: `🔒 ${t('dailyChallengeScreen.slotLocked')}`,
+        description: t('dailyChallengeScreen.slotLockedHint').replace('{n}', String(slot)),
+      });
+      return;
+    }
+    if (completed) {
+      toast({
+        title: `✅ ${t('dailyChallengeScreen.slotDone')}`,
+        description: t('dailyChallengeScreen.weeklySlotDoneHint'),
+      });
+      return;
+    }
+    setSelectedWeeklySlot(slot);
+    setWeeklySongRefreshKey(k => k + 1); // fresh song choices for the new slot
+    requestAnimationFrame(() => {
+      weeklyPlayAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setWeeklyHighlighted(true);
+      if (weeklyHighlightTimerRef.current) clearTimeout(weeklyHighlightTimerRef.current);
+      weeklyHighlightTimerRef.current = setTimeout(() => setWeeklyHighlighted(false), 2000);
+    });
+  }, [t]);
+
+  // Handler: play a specific song with a selected challenge mode. Challenge
+  // modes are played SOLO by the first selected player (no gameMode override —
+  // the mapped challenge mode wins).
   const handlePlayModeSong = useCallback((song: Song) => {
     if (selectedMode) {
       setItem(StorageKeys.CHALLENGE_MODE, selectedMode.id);
     }
+    setupGamePlayers(false);
     onPlayChallenge(song);
-  }, [selectedMode, onPlayChallenge]);
+  }, [selectedMode, setupGamePlayers, onPlayChallenge]);
 
   // Metric label for a daily type (board value captions)
   const metricLabel = (type: string): string => {
@@ -425,6 +498,94 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         <p className="text-white/60">{t('dailyChallengeScreen.description')}</p>
       </div>
 
+      {/* ═══ STEP 1 · Spieler wählen — the guided flow starts here. Without a
+          player everything below stays hidden. The FIRST selected player also
+          owns the statistics section at the bottom (no duplicate selection). ═══ */}
+      <Card
+        className={`bg-white/5 mb-6 transition-all ${hasPlayer ? 'border-green-500/25' : 'border-cyan-500/40 shadow-[0_0_36px_rgba(34,211,238,0.07)]'}`}
+        data-testid="daily-player-selection"
+      >
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2.5 text-base">
+            <span
+              className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold border shrink-0 ${
+                hasPlayer
+                  ? 'bg-green-500/20 border-green-500 text-green-300'
+                  : 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+              }`}
+              aria-hidden
+            >
+              {hasPlayer ? '✓' : '1'}
+            </span>
+            {t('dailyChallengeScreen.stepPlayers')}
+          </CardTitle>
+          <CardDescription>{t('dailyChallengeScreen.stepPlayersDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activeProfiles.length === 0 ? (
+            <p className="text-sm text-white/50 py-2">{t('dailyChallengeScreen.noActiveProfiles')}</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+              {activeProfiles.map((profile) => {
+                const isSelected = selectedPlayerIds.includes(profile.id);
+                const slot = selectedPlayerIds.indexOf(profile.id);
+                return (
+                  <button
+                    key={profile.id}
+                    onClick={() => togglePlayer(profile.id)}
+                    aria-pressed={isSelected}
+                    className={`group relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-cyan-400 bg-cyan-500/10 ring-2 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.15)]'
+                        : 'border-white/10 bg-white/5 hover:border-cyan-400/40 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="relative">
+                      <span
+                        className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold overflow-hidden"
+                        style={{ backgroundColor: profile.color }}
+                      >
+                        {profile.avatar ? (
+                          <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+                        ) : (
+                          profile.name?.[0] || '?'
+                        )}
+                      </span>
+                      {isSelected && (
+                        <span
+                          className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-400 text-black shadow-[0_0_10px_rgba(34,211,238,0.6)]"
+                          aria-label={slot === 0 ? 'P1' : 'P2'}
+                        >
+                          {slot === 0 ? 'P1' : 'P2'}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-sm font-medium text-white/90 truncate max-w-full">{profile.name}</span>
+                    <span className="text-[11px] text-white/45">Lv. {profile.level || 1}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {!hasPlayer && (
+            <p className="text-xs text-amber-400/90 mt-3 flex items-center gap-1.5" data-testid="daily-player-gate-hint">
+              <span aria-hidden>👆</span> {t('dailyChallengeScreen.selectPlayerFirst')}
+            </p>
+          )}
+          {hasPlayer && selectedPlayerIds.length >= 2 && (
+            <p className="text-xs text-white/50 mt-3">{t('dailyChallengeScreen.dualPlayerHint')}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Without a player the challenge selection (and everything below) stays hidden */}
+      {!hasPlayer ? (
+        <div className="text-center py-14 text-white/40" data-testid="daily-player-gate">
+          <div className="text-5xl mb-3" aria-hidden>🎤</div>
+          <p className="text-sm max-w-md mx-auto">{t('dailyChallengeScreen.selectPlayerFirst')}</p>
+        </div>
+      ) : (
+        <>
       {/* ── Tab navigation (top) ── */}
       <div className="flex gap-2 mb-6 flex-wrap" role="tablist" aria-label={t('dailyChallengeScreen.title')}>
         {([
@@ -448,11 +609,13 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       {/* ══ TAB: Daily Challenges (5 slots) ══ */}
       {activeTab === 'challenge' && (
         <div className="space-y-4 mb-6">
-          {/* ── How dailies work: they must be started HERE (unlike the
-              weeklies, which count every song automatically). ── */}
-          <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-xs text-cyan-200/90 flex items-start gap-2" data-testid="daily-start-hint">
-            <span className="text-base leading-none mt-0.5" aria-hidden>ℹ️</span>
-            <span>{t('dailyChallengeScreen.dailyActiveStartHint')}</span>
+          {/* ── STEP 2 · Challenge wählen ── */}
+          <div className="flex items-start gap-3" data-testid="daily-step-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-purple-500/20 border border-purple-500 text-purple-300 shrink-0" aria-hidden>2</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white/90">{t('dailyChallengeScreen.stepChallenge')}</h2>
+              <p className="text-xs text-white/50">{t('dailyChallengeScreen.dailyActiveStartHint')}</p>
+            </div>
           </div>
 
           {/* ── Difficulty selector — independent of the global game difficulty.
@@ -593,22 +756,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             })}
           </div>
 
-          {/* ── Play area for the selected slot ── */}
-          <div ref={playAreaRef} className="scroll-mt-4" data-testid="daily-play-area">
+          {/* ── STEP 3 · Song wählen — folds out under the slot selection ── */}
+          <div ref={playAreaRef} className="scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="daily-play-area">
+          <div className="flex items-start gap-3 mb-3" data-testid="daily-step-3">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white/90">
+                {t('dailyChallengeScreen.stepSong')}
+                <span className="ml-2 text-white/60 font-normal">— {playSlot + 1}. {typeDef.icon} {typeName(typeDef, t)}</span>
+              </h2>
+              <p className="text-xs text-white/50">{challengeDescription}</p>
+            </div>
+            <Badge variant="outline" className="border-cyan-500 text-cyan-400 shrink-0">
+              +{challengeXP} XP{getDailyDifficultyMultiplier(selectedDifficulty) !== 1 ? ` (×${getDailyDifficultyMultiplier(selectedDifficulty)})` : ''}
+            </Badge>
+          </div>
           <Card className={`bg-white/5 border-white/10 transition-all duration-700 ${completedToday ? 'ring-1 ring-green-500/40' : ''} ${playAreaHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex flex-wrap items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <span className="text-2xl" aria-hidden>{typeDef.icon}</span>
-                  <span>{playSlot + 1}. {typeName(typeDef, t)}</span>
-                </span>
-                <Badge variant="outline" className="border-cyan-500 text-cyan-400">
-                  +{challengeXP} XP{getDailyDifficultyMultiplier(selectedDifficulty) !== 1 ? ` (×${getDailyDifficultyMultiplier(selectedDifficulty)})` : ''}
-                </Badge>
-              </CardTitle>
-              <CardDescription>{challengeDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               {slotCategoryEmpty && (
                 <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300">
                   {t('dailyChallengeScreen.noMatchingSongs')}
@@ -661,108 +825,62 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                 );
               })()}
 
-              {/* ── Mandatory player selection (1–2 players) ── */}
-              <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">
-                  {t('dailyChallengeScreen.selectChallengePlayers')} <span className="text-cyan-400">*</span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {activeProfiles.map((profile) => {
-                    const isSelected = selectedPlayerIds.includes(profile.id);
-                    const slot = selectedPlayerIds.indexOf(profile.id);
-                    return (
-                      <button
-                        key={profile.id}
-                        onClick={() => togglePlayer(profile.id)}
-                        aria-pressed={isSelected}
-                        className={`flex items-center gap-2 p-2.5 rounded-lg transition-all border ${
-                          isSelected
-                            ? 'bg-cyan-500/20 border-cyan-500 text-white ring-1 ring-cyan-400/50'
-                            : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10'
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                          style={{ backgroundColor: profile.color }}
-                        >
-                          {profile.avatar ? (
-                            <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            profile.name?.[0] || '?'
-                          )}
-                        </div>
-                        <span className="text-sm truncate flex-1 text-left">{profile.name}</span>
-                        {isSelected && (
-                          <span className="text-[10px] font-bold text-cyan-300 flex-shrink-0">
-                            {slot === 0 ? 'P1' : 'P2'}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {selectedPlayerIds.length === 0 && (
-                  <p className="text-xs text-amber-400/80 mt-2">{t('dailyChallengeScreen.selectChallengePlayersHint')}</p>
-                )}
-
-                {/* Evaluation mode when two players are selected */}
-                {selectedPlayerIds.length >= 2 && (
-                  <div className="mt-3">
-                    <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.evaluationMode')}</label>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={evaluationMode === 'duel' ? 'default' : 'outline'}
-                        onClick={() => setEvaluationMode('duel')}
-                        className={evaluationMode === 'duel' ? 'bg-purple-500' : 'border-white/20'}
-                      >
-                        {t('dailyChallengeScreen.evaluationDuel')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={evaluationMode === 'coop' ? 'default' : 'outline'}
-                        onClick={() => setEvaluationMode('coop')}
-                        className={evaluationMode === 'coop' ? 'bg-green-500' : 'border-white/20'}
-                      >
-                        {t('dailyChallengeScreen.evaluationTeam')}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Three song choices for the slot */}
-              {selectedPlayerIds.length > 0 && (
+              {/* Evaluation mode when two players are selected (players
+                  themselves are picked in step 1 at the top) */}
+              {selectedPlayerIds.length >= 2 && (
                 <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm text-white/60">{t('dailyChallengeScreen.selectSong')}</label>
+                  <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.evaluationMode')}</label>
+                  <div className="flex gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="border-white/20 h-7 px-2 text-xs"
-                      onClick={() => setSongRefreshKey(k => k + 1)}
-                      title={t('dailyChallengeScreen.shuffleSongs')}
+                      variant={evaluationMode === 'duel' ? 'default' : 'outline'}
+                      onClick={() => setEvaluationMode('duel')}
+                      className={evaluationMode === 'duel' ? 'bg-purple-500' : 'border-white/20'}
                     >
-                      🔄 {t('dailyChallengeScreen.shuffleSongs')}
+                      {t('dailyChallengeScreen.evaluationDuel')}
                     </Button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {songChoices.map((song, idx) => (
-                      <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlaySong(song)}>
-                        <CardContent className="pt-3 pb-3">
-                          <div className="text-sm font-medium text-white truncate">{song.title}</div>
-                          <div className="text-xs text-white/50 truncate">{song.artist}</div>
-                          <div className="flex items-center gap-2 mt-1">
-                            {song.genre && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.genre}</span>}
-                            {song.language && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.language}</span>}
-                            {song.duration && <span className="text-xs text-white/40">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</span>}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    <Button
+                      size="sm"
+                      variant={evaluationMode === 'coop' ? 'default' : 'outline'}
+                      onClick={() => setEvaluationMode('coop')}
+                      className={evaluationMode === 'coop' ? 'bg-green-500' : 'border-white/20'}
+                    >
+                      {t('dailyChallengeScreen.evaluationTeam')}
+                    </Button>
                   </div>
                 </div>
               )}
+
+              {/* Three song choices for the slot (player is guaranteed here) */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm text-white/60">{t('dailyChallengeScreen.selectSong')}</label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-white/20 h-7 px-2 text-xs"
+                    onClick={() => setSongRefreshKey(k => k + 1)}
+                    title={t('dailyChallengeScreen.shuffleSongs')}
+                  >
+                    🔄 {t('dailyChallengeScreen.shuffleSongs')}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {songChoices.map((song, idx) => (
+                    <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlaySong(song)}>
+                      <CardContent className="pt-3 pb-3">
+                        <div className="text-sm font-medium text-white truncate">{song.title}</div>
+                        <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {song.genre && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.genre}</span>}
+                          {song.language && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.language}</span>}
+                          {song.duration && <span className="text-xs text-white/40">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</span>}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
 
               <div className="flex items-center justify-between">
                 <div className="text-sm text-white/60">
@@ -786,9 +904,22 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </div>
       )}
 
-      {/* ══ TAB: Weekly Challenges (5 slots, own difficulty) ══ */}
+      {/* ══ TAB: Weekly Challenges (5 slots, own difficulty) — same
+          3-step structure as the daily tab: player (step 1, top) → pick a
+          weekly slot → pick a song. Weekly slots count every sung song
+          automatically, so playing from here is pure convenience. ══ */}
       {activeTab === 'weekly' && (
         <div className="space-y-4 mb-6">
+          {/* ── STEP 2 · Challenge wählen ── */}
+          <div className="flex items-start gap-3" data-testid="weekly-step-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-purple-500/20 border border-purple-500 text-purple-300 shrink-0" aria-hidden>2</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white/90">{t('dailyChallengeScreen.stepChallenge')}</h2>
+              <p className="text-xs text-white/50">{t('dailyChallengeScreen.weeklyPickSlot')}</p>
+            </div>
+            <span className="text-xs text-white/40 shrink-0">{t('dailyChallengeScreen.resetsIn')} {weeklyReset.days}d {weeklyReset.hours}h</span>
+          </div>
+
           {/* Weekly difficulty selector — independent from daily + global */}
           <Card className="bg-white/5 border-white/10">
             <CardContent className="pt-4 pb-4">
@@ -835,21 +966,35 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             </CardContent>
           </Card>
 
-          {/* The 5 weekly slots */}
+          {/* The 5 weekly slots — selectable, they unfold the song area */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {weeklySlots.slice(0, WEEKLY_SLOTS_PER_WEEK).map((slotData) => {
               const slotInfo = getWeeklyChallengeForSlot(slotData.slot, viewProfileLevel, weeklyDifficulty);
               const def = slotInfo.def;
               const unlocked = isWeeklySlotUnlocked(slotData.slot, challengePlayerId);
               const completed = weeklyProgress.completedSlots.includes(slotData.slot);
+              const slotMet = (weeklyProgress.metBySlot[String(slotData.slot)] ?? []) as DailyDifficulty[];
               const slotXP = Math.round(WEEKLY_SLOT_XP[Math.min(slotData.slot, WEEKLY_SLOT_XP.length - 1)] * getDailyDifficultyMultiplier(weeklyDifficulty));
+              const isSelSlot = selectedWeeklySlot === slotData.slot;
               return (
                 <Card
                   key={slotData.slot}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${slotData.slot + 1}. ${typeName(def, t)}`}
+                  data-testid={`weekly-slot-card-${slotData.slot}`}
+                  onClick={() => activateWeeklySlot(slotData.slot, unlocked, completed)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      activateWeeklySlot(slotData.slot, unlocked, completed);
+                    }
+                  }}
                   className={`bg-white/5 transition-all ${
-                    completed ? 'ring-2 ring-green-500 border-green-500/30'
-                    : unlocked ? 'border-white/10 hover:border-cyan-500/50'
-                    : 'border-white/10 opacity-50'
+                    completed ? 'ring-2 ring-green-500 border-green-500/30 cursor-pointer'
+                    : isSelSlot ? 'ring-2 ring-cyan-500 cursor-pointer'
+                    : unlocked ? 'border-white/10 hover:border-cyan-500/50 cursor-pointer hover:bg-white/10'
+                    : 'border-white/10 opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <CardContent className="pt-4 pb-4">
@@ -868,6 +1013,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                           <Badge className="bg-green-500/20 text-green-300 border border-green-500/40">✓ {t('dailyChallengeScreen.slotDone')}</Badge>
                         ) : !unlocked ? (
                           <Badge variant="outline" className="border-white/20 text-white/40">🔒 {t('dailyChallengeScreen.slotLocked')}</Badge>
+                        ) : isSelSlot ? (
+                          <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">▶ {t('dailyChallengeScreen.slotActive')}</Badge>
                         ) : (
                           <Badge variant="outline" className="border-cyan-500/40 text-cyan-300">{t('dailyChallengeScreen.slotOpen')}</Badge>
                         )}
@@ -878,13 +1025,95 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       <span>
                         {t('dailyChallengeScreen.target')}: <span className="text-white/80 font-medium">{formatDailyValue(def.metricKey, slotInfo.target)}</span>
                       </span>
-                      <span className="text-white/30">{def.aggregation === 'sum' ? t('dailyChallengeScreen.weeklySumType') : t('dailyChallengeScreen.weeklyBestType')}</span>
+                      <span className="flex items-center gap-2">
+                        {slotMet.length > 0 && (
+                          <span className="flex gap-0.5">
+                            {DAILY_DIFFICULTIES.map(d => (
+                              <span key={d.id} title={t(d.labelKey)} className={slotMet.includes(d.id) ? '' : 'opacity-20'}>{d.icon}</span>
+                            ))}
+                          </span>
+                        )}
+                        <span className="text-white/30">{def.aggregation === 'sum' ? t('dailyChallengeScreen.weeklySumType') : t('dailyChallengeScreen.weeklyBestType')}</span>
+                      </span>
                     </div>
+                    {/* Explicit affordance — unfolds the song selection below */}
+                    {unlocked && !completed && (
+                      <Button
+                        size="sm"
+                        className="mt-3 w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-semibold"
+                        data-testid={`weekly-slot-start-${slotData.slot}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          activateWeeklySlot(slotData.slot, unlocked, completed);
+                        }}
+                      >
+                        ▶ {t('dailyChallengeScreen.slotStart')}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+
+          {/* ── STEP 3 · Song wählen — folds out when a weekly slot is picked ── */}
+          {selectedWeeklySlot !== null && (() => {
+            const slotInfo = getWeeklyChallengeForSlot(selectedWeeklySlot, viewProfileLevel, weeklyDifficulty);
+            const wDef = slotInfo.def;
+            return (
+              <div
+                ref={weeklyPlayAreaRef}
+                className="scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300"
+                data-testid="weekly-play-area"
+              >
+                <div className="flex items-start gap-3 mb-3" data-testid="weekly-step-3">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold text-white/90">
+                      {t('dailyChallengeScreen.stepSong')}
+                      <span className="ml-2 text-white/60 font-normal">— {selectedWeeklySlot + 1}. {wDef.icon} {typeName(wDef, t)}</span>
+                    </h2>
+                    <p className="text-xs text-white/50">
+                      {interpolateChallengeText(t(wDef.descriptionKey), wDef.descriptionParams, slotInfo.target, wDef.metricKey)} · {wDef.aggregation === 'sum' ? t('dailyChallengeScreen.weeklySumType') : t('dailyChallengeScreen.weeklyBestType')}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-white/20 h-7 px-2 text-xs shrink-0"
+                    onClick={() => setWeeklySongRefreshKey(k => k + 1)}
+                    title={t('dailyChallengeScreen.shuffleSongs')}
+                  >
+                    🔄 {t('dailyChallengeScreen.shuffleSongs')}
+                  </Button>
+                </div>
+                <Card className={`bg-white/5 border-white/10 transition-all duration-700 ${weeklyHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''}`}>
+                  <CardContent className="pt-4">
+                    {weeklySongChoices.length === 0 ? (
+                      <p className="text-sm text-white/50 py-2">{t('dailyChallengeScreen.noMatchingSongs')}</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                        {weeklySongChoices.map((song, idx) => (
+                          <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlayWeeklySong(song)} data-testid={`weekly-song-${idx}`}>
+                            <CardContent className="pt-3 pb-3">
+                              <div className="text-sm font-medium text-white truncate">{song.title}</div>
+                              <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {song.genre && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.genre}</span>}
+                                {song.language && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{song.language}</span>}
+                                {song.duration && <span className="text-xs text-white/40">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</span>}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-white/40">{t('dailyChallengeScreen.weeklyCountsAutomatically')}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
 
           <Card className="bg-white/5 border-white/10">
             <CardContent className="pt-4">
@@ -901,28 +1130,36 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </div>
       )}
 
-      {/* ══ TAB: Challenge Modes (71 modes, filter + completion) ══ */}
+      {/* ══ TAB: Challenge Modes (71 modes, filter + completion) — same
+          3-step structure: player (step 1, top) → pick a mode → pick a song ══ */}
       {activeTab === 'modes' && (
         <div className="space-y-4 mb-6">
+          {/* ── STEP 2 · Challenge-Modus wählen ── */}
+          <div className="flex items-start gap-3" data-testid="modes-step-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-purple-500/20 border border-purple-500 text-purple-300 shrink-0" aria-hidden>2</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white/90">{t('dailyChallengeScreen.stepChallengeMode')}</h2>
+              <p className="text-xs text-white/50">{t('dailyChallengeScreen.modesSoloHint')}</p>
+            </div>
+            {/* Difficulty filter */}
+            <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10 shrink-0">
+              {(['all', 'easy', 'medium', 'hard', 'extreme'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setModeFilter(f)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                    modeFilter === f ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  {f === 'all' ? t('dailyChallengeScreen.filterAll') : f.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Card className="bg-white/5 border-white/10">
             <CardHeader className="pb-3">
-              <CardTitle className="flex flex-wrap items-center justify-between gap-3">
-                <span>{t('dailyChallengeScreen.challengeModes')} ({CHALLENGE_MODES.length})</span>
-                {/* Difficulty filter */}
-                <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10">
-                  {(['all', 'easy', 'medium', 'hard', 'extreme'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setModeFilter(f)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                        modeFilter === f ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      {f === 'all' ? t('dailyChallengeScreen.filterAll') : f.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </CardTitle>
+              <CardTitle>{t('dailyChallengeScreen.challengeModes')} ({CHALLENGE_MODES.length})</CardTitle>
               <CardDescription>{t('dailyChallengeScreen.specialModifiers')}</CardDescription>
             </CardHeader>
           </Card>
@@ -1020,12 +1257,19 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             })}
           </div>
 
-          {/* Song selection when a mode is selected */}
+          {/* ── STEP 3 · Song wählen — folds out when a mode is picked ── */}
           {selectedMode && modeSongChoices.length > 0 && (
-            <div className="mb-4">
-              <label className="text-sm text-white/60 mb-2 block">
-                {selectedMode.icon} {t(selectedMode.nameKey)} — {t('dailyChallengeScreen.selectSong')}
-              </label>
+            <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="modes-step-3">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-semibold text-white/90">
+                    {t('dailyChallengeScreen.stepSong')}
+                    <span className="ml-2 text-white/60 font-normal">— {selectedMode.icon} {t(selectedMode.nameKey)}</span>
+                  </h2>
+                  <p className="text-xs text-white/50">{t(selectedMode.descriptionKey)}</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {modeSongChoices.map((song, idx) => (
                   <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlayModeSong(song)}>
@@ -1077,7 +1321,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       difficulty: mixerSelected.length >= 3 ? 'extreme' : mixerSelected.length >= 2 ? 'hard' : 'medium',
                     });
                     setItem(StorageKeys.CHALLENGE_MODE, customChallenge.id);
-                    onPlayChallenge(songChoices[0] || getAllSongs()[0]);
+                    // Fresh random song (previously this reused the daily tab's
+                    // songChoices which could be stale/empty on the modes tab)
+                    const mixerSong = shuffleArray(getAllSongs())[0];
+                    if (!mixerSong) return;
+                    setupGamePlayers(false);
+                    onPlayChallenge(mixerSong);
                   }}>
                     {t('dailyChallengeScreen.playNow')} (+{Math.round((150 + mixerSelected.length * 50) * (mixerSelected.length >= 3 ? 3 : mixerSelected.length >= 2 ? 2 : 1.5))} XP)
                   </Button>
@@ -1362,32 +1611,23 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </Card>
       )}
 
-      {/* ── Player progress section (bottom): switchable per player ── */}
-      {activeProfiles.length > 0 && (
+      {/* ── Player progress section (bottom): ALWAYS follows the FIRST
+          selected player — no duplicate statistics player selection. ── */}
+      {viewProfile && (
         <section aria-label={t('dailyChallengeScreen.playerProgress')} className="mt-8 pt-6 border-t border-white/10">
-          {/* Player switcher */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-sm text-white/50 mr-1">{t('dailyChallengeScreen.playerProgress')}:</span>
-            {activeProfiles.map((profile) => (
-              <button
-                key={profile.id}
-                onClick={() => setViewPlayerId(profile.id)}
-                aria-pressed={viewProfile?.id === profile.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-sm ${
-                  viewProfile?.id === profile.id
-                    ? 'bg-cyan-500 text-white ring-2 ring-cyan-400'
-                    : 'bg-white/10 text-white/60 hover:bg-white/20'
-                }`}
-              >
-                <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: profile.color }}>
-                  {profile.avatar ? <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" /> : profile.name?.[0] || '?'}
-                </div>
-                <span>{profile.name}</span>
-              </button>
-            ))}
+          {/* Whose statistics these are — fixed to P1 from step 1 */}
+          <div className="flex items-center gap-2.5 mb-4 flex-wrap">
+            <span className="text-sm text-white/50">{t('dailyChallengeScreen.playerProgress')}:</span>
+            <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-sm">
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden" style={{ backgroundColor: viewProfile.color }}>
+                {viewProfile.avatar ? <img src={viewProfile.avatar} alt={viewProfile.name} className="w-full h-full object-cover" /> : viewProfile.name?.[0] || '?'}
+              </span>
+              <span className="font-medium">{viewProfile.name}</span>
+              <span className="text-xs text-cyan-300">Lv. {viewProfileLevel}</span>
+            </span>
           </div>
 
-          {/* Level & XP Progress — of the viewed player */}
+          {/* Level & XP Progress — of the first selected player */}
           <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 mb-4">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between mb-2">
@@ -1455,6 +1695,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             </Card>
           </div>
         </section>
+      )}
+        </>
       )}
     </div>
   );
