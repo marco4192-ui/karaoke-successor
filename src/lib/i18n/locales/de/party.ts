@@ -523,6 +523,8 @@ modeSettings: {
   vote: 'Abstimmung',
   byStrength: 'Nach Stärke',
   roundDuration: 'Runden-Dauer',
+  brMedleyRoundDuration: 'Medley-Runden-Dauer',
+  brMedleyRoundDurationDesc: 'Gilt nur für Medley-Runden — Zufall und Abstimmung spielen komplette Songs.',
   finalRoundDuration: 'Finalrunden-Dauer',
   medleyMode: 'Medley-Modus',
   medleyModeDesc: 'Mehrere Song-Snippets pro Runde',

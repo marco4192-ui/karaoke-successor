@@ -123,11 +123,14 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 2,
     maxPlayers: 24,
     settings: [
-      { key: 'roundDuration', label: 'Round Duration', labelKey: 'modeSettings.roundDuration', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
+      // roundDuration now ONLY governs medley rounds — 'random' and 'vote'
+      // play FULL songs (user rule 6.3). Description clarifies this.
+      { key: 'roundDuration', label: 'Medley Round Duration', labelKey: 'modeSettings.brMedleyRoundDuration', description: 'Only applies to medley rounds — Random and Vote play full songs', descriptionKey: 'modeSettings.brMedleyRoundDurationDesc', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
       { key: 'finalRoundDuration', label: 'Final Round Duration', labelKey: 'modeSettings.finalRoundDuration', type: 'slider', min: 60, max: 300, step: 30, defaultValue: 120, unit: 's' },
-      { key: 'medleyMode', label: 'Medley Mode', description: 'Multiple song snippets per round', labelKey: 'modeSettings.medleyMode', descriptionKey: 'modeSettings.medleyModeDesc', type: 'toggle', defaultValue: false },
-      // NOTE: Song selection method is controlled by the top-level songSelectionOptions (random|vote),
-      // NOT by an inner setting. The UI renders selection buttons based on songSelectionOptions.
+      // NOTE: Song selection method is controlled by the top-level songSelectionOptions
+      // (random|vote|medley), NOT by an inner setting. The medleyMode toggle was REMOVED:
+      // selecting 'medley' as the song method now enables medley rounds (user rule 6.3);
+      // random/vote always play complete songs.
       { key: 'grandFinaleBestOf', label: 'Grand Finale', description: 'Final 2 players format', labelKey: 'modeSettings.grandFinale', descriptionKey: 'modeSettings.grandFinaleDesc', type: 'select', options: [
         { value: 1, label: 'Normal Final', labelKey: 'modeSettings.normalFinal' },
         { value: 3, label: '🏆 Best of 3', labelKey: 'modeSettings.bestOf3' },
@@ -139,7 +142,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'shrinkingTimer', label: 'Shrinking Timer', description: 'Rounds get shorter over time', labelKey: 'modeSettings.shrinkingTimer', descriptionKey: 'modeSettings.shrinkingTimerDesc', type: 'toggle', defaultValue: false },
       { key: 'noRepeatProtection', label: 'No-Repeat Protection', description: 'Prevent recently played songs', labelKey: 'modeSettings.noRepeatProtection', descriptionKey: 'modeSettings.noRepeatProtectionDesc', type: 'toggle', defaultValue: true },
     ],
-    songSelectionOptions: ['random', 'vote'],
+    songSelectionOptions: ['random', 'vote', 'medley'],
     supportsCompanionApp: true,
     deviceAssignmentMode: 'exclusive',
   },

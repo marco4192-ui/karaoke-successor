@@ -551,6 +551,8 @@ export const partyTranslations = {
     byStrength: 'By Strength',
     // Battle Royale
     roundDuration: 'Round Duration',
+    brMedleyRoundDuration: 'Medley Round Duration',
+    brMedleyRoundDurationDesc: 'Only applies to medley rounds — Random and Vote play full songs.',
     finalRoundDuration: 'Final Round Duration',
     medleyMode: 'Medley Mode',
     medleyModeDesc: 'Multiple song snippets per round',

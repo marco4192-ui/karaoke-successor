@@ -11,6 +11,16 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     showNoteHighway?: boolean;
     showVideoBackground?: boolean; countdownDuration?: number;
   };
+  // User rule 6.3: the song-selection METHOD drives the round format —
+  // 'medley' plays medley rounds (30s snippets), 'random'/'vote' play
+  // COMPLETE songs. The old medleyMode toggle is gone from the setup UI;
+  // a stale draft value is ignored (songSelection wins).
+  // NOTE: songSelection is a TOP-LEVEL field of GameSetupResult (the unified
+  // setup hook) — reading it from settings always yielded undefined and
+  // silently degraded every BR game to 'random' (user report 6.5). The
+  // settings fallback only covers older callers.
+  const selectionMethod = (result.songSelection as string | undefined) ?? s.songSelection ?? 'random';
+  const isMedleySelection = selectionMethod === 'medley';
   // Battle Royale allows up to 4 simultaneous local microphone players
   // (MAX_LOCAL_MIC_PLAYERS) plus companion players.
   // Item 8.2 FIX: count MICROPHONE players separately — the old index-based
@@ -38,11 +48,13 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     roundDuration: s.roundDuration ?? 60,
     finalRoundDuration: s.finalRoundDuration ?? 120,
     randomSongs: true,
-    medleyMode: s.medleyMode ?? false,
+    medleyMode: isMedleySelection,
     medleySnippets: 3,
     difficulty: result.difficulty,
     eliminationAnimation: true,
-    songSelection: (s.songSelection as 'random' | 'vote') ?? 'random',
+    // Internal per-round picker: vote keeps the voting phase; medley and
+    // random pick directly (medley rounds bundle several snippets).
+    songSelection: selectionMethod === 'vote' ? 'vote' : 'random',
     noRepeatProtection: s.noRepeatProtection ?? true,
     noRepeatCount: 10,
     grandFinaleBestOf: (s.grandFinaleBestOf as 1 | 3 | 5) ?? 1,
