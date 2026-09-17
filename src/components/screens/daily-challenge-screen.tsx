@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -112,6 +112,35 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   const [weeklyHighlighted, setWeeklyHighlighted] = useState(false);
   const weeklyHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Anchor points (guided flow): after a selection the user gets "pulled"
+  //    (smooth-scrolled) to the next step of the flow. ──
+  // Step 1 → step 2: picking the FIRST player unfolds the tab bar + challenge
+  // selection — pull the user down to the tabs (see togglePlayer).
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [tabsHighlighted, setTabsHighlighted] = useState(false);
+  const tabsHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Modes tab, step 2 → step 3: picking a challenge mode unfolds the song
+  // selection — pull the user down to it (see the mode card onClick).
+  const modeSongsRef = useRef<HTMLDivElement>(null);
+  const [modeSongsHighlighted, setModeSongsHighlighted] = useState(false);
+  const modeSongsHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Anchor-point helper: smooth-scroll a target into view and pulse its
+   *  highlight ring for ~2 s — same mechanics as the slot activation. */
+  const scrollToRef = useCallback((
+    ref: RefObject<HTMLDivElement | null>,
+    setHighlighted: (highlighted: boolean) => void,
+    timerRef: RefObject<ReturnType<typeof setTimeout> | null>,
+  ) => {
+    requestAnimationFrame(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setHighlighted(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setHighlighted(false), 2000);
+    });
+  }, []);
+
   /** Select a daily slot and guide the user to the play area (players + songs). */
   const activateSlot = useCallback((slot: number, unlocked: boolean, completed: boolean) => {
     if (!unlocked) {
@@ -130,18 +159,15 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     }
     setSelectedSlot(slot);
     // Scroll the play area into view + brief highlight pulse so the click has a clear effect
-    requestAnimationFrame(() => {
-      playAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setPlayAreaHighlighted(true);
-      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
-      highlightTimerRef.current = setTimeout(() => setPlayAreaHighlighted(false), 2000);
-    });
-  }, [t]);
+    scrollToRef(playAreaRef, setPlayAreaHighlighted, highlightTimerRef);
+  }, [scrollToRef, t]);
 
   // Clean up the highlight timers on unmount
   useEffect(() => () => {
     if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
     if (weeklyHighlightTimerRef.current) clearTimeout(weeklyHighlightTimerRef.current);
+    if (tabsHighlightTimerRef.current) clearTimeout(tabsHighlightTimerRef.current);
+    if (modeSongsHighlightTimerRef.current) clearTimeout(modeSongsHighlightTimerRef.current);
   }, []);
 
   // ── STEP 1: player selection (1–2 players) — deliberately starts EMPTY so
@@ -348,8 +374,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
   }
 
-  // Toggle player selection (max 2)
+  // Toggle player selection (max 2). Anchor point: picking the FIRST player
+  // unfolds the challenge area below — smoothly pull the user down to the tab
+  // bar (step 2). Only on the "none → first player" transition; adding or
+  // replacing a second player and deselecting never scroll.
   const togglePlayer = (profileId: string) => {
+    const isFirstPlayerPick = selectedPlayerIds.length === 0;
     setSelectedPlayerIds(prev =>
       prev.includes(profileId)
         ? prev.filter(id => id !== profileId)
@@ -357,6 +387,9 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           ? [...prev, profileId]
           : [prev[1], profileId], // replace the second slot when full
     );
+    if (isFirstPlayerPick) {
+      scrollToRef(tabsRef, setTabsHighlighted, tabsHighlightTimerRef);
+    }
   };
 
   // Handler: play a specific song for the daily challenge with the selected players
@@ -427,13 +460,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     }
     setSelectedWeeklySlot(slot);
     setWeeklySongRefreshKey(k => k + 1); // fresh song choices for the new slot
-    requestAnimationFrame(() => {
-      weeklyPlayAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setWeeklyHighlighted(true);
-      if (weeklyHighlightTimerRef.current) clearTimeout(weeklyHighlightTimerRef.current);
-      weeklyHighlightTimerRef.current = setTimeout(() => setWeeklyHighlighted(false), 2000);
-    });
-  }, [t]);
+    scrollToRef(weeklyPlayAreaRef, setWeeklyHighlighted, weeklyHighlightTimerRef);
+  }, [scrollToRef, t]);
 
   // Handler: play a specific song with a selected challenge mode. Challenge
   // modes are played SOLO by the first selected player (no gameMode override —
@@ -553,7 +581,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       </span>
                       {isSelected && (
                         <span
-                          className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-400 text-black shadow-[0_0_10px_rgba(34,211,238,0.6)]"
+                          className="absolute -bottom-1 -right-1 px-1 py-0 rounded-full text-[8px] font-black bg-cyan-400 text-black shadow-[0_0_10px_rgba(34,211,238,0.6)]"
                           aria-label={slot === 0 ? 'P1' : 'P2'}
                         >
                           {slot === 0 ? 'P1' : 'P2'}
@@ -586,8 +614,16 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         </div>
       ) : (
         <>
-      {/* ── Tab navigation (top) ── */}
-      <div className="flex gap-2 mb-6 flex-wrap" role="tablist" aria-label={t('dailyChallengeScreen.title')}>
+      {/* ── Tab navigation (top) — anchor point after the first player pick:
+          scrolled into view + highlight pulse (see togglePlayer) ── */}
+      <div
+        ref={tabsRef}
+        className={`flex gap-2 mb-6 flex-wrap scroll-mt-4 rounded-xl transition-all duration-700 ${
+          tabsHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''
+        }`}
+        role="tablist"
+        aria-label={t('dailyChallengeScreen.title')}
+      >
         {([
           ['challenge', 'dailyChallengeScreen.challenges'],
           ['weekly', 'dailyChallengeScreen.weeklyChallenge'],
@@ -1213,6 +1249,9 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       } else {
                         setModeSongChoices(shuffleArray(songs).slice(0, 3));
                       }
+                      // Anchor point: the song selection (step 3) unfolds
+                      // below — pull the user down to it
+                      scrollToRef(modeSongsRef, setModeSongsHighlighted, modeSongsHighlightTimerRef);
                     }
                   }}
                 >
@@ -1259,27 +1298,31 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
 
           {/* ── STEP 3 · Song wählen — folds out when a mode is picked ── */}
           {selectedMode && modeSongChoices.length > 0 && (
-            <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="modes-step-3">
-              <div className="flex items-start gap-3 mb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-sm font-semibold text-white/90">
-                    {t('dailyChallengeScreen.stepSong')}
-                    <span className="ml-2 text-white/60 font-normal">— {selectedMode.icon} {t(selectedMode.nameKey)}</span>
-                  </h2>
-                  <p className="text-xs text-white/50">{t(selectedMode.descriptionKey)}</p>
+            <div ref={modeSongsRef} className="mb-4 scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="modes-step-3">
+              {/* Anchor highlight wrapper — own transition classes so they
+                  don't clash with the mount animation on the outer div */}
+              <div className={`rounded-xl transition-all duration-700 ${modeSongsHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''}`}>
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold text-white/90">
+                      {t('dailyChallengeScreen.stepSong')}
+                      <span className="ml-2 text-white/60 font-normal">— {selectedMode.icon} {t(selectedMode.nameKey)}</span>
+                    </h2>
+                    <p className="text-xs text-white/50">{t(selectedMode.descriptionKey)}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {modeSongChoices.map((song, idx) => (
-                  <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlayModeSong(song)}>
-                    <CardContent className="pt-3 pb-3">
-                      <div className="text-sm font-medium text-white truncate">{song.title}</div>
-                      <div className="text-xs text-white/50 truncate">{song.artist}</div>
-                      {song.duration && <div className="text-xs text-white/40 mt-1">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</div>}
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {modeSongChoices.map((song, idx) => (
+                    <Card key={song.id || idx} className="bg-white/5 border-white/10 hover:border-cyan-500/50 cursor-pointer transition-all hover:scale-[1.02]" onClick={() => handlePlayModeSong(song)}>
+                      <CardContent className="pt-3 pb-3">
+                        <div className="text-sm font-medium text-white truncate">{song.title}</div>
+                        <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                        {song.duration && <div className="text-xs text-white/40 mt-1">{Math.round(song.duration / 60000)}:{String(Math.round((song.duration % 60000) / 1000)).padStart(2, '0')}</div>}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </div>
           )}
