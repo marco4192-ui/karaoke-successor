@@ -16,10 +16,10 @@ import { MANUAL_START_PLATFORMS, type VideoPlatform } from '@/lib/url-utils';
 import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getPlaylists } from '@/lib/playlist-manager';
-import { StorageKeys, getJson, setJson, removeItem } from '@/lib/storage';
 import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
 import { JukeboxPlaylistBrowser } from './jukebox-playlist-browser';
+import { setJukeboxPool, useJukeboxPoolId } from './jukebox-pool';
 import { getSongPlatformVideo, isVideoBreak, parseVideoLinkInput, videoBreakPlatform, platformDisplayName } from './video-break';
 import { EqualizerBars, VinylDisc } from './jukebox-visuals';
 
@@ -311,30 +311,13 @@ function JukeboxPlatformVideo({
 /** Inline pool/playlist switcher for the jukebox player view */
 function PoolSelector({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState('');
+  // Shared pool state — stays in sync with every other jukebox surface
+  // (controls bar, fullscreen header, setup view) via the pool-changed event.
+  const selectedPlaylistId = useJukeboxPoolId();
   const [enqueueState, setEnqueueState] = useState<'idle' | 'busy' | 'done'>('idle');
 
-  // Restore selection on mount
-  useEffect(() => {
-    const stored = getJson<string[] | null>(StorageKeys.JUKEBOX_PLAYLIST, null);
-    if (stored && Array.isArray(stored) && stored.length > 0) {
-      const playlists = getPlaylists();
-      const match = playlists.find(p => !p.isSystem && JSON.stringify(p.songIds) === JSON.stringify(stored));
-      if (match) setSelectedPlaylistId(match.id);
-    }
-  }, []);
-
   const handleChange = (playlistId: string) => {
-    setSelectedPlaylistId(playlistId);
-    if (!playlistId) {
-      removeItem(StorageKeys.JUKEBOX_PLAYLIST);
-    } else {
-      const playlists = getPlaylists();
-      const pl = playlists.find(p => p.id === playlistId);
-      if (pl) setJson(StorageKeys.JUKEBOX_PLAYLIST, pl.songIds);
-    }
-    // Notify useJukebox to re-filter via custom event
-    window.dispatchEvent(new CustomEvent('jukebox-pool-changed'));
+    setJukeboxPool(playlistId);
   };
 
   // Queue the selected library playlist directly into the running jukebox queue
@@ -368,6 +351,8 @@ function PoolSelector({ j }: { j: UseJukeboxReturn }) {
         activePlaylistId={selectedPlaylistId}
         triggerClassName="h-9 px-3 rounded-xl"
       />
+      {/* NOTE: the same browser is also available in the controls bar
+          ("Jukebox-Menü") and in the fullscreen header. */}
       {playlists.length > 0 && (
         <>
       <select
@@ -421,6 +406,7 @@ function PoolSelector({ j }: { j: UseJukeboxReturn }) {
 
 function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
+  const fullscreenPoolId = useJukeboxPoolId();
   return (
     <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 via-black/60 to-transparent p-4 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
@@ -439,6 +425,14 @@ function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
         {j.timerRemaining !== null && j.timerRemaining > 0 && (
           <span className="text-white/70 text-sm font-mono bg-white/10 rounded-lg px-2.5 py-1 border border-white/10">{formatTimer(j.timerRemaining)}</span>
         )}
+        {/* Playlists ansehen — also reachable in fullscreen mode */}
+        <JukeboxPlaylistBrowser
+          songs={j.songs}
+          onEnqueue={j.enqueueLibraryPlaylist}
+          onSelectPool={setJukeboxPool}
+          activePlaylistId={fullscreenPoolId}
+          triggerClassName="h-9 px-3 rounded-xl bg-white/10 border-white/20 text-white/80 hover:bg-white/20 hover:text-white"
+        />
         <Button
           variant="outline"
           onClick={() => j.setShowLyrics(!j.showLyrics)}
@@ -679,6 +673,9 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
 
 function ControlsBar({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
+  // Active pool for the browser's "Als Pool setzen" highlight — kept in sync
+  // with all other jukebox surfaces through the shared pool state.
+  const activePoolId = useJukeboxPoolId();
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
       <div className="flex items-center gap-2">
@@ -752,6 +749,17 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
           </svg>
           <span className="text-xs hidden sm:inline">{t('jukeboxPlayer.playlist')}</span>
         </button>
+
+        {/* Playlists ansehen — the playlist browser right inside the jukebox
+            menu, so existing playlists can be inspected / enqueued / set as
+            pool without detouring through the library. */}
+        <JukeboxPlaylistBrowser
+          songs={j.songs}
+          onEnqueue={j.enqueueLibraryPlaylist}
+          onSelectPool={setJukeboxPool}
+          activePlaylistId={activePoolId}
+          triggerClassName="p-2.5 rounded-xl h-auto px-2.5 text-white/50 hover:text-white hover:bg-white/10 border-0 border-transparent hover:border-cyan-400/40 bg-transparent"
+        />
 
         {/* N9: Songs played indicator */}
         {j.songsPlayed > 0 && (

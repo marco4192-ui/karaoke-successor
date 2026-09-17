@@ -11,11 +11,10 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { decadeShortLabel } from '@/lib/game/era-filter';
-import { getJsonOptional, setJson } from '@/lib/storage';
-import { StorageKeys } from '@/lib/storage';
 import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
 import { JukeboxPlaylistBrowser } from './jukebox-playlist-browser';
+import { setJukeboxPool, useJukeboxPoolId } from './jukebox-pool';
 import {
   isVideoBreak,
   parseVideoLinkInput,
@@ -148,41 +147,20 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  // Playlist-Auswahl fuer Jukebox
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
+  // Playlist-Auswahl fuer Jukebox — shared pool state, synced with the
+  // running player (controls bar / fullscreen header) via the pool-changed event.
+  const selectedPlaylistId = useJukeboxPoolId();
+  const [playlistTick, setPlaylistTick] = useState(0);
   const playlists = useMemo(() => {
     try {
       return getPlaylists().filter(p => !p.isSystem);
     } catch { return []; }
-  }, [selectedPlaylistId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [playlistTick, selectedPlaylistId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePlaylistSelect = (plId: string) => {
-    setSelectedPlaylistId(plId);
-    if (!plId) {
-      // "Alle Songs" - JUKEBOX_PLAYLIST loeschen
-      try { localStorage.removeItem(StorageKeys.JUKEBOX_PLAYLIST); } catch { /* ignore */ }
-    } else {
-      const pl = playlists.find(p => p.id === plId);
-      if (pl && pl.songIds.length > 0) {
-        setJson(StorageKeys.JUKEBOX_PLAYLIST, pl.songIds);
-      }
-    }
+    setJukeboxPool(plId);
+    setPlaylistTick(t => t + 1);
   };
-
-  // Aktive Playlist beim Mount erkennen
-  useEffect(() => {
-    const saved = getJsonOptional<string[]>(StorageKeys.JUKEBOX_PLAYLIST);
-    if (saved && saved.length > 0) {
-      // Versuche die Playlist anhand der Song-IDs zu finden
-      try {
-        const allPls = getPlaylists();
-        const match = allPls.find(p => !p.isSystem && p.songIds.length > 0 &&
-          saved.length === p.songIds.length &&
-          saved.every((sid, idx) => sid === p.songIds[idx]));
-        if (match) setSelectedPlaylistId(match.id);
-      } catch { /* ignore */ }
-    }
-  }, []);
 
   // ── Video-Links: EIN Feld für einen oder viele Links ──
   const parsedLinks = useMemo(() => parseVideoLinkInput(videoLinksInput), [videoLinksInput]);
@@ -372,6 +350,18 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               value={formatPoolDuration(totalPoolMs)}
               label=""
               accent="text-amber-400"
+            />
+          </div>
+
+          {/* Prominent "Playlists ansehen" entry — always visible in the
+              jukebox menu (even with zero playlists), no library detour. */}
+          <div className="flex flex-wrap items-center gap-2.5 mt-5 justify-center sm:justify-start">
+            <JukeboxPlaylistBrowser
+              songs={j.songs}
+              onEnqueue={j.enqueueLibraryPlaylist}
+              onSelectPool={handlePlaylistSelect}
+              activePlaylistId={selectedPlaylistId}
+              triggerClassName="h-11 px-5 rounded-2xl text-sm bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border-cyan-400/40 text-cyan-100 hover:from-cyan-500/30 hover:to-purple-500/30 hover:border-cyan-300/60 hover:text-white"
             />
           </div>
         </div>
