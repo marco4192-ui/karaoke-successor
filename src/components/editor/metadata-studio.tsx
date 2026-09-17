@@ -11,8 +11,10 @@
  *  - Scope:   all songs OR the current multi-selection (old "AI Suggest")
  *  - Fields:  Genre / Language / Year — independently selectable
  *  - Mode:    "fill missing" (only empty fields get values), "harmonize"
- *             (AI suggests corrections incl. existing values) or "rule-based"
- *             (deterministic GENRE_ALIASES mapping — no AI, no quota)
+ *             (AI suggests corrections incl. existing values), "rule-based"
+ *             (deterministic GENRE_ALIASES mapping — no AI, no quota) or
+ *             "manual" (R5-1: direct per-song editing of all scope songs —
+ *             current value + editor side by side, no AI involved)
  *  - Target:  write into the UltraStar txt (survives a library reset) or keep
  *             changes game-local only (wiped by the library reset — hint shown)
  *
@@ -50,7 +52,7 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
-export type StudioMode = 'fill' | 'harmonize' | 'rule';
+export type StudioMode = 'fill' | 'harmonize' | 'rule' | 'manual';
 export type StudioWriteTarget = 'txt' | 'local';
 
 interface MetadataStudioProps {
@@ -224,6 +226,13 @@ export function MetadataStudio({
   const [manualPicks, setManualPicks] = useState<Record<string, string>>({});
   const [manualApplyProgress, setManualApplyProgress] = useState<{ done: number; total: number } | null>(null);
 
+  // ── Manual edit mode (R5-1) ──
+  /** Per-song edited values (songId → raw input strings). An edit only
+   *  counts as "changed" when it differs from the current value (see
+   *  manualUpdatesFor) — unchanged entries are never applied. */
+  const [manualEdits, setManualEdits] = useState<Record<string, { genre?: string; language?: string; year?: string }>>({});
+  const [manualEditApplyProgress, setManualEditApplyProgress] = useState<{ done: number; total: number } | null>(null);
+
   /** Full song lookup for the manual-review preview (items only carry
    *  title/artist/genre — playback needs the media URLs). */
   const songById = useMemo(() => {
@@ -382,6 +391,100 @@ export function MetadataStudio({
       onApplied();
     }
   }, [manualReview, manualPicks, writeTarget, onApplied]);
+
+  // ── Manual edit mode (R5-1) ──
+
+  /** Effective manual edits for one song: normalized values for the ACTIVE
+   *  fields that DIFFER from the current value. Empty, implausible (year
+   *  outside 1900–2100) or unchanged entries are skipped silently — only
+   *  real changes are applied. */
+  const manualUpdatesFor = useCallback((
+    song: Song,
+  ): { genre?: string; language?: string; year?: number } => {
+    const edit = manualEdits[song.id];
+    if (!edit) return {};
+    const updates: { genre?: string; language?: string; year?: number } = {};
+    if (fields.genre && edit.genre) {
+      const next = normalizeGenreName(edit.genre);
+      if (next && next !== song.genre) updates.genre = next;
+    }
+    if (fields.language && edit.language?.trim()) {
+      const next = normalizeLanguage(edit.language.trim());
+      if (next && next !== song.language) updates.language = next;
+    }
+    if (fields.year && edit.year?.trim()) {
+      const parsed = Number(edit.year.trim());
+      if (Number.isFinite(parsed) && parsed >= 1900 && parsed <= 2100 && parsed !== song.year) {
+        updates.year = parsed;
+      }
+    }
+    return updates;
+  }, [manualEdits, fields]);
+
+  /** Songs with at least one changed field — drives the "X von Y" counter
+   *  and the Apply button state. */
+  const manualEditChangedCount = useMemo(
+    () => scopeSongs.reduce(
+      (count, song) => (Object.keys(manualUpdatesFor(song)).length > 0 ? count + 1 : count),
+      0,
+    ),
+    [scopeSongs, manualUpdatesFor],
+  );
+
+  /** Apply ALL changed manual edits (same write path as handleApplyManualPicks:
+   *  txt-first when txt is the target — the library is only updated when the
+   *  txt write succeeded; local target just updates the game library). */
+  const handleApplyManualEdits = useCallback(async () => {
+    const pending = scopeSongs
+      .map(song => ({ songId: song.id, updates: manualUpdatesFor(song) as Partial<Song> }))
+      .filter(item => Object.keys(item.updates).length > 0);
+    if (pending.length === 0) return;
+
+    setManualEditApplyProgress({ done: 0, total: pending.length });
+    let done = 0;
+    let applied = 0;
+    let failedFiles = 0;
+    const appliedIds: string[] = [];
+
+    for (const item of pending) {
+      try {
+        if (writeTarget === 'txt') {
+          const result = await persistSongMetadataToTxt(item.songId, item.updates);
+          if (result.success) {
+            updateSong(item.songId, item.updates);
+            applied++;
+            appliedIds.push(item.songId);
+          } else {
+            failedFiles++;
+          }
+        } else {
+          updateSong(item.songId, item.updates);
+          applied++;
+          appliedIds.push(item.songId);
+        }
+      } catch { failedFiles++; /* counted as not applied */ }
+      done++;
+      if (!isMountedRef.current) return;
+      setManualEditApplyProgress({ done, total: pending.length });
+      await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
+    }
+
+    if (!isMountedRef.current) return;
+    // Drop the applied edits (failed txt writes stay editable for a retry)
+    setManualEdits(prev => {
+      const next = { ...prev };
+      for (const id of appliedIds) delete next[id];
+      return next;
+    });
+    setManualEditApplyProgress(null);
+    setFileErrors(failedFiles > 0 ? failedFiles : null);
+    if (applied > 0) {
+      if (writeTarget === 'local') {
+        setLocalAppliedInfo(prev => prev == null ? applied : prev + applied);
+      }
+      onApplied();
+    }
+  }, [scopeSongs, manualUpdatesFor, writeTarget, onApplied]);
 
   const ruleJob = useRuleHarmonizerState();
   const ruleRunning = ruleJob.status === 'running';
@@ -736,6 +839,7 @@ export function MetadataStudio({
             {segButton(mode === 'fill', () => setMode('fill'), t('editor.studioModeFill'), 'studio-mode-fill')}
             {segButton(mode === 'harmonize', () => setMode('harmonize'), t('editor.studioModeHarmonize'), 'studio-mode-harmonize')}
             {segButton(mode === 'rule', () => setMode('rule'), t('editor.studioModeRule'), 'studio-mode-rule', 'cyan')}
+            {segButton(mode === 'manual', () => setMode('manual'), `✏️ ${t('editor.studioModeManual')}`, 'studio-mode-manual', 'amber')}
           </div>
 
           {/* ── Write target ── */}
@@ -941,6 +1045,164 @@ export function MetadataStudio({
             </div>
           )}
 
+          {/* ── Manual edit mode (R5-1) ──
+              Direct per-song editing for ALL songs in scope: the current
+              value + an editor side by side for every ACTIVE field (genre
+              dropdown, language/year free text). Changed inputs get an amber
+              ring; the Apply button in the header replaces the Run button. */}
+          {mode === 'manual' && (
+            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="manual-edit-panel">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-[11px] text-amber-300 font-medium">
+                  ✏️ {t('editor.manualEditChangedCount')
+                    .replace('{changed}', String(manualEditChangedCount))
+                    .replace('{total}', String(scopeSongs.length))}
+                </p>
+                <Button
+                  size="sm"
+                  disabled={manualEditChangedCount === 0 || manualEditApplyProgress !== null}
+                  onClick={handleApplyManualEdits}
+                  title={manualEditChangedCount === 0 ? t('editor.manualEditNoChanges') : undefined}
+                  className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
+                  data-testid="manual-edit-apply"
+                >
+                  {manualEditApplyProgress
+                    ? `${manualEditApplyProgress.done}/${manualEditApplyProgress.total}`
+                    : t('editor.manualReviewApply')}
+                </Button>
+              </div>
+              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualEditHint')}</p>
+              {scopeSongs.length === 0 ? (
+                <p className="text-[10px] text-white/40" data-testid="manual-edit-empty">
+                  ☑️ {t('editor.manualEditEmptyScope')}
+                </p>
+              ) : (
+                <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1" data-testid="manual-edit-list">
+                  {scopeSongs.map(song => {
+                    const edit = manualEdits[song.id];
+                    const updates = manualUpdatesFor(song);
+                    const changedFields =
+                      (updates.genre !== undefined ? 1 : 0) +
+                      (updates.language !== undefined ? 1 : 0) +
+                      (updates.year !== undefined ? 1 : 0);
+                    return (
+                      <div
+                        key={song.id}
+                        data-testid={`manual-edit-row-${song.id}`}
+                        className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5"
+                      >
+                        {/* Title + Artist */}
+                        <div className="flex-1 min-w-[130px] sm:min-w-[180px]">
+                          <p className="text-[11px] text-white/85 font-medium truncate" title={song.title}>{song.title}</p>
+                          <p className="text-[10px] text-white/40 truncate" title={song.artist}>{song.artist}</p>
+                        </div>
+
+                        {/* Genre: current value + genre dropdown (23 genres) */}
+                        {fields.genre && (<>
+                          <span
+                            title={t('editor.manualEditCurrent')}
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
+                              song.genre ? 'border-white/15 text-amber-200/90' : 'border-white/10 text-white/30 italic'
+                            }`}
+                          >
+                            {song.genre || '—'}
+                          </span>
+                          <span className="text-white/30 text-[10px]">→</span>
+                          <select
+                            value={edit?.genre ?? ''}
+                            onChange={e => setManualEdits(prev => ({
+                              ...prev,
+                              [song.id]: { ...prev[song.id], genre: e.target.value },
+                            }))}
+                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none min-w-[110px] ${
+                              updates.genre !== undefined
+                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
+                                : 'border-white/20 focus:border-amber-500'
+                            }`}
+                            aria-label={`${t('editor.songInfoTab.genre')}: ${song.title}`}
+                            data-testid={`manual-edit-genre-${song.id}`}
+                          >
+                            <option value="">{t('editor.manualReviewChoose')}</option>
+                            {GENRES.map(g => (
+                              <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
+                            ))}
+                          </select>
+                        </>)}
+
+                        {/* Language: current value + free text input */}
+                        {fields.language && (<>
+                          <span
+                            title={t('editor.manualEditCurrent')}
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
+                              song.language ? 'border-white/15 text-purple-200/90' : 'border-white/10 text-white/30 italic'
+                            }`}
+                          >
+                            {song.language || '—'}
+                          </span>
+                          <span className="text-white/30 text-[10px]">→</span>
+                          <input
+                            type="text"
+                            value={edit?.language ?? ''}
+                            onChange={e => setManualEdits(prev => ({
+                              ...prev,
+                              [song.id]: { ...prev[song.id], language: e.target.value },
+                            }))}
+                            placeholder={t('editor.songInfoTab.language')}
+                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-28 ${
+                              updates.language !== undefined
+                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
+                                : 'border-white/20 focus:border-amber-500'
+                            }`}
+                            aria-label={`${t('editor.songInfoTab.language')}: ${song.title}`}
+                            data-testid={`manual-edit-language-${song.id}`}
+                          />
+                        </>)}
+
+                        {/* Year: current value + numeric input (4 digits) */}
+                        {fields.year && (<>
+                          <span
+                            title={t('editor.manualEditCurrent')}
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
+                              song.year ? 'border-white/15 text-emerald-200/90' : 'border-white/10 text-white/30 italic'
+                            }`}
+                          >
+                            {song.year || '—'}
+                          </span>
+                          <span className="text-white/30 text-[10px]">→</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={edit?.year ?? ''}
+                            onChange={e => setManualEdits(prev => ({
+                              ...prev,
+                              [song.id]: { ...prev[song.id], year: e.target.value.replace(/[^0-9]/g, '') },
+                            }))}
+                            placeholder={t('editor.songInfoTab.yearPlaceholder')}
+                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-16 text-center ${
+                              updates.year !== undefined
+                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
+                                : 'border-white/20 focus:border-amber-500'
+                            }`}
+                            aria-label={`${t('editor.songInfoTab.year')}: ${song.title}`}
+                            data-testid={`manual-edit-year-${song.id}`}
+                          />
+                        </>)}
+
+                        {/* Changed-field count for this row (subtle amber) */}
+                        {changedFields > 0 && (
+                          <span className="text-[10px] text-amber-300 font-mono whitespace-nowrap">
+                            ✏️ {changedFields}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Run / progress ── */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Select-Songs button — moved INTO the studio (user request:
@@ -959,7 +1221,9 @@ export function MetadataStudio({
                 : `☑️ ${t('editor.enterSelectMode')}${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
             </Button>
 
-            {mode === 'rule' ? (
+            {/* Manual mode (R5-1): no Run button — the Apply button inside
+                the manual edit list replaces it (direct editing, no AI job). */}
+            {mode !== 'manual' && (mode === 'rule' ? (
               <Button
                 size="sm"
                 onClick={handleRuleStart}
@@ -990,13 +1254,13 @@ export function MetadataStudio({
                   <span className="opacity-70">({runSubset.length})</span>
                 )}
               </Button>
-            )}
+            ))}
 
             {/* No selection yet → explicit hint next to the greyed Run.
                 Rule mode with scope 'all' needs NO selection (the plan covers
                 every song) — showing the hint there made the disabled Run
                 feel like "nothing happens" (user item 7). */}
-            {selectedIds.size === 0 && (mode !== 'rule' || scope === 'selection') && (
+            {mode !== 'manual' && selectedIds.size === 0 && (mode !== 'rule' || scope === 'selection') && (
               <p className="text-[11px] text-amber-300/80">☑️ {t('editor.studioRunNeedsSelection')}</p>
             )}
             {noFieldsSelected && (
@@ -1006,7 +1270,7 @@ export function MetadataStudio({
 
           {/* ── Measured batch-size recommendation (real timings, see
               STUDIO_RECOMMENDED_BATCH above) ── */}
-          {mode !== 'rule' && (
+          {mode !== 'rule' && mode !== 'manual' && (
             <p className="text-[10px] text-white/40 leading-relaxed" data-testid="studio-batch-hint">
               💡 {t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}
             </p>
