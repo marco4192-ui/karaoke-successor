@@ -104,8 +104,91 @@ export interface WeeklyTypeDefinition {
 const T = (easy: number, normal: number, hard: number, very_hard: number, insane: number): Record<DailyDifficulty, number> =>
   ({ easy, normal, hard, very_hard, insane });
 
+// ---------------------------------------------------------------------------
+// Global difficulty easing (user feedback 2026-09: "die Daily Challenges sind
+// noch zu schwer — easy soll bei 30 % Genauigkeit anfangen, insane bei 75 %").
+// Percent metrics (accuracy / tickAccuracy) use FIXED anchors for every daily
+// type, everything else is eased multiplicatively per difficulty. Gates and
+// their {m} description params are eased with matching factors so the
+// displayed text always agrees with the actual gate check.
+// ---------------------------------------------------------------------------
+
+/** fixed percent anchors: easy 30 % → insane 75 % */
+const PERCENT_TARGETS: Record<DailyDifficulty, number> =
+  T(30, 45, 55, 65, 75);
+
+/** multiplicative easing for 'max' metrics (lower target = easier) */
+const EASE_MAX: Record<DailyDifficulty, number> =
+  T(0.60, 0.70, 0.80, 0.86, 0.92);
+
+/** multiplicative easing for 'min' metrics — allowed misses become MORE forgiving */
+const EASE_MIN: Record<DailyDifficulty, number> =
+  T(1.50, 1.35, 1.25, 1.15, 1.10);
+
+/** gate easing: '>= accuracy' gates demand less … */
+const GATE_EASE_PCT = 0.75;
+/** … '>=' count gates demand less … */
+const GATE_EASE_COUNT = 0.75;
+/** … '<=' missed-notes gates allow more … */
+const GATE_EASE_MISS_MAX = 1.4;
+
+/** friendly rounding for eased targets / gate counts */
+function roundTargetValue(value: number): number {
+  if (value >= 5000) return Math.round(value / 100) * 100;
+  if (value >= 500) return Math.round(value / 50) * 50;
+  if (value >= 100) return Math.round(value / 10) * 10;
+  if (value >= 20) return Math.round(value / 5) * 5;
+  return Math.max(1, Math.round(value));
+}
+
+/** ease one target value for a given metric/direction/difficulty */
+function easeTarget(metricKey: DailyMetricKey, direction: 'max' | 'min', difficulty: DailyDifficulty, value: number): number {
+  if (metricKey === 'accuracy' || metricKey === 'tickAccuracy') return PERCENT_TARGETS[difficulty];
+  const factor = direction === 'min' ? EASE_MIN[difficulty] : EASE_MAX[difficulty];
+  const eased = value * factor;
+  // 'min' types (allowed misses) round UP so easing never tightens a target
+  return direction === 'min' ? Math.ceil(eased) : roundTargetValue(eased);
+}
+
+/** ease the gates of a daily type so they stay consistent with the new targets */
+function easeGates(gates: DailyGate[] | undefined): DailyGate[] | undefined {
+  if (!gates || gates.length === 0) return gates;
+  return gates.map(g => {
+    let factor = GATE_EASE_COUNT;
+    if (g.metricKey === 'accuracy' || g.metricKey === 'tickAccuracy') factor = GATE_EASE_PCT;
+    else if (g.metricKey === 'notesMissed') factor = g.op === '<=' ? GATE_EASE_MISS_MAX : GATE_EASE_COUNT;
+    const raw = g.value * factor;
+    const eased = (g.metricKey === 'accuracy' || g.metricKey === 'tickAccuracy')
+      ? Math.round(raw)
+      : g.op === '<=' ? Math.ceil(raw) : roundTargetValue(raw);
+    return { ...g, value: eased };
+  });
+}
+
+/** ease the {m} description param with the same factor as its gate */
+function easeDescriptionParams(
+  params: Record<string, string> | undefined,
+  gates: DailyGate[] | undefined,
+): Record<string, string> | undefined {
+  if (!params || params.m === undefined) return params;
+  const raw = String(params.m);
+  const isPct = raw.trim().endsWith('%');
+  const num = parseFloat(raw);
+  if (!Number.isFinite(num)) return params;
+  const op = gates?.[0]?.op ?? '>=';
+  let eased: number;
+  if (isPct) {
+    eased = Math.round(num * GATE_EASE_PCT);
+  } else if (op === '<=') {
+    eased = Math.ceil(num * GATE_EASE_MISS_MAX);
+  } else {
+    eased = roundTargetValue(num * GATE_EASE_COUNT);
+  }
+  return { ...params, m: isPct ? `${eased}%` : String(eased) };
+}
+
 /** standard accuracy targets for category challenges (the song must match + this accuracy) */
-const CAT_ACC: Record<DailyDifficulty, number> = T(50, 60, 70, 78, 85);
+const CAT_ACC: Record<DailyDifficulty, number> = PERCENT_TARGETS;
 
 /** language code → name normalization (songs may store either form) */
 const LANGUAGE_ALIASES: Record<string, string> = {
@@ -296,11 +379,18 @@ function perf(
   metricKey: DailyMetricKey, targets: Record<DailyDifficulty, number>,
   opts?: { cap?: number; gates?: DailyGate[]; direction?: 'max' | 'min'; descriptionParams?: Record<string, string> },
 ): DailyTypeDefinition {
+  const direction = opts?.direction ?? 'max';
+  // Global difficulty easing: every target / gate / description param of the
+  // DAILY pool is transformed here so display and evaluation stay in sync.
+  const easedTargets = Object.fromEntries(
+    (Object.keys(targets) as DailyDifficulty[]).map(d => [d, easeTarget(metricKey, direction, d, targets[d])]),
+  ) as Record<DailyDifficulty, number>;
+  const easedGates = easeGates(opts?.gates);
   return {
     id, icon, nameKey, descriptionKey: descKey, metricKey,
-    direction: opts?.direction ?? 'max',
-    targets, cap: opts?.cap, gates: opts?.gates,
-    descriptionParams: opts?.descriptionParams,
+    direction,
+    targets: easedTargets, cap: opts?.cap, gates: easedGates,
+    descriptionParams: easeDescriptionParams(opts?.descriptionParams, opts?.gates),
   };
 }
 

@@ -374,11 +374,14 @@ export function extractWeeklyMetric(type: string, m: DailyResultMetrics): number
  * Compute the effective target for a daily type at a given difficulty,
  * including the slight level scaling (max +25 % at level 100).
  * 'min' types (missed notes) tighten with level instead of loosening.
+ * Percent metrics (accuracy / tickAccuracy) keep their fixed anchors
+ * (easy 30 % → insane 75 %) and do NOT scale with level.
  */
 export function getDailyTargetFor(type: string, difficulty: DailyDifficulty, level?: number): number {
   const def = getDailyType(type);
   const base = def.targets[difficulty] ?? def.targets.normal;
-  if (level === undefined || level <= 1) return base;
+  const isPercent = def.metricKey === 'accuracy' || def.metricKey === 'tickAccuracy';
+  if (isPercent || level === undefined || level <= 1) return base;
   const scale = 1 + Math.min(0.25, level * 0.0025);
   if (def.direction === 'min') {
     return Math.max(1, Math.round(base / scale));
