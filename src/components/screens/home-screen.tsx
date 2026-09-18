@@ -43,6 +43,8 @@ import {
 
 interface HomeScreenProps {
   onNavigate: (_screen: Screen) => void;
+  /** Launch the library with a preselected start mode (Single/Duell/Duett). */
+  onLaunchMode: (_mode: 'single' | 'duel' | 'duet') => void;
 }
 
 type Translate = (_key: string) => string;
@@ -229,7 +231,73 @@ function ChallengePreviewCard({
   );
 }
 
-export function HomeScreen({ onNavigate }: HomeScreenProps) {
+/** "Singen" launcher card — Single / Duell / Duett, all via the Library.
+ *  Each chip navigates to the library with that start mode preselected
+ *  (Duett additionally filters the grid down to duet-capable songs). */
+function SingModeLauncherCard({ t, onLaunchMode }: { t: Translate; onLaunchMode: (_mode: 'single' | 'duel' | 'duet') => void }) {
+  const modes: Array<{
+    mode: 'single' | 'duel' | 'duet';
+    testId: string;
+    icon: string;
+    label: string;
+    sub: string;
+    activeClass: string;
+  }> = [
+    {
+      mode: 'single',
+      testId: 'home-launch-single',
+      icon: '🎤',
+      label: t('homeScreen.launchSingle'),
+      sub: t('homeScreen.launchSingleSub'),
+      activeClass: 'border-cyan-400/50 hover:border-cyan-300 hover:bg-cyan-500/15 hover:shadow-[0_0_16px_rgba(0,229,255,0.35)]',
+    },
+    {
+      mode: 'duel',
+      testId: 'home-launch-duell',
+      icon: '⚔️',
+      label: t('homeScreen.launchDuell'),
+      sub: t('homeScreen.launchDuellSub'),
+      activeClass: 'border-pink-400/50 hover:border-pink-300 hover:bg-pink-500/15 hover:shadow-[0_0_16px_rgba(255,45,149,0.35)]',
+    },
+    {
+      mode: 'duet',
+      testId: 'home-launch-duett',
+      icon: '🎭',
+      label: t('homeScreen.launchDuett'),
+      sub: t('homeScreen.launchDuettSub'),
+      activeClass: 'border-yellow-400/50 hover:border-yellow-300 hover:bg-yellow-500/15 hover:shadow-[0_0_16px_rgba(255,214,10,0.35)]',
+    },
+  ];
+
+  return (
+    <div
+      data-testid="home-nav-solo"
+      className="retro-gradient-card retro-border-cyan rounded-xl p-5 transition-all duration-200"
+    >
+      <MicIcon className="w-8 h-8 mb-3 text-[#00e5ff]" />
+      <div className="font-bold text-white mb-1">{t('homeScreen.navSoloTitle')}</div>
+      <div className="text-sm text-[#b8b8d0]/80 leading-snug mb-4">{t('homeScreen.navSoloDesc')}</div>
+      <div className="grid grid-cols-3 gap-2">
+        {modes.map(({ mode, testId, icon, label, sub, activeClass }) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => onLaunchMode(mode)}
+            data-testid={testId}
+            aria-label={`${label} — ${sub}`}
+            className={`group flex flex-col items-center gap-0.5 rounded-lg border border-white/15 bg-white/5 px-2 py-3 text-center transition-all duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${activeClass}`}
+          >
+            <span className="text-xl leading-none" aria-hidden>{icon}</span>
+            <span className="text-sm font-bold text-white leading-tight">{label}</span>
+            <span className="text-[10px] text-[#b8b8d0]/70 leading-tight">{sub}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
   const { t } = useTranslation();
   const { profiles, activeProfileId } = useGameStore();
   // Track if component is mounted (to avoid hydration mismatch)
@@ -266,6 +334,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     : null;
 
   // ── Navigation cards (icon, title, 1-line description) ──
+  // NOTE: the "Singen" (Single/Duell/Duett) launcher card is rendered
+  // separately as the first grid item — see SingModeLauncherCard.
   const navItems: Array<{
     screen: Screen;
     testId: string;
@@ -277,17 +347,6 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     hoverBorder: string;
     hoverGlow: string;
   }> = [
-    {
-      screen: 'library',
-      testId: 'home-nav-solo',
-      Icon: MicIcon,
-      title: t('homeScreen.navSoloTitle'),
-      desc: t('homeScreen.navSoloDesc'),
-      iconColor: 'text-[#00e5ff]',
-      border: 'retro-border-cyan',
-      hoverBorder: 'hover:border-cyan-300/80',
-      hoverGlow: 'hover:shadow-[0_0_24px_rgba(0,229,255,0.25)]',
-    },
     {
       screen: 'party',
       testId: 'home-nav-party-modes',
@@ -501,6 +560,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           {t('homeScreen.navSectionTitle')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SingModeLauncherCard t={t} onLaunchMode={onLaunchMode} />
           {navItems.map(({ screen, testId, Icon, title, desc, iconColor, border, hoverBorder, hoverGlow }) => (
             <button
               key={screen}

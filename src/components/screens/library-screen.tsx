@@ -35,7 +35,7 @@ import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 
-export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEditor, partyPickActive = false }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; }) {
+export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, onNavigateToEditor, partyPickActive = false }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; /** Start mode preselected from the home "Singen" launcher (session-scoped). */ preselectMode?: 'single' | 'duel' | 'duet'; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; }) {
   const { t } = useTranslation();
 
   // Core state
@@ -113,11 +113,18 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
     const isPartyMode = initialGameMode && initialGameMode !== 'standard' && initialGameMode !== 'duel' && initialGameMode !== 'duet';
     return {
       difficulty: storeDifficulty,
-      mode: initialGameMode === 'duel' ? 'duel' : initialGameMode === 'duet' ? 'duet' : 'single',
+      // Home launcher preselect wins over the store gameMode ('duet' from
+      // initialGameMode is now preserved too — it was silently dropped here
+      // and in handleSongClick before, so a duet session fell back to single).
+      mode: preselectMode ?? (initialGameMode === 'duel' ? 'duel' : initialGameMode === 'duet' ? 'duet' : 'single'),
       players: [],
       partyMode: isPartyMode ? initialGameMode : undefined,
     };
   });
+  // Session-scoped mirror of preselectMode (captured once per mount): keeps
+  // the chosen mode for every song click of this library visit. Cleared when
+  // the user explicitly turns the Duet filter chip off (onResetStartMode).
+  const [sessionPreselect, setSessionPreselect] = useState<'single' | 'duel' | 'duet' | null>(preselectMode ?? null);
 
   // --- Effects ---
   useEffect(() => { initializePlaylists(); setPlaylists(getPlaylists()); }, []);
@@ -273,7 +280,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
     // Use the user's global default difficulty (from the store, which
     // reflects the Settings → Default Difficulty choice) instead of the
     // per-song difficulty, so that the global setting is actually applied.
-    setStartOptions({ difficulty: gameState.difficulty, mode: initialGameMode === 'duel' ? 'duel' : 'single', players: activeProfileId ? [activeProfileId] : [], partyMode: isPartyMode ? initialGameMode : undefined });
+    setStartOptions({ difficulty: gameState.difficulty, mode: sessionPreselect ?? (initialGameMode === 'duel' ? 'duel' : initialGameMode === 'duet' ? 'duet' : 'single'), players: activeProfileId ? [activeProfileId] : [], partyMode: isPartyMode ? initialGameMode : undefined });
     setShowSongModal(true);
   };
 
@@ -356,7 +363,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
           folderBreadcrumb={folderBreadcrumb} onBreadcrumbClick={handleBreadcrumbClick}
           getGroupDisplayName={(key) => getGroupDisplayName(key, groupBy)}
           startMode={startOptions.mode}
-          onResetStartMode={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
+          onResetStartMode={() => { setStartOptions(prev => ({ ...prev, mode: 'single' })); setSessionPreselect(null); }}
         />
       )}
 

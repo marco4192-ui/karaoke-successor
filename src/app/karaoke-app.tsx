@@ -59,6 +59,21 @@ export default function KaraokeZERO() {
   // see isPartyActiveDirect below (Bug 12).
   const { screen, setScreen, navigateWithGuard, pendingNavigation, setPendingNavigation, markPartyConfirmed } = useScreenNavigation(party);
 
+  // ── Home "Singen" launcher: preselected start mode for the Library ──
+  // Set by the Single/Duell/Duett chips on the home screen, consumed by
+  // LibraryScreen when it mounts (session-scoped: stays for the whole
+  // library visit, cleared once the user leaves the library again).
+  // Deliberately NOT stored via setGameMode — the store gameMode has
+  // side effects in abort paths; this transient prop is side-effect free.
+  const [libraryPreselect, setLibraryPreselect] = useState<'single' | 'duel' | 'duet' | null>(null);
+  const handleLaunchMode = useCallback((_mode: 'single' | 'duel' | 'duet') => {
+    setLibraryPreselect(_mode);
+    setScreen('library');
+  }, [setScreen]);
+  useEffect(() => {
+    if (screen !== 'library' && libraryPreselect) setLibraryPreselect(null);
+  }, [screen, libraryPreselect]);
+
   // Bug 12: DIRECT party-active computation from the party store state.
   // The navigation guard's isPartyModeActive flag latches to false after ONE
   // confirmed leave (partyConfirmed) even when a new party game (e.g. a
@@ -1249,7 +1264,7 @@ export default function KaraokeZERO() {
           ? 'pt-0 px-0 pb-0 w-full h-full'
           : 'px-4 pb-8 flex-1 min-h-0'
       }`}>
-        {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
+        {screen === 'home' && <HomeScreen onNavigate={setScreen} onLaunchMode={handleLaunchMode} />}
         {screen === 'library' && (
           <LibraryScreen
             partyPickActive={!!party.selectedGameMode}
@@ -1342,6 +1357,7 @@ export default function KaraokeZERO() {
               setScreen('game');
             }}
             initialGameMode={gameState.gameMode}
+            preselectMode={libraryPreselect ?? undefined}
             onNavigateToEditor={() => setScreen('editor')}
           />
         )}
