@@ -44,9 +44,10 @@ export function SongCard({
   const showBackgroundDuringPreview = isPreviewing && !songHasVideo && !!effectiveSong.backgroundImage;
 
   return (
-    <div 
+    <div
       ref={itemRef as React.Ref<HTMLDivElement> | undefined}
       {...restItemProps}
+      data-testid={`song-card-${song.id}`}
       className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
       onClick={() => onSongClick(song)}
       onMouseEnter={() => onPreviewStart(song)}

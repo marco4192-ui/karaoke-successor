@@ -6,6 +6,8 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { TourController } from '@/components/tutorial/tour-manager';
+import { HelpMenu } from '@/components/tutorial/help-menu';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { getAllSongs } from '@/lib/game/song-library';
@@ -73,6 +75,11 @@ export default function KaraokeZERO() {
   useEffect(() => {
     if (screen !== 'library' && libraryPreselect) setLibraryPreselect(null);
   }, [screen, libraryPreselect]);
+
+  // Tour navigation (tutorial system): direct setScreen — bypasses the party
+  // guard because starting a tour is an explicit user action; the help FAB
+  // is hidden on running game screens, so mid-game tour starts are impossible.
+  const handleTourNavigate = useCallback((target: Screen) => { setScreen(target); }, [setScreen]);
 
   // Bug 12: DIRECT party-active computation from the party store state.
   // The navigation guard's isPartyModeActive flag latches to false after ONE
@@ -1231,7 +1238,12 @@ export default function KaraokeZERO() {
   }
 
   // ===================== MAIN RENDER =====================
+  // Help FAB visibility: hidden on running games & immersive screens —
+  // except the editor (the editor tutorial lives there).
+  const helpFabHidden = (IMMERSIVE_SCREENS.has(screen) && screen !== 'editor') || screen === 'results' || screen === 'mobile';
+
   return (
+    <TourController navigate={handleTourNavigate} screen={screen}>
     <div
       className={`${IMMERSIVE_SCREENS.has(screen) || screen === 'library' ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col w-full text-white theme-container`}
       style={{
@@ -1564,5 +1576,7 @@ export default function KaraokeZERO() {
         />
       )}
     </div>
+    {!helpFabHidden && <HelpMenu />}
+    </TourController>
   );
 }

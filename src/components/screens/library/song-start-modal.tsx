@@ -275,7 +275,7 @@ export function SongStartModal({
 
   return (
     <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
-      <DialogContent ref={dialogContentRef} className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent ref={dialogContentRef} data-testid="song-start-modal" className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg">{selectedSong.title}</DialogTitle>
           <DialogDescription className="text-white/60">{selectedSong.artist}</DialogDescription>

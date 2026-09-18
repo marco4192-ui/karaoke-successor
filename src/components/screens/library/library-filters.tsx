@@ -97,7 +97,7 @@ export function LibraryFilters({
         </select>
       </div>
       
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center" data-testid="library-filter-row">
         <div className="flex items-center gap-2">
           <span className="text-white/40 text-sm">{t('libraryFilters.genreLabel')}</span>
           <Select

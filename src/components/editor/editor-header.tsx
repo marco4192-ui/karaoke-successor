@@ -186,6 +186,7 @@ export function EditorHeader({
           size="sm"
           onClick={onCancel}
           className="text-slate-400 hover:text-white h-8 px-3"
+          data-testid="editor-cancel-button"
         >
           {t('common.cancel')}
         </Button>
