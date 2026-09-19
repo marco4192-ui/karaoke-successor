@@ -69,6 +69,54 @@ Dateien und bundelt den Socket.IO-Server via esbuild).
 
 ---
 
+## 2b. GitHub-Actions: Der 100 %-Standalone-Builder
+
+Der Workflow **`.github/workflows/build-executables.yml`** („Build Standalone
+Executables") erzeugt Release-fähige Builds für alle drei Plattformen —
+so, dass sie auf einem **nackten System** laufen (kein Node.js, kein Browser,
+**kein Internet zur Installationszeit**; Online-Inhalte wie YouTube-Embeds
+natürlich ausgenommen).
+
+**Trigger:**
+- `git push --tags v1.2.3` → baut alle drei Plattformen + erstellt ein
+  **Draft-Release** mit allen Artefakten und Prüfsummen (`SHA256SUMS.txt`)
+- Actions-UI → „Run workflow": Plattformen einzeln wählbar, Release optional
+  („create_release"-Haken)
+
+**Was der Workflow je Plattform erzeugt:**
+
+| Plattform | Artefakt | Standalone-Mechanismus |
+|---|---|---|
+| Windows | NSIS-`*-setup.exe` | `webviewInstallMode: "offlineInstaller"` — der komplette WebView2-Installer ist **im Setup eingebettet**; zusätzlich portables `node.exe`, ONNX-Runtime **und VC++-Runtime-DLLs** (msvcp140/vcruntime140) im Bundle. Installer-Größen-Check ≥ 70 MB als Sicherheitsnetz. |
+| macOS | Universal-`.dmg` | Rust-Universal-Binary (`--target universal-apple-darwin`); Node.js und ONNX-Runtime werden **per `lipo` zu Universal-Binaries gemergt** (x64 + arm64) — funktioniert nativ auf Intel- UND Apple-Silicon-Macs ab 10.15. |
+| Linux | `.AppImage` + `.deb` | AppImage mit `bundleSystemdeps: true` (WebKitGTK & Co. gebündelt) **und** `bundleMediaCodes: true` (ffmpeg-Medien-Codecs → H.264/AAC-Videoplayback funktioniert). deb = Paket-Manager-Variante (nutzt System-WebKit). |
+
+**Der Workflow nutzt die kanonischen Repo-Skripte** (identisch zu lokal):
+`download-node.mjs` → `download-onnxruntime.mjs` → `prepare-bundle.mjs` →
+`tauri build`. Damit landet der **komplette Server mit Socket.IO**
+(`socketio-server.cjs` + custom `server.js`) in jedem Build — die alten
+GitHub-Builds kopierten nur das Next-standalone ohne Socket.IO, weshalb
+Companions dort auf HTTP-Polling fielen, und macOS/Linux-Builds hatten gar
+keine ONNX-Runtime (CREPE-Pitch-Erkennung ohne Funktion).
+
+**macOS-Signing (optional, für „nackte" Macs ohne Gatekeeper-Warnung):**
+Secrets im Repo setzen → `tauri build` signiert + notarisiert automatisch:
+- `APPLE_CERTIFICATE` (base64-codiertes .p12), `APPLE_CERTIFICATE_PASSWORD`,
+  `APPLE_SIGNING_IDENTITY` (z. B. „Developer ID Application: Name (TEAMID)")
+- `APPLE_ID`, `APPLE_PASSWORD` (App-spezifisches Passwort), `APPLE_TEAM_ID`
+Ohne Secrets: unsignierter Build (Rechtsklick → „Öffnen" bzw.
+`xattr -cr /Applications/Karaoke\ ZERO.app`, siehe Release-Notes).
+
+**Versionierung:** Der Tag bzw. die Workflow-Input-Version (z. B. `v1.0.2`)
+wird vor dem Build automatisch ins `src-tauri/tauri.conf.json` geschrieben —
+Artefakte und „Über"-Dialog tragen dann die Release-Version.
+
+**ONNX-Runtime:** 1.20.0 (exakt die Version, gegen die der `ort`-Crate
+2.0.0-rc.12 gebaut ist; C-ABI-abwärtskompatibel). Zentral änderbar über
+`env.ONNX_VERSION` im Workflow.
+
+---
+
 ## 3. Plattform-Verhalten im Detail
 
 ### Rust-Backend (`src-tauri/src/lib.rs`)
@@ -109,10 +157,13 @@ Dateien und bundelt den Socket.IO-Server via esbuild).
 
 | Thema | Plattform | Status |
 |---|---|---|
-| **Gatekeeper** | macOS | Unsignierte Builds (ohne Apple Developer Account) lösen beim ersten Start die Warnung „nicht verifizierter Entwickler" aus. Abhilfe: Rechtsklick → „Öffnen" oder `xattr -cr /Applications/Karaoke\ ZERO.app`. Für Distribution: Signing + Notarization (Apple Developer Program, ~99 €/Jahr) nötig. |
-| **Proprietäre Video-Codecs** (H.264/AAC) | Linux | WebKitGTK spielt je nach Distibution keine proprietären Codecs → YouTube-/Plattform-Embeds können schwarz bleiben. **Lokale Audiodateien sind davon nicht betroffen** (Rust-Audio-Engine via Symphonia + cpal). Lokale Videodateien mit offenen Codecs (VP9/AV1/Vorbis/WebM) funktionieren. |
+| **Gatekeeper** | macOS | Unsignierte Builds (ohne Apple Developer Account) lösen beim ersten Start die Warnung „nicht verifizierter Entwickler" aus. Abhilfe: Rechtsklick → „Öffnen" oder `xattr -cr /Applications/Karaoke\ ZERO.app`. Für Distribution: Signing + Notarization (Apple Developer Program, ~99 €/Jahr) — im GitHub-Workflow vorbereitet, nur Secrets setzen (siehe 2b). |
+| **Proprietäre Video-Codecs** (H.264/AAC) | Linux | **Im AppImage GELÖST**: `bundleMediaCodes: true` bündelt die ffmpeg-Medien-Codecs → Plattform-Embeds und lokale H.264-MP4s spielen. Nur das **deb** nutzt das System-WebKit (je nach Distribution ohne proprietäre Codecs). Lokale Audiodateien sind immer unbeeinflusst (Rust-Audio-Engine via Symphonia + cpal). |
+| **WebKit-Sicherheits-Updates** | Linux | Trade-off des gebündelten AppImage-WebKit (`bundleSystemdeps: true`): WebKitGTK-Updates erreichen das AppImage NICHT automatisch — das deb bleibt der „immer aktuelle" Weg. Bewusste Entscheidung pro maximaler Kompatibilität. |
+| **AppImage & FUSE** | Linux | AppImages brauchen FUSE (auf modernen Distros meist vorhanden). Ohne FUSE: `./Karaoke*.AppImage --appimage-extract-and-run`. glibc-Baseline: gebaut auf Ubuntu 22.04 (glibc 2.35) → läuft auf praktisch allen aktuellen x64-Distributionen (Alpine/musl ausgenommen). |
+| **WebView2** | Windows | Der NSIS-Installer bettet den **kompletten WebView2-Offline-Installer** ein (`webviewInstallMode: "offlineInstaller"` → Installer ~110–160 MB statt ~40 MB) — Installation ganz ohne Internet, auch auf frischen/LTSC-Systemen. WebView2 bleibt danach ein normales, auto-aktualisierendes System-Bauteil. |
 | **macOS-Firewall** | macOS | Beim ersten Start fragt macOS ggf. nach Netzwerk-Freigabe für den Node-Server (Port 3000, nur lokal) — mit „Erlauben" bestätigen. |
-| **RPM-Build** | Linux | `tauri build` versucht rpm mit; falls `rpmbuild` fehlt, schlägt nur das rpm-Ziel fehl — `--bundles deb,appimage` umgeht das. |
+| **RPM-Build** | Linux | Der CI-Workflow baut gezielt `--bundles deb,appimage` → kein rpm, kein rpmbuild-Problem. |
 
 ---
 
@@ -137,6 +188,17 @@ identisch** bleibt:
    crashen lassen) — der Windows-Download-Pfad selbst ist unverändert.
 6. **`app_get_platform`**: rein additiver Command; die App funktioniert auch,
    wenn das Frontend ihn nicht aufruft.
+7. **`tauri.conf.json` (Standalone-Schalter, Session „100 % Standalone")**:
+   `windows.nsis.webviewInstallMode = offlineInstaller` und
+   `linux.appimage.bundleSystemdeps/bundleMediaCodes = true` — reine
+   **Bundle-Optionen**: Windows-Code-Logik, Ressourcen-Layout, NSIS-Modus
+   (currentUser) und `targets: []` unverändert; die App-Funktion ist auf
+   allen Plattformen identisch. Lokale Windows-Builds laden beim Bündeln
+   jetzt den WebView2-Offline-Installer (~127 MB) herunter → Installer
+   wächst, Funktion bleibt gleich.
+8. **`scripts/prepare-bundle.mjs`**: Bugfix — `readFileSync` fehlte in den
+   fs-Importen (latenter Crash bei „server.js ersetzen", hätte JEDE
+   `tauri:build`-Ausführung abgebrochen). Sonst unverändert.
 
 Zusätzlich verifiziert:
 - `download-onnxruntime.mjs` auf Linux **real getestet** (valide

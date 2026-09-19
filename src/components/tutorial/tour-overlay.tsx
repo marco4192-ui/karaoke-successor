@@ -51,7 +51,9 @@ function measureTarget(selector: string | undefined): Rect | null {
 /** Fully visible in the viewport? (partially visible counts as "needs scrolling") */
 function isRectVisible(r: Rect): boolean {
   if (typeof window === 'undefined') return true;
-  return r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+  const bottom = r.top + r.height;
+  const right = r.left + r.width;
+  return r.top >= 0 && r.left >= 0 && bottom <= window.innerHeight && right <= window.innerWidth;
 }
 
 export function TourOverlay({

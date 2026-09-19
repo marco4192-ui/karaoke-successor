@@ -72,10 +72,10 @@ export async function renderPdfToPageImages(
   const pdfjs = await loadPdfJs();
   // v6: destroy() lives on the LoadingTask (getDocument result), not on
   // the document proxy — keep both references.
+  // (CSP-Hinweis: pdf.js v6 hat die eval-basierte Font-Ausgabe und damit
+  // die Option isEvalSupported komplett entfernt — nichts zu deaktivieren.)
   const loadingTask = pdfjs.getDocument({
     data,
-    // Avoid eval-based font rendering (CSP-safe in web + Tauri shells)
-    isEvalSupported: false,
   });
   const pdf = await loadingTask.promise;
 

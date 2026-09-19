@@ -1,4 +1,39 @@
-name: Build Executables
+# ════════════════════════════════════════════════════════════════════════
+#  Karaoke ZERO — 100 % Standalone-Builds (Windows · macOS · Linux)
+# ════════════════════════════════════════════════════════════════════════
+#  Ein einziger Workflow für alle drei Plattformen. Alle Builds laufen auf
+#  „nacken“ Systemen (frisches OS, kein Node.js, kein Browser, kein Internet
+#  zur Installationszeit — Online-Inhalte wie YouTube-Embeds ausgenommen):
+#
+#    Windows : NSIS-Installer mit OFFLINE eingebettetem WebView2-Installer
+#              (tauri.conf.json → bundle.windows.nsis.webviewInstallMode
+#               = "offlineInstaller") + portables node.exe + ONNX-Runtime
+#              + VC++-Runtime-DLLs im Bundle
+#    macOS   : Universal-Binary (Intel + Apple Silicon). Node.js und
+#              ONNX-Runtime werden per lipo zu Universal-Binaries gemergt;
+#              DMG läuft ab macOS 10.15. Optional Signing+Notarization via
+#              Secrets (ohne Secrets: unsignierter Build, Gatekeeper-Hinweis)
+#    Linux   : AppImage mit gebündeltem WebKitGTK UND Medien-Codecs
+#              (bundleSystemdeps + bundleMediaCodes) — läuft auf den
+#              meisten x64-Distributionen; zusätzlich deb für Paket-Manager
+#
+#  Alle Plattformen nutzen die kanonischen Repo-Skripte (identisch zum
+#  lokalen `bun run tauri:build`):
+#    scripts/download-node.mjs         → portables Node.js
+#    scripts/download-onnxruntime.mjs  → ONNX-Runtime (CREPE-Pitch)
+#    scripts/prepare-bundle.mjs        → Next.js standalone + custom
+#                                        server.js + Socket.IO-Server
+#
+#  Trigger:
+#    • Tag „v*“ pushen          → baut alles + erstellt DRAFT-Release
+#    • „Run workflow“ in der Actions-UI → Plattformen/Release wählbar
+#
+#  Ersetzt die bisherigen Workflows „Build Executables“ + „Release“
+#  (Doppel-Builds auf denselben Tag, Windows ohne tauri build/WebView2,
+#  macOS/Linux ohne ONNX und ohne Socket.IO-Server).
+# ════════════════════════════════════════════════════════════════════════
+
+name: Build Standalone Executables
 
 on:
   push:
@@ -7,26 +42,26 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version (z. B. v1.0.1) — wird ins tauri.conf.json geschrieben'
         required: true
         default: 'v1.0.1'
       build_windows:
-        description: 'Build Windows executable'
+        description: 'Windows-Build (NSIS-Installer, offline-fähig)'
         required: true
         default: true
         type: boolean
       build_macos:
-        description: 'Build macOS executable'
+        description: 'macOS-Build (Universal-Binary DMG)'
         required: true
         default: true
         type: boolean
       build_linux:
-        description: 'Build Linux executable'
+        description: 'Linux-Build (AppImage + deb)'
         required: true
         default: true
         type: boolean
       create_release:
-        description: 'Create GitHub Release'
+        description: 'Draft-Release erstellen (bei Tag-Push immer aktiv)'
         required: true
         default: true
         type: boolean
@@ -34,188 +69,86 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   BUN_VERSION: 'latest'
   NODE_VERSION: '22.14.0'
+  # ONNX Runtime 1.20.0 = exakt die Version, gegen die der `ort`-Crate
+  # 2.0.0-rc.12 gebaut ist (Default in scripts/download-onnxruntime.mjs;
+  # C-ABI-abwärtskompatibel, bei Bedurf hier zentral anheben).
+  ONNX_VERSION: '1.20.0'
+  RELEASE_VERSION: ${{ github.event.inputs.version || github.ref_name }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  TAURI_VERSION: '2'
+
 jobs:
-  # Build Windows MSI/NSIS Installer
+  # ────────────────────────────────────────────────────────────────────
+  #  Windows — NSIS-Installer (100 % offline-fähig)
+  # ────────────────────────────────────────────────────────────────────
   build-windows:
-    name: Build Windows Executable
+    name: Windows · NSIS (offline-fähig)
     runs-on: windows-latest
+    timeout-minutes: 90
     if: ${{ github.event.inputs.build_windows != 'false' }}
-    permissions:
-      contents: write
     steps:
-      - name: Checkout repository
+      - name: Repository auschecken
         uses: actions/checkout@v5
 
-      - name: Setup Bun
+      - name: Bun einrichten
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Setup Node.js
+      - name: Node.js einrichten
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Rust
+      - name: Rust einrichten (MSVC)
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Setup MSVC Developer Command Prompt
+      - name: MSVC-Umgebung aktivieren
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Cache Rust dependencies
+      - name: Rust-Cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install dependencies
+      - name: JavaScript-Abhängigkeiten installieren
         run: bun install --frozen-lockfile
 
-      - name: Verify toolchain
-        shell: pwsh
-        run: |
-          Write-Host "=== Verifying build toolchain ==="
-          Write-Host "Node.js: $(node --version)"
-          Write-Host "Bun: $(bun --version)"
-          Write-Host "Rust: $(rustc --version)"
-          Write-Host "Cargo: $(cargo --version)"
-          Write-Host "MSVC cl.exe:"; cl.exe 2>&1 | Select-Object -First 1
-
-          # Verify cargo-tauri (will be installed by tauri-action if missing)
-          if (-not (Get-Command cargo-tauri -ErrorAction SilentlyContinue)) {
-            Write-Host "Installing tauri-cli via cargo..."
-            cargo install tauri-cli --version "^2" --locked
-          }
-          Write-Host "Tauri CLI: $(cargo tauri --version)"
-          Write-Host "=== Toolchain verified ==="
-
-      - name: Build Next.js standalone
+      - name: Version aus Tag/Dispatch ins tauri.conf.json schreiben
+        shell: bash
         env:
-          NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
-          NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
+          RV: ${{ env.RELEASE_VERSION }}
         run: |
-          bun run next build --webpack
-          if (-not (Test-Path ".next\standalone")) {
-            Write-Error "Standalone build failed!"
-            exit 1
-          }
-          Write-Host "Standalone build successful!"
-          Get-ChildItem ".next\standalone" -Recurse | Where-Object { -not $_.PSIsContainer } | Measure-Object | Select-Object -ExpandProperty Count
+          node -e 'const fs=require("fs");const p="src-tauri/tauri.conf.json";const c=JSON.parse(fs.readFileSync(p,"utf8"));const v=(process.env.RV||"").replace(/^v/,"");if(v){c.version=v;fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");console.log("tauri.conf.json Version ->",v)}else{console.log("Keine Version gesetzt, behalte",c.version)}'
 
-      - name: Download Node.js portable
+      - name: Portables Node.js herunterladen (bundled/node/node.exe)
+        shell: bash
+        run: node scripts/download-node.mjs --version ${{ env.NODE_VERSION }}
+
+      - name: ONNX Runtime herunterladen (bundled/native/onnxruntime.dll)
+        shell: bash
+        run: node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }}
+
+      # VC++-Runtime mitbündeln: Rust-MSVC-Binaries brauchen vcruntime140 —
+      # auf einem „nackten“ Windows ohne Updates ist das nicht garantiert.
+      - name: VC++-Runtime-DLLs bündeln (für nackte Systeme)
         shell: pwsh
         run: |
-          Write-Host "Downloading Node.js v${{ env.NODE_VERSION }}..."
-          $nodeUrl = "https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-win-x64.zip"
-          Invoke-WebRequest -Uri $nodeUrl -OutFile "node.zip" -TimeoutSec 300
-          Expand-Archive -Path "node.zip" -DestinationPath "." -Force
-          Write-Host "Node.js downloaded and extracted"
-
-      - name: Prepare bundled files for Tauri
-        shell: pwsh
-        run: |
-          Write-Host "Creating bundled directories..."
-          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server"
-          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\node"
-
-          # Copy only node.exe (self-contained, ~80MB) — skip npm, corepack, docs, etc.
-          Write-Host "Copying node.exe only (minimal runtime)..."
-          Copy-Item -Force "node-v${{ env.NODE_VERSION }}-win-x64\node.exe" "src-tauri\bundled\node\node.exe"
-
-          # Copy Next.js standalone server
-          Write-Host "Copying Next.js standalone server..."
-          Copy-Item -Recurse -Force ".next\standalone\*" "src-tauri\bundled\server\"
-
-          # Copy static files
-          Write-Host "Copying static files..."
-          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server\.next\static"
-          Copy-Item -Recurse -Force ".next\static\*" "src-tauri\bundled\server\.next\static\"
-
-          # Copy public folder
-          Write-Host "Copying public folder..."
-          if (Test-Path "public") {
-            Copy-Item -Recurse -Force "public" "src-tauri\bundled\server\"
-          }
-
-          # Summary
-          Write-Host "`n=== Bundled files summary ==="
-          $totalFiles = (Get-ChildItem "src-tauri\bundled" -Recurse | Where-Object { -not $_.PSIsContainer }).Count
-          $totalSize = (Get-ChildItem "src-tauri\bundled" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
-          Write-Host "Total: $totalFiles files, $([math]::Round($totalSize, 2)) MB"
-
-      - name: Build Tauri app
-        shell: pwsh
-        working-directory: src-tauri
-        run: |
-          Write-Host "Building Tauri app (portable — no installer)..."
-          cargo build --release --no-default-features --features crepe 2>&1 | ForEach-Object { Write-Host $_ }
-          $exePath = "target\release\karaoke-successor.exe"
-          if (-not (Test-Path $exePath)) {
-            Write-Error "Build failed — exe not found at $exePath"
-            exit 1
-          }
-          Write-Host ("Build complete: {0} ({1:N2} MB)" -f $exePath, ((Get-Item $exePath).Length / 1MB))
-
-      - name: Download ONNX Runtime DLL
-        shell: pwsh
-        run: |
-          Write-Host "=== Downloading ONNX Runtime 1.24.2 (ort-sys 2.0.0-rc.12 target) ==="
-          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\native" | Out-Null
-          $ortVersion = "1.24.2"
-          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$ortVersion/onnxruntime-win-x64-$ortVersion.zip"
-          $ortZip = "onnxruntime.zip"
-          Write-Host "Downloading from: $ortUrl"
-          Invoke-WebRequest -Uri $ortUrl -OutFile $ortZip -TimeoutSec 300
-          Expand-Archive -Path $ortZip -DestinationPath "onnxruntime-extracted" -Force
-          # Copy onnxruntime.dll from the lib/ directory
-          $ortLibDir = "onnxruntime-extracted\onnxruntime-win-x64-$ortVersion\lib"
-          if (Test-Path "$ortLibDir\onnxruntime.dll") {
-            Copy-Item "$ortLibDir\onnxruntime.dll" "src-tauri\bundled\native\onnxruntime.dll" -Force
-            Write-Host ("  Copied onnxruntime.dll ({0:N2} MB)" -f ((Get-Item "$ortLibDir\onnxruntime.dll").Length / 1MB))
-          } else {
-            Write-Error "onnxruntime.dll not found in extracted archive at $ortLibDir"
-            exit 1
-          }
-          # Copy providers DLL if present
-          $providersDlls = @("onnxruntime_providers_shared.dll", "onnxruntime_providers_cuda.dll")
-          foreach ($pDll in $providersDlls) {
-            if (Test-Path "$ortLibDir\$pDll") {
-              Copy-Item "$ortLibDir\$pDll" "src-tauri\bundled\native\$pDll" -Force
-              Write-Host ("  Copied {0} ({1:N2} MB)" -f $pDll, ((Get-Item "$ortLibDir\$pDll").Length / 1MB))
-            }
-          }
-          # Cleanup
-          Remove-Item -Recurse -Force $ortZip, "onnxruntime-extracted" -ErrorAction SilentlyContinue
-          Write-Host "ONNX Runtime download complete."
-
-      - name: Bundle VC++ Runtime DLLs
-        shell: pwsh
-        run: |
-          Write-Host "=== Bundling VC++ Runtime DLLs ==="
+          $dest = "src-tauri\bundled\native"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
           $copied = 0
-          # Strategy 1: vswithout strict -requires filter
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           if (Test-Path $vswhere) {
             $msvcPath = & $vswhere -latest -property installationPath 2>$null
             if ($msvcPath) {
-              Write-Host "  Found VS at: $msvcPath"
               $redistDir = Get-ChildItem "$msvcPath\VC\Redist\MSVC" -Directory -ErrorAction SilentlyContinue |
                 Sort-Object -Descending | Select-Object -First 1
               if ($redistDir) {
@@ -223,495 +156,395 @@ jobs:
                 if (Test-Path $crtDir) {
                   foreach ($dll in @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")) {
                     $src = Join-Path $crtDir $dll
-                    if (Test-Path $src) {
-                      Copy-Item $src "src-tauri\bundled\native\$dll" -Force
-                      Write-Host "  Copied from VS Redist: $dll"
-                      $copied++
-                    }
+                    if (Test-Path $src) { Copy-Item $src "$dest\$dll" -Force; $copied++ }
                   }
                 }
               }
             }
           }
-          # Strategy 2: Fallback - copy from Windows System32 (always available on runners)
           if ($copied -lt 3) {
-            Write-Host "  Falling back to System32..."
+            Write-Host "Fallback: System32 (auf Runnern immer vorhanden)"
             foreach ($dll in @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")) {
-              $dest = "src-tauri\bundled\native\$dll"
-              if (-not (Test-Path $dest)) {
+              if (-not (Test-Path "$dest\$dll")) {
                 $sys32 = Join-Path $env:SystemRoot "System32\$dll"
-                if (Test-Path $sys32) {
-                  Copy-Item $sys32 $dest -Force
-                  Write-Host "  Copied from System32: $dll"
-                  $copied++
-                }
+                if (Test-Path $sys32) { Copy-Item $sys32 "$dest\$dll" -Force; $copied++ }
               }
             }
           }
-          if ($copied -lt 3) {
-            Write-Error "Could not find all VC++ Runtime DLLs (copied $copied/3)"
-            exit 1
-          }
+          if ($copied -lt 3) { Write-Error "VC++-Runtime-DLLs unvollständig ($copied/3)"; exit 1 }
+          Get-ChildItem $dest | ForEach-Object { Write-Host "  $($_.Name) ($([math]::Round($_.Length/1MB,2)) MB)" }
 
-      - name: Verify all required native DLLs
-        shell: pwsh
+      # Kanonisches Bundling (identisch zu lokal): Next.js standalone,
+      # custom server.js + Socket.IO-Server (socketio-server.cjs),
+      # Kopie portable-node → bundled/node
+      - name: Frontend + Server-Bundle vorbereiten (prepare-bundle.mjs)
+        shell: bash
+        env:
+          NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+          NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
+        run: node scripts/prepare-bundle.mjs
+
+      - name: Tauri bauen (NSIS mit offline eingebettetem WebView2-Installer)
+        shell: bash
+        run: bunx tauri build --bundles nsis
+
+      # Sanity-Check: ohne eingebetteten WebView2-Offline-Installer wäre der
+      # NSIS-Installer nur ~40 MB; mit ihm ~110–160 MB.
+      - name: Installer verifizieren (WebView2 offline eingebettet?)
+        shell: bash
         run: |
-          Write-Host "=== Verifying bundled native DLLs ==="
-          $requiredDlls = @(
-            @{Name="onnxruntime.dll"; MinMB=5},
-            @{Name="msvcp140.dll"; MinMB=0.01},
-            @{Name="vcruntime140.dll"; MinMB=0.01},
-            @{Name="vcruntime140_1.dll"; MinMB=0.01}
-          )
-          $missingDlls = @()
-          foreach ($item in $requiredDlls) {
-            $dllPath = "src-tauri\bundled\native\$($item.Name)"
-            if (Test-Path $dllPath) {
-              $sizeMB = (Get-Item $dllPath).Length / 1MB
-              if ($sizeMB -ge $item.MinMB) {
-                Write-Host ("  OK: {0} ({1:N2} MB)" -f $item.Name, $sizeMB)
-              } else {
-                Write-Error ("  WRONG SIZE: {0} is only {1:N2} MB (expected >= {2} MB)" -f $item.Name, $sizeMB, $item.MinMB)
-                $missingDlls += $item.Name
-              }
-            } else {
-              Write-Error "  MISSING: $($item.Name)"
-              $missingDlls += $item.Name
-            }
-          }
-          if ($missingDlls.Count -gt 0) {
-            Write-Error ("Missing/invalid DLLs: {0}" -f ($missingDlls -join ', '))
+          set -euo pipefail
+          exe=$(ls src-tauri/target/release/bundle/nsis/*-setup.exe | head -n 1)
+          sizeMB=$(( $(wc -c < "$exe") / 1048576 ))
+          echo "NSIS-Installer: $exe — ${sizeMB} MB"
+          if [ "$sizeMB" -lt 70 ]; then
+            echo "::error::Installer nur ${sizeMB} MB (< 70 MB) — WebView2-Offline-Installer vermutlich NICHT eingebettet (webviewInstallMode=offlineInstaller pruefen)."
             exit 1
-          }
-          Write-Host ""
-          Write-Host "=== Native DLLs summary ==="
-          Get-ChildItem "src-tauri\bundled\native" -Filter "*.dll" | ForEach-Object {
-            Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length / 1MB))
-          }
+          fi
+          echo "OK: Groesse plausibel — WebView2-Offline-Installer eingebettet."
 
-      - name: Create portable ZIP
-        shell: pwsh
-        run: |
-          Write-Host "=== Creating portable Windows ZIP ==="
-          $exePath = "src-tauri\target\release\karaoke-successor.exe"
-          if (-not (Test-Path $exePath)) {
-            Write-Error "EXE not found at $exePath — build failed?"
-            exit 1
-          }
-
-          $outDir = "portable-dist"
-          if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
-          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-
-          # 1) Main executable
-          Copy-Item $exePath "$outDir\karaoke-zero.exe" -Force
-          Write-Host ("  karaoke-zero.exe ({0:N2} MB)" -f ((Get-Item $exePath).Length / 1MB))
-
-          # 2) Bundled resources (node, server, native DLLs)
-          Copy-Item -Recurse "src-tauri\bundled" "$outDir\bundled" -Force
-
-          # 3) Summary
-          Write-Host ""
-          $totalFiles = (Get-ChildItem $outDir -Recurse -File).Count
-          $totalSize = (Get-ChildItem $outDir -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
-          Write-Host "  Total: $totalFiles files, $([math]::Round($totalSize, 2)) MB uncompressed"
-
-          # 4) Verify critical files
-          $critical = @(
-            "$outDir\karaoke-zero.exe",
-            "$outDir\bundled\node\node.exe",
-            "$outDir\bundled\native\onnxruntime.dll",
-            "$outDir\bundled\server\server.js"
-          )
-          $missing = @()
-          foreach ($f in $critical) {
-            if (-not (Test-Path $f)) {
-              Write-Error "  MISSING: $f"
-              $missing += $f
-            }
-          }
-          if ($missing.Count -gt 0) {
-            Write-Error "Critical files missing — aborting"
-            exit 1
-          }
-
-          # 5) Compress
-          $zipName = "Karaoke-ZERO-Windows-x64.zip"
-          if (Test-Path $zipName) { Remove-Item $zipName -Force }
-          Compress-Archive -Path "$outDir\*" -DestinationPath $zipName -Force
-          $zipMB = (Get-Item $zipName).Length / 1MB
-          Write-Host "  ZIP: $zipName ($([math]::Round($zipMB, 2)) MB)"
-
-          if ($zipMB -lt 40) {
-            Write-Error "ZIP too small ($([math]::Round($zipMB, 2)) MB < 40 MB) — files missing!"
-            exit 1
-          }
-          Write-Host "  Size check passed."
-
-      - name: Clean up build artefacts
-        shell: pwsh
-        run: |
-          Remove-Item -Recurse -Force "portable-dist" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "node.zip" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "node-v${{ env.NODE_VERSION }}-win-x64" -ErrorAction SilentlyContinue
-          $drive = Get-PSDrive -Name C
-          Write-Host "Free space on C: $([math]::Round($drive.Free / 1GB, 2)) GB"
-
-      - name: Upload portable ZIP
+      - name: Artefakt hochladen (NSIS-Installer)
         uses: actions/upload-artifact@v5
         with:
-          name: windows-portable
-          path: Karaoke-ZERO-Windows-x64.zip
+          name: windows-nsis-installer
+          path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
+          if-no-files-found: error
 
-  # Build macOS DMG/App
+  # ────────────────────────────────────────────────────────────────────
+  #  macOS — Universal-Binary (Intel + Apple Silicon)
+  # ────────────────────────────────────────────────────────────────────
   build-macos:
-    name: Build macOS Executable
+    name: macOS · Universal (Intel + Apple Silicon)
     runs-on: macos-latest
+    timeout-minutes: 120
     if: ${{ github.event.inputs.build_macos != 'false' }}
-    permissions:
-      contents: write
     steps:
-      - name: Checkout repository
+      - name: Repository auschecken
         uses: actions/checkout@v5
 
-      - name: Setup Bun
+      - name: Bun einrichten
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Setup Node.js
+      - name: Node.js einrichten
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Rust
+      - name: Rust einrichten (beide Apple-Ziele für Universal-Binary)
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin, x86_64-apple-darwin
 
-      - name: Cache Rust dependencies
+      - name: Rust-Cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install dependencies
+      - name: JavaScript-Abhängigkeiten installieren
         run: bun install --frozen-lockfile
 
-      - name: Verify toolchain
+      - name: Version aus Tag/Dispatch ins tauri.conf.json schreiben
+        env:
+          RV: ${{ env.RELEASE_VERSION }}
         run: |
-          echo "=== Verifying build toolchain ==="
-          echo "Node.js: $(node --version)"
-          echo "Bun: $(bun --version)"
-          echo "Rust: $(rustc --version)"
-          echo "Cargo: $(cargo --version)"
-          echo "Xcode CLT:"
-          xcode-select -p
-          echo "Clang: $(clang --version 2>&1 | head -1)"
+          node -e 'const fs=require("fs");const p="src-tauri/tauri.conf.json";const c=JSON.parse(fs.readFileSync(p,"utf8"));const v=(process.env.RV||"").replace(/^v/,"");if(v){c.version=v;fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");console.log("tauri.conf.json Version ->",v)}else{console.log("Keine Version gesetzt, behalte",c.version)}'
 
-          # Verify cargo-tauri (will be installed by tauri-action if missing)
-          if ! command -v cargo-tauri &> /dev/null; then
-            echo "Installing tauri-cli via cargo..."
-            cargo install tauri-cli --version "^2" --locked
-          fi
-          echo "Tauri CLI: $(cargo tauri --version)"
-          echo "=== Toolchain verified ==="
+      # Node.js als Universal-Binary: beide Architekturen laden und per
+      # lipo mergen — sonst würde die App auf Intel- oder M-Macs das
+      # falsche node-Binary spawnen.
+      - name: Node.js Universal-Binary bauen (x64 + arm64 → lipo)
+        run: |
+          set -euo pipefail
+          node scripts/download-node.mjs --version ${{ env.NODE_VERSION }} --arch x64
+          mkdir -p /tmp/kz-node-build
+          mv portable-node/bin/node /tmp/kz-node-build/node-x64
+          node scripts/download-node.mjs --version ${{ env.NODE_VERSION }} --arch arm64
+          mv portable-node/bin/node /tmp/kz-node-build/node-arm64
+          lipo -create /tmp/kz-node-build/node-x64 /tmp/kz-node-build/node-arm64 -output /tmp/kz-node-build/node-universal
+          cp /tmp/kz-node-build/node-universal portable-node/bin/node
+          chmod +x portable-node/bin/node
+          echo "--- Verifikation ---"
+          lipo -info portable-node/bin/node
+          lipo -info portable-node/bin/node | grep -q x86_64
+          lipo -info portable-node/bin/node | grep -q arm64
+          echo "OK: Node.js ist ein Universal-Binary."
 
-      - name: Build Next.js standalone
+      # ONNX-Runtime ebenfalls universal mergen (libonnxruntime.dylib und
+      # ggf. providers_shared), damit CREPE auf beiden Architekturen lädt.
+      - name: ONNX Runtime Universal-Bibliotheken bauen (lipo)
+        run: |
+          set -euo pipefail
+          node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch x64
+          mkdir -p /tmp/kz-onnx-x64
+          find src-tauri/bundled/native -type f ! -name '.gitkeep' -exec mv {} /tmp/kz-onnx-x64/ \;
+          node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch arm64
+          for f in /tmp/kz-onnx-x64/*; do
+            base="$(basename "$f")"
+            dst="src-tauri/bundled/native/$base"
+            if [ -f "$dst" ]; then
+              lipo -create "$f" "$dst" -output "/tmp/kz-universal-$base"
+              cp "/tmp/kz-universal-$base" "$dst"
+              chmod +x "$dst" || true
+              echo "OK universal: $base"
+            else
+              echo "WARN: $base fehlt im arm64-Download — uebersprungen"
+            fi
+          done
+          ls -la src-tauri/bundled/native/
+          echo "--- Verifikation ---"
+          lipo -info src-tauri/bundled/native/libonnxruntime.dylib
+          lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q x86_64
+          lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q arm64
+          echo "OK: ONNX Runtime ist ein Universal-Binary."
+
+      - name: Frontend + Server-Bundle vorbereiten (prepare-bundle.mjs)
         env:
           NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
           NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
-        run: bun run next build --webpack
+        run: node scripts/prepare-bundle.mjs
 
-      - name: Download Node.js portable (macOS)
-        run: |
-          # Download for Intel and Apple Silicon
-          echo "Downloading Node.js for macOS Intel..."
-          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-darwin-x64.tar.gz | tar xz
-          mv node-v${{ env.NODE_VERSION }}-darwin-x64 node-darwin-x64
+      # Ohne Apple-Secrets: unsignierter Build (Gatekeeper-Hinweis in den
+      # Release-Notes). Mit Secrets: Signierung + Notarization direkt im
+      # tauri build.
+      - name: Tauri bauen (Universal, unsigniert)
+        if: ${{ secrets.APPLE_CERTIFICATE == '' }}
+        run: bunx tauri build --target universal-apple-darwin --bundles app,dmg
 
-          echo "Downloading Node.js for macOS Apple Silicon..."
-          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-darwin-arm64.tar.gz | tar xz
-          mv node-v${{ env.NODE_VERSION }}-darwin-arm64 node-darwin-arm64
-
-      - name: Prepare bundled files
-        run: |
-          mkdir -p src-tauri/bundled/server
-          mkdir -p src-tauri/bundled/node
-
-          # Copy Next.js standalone
-          echo "Copying Next.js standalone..."
-          cp -r .next/standalone/* src-tauri/bundled/server/
-          mkdir -p src-tauri/bundled/server/.next/static
-          cp -r .next/static/* src-tauri/bundled/server/.next/static/
-          cp -r public src-tauri/bundled/server/ 2>/dev/null || true
-
-          # Copy Node.js (Intel version as default)
-          echo "Copying Node.js runtime..."
-          cp -r node-darwin-x64/* src-tauri/bundled/node/
-          chmod +x src-tauri/bundled/node/bin/node
-
-          # Summary
-          echo "=== Bundled files summary ==="
-          du -sh src-tauri/bundled/*
-
-      - name: Ensure dist folder
-        run: mkdir -p dist
-
-      - name: Build Tauri app (Universal Binary)
-        uses: tauri-apps/tauri-action@v0
+      - name: Tauri bauen (Universal, signiert + notarisiert)
+        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
-          releaseBody: |
-            # 🎤 Karaoke Successor (macOS)
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bunx tauri build --target universal-apple-darwin --bundles app,dmg
 
-            **Fully standalone - no Node.js installation required!**
-
-            ## 📥 Installation (macOS)
-            1. Download the `.dmg` file
-            2. Open the DMG and drag to Applications
-            3. Launch "Karaoke Successor"
-            4. Enjoy! 🎤
-
-            ## ✨ Features
-            - Real-time pitch detection (YIN algorithm)
-            - 3 difficulty levels
-            - Party modes
-            - Mobile companion app
-            - Song import
-            - Achievements system
-
-            ## 🖥️ System Requirements
-            - macOS 10.15 (Catalina) or later
-            - 4GB RAM minimum
-            - Microphone (optional)
-          releaseDraft: ${{ github.event.inputs.create_release != 'false' }}
-          prerelease: false
-          args: --target universal-apple-darwin
-
-      - name: Upload macOS artifacts
+      - name: Artefakt hochladen (Universal-DMG)
         uses: actions/upload-artifact@v5
         with:
-          name: macos-executables
-          path: |
-            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+          name: macos-universal-dmg
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
 
-  # Build Linux DEB/AppImage
+  # ────────────────────────────────────────────────────────────────────
+  #  Linux — AppImage (WebKitGTK + Medien-Codecs gebündelt) + deb
+  # ────────────────────────────────────────────────────────────────────
   build-linux:
-    name: Build Linux Executable
+    name: Linux · AppImage + deb
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     if: ${{ github.event.inputs.build_linux != 'false' }}
-    permissions:
-      contents: write
     steps:
-      - name: Checkout repository
+      - name: Repository auschecken
         uses: actions/checkout@v5
 
-      - name: Setup Bun
+      - name: Bun einrichten
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Setup Node.js
+      - name: Node.js einrichten
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Rust
+      - name: Rust einrichten
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-gnu
 
-      - name: Cache Rust dependencies
+      - name: Rust-Cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install system dependencies
+      # ubuntu-22.04 = älteste noch übliche Baseline (glibc 2.35) → das
+      # AppImage läuft auf praktisch allen aktuellen x64-Distributionen.
+      - name: System-Abhängigkeiten installieren (WebKitGTK 4.1, ALSA, …)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            pkg-config \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libfuse2 \
-            fuse \
-            squashfs-tools \
-            file \
-            desktop-file-utils \
-            appstream \
-            libasound2-dev \
-            libpulse-dev
+            build-essential pkg-config curl wget file \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libglib2.0-dev \
+            libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev libpulse-dev libssl-dev libxdo-dev \
+            libfuse2 squashfs-tools desktop-file-utils appstream
 
-      - name: Install dependencies
+      - name: JavaScript-Abhängigkeiten installieren
         run: bun install --frozen-lockfile
 
-      - name: Verify toolchain
+      - name: Version aus Tag/Dispatch ins tauri.conf.json schreiben
+        env:
+          RV: ${{ env.RELEASE_VERSION }}
         run: |
-          echo "=== Verifying build toolchain ==="
-          echo "Node.js: $(node --version)"
-          echo "Bun: $(bun --version)"
-          echo "Rust: $(rustc --version)"
-          echo "Cargo: $(cargo --version)"
-          echo "GCC: $(gcc --version | head -1)"
-          echo "PKG-Config: $(pkg-config --version)"
+          node -e 'const fs=require("fs");const p="src-tauri/tauri.conf.json";const c=JSON.parse(fs.readFileSync(p,"utf8"));const v=(process.env.RV||"").replace(/^v/,"");if(v){c.version=v;fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");console.log("tauri.conf.json Version ->",v)}else{console.log("Keine Version gesetzt, behalte",c.version)}'
 
-          # Verify cargo-tauri (will be installed by tauri-action if missing)
-          if ! command -v cargo-tauri &> /dev/null; then
-            echo "Installing tauri-cli via cargo..."
-            cargo install tauri-cli --version "^2" --locked
-          fi
-          echo "Tauri CLI: $(cargo tauri --version)"
-          echo "=== Toolchain verified ==="
+      - name: Portables Node.js herunterladen (bundled/node/bin/node)
+        run: node scripts/download-node.mjs --version ${{ env.NODE_VERSION }}
 
-      - name: Build Next.js standalone
+      - name: ONNX Runtime herunterladen (bundled/native/libonnxruntime.so)
+        run: node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }}
+
+      - name: Frontend + Server-Bundle vorbereiten (prepare-bundle.mjs)
         env:
           NEXT_PUBLIC_LEADERBOARD_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
           NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
-        run: bun run next build --webpack
+        run: node scripts/prepare-bundle.mjs
 
-      - name: Download Node.js portable (Linux)
+      # bundleSystemdeps=true  → WebKitGTK & Co. wandern ins AppImage
+      # bundleMediaCodes=true  → ffmpeg-Medien-Codecs (H.264/AAC) gebündelt
+      - name: Tauri bauen (AppImage mit gebündeltem WebKit + Codecs, + deb)
+        run: bunx tauri build --bundles deb,appimage
+
+      - name: Artefakte prüfen + ausführbar markieren
         run: |
-          echo "Downloading Node.js for Linux..."
-          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-linux-x64.tar.xz | tar xJ
-          mv node-v${{ env.NODE_VERSION }}-linux-x64 node-linux-x64
+          set -euo pipefail
+          echo "--- AppImage ---"
+          ls -la src-tauri/target/release/bundle/appimage/
+          chmod +x src-tauri/target/release/bundle/appimage/*.AppImage
+          file src-tauri/target/release/bundle/appimage/*.AppImage
+          echo "--- deb ---"
+          ls -la src-tauri/target/release/bundle/deb/
 
-      - name: Prepare bundled files
+      - name: Artefakte hochladen (AppImage + deb)
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-standalone
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
+          retention-days: 30
+          if-no-files-found: error
+
+  # ────────────────────────────────────────────────────────────────────
+  #  Release — DRAFT mit allen Artefakten + Prüfsummen (ein einziger Job,
+  #  daher keine Race-Conditions zwischen den Plattform-Builds)
+  # ────────────────────────────────────────────────────────────────────
+  release:
+    name: GitHub Release (Draft)
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-macos, build-linux]
+    if: >-
+      always() &&
+      !contains(join(needs.*.result, ','), 'failure') &&
+      contains(join(needs.*.result, ','), 'success') &&
+      (github.event_name == 'push' || github.event.inputs.create_release != 'false')
+    permissions:
+      contents: write
+    steps:
+      - name: Alle Build-Artefakte herunterladen
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+
+      - name: Release-Dateien sammeln + Prüfsummen erzeugen
         run: |
-          mkdir -p src-tauri/bundled/server
-          mkdir -p src-tauri/bundled/node
+          set -euo pipefail
+          mkdir -p release-files
+          find artifacts -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' -o -name '*.deb' \) \
+            -exec cp {} release-files/ \;
+          count=$(find release-files -type f | wc -l)
+          if [ "$count" -lt 1 ]; then
+            echo "::error::Keine Release-Dateien gefunden"
+            exit 1
+          fi
+          cd release-files
+          sha256sum * > SHA256SUMS.txt
+          echo "--- Release-Dateien ---"
+          ls -la
+          echo "--- SHA256SUMS ---"
+          cat SHA256SUMS.txt
 
-          # Copy Next.js standalone
-          echo "Copying Next.js standalone..."
-          cp -r .next/standalone/* src-tauri/bundled/server/
-          mkdir -p src-tauri/bundled/server/.next/static
-          cp -r .next/static/* src-tauri/bundled/server/.next/static/
-          cp -r public src-tauri/bundled/server/ 2>/dev/null || true
-
-          # Copy Node.js
-          echo "Copying Node.js runtime..."
-          cp -r node-linux-x64/* src-tauri/bundled/node/
-          chmod +x src-tauri/bundled/node/bin/node
-
-          # Summary
-          echo "=== Bundled files summary ==="
-          du -sh src-tauri/bundled/*
-
-      - name: Ensure dist folder
-        run: mkdir -p dist
-
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+      - name: Draft-Release erstellen
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
-          releaseBody: |
-            # 🎤 Karaoke Successor (Linux)
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: 'Karaoke ZERO ${{ env.RELEASE_VERSION }}'
+          body: |
+            # 🎤 Karaoke ZERO ${{ env.RELEASE_VERSION }} — 100 % Standalone
 
-            **Fully standalone - no Node.js installation required!**
+            Diese Builds laufen auf **nackten Systemen**: kein installiertes Node.js,
+            kein Browser, **keine Internetverbindung zur Installationszeit**
+            (Online-Inhalte wie YouTube-Embeds natürlich ausgenommen).
 
-            ## 📥 Installation (Linux)
-            1. Download the `.deb` file
-            2. Install: `sudo dpkg -i karaoke-successor_*.deb`
-            3. Or use: `sudo apt install ./karaoke-successor_*.deb`
-            4. Launch "Karaoke Successor" from your app menu
-            5. Enjoy! 🎤
+            ## 📦 Downloads
 
-            ## ✨ Features
-            - Real-time pitch detection (YIN algorithm)
-            - 3 difficulty levels
-            - Party modes
-            - Mobile companion app
-            - Song import
-            - Achievements system
+            | Datei | Plattform | Hinweis |
+            |---|---|---|
+            | `*-setup.exe` | Windows x64 | NSIS-Installer — WebView2 ist **offline eingebettet**, keine Admin-Rechte nötig |
+            | `*.dmg` | macOS **Universal** (Intel + Apple Silicon) | macOS ≥ 10.15 |
+            | `*.AppImage` | Linux x64 | WebKitGTK **und** Medien-Codecs (H.264/AAC) sind gebündelt |
+            | `*.deb` | Linux (Debian/Ubuntu) | Paket-Manager-Variante (nutzt System-WebKit) |
+            | `SHA256SUMS.txt` | alle | Prüfsummen |
 
-            ## 🖥️ System Requirements
-            - Ubuntu 20.04+ or compatible distribution
-            - 4GB RAM minimum
-            - Microphone (optional)
-          releaseDraft: ${{ github.event.inputs.create_release != 'false' }}
+            ## 💻 Installation
+
+            **Windows:** `*-setup.exe` ausführen — fertig.
+
+            **macOS:** DMG öffnen → „Karaoke ZERO“ in den Programme-Ordner ziehen.
+            > ⚠️ Unsignierter Build: beim ersten Start ggf. Rechtsklick → „Öffnen“
+            > (Gatekeeper) oder im Terminal: `xattr -cr "/Applications/Karaoke ZERO.app"`
+
+            **Linux (AppImage):**
+            ```bash
+            chmod +x Karaoke*.AppImage && ./Karaoke*.AppImage
+            ```
+            Ohne FUSE: `./Karaoke*.AppImage --appimage-extract-and-run`
+
+            **Linux (deb):** `sudo apt install ./Karaoke*.deb`
+
+            Prüfsummen verifizieren: `sha256sum -c SHA256SUMS.txt`
+          draft: true
           prerelease: false
-          args: --bundles deb
+          files: release-files/*
 
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: linux-executables
-          path: |
-            src-tauri/target/release/bundle/deb/*.deb
-          retention-days: 30
-          if-no-files-found: warn
-
-  # Summary job that runs after all builds complete
+  # ────────────────────────────────────────────────────────────────────
+  #  Zusammenfassung (läuft immer, auch bei Fehlern)
+  # ────────────────────────────────────────────────────────────────────
   build-summary:
-    name: Build Summary
+    name: Zusammenfassung
     runs-on: ubuntu-latest
     needs: [build-windows, build-macos, build-linux]
     if: always()
     steps:
-      - name: Check build results
+      - name: Ergebnisse zusammenfassen
         run: |
-          echo "## 🏗️ Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows | ${{ needs.build-windows.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS | ${{ needs.build-macos.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux | ${{ needs.build-linux.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🏗️ Standalone-Build — Zusammenfassung"
+            echo ""
+            echo "Version: **${{ env.RELEASE_VERSION }}**"
+            echo ""
+            echo "| Plattform | Ergebnis |"
+            echo "|---|---|"
+            echo "| Windows (NSIS, offline-fähig) | ${{ needs.build-windows.result == 'success' && '✅ Erfolg' || '❌ Fehlgeschlagen/Skipped' }} |"
+            echo "| macOS (Universal DMG) | ${{ needs.build-macos.result == 'success' && '✅ Erfolg' || '❌ Fehlgeschlagen/Skipped' }} |"
+            echo "| Linux (AppImage + deb) | ${{ needs.build-linux.result == 'success' && '✅ Erfolg' || '❌ Fehlgeschlagen/Skipped' }} |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Download all artifacts
+      - name: Artefakte auflisten
         uses: actions/download-artifact@v5
         with:
           path: all-artifacts
         continue-on-error: true
 
-      - name: List all artifacts
+      - name: Artefakt-Übersicht
+        continue-on-error: true
         run: |
-          echo "## 📦 Artifacts Created" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -d "all-artifacts" ]; then
-            find all-artifacts -type f \( -name "*.zip" -o -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" \) 2>/dev/null | while read file; do
+          {
+            echo "## 📦 Artefakte"
+            echo ""
+            find all-artifacts -type f 2>/dev/null | while read -r file; do
               size=$(du -h "$file" | cut -f1)
-              echo "- \`$(basename "$file")\` ($size)" >> $GITHUB_STEP_SUMMARY
+              echo "- \`$(basename "$file")\` ($size)"
             done
-          else
-            echo "No artifacts found" >> $GITHUB_STEP_SUMMARY
-          fi
+          } >> "$GITHUB_STEP_SUMMARY"

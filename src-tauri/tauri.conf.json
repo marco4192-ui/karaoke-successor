@@ -41,7 +41,10 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "webviewInstallMode": {
+          "type": "offlineInstaller"
+        }
       }
     },
     "macOS": {
@@ -49,7 +52,8 @@
     },
     "linux": {
       "appimage": {
-        "bundleSystemdeps": false
+        "bundleSystemdeps": true,
+        "bundleMediaCodes": true
       },
       "deb": {
         "depends": ["libasound2t64 | libasound2"]

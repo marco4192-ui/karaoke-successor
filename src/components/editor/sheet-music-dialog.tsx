@@ -338,8 +338,12 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
       const mimeType = guessMimeType(fileName);
       if (mimeType === 'application/pdf') {
         // PDF → render pages client-side (pdf.js)
-        const bytes = await nativeReadFileBytes(path);
-        await loadPdf(fileName, bytes);
+        // nativeReadFileBytes liefert Base64; loadPdf erwartet File | ArrayBuffer
+        const base64 = await nativeReadFileBytes(path);
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        await loadPdf(fileName, bytes.buffer);
         return;
       }
       if (!mimeType) {
