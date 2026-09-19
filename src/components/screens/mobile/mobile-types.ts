@@ -178,6 +178,14 @@ export interface BrGameData {
   snippetIndex?: number;
   snippetCount?: number;
   players?: BrGameMirrorPlayer[];
+  /** Present while status === 'voting': the song options + per-option votes
+   *  and which players already voted — companions render vote buttons and
+   *  submit their pick via the `br_vote` command (round 2+ votes included). */
+  voteOptions?: Array<{
+    songName: string;
+    votes: number;
+    votedPlayerIds: string[];
+  }>;
 }
 
 export interface GameState {

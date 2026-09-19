@@ -562,6 +562,17 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-vote', { detail: { songId } }));
           break;
         }
+        // BR in-game song vote (6.2): br_vote:<songIndex>:<profileId> —
+        // companion players vote for the next round's song from their phone.
+        if (cmd.type.startsWith('br_vote:')) {
+          const parts = cmd.type.slice('br_vote:'.length).split(':');
+          const songIndex = Number(parts[0]);
+          const playerId = parts.slice(1).join(':');
+          if (Number.isFinite(songIndex) && playerId) {
+            window.dispatchEvent(new CustomEvent('remote-br-vote', { detail: { songIndex, playerId } }));
+          }
+          break;
+        }
         // Check for party_select_song:<songId> pattern
         // Companion selected a song from library during party mode
         if (cmd.type.startsWith('party_select_song:')) {

@@ -1080,6 +1080,15 @@ export default function KaraokeZERO() {
                 eliminated: p.eliminated,
                 playerType: p.playerType === 'companion' ? 'companion' : 'microphone',
               })),
+              // Voting phase (6.2): push options + live votes so companion
+              // apps can vote from their phone — including round 2+ votes.
+              voteOptions: brGame.status === 'voting' && brGame.voteOptions
+                ? brGame.voteOptions.map(o => ({
+                  songName: o.songName,
+                  votes: o.votes,
+                  votedPlayerIds: o.votedPlayerIds,
+                }))
+                : undefined,
             };
           }
         }

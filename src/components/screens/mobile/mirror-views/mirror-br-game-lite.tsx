@@ -65,6 +65,12 @@ export function MirrorBrGameLite({
   const isPlaying = gameState.isPlaying && br?.status === 'playing';
   const isVoting = br?.status === 'voting';
   const isCountdown = br?.status === 'countdown';
+  // Voting (6.2): my own vote = the option whose votedPlayerIds contains my
+  // profile id. -1 while I haven't voted yet (or no options yet).
+  const brVoteOptions = isVoting ? (br?.voteOptions ?? []) : [];
+  const myVoteIndex = profileId
+    ? brVoteOptions.findIndex(o => (o.votedPlayerIds ?? []).includes(profileId))
+    : -1;
 
   // ── Pause / leave dialog sync (same as the other game mirrors) ──
   const [showPauseOverlay, setShowPauseOverlay] = useState(false);
@@ -205,9 +211,43 @@ export function MirrorBrGameLite({
 
       {/* ── Core signal: everyone sings — SING ALONG! + own live pitch ── */}
       {isVoting ? (
-        <div className="rounded-2xl border border-amber-400/50 bg-amber-500/10 p-5 text-center">
+        <div className="rounded-2xl border border-amber-400/50 bg-amber-500/10 p-4 text-center" data-testid="br-mirror-voting">
           <p className="text-lg font-bold text-amber-300">{'\u{1F5F3}'}</p>
-          <p className="text-sm text-amber-200/80">{t('mobile.brGameVoting') || 'Vote for the next song!'}</p>
+          <p className="text-sm text-amber-200/80 mb-3">{t('mobile.brGameVoting') || 'Vote for the next song!'}</p>
+          {brVoteOptions.length === 0 ? (
+            <p className="text-xs text-white/40">
+              {t('mobile.brVoteWaiting') || 'Waiting for the options…'}
+            </p>
+          ) : me && me.eliminated ? (
+            <p className="text-xs text-white/40">
+              {t('mobile.brVoteEliminated') || 'Eliminated — no vote this round.'}
+            </p>
+          ) : myVoteIndex >= 0 ? (
+            <div className="rounded-xl bg-amber-500/15 border border-amber-400/30 px-3 py-2.5" data-testid="br-mirror-voted">
+              <p className="text-xs font-semibold text-amber-200/90">
+                ✓ {t('mobile.brVoteDone') || 'Your vote is in!'}
+              </p>
+              <p className="text-xs text-white/50 truncate mt-0.5">
+                {brVoteOptions[myVoteIndex]?.songName}
+              </p>
+            </div>
+          ) : profileId ? (
+            <div className="flex flex-col gap-2">
+              {brVoteOptions.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleCmd(`br_vote:${i}:${profileId}`)}
+                  className="flex items-center justify-between gap-2 w-full rounded-xl px-3 py-2.5 bg-amber-500/15 border border-amber-400/40 text-amber-100 active:scale-[0.98] active:bg-amber-500/25 transition-all"
+                  data-testid={`br-mirror-vote-${i}`}
+                >
+                  <span className="text-sm font-medium truncate text-left">{opt.songName}</span>
+                  <span className="text-[10px] text-amber-200/70 shrink-0">
+                    {opt.votes} {t('mobile.brVotes') || 'votes'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : me && me.eliminated ? (
         <div className="rounded-2xl border border-red-400/40 bg-red-500/10 p-5 text-center">

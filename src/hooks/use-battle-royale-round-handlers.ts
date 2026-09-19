@@ -300,8 +300,32 @@ export function useBattleRoyaleRoundHandlers({
     const currentGame = gameRef.current;
     if (currentGame.status !== 'voting') return;
     const updatedGame = submitVote(currentGame, playerId, songIndex);
+    // Update the ref SYNCHRONOUSLY: rapid consecutive votes (host click +
+    // companion votes arriving in the same poll batch) would otherwise all
+    // read the same stale base and overwrite each other — dropping votes.
+    gameRef.current = updatedGame;
     onUpdateGameRef.current(updatedGame);
   }, []);
+
+  // ── Companion-app votes (6.2) ──
+  // Mirror apps send br_vote:<songIndex>:<profileId> (dispatched as
+  // 'remote-br-vote' by the global remote control). Companion players are
+  // built from profiles, so the player id IS the profile id. Only ACTIVE
+  // (non-eliminated) players may vote; submitVote dedupes per player.
+  useEffect(() => {
+    const handleRemoteBrVote = (e: Event) => {
+      const { songIndex, playerId } = (e as CustomEvent).detail || {};
+      if (typeof playerId !== 'string' || !playerId) return;
+      if (typeof songIndex !== 'number' || !Number.isFinite(songIndex)) return;
+      const currentGame = gameRef.current;
+      if (currentGame.status !== 'voting') return;
+      const isActiveVoter = currentGame.players.some(p => p.id === playerId && !p.eliminated);
+      if (!isActiveVoter) return;
+      handleVoteSubmit(playerId, songIndex);
+    };
+    window.addEventListener('remote-br-vote', handleRemoteBrVote);
+    return () => window.removeEventListener('remote-br-vote', handleRemoteBrVote);
+  }, [handleVoteSubmit]);
 
   const handleStartRoundAfterVote = useCallback(() => {
     const currentGame = gameRef.current;

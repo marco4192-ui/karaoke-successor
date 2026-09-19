@@ -29,12 +29,15 @@ export function VotingView({
 }: VotingViewProps) {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(votingTimeoutSeconds);
-  const [votedPlayers, setVotedPlayers] = useState<Set<string>>(new Set());
   const [phase, setPhase] = useState<'voting' | 'result'>('voting');
   const [winningIndex, setWinningIndex] = useState(0);
 
+  // Votes live in the GAME state (voteOptions[].votedPlayerIds) — this way
+  // host clicks AND companion-app votes both count, and allVoted is always
+  // accurate even across re-renders (the old local Set was desktop-only).
+  const votedIds = new Set(voteOptions.flatMap(o => o.votedPlayerIds));
   const totalVoters = activePlayers.length;
-  const allVoted = votedPlayers.size >= totalVoters;
+  const allVoted = totalVoters > 0 && votedIds.size >= totalVoters;
 
   // Timer
   useEffect(() => {
@@ -51,7 +54,11 @@ export function VotingView({
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Auto-resolve when time runs out or all voted
+  // Auto-resolve when time runs out or all voted → show result phase.
+  // NOTE: deliberately SEPARATE from the auto-start effect below — a single
+  // effect that both flips `phase` and schedules the start timer cancels its
+  // own timer on the phase re-run (~16ms later), so the round never started
+  // after all players voted (user report 6.2).
   useEffect(() => {
     if ((timeLeft === 0 || allVoted) && phase === 'voting') {
       // Determine winner
@@ -62,18 +69,21 @@ export function VotingView({
       const winnerIdx = topIndices[Math.floor(Math.random() * topIndices.length)].index;
       setWinningIndex(winnerIdx);
       setPhase('result');
-
-      // Auto-start after showing result
-      const timer = setTimeout(() => {
-        onStartRound();
-      }, 3000);
-      return () => clearTimeout(timer);
     }
-  }, [timeLeft, allVoted, phase, voteOptions, onStartRound]);
+  }, [timeLeft, allVoted, phase, voteOptions]);
+
+  // Result phase → auto-start the round after 3s (own effect, own cleanup —
+  // runs exactly once per result phase).
+  useEffect(() => {
+    if (phase !== 'result') return;
+    const timer = setTimeout(() => {
+      onStartRound();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [phase, onStartRound]);
 
   const handleVote = (playerId: string, songIndex: number) => {
-    if (votedPlayers.has(playerId)) return;
-    setVotedPlayers(prev => new Set([...prev, playerId]));
+    if (votedIds.has(playerId)) return;
     onVoteSubmit(playerId, songIndex);
   };
 
@@ -90,7 +100,7 @@ export function VotingView({
           {timeLeft}s
         </Badge>
         <div className="text-white/60">
-          {votedPlayers.size}/{totalVoters} {t('battleRoyale.voted')}
+          {votedIds.size}/{totalVoters} {t('battleRoyale.voted')}
         </div>
       </div>
 
@@ -117,8 +127,10 @@ export function VotingView({
               `}
               onClick={() => {
                 // For simplicity, first unvoted player's vote is cast on click
+                // (host input for local players — companions vote on their
+                // own phone screens, votes land in the same game state).
                 if (phase !== 'voting') return;
-                const unvoted = activePlayers.find(p => !votedPlayers.has(p.id));
+                const unvoted = activePlayers.find(p => !votedIds.has(p.id));
                 if (unvoted) handleVote(unvoted.id, index);
               }}
             >
