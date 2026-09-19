@@ -69,6 +69,8 @@ interface MetadataStudioProps {
    *  to the studio, placed next to Run). */
   selectMode: boolean;
   onToggleSelectMode: () => void;
+  /** Clears the whole multi-selection (Deselect button next to Select-Songs). */
+  onClearSelection: () => void;
   onApplied: () => void;
   t: (key: string) => string;
 }
@@ -107,6 +109,7 @@ export function MetadataStudio({
   selectionFocusToken = 0,
   selectMode,
   onToggleSelectMode,
+  onClearSelection,
   onApplied,
   t,
 }: MetadataStudioProps) {
@@ -1089,8 +1092,43 @@ export function MetadataStudio({
                       <div
                         key={song.id}
                         data-testid={`manual-edit-row-${song.id}`}
-                        className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5"
+                        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
+                          manualPreviewId === song.id ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
+                        }`}
                       >
+                        {/* Listen-before-you-edit preview (same as the rule-based
+                            manual review list — user request: parity). */}
+                        {(() => {
+                          const hasAudio = !!(
+                            song.audioUrl || song.relativeAudioPath || song.storedMedia
+                            || song.videoUrl || song.videoBackground || song.relativeVideoPath
+                          );
+                          const isPlaying = manualPreviewId === song.id;
+                          return (
+                            <button
+                              onClick={() => void toggleManualPreview(song.id)}
+                              disabled={!hasAudio}
+                              className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
+                                isPlaying
+                                  ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
+                                  : hasAudio
+                                    ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
+                                    : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
+                              }`}
+                              title={!hasAudio
+                                ? t('editor.manualReviewNoAudio')
+                                : isPlaying
+                                  ? t('editor.manualReviewStopPreview')
+                                  : t('editor.manualReviewPlay')}
+                              aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${song.title}`}
+                              data-testid={`manual-edit-play-${song.id}`}
+                            >
+                              {isPlaying
+                                ? <Square className="w-3 h-3" />
+                                : <Play className="w-3 h-3 ml-0.5" />}
+                            </button>
+                          );
+                        })()}
                         {/* Title + Artist */}
                         <div className="flex-1 min-w-[130px] sm:min-w-[180px]">
                           <p className="text-[11px] text-white/85 font-medium truncate" title={song.title}>{song.title}</p>
@@ -1219,6 +1257,20 @@ export function MetadataStudio({
               {selectMode
                 ? `✕ ${t('editor.exitSelectMode')}`
                 : `☑️ ${t('editor.enterSelectMode')}${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
+            </Button>
+
+            {/* Deselect — clears the whole multi-selection (user request:
+                same prominence as Select, only enabled with a selection). */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onClearSelection}
+              disabled={selectedIds.size === 0}
+              title={selectedIds.size === 0 ? undefined : `${t('editor.studioDeselect')} (${selectedIds.size})`}
+              className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 text-xs disabled:opacity-40"
+              data-testid="studio-deselect-songs"
+            >
+              {t('editor.studioDeselect')}{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
             </Button>
 
             {/* Manual mode (R5-1): no Run button — the Apply button inside

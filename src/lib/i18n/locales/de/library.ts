@@ -443,6 +443,7 @@ editor: {
   loadingLibraryDesc: 'Songs werden aus dem Speicher geladen.',
   loadingCoversDesc: 'Cover werden importiert…',
   enterSelectMode: 'Songs auswählen',
+  studioDeselect: '✕ Auswahl aufheben',
   studioTitle: 'Metadaten-Studio',
   studioDesc: 'Genre, Sprache & Jahr per KI ergänzen oder harmonisieren — für alle Songs oder eine Auswahl.',
   studioScope: 'Bereich',

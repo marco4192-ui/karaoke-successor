@@ -463,6 +463,7 @@ export const libraryTranslations = {
     loadingLibraryDesc: 'Loading songs from storage.',
     loadingCoversDesc: 'Importing covers…',
     enterSelectMode: 'Select songs',
+    studioDeselect: '✕ Deselect',
     studioTitle: 'Metadata Studio',
     studioDesc: 'Fill or harmonize Genre, Language & Year via AI — for all songs or a selection.',
     studioScope: 'Scope',

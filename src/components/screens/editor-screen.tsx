@@ -404,6 +404,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               selectionFocusToken={studioSelectionFocus}
               selectMode={selectMode}
               onToggleSelectMode={handleToggleSelectMode}
+              onClearSelection={clearSelection}
               onApplied={refreshSongs}
               t={t}
             />
