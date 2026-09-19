@@ -135,22 +135,41 @@ export function PlayingView({
   const [showGoOverlay, setShowGoOverlay] = useState(false);
 
   // ── User rule 6.4: recently eliminated player ──
-  // When a new round starts, the player eliminated in the PREVIOUS round
-  // gets a blinking red X on their card for ~2.7s (CSS brElimBlink), then
-  // stays permanently grayed out. No fullscreen overlay, no countdown.
+  // A newly eliminated player gets a blinking red X on their card for ~2.7s
+  // (CSS brElimBlink), then stays permanently grayed out. No fullscreen
+  // overlay, no countdown. Diffs the eliminated set on every players update,
+  // so it fires for BOTH round-end eliminations AND mid-round eliminations
+  // (user rule 6.1: full-song rounds eliminate at intervals while the song
+  // keeps playing).
+  // NOTE: the blink timer lives in a ref (NOT effect cleanup) — game.players
+  // changes on every scoring tick (~10×/s) and a cleanup-based timer would
+  // be cancelled immediately.
   const [blinkEliminatedId, setBlinkEliminatedId] = useState<string | null>(null);
-  const blinkRoundRef = useRef(game.currentRound);
+  const prevEliminatedIdsRef = useRef<Set<string>>(
+    new Set(game.players.filter(p => p.eliminated).map(p => p.id)),
+  );
+  const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (game.currentRound === blinkRoundRef.current) return;
-    blinkRoundRef.current = game.currentRound;
-    // rounds are 1-based; the finished round is the second-to-last entry
-    const finishedRound = game.rounds[game.rounds.length - 2];
-    const elimId = finishedRound?.eliminatedPlayerId ?? null;
-    if (!elimId) return;
-    setBlinkEliminatedId(elimId);
-    const timer = setTimeout(() => setBlinkEliminatedId(null), 2700);
-    return () => clearTimeout(timer);
-  }, [game.currentRound, game.rounds]);
+    const eliminatedNow = new Set(
+      game.players.filter(p => p.eliminated).map(p => p.id),
+    );
+    const prev = prevEliminatedIdsRef.current;
+    prevEliminatedIdsRef.current = eliminatedNow;
+
+    let newly: string | null = null;
+    for (const id of eliminatedNow) {
+      if (!prev.has(id)) { newly = id; break; }
+    }
+    if (!newly) return;
+    setBlinkEliminatedId(newly);
+    if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
+    blinkTimerRef.current = setTimeout(() => setBlinkEliminatedId(null), 2700);
+  }, [game.players]);
+  useEffect(() => {
+    return () => {
+      if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
+    };
+  }, []);
 
   // Fix 15 (webcam): BR does not render the webcam background layer (or its
   // quick controls) by default — a live webcam feed + processing costs real

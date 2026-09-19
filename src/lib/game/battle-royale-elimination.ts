@@ -9,6 +9,99 @@ import { recordHallOfFame } from './battle-royale-hall-of-fame';
 
 // ==================== ELIMINATION ====================
 
+/**
+ * Mid-round elimination for full-song rounds (songSelection random/vote —
+ * user rule 6.1): eliminates the weakest active player WHILE THE SONG KEEPS
+ * PLAYING. The song is never interrupted — only the player is out.
+ *
+ * Stops at 2 active players when the grand finale is enabled (the finale
+ * decides the winner between the last two); without a finale it plays down
+ * to the last man standing (status 'completed' + winner mid-song).
+ * Returns null when no elimination applies (grand finale rounds, too few
+ * players, wrong status).
+ */
+export function eliminateWeakestMidRound(
+  game: BattleRoyaleGame,
+): { game: BattleRoyaleGame; eliminatedId: string } | null {
+  if (game.status !== 'playing' || game.isGrandFinale) return null;
+  const activePlayers = getActivePlayers(game);
+
+  const finaleEnabled = game.settings.grandFinaleBestOf > 1;
+  // Never eliminate below 2 while the grand finale decides the last two.
+  if (finaleEnabled && activePlayers.length <= 2) return null;
+  if (activePlayers.length <= 1) return null;
+
+  // Same ranking as endRoundAndEliminate: lowest score, tiebreakers
+  // fewest notesHit, lowest maxCombo, player ID.
+  const sorted = [...activePlayers].sort((a, b) => {
+    if (a.score !== b.score) return a.score - b.score;
+    if (a.notesHit !== b.notesHit) return a.notesHit - b.notesHit;
+    if (a.maxCombo !== b.maxCombo) return a.maxCombo - b.maxCombo;
+    return a.id.localeCompare(b.id);
+  });
+  const lowestScorer = sorted[0];
+  const topScorer = sorted[sorted.length - 1];
+
+  // Resolve spectator predictions (#11) for this elimination
+  const updatedPredictions = { ...game.correctPredictions };
+  for (const [spectatorId, predictedId] of Object.entries(game.spectatorPredictions)) {
+    if (predictedId === lowestScorer.id) {
+      updatedPredictions[spectatorId] = (updatedPredictions[spectatorId] || 0) + 1;
+    }
+  }
+
+  const updatedPlayers = game.players.map(p =>
+    p.id === lowestScorer.id
+      ? { ...p, eliminated: true, eliminationRound: game.currentRound }
+      : p
+  );
+  const remainingPlayers = updatedPlayers.filter(p => !p.eliminated);
+
+  // Round highlight (mid-round eliminations appear in the winner screen too)
+  const roundHighlight: RoundHighlight = {
+    roundNumber: game.currentRound,
+    eliminatedPlayerId: lowestScorer.id,
+    eliminatedPlayerName: lowestScorer.name,
+    topScorerId: topScorer.id,
+    topScorerName: topScorer.name,
+    // Mid-song snapshot (no round delta yet — the round is still running)
+    topScoreDelta: topScorer.score,
+    bountyClaimed: false,
+    bountyClaimedById: null,
+  };
+
+  // Last man standing without a finale → game over mid-song
+  if (remainingPlayers.length === 1) {
+    const completed: BattleRoyaleGame = {
+      ...game,
+      players: updatedPlayers,
+      status: 'completed',
+      winner: remainingPlayers[0],
+      correctPredictions: updatedPredictions,
+      gameStats: {
+        ...game.gameStats,
+        roundHighlights: [...game.gameStats.roundHighlights, roundHighlight],
+      },
+    };
+    const withStats = updateGameStats(completed);
+    recordHallOfFame(withStats);
+    return { game: withStats, eliminatedId: lowestScorer.id };
+  }
+
+  return {
+    game: updateGameStats({
+      ...game,
+      players: updatedPlayers,
+      correctPredictions: updatedPredictions,
+      gameStats: {
+        ...game.gameStats,
+        roundHighlights: [...game.gameStats.roundHighlights, roundHighlight],
+      },
+    }),
+    eliminatedId: lowestScorer.id,
+  };
+}
+
 export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
   const activePlayers = getActivePlayers(game);
 
@@ -17,6 +110,22 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
   }
 
   if (game.rounds.length === 0) return game;
+
+  // ── Round ends with exactly the last two players and the grand finale is
+  // enabled (mid-round eliminations stop at 2): no further elimination —
+  // the finale duel decides the game. Without this, the "uninterrupted song"
+  // rule would let the game complete on a technicality (2→1 elimination at
+  // song end) even though the user configured a best-of finale.
+  if (
+    activePlayers.length === 2 &&
+    !game.isGrandFinale &&
+    game.settings.grandFinaleBestOf > 1
+  ) {
+    return enterGrandFinale({
+      ...game,
+      status: 'elimination',
+    });
+  }
 
   // Calculate score deltas for this round (#9, #12)
   const roundScoreDeltas: Record<string, number> = {};

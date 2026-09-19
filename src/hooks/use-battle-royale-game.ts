@@ -8,6 +8,7 @@ import {
   updatePlayerScore,
   getBountyMultiplier,
   getCurrentMedleySnippet,
+  eliminateWeakestMidRound,
   BattleRoyaleGame,
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
@@ -408,6 +409,61 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- multiPitch is stable for .stop()/.start()
   }, [pauseDialogAction]);
+
+  // ── Mid-round eliminations (user rule 6.1) ─────────────────────────
+  // Full-song rounds (songSelection random/vote) eliminate the weakest
+  // player every `settings.roundDuration` seconds WHILE THE SONG KEEPS
+  // PLAYING — only the player is out, the round is never interrupted.
+  // Medley keeps its snippet-based budget; grand finale rounds decide via
+  // round wins, not eliminations.
+  const handleMidRoundElimination = useCallback(() => {
+    if (roundEndingRef.current) return;
+    // Base on the not-yet-flushed accumulation so the elimination decision
+    // sees the very latest scores (same rationale as the game loop).
+    const base = pendingScoredGameRef.current ?? gameRef.current;
+    const result = eliminateWeakestMidRound(base);
+    if (!result) return;
+    const updated = result.game;
+    gameRef.current = updated;
+    // Keep the loop's pending base consistent so the throttled store write
+    // can never revert the elimination.
+    pendingScoredGameRef.current = updated;
+
+    if (updated.status === 'completed') {
+      // Last man standing mid-song: stop media + pitch, then commit — the
+      // screen router switches to the WinnerView.
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+      if (videoRef.current) { videoRef.current.pause(); videoRef.current.src = ''; }
+      audioHasPlayedRef.current = false;
+      multiPitch.stop();
+      roundEndingRef.current = true; // game loop stops touching the game
+    }
+    onUpdateGame(updated);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs + stable multiPitch object
+  }, []);
+
+  const handleMidRoundElimRef = useRef(handleMidRoundElimination);
+  useEffect(() => {
+    handleMidRoundElimRef.current = handleMidRoundElimination;
+  }, [handleMidRoundElimination]);
+
+  // Interval: every eliminationInterval seconds while a full-song round
+  // plays. Re-arms per round (currentRound dep) and pauses with the game.
+  const isFullSongRound =
+    (game.settings.songSelection === 'random' || game.settings.songSelection === 'vote') &&
+    !game.settings.medleyMode &&
+    !game.isGrandFinale;
+  const eliminationIntervalSec = isFullSongRound
+    ? Math.max(10, game.settings.roundDuration)
+    : 0;
+  useEffect(() => {
+    if (game.status !== 'playing' || eliminationIntervalSec <= 0) return;
+    if (pauseDialogAction === 'song-pause') return; // paused: no eliminations
+    const iv = setInterval(() => {
+      handleMidRoundElimRef.current();
+    }, eliminationIntervalSec * 1000);
+    return () => clearInterval(iv);
+  }, [game.status, game.currentRound, eliminationIntervalSec, pauseDialogAction]);
 
   // ── Item 8.1: Companion game-state sync ──────────────────────────
   // Same mechanism CPTM/PTM use (useMobileGameSync): pushes the current

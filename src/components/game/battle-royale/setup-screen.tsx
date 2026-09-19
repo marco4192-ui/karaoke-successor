@@ -322,9 +322,16 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <CardTitle>{t('battleRoyale.gameSettings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Round Duration */}
+          {/* Round Duration / Elimination interval (user rule 6.1):
+              random/vote play FULL songs — this setting is the interval at
+              which the weakest player is eliminated MID-SONG (the song keeps
+              playing). Medley rounds keep it as the round budget. */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.roundDuration').replace('{n}', String(roundDuration))}</label>
+            <label className="text-sm text-white/60 mb-2 block">
+              {medleyMode
+                ? t('battleRoyale.roundDuration').replace('{n}', String(roundDuration))
+                : t('battleRoyale.eliminationInterval').replace('{n}', String(roundDuration))}
+            </label>
             <input
               type="range"
               min={30}
@@ -338,6 +345,11 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               <span>{t('battleRoyale.fast')}</span>
               <span>{t('battleRoyale.long')}</span>
             </div>
+            {!medleyMode && (
+              <p className="text-[11px] text-white/40 leading-relaxed mt-1.5">
+                {t('battleRoyale.eliminationIntervalHint').replace('{n}', String(roundDuration))}
+              </p>
+            )}
           </div>
 
           {/* Final Round Duration */}

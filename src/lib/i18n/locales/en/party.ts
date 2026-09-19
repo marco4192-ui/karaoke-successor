@@ -234,6 +234,8 @@ export const partyTranslations = {
     total: '👥 Total',
     gameSettings: 'Game Settings',
     roundDuration: 'Round Duration: {n}s',
+    eliminationInterval: 'Elimination interval: {n}s',
+    eliminationIntervalHint: 'Random and Vote play FULL songs — the weakest player is eliminated every {n}s mid-song while the song keeps playing.',
     finalRoundDuration: 'Final Round Duration: {n}s',
     fast: '30s (Fast)',
     long: '180s (Long)',

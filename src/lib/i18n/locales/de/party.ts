@@ -223,6 +223,8 @@ battleRoyale: {
   total: '👥 Gesamt',
   gameSettings: 'Spiel-Einstellungen',
   roundDuration: 'Runden-Dauer: {n}s',
+  eliminationInterval: 'Eliminierungs-Intervall: {n}s',
+  eliminationIntervalHint: 'Bei „Zufällig“ und „Abstimmen“ werden ganze Songs gespielt — der schwächste Spieler scheidet alle {n}s mitten im Song aus, der Song läuft ungestört weiter.',
   finalRoundDuration: 'Finalrunden-Dauer: {n}s',
   fast: '30s (Schnell)',
   long: '180s (Lang)',
