@@ -55,6 +55,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     playerPitchMap,
     multiPitchErrors,
     eliminationPhase,
+    brNotePerformance,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
 
   // DO-NOT-CHANGE: Clear pause state on round transitions to prevent the pause overlay
@@ -154,6 +155,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         playerPitchMap={playerPitchMap}
         multiPitchErrors={multiPitchErrors}
         eliminationPhase={eliminationPhase}
+        brNotePerformance={brNotePerformance}
       />
     );
   }
@@ -198,6 +200,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       playerPitchMap={playerPitchMap}
       multiPitchErrors={multiPitchErrors}
       eliminationPhase={eliminationPhase}
+      brNotePerformance={brNotePerformance}
     />
   );
 }

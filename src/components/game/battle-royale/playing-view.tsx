@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge';
 import { GameHudChrome } from '@/components/game/hud/game-hud-chrome';
 import { TimeDisplay } from '@/components/game/game-hud';
-import { NoteHighway } from '@/components/game/note-highway';
+import { NoteHighway, NotePlayerStrip } from '@/components/game/note-highway';
 import { GameBackground } from '@/components/game/game-background';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
@@ -95,7 +95,12 @@ interface PlayingViewProps {
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
   eliminationPhase?: null | 'eliminating' | 'survivor-flash';
+  /** Per-player note performance samples (ghost notes): playerId → noteKey → samples. */
+  brNotePerformance?: Map<string, Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>>;
 }
+
+/** Stable empty performance map for players without samples yet. */
+const EMPTY_PLAYER_PERF: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>> = new Map();
 
 export function PlayingView({
   game,
@@ -121,6 +126,7 @@ export function PlayingView({
   playerPitchMap,
   multiPitchErrors,
   eliminationPhase,
+  brNotePerformance,
 }: PlayingViewProps) {
   const { t } = useTranslation();
   const currentRound = game.rounds[game.rounds.length - 1];
@@ -325,6 +331,27 @@ export function PlayingView({
 
   // V5: Multi-pitch mic status — count players whose pitch detector is initialized
   const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');
+
+  // ── Ghost notes: per-player strips for the note highway ─────────────
+  // ≥2 active players → Medley-style per-player strips (hits fill the
+  // strip in the player colour, wrong-pitch misses become ghost bars at
+  // the sung pitch in the player colour + live miss dots).
+  // Exactly 1 active player (late-game survivor) → single-player modern
+  // pipeline (ghosts like Single/Duell). No data yet → flat fill fallback.
+  const playerStrips = useMemo<NotePlayerStrip[]>(() => {
+    if (!brNotePerformance) return [];
+    return activePlayers.map(p => ({
+      id: p.id,
+      color: p.color,
+      performance: brNotePerformance.get(p.id) ?? EMPTY_PLAYER_PERF,
+    }));
+    // activePlayers is memoised upstream; brNotePerformance identity only
+    // changes on the throttled (200 ms) snapshot sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlayers, brNotePerformance]);
+
+  const stripsActive = playerStrips.length >= 2;
+  const soloStrip = playerStrips.length === 1 ? playerStrips[0] : null;
   // (B3.2) The central "x/x mics active" pill was removed — per-player
   // singing indicators on the cards already show real-time mic status.
 
@@ -724,11 +751,15 @@ export function PlayingView({
             noteWindow={NOTE_WINDOW}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
-            // Item 3: flat single-colour fill as the sing line passes — NO
-            // pitch data visualised (no quality colours, no sung-pitch
-            // ghosts) and no performance samples needed: the cheapest
-            // possible pipeline for this performance-critical mode.
-            flatNoteFill="#22d3ee"
+            // Ghost notes (user request): per-player strips / single-player
+            // performance pipeline — wrong-pitch misses render as ghost bars
+            // at the sung pitch (per-player colour), hits fill the strips.
+            // Flat fill only as long as no samples exist at all.
+            playerStrips={stripsActive ? playerStrips : undefined}
+            playerNames={stripsActive ? activePlayers.map(p => ({ id: p.id, name: p.name })) : undefined}
+            notePerformance={soloStrip ? soloStrip.performance : undefined}
+            playerColor={soloStrip ? soloStrip.color : undefined}
+            flatNoteFill={!stripsActive && !soloStrip ? '#22d3ee' : undefined}
           />
         </div>
       )}

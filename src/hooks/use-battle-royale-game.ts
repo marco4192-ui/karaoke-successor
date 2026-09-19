@@ -53,6 +53,41 @@ function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
 /** Stable empty array pinned to visibleNotesRef while the note highway is hidden (Fix 15). */
 const EMPTY_VISIBLE_NOTES: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
+// ── Ghost notes (user request: mic failures as ghost notes) ──────────
+// Visual performance samples, same shape as the Medley strips pipeline
+// (see getMultiPlayerNoteOverlay): wrong-pitch misses become ghost bars at
+// the sung pitch in the player's colour, hits fill the per-player strips.
+export interface BrNotePerformanceSample {
+  time: number;
+  accuracy: number;
+  hit: boolean;
+  sungPitch?: number | null;
+}
+
+/** Cap per note — a 3s note at 100 ms cadence needs 30; 120 is generous. */
+const MAX_BR_PERF_SAMPLES = 120;
+/** Notes whose last sample is older than this (ms, song-relative) drop out of the synced snapshot. */
+const BR_PERF_PRUNE_MS = 6000;
+
+/** Build an immutable snapshot (new Maps, copied arrays) for React state —
+ *  drops notes that have fully scrolled past and caps the sample arrays. */
+function snapshotBrPerformance(
+  src: Map<string, Map<string, BrNotePerformanceSample[]>>,
+  currentTime: number,
+): Map<string, Map<string, BrNotePerformanceSample[]>> {
+  const out = new Map<string, Map<string, BrNotePerformanceSample[]>>();
+  for (const [playerId, notes] of src) {
+    const playerMap = new Map<string, BrNotePerformanceSample[]>();
+    for (const [noteKey, samples] of notes) {
+      const lastTime = samples.length > 0 ? samples[samples.length - 1].time : -1;
+      if (lastTime < currentTime - BR_PERF_PRUNE_MS) continue;
+      playerMap.set(noteKey, samples.slice(-MAX_BR_PERF_SAMPLES));
+    }
+    if (playerMap.size > 0) out.set(playerId, playerMap);
+  }
+  return out;
+}
+
 interface UseBattleRoyaleGameParams {
   game: BattleRoyaleGame;
   songs: Song[];
@@ -86,6 +121,8 @@ interface UseBattleRoyaleGameReturn {
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   playerPitchMap: Map<string, PitchDetectionResult | null>; // Per-player pitch data
   multiPitchErrors: Map<string, string>; // Per-player pitch errors
+  /** Per-player note performance samples (ghost notes): playerId → noteKey → samples. */
+  brNotePerformance: Map<string, Map<string, BrNotePerformanceSample[]>>;
   songProgress: number; // 0-100
   countdown: number;
   eliminationPhase: null | 'eliminating' | 'survivor-flash';
@@ -308,6 +345,32 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // ── Visible notes ref (updated every frame) ────────────────────────
   const visibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
   const pitchStatsRef = useRef<PitchStats | null>(null);
+
+  // ── Per-player note performance (ghost notes) ─────────────────────
+  // Written on every scoring tick inside the rAF game loop (plain ref, no
+  // render), synced into React state throttled at 200 ms — the same refs +
+  // throttled-state pattern the store writes use (rule 6.1) so the party
+  // tree doesn't re-render at tick rate.
+  const brNotePerformanceRef = useRef<Map<string, Map<string, BrNotePerformanceSample[]>>>(new Map());
+  const [brNotePerformance, setBrNotePerformance] = useState<Map<string, Map<string, BrNotePerformanceSample[]>>>(new Map());
+  const lastPerfSyncRef = useRef(0);
+
+  /** Push a visual sample for a player + note (stable key formula: note.id || `note-${startTime}`). */
+  const pushPerformanceSample = useCallback((playerId: string, note: Note, sample: BrNotePerformanceSample) => {
+    const noteKey = note.id || `note-${note.startTime}`;
+    let playerMap = brNotePerformanceRef.current.get(playerId);
+    if (!playerMap) {
+      playerMap = new Map();
+      brNotePerformanceRef.current.set(playerId, playerMap);
+    }
+    let samples = playerMap.get(noteKey);
+    if (!samples) {
+      samples = [];
+      playerMap.set(noteKey, samples);
+    }
+    if (samples.length >= MAX_BR_PERF_SAMPLES) samples.splice(0, samples.length - MAX_BR_PERF_SAMPLES + 1);
+    samples.push(sample);
+  }, []);
 
   // ── Fix 15: note-highway work is gated on the showNoteHighway setting ──
   // BR doesn't need the singing visualization when the highway is hidden, so
@@ -678,6 +741,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     prefetchedSongRef.current = null;
     prefetchedMediaRef.current = null;
     pendingScoredGameRef.current = null;
+    // Fresh round → fresh performance samples (ghosts must never bleed
+    // across songs/rounds; the note keys would collide otherwise).
+    brNotePerformanceRef.current = new Map();
+    setBrNotePerformance(new Map());
   }, [game.currentRound]);
 
   // ── Game Loop for simultaneous per-player scoring ──────────────────
@@ -800,7 +867,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (playerPitch.isSinging === false) continue;
             if (playerPitch.note == null) continue;
 
-            const { game: updatedGame } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
+            const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
+            // Ghost notes: record the visual sample (hit or wrong-pitch miss
+            // at the player's actually-sung pitch) for this player + note.
+            pushPerformanceSample(player.id, activeNote, {
+              time: currentAudioTime,
+              accuracy: tick.accuracy,
+              hit: tick.hit,
+              sungPitch: playerPitch.note,
+            });
             if (updatedGame !== batchedGame) {
               batchedGame = updatedGame;
               scoreChanged = true;
@@ -814,7 +889,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             const cachedPitch = companionPitchCacheRef.current.get(player.id);
 
             if (cachedPitch && cachedPitch.note != null && cachedPitch.isSinging !== false) {
-              const { game: updatedGame } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
+              const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
+              // Ghost notes (companions too): same sample recording as the
+              // mic players so their misses also render as ghost bars.
+              pushPerformanceSample(player.id, activeNote, {
+                time: currentAudioTime,
+                accuracy: tick.accuracy,
+                hit: tick.hit,
+                sungPitch: cachedPitch.note,
+              });
               if (updatedGame !== batchedGame) {
                 batchedGame = updatedGame;
                 scoreChanged = true;
@@ -823,8 +906,19 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         }
 
-        // (Item 3: note-performance state sync removed — the BR note highway
-        // renders the flat fill from the sing line alone; no samples exist.)
+        // ── Ghost-note state sync (throttled 200 ms) ──────────────────
+        // Replaces the removed Item-3 sync: per-player samples exist again,
+        // so the note highway can render strips + ghosts like the other
+        // modes. Immutable snapshot → new Map identities → memo-safe.
+        const nowPerfSync = performance.now();
+        if (
+          nowPerfSync - lastPerfSyncRef.current >= 200 &&
+          brNotePerformanceRef.current.size > 0 &&
+          mountedRef.current
+        ) {
+          lastPerfSyncRef.current = nowPerfSync;
+          setBrNotePerformance(snapshotBrPerformance(brNotePerformanceRef.current, currentAudioTime));
+        }
 
         if (scoreChanged) {
           // Accumulate + keep gameRef current WITHOUT re-rendering (plain ref
@@ -895,6 +989,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     visibleNotes: visibleNotesRef.current,
     playerPitchMap: multiPitch.playerPitches,
     multiPitchErrors: multiPitch.errors,
+    brNotePerformance,
     songProgress: currentSong && currentSong.duration > 0
       ? Math.min(100, Math.max(0, (currentTime / currentSong.duration) * 100))
       : 0,
