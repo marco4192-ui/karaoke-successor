@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameState, MobileView, PitchData } from '../mobile-types';
+import type { BrSingingEvent } from '@/lib/socketio-events';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== Props =====================
@@ -16,6 +17,9 @@ interface MirrorBrGameLiteProps {
   currentPitch?: PitchData | null;
   /** Whether this phone's microphone is currently capturing. */
   isMicListening?: boolean;
+  /** Live BR singing feedback pushed by the desktop (~2 Hz): per-player
+   *  pitch/hit/ghost monitor (own phone included). */
+  brSinging?: BrSingingEvent | null;
   onNavigate: (v: MobileView) => void;
   onSendDesktopCommand: (screen: string) => void;
   // Remote control takeover
@@ -53,7 +57,7 @@ function midiToNoteLabel(note: number | null | undefined): string {
  * desktop, where it feeds BR scoring), plus the live roster with scores.
  */
 export function MirrorBrGameLite({
-  gameState, profileId, profileName, currentPitch, isMicListening,
+  gameState, profileId, profileName, currentPitch, isMicListening, brSinging,
   onSendDesktopCommand, isRemoteLocked, remoteLockedBy, onAcquireRemote,
 }: MirrorBrGameLiteProps) {
   const { t } = useTranslation();
@@ -319,6 +323,102 @@ export function MirrorBrGameLite({
               ? (t('mobile.brGameWaiting') || 'Waiting for the round…')
               : (t('mobile.cptmPaused') || 'Paused')}
           </p>
+        </div>
+      )}
+
+      {/* ── Live singing monitor: per-player pitch/hit/ghost feedback ──
+          Pushed by the desktop at ~2 Hz while the round plays. The pitch lane
+          shows the target note (centre tick) and where the player actually
+          sings (dot) — off-pitch = ghost-style red dot; the bar below fills
+          green for hits / red for misses of the current note. */}
+      {isPlaying && brSinging && brSinging.players.length > 0 && (
+        <div
+          className="flex flex-col gap-2 rounded-xl bg-white/5 border border-white/10 p-4"
+          data-testid="br-mirror-singing"
+          aria-live="off"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+            {'\u{1F3B5}'} {t('mobile.brSingingMonitor') || 'Live singing'}
+          </p>
+          {brSinging.players.map(pl => {
+            // Ghost-note essence on a phone: sung pitch vs target pitch.
+            const diff = pl.sungNote != null && pl.targetNote != null
+              ? pl.sungNote - pl.targetNote
+              : null;
+            const onPitch = diff != null && Math.abs(diff) <= 1;
+            // Map ±10 semitones to ±45 % of the lane width.
+            const dotLeft = diff != null
+              ? 50 + Math.max(-45, Math.min(45, (diff / 10) * 45))
+              : null;
+            const hitPct = Math.round(pl.hitRate * 100);
+            const isFresh = Date.now() - brSinging.serverTime < 2000;
+            const isMe = pl.id === profileId;
+            return (
+              <div
+                key={pl.id}
+                className={`rounded-lg px-2.5 py-2 border ${isMe ? 'border-emerald-400/40 bg-emerald-500/5' : 'border-white/10 bg-black/20'} ${isFresh ? '' : 'opacity-40'}`}
+                data-testid="br-mirror-singing-player"
+              >
+                {/* Row 1: colour dot + name + note + streak */}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: pl.color, boxShadow: `0 0 5px ${pl.color}` }}
+                  />
+                  <span className={`text-xs font-medium truncate flex-1 ${isMe ? 'text-emerald-200' : 'text-white/80'}`}>
+                    {pl.name}{isMe ? ` (${t('mobile.cptmYou') || 'you'})` : ''}
+                  </span>
+                  {pl.streak > 2 && (
+                    <span className="text-[10px] text-amber-400 shrink-0">{'\u{1F525}'}{pl.streak}</span>
+                  )}
+                  <span
+                    className={`text-xs font-bold tabular-nums shrink-0 ${pl.singing ? '' : 'text-white/25'}`}
+                    style={pl.singing ? { color: onPitch ? '#34d399' : '#f87171' } : undefined}
+                  >
+                    {midiToNoteLabel(pl.sungNote)}
+                  </span>
+                </div>
+                {/* Row 2: pitch lane — centre tick = target, dot = sung pitch */}
+                <div className="relative h-3.5 mt-1.5 rounded bg-white/5" aria-label={t('mobile.brSingingPitch')}>
+                  {/* target tick */}
+                  <span className="absolute left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-white/25 rounded" />
+                  {/* sung dot */}
+                  {dotLeft != null && pl.singing && (
+                    <span
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full border border-black/40 transition-all duration-300"
+                      style={{
+                        left: `${dotLeft}%`,
+                        backgroundColor: onPitch ? '#34d399' : '#f87171',
+                        boxShadow: onPitch ? '0 0 6px rgba(52,211,153,0.8)' : '0 0 6px rgba(248,113,113,0.8)',
+                      }}
+                    />
+                  )}
+                  {/* off-pitch direction hint (ghost drift) */}
+                  {pl.singing && diff != null && !onPitch && (
+                    <span
+                      className="absolute top-0.5 text-[8px] font-bold"
+                      style={{
+                        left: dotLeft != null && dotLeft > 50 ? 'calc(50% - 52px)' : 'calc(50% + 26px)',
+                        color: '#f87171',
+                      }}
+                    >
+                      {diff < 0 ? '\u2193' + t('mobile.brSingingTooLow') : '\u2191' + t('mobile.brSingingTooHigh')}
+                    </span>
+                  )}
+                </div>
+                {/* Row 3: hit rate of the current note (green) vs misses (red) */}
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <div className="flex-1 h-1.5 rounded-full bg-red-400/25 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-400/80 transition-all duration-300"
+                      style={{ width: `${hitPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] tabular-nums text-white/50 shrink-0 w-11 text-right">{hitPct}% {t('mobile.brSingingHits')}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

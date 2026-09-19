@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { StorageKeys, setItem, removeItem, getString } from '@/lib/storage';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
+import type { BrSingingEvent } from '@/lib/socketio-events';
 
 interface UseMobileConnectionCallbacks {
   onProfileLoaded: (_profile: MobileProfile) => void;
@@ -11,6 +12,9 @@ interface UseMobileConnectionCallbacks {
   onGameStateUpdate: (_gameState: GameState) => void;
   onError: (_error: string) => void;
   onSongEnd: () => void;
+  /** Live Battle-Royale singing feedback pushed by the desktop (~2 Hz,
+   *  only while a BR round is playing). Optional — unused callbacks are fine. */
+  onBrSinging?: (_data: BrSingingEvent) => void;
 }
 
 interface RawGameState {
@@ -204,6 +208,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     socket.on('party-leave', (data: { show: boolean }) => {
       // Dispatch custom event for the companion UI to react
       window.dispatchEvent(new CustomEvent('socket-party-leave', { detail: data }));
+    });
+
+    // ─── Receive live Battle-Royale singing feedback (per-player pitch/hit
+    // monitor pushed by the desktop while a BR round plays, ~2 Hz) ───
+    socket.on('br-singing', (data: BrSingingEvent) => {
+      callbacksRef.current.onBrSinging?.(data);
     });
 
     // ─── Receive PTM/party-mode phase changes ───

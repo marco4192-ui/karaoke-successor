@@ -53,6 +53,9 @@ export interface MirrorViewProps {
   currentPitch?: PitchData | null;
   /** Whether this phone's microphone is currently capturing (BR in-game mirror). */
   isMicListening?: boolean;
+  /** Live BR singing feedback pushed by the desktop (~2 Hz): per-player
+   *  pitch/hit/ghost monitor rendered by the BR in-game mirror. */
+  brSinging?: import('@/lib/socketio-events').BrSingingEvent | null;
 
   // Warteschlange & Daten
   queue: QueueItem[];
@@ -161,6 +164,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   profileId,
   currentPitch,
   isMicListening,
+  brSinging,
   queue,
   slotsRemaining,
   onRemoveFromQueue,
@@ -512,6 +516,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             profileName={profileName}
             currentPitch={currentPitch ?? null}
             isMicListening={isMicListening ?? false}
+            brSinging={brSinging ?? null}
             onNavigate={onNavigate}
             onSendDesktopCommand={onSendDesktopCommand}
             isRemoteLocked={isRemoteLocked}

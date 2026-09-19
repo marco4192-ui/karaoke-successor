@@ -328,6 +328,13 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     io!.to('companions').emit('difficulty', data);
   });
 
+  // Desktop pushes live Battle-Royale singing feedback (per-player
+  // pitch/hit/miss monitor, ~2 Hz) → straight through to the companions.
+  // Ephemeral data — nothing is persisted in mutableState.
+  mobileEvents.on(EVENTS.BR_SINGING_UPDATE, (data: { players: unknown[]; serverTime: number }) => {
+    io!.to('companions').emit('br-singing', data);
+  });
+
   mobileEvents.on(EVENTS.DESKTOP_DIALOG, (data: { dialog: string | null; dialogData?: Record<string, unknown> }) => {
     io!.to('companions').emit('desktop-dialog', data);
   });

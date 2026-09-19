@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 // Types & constants
 import type { MobileProfile } from './mobile/mobile-types';
 import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
+import type { BrSingingEvent } from '@/lib/socketio-events';
 import { MobileChat } from './mobile/mobile-chat';
 import { ChatNotificationPopup } from './mobile/mobile-chat-notification';
 import { PROFILE_COLORS } from './mobile/mobile-types';
@@ -66,10 +67,20 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       if (_state.difficulty && _state.difficulty !== data.difficulty) {
         data.setDifficulty(_state.difficulty);
       }
+      // Drop the live singing monitor as soon as the BR round stops playing
+      // (keeps stale ghost/hit data from bleeding into other mirror views).
+      if (!_state.brGameData || _state.brGameData.status !== 'playing') {
+        setBrSinging(null);
+      }
     },
     onError: setError,
     onSongEnd: () => { data.loadGameResults(); data.loadQueue(); },
+    onBrSinging: (payload) => setBrSinging(payload),
   });
+
+  // ── Live Battle-Royale singing monitor (per-player pitch/hit/ghost data
+  // pushed by the desktop at ~2 Hz while a BR round plays) ──
+  const [brSinging, setBrSinging] = useState<BrSingingEvent | null>(null);
 
   // Pitch detection — prefers the Socket.IO push path (sendPitch) for
   // instant delivery to the desktop; HTTP batch_pitch stays as fallback.
@@ -545,6 +556,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               profileId={profile?.id || null}
               currentPitch={currentPitch}
               isMicListening={isListening}
+              brSinging={brSinging}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}
@@ -599,6 +611,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               profileId={profile?.id || null}
               currentPitch={currentPitch}
               isMicListening={isListening}
+              brSinging={brSinging}
               queue={data.queue}
               slotsRemaining={data.slotsRemaining}
               onRemoveFromQueue={data.removeFromQueue}

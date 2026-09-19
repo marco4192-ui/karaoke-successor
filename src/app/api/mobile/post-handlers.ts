@@ -183,6 +183,38 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, updated: true });
       }
 
+      case 'br-singing': {
+        // Desktop pushes live Battle-Royale singing feedback (per-player
+        // pitch/hit/miss monitor, ~2 Hz) → broadcast to companions.
+        // Ephemeral: nothing is stored, only forwarded via Socket.IO.
+        if (!requireAuthOrRemoteHolder(request, clientId)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN or hold remote control.' }, { status: 401 });
+        }
+        const brPayload = payload as { players?: unknown };
+        // Validate + clamp: must be an array of at most 12 player entries
+        // with sane scalar fields (protects the companions from bad host data).
+        if (!Array.isArray(brPayload.players)) {
+          return Response.json({ success: false, message: 'Invalid payload (players array expected)' }, { status: 400 });
+        }
+        const players = brPayload.players.slice(0, 12).map((raw) => {
+          const p = (raw ?? {}) as Record<string, unknown>;
+          const clampNum = (v: unknown): number | null =>
+            typeof v === 'number' && Number.isFinite(v) ? Math.max(-1e4, Math.min(1e4, v)) : null;
+          return {
+            id: typeof p.id === 'string' ? p.id.slice(0, 64) : '',
+            name: typeof p.name === 'string' ? p.name.slice(0, 50) : '?',
+            color: typeof p.color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : '#94a3b8',
+            singing: p.singing === true,
+            sungNote: clampNum(p.sungNote),
+            targetNote: clampNum(p.targetNote),
+            hitRate: typeof p.hitRate === 'number' && Number.isFinite(p.hitRate) ? Math.max(0, Math.min(1, p.hitRate)) : 0,
+            streak: typeof p.streak === 'number' && Number.isFinite(p.streak) ? Math.max(0, Math.min(999, Math.round(p.streak))) : 0,
+          };
+        });
+        mobileEvents.emit(EVENTS.BR_SINGING_UPDATE, { players, serverTime: Date.now() });
+        return Response.json({ success: true, forwarded: players.length });
+      }
+
       case 'profile':
         // Update profile for a client
         if (clientId) {

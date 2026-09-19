@@ -73,6 +73,22 @@ export interface DesktopDialogEvent {
   data?: Record<string, unknown>;
 }
 
+/** Emitted when the desktop pushes live Battle-Royale singing feedback
+ *  (per-player pitch/hit/miss monitor) to the companions at ~2 Hz. */
+export interface BrSingingEvent {
+  players: Array<{
+    id: string;
+    name: string;
+    color: string;
+    singing: boolean;
+    sungNote: number | null;
+    targetNote: number | null;
+    hitRate: number;
+    streak: number;
+  }>;
+  serverTime: number;
+}
+
 // ─── Event Names ───
 export const EVENTS = {
   GAMESTATE_UPDATE: 'gamestate-update',
@@ -83,4 +99,5 @@ export const EVENTS = {
   PARTY_LEAVE: 'party-leave',
   PAUSE_STATE: 'pause-state',
   REMOTE_COMMAND: 'remote-command',
+  BR_SINGING_UPDATE: 'br-singing-update',
 } as const;
