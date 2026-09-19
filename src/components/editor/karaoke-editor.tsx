@@ -678,9 +678,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       const b = line.notes[idx + 1];
 
       // UltraStar syllable join: 'Hel-' + 'lo' → 'Hello' (no space, trailing '-' stripped)
-      const lyric = a.lyric.endsWith('-')
-        ? a.lyric.slice(0, -1) + b.lyric
-        : a.lyric + ' ' + b.lyric;
+      const lyric = (a.lyric ?? '').endsWith('-')
+        ? (a.lyric ?? '').slice(0, -1) + (b.lyric ?? '')
+        : (a.lyric ?? '') + ' ' + (b.lyric ?? '');
 
       const start = Math.min(a.startTime, b.startTime);
       const end = Math.max(a.startTime + a.duration, b.startTime + b.duration);

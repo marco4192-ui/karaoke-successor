@@ -246,8 +246,8 @@ export function EditorLyricsTab({
                           const isActiveNote = isActive &&
                             currentTime >= note.startTime &&
                             currentTime < note.startTime + note.duration;
-                          const isWordEnd = note.lyric.endsWith(' ');
-                          const displayText = isWordEnd ? note.lyric.trimEnd() : note.lyric;
+                          const isWordEnd = (note.lyric ?? '').endsWith(' ');
+                          const displayText = isWordEnd ? (note.lyric ?? '').trimEnd() : (note.lyric ?? '');
 
                           return (
                             <span
@@ -386,7 +386,7 @@ function groupNotesIntoWords(notes: Note[]): Note[][] {
   for (const note of notes) {
     currentGroup.push(note);
 
-    if (note.lyric.endsWith(' ')) {
+    if ((note.lyric ?? '').endsWith(' ')) {
       groups.push(currentGroup);
       currentGroup = [];
     }
