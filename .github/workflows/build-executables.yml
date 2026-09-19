@@ -187,7 +187,12 @@ jobs:
         run: node scripts/prepare-bundle.mjs
 
       - name: Tauri bauen (NSIS mit offline eingebettetem WebView2-Installer)
-        shell: bash
+        # WICHTIG: pwsh, NICHT bash! In git-bash steht C:\Program Files\
+        # Git\usr\bin vorne im PATH -> rustc erwischt dort Gits POSIX-
+        # link.exe statt des MSVC-Linkers (klassische CI-Falle:
+        # "/usr/bin/link: extra operand" + link.exe exit code 1). In pwsh
+        # wird Git-usr\bin NICHT vor den PATH gesetzt -> MSVC-Linker.
+        shell: pwsh
         run: bunx tauri build --bundles nsis
 
       # Sanity-Check: ohne eingebetteten WebView2-Offline-Installer wäre der
