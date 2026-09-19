@@ -43,7 +43,7 @@ export interface TauriScannedSong {
   mp3File?: string;        // #MP3: raw value from TXT
   coverFile?: string;      // #COVER: raw value from TXT
   backgroundFile?: string; // #BACKGROUND: raw value from TXT
-  videoFile?: string;      // #VIDEO: raw value from TXT (non-URL)
+  videoFile?: string;      // #VIDEO:/#SOURCE: raw value from TXT (file name OR video URL)
   // Media flags
   hasEmbeddedAudio?: boolean; // True if #MP3: points to a video file
 }

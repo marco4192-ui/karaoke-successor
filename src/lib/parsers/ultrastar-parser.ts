@@ -179,10 +179,13 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'VIDEO':
           case 'SOURCE': {
-            // #VIDEO and #SOURCE are treated EXACTLY the same: the value is
+            // #VIDEO and #SOURCE are treated EXACTLY the same (the value is
             // classified as YouTube / Dailymotion / Vimeo / Rutube / VK /
-            // Bilibili / Niconico / direct video URL / local path.
-            // #SOURCE is the new writer convention (generateUltraStarTxt).
+            // Bilibili / Niconico / direct video URL / local path).
+            // Writer convention (generateUltraStarTxt): REAL video FILES are
+            // exported as #VIDEO:, video URLs as #SOURCE: — but parsing
+            // accepts BOTH keys for either value type (#VIDEO: also accepts
+            // video URLs for backward compatibility with older files).
             classifyVideoHeaderValue(song, value);
             break;
           }
@@ -539,8 +542,19 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#BACKGROUND:${song.backgroundFile}`);
   }
 
-  // Video (file or URL) — written as #SOURCE (new convention; the parser
-  // accepts BOTH #SOURCE and #VIDEO, older files keep working)
+  // ── Video-Quelle — Semantik (User-Spezifikation) ──
+  // 1. ECHTE VIDEODATEIEN (Dateinamen) → #VIDEO:
+  // 2. VIDEO-URLs (Plattform-Links + direkte Video-Datei-URLs) → #SOURCE:
+  // Beim PARSEN werden #VIDEO: und #SOURCE: identisch behandelt
+  // (#VIDEO: akzeptiert URLs ebenfalls); der Export schreibt sie sauber
+  // getrennt nach Werttyp. blob:-/file:-URLs sind Session-Artefakte und
+  // werden NIE exportiert — für lokale Videos ohne #VIDEO-Tag wird der
+  // echte Dateiname aus relativeVideoPath abgeleitet.
+  const isHttpVideoUrl = (v?: string) => !!v && /^https?:\/\//i.test(v);
+  const relativeVideoBasename = song.relativeVideoPath
+    ? (song.relativeVideoPath.split(/[\\/]/).pop() || '')
+    : '';
+
   if (song.youtubeUrl) {
     lines.push(`#SOURCE:${song.youtubeUrl}`);
   } else if (song.dailymotionUrl) {
@@ -555,10 +569,20 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#SOURCE:${song.bilibiliUrl}`);
   } else if (song.nicovideoUrl) {
     lines.push(`#SOURCE:${song.nicovideoUrl}`);
-  } else if (song.videoFile) {
-    lines.push(`#SOURCE:${song.videoFile}`);
-  } else if (song.videoBackground) {
+  } else if (isHttpVideoUrl(song.videoBackground)) {
+    // Direct video URL (fallback video source; blob: URLs are filtered out
+    // by the isHttpVideoUrl check and never exported)
     lines.push(`#SOURCE:${song.videoBackground}`);
+  } else if (isHttpVideoUrl(song.videoFile)) {
+    // Legacy storage: a URL parked in videoFile — still a URL → #SOURCE:
+    lines.push(`#SOURCE:${song.videoFile}`);
+  } else if (song.videoFile) {
+    // Real video FILE → #VIDEO:
+    lines.push(`#VIDEO:${song.videoFile}`);
+  } else if (relativeVideoBasename) {
+    // Local video without a #VIDEO tag — derive the REAL file name from the
+    // relative media path (never the playback blob URL)
+    lines.push(`#VIDEO:${relativeVideoBasename}`);
   }
 
   // Video Gap

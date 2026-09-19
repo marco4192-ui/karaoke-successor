@@ -160,7 +160,13 @@ async function processTxtFile(
     else if (trimmed.startsWith('#YEAR:')) year = parseInt(trimmed.substring(6)) || undefined;
     else if (trimmed.startsWith('#MP3:')) txtMp3File = trimmed.substring(5).trim();
     else if (trimmed.startsWith('#AUDIO:')) txtMp3File = trimmed.substring(7).trim();
+    // #VIDEO: and #SOURCE: are read EXACTLY the same — #VIDEO: is the file
+    // convention (real video files) and ALSO accepts video URLs, #SOURCE:
+    // is the URL convention. Both land in txtVideoFile; http(s) values are
+    // later mapped to the URL/videoBackground branch, file names to the
+    // local video file path.
     else if (trimmed.startsWith('#VIDEO:')) txtVideoFile = trimmed.substring(7).trim();
+    else if (trimmed.startsWith('#SOURCE:')) txtVideoFile = trimmed.substring(8).trim();
     else if (trimmed.startsWith('#COVER:')) txtCoverFile = trimmed.substring(7).trim();
     else if (trimmed.startsWith('#BACKGROUND:')) txtBackgroundFile = trimmed.substring(12).trim();
     else if (trimmed.startsWith('#START:')) start = parseInt(trimmed.substring(7)) || undefined;

@@ -69,6 +69,8 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     ".zscripts/**", "download/**", "mini-services/**", "tool-results/**", "upload/**",
     // Generated / bundled output (repo ships it, but it is not hand-written source)
     "src-tauri/bundled/**", "dist/**", "portable-node/**",
+    // pdf.js worker build-time copy (minified vendor file, not source)
+    "public/pdf.worker.min.mjs",
     // Build scripts (Node tooling scripts using CommonJS require by design)
     "scripts/**",
     // Legacy PHP leaderboard service (no JS tooling)

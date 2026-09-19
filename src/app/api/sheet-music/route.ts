@@ -11,7 +11,10 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
  * lets the user pick the correct strand and imports it through the same
  * pipeline as the MIDI import (pitch + timing basis, '~' lyrics).
  *
- * PDFs are NOT accepted yet (client shows "Bald verfügbar" hint).
+ * PDFs are rendered to PNG pages CLIENT-SIDE (pdf.js, see
+ * src/lib/editor/pdf-render.ts + public/pdf.worker.min.mjs) and are sent
+ * page by page as image/png — the raw-PDF guard below stays as a safety
+ * net (direct PDF uploads still get a clear German error message).
  * Rate limit: 20 requests/minute per IP (shared in-memory limiter).
  */
 

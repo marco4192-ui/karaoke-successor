@@ -3,13 +3,17 @@
 /**
  * Sheet Music (Notenblatt) Recognition Dialog (user request 5)
  *
- * Flow: upload an IMAGE of sheet music (PDF: "Bald verfügbar") →
- * POST /api/sheet-music (backend VLM/OMR) → pick the correct voice/strand
- * ("Strang") → import the notes into the editor EXACTLY like the MIDI
- * import (pitch + timing basis):
+ * Flow: upload an IMAGE or PDF of sheet music → (PDF: pdf.js renders every
+ * page to a PNG client-side) → POST /api/sheet-music (backend VLM/OMR,
+ * page by page) → pick the correct voice/strand ("Strang") → import the
+ * notes into the editor EXACTLY like the MIDI import (pitch + timing basis):
  *
  * - The backend returns one entry per detected staff/voice; the user picks
  *   the correct strand in a radio-style list (first preselected).
+ * - PDF: navigate pages (thumbnails + prev/next); either analyze ONLY the
+ *   current page or ALL pages — for "all pages" the per-page voices are
+ *   merged by staff INDEX (staff order is stable across pages), notes stay
+ *   in reading order (page 1 first).
  * - Tempo (from the tempo marking) is editable, transposition optional.
  * - Optional lyrics textarea → syllables are assigned sequentially in
  *   reading order; notes without a syllable keep '~' (editable later).
@@ -23,7 +27,7 @@
  * dialog is honest: confidence + model warnings are always shown.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,13 +35,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { X, ScanLine, Upload, AlertTriangle, Gauge, MessageSquareWarning, Music4 } from 'lucide-react';
+import { X, ScanLine, Upload, AlertTriangle, Gauge, MessageSquareWarning, Music4, ChevronLeft, ChevronRight, FileText, Layers } from 'lucide-react';
 import type { Note } from '@/types/game';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
 import { useTranslation } from '@/lib/i18n/translations';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen, nativeReadFileBytes } from '@/lib/native-fs';
 import { cn, midiPitchToFrequency } from '@/lib/utils';
+import {
+  renderPdfToPageImages,
+  isPdfFile,
+  MAX_PDF_PAGES,
+  type PdfPageImage,
+} from '@/lib/editor/pdf-render';
 // READ-ONLY reuse of the MIDI import contract (midi-import-dialog is owned
 // by another agent — only the exported result TYPE is imported here).
 import type { MidiImportResult } from './midi-import-dialog';
@@ -80,6 +90,66 @@ interface PickedImage {
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'];
 
+/** Total note cap for a merged (all-PDF-pages) voice. */
+const MERGED_NOTE_CAP = 1500;
+
+/**
+ * Merge per-page analyses ("all pages" mode): voices are matched by staff
+ * INDEX — staff order is stable across pages of the same score. Notes stay
+ * in reading order (page 1 first). Tempo from the first page, confidence
+ * weighted by note count, warnings deduplicated.
+ */
+function mergePageAnalyses(pages: SheetMusicAnalysis[]): SheetMusicAnalysis | null {
+  const voices: SheetMusicVoice[] = [];
+  let tempo = 120;
+  let tempoFound = false;
+  let confWeight = 0;
+  let confSum = 0;
+  const warnings: string[] = [];
+  let truncated = false;
+
+  for (const page of pages) {
+    if (!tempoFound && page.tempo > 0) {
+      tempo = page.tempo;
+      tempoFound = true;
+    }
+    const pageNotes = page.voices.reduce((sum, v) => sum + v.noteCount, 0);
+    confWeight += pageNotes;
+    confSum += page.confidence * pageNotes;
+    if (page.warnings && !warnings.includes(page.warnings)) warnings.push(page.warnings);
+    truncated = truncated || page.truncated;
+
+    page.voices.forEach((voice, idx) => {
+      let target = voices[idx];
+      if (!target) {
+        target = { id: idx + 1, label: voice.label, noteCount: 0, notes: [] };
+        voices[idx] = target;
+      }
+      for (const note of voice.notes) {
+        if (target.notes.length >= MERGED_NOTE_CAP) {
+          truncated = true;
+          break;
+        }
+        target.notes.push({ midi: note.midi, beats: note.beats });
+      }
+      target.noteCount = target.notes.length;
+    });
+  }
+
+  // Drop voices that ended up empty (a page returned fewer staves than another)
+  const filled = voices.filter(v => v && v.noteCount > 0).map((v, i) => ({ ...v, id: i + 1 }));
+  if (filled.length === 0) return null;
+
+  const mergedWarnings = warnings.join(' · ').slice(0, 500);
+  return {
+    voices: filled,
+    tempo,
+    confidence: confWeight > 0 ? confSum / confWeight : 0.5,
+    warnings: mergedWarnings,
+    truncated,
+  };
+}
+
 /** Mime type from a file name/extension (browser file.type can be empty). */
 function guessMimeType(name: string, fallback?: string): string | null {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -115,6 +185,9 @@ interface SheetMusicDialogProps {
 export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNotes }: SheetMusicDialogProps) {
   const { t } = useTranslation();
 
+  /** Hidden persistent file input (browser path) — testable + accessible. */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [image, setImage] = useState<PickedImage | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<SheetMusicAnalysis | null>(null);
@@ -124,6 +197,20 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
   const [transpose, setTranspose] = useState(0);
   const [lyricsText, setLyricsText] = useState('');
   const [confirmReplace, setConfirmReplace] = useState(false);
+
+  // ── PDF state (user request: PDF-Erkennung von Notenblättern) ──
+  /** Rendered PDF pages (null when a plain image was picked). */
+  const [pdfPages, setPdfPages] = useState<PdfPageImage[] | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [pdfTotalPages, setPdfTotalPages] = useState<number>(0);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isRenderingPdf, setIsRenderingPdf] = useState(false);
+  /** "Analyze ALL pages" mode — per-page voices merged by staff index. */
+  const [analyzeAll, setAnalyzeAll] = useState(false);
+  /** True when the current analysis is a merged multi-page result. */
+  const [analysisIsMerged, setAnalysisIsMerged] = useState(false);
+  /** Progress for the all-pages analysis ("Analysiere Seite 2/4…"). */
+  const [analyzeProgress, setAnalyzeProgress] = useState<{ done: number; total: number } | null>(null);
 
   const sm = useCallback((key: string) => t(`editor.midiImport.sheetMusic.${key}`), [t]);
 
@@ -144,113 +231,234 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
     return selectedVoice.notes.reduce((sum, n) => sum + n.beats, 0);
   }, [selectedVoice]);
 
-  // ── Step 1: pick an image (Tauri native picker or browser input) ──
-  const handleChooseImage = useCallback(async () => {
-    setError(null);
-    setConfirmReplace(false);
-    setAnalysis(null); // new image → previous analysis is stale
+  // ── Step 1: pick an image or PDF (Tauri native picker or browser input) ──
+  const resetAnalysisState = useCallback(() => {
+    setAnalysis(null);
     setSelectedVoiceId(-1);
+    setAnalysisIsMerged(false);
+    setConfirmReplace(false);
+    setAnalyzeProgress(null);
+  }, []);
+
+  /** Load a picked PDF: render pages, show page 1. */
+  const loadPdf = useCallback(async (fileName: string, source: File | ArrayBuffer) => {
+    setError(null);
+    setIsRenderingPdf(true);
+    try {
+      const { pages, totalPages } = await renderPdfToPageImages(source, {
+        maxPages: MAX_PDF_PAGES,
+      });
+      if (pages.length === 0) {
+        setError(t('editor.midiImport.sheetMusic.pdfRenderError'));
+        return;
+      }
+      setPdfPages(pages);
+      setPdfFileName(fileName);
+      setPdfTotalPages(totalPages);
+      setCurrentPageIndex(0);
+      resetAnalysisState();
+      setImage({
+        dataUrl: pages[0].dataUrl,
+        base64: pages[0].base64,
+        mimeType: 'image/png',
+        fileName: `${fileName} (S. 1/${pages.length})`,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[SheetMusic] PDF rendering failed:', err);
+      setError(t('editor.midiImport.sheetMusic.pdfRenderError'));
+    } finally {
+      setIsRenderingPdf(false);
+    }
+  }, [t, resetAnalysisState]);
+
+  /** Handle a picked browser File (image OR PDF) — from the hidden input. */
+  const handlePickedFile = useCallback(async (file: File | null) => {
+    if (!file) return; // cancelled
+    // Shared reset (new file → previous analysis is stale)
+    setError(null);
+    setAnalysis(null);
+    setSelectedVoiceId(-1);
+    setAnalysisIsMerged(false);
+    setConfirmReplace(false);
+    setPdfPages(null);
+    setPdfFileName(null);
+    setAnalyzeProgress(null);
+
+    // PDF → render pages client-side (pdf.js)
+    if (isPdfFile(file.name, file.type)) {
+      await loadPdf(file.name, file);
+      return;
+    }
+
+    const mimeType = guessMimeType(file.name, file.type);
+    if (!mimeType) {
+      setError(t('editor.midiImport.sheetMusic.error'));
+      return;
+    }
+    const dataUrl = await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+    if (!dataUrl) {
+      setError(t('editor.midiImport.sheetMusic.error'));
+      return;
+    }
+    setImage({ dataUrl, base64: dataUrl.split(',')[1] ?? '', mimeType, fileName: file.name });
+  }, [t, loadPdf]);
+
+  /** Open the file picker: Tauri → native dialog; browser → hidden input. */
+  const handleChooseFile = useCallback(async () => {
+    if (!isTauri()) {
+      // Browser: open the hidden persistent <input type="file"> — the picked
+      // File is handled by its onChange (handlePickedFile).
+      fileInputRef.current?.click();
+      return;
+    }
+
+    // ── Tauri: native file picker (image OR PDF) ──
+    setError(null);
+    setAnalysis(null); // new file → previous analysis is stale
+    setSelectedVoiceId(-1);
+    setAnalysisIsMerged(false);
+    setConfirmReplace(false);
+    setPdfPages(null);
+    setPdfFileName(null);
+    setAnalyzeProgress(null);
 
     const title = t('editor.midiImport.sheetMusic.title');
     let picked: PickedImage | null = null;
 
-    if (isTauri()) {
-      try {
-        const path = await nativePickFileOpen(title, 'Notenblatt', [...IMAGE_EXTENSIONS, 'pdf']);
-        if (!path) return; // user cancelled
-        const fileName = path.split(/[/\\]/).pop() || path;
-        const mimeType = guessMimeType(fileName);
-        if (mimeType === 'application/pdf') {
-          setError(t('editor.midiImport.sheetMusic.unsupportedPdf'));
-          return;
-        }
-        if (!mimeType) {
-          setError(t('editor.midiImport.sheetMusic.error'));
-          return;
-        }
-        const base64 = await nativeReadFileBytes(path);
-        picked = { dataUrl: `data:${mimeType};base64,${base64}`, base64, mimeType, fileName };
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[SheetMusic] Native image read failed:', err);
+    try {
+      const path = await nativePickFileOpen(title, 'Notenblatt', [...IMAGE_EXTENSIONS, 'pdf']);
+      if (!path) return; // user cancelled
+      const fileName = path.split(/[/\\]/).pop() || path;
+      const mimeType = guessMimeType(fileName);
+      if (mimeType === 'application/pdf') {
+        // PDF → render pages client-side (pdf.js)
+        const bytes = await nativeReadFileBytes(path);
+        await loadPdf(fileName, bytes);
+        return;
+      }
+      if (!mimeType) {
         setError(t('editor.midiImport.sheetMusic.error'));
         return;
       }
-    } else {
-      picked = await new Promise<PickedImage | null>((resolve) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/png,image/jpeg,image/webp,image/gif,image/bmp';
-        input.onchange = () => {
-          const file = input.files?.[0];
-          if (!file) {
-            resolve(null);
-            return;
-          }
-          const mimeType = guessMimeType(file.name, file.type);
-          if (mimeType === 'application/pdf') {
-            resolve({ dataUrl: '', base64: '', mimeType: 'application/pdf', fileName: file.name });
-            return;
-          }
-          if (!mimeType) {
-            resolve(null);
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = () => {
-            const dataUrl = reader.result as string;
-            resolve({ dataUrl, base64: dataUrl.split(',')[1] ?? '', mimeType, fileName: file.name });
-          };
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
-        };
-        input.oncancel = () => resolve(null);
-        input.click();
-      });
+      const base64 = await nativeReadFileBytes(path);
+      picked = { dataUrl: `data:${mimeType};base64,${base64}`, base64, mimeType, fileName };
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[SheetMusic] Native image read failed:', err);
+      setError(t('editor.midiImport.sheetMusic.error'));
+      return;
     }
 
     if (!picked) return; // cancelled or unreadable
-    if (picked.mimeType === 'application/pdf') {
-      setError(t('editor.midiImport.sheetMusic.unsupportedPdf'));
-      return;
-    }
     setImage(picked);
-  }, [t]);
+  }, [t, loadPdf]);
 
-  // ── Step 2: analyze via backend VLM ──
+  /** Switch the visible PDF page (per-page analysis becomes stale). */
+  const goToPage = useCallback((index: number) => {
+    if (!pdfPages) return;
+    const clamped = Math.max(0, Math.min(pdfPages.length - 1, index));
+    if (clamped === currentPageIndex) return;
+    setCurrentPageIndex(clamped);
+    const page = pdfPages[clamped];
+    setImage({
+      dataUrl: page.dataUrl,
+      base64: page.base64,
+      mimeType: 'image/png',
+      fileName: `${pdfFileName ?? 'PDF'} (S. ${clamped + 1}/${pdfPages.length})`,
+    });
+    // A per-page analysis is stale after switching pages; a MERGED
+    // (all-pages) analysis stays valid — it covers every page.
+    if (!analysisIsMerged) {
+      setAnalysis(null);
+      setSelectedVoiceId(-1);
+    }
+    setConfirmReplace(false);
+  }, [pdfPages, currentPageIndex, pdfFileName, analysisIsMerged]);
+
+  /** POST one page image to the backend. */
+  const analyzeImageBase64 = useCallback(async (base64: string): Promise<SheetMusicApiResponse> => {
+    const res = await fetch('/api/sheet-music', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mimeType: 'image/png' }),
+    });
+    const data: SheetMusicApiResponse = await res.json().catch(() => ({ success: false }));
+    return data;
+  }, []);
+
+  // ── Step 2: analyze via backend VLM (current page OR all PDF pages) ──
   const handleAnalyze = useCallback(async () => {
-    if (!image || isAnalyzing) return;
+    if (!image || isAnalyzing || isRenderingPdf) return;
+    const analyzeAllPages = !!pdfPages && pdfPages.length > 1 && analyzeAll;
+    if (!analyzeAllPages && !image.base64) return;
+
     setError(null);
     setConfirmReplace(false);
     setAnalysis(null);
+    setSelectedVoiceId(-1);
+    setAnalysisIsMerged(false);
     setIsAnalyzing(true);
     try {
-      const res = await fetch('/api/sheet-music', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: image.base64, mimeType: image.mimeType }),
-      });
-      const data: SheetMusicApiResponse = await res.json().catch(() => ({ success: false }));
-      if (!res.ok || !data.success || !data.result) {
-        // Backend messages are short German strings (raw model text never leaks)
-        setError(data.error || t('editor.midiImport.sheetMusic.error'));
-        return;
+      let result: SheetMusicAnalysis | null = null;
+      let merged = false;
+
+      if (analyzeAllPages && pdfPages) {
+        // ── All-pages mode: analyze page by page, merge by staff index ──
+        const pageAnalyses: SheetMusicAnalysis[] = [];
+        for (let i = 0; i < pdfPages.length; i++) {
+          setAnalyzeProgress({ done: i, total: pdfPages.length });
+          const data = await analyzeImageBase64(pdfPages[i].base64);
+          if (!data.success || !data.result) {
+            // Backend messages are short German strings (raw model text never leaks)
+            setError(
+              data.error
+                ? `${data.error} (Seite ${i + 1}/${pdfPages.length})`
+                : t('editor.midiImport.sheetMusic.error'),
+            );
+            return;
+          }
+          // A page with NO detected voices is skipped (e.g. a title page) —
+          // only an ALL-pages-empty result ends as "no notes detected".
+          if (data.result.voices.length > 0) {
+            pageAnalyses.push(data.result);
+          }
+        }
+        setAnalyzeProgress({ done: pdfPages.length, total: pdfPages.length });
+        result = pageAnalyses.length > 0 ? mergePageAnalyses(pageAnalyses) : null;
+        merged = true;
+      } else {
+        // ── Single page / single image mode (unchanged behavior) ──
+        const data = await analyzeImageBase64(image.base64);
+        if (!data.success || !data.result) {
+          setError(data.error || t('editor.midiImport.sheetMusic.error'));
+          return;
+        }
+        result = data.result;
       }
-      if (data.result.voices.length === 0) {
+
+      if (!result || result.voices.length === 0) {
         setError(t('editor.midiImport.sheetMusic.noVoices'));
         return;
       }
-      setAnalysis(data.result);
-      setSelectedVoiceId(data.result.voices[0].id); // preselect first strand
-      setTempo(data.result.tempo);
+      setAnalysis(result);
+      setAnalysisIsMerged(merged);
+      setSelectedVoiceId(result.voices[0].id); // preselect first strand
+      setTempo(result.tempo);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[SheetMusic] Analysis request failed:', err);
       setError(t('editor.midiImport.sheetMusic.error'));
     } finally {
       setIsAnalyzing(false);
+      setAnalyzeProgress(null);
     }
-  }, [image, isAnalyzing, t]);
+  }, [image, isAnalyzing, isRenderingPdf, pdfPages, analyzeAll, analyzeImageBase64, t]);
 
   // ── Step 3: build notes + emit via the MIDI import contract ──
   const emitImport = useCallback(() => {
@@ -310,9 +518,17 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
 
   if (!open) return null;
 
-  const canAnalyze = !!image && !isAnalyzing;
+  const canAnalyze = !!image && !isAnalyzing && !isRenderingPdf;
   const canImport = !!analysis && !!selectedVoice && selectedVoice.noteCount > 0;
   const lowQuality = !!analysis && analysis.confidence < 0.5;
+  const analyzingLabel = analyzeProgress
+    ? t('editor.midiImport.sheetMusic.analyzingPage')
+        .replace('{page}', String(analyzeProgress.done + 1))
+        .replace('{total}', String(analyzeProgress.total))
+    : null;
+  const analyzingText = isRenderingPdf
+    ? t('editor.midiImport.sheetMusic.pdfRendering')
+    : analyzingLabel || t('editor.midiImport.sheetMusic.analyzing');
 
   return (
     <div
@@ -360,13 +576,29 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
             {t('editor.midiImport.sheetMusic.description')}
           </p>
 
-          {/* Section 1: Image upload + preview + analyze */}
+          {/* Section 1: Image/PDF upload + preview + page navigation + analyze */}
           <div className="space-y-3">
+            {/* Hidden file input — the button triggers it (browser path;
+                Tauri uses the native file picker instead) */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,application/pdf,.pdf"
+              className="hidden"
+              aria-label={t('editor.midiImport.sheetMusic.chooseFile')}
+              data-testid="sheet-music-file-input"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                // Allow re-picking the same file (change event must re-fire)
+                e.target.value = '';
+                void handlePickedFile(file);
+              }}
+            />
             <div className="flex items-center gap-2 flex-wrap">
               <Button
                 variant="outline"
-                onClick={handleChooseImage}
-                disabled={isAnalyzing}
+                onClick={handleChooseFile}
+                disabled={isAnalyzing || isRenderingPdf}
                 className="border-slate-600 text-slate-300 hover:text-white hover:bg-white/10"
                 data-testid="sheet-music-choose-image"
               >
@@ -380,14 +612,16 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
                 className="border-cyan-500/60 text-cyan-300 hover:text-white hover:bg-cyan-500/20 disabled:opacity-40"
                 data-testid="sheet-music-analyze"
               >
-                {isAnalyzing ? (
+                {isAnalyzing || isRenderingPdf ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <ScanLine className="w-4 h-4" />
                 )}
-                {isAnalyzing
-                  ? t('editor.midiImport.sheetMusic.analyzing')
-                  : t('editor.midiImport.sheetMusic.analyze')}
+                {isAnalyzing || isRenderingPdf
+                  ? analyzingText
+                  : pdfPages && pdfPages.length > 1 && analyzeAll
+                    ? t('editor.midiImport.sheetMusic.analyzeAll')
+                    : t('editor.midiImport.sheetMusic.analyze')}
               </Button>
               {image && (
                 <span
@@ -395,7 +629,14 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
                   data-testid="sheet-music-image-loaded"
                   title={image.fileName}
                 >
-                  {image.fileName}
+                  {pdfFileName && pdfPages ? (
+                    <span className="inline-flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5 text-red-400/80 shrink-0" aria-hidden />
+                      {pdfFileName}
+                    </span>
+                  ) : (
+                    image.fileName
+                  )}
                 </span>
               )}
             </div>
@@ -413,7 +654,123 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
                 />
               </div>
             )}
+
+            {/* ── PDF page navigation (thumbnails + prev/next + page indicator) ── */}
+            {pdfPages && pdfPages.length > 0 && (
+              <div
+                className="space-y-2 border border-slate-700/70 rounded-lg bg-slate-900/60 p-2.5"
+                data-testid="sheet-music-pdf-pages"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-red-400/80 shrink-0" aria-hidden />
+                    <span className="text-xs text-slate-400 font-mono truncate" data-testid="sheet-music-pdf-page-indicator">
+                      {t('editor.midiImport.sheetMusic.pdfPage')
+                        .replace('{page}', String(currentPageIndex + 1))
+                        .replace('{total}', String(pdfPages.length))}
+                    </span>
+                    {pdfTotalPages > pdfPages.length && (
+                      <span className="text-[10px] text-amber-500/80" title={t('editor.midiImport.sheetMusic.pdfPageCapHint')}>
+                        {t('editor.midiImport.sheetMusic.pdfPageCap').replace('{max}', String(pdfPages.length))}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => goToPage(currentPageIndex - 1)}
+                      disabled={currentPageIndex === 0 || isAnalyzing || isRenderingPdf}
+                      aria-label={t('editor.midiImport.sheetMusic.pdfPrevPage')}
+                      className="text-slate-400 hover:text-white h-7 w-7 p-0"
+                      data-testid="sheet-music-pdf-prev"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => goToPage(currentPageIndex + 1)}
+                      disabled={currentPageIndex >= pdfPages.length - 1 || isAnalyzing || isRenderingPdf}
+                      aria-label={t('editor.midiImport.sheetMusic.pdfNextPage')}
+                      className="text-slate-400 hover:text-white h-7 w-7 p-0"
+                      data-testid="sheet-music-pdf-next"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Thumbnail strip (max-h with scroll for many pages) */}
+                <div
+                  className="flex gap-2 overflow-x-auto pb-1 editor-panel-scroll"
+                  role="tablist"
+                  aria-label={t('editor.midiImport.sheetMusic.pdfPages')}
+                >
+                  {pdfPages.map((page, index) => (
+                    <button
+                      key={page.pageNumber}
+                      type="button"
+                      role="tab"
+                      aria-selected={index === currentPageIndex}
+                      onClick={() => goToPage(index)}
+                      disabled={isAnalyzing || isRenderingPdf}
+                      data-testid={`sheet-music-pdf-thumb-${index + 1}`}
+                      title={t('editor.midiImport.sheetMusic.pdfPage')
+                        .replace('{page}', String(index + 1))
+                        .replace('{total}', String(pdfPages.length))}
+                      className={cn(
+                        'relative shrink-0 rounded border overflow-hidden transition-all',
+                        index === currentPageIndex
+                          ? 'border-cyan-400 ring-1 ring-cyan-400/60'
+                          : 'border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100',
+                      )}
+                    >
+                      <img
+                        src={page.dataUrl}
+                        alt=""
+                        className="h-16 w-auto object-contain bg-white pointer-events-none"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-0 right-0 bg-black/70 text-white text-[9px] font-mono px-1 rounded-tl">
+                        {page.pageNumber}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Analyze-all toggle (multi-page PDFs only) */}
+                {pdfPages.length > 1 && (
+                  <label
+                    className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300"
+                    data-testid="sheet-music-analyze-all-toggle"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={analyzeAll}
+                      onChange={(e) => setAnalyzeAll(e.target.checked)}
+                      disabled={isAnalyzing || isRenderingPdf}
+                      className="accent-cyan-500 w-3.5 h-3.5"
+                    />
+                    <Layers className="w-3.5 h-3.5 text-purple-400" aria-hidden />
+                    {t('editor.midiImport.sheetMusic.analyzeAll')}
+                  </label>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* PDF pages are being rendered */}
+          {isRenderingPdf && (
+            <div
+              className="flex items-center gap-3 bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-sm text-slate-300"
+              role="status"
+              data-testid="sheet-music-pdf-rendering"
+            >
+              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              {t('editor.midiImport.sheetMusic.pdfRendering')}
+            </div>
+          )}
 
           {/* Section 2: Analysis result (honest: confidence + warnings) */}
           {analysis && (
@@ -457,9 +814,19 @@ export function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNote
 
               {/* Voices (Stränge) — user picks the correct strand */}
               <div className="space-y-2">
-                <Label className="text-slate-400 text-xs flex items-center gap-1.5">
+                <Label className="text-slate-400 text-xs flex items-center gap-1.5 flex-wrap">
                   <Music4 className="w-3.5 h-3.5 text-cyan-400" />
                   {t('editor.midiImport.sheetMusic.voices')}
+                  {analysisIsMerged && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/15 border border-purple-500/40 text-[10px] text-purple-300 font-normal"
+                      data-testid="sheet-music-merged-badge"
+                      title={t('editor.midiImport.sheetMusic.mergedHint')}
+                    >
+                      <Layers className="w-3 h-3" aria-hidden />
+                      {t('editor.midiImport.sheetMusic.mergedVoices')}
+                    </span>
+                  )}
                 </Label>
                 <div
                   className="border border-slate-700 rounded-lg overflow-hidden"
