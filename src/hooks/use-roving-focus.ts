@@ -423,12 +423,15 @@ export function useAutoFocus(
 
     // Small delay to ensure the new screen is rendered
     const timer = setTimeout(() => {
-      // Try to find and focus the first focusable element
+      // Try to find and focus the first focusable element.
+      // preventScroll: autofocus is a keyboard-navigation aid — it must
+      // NEVER move the viewport (e.g. back to the top of a long setup
+      // form the user has scrolled).
       const focusable = container.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex="0"]:not([disabled])'
       );
       if (focusable.length > 0) {
-        focusable[0].focus();
+        focusable[0].focus({ preventScroll: true });
       }
     }, 100);
 

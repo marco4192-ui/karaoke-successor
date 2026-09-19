@@ -171,7 +171,16 @@ export default function KaraokeZERO() {
   // content starts hidden behind the sticky navbar and elements become unclickable
   // (clicks land on the navbar overlay). Games run in fixed full-viewport layouts,
   // so resetting to top is always safe.
+  // EXCEPTION: the song-voting overlay is rendered ON TOP of the (still mounted)
+  // party setup screen — entering it and returning from it (pick or cancel) must
+  // PRESERVE the scroll position, so the user lands exactly where they were
+  // (e.g. at the song-selection method tiles) instead of the player grid.
+  const prevScreenRef = useRef<Screen | null>(null);
   useEffect(() => {
+    const prev = prevScreenRef.current;
+    prevScreenRef.current = screen;
+    if (screen === 'song-voting') return; // overlay on top — keep scroll
+    if (prev === 'song-voting' && screen === 'party-setup') return; // back from overlay
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [screen]);
 

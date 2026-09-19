@@ -56,7 +56,9 @@ export function UnifiedPartySetup({
     if (!container) return;
     const timer = setTimeout(() => {
       const btn = container.querySelector<HTMLElement>('button:not([disabled])');
-      btn?.focus();
+      // preventScroll: autofocus must not yank the viewport — returning
+      // from the vote overlay should keep the user's scroll position.
+      btn?.focus({ preventScroll: true });
     }, 100);
     return () => clearTimeout(timer);
   }, []);

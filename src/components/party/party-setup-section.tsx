@@ -43,8 +43,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
   return (
     <>
-      {/* Unified Party Setup Screen */}
-      {screen === 'party-setup' && party.selectedGameMode && (
+      {/* Unified Party Setup Screen — stays MOUNTED while the vote overlay
+          ('song-voting') is open, so returning from it (pick or cancel)
+          restores the exact same view + scroll position. Only next-round
+          votes (ptm/cptm, launched from a running game) leave it unmounted. */}
+      {(screen === 'party-setup' || (screen === 'song-voting' && !party.nextRoundPick)) && party.selectedGameMode && (
         <UnifiedPartySetup
           gameMode={party.selectedGameMode}
           profiles={profiles}
