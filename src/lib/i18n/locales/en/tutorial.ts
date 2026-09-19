@@ -75,17 +75,33 @@ export const tutorialTranslations = {
           title: 'Party modes',
           body: '9 games for 2–24 players: Battle Royale, Pass-the-Mic, Medley contest, tournament, missing words, blind karaoke and more — phones can join as mics.',
         },
+        partyModes: {
+          title: 'The mode picker',
+          body: 'This is where you pick the party mode: Battle Royale (last man standing), Pass-the-Mic, tournament (bracket), medley and more.\n\nEach card shows what to expect — one click opens player selection.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke without competition: build playlists, queue songs, share favourites. The perfect background entertainer.',
+        },
+        jukeboxView: {
+          title: 'Inside the jukebox menu',
+          body: '"Browse playlists" gives you direct access to every saved playlist — including the ones you created in the library. One click enqueues the whole playlist.',
         },
         highscoreCard: {
           title: 'Highscores',
           body: 'Highscores per song and difficulty — beat your friends (or yourself).',
         },
+        highscoreView: {
+          title: 'The highscore boards',
+          body: 'Filtered by song and difficulty — with the filter bar on top. The phone icons show companion app usage.',
+        },
         settingsCard: {
           title: 'Settings',
           body: 'Microphones, language, gameplay fine-tuning, appearance and graphics — all the knobs live here.',
+        },
+        settingsView: {
+          title: 'The settings tabs',
+          body: 'Pick a section at the top: General (language), Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (phone connection) and more.',
         },
         finish: {
           title: 'Done! 🎉',

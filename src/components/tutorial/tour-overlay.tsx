@@ -48,6 +48,12 @@ function measureTarget(selector: string | undefined): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
+/** Fully visible in the viewport? (partially visible counts as "needs scrolling") */
+function isRectVisible(r: Rect): boolean {
+  if (typeof window === 'undefined') return true;
+  return r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+}
+
 export function TourOverlay({
   step, title, body, stepNumber, totalSteps, chapterIcon, chapterTitle,
   hasNext, hasPrev, onNext, onPrev, onSkip, onForwardClick,
@@ -56,12 +62,17 @@ export function TourOverlay({
   const [rect, setRect] = useState<Rect | null>(null);
   const [targetFound, setTargetFound] = useState<boolean | null>(null);
   const forwardedRef = useRef(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  // Real (measured) tooltip height — used for placement checks and
+  // clamping, so long texts can never push the card off-screen.
+  const [tooltipH, setTooltipH] = useState(220);
 
   // ── Anchoring: poll for the target, re-measure periodically ──
   useLayoutEffect(() => {
     forwardedRef.current = false;
     let cancelled = false;
     let foundOnce = false;
+    let scrolled = false;
 
     const tick = () => {
       if (cancelled) return;
@@ -70,6 +81,14 @@ export function TourOverlay({
         foundOnce = true;
         setTargetFound(true);
         setRect(r);
+        // Auto-scroll: bring the target into view ONCE per step when it
+        // is (partially) outside the viewport — the screen follows the
+        // tour instead of the user having to scroll after every step.
+        if (!scrolled && !isRectVisible(r)) {
+          scrolled = true;
+          const el = step.target ? document.querySelector(step.target) : null;
+          el?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        }
       } else if (!foundOnce) {
         setTargetFound(false);
       }
@@ -113,6 +132,21 @@ export function TourOverlay({
     onForwardClick();
   }, [onForwardClick]);
 
+  // ── Measure the real tooltip height (whenever it changes) ──
+  // A ResizeObserver catches everything: text swaps, line wrapping when
+  // the card switches between centered (480px) and anchored (340/300px)
+  // widths, icons loading late — the placement math always sees the
+  // true height so long texts can never push the card off-screen.
+  useLayoutEffect(() => {
+    const el = tooltipRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      if (el.offsetHeight > 0) setTooltipH(Math.max(el.offsetHeight, 140));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // ── Tooltip placement (desktop) / bottom sheet (mobile) ──
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
@@ -131,22 +165,29 @@ export function TourOverlay({
     const below = rect.top + rect.height + 16;
     const above = rect.top - 16;
     const place = step.placement ?? 'bottom';
-    const tooltipH = 220; // rough estimate
     const fits = (dir: string) =>
-      dir === 'bottom' ? below + tooltipH < vh : above - tooltipH > 0;
+      dir === 'bottom' ? below + tooltipH < vh : above - tooltipH > 12;
     let dir = place;
     if (dir !== 'top' && dir !== 'bottom' && dir !== 'left' && dir !== 'right') dir = 'bottom';
     if ((dir === 'bottom' && !fits('bottom')) || (dir === 'top' && !fits('top'))) dir = fits('bottom') ? 'bottom' : 'top';
     if (dir === 'bottom' || dir === 'top') {
-      const left = Math.min(Math.max(12, rect.left + rect.width / 2 - 170), vw - 352);
-      tooltipStyle = dir === 'bottom'
-        ? { top: Math.round(below), left: Math.round(left), width: 340 }
-        : { top: Math.round(above - tooltipH), left: Math.round(left), width: 340, transform: 'translateY(-100%)' };
+      const left = Math.min(Math.max(12, rect.left + rect.width / 2 - 170), Math.max(12, vw - 352));
+      if (dir === 'bottom') {
+        // 'top' edge right below the target, clamped into the viewport
+        const top = Math.min(Math.round(below), Math.max(12, Math.round(vh - tooltipH - 12)));
+        tooltipStyle = { top, left: Math.round(left), width: 340 };
+      } else {
+        // bottom edge right above the target (translateY(-100%) makes the
+        // element's bottom = top) — no double offset, clamped to stay on-screen
+        const top = Math.max(Math.round(above), Math.round(tooltipH + 12));
+        tooltipStyle = { top, left: Math.round(left), width: 340, transform: 'translateY(-100%)' };
+      }
     } else {
-      const top = Math.min(Math.max(12, rect.top + rect.height / 2 - 110), vh - 260);
-      tooltipStyle = dir === 'right'
-        ? { top: Math.round(top), left: Math.round(rect.left + rect.width + 16), width: 300 }
-        : { top: Math.round(top), left: Math.round(Math.max(12, rect.left - 316)), width: 300 };
+      const top = Math.min(Math.max(12, rect.top + rect.height / 2 - tooltipH / 2), Math.max(12, Math.round(vh - tooltipH - 12)));
+      const left = dir === 'right'
+        ? Math.min(Math.round(rect.left + rect.width + 16), Math.max(12, vw - 312))
+        : Math.max(12, Math.round(rect.left - 316));
+      tooltipStyle = { top: Math.round(top), left, width: 300 };
     }
     tooltipClass = 'retro-gradient-card retro-border-cyan';
   }
@@ -195,6 +236,7 @@ export function TourOverlay({
 
       {/* Tooltip card */}
       <div
+        ref={tooltipRef}
         className={cn(
           'absolute rounded-xl shadow-2xl p-4 sm:p-5 flex flex-col gap-3',
           tooltipClass,

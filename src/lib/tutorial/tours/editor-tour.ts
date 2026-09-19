@@ -10,6 +10,7 @@ import type { TourDefinition } from '../types';
 export const editorTour: TourDefinition = {
   id: 'editor',
   icon: '✏️',
+  startScreen: 'editor',
   chapters: [
     {
       id: 'entry',

@@ -75,17 +75,33 @@ export const tutorialTranslations = {
           title: 'Party-Modi',
           body: '9 Spiele für 2–24 Spieler: Battle Royal, Pass-the-Mic, Medley-Wettbewerb, Turnier, Fehlende Wörter, Blind-Karaoke und mehr — inklusive Handy-Anbindung als Mikro.',
         },
+        partyModes: {
+          title: 'Die Modi-Auswahl',
+          body: 'Hier wählt ihr den Party-Modus: Battle Royal (Last Man Standing), Pass-the-Mic (Mikro-Weitergabe), Turnier (K.-o.-Baum), Medley und mehr.\n\nJede Karte zeigt, was dich erwartet — ein Klick startet die Spielerauswahl.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke ohne Wettkampf: Playlists bauen, Songs einreihen, Vorlieben teilen. Ideal als Hintergrund-Entertainer.',
+        },
+        jukeboxView: {
+          title: 'Im Jukebox-Menü',
+          body: 'Über „Playlists ansehen" greifst du direkt auf alle gespeicherten Playlists zu — auch die, die du in der Bibliothek erstellt hast. Ein Klick reiht sie komplett in die Warteschlange ein.',
         },
         highscoreCard: {
           title: 'Bestenlisten',
           body: 'Highscores pro Song und Schwierigkeit — schlage deine Freunde (oder dich selbst).',
         },
+        highscoreView: {
+          title: 'Die Bestenlisten',
+          body: 'Gefiltert nach Song und Schwierigkeit — inklusive Filterleiste oben. Die Handy-Symbole zeigen die Companion-App-Nutzung an.',
+        },
         settingsCard: {
           title: 'Einstellungen',
           body: 'Mikrofone, Sprache, Gameplay-Feintuning, Darstellung und Grafik — alles Feinjustieren passiert hier.',
+        },
+        settingsView: {
+          title: 'Die Einstellungs-Reiter',
+          body: 'Oben wählt du den Bereich: Allgemein (Sprache), Gameplay, Darstellung, Grafik & Sound, Mikrofon, Mobil (Handy-Anbindung) und mehr.',
         },
         finish: {
           title: 'Geschafft! 🎉',

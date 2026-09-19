@@ -41,6 +41,10 @@ export interface TourDefinition {
   id: TourId;
   icon: string;
   chapters: TourChapter[];
+  /** Screen the tour lives on — startTour navigates here first, so
+   *  restarting the tour from anywhere brings you back to the start
+   *  screen (e.g. home for the basic tour, editor for the editor tour). */
+  startScreen?: Screen;
 }
 
 /** Runtime state of the currently running tour. */

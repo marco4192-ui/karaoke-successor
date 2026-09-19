@@ -142,10 +142,14 @@ export function TourController({ children, navigate, screen }: TourControllerPro
   const startTour = useCallback((tourId: TourId, opts?: { chapterId?: string }) => {
     const { tour, steps, chapterId } = flattenSteps(tourId, opts?.chapterId);
     if (!tour || steps.length === 0) return;
+    // Bring the user back to the screen the tour lives on (e.g. home for
+    // the basic tour) — restarting from the library or editor must not
+    // strand step 1 on a screen where no target exists.
+    if (tour.startScreen) navigate(tour.startScreen);
     const active: ActiveTour = { tour, steps, index: 0, chapterId };
     // advanceTo performs the first step's navigation + skipIf handling
     advanceTo(active, 0);
-  }, [flattenSteps, advanceTo]);
+  }, [flattenSteps, advanceTo, navigate]);
 
   const stopTour = useCallback(() => setState(null), []);
 
