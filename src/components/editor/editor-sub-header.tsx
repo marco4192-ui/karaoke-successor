@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
-  Plus, Copy, Trash2, Scissors, Merge, Users, Mic, ArrowUpDown, Hand, Music, Star, Zap, Mic2, FileMusic, Music2,
+  Plus, Copy, Trash2, Scissors, Merge, Users, Mic, ArrowUpDown, Hand, Music, Star, Zap, Mic2, FileMusic, Music2, ScanLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -58,6 +58,8 @@ interface EditorSubHeaderProps {
   tapMode: TapModeState;
   /** MIDI/KAR note import (3.2): opens the import dialog. */
   onOpenMidiImport: () => void;
+  /** Sheet music (Notenblatt) recognition (5): opens the VLM import dialog. */
+  onOpenSheetMusic: () => void;
   /** MIDI/KAR comparison overlay (3.5): first click loads a file, further clicks toggle visibility. */
   onToggleMidiComparison: () => void;
   /** True while the comparison overlay is loaded AND visible (button active state). */
@@ -91,6 +93,7 @@ export function EditorSubHeader({
   onTransposeAll,
   tapMode,
   onOpenMidiImport,
+  onOpenSheetMusic,
   onToggleMidiComparison,
   comparisonActive,
 }: EditorSubHeaderProps) {
@@ -325,6 +328,7 @@ export function EditorSubHeader({
 
       {/* ── MIDI/KAR source tools (3.2 import + 3.5 comparison overlay) ── */}
       {toolButton(t('editor.midiImport.importButton'), <FileMusic className="w-3.5 h-3.5" />, onOpenMidiImport, false, 'editor-sub-midi-import', 'hover:border-amber-500 hover:text-amber-300')}
+      {toolButton(t('editor.midiImport.sheetMusic.button'), <ScanLine className="w-3.5 h-3.5" />, onOpenSheetMusic, false, 'editor-sub-sheet-music', 'hover:border-cyan-500 hover:text-cyan-300')}
 
       <Tooltip>
         <TooltipTrigger asChild>

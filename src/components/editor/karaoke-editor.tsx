@@ -27,7 +27,11 @@ import {
   type MidiImportResult,
   type ComparisonNote,
 } from './midi-import-dialog';
+// Sheet music (Notenblatt) recognition via VLM (5) — same import contract
+import { SheetMusicDialog } from './sheet-music-dialog';
 import { parseMIDIKaraoke } from '@/lib/parsers/multi-format-import';
+import { isMidiSongMusic } from '@/lib/audio/midi-synth';
+import { MidiAudioSource } from '@/components/game/midi-audio-source';
 import { toast } from '@/hooks/use-toast';
 import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
@@ -123,6 +127,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
   // ── MIDI/KAR import (3.2) + comparison overlay (3.5) ──
   const [showMidiImport, setShowMidiImport] = useState(false);
+  // ── Sheet music (Notenblatt) recognition via VLM (5) ──
+  const [showSheetMusicImport, setShowSheetMusicImport] = useState(false);
   // Pure editor state — NEVER serialized, never in the undo history.
   const [comparisonNotes, setComparisonNotes] = useState<ComparisonNote[] | null>(null);
   const [comparisonVisible, setComparisonVisible] = useState(true);
@@ -215,6 +221,13 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
   const selectedNote = useMemo(() => allNotes.find(n => n.id === selectedNoteId), [allNotes, selectedNoteId]);
+
+  // MIDI/KAR as the song's music file: preview playback runs through the
+  // Web Audio synth adapter instead of an <audio> element.
+  const midiMusicActive = useMemo(
+    () => isMidiSongMusic(currentSong, currentSong.audioUrl),
+    [currentSong],
+  );
 
   // The video sync overlay is available for any song with a video source
   const hasVideo = useMemo(() =>
@@ -951,6 +964,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     if (firstNote) handleNoteJump(firstNote);
   }, [applyLyrics, setSongInternal, markDirty, handleNoteJump]);
 
+  // ── Sheet music (Notenblatt) recognition (5) ──
+  // The dialog delivers the SAME MidiImportResult shape (pitch + timing
+  // basis, '~' placeholders, bpm from the detected tempo, gap 0) — so it
+  // reuses the exact MIDI import code path above; only the dialog differs.
+  const handleSheetMusicImport = useCallback((result: MidiImportResult) => {
+    handleMidiImport(result);
+    setShowSheetMusicImport(false);
+  }, [handleMidiImport]);
+
   // ── MIDI/KAR comparison overlay (3.5) ──
   // First click: file picker → parse → auto-pick melody track → beats on the
   // CURRENT song grid (the song is NOT changed). Further clicks toggle the
@@ -1114,6 +1136,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               onTransposeAll={handleTransposeAll}
               tapMode={tapPlacement}
               onOpenMidiImport={() => setShowMidiImport(true)}
+              onOpenSheetMusic={() => setShowSheetMusicImport(true)}
               onToggleMidiComparison={handleToggleMidiComparison}
               comparisonActive={comparisonNotes !== null && comparisonVisible}
             />
@@ -1231,8 +1254,18 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         </div>
       )}
 
-      {currentSong.audioUrl && (
+      {currentSong.audioUrl && !midiMusicActive && (
         <audio ref={audioRef} src={currentSong.audioUrl} onEnded={() => setIsPlaying(false)} />
+      )}
+      {/* MIDI music: bridge assigns the synth adapter to audioRef (playback
+          via useEditorPlayback — play/pause/seek/playbackRate all supported) */}
+      {currentSong.audioUrl && midiMusicActive && (
+        <MidiAudioSource
+          audioRef={audioRef}
+          audioUrl={currentSong.audioUrl}
+          songId={currentSong.id}
+          onEnded={() => setIsPlaying(false)}
+        />
       )}
       {/* Fallback: play audio from video file when no separate audio exists */}
       {!currentSong.audioUrl && currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && (
@@ -1257,6 +1290,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         open={showMidiImport}
         onOpenChange={setShowMidiImport}
         onImport={handleMidiImport}
+        hasExistingNotes={allNotes.length > 0}
+      />
+
+      {/* Notenblatt-Erkennung (5) — VLM notes import, same code path as MIDI */}
+      <SheetMusicDialog
+        open={showSheetMusicImport}
+        onOpenChange={setShowSheetMusicImport}
+        onImport={handleSheetMusicImport}
         hasExistingNotes={allNotes.length > 0}
       />
 
