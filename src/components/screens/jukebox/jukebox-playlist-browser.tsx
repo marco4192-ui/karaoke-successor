@@ -9,7 +9,7 @@
  */
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -51,10 +51,27 @@ export function JukeboxPlaylistBrowser({
   const [open, setOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Bumped whenever playlists change ANYWHERE (library create/edit, mobile
+  // companion, another tab) → the list below refreshes live, even while
+  // this dialog is open. Covers the "library playlists don't show up in
+  // the jukebox" report: no reopen needed, no stale snapshot.
+  const [playlistTick, setPlaylistTick] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setPlaylistTick(t => t + 1);
+    window.addEventListener('karaoke-playlists-changed', bump);
+    // 'storage' fires in THIS tab only when localStorage was changed by
+    // ANOTHER tab — cross-tab live sync for free.
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('karaoke-playlists-changed', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
 
   const playlists = useMemo(
     () => getPlaylists().filter(p => !p.isSystem),
-    [open], // eslint-disable-line react-hooks/exhaustive-deps -- refresh on every dialog open
+    [open, playlistTick], // refresh on every dialog open AND on live changes
   );
 
   const songById = useMemo(() => {

@@ -86,6 +86,15 @@ function getDefaultPlaylists(): Playlist[] {
 // Save playlists to storage
 function savePlaylists(playlists: Playlist[]): void {
   setJson(STORAGE_KEY, playlists);
+  // Broadcast the change so open surfaces (jukebox playlist browser,
+  // setup pool select, library playlist view) can refresh live — a
+  // playlist created in the library or on a companion shows up in the
+  // jukebox immediately, without reopening the dialog.
+  try {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('karaoke-playlists-changed'));
+    }
+  } catch { /* never block a save because of the notification */ }
 }
 
 // Create a new playlist

@@ -151,6 +151,18 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   // running player (controls bar / fullscreen header) via the pool-changed event.
   const selectedPlaylistId = useJukeboxPoolId();
   const [playlistTick, setPlaylistTick] = useState(0);
+  // Live refresh: playlists created/edited in the library or on a companion
+  // dispatch 'karaoke-playlists-changed' — the pool select updates without
+  // remounting the jukebox.
+  useEffect(() => {
+    const bump = () => setPlaylistTick(t => t + 1);
+    window.addEventListener('karaoke-playlists-changed', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('karaoke-playlists-changed', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
   const playlists = useMemo(() => {
     try {
       return getPlaylists().filter(p => !p.isSystem);
