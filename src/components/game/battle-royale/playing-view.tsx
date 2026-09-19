@@ -768,9 +768,15 @@ export function PlayingView({
       {/* Item 8: pb-7 (was pb-3) — lifts the lyrics bar slightly UP, clear of
           the bottom-corner time displays; badges + lyrics now sit closer
           together around the note highway. */}
-      <div className="flex-shrink-0 px-4 pb-7 min-h-0">
+      {/* 6.3: FIXED height reservation — the note highway is a flex-1 sibling,
+          so a lyrics band that grows/shrinks (1 line vs. current+next preview,
+          fallbacks during instrumental pauses) resized the Tonleiter on every
+          change and made it visibly jump up/down. The card now always occupies
+          the same height (fits current line + next-line preview) with the
+          content vertically centered — the highway geometry stays constant. */}
+      <div className="flex-shrink-0 px-4 pb-7">
         {currentSong ? (
-          <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
+          <div className="w-full h-[72px] bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10 flex flex-col items-center justify-center">
             {currentLyricLine ? (
               <div className="text-center">
                 <LyricLineDisplay
@@ -794,7 +800,7 @@ export function PlayingView({
             )}
           </div>
         ) : (
-          <div className="w-full bg-black/30 rounded-xl px-4 py-2 border border-white/10 text-center">
+          <div className="w-full h-[72px] bg-black/30 rounded-xl px-4 py-2 border border-white/10 text-center flex items-center justify-center">
             <p className="text-white/30 text-sm">{t('battleRoyale.loadingSong')}</p>
           </div>
         )}
