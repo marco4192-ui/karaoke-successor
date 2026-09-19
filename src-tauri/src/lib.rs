@@ -464,6 +464,27 @@ fn check_server_running() -> bool {
     TcpStream::connect("127.0.0.1:3000").is_ok()
 }
 
+/// Best-effort chmod +x (Unix only): some packaging flows (AppImage resource
+/// copy, duplicated .app bundles) can drop the executable bit on the bundled
+/// Node binary. Without +x, spawning it fails with EACCES (Permission denied).
+#[cfg(unix)]
+fn ensure_executable(path: &std::path::Path) {
+    use std::os::unix::fs::PermissionsExt;
+    const EXEC_BITS: u32 = 0o111; // execute for user | group | other
+    if let Ok(meta) = fs::metadata(path) {
+        let perms = meta.permissions();
+        let mode = perms.mode();
+        if mode & EXEC_BITS != EXEC_BITS {
+            let mut new_perms = meta.permissions();
+            new_perms.set_mode(mode | EXEC_BITS);
+            match fs::set_permissions(path, new_perms) {
+                Ok(()) => println!("[standalone] Restored +x on {}", path.display()),
+                Err(e) => println!("[standalone] Could not restore +x on {}: {}", path.display(), e),
+            }
+        }
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn get_node_path(resource_dir: &PathBuf) -> Option<PathBuf> {
     // Windows: bundled/node/node.exe
@@ -572,6 +593,59 @@ fn get_server_cwd(server_path: &PathBuf) -> PathBuf {
     server_path.parent().unwrap_or(server_path).to_path_buf()
 }
 
+// ============================================================
+// Platform diagnostics (About screen / support reports)
+// ============================================================
+
+#[derive(Serialize)]
+struct PlatformInfo {
+    /// Operating system: "windows" | "macos" | "linux"
+    os: &'static str,
+    /// CPU architecture: "x86_64" | "aarch64" | ...
+    arch: &'static str,
+    /// OS family: "unix" | "windows"
+    family: &'static str,
+    /// Bundled portable Node.js found in the app resources
+    bundled_node: bool,
+    /// Bundled ONNX Runtime library found in bundled/native/
+    /// (required for CREPE pitch detection)
+    bundled_onnx: bool,
+    /// ORT_LIB_PATH env value (set at startup when native libs were found)
+    ort_lib_path: Option<String>,
+    /// Port the bundled Next.js server is served on
+    server_port: u16,
+}
+
+/// Platform/runtime diagnostics — lets users verify that the desktop app
+/// bundles everything it needs (Node.js runtime, ONNX Runtime for CREPE)
+/// on Windows, macOS and Linux alike.
+#[tauri::command]
+fn app_get_platform(app: tauri::AppHandle) -> Result<PlatformInfo, String> {
+    let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
+
+    // ort (load-dynamic) expects a platform-specific library name
+    let onnx_lib_name = match std::env::consts::OS {
+        "windows" => "onnxruntime.dll",
+        "macos" => "libonnxruntime.dylib",
+        _ => "libonnxruntime.so",
+    };
+    let bundled_onnx = resource_dir
+        .join("bundled")
+        .join("native")
+        .join(onnx_lib_name)
+        .exists();
+
+    Ok(PlatformInfo {
+        os: std::env::consts::OS,
+        arch: std::env::consts::ARCH,
+        family: std::env::consts::FAMILY,
+        bundled_node: get_node_path(&resource_dir).is_some(),
+        bundled_onnx,
+        ort_lib_path: std::env::var("ORT_LIB_PATH").ok(),
+        server_port: 3000,
+    })
+}
+
 pub fn run() {
     // ── Windows: Make bundled native DLLs discoverable ──
     // On a clean Windows install, the Microsoft Visual C++ Runtime
@@ -666,8 +740,34 @@ pub fn run() {
             charts::commands::viral_set_country,
             // Network
             network_get_local_ip,
+            // Platform diagnostics (About screen)
+            app_get_platform,
         ])
         .setup(|app| {
+            // ── macOS / Linux: make bundled native libraries discoverable ──
+            // Windows handles this in run() via exe_dir (NSIS layout, where
+            // resources sit next to the .exe). On macOS (.app bundle) and
+            // Linux (AppImage / deb) resources live elsewhere, so we resolve
+            // resource_dir here instead. ort (load-dynamic) checks
+            // ORT_LIB_PATH (directory) and ORT_DYLIB_PATH (exact file) on all
+            // platforms before falling back to standard library search.
+            #[cfg(not(target_os = "windows"))]
+            {
+                if let Ok(resource_dir) = app.handle().path().resource_dir() {
+                    let native_dir = resource_dir.join("bundled").join("native");
+                    if native_dir.exists() {
+                        let lib_name =
+                            if cfg!(target_os = "macos") { "libonnxruntime.dylib" } else { "libonnxruntime.so" };
+                        let lib_path = native_dir.join(lib_name);
+                        std::env::set_var("ORT_LIB_PATH", &native_dir);
+                        if lib_path.exists() {
+                            std::env::set_var("ORT_DYLIB_PATH", &lib_path);
+                        }
+                        println!("[standalone] ORT native lib dir: {}", native_dir.display());
+                    }
+                }
+            }
+
             // Register the audio state (dedicated audio thread uses Channel IPC)
             let audio_state = audio::commands::AudioState::new()
                 .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
@@ -692,8 +792,11 @@ pub fn run() {
                 let splash = r#"<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0d0d2b 100%);display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#fff}.c{text-align:center}.i{font-size:4.5rem;margin-bottom:1.25rem;animation:f 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,45,149,.4))}.t{font-size:2.2rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;background:linear-gradient(135deg,#ff2d95 0%,#ff6b9d 50%,#c850c0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2.5rem}.b{width:220px;height:3px;background:rgba(255,255,255,.08);border-radius:3px;margin:0 auto 1.5rem;overflow:hidden;position:relative}.f{position:absolute;left:0;top:0;height:100%;width:35%;background:linear-gradient(90deg,transparent,#ff2d95,#c850c0,transparent);border-radius:3px;animation:s 1.6s ease-in-out infinite}.h{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25)}@keyframes f{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes s{0%{left:-35%}100%{left:100%}}</style></head><body><div class="c"><div class="i">&#x1F3A4;</div><div class="t">Karaoke ZERO</div><div class="b"><div class="f"></div></div><div class="h">wird gestartet...</div></div></body></html>"#;
                 let tmp = std::env::temp_dir().join("karaoke-splash.html");
                 if fs::write(&tmp, splash).is_ok() {
-                    let file_url = format!("file:///{}", tmp.display().to_string().replace('\\', "/"));
-                    if let Ok(url) = tauri::Url::parse(&file_url) {
+                    // Url::from_file_path builds a correct file:// URL on ALL
+                    // platforms (Windows: file:///C:/…, Unix: file:///tmp/…).
+                    // The previous manual format!() produced file:////tmp/…
+                    // (four slashes) on Unix, which WKWebView (macOS) rejects.
+                    if let Ok(url) = tauri::Url::from_file_path(&tmp) {
                         let _ = window.navigate(url);
                     }
                 }
@@ -746,6 +849,11 @@ pub fn run() {
                             println!("Runtime: {:?}", node);
                             println!("Server: {:?}", server_path);
                             println!("Working dir: {:?}", cwd);
+                            
+                            // Ensure the bundled Node binary kept its execute
+                            // bit through packaging (Unix: AppImage/.app).
+                            #[cfg(unix)]
+                            ensure_executable(&node);
                             
                             let result = Command::new(&node)
                                 .arg(&server_path)

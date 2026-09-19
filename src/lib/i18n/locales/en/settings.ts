@@ -536,7 +536,16 @@ export const settingsTranslations = {
     connected: '✅ Connected to leaderboard!',
     notConnected: '❌ Could not connect to leaderboard',
     desktopInstalled: 'Desktop App Installed',
-    desktopInstalledDesc: 'This app is running as a native desktop application with full offline support.'
+    desktopInstalledDesc: 'This app is running as a native desktop application with full offline support.',
+    platformInfo: 'System & Runtime',
+    platformOs: 'Operating system',
+    platformArch: 'Architecture',
+    platformNode: 'Bundled Node.js',
+    platformOnnx: 'ONNX Runtime (CREPE)',
+    platformServer: 'Local server',
+    platformReady: 'Ready',
+    platformMissing: 'Not found',
+    platformMissingHint: 'Some native features may be unavailable.'
   },
 
   webcamSettings: {

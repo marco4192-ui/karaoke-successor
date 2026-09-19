@@ -6,9 +6,13 @@
  * Usage: node scripts/download-node.mjs
  *   or:  node scripts/download-node.mjs --version 20.18.2
  *   or:  node scripts/download-node.mjs --version 22.14.0 --platform win --arch x64
+ *
+ * Cross-platform: run this ON the target OS right before `bun run tauri:build`.
+ * Windows → portable-node/node.exe
+ * macOS/Linux → portable-node/bin/node (chmod 755)
  */
 
-import { createWriteStream, existsSync, mkdirSync, chmodSync } from 'fs';
+import { createWriteStream, existsSync, mkdirSync, chmodSync, statSync, unlinkSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { platform, arch } from 'os';
@@ -100,7 +104,7 @@ async function main() {
 
     await download(urlConfig, nodeExe);
     ok(`Downloaded node.exe → ${nodeExe}`);
-    ok(`Size: ${(require('fs').statSync(nodeExe).size / 1024 / 1024).toFixed(1)} MB`);
+    ok(`Size: ${(statSync(nodeExe).size / 1024 / 1024).toFixed(1)} MB`);
   } else {
     // macOS/Linux: download tar.gz and extract bin/node
     const tarPath = join(tmpdir(), `node-v${nodeVersion}.tar.gz`);
@@ -133,7 +137,7 @@ async function main() {
       ok(`Extracted node → ${dstNode}`);
     } finally {
       // Cleanup
-      try { require('fs').unlinkSync(tarPath); } catch {}
+      try { unlinkSync(tarPath); } catch {}
       try { execSync(`rm -rf "${extractDir}"`); } catch {}
     }
   }

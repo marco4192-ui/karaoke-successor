@@ -14,7 +14,8 @@
     "test:run": "vitest run",
     "tauri:dev": "tauri dev",
     "tauri:build": "node scripts/prepare-bundle.mjs && tauri build",
-    "node:download": "node scripts/download-node.mjs"
+    "node:download": "node scripts/download-node.mjs",
+    "onnx:download": "node scripts/download-onnxruntime.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
