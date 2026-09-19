@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon, Activity } from 'lucide-react';
+import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon, Activity, Link2, Wallpaper } from 'lucide-react';
 import type { Song } from '@/types/game';
 import { parseLyricsToSyllables, type SyllableResult } from '@/lib/editor/syllable-separator';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -18,6 +18,7 @@ import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen } from '@/lib/native-fs';
 import { GENRES, LANGUAGES } from '@/lib/constants';
 import { useAudioAnalysis } from '@/hooks/use-audio-analysis';
+import { classifyVideoInput, classifyBackgroundInput } from '@/lib/editor/video-classification';
 
 interface NewSongDialogProps {
   onSave: (_song: Song) => void;
@@ -54,6 +55,12 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const [audioPath, setAudioPath] = useState('');
   const [videoPath, setVideoPath] = useState('');
   const [coverPath, setCoverPath] = useState('');
+  // Background: local image file path + optional URL (image or video/platform link)
+  const [backgroundPath, setBackgroundPath] = useState('');
+  const [backgroundUrl, setBackgroundUrl] = useState('');
+  // Video URL (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico
+  // or a direct video URL) — classified into the matching Song field
+  const [videoUrl, setVideoUrl] = useState('');
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -94,6 +101,27 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       ? detectedDurationMs + 5000
       : 180000; // default 3 minutes when no audio loaded
 
+    // Classify the optional video URL (platform link, direct video URL or
+    // full embed code) into exactly ONE Song video field — the same contract
+    // as the #VIDEO field in the editor (all other video fields are cleared).
+    const videoUrlFields = videoUrl.trim() ? classifyVideoInput(videoUrl) : {};
+    // Classify the optional background URL: video/platform link →
+    // videoBackground (fallback video source AFTER the #VIDEO fields),
+    // image URL → backgroundImage (visual fallback when the video is
+    // missing or broken). Applied AFTER videoUrlFields so a background
+    // video URL survives the video-field reset.
+    const backgroundUrlFields = backgroundUrl.trim() ? classifyBackgroundInput(backgroundUrl) : {};
+
+    // Any video source means the video provides the audio when no separate
+    // audio file is set (mirrors convertUltraStarToSong's hasEmbeddedAudio).
+    const hasVideoSource = !!(
+      videoPath
+      || videoUrlFields.youtubeUrl || videoUrlFields.dailymotionUrl || videoUrlFields.vimeoUrl
+      || videoUrlFields.rutubeUrl || videoUrlFields.vkVideoUrl || videoUrlFields.bilibiliUrl
+      || videoUrlFields.nicovideoUrl || videoUrlFields.videoBackground || videoUrlFields.videoFile
+      || backgroundUrlFields.videoBackground
+    );
+
     const song: Song = {
       id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       title: title.trim(),
@@ -112,12 +140,21 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       ...(audioPath ? { relativeAudioPath: audioPath } : {}),
       ...(videoPath ? { relativeVideoPath: videoPath } : {}),
       ...(coverPath ? { relativeCoverPath: coverPath, coverImage: coverPath } : {}),
+      ...(backgroundPath ? {
+        relativeBackgroundPath: backgroundPath,
+        backgroundFile: backgroundPath.split(/[/\\]/).pop() || 'background.jpg',
+        backgroundImage: backgroundPath,
+      } : {}),
+      ...videoUrlFields,
+      ...backgroundUrlFields,
       // Store raw lyrics text so the editor can parse syllables for tap-mode assignment
       ...(lyricsText.trim() ? { rawLyrics: lyricsText.trim() } : {}),
+      // Video (URL or local file) provides the audio when no audio file is set
+      hasEmbeddedAudio: !audioPath && hasVideoSource,
     };
 
     return song;
-  }, [title, artist, bpm, gap, genre, language, edition, audioPath, videoPath, coverPath, detectedDurationMs, lyricsText]);
+  }, [title, artist, bpm, gap, genre, language, edition, audioPath, videoPath, coverPath, backgroundPath, backgroundUrl, videoUrl, detectedDurationMs, lyricsText]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -142,11 +179,11 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   }, [audioPath, detectBpm]);
 
   // Pick a file using native Tauri command (bypass ACL) or browser fallback
-  const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (_path: string) => void) => {
+  const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover' | 'background', setter: (_path: string) => void) => {
     if (isTauri()) {
       try {
         const filters = fileType === 'audio'
-          ? { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] }
+          ? { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'mid', 'kar'] }
           : fileType === 'video'
             ? { name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov'] }
             : { name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] };
@@ -155,7 +192,9 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
           ? t('editor.newSongDialog.selectAudio')
           : fileType === 'video'
             ? t('editor.newSongDialog.selectVideo')
-            : t('editor.newSongDialog.selectCover');
+            : fileType === 'cover'
+              ? t('editor.newSongDialog.selectCover')
+              : t('editor.newSongDialog.selectBackground');
 
         const selected = await nativePickFileOpen(title, filters.name, filters.extensions);
         if (selected) setter(selected);
@@ -167,7 +206,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       // Browser fallback: use hidden file input
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = fileType === 'audio' ? 'audio/*' : fileType === 'video' ? 'video/*' : 'image/*';
+      input.accept = fileType === 'audio' ? 'audio/*,.mid,.kar' : fileType === 'video' ? 'video/*' : 'image/*';
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) setter(file.name);
@@ -354,66 +393,137 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
             </p>
             <div className="grid grid-cols-1 gap-3">
               {/* Audio */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
-                  <Music className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <Input
-                    value={audioPath}
-                    onChange={(e) => setAudioPath(e.target.value)}
-                    placeholder={t('editor.newSongDialog.noAudioSelected')}
-                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
-                  />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <Music className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <Input
+                      value={audioPath}
+                      onChange={(e) => setAudioPath(e.target.value)}
+                      placeholder={t('editor.newSongDialog.noAudioSelected')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pickFile('audio', setAudioPath)}
+                    className="border-slate-600 text-slate-400 shrink-0"
+                  >
+                    {t('editor.newSongDialog.browse')}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pickFile('audio', setAudioPath)}
-                  className="border-slate-600 text-slate-400 shrink-0"
-                >
-                  {t('editor.newSongDialog.browse')}
-                </Button>
+                <p className="text-[10px] text-white/40 pl-1">
+                  {t('editor.newSongDialog.formats.audio')} · {t('editor.newSongDialog.formats.audioMidi')}
+                </p>
               </div>
 
-              {/* Video */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
-                  <Film className="w-4 h-4 text-purple-400 shrink-0" />
-                  <Input
-                    value={videoPath}
-                    onChange={(e) => setVideoPath(e.target.value)}
-                    placeholder={t('editor.newSongDialog.noVideoSelected')}
-                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
-                  />
+              {/* Video — local file + optional platform/direct URL */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <Film className="w-4 h-4 text-purple-400 shrink-0" />
+                    <Input
+                      value={videoPath}
+                      onChange={(e) => setVideoPath(e.target.value)}
+                      placeholder={t('editor.newSongDialog.noVideoSelected')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pickFile('video', setVideoPath)}
+                    className="border-slate-600 text-slate-400 shrink-0"
+                  >
+                    {t('editor.newSongDialog.browse')}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pickFile('video', setVideoPath)}
-                  className="border-slate-600 text-slate-400 shrink-0"
-                >
-                  {t('editor.newSongDialog.browse')}
-                </Button>
+                {/* Video URL — YouTube/Dailymotion/Vimeo/Rutube/VK/Bilibili/Niconico
+                    links, direct video URLs or full embed codes. Classified into
+                    the matching Song field (same contract as the #VIDEO editor field). */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <Link2 className="w-4 h-4 text-purple-300 shrink-0" />
+                    <Input
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder={t('editor.newSongDialog.videoUrlPlaceholder')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                      inputMode="url"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-white/40 pl-1">
+                  {t('editor.newSongDialog.formats.video')}
+                </p>
               </div>
 
               {/* Cover */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
-                  <ImageIcon className="w-4 h-4 text-amber-400 shrink-0" />
-                  <Input
-                    value={coverPath}
-                    onChange={(e) => setCoverPath(e.target.value)}
-                    placeholder={t('editor.newSongDialog.noCoverSelected')}
-                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
-                  />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <ImageIcon className="w-4 h-4 text-amber-400 shrink-0" />
+                    <Input
+                      value={coverPath}
+                      onChange={(e) => setCoverPath(e.target.value)}
+                      placeholder={t('editor.newSongDialog.noCoverSelected')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pickFile('cover', setCoverPath)}
+                    className="border-slate-600 text-slate-400 shrink-0"
+                  >
+                    {t('editor.newSongDialog.browse')}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pickFile('cover', setCoverPath)}
-                  className="border-slate-600 text-slate-400 shrink-0"
-                >
-                  {t('editor.newSongDialog.browse')}
-                </Button>
+                <p className="text-[10px] text-white/40 pl-1">
+                  {t('editor.newSongDialog.formats.cover')}
+                </p>
+              </div>
+
+              {/* Background — local image file + optional URL (image or video/platform link).
+                  The background acts as the fallback layer when no video is available. */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <Wallpaper className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <Input
+                      value={backgroundPath}
+                      onChange={(e) => setBackgroundPath(e.target.value)}
+                      placeholder={t('editor.newSongDialog.noBackgroundSelected')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pickFile('background', setBackgroundPath)}
+                    className="border-slate-600 text-slate-400 shrink-0"
+                  >
+                    {t('editor.newSongDialog.browse')}
+                  </Button>
+                </div>
+                {/* Background URL — image URLs (visual fallback) or video URLs /
+                    platform links (played as a fallback video when no video is set). */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                    <Link2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                    <Input
+                      value={backgroundUrl}
+                      onChange={(e) => setBackgroundUrl(e.target.value)}
+                      placeholder={t('editor.newSongDialog.backgroundUrlPlaceholder')}
+                      className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                      inputMode="url"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-white/40 pl-1">
+                  {t('editor.newSongDialog.formats.background')}
+                </p>
               </div>
             </div>
           </div>

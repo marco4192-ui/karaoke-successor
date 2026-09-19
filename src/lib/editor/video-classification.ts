@@ -85,3 +85,34 @@ export function classifyVideoInput(raw: string): Partial<Song> {
   // Local file name — keep as-is (trimmed)
   return { ...cleared, videoFile: trimmed };
 }
+
+/**
+ * Classify raw #BACKGROUND user input (image URL or video URL / platform
+ * link) into the matching Song fields:
+ *   - streaming-platform link or direct video URL → videoBackground
+ *     (fallback video source AFTER the #VIDEO/#SOURCE platform fields in
+ *     the game's priority chain — #VIDEO always wins when both exist)
+ *   - image URL (or any other http(s) URL without a video signature) →
+ *     backgroundImage (the visual fallback when the video is missing/broken)
+ * Non-http input (local file names) is ignored — local background images
+ * belong to the file picker (backgroundFile / relativeBackgroundPath).
+ */
+export function classifyBackgroundInput(raw: string): Partial<Song> {
+  const trimmed = raw.trim();
+  if (!trimmed) return {};
+
+  // Embed codes (&amp;-escaped or not) are reduced to their bare src URL.
+  const url = normalizeVideoUrlInput(trimmed);
+  if (!/^https?:\/\//i.test(url)) return {};
+
+  // Platform links (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico)
+  if (detectVideoPlatform(url)) {
+    return { videoBackground: url };
+  }
+  // Direct video file URLs (mp4/webm/…)
+  if (isDirectVideoUrl(url)) {
+    return { videoBackground: url };
+  }
+  // Everything else http(s) → treat as image URL
+  return { backgroundImage: url };
+}

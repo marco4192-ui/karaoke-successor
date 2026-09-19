@@ -20,7 +20,7 @@
 
 import { Song, Difficulty } from '@/types/game';
 import type { DuetPlayerTag } from '@/lib/parsers/duet-markers';
-import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl, isDirectVideoUrl, normalizeVideoUrlInput } from '@/lib/url-utils';
+import { isYouTubeUrl, isDailymotionUrl, isVimeoUrl, isRutubeUrl, isVkVideoUrl, isBilibiliUrl, isNiconicoUrl, isDirectVideoUrl, normalizeVideoUrlInput, detectVideoPlatform } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
@@ -40,13 +40,14 @@ export interface UltraStarSong {
   artist: string;
   mp3: string;
   video?: string;
-  youtubeUrl?: string; // YouTube video URL (from #VIDEO: if it's a URL)
-  dailymotionUrl?: string; // Dailymotion video URL (from #VIDEO:)
-  vimeoUrl?: string; // Vimeo video URL (from #VIDEO:)
-  rutubeUrl?: string; // Rutube video URL (from #VIDEO:) — postMessage Player API
-  vkVideoUrl?: string; // VK video URL (from #VIDEO:) — official videoplayer.js SDK (needs Export-URL hash)
-  bilibiliUrl?: string; // Bilibili video URL (from #VIDEO:) — iframe + manual start gate
-  nicovideoUrl?: string; // Niconico video URL (from #VIDEO:) — unofficial jsapi
+  youtubeUrl?: string; // YouTube video URL (from #VIDEO:/#SOURCE: if it's a URL)
+  dailymotionUrl?: string; // Dailymotion video URL (from #VIDEO:/#SOURCE:)
+  vimeoUrl?: string; // Vimeo video URL (from #VIDEO:/#SOURCE:)
+  rutubeUrl?: string; // Rutube video URL (from #VIDEO:/#SOURCE:) — postMessage Player API
+  vkVideoUrl?: string; // VK video URL (from #VIDEO:/#SOURCE:) — official videoplayer.js SDK (needs Export-URL hash)
+  bilibiliUrl?: string; // Bilibili video URL (from #VIDEO:/#SOURCE:) — iframe + manual start gate
+  nicovideoUrl?: string; // Niconico video URL (from #VIDEO:/#SOURCE:) — unofficial jsapi
+  backgroundVideo?: string; // #BACKGROUND: video URL (direct or platform link) — becomes videoBackground (fallback video source AFTER #VIDEO)
   videoGap?: number;
   cover?: string;
   background?: string;
@@ -71,6 +72,66 @@ export interface UltraStarSong {
   isDuet?: boolean;
   /** Voice names, index 0-3 → P1/P2/P4/P8. */
   duetPlayerNames?: string[];
+}
+
+/** Image extensions for the #BACKGROUND tag — values ending in these stay background images. */
+const BACKGROUND_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
+
+/**
+ * True when a #BACKGROUND value looks like a VIDEO source instead of an image:
+ * not an image extension AND (direct video URL or a streaming-platform link).
+ */
+function isBackgroundVideoValue(value: string): boolean {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  if (BACKGROUND_IMAGE_EXTENSIONS.some(ext => lower.endsWith(ext))) return false;
+  // Platform links (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico)
+  if (detectVideoPlatform(normalizeVideoUrlInput(value))) return true;
+  // Direct video file URLs (.mp4, .webm, …)
+  return isDirectVideoUrl(value);
+}
+
+/**
+ * Classify a #VIDEO / #SOURCE header value into the UltraStarSong URL fields.
+ * Both keys share the EXACT same platform classification — #SOURCE is the new
+ * convention for video URLs (both keys are parsed, writers emit #SOURCE).
+ */
+function classifyVideoHeaderValue(song: UltraStarSong, rawValue: string): void {
+  // The raw value may be a FULL iframe embed code (VK „Einbetten“)
+  // or an &amp;-escaped URL — normalizeVideoUrlInput reduces embed
+  // snippets to their src URL and unescapes entities BEFORE the
+  // startsWith('http') gate (an embed code would fail that check).
+  const videoValue = normalizeVideoUrlInput(rawValue);
+  if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
+    if (isYouTubeUrl(videoValue)) {
+      // YouTube URL — store separately for YouTube player
+      song.youtubeUrl = videoValue;
+    } else if (isDailymotionUrl(videoValue)) {
+      // Dailymotion URL — official ad events on embeds
+      song.dailymotionUrl = videoValue;
+    } else if (isVimeoUrl(videoValue)) {
+      // Vimeo URL — ad-free embeds with player.js SDK
+      song.vimeoUrl = videoValue;
+    } else if (isRutubeUrl(videoValue)) {
+      // Rutube URL — postMessage Player API (playStart/currentTime)
+      song.rutubeUrl = videoValue;
+    } else if (isVkVideoUrl(videoValue)) {
+      // VK Video URL — official SDK; hash only in Export URLs
+      song.vkVideoUrl = videoValue;
+    } else if (isBilibiliUrl(videoValue)) {
+      // Bilibili URL — iframe embed, manual start gate
+      song.bilibiliUrl = videoValue;
+    } else if (isNiconicoUrl(videoValue)) {
+      // Niconico URL — unofficial jsapi embed
+      song.nicovideoUrl = videoValue;
+    } else {
+      // Direct video URL (MP4, WebM, etc.) — play via HTML5 <video> element
+      // Stored in video field, which becomes videoBackground later
+      song.video = videoValue;
+    }
+  } else {
+    song.video = videoValue;
+  }
 }
 
 // Parse UltraStar txt file content
@@ -116,44 +177,13 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
           case 'MP3':
             song.mp3 = value.trim();
             break;
-          case 'VIDEO': {
-            // Classify URL: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili,
-            // Niconico, direct video file, or local path.
-            // The raw value may be a FULL iframe embed code (VK „Einbetten“)
-            // or an &amp;-escaped URL — normalizeVideoUrlInput reduces embed
-            // snippets to their src URL and unescapes entities BEFORE the
-            // startsWith('http') gate (an embed code would fail that check).
-            const videoValue = normalizeVideoUrlInput(value);
-            if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
-              if (isYouTubeUrl(videoValue)) {
-                // YouTube URL — store separately for YouTube player
-                song.youtubeUrl = videoValue;
-              } else if (isDailymotionUrl(videoValue)) {
-                // Dailymotion URL — official ad events on embeds
-                song.dailymotionUrl = videoValue;
-              } else if (isVimeoUrl(videoValue)) {
-                // Vimeo URL — ad-free embeds with player.js SDK
-                song.vimeoUrl = videoValue;
-              } else if (isRutubeUrl(videoValue)) {
-                // Rutube URL — postMessage Player API (playStart/currentTime)
-                song.rutubeUrl = videoValue;
-              } else if (isVkVideoUrl(videoValue)) {
-                // VK Video URL — official SDK; hash only in Export URLs
-                song.vkVideoUrl = videoValue;
-              } else if (isBilibiliUrl(videoValue)) {
-                // Bilibili URL — iframe embed, manual start gate
-                song.bilibiliUrl = videoValue;
-              } else if (isNiconicoUrl(videoValue)) {
-                // Niconico URL — unofficial jsapi embed
-                song.nicovideoUrl = videoValue;
-              } else {
-                // Direct video URL (MP4, WebM, etc.) — play via HTML5 <video> element
-                // Stored in video field, which becomes videoBackground later
-                song.video = videoValue;
-              }
-            } else {
-              song.video = videoValue;
-            }
+          case 'VIDEO':
+          case 'SOURCE': {
+            // #VIDEO and #SOURCE are treated EXACTLY the same: the value is
+            // classified as YouTube / Dailymotion / Vimeo / Rutube / VK /
+            // Bilibili / Niconico / direct video URL / local path.
+            // #SOURCE is the new writer convention (generateUltraStarTxt).
+            classifyVideoHeaderValue(song, value);
             break;
           }
           case 'VIDEOGAP':
@@ -162,9 +192,21 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
           case 'COVER':
             song.cover = value.trim();
             break;
-          case 'BACKGROUND':
-            song.background = value.trim();
+          case 'BACKGROUND': {
+            // #BACKGROUND may hold an image file/URL — or a VIDEO source
+            // (direct video URL / platform link). Images keep mapping to
+            // `background` (→ song.backgroundImage); video values go to
+            // `backgroundVideo`, which convertUltraStarToSong promotes to
+            // song.videoBackground — a fallback video source that the game's
+            // priority chain uses AFTER the #VIDEO/#SOURCE platform URLs.
+            const bgValue = value.trim();
+            if (isBackgroundVideoValue(bgValue)) {
+              song.backgroundVideo = bgValue;
+            } else {
+              song.background = bgValue;
+            }
             break;
+          }
           case 'BPM':
             // BPM can be decimal or comma-separated
             song.bpm = parseFloat(value.replace(',', '.')) || 120;
@@ -411,6 +453,14 @@ export function convertUltraStarToSong(
     }
   }
 
+  // #BACKGROUND video URL (direct or platform link) — fallback video source
+  // AFTER every #VIDEO/#SOURCE-derived source (platform URLs + direct/local
+  // video files). useYouTubeGame's priority chain picks platform URLs from the
+  // dedicated fields FIRST, then from videoBackground — exactly this order.
+  if (!videoBackground && !youtubeUrl && !dailymotionUrl && !vimeoUrl && !rutubeUrl && !vkVideoUrl && !bilibiliUrl && !nicovideoUrl && ultraStar.backgroundVideo) {
+    videoBackground = ultraStar.backgroundVideo;
+  }
+
   return {
     id: `imported-${crypto.randomUUID()}`,
     title: ultraStar.title,
@@ -489,25 +539,26 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#BACKGROUND:${song.backgroundFile}`);
   }
 
-  // Video (file or URL)
+  // Video (file or URL) — written as #SOURCE (new convention; the parser
+  // accepts BOTH #SOURCE and #VIDEO, older files keep working)
   if (song.youtubeUrl) {
-    lines.push(`#VIDEO:${song.youtubeUrl}`);
+    lines.push(`#SOURCE:${song.youtubeUrl}`);
   } else if (song.dailymotionUrl) {
-    lines.push(`#VIDEO:${song.dailymotionUrl}`);
+    lines.push(`#SOURCE:${song.dailymotionUrl}`);
   } else if (song.vimeoUrl) {
-    lines.push(`#VIDEO:${song.vimeoUrl}`);
+    lines.push(`#SOURCE:${song.vimeoUrl}`);
   } else if (song.rutubeUrl) {
-    lines.push(`#VIDEO:${song.rutubeUrl}`);
+    lines.push(`#SOURCE:${song.rutubeUrl}`);
   } else if (song.vkVideoUrl) {
-    lines.push(`#VIDEO:${song.vkVideoUrl}`);
+    lines.push(`#SOURCE:${song.vkVideoUrl}`);
   } else if (song.bilibiliUrl) {
-    lines.push(`#VIDEO:${song.bilibiliUrl}`);
+    lines.push(`#SOURCE:${song.bilibiliUrl}`);
   } else if (song.nicovideoUrl) {
-    lines.push(`#VIDEO:${song.nicovideoUrl}`);
+    lines.push(`#SOURCE:${song.nicovideoUrl}`);
   } else if (song.videoFile) {
-    lines.push(`#VIDEO:${song.videoFile}`);
+    lines.push(`#SOURCE:${song.videoFile}`);
   } else if (song.videoBackground) {
-    lines.push(`#VIDEO:${song.videoBackground}`);
+    lines.push(`#SOURCE:${song.videoBackground}`);
   }
 
   // Video Gap

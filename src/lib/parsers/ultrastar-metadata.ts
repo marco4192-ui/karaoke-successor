@@ -133,12 +133,14 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
       const tag = trimmedLine.substring(1, trimmedLine.indexOf(':'));
       const idx = headerNameIndex[tag] ?? 0;
       voiceNames[idx] = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim() || `Player ${idx + 1}`;
-    } else if (trimmedLine.startsWith('#VIDEO:')) {
+    } else if (trimmedLine.startsWith('#VIDEO:') || trimmedLine.startsWith('#SOURCE:')) {
       // Classify streaming-platform URLs (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico).
+      // #SOURCE: is the new video-URL key convention — parsed EXACTLY like #VIDEO:
+      // (both keys are accepted; newly saved songs write #SOURCE).
       // The value may be a plain URL, a DIRECT video-file URL or even a full
       // iframe embed code (VK „Einbetten“) — normalizeVideoUrlInput reduces
       // embed snippets to their src URL and unescapes &amp; entities first.
-      const videoValue = normalizeVideoUrlInput(trimmedLine.substring(7));
+      const videoValue = normalizeVideoUrlInput(trimmedLine.substring(trimmedLine.startsWith('#VIDEO:') ? 7 : 8));
       if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
         const platform = detectVideoPlatform(videoValue);
         if (platform === 'youtube') youtubeUrl = videoValue;

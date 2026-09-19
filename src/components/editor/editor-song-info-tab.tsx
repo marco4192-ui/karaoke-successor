@@ -119,11 +119,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         <Separator className="bg-slate-700" />
 
-        {/* Video — the effective #VIDEO source (R4 point 9): shows the REAL
+        {/* Video — the effective #VIDEO/#SOURCE source (R4 point 9): shows the REAL
             video file name for local videos (derived from the media path) and
             the platform URL for streaming songs — never the playback blob URL. */}
         <div className="space-y-2">
-          <Label htmlFor="song-video" className="text-slate-400 text-xs">{t('editor.songInfoTab.videoUrl')}</Label>
+          <Label htmlFor="song-video" className="text-slate-400 text-xs">
+            {t('editor.songInfoTab.videoUrl')}
+            <span className="ml-1.5 font-mono text-[10px] text-slate-600">#VIDEO:/#SOURCE:</span>
+          </Label>
           <Input
             id="song-video"
             name="song-video"
@@ -139,6 +142,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             className="bg-slate-800 border-slate-600"
           />
           <p className="text-[10px] text-slate-500">{t('editor.metadataTab.videoHint')}</p>
+          <p className="text-[10px] text-slate-500">{t('editor.newSongDialog.videoKeyNote')}</p>
         </div>
 
         {/* Video Gap */}

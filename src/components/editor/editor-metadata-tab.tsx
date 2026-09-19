@@ -100,9 +100,10 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
           />
         </div>
 
-        {/* VIDEO File / URL — accepts local names, URLs and full embed codes */}
+        {/* VIDEO File / URL — accepts local names, URLs and full embed codes.
+            #SOURCE: is the new key convention — both keys are parsed identically. */}
         <div className="space-y-2">
-          <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO:</Label>
+          <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO: / #SOURCE:</Label>
           <Input
             id="meta-video"
             value={getEffectiveVideoValue(song)}
@@ -119,6 +120,9 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
           />
           <p className="text-[10px] text-slate-500">
             {t('editor.metadataTab.videoHint')}
+          </p>
+          <p className="text-[10px] text-slate-500">
+            {t('editor.newSongDialog.videoKeyNote')}
           </p>
         </div>
 
