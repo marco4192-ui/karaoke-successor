@@ -30,6 +30,7 @@ import {
 } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
 import { ModeWarningBanner } from '@/components/game/hud/mode-warning-banner';
+import { MidiAudioSource } from '@/components/game/midi-audio-source';
 import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 
 // ===================== GAME SCREEN =====================
@@ -103,6 +104,11 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
         )}
 
+        {/* MIDI music indicator — the song's music is synthesized live */}
+        {g.midiMusicActive && (
+          <span className="text-xs text-emerald-400/80 font-medium px-2 py-1 bg-emerald-500/10 rounded">{t('gameScreen.midiSynth')}</span>
+        )}
+
         {/* Right: Fullscreen > Difficulty > Webcam (right to left) — matching glass panel */}
         <div className="flex items-center gap-1.5 rounded-2xl bg-black/35 backdrop-blur-md border border-white/10 p-1.5 shadow-lg shadow-black/40">
           <GameScoreDisplay
@@ -133,7 +139,9 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       {/* key=song.id forces React to create a fresh DOM element per song,
           preventing "already connected to different MediaElementSourceNode" errors
           when useSongEnergy calls createMediaElementSource */}
-      {g.effectiveSong?.audioUrl && (
+      {/* MIDI/KAR music: no <audio> element — the bridge assigns an
+          HTMLAudioElement-compatible Web Audio synth adapter to audioRef. */}
+      {g.effectiveSong?.audioUrl && !g.midiMusicActive && (
         <audio
           key={g.effectiveSong.id}
           ref={g.audioElRefCallback}
@@ -153,6 +161,16 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
           onCanPlay={() => { g.audioLoadedRef.current = true; }}
           preload="auto"
+        />
+      )}
+      {g.midiMusicActive && g.effectiveSong?.audioUrl && (
+        <MidiAudioSource
+          audioRef={g.audioRef}
+          audioUrl={g.effectiveSong.audioUrl}
+          songId={g.effectiveSong.id}
+          masterVolume={g.masterVolume}
+          onEnded={g.endGameAndCleanup}
+          onReady={() => { g.audioLoadedRef.current = true; }}
         />
       )}
 

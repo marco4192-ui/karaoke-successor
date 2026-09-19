@@ -62,6 +62,7 @@ gameScreen: {
   backToLibrary: 'Zurück zur Bibliothek',
   pause: '⏸ Pause',
   lowPerf: '⚡ Niedrige Perf.',
+  midiSynth: '🎛 MIDI-Synthese',
   youtubeErrorDeleted: 'YouTube-Video nicht gefunden (gelöscht oder privat)',
   youtubeErrorEmbed: 'Dieses Video kann nicht eingebettet werden (Einbettungssperre)',
   youtubeErrorVevo: 'Dieses Video kann nicht eingebettet werden (Vevo/Einbettungssperre)',

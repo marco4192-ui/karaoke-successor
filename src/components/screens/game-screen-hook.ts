@@ -32,6 +32,7 @@ import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
+import { isMidiSongMusic } from '@/lib/audio/midi-synth';
 import {
   applyLoudnessVolume,
   clearLoudnessGain,
@@ -250,6 +251,13 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
 
   // Webcam background state - SEPARATE camera for filming singers
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>({ ...DEFAULT_WEBCAM_CONFIG });
+
+  // ── MIDI/KAR as the song's music file → Web Audio synthesis ──
+  // A .mid/.midi/.kar "#MP3" cannot be decoded by <audio>; game-screen.tsx
+  // then renders <MidiAudioSource> instead of the hidden <audio> element and
+  // the audioRef receives an HTMLAudioElement-compatible synth adapter.
+  const midiAudioUrl = effectiveSong?.audioUrl ?? null;
+  const midiMusicActive = !!midiAudioUrl && isMidiSongMusic(effectiveSong, midiAudioUrl);
 
   // SAFETY: Ensure at least one player exists before game starts
   useEffect(() => {
@@ -530,7 +538,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     p2ScoringState: p2State,
     p1PerfectNotesCount,
     playbackRate: practiceMode.playbackRate,
-    isNativeAudio: nativeAudio.enabled,
+    // MIDI songs always use the Web Audio engine — native audio (ASIO/WASAPI)
+    // cannot synthesize MIDI, so the fake element's output must stay unmuted.
+    isNativeAudio: nativeAudio.enabled && !midiMusicActive,
     nativeAudioTime: nativeAudio.currentPosition,
     nativeAudioPlay: nativeAudio.play,
     nativeAudioPause: nativeAudio.pause,
@@ -663,6 +673,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     audioLoadedRef,
     videoLoadedRef,
     audioElRefCallback,
+    /** True when the song's music file is a MIDI/KAR played via the synth engine. */
+    midiMusicActive,
     displayDuration,
     setDisplayDuration,
     nativeAudio,

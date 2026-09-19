@@ -55,6 +55,8 @@ export interface GameScreenHookReturn {
   audioLoadedRef: React.RefObject<boolean>;
   videoLoadedRef: React.RefObject<boolean>;
   audioElRefCallback: (el: HTMLAudioElement | null) => void;
+  /** True when the song's music file is a MIDI/KAR played via the Web Audio synth engine. */
+  midiMusicActive: boolean;
   displayDuration: number;
   setDisplayDuration: React.Dispatch<React.SetStateAction<number>>;
   nativeAudio: ReturnType<typeof useNativeAudio>;

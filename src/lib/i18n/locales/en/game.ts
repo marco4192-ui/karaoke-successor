@@ -67,6 +67,7 @@ export const gameTranslations = {
     backToLibrary: 'Back to Library',
     pause: '⏸ Pause',
     lowPerf: '⚡ Low-Perf',
+    midiSynth: '🎛 MIDI Synthesis',
     youtubeErrorDeleted: 'YouTube video not found (deleted or private)',
     youtubeErrorEmbed: 'This video cannot be embedded (embedding disabled)',
     youtubeErrorVevo: 'This video cannot be embedded (Vevo/embedding restriction)',
