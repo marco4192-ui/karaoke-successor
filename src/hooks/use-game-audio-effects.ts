@@ -1,19 +1,32 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, type RefObject } from 'react';
 import { AudioEffectsEngine, AUDIO_PRESETS, type AudioEffectPreset } from '@/lib/audio/audio-effects';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { useGameStore } from '@/lib/game/store';
+import { StorageKeys, getNumber, setItem } from '@/lib/storage';
+import {
+  setVocalRemoval,
+  clearVocalRemoval,
+  getVocalFilterUnsupportedReason,
+  type VocalFilterUnsupportedReason,
+} from '@/lib/audio/vocal-filter';
 
 interface UseGameAudioEffectsOptions {
   /** Ref to the <audio> element playing the song. */
   audioRef?: RefObject<HTMLAudioElement | null>;
   /** Ref to the <video> element playing background video. */
   videoRef?: RefObject<HTMLVideoElement | null>;
+  /** True when the song's music is the Web Audio MIDI synth adapter — the vocal filter is a no-op then. */
+  midiMusicActive?: boolean;
+  /** The song's own audio-file URL (null → music comes from the platform player / embedded video). */
+  songAudioUrl?: string | null;
+  /** True when native audio (ASIO/WASAPI) bypasses the <audio> element's output. */
+  nativeAudioEnabled?: boolean;
 }
 
 /**
- * Hook for managing audio effects (reverb, echo) during gameplay.
+ * Hook for managing audio effects (reverb, echo, vocal filter) during gameplay.
  * Audio effects are initialized lazily — only when the user opens the panel.
  *
  * IMPORTANT: We reuse the existing MediaStream AND AudioContext from the
@@ -27,9 +40,16 @@ interface UseGameAudioEffectsOptions {
  * 2. Await AudioEffects initialization (which connects to AudioContext.destination)
  * 3. After init completes, restore media positions (which may have been reset)
  * 4. When closing the panel, resumeGame() plays audio from the correct position
+ *
+ * The VOCAL FILTER (Gesangsfilter) is independent of the mic effects engine:
+ * it runs on the song's <audio> element through the SHARED media context
+ * (getSharedMediaSource), NOT on the PitchDetector context — a
+ * MediaElementAudioSourceNode chain cannot cross AudioContexts (see
+ * src/lib/audio/vocal-filter.ts). It therefore works even when the mic
+ * effects engine failed to initialize.
  */
 export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
-  const { audioRef, videoRef } = options || {};
+  const { audioRef, videoRef, midiMusicActive = false, songAudioUrl = null, nativeAudioEnabled = false } = options || {};
   const pauseGame = useGameStore((s) => s.pauseGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
   const gameStatus = useGameStore((s) => s.gameState.status);
@@ -38,6 +58,23 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [reverbAmount, setReverbAmount] = useState(0);
   const [echoAmount, setEchoAmount] = useState(0);
+
+  // ── Vocal filter (Gesangsfilter): persisted 0..1, applied to the song's
+  // <audio> element via the shared media source. 0 = off. The initial value
+  // comes from localStorage so the setting survives sessions; it is applied
+  // on game start by the game-screen volume effect (piggybacked after
+  // applyLoudnessVolume) and directly whenever the user moves the slider.
+  const [vocalFilterAmount, setVocalFilterAmountState] = useState(() =>
+    Math.min(1, Math.max(0, getNumber(StorageKeys.VOCAL_FILTER_AMOUNT, 0))),
+  );
+  /** Latest amount without re-rendering — read by the game-screen piggyback. */
+  const vocalFilterAmountRef = useRef(vocalFilterAmount);
+
+  /** Why the vocal filter is unavailable for the current song/medium (null = available). */
+  const vocalFilterUnsupportedReason: VocalFilterUnsupportedReason | null = useMemo(
+    () => getVocalFilterUnsupportedReason({ midiMusicActive, songAudioUrl, nativeAudioEnabled }),
+    [midiMusicActive, songAudioUrl, nativeAudioEnabled],
+  );
 
   // Store saved positions so we can restore them after init
   const savedPositionsRef = useRef<{ audio: number | null; video: number | null }>({
@@ -145,15 +182,19 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     setShowAudioEffects(prev => !prev);
   }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus, audioRef, videoRef, restoreMediaPositions]);
 
-  // Cleanup audio effects on unmount
+  // Cleanup audio effects on unmount — also bypass the vocal filter chain
+  // so the (about-to-be-discarded) element is left in pristine routing.
   useEffect(() => {
     return () => {
       if (audioEffectsRef.current) {
         audioEffectsRef.current.disconnect();
         audioEffectsRef.current = null;
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount cleanup intentionally reads the CURRENT element (latest song), not a stale mount-time snapshot
+      const el = audioRef?.current;
+      if (el) clearVocalRemoval(el);
     };
-  }, []);
+  }, [audioRef]);
 
   // Wire reverb/echo state changes to the audio effects engine
   useEffect(() => {
@@ -176,6 +217,26 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     if (presetSettings.delay) setEchoAmount(presetSettings.delay.mix ?? 0);
   }, [audioEffectsRef]);
 
+  /**
+   * Set the vocal filter amount (0..1). Persists to localStorage, updates the
+   * UI state and applies it to the song's audio element immediately (the
+   * Web Audio chain is built lazily on the first non-zero amount). No-op when
+   * the filter is unavailable for the current medium — setVocalRemoval's
+   * internal guards (cross-origin / MIDI adapter) are the second line of
+   * defense and simply return false (playback never breaks).
+   */
+  const setVocalFilterAmount = useCallback((val: number) => {
+    if (vocalFilterUnsupportedReason) return; // locked for this medium
+    const clamped = Math.min(1, Math.max(0, Number.isFinite(val) ? val : 0));
+    setVocalFilterAmountState(clamped);
+    vocalFilterAmountRef.current = clamped;
+    setItem(StorageKeys.VOCAL_FILTER_AMOUNT, String(clamped));
+    const el = audioRef?.current;
+    if (el) {
+      void setVocalRemoval(el, clamped);
+    }
+  }, [audioRef, vocalFilterUnsupportedReason]);
+
   return {
     audioEffects,
     setAudioEffects,
@@ -186,5 +247,12 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     echoAmount,
     setEchoAmount,
     applyEffectPreset,
+    /** Vocal filter (0..1, persisted; 0 = off). */
+    vocalFilterAmount,
+    setVocalFilterAmount,
+    /** Latest vocal-filter amount without re-render (game-start piggyback). */
+    vocalFilterAmountRef,
+    /** null = vocal filter available; otherwise the reason it is not. */
+    vocalFilterUnsupportedReason,
   };
 }

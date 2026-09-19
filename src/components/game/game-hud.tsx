@@ -3,6 +3,7 @@
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { PRESET_LABELS } from '@/lib/audio/audio-effects';
 import type { AudioEffectPreset } from '@/lib/audio/audio-effects';
+import type { VocalFilterUnsupportedReason } from '@/lib/audio/vocal-filter';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== AUDIO EFFECTS BUTTON =====================
@@ -37,9 +38,22 @@ interface AudioEffectsPanelProps {
   onReverbChange: (_val: number) => void;
   onEchoChange: (_val: number) => void;
   onApplyPreset: (_preset: AudioEffectPreset) => void;
+  /** Vocal filter (Gesangsfilter) amount 0..1 — 0 = off. */
+  vocalFilterAmount: number;
+  onVocalFilterChange: (_val: number) => void;
+  /** null = vocal filter available; otherwise why it is not (row rendered disabled). */
+  vocalFilterUnsupportedReason: VocalFilterUnsupportedReason | null;
 }
 
 const PRESET_KEYS = Object.keys(PRESET_LABELS) as AudioEffectPreset[];
+
+/** i18n key per unavailability reason (tooltip explaining why). */
+const VOCAL_FILTER_REASON_KEYS: Record<VocalFilterUnsupportedReason, string> = {
+  midi: 'gameHud.vocalFilterReasonMidi',
+  platform: 'gameHud.vocalFilterReasonPlatform',
+  crossorigin: 'gameHud.vocalFilterReasonCrossOrigin',
+  native: 'gameHud.vocalFilterReasonNative',
+};
 
 export function AudioEffectsPanel({
   show,
@@ -49,10 +63,23 @@ export function AudioEffectsPanel({
   onReverbChange,
   onEchoChange,
   onApplyPreset,
+  vocalFilterAmount,
+  onVocalFilterChange,
+  vocalFilterUnsupportedReason,
 }: AudioEffectsPanelProps) {
   const { t } = useTranslation();
 
   if (!show) return null;
+
+  const vocalFilterUnavailable = vocalFilterUnsupportedReason !== null;
+  const vocalFilterLabel = vocalFilterUnavailable
+    ? t('gameHud.vocalFilterUnavailable')
+    : vocalFilterAmount <= 0
+      ? t('gameHud.vocalFilterOff')
+      : t('gameHud.vocalFilter').replace('{n}', String(Math.round(vocalFilterAmount * 100)));
+  const vocalFilterTooltip = vocalFilterUnavailable
+    ? t(VOCAL_FILTER_REASON_KEYS[vocalFilterUnsupportedReason])
+    : undefined;
 
   return (
     <div className="fixed bottom-60 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
@@ -91,6 +118,35 @@ export function AudioEffectsPanel({
             data-testid="game-hud-echo-slider"
             aria-label="Echo"
           />
+        </div>
+        {/* Vocal filter (Gesangsfilter) — karaoke-style center-channel
+            cancellation (L−R) on the song's <audio> element. Disabled with a
+            hint when the medium cannot be filtered (platform audio / MIDI
+            synth / cross-origin / native audio output). */}
+        <div title={vocalFilterTooltip}>
+          <span className={`text-xs block ${vocalFilterUnavailable ? 'text-white/40' : 'text-white/60'}`}>
+            {vocalFilterLabel}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={Math.round(vocalFilterAmount * 100)}
+            onChange={(e) => {
+              const val = parseInt(e.target.value) / 100;
+              onVocalFilterChange(val);
+            }}
+            disabled={vocalFilterUnavailable}
+            className={`w-full accent-rose-500 ${vocalFilterUnavailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+            data-testid="game-hud-vocal-filter-slider"
+            aria-label={t('gameHud.vocalFilterLabel')}
+            title={vocalFilterTooltip}
+          />
+          {vocalFilterUnavailable && (
+            <p className="text-[10px] text-white/40 mt-0.5" data-testid="game-hud-vocal-filter-unavailable">
+              {t('gameHud.vocalFilterUnavailableShort')}
+            </p>
+          )}
         </div>
         <div>
           <span className="text-xs text-white/60 mb-1 block">{t('gameHud.presets')}</span>

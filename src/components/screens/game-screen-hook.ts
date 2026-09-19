@@ -33,6 +33,7 @@ import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
 import { isMidiSongMusic } from '@/lib/audio/midi-synth';
+import { setVocalRemoval, clearVocalRemoval } from '@/lib/audio/vocal-filter';
 import {
   applyLoudnessVolume,
   clearLoudnessGain,
@@ -213,19 +214,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // Mobile client state - pitch polling extracted to dedicated hook
   const { mobilePitch } = useMobilePitchPolling(song);
 
-  // Audio effects - lazy init, cleanup managed by hook.
-  const {
-    audioEffects,
-    setAudioEffects,
-    showAudioEffects,
-    toggleAudioEffects,
-    reverbAmount,
-    setReverbAmount,
-    echoAmount,
-    setEchoAmount,
-    applyEffectPreset,
-  } = useGameAudioEffects({ audioRef, videoRef });
-
   // YouTube + Ad handling - URL extraction, ad callbacks, countdown
   const {
     youtubeVideoId,
@@ -258,6 +246,32 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // the audioRef receives an HTMLAudioElement-compatible synth adapter.
   const midiAudioUrl = effectiveSong?.audioUrl ?? null;
   const midiMusicActive = !!midiAudioUrl && isMidiSongMusic(effectiveSong, midiAudioUrl);
+
+  // Audio effects - lazy init, cleanup managed by hook. Also carries the
+  // vocal filter (Gesangsfilter): it needs to know whether the music is the
+  // MIDI synth (no-op), comes from the song's own audio file (filterable) or
+  // from a platform player / native audio output (unavailable).
+  const {
+    audioEffects,
+    setAudioEffects,
+    showAudioEffects,
+    toggleAudioEffects,
+    reverbAmount,
+    setReverbAmount,
+    echoAmount,
+    setEchoAmount,
+    applyEffectPreset,
+    vocalFilterAmount,
+    setVocalFilterAmount,
+    vocalFilterAmountRef,
+    vocalFilterUnsupportedReason,
+  } = useGameAudioEffects({
+    audioRef,
+    videoRef,
+    midiMusicActive,
+    songAudioUrl: midiMusicActive ? null : (effectiveSong?.audioUrl ?? null),
+    nativeAudioEnabled: nativeAudio.enabled,
+  });
 
   // SAFETY: Ensure at least one player exists before game starts
   useEffect(() => {
@@ -604,7 +618,12 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     // re-created per song via key={song.id}) so cleanup clears the right one.
     const el = audioRef.current;
     let cancelled = false;
-    if (el) clearLoudnessGain(el);
+    if (el) {
+      clearLoudnessGain(el);
+      // Vocal filter: bypass the old element's chain (it is discarded with
+      // the song change, but leaving pristine routing is defensive and free).
+      clearVocalRemoval(el);
+    }
     if (!songLoudnessId || !songLoudnessUrl || !loudnessNormalization) return;
     getSongLoudnessGainDb(songLoudnessId, songLoudnessUrl)
       .then((gainDb) => {
@@ -616,7 +635,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
       });
     return () => {
       cancelled = true;
-      if (el) clearLoudnessGain(el);
+      if (el) {
+        clearLoudnessGain(el);
+        clearVocalRemoval(el);
+      }
     };
   }, [songLoudnessId, songLoudnessUrl, loudnessNormalization, audioRef]);
 
@@ -626,6 +648,15 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   useEffect(() => {
     if (audioRef.current) {
       applyLoudnessVolume(audioRef.current, masterVolume, loudnessGainDb);
+      // ── Vocal filter piggyback: apply the persisted amount on game start
+      // and on every song change / volume change (the filter's dry factor
+      // lives on its own node, so re-applying after loudness is conflict-free
+      // — see vocal-filter.ts). Ref-read keeps slider drags out of the deps.
+      // Guarded: MIDI synth music has no element source, and setVocalRemoval's
+      // own guards (cross-origin etc.) remain the second line of defense.
+      if (!midiMusicActive && vocalFilterAmountRef.current > 0) {
+        void setVocalRemoval(audioRef.current, vocalFilterAmountRef.current);
+      }
     }
     // The video element is only audible when it carries the song's embedded
     // audio (no separate audioUrl — in that case the gain is 0 anyway); when a
@@ -635,7 +666,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
       const factor = loudnessGainDb <= 0 ? Math.pow(10, loudnessGainDb / 20) : 1;
       videoRef.current.volume = Math.min(1, Math.max(0, (masterVolume / 100) * factor));
     }
-  }, [masterVolume, loudnessGainDb, songLoudnessId, audioRef, videoRef]);
+  }, [masterVolume, loudnessGainDb, songLoudnessId, midiMusicActive, vocalFilterAmountRef, audioRef, videoRef]);
 
   // Auto-fullscreen on game start (uses Tauri native API when available — Escape won't exit)
   useEffect(() => {
@@ -749,6 +780,11 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     echoAmount,
     setEchoAmount,
     applyEffectPreset,
+    /** Vocal filter (Gesangsfilter) — amount 0..1, persisted, 0 = off. */
+    vocalFilterAmount,
+    setVocalFilterAmount,
+    /** null = vocal filter available; otherwise the reason it is not. */
+    vocalFilterUnsupportedReason,
 
     // Webcam
     webcamConfig,

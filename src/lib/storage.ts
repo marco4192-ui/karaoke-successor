@@ -45,6 +45,8 @@ export const StorageKeys = {
   LOUDNESS_NORMALIZATION: 'karaoke-loudness-normalization',
   /** Per-song loudness normalization gains (songId → gainDb) */
   LOUDNESS_GAINS: 'karaoke-loudness-gains',
+  /** Vocal filter amount (0..1) — karaoke-style center-channel cancellation */
+  VOCAL_FILTER_AMOUNT: 'karaoke-vocal-filter-amount',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
 

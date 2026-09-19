@@ -358,6 +358,9 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           onReverbChange={g.setReverbAmount}
           onEchoChange={g.setEchoAmount}
           onApplyPreset={g.applyEffectPreset}
+          vocalFilterAmount={g.vocalFilterAmount}
+          onVocalFilterChange={g.setVocalFilterAmount}
+          vocalFilterUnsupportedReason={g.vocalFilterUnsupportedReason}
         />
 
         {/* Progress Bar — uses actual media duration when available */}

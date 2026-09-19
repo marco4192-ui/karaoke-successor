@@ -137,6 +137,11 @@ export interface GameScreenHookReturn {
   echoAmount: number;
   setEchoAmount: React.Dispatch<React.SetStateAction<number>>;
   applyEffectPreset: (preset: 'pop' | 'rock' | 'concert' | 'studio' | 'vintage' | 'ethereal' | 'power' | 'intimate') => void;
+  /** Vocal filter (Gesangsfilter) — amount 0..1, persisted, 0 = off. */
+  vocalFilterAmount: number;
+  setVocalFilterAmount: (val: number) => void;
+  /** null = vocal filter available; otherwise the reason it is not. */
+  vocalFilterUnsupportedReason: ReturnType<typeof useGameAudioEffects>['vocalFilterUnsupportedReason'];
 
   // Webcam
   webcamConfig: WebcamBackgroundConfig;
