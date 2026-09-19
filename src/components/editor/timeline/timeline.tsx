@@ -6,7 +6,7 @@ import type { Note, Song, NoteType, DuetPlayer } from '@/types/game';
 import { midiToNoteName, getNoteType, noteTypeFlags, NOTE_TYPE_CHARS } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info, ChevronUp } from 'lucide-react';
+import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info, ChevronUp, X } from 'lucide-react';
 import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,11 @@ interface TimelineProps {
    *  jumps to the SAME note retrigger (new object identity alone is not
    *  enough when parents memoize the command). */
   noteJumpCommand?: { noteId: string; nonce: number } | null;
+  /** MIDI/KAR comparison overlay (3.5): non-interactive reference notes drawn in
+   *  the note lanes (beat grid of the CURRENT song — the song is never changed). */
+  comparisonNotes?: Array<{ beat: number; lengthBeats: number; pitch: number }> | null;
+  /** Remove the comparison reference entirely (✕ in the legend chip). */
+  onClearComparison?: () => void;
 }
 
 // Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
@@ -111,7 +116,9 @@ export function Timeline({
   onCommitHistory,
   onNoteAdd,
   onLyricChange,
-  noteJumpCommand
+  noteJumpCommand,
+  comparisonNotes = null,
+  onClearComparison,
 }: TimelineProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -811,6 +818,44 @@ export function Timeline({
                 pitchHeight={lane.pitchHeight}
               />
 
+              {/* ── MIDI/KAR comparison overlay (3.5) ──
+                  Hollow, dashed outline blocks in the SAME coordinate space as
+                  NoteBlock (beat → x via the current song's bpm/gap, pitch → y),
+                  but pointer-events-none and painted BELOW the real notes.
+                  Pure editor state — never serialized, never exported. */}
+              {comparisonNotes && comparisonNotes.length > 0 && (
+                <div
+                  className="absolute inset-0 ml-8 pointer-events-none"
+                  aria-hidden
+                  data-testid="editor-comparison-layer"
+                >
+                  {comparisonNotes
+                    .filter(cn => cn.pitch >= lane.minPitch && cn.pitch <= lane.maxPitch)
+                    .map((cn, i) => {
+                      // Inverse of the export formula: beat n sits at GAP + n·15000/BPM
+                      const startMs = song.gap + cn.beat * detailBeatDuration;
+                      const startX = (startMs / 1000) * pixelsPerSecond - scrollOffset;
+                      const width = Math.max(6, (cn.lengthBeats * detailBeatDuration / 1000) * pixelsPerSecond);
+                      const blockHeight = Math.min(lane.pitchHeight - 1, Math.round(lane.pitchHeight * 0.9) + 3);
+                      // 2px vertical offset keeps overlaps with real notes readable
+                      const y = (lane.maxPitch - cn.pitch) * lane.pitchHeight + (lane.pitchHeight - blockHeight) / 2 + 2;
+                      if (startX + width < 0 || startX > viewport.width) return null;
+                      return (
+                        <div
+                          key={`cmp-${i}`}
+                          className="absolute rounded border-2 border-dashed border-amber-500/70 bg-amber-500/5 opacity-60"
+                          style={{
+                            left: `${startX}px`,
+                            top: `${y}px`,
+                            width: `${width}px`,
+                            height: `${blockHeight}px`,
+                          }}
+                        />
+                      );
+                    })}
+                </div>
+              )}
+
               {/* Pitch labels */}
               <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/80 border-r border-slate-700 z-20">
                 {Array.from({ length: Math.floor(lane.maxPitch - lane.minPitch) + 1 }, (_, i) => {
@@ -871,6 +916,38 @@ export function Timeline({
             </div>
           ))}
         </div>
+
+        {/* ── MIDI/KAR comparison legend chip (3.5) ──
+            Non-blocking (pointer-events-none) except the ✕ clear button,
+            which removes the reference overlay entirely. */}
+        {comparisonNotes && comparisonNotes.length > 0 && (
+          <div
+            className="absolute z-30 flex items-center gap-1.5 pl-1.5 pr-1 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-semibold tracking-wide backdrop-blur-sm pointer-events-none"
+            style={{ top: 4, left: LEFT_GUTTER + 8 }}
+            data-testid="editor-comparison-legend"
+          >
+            <span
+              className="w-3.5 h-2 rounded-sm border border-dashed border-amber-400/80 bg-amber-500/10"
+              aria-hidden
+            />
+            {t('editor.midiImport.comparisonLegend')}
+            {onClearComparison && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClearComparison();
+                }}
+                className="pointer-events-auto p-0.5 rounded hover:bg-amber-500/30 text-amber-300 transition-colors"
+                title={t('editor.midiImport.comparisonClear')}
+                aria-label={t('editor.midiImport.comparisonClear')}
+                data-testid="editor-comparison-clear"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Lyric track */}
         <div

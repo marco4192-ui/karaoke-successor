@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
-  Plus, Copy, Trash2, Scissors, Merge, Users, Mic, ArrowUpDown, Hand, Music, Star, Zap, Mic2,
+  Plus, Copy, Trash2, Scissors, Merge, Users, Mic, ArrowUpDown, Hand, Music, Star, Zap, Mic2, FileMusic, Music2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -56,6 +56,12 @@ interface EditorSubHeaderProps {
   /** Transpose ALL notes of the song by ±semitones (single undo step). */
   onTransposeAll: (_delta: number) => void;
   tapMode: TapModeState;
+  /** MIDI/KAR note import (3.2): opens the import dialog. */
+  onOpenMidiImport: () => void;
+  /** MIDI/KAR comparison overlay (3.5): first click loads a file, further clicks toggle visibility. */
+  onToggleMidiComparison: () => void;
+  /** True while the comparison overlay is loaded AND visible (button active state). */
+  comparisonActive: boolean;
 }
 
 const NOTE_TYPE_BUTTONS: Array<{
@@ -84,6 +90,9 @@ export function EditorSubHeader({
   onPlayerChange,
   onTransposeAll,
   tapMode,
+  onOpenMidiImport,
+  onToggleMidiComparison,
+  comparisonActive,
 }: EditorSubHeaderProps) {
   const { t } = useTranslation();
   const hasSelection = selectedCount > 0;
@@ -311,6 +320,32 @@ export function EditorSubHeader({
           {tapMode.isHolding ? t('editor.subHeader.tapHold') : t('editor.subHeader.tapPress')} · {t('editor.subHeader.tapNext')} #{tapMode.nextLyricIndex}
         </span>
       )}
+
+      <div className="w-px h-6 bg-slate-700 mx-0.5" aria-hidden />
+
+      {/* ── MIDI/KAR source tools (3.2 import + 3.5 comparison overlay) ── */}
+      {toolButton(t('editor.midiImport.importButton'), <FileMusic className="w-3.5 h-3.5" />, onOpenMidiImport, false, 'editor-sub-midi-import', 'hover:border-amber-500 hover:text-amber-300')}
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="sm"
+            onClick={onToggleMidiComparison}
+            aria-pressed={comparisonActive}
+            data-testid="editor-sub-midi-comparison"
+            className={cn(
+              'h-8 px-3 gap-1.5 font-semibold whitespace-nowrap transition-all',
+              comparisonActive
+                ? 'bg-gradient-to-r from-amber-500 to-violet-500 hover:from-amber-400 hover:to-violet-400 text-white shadow-lg shadow-amber-500/30 ring-1 ring-amber-300/60'
+                : 'border border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300',
+            )}
+          >
+            <Music2 className="w-4 h-4" />
+            <span className="text-xs">{t('editor.midiImport.comparisonButton')}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{t('editor.midiImport.comparisonHint')}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

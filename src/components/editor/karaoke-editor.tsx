@@ -20,6 +20,15 @@ import { EditorHeader, type EditorHeaderPanel } from './editor-header';
 import { EditorSubHeader } from './editor-sub-header';
 import { ShortcutsPanel } from './shortcuts-panel';
 import { VideoSyncOverlay } from './video-sync-overlay';
+import {
+  MidiImportDialog,
+  pickMidiFileArrayBuffer,
+  midiTrackToComparisonNotes,
+  type MidiImportResult,
+  type ComparisonNote,
+} from './midi-import-dialog';
+import { parseMIDIKaraoke } from '@/lib/parsers/multi-format-import';
+import { toast } from '@/hooks/use-toast';
 import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
 import { EditorLyricsTab } from './editor-lyrics-tab';
@@ -47,6 +56,41 @@ function finalizeLine(line: LyricLine): LyricLine {
     text: notes.map(n => n.lyric).join(' '),
     endTime: lastNote ? lastNote.startTime + lastNote.duration : line.endTime,
   };
+}
+
+/**
+ * Group flat notes (time order) into lyric lines using insertNote's
+ * TAP_LINE_GAP_MS rule (gap ≤ 1400 ms keeps the line; chords/overlapping
+ * notes stay together). Used by the MIDI/KAR note import (3.2).
+ */
+function groupNotesIntoLines(notes: Note[]): LyricLine[] {
+  const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
+  const lines: LyricLine[] = [];
+  let current: Note[] = [];
+  let lastEnd = Number.NEGATIVE_INFINITY;
+
+  const flush = () => {
+    if (current.length === 0) return;
+    lines.push(finalizeLine({
+      id: uuidv4(),
+      text: '',
+      startTime: current[0].startTime,
+      endTime: current[current.length - 1].startTime + current[current.length - 1].duration,
+      notes: current,
+    }));
+    current = [];
+  };
+
+  for (const note of sorted) {
+    if (current.length > 0 && note.startTime - lastEnd > TAP_LINE_GAP_MS) {
+      flush();
+    }
+    current.push(note);
+    lastEnd = Math.max(lastEnd, note.startTime + note.duration);
+  }
+  flush();
+
+  return lines;
 }
 
 export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
@@ -77,6 +121,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [snapEnabled, setSnapEnabled] = useState(false);
   // Video sync overlay (video + notes side by side, with timecode control)
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  // ── MIDI/KAR import (3.2) + comparison overlay (3.5) ──
+  const [showMidiImport, setShowMidiImport] = useState(false);
+  // Pure editor state — NEVER serialized, never in the undo history.
+  const [comparisonNotes, setComparisonNotes] = useState<ComparisonNote[] | null>(null);
+  const [comparisonVisible, setComparisonVisible] = useState(true);
 
   useEffect(() => {
     // Mount the heavy editor tree one frame after the overlay painted.
@@ -874,6 +923,65 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     markDirty();
   }, [setSongInternal, markDirty]);
 
+  // ── MIDI/KAR note import (3.2) ──
+  // The dialog delivers FINAL Note[] (ms times beat-snapped to the MIDI BPM,
+  // syllables already assigned, '~' placeholders). Here: group into lyric
+  // lines (insertNote's TAP_LINE_GAP_MS rule) and apply — existing notes are
+  // replaced (the dialog already confirmed that with the user). BPM/GAP are
+  // set from the MIDI tempo map (same pattern as handleApplyBpm). The song's
+  // audio stays untouched — the MIDI is ONLY the pitch/timing basis.
+  const handleMidiImport = useCallback((result: MidiImportResult) => {
+    const lines = groupNotesIntoLines(result.notes);
+    // ONE undo step ('push', not 'replace') — the pre-import notes stay
+    // restorable via Ctrl+Z even though they were fully replaced.
+    applyLyrics(lines, 'push');
+    setSongInternal({
+      ...currentSongRef.current,
+      bpm: Math.max(1, Math.round(result.bpm)),
+      gap: result.gap,
+    });
+    markDirty();
+    setShowMidiImport(false);
+    // The old selection died with the old notes
+    setSelectedNoteId(undefined);
+    setSelectedNoteIds(new Set());
+    // Jump to the first imported note so the result is immediately visible
+    // (scrolls + pitch-centers the timeline on it)
+    const firstNote = result.notes[0];
+    if (firstNote) handleNoteJump(firstNote);
+  }, [applyLyrics, setSongInternal, markDirty, handleNoteJump]);
+
+  // ── MIDI/KAR comparison overlay (3.5) ──
+  // First click: file picker → parse → auto-pick melody track → beats on the
+  // CURRENT song grid (the song is NOT changed). Further clicks toggle the
+  // visibility; the ✕ in the timeline legend chip clears the reference.
+  const handleToggleMidiComparison = useCallback(async () => {
+    if (comparisonNotes) {
+      setComparisonVisible(prev => !prev);
+      return;
+    }
+
+    const picked = await pickMidiFileArrayBuffer(t('editor.midiImport.comparisonButton'));
+    if (!picked) return; // user cancelled the picker
+
+    const midi = parseMIDIKaraoke(picked.buffer);
+    if (!midi) {
+      toast({ title: t('editor.midiImport.parseError'), variant: 'destructive' });
+      return;
+    }
+    const track =
+      midi.tracks.find(tr => tr.index === midi.melodyTrackIndex && tr.noteCount > 0) ??
+      midi.tracks.find(tr => tr.noteCount > 0);
+    if (!track) {
+      toast({ title: t('editor.midiImport.noTracks'), variant: 'destructive' });
+      return;
+    }
+
+    const { bpm, gap } = currentSongRef.current;
+    setComparisonNotes(midiTrackToComparisonNotes(track, bpm, gap));
+    setComparisonVisible(true);
+  }, [comparisonNotes, t]);
+
   // Determine the audio file path for analysis — resolve relative paths to absolute.
   // Falls back to the video file path so that video-embedded audio can be analyzed.
   const analysisAudioPath = useMemo(() => {
@@ -1005,6 +1113,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               onPlayerChange={handlePlayerChange}
               onTransposeAll={handleTransposeAll}
               tapMode={tapPlacement}
+              onOpenMidiImport={() => setShowMidiImport(true)}
+              onToggleMidiComparison={handleToggleMidiComparison}
+              comparisonActive={comparisonNotes !== null && comparisonVisible}
             />
           )}
 
@@ -1029,6 +1140,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                 onNoteAdd={handleNoteAdd}
                 onLyricChange={handleLyricChange}
                 noteJumpCommand={noteJumpCommand}
+                comparisonNotes={comparisonVisible ? comparisonNotes : null}
+                onClearComparison={() => setComparisonNotes(null)}
               />
             )}
           </main>
@@ -1138,6 +1251,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           onClose={() => setShowVideoOverlay(false)}
         />
       )}
+
+      {/* MIDI/KAR note import (3.2) — notes as pitch/timing basis, never the music file */}
+      <MidiImportDialog
+        open={showMidiImport}
+        onOpenChange={setShowMidiImport}
+        onImport={handleMidiImport}
+        hasExistingNotes={allNotes.length > 0}
+      />
 
       {/* Cancel confirmation — guard against losing unsaved changes */}
       {showCancelConfirm && (
