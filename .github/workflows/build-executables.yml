@@ -81,7 +81,7 @@ env:
   # C-ABI-abwärtskompatibel, bei Bedurf hier zentral anheben).
   ONNX_VERSION: '1.20.0'
   RELEASE_VERSION: ${{ github.event.inputs.version || github.ref_name }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ────────────────────────────────────────────────────────────────────
@@ -219,6 +219,16 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 120
     if: ${{ github.event.inputs.build_macos != 'false' }}
+    env:
+      # WICHTIG: Der `secrets`-Context ist in `if:`-Bedingungen NICHT
+      # erlaubt — GitHub validiert die Datei dann komplett ab (Fehler:
+      # „Unrecognized named-value: 'secrets'“). Der Secret-Status wird
+      # deshalb hier (in job-env ist `secrets` erlaubt) einmalig in eine
+      # normale Umgebungsvariable überführt und in den Step-`if`s über
+      # den `env`-Context geprüft (dort ist er erlaubt).
+      #   'true'  → APPLE_CERTIFICATE-Secret hinterlegt → signiert bauen
+      #   'false' → kein Zertifikat → unsigniert (Gatekeeper-Hinweis)
+      APPLE_SIGNING_AVAILABLE: ${{ secrets.APPLE_CERTIFICATE != '' }}
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v5
@@ -308,13 +318,14 @@ jobs:
 
       # Ohne Apple-Secrets: unsignierter Build (Gatekeeper-Hinweis in den
       # Release-Notes). Mit Secrets: Signierung + Notarization direkt im
-      # tauri build.
+      # tauri build. (Bedingung via env-Relay, s. Job-env-Kommentar oben —
+      # `secrets` in `if:` wäre ein Validierungsfehler.)
       - name: Tauri bauen (Universal, unsigniert)
-        if: ${{ secrets.APPLE_CERTIFICATE == '' }}
+        if: ${{ env.APPLE_SIGNING_AVAILABLE != 'true' }}
         run: bunx tauri build --target universal-apple-darwin --bundles app,dmg
 
       - name: Tauri bauen (Universal, signiert + notarisiert)
-        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
+        if: ${{ env.APPLE_SIGNING_AVAILABLE == 'true' }}
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
