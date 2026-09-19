@@ -88,8 +88,8 @@ natürlich ausgenommen).
 | Plattform | Artefakt | Standalone-Mechanismus |
 |---|---|---|
 | Windows | NSIS-`*-setup.exe` | `webviewInstallMode: "offlineInstaller"` — der komplette WebView2-Installer ist **im Setup eingebettet**; zusätzlich portables `node.exe`, ONNX-Runtime **und VC++-Runtime-DLLs** (msvcp140/vcruntime140) im Bundle. Installer-Größen-Check ≥ 70 MB als Sicherheitsnetz. |
-| macOS | Universal-`.dmg` | Rust-Universal-Binary (`--target universal-apple-darwin`); Node.js und ONNX-Runtime werden **per `lipo` zu Universal-Binaries gemergt** (x64 + arm64) — funktioniert nativ auf Intel- UND Apple-Silicon-Macs ab 10.15. |
-| Linux | `.AppImage` + `.deb` | AppImage mit `bundleSystemdeps: true` (WebKitGTK & Co. gebündelt) **und** `bundleMediaCodes: true` (ffmpeg-Medien-Codecs → H.264/AAC-Videoplayback funktioniert). deb = Paket-Manager-Variante (nutzt System-WebKit). |
+| macOS | Universal-`.dmg` | Rust-Universal-Binary (`--target universal-apple-darwin`); Node.js wird **per `lipo` zum Universal-Binary gemergt** (x64 + arm64), die ONNX-Runtime kommt als **fertiges Universal2-Asset von Microsoft** (`onnxruntime-osx-universal2-<v>.tgz`) — funktioniert nativ auf Intel- UND Apple-Silicon-Macs ab 10.15. |
+| Linux | `.AppImage` + `.deb` | AppImage: **linuxdeploy** (vom Tauri-CLI) bündelt WebKitGTK samt Helper-Prozessen (WebKitWebProcess & Co.) automatisch per ldd-Auflösung — zusätzlich `bundleMediaFramework: true` (GStreamer-Linuxdeploy-Plugin) + die auf dem Runner installierten GStreamer-Codec-Pakete (gst-libav → H.264/AAC-Videoplayback funktioniert). deb = Paket-Manager-Variante (nutzt System-WebKit). |
 
 **Der Workflow nutzt die kanonischen Repo-Skripte** (identisch zu lokal):
 `download-node.mjs` → `download-onnxruntime.mjs` → `prepare-bundle.mjs` →
@@ -158,8 +158,8 @@ Artefakte und „Über"-Dialog tragen dann die Release-Version.
 | Thema | Plattform | Status |
 |---|---|---|
 | **Gatekeeper** | macOS | Unsignierte Builds (ohne Apple Developer Account) lösen beim ersten Start die Warnung „nicht verifizierter Entwickler" aus. Abhilfe: Rechtsklick → „Öffnen" oder `xattr -cr /Applications/Karaoke\ ZERO.app`. Für Distribution: Signing + Notarization (Apple Developer Program, ~99 €/Jahr) — im GitHub-Workflow vorbereitet, nur Secrets setzen (siehe 2b). |
-| **Proprietäre Video-Codecs** (H.264/AAC) | Linux | **Im AppImage GELÖST**: `bundleMediaCodes: true` bündelt die ffmpeg-Medien-Codecs → Plattform-Embeds und lokale H.264-MP4s spielen. Nur das **deb** nutzt das System-WebKit (je nach Distribution ohne proprietäre Codecs). Lokale Audiodateien sind immer unbeeinflusst (Rust-Audio-Engine via Symphonia + cpal). |
-| **WebKit-Sicherheits-Updates** | Linux | Trade-off des gebündelten AppImage-WebKit (`bundleSystemdeps: true`): WebKitGTK-Updates erreichen das AppImage NICHT automatisch — das deb bleibt der „immer aktuelle" Weg. Bewusste Entscheidung pro maximaler Kompatibilität. |
+| **Proprietäre Video-Codecs** (H.264/AAC) | Linux | **Im AppImage GELÖST**: `bundleMediaFramework: true` + GStreamer-Codec-Pakete auf dem Build-Runner (gst-libav mit den ffmpeg-Decodern) werden per linuxdeploy-gstreamer-Plugin gebündelt → Plattform-Embeds und lokale H.264-MP4s spielen. Nur das **deb** nutzt das System-WebKit (je nach Distribution ohne proprietäre Codecs). Lokale Audiodateien sind immer unbeeinflusst (Rust-Audio-Engine via Symphonia + cpal). |
+| **WebKit-Sicherheits-Updates** | Linux | Trade-off des gebündelten AppImage-WebKit (linuxdeploy bündelt die ldd-aufgelösten System-Bibliotheken): WebKitGTK-Updates erreichen das AppImage NICHT automatisch — das deb bleibt der „immer aktuelle" Weg. Bewusste Entscheidung pro maximaler Kompatibilität. |
 | **AppImage & FUSE** | Linux | AppImages brauchen FUSE (auf modernen Distros meist vorhanden). Ohne FUSE: `./Karaoke*.AppImage --appimage-extract-and-run`. glibc-Baseline: gebaut auf Ubuntu 22.04 (glibc 2.35) → läuft auf praktisch allen aktuellen x64-Distributionen (Alpine/musl ausgenommen). |
 | **WebView2** | Windows | Der NSIS-Installer bettet den **kompletten WebView2-Offline-Installer** ein (`webviewInstallMode: "offlineInstaller"` → Installer ~110–160 MB statt ~40 MB) — Installation ganz ohne Internet, auch auf frischen/LTSC-Systemen. WebView2 bleibt danach ein normales, auto-aktualisierendes System-Bauteil. |
 | **macOS-Firewall** | macOS | Beim ersten Start fragt macOS ggf. nach Netzwerk-Freigabe für den Node-Server (Port 3000, nur lokal) — mit „Erlauben" bestätigen. |
@@ -189,13 +189,15 @@ identisch** bleibt:
 6. **`app_get_platform`**: rein additiver Command; die App funktioniert auch,
    wenn das Frontend ihn nicht aufruft.
 7. **`tauri.conf.json` (Standalone-Schalter, Session „100 % Standalone")**:
-   `windows.nsis.webviewInstallMode = offlineInstaller` und
-   `linux.appimage.bundleSystemdeps/bundleMediaCodes = true` — reine
+   `bundle.windows.webviewInstallMode = {type: "offlineInstaller"}` und
+   `linux.appimage.bundleMediaFramework = true` — reine
    **Bundle-Optionen**: Windows-Code-Logik, Ressourcen-Layout, NSIS-Modus
    (currentUser) und `targets: []` unverändert; die App-Funktion ist auf
    allen Plattformen identisch. Lokale Windows-Builds laden beim Bündeln
    jetzt den WebView2-Offline-Installer (~127 MB) herunter → Installer
-   wächst, Funktion bleibt gleich.
+   wächst, Funktion bleibt gleich. (Hinweis: die Keys hießen in einer
+   früheren Version falsch `nsis.webviewInstallMode` / `bundleSystemdeps` /
+   `bundleMediaCodes` — das warf Schema-Fehler auf CI; korrigiert.)
 8. **`scripts/prepare-bundle.mjs`**: Bugfix — `readFileSync` fehlte in den
    fs-Importen (latenter Crash bei „server.js ersetzen", hätte JEDE
    `tauri:build`-Ausführung abgebrochen). Sonst unverändert.

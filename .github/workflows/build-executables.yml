@@ -6,16 +6,18 @@
 #  zur Installationszeit — Online-Inhalte wie YouTube-Embeds ausgenommen):
 #
 #    Windows : NSIS-Installer mit OFFLINE eingebettetem WebView2-Installer
-#              (tauri.conf.json → bundle.windows.nsis.webviewInstallMode
-#               = "offlineInstaller") + portables node.exe + ONNX-Runtime
-#              + VC++-Runtime-DLLs im Bundle
-#    macOS   : Universal-Binary (Intel + Apple Silicon). Node.js und
-#              ONNX-Runtime werden per lipo zu Universal-Binaries gemergt;
-#              DMG läuft ab macOS 10.15. Optional Signing+Notarization via
-#              Secrets (ohne Secrets: unsignierter Build, Gatekeeper-Hinweis)
-#    Linux   : AppImage mit gebündeltem WebKitGTK UND Medien-Codecs
-#              (bundleSystemdeps + bundleMediaCodes) — läuft auf den
-#              meisten x64-Distributionen; zusätzlich deb für Paket-Manager
+#              (tauri.conf.json → bundle.windows.webviewInstallMode
+#               = {type: "offlineInstaller"}) + portables node.exe +
+#              ONNX-Runtime + VC++-Runtime-DLLs im Bundle
+#    macOS   : Universal-Binary (Intel + Apple Silicon). Node.js wird per
+#              lipo zu einem Universal-Binary gemergt; ONNX-Runtime kommt
+#              als fertiges Universal2-Asset von Microsoft. DMG läuft ab
+#              macOS 10.15. Optional Signing+Notarization via Secrets
+#              (ohne Secrets: unsignierter Build, Gatekeeper-Hinweis)
+#    Linux   : AppImage mit gebündeltem WebKitGTK (linuxdeploy folgt den
+#              ldd-Abhängigkeiten automatisch) UND GStreamer-Medien-
+#              codecs (bundleMediaFramework + gst-Pakete auf dem Runner);
+#              zusätzlich deb für Paket-Manager
 #
 #  Alle Plattformen nutzen die kanonischen Repo-Skripte (identisch zum
 #  lokalen `bun run tauri:build`):
@@ -282,33 +284,19 @@ jobs:
           lipo -info portable-node/bin/node | grep -q arm64
           echo "OK: Node.js ist ein Universal-Binary."
 
-      # ONNX-Runtime ebenfalls universal mergen (libonnxruntime.dylib und
-      # ggf. providers_shared), damit CREPE auf beiden Architekturen lädt.
-      - name: ONNX Runtime Universal-Bibliotheken bauen (lipo)
+      # ONNX-Runtime: Microsoft liefert ein Universal2-Asset (x86_64 + arm64
+      # bereits in EINER Datei) — kein lipo-Merge mehr nötig. Die frühere
+      # „osx-x64“-Assetname-Falle (→ HTTP 404) ist im Script ebenfalls gefixt.
+      - name: ONNX Runtime herunterladen (Universal2 x64+arm64)
         run: |
           set -euo pipefail
-          node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch x64
-          mkdir -p /tmp/kz-onnx-x64
-          find src-tauri/bundled/native -type f ! -name '.gitkeep' -exec mv {} /tmp/kz-onnx-x64/ \;
-          node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch arm64
-          for f in /tmp/kz-onnx-x64/*; do
-            base="$(basename "$f")"
-            dst="src-tauri/bundled/native/$base"
-            if [ -f "$dst" ]; then
-              lipo -create "$f" "$dst" -output "/tmp/kz-universal-$base"
-              cp "/tmp/kz-universal-$base" "$dst"
-              chmod +x "$dst" || true
-              echo "OK universal: $base"
-            else
-              echo "WARN: $base fehlt im arm64-Download — uebersprungen"
-            fi
-          done
+          node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch universal2
           ls -la src-tauri/bundled/native/
           echo "--- Verifikation ---"
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q x86_64
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q arm64
-          echo "OK: ONNX Runtime ist ein Universal-Binary."
+          echo "OK: ONNX Runtime ist ein Universal-Binary (Universal2-Asset)."
 
       - name: Frontend + Server-Bundle vorbereiten (prepare-bundle.mjs)
         env:
@@ -377,7 +365,10 @@ jobs:
 
       # ubuntu-22.04 = älteste noch übliche Baseline (glibc 2.35) → das
       # AppImage läuft auf praktisch allen aktuellen x64-Distributionen.
-      - name: System-Abhängigkeiten installieren (WebKitGTK 4.1, ALSA, …)
+      # GStreamer-Pakete: werden per bundleMediaFramework (linuxdeploy-Plugin
+      # „gstreamer“) ins AppImage gebündelt — gst-libav bringt die
+      # H.264/AAC-Decoder, die WebKitGTK für Medien-Streams braucht.
+      - name: System-Abhängigkeiten installieren (WebKitGTK 4.1, GStreamer-Codecs, ALSA, …)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -386,7 +377,10 @@ jobs:
             libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
             libayatana-appindicator3-dev librsvg2-dev \
             libasound2-dev libpulse-dev libssl-dev libxdo-dev \
-            libfuse2 squashfs-tools desktop-file-utils appstream
+            libfuse2 squashfs-tools desktop-file-utils appstream \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav gstreamer1.0-gl
 
       - name: JavaScript-Abhängigkeiten installieren
         run: bun install --frozen-lockfile
@@ -409,8 +403,11 @@ jobs:
           NEXT_PUBLIC_LEADERBOARD_API_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
         run: node scripts/prepare-bundle.mjs
 
-      # bundleSystemdeps=true  → WebKitGTK & Co. wandern ins AppImage
-      # bundleMediaCodes=true  → ffmpeg-Medien-Codecs (H.264/AAC) gebündelt
+      # Linuxdeploy (vom Tauri-CLI aufgerufen) bündelt WebKitGTK samt
+      # Helper-Prozessen (WebKitWebProcess & Co.) automatisch per
+      # ldd-Auflösung. bundleMediaFramework=true (tauri.conf.json) aktiviert
+      # zusätzlich den gstreamer-Plugin → die oben installierten Codec-
+      # Pakete (H.264/AAC via gst-libav) wandern ins AppImage.
       - name: Tauri bauen (AppImage mit gebündeltem WebKit + Codecs, + deb)
         run: bunx tauri build --bundles deb,appimage
 

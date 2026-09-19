@@ -38,13 +38,13 @@
       "icons/icon.ico"
     ],
     "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      },
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],
-        "displayLanguageSelector": false,
-        "webviewInstallMode": {
-          "type": "offlineInstaller"
-        }
+        "displayLanguageSelector": false
       }
     },
     "macOS": {
@@ -52,8 +52,7 @@
     },
     "linux": {
       "appimage": {
-        "bundleSystemdeps": true,
-        "bundleMediaCodes": true
+        "bundleMediaFramework": true
       },
       "deb": {
         "depends": ["libasound2t64 | libasound2"]

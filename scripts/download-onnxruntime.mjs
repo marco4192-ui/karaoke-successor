@@ -12,6 +12,7 @@
  * Usage: node scripts/download-onnxruntime.mjs
  *   or:  node scripts/download-onnxruntime.mjs --version 1.20.0
  *   or:  node scripts/download-onnxruntime.mjs --platform linux --arch arm64
+ *   or:  node scripts/download-onnxruntime.mjs --arch universal2   (macOS fat binary)
  *
  * Cross-platform: run this ON the target OS right before
  * `node scripts/download-node.mjs` + `bun run tauri:build`.
@@ -45,7 +46,8 @@ for (let i = 0; i < args.length; i++) {
 }
 
 // ONNX Runtime release asset naming
-// (Linux arm64 assets are called "aarch64", macOS assets "osx-<arch>")
+// (Linux arm64 assets are called "aarch64", macOS assets "osx-<arch>" with
+//  x86_64 spelled with underscore! "universal2" = fat binary x86_64+arm64)
 const assetArch = targetPlatform === 'linux' && targetArch === 'arm64' ? 'aarch64' : targetArch;
 const assetPlatform = targetPlatform === 'win' ? 'win' : targetPlatform === 'osx' ? 'osx' : 'linux';
 
@@ -55,8 +57,14 @@ const URLS = {
     arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-win-arm64-${ortVersion}.zip`,
   },
   osx: {
-    x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-x64-${ortVersion}.tgz`,
+    // WICHTIG: macOS-Assets heißen "osx-x86_64" (mit Unterstrich), NICHT
+    // "osx-x64" — falscher Name = HTTP 404 (reale CI-Falle, v1.20.0).
+    x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-x86_64-${ortVersion}.tgz`,
     arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-arm64-${ortVersion}.tgz`,
+    // Microsoft liefert ein Universal2-Fat-Binary (x86_64 + arm64 in einer
+    // Datei) — ideal für `tauri build --target universal-apple-darwin`,
+    // kein lipo-Merge nötig.
+    universal2: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-universal2-${ortVersion}.tgz`,
   },
   linux: {
     x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-linux-x64-${ortVersion}.tgz`,
