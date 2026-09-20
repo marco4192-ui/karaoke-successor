@@ -95,6 +95,10 @@ interface PlayingViewProps {
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
   eliminationPhase?: null | 'eliminating' | 'survivor-flash';
+  /** Seconds until the next mid-round elimination (null = none scheduled). */
+  nextEliminationIn?: number | null;
+  /** Latest mid-round elimination for the non-blocking HUD banner. */
+  midRoundEliminationNotice?: { id: string; name: string } | null;
   /** Per-player note performance samples (ghost notes): playerId → noteKey → samples. */
   brNotePerformance?: Map<string, Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>>;
 }
@@ -126,6 +130,8 @@ export function PlayingView({
   playerPitchMap,
   multiPitchErrors,
   eliminationPhase,
+  nextEliminationIn,
+  midRoundEliminationNotice,
   brNotePerformance,
 }: PlayingViewProps) {
   const { t } = useTranslation();
@@ -418,6 +424,25 @@ export function PlayingView({
       {/* #10 Elimination Camera: Pulsing border in last 5 seconds */}
       {eliminationAnimationEnabled && isDangerZone && (
         <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
+      )}
+
+      {/* ─────────── 2.2-R3: Mid-round elimination banner (non-blocking) ───────────
+          Surfaces WHO just went out in the configured rhythm — the inline ✕ on
+          the player card alone was easy to miss (user follow-up: "keine
+          Veränderung im Spiel"). Auto-clears after a few seconds (hook-side). */}
+      {midRoundEliminationNotice && (
+        <div
+          className="absolute top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-300"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2 rounded-full bg-red-950/85 border border-red-500/50 px-4 py-2 shadow-lg shadow-red-950/50 backdrop-blur-sm">
+            <span aria-hidden="true" className="text-lg">💀</span>
+            <span className="text-sm font-semibold text-red-200">
+              {t('battleRoyale.midRoundEliminated').replace('{name}', midRoundEliminationNotice.name)}
+            </span>
+          </div>
+        </div>
       )}
 
       {/* ─────────── Unified HUD chrome (top-center: song; top-left: Pause + End Round; top-right: Difficulty + Webcam + Fullscreen) ─────────── */}
@@ -787,6 +812,23 @@ export function PlayingView({
           <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0 bg-black/40">
             🎵 {currentSnippetIndex + 1}/{totalSnippets}
             {snippetTimeLeft !== null && ` (${snippetTimeLeft}s)`}
+          </Badge>
+        )}
+        {/* 2.2-R3: next mid-round elimination countdown — makes the
+            configured elimination interval visible while the song plays
+            (rhythm rounds only; absent in medley / finale rounds). */}
+        {nextEliminationIn != null && (
+          <Badge
+            className={`font-mono text-xs ${
+              nextEliminationIn <= 5
+                ? 'bg-red-500 text-white animate-pulse'
+                : nextEliminationIn <= 10
+                  ? 'bg-orange-500/25 text-orange-300 border border-orange-400/40'
+                  : 'bg-red-500/15 text-red-300 border border-red-400/30'
+            }`}
+            aria-label={t('battleRoyale.nextEliminationIn').replace('{n}', String(nextEliminationIn))}
+          >
+            💀 {nextEliminationIn}s
           </Badge>
         )}
       </div>

@@ -128,6 +128,13 @@ interface UseBattleRoyaleGameReturn {
   songProgress: number; // 0-100
   countdown: number;
   eliminationPhase: null | 'eliminating' | 'survivor-flash';
+  /** Seconds until the next mid-round elimination (full-song rhythm rounds
+   *  only; null when no rhythm elimination is scheduled). Drives the HUD
+   *  badge so the configured interval is VISIBLE while playing. */
+  nextEliminationIn: number | null;
+  /** Latest mid-round elimination notice ({name} + id) for the non-blocking
+   *  HUD banner; auto-clears after a few seconds. */
+  midRoundEliminationNotice: { id: string; name: string } | null;
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -506,6 +513,16 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // by the paused time) and is frozen per round.
   // Medley keeps its snippet-based budget; grand finale rounds decide via
   // round wins, not eliminations.
+
+  // HUD notice state (2.2-R3): who just went out + seconds until the next
+  // elimination — makes the configured rhythm visible while playing.
+  const [midRoundEliminationNotice, setMidRoundEliminationNotice] = useState<{ id: string; name: string } | null>(null);
+  const elimNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [nextEliminationIn, setNextEliminationIn] = useState<number | null>(null);
+  useEffect(() => () => {
+    if (elimNoticeTimerRef.current !== null) clearTimeout(elimNoticeTimerRef.current);
+  }, []);
+
   const handleMidRoundElimination = useCallback(() => {
     if (roundEndingRef.current) return;
     // Base on the not-yet-flushed accumulation so the elimination decision
@@ -518,6 +535,21 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     // Keep the loop's pending base consistent so the throttled store write
     // can never revert the elimination.
     pendingScoredGameRef.current = updated;
+
+    // Non-blocking HUD notice (user follow-up 2.2-R3: the inline ✕ on the
+    // player card is easy to miss — surface WHO just went out so the
+    // configured rhythm is unmissable).
+    const eliminated = updated.players.find(p => p.id === result.eliminatedId);
+    if (eliminated) {
+      setMidRoundEliminationNotice({ id: eliminated.id, name: eliminated.name });
+      if (elimNoticeTimerRef.current !== null) {
+        clearTimeout(elimNoticeTimerRef.current);
+      }
+      elimNoticeTimerRef.current = setTimeout(() => {
+        elimNoticeTimerRef.current = null;
+        setMidRoundEliminationNotice(null);
+      }, 3500);
+    }
 
     if (updated.status === 'completed') {
       // Last man standing mid-song: stop media + pitch, then commit — the
@@ -586,12 +618,38 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Ticker: cheap 500ms check that fires the elimination when the deadline
   // passes, then re-arms with a freshly computed interval (player count may
   // have changed) or disarms when the finale duel / game end takes over.
+  // Also SELF-HEALING (2.2-R3): if the deadline is null while a rhythm round
+  // is still running (e.g. a missed transition after an unexpected state
+  // change), re-arm instead of silently staying disarmed — the rhythm must
+  // never stop mid-round.
   useEffect(() => {
-    if (game.status !== 'playing' || !isFullSongRound) return;
+    if (game.status !== 'playing' || !isFullSongRound) {
+      setNextEliminationIn(null);
+      return;
+    }
     const iv = setInterval(() => {
       if (pauseDialogAction === 'song-pause') return; // paused — the clock is shifted, not ticking
-      const next = nextElimAtRef.current;
-      if (next === null || Date.now() < next) return;
+      let next = nextElimAtRef.current;
+
+      // Self-heal: re-arm a lost deadline (never extend an armed one).
+      if (next === null) {
+        const g0 = gameRef.current;
+        const active0 = g0.players.filter(p => !p.eliminated).length;
+        const finaleEnabled0 = g0.settings.grandFinaleBestOf > 1;
+        const rhythmApplies = g0.status === 'playing' && !g0.isGrandFinale &&
+          (finaleEnabled0 ? active0 > 2 : active0 > 1);
+        if (rhythmApplies) {
+          next = Date.now() + elimIntervalSec(g0) * 1000;
+          nextElimAtRef.current = next;
+        }
+      }
+
+      if (next === null) {
+        setNextEliminationIn(null);
+        return;
+      }
+      setNextEliminationIn(Math.max(0, Math.ceil((next - Date.now()) / 1000)));
+      if (Date.now() < next) return;
 
       handleMidRoundElimRef.current();
 
@@ -603,6 +661,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         // The finale duel decides between the last two / last man standing
         // won — no further rhythm eliminations.
         nextElimAtRef.current = null;
+        setNextEliminationIn(null);
       } else {
         nextElimAtRef.current = Date.now() + elimIntervalSec(g) * 1000;
       }
@@ -1172,5 +1231,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       : 0,
     countdown,
     eliminationPhase,
+    nextEliminationIn,
+    midRoundEliminationNotice,
   };
 }

@@ -287,7 +287,12 @@ export function useBattleRoyaleRoundHandlers({
 
     // #2 Song Voting: enter voting phase (skipped for round 1 with a host-voted song)
     if (!hostVotedFirstSong && currentGame.settings.songSelection === 'vote') {
-      const voteSongs = getRandomSongs(3, excludeIds);
+      let voteSongs = getRandomSongs(3, excludeIds);
+      if (voteSongs.length < 2) {
+        // Same robustness fallback: without enough UNplayed songs for voting,
+        // retry without the no-repeat exclusions before degrading to random.
+        voteSongs = getRandomSongs(3);
+      }
       if (voteSongs.length >= 2) {
         const options = voteSongs.map(s => ({ songId: s.id, songName: s.title }));
         const updatedGame = startVotingPhase(currentGame, options);
@@ -299,10 +304,28 @@ export function useBattleRoyaleRoundHandlers({
 
     // Prefer the pre-fetched song (warmed in the last seconds of the previous
     // round — same exclusion rules) so the transition needs no loading pause.
-    const song = hostVotedFirstSong ?? consumePrefetchedSong() ?? getRandomSong(excludeIds);
+    // Robustness fallback (user follow-up 2.2-R3): when the no-repeat exclusion
+    // list covers EVERY playable song (e.g. a tiny library), retry WITHOUT the
+    // exclusions instead of freezing the game mid-transition (PlayingView used
+    // to hang at 0s with no next round and no error). No-repeat is a comfort
+    // feature — the game must always keep going.
+    const song = hostVotedFirstSong ?? consumePrefetchedSong() ?? getRandomSong(excludeIds) ?? getRandomSong();
     if (!song) {
       // eslint-disable-next-line no-console
-      console.error('[BattleRoyale] No playable songs found.');
+      console.error('[BattleRoyale] No playable songs found — cannot start the next round.');
+      // NOTHING playable at all (empty library / no audio): surface a real
+      // game state instead of hanging — end the game, last man (highest score)
+      // wins. advanceToNextRound refuses non-elimination statuses, so commit
+      // a completed game directly.
+      const activePs = getActivePlayers(currentGame);
+      const winner = [...activePs].sort((a, b) => b.score - a.score)[0] ?? null;
+      const gameOver: BattleRoyaleGame = {
+        ...currentGame,
+        status: 'completed',
+        winner,
+      };
+      gameRef.current = gameOver;
+      onUpdateGameRef.current(gameOver);
       return;
     }
 
