@@ -9,6 +9,7 @@ import {
   getBountyMultiplier,
   getCurrentMedleySnippet,
   eliminateWeakestMidRound,
+  getEffectiveRoundDuration,
   BattleRoyaleGame,
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
@@ -494,10 +495,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // eslint-disable-next-line react-hooks/exhaustive-deps -- multiPitch is stable for .stop()/.start()
   }, [pauseDialogAction]);
 
-  // ── Mid-round eliminations (user rule 6.1) ─────────────────────────
+  // ── Mid-round eliminations (user request 2.2-R2) ─────────────────
   // Full-song rounds (songSelection random/vote) eliminate the weakest
-  // player every `settings.roundDuration` seconds WHILE THE SONG KEEPS
-  // PLAYING — only the player is out, the round is never interrupted.
+  // player in the CONFIGURED rhythm while the song keeps playing — only
+  // the player is out, the round is never interrupted. The interval comes
+  // from getEffectiveRoundDuration (the same settings value the setup
+  // slider shows; the shrinking-timer setting reduces it in later rounds) —
+  // there are NO hardcoded intervals. Timestamp-based instead of
+  // setInterval so the rhythm survives pause/unpause (the deadline shifts
+  // by the paused time) and is frozen per round.
   // Medley keeps its snippet-based budget; grand finale rounds decide via
   // round wins, not eliminations.
   const handleMidRoundElimination = useCallback(() => {
@@ -531,23 +537,79 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     handleMidRoundElimRef.current = handleMidRoundElimination;
   }, [handleMidRoundElimination]);
 
-  // Interval: every eliminationInterval seconds while a full-song round
-  // plays. Re-arms per round (currentRound dep) and pauses with the game.
+  // Full-song rhythm rounds: random/vote, no medley, no grand finale.
   const isFullSongRound =
     (game.settings.songSelection === 'random' || game.settings.songSelection === 'vote') &&
     !game.settings.medleyMode &&
     !game.isGrandFinale;
-  const eliminationIntervalSec = isFullSongRound
-    ? Math.max(10, game.settings.roundDuration)
-    : 0;
+
+  // Elimination clock: deadline timestamp (ms) or null when disarmed.
+  const nextElimAtRef = useRef<number | null>(null);
+  const elimPausedAtRef = useRef<number | null>(null);
+
+  // Effective rhythm for the given game state — always from the settings
+  // (roundDuration / finalRoundDuration / shrinking timer).
+  const elimIntervalSec = useCallback((g: BattleRoyaleGame): number =>
+    Math.max(5, getEffectiveRoundDuration(
+      g.settings,
+      g.currentRound,
+      g.players.filter(p => !p.eliminated).length,
+      g.isGrandFinale,
+    )), []);
+
+  // Arm the clock at the START of each full-song round (playing transition
+  // or round change). Frozen afterwards — in-round eliminations only
+  // re-arm AFTER firing (see the ticker), never mid-interval.
   useEffect(() => {
-    if (game.status !== 'playing' || eliminationIntervalSec <= 0) return;
-    if (pauseDialogAction === 'song-pause') return; // paused: no eliminations
+    if (game.status !== 'playing' || !isFullSongRound) {
+      nextElimAtRef.current = null;
+      elimPausedAtRef.current = null;
+      return;
+    }
+    nextElimAtRef.current = Date.now() + elimIntervalSec(gameRef.current) * 1000;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reads gameRef.current on purpose (freeze the interval at round start)
+  }, [game.status, game.currentRound, isFullSongRound]);
+
+  // Pause: shift the deadline by the paused duration — the rhythm rests
+  // during the pause and resumes where it was, never firing while paused.
+  useEffect(() => {
+    if (pauseDialogAction === 'song-pause') {
+      elimPausedAtRef.current = Date.now();
+    } else if (elimPausedAtRef.current !== null) {
+      if (nextElimAtRef.current !== null) {
+        nextElimAtRef.current += Date.now() - elimPausedAtRef.current;
+      }
+      elimPausedAtRef.current = null;
+    }
+  }, [pauseDialogAction]);
+
+  // Ticker: cheap 500ms check that fires the elimination when the deadline
+  // passes, then re-arms with a freshly computed interval (player count may
+  // have changed) or disarms when the finale duel / game end takes over.
+  useEffect(() => {
+    if (game.status !== 'playing' || !isFullSongRound) return;
     const iv = setInterval(() => {
+      if (pauseDialogAction === 'song-pause') return; // paused — the clock is shifted, not ticking
+      const next = nextElimAtRef.current;
+      if (next === null || Date.now() < next) return;
+
       handleMidRoundElimRef.current();
-    }, eliminationIntervalSec * 1000);
+
+      // Re-arm or disarm based on the post-elimination state
+      const g = gameRef.current;
+      const active = g.players.filter(p => !p.eliminated).length;
+      const finaleEnabled = g.settings.grandFinaleBestOf > 1;
+      if (g.status === 'completed' || (finaleEnabled ? active <= 2 : active <= 1)) {
+        // The finale duel decides between the last two / last man standing
+        // won — no further rhythm eliminations.
+        nextElimAtRef.current = null;
+      } else {
+        nextElimAtRef.current = Date.now() + elimIntervalSec(g) * 1000;
+      }
+    }, 500);
     return () => clearInterval(iv);
-  }, [game.status, game.currentRound, eliminationIntervalSec, pauseDialogAction]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + primitives only
+  }, [game.status, isFullSongRound, pauseDialogAction]);
 
   // ── Item 8.1: Companion game-state sync ──────────────────────────
   // Same mechanism CPTM/PTM use (useMobileGameSync): pushes the current

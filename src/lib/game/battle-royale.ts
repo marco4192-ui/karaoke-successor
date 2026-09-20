@@ -203,8 +203,16 @@ export function createBattleRoyale(
 
 // ==================== ROUND DURATION & DIFFICULTY ====================
 
-/** Calculate effective round duration considering shrinking timer, grand finale, etc. */
-function getEffectiveRoundDuration(
+/**
+ * Effective round duration in seconds for the GIVEN round — the single
+ * source of truth for every duration-derived behavior (round timer, medley
+ * snippet budget, mid-round elimination rhythm). All values come from the
+ * Battle Royale settings — there are NO hardcoded intervals:
+ *  • grand finale / last duel (2 players) → settings.finalRoundDuration
+ *  • otherwise → settings.roundDuration, reduced by the shrinking-timer
+ *    setting (never below settings.minRoundDuration)
+ */
+export function getEffectiveRoundDuration(
   settings: BattleRoyaleSettings,
   roundNumber: number,
   activePlayerCount: number,
@@ -414,11 +422,19 @@ export function startRound(
     roundType = 'full';
   }
 
-  // Round duration:
-  //  • medley → fixed 30s snippets, count derived from the base budget
-  //    (60s ⇒ 2 snippets, 90s ⇒ 3, … capped at 6)
-  //  • random/vote → the song's own length (+5s tail buffer so the audio
-  //    'ended' event never races the round timer)
+  // Round duration — every branch derives from the SETTINGS (no hardcoded
+  // intervals, user request 2.2-R2):
+  //  • medley → 30s snippets, count derived from the base budget
+  //    (roundDuration; 60s ⇒ 2 snippets, 90s ⇒ 3, … capped at 6). Finale
+  //    medley rounds use finalRoundDuration as their budget.
+  //  • random/vote FINAL rounds (grand finale, or the last duel with 2
+  //    players) → settings.finalRoundDuration caps the round — the finale
+  //    length is configured, NOT the full song (user request 2.2-R2).
+  //    A shorter song still ends earlier via its own 'ended' event.
+  //  • random/vote normal rounds → the song's own length (+5s tail buffer
+  //    so the audio 'ended' event never races the round timer); the
+  //    ELIMINATION rhythm inside these rounds is the configured interval
+  //    (see getEffectiveRoundDuration / the mid-round elimination ticker).
   //  • fallback (no duration known) → the configured base duration
   let duration: number;
   const snippetList: MedleySnippet[] = [];
@@ -437,6 +453,11 @@ export function startRound(
     // Duration follows the snippets ACTUALLY used (pool may be smaller than
     // the planned count) — never a longer round than there are snippets for.
     duration = Math.max(1, snippetList.length) * MEDLEY_SNIPPET_SECONDS;
+  } else if (isGrandFinaleRound || isFinalRound) {
+    // 2.2-R2: the finale length comes from the settings (finalRoundDuration),
+    // not the full song. The round timer caps the duel; a song that ends
+    // earlier closes the round via its 'ended' event.
+    duration = baseDuration;
   } else if (songDurationSec && songDurationSec > 0) {
     // +5s tail buffer: the audio 'ended' event never races the round timer,
     // and PlayingView's 3s fade-out only starts AFTER the song is over

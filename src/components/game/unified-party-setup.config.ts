@@ -123,10 +123,15 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 2,
     maxPlayers: 24,
     settings: [
-      // roundDuration now ONLY governs medley rounds — 'random' and 'vote'
-      // play FULL songs (user rule 6.3). Description clarifies this.
-      { key: 'roundDuration', label: 'Medley Round Duration', labelKey: 'modeSettings.brMedleyRoundDuration', description: 'Only applies to medley rounds — Random and Vote play full songs', descriptionKey: 'modeSettings.brMedleyRoundDurationDesc', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
-      { key: 'finalRoundDuration', label: 'Final Round Duration', labelKey: 'modeSettings.finalRoundDuration', type: 'slider', min: 60, max: 300, step: 30, defaultValue: 120, unit: 's' },
+      // Ausscheide-Intervall (user request 2.2-R2): this SINGLE setting is the
+      // elimination rhythm — Random/Vote rounds eliminate the weakest player
+      // every N seconds while the song keeps playing (song end = pure round
+      // change). In Medley rounds the same value is the ROUND BUDGET the
+      // 30-second snippet count is derived from. No hardcoded intervals.
+      { key: 'roundDuration', label: 'Elimination Interval', labelKey: 'modeSettings.brEliminationInterval', description: 'Weakest player eliminated every N seconds (Random/Vote); medley round budget', descriptionKey: 'modeSettings.brEliminationIntervalDesc', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
+      // Final round length (user request 2.2-R2): grand finale rounds and the
+      // last 2-player duel are capped by this duration — NOT the full song.
+      { key: 'finalRoundDuration', label: 'Final Round Duration', labelKey: 'modeSettings.finalRoundDuration', description: 'Length of the final round (last duel / grand finale rounds)', descriptionKey: 'modeSettings.finalRoundDurationDesc', type: 'slider', min: 60, max: 300, step: 30, defaultValue: 120, unit: 's' },
       // NOTE: Song selection method is controlled by the top-level songSelectionOptions
       // (random|vote|medley), NOT by an inner setting. The medleyMode toggle was REMOVED:
       // selecting 'medley' as the song method now enables medley rounds (user rule 6.3);

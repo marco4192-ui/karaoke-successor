@@ -1,6 +1,8 @@
 /**
  * Vocal Detector — Distinguishes actual singing from humming/noise.
  *
+ * ⛔ GLOBALLY DISABLED — see VOCAL_CLASSIFIER_ENABLED below.
+ *
  * Approach: Real-time analysis of three signals already available
  * inside the pitch-detection loop:
  *
@@ -64,6 +66,26 @@ interface VocalDetectorConfig {
   enabled: boolean;
 }
 
+// ===================== GLOBAL KILL SWITCH =====================
+
+/**
+ * ⛔ The humming/singing classifier is DISABLED (user decision, 2026-09-20).
+ *
+ * Why: the classifier fundamentally misjudges SUSTAINED karaoke notes —
+ * a steady held tone has low pitch variance and no fresh onsets, which
+ * looks exactly like "humming" to it. That caused:
+ *   • as a SCORING gate: "only every other note is scored" (gate already
+ *     removed from all scoring paths in R9), and
+ *   • as a VISUAL indicator: mic badges dimmed to "silent" while the
+ *     player was mid-note — confusing feedback with zero benefit.
+ *
+ * Every consumer now effectively gets "a tone is detected = active"
+ * (pitch != null plus the volume threshold), which is reliable and needs
+ * no classification. Flip to true to re-enable the experimental
+ * classifier for testing.
+ */
+const VOCAL_CLASSIFIER_ENABLED = false;
+
 // ===================== DEFAULTS =====================
 
 const DEFAULT_VOCAL_CONFIG: VocalDetectorConfig = {
@@ -77,7 +99,9 @@ const DEFAULT_VOCAL_CONFIG: VocalDetectorConfig = {
   pitchVarianceWeight: 0.4,
   spectralFlatnessWeight: 0.25,
   onsetRateWeight: 0.35,
-  enabled: true,
+  // Kill switch: disabled → processFrame() short-circuits to
+  // "isSinging: true" and all the spectral bookkeeping is skipped.
+  enabled: VOCAL_CLASSIFIER_ENABLED,
 };
 
 /** Slightly relaxed config for 'easy' difficulty */

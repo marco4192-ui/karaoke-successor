@@ -553,9 +553,12 @@ export const partyTranslations = {
     byStrength: 'By Strength',
     // Battle Royale
     roundDuration: 'Round Duration',
+    brEliminationInterval: 'Elimination Interval',
+    brEliminationIntervalDesc: 'The weakest player is eliminated every {n} seconds (Random/Vote). Medley: round budget of 30-second snippets.',
     brMedleyRoundDuration: 'Medley Round Duration',
     brMedleyRoundDurationDesc: 'Only applies to medley rounds — Random and Vote play full songs.',
     finalRoundDuration: 'Final Round Duration',
+    finalRoundDurationDesc: 'Length of the final round (last duel / grand finale rounds).',
     medleyMode: 'Medley Mode',
     medleyModeDesc: 'Multiple song snippets per round',
     normalFinal: 'Normal Final',
