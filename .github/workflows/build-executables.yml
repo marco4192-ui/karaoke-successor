@@ -414,7 +414,9 @@ jobs:
       # zusätzlich den gstreamer-Plugin → die oben installierten Codec-
       # Pakete (H.264/AAC via gst-libav) wandern ins AppImage.
       - name: Tauri bauen (AppImage mit gebündeltem WebKit + Codecs, + deb)
-        run: bunx tauri build --bundles deb,appimage
+        # --verbose: linuxdeploy-Ausgabe wird vom Bundler nur auf Debug-Level
+        # geloggt — ohne verbose bleibt die Ursache unsichtbar.
+        run: bunx tauri build --verbose --bundles deb,appimage
 
       - name: Artefakte prüfen + ausführbar markieren
         run: |
