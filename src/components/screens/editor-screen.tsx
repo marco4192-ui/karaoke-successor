@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, getAllSongsAsync, upsertSong, purgeAbortedNewSongs, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
+import { isDuetSong } from '@/components/screens/library/utils';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { MetadataStudio } from '@/components/editor/metadata-studio';
@@ -470,6 +471,20 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                       </svg>
                     )}
                   </div>
+                )}
+                {/* Duet badge (user request R10-3): mark duet songs so hosts
+                    can spot them at a glance when planning pairings. Same
+                    detection as the main library (isDuet flag / title markers /
+                    P1-P2 lyrics). */}
+                {isDuetSong(song) && (
+                  <span
+                    className="absolute top-1 right-1 z-10 flex items-center gap-0.5 rounded-full bg-violet-500/85 px-1.5 py-[1px] text-[8px] font-bold text-white shadow-sm backdrop-blur-sm"
+                    title={t('editor.duetBadge')}
+                    data-testid={`editor-duet-badge-${song.id}`}
+                  >
+                    <span aria-hidden="true">🎭</span>
+                    <span className="hidden sm:inline">2</span>
+                  </span>
                 )}
                 {/* Cover Image */}
                 <div className="relative aspect-square bg-gradient-to-br from-purple-600/30 to-blue-600/30 overflow-hidden">

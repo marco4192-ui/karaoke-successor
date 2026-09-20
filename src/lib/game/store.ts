@@ -79,6 +79,10 @@ interface GameStore {
     partnerId?: string;
     partnerName?: string;
     gameMode?: 'single' | 'duel' | 'duet';
+    /** Playlist exception (user rule R10): skip the max-3-per-player limit —
+     *  set ONLY by the playlist-to-queue flow when all pairings were
+     *  deliberately configured (pre-planned evening with fixed pairings). */
+    skipLimit?: boolean;
   }) => void;
   addCompanionToQueue: (_item: Omit<QueueItem, 'id' | 'addedAt'>) => void;
   removeFromQueue: (_itemId: string) => void;
@@ -449,13 +453,18 @@ export const useGameStore = create<GameStore>()(
       },
 
       addToQueue: (song, playerId, playerName, options) => {
-        const currentQueue = get().queue;
-        const playerQueueCount = currentQueue.filter(
-          (item) => item.playerId === playerId || item.partnerId === playerId
-        ).length;
+        // Max 3 songs per player (as main or partner) — the normal rule.
+        // R10 playlist exception: options.skipLimit lifts it when a whole
+        // playlist is queued with deliberately configured pairings.
+        if (!options?.skipLimit) {
+          const currentQueue = get().queue;
+          const playerQueueCount = currentQueue.filter(
+            (item) => item.playerId === playerId || item.partnerId === playerId
+          ).length;
 
-        // Max 3 songs per player (as main or partner)
-        if (playerQueueCount >= 3) return;
+          // Max 3 songs per player (as main or partner)
+          if (playerQueueCount >= 3) return;
+        }
 
         const item: QueueItem = {
           id: crypto.randomUUID(),

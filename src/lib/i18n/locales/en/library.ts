@@ -159,6 +159,10 @@ export const libraryTranslations = {
     willAdd: '{count} of {total} songs will be added',
     cancel: 'Cancel',
     addAll: 'Add {count} songs',
+    noLimitToggle: 'No per-player limit (lift the 3-per-player cap)',
+    noLimitOff: 'Default: at most 3 songs per player are added to the queue (as singer or partner).',
+    noLimitAutoOn: 'All pairings were set manually — the limit is lifted automatically. The entire playlist will be queued.',
+    noLimitManualOn: 'Limit lifted manually — the entire playlist will be queued without a per-player limit.',
   },
 
   song: {
@@ -497,6 +501,7 @@ export const libraryTranslations = {
     studioLocalApplied: '{n} song(s) updated locally only.',
     bootTitle: 'Loading editor…',
     loadMore: 'Load More',
+    duetBadge: 'Duet song (2 voices)',
     saving: 'Saving...',
     saveChanges: 'Save changes to TXT file',
     saveError: 'Error saving',

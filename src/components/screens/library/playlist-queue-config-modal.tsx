@@ -70,6 +70,27 @@ export function PlaylistQueueConfigModal({
     }))
   );
 
+  // ── R10 playlist exception: no per-player limit when ALL pairings were
+  // manually configured ──
+  // Track which rows the user has deliberately assigned (player, partner or
+  // mode changed from the default prefill). When EVERY row is touched, the
+  // modal auto-lifts the max-3-per-player rule (pre-planned evening with
+  // fixed pairings — a deliberate act by everyone involved). An explicit
+  // toggle lets the host override in either direction.
+  const [touchedSongIds, setTouchedSongIds] = useState<Set<string>>(new Set());
+  const [noLimitOverride, setNoLimitOverride] = useState<boolean | null>(null);
+  const allPairingsManual = configs.length > 0 && configs.every(c => touchedSongIds.has(c.songId));
+  const noPlayerLimit = noLimitOverride ?? allPairingsManual;
+
+  const markTouched = useCallback((songId: string) => {
+    setTouchedSongIds(prev => {
+      if (prev.has(songId)) return prev;
+      const next = new Set(prev);
+      next.add(songId);
+      return next;
+    });
+  }, []);
+
   // Reset configs when songs change (modal reopened with different playlist)
   const [lastSongHash, setLastSongHash] = useState('');
   const currentHash = songs.map(s => s.id).join(',');
@@ -84,6 +105,9 @@ export function PlaylistQueueConfigModal({
       partnerId: '',
       partnerName: '',
     })));
+    // R10: fresh playlist → fresh manual-pairing tracking
+    setTouchedSongIds(new Set());
+    setNoLimitOverride(null);
   }
 
   // Drag state
@@ -93,6 +117,12 @@ export function PlaylistQueueConfigModal({
   const updateConfig = useCallback((index: number, updates: Partial<SongConfig>) => {
     setConfigs(prev => prev.map((c, i) => i === index ? { ...c, ...updates } : c));
   }, []);
+
+  // Update a config AND mark it as manually configured (R10 exception)
+  const updateConfigManual = useCallback((index: number, songId: string, updates: Partial<SongConfig>) => {
+    updateConfig(index, updates);
+    markTouched(songId);
+  }, [updateConfig, markTouched]);
 
   // Move item (drag and drop)
   const moveItem = useCallback((from: number, to: number) => {
@@ -108,29 +138,34 @@ export function PlaylistQueueConfigModal({
 
   // Add all configured songs to the queue
   const handleAddAll = () => {
-    const { queue } = useGameStore.getState();
     for (const config of configs) {
-      // Check max 3 per player
-      const playerQueueCount = queue.filter(
-        item => item.playerId === config.playerId || item.partnerId === config.playerId
-      ).length;
-      if (playerQueueCount >= 3) continue;
+      // Max 3 per player — SKIPPED entirely when the playlist exception is
+      // active (all pairings manually configured / toggle enabled, R10).
+      if (!noPlayerLimit) {
+        const { queue } = useGameStore.getState();
+        const playerQueueCount = queue.filter(
+          item => item.playerId === config.playerId || item.partnerId === config.playerId
+        ).length;
+        if (playerQueueCount >= 3) continue;
+      }
 
-      const opts: { partnerId?: string; partnerName?: string; gameMode?: 'single' | 'duel' | 'duet' } = {
+      const opts: { partnerId?: string; partnerName?: string; gameMode?: 'single' | 'duel' | 'duet'; skipLimit?: boolean } = {
         gameMode: config.gameMode,
       };
       if (config.gameMode !== 'single' && config.partnerId) {
         opts.partnerId = config.partnerId;
         opts.partnerName = config.partnerName;
       }
+      if (noPlayerLimit) opts.skipLimit = true;
 
       addToQueue(config.song, config.playerId, config.playerName, opts);
     }
     onClose(false);
   };
 
-  // Count how many would be added (respecting max-3 rule)
+  // Count how many would be added (respecting max-3 rule unless lifted)
   const countAddable = () => {
+    if (noPlayerLimit) return configs.length;
     const { queue } = useGameStore.getState();
     let count = 0;
     const perPlayer = new Map<string, number>();
@@ -226,7 +261,7 @@ export function PlaylistQueueConfigModal({
                       if (isDuetSong && mode !== 'duet') {
                         return; // don't allow switching away from duet for duet songs
                       }
-                      updateConfig(index, updates);
+                      updateConfigManual(index, config.songId, updates);
                     }}
                     disabled={isDuetSong}
                     className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white appearance-none cursor-pointer hover:border-cyan-500/50 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -245,7 +280,7 @@ export function PlaylistQueueConfigModal({
                     onChange={(e) => {
                       const profile = activeProfiles.find(p => p.id === e.target.value);
                       if (profile) {
-                        updateConfig(index, { playerId: profile.id, playerName: profile.name });
+                        updateConfigManual(index, config.songId, { playerId: profile.id, playerName: profile.name });
                       }
                     }}
                     className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white appearance-none cursor-pointer hover:border-cyan-500/50"
@@ -265,7 +300,7 @@ export function PlaylistQueueConfigModal({
                       onChange={(e) => {
                         const profile = activeProfiles.find(p => p.id === e.target.value);
                         if (profile) {
-                          updateConfig(index, { partnerId: profile.id, partnerName: profile.name });
+                          updateConfigManual(index, config.songId, { partnerId: profile.id, partnerName: profile.name });
                         }
                       }}
                       className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white appearance-none cursor-pointer hover:border-cyan-500/50"
@@ -307,28 +342,56 @@ export function PlaylistQueueConfigModal({
         </div>
 
         {/* Footer with actions */}
-        <div className="flex items-center justify-between gap-3 pt-4 border-t border-white/10 mt-2">
-          <div className="text-sm text-white/50">
-            {t('playlistQueueConfig.willAdd').replace('{count}', String(countAddable())).replace('{total}', String(configs.length))}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onClose(false)}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              {t('playlistQueueConfig.cancel')}
-            </Button>
-            <Button
-              onClick={handleAddAll}
-              disabled={configs.length === 0 || countAddable() === 0}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
-            >
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              {t('playlistQueueConfig.addAll').replace('{count}', String(countAddable()))}
-            </Button>
+        <div className="flex flex-col gap-3 pt-4 border-t border-white/10 mt-2">
+          {/* R10 playlist exception toggle: lift the 3-per-player limit when
+              all pairings were deliberately configured (auto-on once every
+              row was touched; the host can override either way). */}
+          <label className="flex items-start gap-2.5 cursor-pointer select-none group">
+            <input
+              type="checkbox"
+              checked={noPlayerLimit}
+              onChange={(e) => setNoLimitOverride(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+            />
+            <span className="text-xs leading-relaxed">
+              <span className="font-medium text-white/85 group-hover:text-white transition-colors">
+                {t('playlistQueueConfig.noLimitToggle')}
+              </span>
+              <span className="block text-white/45 mt-0.5">
+                {noPlayerLimit
+                  ? allPairingsManual
+                    ? t('playlistQueueConfig.noLimitAutoOn')
+                    : t('playlistQueueConfig.noLimitManualOn')
+                  : t('playlistQueueConfig.noLimitOff')}
+              </span>
+            </span>
+          </label>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm text-white/50">
+              {noPlayerLimit && (
+                <span className="mr-1.5" aria-hidden="true">♾️</span>
+              )}
+              {t('playlistQueueConfig.willAdd').replace('{count}', String(countAddable())).replace('{total}', String(configs.length))}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onClose(false)}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                {t('playlistQueueConfig.cancel')}
+              </Button>
+              <Button
+                onClick={handleAddAll}
+                disabled={configs.length === 0 || countAddable() === 0}
+                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
+              >
+                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                {t('playlistQueueConfig.addAll').replace('{count}', String(countAddable()))}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

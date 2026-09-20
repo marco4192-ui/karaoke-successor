@@ -151,6 +151,10 @@ playlistQueueConfig: {
   willAdd: '{count} von {total} Songs werden hinzugefügt',
   cancel: 'Abbrechen',
   addAll: '{count} Songs hinzufügen',
+  noLimitToggle: 'Kein Spieler-Limit (max. 3 pro Spieler aufheben)',
+  noLimitOff: 'Standard: pro Spieler werden maximal 3 Songs zur Queue hinzugefügt (als Sänger oder Partner).',
+  noLimitAutoOn: 'Alle Paarungen wurden manuell festgelegt — das Limit ist automatisch aufgehoben. Die komplette Playlist wird eingereiht.',
+  noLimitManualOn: 'Limit manuell aufgehoben — die komplette Playlist wird ohne Spieler-Limit eingereiht.',
 },
 song: {
   difficulty: 'Schwierigkeit',
@@ -477,6 +481,7 @@ editor: {
   studioLocalApplied: '{n} Song(s) nur lokal aktualisiert.',
   bootTitle: 'Editor wird geladen…',
   loadMore: 'Mehr laden',
+  duetBadge: 'Duett-Song (2 Stimmen)',
   saving: 'Speichere...',
   saveChanges: 'Änderungen in TXT-Datei speichern',
   saveError: 'Fehler beim Speichern',
