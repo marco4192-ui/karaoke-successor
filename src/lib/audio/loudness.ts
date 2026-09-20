@@ -251,8 +251,10 @@ export async function getSongLoudnessGainDb(
  */
 const appliedGainDb = new WeakMap<HTMLMediaElement, number>();
 
-/** True when the element's current media is same-origin (safe for Web Audio). */
-function isSameOriginMedia(el: HTMLMediaElement): boolean {
+/** True when the element's current media is same-origin (safe for Web Audio).
+ *  R9: exported so other consumers (Battle Royale) can guard the Web Audio
+ *  boost path the same way the game screen does. */
+export function isSameOriginMedia(el: HTMLMediaElement): boolean {
   try {
     const src = el.currentSrc || el.src;
     if (!src) return true;

@@ -23,6 +23,10 @@ export const KARAOKE_DEFAULT_CONFIG: PitchDetectorConfig = {
 };
 
 // Difficulty-based configurations - optimized for karaoke
+// R9 (latency, user request 2.3): stability frames trimmed (medium 3→2,
+// hard 5→4). Each frame is one rAF tick (~16 ms) of EXTRA detection latency
+// before the stabilized pitch unlocks; 2 frames (~33 ms) is plenty for
+// karaoke-grade stability while cutting the perceived pitch lag.
 export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> = {
   easy: {
     volumeThreshold: 0.02,        // Very sensitive - picks up quiet singing
@@ -35,7 +39,7 @@ export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> =
   },
   medium: {
     volumeThreshold: 0.04,        // Sensitive
-    pitchStabilityFrames: 3,      // Quick but stable
+    pitchStabilityFrames: 2,      // Quick but stable (R9: was 3)
     yinThreshold: 0.12,           // Standard detection
     noiseGateEnabled: true,
     noiseGateThreshold: -45,
@@ -44,7 +48,7 @@ export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> =
   },
   hard: {
     volumeThreshold: 0.06,        // Moderate sensitivity
-    pitchStabilityFrames: 5,      // More stable pitch required
+    pitchStabilityFrames: 4,      // More stable pitch required (R9: was 5)
     yinThreshold: 0.15,           // Stricter detection
     noiseGateEnabled: true,
     noiseGateThreshold: -40,

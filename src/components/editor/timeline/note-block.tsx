@@ -40,9 +40,11 @@ export function NoteBlock({
   // Calculate position and dimensions
   const startX = (note.startTime / 1000) * pixelsPerSecond - scrollOffset;
   const width = Math.max(10, (note.duration / 1000) * pixelsPerSecond);
-  // Thicker note bars: fill the lane as much as possible (0.9× + 3px,
-  // capped just under the lane height) and center vertically.
-  const noteHeight = Math.min(pitchHeight - 1, Math.round(pitchHeight * 0.9) + 3);
+  // Thicker note bars (R9, user request 1.1): fill the lane at ~96% + 4px
+  // (was 0.9× + 3px) — combined with the 24-semitave pitch window this makes
+  // the bars ≥50% taller than before. Capped just under the lane height and
+  // centered vertically.
+  const noteHeight = Math.min(pitchHeight - 1, Math.round(pitchHeight * 0.96) + 4);
   const y = (maxPitch - note.pitch) * pitchHeight + (pitchHeight - noteHeight) / 2;
 
   // Get note color based on type ( : normal, * golden, F freestyle, R rap, G golden rap )

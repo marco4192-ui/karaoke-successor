@@ -5,7 +5,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
-import { safeAlert } from '@/lib/safe-dialog';
 import { MusicIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { Monitor, Cpu, PackageCheck, PackageX, Server } from 'lucide-react';
@@ -56,6 +55,12 @@ export function AboutTab({
 }: AboutTabProps) {
   const { t } = useTranslation();
   const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  /** R9 (user request 5): live leaderboard connection status. */
+  const [leaderboardStatus, setLeaderboardStatus] = useState<
+    | { state: 'testing' }
+    | { state: 'ok'; version?: string }
+    | { state: 'error'; message?: string }
+  | null>(null);
 
   // Fetch platform/runtime diagnostics from the Rust backend (Tauri only).
   // In the browser the card is not rendered at all.
@@ -227,20 +232,73 @@ export function AboutTab({
       {/* Leaderboard Status */}
       <Card className="bg-white/5 border-white/10">
         <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">{t('settingsAbout.onlineLeaderboard')}</h4>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h4 className="font-medium flex items-center gap-2">
+                <Server className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden />
+                {t('settingsAbout.onlineLeaderboard')}
+              </h4>
               <p className="text-sm text-white/60">{t('settingsAbout.onlineLeaderboardDesc')}</p>
+              {/* R9 (user request 5): live connection status — spinner while
+                  testing, green with server name/version on success, red with
+                  the actual failure reason on error (previously a bare
+                  safeAlert that could silently do nothing in the WebView). */}
+              {leaderboardStatus && (
+                <div
+                  className={`mt-2 text-xs rounded-lg border px-2.5 py-1.5 flex items-center gap-2 ${
+                    leaderboardStatus.state === 'testing'
+                      ? 'bg-white/5 border-white/10 text-white/60'
+                      : leaderboardStatus.state === 'ok'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-red-500/10 border-red-500/30 text-red-300'
+                  }`}
+                  role="status"
+                  data-testid="leaderboard-connection-status"
+                >
+                  {leaderboardStatus.state === 'testing' && (
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" aria-hidden />
+                  )}
+                  {leaderboardStatus.state === 'ok' && (
+                    <PackageCheck className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                  )}
+                  {leaderboardStatus.state === 'error' && (
+                    <PackageX className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                  )}
+                  <span className="min-w-0 break-words">
+                    {leaderboardStatus.state === 'testing' && t('settingsAbout.testingConnection')}
+                    {leaderboardStatus.state === 'ok' && (
+                      <>
+                        {t('settingsAbout.connected')}
+                        {leaderboardStatus.version ? ` · v${leaderboardStatus.version}` : ''}
+                      </>
+                    )}
+                    {leaderboardStatus.state === 'error' && (
+                      <>
+                        {t('settingsAbout.notConnected')}
+                        {leaderboardStatus.message ? ` — ${leaderboardStatus.message}` : ''}
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
             <Button
               variant="outline"
+              disabled={leaderboardStatus?.state === 'testing'}
               onClick={async () => {
-                const connected = await leaderboardService.testConnection();
-                safeAlert(connected ? t('settingsAbout.connected') : t('settingsAbout.notConnected'));
+                setLeaderboardStatus({ state: 'testing' });
+                const result = await leaderboardService.testConnectionDetailed();
+                setLeaderboardStatus(
+                  result.ok
+                    ? { state: 'ok', version: result.version }
+                    : { state: 'error', message: result.message },
+                );
               }}
-              className="border-cyan-500/50 text-cyan-400"
+              className="border-cyan-500/50 text-cyan-400 shrink-0"
             >
-              {t('settingsAbout.testConnection')}
+              {leaderboardStatus?.state === 'testing'
+                ? t('settingsAbout.testingConnection')
+                : t('settingsAbout.testConnection')}
             </Button>
           </div>
         </CardContent>

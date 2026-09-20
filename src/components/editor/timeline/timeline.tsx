@@ -24,11 +24,18 @@ import { snapTimeToBeat } from '@/lib/editor/beat-utils';
  */
 export type NoteHistoryMode = 'push' | 'live' | 'commit' | 'replace';
 
-// Visible pitch range per lane (3 octaves = 36 semitones)
-const VISIBLE_OCTAVES = 3;
+// Visible pitch range per lane (2 octaves = 24 semitones).
+// R9 (user request 1.1): was 3 octaves/36 semitones — the per-semitone lane
+// rows were so flat that the note bars looked thin. Halving the visible
+// range makes each row ~50% taller → note bars ≥50% thicker. The pitch
+// ladder auto-centers on the notes' median and Shift+wheel scrolls, so
+// notes outside the window stay reachable.
+const VISIBLE_OCTAVES = 2;
 const VISIBLE_PITCH_RANGE = VISIBLE_OCTAVES * 12;
-// Split-view lanes show 2 octaves each (both players share the vertical space)
-const SPLIT_PITCH_RANGE = 2 * 12;
+// Split-view lanes (duet) show 16 semitones each — ~50% thicker note bars
+// than the old 24-semitave lanes; trio/quartet lanes show 10 semitones.
+const SPLIT_PITCH_RANGE = 16;
+const SPLIT_PITCH_RANGE_MULTI = 10;
 
 interface TimelineProps {
   song: Song;
@@ -204,14 +211,16 @@ export function Timeline({
   }, [viewport.height]);
 
   const combinedPitchHeight = useMemo(() => {
-    return Math.max(12, Math.min(22, Math.floor(notesAreaHeight / VISIBLE_PITCH_RANGE)));
+    // R9: caps raised (12–22 → 14–34) so larger screens get proportionally
+    // thicker note bars instead of everything being clamped at 22px.
+    return Math.max(14, Math.min(34, Math.floor(notesAreaHeight / VISIBLE_PITCH_RANGE)));
   }, [notesAreaHeight]);
   const splitPitchHeight = useMemo(() => {
     const laneCount = Math.max(2, presentVoices.length || 2);
-    // 2 voices keep the classic 2-octave lanes; 3-4 voices get 1 octave each
-    // so all lanes fit into the available area.
-    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : 12;
-    return Math.max(8, Math.min(22, Math.floor((notesAreaHeight / laneCount) / rangePerLane)));
+    // 2 voices get 16-semitave lanes (thicker bars, R9); 3-4 voices get 10
+    // semitones each so all lanes fit into the available area.
+    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : SPLIT_PITCH_RANGE_MULTI;
+    return Math.max(10, Math.min(30, Math.floor((notesAreaHeight / laneCount) / rangePerLane)));
   }, [notesAreaHeight, presentVoices.length]);
 
   // ── Calculate center pitch from song's notes ──
@@ -272,7 +281,7 @@ export function Timeline({
       ? presentVoices
       : ['P1', ...presentVoices];
     const laneCount = Math.max(2, laneVoices.length);
-    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : 12;
+    const rangePerLane = laneCount <= 2 ? SPLIT_PITCH_RANGE : SPLIT_PITCH_RANGE_MULTI;
     const laneHeight = rangePerLane * splitPitchHeight;
     const clampSplitCenter = (center: number) => {
       const minAllowed = TOTAL_MIN_PITCH + rangePerLane / 2;
@@ -509,15 +518,51 @@ export function Timeline({
     }
   }, [allNotes, lanes]);
 
-  // Handle note click — Ctrl/Cmd+Click toggles the multi-selection (YASS-style)
+  // Handle note click — Ctrl/Cmd+Click toggles the multi-selection (YASS-style).
+  // R9 (user request 1.2): clicking an ALREADY-selected note whose rectangle
+  // is fully covered by other notes (duet: both players sing the same pitch at
+  // the same time) cycles to the next stacked note underneath, so P1's and
+  // P2's simultaneous notes can be selected and edited INDEPENDENTLY in the
+  // combined view without switching to the split view.
   const handleNoteClick = useCallback((noteId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     if (event.ctrlKey || event.metaKey) {
       onNoteCtrlToggle(noteId);
-    } else {
-      onNoteSelect(noteId);
+      return;
     }
-  }, [onNoteSelect, onNoteCtrlToggle]);
+    if (noteId === selectedNoteId) {
+      const lane = lanes.find(l => l.notes.some(n => n.id === noteId));
+      const clicked = lane?.notes.find(n => n.id === noteId);
+      if (lane && clicked) {
+        // Stacked = same lane, same pitch row, overlapping time ranges
+        const stacked = lane.notes.filter(n =>
+          n.id !== noteId &&
+          n.pitch === clicked.pitch &&
+          n.startTime < clicked.startTime + clicked.duration &&
+          n.startTime + n.duration > clicked.startTime,
+        );
+        if (stacked.length > 0) {
+          // Cycle in RENDER order: the next stacked note after the clicked
+          // one's DOM position (wraps around). The newly selected note gets
+          // the z-10 ring and paints on top, so each subsequent click on the
+          // same spot advances through the stack one note at a time.
+          const order = lane.notes;
+          const currentIdx = order.findIndex(n => n.id === noteId);
+          const stackedIds = new Set(stacked.map(n => n.id));
+          let nextId: string | null = null;
+          for (let i = 1; i <= order.length; i++) {
+            const cand = order[(currentIdx + i + order.length) % order.length];
+            if (stackedIds.has(cand.id)) { nextId = cand.id; break; }
+          }
+          if (nextId) {
+            onNoteSelect(nextId);
+            return;
+          }
+        }
+      }
+    }
+    onNoteSelect(noteId);
+  }, [onNoteSelect, onNoteCtrlToggle, selectedNoteId, lanes]);
 
   // ── Jump-to-note (shared by lyric-track double-click + lyrics panel) ──
   // Brings a note into view: horizontally centered in the viewport, vertically
@@ -836,7 +881,7 @@ export function Timeline({
                       const startMs = song.gap + cn.beat * detailBeatDuration;
                       const startX = (startMs / 1000) * pixelsPerSecond - scrollOffset;
                       const width = Math.max(6, (cn.lengthBeats * detailBeatDuration / 1000) * pixelsPerSecond);
-                      const blockHeight = Math.min(lane.pitchHeight - 1, Math.round(lane.pitchHeight * 0.9) + 3);
+                      const blockHeight = Math.min(lane.pitchHeight - 1, Math.round(lane.pitchHeight * 0.96) + 4);
                       // 2px vertical offset keeps overlaps with real notes readable
                       const y = (lane.maxPitch - cn.pitch) * lane.pitchHeight + (lane.pitchHeight - blockHeight) / 2 + 2;
                       if (startX + width < 0 || startX > viewport.width) return null;

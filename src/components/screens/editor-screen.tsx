@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getAllSongs, getAllSongsAsync, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongs, getAllSongsAsync, addSong, updateSong, removeSong, purgeAbortedNewSongs, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { reconcileLibraryFromFiles } from '@/lib/game/library-reconcile';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
@@ -21,6 +21,28 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
 
+  // ── R9 (user request 1.3): aborted new songs must not stay in the library.
+  // Songs created via the New Song dialog are added to the library immediately
+  // (so the editor can open them), but until the user ACTIVELY saves them to
+  // disk (handleSave / "Save only" in the editor) they are "pending". When the
+  // editor is cancelled — or this screen unmounts — pending songs are removed
+  // again so no half-finished shells linger in the library.
+  const pendingNewSongIds = useRef<Set<string>>(new Set());
+  const dropPendingNewSong = useCallback((songId: string) => {
+    if (!pendingNewSongIds.current.has(songId)) return;
+    pendingNewSongIds.current.delete(songId);
+    removeSong(songId);
+    setSongs(prev => prev.filter(s => s.id !== songId));
+  }, []);
+  // Unmount safety net: leaving the EditorScreen (back to home) with an
+  // unsaved new song in the editor drops it from the library as well.
+  useEffect(() => {
+    const pending = pendingNewSongIds.current;
+    return () => {
+      for (const id of pending) removeSong(id);
+    };
+  }, []);
+
   // ── Initial load (R4 point 6): Ladescreen until songs AND covers are ready.
   // The editor now uses the SAME loading path as the Library: getAllSongsAsync()
   // eagerly restores cover URLs (Tauri: shared blobUrlCache; browser: media-db)
@@ -28,6 +50,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // only the first 100 songs, which is why covers visibly reloaded here.
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   useEffect(() => {
+    // R9 (1.3): first, purge aborted new-song shells from earlier sessions
+    // (`new-` ids that were never saved to a txt file and carry no notes).
+    const purged = purgeAbortedNewSongs();
+    if (purged > 0) setSongs(prev => prev.filter(s => !s.id.startsWith('new-') || !!s.lyrics?.length || !!s.relativeTxtPath));
     let cancelled = false;
     (async () => {
       try {
@@ -266,6 +292,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
   const handleSave = (updatedSong: Song) => {
     updateSong(updatedSong.id, updatedSong);
+    // Actively saved → it is now a permanent library entry (R9 1.3)
+    pendingNewSongIds.current.delete(updatedSong.id);
     refreshSongs();
     setSelectedSong(null);
   };
@@ -519,7 +547,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             <KaraokeEditor
               song={selectedSong}
               onSave={handleSave}
-              onCancel={() => setSelectedSong(null)}
+              onCancel={() => {
+                // R9 (1.3): an aborted new song that was never actively saved
+                // is dropped from the library again (no half-finished shells).
+                const cancelledSong = selectedSong;
+                setSelectedSong(null);
+                if (cancelledSong) dropPendingNewSong(cancelledSong.id);
+              }}
+              onSongPersisted={(persisted) => {
+                // Successfully written to disk → permanent library entry
+                pendingNewSongIds.current.delete(persisted.id);
+              }}
             />
           </div>
         </div>
@@ -593,10 +631,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       {showNewSongDialog && (
         <NewSongDialog
           onSave={(song) => {
-            addSong(song);
+            void addSong(song);
+            // R9 (1.3): tracked as "pending" — removed again when the editor
+            // is cancelled without an active save (see KaraokeEditor onCancel).
+            pendingNewSongIds.current.add(song.id);
             setShowNewSongDialog(false);
             // Immediately open the new song in the editor
             setSelectedSong(song);
+            setSongs(prev => (prev.some(s => s.id === song.id) ? prev : [...prev, song]));
           }}
           onCancel={() => setShowNewSongDialog(false)}
         />

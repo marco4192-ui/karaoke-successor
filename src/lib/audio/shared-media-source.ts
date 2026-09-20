@@ -49,7 +49,7 @@ export async function getSharedMediaSource(element: HTMLMediaElement): Promise<{
     return { context: cached.context, source: cached.source, gain: cached.gain };
   }
 
-  const context = new AudioContext();
+  const context = new AudioContext({ latencyHint: 'interactive' });
   // In Tauri webviews the AudioContext is often created in "suspended" state.
   if (context.state === 'suspended') {
     await context.resume();

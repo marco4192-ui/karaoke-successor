@@ -35,8 +35,12 @@ export interface UseNativeAudioResult {
   currentPosition: number;
   /** Whether native audio is currently playing. */
   isPlaying: boolean;
-  /** Play an audio file through native output. */
-  play: (_filePath: string) => Promise<void>;
+  /** Play an audio file through native output.
+   *  R9 (user request 4): `opts.onError` is invoked when the Rust backend
+   *  reports a playback error (delivered via Channel IPC — NOT as a promise
+   *  rejection), so callers can fall back to the browser audio element
+   *  instead of sitting on a muted element with no sound. */
+  play: (_filePath: string, _opts?: { onError?: (_message: string) => void }) => Promise<void>;
   /** Pause playback. */
   pause: () => Promise<void>;
   /** Resume playback. */
@@ -99,7 +103,7 @@ export function useNativeAudio(): UseNativeAudioResult {
   }, [refreshDevices]);
 
   // Playback controls
-  const play = useCallback(async (filePath: string) => {
+  const play = useCallback(async (filePath: string, opts?: { onError?: (_message: string) => void }) => {
     const gen = ++playGenRef.current;
     try {
       setIsPlaying(true);
@@ -121,6 +125,8 @@ export function useNativeAudio(): UseNativeAudioResult {
           if (playGenRef.current !== gen || !mountedRef.current) return;
           // eslint-disable-next-line no-console
           console.error('[NativeAudio] Backend error:', message);
+          // R9: surface backend errors to the caller (browser fallback)
+          opts?.onError?.(message);
         },
       });
 

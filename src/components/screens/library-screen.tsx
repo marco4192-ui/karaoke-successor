@@ -5,7 +5,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics, purgeAbortedNewSongs } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { StorageKeys, getItem, getString, setJson } from '@/lib/storage';
 import { 
@@ -159,6 +159,10 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
   
   useEffect(() => {
     let cancelled = false;
+    // R9 (user request 1.3): aborted new songs must not appear in the library.
+    // Shells from earlier sessions (new- dialog creations never saved to a
+    // txt file, no notes) are purged once when the library mounts.
+    purgeAbortedNewSongs();
     const applySongs = (songs: Song[]) => {
       if (cancelled) return;
       setLoadedSongs(songs);

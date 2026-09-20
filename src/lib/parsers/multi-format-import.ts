@@ -650,7 +650,8 @@ export function convertToSong(
         text: l.text,
         startTime: l.start,
         endTime: l.end,
-        notes: generateNotesFromText(l.text, l.start, l.end),
+        // R9 (1.2): line-scoped prefix — ids like `note-0` collided across lines
+        notes: generateNotesFromText(l.text, l.start, l.end, `km${i}`),
       }));
       return { title: km.title, artist: km.artist, lyrics, audioUrl: km.audioFile || audioUrl, videoBackground: km.videoFile || videoUrl };
     }
@@ -768,7 +769,8 @@ export function convertToSong(
         }
 
         currentLine.notes.push({
-          id: `note-${currentLine.notes.length}`,
+          // R9 (1.2): include the line index — `note-0` existed once per line
+          id: `note-ss${lyrics.length}-${currentLine.notes.length}`,
           pitch: note.pitch,
           frequency: midiPitchToFrequency(note.pitch),
           startTime: note.startTime, duration: note.duration,
@@ -827,7 +829,7 @@ function joinSyllables(notes: Note[]): string {
   return text.replace(/\s+/g, ' ').trim();
 }
 
-function generateNotesFromText(text: string, startTime: number, endTime: number): Note[] {
+function generateNotesFromText(text: string, startTime: number, endTime: number, idPrefix = 'n'): Note[] {
   const words = text.split(' ').filter(w => w.length > 0);
   const totalDuration = endTime - startTime;
   const noteDuration = words.length > 0 ? totalDuration / words.length : totalDuration;
@@ -837,7 +839,8 @@ function generateNotesFromText(text: string, startTime: number, endTime: number)
     // Math.random() so the same text always produces the same note layout.
     const pitch = 60 + (i % 12);
     return {
-      id: `note-${i}`,
+      // R9 (1.2): caller-scoped prefix keeps ids unique across lines
+      id: `note-${idPrefix}-${i}`,
       pitch,
       frequency: midiPitchToFrequency(pitch),
       startTime: startTime + i * noteDuration,

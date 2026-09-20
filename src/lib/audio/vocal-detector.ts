@@ -125,9 +125,15 @@ export class VocalDetector {
   private onsetTimes: number[] = [];
 
   // Hysteresis: avoid rapid toggling between singing/non-singing.
-  // We require N consecutive frames below threshold before blocking scoring.
+  // R9 (user request 2.1 — "regelmäßige Aussetzer"): we require N consecutive
+  // frames below threshold before blocking. 5 frames (~83 ms) was far too
+  // short: a sustained steady syllable (low pitch variance + no fresh onset)
+  // dips below the confidence threshold for a few hundred ms in the MIDDLE of
+  // every held note, so isSinging flickered false in a regular per-note
+  // rhythm. 18 frames (~300 ms at 60 fps) rides out those mid-note dips;
+  // actual humming (minutes of drone) is still blocked reliably.
   private nonSingingFrameCount: number = 0;
-  private readonly HYSTERESIS_FRAMES = 5; // ~83 ms at 60 fps
+  private readonly HYSTERESIS_FRAMES = 18; // ~300 ms at 60 fps
   private isCurrentlySinging: boolean = true; // Start as singing (don't block on first frames)
 
   public constructor(config: Partial<VocalDetectorConfig> = {}) {
@@ -268,11 +274,14 @@ export class VocalDetector {
     return sumSqDiff / pitches.length;
   }
 
-  /** Convert pitch variance to a 0–1 score */
+  /** Convert pitch variance to a 0–1 score.
+   *  R9: sustained sung notes legitimately have LOW variance — the floor for
+   *  "very low variance" is raised (0.3 → 0.45) so held syllables no longer
+   *  drag the overall confidence below the singing threshold on their own. */
   private scorePitchVariance(variance: number): number {
     if (variance < this.config.minPitchVariance) {
-      // Very low variance → humming
-      return variance / this.config.minPitchVariance * 0.3;
+      // Very low variance → possibly humming — but held notes sing like this
+      return variance / this.config.minPitchVariance * 0.45;
     }
     if (variance > 0.5) {
       // High variance → likely singing with vibrato/melody changes
@@ -373,14 +382,17 @@ export class VocalDetector {
     return this.onsetTimes.length / (windowMs / 1000);
   }
 
-  /** Score onset rate: singing typically 2–8 onsets per second */
+  /** Score onset rate: singing typically 2–8 onsets per second.
+   *  R9: held notes legitimately have ~0 onsets for a while — the low-rate
+   *  floor is raised (×0.3 → ×0.45) so a long syllable doesn't flip the
+   *  verdict on its own. */
   private scoreOnsetRate(rate: number): number {
     if (rate >= this.config.minOnsetRate && rate <= 10) {
       return Math.min(1.0, rate / 5); // Peaks at 5 onsets/s
     }
     if (rate < this.config.minOnsetRate) {
-      // Low onset rate → likely humming
-      return (rate / this.config.minOnsetRate) * 0.3;
+      // Low onset rate → likely humming or a held syllable
+      return (rate / this.config.minOnsetRate) * 0.45;
     }
     // Very high rate → possibly noise/clicks
     return 0.3;

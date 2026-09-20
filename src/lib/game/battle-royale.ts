@@ -42,6 +42,7 @@ export {
 // Elimination & round transitions & grand finale
 export {
   endRoundAndEliminate,
+  endRoundWithoutElimination,
   eliminateWeakestMidRound,
   enterGrandFinale,
   advanceToNextRound,

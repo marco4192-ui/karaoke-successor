@@ -533,6 +533,7 @@ export const settingsTranslations = {
     onlineLeaderboard: 'Online Leaderboard',
     onlineLeaderboardDesc: 'Connect to global highscores',
     testConnection: 'Test Connection',
+    testingConnection: 'Testing…',
     connected: '✅ Connected to leaderboard!',
     notConnected: '❌ Could not connect to leaderboard',
     desktopInstalled: 'Desktop App Installed',

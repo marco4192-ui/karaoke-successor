@@ -59,7 +59,33 @@ function toApiDifficulty(d: Difficulty): 'easy' | 'normal' | 'hard' {
 
 // ── Public API ──────────────────────────────────────────
 
-/** Test if the API is reachable */
+/** Detailed connection test result (R9: the About-tab button shows WHY a
+ *  connection failed instead of a bare true/false). */
+export interface ConnectionTestResult {
+  ok: boolean;
+  /** Server name reported by the API root (on success). */
+  serverName?: string;
+  /** API version reported by the root endpoint. */
+  version?: string;
+  /** Human-readable failure reason (network error, timeout, HTTP status…). */
+  message?: string;
+}
+
+/** Test if the API is reachable — detailed variant with diagnostics. */
+async function testConnectionDetailed(): Promise<ConnectionTestResult> {
+  try {
+    const r = await request<{ name?: string; version?: string }>('/');
+    if (r && typeof r.name === 'string' && r.name.length > 0) {
+      return { ok: true, serverName: r.name, version: r.version };
+    }
+    return { ok: false, message: `Unexpected response: ${JSON.stringify(r).slice(0, 120)}` };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return { ok: false, message: reason };
+  }
+}
+
+/** Test if the API is reachable (boolean wrapper for legacy callers). */
 async function testConnection(): Promise<boolean> {
   try {
     const r = await request<{ name: string }>('/');
@@ -389,6 +415,7 @@ async function changeAccountPassword(
 
 export const leaderboardService = {
   testConnection,
+  testConnectionDetailed,
   registerProfile,
   submitScore,
   fetchSongLeaderboard,

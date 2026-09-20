@@ -96,7 +96,7 @@ export class PitchDetector {
         audio: audioConstraints,
       });
 
-      this.audioContext = new AudioContext();
+      this.audioContext = new AudioContext({ latencyHint: 'interactive' });
 
       // CRITICAL: In Tauri webviews the AudioContext is often created in
       // a "suspended" state and must be explicitly resumed, otherwise the
@@ -155,7 +155,7 @@ export class PitchDetector {
           };
           this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: fallbackConstraints });
 
-          this.audioContext = new AudioContext();
+          this.audioContext = new AudioContext({ latencyHint: 'interactive' });
           if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
           }
@@ -197,7 +197,7 @@ export class PitchDetector {
             },
           });
 
-          this.audioContext = new AudioContext();
+          this.audioContext = new AudioContext({ latencyHint: 'interactive' });
           if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
           }
@@ -242,7 +242,7 @@ export class PitchDetector {
       this.mediaStream = stream;
       this.ownsStream = false; // Do not stop tracks on destroy — stream is shared
 
-      this.audioContext = new AudioContext();
+      this.audioContext = new AudioContext({ latencyHint: 'interactive' });
 
       if (this.audioContext.state === 'suspended') {
         try {

@@ -122,7 +122,14 @@ function buildLinesFromNotes(
     const duration = note.duration * beatDuration;
 
     const convertedNote: Note = {
-      id: `note-${lyricLines.length}-${currentLineNotes.length}`,
+      // R9 (user request 1.2): the voice tag is part of the ID. buildLinesFromNotes
+      // runs once PER VOICE with fresh counters, so P1's and P2's simultaneous
+      // notes used to get IDENTICAL ids (`note-0-0` twice) — duplicate React
+      // keys made both blocks show the selection ring at once and edits/undu
+      // resolved to the wrong note. With the voice prefix every note id in a
+      // multi-voice song is unique and each player's notes can be selected,
+      // dragged and edited independently.
+      id: `note-${playerTarget ? playerTarget.toLowerCase() : 'm'}-${lyricLines.length}-${currentLineNotes.length}`,
       pitch: note.pitch + midiBaseOffset,
       frequency: midiToFrequency(note.pitch + midiBaseOffset),
       startTime: Math.round(startTime),
@@ -159,7 +166,9 @@ function buildLinesFromNotes(
 
     if (finalLineText) {
       lyricLines.push({
-        id: `line-${lyricLines.length}`,
+        // R9 (1.2): voice-prefixed LINE ids too — P1's and P2's lines would
+        // otherwise collide (`line-0` twice) and break React keys / lookups.
+        id: `line-${playerTarget ? playerTarget.toLowerCase() : 'm'}-${lyricLines.length}`,
         text: finalLineText,
         startTime: lineStartTime,
         endTime: lineEndTime,

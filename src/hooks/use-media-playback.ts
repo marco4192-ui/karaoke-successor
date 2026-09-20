@@ -10,7 +10,10 @@ export interface PlayMediaParams {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   song: Song;
   isNativeAudio: boolean;
-  nativeAudioPlay?: (_filePath: string) => Promise<void>;
+  /** R9: opts.onError lets the media layer unmute the browser element when
+   *  the native backend fails mid-flight (errors arrive via Channel IPC, not
+   *  as promise rejections). */
+  nativeAudioPlay?: (_filePath: string, _opts?: { onError?: (_message: string) => void }) => Promise<void>;
   nativeAudioSeek?: (_positionMs: number) => Promise<void>;
 }
 
@@ -72,10 +75,16 @@ export async function playSongMedia(params: PlayMediaParams): Promise<void> {
         const normalizedBase = normalizeFilePath(song.baseFolder);
         const normalizedRelative = normalizeFilePath(song.relativeAudioPath);
         const nativePath = `${normalizedBase}/${normalizedRelative}`;
-        nativeAudioPlay(nativePath).catch((err) => {
+        // R9 (user request 4): backend errors arrive via Channel IPC (NOT as
+        // promise rejections) — unmute the browser element in BOTH failure
+        // paths so the song never goes silent when native output hiccups.
+        const fallBackToBrowser = () => {
+          if (audioRef.current) audioRef.current.muted = false;
+        };
+        nativeAudioPlay(nativePath, { onError: fallBackToBrowser }).catch((err) => {
           // eslint-disable-next-line no-console
           console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
-          if (audioRef.current) audioRef.current.muted = false;
+          fallBackToBrowser();
         });
         // Seek to start position after native audio begins
         if (nativeAudioSeek) {

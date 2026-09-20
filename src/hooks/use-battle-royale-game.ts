@@ -24,7 +24,8 @@ import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
-import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { getSongLoudnessGainDb, applyLoudnessVolume, isSameOriginMedia } from '@/lib/audio/loudness';
+import { resetSharedGainNode } from '@/lib/audio/shared-media-source';
 import { StorageKeys, getBool, getNumber } from '@/lib/storage';
 
 function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
@@ -169,9 +170,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // BR plays short snippets with imperative fades; every fade-in/out now runs
   // toward/from this base instead of a literal 1. The base combines the
   // persisted master volume with the per-song loudness gain toward the 89 dB
-  // reference (element-level only — element.volume clamps boosts at 1, no Web
-  // Audio graph in BR). Analysis is cached per songId and never blocks
-  // playback: until the gain arrives the base is just the master volume.
+  // reference. R9: quiet-song BOOSTS go through the shared Web Audio gain node
+  // (applyLoudnessVolume) instead of being clamped away; attenuations fold
+  // into the element volume as before. Analysis is cached per songId and
+  // never blocks playback: until the gain arrives the base is just the master
+  // volume.
   const baseVolumeRef = useRef(1);
   useEffect(() => {
     let cancelled = false;
@@ -183,19 +186,37 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     getSongLoudnessGainDb(songId, audioUrl)
       .then((gainDb) => {
         if (cancelled) return;
-        const base = Math.min(1, Math.max(0, masterVolume * Math.pow(10, gainDb / 20)));
-        baseVolumeRef.current = base;
+        // R9 (user request 3 — volume normalization "greift nicht"):
+        // previously the boost was CLAMPED away here (Math.min(1, master ×
+        // 10^(gain/20))) — quiet songs stayed quiet in BR because element.volume
+        // cannot exceed 1. Now boosts (> 0 dB) run through the same Web Audio
+        // GainNode path the regular game screen uses (applyLoudnessVolume),
+        // while the fade base stays at master volume. Attenuation (<= 0 dB)
+        // keeps folding into element volume as before.
+        if (gainDb > 0) {
+          baseVolumeRef.current = Math.min(1, Math.max(0, masterVolume));
+          if (audioRef.current && isSameOriginMedia(audioRef.current)) {
+            applyLoudnessVolume(audioRef.current, masterVolume * 100, gainDb);
+          }
+        } else {
+          baseVolumeRef.current = Math.min(1, Math.max(0, masterVolume * Math.pow(10, gainDb / 20)));
+        }
         // Apply immediately (lowering only — never interrupt an active fade-out
         // or raise the volume mid-fade; PlayingView's per-second reset effect
         // re-asserts the base afterwards).
-        if (audioRef.current && audioRef.current.volume > base) {
-          audioRef.current.volume = base;
+        if (audioRef.current && audioRef.current.volume > baseVolumeRef.current) {
+          audioRef.current.volume = baseVolumeRef.current;
         }
       })
       .catch(() => {
         // Never throw — analysis failure means gain 0 (base = master volume).
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Song change: reset any boost left on the shared gain node so the
+      // previous song's gain cannot leak into the next one.
+      if (audioRef.current) resetSharedGainNode(audioRef.current);
+    };
   }, [currentSong?.id, mediaLoaded, audioRef, resolvedAudioUrlRef]);
 
   // ── Companion Pitch Polling ────────────────────────────────────────
@@ -760,7 +781,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const STORE_WRITE_INTERVAL_MS = 400;
 
   const startGameLoop = useCallback(() => {
-    const TICK_INTERVAL = 100;
+    // R9 (user request 2.3 — latency): 100 → 60 ms scoring cadence. The tick
+    // only does light math per player (evaluate + score update), so the extra
+    // 6-7 ticks/s cost nothing measurable while cutting the average
+    // pitch→score latency by ~20 ms.
+    const TICK_INTERVAL = 60;
     let lastTickTime = performance.now();
 
     const gameLoop = (timestamp: number) => {
@@ -860,11 +885,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             return { game: updatedGame, activeNote, tick };
           };
 
-          // Score all active MICROPHONE players — each with THEIR OWN pitch detector
+          // Score all active MICROPHONE players — each with THEIR OWN pitch detector.
+          // R9 (user request 2.1 — "nur jeder zweite Ton wird gewertet"): the
+          // isSinging gate is REMOVED from scoring. The VocalDetector classifies
+          // sustained steady notes (low pitch variance, no fresh onset) as
+          // "humming" — exactly what a held karaoke syllable looks like — so the
+          // gate dropped ticks in a regular per-note rhythm (same fix the
+          // single-player mode already made, see use-note-scoring.ts P1).
+          // Pitch presence + the detector's own volume/noise gates filter noise.
           for (const player of micPlayers) {
             const playerPitch = multiPitchRef.current.getPlayerPitch(player.id);
             if (!playerPitch) continue;
-            if (playerPitch.isSinging === false) continue;
             if (playerPitch.note == null) continue;
 
             const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
@@ -888,7 +919,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           for (const player of companionPlayers) {
             const cachedPitch = companionPitchCacheRef.current.get(player.id);
 
-            if (cachedPitch && cachedPitch.note != null && cachedPitch.isSinging !== false) {
+            // R9 (2.1): isSinging gate removed for companions too (see mic
+            // loop above) — score on detected pitch presence.
+            if (cachedPitch && cachedPitch.note != null) {
               const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
               // Ghost notes (companions too): same sample recording as the
               // mic players so their misses also render as ghost bars.

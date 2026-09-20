@@ -102,6 +102,63 @@ export function eliminateWeakestMidRound(
   };
 }
 
+/**
+ * R9 (user request 2.2): close a full-song round WITHOUT eliminating anyone.
+ *
+ * For songSelection random/vote the elimination cadence is the configured
+ * rhythm interval (mid-round eliminations) — the song ending is NOT an
+ * elimination event, it just means the NEXT song starts (same settings).
+ * This performs the round bookkeeping only: endTime, round score deltas and
+ * the bounty resolution (same rules as endRoundAndEliminate), and sets
+ * status 'elimination' so advanceToNextRound can transition.
+ */
+export function endRoundWithoutElimination(game: BattleRoyaleGame): BattleRoyaleGame {
+  const activePlayers = getActivePlayers(game);
+  if (game.rounds.length === 0) return game;
+
+  // Score deltas for this round (#9, #12)
+  const roundScoreDeltas: Record<string, number> = {};
+  for (const player of game.players) {
+    const prevScore = game.previousRoundScores[player.id] ?? 0;
+    roundScoreDeltas[player.id] = player.score - prevScore;
+  }
+
+  // Check bounty (#6): was the bounty target overtaken? (same rule as
+  // endRoundAndEliminate — the round just ended, so the claim is decided now)
+  let bountyClaimed = false;
+  let bountyClaimedById: string | null = null;
+  if (game.bountyPlayerId) {
+    const bountyPlayer = activePlayers.find(p => p.id === game.bountyPlayerId);
+    if (bountyPlayer) {
+      const sortedByDelta = [...activePlayers]
+        .filter(p => p.id !== game.bountyPlayerId)
+        .sort((a, b) => (roundScoreDeltas[b.id] ?? 0) - (roundScoreDeltas[a.id] ?? 0));
+      const topChallenger = sortedByDelta[0];
+      const bountyDelta = roundScoreDeltas[game.bountyPlayerId] ?? 0;
+      const challengerDelta = topChallenger ? (roundScoreDeltas[topChallenger.id] ?? 0) : 0;
+      if (topChallenger && challengerDelta > bountyDelta && challengerDelta > 0) {
+        bountyClaimed = true;
+        bountyClaimedById = topChallenger.id;
+      }
+    }
+  }
+
+  const updatedRounds = [...game.rounds];
+  updatedRounds[updatedRounds.length - 1] = {
+    ...updatedRounds[updatedRounds.length - 1],
+    endTime: Date.now(),
+    roundScoreDeltas,
+    bountyClaimed,
+    bountyClaimedById,
+  };
+
+  return updateGameStats({
+    ...game,
+    rounds: updatedRounds,
+    status: 'elimination',
+  });
+}
+
 export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
   const activePlayers = getActivePlayers(game);
 

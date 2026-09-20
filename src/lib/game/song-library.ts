@@ -448,6 +448,50 @@ export function updateSong(songId: string, updates: Partial<Song>): void {
   }
 }
 
+/**
+ * Remove a song from the custom library (persisted: IndexedDB + localStorage).
+ * R9 (user request 1.3): used to drop aborted "New Song" creations that were
+ * never actively saved by the user — they must not linger in the library.
+ */
+export function removeSong(songId: string): void {
+  try {
+    const customSongs = getCustomSongs();
+    const next = customSongs.filter(s => s.id !== songId);
+    if (next.length === customSongs.length) return; // not present — nothing to do
+    saveCustomSongs(next);
+    songCache = null;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[SongLibrary] Failed to remove song:', e);
+  }
+}
+
+/**
+ * R9 (user request 1.3): purge PRE-EXISTING aborted new-song shells from
+ * earlier sessions. A "shell" is a New-Song-Dialog creation (`new-` id) that
+ * was never actively saved: no txt file reference (relativeTxtPath) and no
+ * notes. Returns the number of removed entries so callers can refresh state.
+ */
+export function purgeAbortedNewSongs(): number {
+  try {
+    const customSongs = getCustomSongs();
+    const shells = customSongs.filter(s =>
+      s.id.startsWith('new-') &&
+      !s.relativeTxtPath &&
+      (!s.lyrics || s.lyrics.length === 0),
+    );
+    if (shells.length === 0) return 0;
+    const shellIds = new Set(shells.map(s => s.id));
+    saveCustomSongs(customSongs.filter(s => !shellIds.has(s.id)));
+    songCache = null;
+    return shells.length;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[SongLibrary] Failed to purge aborted new songs:', e);
+    return 0;
+  }
+}
+
 // Get unique genres
 export function getGenres(): string[] {
   const songs = getAllSongs();

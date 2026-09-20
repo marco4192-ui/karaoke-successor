@@ -77,7 +77,7 @@ interface UseGameLoopOptions {
   // Native audio (ASIO / WASAPI)
   isNativeAudio?: boolean;
   nativeAudioTime?: number;
-  nativeAudioPlay?: (_filePath: string) => Promise<void>;
+  nativeAudioPlay?: (_filePath: string, _opts?: { onError?: (_message: string) => void }) => Promise<void>;
   nativeAudioPause?: () => Promise<void>;
   nativeAudioResume?: () => Promise<void>;
   nativeAudioStop?: () => Promise<void>;

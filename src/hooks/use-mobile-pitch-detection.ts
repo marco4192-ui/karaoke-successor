@@ -179,7 +179,7 @@ export function useMobilePitchDetection({
       });
       mediaStreamRef.current = stream;
       
-      audioContextRef.current = new AudioContext();
+      audioContextRef.current = new AudioContext({ latencyHint: 'interactive' });
 
       // CRITICAL: On iOS Safari and some Android browsers, the AudioContext
       // starts in a "suspended" state and the AnalyserNode returns all-zeros.

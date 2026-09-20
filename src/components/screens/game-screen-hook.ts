@@ -666,7 +666,20 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
       const factor = loudnessGainDb <= 0 ? Math.pow(10, loudnessGainDb / 20) : 1;
       videoRef.current.volume = Math.min(1, Math.max(0, (masterVolume / 100) * factor));
     }
-  }, [masterVolume, loudnessGainDb, songLoudnessId, midiMusicActive, vocalFilterAmountRef, audioRef, videoRef]);
+    // ── R9 (user request 4): native audio output volume ──
+    // When native audio (ASIO/WASAPI) carries the song's sound, the browser
+    // element is muted — master volume + loudness normalization MUST also be
+    // forwarded to the Rust player, otherwise volume changes (and the 89 dB
+    // normalization) silently do nothing. The Rust side clamps to 0..1, so
+    // only attenuation (gainDb <= 0) folds in; boosts keep the element path
+    // (muted anyway) at master and cap at 1 here — same effective behavior.
+    if (nativeAudio.enabled && !midiMusicActive) {
+      const factor = loudnessGainDb <= 0 ? Math.pow(10, loudnessGainDb / 20) : 1;
+      void nativeAudio.setVolume(Math.min(1, Math.max(0, (masterVolume / 100) * factor)));
+    }
+    // nativeAudio.setVolume is a stable useCallback; using the object itself as
+    // a dep would re-fire this effect on every render.
+  }, [masterVolume, loudnessGainDb, songLoudnessId, midiMusicActive, vocalFilterAmountRef, audioRef, videoRef, nativeAudio.enabled, nativeAudio.setVolume]);
 
   // Auto-fullscreen on game start (uses Tauri native API when available — Escape won't exit)
   useEffect(() => {

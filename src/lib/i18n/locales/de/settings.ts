@@ -517,6 +517,7 @@ settingsAbout: {
   onlineLeaderboard: 'Online-Leaderboard',
   onlineLeaderboardDesc: 'Mit globalen Highscores verbinden',
   testConnection: 'Verbindung testen',
+  testingConnection: 'Teste…',
   connected: '✅ Mit Leaderboard verbunden!',
   notConnected: '❌ Verbindung zum Leaderboard fehlgeschlagen',
   desktopInstalled: 'Desktop-App installiert',

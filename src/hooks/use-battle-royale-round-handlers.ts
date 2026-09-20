@@ -4,9 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   startRound,
   endRoundAndEliminate,
+  endRoundWithoutElimination,
   advanceToNextRound,
   advanceToNextSnippet,
   enterGrandFinale,
+  getActivePlayers,
   startVotingPhase,
   resolveVote,
   submitVote,
@@ -149,6 +151,38 @@ export function useBattleRoyaleRoundHandlers({
     // Do NOT early-return when activePlayers <= 1; let endRoundAndEliminate
     // handle it gracefully (returns game unchanged) and advanceToNextRound
     // transition the game to its next state (e.g. declare winner).
+
+    // ── R9 (user request 2.2): rhythm-only elimination for full-song rounds ──
+    // In random/vote mode the elimination cadence is the CONFIGURED RHYTHM
+    // interval (mid-round eliminations, user rule 6.1) — the song ending is
+    // NOT an extra elimination. The song simply ran out: close the round
+    // bookkeeping and start the NEXT song with the same settings. Exceptions
+    // that keep the classic endRoundAndEliminate path (it eliminates NOBODY
+    // in these cases):
+    //  • exactly 2 players left + grand finale enabled → enter the finale
+    //  • safety net: ≤ 1 active player (mid-round elim already handles this,
+    //    but never let an inconsistent state hang)
+    const lastRound = currentGame.rounds[currentGame.rounds.length - 1];
+    const isFullSongRhythmRound =
+      lastRound?.roundType === 'full' &&
+      !currentGame.isGrandFinale &&
+      currentGame.status === 'playing';
+    if (isFullSongRhythmRound) {
+      const activeCount = getActivePlayers(currentGame).length;
+      const finaleEntryPending =
+        activeCount === 2 &&
+        !currentGame.isGrandFinale &&
+        currentGame.settings.grandFinaleBestOf > 1;
+      if (activeCount > 2 || (!finaleEntryPending && activeCount === 2)) {
+        const closed = endRoundWithoutElimination(currentGame);
+        gameRef.current = closed;
+        const advanced = advanceToNextRound(closed);
+        gameRef.current = advanced;
+        roundEndingRef.current = false;
+        handleStartRoundRef.current();
+        return;
+      }
+    }
 
     const updatedGame = endRoundAndEliminate(currentGame);
     gameRef.current = updatedGame; // Update ref immediately so game loop sees new status
