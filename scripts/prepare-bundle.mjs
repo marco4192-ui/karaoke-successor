@@ -149,6 +149,40 @@ mkdirSync(bundledServer, { recursive: true });
 cpSync(standaloneDir, bundledServer, { recursive: true, force: true });
 ok('Copied standalone → src-tauri/bundled/server/');
 
+// ═══════════════════════════════════════════════════════════
+//  Step 3.5: Strip musl native modules (sharp & Co.)
+// ═══════════════════════════════════════════════════════════
+// sharp installs native binaries for EVERY libc/platform as optional
+// dependencies, and the Next.js standalone trace copies them all into
+// the bundle. On glibc systems the musl files are dead weight — and
+// worse: linuxdeploy (AppImage bundling on Linux) resolves the deps of
+// EVERY ELF file in the AppDir and aborts with
+//   "ERROR: Could not find dependency: libc.musl-x86_64.so.1"
+// (real CI failure, GitHub run 35478769960). Windows/macOS builds are
+// not affected by the extra files, but stripping shrinks every bundle.
+// musl/Alpine targets are intentionally unsupported (glibc baseline).
+{
+  const nm = join(bundledServer, 'node_modules');
+  let stripped = 0;
+  const stripMuslDirs = (parent) => {
+    for (const entry of listDir(parent)) {
+      if (!entry.includes('musl')) continue;
+      try {
+        rmSync(join(parent, entry), { recursive: true, force: true });
+        stripped++;
+        ok(`Musl-Modul entfernt: ${entry}`);
+      } catch { /* best effort */ }
+    }
+  };
+  if (existsSync(nm)) {
+    stripMuslDirs(nm); // top-level packages (z. B. *-linux-musl-*)
+    for (const entry of listDir(nm)) { // scoped packages (z. B. @img/sharp-linuxmusl-*)
+      if (entry.startsWith('@')) stripMuslDirs(join(nm, entry));
+    }
+  }
+  if (stripped > 0) ok(`${stripped} musl-Pakete aus dem Server-Bundle entfernt (linuxdeploy/AppImage-Kompatibilität + kleinere Bundles)`);
+}
+
 const serverJs = join(bundledServer, 'server.js');
 if (!existsSync(serverJs)) {
   fail('server.js not found in bundled output!');
