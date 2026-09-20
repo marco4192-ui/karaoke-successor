@@ -45,10 +45,6 @@ interface KaraokeEditorProps {
   song: Song;
   onSave: (_song: Song) => void;
   onCancel: () => void;
-  /** R9 (1.3): fired on EVERY successful disk write (Save & Close AND
-   *  "Save only") so the parent can mark the song as permanently persisted
-   *  instead of dropping it as an aborted new-song shell on cancel. */
-  onSongPersisted?: (_song: Song) => void;
 }
 
 // Max time gap between consecutive tap notes before a new lyric line starts
@@ -101,7 +97,7 @@ function groupNotesIntoLines(notes: Note[]): LyricLine[] {
   return lines;
 }
 
-export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongPersisted }: KaraokeEditorProps) {
+export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
   const { t } = useTranslation();
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
@@ -505,10 +501,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongPersi
       const result = await saveSongToTxt(songToSave);
       if (result.success) {
         markSaved();
-        // Persist to the in-memory library, then close via the parent
-        const { updateSong } = await import('@/lib/game/song-library');
-        updateSong(songToSave.id, songToSave);
-        onSongPersisted?.(songToSave);
+        // Persist to the in-memory library (upsert — 1.3: a NEW song from
+        // the New Song dialog is only added to the library at this point),
+        // then close via the parent
+        const { upsertSong } = await import('@/lib/game/song-library');
+        await upsertSong(songToSave);
         onSave(songToSave);
       } else {
         // Stay open — the file could not be written
@@ -524,7 +521,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongPersi
     } finally {
       setIsSaving(false);
     }
-  }, [onSave, onSongPersisted, markSaved, showSaveResult, t]);
+  }, [onSave, markSaved, showSaveResult, t]);
 
   // Save only — persist to file but stay in the editor
   const handleSaveOnly = useCallback(async () => {
@@ -535,11 +532,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongPersi
       const result = await saveSongToTxt(songToSave);
       if (result.success) {
         markSaved();
-        const { updateSong } = await import('@/lib/game/song-library');
-        updateSong(songToSave.id, songToSave);
-        // R9 (1.3): "Save only" also counts as an active save — the parent
-        // must not treat this song as an aborted new-song shell.
-        onSongPersisted?.(songToSave);
+        // Upsert (1.3): also persists a brand-new song on "save only"
+        const { upsertSong } = await import('@/lib/game/song-library');
+        await upsertSong(songToSave);
       }
       showSaveResult(result);
     } catch (error) {
@@ -552,7 +547,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel, onSongPersi
     } finally {
       setIsSaving(false);
     }
-  }, [onSongPersisted, markSaved, showSaveResult, t]);
+  }, [markSaved, showSaveResult, t]);
 
   // --- Tap Note Placement (Ultrastar-style) ---
   // Create note on space-down, set duration on space-up

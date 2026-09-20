@@ -452,6 +452,8 @@ export function updateSong(songId: string, updates: Partial<Song>): void {
  * Remove a song from the custom library (persisted: IndexedDB + localStorage).
  * R9 (user request 1.3): used to drop aborted "New Song" creations that were
  * never actively saved by the user — they must not linger in the library.
+ * Kept alongside the upsert flow: purgeAbortedNewSongs uses it for legacy
+ * shells, and future delete features build on it.
  */
 export function removeSong(songId: string): void {
   try {
@@ -490,6 +492,30 @@ export function purgeAbortedNewSongs(): number {
     console.error('[SongLibrary] Failed to purge aborted new songs:', e);
     return 0;
   }
+}
+
+// Upsert a FULL song object: update it when it already exists in the
+// library, add it when it doesn't.
+// This is the persistence primitive for the editor save flow (1.3): a NEW
+// song created via the New Song dialog is deliberately NOT added to the
+// library up front — it only lands here once the user actually SAVES from
+// the editor. Aborting the editor discards the song instead of leaving a
+// note-less skeleton in the library. `updateSong` alone would silently
+// no-op for such songs (index not found).
+export async function upsertSong(song: Song): Promise<void> {
+  // Wait for any in-progress scan to complete to avoid race condition
+  await waitForScanLock();
+
+  const customSongs = getCustomSongs();
+  const index = customSongs.findIndex(s => s.id === song.id);
+
+  if (index !== -1) {
+    customSongs[index] = { ...customSongs[index], ...song };
+  } else {
+    customSongs.push({ ...song, id: song.id || crypto.randomUUID() });
+  }
+  saveCustomSongs(customSongs);
+  songCache = null;
 }
 
 // Get unique genres

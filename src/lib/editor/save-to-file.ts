@@ -38,10 +38,13 @@ async function saveTxtToIndexedDb(song: Song, txtContent: string): Promise<SaveR
     const blob = new Blob([txtContent], { type: 'text/plain' });
     await storeMedia(song.id, 'txt', blob);
 
-    // Keep the library entry consistent (storedTxt flag) — best-effort
+    // Keep the library entry consistent (storedTxt flag) — best-effort.
+    // Upsert (1.3): for a brand-new song (New Song dialog → first save) the
+    // library entry doesn't exist yet — updateSong would silently no-op and
+    // the flag (and song) would never be persisted.
     try {
-      const { updateSong } = await import('@/lib/game/song-library');
-      updateSong(song.id, { storedTxt: true });
+      const { upsertSong } = await import('@/lib/game/song-library');
+      await upsertSong({ ...song, storedTxt: true });
     } catch { /* non-critical */ }
 
     return { success: true, message: 'Gespeichert (Browser-Speicher)' };
