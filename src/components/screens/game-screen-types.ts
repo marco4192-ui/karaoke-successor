@@ -142,6 +142,12 @@ export interface GameScreenHookReturn {
   setVocalFilterAmount: (val: number) => void;
   /** null = vocal filter available; otherwise the reason it is not. */
   vocalFilterUnsupportedReason: ReturnType<typeof useGameAudioEffects>['vocalFilterUnsupportedReason'];
+  /** Voice FX Studio (feature idea #16) — persisted settings (pitch correction, harmonizer, voice effects). */
+  voiceFx: ReturnType<typeof useGameAudioEffects>['voiceFx'];
+  /** Update Voice FX settings (partial merge, persisted + applied to the engine). */
+  setVoiceFx: ReturnType<typeof useGameAudioEffects>['setVoiceFx'];
+  /** True when the audio engine supports the Voice FX Studio (AudioWorklets + mic). */
+  voiceFxAvailable: ReturnType<typeof useGameAudioEffects>['voiceFxAvailable'];
 
   // Webcam
   webcamConfig: WebcamBackgroundConfig;

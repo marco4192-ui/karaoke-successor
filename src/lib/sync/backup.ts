@@ -411,12 +411,12 @@ export async function restoreBackup(
 
     if (isKnownDataKey(key)) {
       if (key === StorageKeys.CUSTOM_SONGS) {
-        const merged = mergeCustomSongs(localStorage.getItem(key), value);
+        const merged = mergeCustomSongs(localStorage.getItem(key) ?? undefined, value);
         if (merged) localStorage.setItem(key, merged);
         continue;
       }
       if (key === StorageKeys.PLAYLISTS) {
-        localStorage.setItem(key, mergePlaylists(localStorage.getItem(key), value));
+        localStorage.setItem(key, mergePlaylists(localStorage.getItem(key) ?? undefined, value));
         continue;
       }
       localStorage.setItem(key, value);

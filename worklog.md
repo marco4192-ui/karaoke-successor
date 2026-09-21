@@ -5,9 +5,23 @@
 
 ## Status
 
-- Dev-Server: Port 3000, läuft (`tail dev.log`). Lint: 0 Errors.
+- Dev-Server: Port 3000, läuft (Double-Fork-Start, siehe Konventionen). Lint: 0 Errors. `npx tsc --noEmit`: Exit 0.
+- **R13: Alle 5 Build-Typfehler behoben, die den Release-CI (`build-executables.yml` → `prepare-bundle.mjs` → `next build`) blockierten. E2E im Browser verifiziert.**
 - **Alle Feature-Ideas abgeschlossen: 14 (Sync & Backup), 16 (Voice FX Studio), 17 (Instrumental-Export) implementiert + E2E-bewiesen. 13/18 geparkt, 15 gestrichen (Nutzer-Entscheid).**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort. `git log origin/main..HEAD` bleibt leer.
+
+## Erledigt (2026-09-21, Runde R13 — Build-Fix: 5 Typfehler)
+
+**Anlass:** Nutzer-Report — `node scripts/prepare-bundle.mjs` (Release-CI `build-executables.yml`) scheiterte am `next build`-Typecheck: `voiceFx does not exist in type 'GameScreenHookReturn'`. Der Build stoppt beim ERSTEN Fehler — dahinter lagen 4 weitere maskierte Fehler (via `npx tsc --noEmit` alle gefunden und behoben):
+
+1. **`game-screen-types.ts`** — `GameScreenHookReturn` fehlten die 3 Voice-FX-Felder, die der Hook (R12) längst zurückgibt: `voiceFx`, `setVoiceFx`, `voiceFxAvailable` (typisiert via `ReturnType<typeof useGameAudioEffects>[...]`, wie alle Nachbarfelder).
+2. **`audio-effects.ts` — echter Runtime-Bug, nicht nur Typkosmetik:** `applyPreset()` baute `this.settings` als Objekt-Literal OHNE `voiceFx` → jedes Audio-Preset (Pop/Rock/Concert/Studio) hätte `settings.voiceFx` auf `undefined` gesetzt → späterer Crash in `updateDetectedPitch()` (`this.settings.voiceFx.correctionStrength`). Fix: `voiceFx: { ...this.settings.voiceFx }` — Presets lassen Voice FX Studio jetzt unberührt (korrekt, Presets sind Reverb/EQ-Sachen).
+3. **`multi-format-import.ts`** — `lyricEvents`-Typen (2 Stellen: Track-Deklaration + `raw`-Init) kannten die R10-4-Felder `isExtension`/`isInstrumental` nicht, die der 0x05-Lyrics-Parser pusht (Melisma/Instrumental-Marker). Als optionale Felder ergänzt — konsistent mit dem Consumer (Zeile ~698) und `cleanKaraokeSyllable`-Returntyp.
+4. **`backup.ts`** — `mergeCustomSongs`/`mergePlaylists` bekamen `localStorage.getItem()` (`string | null`), erwarten aber `string | undefined` → `?? undefined` (2 Stellen im Restore-Flow).
+5. **Verifikation:** `npx tsc --noEmit` Exit 0 · Lint 0 Errors · E2E im Browser: Profil erstellt → QA-Song via Converter importiert (Auto-Detect ultrastar → „Import as UltraStar" → „Add to Library" → 1 song) → Game-Screen lädt mit Lyrics + Pitch-Highway → Audio-Panel: Presets Pop/Studio/Rock crashfrei → „End Song" → Results-Screen (Score Analysis, Song-Leaderboard QA Tester #1). Screenshots: `qa-shots/r13-game-screen.png`, `qa-shots/r13-game-lyrics.png`. Kopflos-Browser hat kein Mikro → `NotFoundError: Requested device not found` wird bewusst grazil gefangen („continuing without pitch scoring") — KEIN Bug.
+6. **Dev-Server-Persistenz gefixt:** Sandbox tötet Hintergrundprozesse beim Bash-Session-Ende (setsid allein reicht nicht — Prozess blieb Child der sterbenden Shell). Lösung: Double-Fork via `bash -c 'setsid nohup bun run dev > /dev/null 2>&1 < /dev/null &'` → Server reparentet zu init und überlebt Session-Wechsel.
+
+**Wichtig für zukünftige Runden:** Der `next build`-Typecheck ist strenger als `bun run dev` — DEV LAUFEN LASSEN HEISST NICHT BUILDBAR. Nach jeder Typ-relevanten Änderung `npx tsc --noEmit` laufen lassen (build selbst ist in der Sandbox verboten).
 
 ## Erledigt (2026-09-21, Runde R12 — Feature-Ideas-Komplettumsetzung)
 
@@ -80,4 +94,5 @@ Auftrag: alle Feature Ideas umsetzen, AUSSER 13 (Leaderboard-Frontend — Nutzer
 
 - i18n: neue Keys immer in **de UND en** (`src/lib/i18n/locales/{de,en}/…`), andere Sprachen haben en-Fallback.
 - Browser-QA ohne Tauri: Song-Import über den Converter (siehe oben) — Audio wird jetzt persistent gespeichert.
-- `bun run build` in der Sandbox verboten; nur Port 3000.
+- `bun run build` in der Sandbox verboten; nur Port 3000. Stattdessen `npx tsc --noEmit` für den Build-Typecheck.
+- **Dev-Server-Start (überlebt Session-Ende):** `bash -c 'setsid nohup bun run dev > /dev/null 2>&1 < /dev/null &'` aus `/home/z/my-project` (Double-Fork, log landet via tee in dev.log).

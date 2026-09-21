@@ -409,7 +409,8 @@ export class AudioEffectsEngine {
   async applyPreset(preset: AudioEffectPreset): Promise<void> {
     const presetSettings = AUDIO_PRESETS[preset];
     
-    // Merge preset with defaults
+    // Merge preset with defaults. Voice FX Studio settings are NOT part of
+    // presets — applying a preset must keep the user's current voice FX.
     this.settings = {
       reverb: { ...DEFAULT_EFFECTS_SETTINGS.reverb, ...presetSettings.reverb },
       delay: { ...DEFAULT_EFFECTS_SETTINGS.delay, ...presetSettings.delay },
@@ -418,6 +419,7 @@ export class AudioEffectsEngine {
       eq: { ...DEFAULT_EFFECTS_SETTINGS.eq, ...presetSettings.eq },
       distortion: { ...DEFAULT_EFFECTS_SETTINGS.distortion, ...presetSettings.distortion },
       master: { ...DEFAULT_EFFECTS_SETTINGS.master, ...presetSettings.master },
+      voiceFx: { ...this.settings.voiceFx },
     };
     
     // Apply all settings — must await so reverb impulse buffer is ready before chain connects
