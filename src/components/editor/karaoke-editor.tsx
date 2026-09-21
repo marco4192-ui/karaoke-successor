@@ -122,7 +122,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // Cancel confirmation (unsaved changes guard)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   // Beat snapping (YASS-style magnet)
-  const [snapEnabled, setSnapEnabled] = useState(false);
+  // R14 (user request 2): the beat magnet is ON by default — dragging a
+  // note horizontally now clicks into the beat grid instead of floating
+  // freely ("too easy, hard to hit the right position"). Turn it off with
+  // the magnet button for completely free timing.
+  const [snapEnabled, setSnapEnabled] = useState(true);
   // Video sync overlay (video + notes side by side, with timecode control)
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
   // ── MIDI/KAR import (3.2) + comparison overlay (3.5) ──
@@ -705,12 +709,23 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   }, [applyLyrics]);
 
   /** Nudge all selected notes' start time (←/→, Shift = coarse). Coalesced undo per burst.
-   *  Snaps to the beat grid when the magnet is enabled. */
+   *  Snaps to the beat grid when the magnet is enabled.
+   *  R14: with the magnet now ON by default, a raw 25ms nudge would snap
+   *  right back to the same beat (round-to-nearest) at high BPM — arrows
+   *  would do nothing. Instead the step is raised to ONE BEAT so every
+   *  arrow press always moves the note a musically meaningful distance. */
   const handleNudge = useCallback((delta: number) => {
     const ids = effectiveSelection;
     if (ids.size === 0) return;
     const prev = currentSongRef.current;
     let touched = false;
+    // Beat-aware step: never smaller than one beat while snapping.
+    let step = delta;
+    if (snapEnabled && prev.bpm > 0) {
+      const beatMs = 15000 / prev.bpm;
+      if (Math.abs(step) < beatMs) step = Math.sign(step) * beatMs;
+    }
+    const deltaFinal = step;
     const newLyrics = prev.lyrics.map(line => {
       const has = line.notes.some(n => ids.has(n.id));
       if (!has) return line;
@@ -718,7 +733,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       return finalizeLine({
         ...line,
         notes: line.notes.map(n => ids.has(n.id)
-          ? { ...n, startTime: Math.max(0, Math.round(snapTimeToBeat(n.startTime + delta, prev.bpm, prev.gap, snapEnabled))) }
+          ? { ...n, startTime: Math.max(0, Math.round(snapTimeToBeat(n.startTime + deltaFinal, prev.bpm, prev.gap, snapEnabled))) }
           : n
         ),
       });

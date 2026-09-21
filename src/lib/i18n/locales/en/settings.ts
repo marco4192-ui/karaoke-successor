@@ -641,6 +641,8 @@ export const settingsTranslations = {
   },
 
   syncBackup: {
+    appdataActive: 'Player data & highscores are automatically stored in the Windows AppData folder and survive updates & reinstalls. The manual backup export below is only needed for switching devices.',
+    appdataBrowser: 'Browser mode: player data & highscores live in browser storage (localStorage). In the Windows app they are automatically stored in the AppData folder and survive updates & reinstalls.',
     exportTitle: 'Create Backup',
     exportDesc: 'Bundles your profiles, highscores, achievements, playlists, custom songs and settings into one portable JSON file — for archiving or moving to another device.',
     includeMedia: 'Include song media (audio, video, covers)',

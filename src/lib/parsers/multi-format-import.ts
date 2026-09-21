@@ -146,14 +146,35 @@ interface KaraokeMugenSong {
 
 export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
   try {
-    const parsed = JSON.parse(data);
-    if (!parsed.title || !parsed.artist || !Array.isArray(parsed.lyrics)) return null;
+    // R14: strip a UTF-8 BOM — Mugen exports sometimes carry one and
+    // JSON.parse() chokes on it ("no text" symptom).
+    const parsed = JSON.parse(data.replace(/^\uFEFF/, ''));
+
+    // R14: support the REAL Karaoke Mugen .km.json layout (header.title +
+    // header.singers) in addition to the flat {title, artist, lyrics} shape.
+    const header = parsed.header ?? {};
+    const title: string | undefined = parsed.title ?? header.title;
+    const singers: unknown = parsed.artist ?? header.artist ?? header.singers;
+    const artist: string | undefined = Array.isArray(singers)
+      ? singers.filter(Boolean).join(', ') || undefined
+      : (typeof singers === 'string' ? singers : undefined);
+    const rawLyrics: unknown = parsed.lyrics;
+
+    if (!title || !Array.isArray(rawLyrics)) return null;
+
+    // Lyric entries: {start, end, text} — defensively also accept
+    // from/to and content/line aliases.
+    const lyrics = (rawLyrics as Array<Record<string, unknown>>).map(l => {
+      const start = Number(l.start ?? l.from ?? 0);
+      const end = Number(l.end ?? l.to ?? 0);
+      const text = String(l.text ?? l.content ?? l.line ?? '');
+      return { start, end, text };
+    }).filter(l => Number.isFinite(l.start) && Number.isFinite(l.end) && l.end > l.start && l.text.trim());
+
     return {
-      title: parsed.title,
-      artist: parsed.artist,
-      lyrics: parsed.lyrics.map((l: { start: number; end: number; text: string }) => ({
-        start: l.start, end: l.end, text: l.text,
-      })),
+      title,
+      artist: artist || 'Unknown',
+      lyrics,
       audioFile: parsed.audioFile,
       videoFile: parsed.videoFile,
     };
@@ -183,8 +204,11 @@ export function parseAssKaraoke(data: string): KaraokeMugenSong | null {
     let title = '';
     let artist = '';
 
+    // R14: strip a UTF-8 BOM so [Script Info] matching can't fail on it.
+    const content = data.replace(/^\uFEFF/, '');
+
     // ── [Script Info] ──
-    const scriptInfoMatch = data.match(/\[Script Info\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
+    const scriptInfoMatch = content.match(/\[Script Info\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
     if (scriptInfoMatch) {
       const titleMatch = scriptInfoMatch[1].match(/^\s*Title:\s*(.+)$/m);
       if (titleMatch) {
@@ -200,18 +224,21 @@ export function parseAssKaraoke(data: string): KaraokeMugenSong | null {
     }
 
     // ── [Events] ──
-    const eventsMatch = data.match(/\[Events\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
+    const eventsMatch = content.match(/\[Events\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
     if (!eventsMatch) return null;
 
-    // "H:MM:SS.CC" → ms
+    // "H:MM:SS.CC" → ms (R14: also accept 3-digit centisecond fractions —
+    // some encoders write 0:00:01.001)
     const parseTimestamp = (ts: string): number => {
-      const m = ts.trim().match(/^(\d+):(\d{1,2}):(\d{1,2})[.](\d{1,2})$/);
+      const m = ts.trim().match(/^(\d+):(\d{1,2}):(\d{1,2})[.](\d{1,3})$/);
       if (!m) return NaN;
+      const csDigits = m[4].length;
+      const fraction = parseInt(m[4], 10) * (csDigits === 3 ? 1 : 10);
       return (
         parseInt(m[1], 10) * 3600000 +
         parseInt(m[2], 10) * 60000 +
         parseInt(m[3], 10) * 1000 +
-        parseInt(m[4].padEnd(2, '0'), 10) * 10
+        fraction
       );
     };
 
@@ -227,7 +254,14 @@ export function parseAssKaraoke(data: string): KaraokeMugenSong | null {
       const end = parseTimestamp(parts[2]);
       if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
 
-      const rawText = parts.slice(9).join(',');
+      const rawText = parts.slice(9).join(',')
+        // R14: vector drawing blocks ({\p1}…{\p0}) are effects, not lyrics —
+        // drop them including their payload, otherwise the coordinate soup
+        // ends up in the lyric text.
+        .replace(/\{\\p[\d.]+\}[\s\S]*?\{\\p0\}/g, '')
+        // R14: ASS hard/soft line breaks inside a Dialogue — render as spaces
+        // (they used to leak into the lyric text as literal "\\N").
+        .replace(/\\[Nn]/g, ' ');
 
       // ── Karaoke tags: {\\k20}Ka{\\k15}ra{\\k25}oke … ──
       // Each {\\k<cs>} tag times the text AFTER it until the next tag.
@@ -273,11 +307,13 @@ export function parseAssKaraoke(data: string): KaraokeMugenSong | null {
           let cs = start;
           for (const s of unTimed) { s.start = cs; s.duration = share; cs += share; }
         }
-        lineSyllables = syllables.filter(s => s.text.trim().length > 0 && s.duration > 0);
+        lineSyllables = syllables
+          .filter(s => s.text.trim().length > 0 && s.duration > 0)
+          .map(s => ({ ...s, text: s.text.replace(/\\[Nn]/g, ' ') }));
         text = lineSyllables.map(s => s.text).join('').replace(/\s+/g, ' ').trim();
       } else {
         // No karaoke tags → one note spanning the whole line
-        const clean = rawText.replace(/\{\\[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
+        const clean = rawText.replace(/\{\\[^}]*\}/g, '').replace(/\\[Nn]/g, ' ').replace(/\s+/g, ' ').trim();
         if (!clean) continue;
         text = clean;
         lineSyllables = [{ text: clean, start, duration: end - start }];
@@ -951,7 +987,16 @@ export function convertToSong(
             })
           : generateNotesFromText(l.text, l.start, l.end, `km${i}`),
       }));
-      return { title: km.title, artist: km.artist, lyrics, audioUrl: km.audioFile || audioUrl, videoBackground: km.videoFile || videoUrl };
+      // R14: duration from the lyric lines — without it the import got
+      // duration 0 and the game ended the song instantly (progressbar jumped
+      // straight to 100%). Use the last line/note end + a small tail.
+      const kmDuration = km.lyrics.reduce((acc, l) => {
+        const lastNoteEnd = l.syllables?.length
+          ? Math.max(...l.syllables.map(s => s.start + s.duration))
+          : 0;
+        return Math.max(acc, l.end ?? 0, lastNoteEnd);
+      }, 0);
+      return { title: km.title, artist: km.artist, lyrics, duration: Math.round(kmDuration + 500), audioUrl: km.audioFile || audioUrl, videoBackground: km.videoFile || videoUrl };
     }
 
     case 'midi': {
@@ -1107,7 +1152,11 @@ export function convertToSong(
         }
       }
 
-      return { title: ss.title, artist: ss.artist, genre: ss.genre, lyrics };
+      // R14: duration from the last note end (see karaoke-mugen branch).
+      const ssDuration = ss.notes.length > 0
+        ? Math.max(...ss.notes.map(n => n.startTime + n.duration))
+        : 0;
+      return { title: ss.title, artist: ss.artist, genre: ss.genre, lyrics, duration: Math.round(ssDuration + 500) };
     }
 
     case 'stepmania': {

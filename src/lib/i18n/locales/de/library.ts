@@ -348,6 +348,8 @@ importAlternateFormat: {
   assHint: 'Optional bei JSON-Import — die .ass liefert präzises Silben-Timing (überschreibt die JSON-Lyrics). Bei .ass als Song-Datei nicht nötig.',
   persistSuccess: 'Song gespeichert — UltraStar-Textdatei und Medien liegen dauerhaft in der Bibliothek.',
   persisting: 'Speichere…',
+  lyricsPreview: 'Songtext-Vorschau',
+  lyricsPreviewStats: '{lines} Zeilen · {notes} Noten',
 },
 editor: {
   title: 'Karaoke-Editor',

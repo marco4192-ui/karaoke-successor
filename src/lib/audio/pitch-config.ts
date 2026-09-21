@@ -38,7 +38,12 @@ export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> =
     maxFrequency: 1047,
   },
   medium: {
-    volumeThreshold: 0.04,        // Sensitive
+    // R14 (user request 6 — BR scoring dropouts): 0.04 → 0.03. Quiet
+    // singing (mic distance, soft vowels) sat right at the old raw-RMS
+    // threshold (0.008) and produced constant null frames → gaps in the
+    // rating. 0.03 (raw 0.006) sits just above the -45dB noise gate, which
+    // stays the real noise authority.
+    volumeThreshold: 0.03,        // Sensitive
     pitchStabilityFrames: 2,      // Quick but stable (R9: was 3)
     yinThreshold: 0.12,           // Standard detection
     noiseGateEnabled: true,
@@ -47,7 +52,9 @@ export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> =
     maxFrequency: 1047,
   },
   hard: {
-    volumeThreshold: 0.06,        // Moderate sensitivity
+    // R14: 0.06 → 0.04 (see medium) — difficulty gates pitch tolerance, not
+    // how loud you have to sing.
+    volumeThreshold: 0.04,        // Moderate sensitivity
     pitchStabilityFrames: 4,      // More stable pitch required (R9: was 5)
     yinThreshold: 0.15,           // Stricter detection
     noiseGateEnabled: true,

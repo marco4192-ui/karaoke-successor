@@ -307,6 +307,19 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const pendingScoredGameRef = useRef<BattleRoyaleGame | null>(null);
   const lastStoreWriteRef = useRef(0);
 
+  // ── R14 (user request 6 — “Ausfälle bei der Wertung”): pitch hold ──
+  // A single null detection frame (YIN miss on a note onset/vibrato turn,
+  // momentary volume dip, rAF cadence mismatch with the 60ms scoring tick)
+  // used to skip that scoring tick entirely — sustained singing regularly
+  // produced gaps in the rating. We now bridge short dropouts: while the
+  // microphone is still audible (volume above silence level) the last valid
+  // pitch keeps scoring for up to PITCH_HOLD_MS. Real pauses (volume → 0)
+  // are NOT bridged, and neither are long dropouts.
+  const PITCH_HOLD_MS = 200;
+  /** volume (0–1, amplified) above which a null-pitch frame counts as "still singing, detector just missed". */
+  const PITCH_HOLD_MIN_VOLUME = 0.04;
+  const lastValidPitchRef = useRef<Map<string, { note: number; at: number }>>(new Map());
+
   // ── Countdown state (V3) ───────────────────────────────────────────
   // DO-NOT-CHANGE: countdown is derived synchronously from game.status to avoid
   // a one-frame gap where game.status='countdown' but countdown=0 (from stale useState).
@@ -887,6 +900,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     // across songs/rounds; the note keys would collide otherwise).
     brNotePerformanceRef.current = new Map();
     setBrNotePerformance(new Map());
+    // R14 (6): pitch hold must not bridge across rounds either — the new
+    // round's audio time restarts at 0, so a stale lastValidPitch entry
+    // would look "fresh" to the diff check.
+    lastValidPitchRef.current = new Map();
   }, [game.currentRound]);
 
   // ── Game Loop for simultaneous per-player scoring ──────────────────
@@ -1014,19 +1031,36 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           // gate dropped ticks in a regular per-note rhythm (same fix the
           // single-player mode already made, see use-note-scoring.ts P1).
           // Pitch presence + the detector's own volume/noise gates filter noise.
+          // R14 (user request 6): + pitch hold — see lastValidPitchRef above.
           for (const player of micPlayers) {
             const playerPitch = multiPitchRef.current.getPlayerPitch(player.id);
-            if (!playerPitch) continue;
-            if (playerPitch.note == null) continue;
 
-            const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
+            let detectedNote: number | null = null;
+            if (playerPitch && playerPitch.note != null) {
+              detectedNote = playerPitch.note;
+              lastValidPitchRef.current.set(player.id, { note: detectedNote, at: currentAudioTime });
+            } else {
+              const lastValid = lastValidPitchRef.current.get(player.id);
+              const stillAudible = (playerPitch?.volume ?? 0) >= PITCH_HOLD_MIN_VOLUME;
+              // diff >= 0 guards the round change: each round loads a new
+              // <audio> element, so currentAudioTime resets to 0 and a bare
+              // `diff <= PITCH_HOLD_MS` would bridge a stale pitch for the
+              // whole following round.
+              const diff = lastValid ? currentAudioTime - lastValid.at : -1;
+              if (lastValid && stillAudible && diff >= 0 && diff <= PITCH_HOLD_MS) {
+                detectedNote = lastValid.note; // bridge the dropout
+              }
+            }
+            if (detectedNote == null) continue;
+
+            const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, detectedNote, batchedGame);
             // Ghost notes: record the visual sample (hit or wrong-pitch miss
             // at the player's actually-sung pitch) for this player + note.
             pushPerformanceSample(player.id, activeNote, {
               time: currentAudioTime,
               accuracy: tick.accuracy,
               hit: tick.hit,
-              sungPitch: playerPitch.note,
+              sungPitch: detectedNote,
             });
             if (updatedGame !== batchedGame) {
               batchedGame = updatedGame;
@@ -1042,19 +1076,37 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
             // R9 (2.1): isSinging gate removed for companions too (see mic
             // loop above) — score on detected pitch presence.
-            if (cachedPitch && cachedPitch.note != null) {
-              const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
-              // Ghost notes (companions too): same sample recording as the
-              // mic players so their misses also render as ghost bars.
-              pushPerformanceSample(player.id, activeNote, {
-                time: currentAudioTime,
-                accuracy: tick.accuracy,
-                hit: tick.hit,
-                sungPitch: cachedPitch.note,
-              });
-              if (updatedGame !== batchedGame) {
-                batchedGame = updatedGame;
-                scoreChanged = true;
+            // R14 (6): same pitch hold as mic players — the phone-side
+            // detector misses frames just like the local YIN does.
+            if (cachedPitch) {
+              let detectedNote: number | null = null;
+              if (cachedPitch.note != null) {
+                detectedNote = cachedPitch.note;
+                lastValidPitchRef.current.set(player.id, { note: detectedNote, at: currentAudioTime });
+              } else {
+                const lastValid = lastValidPitchRef.current.get(player.id);
+                // Companions transmit no volume — the time window alone
+                // bounds the bridge (phone-side staleness is handled by the
+                // polling hook's eviction).
+                const diff = lastValid ? currentAudioTime - lastValid.at : -1;
+                if (lastValid && diff >= 0 && diff <= PITCH_HOLD_MS) {
+                  detectedNote = lastValid.note;
+                }
+              }
+              if (detectedNote != null) {
+                const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, detectedNote, batchedGame);
+                // Ghost notes (companions too): same sample recording as the
+                // mic players so their misses also render as ghost bars.
+                pushPerformanceSample(player.id, activeNote, {
+                  time: currentAudioTime,
+                  accuracy: tick.accuracy,
+                  hit: tick.hit,
+                  sungPitch: detectedNote,
+                });
+                if (updatedGame !== batchedGame) {
+                  batchedGame = updatedGame;
+                  scoreChanged = true;
+                }
               }
             }
           }

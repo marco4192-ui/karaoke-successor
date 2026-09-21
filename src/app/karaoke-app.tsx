@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
+import { startAppDataSync } from '@/lib/game/appdata-sync';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -75,6 +76,16 @@ export default function KaraokeZERO() {
   useEffect(() => {
     if (screen !== 'library' && libraryPreselect) setLibraryPreselect(null);
   }, [screen, libraryPreselect]);
+
+  // ── R14 (user request 5): AppData persistence for player data ──
+  // In the Tauri build, profiles + highscores are mirrored into the SQLite
+  // database in the OS app-data directory — they survive app updates and
+  // reinstalls (previously a wiped WebView localStorage deleted all players
+  // and highscores). Browser builds are a no-op (localStorage only).
+  useEffect(() => {
+    const stop = startAppDataSync(useGameStore);
+    return stop;
+  }, []);
 
   // Tour navigation (tutorial system): direct setScreen — bypasses the party
   // guard because starting a tour is an explicit user action; the help FAB

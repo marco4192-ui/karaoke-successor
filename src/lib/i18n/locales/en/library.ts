@@ -367,6 +367,8 @@ export const libraryTranslations = {
     assHint: 'Optional for JSON imports — the .ass provides precise syllable timing (overrides the JSON lyrics). Not needed when a .ass is the song file.',
     persistSuccess: 'Song saved — the UltraStar text file and media are permanently stored in the library.',
     persisting: 'Saving…',
+    lyricsPreview: 'Lyrics preview',
+    lyricsPreviewStats: '{lines} lines · {notes} notes',
   },
 
   editor: {

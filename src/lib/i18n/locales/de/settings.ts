@@ -624,6 +624,8 @@ about: {
 },
 
 syncBackup: {
+  appdataActive: 'Spieler-Daten & Highscores werden automatisch im AppData-Ordner von Windows gespeichert und überstehen Updates & Neuinstallationen. Der manuelle Backup-Export unten ist nur noch für Geräte-Wechsel nötig.',
+  appdataBrowser: 'Browser-Modus: Spieler-Daten & Highscores liegen im Browser-Speicher (localStorage). In der Windows-App werden sie automatisch im AppData-Ordner gespeichert und überstehen Updates & Neuinstallationen.',
   exportTitle: 'Backup erstellen',
   exportDesc: 'Bündelt Profile, Highscores, Achievements, Playlists, eigene Songs und Einstellungen in einer portablen JSON-Datei — zum Archivieren oder Übertragen auf ein anderes Gerät.',
   includeMedia: 'Song-Medien einbeziehen (Audio, Video, Cover)',

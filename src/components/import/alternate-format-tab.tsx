@@ -16,6 +16,7 @@ import {
 } from '@/lib/parsers/multi-format-import';
 import { parseUltraStarTxt, convertUltraStarToSong, generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
 import { upsertSong } from '@/lib/game/song-library';
+import { ImportPreview } from './import-preview';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -551,6 +552,21 @@ export function AlternateFormatTab({
           {statusMessage}
         </div>
       )}
+
+      {/*
+       * R14 (user request 4): the song preview was dead code — ImportPreview
+       * existed but no screen rendered it, so a successful Mugen/ASS import
+       * showed NOTHING but the status line ("es wird kein Text dargestellt").
+       * Rendered here so the user can verify title, badges AND the converted
+       * lyric text before committing the song to the library.
+       */}
+      <ImportPreview
+        progress={null}
+        error={error}
+        previewSong={previewSong}
+        audioUrl={previewSong?.audioUrl || ''}
+        videoUrl={previewSong?.videoBackground || ''}
+      />
 
       {/* Confirm button */}
       {previewSong && (

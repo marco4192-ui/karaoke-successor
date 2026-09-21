@@ -24,6 +24,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** R14: AppData persistence is active in the Tauri desktop build. */
+function isTauriApp(): boolean {
+  return typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+}
+
 export function SyncTab() {
   const { t } = useTranslation();
 
@@ -97,6 +102,17 @@ export function SyncTab() {
 
   return (
     <div className="space-y-6" data-testid="settings-sync-tab">
+      {/* ── R14 (user request 5): AppData persistence status ── */}
+      <div
+        className={`rounded-lg border p-3 text-xs ${isTauriApp()
+          ? 'border-green-500/30 bg-green-500/10 text-green-300'
+          : 'border-white/10 bg-white/5 text-white/50'}`}
+        data-testid="sync-appdata-status"
+      >
+        <span aria-hidden>{isTauriApp() ? '🛡️' : '🌐'}</span>{' '}
+        {isTauriApp() ? t('syncBackup.appdataActive') : t('syncBackup.appdataBrowser')}
+      </div>
+
       {/* ── Export ── */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>

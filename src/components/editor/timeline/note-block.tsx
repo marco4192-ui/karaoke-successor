@@ -228,9 +228,12 @@ export function NoteBlock({
         onMouseLeave={() => setResizeHover(null)}
       />
 
-      {/* Move handle (center) */}
+      {/* Move handle (center) — R14: inset-x-1.5 (was inset-x-4) so short
+          notes (down to ~14px at low zoom) still have a grabbable move area.
+          This element is the LAST child, so it wins the overlap with the
+          inner edges of the two 8px resize handles. */}
       <div
-        className="absolute inset-x-4 top-0 bottom-0 cursor-move"
+        className="absolute inset-x-1.5 top-0 bottom-0 cursor-move"
         onMouseDown={(e) => handleMouseDown(e, 'move')}
       />
 

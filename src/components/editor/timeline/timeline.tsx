@@ -76,10 +76,73 @@ const LEFT_GUTTER = 32;
 // Max time gap between two tap notes before a new lyric line starts
 export const TAP_LINE_GAP_MS = 1400;
 
-// ── Zoom: presets from 25% up to 1000% ──
-const MIN_ZOOM = 0.25;
+// ── Zoom: presets from 5% up to 1000% ──
+// R14 (user request 3): 500% is the new 100% — basePixelsPerSecond was
+// raised 100 → 500 so the DEFAULT zoom (1 = "100%") shows the detail level
+// the old 500% had. MIN_ZOOM went 0.25 → 0.05 so the overview range (whole
+// song visible) is preserved: 5% × 500px/s = 25px/s = exactly the old 25%.
+const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 10;
-const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
+const ZOOM_PRESETS = [0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// ── R14 note-drag feel (user requests 1 + 2) ──
+/** Hysteresis margin (in pitch rows) for stepping between semitone levels
+ *  during a vertical note drag. Prevents flicker right at a row boundary. */
+const PITCH_DRAG_HYSTERESIS = 0.25;
+/** Half-width (in pitch rows) of the sticky "home" band around the note's
+ *  ORIGINAL pitch: leaving it needs a deliberate full-row move, and any
+ *  return drag catches it as soon as the mouse is within half a row of the
+ *  grab point — so the original position can no longer be "jumped over". */
+const PITCH_DRAG_HOME_ROWS = 1.0;
+/** Mouse pixels before the drag axis is decided (dominant direction wins). */
+const DRAG_AXIS_DEADZONE_PX = 4;
+/** A drag stays on its locked axis until the mouse moves this many pitch
+ *  rows on the OTHER axis — then both axes unlock (legacy 2D behaviour). */
+const DRAG_AXIS_ESCAPE_ROWS = 2.5;
+
+/**
+ * R14: map a continuous vertical mouse offset (in pitch rows, positive = up)
+ * to a semitone delta with hysteresis + a sticky home band.
+ *
+ * - Level 0 (original pitch) is double-sticky: it takes ±PITCH_DRAG_HOME_ROWS
+ *   rows to LEAVE it, but coming back it is caught at ±(HOME − 0.5) rows —
+ *   which makes returning to the original pitch easy and reliable (user
+ *   request 1: the note used to "jump over" its original position).
+ * - Non-zero levels step at k±0.5 rows ± hysteresis, so the pitch never
+ *   flickers between two adjacent semitones at a boundary.
+ * - Large jumps (fast drags, coalesced mousemove events) land on the
+ *   nearest step instead of inching from the last one.
+ */
+function pitchDeltaWithHysteresis(rows: number, last: number): number {
+  const H = PITCH_DRAG_HYSTERESIS;
+  const HOME = PITCH_DRAG_HOME_ROWS;
+
+  if (last === 0) {
+    // Leaving the original pitch requires a deliberate full-row move.
+    if (rows > HOME) {
+      let d = 1;
+      while (rows > d + 0.5 + H) d += 1;
+      return d;
+    }
+    if (rows < -HOME) {
+      let d = -1;
+      while (rows < d - 0.5 - H) d -= 1;
+      return d;
+    }
+    return 0;
+  }
+
+  // Stepping between levels (hysteresis at every boundary).
+  let delta = last;
+  while (rows > delta + 0.5 + H) delta += 1;
+  while (rows < delta - 0.5 - H) delta -= 1;
+
+  // Sticky home: descending back toward the start always catches 0 early.
+  if (delta > 0 && rows < HOME - 0.5) delta = 0;
+  if (delta < 0 && rows > -(HOME - 0.5)) delta = 0;
+
+  return delta;
+}
 
 /** All five note types with their TXT chars, for the DropUp menu. */
 const NOTE_TYPE_OPTIONS: Array<{ value: NoteType; char: string; }> = [
@@ -142,6 +205,11 @@ export function Timeline({
     /** Pitch height of the lane the note lives in (vertical → pitch dragging). */
     pitchHeight: number;
     moved: boolean;
+    /** R14: axis intent — locks the drag to the dominant axis so horizontal
+     *  drags never change pitch (and vice versa) until a deliberate escape. */
+    axis: 'undecided' | 'horizontal' | 'vertical' | 'free';
+    /** R14: last applied pitch delta (semitones) — hysteresis anchor. */
+    lastPitchDelta: number;
   } | null>(null);
   // Viewport size (measured via ResizeObserver → responsive pitch grid)
   const [viewport, setViewport] = useState({ width: 1200, height: 700 });
@@ -170,7 +238,9 @@ export function Timeline({
   }, []);
 
   // ── Layout constants ──────────────────────────────────────────
-  const basePixelsPerSecond = 100;
+  // R14 (user request 3): 100 → 500. The zoom label still shows zoom*100%,
+  // so "100%" now displays the old "500%" detail level.
+  const basePixelsPerSecond = 500;
   const pixelsPerSecond = basePixelsPerSecond * zoom;
   const TOTAL_MIN_PITCH = 24; // C1
   const TOTAL_MAX_PITCH = 96; // C7 (6-octave total range)
@@ -453,27 +523,68 @@ export function Timeline({
       if (dragState) {
         const deltaX = e.clientX - dragState.startX;
         const deltaY = e.clientY - dragState.startY;
-        if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) dragState.moved = true;
         const deltaTime = (deltaX / pixelsPerSecond) * 1000;
 
         if (dragState.type === 'move') {
-          // 2D move: horizontal = time, vertical = pitch (R7 task 4 —
-          // notes are draggable in height with the mouse). One semitone per
-          // lane row; clamp to the MIDI range. Frequency follows automatically.
-          const updates: Partial<Note> = {
-            startTime: snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime)),
-          };
-          if (dragState.pitchHeight > 0) {
-            const pitchDelta = Math.round(-deltaY / dragState.pitchHeight);
-            if (pitchDelta !== 0) {
-              updates.pitch = Math.max(0, Math.min(127, dragState.originalNote.pitch + pitchDelta));
+          // R14 (user requests 1 + 2): axis-locked 2D move with hysteresis.
+          // - The first significant mouse movement locks the drag to its
+          //   dominant axis: horizontal drags only change the time (no more
+          //   accidental pitch changes), vertical drags only the pitch (no
+          //   more accidental time/line changes).
+          // - A deliberate ≥2.5-row move on the other axis unlocks both axes.
+          // - Pitch uses pitchDeltaWithHysteresis (sticky home band) so the
+          //   original pitch is always easy to reach again.
+          const pitchHeight = dragState.pitchHeight > 0 ? dragState.pitchHeight : 12;
+          const rows = -deltaY / pitchHeight; // positive = up
+
+          if (dragState.axis === 'undecided') {
+            if (Math.abs(deltaX) >= DRAG_AXIS_DEADZONE_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+              dragState.axis = 'horizontal';
+            } else if (Math.abs(deltaY) >= DRAG_AXIS_DEADZONE_PX && Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
+              dragState.axis = 'vertical';
+            } else if (Math.abs(deltaX) >= 8 || Math.abs(deltaY) >= 8) {
+              // moved, but no clear dominance → legacy free 2D behaviour
+              dragState.axis = 'free';
             }
           }
-          onNoteUpdate(dragState.noteId, updates, 'live');
+          if (dragState.axis === 'horizontal' && Math.abs(deltaY) > DRAG_AXIS_ESCAPE_ROWS * pitchHeight) {
+            dragState.axis = 'free';
+          } else if (dragState.axis === 'vertical' && Math.abs(deltaX) > DRAG_AXIS_ESCAPE_ROWS * pitchHeight) {
+            dragState.axis = 'free';
+          }
+
+          const allowTime = dragState.axis === 'horizontal' || dragState.axis === 'free';
+          const allowPitch = dragState.axis === 'vertical' || dragState.axis === 'free';
+
+          const updates: Partial<Note> = {};
+          if (allowTime) {
+            updates.startTime = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
+          }
+          if (allowPitch) {
+            const nextDelta = pitchDeltaWithHysteresis(rows, dragState.lastPitchDelta);
+            if (nextDelta !== dragState.lastPitchDelta) dragState.lastPitchDelta = nextDelta;
+            if (nextDelta !== 0) {
+              updates.pitch = Math.max(0, Math.min(127, dragState.originalNote.pitch + nextDelta));
+            }
+          }
+
+          // Only mark the gesture as "moved" (→ history entry) when a value
+          // actually CHANGED — hand tremor inside the dead zone no longer
+          // creates phantom undo steps.
+          const changed =
+            (updates.startTime !== undefined && updates.startTime !== dragState.originalNote.startTime) ||
+            (updates.pitch !== undefined && updates.pitch !== dragState.originalNote.pitch);
+          if (changed) dragState.moved = true;
+          if (Object.keys(updates).length > 0) {
+            onNoteUpdate(dragState.noteId, updates, 'live');
+          }
         } else if (dragState.type === 'resize-left') {
           const newStart = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
           const newDuration = dragState.originalNote.duration - (newStart - dragState.originalNote.startTime);
           if (newDuration > 100) {
+            if (newStart !== dragState.originalNote.startTime || newDuration !== dragState.originalNote.duration) {
+              dragState.moved = true;
+            }
             onNoteUpdate(dragState.noteId, {
               startTime: newStart,
               duration: newDuration
@@ -484,6 +595,7 @@ export function Timeline({
           const originalEnd = dragState.originalNote.startTime + dragState.originalNote.duration;
           const newEnd = snapTime(originalEnd + deltaTime);
           const newDuration = Math.max(100, newEnd - dragState.originalNote.startTime);
+          if (newDuration !== dragState.originalNote.duration) dragState.moved = true;
           onNoteUpdate(dragState.noteId, { duration: newDuration }, 'live');
         }
       }
@@ -510,11 +622,12 @@ export function Timeline({
 
   // Handle note drag start — captures the lane's pitch height so vertical
   // mouse movement maps to semitone steps during the drag.
+  // R14: axis starts undecided; the dominant first move locks it.
   const handleNoteDragStart = useCallback((noteId: string, startX: number, startY: number, type: 'move' | 'resize-left' | 'resize-right') => {
     const note = allNotes.find(n => n.id === noteId);
     if (note) {
       const lane = lanes.find(l => l.notes.some(n => n.id === noteId));
-      setDragState({ noteId, startX, startY, type, originalNote: { ...note }, pitchHeight: lane?.pitchHeight ?? 12, moved: false });
+      setDragState({ noteId, startX, startY, type, originalNote: { ...note }, pitchHeight: lane?.pitchHeight ?? 12, moved: false, axis: 'undecided', lastPitchDelta: 0 });
     }
   }, [allNotes, lanes]);
 
