@@ -348,6 +348,12 @@ export const useGameStore = create<GameStore>()(
 
         set((state) => ({
           profiles: [...state.profiles, profile],
+          // UX fix: auto-activate the VERY FIRST profile — it was just created
+          // from the "Profile required" prompt, so the user clearly intends to
+          // use it right away. Without this, every gated action (song start,
+          // "Add to Queue", …) stays disabled until the card is clicked once.
+          activeProfileId:
+            state.profiles.length === 0 ? profile.id : state.activeProfileId,
         }));
 
         return profile;

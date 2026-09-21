@@ -6,8 +6,18 @@
 ## Status
 
 - Dev-Server: Port 3000, läuft (`tail dev.log`). Lint: 0 Errors.
-- **Alle Follow-ups (BR-Rhythmus, Summen-Filter) E2E verifiziert + alle 4 neuen Aufgaben (R10) fertig.**
+- **Alle Follow-ups (BR-Rhythmus, Summen-Filter) E2E verifiziert + alle 4 neuen Aufgaben (R10) fertig + R11-Vollverifikation aller Flows im Browser.**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort. `git log origin/main..HEAD` bleibt leer.
+
+## Erledigt (2026-09-21, Runde R11 — Voll-QA aller R10-Features + UX-Fix)
+
+1. **Vollständige E2E-Verifikation aller R10-Features im Browser** (agent-browser, Dev-Server war abgestürzt → neu gestartet):
+   - **MIDI/KAR-Import (Cold Heart .kar):** Format „MIDI Karaoke" → Song-File + Audio-File injiziert → Track-Picker erscheint, 383-Noten-Gesangsmelodie (Ch 1) automatisch selektiert → „Create preview" → „Add to Library" → Song landet persistent in der Library („1 songs available"). Qualität im Editor: echte Lyrics („It's a human sign / When things go wrong / …") korrekt an Noten, Zeilen strikt sequenziell (0:04 → 4:39, monoton steigend, keine Stapelung/Überlagerung), Intro als ♪, Melismen als ♪ markiert. Screenshots: `qa-shots/midi-coldheart-editor.png`.
+   - **Duett-Badge (Editor Library):** Duett-Song importiert (`public/qa-duet.txt`) → violettes 🎭-Badge erscheint NUR auf der Duett-Karte (`data-testid=editor-duet-badge-{id}`, genau 1 gefunden), Solo-Karten ohne. Auch Haupt-Library zeigt 🎭Duet-Tag. Screenshot: `qa-shots/editor-duet-badge.png`.
+   - **Queue-Playlist-Ausnahme:** Playlist „QA Abend-Playlist" mit 2 Songs angelegt → „Add to Queue" → Config-Modal: „No per-player limit"-Toggle initial UNCHECKED → beide Zeilen manuell auf Duel gesetzt → Toggle flippt AUTOMATISCH auf checked + Text wechselt auf „All pairings were set manually — limit lifted" → „Add 2 songs" → beide Songs in der Queue. Ausnahme-Regel (R10-1) damit erstmals komplett im Browser bewiesen.
+   - **Import-Redesign:** Alter Zustand bestätigt entfernt (keine Ultrastar/FolderScan-Tabs); Format-Karten (UltraStar/MIDI/Mugen/SingStar/StepMania), Song-Dropzone + File Loads (🎵 Audio, 🎬 Video, 🖼️ Cover) alle funktional.
+2. **UX-Fix: Erstes Profil wird automatisch aktiviert** (`store.ts` `createProfile`): Vorher blieb `activeProfileId` null, nachdem man aus dem „Profile required"-Prompt ein Profil erstellte — „Add to Queue", Song-Start etc. blieben blockiert, bis man die Karte manuell anklickte (im QA entdeckt). Jetzt: `activeProfileId` wird gesetzt, wenn es das ALLERERSTE Profil ist (`state.profiles.length === 0`). E2E verifiziert: localStorage geleert → Profil erstellt → `activeProfileId` sofort gesetzt, „Profile required"-Prompt verschwindet.
+3. QA-Testdateien bereitgestellt: `public/qa-coldheart.mid`, `public/qa-auld.mid`, `public/qa-duet.txt` (Duett, 2 Stimmen P1/P2) für zukünftige Cron-Runden.
 
 ## Erledigt (2026-09-20/21, Runde R10)
 

@@ -1,0 +1,18 @@
+#TITLE:QA Duet Badges
+#ARTIST:QA Bot
+#MP3:test.mp3
+#BPM:300
+#GAP:2000
+#LANGUAGE:English
+#GENRE:Pop
+#YEAR:2025
+P 1
+: 40 4 0 hel
+: 44 4 1 lo
+: 48 4 2 world
+- 60
+P 2
+: 64 4 3 sing
+: 68 4 4 with
+: 72 4 5 me
+E
