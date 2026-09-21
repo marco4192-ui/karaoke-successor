@@ -47,6 +47,12 @@ export function detectFileFormat(filename: string, content: string | ArrayBuffer
     } catch { /* not JSON */ }
   }
 
+  // ── KaraokeMugen ASS subtitles (.ass/.ssa) — the lyric track Mugen
+  //    ships alongside its media files ───────────────────────────────
+  if ((ext === 'ass' || ext === 'ssa') && typeof content === 'string' && /\[Events\]/i.test(content)) {
+    return 'karaoke-mugen';
+  }
+
   // ── MIDI (.kar / .mid) ───────────────────────────────────────────
   if (ext === 'kar' || ext === 'mid') return 'midi';
 
@@ -121,10 +127,19 @@ export function detectFileFormat(filename: string, content: string | ArrayBuffer
 
 // ─── KaraokeMugen Parser (.json) ─────────────────────────────────────
 
+interface KaraokeMugenSyllable {
+  /** Syllable text (karaoke tags stripped). */
+  text: string;
+  /** Absolute start in ms. */
+  start: number;
+  /** Duration in ms. */
+  duration: number;
+}
+
 interface KaraokeMugenSong {
   title: string;
   artist: string;
-  lyrics: Array<{ start: number; end: number; text: string }>;
+  lyrics: Array<{ start: number; end: number; text: string; syllables?: KaraokeMugenSyllable[] }>;
   audioFile?: string;
   videoFile?: string;
 }
@@ -149,6 +164,138 @@ export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
   }
 }
 
+// ─── ASS/SSA Subtitle Parser (Karaoke Mugen .ass) ─────────────────────
+
+/**
+ * Parse an ASS (Advanced SubStation Alpha) subtitle file — the lyric source
+ * Karaoke Mugen ships alongside its media. Extracts:
+ *  - Title/artist from [Script Info] (Mugen writes `Title: Artist - Song` —
+ *    split on the first ' - ' when present)
+ *  - Timed lyric lines from [Events] Dialogue entries
+ *  - Per-syllable karaoke timing from {\\k<centiseconds>} tags (\\k, \\K, \\kf,
+ *    \\ko). Lines without karaoke tags become one full-line note.
+ *
+ * ASS carries no pitch — the Mugen conversion generates deterministic
+ * pitches around C4 (same policy as the JSON import); refine in the editor.
+ */
+export function parseAssKaraoke(data: string): KaraokeMugenSong | null {
+  try {
+    let title = '';
+    let artist = '';
+
+    // ── [Script Info] ──
+    const scriptInfoMatch = data.match(/\[Script Info\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
+    if (scriptInfoMatch) {
+      const titleMatch = scriptInfoMatch[1].match(/^\s*Title:\s*(.+)$/m);
+      if (titleMatch) {
+        const raw = titleMatch[1].trim();
+        const dashSplit = raw.split(/\s+-\s+/);
+        if (dashSplit.length >= 2) {
+          artist = dashSplit[0].trim();
+          title = dashSplit.slice(1).join(' - ').trim();
+        } else {
+          title = raw;
+        }
+      }
+    }
+
+    // ── [Events] ──
+    const eventsMatch = data.match(/\[Events\]([\s\S]*?)(?:\r?\n\s*\[|$)/);
+    if (!eventsMatch) return null;
+
+    // "H:MM:SS.CC" → ms
+    const parseTimestamp = (ts: string): number => {
+      const m = ts.trim().match(/^(\d+):(\d{1,2}):(\d{1,2})[.](\d{1,2})$/);
+      if (!m) return NaN;
+      return (
+        parseInt(m[1], 10) * 3600000 +
+        parseInt(m[2], 10) * 60000 +
+        parseInt(m[3], 10) * 1000 +
+        parseInt(m[4].padEnd(2, '0'), 10) * 10
+      );
+    };
+
+    const lyrics: KaraokeMugenSong['lyrics'] = [];
+    for (const line of eventsMatch[1].split(/\r?\n/)) {
+      if (!/^\s*Dialogue\s*:/i.test(line)) continue; // Comments/effects skipped
+
+      // Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+      // The Text field may contain commas → split with limit 9, rejoin the rest.
+      const parts = line.replace(/^\s*Dialogue\s*:\s*/i, '').split(',', 10);
+      if (parts.length < 10) continue;
+      const start = parseTimestamp(parts[1]);
+      const end = parseTimestamp(parts[2]);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+
+      const rawText = parts.slice(9).join(',');
+
+      // ── Karaoke tags: {\\k20}Ka{\\k15}ra{\\k25}oke … ──
+      // Each {\\k<cs>} tag times the text AFTER it until the next tag.
+      const syllables: KaraokeMugenSyllable[] = [];
+      const karaokeTag = /\{\\[kK](?:f|o)?\s*(\d+(?:[.]\d+)?)\}/g;
+      let lastIndex = 0;
+      let cursor = start;
+      let sawKaraokeTag = false;
+
+      let tagMatch: RegExpExecArray | null;
+      while ((tagMatch = karaokeTag.exec(rawText)) !== null) {
+        sawKaraokeTag = true;
+        // Untimed text BEFORE the tag (rare — leading syllable without {\\k})
+        const leading = rawText.slice(lastIndex, tagMatch.index).replace(/\{\\[^}]*\}/g, '');
+        if (leading.trim()) {
+          syllables.push({ text: leading, start: cursor, duration: 0 }); // duration fixed below
+        }
+        const durationMs = Math.round(parseFloat(tagMatch[1]) * 10);
+        lastIndex = karaokeTag.lastIndex;
+
+        // Sung text: from after the tag to the next override block (or EOL)
+        const rest = rawText.slice(lastIndex);
+        const nextBlock = rest.indexOf('{');
+        const segEnd = nextBlock >= 0 ? lastIndex + nextBlock : rawText.length;
+        const sungText = rawText.slice(lastIndex, segEnd);
+        if (sungText.trim()) {
+          syllables.push({ text: sungText, start: cursor, duration: durationMs });
+        }
+        cursor += durationMs;
+        lastIndex = segEnd;
+        karaokeTag.lastIndex = segEnd;
+      }
+
+      let text: string;
+      let lineSyllables: KaraokeMugenSyllable[] | undefined;
+      if (sawKaraokeTag && syllables.length > 0) {
+        // Fix zero-duration leading fragments: give each a share of the first
+        // timed syllable's duration (min 20 ms) so nothing collapses.
+        const unTimed = syllables.filter(s => s.duration === 0);
+        const firstTimed = syllables.find(s => s.duration > 0);
+        if (unTimed.length > 0 && firstTimed) {
+          const share = Math.max(20, Math.floor(firstTimed.duration / (unTimed.length + 1)));
+          let cs = start;
+          for (const s of unTimed) { s.start = cs; s.duration = share; cs += share; }
+        }
+        lineSyllables = syllables.filter(s => s.text.trim().length > 0 && s.duration > 0);
+        text = lineSyllables.map(s => s.text).join('').replace(/\s+/g, ' ').trim();
+      } else {
+        // No karaoke tags → one note spanning the whole line
+        const clean = rawText.replace(/\{\\[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
+        if (!clean) continue;
+        text = clean;
+        lineSyllables = [{ text: clean, start, duration: end - start }];
+      }
+
+      if (!text) continue;
+      lyrics.push({ start, end, text, syllables: lineSyllables });
+    }
+
+    if (lyrics.length === 0) return null;
+    return { title, artist, lyrics };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.debug('[multi-format-import]: failed to parse ASS subtitle file', error);
+    return null;
+  }
+}
+
 // ─── MIDI Karaoke Parser (.kar/.mid) ─────────────────────────────────
 
 /** A single syllable/word event extracted from a MIDI lyrics stream. */
@@ -157,6 +304,11 @@ export interface MIDILyricEvent {
   text: string;
   /** True when this syllable starts a new lyric line (`/` or `\` marker in .kar files). */
   newLine: boolean;
+  /** Karakan `~` — melisma continuation: the note extends the previous
+   *  syllable instead of carrying its own text. Rendered as ♪. */
+  isExtension?: boolean;
+  /** Karakan `.` / `...` — instrumental note without a syllable. Rendered as ♪. */
+  isInstrumental?: boolean;
 }
 
 /** One MIDI track with timing data and selection metadata for the import UI. */
@@ -170,8 +322,13 @@ export interface MIDITrackData {
   lyricSyllableCount: number;
   /** 0..1 — share of notes with a matching lyric syllable (time proximity). */
   lyricCoverage: number;
-  /** Heuristic melody score: prefers non-drum tracks with many notes + lyric coverage. */
+  /** Heuristic melody score (R10-4): monophony + singable range + syllable
+   *  proximity + lyric coverage — prefers the vocal melody over busy
+   *  accompaniment tracks. */
   melodyScore: number;
+  /** 0..1 — share of notes that start only after the previous note ended
+   *  (melodies are monophonic; arpeggios/chords are not). */
+  monoRatio: number;
   notes: Array<{ startTimeMs: number; durationMs: number; pitch: number; velocity: number }>;
   lyrics: MIDILyricEvent[];
 }
@@ -182,6 +339,10 @@ export interface MIDIKaraokeData {
   ticksPerBeat: number;
   /** MIDI header format (0 = single track, 1 = multi track, 2 = async). */
   headerFormat: number;
+  /** Beats per bar from the FIRST time-signature meta event (default 4).
+   *  R10-4: lyric-less imports break lines at bar boundaries — waltzes get
+   *  3-beat phrases, 4/4 songs 4-beat phrases. */
+  beatsPerBar: number;
   /** Title from `@T` meta text, if the file provides one. */
   title?: string;
   /** Artist from `@T` meta text (second `@T` entry), if present. */
@@ -222,10 +383,11 @@ function readVLQ(view: DataView, offset: number, limit: number): [number, number
  * UltraStar/.kar convention encodes word boundaries there ("lo " = word ends,
  * "Sonn-" = hyphenated syllable, " lo" = new word starts).
  */
-function cleanKaraokeSyllable(raw: string): { text: string; newLine: boolean } {
+function cleanKaraokeSyllable(raw: string): { text: string; newLine: boolean; isExtension?: boolean; isInstrumental?: boolean } {
   let text = raw;
   let newLine = false;
-  // Leading `/` (new line) or `\` (clear screen) = line boundary in .kar convention.
+  // Leading `/` (new line) or `\` (clear screen / new paragraph) = line boundary
+  // in .kar convention.
   if (/^[\\/]/.test(text)) {
     newLine = true;
     text = text.slice(1);
@@ -235,6 +397,43 @@ function cleanKaraokeSyllable(raw: string): { text: string; newLine: boolean } {
     newLine = true;
     text = text.replace(/[\r\n]+/g, ' ');
   }
+
+  // Karakan markers (user request R10-4 — MIDI import quality):
+  //  • `~` (own event) = melisma continuation — no text, the note is a ♪
+  //  • `.` (own event) = instrumental note — no text, the note is a ♪
+  //  • `~` embedded in "ng~" and trailing dot-runs "ers..." describe the
+  //    FOLLOWING notes (which match no event and become ♪ automatically) —
+  //    they only need stripping from the display text.
+  //  • `{...}` = backing vocals / second voice — keep the text, drop braces
+  //  • `Name: lyric` = singer label prefix (duets) — keep the lyric, drop label
+  const bare = text.replace(/\s+/g, ' ').trim();
+  if (/^~+$/.test(bare)) {
+    return { text: '', newLine, isExtension: true };
+  }
+  if (/^[.·]+$/.test(bare)) {
+    return { text: '', newLine, isInstrumental: true };
+  }
+
+  // Embedded markers → strip from the text only.
+  text = text.replace(/~/g, '');
+  text = text.replace(/(?:\.\.\.|[.·]{2,})/g, '');
+
+  // Backing vocals / second voice: {Oh} → Oh. Braces may span SEPARATE
+  // events ("/{You're" … " heart}") — strip every stray brace, they are
+  // never literal lyric content.
+  text = text.replace(/[{}]/g, '');
+
+  // Singer label prefix (duet files): "Elton John: It's" → "It's".
+  // Only when a colon separates a short label (≤ 4 words) from actual lyric
+  // content — never strip mid-sentence colons.
+  const labelMatch = text.match(/^\s*([A-Z][\w'&.\- ]{0,40}?):\s*(\S.*)$/);
+  if (labelMatch) {
+    const labelWords = labelMatch[1].trim().split(/\s+/).length;
+    if (labelWords <= 4) {
+      text = labelMatch[2];
+    }
+  }
+
   return { text: text.replace(/\s+/g, ' '), newLine };
 }
 
@@ -283,6 +482,8 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       { tick: 0, microsPerBeat: 500000 }, // default 120 BPM
     ];
     let initialTempo: number | null = null;
+    /** Beats per bar from the FIRST 0x58 time-signature event (default 4/4). */
+    let beatsPerBar = 4;
 
     const activeNotes = new Map<string, { startTick: number; pitch: number; velocity: number }>();
 
@@ -332,15 +533,24 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
             const safeLength = Math.max(0, Math.min(length, arrayBuffer.byteLength - offset));
 
             if (metaType === 0x01) {
-              // Text meta — @T title/artist info in .kar, but NEVER sung lyrics (0x05).
-              const text = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i))).replace(/[\r\n]+/g, ' ').trim();
+              // Text meta — @T title/artist info in .kar, and (Karakan exports)
+              // the sung syllables themselves when no 0x05 events exist.
+              // R10-4: PRESERVE leading/trailing single spaces — the .kar word
+              // boundary convention encodes them (" a" = new word). The old
+              // .trim() here destroyed word spacing for text-event lyrics.
+              const text = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i))).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
               if (text) raw.textEvents.push({ tick: absoluteTick, text });
             } else if (metaType === 0x05) {
               // Lyrics meta — the actual syllables
               const text = decodeMidiText(Array.from({ length: safeLength }, (_, i) => view.getUint8(offset + i)));
-              const { text: cleaned, newLine } = cleanKaraokeSyllable(text);
+              const { text: cleaned, newLine, isExtension, isInstrumental } = cleanKaraokeSyllable(text);
               if (cleaned.trim()) {
-                raw.lyricEvents.push({ tick: absoluteTick, text: cleaned, newLine });
+                raw.lyricEvents.push({ tick: absoluteTick, text: cleaned, newLine, isExtension, isInstrumental });
+              } else if (isExtension || isInstrumental) {
+                // Melisma/instrumental events carry no text but MUST be kept:
+                // they consume their note in the two-pointer matching so the
+                // next real syllable isn't stolen (R10-4).
+                raw.lyricEvents.push({ tick: absoluteTick, text: '', newLine, isExtension, isInstrumental });
               } else if (cleaned === ' ' && raw.lyricEvents.length > 0) {
                 // Whitespace-only event = word-end marker → attach the trailing
                 // space to the previous syllable instead of dropping it.
@@ -353,6 +563,13 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
                 const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
                 if (initialTempo === null) initialTempo = 60000000 / microseconds;
                 tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
+              }
+            } else if (metaType === 0x58) {
+              // Time signature: numerator / denominator(2^-n) / 24 / 8 —
+              // only the numerator (beats per bar) is needed (R10-4).
+              if (safeLength >= 2 && beatsPerBar === 4) {
+                const numerator = view.getUint8(offset);
+                if (numerator >= 1 && numerator <= 12) beatsPerBar = numerator;
               }
             } else if (metaType === 0x03) {
               // Track name
@@ -436,16 +653,29 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
     // ── Title/artist from `@T` text meta events (Karaoke MIDI convention) ──
     // First `@T` = title, second = artist; skip copyright-ish entries.
+    // R10-4: the space after @T is OPTIONAL (Karakan writes "@TElton …").
     const titleEntries: string[] = [];
     for (const raw of rawTracks) {
       for (const ev of raw.textEvents) {
-        const match = ev.text.match(/^@T\s+(.*)$/i);
+        const match = ev.text.match(/^@T\s*(.+)$/i);
         if (match && match[1].trim()) titleEntries.push(match[1].trim());
       }
     }
     const infoEntries = titleEntries.filter(txt => !/^(?:\(c\)|\[c\]|©|copyright)/i.test(txt));
-    const title = infoEntries[0] || undefined;
-    const artist = infoEntries[1] || undefined;
+    let title = infoEntries[0] || undefined;
+    let artist = infoEntries[1] || undefined;
+    // R10-4: the FIRST @T often carries `Artist - Title` while the second is a
+    // credits line ("Words & Music by …"). Split on ' - ' when that pattern
+    // matches, so title/artist come out right for Karakan exports.
+    if (title && title.includes(' - ') && (!artist || /^(?:words|music|lyrics|sequence|kar|chart|from)\b/i.test(artist))) {
+      const dashSplit = title.split(' - ');
+      const possibleArtist = dashSplit[0].trim();
+      const possibleTitle = dashSplit.slice(1).join(' - ').trim();
+      if (possibleArtist && possibleTitle && possibleArtist.split(/\s+/).length <= 6) {
+        artist = possibleArtist;
+        title = possibleTitle;
+      }
+    }
 
     // ── Per-track conversion + melody heuristics ──
     // Syllable/note match tolerance: .kar lyric events sit at (or a few ticks
@@ -465,18 +695,18 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       // Lyrics: prefer real 0x05 events. Fallback for odd files that store
       // lyrics in 0x01 text events: use them only when they aren't `@` control
       // entries and roughly match the note count.
-      let lyricSource: Array<{ tick: number; text: string; newLine: boolean }> = raw.lyricEvents;
+      let lyricSource: Array<{ tick: number; text: string; newLine: boolean; isExtension?: boolean; isInstrumental?: boolean }> = raw.lyricEvents;
       if (lyricSource.length === 0) {
         const candidates = raw.textEvents.filter(ev => !ev.text.startsWith('@'));
         if (candidates.length > 0 && candidates.length >= Math.max(1, Math.floor(raw.notes.length * 0.5))) {
           lyricSource = candidates.map(ev => {
-            const { text, newLine } = cleanKaraokeSyllable(ev.text);
-            return { tick: ev.tick, text, newLine };
-          }).filter(ev => ev.text.trim());
+            const { text, newLine, isExtension, isInstrumental } = cleanKaraokeSyllable(ev.text);
+            return { tick: ev.tick, text, newLine, isExtension, isInstrumental };
+          }).filter(ev => ev.text.trim() || ev.isExtension || ev.isInstrumental);
         }
       }
       const lyrics: MIDILyricEvent[] = lyricSource
-        .map(l => ({ startTimeMs: Math.round(tickToMs(l.tick)), text: l.text, newLine: l.newLine }))
+        .map(l => ({ startTimeMs: Math.round(tickToMs(l.tick)), text: l.text, newLine: l.newLine, isExtension: l.isExtension, isInstrumental: l.isInstrumental }))
         .sort((a, b) => a.startTimeMs - b.startTimeMs);
 
       // Channels + drum detection (GM: channel 10 / index 9 = drums).
@@ -496,10 +726,45 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       }
       const lyricCoverage = notes.length > 0 ? matched / notes.length : 0;
 
-      // Melody score: lyrics coverage dominates, then note count; drums excluded.
+      // ── Melody heuristics (R10-4 — MIDI import quality) ──
+      // The old score (lyric coverage + raw note count) picked busy
+      // accompaniment tracks (e.g. 888-note piano lines) over the actual
+      // vocal melody, which made text and notes misalign ("passen nicht
+      // überein") and produced chaotic overlapping lines. Vocal melodies are:
+      //  • MONOPHONIC — a note only starts after the previous one ended
+      //    (accompaniment arpeggios/chords score low here)  → strongest signal
+      //  • SINGABLE — pitches inside MIDI 53–84 (F3–C6); bass lines are not
+      //  • COMFORTABLE — the core singing range G3–F5 (55–77)
+      //  • SYLLABLE-CLOSE — when the file has lyrics, the melody track's note
+      //    count roughly matches the syllable count (383 notes vs 360
+      //    syllables beats 888 vs 360)
+      let monoCount = 0;
+      let lastEndTick = -1;
+      for (const n of raw.notes) {
+        const endTick = n.tick + n.duration;
+        if (n.tick >= lastEndTick) monoCount++;
+        if (endTick > lastEndTick) lastEndTick = endTick;
+      }
+      const monoRatio = raw.notes.length > 0 ? monoCount / raw.notes.length : 0;
+      const singableRatio = raw.notes.length > 0
+        ? raw.notes.filter(n => n.pitch >= 53 && n.pitch <= 84).length / raw.notes.length
+        : 0;
+      const comfortRatio = raw.notes.length > 0
+        ? raw.notes.filter(n => n.pitch >= 55 && n.pitch <= 77).length / raw.notes.length
+        : 0;
+      // Track names often name the melody explicitly.
+      const nameBonus = /\b(melody|lead|vocal|voice|gesang|sing)\b/i.test(raw.name || '') ? 30 : 0;
+
       const melodyScore = isDrum
         ? -1
-        : lyricCoverage * 100 + Math.min(notes.length, 500) / 5 + (raw.lyricEvents.length > 0 ? 20 : 0);
+        : lyricCoverage * 100 +                    // own aligned lyrics (classic .kar)
+          monoRatio * 40 +                          // monophonic = melody-shaped
+          singableRatio * 25 +                      // inside the singable range
+          comfortRatio * 10 +                       // core singing range bonus
+          nameBonus +
+          Math.min(notes.length, 500) / 25;         // minor size factor
+      // Syllable proximity is added AFTER the map (needs the global syllable
+      // count across all tracks — see below).
 
       return {
         index: idx,
@@ -510,10 +775,25 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
         lyricSyllableCount: lyrics.length,
         lyricCoverage,
         melodyScore,
+        monoRatio,
         notes,
         lyrics,
       };
     });
+
+    // ── Syllable proximity bonus (R10-4) ──
+    // When the file carries lyrics anywhere, the melody track's note count
+    // should be close to the total syllable count. Added post-map because the
+    // best syllable source may be a different track (e.g. a separate "Words"
+    // track in Karakan exports).
+    const globalSyllables = Math.max(0, ...tracks.map(tr => tr.lyrics.length));
+    if (globalSyllables > 0) {
+      for (const tr of tracks) {
+        if (tr.isDrum || tr.noteCount === 0) continue;
+        const deviation = Math.abs(tr.noteCount - globalSyllables) / globalSyllables;
+        tr.melodyScore += Math.max(0, 25 * (1 - deviation));
+      }
+    }
 
     // Auto-detected melody track: best-scoring non-drum track with notes;
     // fall back to the track with the most notes when everything is drum-only-ish.
@@ -532,6 +812,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       tempo: initialTempo ?? 120,
       ticksPerBeat: ticksPerBeat || 480,
       headerFormat,
+      beatsPerBar,
       title,
       artist,
       hasLyrics: tracks.some(tr => tr.lyrics.length > 0),
@@ -650,8 +931,25 @@ export function convertToSong(
         text: l.text,
         startTime: l.start,
         endTime: l.end,
-        // R9 (1.2): line-scoped prefix — ids like `note-0` collided across lines
-        notes: generateNotesFromText(l.text, l.start, l.end, `km${i}`),
+        // ASS karaoke imports carry per-syllable timing ({\k} tags) — build
+        // the notes from that precise data instead of distributing words
+        // evenly across the line.
+        notes: l.syllables && l.syllables.length > 0
+          ? l.syllables.map((syl, j) => {
+              // Deterministic pitch around C4 (ASS has no pitch information)
+              const pitch = 60 + (j % 12);
+              return {
+                id: `note-km${i}-${j}`,
+                pitch,
+                frequency: midiPitchToFrequency(pitch),
+                startTime: syl.start,
+                duration: Math.max(50, syl.duration),
+                lyric: syl.text.trim(),
+                isBonus: false,
+                isGolden: false,
+              };
+            })
+          : generateNotesFromText(l.text, l.start, l.end, `km${i}`),
       }));
       return { title: km.title, artist: km.artist, lyrics, audioUrl: km.audioFile || audioUrl, videoBackground: km.videoFile || videoUrl };
     }
@@ -687,13 +985,20 @@ export function convertToSong(
 
       // ── Build lyric lines ──
       // Line breaks: explicit .kar markers (`/`, `\`) win; long note gaps
-      // (≥ 2 s) act as fallback so lyric-less MIDIs still get sensible lines.
+      // (≥ 2 s) act as fallback. R10-4: lyric-less MIDIs (or fully instrumental
+      // stretches) additionally break at BAR phrases — legato melodies without
+      // rests otherwise collapse into giant 55-note lines ("Strophen wurden
+      // nicht hintereinander dargestellt"). Phrase length: 2 bars of the
+      // file's time signature (waltz 3/4 → ~3.7 s, 4/4 → ~4 s at 120 BPM).
       const lyrics: LyricLine[] = [];
       let currentLineNotes: Note[] = [];
       let lineStartTime = 0;
       let lastEndTime = 0;
+      let lineHasSyllable = false;
       const LINE_BREAK_MS = 2000;
       const LYRIC_TOLERANCE_MS = 600;
+      const barMs = midi.tempo > 0 ? (60000 / midi.tempo) * (midi.beatsPerBar || 4) : 2000;
+      const PHRASE_MS = Math.max(1200, barMs * 2);
 
       const flushLine = () => {
         if (currentLineNotes.length === 0) return;
@@ -706,6 +1011,7 @@ export function convertToSong(
           notes: currentLineNotes,
         });
         currentLineNotes = [];
+        lineHasSyllable = false;
       };
 
       // Two-pointer lyric matching: each note takes the nearest unassigned
@@ -723,7 +1029,20 @@ export function convertToSong(
           li++;
         }
 
-        if (currentLineNotes.length > 0 && (startNewLine || n.startTimeMs - lastEndTime >= LINE_BREAK_MS)) {
+        if (lyricText !== '♪') lineHasSyllable = true;
+
+        // Break conditions (ordered by precedence):
+        //  1. explicit .kar line marker
+        //  2. long rest (≥ 2 s)
+        //  3. BAR PHRASE (R10-4): instrumental stretch (no syllable so far in
+        //     this line) that has run for ≥ 2 bars — keeps legato lyric-less
+        //     melodies in phrase-sized lines instead of giant ♪ blocks.
+        if (
+          currentLineNotes.length > 0 &&
+          (startNewLine ||
+            n.startTimeMs - lastEndTime >= LINE_BREAK_MS ||
+            (!lineHasSyllable && n.startTimeMs - lineStartTime >= PHRASE_MS))
+        ) {
           flushLine();
         }
 

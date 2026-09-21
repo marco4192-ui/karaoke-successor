@@ -6,6 +6,7 @@ import { Song } from '@/types/game';
 import {
   detectFileFormat,
   parseKaraokeMugen,
+  parseAssKaraoke,
   parseMIDIKaraoke,
   parseSingStarData,
   parseStepMania,
@@ -13,8 +14,8 @@ import {
   type DetectedFormat,
   type MIDIKaraokeData,
 } from '@/lib/parsers/multi-format-import';
-import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
-import { addSong } from '@/lib/game/song-library';
+import { parseUltraStarTxt, convertUltraStarToSong, generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
+import { upsertSong } from '@/lib/game/song-library';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -32,7 +33,7 @@ export interface AlternateFormatTabProps {
 const FORMATS: Array<{ id: DetectedFormat; label: string; extensions: string; descriptionKey: string }> = [
   { id: 'ultrastar', label: 'UltraStar', extensions: '.txt', descriptionKey: 'importAlternateFormat.formatDescriptions.ultrastar' },
   { id: 'midi', label: 'MIDI Karaoke', extensions: '.kar, .mid', descriptionKey: 'importAlternateFormat.formatDescriptions.midi' },
-  { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.json', descriptionKey: 'importAlternateFormat.formatDescriptions.karaokeMugen' },
+  { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.ass, .json', descriptionKey: 'importAlternateFormat.formatDescriptions.karaokeMugen' },
   { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', descriptionKey: 'importAlternateFormat.formatDescriptions.singStar' },
   { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', descriptionKey: 'importAlternateFormat.formatDescriptions.stepMania' },
 ];
@@ -50,13 +51,22 @@ export function AlternateFormatTab({
   const [detectedFormat, setDetectedFormat] = useState<DetectedFormat | null>(null);
   const [songFile, setSongFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  /** Optional ASS subtitle file (Karaoke Mugen) — overrides the JSON lyrics
+   *  with the precise per-syllable {\k} timing when provided. */
+  const [assFile, setAssFile] = useState<File | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   // MIDI two-step flow: parse first → user picks a melody track → build preview
   const [midiData, setMidiData] = useState<MIDIKaraokeData | null>(null);
   const [selectedMidiTrack, setSelectedMidiTrack] = useState<number | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const songInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const assInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
   // Track blob URLs created in handleProcess for cleanup on unmount/cancel
@@ -121,11 +131,23 @@ export function AlternateFormatTab({
 
       switch (selectedFormat) {
         case 'karaoke-mugen': {
-          const text = await songFile.text();
-          const data = parseKaraokeMugen(text);
+          // ASS subtitle file (preferred — precise {\k} syllable timing) or
+          // the legacy JSON export. An EXTRA .ass file overrides the JSON.
+          const ext = songFile.name.split('.').pop()?.toLowerCase();
+          let data = null;
+          if (ext === 'ass' || ext === 'ssa') {
+            data = parseAssKaraoke(await songFile.text());
+            if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
+          } else if (assFile) {
+            const assData = parseAssKaraoke(await assFile.text());
+            data = assData ?? parseKaraokeMugen(await songFile.text());
+          } else {
+            data = parseKaraokeMugen(await songFile.text());
+          }
           if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
           tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
-          partialSong = convertToSong(data, 'karaoke-mugen', tempBlobUrl);
+          const videoUrl = videoFile ? URL.createObjectURL(videoFile) : undefined;
+          partialSong = convertToSong(data, 'karaoke-mugen', tempBlobUrl, videoUrl);
           break;
         }
         case 'midi': {
@@ -210,7 +232,10 @@ export function AlternateFormatTab({
         difficulty: 'medium',
         rating: 3,
         audioUrl: partialSong.audioUrl || (audioFile ? URL.createObjectURL(audioFile) : ''),
-        videoBackground: partialSong.videoBackground || '',
+        videoBackground: videoFile
+          ? URL.createObjectURL(videoFile)
+          : partialSong.videoBackground || '',
+        coverImage: coverFile ? URL.createObjectURL(coverFile) : undefined,
         lyrics: partialSong.lyrics || [],
         genre: partialSong.genre,
       };
@@ -233,18 +258,116 @@ export function AlternateFormatTab({
     } finally {
       setIsProcessing(false);
     }
-  }, [songFile, audioFile, selectedFormat, selectedMidiTrack, midiData, previewSong, setError, setPreviewSong, setIsProcessing, t]);
+  }, [songFile, audioFile, videoFile, coverFile, assFile, selectedFormat, selectedMidiTrack, midiData, previewSong, setError, setPreviewSong, setIsProcessing, t]);
+
+  /**
+   * Confirm: add the converted song to the library AND persist everything
+   * (user request R10-2.3 — "the app builds an UltraStar file from it"):
+   *  - the generated UltraStar txt  → media DB (storedTxt) — the song is a
+   *    fully editable UltraStar song afterwards, not a fragile blob-only copy
+   *  - audio / video / cover        → media DB (storedMedia) — survives
+   *    reloads in browser AND Tauri webview (IndexedDB is available in both)
+   */
+  const handleAddToLibrary = useCallback(async () => {
+    if (!previewSong) return;
+    setIsConfirming(true);
+    try {
+      const { storeMedia } = await import('@/lib/db/media-db');
+
+      // 1. Generate the UltraStar txt from the converted song
+      const txtContent = generateUltraStarTxt(previewSong);
+      await storeMedia(previewSong.id, 'txt', new Blob([txtContent], { type: 'text/plain' }));
+
+      // 2. Persist the media files the user provided
+      if (audioFile) await storeMedia(previewSong.id, 'audio', audioFile);
+      if (videoFile) await storeMedia(previewSong.id, 'video', videoFile);
+      if (coverFile) await storeMedia(previewSong.id, 'cover', coverFile);
+
+      // 3. Upsert with persistence flags — the song survives reloads and the
+      //    editor can round-trip the txt (loadSongLyrics/saveSongToTxt).
+      const hasMedia = !!(audioFile || videoFile);
+      await upsertSong({ ...previewSong, storedTxt: true, storedMedia: hasMedia || previewSong.storedMedia === true });
+
+      onImport(previewSong);
+      setStatusMessage(t('importAlternateFormat.persistSuccess'));
+      // Reset for the next import (keep the format selection)
+      setPreviewSong(null);
+      setSongFile(null);
+      setAudioFile(null);
+      setVideoFile(null);
+      setCoverFile(null);
+      setAssFile(null);
+      setMidiData(null);
+      setSelectedMidiTrack(null);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[AlternateFormatImport] persistence failed:', err);
+      setError(err instanceof Error ? err.message : t('importAlternateFormat.unknownError'));
+    } finally {
+      setIsConfirming(false);
+    }
+  }, [previewSong, audioFile, videoFile, coverFile, onImport, setPreviewSong, setError, t]);
+
+  /** Small reusable file-picker row (audio / video / cover / ass file loads). */
+  const renderFileLoad = (
+    label: string,
+    file: File | null,
+    setFile: (_f: File | null) => void,
+    inputRef: React.RefObject<HTMLInputElement | null>,
+    accept: string,
+    hint?: string,
+    icon?: string,
+  ) => (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+        <span aria-hidden="true">{icon}</span>
+        {label}
+      </label>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          className="border-slate-600 text-xs max-w-full truncate"
+        >
+          {file ? file.name : t('importAlternateFormat.selectFile2')}
+        </Button>
+        {file && (
+          <Button variant="ghost" size="sm" onClick={() => setFile(null)} className="text-xs text-red-400">
+            {t('importAlternateFormat.remove')}
+          </Button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        data-testid={`import-file-input-${label.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+      {hint && <p className="text-[10px] text-slate-500">{hint}</p>}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
+      {/* Conversion explainer (R10-2.3) */}
+      <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-slate-300">
+        <p className="flex items-start gap-2">
+          <span aria-hidden="true" className="text-sm">ℹ️</span>
+          <span>{t('importAlternateFormat.conversionNote')}</span>
+        </p>
+      </div>
+
       {/* Format selector */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.songFormat')}</label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {FORMATS.map(fmt => (
             <button
               key={fmt.id}
-              onClick={() => setSelectedFormat(fmt.id)}
+              onClick={() => { setSelectedFormat(fmt.id); setMidiData(null); setSelectedMidiTrack(null); }}
               className={`p-3 rounded-lg border text-left transition-colors ${
                 selectedFormat === fmt.id
                   ? 'border-cyan-500 bg-cyan-500/10'
@@ -280,7 +403,7 @@ export function AlternateFormatTab({
             <div className="text-sm text-slate-500">{t('importAlternateFormat.dropFile')}</div>
           )}
         </div>
-        <input ref={songInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleSongFileSelect(e.target.files[0])} />
+        <input ref={songInputRef} type="file" className="hidden" data-testid="import-song-file-input" onChange={(e) => e.target.files?.[0] && handleSongFileSelect(e.target.files[0])} />
       </div>
 
       {/* MIDI melody track picker (shown after the file has been analyzed) */}
@@ -328,7 +451,9 @@ export function AlternateFormatTab({
                         : 'hover:bg-slate-700/40 cursor-pointer'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">\n                    <span className="text-sm font-medium truncate flex items-center gap-1.5">\n                      {tr.name}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {tr.name}
                       {isMelody && (
                         <span className="shrink-0 rounded-full bg-cyan-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-cyan-300 border border-cyan-500/40">
                           {t('importAlternateFormat.midiMelodyBadge')}
@@ -367,32 +492,50 @@ export function AlternateFormatTab({
         </div>
       )}
 
-      {/* Optional audio file */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.audioFile')}</label>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => audioInputRef.current?.click()}
-            className="border-slate-600 text-xs"
-          >
-            {audioFile ? audioFile.name : t('importAlternateFormat.selectAudio')}
-          </Button>
-          {audioFile && (
-            <Button variant="ghost" size="sm" onClick={() => setAudioFile(null)} className="text-xs text-red-400">
-              {t('importAlternateFormat.remove')}
-            </Button>
-          )}
-        </div>
-        <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
-        <p className="text-[10px] text-slate-500">{t('importAlternateFormat.audioRequired')}</p>
+      {/* File loads: audio, video, cover (+ ASS for Mugen) — R10-2.3 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-slate-700/60 bg-slate-800/30 p-3">
+        {renderFileLoad(
+          t('importAlternateFormat.audioFile'),
+          audioFile,
+          setAudioFile,
+          audioInputRef,
+          'audio/*',
+          t('importAlternateFormat.audioRequired'),
+          '🎵',
+        )}
+        {renderFileLoad(
+          t('importAlternateFormat.videoFile'),
+          videoFile,
+          setVideoFile,
+          videoInputRef,
+          'video/*',
+          t('importAlternateFormat.videoOptional'),
+          '🎬',
+        )}
+        {renderFileLoad(
+          t('importAlternateFormat.coverFile'),
+          coverFile,
+          setCoverFile,
+          coverInputRef,
+          'image/*',
+          t('importAlternateFormat.coverOptional'),
+          '🖼️',
+        )}
+        {selectedFormat === 'karaoke-mugen' && renderFileLoad(
+          t('importAlternateFormat.assFile'),
+          assFile,
+          setAssFile,
+          assInputRef,
+          '.ass,.ssa',
+          t('importAlternateFormat.assHint'),
+          '📝',
+        )}
       </div>
 
       {/* Process button */}
       <Button
         onClick={handleProcess}
-        disabled={!songFile || !selectedFormat || isProcessing || (selectedFormat === 'midi' && !!midiData && selectedMidiTrack === null)}
+        disabled={!songFile || !selectedFormat || isProcessing || isConfirming || (selectedFormat === 'midi' && !!midiData && selectedMidiTrack === null)}
         className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
       >
         {isProcessing
@@ -404,7 +547,7 @@ export function AlternateFormatTab({
 
       {/* Status message */}
       {statusMessage && !error && (
-        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-xs text-green-400">
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-xs text-green-400" role="status">
           {statusMessage}
         </div>
       )}
@@ -413,10 +556,11 @@ export function AlternateFormatTab({
       {previewSong && (
         <div className="flex gap-2">
           <Button
-            onClick={() => { addSong(previewSong); onImport(previewSong); }}
+            onClick={handleAddToLibrary}
+            disabled={isConfirming}
             className="flex-1 bg-green-500 hover:bg-green-400 text-sm"
           >
-            {t('importAlternateFormat.addToLibrary')}
+            {isConfirming ? t('importAlternateFormat.persisting') : t('importAlternateFormat.addToLibrary')}
           </Button>
           <Button
             variant="ghost"

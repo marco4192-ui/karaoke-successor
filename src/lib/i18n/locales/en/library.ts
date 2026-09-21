@@ -268,15 +268,6 @@ export const libraryTranslations = {
     newPlaylist: 'New Playlist'
   },
 
-  importScreen: {
-    ultrastarImport: 'UltraStar Import',
-    folderScan: 'Folder Scan',
-    moreFormats: 'More Formats',
-    processing: 'Processing...',
-    process: 'Process',
-    importSongs: 'Import {n} Songs',
-    addToLibrary: 'Add to Library'
-  },
 
   importUltrastar: {
     fileTitle: 'UltraStar File *',
@@ -322,7 +313,7 @@ export const libraryTranslations = {
     formatDescriptions: {
       ultrastar: 'Classic UltraStar .txt format (notes, lyrics, metadata)',
       midi: 'Karaoke MIDI (.kar) with lyrics & notes — melody track auto-detected',
-      karaokeMugen: 'Karaoke Mugen JSON format',
+      karaokeMugen: 'Karaoke Mugen — .ass subtitles (syllable timing) or JSON export',
       singStar: 'SingStar INI export format',
       stepMania: 'StepMania/StepFever chart format'
     },
@@ -354,7 +345,17 @@ export const libraryTranslations = {
     midiNoLyricsWarning: 'No lyrics found in this MIDI file — notes will be imported without syllables.',
     midiCreatePreview: 'Create preview',
     midiSongInfo: 'Detected: "{title}" by {artist}',
-    midiMetaInfo: '{bpm} BPM · {tracks} tracks'
+    midiMetaInfo: '{bpm} BPM · {tracks} tracks',
+    conversionNote: 'The import converts the song into the UltraStar format: text file, audio, video and cover are stored permanently — the song is fully playable and editable in the editor afterwards.',
+    selectFile2: 'Choose file…',
+    videoFile: 'Video file',
+    videoOptional: 'Optional — e.g. the Karaoke Mugen video.',
+    coverFile: 'Cover image',
+    coverOptional: 'Optional — cover for the library.',
+    assFile: 'ASS subtitles (.ass)',
+    assHint: 'Optional for JSON imports — the .ass provides precise syllable timing (overrides the JSON lyrics). Not needed when a .ass is the song file.',
+    persistSuccess: 'Song saved — the UltraStar text file and media are permanently stored in the library.',
+    persisting: 'Saving…',
   },
 
   editor: {

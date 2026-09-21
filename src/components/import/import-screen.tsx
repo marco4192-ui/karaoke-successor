@@ -1,115 +1,37 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ImportScreenProps } from './import-types';
-import { useImportScreen } from './use-import-screen';
-import { UltrastarTab } from './ultrastar-tab';
-import { FolderScanTab } from './folder-scan-tab';
+import { useState } from 'react';
 import { AlternateFormatTab } from './alternate-format-tab';
-import { ImportPreview } from './import-preview';
-import { useTranslation } from '@/lib/i18n/translations';
+import { ImportScreenProps } from './import-types';
+import { Song } from '@/types/game';
 
+/**
+ * Import Songs (Settings → Library) — R10-2 redesign.
+ *
+ * Formerly three nested tabs (Ultrastar import / Folder Scan / More formats);
+ * the first two were superseded by the multi-folder library (Settings →
+ * Library → Songs Folder + Additional Folders, which scans real UltraStar
+ * folder structures) and are GONE.
+ *
+ * What remains is the single converter: import songs from other karaoke
+ * systems (MIDI/KAR, Karaoke Mugen .ass/.json, SingStar, StepMania) — the
+ * app converts them into a proper UltraStar song (txt + media persisted, see
+ * AlternateFormatTab.handleAddToLibrary).
+ */
 export function ImportScreen({ onImport }: ImportScreenProps) {
-  const { t } = useTranslation();
-
-  const {
-    importType, setImportType, isProcessing, progress, error, setError,
-    audioFile, videoFile, ultrastarFile, audioUrl, videoUrl,
-    title, setTitle, artist, setArtist, useVideoAudio, setUseVideoAudio,
-    previewSong, setPreviewSong, scannedSongs, selectedScanned, setSelectedScanned,
-    scanErrors, setScanErrors, setScannedSongs, setIsProcessing,
-    duplicates,
-    audioInputRef, videoInputRef, ultrastarInputRef, folderInputRef,
-    handleFileSelect, handleDrop, processUltrastarImport,
-    handleScanFolder, importSelectedScanned, confirmImport,
-  } = useImportScreen(onImport, t);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewSong, setPreviewSong] = useState<Song | null>(null);
 
   return (
-    <div className="space-y-6">
-      <Tabs value={importType} onValueChange={(v) => setImportType(v as typeof importType)}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="ultrastar">{t('importScreen.ultrastarImport')}</TabsTrigger>
-          <TabsTrigger value="folder">{t('importScreen.folderScan')}</TabsTrigger>
-          <TabsTrigger value="alt-format">{t('importScreen.moreFormats')}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="ultrastar">
-          <UltrastarTab
-            title={title} setTitle={setTitle}
-            artist={artist} setArtist={setArtist}
-            useVideoAudio={useVideoAudio} setUseVideoAudio={setUseVideoAudio}
-            audioFile={audioFile} videoFile={videoFile} ultrastarFile={ultrastarFile}
-            audioInputRef={audioInputRef} videoInputRef={videoInputRef} ultrastarInputRef={ultrastarInputRef}
-            handleDrop={handleDrop} handleFileSelect={handleFileSelect}
-          />
-        </TabsContent>
-
-        <TabsContent value="folder">
-          <FolderScanTab
-            isProcessing={isProcessing}
-            scannedSongs={scannedSongs}
-            selectedScanned={selectedScanned}
-            setSelectedScanned={setSelectedScanned}
-            scanErrors={scanErrors}
-            setScanErrors={setScanErrors}
-            setScannedSongs={setScannedSongs}
-            setIsProcessing={setIsProcessing}
-            duplicates={duplicates}
-            folderInputRef={folderInputRef}
-            handleScanFolder={handleScanFolder}
-          />
-        </TabsContent>
-
-        <TabsContent value="alt-format">
-          <AlternateFormatTab
-            isProcessing={isProcessing}
-            setIsProcessing={setIsProcessing}
-            error={error}
-            setError={setError}
-            previewSong={previewSong}
-            setPreviewSong={setPreviewSong}
-            onImport={onImport}
-          />
-        </TabsContent>
-      </Tabs>
-
-      {/* Only show ImportPreview for ultrastar/folder tabs */}
-      {importType !== 'alt-format' && (
-        <ImportPreview
-          progress={progress}
-          error={error}
-          previewSong={previewSong}
-          audioUrl={audioUrl}
-          videoUrl={videoUrl}
-        />
-      )}
-
-      <div className="flex justify-end gap-4">
-        {importType === 'ultrastar' && (
-          <Button
-            onClick={processUltrastarImport}
-            disabled={!ultrastarFile || (!audioFile && !videoFile) || isProcessing}
-            className="bg-gradient-to-r from-cyan-500 to-purple-500"
-          >
-            {isProcessing ? t('importScreen.processing') : t('importScreen.process')}
-          </Button>
-        )}
-        {importType === 'folder' && scannedSongs.length > 0 && (
-          <Button
-            onClick={importSelectedScanned}
-            disabled={selectedScanned.size === 0 || isProcessing}
-            className="bg-gradient-to-r from-cyan-500 to-purple-500"
-          >
-            {t('importScreen.importSongs').replace('{n}', String(selectedScanned.size))}
-          </Button>
-        )}
-        {importType !== 'alt-format' && previewSong && (
-          <Button onClick={confirmImport} className="bg-green-500 hover:bg-green-400">
-            {t('importScreen.addToLibrary')}
-          </Button>
-        )}
-      </div>
-    </div>
+    <AlternateFormatTab
+      isProcessing={isProcessing}
+      setIsProcessing={setIsProcessing}
+      error={error}
+      setError={setError}
+      previewSong={previewSong}
+      setPreviewSong={setPreviewSong}
+      onImport={(_song: Song) => onImport(_song)}
+    />
   );
 }
