@@ -1,8 +1,7 @@
 'use client';
 
-import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import type { AudioEffectsEngine, AudioEffectPreset, VoiceFxSettings, VoiceFxMode } from '@/lib/audio/audio-effects';
 import { PRESET_LABELS } from '@/lib/audio/audio-effects';
-import type { AudioEffectPreset } from '@/lib/audio/audio-effects';
 import type { VocalFilterUnsupportedReason } from '@/lib/audio/vocal-filter';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -43,9 +42,22 @@ interface AudioEffectsPanelProps {
   onVocalFilterChange: (_val: number) => void;
   /** null = vocal filter available; otherwise why it is not (row rendered disabled). */
   vocalFilterUnsupportedReason: VocalFilterUnsupportedReason | null;
+  /** Voice FX Studio (feature idea #16). */
+  voiceFx: VoiceFxSettings;
+  onVoiceFxChange: (_updates: Partial<VoiceFxSettings>) => void;
+  /** False when AudioWorklets are unavailable — studio section hides itself. */
+  voiceFxAvailable: boolean;
 }
 
 const PRESET_KEYS = Object.keys(PRESET_LABELS) as AudioEffectPreset[];
+
+/** Voice FX character modes for the studio section. */
+const VOICE_FX_MODES: Array<{ id: Exclude<VoiceFxMode, 'off'>; emoji: string; labelKey: string }> = [
+  { id: 'robot', emoji: '🤖', labelKey: 'gameHud.voiceFxRobot' },
+  { id: 'phone', emoji: '📞', labelKey: 'gameHud.voiceFxPhone' },
+  { id: 'chorus', emoji: '🌊', labelKey: 'gameHud.voiceFxChorus' },
+  { id: 'megaphone', emoji: '📣', labelKey: 'gameHud.voiceFxMegaphone' },
+];
 
 /** i18n key per unavailability reason (tooltip explaining why). */
 const VOCAL_FILTER_REASON_KEYS: Record<VocalFilterUnsupportedReason, string> = {
@@ -66,6 +78,9 @@ export function AudioEffectsPanel({
   vocalFilterAmount,
   onVocalFilterChange,
   vocalFilterUnsupportedReason,
+  voiceFx,
+  onVoiceFxChange,
+  voiceFxAvailable,
 }: AudioEffectsPanelProps) {
   const { t } = useTranslation();
 
@@ -82,7 +97,7 @@ export function AudioEffectsPanel({
     : undefined;
 
   return (
-    <div className="fixed bottom-60 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
+    <div className="fixed bottom-60 right-4 z-30 w-80 max-h-[70vh] overflow-y-auto bg-gray-800/95 rounded-xl p-4 border border-white/20" data-testid="audio-effects-panel">
       <h4 className="font-semibold mb-3">{t('gameHud.audioEffects')}</h4>
       <div className="space-y-3">
         <div>
@@ -163,6 +178,93 @@ export function AudioEffectsPanel({
             ))}
           </div>
         </div>
+        {/* ── Voice FX Studio (feature idea #16): pitch correction,
+            harmonizer, character effects. Hidden when AudioWorklets are
+            unavailable in this runtime. ── */}
+        {voiceFxAvailable && (
+          <div className="pt-2 border-t border-white/10 space-y-3" data-testid="voice-fx-studio">
+            <span className="text-xs font-medium text-cyan-300 block">🎛️ {t('gameHud.voiceFxTitle')}</span>
+
+            {/* Character FX modes */}
+            <div>
+              <span className="text-xs text-white/60 mb-1 block">{t('gameHud.voiceFxMode')}</span>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => onVoiceFxChange({ mode: 'off' })}
+                  className={`px-2 py-1 text-xs rounded-md border transition-all ${voiceFx.mode === 'off' ? 'bg-cyan-500/30 border-cyan-400 text-white' : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/20'}`}
+                  data-testid="voice-fx-mode-off"
+                >
+                  ⬜ {t('gameHud.voiceFxOff')}
+                </button>
+                {VOICE_FX_MODES.map(({ id, emoji, labelKey }) => (
+                  <button
+                    key={id}
+                    onClick={() => onVoiceFxChange({ mode: id })}
+                    className={`px-2 py-1 text-xs rounded-md border transition-all ${voiceFx.mode === id ? 'bg-cyan-500/30 border-cyan-400 text-white' : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/20'}`}
+                    data-testid={`voice-fx-mode-${id}`}
+                  >
+                    {emoji} {t(labelKey)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* FX intensity */}
+            {voiceFx.mode !== 'off' && (
+              <div>
+                <span className="text-xs text-white/60">{t('gameHud.voiceFxMix').replace('{n}', String(Math.round(voiceFx.fxMix * 100)))}</span>
+                <input
+                  type="range" min="0" max="100" value={Math.round(voiceFx.fxMix * 100)}
+                  onChange={(e) => onVoiceFxChange({ fxMix: parseInt(e.target.value) / 100 })}
+                  className="w-full accent-cyan-500"
+                  data-testid="voice-fx-mix-slider"
+                  aria-label={t('gameHud.voiceFxMix')}
+                />
+              </div>
+            )}
+
+            {/* Harmonizer */}
+            <div>
+              <span className="text-xs text-white/60">
+                {voiceFx.harmonyInterval === 0
+                  ? t('gameHud.voiceFxHarmonyOff')
+                  : t('gameHud.voiceFxHarmony').replace('{n}', String(voiceFx.harmonyInterval))}
+              </span>
+              <input
+                type="range" min="-12" max="12" value={voiceFx.harmonyInterval}
+                onChange={(e) => onVoiceFxChange({ harmonyInterval: parseInt(e.target.value) })}
+                className="w-full accent-purple-500"
+                data-testid="voice-fx-harmony-slider"
+                aria-label={t('gameHud.voiceFxHarmony')}
+              />
+              {voiceFx.harmonyInterval !== 0 && (
+                <div>
+                  <span className="text-xs text-white/50">{t('gameHud.voiceFxHarmonyLevel').replace('{n}', String(Math.round(voiceFx.harmonyMix * 100)))}</span>
+                  <input
+                    type="range" min="0" max="100" value={Math.round(voiceFx.harmonyMix * 100)}
+                    onChange={(e) => onVoiceFxChange({ harmonyMix: parseInt(e.target.value) / 100 })}
+                    className="w-full accent-purple-400"
+                    data-testid="voice-fx-harmony-mix-slider"
+                    aria-label={t('gameHud.voiceFxHarmonyLevel')}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Pitch correction */}
+            <div>
+              <span className="text-xs text-white/60">{t('gameHud.voiceFxCorrection').replace('{n}', String(Math.round(voiceFx.correctionStrength * 100)))}</span>
+              <input
+                type="range" min="0" max="100" value={Math.round(voiceFx.correctionStrength * 100)}
+                onChange={(e) => onVoiceFxChange({ correctionStrength: parseInt(e.target.value) / 100 })}
+                className="w-full accent-rose-400"
+                data-testid="voice-fx-correction-slider"
+                aria-label={t('gameHud.voiceFxCorrection')}
+              />
+              <p className="text-[10px] text-white/40 mt-0.5">{t('gameHud.voiceFxHint')}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

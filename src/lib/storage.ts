@@ -47,6 +47,8 @@ export const StorageKeys = {
   LOUDNESS_GAINS: 'karaoke-loudness-gains',
   /** Vocal filter amount (0..1) — karaoke-style center-channel cancellation */
   VOCAL_FILTER_AMOUNT: 'karaoke-vocal-filter-amount',
+  /** Voice FX Studio settings (mode, mixes, harmony, correction — JSON) */
+  VOICE_FX_SETTINGS: 'karaoke-voice-fx-settings',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
 

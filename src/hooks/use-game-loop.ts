@@ -725,6 +725,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         }
         checkNoteHitsRef.current(adjustedTime, currentPitch);
 
+        // Voice FX pitch bridge (feature idea #16): feed the detected pitch
+        // to the chromatic correction ("auto-tune light"). Only the monitor
+        // mix gets corrected — scoring judges the raw voice (the analyser
+        // taps the pristine mic input upstream of the FX chain).
+        const fxBridge = audioEffectsRef.current;
+        if (fxBridge?.isVoiceFxAvailable()) {
+          fxBridge.updateVoiceFxPitch(currentPitch.rawNote ?? currentPitch.note ?? null);
+        }
+
         // Comeback detection for achievement: current combo >= 50 after missing >= 10 notes
         const activePlayer = playersRef.current[0];
         if (activePlayer && !comebackRef.current) {

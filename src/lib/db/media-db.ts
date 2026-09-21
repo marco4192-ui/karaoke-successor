@@ -188,5 +188,37 @@ export async function getTxtContent(songId: string): Promise<string | null> {
   });
 }
 
+/**
+ * Dump ALL media records (backup/sync support — see src/lib/sync/backup.ts).
+ * Returns raw records without creating object URLs, so the caller can encode
+ * them for export without leaking blob: URLs.
+ */
+export async function getAllMediaRecords(): Promise<Array<{
+  songId: string;
+  type: 'audio' | 'video' | 'cover' | 'txt';
+  data: Blob;
+}>> {
+  const db = await initMediaDB();
 
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const records = (request.result || []).map((r: MediaRecord) => ({
+        songId: r.songId,
+        type: r.type,
+        data: r.data,
+      }));
+      resolve(records);
+    };
+
+    request.onerror = () => {
+      // eslint-disable-next-line no-console
+      console.error('[MediaDB] Failed to dump all media:', request.error);
+      reject(request.error);
+    };
+  });
+}
 

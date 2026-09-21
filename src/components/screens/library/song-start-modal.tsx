@@ -7,7 +7,8 @@ import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon, CheckIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
 import { useFocusTrap } from '@/hooks/use-roving-focus';
-import { StorageKeys, getItem } from '@/lib/storage';
+import { StorageKeys, getItem, getNumber } from '@/lib/storage';
+import { getInstrumentalExportBlocker, exportInstrumentalWav, downloadInstrumental } from '@/lib/audio/instrumental-export';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== MIC SELECTOR (Single mode) =====================
@@ -166,6 +167,42 @@ export function SongStartModal({
   const { t } = useTranslation();
   const songIsDuet = isDuetSong(selectedSong);
   const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  // ── Instrumental export (feature idea #17) ──
+  const instrumentalBlocker = getInstrumentalExportBlocker(selectedSong);
+  const [showInstrumental, setShowInstrumental] = useState(false);
+  const [instrAmount, setInstrAmount] = useState(() =>
+    Math.round((getNumber(StorageKeys.VOCAL_FILTER_AMOUNT, 0.85) || 0.85) * 100),
+  );
+  const [instrExporting, setInstrExporting] = useState(false);
+  const [instrProgress, setInstrProgress] = useState(0);
+  const [instrError, setInstrError] = useState<string | null>(null);
+  const [instrDone, setInstrDone] = useState(false);
+
+  const handleInstrumentalExport = async () => {
+    if (instrExporting) return;
+    setInstrExporting(true);
+    setInstrError(null);
+    setInstrDone(false);
+    setInstrProgress(0);
+    try {
+      const result = await exportInstrumentalWav(selectedSong, {
+        amount: instrAmount / 100,
+        onProgress: setInstrProgress,
+      });
+      downloadInstrumental(result);
+      setInstrDone(true);
+    } catch (err) {
+      const code = (err as { code?: string }).code || 'decodeFailed';
+      setInstrError(
+        code === 'noAudioFile' ? t('songStart.instrumentalNoAudio')
+          : code === 'crossOrigin' ? t('songStart.instrumentalCrossOrigin')
+            : t('songStart.instrumentalFailed'),
+      );
+    } finally {
+      setInstrExporting(false);
+    }
+  };
 
   // Trap Tab/Shift+Tab focus inside the dialog when it is open
   useFocusTrap(dialogContentRef, showSongModal);
@@ -642,6 +679,57 @@ export function SongStartModal({
           )}
         </div>
         
+        {/* Instrumental export panel (feature idea #17) */}
+        {showInstrumental && !instrumentalBlocker && (
+          <div className="flex-shrink-0 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3 space-y-3" data-testid="instrumental-panel">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-purple-200">🎚️ {t('songStart.instrumentalTitle')}</span>
+              <button
+                type="button"
+                onClick={() => setShowInstrumental(false)}
+                className="text-white/40 hover:text-white transition-colors"
+                aria-label={t('songStart.instrumentalClose')}
+              >
+                ✕
+              </button>
+            </div>
+            <label className="block">
+              <span className="text-xs text-white/60">{t('songStart.instrumentalAmount').replace('{n}', String(instrAmount))}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={instrAmount}
+                onChange={(e) => setInstrAmount(Number(e.target.value))}
+                disabled={instrExporting}
+                className="w-full accent-purple-400 mt-1"
+                data-testid="instrumental-amount-slider"
+              />
+            </label>
+            <p className="text-xs text-white/40">{t('songStart.instrumentalHint')}</p>
+            {instrExporting && (
+              <div className="h-2 rounded-full bg-white/10 overflow-hidden" role="progressbar" aria-valuenow={Math.round(instrProgress * 100)}>
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all"
+                  style={{ width: `${Math.round(instrProgress * 100)}%` }}
+                />
+              </div>
+            )}
+            {instrError && <p className="text-xs text-red-400" role="alert">{instrError}</p>}
+            {instrDone && <p className="text-xs text-green-400">✓ {t('songStart.instrumentalDone')}</p>}
+            <Button
+              variant="outline"
+              onClick={handleInstrumentalExport}
+              disabled={instrExporting || instrAmount === 0}
+              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 h-9"
+              data-testid="instrumental-export-button"
+            >
+              {instrExporting ? t('songStart.instrumentalExporting') : t('songStart.instrumentalExport')}
+            </Button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2 flex-shrink-0 pt-2 border-t border-white/10">
           <Button 
@@ -700,6 +788,20 @@ export function SongStartModal({
                 : 'Herausforderung an den Chat senden'}
             >
               <span className="mr-1.5">⚔️</span> {t('songChallenge.challengeBtn') || 'Herausfordern'}
+            </Button>
+          )}
+          {/* Instrumental export (feature idea #17) — hidden when the medium
+              can never be filtered (MIDI synth / platform video / CORS). */}
+          {!instrumentalBlocker && (
+            <Button
+              variant="outline"
+              onClick={() => { setShowInstrumental(v => !v); setInstrDone(false); setInstrError(null); }}
+              className={showInstrumental
+                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/30 active:scale-95 transition-transform h-10 px-3'
+                : 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10 active:scale-95 active:bg-purple-500/20 transition-transform h-10 px-3'}
+              data-testid="instrumental-toggle-button"
+            >
+              <span className="mr-1.5" aria-hidden>🎚️</span> {t('songStart.instrumentalButton')}
             </Button>
           )}
           <Button 

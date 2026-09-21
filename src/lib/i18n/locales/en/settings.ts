@@ -134,7 +134,8 @@ export const settingsTranslations = {
     microphone: 'Microphone',
     mobileCompanion: 'Mobile',
     webcam: 'Webcam',
-    viralCharts: 'Viral Charts'
+    viralCharts: 'Viral Charts',
+    syncBackup: 'Sync & Backup'
   },
 
   settingsGameplay: {
@@ -637,5 +638,38 @@ export const settingsTranslations = {
   about: {
     version: 'Version',
     description: 'A modern karaoke experience with accompaniment, scoring and party modes.',
+  },
+
+  syncBackup: {
+    exportTitle: 'Create Backup',
+    exportDesc: 'Bundles your profiles, highscores, achievements, playlists, custom songs and settings into one portable JSON file — for archiving or moving to another device.',
+    includeMedia: 'Include song media (audio, video, covers)',
+    includeMediaDesc: 'Fully self-contained backup file — but considerably larger.',
+    exportButton: '💾 Create & download backup',
+    exporting: 'Creating backup…',
+    exportSuccess: 'Backup downloaded!',
+    exportError: 'The backup could not be created.',
+    restoreTitle: 'Restore Backup',
+    restoreDesc: 'Pick a backup file from the other device, review its contents and merge it into this device. Existing progress is never lost — profiles, songs and the best highscores are merged.',
+    chooseFile: 'Choose backup file…',
+    invalidFile: 'This file is not a valid Karaoke ZERO backup.',
+    previewTitle: 'Backup contents:',
+    restoreMediaToggle: 'Restore song media (IndexedDB)',
+    restoreSettingsToggle: 'Also apply settings (theme, language, gameplay options)',
+    restoreButton: '📥 Restore',
+    restoring: 'Restoring…',
+    restoreSuccess: 'Restore complete!',
+    restoreError: 'Restore failed.',
+    reloadHint: 'Reload the page so the restored songs and media appear.',
+    summaryProfiles: '{n} profiles',
+    summarySongs: '{n} songs',
+    summaryPlaylists: '{n} playlists',
+    summaryHighscores: '{n} highscore entries',
+    summaryMedia: '{n} media files ({size})',
+    howTitle: 'How the device transfer works',
+    howPoint1: 'On the source device: create a backup (with or without song media) and move the file to the target device (USB, cloud folder, messenger — the file only leaves your hands if you send it yourself).',
+    howPoint2: 'On the target device: choose the backup file here and restore it.',
+    howPoint3: 'Device-bound settings (microphone devices, companion registration, songs-folder paths) are deliberately NOT transferred — they apply per device.',
+    howPoint4: 'Highscores merge wisely: per song and player the better run always wins — on both devices.',
   },
 };

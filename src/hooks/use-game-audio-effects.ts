@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo, type RefObject } from 'react';
-import { AudioEffectsEngine, AUDIO_PRESETS, type AudioEffectPreset } from '@/lib/audio/audio-effects';
+import { AudioEffectsEngine, AUDIO_PRESETS, type AudioEffectPreset, type VoiceFxSettings } from '@/lib/audio/audio-effects';
+import { DEFAULT_VOICE_FX } from '@/lib/audio/voice-fx';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { useGameStore } from '@/lib/game/store';
-import { StorageKeys, getNumber, setItem } from '@/lib/storage';
+import { StorageKeys, getNumber, setItem, getJsonOptional } from '@/lib/storage';
 import {
   setVocalRemoval,
   clearVocalRemoval,
@@ -55,9 +56,19 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   const gameStatus = useGameStore((s) => s.gameState.status);
   const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
   const audioEffectsRef = useRef<AudioEffectsEngine | null>(null);
+  /** False when AudioWorklets failed — the studio UI hides itself then. */
+  const [voiceFxAvailable, setVoiceFxAvailable] = useState(false);
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [reverbAmount, setReverbAmount] = useState(0);
   const [echoAmount, setEchoAmount] = useState(0);
+
+  // ── Voice FX Studio (feature idea #16) — persisted settings snapshot.
+  // Applied to the engine as soon as it exists (lazy init on panel open).
+  const [voiceFx, setVoiceFxState] = useState<VoiceFxSettings>(() => ({
+    ...DEFAULT_VOICE_FX,
+    ...(getJsonOptional<Partial<VoiceFxSettings>>(StorageKeys.VOICE_FX_SETTINGS) ?? {}),
+  }));
+  const voiceFxRef = useRef(voiceFx);
 
   // ── Vocal filter (Gesangsfilter): persisted 0..1, applied to the song's
   // <audio> element via the shared media source. 0 = off. The initial value
@@ -115,8 +126,11 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
 
       const engine = new AudioEffectsEngine();
       await engine.initialize(stream, existingAudioContext);
+      // Apply the persisted Voice FX settings to the fresh engine.
+      engine.setVoiceFx(voiceFxRef.current);
       audioEffectsRef.current = engine;
       setAudioEffects(engine);
+      setVoiceFxAvailable(engine.isVoiceFxAvailable());
       return true;
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -237,6 +251,20 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     }
   }, [audioRef, vocalFilterUnsupportedReason]);
 
+  /**
+   * Update a subset of the Voice FX settings — persists, updates state and
+   * applies to the engine immediately (when initialized).
+   */
+  const setVoiceFx = useCallback((updates: Partial<VoiceFxSettings>) => {
+    setVoiceFxState(prev => {
+      const next = { ...prev, ...updates };
+      voiceFxRef.current = next;
+      setItem(StorageKeys.VOICE_FX_SETTINGS, JSON.stringify(next));
+      audioEffectsRef.current?.setVoiceFx(updates);
+      return next;
+    });
+  }, []);
+
   return {
     audioEffects,
     setAudioEffects,
@@ -247,6 +275,11 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     echoAmount,
     setEchoAmount,
     applyEffectPreset,
+    /** Voice FX Studio settings (persisted). */
+    voiceFx,
+    setVoiceFx,
+    /** False when the AudioWorklet chain is unavailable in this runtime. */
+    voiceFxAvailable,
     /** Vocal filter (0..1, persisted; 0 = off). */
     vocalFilterAmount,
     setVocalFilterAmount,

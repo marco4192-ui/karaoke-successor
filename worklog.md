@@ -6,8 +6,30 @@
 ## Status
 
 - Dev-Server: Port 3000, läuft (`tail dev.log`). Lint: 0 Errors.
-- **Alle Follow-ups (BR-Rhythmus, Summen-Filter) E2E verifiziert + alle 4 neuen Aufgaben (R10) fertig + R11-Vollverifikation aller Flows im Browser.**
+- **Alle Feature-Ideas abgeschlossen: 14 (Sync & Backup), 16 (Voice FX Studio), 17 (Instrumental-Export) implementiert + E2E-bewiesen. 13/18 geparkt, 15 gestrichen (Nutzer-Entscheid).**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort. `git log origin/main..HEAD` bleibt leer.
+
+## Erledigt (2026-09-21, Runde R12 — Feature-Ideas-Komplettumsetzung)
+
+Auftrag: alle Feature Ideas umsetzen, AUSSER 13 (Leaderboard-Frontend — Nutzerteil fehlt), 15 (YouTube/Spotify — rechtlich gestrichen), 18 (Twitch — geparkt).
+
+1. **#14 Sync & Backup** (`src/lib/sync/backup.ts`, Settings-Tab „💾 Sync & Backup"):
+   - „Cloud Sync" als Offline-Geräte-Transfer: Backup-JSON mit Profilen, Highscores, Achievements, Playlists, eigenen Songs, Statistiken + optional ALLEN Song-Medien (Base64, IndexedDB-Dump via `getAllMediaRecords`).
+   - Restore mit Preview + Merge: Profile/Songs/Playlists nach ID (Backup gewinnt), Highscores pro Song+Spieler besserer Lauf, Settings optional (Toggle), Medien optional (Toggle). Gerätegebundene Keys (Mikro-Geräte, Companion, Ordner-Pfade) NIE.
+   - E2E: Export-Download ✓, Import-Preview (1/1/1) ✓, Restore → „2 profiles · 1 songs · 1 playlists" (Merge ohne Verlust) ✓, Settings-Übernahme ✓, Reload-persistent ✓.
+   - **Robustheits-Fix daraus:** Fremde Backups mit falschem Highscore-Format (Objekt statt Array) crashten SongStartModal → mergeStorePayloads validiert jetzt (asArray/mergeHighscoreEntries), kaputte Shapes werden verworfen statt eingeschleust.
+2. **#17 Instrumental-Export** (`src/lib/audio/instrumental-export.ts`):
+   - Offline-Rendering (OfflineAudioContext, schneller als Echtzeit) des Songs als 16-Bit-PCM-WAV: L−R-Cancellation wie der Live-Filter + Bass-Erhaltung (Original-Tiefpass 140 Hz beigemischt), Stärke-Regler, Progress-Callback.
+   - UI: Song-Start-Modal → „🎚️ Instrumental" → Panel mit Slider + „💾 Export as WAV" + Fortschritt; Button versteckt sich bei MIDI/Plattform/Cross-Origin (Guard `getInstrumentalExportBlocker`).
+   - E2E: Song ohne Audio → Button korrekt versteckt; Song mit Audio → Export → „✓ Instrumental downloaded!" ✓.
+3. **#16 Voice FX Studio** (`public/audio-worklets/pitch-shifter.js`, `src/lib/audio/voice-fx.ts`, AudioEffectsEngine-Erweiterung):
+   - Granularer 2-Tap-Pitch-Shifter-AudioWorklet (sin/cos-Crossfade, Ring-Buffer, Passthrough bei 0 Halbtönen).
+   - Pitch-Korrektur („Auto-Tune light"): chromatisches Snapping (echte Mathematik via bun-Unit-Test bewiesen: 445 Hz → −0.196 Halbtöne etc.), wirkt NUR auf den Monitor-Mix — Analyser/Scoring tapept das rohe Mikrofon.
+   - Harmonizer (±12 Halbtöne, eigener Pegel) + Stimm-Effekte: 🤖 Roboter (Ring-Mod 30 Hz), 📞 Telefon (BP 300–3400), 🌊 Chorus (25 ms LFO), 📣 Megafon (Tanh+BP) — alle parallel, Umschalten ohne Reconnect.
+   - UI: In-Game-Audio-Panel → „🎛️ Voice FX Studio" (versteckt ohne AudioWorklets/Mikro); Persistenz `karaoke-voice-fx-settings`.
+   - **Kritischer E2E-Catch:** `parameterDescriptors` fehlte im Worklet → semitones-Param wäre undefined gewesen (Live-Crash). Browser-Test (Registrierung + +12-Halbton-Render: 220 Hz → ~448 Hz gemessen) hat es gefunden und gefixt.
+   - Verifikation ohne Mikro: Game-Screen + Audio-Panel laden crashfrei, Studio-Sektion korrekt versteckt (graceful degradation).
+4. **FEATURE_IDEAS.md** aktualisiert: 14/16/17 ✅ mit Implementierungs-Doku, 13 🅿️ geparkt, 15 ❌ gestrichen, 18 🅿️ geparkt.
 
 ## Erledigt (2026-09-21, Runde R11 — Voll-QA aller R10-Features + UX-Fix)
 

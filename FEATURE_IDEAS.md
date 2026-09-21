@@ -80,47 +80,53 @@
 
 ---
 
-## 🔄 IN PROGRESS
+## 🔄 IN PROGRESS — GEARKT (auf Nutzerwunsch)
 
-### 13. Online Leaderboard Frontend
+### 13. Online Leaderboard Frontend 🅿️ GEPARKT
 - Globale Rangliste
 - Per-Song Leaderboard
 - Spieler-Detail-Ansicht mit Top-Songs
 - Suchfunktion
+- **Status: Auf Nutzerwunsch geparkt — der Nutzerteil des Backends fehlt noch.**
 
 ---
 
-## 🔧 Technische Verbesserungen (Später)
+## 🔧 Technische Verbesserungen
 
-### 14. Cloud Sync
-- Profile in der Cloud speichern
-- Highscores synchronisieren
-- Geräteübergbergreifendes Spielen
+### 14. Sync & Backup ✅ (2026-09-21)
+- „Cloud Sync“ als Offline-Geräte-Transfer realisiert (bewusst ohne Cloud: Server-/Account-frei, datenschutzfreundlich)
+- Backup-Datei (JSON): Profile, Highscores, Achievements, Playlists, eigene Songs, Statistiken, optional ALLE Song-Medien (Audio/Video/Cover/TXT als Base64)
+- Wiederherstellen mit Vorschau + klugen Merges: Profile/Songs/Playlists nach ID (Backup gewinnt), Highscores pro Song+Spieler immer der bessere Lauf
+- Gerätegebundene Einstellungen (Mikro-Geräte, Companion-Registrierung, Songs-Ordner-Pfade) werden bewusst NIE übernommen
+- UI: Settings → „Sync & Backup“ (💾) — Export-Download, Import-Vorschau, Toggles für Medien/Einstellungen
 
-### 15. YouTube/Spotify Integration
-- Karaoke-Videos direkt von YouTube
-- Spotify für Audio-Streaming
-- Automatische Lyrics-Sync
-- ⚠️ Rechtliche Bedenken beachten
-
----
-
-## 🎤 Audio Features (Später)
-
-### 16. Erweiterte Audio-Effekte
-- Pitch Correction
-- Harmonizer
-- Stimmen-Effekte
-
-### 17. AI-Stimmtrennung
-- Instrumental aus beliebigen Songs extrahieren
-- Vocals entfernen für reinen Karaoke-Track
+### ~~15. YouTube/Spotify Integration~~ ❌ GESTRICHEN (2026-09-21)
+- **Auf Nutzerwunsch gestrichen — rechtlich zu bedenklich.**
 
 ---
 
-## 🏆 Social Features (Später)
+## 🎤 Audio Features
 
-### 18. Twitch/Stream Integration
+### 16. Voice FX Studio ✅ (2026-09-21)
+- **Pitch-Korrektur** („Auto-Tune light“): chromatisches Snapping über eigenen Pitch-Shifter-AudioWorklet, Stärke-Regler 0–100 %, wirkt NUR auf den Monitor-Mix — die Wertung hört die echte Stimme (Analyser tapept das rohe Mikrofon)
+- **Harmonizer**: zweite Stimme in einstellbarem Intervall (±12 Halbtöne) mit eigenem Pegel
+- **Stimm-Effekte**: 🤖 Roboter (Ring-Modulation 30 Hz), 📞 Telefon (Bandpass 300–3400 Hz), 🌊 Chorus (25 ms LFO-Delay), 📣 Megafon (Tanh-Verzerrung + Bandpass)
+- Granularer 2-Tap-Pitch-Shifter (sin/cos-Crossfade, klickfrei) als `public/audio-worklets/pitch-shifter.js`
+- UI: In-Game-Audio-Panel → „🎛️ Voice FX Studio“ (versteckt sich, wenn AudioWorklets fehlen); Einstellungen persistieren (localStorage)
+
+### 17. Karaoke-Filter / Instrumental-Export ✅ (2026-09-21)
+- Live-Gesangsfilter im Spiel existierte bereits (Mitten-Kanalcancellation L−R)
+- NEU: **Instrumental-Export** — rendert den Song offline (schneller als Echtzeit) als 16-Bit-PCM-WAV: Gesangs-Entfernung per Regler (0–100 %) + Bass-Erhaltung (Tiefpass 140 Hz wird aus dem Original beigemischt)
+- UI: Song-Start-Modal → „🎚️ Instrumental“ → Stärke-Regler + Fortschrittsbalken + Download (`<Titel> (instrumental).wav`)
+- Blocker-Guards: MIDI-Synthese / Plattform-Video / Cross-Origin werden sauber abgefangen und verstecken den Button
+- Ehrlich dokumentiert: DSP-Cancellation (keine KI-Stem-Trennung — die würde Modelle im zweistelligen MB-Bereich erfordern); wirkt am besten bei Stereomixes mit zentriertem Gesang
+
+---
+
+## 🏆 Social Features — GEPARKT (auf Nutzerwunsch)
+
+### 18. Twitch/Stream Integration 🅿️ GEPARKT
 - Overlay für Streamer
 - Chat-basierte Song-Wünsche
 - Viewer-Voting für Schwierigkeit
+- **Status: Auf Nutzerwunsch geparkt — rechtliche Bedenken, Umsetzung wenn überhaupt sehr speziell.**

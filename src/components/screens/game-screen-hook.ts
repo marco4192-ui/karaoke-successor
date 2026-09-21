@@ -265,6 +265,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setVocalFilterAmount,
     vocalFilterAmountRef,
     vocalFilterUnsupportedReason,
+    voiceFx,
+    setVoiceFx,
+    voiceFxAvailable,
   } = useGameAudioEffects({
     audioRef,
     videoRef,
@@ -798,6 +801,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setVocalFilterAmount,
     /** null = vocal filter available; otherwise the reason it is not. */
     vocalFilterUnsupportedReason,
+    /** Voice FX Studio (feature idea #16) — persisted settings + availability. */
+    voiceFx,
+    setVoiceFx,
+    voiceFxAvailable,
 
     // Webcam
     webcamConfig,

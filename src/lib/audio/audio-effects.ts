@@ -1,6 +1,15 @@
 // Audio Effects Engine - Professional Voice Processing
 // Includes: Reverb, Echo, Pitch Shift, Compressor, EQ, Distortion
+// + Voice FX Studio (feature idea #16): pitch correction, harmonizer,
+//   character effects (robot/phone/chorus/megaphone) via AudioWorklet.
 // With presets and real-time control
+
+import {
+  VoiceFxChain, DEFAULT_VOICE_FX,
+  type VoiceFxSettings, type VoiceFxMode,
+} from './voice-fx';
+
+export type { VoiceFxMode, VoiceFxSettings } from './voice-fx';
 
 export type AudioEffectPreset = 'pop' | 'rock' | 'concert' | 'studio' | 'vintage' | 'ethereal' | 'power' | 'intimate';
 
@@ -56,6 +65,7 @@ interface AudioEffectSettings {
     volume: number;      // 0-2
     mix: number;         // 0-1 (dry/wet)
   };
+  voiceFx: VoiceFxSettings;
 }
 
 // Preset configurations
@@ -127,6 +137,7 @@ const DEFAULT_EFFECTS_SETTINGS: AudioEffectSettings = {
   eq: { enabled: false, low: 0, mid: 0, high: 0 },
   distortion: { enabled: false, amount: 0, tone: 0.5 },
   master: { volume: 1, mix: 0.7 },
+  voiceFx: { ...DEFAULT_VOICE_FX },
 };
 
 export class AudioEffectsEngine {
@@ -155,6 +166,12 @@ export class AudioEffectsEngine {
   private settings: AudioEffectSettings = { ...DEFAULT_EFFECTS_SETTINGS };
   // Track previous effect enable states to avoid unnecessary chain reconnects
   private prevEnabledState = '';
+
+  // Voice FX Studio (feature idea #16) — pitch correction, harmonizer,
+  // character effects. Lazily attached to the mic input; null when the
+  // AudioWorklet module failed to load (feature silently unavailable).
+  private voiceFxChain: VoiceFxChain | null = null;
+  private voiceFxAvailable = false;
   
   private ownsAudioContext = false; // true if we created it, false if reused
   private isInitialized = false;
@@ -232,7 +249,19 @@ export class AudioEffectsEngine {
     this.distortionNode = this.audioContext.createWaveShaper();
     this.distortionNode.curve = this.makeDistortionCurve(this.settings.distortion.amount) as Float32Array<ArrayBuffer>;
     this.distortionNode.oversample = '4x';
-    
+
+    // Voice FX Studio — attach between mic input and everything else.
+    // Best-effort: when AudioWorklets are unavailable the chain stays null
+    // and the pristine mic path is used (feature simply not offered in UI).
+    try {
+      this.voiceFxChain = await VoiceFxChain.create(this.audioContext, this.inputNode);
+      this.voiceFxAvailable = this.voiceFxChain !== null;
+      if (this.voiceFxChain) this.voiceFxChain.applySettings(this.settings.voiceFx);
+    } catch {
+      this.voiceFxChain = null;
+      this.voiceFxAvailable = false;
+    }
+
     // Connect the effect chain
     this.connectEffectChain();
     
@@ -273,15 +302,20 @@ export class AudioEffectsEngine {
       try { node?.disconnect(); } catch { /* ignore — node may not be connected */ }
     }
     
-    // Connect to analyser for visualization
+    // Connect to analyser for visualization (always the RAW mic — the
+    // pitch detection / visualization must not hear the corrected voice)
     this.inputNode.connect(this.analyserNode);
-    
+
+    // Voice FX chain sits between the mic and everything downstream — both
+    // the dry and the wet path hear the corrected/harmonized/FX voice.
+    const chainSource: AudioNode = this.voiceFxChain?.output ?? this.inputNode;
+
     // Dry path (direct to output)
-    this.inputNode.connect(this.dryGain);
+    chainSource.connect(this.dryGain);
     this.dryGain.connect(this.masterGain);
-    
+
     // Wet path through effects
-    let wetChain: AudioNode = this.inputNode;
+    let wetChain: AudioNode = chainSource;
     
     // EQ
     if (this.settings.eq.enabled && this.eqLow && this.eqMid && this.eqHigh) {
@@ -479,7 +513,42 @@ export class AudioEffectsEngine {
     }
   }
 
+  // ── Voice FX Studio (feature idea #16) ──────────────────────────────────
+
+  /** True when the Voice FX chain could be built (AudioWorklets available). */
+  isVoiceFxAvailable(): boolean {
+    return this.voiceFxAvailable;
+  }
+
+  /** Apply Voice FX settings (mode, mixes, harmony, correction strength). */
+  setVoiceFx(settings: Partial<VoiceFxSettings>): void {
+    this.settings.voiceFx = { ...this.settings.voiceFx, ...settings };
+    this.voiceFxChain?.applySettings(this.settings.voiceFx);
+  }
+
+  /** Get the current Voice FX snapshot. */
+  getVoiceFx(): VoiceFxSettings {
+    return { ...this.settings.voiceFx };
+  }
+
+  /**
+   * Feed the detected mic pitch (Hz) — drives the chromatic pitch
+   * correction ("auto-tune light"). Called from the game loop every tick;
+   * no-op when the chain is unavailable or correction is off.
+   */
+  updateVoiceFxPitch(detectedHz: number | null): void {
+    if (!this.voiceFxChain) return;
+    if (this.settings.voiceFx.correctionStrength <= 0) return;
+    this.voiceFxChain.updateDetectedPitch(detectedHz);
+  }
+
   disconnect(): void {
+    // Dispose the Voice FX chain first (stops its oscillators)
+    if (this.voiceFxChain) {
+      try { this.voiceFxChain.dispose(); } catch { /* ignore */ }
+      this.voiceFxChain = null;
+      this.voiceFxAvailable = false;
+    }
     // Disconnect all effect nodes to prevent dangling references
     const nodesToDisconnect: (AudioNode | null)[] = [
       this.inputNode,

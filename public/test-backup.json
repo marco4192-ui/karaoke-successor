@@ -1,0 +1,12 @@
+{
+  "format": "karaoke-zero-backup",
+  "version": 1,
+  "createdAt": "2026-09-21T10:00:00.000Z",
+  "localStorage": {
+    "karaoke-successor-storage": "{\"state\":{\"profiles\":[{\"id\":\"restore-profile-1\",\"name\":\"Restore Tester\",\"avatar\":\"\",\"isActive\":true}],\"activeProfileId\":\"restore-profile-1\",\"highscores\":{},\"leaderboardType\":\"global\",\"onlineEnabled\":false},\"version\":0}",
+    "karaoke-successor-custom-songs": "[{\"id\":\"restore-song-1\",\"title\":\"Restored Song\",\"artist\":\"Backup Bot\",\"bpm\":300,\"gap\":2000,\"duration\":60,\"difficulty\":\"medium\",\"rating\":3,\"audioUrl\":\"\",\"lyrics\":[],\"isDuet\":false}]",
+    "karaoke-playlists": "[{\"id\":\"restore-playlist-1\",\"name\":\"Restored Playlist\",\"songIds\":[\"restore-song-1\"],\"isSystem\":false}]",
+    "karaoke-default-difficulty": "hard"
+  },
+  "media": null
+}

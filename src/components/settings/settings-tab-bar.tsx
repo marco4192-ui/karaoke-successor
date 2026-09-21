@@ -7,7 +7,7 @@ import {
 } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 
-export type SettingsTab = 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'viral' | 'about';
+export type SettingsTab = 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'viral' | 'sync' | 'about';
 
 interface SettingsTabBarProps {
   activeTab: SettingsTab;
@@ -26,6 +26,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
     { id: 'mobile', label: t('settingsTabs.mobileCompanion'), icon: PhoneIcon, color: 'cyan' },
     { id: 'webcam', label: t('settingsTabs.webcam'), icon: WebcamIcon, color: 'cyan' },
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
+    { id: 'sync', label: t('settingsTabs.syncBackup'), icon: () => <span>💾</span>, color: 'green' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },
   ];
 
