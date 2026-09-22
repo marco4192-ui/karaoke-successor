@@ -259,12 +259,25 @@ export function getNoteDisplayStyleClasses(
   const isNoteComplete = clampedFill >= 1 && hasAnySamples;
 
   // ── Time-based segment → sample mapping ────────────────────────
+  // R15 (user request 1.1 — "Notenblöcke füllen sich nicht immer vollständig"):
+  // segments with NO sample used to render as MISS gaps, but the samples
+  // arrive on the 60ms scoring tick while segments cover ~50ms — aliasing
+  // (plus short detector dropouts) left regular holes in notes that were
+  // sung fine. `noData` marks those segments: they render NEUTRAL instead
+  // of red, and short holes (≤3 segments ≈ 150ms) right after a HIT inherit
+  // that hit (matching the 200ms scoring pitch-hold from R14). Only
+  // segments with real miss samples show the scorched gap.
   const segData: Array<{
     hit: boolean;
     accuracy: number;
     displayType: string;
     sungPitch: number | null;
+    noData: boolean;
   }> = [];
+
+  let lastSampledHit: { accuracy: number; displayType: string } | null = null;
+  let holeLen = 0;
+  const SOLO_BRIDGE_MAX_GAPS = 3; // ≤3 empty segments (≈150ms) inherit a hit
 
   for (let i = 0; i < segCount; i++) {
     const segStart = nStart + i * segDur;
@@ -279,9 +292,17 @@ export function getNoteDisplayStyleClasses(
         );
 
     if (segSamples.length === 0) {
-      segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: null });
+      holeLen++;
+      // Short hole directly after a sampled HIT → inherit it (aliasing /
+      // detector dropout bridging). Longer holes stay neutral "no data".
+      if (lastSampledHit && holeLen <= SOLO_BRIDGE_MAX_GAPS) {
+        segData.push({ hit: true, accuracy: lastSampledHit.accuracy, displayType: lastSampledHit.displayType, sungPitch: null, noData: false });
+      } else {
+        segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: null, noData: true });
+      }
       continue;
     }
+    holeLen = 0;
 
     const bestHit = segSamples.reduce(
       (best, s) => (s.hit && s.accuracy > best.accuracy ? s : best),
@@ -295,9 +316,11 @@ export function getNoteDisplayStyleClasses(
       if (bestHit.accuracy > 0.95) dt = 'Perfect';
       else if (bestHit.accuracy > 0.8) dt = 'Great';
       else if (bestHit.accuracy > 0.6) dt = 'Good';
-      segData.push({ hit: true, accuracy: bestHit.accuracy, displayType: dt, sungPitch: null });
+      segData.push({ hit: true, accuracy: bestHit.accuracy, displayType: dt, sungPitch: null, noData: false });
+      lastSampledHit = { accuracy: bestHit.accuracy, displayType: dt };
     } else {
-      segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: lastSung.sungPitch ?? null });
+      segData.push({ hit: false, accuracy: 0, displayType: 'Miss', sungPitch: lastSung.sungPitch ?? null, noData: false });
+      lastSampledHit = null;
     }
   }
 
@@ -485,6 +508,11 @@ export function getNoteDisplayStyleClasses(
                   bgImage = `linear-gradient(90deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 70%), ${sealedUniform}`;
                   segGlow = `0 0 12px ${hexWithAlpha(sealedUniform, 0.8)}, inset 0 0 5px rgba(255, 255, 255, 0.30)`;
                 }
+              } else if (seg.noData) {
+                // R15 (1.1): no sample here (tick aliasing / detector dropout
+                // / silence) — NEUTRAL track, not a scorched miss gap.
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
               } else {
                 // Aussetzer: the beam cut out — a scorched dark gap. The exact
                 // pitch that was sung instead shows in the ghost mark above/
@@ -520,6 +548,10 @@ export function getNoteDisplayStyleClasses(
                 bgColor   = qualityColors[seg.displayType as keyof typeof qualityColors] || qualityColors.Okay;
                 borderCol = 'transparent';
                 segGlow   = qualityGlows[seg.displayType as keyof typeof qualityGlows];
+              } else if (seg.noData) {
+                // R15 (1.1): no sample — neutral track, not a miss gap.
+                bgColor   = unreachedBg;
+                borderCol = unreachedBdr;
               } else {
                 bgColor   = missGap;
                 borderCol = missGapBorder;
@@ -642,7 +674,19 @@ export interface NoteStripPlayer {
  *   • unreached: player color @ 0.22 bg / 0.45 border
  *   • hit:       player color SOLID + glow (freshly burned = white sheen)
  *   • miss:      scorched dark gap (same values as the sealed Aussetzer)
+ *   • no data:   neutral dim track (R15 — see the segment bridging below)
  * Golden notes use the gold color for ALL players, bonus notes magenta.
+ *
+ * R15 (user request 1.1 — "Notenblöcke füllen sich nicht immer vollständig"):
+ * The visual samples arrive on the 60ms scoring tick, but segments cover
+ * ~50ms — aliasing leaves sample-less segments that used to render as
+ * scorched MISS gaps even though the player was on pitch (score fine,
+ * blocks full of holes). Two fixes:
+ *   1. Segments with NO sample are NEUTRAL (dim track) — "no data" is not
+ *      "missed". Only segments with real miss samples show the gap.
+ *   2. Short holes (≤3 segments ≈ 150ms) directly after a HIT inherit that
+ *      hit — bridging tick aliasing and short detector dropouts, matching
+ *      the 200ms scoring pitch-hold from R14.
  *
  * ONE shared white-hot laser head (note-laser-head class) spans the full
  * bar height while ANY player's latest sample (≤300ms) is a hit. Misses
@@ -655,6 +699,10 @@ export interface NoteStripPlayer {
  *   and `hitGlow` — the strongest player color that has hits (for the note
  *   container's box-shadow) or null.
  */
+
+/** Max sample-less segments after a hit that inherit it (≈150ms at 50ms/seg). */
+const STRIP_BRIDGE_MAX_GAPS = 3;
+
 export function getMultiPlayerNoteOverlay(
   players: NoteStripPlayer[],
   noteStartTime: number,
@@ -688,16 +736,35 @@ export function getMultiPlayerNoteOverlay(
     isGolden ? SEALED_GOLD_COLOR : isBonus ? SEALED_BONUS_COLOR : p.color;
 
   // ── Per-player per-segment classification (O(samples) per player) ──
+  // R15 (1.1): `hasSample` separates "no data" (neutral) from "missed"
+  // (scorched) — see the header comment for the full rationale.
   const segInfo = players.map(p => {
     const hit = new Array<boolean>(segCount).fill(false);
     const lastMissPitch = new Array<number | null>(segCount).fill(null);
+    const hasSample = new Array<boolean>(segCount).fill(false);
     for (const s of p.samples) {
       const idx = Math.floor((s.time - nStart) / segDur);
       if (idx < 0 || idx >= segCount) continue;
+      hasSample[idx] = true;
       if (s.hit) hit[idx] = true;
       else if (s.sungPitch != null) lastMissPitch[idx] = s.sungPitch;
     }
-    return { hit, lastMissPitch };
+    // Bridge short sample-less holes after a HIT (tick aliasing / short
+    // detector dropout while the player keeps singing) — they inherit it.
+    let holeLen = 0;
+    let lastSampledHit = false;
+    for (let i = 0; i < segCount; i++) {
+      if (hasSample[i]) {
+        holeLen = 0;
+        lastSampledHit = hit[i];
+        continue;
+      }
+      holeLen++;
+      if (holeLen <= STRIP_BRIDGE_MAX_GAPS && lastSampledHit) {
+        hit[i] = true;
+      }
+    }
+    return { hit, lastMissPitch, hasSample };
   });
 
   // ── Per-player laser / live-miss state ──
@@ -785,6 +852,7 @@ export function getMultiPlayerNoteOverlay(
         const color = stripColor(p);
         const hasAny = p.samples.length > 0;
         const hit = segInfo[i].hit;
+        const segHasSample = segInfo[i].hasSample;
         return (
           <div
             key={p.id}
@@ -824,6 +892,12 @@ export function getMultiPlayerNoteOverlay(
                     segGlow = `0 0 12px ${hexWithAlpha(color, 0.8)}, inset 0 0 5px rgba(255, 255, 255, 0.30)`;
                   }
                   animClass = 'note-seal-seg';
+                } else if (!segHasSample[idx]) {
+                  // R15 (1.1): no sample in this segment — tick aliasing,
+                  // detector dropout or silence. NEUTRAL dim track, NOT a
+                  // scorched miss gap: "no data" ≠ "missed".
+                  bgColor = hexWithAlpha(color, 0.22);
+                  borderCol = hexWithAlpha(color, 0.45);
                 } else {
                   // Aussetzer: scorched dark gap (same values as sealed mode)
                   bgColor = 'rgba(140, 21, 21, 0.32)';

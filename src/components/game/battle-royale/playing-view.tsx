@@ -307,6 +307,8 @@ export function PlayingView({
   const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
 
   // Standard lyrics display: find current and next lyric lines using LyricLineDisplay
+  // R15 (user request 1.2): 3s preview window — the lyric block fades back in
+  // ~3 seconds before the next vocal phrase starts (was 2s).
   const { currentLyricLine, nextLyricLine } = useMemo(() => {
     if (!currentSong?.lyrics || currentSong.lyrics.length === 0) {
       return { currentLyricLine: null, nextLyricLine: null };
@@ -323,15 +325,18 @@ export function PlayingView({
         nextLyricLine: idx >= 0 && idx < lyrics.length - 1 ? lyrics[idx + 1] : null,
       };
     }
-    // No active line: show next upcoming line within 2s preview window
+    // No active line: show next upcoming line within 3s preview window
     for (let i = 0; i < lyrics.length; i++) {
-      if (currentTime < lyrics[i].startTime && lyrics[i].startTime - currentTime < 2000) {
+      if (currentTime < lyrics[i].startTime && lyrics[i].startTime - currentTime < 3000) {
         return {
           currentLyricLine: lyrics[i],
           nextLyricLine: i < lyrics.length - 1 ? lyrics[i + 1] : null,
         };
       }
     }
+    // Long instrumental pause: NO line — the block fades out entirely
+    // (R15, user request 1.2: like the other modes, no stale text during
+    // pauses — and no misleading "first line of the song" fallback either).
     return { currentLyricLine: null, nextLyricLine: null };
   }, [currentSong, currentTime]);
 
@@ -847,8 +852,20 @@ export function PlayingView({
           change and made it visibly jump up/down. The card now always occupies
           the same height (fits current line + next-line preview) with the
           content vertically centered — the highway geometry stays constant. */}
-      <div className="flex-shrink-0 px-4 pb-7">
-        {currentSong ? (
+      {/* R15 (user request 1.2): during LONG instrumental pauses the block now
+          FADES OUT completely (opacity-0) instead of showing stale text —
+          it fades back in ~3s before the next vocal phrase. The fixed height
+          is kept so the note highway geometry never jumps. */}
+      {currentSong ? (
+        <div
+          data-testid="br-lyrics-block"
+          className={`flex-shrink-0 px-4 pb-7 transition-opacity duration-300 ${
+            currentLyricLine || !(currentSong.lyrics && currentSong.lyrics.length > 0)
+              ? 'opacity-100'
+              : 'opacity-0'
+          }`}
+          aria-hidden={!currentLyricLine && !!(currentSong.lyrics && currentSong.lyrics.length > 0)}
+        >
           <div className="w-full h-[72px] bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10 flex flex-col items-center justify-center">
             {currentLyricLine ? (
               <div className="text-center">
@@ -865,19 +882,20 @@ export function PlayingView({
                 )}
               </div>
             ) : currentSong.lyrics && currentSong.lyrics.length > 0 ? (
-              <p className="text-white/40 text-center text-sm">
-                {currentSong.lyrics[0].notes.map(n => n.lyric).join('')}
-              </p>
+              /* Long pause — block is faded out via opacity-0 (nothing to show). */
+              <span className="sr-only">&nbsp;</span>
             ) : (
               <p className="text-white/30 text-center text-sm">{t('battleRoyale.loadingLyrics')}</p>
             )}
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="flex-shrink-0 px-4 pb-7">
           <div className="w-full h-[72px] bg-black/30 rounded-xl px-4 py-2 border border-white/10 text-center flex items-center justify-center">
             <p className="text-white/30 text-sm">{t('battleRoyale.loadingSong')}</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ─────────── 5. ROUND PROGRESS BAR (very bottom edge, h-1 like other modes — B3.4) ─────────── */}
       <div className="flex-shrink-0 w-full h-1 bg-white/10" data-testid="br-round-progress">

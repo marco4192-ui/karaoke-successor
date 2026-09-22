@@ -420,8 +420,6 @@ settingsLibrary: {
   noBaseFolder: 'Kein Basisordner festgelegt. Bitte wähle einen Songs-Ordner zum Importieren.',
   scanning: 'Scannen...',
   songsProcessed: 'Songs verarbeitet',
-  importSongs: 'Aus anderen Karaoke-Systemen importieren',
-  importSongsDesc: 'Wandle Songs anderer Systeme (MIDI/KAR, Karaoke Mugen .ass/.json, SingStar, StepMania) in das UltraStar-Format um — komplette UltraStar-Bibliotheken importierst du oben über die Songs-Ordner.',
   cannotUndo: 'Diese Aktionen können nicht einfach rückgängig gemacht werden',
   resetSuccess: 'Bibliothek erfolgreich zurückgesetzt!',
   additionalSources: 'Weitere Bibliotheks-Quellen',

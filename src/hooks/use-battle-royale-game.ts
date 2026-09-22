@@ -591,6 +591,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Elimination clock: deadline timestamp (ms) or null when disarmed.
   const nextElimAtRef = useRef<number | null>(null);
   const elimPausedAtRef = useRef<number | null>(null);
+  // R15 (user request 1.3): remaining elimination time carried across a
+  // round transition (song ended before the deadline). The rhythm is a
+  // GAME clock, not a per-round timer — the next song CONTINUES the
+  // countdown instead of restarting the full interval ("ein neuer Song
+  // startete wieder mit 120 Sekunden Countdown").
+  const elimCarryMsRef = useRef<number | null>(null);
+  // Minimum carried-over countdown when the next round starts (seconds) — a
+  // fresh song gets a fair start before a due/overdue elimination fires.
+  const ELIM_CARRY_MIN_SEC = 5;
 
   // Effective rhythm for the given game state — always from the settings
   // (roundDuration / finalRoundDuration / shrinking timer).
@@ -605,10 +614,43 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Arm the clock at the START of each full-song round (playing transition
   // or round change). Frozen afterwards — in-round eliminations only
   // re-arm AFTER firing (see the ticker), never mid-interval.
+  // R15 (user request 1.3): when the previous round's SONG ended before the
+  // deadline (song shorter than the remaining elimination countdown), the
+  // next round CONTINUES the leftover countdown (min 5s) instead of
+  // re-arming the full interval — an elimination that was 8s away stays
+  // 8s away, regardless of how long the next song is.
   useEffect(() => {
     if (game.status !== 'playing' || !isFullSongRound) {
+      // Leaving a rhythm round (song ended → voting / finale / game over):
+      // remember the remaining elimination time so the NEXT round can
+      // continue the rhythm instead of restarting it.
+      if (nextElimAtRef.current !== null) {
+        const remainingMs = nextElimAtRef.current - Date.now();
+        elimCarryMsRef.current = remainingMs > 0 ? remainingMs : null;
+      }
       nextElimAtRef.current = null;
       elimPausedAtRef.current = null;
+      return;
+    }
+    // Direct round change while staying in 'playing' (song ended → next
+    // song starts immediately, no intermediate render): the old deadline
+    // is still armed — continue it.
+    const prevDeadline = nextElimAtRef.current;
+    if (prevDeadline !== null) {
+      const remainingMs = prevDeadline - Date.now();
+      // Overdue (< 0.5s: the song ended right at the deadline before the
+      // 500ms ticker could fire) → fire shortly into the next song instead
+      // of wiping a due elimination.
+      nextElimAtRef.current = Date.now() + Math.max(ELIM_CARRY_MIN_SEC * 1000, remainingMs);
+      elimCarryMsRef.current = null;
+      return;
+    }
+    // Re-entering 'playing' after an intermediate phase (voting): continue
+    // the carried-over countdown, else the full configured interval.
+    const carried = elimCarryMsRef.current;
+    elimCarryMsRef.current = null;
+    if (carried != null) {
+      nextElimAtRef.current = Date.now() + Math.max(ELIM_CARRY_MIN_SEC * 1000, carried);
       return;
     }
     nextElimAtRef.current = Date.now() + elimIntervalSec(gameRef.current) * 1000;

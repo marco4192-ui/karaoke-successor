@@ -4,8 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ImportScreen } from '@/components/import/import-screen';
-import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
+import { FolderIcon, TrashIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
 import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
@@ -351,27 +350,6 @@ export function LibraryTab({
           </CardContent>
         </Card>
       )}
-
-      {/* Import Songs Section */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CloudUploadIcon className="w-5 h-5 text-cyan-400" />
-            {t('settingsLibrary.importSongs')}
-          </CardTitle>
-          <CardDescription>
-            {t('settingsLibrary.importSongsDesc')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ImportScreen
-            onImport={(_song) => {
-              // Refresh song count after import
-            }}
-            onCancel={() => {}}
-          />
-        </CardContent>
-      </Card>
 
       {/* Viral Charts */}
       <ViralChartsSettings />
