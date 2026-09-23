@@ -104,8 +104,6 @@ export const settingsTranslations = {
     feature5: 'Offline-capable with local SQLite database',
     autoFullscreen: 'Auto-Fullscreen',
     autoFullscreenDesc: 'Automatically switch to fullscreen when starting a song.',
-    noteColorProfile: 'Note Colors',
-    noteColorProfileDesc: 'Choose a color palette for the note bars during gameplay',
     noteDisplayMode: 'Note Display',
     noteDisplayModeDesc: 'Controls the colour and look of the note bars while singing',
     noteDisplaySealed: 'Laser',
@@ -124,7 +122,6 @@ export const settingsTranslations = {
     exactGood: 'Good / Okay',
     exactNearMiss: 'Near miss',
     exactFarMiss: 'Far miss',
-    noteColorsLegacyHint: 'Applies to Battle Royale & Medley Contest (multi-singer view) plus golden/bonus notes',
   },
 
   settingsTabs: {
@@ -600,8 +597,6 @@ export const settingsTranslations = {
     colorTheme: 'Color Theme',
     lyricsSize: 'Lyrics Size',
     lyricsStyle: 'Lyrics Style',
-    noteColorProfile: 'Note Colors',
-    noteColorProfileDesc: 'Color palette for the note bars',
     noteDisplayMode: 'Note Display',
     noteDisplayModeDesc: 'Look of the note bars in game',
     noteDisplaySealed: 'Laser',

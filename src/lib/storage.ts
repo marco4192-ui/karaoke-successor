@@ -28,7 +28,9 @@ export const StorageKeys = {
   ANIMATED_BG: 'karaoke-animated-bg',
   NOTE_STYLE: 'karaoke-note-style',
   NOTE_SHAPE: 'karaoke-note-shape',
-  NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
+  // R20-3: NOTE_COLOR_PROFILE ('karaoke-note-color-profile') removed — the
+  // Note-Colors setting no longer exists (sealed/exact display governs the
+  // note look; legacy profile rendering is fixed to the default palette).
   /** Note bar display mode: 'sealed' (laser/burner fill, uniform hit colour, misses at sung pitch) | 'exact' (5-colour quality code) */
   NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
   /** Uniform burn colour for the 'sealed' note display mode (#rrggbb) */

@@ -355,23 +355,17 @@ export default function KaraokeZERO() {
       return;
     }
 
-    // ── Medley Contest abort: clear medley state, return to party setup ──
-    // The dedicated medley game uses screen === 'medley-game' (not 'game'),
-    // so the standard medley abort guard above (line 129, screen === 'game')
-    // never matches. Without this guard, ESC→Abort falls through to the
-    // PartyTerminator which nukes ALL party state.
+    // ── Medley Contest abort: confirm leaving FIRST, teardown only after ──
+    // User report (R20-1): Pause → Abort tore down the whole Medley Contest
+    // IMMEDIATELY with no confirmation. Route through the same party-leave
+    // dialog the other party modes use: "End Party" → handlePartyModeEnd
+    // (resetPartyState(true) clears all medley fields), "Back" → the medley
+    // hook's pauseDialogAction effect resumes the paused snippet (incl.
+    // audio/video re-sync — see use-medley-audio.ts resume branch).
+    // Note: the leave dialog during a paused medley song is ALREADY reachable
+    // via ESC-ESC (keyboard case 4) — this makes the Abort button consistent.
     if (screen === 'medley-game' || screen === 'medley') {
-      party.setMedleyPlayers([]);
-      party.setMedleySongs([]);
-      party.setMedleySettings(null);
-      party.setMedleyMatches([]);
-      party.setMedleySeriesHistory([]);
-      // User report ("Mode terminieren"): selectedGameMode must go too —
-      // otherwise Library song picks re-enter the aborted Medley Contest.
-      party.setSelectedGameMode(null);
-      party.setUnifiedSetupResult(null);
-      party.setIsSongPlaying(false);
-      setScreen('party');
+      party.setPauseDialogAction('party-leave');
       return;
     }
 

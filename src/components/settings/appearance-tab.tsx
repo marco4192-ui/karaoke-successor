@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';
 import {
-  NOTE_COLOR_PROFILES,
   NoteDisplayMode,
   SEALED_HIT_COLOR_PRESETS,
   DEFAULT_SEALED_HIT_COLOR,
@@ -120,8 +119,6 @@ interface AppearanceTabProps {
   setLyricsSize: (_value: string) => void;
   performanceMode: 'full' | 'low';
   setPerformanceMode: (_value: 'full' | 'low') => void;
-  noteColorProfile: string;
-  setNoteColorProfile: (_value: string) => void;
   /** Note bar display mode: 'sealed' (uniform hit colour + red misses) or 'exact' (5-colour quality code) */
   noteDisplayMode: NoteDisplayMode;
   setNoteDisplayMode: (_value: NoteDisplayMode) => void;
@@ -145,8 +142,6 @@ export function AppearanceTab({
   setLyricsSize,
   performanceMode,
   setPerformanceMode,
-  noteColorProfile,
-  setNoteColorProfile,
   noteDisplayMode,
   setNoteDisplayMode,
   sealedHitColor,
@@ -432,49 +427,6 @@ export function AppearanceTab({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Note Color Profiles */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-lg">{'\u{1F3B6}'}</span>
-            {tx('settings.noteColorProfile') || 'Note Colors'}
-          </CardTitle>
-          <CardDescription>{tx('settings.noteColorProfileDesc') || 'Choose a color palette for the note bars during gameplay'}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {NOTE_COLOR_PROFILES.map((prof) => (
-              <button
-                key={prof.id}
-                type="button"
-                onClick={() => {
-                  setNoteColorProfile(prof.id);
-                  saveSetting(StorageKeys.NOTE_COLOR_PROFILE, prof.id);
-                }}
-                className={`p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
-                  noteColorProfile === prof.id
-                    ? 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/50'
-                    : 'border-white/10 bg-white/5 hover:border-white/30'
-                }`}
-              >
-                <div className="w-full h-6 rounded-lg mb-2 flex overflow-hidden">
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Perfect }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Great }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Good }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Okay }} />
-                </div>
-                <span className="text-sm font-medium theme-adaptive-text">{prof.name}</span>
-                <p className="text-xs theme-adaptive-text-secondary truncate">{prof.description}</p>
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-white/40 mt-3 flex items-start gap-1.5">
-            <span aria-hidden="true">ℹ</span>
-            <span>{tx('settings.noteColorsLegacyHint')}</span>
-          </p>
         </CardContent>
       </Card>
 

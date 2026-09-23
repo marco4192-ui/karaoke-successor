@@ -55,9 +55,6 @@ function SettingsScreen() {
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
   const [bgVideo, setBgVideo] = useState<boolean>(true);
   const [useAnimatedBg, setUseAnimatedBg] = useState<boolean>(false);
-  const [noteColorProfile, setNoteColorProfile] = useState<string>(() =>
-    getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'),
-  );
   const [noteDisplayMode, setNoteDisplayMode] = useState<NoteDisplayMode>(() =>
     getString(StorageKeys.NOTE_DISPLAY_MODE, 'sealed') === 'exact' ? 'exact' : 'sealed',
   );
@@ -112,8 +109,6 @@ function SettingsScreen() {
       } else if (detail.key === StorageKeys.NOTE_SEALED_HIT_COLOR) {
         const raw = String(detail.value);
         setSealedHitColor(/^#[0-9a-fA-F]{6}$/.test(raw) ? raw : DEFAULT_SEALED_HIT_COLOR);
-      } else if (detail.key === StorageKeys.NOTE_COLOR_PROFILE) {
-        setNoteColorProfile(String(detail.value));
       }
     };
     window.addEventListener('settingsChange', handleCompanionSetting);
@@ -152,7 +147,6 @@ function SettingsScreen() {
     setLyricsSize(getString(StorageKeys.LYRICS_SIZE, 'medium'));
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
     setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
-    setNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE, 'neon'));
     setNoteDisplayMode(getString(StorageKeys.NOTE_DISPLAY_MODE, 'sealed') === 'exact' ? 'exact' : 'sealed');
     const rawSealedColor = getString(StorageKeys.NOTE_SEALED_HIT_COLOR, DEFAULT_SEALED_HIT_COLOR);
     setSealedHitColor(/^#[0-9a-fA-F]{6}$/.test(rawSealedColor) ? rawSealedColor : DEFAULT_SEALED_HIT_COLOR);
@@ -271,8 +265,6 @@ function SettingsScreen() {
           setLyricsSize={setLyricsSize}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
-          noteColorProfile={noteColorProfile}
-          setNoteColorProfile={setNoteColorProfile}
           noteDisplayMode={noteDisplayMode}
           setNoteDisplayMode={setNoteDisplayMode}
           sealedHitColor={sealedHitColor}

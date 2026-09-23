@@ -201,15 +201,20 @@ export function PlayingView({
   }, [setIsSongPlaying]);
 
   // Pause / Resume — pause BOTH audio AND video (video was missing before)
+  // R20-2 (user report "Video läuft bei Abort weiter"): ANY open dialog
+  // freezes the media — Abort swaps 'song-pause' → 'party-leave' in one
+  // batched store write (null is never rendered), so a check for
+  // 'song-pause' alone left the video running behind the leave dialog while
+  // the audio stayed paused → the video ran ahead and was async after Back.
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction !== null) {
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
       }
       if (videoRef.current && !videoRef.current.paused) {
         videoRef.current.pause();
       }
-    } else if (pauseDialogAction === null) {
+    } else {
       if (audioRef.current && audioRef.current.paused && game.status === 'playing' && audioStartedRef.current) {
         audioRef.current.play().catch(() => {});
       }
@@ -410,7 +415,7 @@ export function PlayingView({
           isYouTube={false}
           youtubeVideoId={null}
           useYouTubeAudio={false}
-          isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
+          isPlaying={game.status === 'playing' && pauseDialogAction === null}
           isAdPlaying={false}
           songEnergy={0}
           volume={1}
@@ -555,7 +560,7 @@ export function PlayingView({
 
       {/* ─────────── Unified HUD chrome (top-center: song; top-left: Pause + End Round; top-right: Difficulty + Webcam + Fullscreen) ─────────── */}
       <GameHudChrome
-        isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
+        isPlaying={game.status === 'playing' && pauseDialogAction === null}
         onTogglePause={() => {
           if (pauseDialogAction === 'song-pause') {
             setPauseDialogAction(null);

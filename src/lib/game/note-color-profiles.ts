@@ -7,10 +7,11 @@
 //
 // The "neon" profile is the original hardcoded palette.
 //
-// NOTE: since the "modern" note display modes (sealed / exact) landed, the
-// profiles only govern the LEGACY note rendering used by modes with more
-// than two simultaneous singers (Battle Royale, Medley Contest) — plus the
-// golden/bonus special-note look everywhere.
+// R20-3: the Note-Colors SETTINGS entry was removed — it only affected the
+// legacy quality pipeline, which no mode renders anymore (sealed/exact
+// display + fixed golden/rap/freestyle palettes govern everything; the
+// low-perf lane and any remaining legacy path are pinned to the default
+// 'neon' profile, see getNoteColorProfile(null) in note-utils.tsx).
 
 import { StorageKeys, getString } from '@/lib/storage';
 

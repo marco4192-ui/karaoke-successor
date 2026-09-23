@@ -1,6 +1,5 @@
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
-import { StorageKeys, getString } from '@/lib/storage';
 import {
   getNoteColorProfile,
   resolveNoteColors,
@@ -213,7 +212,11 @@ export function getNoteDisplayStyleClasses(
   const isSealed = displayMode === 'sealed';
   const isExact = displayMode === 'exact';
 
-  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
+  // R20-3: the Note-Colors profile SETTING was removed (it only affected
+  // the legacy quality pipeline, which no mode renders anymore — sealed/exact
+  // display + fixed special-note palettes govern everything). The default
+  // 'neon' profile stays as the fixed fallback for the legacy render path.
+  const profile = getNoteColorProfile(null);
   const isSpecialNote = isGolden || isBonus || isRap;
   // Sealed: no per-quality colours at all — one uniform hit colour
   // (golden notes seal in gold, rap notes in emerald, freestyle in magenta).
@@ -1015,8 +1018,9 @@ export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean, is
   if (isBonus) {
     return 'bg-gradient-to-r from-pink-500 to-purple-500';
   }
-  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
-  return profile.lowPerfGradient;
+  // R20-3: Note-Colors setting removed — the low-perf lane uses the fixed
+  // default ('neon') look.
+  return getNoteColorProfile(null).lowPerfGradient;
 }
 
 /**
@@ -1027,8 +1031,8 @@ export function getNoteBoxShadow(isActive: boolean, isGolden: boolean): string {
   if (isGolden) {
     return '0 0 30px rgba(251, 191, 36, 0.7)';
   }
-  const profile = getNoteColorProfile(getString(StorageKeys.NOTE_COLOR_PROFILE));
-  return profile.lowPerfActiveGlow;
+  // R20-3: Note-Colors setting removed — fixed default look.
+  return getNoteColorProfile(null).lowPerfActiveGlow;
 }
 
 /**

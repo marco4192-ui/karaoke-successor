@@ -524,15 +524,21 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [gameRef]);
 
   // ── Pause state (read from store, used by game loop + round timer) ───
+  // R20-2 (user report "Video läuft bei Abort weiter"): ANY open dialog
+  // freezes the game — not just the pause menu. Abort swaps 'song-pause' →
+  // 'party-leave' in one batched store write; React never renders the null
+  // state in between, so checks for 'song-pause' alone left the round timer,
+  // elimination ticker and the background VIDEO running behind the leave
+  // dialog while the audio stayed paused → video desynced on Back.
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
-  const pausedRef = useRef(pauseDialogAction === 'song-pause');
-  pausedRef.current = pauseDialogAction === 'song-pause';
+  const pausedRef = useRef(pauseDialogAction !== null);
+  pausedRef.current = pauseDialogAction !== null;
 
   // Stop pitch detection while paused (like standard game mode does)
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction !== null) {
       multiPitch.stop();
-    } else if (pauseDialogAction === null && gameRef.current.status === 'playing') {
+    } else if (gameRef.current.status === 'playing') {
       // Restart pitch detection after unpause (game init effect won't re-fire)
       if (!multiPitch.isRunning) {
         multiPitch.start();
@@ -723,9 +729,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // during the pause and resumes where it was, never firing while paused.
   // R19: an active showdown deadline rests during the pause too (the tied
   // players must not lose extension time while the game stands still).
+  // R20-2: ANY open dialog rests the clock (pause menu AND the leave
+  // confirmation that opens on top of it) — only latch the pause start ONCE
+  // so the full dialog duration shifts the deadline when it finally closes.
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause') {
-      elimPausedAtRef.current = Date.now();
+    if (pauseDialogAction !== null) {
+      if (elimPausedAtRef.current === null) {
+        elimPausedAtRef.current = Date.now();
+      }
     } else if (elimPausedAtRef.current !== null) {
       const pausedFor = Date.now() - elimPausedAtRef.current;
       if (nextElimAtRef.current !== null) {
@@ -767,7 +778,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       return;
     }
     const iv = setInterval(() => {
-      if (pauseDialogAction === 'song-pause') return; // paused — the clock is shifted, not ticking
+      if (pauseDialogAction !== null) return; // dialog open — the clock is shifted, not ticking
 
       // ── R19: active showdown — its deadline IS the clock ──
       const tie = gameRef.current.tieBreak;
@@ -848,7 +859,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // (snippet) song + isPlaying to all companion apps so a participating
   // player's phone shows the BR in-game screen and streams pitch (the
   // mobile pitch loop only runs/sends while gameState.isPlaying is true).
-  const brCompanionPlaying = game.status === 'playing' && pauseDialogAction !== 'song-pause';
+  // R20-2: frozen during ANY open dialog (pause + leave confirmation).
+  const brCompanionPlaying = game.status === 'playing' && pauseDialogAction === null;
   useMobileGameSync(
     currentSong,
     brCompanionPlaying,
@@ -883,7 +895,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     medleySnippetList: game.medleySnippetList,
     currentSnippetIndex: game.currentSnippetIndex,
     onSnippetEndRef,
-    isPaused: pauseDialogAction === 'song-pause',
+    // R20-2: frozen during ANY open dialog — the leave confirmation must
+    // not let the round (or a snippet) expire behind the user's back.
+    isPaused: pauseDialogAction !== null,
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────

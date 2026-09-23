@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
-import { NOTE_COLOR_PROFILES, SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
+import { SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
 
@@ -59,7 +59,6 @@ const SK = {
   MIC_SENSITIVITY: 'karaoke-mic-sensitivity',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   LANGUAGE: 'karaoke-language',
-  NOTE_COLOR_PROFILE: 'karaoke-note-color-profile',
   NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
   NOTE_SEALED_HIT_COLOR: 'karaoke-note-sealed-hit-color',
 } as const;
@@ -79,7 +78,6 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.LYRICS_STYLE]: 'classic',
   [SK.LYRICS_SIZE]: 'medium',
   [SK.THEME]: 'neon-nights',
-  [SK.NOTE_COLOR_PROFILE]: 'neon',
   [SK.NOTE_DISPLAY_MODE]: 'sealed',
   [SK.NOTE_SEALED_HIT_COLOR]: DEFAULT_SEALED_HIT_COLOR,
   [SK.MASTER_VOLUME]: 100,
@@ -470,33 +468,6 @@ function AppearanceSettings({ settings, sendSetting, t }: {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Note-Color-Profil */}
-      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.noteColorProfile', 'Note-Farben')}</span>
-        <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.noteColorProfileDesc', 'Farbpalette fuer die Notenbalken')}</p>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          {NOTE_COLOR_PROFILES.map((prof) => {
-            const isActive = String(settings[SK.NOTE_COLOR_PROFILE]) === prof.id;
-            return (
-              <button
-                key={prof.id}
-                onClick={() => sendSetting(SK.NOTE_COLOR_PROFILE, prof.id)}
-                className={'flex flex-col items-center gap-1.5 rounded-lg px-3 py-2.5 active:scale-95 transition-all border ' +
-                  (isActive ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5')}
-              >
-                <div className="w-full h-4 rounded overflow-hidden flex">
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Perfect }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Great }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Good }} />
-                  <div className="flex-1" style={{ backgroundColor: prof.hitColors.Okay }} />
-                </div>
-                <span className="text-xs font-medium text-white">{prof.name}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
