@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: '고요하지 못하는 비명',
 },
 battleRoyale: {
-  bounty: '현상금',
   micError: '마이크',
   survived: '생존',
   visualSettings: '화면 설정',

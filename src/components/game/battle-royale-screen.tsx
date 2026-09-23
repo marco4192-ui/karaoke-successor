@@ -46,9 +46,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     setCurrentTime,
-    previousRoundScores,
-    bountyPlayerId,
-    bountyMultiplier,
+    tieBreak,
     pitchStats,
     visibleNotes,
     countdown,
@@ -84,11 +82,18 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
 
   // Winner celebration
   if (game.status === 'completed' && game.winner) {
+    // R19 (per-round scores): the winner's best single round — replaces the
+    // meaningless cumulative "Final Score" (the last round can be 0).
+    const winnerBestRoundScore = game.rounds.reduce(
+      (best, r) => Math.max(best, r.roundScoreDeltas[game.winner!.id] ?? 0),
+      0,
+    );
     return (
       <WinnerView
         winner={game.winner}
         eliminationOrder={getEliminationOrder(game)}
         gameStats={game.gameStats}
+        winnerBestRoundScore={winnerBestRoundScore}
         finaleSongTitle={game.rounds[game.rounds.length - 1]?.songName}
         onEndGame={onEndGame}
       />
@@ -148,9 +153,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         baseVolumeRef={baseVolumeRef}
         setCurrentTime={setCurrentTime}
         onRoundEnd={handleRoundEnd}
-        previousRoundScores={previousRoundScores}
-        bountyPlayerId={bountyPlayerId}
-        bountyMultiplier={bountyMultiplier}
+        tieBreak={tieBreak}
         pitchStats={pitchStats}
         visibleNotes={visibleNotes}
         countdown={countdown}
@@ -195,9 +198,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       baseVolumeRef={baseVolumeRef}
       setCurrentTime={setCurrentTime}
       onRoundEnd={handleRoundEnd}
-      previousRoundScores={previousRoundScores}
-      bountyPlayerId={bountyPlayerId}
-      bountyMultiplier={bountyMultiplier}
+      tieBreak={tieBreak}
       pitchStats={pitchStats}
       visibleNotes={visibleNotes}
       countdown={countdown}

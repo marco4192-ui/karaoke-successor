@@ -1017,7 +1017,6 @@ rankingTitles: {
   silentScream: 'Stiller Schrei',
 },
 battleRoyale: {
-  bounty: 'KOPFGELD',
   micError: 'Mikro',
   survived: 'Überlebt',
   visualSettings: 'Visuelle Einstellungen',

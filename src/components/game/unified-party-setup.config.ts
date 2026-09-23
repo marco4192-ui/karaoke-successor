@@ -141,8 +141,6 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
         { value: 3, label: '🏆 Best of 3', labelKey: 'modeSettings.bestOf3' },
         { value: 5, label: '🏆 Best of 5', labelKey: 'modeSettings.bestOf5' },
       ], defaultValue: 1 },
-      { key: 'bountyEnabled', label: 'Bounty System', description: 'Score multiplier for hunting the leader', labelKey: 'modeSettings.bountySystem', descriptionKey: 'modeSettings.bountySystemDesc', type: 'toggle', defaultValue: true },
-      { key: 'bountyMultiplier', label: 'Bounty Multiplier', labelKey: 'modeSettings.bountyMultiplier', type: 'slider', min: 1.2, max: 3, step: 0.1, defaultValue: 1.5, unit: 'x' },
       { key: 'escalatingDifficulty', label: 'Escalating Difficulty', description: 'Difficulty increases every 3 rounds', labelKey: 'modeSettings.escalatingDifficulty', descriptionKey: 'modeSettings.escalatingDifficultyDesc', type: 'toggle', defaultValue: false },
       { key: 'shrinkingTimer', label: 'Shrinking Timer', description: 'Rounds get shorter over time', labelKey: 'modeSettings.shrinkingTimer', descriptionKey: 'modeSettings.shrinkingTimerDesc', type: 'toggle', defaultValue: false },
       { key: 'noRepeatProtection', label: 'No-Repeat Protection', description: 'Prevent recently played songs', labelKey: 'modeSettings.noRepeatProtection', descriptionKey: 'modeSettings.noRepeatProtectionDesc', type: 'toggle', defaultValue: true },

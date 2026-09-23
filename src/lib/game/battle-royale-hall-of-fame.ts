@@ -39,6 +39,13 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
 
   const winner = game.winner;
   const survivalRounds = game.currentRound; // winner survived all rounds
+  // R19 (per-round scores): the cumulative score is meaningless (its maximum
+  // scales with player count/rounds) — the HOF tracks the winner's BEST
+  // SINGLE ROUND instead (comparable across games).
+  const bestRoundScore = game.rounds.reduce(
+    (best, r) => Math.max(best, r.roundScoreDeltas[winner.id] ?? 0),
+    0,
+  );
   const existing = getHallOfFame();
 
   // Find existing entry for this player
@@ -50,7 +57,7 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
     entry.totalGames += 1;
     entry.currentWinStreak += 1;
     entry.longestWinStreak = Math.max(entry.longestWinStreak, entry.currentWinStreak);
-    entry.bestScore = Math.max(entry.bestScore, winner.score);
+    entry.bestScore = Math.max(entry.bestScore, bestRoundScore);
     entry.lastWinDate = Date.now();
     // Update average survival: (oldAvg * (totalGames-1) + newSurvival) / totalGames
     entry.averageSurvivalRounds = Math.round(
@@ -66,7 +73,7 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
       playerType: winner.playerType,
       wins: 1,
       totalGames: 1,
-      bestScore: winner.score,
+      bestScore: bestRoundScore,
       longestWinStreak: 1,
       currentWinStreak: 1,
       averageSurvivalRounds: survivalRounds,

@@ -17,12 +17,14 @@ export type {
   BattleRoyaleStatus,
   BattleRoyaleGame,
   BattleRoyaleSettings,
+  TieBreakState,
 } from './battle-royale-types';
 export {
   MAX_LOCAL_MIC_PLAYERS,
   MAX_COMPANION_PLAYERS,
   MAX_BATTLE_ROYALE_PLAYERS,
   DEFAULT_BATTLE_ROYALE_SETTINGS,
+  TIE_BREAK_EXTENSION_SECONDS,
 } from './battle-royale-types';
 
 // Hall of Fame
@@ -46,7 +48,10 @@ export {
   eliminateWeakestMidRound,
   enterGrandFinale,
   advanceToNextRound,
+  detectRoundEndTie,
+  resolveTieBreakElimination,
 } from './battle-royale-elimination';
+export type { EliminationTieSignal } from './battle-royale-elimination';
 
 // ==================== LOCAL IMPORTS ====================
 
@@ -66,6 +71,7 @@ import {
   DEFAULT_BATTLE_ROYALE_SETTINGS,
   DIFFICULTY_ORDER,
   ESCALATION_INTERVAL,
+  TIE_BREAK_EXTENSION_SECONDS,
 } from './battle-royale-types';
 import { Difficulty } from '@/types/game';
 import { shuffleArray, generateCode, FULL_CODE_CHARS } from '@/lib/utils';
@@ -171,11 +177,11 @@ export function createBattleRoyale(
     // #3 No-repeat
     recentlyPlayedSongIds: [],
 
-    // #9 Trend tracking
+    // Delta bookkeeping (R19: per-round scores)
     previousRoundScores: {},
 
-    // #6 Bounty
-    bountyPlayerId: null,
+    // R19 tie-break showdown
+    tieBreak: null,
 
     // #4 Grand Finale
     isGrandFinale: false,
@@ -249,25 +255,43 @@ function getEffectiveDifficulty(
   return DIFFICULTY_ORDER[newIndex];
 }
 
-// ==================== BOUNTY SYSTEM (#6) ====================
+// ==================== BOUNTY → removed (R19) ====================
+// The bounty system was REMOVED by user decision (R19): with per-round
+// score resets there is no accumulated deficit a booster could fairly
+// compensate — see bounty-fairness-analysis (R17) for why the flat ×1.5
+// booster eliminated the best singer.
 
-/** Determine who should have the bounty (current score leader among active players) */
-export function calculateBountyTarget(game: BattleRoyaleGame): string | null {
-  if (!game.settings.bountyEnabled) return null;
+// ==================== TIE-BREAK SHOWDOWN (R19) ====================
 
+/** Detect a tie at the LOWEST score among active players (the players who
+ *  would be threatened by the next elimination). Returns the tied player
+ *  ids (≥ 2) or null. With per-round scores this includes the all-zero
+ *  case (e.g. instrumental intro) — the user's showdown rule applies
+ *  uniformly: 10s extension, then coin flip. */
+export function findEliminationTie(game: BattleRoyaleGame): string[] | null {
   const activePlayers = getActivePlayers(game);
-  if (activePlayers.length < 3) return null; // No bounty with 2 players (grand finale)
-
-  const sorted = [...activePlayers].sort((a, b) => b.score - a.score);
-  return sorted[0]?.id ?? null;
+  if (activePlayers.length < 2) return null;
+  const sorted = [...activePlayers].sort((a, b) => a.score - b.score);
+  const lowest = sorted[0].score;
+  const tied = sorted.filter(p => p.score === lowest);
+  return tied.length >= 2 ? tied.map(p => p.id) : null;
 }
 
-/** Get bounty multiplier for a specific player */
-export function getBountyMultiplier(game: BattleRoyaleGame, playerId: string): number {
-  if (!game.settings.bountyEnabled) return 1;
-  if (!game.bountyPlayerId) return 1;
-  if (playerId === game.bountyPlayerId) return 1; // No bonus for bounty target
-  return game.settings.bountyMultiplier;
+/** Start a tie-break showdown: the tied players get a fixed 10-second
+ *  extension to break the tie by singing (coin flip afterwards if still
+ *  tied). Pure state change — the song keeps playing. */
+export function startTieBreak(
+  game: BattleRoyaleGame,
+  tiedPlayerIds: string[],
+  seconds: number = TIE_BREAK_EXTENSION_SECONDS,
+): BattleRoyaleGame {
+  return {
+    ...game,
+    tieBreak: {
+      until: Date.now() + seconds * 1000,
+      playerIds: tiedPlayerIds,
+    },
+  };
 }
 
 // ==================== SONG SELECTION HELPERS ====================
@@ -467,11 +491,14 @@ export function startRound(
     duration = baseDuration;
   }
 
-  // Calculate bounty target (#6)
-  const bountyPlayerId = calculateBountyTarget(game);
-
-  // For grand finale rounds, reset active players' scores for fair per-round comparison
-  const resetScores = isGrandFinaleRound;
+  // R19 (user decision): EVERY round is a fresh start — scores of all
+  // active players reset to 0 at round start ("Reset nach dem Song"). A
+  // round/song is one coherent performance; nobody dies from an accumulated
+  // deficit. Career-wide notesHit/notesMissed/maxCombo stay for the stats.
+  // NOTE: an ACTIVE tie-break showdown survives a round change on purpose
+  // (the rhythm path force-resolves it with the scores of the song where
+  // the tie happened — before this reset runs for the next round).
+  const resetScores = true;
   const updatedPlayers = game.players.map(p => {
     if (!p.eliminated) {
       return {
@@ -485,9 +512,10 @@ export function startRound(
     return p;
   });
 
-  // Snapshot current scores for trend tracking (#9)
-  // IMPORTANT: Snapshot AFTER score reset so deltas reflect round earnings, not accumulated totals.
-  // In grand finale rounds, scores are reset to 0, so prevScore=0 and delta = roundScore.
+  // Snapshot current scores for the round-delta bookkeeping (R19: this is
+  // 0 for every active player after the reset — deltas = round points).
+  // Eliminated players keep their frozen score → their delta stays 0 in
+  // all following rounds.
   const previousRoundScores: Record<string, number> = {};
   for (const player of updatedPlayers) {
     previousRoundScores[player.id] = player.score;
@@ -505,9 +533,6 @@ export function startRound(
     endTime: null,
     eliminatedPlayerId: null,
     roundType,
-    bountyPlayerId,
-    bountyClaimed: false,
-    bountyClaimedById: null,
     effectiveDifficulty,
     roundScoreDeltas: {},
   };
@@ -527,12 +552,11 @@ export function startRound(
     // grayed-out treatment in the meantime.
     status: game.rounds.length >= 1 ? 'playing' : 'countdown',
     effectiveDifficulty,
-    bountyPlayerId,
 
     // #3 No-repeat
     recentlyPlayedSongIds: updatedRecentSongs,
 
-    // #9 Trend tracking
+    // R19 delta bookkeeping
     previousRoundScores,
 
     // #1 Medley

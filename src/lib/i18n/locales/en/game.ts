@@ -613,7 +613,6 @@ export const gameTranslations = {
 
   // --- Battle Royale (new keys) ---
   battleRoyale: {
-    bounty: 'BOUNTY',
     micError: 'Mic',
     survived: 'Survived',
     visualSettings: 'Visual Settings',

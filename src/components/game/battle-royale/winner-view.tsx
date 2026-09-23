@@ -18,12 +18,16 @@ interface WinnerViewProps {
   winner: NonNullable<import('@/lib/game/battle-royale').BattleRoyaleGame['winner']>;
   eliminationOrder: BattleRoyalePlayer[];
   gameStats: BattleRoyaleGameStats;
+  /** R19 (per-round scores): the winner's best single round — replaces the
+   *  old cumulative "Final Score", which is meaningless now (its maximum
+   *  scales with player count/rounds, and the last round's score can be 0). */
+  winnerBestRoundScore: number;
   /** Title of the grand-finale song (last round) — recorded in the session history */
   finaleSongTitle?: string;
   onEndGame: () => void;
 }
 
-export function WinnerView({ winner, eliminationOrder, gameStats, finaleSongTitle, onEndGame }: WinnerViewProps) {
+export function WinnerView({ winner, eliminationOrder, gameStats, winnerBestRoundScore, finaleSongTitle, onEndGame }: WinnerViewProps) {
   const { t } = useTranslation();
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
@@ -71,7 +75,11 @@ export function WinnerView({ winner, eliminationOrder, gameStats, finaleSongTitl
           </Badge>
         </div>
         <div className="text-xl text-white/60 mb-8">
-          {t('battleRoyale.finalScore').replace('{n}', String(winner.score.toLocaleString()))}
+          {/* R19: per-round scores — show the winner's BEST ROUND (a cumulative
+              total is not comparable across games and the last round may be 0).
+              Label + value composed here: the i18n key is shared with the
+              stats card below (which renders the value separately). */}
+          {t('battleRoyale.bestRoundScore')}: {winnerBestRoundScore.toLocaleString()}
         </div>
 
         <div className="flex justify-center gap-3">
@@ -170,11 +178,13 @@ export function WinnerView({ winner, eliminationOrder, gameStats, finaleSongTitl
                         ) : (
                           <span className="text-amber-400">{t('battleRoyale.finalRound')}</span>
                         )}
+                        {highlight.byCoinFlip && (
+                          <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-xs shrink-0" title={t('battleRoyale.coinFlipBadge')}>
+                            🪙 {t('battleRoyale.coinFlipBadge')}
+                          </Badge>
+                        )}
                         <span className="text-white/20">|</span>
                         <span className="text-green-400">⭐ {highlight.topScorerName}: +{highlight.topScoreDelta.toLocaleString()}</span>
-                        {highlight.bountyClaimed && highlight.bountyClaimedById && (
-                          <Badge className="bg-amber-500/20 text-amber-400 text-xs shrink-0">🎯</Badge>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -223,7 +233,10 @@ export function WinnerView({ winner, eliminationOrder, gameStats, finaleSongTitl
                       </div>
                     </div>
                     <div className="text-right">
+                      {/* R19: best SINGLE round (per-round scores — cumulative
+                          scores are not comparable across games) */}
                       <div className="text-sm font-bold text-amber-400">{entry.bestScore.toLocaleString()}</div>
+                      <div className="text-[10px] text-white/40">{t('battleRoyale.bestRound')}</div>
                       {entry.longestWinStreak > 1 && (
                         <div className="text-xs text-amber-400/60">🔥{entry.longestWinStreak}</div>
                       )}

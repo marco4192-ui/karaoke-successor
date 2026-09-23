@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: '无声尖叫',
 },
 battleRoyale: {
-  bounty: '悬赏',
   micError: '麦克风',
   survived: '存活',
   visualSettings: '视觉设置',

@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Urlo Silenzioso',
 },
 battleRoyale: {
-  bounty: 'TAGLIA',
   micError: 'Micro',
   survived: 'Sopravvissuto',
   visualSettings: 'Impostazioni visive',

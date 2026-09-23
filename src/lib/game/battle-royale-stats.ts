@@ -138,8 +138,8 @@ export function getBattleRoyaleStats(game: BattleRoyaleGame) {
     // #7 Dynamic difficulty
     effectiveDifficulty: game.effectiveDifficulty,
 
-    // #6 Bounty
-    bountyPlayerId: game.bountyPlayerId,
+    // R19 tie-break showdown (active while tied players battle)
+    tieBreak: game.tieBreak,
 
     // #1 Medley
     isMedleyRound: game.medleySnippetList.length > 0,

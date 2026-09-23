@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Grito Silencioso',
 },
 battleRoyale: {
-  bounty: 'RECOMPENSA',
   micError: 'Micro',
   survived: 'Sobreviveu',
   visualSettings: 'Definições visuais',

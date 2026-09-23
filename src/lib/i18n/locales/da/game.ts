@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Stille skrig',
 },
 battleRoyale: {
-  bounty: 'DUSØR',
   micError: 'Mikrofon',
   survived: 'Overlevede',
   visualSettings: 'Visuelle indstillinger',

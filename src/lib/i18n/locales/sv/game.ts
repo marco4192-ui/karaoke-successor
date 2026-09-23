@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Tyst skrik',
 },
 battleRoyale: {
-  bounty: 'HUVUDJAG',
   micError: 'Mikrofon',
   survived: 'Överlevde',
   visualSettings: 'Visuella inställningar',

@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Hiljainen huuto',
 },
 battleRoyale: {
-  bounty: 'PÄÄPALKO',
   micError: 'Mikrofoni',
   survived: 'Selvisi',
   visualSettings: 'Visuaaliset asetukset',

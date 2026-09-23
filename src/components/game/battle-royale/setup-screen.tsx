@@ -59,10 +59,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   // #4 Grand Finale
   const [grandFinaleBestOf, setGrandFinaleBestOf] = useState<1 | 3 | 5>(DEFAULT_BATTLE_ROYALE_SETTINGS.grandFinaleBestOf);
 
-  // #6 Bounty
-  const [bountyEnabled, setBountyEnabled] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.bountyEnabled);
-  const [bountyMultiplier, setBountyMultiplier] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.bountyMultiplier);
-
   // #7 Dynamic difficulty
   const [escalatingDifficulty, setEscalatingDifficulty] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.escalatingDifficulty);
 
@@ -256,8 +252,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       noRepeatProtection,
       noRepeatCount,
       grandFinaleBestOf,
-      bountyEnabled,
-      bountyMultiplier,
       escalatingDifficulty,
       shrinkingTimer,
       shrinkFactor,
@@ -489,35 +483,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               ))}
             </div>
           </div>
-
-          {/* #6 Bounty System */}
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-medium">{t('battleRoyale.bountySystem')}</label>
-              <p className="text-sm text-white/60">{t('battleRoyale.bountyDesc')}</p>
-            </div>
-            <Button
-              variant={bountyEnabled ? 'default' : 'outline'}
-              onClick={() => setBountyEnabled(!bountyEnabled)}
-              className={bountyEnabled ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
-            >
-              {bountyEnabled ? t('battleRoyale.on') : t('battleRoyale.off')}
-            </Button>
-          </div>
-          {bountyEnabled && (
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.bountyMultiplierLabel').replace('{n}', String(bountyMultiplier))}</label>
-              <input
-                type="range"
-                min={1.2}
-                max={3}
-                step={0.1}
-                value={bountyMultiplier}
-                onChange={(e) => setBountyMultiplier(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-          )}
 
           {/* #7 Escalating Difficulty */}
           <div className="flex items-center justify-between">

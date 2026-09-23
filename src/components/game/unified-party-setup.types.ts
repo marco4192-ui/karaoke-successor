@@ -180,8 +180,6 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
   songSelection?: 'random' | 'vote';
   noRepeatProtection?: boolean;
   grandFinaleBestOf?: 1 | 3 | 5;
-  bountyEnabled?: boolean;
-  bountyMultiplier?: number;
   escalatingDifficulty?: boolean;
   shrinkingTimer?: boolean;
   shrinkFactor?: number;

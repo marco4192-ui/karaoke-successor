@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'サイレント・スクリーム',
 },
 battleRoyale: {
-  bounty: 'バウンティ',
   micError: 'マイク',
   survived: '生存',
   visualSettings: 'ビジュアル設定',

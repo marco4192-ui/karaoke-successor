@@ -113,11 +113,6 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
             ⏱️ {t('battleRoyale.shrinkingTimer')}
           </Badge>
         )}
-        {game.settings.bountyEnabled && !isGrandFinale && stats.bountyPlayerId && (
-          <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-xs">
-            🎯 {t('battleRoyale.bountyActive')}
-          </Badge>
-        )}
       </div>
 
       {/* Player Grid - Split by Type */}

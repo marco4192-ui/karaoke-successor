@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Stille schreeuw',
 },
 battleRoyale: {
-  bounty: 'PREMIE',
   micError: 'Microfoon',
   survived: 'Overleeft',
   visualSettings: 'Visuele instellingen',

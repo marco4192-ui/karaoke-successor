@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Безмолвный крик',
 },
 battleRoyale: {
-  bounty: 'НАГРАДА',
   micError: 'Микрофон',
   survived: 'Выжил',
   visualSettings: 'Настройки графики',

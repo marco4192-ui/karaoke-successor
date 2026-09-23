@@ -6,12 +6,14 @@ import {
   getPlayersByScore,
   getBattleRoyaleStats,
   updatePlayerScore,
-  getBountyMultiplier,
   getCurrentMedleySnippet,
   eliminateWeakestMidRound,
+  resolveTieBreakElimination,
+  startTieBreak,
   getEffectiveRoundDuration,
   BattleRoyaleGame,
   BattleRoyalePlayer,
+  TieBreakState,
 } from '@/lib/game/battle-royale';
 import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW } from '@/lib/game/note-utils';
@@ -116,9 +118,9 @@ interface UseBattleRoyaleGameReturn {
   handleStartRoundAfterVote: () => void;
   handleGrandFinaleIntroComplete: () => void;
   setCurrentTime: (_time: number) => void;
-  previousRoundScores: Record<string, number>; // #9 Trend tracking
-  bountyPlayerId: string | null; // #6 Bounty
-  bountyMultiplier: number; // #6 Bounty
+  /** R19 tie-break showdown (active while tied players battle the 10s
+   *  extension) — drives the amber ⚔️ HUD + frame. */
+  tieBreak: TieBreakState | null;
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   playerPitchMap: Map<string, PitchDetectionResult | null>; // Per-player pitch data
@@ -130,11 +132,13 @@ interface UseBattleRoyaleGameReturn {
   eliminationPhase: null | 'eliminating' | 'survivor-flash';
   /** Seconds until the next mid-round elimination (full-song rhythm rounds
    *  only; null when no rhythm elimination is scheduled). Drives the HUD
-   *  badge so the configured interval is VISIBLE while playing. */
+   *  badge so the configured interval is VISIBLE while playing. During a
+   *  tie-break showdown it counts down the SHOWDOWN deadline instead. */
   nextEliminationIn: number | null;
   /** Latest mid-round elimination notice ({name} + id) for the non-blocking
-   *  HUD banner; auto-clears after a few seconds. */
-  midRoundEliminationNotice: { id: string; name: string } | null;
+   *  HUD banner; auto-clears after a few seconds. byCoinFlip = the showdown
+   *  ended in a coin flip (R19). */
+  midRoundEliminationNotice: { id: string; name: string; byCoinFlip?: boolean } | null;
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -457,6 +461,27 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return songs.find(s => s.id === id) ?? null;
   }, [songs]);
 
+  // ── Mid-round elimination HUD notice (2.2-R3 + R19 coin-flip variant) ──
+  // Non-blocking banner: WHO just went out (and whether a coin flip decided
+  // it). Defined BEFORE the round handlers so they can surface forced
+  // showdown resolutions (song ending mid-showdown) on the same banner.
+  const [midRoundEliminationNotice, setMidRoundEliminationNotice] = useState<{ id: string; name: string; byCoinFlip?: boolean } | null>(null);
+  const elimNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (elimNoticeTimerRef.current !== null) clearTimeout(elimNoticeTimerRef.current);
+  }, []);
+
+  const notifyElimination = useCallback((info: { id: string; name: string; byCoinFlip?: boolean }) => {
+    setMidRoundEliminationNotice({ id: info.id, name: info.name, byCoinFlip: info.byCoinFlip });
+    if (elimNoticeTimerRef.current !== null) {
+      clearTimeout(elimNoticeTimerRef.current);
+    }
+    elimNoticeTimerRef.current = setTimeout(() => {
+      elimNoticeTimerRef.current = null;
+      setMidRoundEliminationNotice(null);
+    }, 3500);
+  }, []);
+
   // ── Round Handlers ────────────────────────────────────────────────
   // Consume the pre-fetched song so the next round starts without a loading
   // pause (the media was already warmed during the previous round's tail).
@@ -490,6 +515,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     getRandomSongs,
     getSongById,
     consumePrefetchedSong,
+    notifyElimination,
   });
 
   // Keep gameRefRef in sync with gameRef from round handlers
@@ -527,22 +553,58 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Medley keeps its snippet-based budget; grand finale rounds decide via
   // round wins, not eliminations.
 
-  // HUD notice state (2.2-R3): who just went out + seconds until the next
-  // elimination — makes the configured rhythm visible while playing.
-  const [midRoundEliminationNotice, setMidRoundEliminationNotice] = useState<{ id: string; name: string } | null>(null);
-  const elimNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [nextEliminationIn, setNextEliminationIn] = useState<number | null>(null);
-  useEffect(() => () => {
-    if (elimNoticeTimerRef.current !== null) clearTimeout(elimNoticeTimerRef.current);
-  }, []);
 
   const handleMidRoundElimination = useCallback(() => {
     if (roundEndingRef.current) return;
     // Base on the not-yet-flushed accumulation so the elimination decision
     // sees the very latest scores (same rationale as the game loop).
     const base = pendingScoredGameRef.current ?? gameRef.current;
+
+    // ── R19 showdown: the deadline of an ACTIVE showdown has come —
+    // resolve it (lowest of the tied players goes out; STILL tied → coin
+    // flip; nobody goes out when only one contender remains). ──
+    if (base.tieBreak) {
+      const res = resolveTieBreakElimination(base);
+      if (res) {
+        const updated = res.game;
+        gameRef.current = updated;
+        pendingScoredGameRef.current = updated;
+        if (res.eliminatedId) {
+          const eliminated = updated.players.find(p => p.id === res.eliminatedId);
+          if (eliminated) {
+            notifyElimination({ id: eliminated.id, name: eliminated.name, byCoinFlip: res.byCoinFlip });
+          }
+        }
+        if (updated.status === 'completed') {
+          // Coin flip decided the last man standing: stop media + pitch,
+          // then commit — the screen router switches to the WinnerView.
+          if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+          if (videoRef.current) { videoRef.current.pause(); videoRef.current.src = ''; }
+          audioHasPlayedRef.current = false;
+          multiPitch.stop();
+          roundEndingRef.current = true; // game loop stops touching the game
+        }
+        onUpdateGame(updated);
+      }
+      return;
+    }
+
     const result = eliminateWeakestMidRound(base);
     if (!result) return;
+
+    // ── R19 user rule: TIE at the bottom → start the 10-second showdown
+    // instead of eliminating arbitrarily. The song keeps playing; the
+    // ticker counts down the showdown and fires this handler again at its
+    // deadline (resolution branch above). ──
+    if ('tie' in result) {
+      const showdown = startTieBreak(base, result.tiedIds);
+      gameRef.current = showdown;
+      pendingScoredGameRef.current = showdown;
+      onUpdateGame(showdown);
+      return;
+    }
+
     const updated = result.game;
     gameRef.current = updated;
     // Keep the loop's pending base consistent so the throttled store write
@@ -554,14 +616,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     // configured rhythm is unmissable).
     const eliminated = updated.players.find(p => p.id === result.eliminatedId);
     if (eliminated) {
-      setMidRoundEliminationNotice({ id: eliminated.id, name: eliminated.name });
-      if (elimNoticeTimerRef.current !== null) {
-        clearTimeout(elimNoticeTimerRef.current);
-      }
-      elimNoticeTimerRef.current = setTimeout(() => {
-        elimNoticeTimerRef.current = null;
-        setMidRoundEliminationNotice(null);
-      }, 3500);
+      notifyElimination({ id: eliminated.id, name: eliminated.name });
     }
 
     if (updated.status === 'completed') {
@@ -574,8 +629,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       roundEndingRef.current = true; // game loop stops touching the game
     }
     onUpdateGame(updated);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs + stable multiPitch object
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs + stable multiPitch object + stable notifyElimination
+  }, [notifyElimination]);
 
   const handleMidRoundElimRef = useRef(handleMidRoundElimination);
   useEffect(() => {
@@ -619,7 +674,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // next round CONTINUES the leftover countdown (min 5s) instead of
   // re-arming the full interval — an elimination that was 8s away stays
   // 8s away, regardless of how long the next song is.
+  // R19: an ACTIVE tie-break showdown owns the clock while it runs (the
+  // ticker derives its deadline from game.tieBreak.until) — leave the ref
+  // alone so the showdown resolution path can re-arm it cleanly.
   useEffect(() => {
+    if (gameRef.current?.tieBreak) {
+      nextElimAtRef.current = null;
+      return;
+    }
     if (game.status !== 'playing' || !isFullSongRound) {
       // Leaving a rhythm round (song ended → voting / finale / game over):
       // remember the remaining elimination time so the NEXT round can
@@ -659,16 +721,34 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   // Pause: shift the deadline by the paused duration — the rhythm rests
   // during the pause and resumes where it was, never firing while paused.
+  // R19: an active showdown deadline rests during the pause too (the tied
+  // players must not lose extension time while the game stands still).
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
       elimPausedAtRef.current = Date.now();
     } else if (elimPausedAtRef.current !== null) {
+      const pausedFor = Date.now() - elimPausedAtRef.current;
       if (nextElimAtRef.current !== null) {
-        nextElimAtRef.current += Date.now() - elimPausedAtRef.current;
+        nextElimAtRef.current += pausedFor;
+      }
+      const gBase = pendingScoredGameRef.current ?? gameRef.current;
+      if (gBase?.tieBreak) {
+        const shifted: BattleRoyaleGame = {
+          ...gBase,
+          tieBreak: { ...gBase.tieBreak, until: gBase.tieBreak.until + pausedFor },
+        };
+        gameRef.current = shifted;
+        pendingScoredGameRef.current = shifted;
+        onUpdateGame(shifted);
       }
       elimPausedAtRef.current = null;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reads refs on purpose; onUpdateGame is stable from the screen
   }, [pauseDialogAction]);
+
+  // R19: the ticker also runs during a showdown in NON-rhythm rounds (medley
+  // / grand finale) — it counts the showdown down and resolves it.
+  const hasTieBreak = !!game.tieBreak;
 
   // Ticker: cheap 500ms check that fires the elimination when the deadline
   // passes, then re-arms with a freshly computed interval (player count may
@@ -677,13 +757,49 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // is still running (e.g. a missed transition after an unexpected state
   // change), re-arm instead of silently staying disarmed — the rhythm must
   // never stop mid-round.
+  // R19: an ACTIVE tie-break showdown takes precedence — countdown to its
+  // deadline; at expiry, rhythm showdowns resolve directly (elimination /
+  // coin flip), medley & finale showdowns end the round (the round-end path
+  // holds the final resolver: coin flip on a still-standing tie).
   useEffect(() => {
-    if (game.status !== 'playing' || !isFullSongRound) {
+    if (game.status !== 'playing' || (!isFullSongRound && !hasTieBreak)) {
       setNextEliminationIn(null);
       return;
     }
     const iv = setInterval(() => {
       if (pauseDialogAction === 'song-pause') return; // paused — the clock is shifted, not ticking
+
+      // ── R19: active showdown — its deadline IS the clock ──
+      const tie = gameRef.current.tieBreak;
+      if (tie) {
+        setNextEliminationIn(Math.max(0, Math.ceil((tie.until - Date.now()) / 1000)));
+        if (Date.now() < tie.until) return;
+
+        const g0 = gameRef.current;
+        const lastRound0 = g0.rounds[g0.rounds.length - 1];
+        if (lastRound0?.roundType === 'full' && !g0.isGrandFinale) {
+          // Rhythm showdown: resolve the elimination directly.
+          handleMidRoundElimRef.current();
+        } else {
+          // Medley / grand-finale showdown: the round ends NOW — the
+          // round-end path resolves the tie (coin flip if still tied).
+          handleRoundEndRef.current();
+        }
+
+        // Re-arm the rhythm clock after the resolution (or disarm at game
+        // end / when another showdown took over)
+        const g = gameRef.current;
+        const active = g.players.filter(p => !p.eliminated).length;
+        const finaleEnabled = g.settings.grandFinaleBestOf > 1;
+        if (g.status === 'completed' || g.tieBreak || (finaleEnabled ? active <= 2 : active <= 1)) {
+          nextElimAtRef.current = null;
+          setNextEliminationIn(null);
+        } else {
+          nextElimAtRef.current = Date.now() + elimIntervalSec(g) * 1000;
+        }
+        return;
+      }
+
       let next = nextElimAtRef.current;
 
       // Self-heal: re-arm a lost deadline (never extend an armed one).
@@ -708,13 +824,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       handleMidRoundElimRef.current();
 
-      // Re-arm or disarm based on the post-elimination state
+      // Re-arm or disarm based on the post-elimination state. R19: a
+      // freshly STARTED showdown (tie signal) owns the clock now — its
+      // deadline comes from game.tieBreak.until, so disarm the rhythm ref.
       const g = gameRef.current;
       const active = g.players.filter(p => !p.eliminated).length;
       const finaleEnabled = g.settings.grandFinaleBestOf > 1;
-      if (g.status === 'completed' || (finaleEnabled ? active <= 2 : active <= 1)) {
+      if (g.status === 'completed' || g.tieBreak || (finaleEnabled ? active <= 2 : active <= 1)) {
         // The finale duel decides between the last two / last man standing
-        // won — no further rhythm eliminations.
+        // won / a showdown is running — no further rhythm eliminations.
         nextElimAtRef.current = null;
         setNextEliminationIn(null);
       } else {
@@ -723,7 +841,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }, 500);
     return () => clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + primitives only
-  }, [game.status, isFullSongRound, pauseDialogAction]);
+  }, [game.status, isFullSongRound, hasTieBreak, pauseDialogAction]);
 
   // ── Item 8.1: Companion game-state sync ──────────────────────────
   // Same mechanism CPTM/PTM use (useMobileGameSync): pushes the current
@@ -1040,8 +1158,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
             let updatedGame: BattleRoyaleGame;
             if (tick.hit) {
-              const bountyMult = getBountyMultiplier(currentGame, playerId);
-              const adjustedPoints = Math.round(tick.points * bountyMult);
+              // R19: raw points — the bounty multiplier was removed together
+              // with the bounty system (per-round scores, user decision).
+              const adjustedPoints = Math.round(tick.points);
               updatedGame = updatePlayerScore(
                 currentGame,
                 playerId,
@@ -1312,9 +1431,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     setCurrentTime,
-    previousRoundScores: game.previousRoundScores,
-    bountyPlayerId: game.bountyPlayerId,
-    bountyMultiplier: game.settings.bountyMultiplier,
+    tieBreak: game.tieBreak,
     pitchStats: pitchStatsRef.current,
     visibleNotes: visibleNotesRef.current,
     playerPitchMap: multiPitch.playerPitches,

@@ -758,6 +758,14 @@
   animation: br-countdown-critical 1.05s ease-in-out infinite;
 }
 
+/* R19: coin-flip elimination — the 🪙 emoji spins around its Y axis when a
+   tie-break showdown had to be decided by the coin (Münzwurf). */
+@keyframes brCoinFlip {
+  0%   { transform: rotateY(0deg) scale(1); }
+  50%  { transform: rotateY(360deg) scale(1.35); }
+  100% { transform: rotateY(720deg) scale(1); }
+}
+
 .elimination-camera-active::after {
   content: '';
   position: fixed;

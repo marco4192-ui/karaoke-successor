@@ -14,6 +14,7 @@ import {
   BattleRoyaleGame,
   BattleRoyalePlayer,
   getCurrentMedleySnippet,
+  TieBreakState,
 } from '@/lib/game/battle-royale';
 import { LyricLineDisplay } from '@/components/game/lyric-line-display';
 import { loadWebcamConfig } from '@/components/game/webcam-background';
@@ -84,9 +85,10 @@ interface PlayingViewProps {
   baseVolumeRef: React.MutableRefObject<number>;
   setCurrentTime: (_time: number) => void;
   onRoundEnd: () => void;
-  previousRoundScores: Record<string, number>;
-  bountyPlayerId: string | null;
-  bountyMultiplier: number;
+  /** R19 tie-break showdown (active while tied players battle the 10s
+   *  extension) — drives the amber ⚔️ HUD, the amber frame and the amber
+   * card highlight of the tied players. */
+  tieBreak?: TieBreakState | null;
   // New props
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
@@ -95,10 +97,12 @@ interface PlayingViewProps {
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
   eliminationPhase?: null | 'eliminating' | 'survivor-flash';
-  /** Seconds until the next mid-round elimination (null = none scheduled). */
+  /** Seconds until the next mid-round elimination (null = none scheduled).
+   *  During a tie-break showdown it counts down the SHOWDOWN deadline. */
   nextEliminationIn?: number | null;
-  /** Latest mid-round elimination for the non-blocking HUD banner. */
-  midRoundEliminationNotice?: { id: string; name: string } | null;
+  /** Latest mid-round elimination for the non-blocking HUD banner.
+   *  byCoinFlip = the showdown ended in a coin flip (R19). */
+  midRoundEliminationNotice?: { id: string; name: string; byCoinFlip?: boolean } | null;
   /** Per-player note performance samples (ghost notes): playerId → noteKey → samples. */
   brNotePerformance?: Map<string, Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>>>;
 }
@@ -121,9 +125,7 @@ export function PlayingView({
   baseVolumeRef,
   setCurrentTime,
   onRoundEnd,
-  previousRoundScores,
-  bountyPlayerId,
-  bountyMultiplier,
+  tieBreak,
   pitchStats,
   visibleNotes,
   countdown,
@@ -258,37 +260,6 @@ export function PlayingView({
     }
   }, [roundTimeLeft, game.status, onRoundEnd]);
 
-  // #9 Trend: Calculate score deltas from previous round
-  const scoreDeltas = useMemo(() => {
-    const deltas: Record<string, number> = {};
-    for (const player of game.players) {
-      const prev = previousRoundScores[player.id] ?? 0;
-      deltas[player.id] = player.score - prev;
-    }
-    return deltas;
-  }, [game.players, previousRoundScores]);
-
-  // Rank change calculation for trend arrows
-  const prevRanks = useMemo(() => {
-    const entries = Object.entries(previousRoundScores);
-    if (entries.length === 0) return {};
-    const sorted = [...entries].sort((a, b) => b[1] - a[1]);
-    const ranks: Record<string, number> = {};
-    sorted.forEach(([id], i) => { ranks[id] = i + 1; });
-    return ranks;
-  }, [previousRoundScores]);
-
-  const currentRanks = useMemo(() => {
-    const sorted = [...game.players].sort((a, b) => {
-      if (a.eliminated && !b.eliminated) return 1;
-      if (!a.eliminated && b.eliminated) return -1;
-      return b.score - a.score;
-    });
-    const ranks: Record<string, number> = {};
-    sorted.forEach((p, i) => { ranks[p.id] = i + 1; });
-    return ranks;
-  }, [game.players]);
-
   // Danger zone detection
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);
   const dangerZone = activeSorted.length > 3 ? activeSorted.slice(-3) : activeSorted;
@@ -300,6 +271,9 @@ export function PlayingView({
   //    (mid-round eliminations; carries across song changes since R15/1.3)
   //  • medley rounds → the round timer (round end = elimination there)
   //  • grand finale → none (the duel decides a WIN, nobody is eliminated)
+  // R19: during a tie-break SHOWDOWN the same HUD turns amber (⚔️ Stechen!)
+  // and counts down the showdown deadline — including medley/finale rounds.
+  const showdownActive = !!tieBreak;
   const elimCountdownSec: number | null =
     nextEliminationIn != null
       ? nextEliminationIn
@@ -311,17 +285,23 @@ export function PlayingView({
   // True when the elimination clock IS the round timer (medley rounds) —
   // the bottom-left round badge then hides to avoid showing the same
   // number twice (a numeric equality check would misfire in rhythm rounds
-  // when both clocks coincidentally hold the same value).
+  // when both clocks coincidentally hold the same value). Hidden during a
+  // showdown too (its countdown owns the display, the round timer is at 0).
   const elimFromRoundTimer =
-    nextEliminationIn == null && !game.isGrandFinale && currentRound?.roundType === 'medley';
+    !showdownActive && nextEliminationIn == null && !game.isGrandFinale && currentRound?.roundType === 'medley';
   // Critical: last 5 seconds of EVERY countdown → alarm frame + beating number
   const isElimCritical = elimCountdownSec != null && elimCountdownSec <= 5 && elimCountdownSec > 0;
-  const isDangerZone = isElimCritical;
+  const isDangerZone = isElimCritical && !showdownActive;
 
   const isDanger = useCallback((player: BattleRoyalePlayer) =>
     isDangerZone && !player.eliminated && dangerZone.some(d => d.id === player.id),
     [isDangerZone, dangerZone]
   );
+
+  // R19: the tied players battling the showdown glow amber on their cards.
+  const isInShowdown = useCallback((player: BattleRoyalePlayer) =>
+    showdownActive && !player.eliminated && !!tieBreak && tieBreak.playerIds.includes(player.id),
+    [showdownActive, tieBreak]);
 
   const isLowest = (player: BattleRoyalePlayer) =>
     !player.eliminated && activeSorted.length > 0 && activeSorted[activeSorted.length - 1].id === player.id;
@@ -332,7 +312,9 @@ export function PlayingView({
   // what puts the bottom players at risk; medley rounds keep the identical
   // behaviour since their round timer IS the elimination clock).
   const eliminationAnimationEnabled = game.settings.eliminationAnimation;
-  const isEliminationCamera = eliminationAnimationEnabled && elimCountdownSec != null && elimCountdownSec <= 10 && elimCountdownSec > 0;
+  // R19: the amber showdown frame replaces the red elimination drama while
+  // the showdown runs (the tied players get their own visual language).
+  const isEliminationCamera = eliminationAnimationEnabled && !showdownActive && elimCountdownSec != null && elimCountdownSec <= 10 && elimCountdownSec > 0;
 
   // Standard lyrics display: find current and next lyric lines using LyricLineDisplay
   // R15 (user request 1.2): 3s preview window — the lyric block fades back in
@@ -459,70 +441,113 @@ export function PlayingView({
           During the last 5 seconds of EVERY elimination countdown a narrow
           red frame around the ENTIRE screen blinks like an alarm beacon —
           hard on/off, ~1.05s cycle (dramatic, not frantic). Always on: this
-          is the core elimination warning, not an optional camera effect. */}
-      {isElimCritical && (
+          is the core elimination warning, not an optional camera effect.
+          R19: while a tie-break SHOWDOWN runs, the frame blinks AMBER for
+          its entire duration (⚔️ — the tied players get their own visual
+          language, distinct from the red elimination warning). */}
+      {showdownActive ? (
+        <div
+          data-testid="br-showdown-frame"
+          className="fixed inset-0 z-40 pointer-events-none animate-br-alarm-frame border-[6px] border-amber-400"
+          style={{ boxShadow: 'inset 0 0 70px rgba(251, 191, 36, 0.30), 0 0 26px rgba(251, 191, 36, 0.45)' }}
+        />
+      ) : isElimCritical ? (
         <div
           data-testid="br-alarm-frame"
           className="fixed inset-0 z-40 pointer-events-none animate-br-alarm-frame border-[6px] border-red-500"
           style={{ boxShadow: 'inset 0 0 70px rgba(239, 68, 68, 0.35), 0 0 26px rgba(239, 68, 68, 0.5)' }}
         />
-      )}
+      ) : null}
 
-      {/* ─────────── R16 (user request 1): ELIMINATION COUNTDOWN ───────────
-          Prominent, large, red, centered at the top edge. Shows the ONE
-          clock that decides who drops out next (rhythm interval in full-song
+      {/* ─────────── R16/R19: ELIMINATION COUNTDOWN / SHOWDOWN ───────────
+          Prominent, large, centered at the top edge. Shows the ONE clock
+          that decides who drops out next (rhythm interval in full-song
           rounds / round timer in medley rounds; hidden in the grand finale).
-          Critical (≤ 5s): the number beats in sync with the alarm frame. */}
+          Critical (≤ 5s): the number beats in sync with the alarm frame.
+          R19 showdown: amber ⚔️ variant counting down the 10s extension —
+          "sing now or the coin decides!" */}
       {elimCountdownSec != null && (
         <div
-          data-testid="br-elim-countdown"
+          data-testid={showdownActive ? 'br-showdown-countdown' : 'br-elim-countdown'}
           className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
           role="timer"
-          aria-label={t('battleRoyale.nextEliminationIn').replace('{n}', String(elimCountdownSec))}
+          aria-label={showdownActive
+            ? t('battleRoyale.showdownAria').replace('{n}', String(elimCountdownSec))
+            : t('battleRoyale.nextEliminationIn').replace('{n}', String(elimCountdownSec))}
         >
           <div
             className={`flex items-center gap-3 rounded-2xl border px-5 py-1.5 backdrop-blur-md shadow-xl transition-all duration-300 ${
-              isElimCritical
-                ? 'bg-red-950/85 border-red-500 shadow-red-600/40'
-                : 'bg-black/55 border-red-500/50 shadow-red-950/50'
+              showdownActive
+                ? isElimCritical
+                  ? 'bg-amber-950/90 border-amber-300 shadow-amber-400/40'
+                  : 'bg-amber-950/70 border-amber-500/70 shadow-amber-950/50'
+                : isElimCritical
+                  ? 'bg-red-950/85 border-red-500 shadow-red-600/40'
+                  : 'bg-black/55 border-red-500/50 shadow-red-950/50'
             }`}
           >
             <span
               aria-hidden="true"
               className={`text-2xl select-none ${isElimCritical ? 'animate-br-countdown-critical' : ''}`}
             >
-              💀
+              {showdownActive ? '⚔️' : '💀'}
             </span>
             <span
               className={`font-mono font-black tabular-nums leading-none select-none ${
                 isElimCritical
-                  ? 'text-5xl text-red-400 animate-br-countdown-critical drop-shadow-[0_0_16px_rgba(248,113,113,0.9)]'
-                  : 'text-4xl text-red-500'
+                  ? showdownActive
+                    ? 'text-5xl text-amber-300 animate-br-countdown-critical drop-shadow-[0_0_16px_rgba(252,211,77,0.9)]'
+                    : 'text-5xl text-red-400 animate-br-countdown-critical drop-shadow-[0_0_16px_rgba(248,113,113,0.9)]'
+                  : showdownActive
+                    ? 'text-4xl text-amber-400'
+                    : 'text-4xl text-red-500'
               }`}
             >
               {elimCountdownSec}
             </span>
-            <span className="max-w-[90px] text-[10px] font-bold uppercase tracking-widest leading-tight text-red-300/80 text-left">
-              {t('battleRoyale.eliminationCountdownLabel')}
+            <span className={`max-w-[110px] text-[10px] font-bold uppercase tracking-widest leading-tight text-left ${
+              showdownActive ? 'text-amber-200/90' : 'text-red-300/80'
+            }`}>
+              {showdownActive
+                ? t('battleRoyale.showdownLabel')
+                : t('battleRoyale.eliminationCountdownLabel')}
             </span>
           </div>
         </div>
       )}
 
-      {/* ─────────── 2.2-R3: Mid-round elimination banner (non-blocking) ───────────
+      {/* ─────────── 2.2-R3 / R19: Mid-round elimination banner (non-blocking) ───────────
           Surfaces WHO just went out in the configured rhythm — the inline ✕ on
           the player card alone was easy to miss (user follow-up: "keine
-          Veränderung im Spiel"). Auto-clears after a few seconds (hook-side). */}
+          Veränderung im Spiel"). Auto-clears after a few seconds (hook-side).
+          R19: coin-flip eliminations get their own amber 🪙 variant. */}
       {midRoundEliminationNotice && (
         <div
           className="absolute top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-300"
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-center gap-2 rounded-full bg-red-950/85 border border-red-500/50 px-4 py-2 shadow-lg shadow-red-950/50 backdrop-blur-sm">
-            <span aria-hidden="true" className="text-lg">💀</span>
-            <span className="text-sm font-semibold text-red-200">
-              {t('battleRoyale.midRoundEliminated').replace('{name}', midRoundEliminationNotice.name)}
+          <div
+            data-testid={midRoundEliminationNotice.byCoinFlip ? 'br-coinflip-notice' : 'br-elimination-notice'}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 shadow-lg backdrop-blur-sm border ${
+              midRoundEliminationNotice.byCoinFlip
+                ? 'bg-amber-950/90 border-amber-400/60 shadow-amber-950/50'
+                : 'bg-red-950/85 border-red-500/50 shadow-red-950/50'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className="text-lg inline-block"
+              style={midRoundEliminationNotice.byCoinFlip ? { animation: 'brCoinFlip 0.9s ease-out' } : undefined}
+            >
+              {midRoundEliminationNotice.byCoinFlip ? '🪙' : '💀'}
+            </span>
+            <span className={`text-sm font-semibold ${
+              midRoundEliminationNotice.byCoinFlip ? 'text-amber-200' : 'text-red-200'
+            }`}>
+              {midRoundEliminationNotice.byCoinFlip
+                ? t('battleRoyale.coinFlipEliminated').replace('{name}', midRoundEliminationNotice.name)
+                : t('battleRoyale.midRoundEliminated').replace('{name}', midRoundEliminationNotice.name)}
             </span>
           </div>
         </div>
@@ -690,20 +715,9 @@ export function PlayingView({
             const eliminated = player.eliminated;
             // 6.4: blinking-X phase right after the elimination became visible
             const justEliminated = eliminated && blinkEliminatedId === player.id;
-            const isBounty = bountyPlayerId === player.id;
+            // R19: this player is battling the tie-break showdown
+            const inShowdown = isInShowdown(player);
             const isLeader = !eliminated && sortedPlayers[0]?.id === player.id && sortedPlayers[0]?.score > 0;
-
-            // #9 Trend arrow
-            const prevRank = prevRanks[player.id];
-            const curRank = currentRanks[player.id];
-            const delta = scoreDeltas[player.id] ?? 0;
-            let trendArrow: string | null = null;
-            let trendColor = 'text-white/40';
-            if (prevRank !== undefined && curRank !== undefined && !eliminated) {
-              if (curRank < prevRank) { trendArrow = '▲'; trendColor = 'text-green-400'; }
-              else if (curRank > prevRank) { trendArrow = '▼'; trendColor = 'text-red-400'; }
-              else { trendArrow = '●'; trendColor = 'text-white/40'; }
-            }
 
             return (
               <div
@@ -714,12 +728,12 @@ export function PlayingView({
                     ? 'bg-red-500/25 border-2 border-red-500 shadow-lg shadow-red-500/30'
                     : eliminated
                     ? 'bg-white/5 grayscale opacity-30 scale-90 pointer-events-none'
-                    : danger
-                      ? 'bg-red-500/20 border-2 border-red-500 animate-pulse scale-105 shadow-lg shadow-red-500/30'
-                      : lowest
-                        ? 'bg-gradient-to-br from-red-500/15 to-pink-500/15 border border-red-500/40'
-                        : isBounty
-                          ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-500/60 shadow-lg shadow-amber-500/20'
+                    : inShowdown
+                      ? 'bg-amber-500/20 border-2 border-amber-400 animate-pulse scale-105 shadow-lg shadow-amber-500/30'
+                      : danger
+                        ? 'bg-red-500/20 border-2 border-red-500 animate-pulse scale-105 shadow-lg shadow-red-500/30'
+                        : lowest
+                          ? 'bg-gradient-to-br from-red-500/15 to-pink-500/15 border border-red-500/40'
                           : 'bg-gradient-to-br from-white/10 to-white/5 border border-white/10'
                   }
                 `}
@@ -732,14 +746,14 @@ export function PlayingView({
                       src={player.avatar}
                       alt={player.name}
                       className={`rounded-full object-cover border-2 ${
-                        isBounty ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
+                        inShowdown ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
                       }`}
                       style={{ width: '32px', height: '32px' }}
                     />
                   ) : (
                     <div
                       className={`rounded-full flex items-center justify-center text-white font-bold border-2 ${
-                        isBounty ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
+                        inShowdown ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
                       }`}
                       style={{
                         width: '32px',
@@ -755,9 +769,9 @@ export function PlayingView({
                     style={{ fontSize: '8px' }}>
                     {player.playerType === 'microphone' ? '🎤' : '📱'}
                   </div>
-                  {/* #6 Bounty target indicator */}
-                  {isBounty && !eliminated && (
-                    <div className="absolute -top-1 -left-1 text-[10px] animate-bounce">🎯</div>
+                  {/* R19: showdown contender indicator */}
+                  {inShowdown && (
+                    <div className="absolute -top-1 -left-1 text-[10px] animate-bounce">⚔️</div>
                   )}
                 </div>
 
@@ -765,48 +779,31 @@ export function PlayingView({
                 <div className="flex flex-col min-w-0 flex-1">
                   {/* Name */}
                   <div className={`text-[10px] font-medium truncate ${
-                    eliminated ? 'text-white/30' : 'text-white/80'
+                    inShowdown ? 'text-amber-200' : eliminated ? 'text-white/30' : 'text-white/80'
                   }`}>
                     {player.name}
                   </div>
 
-                  {/* Score + #9 Trend arrow */}
+                  {/* Score (R19: round points — every round starts at 0) */}
                   <div className="flex items-center gap-0.5">
                     <div className={`font-bold text-xs ${
                       eliminated
                         ? 'text-white/20'
-                        : lowest
-                          ? 'text-red-300'
-                          : 'text-white'
+                        : inShowdown
+                          ? 'text-amber-300'
+                          : lowest
+                            ? 'text-red-300'
+                            : 'text-white'
                     }`}
-                    style={isLeader && !isBounty ? { textShadow: '0 0 10px rgba(250,204,21,0.5)' } : undefined}
+                    style={isLeader ? { textShadow: '0 0 10px rgba(250,204,21,0.5)' } : undefined}
                     >
                       <AnimatedNumber value={player.score} />
-                      {isLeader && !isBounty && <span className="ml-0.5 text-yellow-400 text-[9px]">👑</span>}
+                      {isLeader && <span className="ml-0.5 text-yellow-400 text-[9px]">👑</span>}
                     </div>
-                    {/* #9 Trend arrow */}
-                    {trendArrow && (
-                      <span className={`text-[9px] font-bold ${trendColor}`} style={{ marginTop: '-2px' }}>
-                        {trendArrow}
-                      </span>
-                    )}
                   </div>
 
                   {/* Bottom info row */}
                   <div className="flex items-center gap-1">
-                    {/* #9 Score delta this round */}
-                    {delta > 0 && !eliminated && (
-                      <span className="text-[8px] text-green-400">+{delta.toLocaleString()}</span>
-                    )}
-
-                    {/* #6 Bounty multiplier indicator */}
-                    {isBounty && !eliminated && (
-                      <span className="text-[8px] text-amber-400">{t('battleRoyale.bounty')}</span>
-                    )}
-                    {!isBounty && !eliminated && bountyPlayerId && (
-                      <span className="text-[8px] text-amber-400/60">×{bountyMultiplier}</span>
-                    )}
-
                     {/* Combo indicator */}
                     {!eliminated && player.currentCombo > 2 && (
                       <span className="text-[8px] text-amber-400">
@@ -879,8 +876,9 @@ export function PlayingView({
       <div className="absolute bottom-2 left-3 z-30 pointer-events-none flex items-center gap-2">
         {/* Round/song countdown — bottom-left (unified HUD spec, Muster F).
             R16: hidden when it would duplicate the prominent top elimination
-            countdown (medley rounds — round timer IS the elimination clock). */}
-        {!elimFromRoundTimer && (
+            countdown (medley rounds — round timer IS the elimination clock;
+            showdown — the ⚔️ countdown owns the display, round timer is 0). */}
+        {!elimFromRoundTimer && !showdownActive && (
           <Badge
             className={`font-mono text-xs ${
               roundTimeLeft <= 5

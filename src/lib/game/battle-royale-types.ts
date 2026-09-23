@@ -47,14 +47,20 @@ export interface BattleRoyaleRound {
   endTime: number | null;
   eliminatedPlayerId: string | null;
   roundType: 'full' | 'short' | 'medley' | 'grand-finale';
-  // Bounty info
-  bountyPlayerId: string | null;
-  bountyClaimed: boolean;
-  bountyClaimedById: string | null;
   // Effective difficulty at time of round
   effectiveDifficulty: Difficulty;
-  // Score deltas for trend tracking (playerId -> points gained this round)
+  // Score deltas for this round (playerId -> points gained this round)
   roundScoreDeltas: Record<string, number>;
+}
+
+/** R19 (user decision): tie-break showdown. When an elimination would hit
+ *  tied players, they get a fixed 10-second extension to break the tie by
+ *  singing; if it is still tied afterwards, a coin flip decides. */
+export interface TieBreakState {
+  /** Epoch-ms deadline of the extension (shifted by pauses). */
+  until: number;
+  /** The tied players battling in this showdown. */
+  playerIds: string[];
 }
 
 export interface RoundHighlight {
@@ -64,8 +70,8 @@ export interface RoundHighlight {
   topScorerId: string;
   topScorerName: string;
   topScoreDelta: number;
-  bountyClaimed: boolean;
-  bountyClaimedById: string | null;
+  /** R19: this elimination/round win was decided by coin flip. */
+  byCoinFlip: boolean;
 }
 
 export interface BattleRoyaleGameStats {
@@ -121,12 +127,14 @@ export interface BattleRoyaleGame {
   // Song no-repeat protection (#3)
   recentlyPlayedSongIds: string[];
 
-  // Previous round scores for trend arrows (#9)
-  // Snapshot of each player's score at the START of the current round
+  // Previous round scores — snapshot of each player's score at the START of
+  // the current round. R19: scores reset every round (per-round competition),
+  // so this snapshot is the DELTA BOOKKEEPING for roundScoreDeltas (and is
+  // all-zeros for active players right after the reset).
   previousRoundScores: Record<string, number>;
 
-  // Bounty system (#6)
-  bountyPlayerId: string | null;
+  // R19 tie-break showdown (active while tied players battle the extension)
+  tieBreak: TieBreakState | null;
 
   // Grand Finale (#4)
   isGrandFinale: boolean;
@@ -179,10 +187,6 @@ export interface BattleRoyaleSettings {
   // Grand Finale (#4)
   grandFinaleBestOf: 1 | 3 | 5;
 
-  // Bounty system (#6)
-  bountyEnabled: boolean;
-  bountyMultiplier: number;
-
   // Dynamic difficulty (#7)
   escalatingDifficulty: boolean;
 
@@ -223,10 +227,6 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
   // #4 Grand Finale
   grandFinaleBestOf: 1,
 
-  // #6 Bounty system
-  bountyEnabled: true,
-  bountyMultiplier: 1.5,
-
   // #7 Dynamic difficulty
   escalatingDifficulty: false,
 
@@ -247,3 +247,6 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
 
 export const DIFFICULTY_ORDER: Difficulty[] = ['easy', 'medium', 'hard'];
 export const ESCALATION_INTERVAL = 3; // rounds between difficulty increases
+
+/** R19 (user decision): length of the tie-break showdown extension in seconds. */
+export const TIE_BREAK_EXTENSION_SECONDS = 10;

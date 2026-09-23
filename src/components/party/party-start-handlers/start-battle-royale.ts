@@ -6,7 +6,7 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
   const s = result.settings as {
     roundDuration?: number; finalRoundDuration?: number; medleyMode?: boolean;
     songSelection?: string; noRepeatProtection?: boolean; grandFinaleBestOf?: 1 | 3 | 5;
-    bountyEnabled?: boolean; bountyMultiplier?: number; escalatingDifficulty?: boolean;
+    escalatingDifficulty?: boolean;
     shrinkingTimer?: boolean; shrinkFactor?: number; minRoundDuration?: number;
     showNoteHighway?: boolean;
     showVideoBackground?: boolean; countdownDuration?: number;
@@ -58,8 +58,6 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     noRepeatProtection: s.noRepeatProtection ?? true,
     noRepeatCount: 10,
     grandFinaleBestOf: (s.grandFinaleBestOf as 1 | 3 | 5) ?? 1,
-    bountyEnabled: s.bountyEnabled ?? true,
-    bountyMultiplier: s.bountyMultiplier ?? 1.5,
     escalatingDifficulty: s.escalatingDifficulty ?? false,
     shrinkingTimer: s.shrinkingTimer ?? false,
     shrinkFactor: s.shrinkFactor ?? 5,

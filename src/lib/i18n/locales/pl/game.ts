@@ -929,7 +929,6 @@ rankingTitles: {
   silentScream: 'Cichy krzyk',
 },
 battleRoyale: {
-  bounty: 'NAGRODA',
   micError: 'Mikrofon',
   survived: 'Przeżył',
   visualSettings: 'Ustawienia graficzne',

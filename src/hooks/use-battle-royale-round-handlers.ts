@@ -12,6 +12,10 @@ import {
   startVotingPhase,
   resolveVote,
   submitVote,
+  detectRoundEndTie,
+  resolveTieBreakElimination,
+  startTieBreak,
+  TIE_BREAK_EXTENSION_SECONDS,
   BattleRoyaleGame,
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
@@ -32,6 +36,9 @@ interface UseBattleRoyaleRoundHandlersParams {
   /** Consumes the pre-fetched next song (warmed during the last seconds of
    *  the previous round) so the round transition needs no loading pause. */
   consumePrefetchedSong: () => Song | null;
+  /** Surfaces a mid-round/forced elimination on the HUD banner (R19: with
+   *  byCoinFlip for showdown coin-flip decisions). */
+  notifyElimination: (_info: { id: string; name: string; byCoinFlip?: boolean }) => void;
 }
 
 interface UseBattleRoyaleRoundHandlersReturn {
@@ -73,6 +80,7 @@ export function useBattleRoyaleRoundHandlers({
   getRandomSongs,
   getSongById,
   consumePrefetchedSong,
+  notifyElimination,
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
   const [eliminationPhase] = useState<null | 'eliminating' | 'survivor-flash'>(null);
@@ -92,6 +100,10 @@ export function useBattleRoyaleRoundHandlers({
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const survivorFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // R19: lifts the roundEnding guard 600ms after a showdown started — the
+  // duplicate round-end calls (timer hook + PlayingView auto-end, ~500ms
+  // apart) must not re-enter and tear the freshly started showdown down.
+  const showdownGuardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRoundEndRef = useRef<() => void>(() => {});
   const onSnippetEndRef = useRef<(() => void) | null>(null);
 
@@ -137,6 +149,32 @@ export function useBattleRoyaleRoundHandlers({
     // loops when combined with React effect chains during round transitions.
     const currentGame = gameRef.current;
 
+    // ── R19 (user rule): tie at round end → SHOWDOWN instead of ending ──
+    // Medley rounds eliminate at round end, grand finale rounds decide a
+    // round WIN — when the threatened players are TIED, they get a 10-second
+    // extension to break the tie by singing (coin flip if still tied
+    // afterwards). The round timer already hit 0; the showdown countdown
+    // takes over the HUD and fires this handler again at the deadline.
+    // Must run BEFORE the audio teardown — the song keeps playing!
+    if (currentGame.status === 'playing' && !currentGame.tieBreak) {
+      const tie = detectRoundEndTie(currentGame);
+      if (tie) {
+        const showdown = startTieBreak(currentGame, tie.tiedIds, TIE_BREAK_EXTENSION_SECONDS);
+        gameRef.current = showdown;
+        onUpdateGameRef.current(showdown);
+        // Debounce the duplicate round-end calls that fire ~500ms after the
+        // timer hits 0 (timer hook + PlayingView auto-end): they must NOT
+        // re-enter here and tear the showdown down. Scoring continues — the
+        // guard lifts by itself after 600ms.
+        if (showdownGuardTimerRef.current) clearTimeout(showdownGuardTimerRef.current);
+        showdownGuardTimerRef.current = setTimeout(() => {
+          showdownGuardTimerRef.current = null;
+          roundEndingRef.current = false;
+        }, 600);
+        return;
+      }
+    }
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
@@ -168,13 +206,37 @@ export function useBattleRoyaleRoundHandlers({
       !currentGame.isGrandFinale &&
       currentGame.status === 'playing';
     if (isFullSongRhythmRound) {
-      const activeCount = getActivePlayers(currentGame).length;
+      let g = currentGame;
+      // ── R19: an ACTIVE showdown cannot survive the score reset of the
+      // next round (the tie evidence would be wiped) — resolve it NOW with
+      // the scores of the song where the tie happened (force = also before
+      // its deadline, e.g. when the song ends mid-showdown).
+      if (g.tieBreak) {
+        const res = resolveTieBreakElimination(g, true);
+        if (res) {
+          g = res.game;
+          if (res.eliminatedId) {
+            const eliminated = g.players.find(p => p.id === res.eliminatedId);
+            if (eliminated) {
+              notifyElimination({ id: eliminated.id, name: eliminated.name, byCoinFlip: res.byCoinFlip });
+            }
+          }
+          // The coin flip may have completed the game (last man standing)
+          if (g.status === 'completed' || g.winner) {
+            gameRef.current = g;
+            onUpdateGameRef.current(g);
+            roundEndingRef.current = false;
+            return;
+          }
+        }
+      }
+      const activeCount = getActivePlayers(g).length;
       const finaleEntryPending =
         activeCount === 2 &&
-        !currentGame.isGrandFinale &&
-        currentGame.settings.grandFinaleBestOf > 1;
+        !g.isGrandFinale &&
+        g.settings.grandFinaleBestOf > 1;
       if (activeCount > 2 || (!finaleEntryPending && activeCount === 2)) {
-        const closed = endRoundWithoutElimination(currentGame);
+        const closed = endRoundWithoutElimination(g);
         gameRef.current = closed;
         const advanced = advanceToNextRound(closed);
         gameRef.current = advanced;
@@ -234,7 +296,7 @@ export function useBattleRoyaleRoundHandlers({
     roundEndingRef.current = false;
     handleStartRoundRef.current();
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
-  }, [stopPitch, audioRef, videoRef, audioHasPlayedRef]);
+  }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, notifyElimination]);
 
   useEffect(() => {
     handleRoundEndRef.current = handleRoundEnd;
@@ -255,6 +317,10 @@ export function useBattleRoyaleRoundHandlers({
       if (autoStartTimerRef.current) {
         clearTimeout(autoStartTimerRef.current);
         autoStartTimerRef.current = null;
+      }
+      if (showdownGuardTimerRef.current) {
+        clearTimeout(showdownGuardTimerRef.current);
+        showdownGuardTimerRef.current = null;
       }
     };
   }, []);
