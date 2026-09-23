@@ -292,7 +292,31 @@ export function PlayingView({
   // Danger zone detection
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);
   const dangerZone = activeSorted.length > 3 ? activeSorted.slice(-3) : activeSorted;
-  const isDangerZone = roundTimeLeft <= 5 && roundTimeLeft > 0;
+
+  // ── R16 (user request 1): the ELIMINATION countdown ──────────────────
+  // The ONE clock that decides who drops out next — shown prominently at
+  // the top edge (big, red, centered):
+  //  • rhythm rounds (random/vote, no medley, no finale) → nextEliminationIn
+  //    (mid-round eliminations; carries across song changes since R15/1.3)
+  //  • medley rounds → the round timer (round end = elimination there)
+  //  • grand finale → none (the duel decides a WIN, nobody is eliminated)
+  const elimCountdownSec: number | null =
+    nextEliminationIn != null
+      ? nextEliminationIn
+      : game.isGrandFinale
+        ? null
+        : currentRound?.roundType === 'medley'
+          ? roundTimeLeft
+          : null;
+  // True when the elimination clock IS the round timer (medley rounds) —
+  // the bottom-left round badge then hides to avoid showing the same
+  // number twice (a numeric equality check would misfire in rhythm rounds
+  // when both clocks coincidentally hold the same value).
+  const elimFromRoundTimer =
+    nextEliminationIn == null && !game.isGrandFinale && currentRound?.roundType === 'medley';
+  // Critical: last 5 seconds of EVERY countdown → alarm frame + beating number
+  const isElimCritical = elimCountdownSec != null && elimCountdownSec <= 5 && elimCountdownSec > 0;
+  const isDangerZone = isElimCritical;
 
   const isDanger = useCallback((player: BattleRoyalePlayer) =>
     isDangerZone && !player.eliminated && dangerZone.some(d => d.id === player.id),
@@ -302,9 +326,13 @@ export function PlayingView({
   const isLowest = (player: BattleRoyalePlayer) =>
     !player.eliminated && activeSorted.length > 0 && activeSorted[activeSorted.length - 1].id === player.id;
 
-  // #10 Elimination camera: dramatic effects in last 10 seconds
+  // #10 Elimination camera: dramatic effects in the last 10 seconds of the
+  // ELIMINATION countdown (R16: re-keyed from the round timer — in rhythm
+  // rounds the round timer merely ends the SONG, the elimination clock is
+  // what puts the bottom players at risk; medley rounds keep the identical
+  // behaviour since their round timer IS the elimination clock).
   const eliminationAnimationEnabled = game.settings.eliminationAnimation;
-  const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
+  const isEliminationCamera = eliminationAnimationEnabled && elimCountdownSec != null && elimCountdownSec <= 10 && elimCountdownSec > 0;
 
   // Standard lyrics display: find current and next lyric lines using LyricLineDisplay
   // R15 (user request 1.2): 3s preview window — the lyric block fades back in
@@ -417,18 +445,68 @@ export function PlayingView({
       {/* Dark overlay on top of background */}
       <div className="absolute inset-0 bg-black/30 pointer-events-none" style={{ zIndex: -5 }} />
 
-      {/* #10 Elimination Camera: Red vignette overlay in last 10 seconds */}
-      {isEliminationCamera && (
+      {/* #10 Elimination Camera: Red vignette overlay — last 10 seconds of the
+          ELIMINATION countdown (R16: intensity follows the elimination clock) */}
+      {isEliminationCamera && elimCountdownSec != null && (
         <div className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-1000"
           style={{
-            background: `radial-gradient(ellipse at center, transparent 40%, rgba(220, 38, 38, ${0.3 * (1 - roundTimeLeft / 10)}) 100%)`,
+            background: `radial-gradient(ellipse at center, transparent 40%, rgba(220, 38, 38, ${0.3 * (1 - elimCountdownSec / 10)}) 100%)`,
           }}
         />
       )}
 
-      {/* #10 Elimination Camera: Pulsing border in last 5 seconds */}
-      {eliminationAnimationEnabled && isDangerZone && (
-        <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
+      {/* ─────────── R16 (user request 1): ALARM FRAME ───────────
+          During the last 5 seconds of EVERY elimination countdown a narrow
+          red frame around the ENTIRE screen blinks like an alarm beacon —
+          hard on/off, ~1.05s cycle (dramatic, not frantic). Always on: this
+          is the core elimination warning, not an optional camera effect. */}
+      {isElimCritical && (
+        <div
+          data-testid="br-alarm-frame"
+          className="fixed inset-0 z-40 pointer-events-none animate-br-alarm-frame border-[6px] border-red-500"
+          style={{ boxShadow: 'inset 0 0 70px rgba(239, 68, 68, 0.35), 0 0 26px rgba(239, 68, 68, 0.5)' }}
+        />
+      )}
+
+      {/* ─────────── R16 (user request 1): ELIMINATION COUNTDOWN ───────────
+          Prominent, large, red, centered at the top edge. Shows the ONE
+          clock that decides who drops out next (rhythm interval in full-song
+          rounds / round timer in medley rounds; hidden in the grand finale).
+          Critical (≤ 5s): the number beats in sync with the alarm frame. */}
+      {elimCountdownSec != null && (
+        <div
+          data-testid="br-elim-countdown"
+          className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+          role="timer"
+          aria-label={t('battleRoyale.nextEliminationIn').replace('{n}', String(elimCountdownSec))}
+        >
+          <div
+            className={`flex items-center gap-3 rounded-2xl border px-5 py-1.5 backdrop-blur-md shadow-xl transition-all duration-300 ${
+              isElimCritical
+                ? 'bg-red-950/85 border-red-500 shadow-red-600/40'
+                : 'bg-black/55 border-red-500/50 shadow-red-950/50'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`text-2xl select-none ${isElimCritical ? 'animate-br-countdown-critical' : ''}`}
+            >
+              💀
+            </span>
+            <span
+              className={`font-mono font-black tabular-nums leading-none select-none ${
+                isElimCritical
+                  ? 'text-5xl text-red-400 animate-br-countdown-critical drop-shadow-[0_0_16px_rgba(248,113,113,0.9)]'
+                  : 'text-4xl text-red-500'
+              }`}
+            >
+              {elimCountdownSec}
+            </span>
+            <span className="max-w-[90px] text-[10px] font-bold uppercase tracking-widest leading-tight text-red-300/80 text-left">
+              {t('battleRoyale.eliminationCountdownLabel')}
+            </span>
+          </div>
+        </div>
       )}
 
       {/* ─────────── 2.2-R3: Mid-round elimination banner (non-blocking) ───────────
@@ -799,19 +877,23 @@ export function PlayingView({
 
       {/* ─────────── Unified bottom HUD: round countdown + snippet timer (bottom-left, above the progress bar) + playtime/duration (bottom-right, ONE LINE) ─────────── */}
       <div className="absolute bottom-2 left-3 z-30 pointer-events-none flex items-center gap-2">
-        {/* Round countdown — moved from top to BOTTOM-left (unified HUD spec, Muster F) */}
-        <Badge
-          className={`font-mono text-xs ${
-            roundTimeLeft <= 5
-              ? 'bg-red-500 text-white animate-pulse'
-              : roundTimeLeft <= 10
-                ? 'bg-orange-500/25 text-orange-300 border border-orange-400/40'
-                : 'bg-purple-500/20 text-purple-400'
-          }`}
-          aria-label={t('battleRoyale.timeLeft').replace('{n}', String(roundTimeLeft))}
-        >
-          {roundTimeLeft}s
-        </Badge>
+        {/* Round/song countdown — bottom-left (unified HUD spec, Muster F).
+            R16: hidden when it would duplicate the prominent top elimination
+            countdown (medley rounds — round timer IS the elimination clock). */}
+        {!elimFromRoundTimer && (
+          <Badge
+            className={`font-mono text-xs ${
+              roundTimeLeft <= 5
+                ? 'bg-red-500 text-white animate-pulse'
+                : roundTimeLeft <= 10
+                  ? 'bg-orange-500/25 text-orange-300 border border-orange-400/40'
+                  : 'bg-purple-500/20 text-purple-400'
+            }`}
+            aria-label={t('battleRoyale.timeLeft').replace('{n}', String(roundTimeLeft))}
+          >
+            {roundTimeLeft}s
+          </Badge>
+        )}
         {/* #1 Medley snippet indicator — bottom-left (unified HUD spec) */}
         {totalSnippets > 1 && (
           <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0 bg-black/40">
@@ -819,23 +901,8 @@ export function PlayingView({
             {snippetTimeLeft !== null && ` (${snippetTimeLeft}s)`}
           </Badge>
         )}
-        {/* 2.2-R3: next mid-round elimination countdown — makes the
-            configured elimination interval visible while the song plays
-            (rhythm rounds only; absent in medley / finale rounds). */}
-        {nextEliminationIn != null && (
-          <Badge
-            className={`font-mono text-xs ${
-              nextEliminationIn <= 5
-                ? 'bg-red-500 text-white animate-pulse'
-                : nextEliminationIn <= 10
-                  ? 'bg-orange-500/25 text-orange-300 border border-orange-400/40'
-                  : 'bg-red-500/15 text-red-300 border border-red-400/30'
-            }`}
-            aria-label={t('battleRoyale.nextEliminationIn').replace('{n}', String(nextEliminationIn))}
-          >
-            💀 {nextEliminationIn}s
-          </Badge>
-        )}
+        {/* 2.2-R3 / R16: the elimination countdown moved to the prominent
+            top-center display (br-elim-countdown) — no duplicate badge here. */}
       </div>
       {/* B3.5: playtime/duration — single line, right-aligned, no wrapping */}
       <div className="absolute bottom-2 right-3 z-30 pointer-events-none whitespace-nowrap text-right">

@@ -238,6 +238,7 @@ export const partyTranslations = {
     eliminationIntervalHint: 'Random and Vote play FULL songs — the weakest player is eliminated every {n}s mid-song while the song keeps playing.',
     midRoundEliminated: '{name} has been eliminated!',
     nextEliminationIn: 'Next elimination in {n} seconds',
+    eliminationCountdownLabel: 'Next elimination',
     finalRoundDuration: 'Final Round Duration: {n}s',
     fast: '30s (Fast)',
     long: '180s (Long)',

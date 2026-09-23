@@ -731,6 +731,33 @@
   animation: elimination-pulse 1.2s ease-in-out infinite;
 }
 
+/* Battle Royale (R16, user request 1): ALARM frame — during the last 5
+   seconds of EVERY elimination countdown a narrow red frame around the
+   entire screen blinks like an alarm beacon. Hard on/off (~1.05s cycle,
+   sharp edges via near-zero opacity floor) — dramatic but not frantic. */
+@keyframes br-alarm-frame {
+  0%, 42%   { opacity: 1; }
+  50%, 92%  { opacity: 0.04; }
+  100%      { opacity: 1; }
+}
+
+.animate-br-alarm-frame {
+  animation: br-alarm-frame 1.05s linear infinite;
+}
+
+/* R16 (user request 1): the prominent elimination-countdown number beats
+   once per second while critical (≤ 5s) — synced to the alarm frame
+   rhythm so number + frame pulse together. */
+@keyframes br-countdown-critical {
+  0%, 28%   { transform: scale(1); }
+  12%       { transform: scale(1.22); }
+  100%      { transform: scale(1); }
+}
+
+.animate-br-countdown-critical {
+  animation: br-countdown-critical 1.05s ease-in-out infinite;
+}
+
 .elimination-camera-active::after {
   content: '';
   position: fixed;
