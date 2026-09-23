@@ -6,10 +6,26 @@
 ## Status
 
 - Dev-Server: Port 3000, läuft (Double-Fork-Start, siehe Konventionen). Lint: 0 Errors. `npx tsc --noEmit`: Exit 0.
+- **R17: Bounty-Fairness-Analyse — Nutzer-Kritik mathematisch bestätigt (flacher ×1,5-Booster eliminiert den besten Sänger) + 3 Vorschläge erarbeitet (Empfehlung: gleitender Multiplikator). Umsetzung wartet auf Nutzer-Entscheidung.**
 - **R16: BR-Eliminations-Countdown prominent (groß/rot/oben-mittig) + Alarm-Rahmen (letzte 5s jeder Countdown) + Bounty-Regel per Unit-Test verifiziert.**
 - **R15: BR-Feinschliff (Notenfüllung ohne Lücken, Textblock-Ausblendung bei Pausen, Eliminations-Countdown läuft über Song-Wechsel hinweg) + Import-Funktionen komplett aus Settings/Library entfernt.**
 - **R14: Alle 6 Nutzer-Anfragen umgesetzt + E2E-bewiesen: Editor-Drag-Feel (Achsen-Lock + Hysterese + Sticky-Home), Zoom 500%=100%, Import-Preview (war Dead Code!), AppData-Persistenz, BR-Pitch-Hold gegen Wertungsausfälle.**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort.
+
+## Erledigt (2026-09-23, Runde R17 — Bounty-Fairness-Analyse & System-Vorschläge)
+
+**Anlass:** Nutzer-Kritik an der Bounty-Regel: Bei geringen Punkteunterschieden ist der Führende absolut im Nachteil — wenn alle außer ihm ×1,5 geboostet werden und alle in der nächsten Runde genauso singen wie vorher, scheidet der beste Sänger aus. Analyse bestätigt die Kritik mathematisch; Nutzer hat um Vorschläge für ein gerechteres, flexibleres System gebeten. **Umsetzung steht noch aus — Entscheidung des Nutzers abzuwarten (V1 / V1+V2 / V3 / Kalibrierung V1b).**
+
+1. **Kritik bewiesen** (`qa-test-song/bounty-fairness-analysis.ts`, echte Game-Funktionen ohne Mocks, `bun`-Lauf grün):
+   - Nutzer-Beispiel (P1=2000, P2=1900, P3=1800, P4=1650, P5 raus; Runde 2 singt jeder exakt wie in Runde 1): Flaches System → P1 landet mit 4.000 auf dem LETZTEN Platz (P2 4.750 / P3 4.500 / P4 4.125) und fliegt — obwohl er der beste Sänger ist. ❌
+   - **Zusatz-Bug gefunden (Runden-1-Willkür):** In Runde 1 sind alle Punkte 0 → `calculateBountyTarget` greift bei Gleichstand den ERSTEN Spieler der Liste (stable sort) → alle anderen bekommen die GANZE erste Runde ×1,5 ohne jeden Grund. Der zuerst hinzugefügte Spieler ist systematisch benachteiligt (und wer Runde 1 führt, wird in Runde 2 erneut nicht geboostet — doppelte Strafe).
+2. **Vorschläge (in der Antwort an den Nutzer ausformuliert):**
+   - **V1 Gleitender Multiplikator (Empfehlung):** `mult_i = 1 + (M−1) · min(1, Rückstand_i / Führender-Punkte)`. Nutzer-Beispiel: P2 nur ×1,025 statt ×1,5 → Rangfolge bleibt bei gleichem Gesang EXAKT erhalten (P4 fliegt, nicht P1). Fairheits-Garantie: Überholen bei gleichem Gesang nur, wenn Raw-Runde > L/(M−1) (z. B. >4.000 Punkte bei 2.000er Führung) — dann ist der Überhol-Vers verdient. Großer Rückstand (67–83 %) → ×1,33–1,42 → Aufholjagd funktioniert (Simulation 3 Runden: 6.000/2.000/1.000 → 9.000/5.808/5.010, Lücke schrumpft ~20 %/Runde bei gleichem Gesang). Runde 1: Guard (L≤0 → alle ×1,000). Selbststabilisierend: Boost dimmt sich automatisch herunter, je enger das Feld rückt.
+   - **V1b (optionale Kalibrierung):** Normalisierung über Ø-Runden-Delta statt Führender-Punkte („Rückstand in Runden gemessen", z. B. gap/(2×Ø-Delta)) — hält den Boost spät im Spiel stark, wenn die Summen groß und relativen Lücken klein werden; schwieriger zu erklären.
+   - **V2 Überhol-Prämie:** kein laufender Multiplikator (alle raw); wer den Führenden überholt, bekommt eine Einmal-Prämie + Banner („🎯 Kopfgeld geholt! +X"); optional Verteidigungs-Prämie fürs Ziel. Reinstes Kopfgeld-Feeling, null Rang-Verzerrung, aber schwache Aufhol-Wirkung für Hoffnungslose — eher Add-on zu V1 als Ersatz.
+   - **V3 Runden-basierte Eliminierung:** es fliegt der schwächste Sänger DER RUNDE (raw-Runden-Delta), nicht der kumulativ Letzte — jede Runde do-or-die, keine „Tod durch angelaufenes Defizit"-Eliminierung. Faireste Eliminierung, ÄNDERT aber die Spiel-Philosophie (Konsistenz schützt nicht mehr); bräuchte Raw-Buchführung neben geboosteten Punkten (zwei Bücher).
+   - **Empfehlung:** V1 + Runden-1-Gleichstand-Guard (kein Bounty-Ziel bei L≤0/Gleichstand) + M-Slider (1,2–3) bleibt als Maximum + optional V2 als Highlight-Moment + „Flach" als opt-in Chaos-Modus. Config-Idee: `bountyScaling: 'sliding' | 'flat'` neben `bountyEnabled`.
+3. **Umsetzungs-Skizze für die gewählte Variante (V1):** `getBountyMultiplier()` lücken-proportional rechnen (Signatur unverändert → Hook-Aufruf `use-battle-royale-game.ts` ~Zeile 1043 braucht KEINE Änderung), `calculateBountyTarget()` null bei Gleichstand/L≤0, Playing-View zeigt Multiplikator pro Spieler (statt global ×1,5), Setup-Screen-Modus-Toggle + i18n de+en, `bounty-verify.ts` um Gleit-Fälle erweitern. Analyse-Skript bleibt als Design-Spec + Test-Grundlage.
 
 ## Erledigt (2026-09-23, Runde R16 — BR-Countdown-Drama + Bounty-Beweis)
 
