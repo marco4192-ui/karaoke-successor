@@ -6,11 +6,21 @@
 ## Status
 
 - Dev-Server: Port 3000, läuft (Double-Fork-Start, siehe Konventionen). Lint: 0 Errors. `npx tsc --noEmit`: Exit 0.
+- **R18 (Diskussion, Umsetzung pendent):** Score-Reset pro Runde (V3-Variante des Nutzers) — zugestimmt; wartet auf Entscheidung: Reset pro Runde vs. pro Eliminierung + Bounty-Schicksal. Details siehe R18-Abschnitt.
 - **R17: Bounty-Fairness-Analyse — Nutzer-Kritik mathematisch bestätigt (flacher ×1,5-Booster eliminiert den besten Sänger) + 3 Vorschläge erarbeitet (Empfehlung: gleitender Multiplikator). Umsetzung wartet auf Nutzer-Entscheidung.**
 - **R16: BR-Eliminations-Countdown prominent (groß/rot/oben-mittig) + Alarm-Rahmen (letzte 5s jeder Countdown) + Bounty-Regel per Unit-Test verifiziert.**
 - **R15: BR-Feinschliff (Notenfüllung ohne Lücken, Textblock-Ausblendung bei Pausen, Eliminations-Countdown läuft über Song-Wechsel hinweg) + Import-Funktionen komplett aus Settings/Library entfernt.**
 - **R14: Alle 6 Nutzer-Anfragen umgesetzt + E2E-bewiesen: Editor-Drag-Feel (Achsen-Lock + Hysterese + Sticky-Home), Zoom 500%=100%, Import-Preview (war Dead Code!), AppData-Persistenz, BR-Pitch-Hold gegen Wertungsausfälle.**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort.
+
+## Erledigt (2026-09-23, Runde R18 — Design-Diskussion: Score-Reset pro Runde)
+
+**Nutzervorschlag (V3-Variante):** Nach jeder Eliminierung alle Punkte auf Null — jede Runde gleiche Chancen; kumulativer Highscore sei ohnehin nicht aussagekräftig (max. erreichbare Punktzahl hängt von der Teilnehmerzahl ab). **Status: zugestimmt mit 2 Empfehlungen, Umsetzung wartet auf Nutzer-Entscheidung** zu (a) Reset-Zeitpunkt: pro RUNDE/Song empfohlen statt pro Eliminierung (sonst vergisst der Score mitten im Song Leistungen; Instrumental-Passagen → alle 0 → willkürlicher ID-Tiebreak-Kill) und (b) Bounty-Schicksal: im Reset-Modus obsolet (Rundenstart alle 0 → willkürliches Ziel = R17-Bug jede Runde) → Empfehlung: Bounty nur im (opt-out) Kumulativ-Modus behalten.
+
+**Verifiziert (alles gelesen, nichts spekuliert):**
+- Kern-Reset existiert bereits: `startRound()` hat `resetScores = isGrandFinaleRound` — das Grand Finale macht GENAU das (per-Runden-Vergleich via finalWins); Vorschlag dehnt also das Finale-Prinzip aufs ganze Spiel aus. `previousRoundScores`-Snapshot passiert NACH dem Reset → Deltas = Rundenpunkte automatisch. Kernänderung ≈ 1 Zeile + Guards.
+- 5 Detailstellen bei Umsetzung: (1) Bounty abschalten im Reset-Modus (s. o.), (2) Gleichstands-Guard in `eliminateWeakestMidRound` (alle Rundenpunkte identisch → kein Kill, nächster Ticker-Tick; sonst willkürliche Eliminierung bei Instrumental-Intro — mit Reset Jede-Runde-Risiko), (3) Trend-Pfeile `playing-view.tsx` ~265–279 vergleichen gegen Rundenstart-Snapshot (nach Reset alle 0 → brechen) → gegen Vor-Runden-Endstand vergleichen oder ausblenden, (4) Hall of Fame `bestScore` = winner.score wäre nur „letzte Runde" → auf beste Einzelrunde umstellen (`gameStats.bestSingleRoundDelta` existiert schon); BR schreibt KEINE Song-Highscores, nur die HOF ist betroffen, (5) Tiebreaker notesHit/maxCombo sind Karriere-Werte über Runden → für Konsistenz auf Runden-Werte umstellen.
+- Trade-off (dem Nutzer klar benannt): Konstanz schützt nicht mehr — ein Spitzensänger mit einem schwachen Song fliegt. Gewollt (do-or-die), aber Preis der Variante.
 
 ## Erledigt (2026-09-23, Runde R17 — Bounty-Fairness-Analyse & System-Vorschläge)
 
