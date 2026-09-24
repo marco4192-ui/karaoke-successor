@@ -3,6 +3,7 @@
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
+import { matchUltraStarNoteLine, normalizeUltraStarWordBoundaries } from '@/lib/parsers/word-boundary';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeVideoUrlInput, detectVideoPlatform } from '@/lib/url-utils';
 
@@ -179,28 +180,27 @@ export async function parseUltraStarFull(txtFile?: File): Promise<{
         noteLine = duetPrefix.rest;
       }
 
-      // IMPORTANT: Use trimStart() — NOT trim() — to handle leading spaces
-      // while preserving trailing spaces for syllable detection.
-      // A trailing space in the lyric (e.g., "the ") means this is a complete word.
-      // No trailing space (e.g., "whis") means it's a syllable continuation.
-      // Do NOT change this to trim() — that would break syllable parsing.
-      const trimmedNoteLine = noteLine.trimStart();
-      const noteMatch = trimmedNoteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+      // Shared note-line matcher — keeps the whitespace run between pitch
+      // and lyric intact; variant-2 word boundaries (leading space before a
+      // new word) are resolved by normalizeUltraStarWordBoundaries() below.
+      const noteMatch = matchUltraStarNoteLine(noteLine);
       if (noteMatch) {
-        const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
         notes.push({
-          type,
-          startBeat: parseInt(startStr),
-          duration: parseInt(durationStr),
-          pitch: parseInt(pitchStr),
-          // DON'T trim - preserve trailing spaces for syllable detection
-          // A trailing space means this is a complete word, no space means it's a syllable
-          lyric: lyric,
+          type: noteMatch.type,
+          startBeat: noteMatch.startBeat,
+          duration: noteMatch.duration,
+          pitch: noteMatch.pitch,
+          // Raw lyric incl. leading whitespace — normalized below
+          lyric: noteMatch.lyric,
           player: notePlayer,
         });
       }
     }
   }
+
+  // Resolve word-boundary conventions (variant-2 leading spaces → variant-1
+  // trailing spaces) before lyric-line conversion.
+  normalizeUltraStarWordBoundaries(notes, lineBreakBeats);
 
   // Convert beats to milliseconds using CORRECT UltraStar formula
   // Use the shared converter to build lyric lines (handles duet P1/P2 separation)

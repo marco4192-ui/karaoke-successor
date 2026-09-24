@@ -12,9 +12,13 @@
 // - Line breaks: - <beat> (marks end of a lyric line, separate line in file)
 // - End: E
 //
-// LYRIC SPACING RULES:
-// - Trailing space in lyric = end of word (space is displayed)
-// - No trailing space = syllable connected to next note
+// LYRIC SPACING RULES (two conventions in the wild — see word-boundary.ts):
+// - Variant 1 (classic): TRAILING space on the syllable that ends a word
+//   ("lo " → "Hello ") — space is displayed after the word
+// - Variant 2: LEADING space on the syllable that starts a new word
+//   (": 8 4 60␣␣World" → " World") — space is displayed before the word.
+//   Both are normalized to variant 1 by normalizeUltraStarWordBoundaries().
+// - No space = syllable connected to next note
 // - Line breaks ("- <beat>") create new lyric lines
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
@@ -25,6 +29,7 @@ import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, notesHaveBothPlayers } from '@/lib/parsers/duet-markers';
+import { matchUltraStarNoteLine, normalizeUltraStarWordBoundaries } from '@/lib/parsers/word-boundary';
 
 interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -321,28 +326,29 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
       noteLine = duetPrefix.rest;
     }
 
-    // Note lines tolerate leading whitespace (trimStart), but NEVER a full
-    // trim — trailing spaces in lyrics are significant for syllables.
-    const noteMatch = noteLine.trimStart().match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Note lines tolerate leading whitespace (the shared matcher handles
+    // it). The matcher keeps the whitespace run between pitch and lyric
+    // intact — variant-2 word boundaries (leading space) are resolved by
+    // normalizeUltraStarWordBoundaries() after the parse loop.
+    const noteMatch = matchUltraStarNoteLine(noteLine);
     if (noteMatch) {
-      const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
-      const start = parseInt(startStr);
-      const duration = parseInt(durationStr);
-      const pitch = parseInt(pitchStr);
-
       song.notes.push({
-        type: type as UltraStarNote['type'],
-        startBeat: start,
-        duration,
-        pitch,
-        // DON'T trim - preserve trailing spaces for syllable detection
-        // A trailing space means this is a complete word, no space means it's a syllable
-        lyric: lyric, 
+        type: noteMatch.type,
+        startBeat: noteMatch.startBeat,
+        duration: noteMatch.duration,
+        pitch: noteMatch.pitch,
+        // Raw lyric incl. leading whitespace — normalized below
+        lyric: noteMatch.lyric,
         player: notePlayer,
       });
       continue;
     }
   }
+
+  // Resolve word-boundary conventions (variant-2 leading spaces →
+  // variant-1 trailing spaces) BEFORE any lyric-line conversion. Line
+  // breaks are passed so boundaries at a line start get dropped.
+  normalizeUltraStarWordBoundaries(song.notes, new Set(song.lineBreaks));
   
   // Mark as multi-voice when body markers OR header tags declare it.
   // Body markers additionally require TWO different voices to have notes — a

@@ -4,6 +4,7 @@
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix, lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
+import { matchUltraStarNoteLine, normalizeUltraStarWordBoundaries } from '@/lib/parsers/word-boundary';
 import {
   nativeReadFileText,
   nativeReadDir,
@@ -333,15 +334,20 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
       noteLine = duetPrefix.rest;
     }
 
-    const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Shared note-line matcher — keeps the whitespace run between pitch
+    // and lyric intact; variant-2 word boundaries (leading space before a
+    // new word) are resolved by normalizeUltraStarWordBoundaries() below.
+    const noteMatch = matchUltraStarNoteLine(noteLine);
     if (noteMatch) {
-      const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
-      // DON'T trim - preserve trailing spaces for syllable detection
-      // A trailing space means this is a complete word, no space means it's a syllable
-      notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
+      // Raw lyric incl. leading whitespace — normalized below
+      notes.push({ type: noteMatch.type, startBeat: noteMatch.startBeat, duration: noteMatch.duration, pitch: noteMatch.pitch, lyric: noteMatch.lyric, player: notePlayer });
       continue;
     }
   }
+
+  // Resolve word-boundary conventions (variant-2 leading spaces → variant-1
+  // trailing spaces) before lyric-line conversion.
+  normalizeUltraStarWordBoundaries(notes, lineBreakBeats);
 
   return convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 }

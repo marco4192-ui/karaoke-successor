@@ -4,6 +4,7 @@ import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getTxtContent, storeMedia, getMedia } from '@/lib/db/media-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { matchPlayerMarkerLine, matchDuetNotePrefix } from '@/lib/parsers/duet-markers';
+import { matchUltraStarNoteLine, normalizeUltraStarWordBoundaries } from '@/lib/parsers/word-boundary';
 import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
 import { normalizeTxtContent } from '@/lib/utils';
 
@@ -177,14 +178,20 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
       noteLine = duetPrefix.rest;
     }
 
-    const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Shared note-line matcher — keeps the whitespace run between pitch
+    // and lyric intact; variant-2 word boundaries (leading space before a
+    // new word) are resolved by normalizeUltraStarWordBoundaries() below.
+    const noteMatch = matchUltraStarNoteLine(noteLine);
     if (noteMatch) {
-      const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
-      notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
+      notes.push({ type: noteMatch.type, startBeat: noteMatch.startBeat, duration: noteMatch.duration, pitch: noteMatch.pitch, lyric: noteMatch.lyric, player: notePlayer });
       noteLineCount++;
       continue;
     }
   }
+
+  // Resolve word-boundary conventions (variant-2 leading spaces → variant-1
+  // trailing spaces) before lyric-line conversion.
+  normalizeUltraStarWordBoundaries(notes, lineBreakBeats);
 
   // DIAGNOSTIC: If no notes were found, log sample lines to identify the format
   if (noteLineCount === 0 && lines.length > 0) {
