@@ -19,6 +19,12 @@
 //       : 4 4 60 lo
 //       : 8 4 60␣␣World     ← extra space before "World" → new word
 //
+//     A SINGLE space (": 8 4 60 World") is just the field separator —
+//     NEVER a word boundary. The boundary space must exist TWICE in the
+//     file (separator + marker); with only one space the line is
+//     indistinguishable from a word-continuation syllable, so the word
+//     boundaries could not be recovered.
+//
 // Both render identically ("Hello World"). normalizeUltraStarWordBoundaries()
 // converts variant 2 into the internal variant-1 form so all downstream
 // code (lyric-line assembly, editor word-end detection, TXT export) sees

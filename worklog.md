@@ -5,7 +5,8 @@
 
 ## Status
 
-- Dev-Server: Port 3000, läuft (Double-Fork-Start, siehe Konventionen). Lint: 0 Errors (821 Warnungen, prä-existierendes Niveau). `npx tsc --noEmit`: Exit 0.
+- Dev-Server: Port 3000, läuft (Double-Fork-Start, siehe Konventionen). Lint: 0 Errors (822 Warnungen, prä-existierendes Niveau +1 no-console im QA-Skript). `npx tsc --noEmit`: Exit 0.
+- **R22: Variante-2-Klarstellung (Nutzerfrage „Leading Space muss doppelt existieren?") — BESTÄTIGT: Die Implementierung verlangt von Anfang an genau das DOPPELTE Leerzeichen (Separator + Grenz-Marker); ein einzelnes Leerzeichen ist zwingend nur der Feld-Separator und kann niemals eine Wortgrenze tragen (informationstheoretisch nicht unterscheidbar von einer Wort-Fortsetzungssilbe). Semantik jetzt mit 8 expliziten Unit-Checks festgenagelt (48/48) + Live-E2E-Beweis über die komplette Pipeline („lo "/„This "/„a "/„ing " MIT trailing Space, „Sing" OHNE — genau die Doppel-Space-Regel).**
 - **R21: UltraStar Variante-2-Support (Leading-Space-Wortgrenze vor jedem neuen Wort) — normalisiert auf Variante 1 (trailing), dateiweise Konventions-Erkennung, Alignment-sicher, duett-sicher, zeilenstart-sicher. Unit 40/40 + Live-E2E (Silben „lo "/„This "/„ing " mit trailing Space im Highway).**
 - **R19: BR-Neugestaltung nach Nutzer-Entscheidung — Per-Runden-Reset („Reset nach dem Song"), Bounty+Trend+Kumulation ENTFERNT, Gleichstands-Lösung: 10s-Stechen (⚔️ amber HUD + Rahmen) → Münzwurf (🪙). Unit-bewiesen (28 Checks) UND live im E2E (2 Münzwurf-Eliminierungen im Browser-Run).**
 - **R20: 3 Nutzer-Kleinigkeiten — Medley-Abort zeigt jetzt Leave-Confirm-Dialog (kein sofortiger Teardown mehr), BR friert Video/Audio/Rundentimer/Eliminierungs-Ticker während JEDEM offenen Dialog komplett ein (Async-Video-Bug behoben), Note-Colors-Setting entfernt (war praktisch wirkungslos — sealed/exact + feste Spezialpaletten regeln alles). KORREKTUR (R21, Nutzerhinweis): Die R20-Analyse behauptete fälschlich „BR (flat)" — BR nutzt dieselbe Per-Player-Strips-Technik wie der Medley Contest (playing-view.tsx playerStrips, getMultiPlayerNoteOverlay); flat ist nur der No-Data-Fallback (alleiniger Überlebender ohne Samples → Solo-Pipeline bzw. flatFill '#22d3ee').**
@@ -15,6 +16,17 @@
 - **R15: BR-Feinschliff (Notenfüllung ohne Lücken, Textblock-Ausblendung bei Pausen, Eliminations-Countdown läuft über Song-Wechsel hinweg) + Import-Funktionen komplett aus Settings/Library entfernt.**
 - **R14: Alle 6 Nutzer-Anfragen umgesetzt + E2E-bewiesen: Editor-Drag-Feel (Achsen-Lock + Hysterese + Sticky-Home), Zoom 500%=100%, Import-Preview (war Dead Code!), AppData-Persistenz, BR-Pitch-Hold gegen Wertungsausfälle.**
 - **GitHub-Sync aktiv:** post-commit-Hook pusht jeden Commit sofort.
+
+## Erledigt (2026-09-24, Runde R22 — Variante-2-Klarstellung: Grenz-Space muss DOPPELT im File stehen)
+
+**Nutzer-Anliegen:** Klarstellung zu R21/R22 — in Variante-2-Dateien muss das führende Leerzeichen quasi DOPPELT existieren (`: 8 4 60␣␣World`), nicht nur einfach (`: 8 4 60 World`). Prüfen und fixen.
+
+1. **Befund: Die Implementierung war bereits exakt so gebaut.** `matchUltraStarNoteLine()` (word-boundary.ts) trennt den Whitespace-Run zwischen Pitch-Zahl und Silbe: das ERSTE Zeichen ist der Feld-Separator (wird gedroppt), erst ein WEITERES Leerzeichen bleibt als Grenz-Marker auf der Silbe stehen. D.h.: `: 8 4 60 World` (1 Space) → Silbe „World“ OHNE Grenze (Wort-Fortsetzung); `: 8 4 60␣␣World` (2 Spaces) → „ World“ MIT Grenze → neue Wortgrenze. Das ist zwingend so, weil der Feld-Separator immer ein Space ist — ein einzelnes Space kann niemals Grenz-Information tragen (sonst wäre jede Note ein neues Wort bzw. nicht von Fortsetzungssilben unterscheidbar; ein reines Einzelspace-File ist nicht rekonstruierbar, Unit-Check „HelloWorldTest“ dokumentiert genau das).
+2. **Festgenagelt (Regressions-Schutz):**
+   - `qa-test-song/leading-space-verify.ts` Abschnitt 8 (8 neue Checks, Summe 48/48): Matcher-Ebene (1 Space = nur Separator → kein Marker; 2 Spaces = Separator + Grenze; 3 Spaces = Alignment-Artefakt) + File-Ebene (nur DOPPELTE Spaces werden Grenzen: „Hello World Wonderful“; Einzelspace-Silben bleiben verbunden; All-Einzelspace-File → keine Grenzen rekonstruierbar → „HelloWorldTest“).
+   - `word-boundary.ts` Header-Kommentar verschärft: „A SINGLE space is just the field separator — NEVER a word boundary. The boundary space must exist TWICE in the file."
+3. **Live-E2E-Beweis (komplette Pipeline IndexedDB → loadSongLyrics → Highway):** QA-Song „QA Variant Two“ (Doppel-Space-TXT in Media-DB, verifiziert) gesungen, Silben via 100ms-DOM-Collector mitgezeichnet: `Hel`, `lo␣`, `World`, `This␣`, `is␣`, `a␣`, `test`, `Sing`, `ing␣`, `karaoke` — „lo “/„This “/„is “/„a “/„ing “ tragen die Grenze als trailing Space, „Sing“ bewusst OHNE (einzelnes Space vor „ing“ = Fortsetzung), „World“/„test“/„karaoke“ ohne (Zeilenstart-/Ende-Grenzen korrekt verworfen). Ergebnis: „Hello World“ / „This is a test“ / „Singing karaoke“ — exakt die Doppel-Space-Regel live bewiesen.
+4. **Kein Verhaltens-Change** — nur Tests + Dokumentation. tsc Exit 0, Lint 0 Errors, dev.log sauber.
 
 ## Erledigt (2026-09-24, Runde R21 — UltraStar Variante 2: Leading-Space-Wortgrenzen + R20-Faktenkorrektur)
 

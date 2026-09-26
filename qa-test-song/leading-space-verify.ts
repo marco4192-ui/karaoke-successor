@@ -220,5 +220,59 @@ console.log('\n7) Edge cases');
   check('text = "Hello Gold Free Rap"', song.lyrics[0]?.text === 'Hello Gold Free Rap', `got "${song.lyrics[0]?.text}"`);
 }
 
+// ────────────────────────────────────────────────────────────────────
+console.log('\n8) R22 clarification: the boundary space must exist TWICE (separator + marker)');
+{
+  // Matcher level — one space is consumed entirely by the field separator
+  const s1 = matchUltraStarNoteLine(': 8 4 60 World');
+  check('single space = separator only → lyric "World" (NO boundary marker)', s1?.lyric === 'World', `got "${s1?.lyric}"`);
+  const d1 = matchUltraStarNoteLine(': 8 4 60  World');
+  check('double space = separator + boundary → lyric " World"', d1?.lyric === ' World', `got "${d1?.lyric}"`);
+  const a1 = matchUltraStarNoteLine(': 8 4 60   World');
+  check('triple space = alignment run → no boundary marker (stripped later)', a1?.lyric === '  World', `got "${a1?.lyric}"`);
+
+  // File level — ONLY doubled spaces are boundaries; single-space lines
+  // stay connected syllables of the same word
+  const txt = [
+    '#TITLE:QA Doubled',
+    '#BPM:300',
+    '#GAP:0',
+    ': 0 4 60 Hel',
+    ': 4 4 60 lo',       // single space → still "Hello"
+    ': 8 4 60  World',   // double → new word
+    ': 12 4 60  Won',    // double → new word
+    ': 16 4 60 der',     // single → "Wonder"
+    ': 20 4 60 ful',     // single → "Wonderful"
+    '- 25',
+    'E',
+  ].join('\n');
+  const us = parseUltraStarTxt(txt);
+  check('"lo" got the boundary of the DOUBLED " World"', us.notes[1].lyric === 'lo ', `got "${us.notes[1].lyric}"`);
+  check('"World" got the boundary of the DOUBLED " Won"', us.notes[2].lyric === 'World ', `got "${us.notes[2].lyric}"`);
+  check('single-space "Won/der/ful" stay connected (no boundaries)',
+    us.notes[3].lyric === 'Won' && us.notes[4].lyric === 'der' && us.notes[5].lyric === 'ful',
+    `got "${us.notes[3].lyric}"/"${us.notes[4].lyric}"/"${us.notes[5].lyric}"`);
+  const song = convertUltraStarToSong(us, '/qa-short.mp3');
+  check('line text = "Hello World Wonderful"', song.lyrics[0]?.text === 'Hello World Wonderful', `got "${song.lyrics[0]?.text}"`);
+
+  // All-single-space file (no doubled spaces, no trailing spaces): a single
+  // space carries NO boundary information — the words cannot be recovered.
+  // This is exactly WHY variant-2 files must write the space twice.
+  const txtAllSingle = [
+    '#TITLE:QA All Single',
+    '#BPM:300',
+    '#GAP:0',
+    ': 0 4 60 Hel',
+    ': 4 4 60 lo',
+    ': 8 4 60 World',
+    ': 12 4 60 Test',
+    '- 17',
+    'E',
+  ].join('\n');
+  const us2 = parseUltraStarTxt(txtAllSingle);
+  const song2 = convertUltraStarToSong(us2, '/qa-short.mp3');
+  check('all-single-space file → no boundary info recoverable → "HelloWorldTest"', song2.lyrics[0]?.text === 'HelloWorldTest', `got "${song2.lyrics[0]?.text}"`);
+}
+
 console.log(`\n═══ RESULT: ${pass} passed, ${fail} failed ═══`);
 process.exit(fail > 0 ? 1 : 0);
