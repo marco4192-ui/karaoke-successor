@@ -8,8 +8,8 @@ import { updateSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
 import { normalizeLanguageMixed, normalizeLanguage, canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
-
-import { GENRES, LANGUAGES } from '@/lib/constants';
+import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
+import { customTaxonomy } from '@/lib/game/custom-taxonomy';
 
 export function GenreLanguageEditor({
   song,
@@ -37,6 +37,11 @@ export function GenreLanguageEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // R20: full vocabulary = built-in list + user's custom entries (reactive —
+  // adding a genre in Settings → Genres & Languages updates this dropdown
+  // immediately)
+  const { allGenres, allLanguages } = useCustomTaxonomy();
 
   // ── AI metadata suggestion state ──
   const [aiSuggestion, setAiSuggestion] = useState<{ genre?: string; language?: string } | null>(null);
@@ -81,7 +86,14 @@ export function GenreLanguageEditor({
       const res = await fetch('/api/song-identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, type: 'filename' }),
+        body: JSON.stringify({
+          input,
+          type: 'filename',
+          // R20: user-defined genres are valid AI suggestions too
+          ...(customTaxonomy.getCustomGenres().length > 0
+            ? { customGenres: customTaxonomy.getCustomGenres() }
+            : {}),
+        }),
       });
       const data = await res.json();
       if (res.status === 429 || data.error === 'rate_limited') {
@@ -214,7 +226,7 @@ export function GenreLanguageEditor({
               {showGenreDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
                   <div className="p-2 grid grid-cols-2 gap-1">
-                    {GENRES.map(genre => (
+                    {allGenres.map(genre => (
                       <button
                         key={genre}
                         onClick={() => handleGenreSelect(genre)}
@@ -271,7 +283,7 @@ export function GenreLanguageEditor({
               {showLanguageDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
                   <div className="p-2">
-                    {LANGUAGES.map(lang => (
+                    {allLanguages.map(lang => (
                       <button
                         key={lang}
                         onClick={() => handleLanguageSelect(lang)}

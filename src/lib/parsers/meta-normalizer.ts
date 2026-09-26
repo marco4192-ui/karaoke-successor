@@ -3,6 +3,7 @@
 // different spellings map to the same canonical category for filtering.
 
 import { GENRES as CANONICAL_GENRE_LIST } from '@/lib/constants';
+import { customTaxonomy } from '@/lib/game/custom-taxonomy';
 
 // ── Language normalization ──
 
@@ -185,8 +186,14 @@ const LANGUAGE_ALIASES: Record<string, string> = {
  * Case-insensitive lookup; returns the original value if no mapping found.
  * Parenthetical additions ("German (modern)", "English (US)") are stripped —
  * the canonical value is always the bare language name.
+ *
+ * Custom user-defined languages (R20 "Genres & Languages" settings): when no
+ * built-in alias matches, an exact (case-insensitive) match against the
+ * custom list wins and returns the properly-cased custom entry
+ * ("bavarian" → "Bavarian"). API routes pass their request-body list as
+ * `extraLanguages` because they cannot read localStorage.
  */
-export function normalizeLanguage(raw: string): string {
+export function normalizeLanguage(raw: string, extraLanguages?: string[]): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
 
@@ -194,7 +201,15 @@ export function normalizeLanguage(raw: string): string {
   // "deutsch (neu)" → "deutsch" → "German"
   const withoutParens = trimmed.replace(/\([^)]*\)/g, ' ').trim();
   const key = withoutParens.toLowerCase();
-  return LANGUAGE_ALIASES[key] || (withoutParens || trimmed);
+  const alias = LANGUAGE_ALIASES[key];
+  if (alias) return alias;
+
+  // Custom languages (user-defined vocabulary) — exact match, proper casing
+  const extras = extraLanguages ?? customTaxonomy.getCustomLanguages();
+  const extraMatch = extras.find(l => l.toLowerCase() === key);
+  if (extraMatch) return extraMatch;
+
+  return withoutParens || trimmed;
 }
 
 // ── Mixed-language handling (user item 12 — Language Harmonization) ──────
@@ -217,8 +232,12 @@ const LANGUAGE_SEPARATORS = /\s*[/+&,]\s*/;
  *  - Duplicates collapse; the first mentioned language leads.
  *  - Everything that is not a known language keeps its (trimmed) raw form
  *    as a single part — never silently dropped.
+ *
+ * `extraLanguages` (R20): custom user-defined languages, honored per part
+ * (API routes forward them from the request body; client-side callers get
+ * them automatically from the custom-taxonomy store).
  */
-export function normalizeLanguageMixed(raw: string): string {
+export function normalizeLanguageMixed(raw: string, extraLanguages?: string[]): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
 
@@ -230,7 +249,7 @@ export function normalizeLanguageMixed(raw: string): string {
     .split(LANGUAGE_SEPARATORS)
     .map(part => part.trim())
     .filter(Boolean)
-    .map(part => normalizeLanguage(part));
+    .map(part => normalizeLanguage(part, extraLanguages));
 
   if (parts.length === 0) return trimmed;
 
@@ -449,8 +468,14 @@ function normalizeGenreLookupKey(value: string): string {
  *     the dominant one)
  *  3. Map sub-genres/aliases to the canonical GENRES list
  *  4. Unknown values fall back to light title-casing (never dropped)
+ *
+ * `extraCanonicalGenres` (R20 "Genres & Languages" settings): user-defined
+ * main categories are checked BEFORE the alias map — if the user explicitly
+ * added e.g. "Jazz" as a category, "Jazz" stays "Jazz" instead of being
+ * alias-mapped to "R&B". Client-side callers get the customs automatically
+ * from the custom-taxonomy store; API routes forward their request list.
  */
-export function canonicalizeGenre(raw: string): string {
+export function canonicalizeGenre(raw: string, extraCanonicalGenres?: string[]): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
 
@@ -467,6 +492,13 @@ export function canonicalizeGenre(raw: string): string {
   // resolve to the same alias entry (user library uses both spellings —
   // previously hyphenated tags fell through the map untouched).
   const key = normalizeGenreLookupKey(value);
+
+  // Custom user-defined main categories (R20) WIN over the alias map — the
+  // user created them deliberately, so they are canonical in their library.
+  const extras = extraCanonicalGenres ?? customTaxonomy.getCustomGenres();
+  const extraMatch = extras.find(g => g.toLowerCase() === key);
+  if (extraMatch) return extraMatch;
+
   const canonical =
     GENRE_ALIASES[key] ??
     GENRE_ALIASES[key.replace(/-/g, ' ')] ??

@@ -3,6 +3,7 @@ import { aiChatCompletion } from '@/lib/ai/ai-provider';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { GENRES, LANGUAGES } from '@/lib/constants';
 import { canonicalizeGenre, normalizeLanguageMixed } from '@/lib/parsers/meta-normalizer';
+import { sanitizeCustomEntries } from '@/lib/game/custom-taxonomy';
 
 // ── Types ──
 
@@ -36,6 +37,12 @@ interface HarmonizeRequest {
     hintSource?: string | null;
     hintYear?: number | null;
   }>;
+  /** User-defined main genres (R20 "Genres & Languages" settings) — added
+   *  to the canonical prompt vocabulary and honored by the deterministic
+   *  post-normalization. Sanitized, max 50 entries. */
+  customGenres?: string[];
+  /** User-defined languages (R20) — same treatment as customGenres. */
+  customLanguages?: string[];
 }
 
 // ── Genre normalization map (common sub-genres → parent genres) ──
@@ -45,21 +52,51 @@ interface HarmonizeRequest {
  * curated GENRES list; language values are canonical English names, mixed
  * languages joined with '/' — never parenthetical additions. Suggestions
  * are additionally post-processed deterministically below (belt+suspenders).
+ *
+ * R20: the user's custom genres/languages (Settings → Genres & Languages)
+ * EXTEND the vocabulary — the LLM may suggest them, and the deterministic
+ * post-normalization keeps them (instead of alias-mapping e.g. "Jazz" to
+ * "R&B").
  */
-const CANONICAL_RULES = `
-CANONICAL GENRE LIST — suggested genres MUST be one of these ${GENRES.length} values:
-${GENRES.join(', ')}
+function buildCanonicalRules(customGenres: string[], customLanguages: string[]): string {
+  const genreList = [...GENRES, ...customGenres];
+  const languageSample = [...LANGUAGES.slice(0, 8), ...customLanguages];
+  const customGenreNote = customGenres.length > 0
+    ? `\nCUSTOM GENRES (user-defined, equally valid — prefer them over the closest parent when they match exactly): ${customGenres.join(', ')}`
+    : '';
+  const customLanguageNote = customLanguages.length > 0
+    ? `\nCUSTOM LANGUAGES (user-defined, valid full names): ${customLanguages.join(', ')}`
+    : '';
+  return `
+CANONICAL GENRE LIST — suggested genres MUST be one of these ${genreList.length} values:
+${genreList.join(', ')}
 Any sub-genre ("Dance Pop", "Neo Soul", "Dubstep"...) maps to its parent in the list above.
-If nothing fits, use the closest parent — never invent new genres.
+If nothing fits, use the closest parent — never invent new genres.${customGenreNote}
 
 LANGUAGE RULES:
-- Values are full ENGLISH language names: ${LANGUAGES.slice(0, 8).join(', ')}, ... (standard names only)
+- Values are full ENGLISH language names: ${languageSample.join(', ')}, ... (standard names only)
 - NEVER ISO codes or native forms (Deutsch, Español, 日本語).
 - NEVER parenthetical additions: "English (US)", "German (modern)" → just "English" / "German".
 - Mixed-language songs: join BOTH languages with '/' in dominance order,
-  e.g. "German/English". Max 3 languages.`;
+  e.g. "German/English". Max 3 languages.${customLanguageNote}`;
+}
 
-const NORMALIZATION_HINTS = `
+/**
+ * Normalization hints (sub-genre → parent). R20: built dynamically because
+ * user-defined genres can CONFLICT with the built-in rules — e.g. a custom
+ * "Jazz" main category must catch "Vocal Jazz"/"Swing"/"Bebop" instead of the
+ * built-in R&B fallback, and any sub-genre of a custom category maps to it.
+ */
+function buildNormalizationHints(customGenres: string[]): string {
+  const customSet = new Set(customGenres.map(g => g.toLowerCase()));
+  const jazzIsCustom = customSet.has('jazz');
+  const jazzLine = jazzIsCustom
+    ? '- "Vocal Jazz", "Smooth Jazz", "Bebop", "Swing", "Big Band", "jazz" (any casing) → "Jazz" (user-defined main category — jazz maps THERE, not to R&B)'
+    : '- "Vocal Jazz", "Smooth Jazz", "Bebop", "Swing", "Big Band" → "R&B" (jazz is subsumed by R&B — no separate Jazz main category)';
+  const customParentLine = customGenres.length > 0
+    ? `- USER-DEFINED CATEGORIES: ${customGenres.join(', ')} are canonical main categories. A sub-genre of a user-defined category maps to IT (e.g. "Smooth ${customGenres[0]}" → "${customGenres[0]}"). An exact match with a user-defined category ALWAYS keeps that category — never remap it to a built-in parent.\n`
+    : '';
+  return `
 Common normalizations (sub-genres → parent genre):
 - "Bubblegum Pop", "Dance Pop", "Synthpop", "Electropop", "Indie Pop", "Art Pop", "Bedroom Pop" → "Pop"
 - "Alternative Rock", "Classic Rock", "Progressive Rock", "Punk Rock", "Hard Rock", "Grunge" → "Rock"
@@ -67,7 +104,7 @@ Common normalizations (sub-genres → parent genre):
 - "Trance", "Drum and Bass", "Dubstep", "Deep House", "Techno", "House", "Ambient" → "Electronic"
 - "Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" (keep as Schlager, NOT Pop — it's a distinct German genre)
 - "K-Pop", "J-Pop" → keep as-is (canonical); "J-Rock" → "Rock"
-- "Vocal Jazz", "Smooth Jazz", "Bebop", "Swing", "Big Band" → "R&B" (jazz is subsumed by R&B — no separate Jazz main category)
+${jazzLine}
 - "Hip-Hop", "Rap", "Trap", "Drill", "Gangsta Rap" → "Rap" (the main category; no separate Hip-Hop)
 - "Country Pop", "Outlaw Country", "Bro-Country" → "Country"
 - "Indie Folk", "Folk Rock", "Americana", "Bluegrass" → "Folk"
@@ -82,7 +119,7 @@ Common normalizations (sub-genres → parent genre):
 - "Children's", "Kindermusik", "Kinderlied" → "Children's"
 - "Disney", "Walt Disney", "Disney Songs", "Disney Classics", "Disney Soundtrack" → "Disney" (keep as Disney, NOT Soundtrack — dedicated karaoke category)
 - Disney movie songs (e.g. from Frozen, Lion King, Aladdin, Moana) → "Disney"
-
+${customParentLine}
 Language detection hints:
 - Artist names ending in common patterns: "-ovic", "-ova" → Slavic language; "-sson", "-sen" → Scandinavian
 - Known non-English genres hint at language: "Schlager"/"Volksmusik" → German; "Chanson" → French; "Canzone" → Italian
@@ -90,6 +127,7 @@ Language detection hints:
 - "Volksmusik" is traditional German/Austrian/Swiss folk → German (language)
 - K-Pop songs → "Korean", J-Pop songs → "Japanese" (English language names)
 `;
+}
 
 export async function POST(request: NextRequest) {
   if (!isLocalRequest(request)) {
@@ -103,6 +141,11 @@ export async function POST(request: NextRequest) {
     if (!songs || !Array.isArray(songs) || songs.length === 0) {
       return NextResponse.json({ success: false, error: 'No songs provided' }, { status: 400 });
     }
+
+    // R20: user-defined vocabulary — sanitize BEFORE it reaches the prompt
+    // (never trust the request body blindly, even from localhost).
+    const customGenres = sanitizeCustomEntries(body.customGenres);
+    const customLanguages = sanitizeCustomEntries(body.customLanguages);
 
     // Limit batch size to prevent token overflow. 15 instead of the old 50:
     // with 50 songs per call the LLM regularly returned an incomplete JSON
@@ -139,9 +182,9 @@ RULES:
 6. If the current value is already good, set the suggestion to null with confidence 100.
 7. If a [Facts: ...] hint is present, it comes from MusicBrainz/Deezer and is RELIABLE. Trust it: suggest the fact's genre (normalized to the standard spelling) instead of guessing. Never contradict a factual year.
 
-${CANONICAL_RULES}
+${buildCanonicalRules(customGenres, customLanguages)}
 
-${NORMALIZATION_HINTS}
+${buildNormalizationHints(customGenres)}
 
 Respond ONLY with a valid JSON array. Each element must have:
 - "index" (1-based, matching the input list)
@@ -211,8 +254,11 @@ Do NOT include any text outside the JSON array.`,
         // analyzed=false marks songs the LLM silently dropped — the client
         // keeps them "unanalyzed" instead of caching a fake no-change.
         analyzed: !!match,
-        suggestedGenre: match ? (rawGenre ? canonicalizeGenre(rawGenre) : null) : null,
-        suggestedLanguage: match ? (rawLanguage ? normalizeLanguageMixed(rawLanguage) : null) : null,
+        // Custom vocabulary (R20) is passed through so e.g. a user-defined
+        // "Jazz" survives the deterministic post-normalization instead of
+        // being alias-mapped to "R&B".
+        suggestedGenre: match ? (rawGenre ? canonicalizeGenre(rawGenre, customGenres) : null) : null,
+        suggestedLanguage: match ? (rawLanguage ? normalizeLanguageMixed(rawLanguage, customLanguages) : null) : null,
         genreConfidence: match?.genreConfidence ?? 0,
         languageConfidence: match?.languageConfidence ?? 0,
         genreReason: match?.genreReason ?? '',

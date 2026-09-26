@@ -19,6 +19,10 @@ export const StorageKeys = {
   CUSTOM_SONGS: 'karaoke-successor-custom-songs',
   CUSTOM_SONG_IDS: 'karaoke-custom-song-ids',
   LIBRARY_SETTINGS: 'karaoke-library-settings',
+  /** User-defined genre entries beyond the built-in GENRES list (JSON string[]) */
+  CUSTOM_GENRES: 'karaoke-custom-genres',
+  /** User-defined language entries beyond the built-in LANGUAGES list (JSON string[]) */
+  CUSTOM_LANGUAGES: 'karaoke-custom-languages',
 
   // --- Game Settings ---
   DEFAULT_DIFFICULTY: 'karaoke-default-difficulty',

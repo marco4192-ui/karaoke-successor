@@ -47,7 +47,7 @@ import {
   ruleHarmonizer,
   RuleHarmonizeJobState,
 } from '@/lib/editor/rule-harmonizer';
-import { GENRES } from '@/lib/constants';
+import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
@@ -118,6 +118,11 @@ export function MetadataStudio({
   const [fields, setFields] = useState({ genre: true, language: true, year: true });
   const [mode, setMode] = useState<StudioMode>('fill');
   const [writeTarget, setWriteTarget] = useState<StudioWriteTarget>('txt');
+
+  // R20: genre vocabulary = built-in list + user-defined entries from
+  // Settings → Genres & Languages (reactive — the dropdowns here update the
+  // moment a custom genre is added or removed there)
+  const { allGenres } = useCustomTaxonomy();
 
   // Opening from the select bar switches to the selection scope (token-based
   // so it also fires when the scope was already "selection")
@@ -1027,7 +1032,7 @@ export function MetadataStudio({
                         data-testid={`studio-manual-select-${item.songId}`}
                       >
                         <option value="">{t('editor.manualReviewChoose')}</option>
-                        {GENRES.map(g => (
+                        {allGenres.map(g => (
                           <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
                         ))}
                       </select>
@@ -1161,7 +1166,7 @@ export function MetadataStudio({
                             data-testid={`manual-edit-genre-${song.id}`}
                           >
                             <option value="">{t('editor.manualReviewChoose')}</option>
-                            {GENRES.map(g => (
+                            {allGenres.map(g => (
                               <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
                             ))}
                           </select>

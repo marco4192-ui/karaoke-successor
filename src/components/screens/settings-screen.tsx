@@ -25,6 +25,7 @@ import { GraphicSoundTab } from '@/components/settings/graphic-sound-tab';
 import { AboutTab } from '@/components/settings/about-tab';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
 import { SyncTab } from '@/components/settings/sync-tab';
+import { TaxonomyTab } from '@/components/settings/taxonomy-tab';
 import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-section';
 import { CompanionListSection } from '@/components/settings/companion-list-section';
 import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-bar';
@@ -90,7 +91,7 @@ function SettingsScreen() {
   useEffect(() => {
     const handleRemoteTab = (e: Event) => {
       const { tab } = (e as CustomEvent).detail;
-      if (tab && ['general','gameplay','appearance','graphicsound','microphone','mobile','webcam','library','viral','sync','about'].includes(tab)) {
+      if (tab && ['general','gameplay','appearance','graphicsound','microphone','mobile','webcam','library','taxonomy','viral','sync','about'].includes(tab)) {
         setActiveTab(tab as SettingsTab);
       }
     };
@@ -327,6 +328,8 @@ function SettingsScreen() {
           tx={tx}
         />
       )}
+
+      {activeTab === 'taxonomy' && <TaxonomyTab />}
 
       {activeTab === 'viral' && <ViralChartsSettings />}
 

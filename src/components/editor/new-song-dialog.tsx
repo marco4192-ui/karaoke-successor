@@ -16,7 +16,7 @@ import { parseLyricsToSyllables, type SyllableResult } from '@/lib/editor/syllab
 import { useTranslation } from '@/lib/i18n/translations';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen } from '@/lib/native-fs';
-import { GENRES, LANGUAGES } from '@/lib/constants';
+import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { useAudioAnalysis } from '@/hooks/use-audio-analysis';
 import { classifyVideoInput, classifyBackgroundInput } from '@/lib/editor/video-classification';
 
@@ -37,6 +37,9 @@ interface NewSongDialogProps {
  */
 export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const { t } = useTranslation();
+  // R20: built-in + user-defined genres/languages (reactive via the
+  // custom-taxonomy store — Settings → Genres & Languages)
+  const { allGenres, allLanguages } = useCustomTaxonomy();
 
   // Metadata state
   const [title, setTitle] = useState('');
@@ -328,7 +331,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                     <SelectValue placeholder={t('editor.newSongDialog.genrePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {GENRES.map(g => (
+                    {allGenres.map(g => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
                   </SelectContent>
@@ -341,7 +344,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                     <SelectValue placeholder={t('editor.newSongDialog.languagePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {LANGUAGES.map(l => (
+                    {allLanguages.map(l => (
                       <SelectItem key={l} value={l}>{l}</SelectItem>
                     ))}
                   </SelectContent>

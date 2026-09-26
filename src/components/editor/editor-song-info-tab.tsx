@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users } from 'lucide-react';
 import type { Song } from '@/types/game';
 import { useTranslation } from '@/lib/i18n/translations';
-import { GENRES, LANGUAGES } from '@/lib/constants';
+import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { classifyVideoInput, getEffectiveVideoValue } from '@/lib/editor/video-classification';
 
 interface EditorSongInfoTabProps {
@@ -21,6 +21,9 @@ interface EditorSongInfoTabProps {
 
 export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsavedChanges }: EditorSongInfoTabProps) {
   const { t } = useTranslation();
+  // R20: built-in + user-defined genres/languages (Settings → Genres &
+  // Languages) — the vocabulary is reactive across the whole app
+  const { allGenres, allLanguages } = useCustomTaxonomy();
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
@@ -166,9 +169,10 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         <Separator className="bg-slate-700" />
 
-        {/* Genre — canonical GENRES list from constants.ts (single source of
-            truth, includes Disney). The old Genre/Language sidebar tab was
-            removed (R4 point 8) — this is the regular metadata editing spot. */}
+        {/* Genre — canonical vocabulary (built-in list + user customs from
+            Settings → Genres & Languages, R20). The old Genre/Language
+            sidebar tab was removed (R4 point 8) — this is the regular
+            metadata editing spot. */}
         <div className="space-y-2">
           <Label htmlFor="song-genre" className="text-slate-400 text-xs">{t('editor.songInfoTab.genre')}</Label>
           <Select
@@ -182,7 +186,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               <SelectValue placeholder={t('editor.songInfoTab.genrePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              {GENRES.map(g => (
+              {allGenres.map(g => (
                 <SelectItem key={g} value={g}>{g}</SelectItem>
               ))}
             </SelectContent>
@@ -217,8 +221,8 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
           />
         </div>
 
-        {/* Language — canonical LANGUAGES list from constants.ts (English
-            names, consistent with the AI harmonize pipeline) */}
+        {/* Language — canonical vocabulary (built-in English names + user
+            customs, R20) — consistent with the AI harmonize pipeline */}
         <div className="space-y-2">
           <Label htmlFor="song-language" className="text-slate-400 text-xs">{t('editor.songInfoTab.language')}</Label>
           <Select
@@ -233,7 +237,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               <SelectValue placeholder={t('editor.songInfoTab.languagePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              {LANGUAGES.map(l => (
+              {allLanguages.map(l => (
                 <SelectItem key={l} value={l}>{l}</SelectItem>
               ))}
             </SelectContent>

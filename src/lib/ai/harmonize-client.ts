@@ -19,7 +19,7 @@
 
 import { getCachedHarmonize, setCachedHarmonize, HarmonizeCacheEntry } from '@/lib/ai/harmonize-cache';
 import { normalizeLanguageMixed, canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
-import { GENRES, LANGUAGES } from '@/lib/constants';
+import { customTaxonomy } from '@/lib/game/custom-taxonomy';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -125,19 +125,23 @@ const LOOKUP_CHUNK_SIZE = 12;
 
 // ── Canonicality helpers (client-side LLM skip rules) ────────────────────
 
+// NOTE (R20 "Genres & Languages"): the canonical vocabulary is the built-in
+// list PLUS the user's custom entries — a song tagged with a custom genre
+// ("Jazz"…) or custom language is already canonical and does not burn an
+// LLM call.
+
 function isCanonicalGenre(genre: string | null): boolean {
   if (!genre) return false;
-  return GENRES.includes(genre as (typeof GENRES)[number]);
+  return customTaxonomy.getAllGenres().includes(genre);
 }
 
 function isCanonicalLanguage(language: string | null): boolean {
   if (!language) return false;
-  if (LANGUAGES.includes(language as (typeof LANGUAGES)[number])) return true;
+  const all = customTaxonomy.getAllLanguages();
+  if (all.includes(language)) return true;
   // Mixed-language values ("German/English") are canonical when every part is
   const parts = language.split('/');
-  return parts.length > 1 && parts.every(p =>
-    LANGUAGES.includes(p.trim() as (typeof LANGUAGES)[number]),
-  );
+  return parts.length > 1 && parts.every(p => all.includes(p.trim()));
 }
 
 /**
@@ -239,12 +243,16 @@ interface LlmSuggestion {
 }
 
 /** One LLM call for a small chunk. Returns ONLY the songs the model actually
- *  answered for (analyzed=true entries); dropped entries are absent. */
+ *  answered for (analyzed=true entries); dropped entries are absent.
+ *  Custom genres/languages (R20) travel WITH the request so the server-side
+ *  prompt and post-normalization honor the user's vocabulary. */
 async function callLlmChunk(
   songs: Array<HarmonizeSong & { hintGenre?: string; hintSource?: string; hintYear?: number }>,
   signal?: AbortSignal,
 ): Promise<Map<string, LlmSuggestion>> {
   const map = new Map<string, LlmSuggestion>();
+  const customGenres = customTaxonomy.getCustomGenres();
+  const customLanguages = customTaxonomy.getCustomLanguages();
   try {
     const res = await fetch('/api/harmonize', {
       method: 'POST',
@@ -257,6 +265,8 @@ async function callLlmChunk(
           hintSource: s.hintSource ?? undefined,
           hintYear: s.hintYear ?? undefined,
         })),
+        ...(customGenres.length > 0 ? { customGenres } : {}),
+        ...(customLanguages.length > 0 ? { customLanguages } : {}),
       }),
       signal,
     });

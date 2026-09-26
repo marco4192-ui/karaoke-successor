@@ -3,11 +3,15 @@ import { aiChatCompletion } from '@/lib/ai/ai-provider'; // provider-aware (ZAI 
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 import { withRetry, isRateLimitError } from '@/app/api/lib/retry';
 import { GENRES } from '@/lib/constants';
+import { sanitizeCustomEntries } from '@/lib/game/custom-taxonomy';
 
 // TypeScript types for song identification
 interface SongIdentifyRequest {
   input: string;
   type: 'filename' | 'lyrics';
+  /** User-defined main genres (R20 "Genres & Languages" settings) — added
+   *  to the genre prompt vocabulary so AI suggestions can pick them. */
+  customGenres?: string[];
 }
 
 interface SongMetadata {
@@ -80,6 +84,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
       ? sanitizeLLMInput(body.input.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim())
       : sanitizeLLMInput(body.input, 200);
 
+    // R20: user-defined genres extend the suggestion vocabulary
+    const customGenres = sanitizeCustomEntries(body.customGenres);
+    const genreList = [...GENRES, ...customGenres];
+    const customGenreNote = customGenres.length > 0
+      ? ` Also valid (user-defined main genres, prefer them when they match exactly): ${customGenres.join(', ')}.`
+      : '';
+
     // Use LLM to extract metadata directly (faster than web search)
     try {
       const completion = await withRetry<string>(async (): Promise<string> => {
@@ -103,8 +114,8 @@ Rules:
 - confidence should be 0-100 based on how certain you are
 - For language, ALWAYS use the full ENGLISH language name (e.g. "English", "German", "Spanish", "French", "Japanese", "Korean", "Chinese", "Russian", "Italian", "Portuguese") — NOT ISO codes, NOT native forms (no "Deutsch", "Español", "日本語")
 - If you cannot determine a field, set it to null
-- For genre, use ONE of these ${GENRES.length} well-known MAIN genres: ${GENRES.join(', ')}. Disney songs (Disney animated/live-action movies, e.g. "Let It Go", "Hakuna Matata") get genre "Disney", NOT "Soundtrack" or "Musical".
-- Sub-genres should be normalized to their parent genre. Examples: "Synthpop" → "Pop", "Alternative Rock" → "Rock", "Deep House" → "Electronic", "Contemporary R&B" → "R&B", "Indie Folk" → "Folk", "Neo Soul" → "Soul", "Hip-Hop"/"Trap" → "Rap", "Jazz"/"Swing"/"Big Band" → "R&B", "Disco" → "Electronic"
+- For genre, use ONE of these ${genreList.length} well-known MAIN genres: ${genreList.join(', ')}. Disney songs (Disney animated/live-action movies, e.g. "Let It Go", "Hakuna Matata") get genre "Disney", NOT "Soundtrack" or "Musical".${customGenreNote}
+- Sub-genres should be normalized to their parent genre. Examples: "Synthpop" → "Pop", "Alternative Rock" → "Rock", "Deep House" → "Electronic", "Contemporary R&B" → "R&B", "Indie Folk" → "Folk", "Neo Soul" → "Soul", "Hip-Hop"/"Trap" → "Rap", ${customGenres.some(g => g.toLowerCase() === 'jazz') ? '"Jazz"/"Swing"/"Big Band" → "Jazz" (user-defined category), "Disco" → "Electronic"' : '"Jazz"/"Swing"/"Big Band" → "R&B", "Disco" → "Electronic"'}
 - For language detection from lyrics: look at the actual words used. Common indicators:
   - German: "ich", "du", "der", "die", "das", "und", "nicht", "ein", "ist", "mir"
   - English: "the", "is", "and", "you", "I", "to", "a", "in", "it", "of"
