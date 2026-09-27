@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,6 +64,17 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   // Video URL (YouTube / Dailymotion / Vimeo / Rutube / VK / Bilibili / Niconico
   // or a direct video URL) — classified into the matching Song field
   const [videoUrl, setVideoUrl] = useState('');
+
+  // R26 (cover-bug fix): the BROWSER file picker must keep the actual File
+  // objects — the previous code kept only `file.name`, which then landed in
+  // `coverImage` as a raw path string. An <img src="cover.jpg"> resolves
+  // against the page URL and 404s → „Bild konnte nicht geladen werden“ icon.
+  // The Files are persisted to the media IndexedDB in handleSave (with
+  // storedMedia: true), so covers/audio survive page reloads like the old
+  // Converter imports did.
+  const pickedFilesRef = useRef<{
+    audio?: File; video?: File; cover?: File; background?: File;
+  }>({});
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -142,11 +153,15 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       mp3File: audioPath ? audioPath.split(/[/\\]/).pop() || 'song.mp3' : 'song.mp3',
       ...(audioPath ? { relativeAudioPath: audioPath } : {}),
       ...(videoPath ? { relativeVideoPath: videoPath } : {}),
-      ...(coverPath ? { relativeCoverPath: coverPath, coverImage: coverPath } : {}),
+      // R26: NEVER put a raw filesystem path/name into coverImage or
+      // backgroundImage — it is not a loadable URL and renders as a broken
+      // image. Tauri resolves relativeCoverPath/relativeBackgroundPath at
+      // runtime; the browser keeps the picked File in pickedFilesRef, which
+      // handleSave persists into the media IndexedDB (storedMedia).
+      ...(coverPath ? { relativeCoverPath: coverPath } : {}),
       ...(backgroundPath ? {
         relativeBackgroundPath: backgroundPath,
         backgroundFile: backgroundPath.split(/[/\\]/).pop() || 'background.jpg',
-        backgroundImage: backgroundPath,
       } : {}),
       ...videoUrlFields,
       ...backgroundUrlFields,
@@ -167,6 +182,44 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
     setIsSaving(true);
     try {
+      // R26 (cover-bug fix): persist browser-picked media Files into the
+      // media IndexedDB under the song's ID so covers/audio/video survive
+      // page reloads (the same mechanism the old Converter imports used).
+      // Tauri needs nothing here — relative*Path fields are resolved from
+      // the filesystem at runtime.
+      if (!isTauri()) {
+        const files = pickedFilesRef.current;
+        try {
+          if (files.cover || files.audio || files.video) {
+            const { storeMedia } = await import('@/lib/db/media-db');
+            if (files.cover) {
+              await storeMedia(song.id, 'cover', files.cover);
+              // Session URL for the editor preview — the library restores a
+              // fresh one from IndexedDB on every load (storedMedia: true).
+              song.coverImage = URL.createObjectURL(files.cover);
+            }
+            if (files.audio) {
+              await storeMedia(song.id, 'audio', files.audio);
+              song.audioUrl = URL.createObjectURL(files.audio);
+            }
+            if (files.video) {
+              await storeMedia(song.id, 'video', files.video);
+              song.videoBackground = URL.createObjectURL(files.video);
+            }
+            song.storedMedia = true;
+          }
+          if (files.background) {
+            // Visual-only for this session (the media-db has no background
+            // slot) — saveCustomSongs strips the blob: URL on persist, so it
+            // cleanly disappears after a reload instead of breaking.
+            song.backgroundImage = URL.createObjectURL(files.background);
+          }
+        } catch (mediaErr) {
+          // Non-fatal: the song still saves, just without persisted media.
+          // eslint-disable-next-line no-console
+          console.warn('[NewSong] Media persistence failed:', mediaErr);
+        }
+      }
       onSave(song);
     } catch (err) {
       setError(`${t('editor.newSongDialog.error')} ${err instanceof Error ? err.message : t('editor.newSongDialog.unknownError')}`);
@@ -206,13 +259,17 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
         console.error(`[NewSong] File picker error:`, err);
       }
     } else {
-      // Browser fallback: use hidden file input
+      // Browser fallback: keep the REAL File (not just its name — see
+      // pickedFilesRef above) so handleSave can persist it in IndexedDB.
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = fileType === 'audio' ? 'audio/*,.mid,.kar' : fileType === 'video' ? 'video/*' : 'image/*';
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) setter(file.name);
+        if (file) {
+          pickedFilesRef.current[fileType] = file;
+          setter(file.name);
+        }
       };
       input.click();
     }

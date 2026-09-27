@@ -279,3 +279,29 @@ Auftrag: alle Feature Ideas umsetzen, AUSSER 13 (Leaderboard-Frontend — Nutzer
 - Browser-QA ohne Tauri: Song-Import über den Converter (siehe oben) — Audio wird jetzt persistent gespeichert.
 - `bun run build` in der Sandbox verboten; nur Port 3000. Stattdessen `npx tsc --noEmit` für den Build-Typecheck.
 - **Dev-Server-Start (überlebt Session-Ende):** `bash -c 'setsid nohup bun run dev > /dev/null 2>&1 < /dev/null &'` aus `/home/z/my-project` (Double-Fork, log landet via tee in dev.log).
+
+---
+
+Task ID: r26
+Agent: main (Z.ai Code)
+Task: User-Bug-Report „In der Library werden nicht mehr bei allen Songs die Cover angezeigt (‚Bild konnte nicht geladen werden‘-Icon), ohne dass etwas geändert wurde" — Ursache finden und beheben.
+
+Work Log:
+- Reproduktion mit eigener Seed-Bibliothek (qa-test-song/seed-covers.js: 4 Songs mit storedMedia-Covern aus Media-DB + 2 mit Data-URL-Covern; qa-test-song/seed-pathological.js: 1 Song mit toter blob:-CoverURL ohne Media-DB-Record + 1 Song mit rohem Pfad ‚cover.jpg' als coverImage)
+- Ursachenanalyse (statisch + empirisch, inkl. instrumentiertem URL.revokeObjectURL): Cover-Bug-Klasse = blob-URL-Lebenszyklus-Fehler mit 4 konkreten Auslösern:
+  1. new-song-dialog.tsx setzte `coverImage: coverPath` / `backgroundImage: backgroundPath` mit rohem Datei-Name/Pfad (Browser: file.name) → <img src="cover.jpg"> 404 → Broken-Image-Icon. Browser-Picker warf die File-Objekte weg (nur Name blieb).
+  2. getAllSongsAsync() revocierte beim JEDEN Aufruf die komplette vorherige Blob-Generation (revokeBrowserBlobUrls) — bei überlappenden Aufrufen (Settings-Tabs/Motto-Tab/Queue/Editor laden alle per getAllSongsAsync) konnten angezeigte Covers mitten in der Anzeige sterben.
+  3. Restore-Fallback `coverImage: mediaUrls.coverUrl || song.coverImage` konnte tote/revoked blob:-URLs aus dem Cache durchreichen (z.B. nach Editor-Save mit laufender Blob-URL im Song-Objekt via upsertSong).
+  4. purgeAbortedNewSongs() löschte auch GESPEICHERTE Songs (storedTxt=true, aber noch keine Notes) aus der Library — Datenverlust inkl. gespeicherter Cover-Records.
+- Fix 1 (song-library.ts): Blob-URLs jetzt per GENERATION getrackt (openBrowserBlobUrlGeneration/trackBrowserBlobUrls) — Revoken erst ab Generation N-2 (One-Generation-Grace); neuer dropDeadBlobUrl()-Sanitizer: storedMedia-Songs ohne Media-DB-Record bekommen NIE eine tote blob:-Fallback-URL (→ sauberer Platzhalter); revokeBrowserBlobUrls() (voller Reset bei Scan/Clear) bleibt erhalten.
+- Fix 2 (new-song-dialog.tsx): Browser-Picker behält echte File-Objekte (pickedFilesRef); handleSave persistiert cover/audio/video via storeMedia in die Media-DB + storedMedia:true + Session-Blob-URLs für Editor-Preview; coverImage/backgroundImage werden NIE mehr auf Roh-Pfade gesetzt (Tauri: relativeCoverPath-only, Restore lädt zur Laufzeit).
+- Fix 3 (song-card.tsx + neue safe-image.tsx): onError-Sicherheitsnetz — fehlgeschlagene Cover/Background-srcs werden pro-URL markiert und ausgeblendet → sauberer MusicIcon-Platzhalter statt Broken-Image-Icon; SafeImage zusätzlich in song-start-modal, playlist-view, folder-view (Companion mobile-songs-view + Editor hatten bereits onError).
+- Fix 4 (song-library.ts purgeAbortedNewSongs): Purge nur noch für NEVER-SAVED Shells (!relativeTxtPath && !storedTxt && keine Notes) — gespeicherte Songs überleben.
+- E2E mit Agent-Browser verifiziert: 6 normale Covers cover-ok nach Reload + Navigationen (Settings/Party/Queue/Editor/Song-Play-Roundtrips); tote blob:-URL → Platzhalter; Pfad-Cover → Platzhalter; kompletter New-Song-Flow (Cover-File picken → Create Song → Editor-Save → Reload) → „Cover Test Song" überlebt Purge UND zeigt Cover aus Media-DB; Start-Modal-Cover ok; kein einziges Broken-Image mehr. QA-Shot: qa-shots/r26-library-covers-fixed.png.
+- npx tsc --noEmit: Exit 0. Lint: 0 Errors (825 Warnungen, +1 durch Zeilenverschiebung prä-existenter Muster — verifiziert: keine neue Warnung aus R26-Code). dev.log clean.
+
+Stage Summary:
+- Cover-Bug-Klasse vollständig behoben (4 Auslöser, Defense-in-Depth: Sanitizer + Generations-Grace + SafeImage/onError + Persistenz)
+- Neue Songs im Browser behalten jetzt ihre Cover/Audio/Video-Dateien dauerhaft (Media-DB, wie der alte Converter vor R15) — vorher gingen die Dateien beim Picker bereits verloren
+- Gespeicherte note-lose Songs werden nicht mehr aus der Library gelöscht (Datenverlust-Fix)
+- Hinweis für den User: Bestehende Songs, deren Cover bereits nie persistiert wurden (vor diesem Fix erstellt), zeigen jetzt den sauberen Musik-Platzhalter statt des Fehler-Icons; einmal neu importiert/ gespeichert bleiben sie dauerhaft erhalten.

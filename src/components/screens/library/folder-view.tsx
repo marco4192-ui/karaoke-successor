@@ -8,6 +8,7 @@ import { FolderIcon, MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { LANGUAGE_FLAGS } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
+import { SafeImage } from './safe-image';
 
 interface FolderViewProps {
   groupedSongs: Map<string, Song[]>;
@@ -183,13 +184,17 @@ export function FolderView({
                   className="w-8 h-8 rounded bg-gradient-to-br from-purple-600/50 to-blue-600/50 border-2 border-gray-900 overflow-hidden"
                   style={{ zIndex: 4 - i }}
                 >
-                  {song.coverImage ? (
-                    <img src={song.coverImage} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <MusicIcon className="w-4 h-4 text-white/30" />
-                    </div>
-                  )}
+                  {/* R26: SafeImage — dead cover src → placeholder, never the broken-image icon */}
+                  <SafeImage
+                    src={song.coverImage}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    fallback={(
+                      <div className="w-full h-full flex items-center justify-center">
+                        <MusicIcon className="w-4 h-4 text-white/30" />
+                      </div>
+                    )}
+                  />
                 </div>
               ))}
               {songs.length > 4 && (

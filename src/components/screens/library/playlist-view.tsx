@@ -15,6 +15,7 @@ import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
 import { useTranslation } from '@/lib/i18n/translations';
 import { toast } from '@/hooks/use-toast';
+import { SafeImage } from './safe-image';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -165,13 +166,14 @@ export function PlaylistView({
                     </div>
                   )}
                   
-                  {/* Cover Image */}
+                  {/* Cover Image — R26: SafeImage hides dead cover srcs (broken-image icon bug) */}
                   <div className="w-full aspect-square rounded-lg mb-3 overflow-hidden bg-gradient-to-br from-purple-600/30 to-cyan-600/30 flex items-center justify-center">
-                    {playlistSongs.length > 0 && playlistSongs[0].coverImage ? (
-                      <img src={playlistSongs[0].coverImage} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <MusicIcon className="w-12 h-12 text-white/30" />
-                    )}
+                    <SafeImage
+                      src={playlistSongs.length > 0 ? playlistSongs[0].coverImage : undefined}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      fallback={<MusicIcon className="w-12 h-12 text-white/30" />}
+                    />
                   </div>
                   
                   {/* Playlist Name */}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { SongCardProps } from './types';
 import { MusicIcon, PlayIcon } from '@/components/icons';
@@ -27,6 +28,19 @@ export function SongCard({
   const isPreviewing = previewSong?.id === song.id;
   const songHasVideo = hasVideo(song);
 
+  // R26 (cover-bug fix): safety net against un-loadable image srcs (dead
+  // blob: URLs, 404 paths, unreachable remotes). A failed <img> must never
+  // show the browser's „Bild konnte nicht geladen werden“ icon — the card
+  // falls back to the clean MusicIcon placeholder instead. Failed srcs are
+  // tracked per URL, so a changed src (e.g. a restored fresh blob URL)
+  // simply renders again.
+  const [failedSrcs, setFailedSrcs] = useState<Set<string>>(new Set());
+  const markFailed = (src?: string) => {
+    if (!src) return;
+    setFailedSrcs(prev => prev.has(src) ? prev : new Set(prev).add(src));
+  };
+  const isFailed = (src?: string) => !!src && failedSrcs.has(src);
+
   // Extract itemProps so we can merge onKeyDown with our fallback handler
   const { ref: itemRef, onKeyDown: itemOnKeyDown, ...restItemProps } = itemProps || {};
 
@@ -41,7 +55,11 @@ export function SongCard({
   };
 
   const effectiveSong = isPreviewing && previewSong ? previewSong : song;
-  const showBackgroundDuringPreview = isPreviewing && !songHasVideo && !!effectiveSong.backgroundImage;
+  const coverBroken = isFailed(effectiveSong.coverImage);
+  const backgroundBroken = isFailed(effectiveSong.backgroundImage);
+  const showBackground = !!effectiveSong.backgroundImage && !backgroundBroken;
+  const showCover = !!effectiveSong.coverImage && !coverBroken;
+  const showBackgroundDuringPreview = isPreviewing && !songHasVideo && showBackground;
 
   return (
     <div
@@ -55,20 +73,22 @@ export function SongCard({
       onKeyDown={handleKeyDown}
     >
       <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
-        {effectiveSong.backgroundImage && (
+        {showBackground && (
           <img 
             src={effectiveSong.backgroundImage} 
             alt="" 
+            onError={() => markFailed(effectiveSong.backgroundImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               showBackgroundDuringPreview ? 'opacity-100' : 'opacity-0'
             }`} 
           />
         )}
         
-        {effectiveSong.coverImage && (
+        {showCover && (
           <img 
             src={effectiveSong.coverImage} 
             alt={effectiveSong.title} 
+            onError={() => markFailed(effectiveSong.coverImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               isPreviewing && songHasVideo ? 'opacity-0' : 'opacity-100'
             }`} 
@@ -124,7 +144,7 @@ export function SongCard({
           );
         })()}
         
-        {!effectiveSong.coverImage && !effectiveSong.backgroundImage && !songHasVideo && (
+        {!showCover && !showBackground && !songHasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
             <MusicIcon className="w-16 h-16 text-white/30" />
           </div>

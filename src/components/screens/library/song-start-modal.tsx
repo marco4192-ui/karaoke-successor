@@ -10,6 +10,7 @@ import { useFocusTrap } from '@/hooks/use-roving-focus';
 import { StorageKeys, getItem, getNumber } from '@/lib/storage';
 import { getInstrumentalExportBlocker, exportInstrumentalWav, downloadInstrumental } from '@/lib/audio/instrumental-export';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SafeImage } from './safe-image';
 
 // ===================== MIC SELECTOR (Single mode) =====================
 function useSavedMics() {
@@ -321,13 +322,17 @@ export function SongStartModal({
         {/* Cover + info row */}
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="w-28 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex-shrink-0">
-            {selectedSong.coverImage ? (
-              <img src={selectedSong.coverImage} alt={selectedSong.title} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <MusicIcon className="w-10 h-10 text-white/30" />
-              </div>
-            )}
+            {/* R26: SafeImage — a dead cover src shows the placeholder instead of the broken-image icon */}
+            <SafeImage
+              src={selectedSong.coverImage}
+              alt={selectedSong.title}
+              className="w-full h-full object-cover"
+              fallback={(
+                <div className="w-full h-full flex items-center justify-center">
+                  <MusicIcon className="w-10 h-10 text-white/30" />
+                </div>
+              )}
+            />
           </div>
           <div className="text-sm text-white/40 space-y-0.5 min-w-0">
             <p>{t('songStart.bpm')} {selectedSong.bpm} | {t('songStart.duration')} {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>

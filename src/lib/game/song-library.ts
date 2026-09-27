@@ -35,7 +35,41 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Track blob URLs created by getAllSongsAsync() browser-mode path for cleanup.
 // Without this, every library refresh leaks up to 4 blob URLs per storedMedia song.
-let lastBrowserBlobUrls: Array<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string }> = [];
+//
+// R26 (cover-bug fix): URLs are tracked PER GENERATION. Every getAllSongsAsync()
+// call opens a new generation; revocation only drops generations that are at
+// least TWO calls old. The one-generation grace period keeps the URLs of the
+// PREVIOUS call alive — so a consumer that still displays the previous result
+// (e.g. the Library grid during a fast Settings→Library roundtrip, or an
+// interleaved concurrent restore) never has its <img src="blob:…"> yanked
+// away mid-display (symptom: „Bild konnte nicht geladen werden“ icons).
+type BrowserBlobUrls = { audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string };
+let blobUrlGenerations: BrowserBlobUrls[][] = [[]];
+
+/** Record a fresh set of browser blob URLs in the CURRENT generation. */
+function trackBrowserBlobUrls(urls: BrowserBlobUrls): void {
+  const current = blobUrlGenerations[blobUrlGenerations.length - 1];
+  if (current) current.push(urls);
+}
+
+/** Open a new blob-URL generation and retire old ones (grace: keep the
+ *  previous generation alive — see comment above). */
+function openBrowserBlobUrlGeneration(): void {
+  blobUrlGenerations.push([]);
+  // Revoke everything except the two newest generations.
+  while (blobUrlGenerations.length > 2) {
+    const retired = blobUrlGenerations.shift();
+    if (retired) for (const urls of retired) revokeSongMediaUrls(urls);
+  }
+}
+
+/** Drop a stale blob: URL that can no longer be loaded. Blob URLs never
+ *  survive a page reload, and a revoked one renders as the browser's broken
+ *  image icon — a clean `undefined` (→ MusicIcon placeholder) is always better.
+ *  Non-blob URLs (data:, http(s):, /path) are passed through untouched. */
+function dropDeadBlobUrl(url: string | undefined): string | undefined {
+  return url && url.startsWith('blob:') ? undefined : url;
+}
 
 // Scan lock: prevents loadCustomSongsFromStorage from overwriting cache
 // while a Settings scan is in progress (avoids race condition).
@@ -58,12 +92,14 @@ function waitForScanLock(): Promise<void> {
   return scanLock;
 }
 
-/** Revoke all blob URLs tracked by getAllSongsAsync browser-mode path. */
+/** Revoke ALL tracked blob URLs immediately (full library replacement /
+ *  explicit cache clear — e.g. folder scan or reset). No grace here: the
+ *  caller replaces the entire song store, so every previous URL is garbage. */
 function revokeBrowserBlobUrls(): void {
-  for (const urls of lastBrowserBlobUrls) {
-    revokeSongMediaUrls(urls);
+  for (const generation of blobUrlGenerations) {
+    for (const urls of generation) revokeSongMediaUrls(urls);
   }
-  lastBrowserBlobUrls = [];
+  blobUrlGenerations = [[]];
 }
 
 /** Invalidate all in-memory caches, forcing fresh reads from storage. */
@@ -482,9 +518,14 @@ export function removeSong(songId: string): void {
 export function purgeAbortedNewSongs(): number {
   try {
     const customSongs = getCustomSongs();
+    // R26: a song with storedTxt=true (or a relativeTxtPath) HAS been saved
+    // to a txt file — it is a legitimate library entry, not an aborted shell,
+    // and must survive the purge (previously a saved-but-note-less song was
+    // dropped here, taking its saved media/cover records with it).
     const shells = customSongs.filter(s =>
       s.id.startsWith('new-') &&
       !s.relativeTxtPath &&
+      !s.storedTxt &&
       (!s.lyrics || s.lyrics.length === 0),
     );
     if (shells.length === 0) return 0;
@@ -772,20 +813,27 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   }
 
   // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag.
-  // CRITICAL: Revoke previous blob URLs before creating new ones to prevent memory leaks.
-  revokeBrowserBlobUrls();
+  // R26: a NEW generation is opened instead of revoking the previous call's
+  // URLs outright (one-generation grace — see trackBrowserBlobUrls above),
+  // and stale blob: fallbacks are dropped so a dead URL can never reach an
+  // <img> (the „Bild konnte nicht geladen werden“ cover bug).
+  openBrowserBlobUrlGeneration();
   // Restore URLs in batches to avoid excessive IndexedDB reads
   const restoredSongsCopy = [...songs];
   await asyncPool(20, songs, async (song, index) => {
     if (song.storedMedia) {
       try {
         const mediaUrls = await getSongMediaUrls(song.id);
-        lastBrowserBlobUrls.push(mediaUrls);
+        trackBrowserBlobUrls(mediaUrls);
+        // storedMedia songs: the media-db is the single source of truth. When a
+        // record is missing there, any cached blob: URL is stale (revoked or
+        // from a previous session) — drop it instead of rendering a broken
+        // image. Non-blob URLs (data:/http) stay valid and are kept.
         restoredSongsCopy[index] = {
           ...song,
-          audioUrl: mediaUrls.audioUrl || song.audioUrl,
-          videoBackground: mediaUrls.videoUrl || song.videoBackground,
-          coverImage: mediaUrls.coverUrl || song.coverImage
+          audioUrl: mediaUrls.audioUrl || dropDeadBlobUrl(song.audioUrl),
+          videoBackground: mediaUrls.videoUrl || dropDeadBlobUrl(song.videoBackground),
+          coverImage: mediaUrls.coverUrl || dropDeadBlobUrl(song.coverImage)
         };
       } catch (error) {
         // eslint-disable-next-line no-console
