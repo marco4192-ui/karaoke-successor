@@ -3,7 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
+import { filterSongsByMotto } from '@/lib/game/motto-party';
 import type { MobileSong, GameMode, GameState, MobileView } from '../mobile-types';
+
+/** i18n with a hard fallback (mirror views load a lite dictionary — keys
+ *  can be missing; then the German fallback keeps the UI usable). */
+function tOr(t: (_key: string) => string, key: string, fallback: string): string {
+  return t(key) === key ? fallback : t(key);
+}
 
 // ===================== Props =====================
 
@@ -141,6 +148,22 @@ export function MirrorLibraryLite({
     }, [opponents, availableProfiles]);
 
     const displaySongs = useMemo(() => {
+      // ── Motto-Party (R25): the motto config synced from the desktop is the
+      // single source of truth — search field and the local genre/language/
+      // era/viral filters are hidden (replaced by the motto banner), so their
+      // values cannot carry user intent. The motto pool is computed from ALL
+      // songs with the EXACT same matching logic as the desktop library
+      // (filterSongsByMotto is generic — runs on MobileSong[] too). The
+      // duet-mode constraint stays functional (game requirement). ──
+      const motto = gameState.mottoParty;
+      if (motto?.enabled) {
+        let mottoSongs = filterSongsByMotto(songs, motto);
+        if (isDuetMode) {
+          mottoSongs = mottoSongs.filter(isLikelyDuet);
+        }
+        return [...mottoSongs].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+      }
+
       let result = filteredSongs;
       if (genreFilter !== 'all') {
         result = result.filter((s) => s.genre === genreFilter);
@@ -167,7 +190,7 @@ export function MirrorLibraryLite({
       }
       // Nach Songtitel alphabetisch sortieren
       return [...result].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
-    }, [filteredSongs, genreFilter, languageFilter, eraFilter, isDuetMode, filterViral, gameState.viralSongIds]);
+    }, [filteredSongs, genreFilter, languageFilter, eraFilter, isDuetMode, filterViral, gameState.viralSongIds, gameState.mottoParty, songs]);
 
     // Extrahiere verfuegbare Genres, Sprachen und Aeras (Jahrzehnte)
     const { genres, languages, decades } = useMemo(() => {
@@ -495,6 +518,34 @@ export function MirrorLibraryLite({
           </div>
         )}
 
+        {/* ── MOTTO-PARTY (R25): while active, ALL search fields and filters
+            are hidden and replaced by the motto banner (like the desktop
+            library) — the song list only shows the motto-matching songs ── */}
+        {gameState.mottoParty?.enabled ? (
+          <div
+            className="rounded-2xl border border-purple-400/30 bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-amber-500/15 px-3.5 py-3 flex items-center gap-3"
+            data-testid="mirror-library-motto-banner"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl shrink-0" aria-hidden="true">🎉</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-purple-300 font-semibold uppercase tracking-wider">
+                {tOr(t, 'unifiedSetup.mottoPartyLabel', 'Motto-Party')}
+              </p>
+              <h4 className="text-white font-bold text-base truncate">
+                {gameState.mottoParty.name?.trim() || tOr(t, 'unifiedSetup.mottoPartyLabel', 'Motto-Party')}
+              </h4>
+              <p className="text-white/40 text-[11px] leading-snug">
+                {tOr(t, 'unifiedSetup.mottoPartySongs', '{n} von {m} Songs passen zum Motto')
+                  .replace('{n}', String(displaySongs.length))
+                  .replace('{m}', String(songs.length))}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-purple-500/25 border border-purple-400/30 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+              🎉 {tOr(t, 'settingsMotto.activeBadge', 'Aktiv')}
+            </span>
+          </div>
+        ) : (
+        <>
         {/* Suchfeld */}
         <div className="relative">
           <input
@@ -579,6 +630,8 @@ export function MirrorLibraryLite({
             {filterViral && <span className="text-xs text-orange-400/60">({gameState.viralSongIds?.length})</span>}
           </button>
         )}
+        </>
+        )}
 
         {/* Loading */}
         {songsLoading && (
@@ -598,8 +651,12 @@ export function MirrorLibraryLite({
         {/* Leerer Zustand */}
         {!songsLoading && !songsError && displaySongs.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
-            <span className="text-3xl">{'\u{1F3B5}'}</span>
-            <p className="text-sm text-white/40">{t('mobile.mirrorNoSongs') || 'Keine Songs gefunden'}</p>
+            <span className="text-3xl" aria-hidden="true">{gameState.mottoParty?.enabled ? '🎉' : '🎵'}</span>
+            <p className="text-sm text-white/40 text-center">
+              {gameState.mottoParty?.enabled
+                ? tOr(t, 'library.mottoNoSongs', 'Kein Song passt zum Motto — passe das Motto in den Settings an')
+                : (t('mobile.mirrorNoSongs') || 'Keine Songs gefunden')}
+            </p>
           </div>
         )}
 
@@ -626,8 +683,12 @@ export function MirrorLibraryLite({
                 </div>
                 <p className="truncate text-xs text-white/40">{song.artist}</p>
               </div>
-              {/* Desktop-Preview Button (nur kontrollierender Companion) */}
-              <button
+              {/* Desktop-Preview Button (nur kontrollierender Companion) —
+                  span[role=button] instead of <button>: a button inside the
+                  song-row <button> is invalid HTML (hydration error). */}
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
                   haptic();
@@ -637,8 +698,20 @@ export function MirrorLibraryLite({
                     handleDesktopPreview(song.id);
                   }
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    haptic();
+                    if (desktopPreviewSongId === song.id) {
+                      handleStopDesktopPreview();
+                    } else {
+                      handleDesktopPreview(song.id);
+                    }
+                  }
+                }}
                 className={
-                  'shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 ' +
+                  'shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ' +
                   (desktopPreviewSongId === song.id
                     ? 'bg-cyan-500/30 text-cyan-400'
                     : 'bg-white/5 text-white/30 active:text-white/60')
@@ -647,8 +720,8 @@ export function MirrorLibraryLite({
                   ? (t('mobilePreview.stopPreview') || 'Stop Preview')
                   : (t('mobilePreview.playOnDesktop') || 'Preview on Desktop')}
               >
-                <span className="text-sm">{desktopPreviewSongId === song.id ? '\u23F9' : '\u{1F50A}'}</span>
-              </button>
+                <span className="text-sm" aria-hidden="true">{desktopPreviewSongId === song.id ? '\u23F9' : '\u{1F50A}'}</span>
+              </span>
               {/* Dauer */}
               <span className="shrink-0 text-[10px] font-mono text-white/30 w-8 text-right">{formatDurationSec(song.duration)}</span>
               {/* Chevron */}

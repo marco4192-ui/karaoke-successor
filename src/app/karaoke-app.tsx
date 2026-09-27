@@ -48,6 +48,10 @@ import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { DesktopChatNotification } from '@/components/ui/desktop-chat-notification';
 import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
+// Motto-Party (R25): module import — read fresh inside the 2s sync (getConfig)
+// so toggling the motto reaches the companion library without re-running
+// this effect on every store change.
+import { mottoParty } from '@/lib/game/motto-party';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -1194,6 +1198,21 @@ export default function KaraokeZERO() {
               brGameData: screen === 'battle-royale-game' ? brGameData : null,
               tournamentBracketData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
+              // Motto-Party (R25): full config for the companion library —
+              // read FRESH at call time (like partyNow above) so changes
+              // propagate with the next 2s tick. Explicit null when disabled
+              // so companions never keep a stale motto active.
+              mottoParty: (() => {
+                const m = mottoParty.getConfig();
+                if (!m.enabled) return null;
+                return {
+                  enabled: true,
+                  name: m.name,
+                  logic: m.logic,
+                  searchFields: m.searchFields.map(f => ({ id: f.id, term: f.term })),
+                  filters: { ...m.filters },
+                };
+              })(),
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
               recentParties: recentPartiesPayload,
             },

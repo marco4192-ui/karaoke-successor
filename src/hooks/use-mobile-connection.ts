@@ -41,6 +41,7 @@ interface RawGameState {
   brGameData?: GameState['brGameData'];
   tournamentBracketData?: GameState['tournamentBracketData'];
   viralSongIds?: string[];
+  mottoParty?: GameState['mottoParty'];
   difficulty?: 'easy' | 'medium' | 'hard';
   recentParties?: GameState['recentParties'];
 }
@@ -70,6 +71,7 @@ function parseGameState(raw: RawGameState): GameState {
     brGameData: raw.brGameData ?? null,
     tournamentBracketData: raw.tournamentBracketData ?? null,
     viralSongIds: raw.viralSongIds ?? [],
+    mottoParty: raw.mottoParty ?? null,
     difficulty: raw.difficulty ?? 'medium',
     recentParties: raw.recentParties ?? undefined,
   };
@@ -92,6 +94,7 @@ const INITIAL_GAME_STATE: GameState = {
   ptmPhase: null,
   ptmIntroData: null,
   viralSongIds: [],
+  mottoParty: null,
   difficulty: 'medium',
 };
 

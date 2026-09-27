@@ -20,6 +20,7 @@ export const libraryTranslations = {
     noSongs: 'No songs found',
     noSongsDesc: 'Try adjusting your search or filters',
     noSongsHint: 'Try a different search or import some songs',
+    mottoNoSongs: 'No song matches the motto — adjust it under Settings → Theme Party',
     selectSong: 'Select a song to start singing',
     selectSongDesc: 'Choose from your library or import new songs',
     song: {

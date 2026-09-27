@@ -10,6 +10,8 @@ import { splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { getBigLanguages, getLanguageFilterEntries, songMatchesLanguageFilter } from '@/lib/game/language-filter';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { CHRISTMAS_FILTER_VALUE, isChristmasSong, isChristmasSeasonEnabled } from '@/lib/seasonal';
+import { useMottoParty } from '@/hooks/use-motto-party';
+import { filterSongsByMotto } from '@/lib/game/motto-party';
 
 interface UseLibraryFiltersParams {
   loadedSongs: Song[];
@@ -20,6 +22,13 @@ interface UseLibraryFiltersParams {
 }
 
 export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMode, viralSongIds }: UseLibraryFiltersParams) {
+  // Motto-Party (R25): when active, the motto config is the single source of
+  // truth for the library song pool — search query and filter settings are
+  // ignored (their UI is hidden and replaced by the motto banner, exactly
+  // like the party setup in R24). Sorting and the functional duet-mode
+  // constraint stay active (presentation/game requirement, not filters).
+  const motto = useMottoParty();
+
   // Seasonal easter egg: the 🎄 Christmas filter is only offered in December
   // (or via ?xmas=1). Evaluated post-mount so SSR and client agree on the
   // initial render — no hydration mismatch across timezone edges.
@@ -43,6 +52,22 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
   const bigLanguages = useMemo(() => getBigLanguages(loadedSongs), [loadedSongs]);
 
   const filteredSongs = useMemo(() => {
+    // ── Motto-Party (R25): the motto pool replaces search + ALL filter
+    // settings. The search field and filter chips are hidden while the motto
+    // is active (replaced by the motto banner), so their values cannot carry
+    // user intent — identical semantics to the R24 party pools. Sorting and
+    // the functional duet-mode constraint (startMode) still apply. ──
+    if (motto.enabled) {
+      let mottoSongs = filterSongsByMotto(loadedSongs, motto);
+      // Functional constraint (NOT a filter chip): duet mode requires duet
+      // songs — kept on top of the motto pool so a preselected duet session
+      // stays playable.
+      if (startMode === 'duet') {
+        mottoSongs = mottoSongs.filter(s => isDuetSong(s));
+      }
+      return sortSongs(mottoSongs, settings);
+    }
+
     let songs = loadedSongs;
     
     // Use the deferred (lower-priority) search query for filtering.
@@ -114,25 +139,9 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
       songs = songs.filter(s => viralSongIds.has(s.id));
     }
     
-    // Sort
-    songs = [...songs].sort((a, b) => {
-      let comparison = 0;
-      switch (settings.sortBy) {
-        case 'title':
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case 'artist':
-          comparison = a.artist.localeCompare(b.artist);
-          break;
-        case 'dateAdded':
-          comparison = (b.dateAdded || 0) - (a.dateAdded || 0);
-          break;
-      }
-      return settings.sortOrder === 'asc' ? comparison : -comparison;
-    });
-    
-    return songs;
-  }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds, bigLanguages]);
+    // Sort (shared with the motto pool — presentation, not a filter)
+    return sortSongs(songs, settings);
+  }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds, bigLanguages, motto]);
   
   // Get unique genres from loaded songs (read from #Genre: in txt files, normalized).
   // In December the seasonal 🎄 Christmas entry is injected right after "all".
@@ -173,5 +182,26 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return ['all', ...getAvailableDecades(loadedSongs)];
   }, [loadedSongs]);
   
-  return { filteredSongs, availableGenres, availableLanguages, availableYears, availableEras, isFilterStale };
+  return { filteredSongs, availableGenres, availableLanguages, availableYears, availableEras, isFilterStale, mottoEnabled: motto.enabled };
+}
+
+/** Sort a song pool by the persisted library sort setting (presentation —
+ *  also applied to the Motto-Party pool so A-Z / Z-A / recently-added keep
+ *  working while the motto replaces the filters). */
+function sortSongs<T extends { title: string; artist: string; dateAdded?: number }>(songs: T[], settings: LibrarySettings): T[] {
+  return [...songs].sort((a, b) => {
+    let comparison = 0;
+    switch (settings.sortBy) {
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'artist':
+        comparison = a.artist.localeCompare(b.artist);
+        break;
+      case 'dateAdded':
+        comparison = (b.dateAdded || 0) - (a.dateAdded || 0);
+        break;
+    }
+    return settings.sortOrder === 'asc' ? comparison : -comparison;
+  });
 }

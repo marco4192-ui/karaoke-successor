@@ -34,6 +34,7 @@ import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 import { useDebouncedValue } from '@/hooks/use-debounce';
+import { useMottoParty } from '@/hooks/use-motto-party';
 
 export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, onNavigateToEditor, partyPickActive = false }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; /** Start mode preselected from the home "Singen" launcher (session-scoped). */ preselectMode?: 'single' | 'duel' | 'duet'; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; }) {
   const { t } = useTranslation();
@@ -234,6 +235,13 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
     loadedSongs, searchQuery, settings: debouncedSettings, startMode: startOptions.mode,
     viralSongIds: viralCharts.viralSongIds,
   });
+
+  // Motto-Party (R25): while active, the library song selection follows the
+  // motto — the pool is restricted (useLibraryFilters) and the search field +
+  // filter chips are replaced by the motto banner (LibraryFilters). Reactive
+  // via the motto store, so toggling it in the Settings applies here
+  // instantly, even with the library open.
+  const motto = useMottoParty();
   
   const groupedSongs = useMemo(() => {
     if (groupBy === 'none' || viewMode === 'grid') return new Map<string, Song[]>();
@@ -362,6 +370,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
           settings={settings} setSettings={setSettings}
           viewMode={viewMode} groupBy={groupBy}
           availableGenres={availableGenres} availableLanguages={availableLanguages} availableYears={availableYears} availableEras={availableEras}
+          motto={motto.enabled ? { name: motto.name, matchingSongs: filteredSongs.length, totalSongs: loadedSongs.length } : null}
           onSetViewMode={(mode) => { if (mode !== 'folder') setSelectedPlaylist(null); setViewMode(mode); }}
           onSetGroupBy={setGroupBy} onClearFolder={handleClearFolder}
           folderBreadcrumb={folderBreadcrumb} onBreadcrumbClick={handleBreadcrumbClick}
@@ -385,8 +394,18 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
             />
           ) : filteredSongs.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-white/60 mb-4">{t('library.noSongs')}</p>
-              <p className="text-white/40 text-sm">{t('library.noSongsHint')}</p>
+              {motto.enabled ? (
+                <>
+                  <p className="text-4xl mb-4" aria-hidden="true">🎉</p>
+                  <p className="text-white/60 mb-4">{t('library.mottoNoSongs')}</p>
+                  <p className="text-white/40 text-sm">{t('unifiedSetup.mottoPartyHint')}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/60 mb-4">{t('library.noSongs')}</p>
+                  <p className="text-white/40 text-sm">{t('library.noSongsHint')}</p>
+                </>
+              )}
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
             <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} renderSongCard={renderViralSongCard} onSongSelect={(index) => { const song = currentFolderSongs[index]; if (song) handleSongClick(song); }} />

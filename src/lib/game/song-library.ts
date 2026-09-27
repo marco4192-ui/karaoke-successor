@@ -15,6 +15,7 @@ import { fuzzyMatch } from '@/lib/fuzzy-search';
 // so this edge cannot become a circular dependency.
 import { mottoParty } from '@/lib/game/motto-party';
 import type { MottoPartyConfig } from '@/lib/game/motto-party';
+import { filterSongsByMotto as filterSongsByMottoGeneric } from '@/lib/game/motto-party';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
 // NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
@@ -568,37 +569,12 @@ export function getDecades(): string[] {
 }
 
 // Filter songs by the Motto-Party config (user request R24: „Motto-Party").
-// Exported so the Settings tab can render a live preview with the exact same
-// logic the game uses.
-//
-// Semantics:
-//  1. MULTIPLE search fields (artist/title, fuzzy — same Levenshtein
-//     tolerance as the regular search) combine with
-//       logic='and' → cumulative: a song must match EVERY term
-//       logic='or'  → independent: a song must match ANY term
-//  2. Activated filters (genre/language/releaseYear/era) AND-combine on top
-//     of the search-field matches — same normalization rules as the regular
-//     filter logic (comma-separated genres, multilingual songs, era buckets).
+// R25: the implementation moved to motto-party.ts as a GENERIC filter
+// (works for the desktop Song[] AND the companion MobileSong[]) — this is a
+// thin typed wrapper so existing importers keep working. Semantics are
+// unchanged (see motto-party.ts → filterSongsByMotto).
 export function filterSongsByMotto(songs: Song[], motto: MottoPartyConfig): Song[] {
-  const terms = motto.searchFields
-    .map(f => f.term.trim())
-    .filter(t => t.length > 0);
-  const f = motto.filters;
-  const hasFilters = f.genre !== 'all' || f.language !== 'all' || f.releaseYear !== 'all' || f.era !== 'all';
-  if (terms.length === 0 && !hasFilters) return songs;
-
-  // 1. Search fields (cumulative AND / independent OR)
-  let pool = songs;
-  if (terms.length > 0) {
-    pool = pool.filter(s => {
-      const matches = terms.map(term => fuzzyMatch(term, s.title) || fuzzyMatch(term, s.artist));
-      return motto.logic === 'and' ? matches.every(Boolean) : matches.some(Boolean);
-    });
-  }
-
-  // 2. Activated filters — AND-combined on top (combined=true: genre AND
-  //    language must both match when both are active, like the regular filter)
-  return filterSongsStandard(pool, f.genre, f.language, true, f.releaseYear, f.era, undefined);
+  return filterSongsByMottoGeneric(songs, motto);
 }
 
 // Filter songs by genre and/or language (with normalization).

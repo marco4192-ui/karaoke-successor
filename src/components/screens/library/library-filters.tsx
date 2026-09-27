@@ -10,6 +10,7 @@ import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { CHRISTMAS_FILTER_VALUE } from '@/lib/seasonal';
 import { decadeShortLabel } from '@/lib/game/era-filter';
+import { MottoPartyBanner } from '@/components/game/unified-party-setup.components';
 
 interface LibraryFiltersProps {
   searchQuery: string;
@@ -31,6 +32,12 @@ interface LibraryFiltersProps {
   getGroupDisplayName: (_key: string) => string;
   startMode: string;
   onResetStartMode: () => void;
+  /** Motto-Party (R25): when set (motto active), the search field and ALL
+   *  filter chips are hidden and replaced by the motto banner — the song
+   *  pool is restricted to the motto-matching songs via useLibraryFilters.
+   *  Sorting, view mode and group-by stay available (presentation, not
+   *  filters). */
+  motto?: { name: string; matchingSongs: number; totalSongs: number } | null;
 }
 
 export function LibraryFilters({
@@ -52,6 +59,7 @@ export function LibraryFilters({
   getGroupDisplayName,
   startMode,
   onResetStartMode,
+  motto = null,
 }: LibraryFiltersProps) {
   const { t } = useTranslation();
   const selectStyle = {
@@ -64,6 +72,38 @@ export function LibraryFilters({
 
   return (
     <div className="space-y-4 mb-6">
+      {motto ? (
+        /* ── Motto-Party active (R25): banner replaces the search field and
+           ALL filter chips; the sort dropdown stays (presentation, not a
+           filter — same pool, different order). ── */
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch" data-testid="library-motto-row">
+          <div className="flex-1 min-w-0">
+            <MottoPartyBanner
+              name={motto.name}
+              matchingSongs={motto.matchingSongs}
+              totalSongs={motto.totalSongs}
+            />
+          </div>
+          <select
+            value={`${settings.sortBy}-${settings.sortOrder}`}
+            onChange={(e) => {
+              const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
+              setSettings(prev => ({ ...prev, sortBy, sortOrder }));
+            }}
+            aria-label={t('library.sortBy')}
+            className="bg-gray-800 border border-white/20 rounded-md px-3 py-2 text-white appearance-none cursor-pointer self-start sm:self-stretch hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            style={selectStyle}
+            data-testid="library-motto-sort"
+          >
+            <option value="title-asc" className="bg-gray-800 text-white">{t('libraryFilters.titleAZ')}</option>
+            <option value="title-desc" className="bg-gray-800 text-white">{t('libraryFilters.titleZA')}</option>
+            <option value="artist-asc" className="bg-gray-800 text-white">{t('libraryFilters.artistAZ')}</option>
+            <option value="artist-desc" className="bg-gray-800 text-white">{t('libraryFilters.artistZA')}</option>
+            <option value="dateAdded-desc" className="bg-gray-800 text-white">{t('libraryFilters.recentlyAdded')}</option>
+          </select>
+        </div>
+      ) : (
+      <>
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Input
@@ -227,6 +267,8 @@ export function LibraryFilters({
           </button>
         )}
       </div>
+      </>
+      )}
       
       <div className="flex gap-2 items-center overflow-x-auto scrollbar-thin">
         <div className="flex bg-white/5 rounded-lg p-1">

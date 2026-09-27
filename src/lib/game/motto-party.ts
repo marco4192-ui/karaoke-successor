@@ -25,6 +25,10 @@
  */
 
 import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
+import { splitGenres, normalizeGenreName, normalizeLanguage } from '@/lib/parsers/meta-normalizer';
+import { splitLanguageParts, LANGUAGE_FILTER_OTHERS, MIN_SONGS_FOR_OWN_LANGUAGE_ENTRY } from '@/lib/game/language-filter';
+import { songMatchesEra } from '@/lib/game/era-filter';
 
 // ===================== TYPES =====================
 
@@ -294,3 +298,109 @@ class MottoPartyStore {
 
 /** Module singleton — survives component unmounts, shared across the app. */
 export const mottoParty = new MottoPartyStore();
+
+// ===================== GENERIC MOTTO FILTER (R25) =====================
+
+/**
+ * Minimal song shape the motto filter needs — BOTH the desktop `Song` and
+ * the companion `MobileSong` satisfy it structurally, so the desktop
+ * library, the party pools and the companion library all run the EXACT
+ * same matching logic (single source of truth, no drift between devices).
+ */
+export interface MottoSongSubset {
+  title: string;
+  artist: string;
+  genre?: string;
+  language?: string;
+  year?: number;
+}
+
+/**
+ * Filter songs by the Motto-Party config — generic over any song shape with
+ * title/artist/genre/language/year (user request R24, extended to the normal
+ * Library song selection in R25: Desktop + Companion).
+ *
+ * Semantics (identical to the R24 party pools — implemented here so the
+ * companion library mirrors the desktop 1:1):
+ *  1. MULTIPLE search fields (artist/title, fuzzy — same Levenshtein
+ *     tolerance as the regular search) combine with
+ *       logic='and' → cumulative: a song must match EVERY term
+ *       logic='or'  → independent: a song must match ANY term
+ *  2. Activated filters (genre/language/releaseYear/era) AND-combine on top
+ *     of the search-field matches — same normalization rules as the regular
+ *     filter logic (comma-separated genres, multilingual songs, era buckets,
+ *     "Others" languages below the 5-song own-entry threshold).
+ */
+export function filterSongsByMotto<T extends MottoSongSubset>(songs: T[], motto: MottoPartyConfig): T[] {
+  const terms = motto.searchFields
+    .map(f => f.term.trim())
+    .filter(t => t.length > 0);
+  const f = motto.filters;
+  const hasGenre = f.genre !== 'all';
+  const hasLanguage = f.language !== 'all';
+  const hasYear = f.releaseYear !== 'all';
+  const hasEra = f.era !== 'all';
+  if (terms.length === 0 && !hasGenre && !hasLanguage && !hasYear && !hasEra) return songs;
+
+  // 1. Search fields (cumulative AND / independent OR)
+  let pool = songs;
+  if (terms.length > 0) {
+    pool = pool.filter(s => {
+      const matches = terms.map(term => fuzzyMatch(term, s.title) || fuzzyMatch(term, s.artist));
+      return motto.logic === 'and' ? matches.every(Boolean) : matches.some(Boolean);
+    });
+  }
+
+  // 2. Genre filter — comma-separated genres match per part ("Soundtrack, K-Pop")
+  if (hasGenre) {
+    const normalizedFilter = normalizeGenreName(f.genre).toLowerCase();
+    pool = pool.filter(s => {
+      if (!s.genre) return false;
+      return splitGenres(s.genre).some(g => normalizeGenreName(g).toLowerCase() === normalizedFilter);
+    });
+  }
+
+  // 3. Language filter — multilingual songs ("German/English") match EVERY
+  //    listed language; "Others" matches languages below the 5-song threshold
+  //    (computed from the same pool, like the regular filter dropdowns).
+  if (hasLanguage) {
+    if (f.language === LANGUAGE_FILTER_OTHERS) {
+      const counts = new Map<string, number>();
+      for (const s of pool) {
+        if (!s.language) continue;
+        for (const part of splitLanguageParts(s.language)) {
+          counts.set(part, (counts.get(part) ?? 0) + 1);
+        }
+      }
+      const big = new Set<string>();
+      for (const [lang, count] of counts) {
+        if (count >= MIN_SONGS_FOR_OWN_LANGUAGE_ENTRY) big.add(lang);
+      }
+      pool = pool.filter(s => {
+        if (!s.language) return false;
+        return splitLanguageParts(s.language).some(p => !big.has(p));
+      });
+    } else {
+      const target = normalizeLanguage(f.language);
+      pool = pool.filter(s => {
+        if (!s.language) return false;
+        return splitLanguageParts(s.language).includes(target);
+      });
+    }
+  }
+
+  // 4. Release-year filter (exact match)
+  if (hasYear) {
+    const year = parseInt(f.releaseYear, 10);
+    if (!isNaN(year)) {
+      pool = pool.filter(s => s.year === year);
+    }
+  }
+
+  // 5. Era filter (decade bucket, e.g. '1980' matches 1980-1989)
+  if (hasEra) {
+    pool = pool.filter(s => songMatchesEra(s, f.era));
+  }
+
+  return pool;
+}

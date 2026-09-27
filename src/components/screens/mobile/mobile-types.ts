@@ -188,6 +188,21 @@ export interface BrGameData {
   }>;
 }
 
+/**
+ * Motto-Party sync config (R25): the FULL desktop config pushed with the
+ * 2s gamestate so the companion library can filter its song list with the
+ * EXACT same logic as the desktop (filterSongsByMotto is generic and runs
+ * on MobileSong[] too). `enabled` mirrors the master switch — null means
+ * "no motto configured / disabled" (explicit key, clears stale state).
+ */
+export interface MottoPartySync {
+  enabled: boolean;
+  name: string;
+  logic: 'and' | 'or';
+  searchFields: Array<{ id: string; term: string }>;
+  filters: { genre: string; language: string; releaseYear: string; era: string };
+}
+
 export interface GameState {
   currentSong: { title: string; artist: string } | null;
   isPlaying: boolean;
@@ -304,6 +319,10 @@ export interface GameState {
   } | null;
   // Viral-hit song IDs synced from desktop (for library filter)
   viralSongIds?: string[];
+  // Motto-Party (R25): full config synced from desktop — when enabled, the
+  // companion library hides its search/filters and shows only the
+  // motto-matching songs (same logic as the desktop library).
+  mottoParty?: MottoPartySync | null;
   // Global difficulty setting from desktop (for companion library)
   difficulty?: 'easy' | 'medium' | 'hard';
   // Recent party sessions synced from the desktop party screen (mirror view).

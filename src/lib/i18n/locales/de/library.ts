@@ -18,6 +18,7 @@ library: {
   noSongs: 'Keine Songs gefunden',
   noSongsDesc: 'Versuche deine Suche oder Filter anzupassen',
   noSongsHint: 'Versuche eine andere Suche oder importiere einige Songs',
+  mottoNoSongs: 'Kein Song passt zum Motto — passe das Motto unter Settings → Motto-Party an',
   selectSong: 'Wähle einen Song um zu starten',
   selectSongDesc: 'Wähle aus deiner Bibliothek oder importiere neue Songs',
   song: {
