@@ -6,9 +6,10 @@ import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getYears, getDecades } from '@/lib/game/song-library';
-import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector } from './unified-party-setup.components';
+import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector, MottoPartyBanner } from './unified-party-setup.components';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
+import { useMottoParty } from '@/hooks/use-motto-party';
 
 // Re-export public API (only exports actually consumed by other modules)
 export { SongVotingModal } from './unified-party-setup.components';
@@ -66,6 +67,11 @@ export function UnifiedPartySetup({
   // Live companion connection status — needed for Singing Device Assignment
   // (companion players must be connected) and the player grid status dots.
   const connectedProfileIds = useCompanionConnections(true);
+
+  // Motto-Party (R24): while active, the whole Song Filter section is hidden
+  // and replaced by the motto banner; filterSongs (song-library) restricts
+  // every song pool to the motto-matching songs.
+  const motto = useMottoParty();
 
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
@@ -144,6 +150,7 @@ export function UnifiedPartySetup({
           filterEra,
           filterCombined,
           filterSearch,
+          mottoParty: { enabled: motto.enabled, name: motto.name },
           availableGenres,
           availableLanguages,
           availableYears,
@@ -162,7 +169,7 @@ export function UnifiedPartySetup({
     selectedPlayers, deviceAssignments, micAssignments, difficulty, settings,
     songSelection, preSelectedSong, resolvedSong, filterGenre, filterLanguage,
     filterReleaseYear, filterEra, filterCombined, filterSearch, connectedKey, savedMics,
-    selectedMicName, deviceMode,
+    selectedMicName, deviceMode, motto.enabled, motto.name,
   ]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,26 +271,37 @@ export function UnifiedPartySetup({
         />
 
         {/* ── F. Song Filter ── */}
-        <SongFilterSection
-          filterGenre={filterGenre}
-          filterLanguage={filterLanguage}
-          filterCombined={filterCombined}
-          availableGenres={availableGenres}
-          availableLanguages={availableLanguages}
-          totalSongs={songs.length}
-          filteredSongs={filteredSongs.length}
-          onFilterGenreChange={setFilterGenre}
-          onFilterLanguageChange={setFilterLanguage}
-          onFilterCombinedChange={setFilterCombined}
-          filterReleaseYear={filterReleaseYear}
-          availableYears={availableYears}
-          onFilterReleaseYearChange={setFilterReleaseYear}
-          filterEra={filterEra}
-          availableDecades={availableDecades}
-          onFilterEraChange={setFilterEra}
-          filterSearch={filterSearch}
-          onFilterSearchChange={setFilterSearch}
-        />
+        {/* While the Motto-Party is active (R24) every search field and filter
+            is hidden and replaced by the motto banner — the song pool is
+            restricted to the motto-matching songs via filterSongs(). */}
+        {motto.enabled ? (
+          <MottoPartyBanner
+            name={motto.name}
+            matchingSongs={filteredSongs.length}
+            totalSongs={songs.length}
+          />
+        ) : (
+          <SongFilterSection
+            filterGenre={filterGenre}
+            filterLanguage={filterLanguage}
+            filterCombined={filterCombined}
+            availableGenres={availableGenres}
+            availableLanguages={availableLanguages}
+            totalSongs={songs.length}
+            filteredSongs={filteredSongs.length}
+            onFilterGenreChange={setFilterGenre}
+            onFilterLanguageChange={setFilterLanguage}
+            onFilterCombinedChange={setFilterCombined}
+            filterReleaseYear={filterReleaseYear}
+            availableYears={availableYears}
+            onFilterReleaseYearChange={setFilterReleaseYear}
+            filterEra={filterEra}
+            availableDecades={availableDecades}
+            onFilterEraChange={setFilterEra}
+            filterSearch={filterSearch}
+            onFilterSearchChange={setFilterSearch}
+          />
+        )}
 
         {/* ── G. Song Selection ── */}
         {/* Pre-selected Library/Vote Song Banner (display-only — the "Ready to Play" button below starts the game) */}

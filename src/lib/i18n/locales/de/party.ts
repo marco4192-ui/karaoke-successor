@@ -379,6 +379,10 @@ unifiedSetup: {
   noFilterActive: 'Kein Filter aktiv — alle Songs verfügbar',
   songsMatchFilter: '{n} Song(s) passen auf den Filter (beide Bedingungen müssen erfüllt sein)',
   songsMatchAnyFilter: '{n} Song(s) passen auf den Filter (mindestens eine Bedingung)',
+  // ── Motto-Party (R24) ──
+  mottoPartyLabel: 'Motto-Party',
+  mottoPartySongs: '{n} von {m} Songs passen zum Motto',
+  mottoPartyHint: 'Alle Suchfelder und Filter sind durch das Motto ersetzt — änderbar unter Settings → Motto-Party.',
   songSelection: 'Song-Auswahl',
   microphoneSelection: 'Mikrofon-Auswahl',
   selectMicrophone: '— Mikrofon auswählen —',

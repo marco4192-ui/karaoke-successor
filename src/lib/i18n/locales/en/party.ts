@@ -406,6 +406,10 @@ export const partyTranslations = {
     noFilterActive: 'No filter active — all songs available',
     songsMatchFilter: '{n} song(s) match the filter (both conditions must be met)',
     songsMatchAnyFilter: '{n} song(s) match the filter (at least one condition)',
+    // ── Theme Party (R24) ──
+    mottoPartyLabel: 'Theme Party',
+    mottoPartySongs: '{n} of {m} songs match the motto',
+    mottoPartyHint: 'All search fields and filters are replaced by the motto — changeable under Settings → Theme Party.',
     songSelection: 'Song Selection',
     microphoneSelection: 'Microphone Selection',
     selectMicrophone: '— Select microphone —',

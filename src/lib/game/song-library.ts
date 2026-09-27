@@ -11,6 +11,10 @@ import { getBigLanguages, getLanguageFilterEntries, songMatchesLanguageFilter } 
 import { lyricsIndicateDuet } from '@/lib/parsers/duet-markers';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
+// Motto-Party (R24): typed store — no song-library imports inside motto-party.ts,
+// so this edge cannot become a circular dependency.
+import { mottoParty } from '@/lib/game/motto-party';
+import type { MottoPartyConfig } from '@/lib/game/motto-party';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
 // NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
@@ -563,6 +567,40 @@ export function getDecades(): string[] {
   return getAvailableDecades(getAllSongs());
 }
 
+// Filter songs by the Motto-Party config (user request R24: „Motto-Party").
+// Exported so the Settings tab can render a live preview with the exact same
+// logic the game uses.
+//
+// Semantics:
+//  1. MULTIPLE search fields (artist/title, fuzzy — same Levenshtein
+//     tolerance as the regular search) combine with
+//       logic='and' → cumulative: a song must match EVERY term
+//       logic='or'  → independent: a song must match ANY term
+//  2. Activated filters (genre/language/releaseYear/era) AND-combine on top
+//     of the search-field matches — same normalization rules as the regular
+//     filter logic (comma-separated genres, multilingual songs, era buckets).
+export function filterSongsByMotto(songs: Song[], motto: MottoPartyConfig): Song[] {
+  const terms = motto.searchFields
+    .map(f => f.term.trim())
+    .filter(t => t.length > 0);
+  const f = motto.filters;
+  const hasFilters = f.genre !== 'all' || f.language !== 'all' || f.releaseYear !== 'all' || f.era !== 'all';
+  if (terms.length === 0 && !hasFilters) return songs;
+
+  // 1. Search fields (cumulative AND / independent OR)
+  let pool = songs;
+  if (terms.length > 0) {
+    pool = pool.filter(s => {
+      const matches = terms.map(term => fuzzyMatch(term, s.title) || fuzzyMatch(term, s.artist));
+      return motto.logic === 'and' ? matches.every(Boolean) : matches.some(Boolean);
+    });
+  }
+
+  // 2. Activated filters — AND-combined on top (combined=true: genre AND
+  //    language must both match when both are active, like the regular filter)
+  return filterSongsStandard(pool, f.genre, f.language, true, f.releaseYear, f.era, undefined);
+}
+
 // Filter songs by genre and/or language (with normalization).
 // Optional releaseYear (exact year) and era (decade bucket, e.g. '1980' =
 // 1980-1989) filters are AND-combined with genre/language — for themed
@@ -570,7 +608,31 @@ export function getDecades(): string[] {
 // Optional free-text `search` (artist/title, e.g. "ABBA") is applied FIRST
 // and AND-combined with every other filter. Matching is fuzzy (typos are
 // tolerated via Levenshtein — "Koldplay" still finds "Coldplay").
+//
+// Motto-Party (R24): when the motto party is ENABLED, its config is the
+// single source of truth for EVERY song pool in the game — the passed
+// individual filters are ignored (the filter UI is hidden while the motto is
+// active, so those values cannot carry user intent). Every filterSongs call
+// site (party setup, vote suggestions, medley snippets, Battle Royale
+// rounds, tournament picks, PTM next song, companion song list) therefore
+// respects the motto without knowing about it.
 export function filterSongs(
+  songs: Song[],
+  genre?: string,
+  language?: string,
+  combined?: boolean,
+  releaseYear?: string,
+  era?: string,
+  search?: string
+): Song[] {
+  const motto = mottoParty.getConfig();
+  if (motto.enabled) {
+    return filterSongsByMotto(songs, motto);
+  }
+  return filterSongsStandard(songs, genre, language, combined, releaseYear, era, search);
+}
+
+function filterSongsStandard(
   songs: Song[],
   genre?: string,
   language?: string,

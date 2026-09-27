@@ -1071,7 +1071,32 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
           </div>
         ) : null}
 
-        {/* -------- SONG-FILTER (user request item 4 — wie in der Desktop-Ansicht) -------- */}
+        {/* -------- MOTTO-PARTY (R24): while active, ALL search fields and filters
+            are hidden and replaced by the motto banner (like the desktop) -------- */}
+        {setup?.mottoParty?.enabled ? (
+          <div>
+            <SectionHeader>
+              {tOr(t, 'unifiedSetup.songFilter', 'Song-Filter')}
+            </SectionHeader>
+            <div
+              className="rounded-2xl border border-purple-400/30 bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-amber-500/15 px-3.5 py-3 flex items-center gap-3"
+              data-testid="mirror-motto-banner"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl shrink-0" aria-hidden="true">🎉</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-purple-300 font-semibold uppercase tracking-wider">
+                  {tOr(t, 'unifiedSetup.mottoPartyLabel', 'Motto-Party')}
+                </p>
+                <h4 className="text-white font-bold text-base truncate">
+                  {setup.mottoParty.name?.trim() || tOr(t, 'unifiedSetup.mottoPartyLabel', 'Motto-Party')}
+                </h4>
+                <p className="text-white/40 text-[11px] leading-snug">
+                  {tOr(t, 'unifiedSetup.mottoPartyHint', 'Alle Suchfelder und Filter sind durch das Motto ersetzt — änderbar unter Settings → Motto-Party.')}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div>
           <SectionHeader>
             {tOr(t, 'unifiedSetup.songFilter', 'Song-Filter')}
@@ -1190,6 +1215,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             </div>
           </div>
         </div>
+        )}
 
         {/* -------- SONG-AUSWAHL -------- */}
         <div>

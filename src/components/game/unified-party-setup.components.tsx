@@ -10,4 +10,4 @@ export { SongVotingModal } from './unified-party-setup-voting';
 export { GameSidebar, MobileGameHeader, SettingsPanel } from './unified-party-setup-layout';
 
 // Game setup components
-export { PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary } from './unified-party-setup-game';
+export { PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, MottoPartyBanner } from './unified-party-setup-game';

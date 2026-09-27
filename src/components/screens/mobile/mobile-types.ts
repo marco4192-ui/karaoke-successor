@@ -233,6 +233,9 @@ export interface GameState {
     filterCombined?: boolean;
     /** Free-text filter (artist/title, fuzzy-matched — e.g. "ABBA") */
     filterSearch?: string;
+    /** Motto-Party (R24): when enabled, the mirror hides its filter UI and
+     *  shows a "Motto-Party: <name>" banner instead (like the desktop). */
+    mottoParty?: { enabled: boolean; name: string };
     availableGenres?: string[];
     availableLanguages?: string[];
     availableYears?: number[];

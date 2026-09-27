@@ -360,6 +360,64 @@ export function SongFilterSection({
   );
 }
 
+// ===================== MOTTO-PARTY BANNER (R24) =====================
+
+/**
+ * Replaces the entire Song Filter section while the Motto-Party is active:
+ * all search fields and filters are hidden and represented by this single
+ * festive banner (user request R24: "Ist die Motto-Party aktiviert, werden
+ * alle Suchfelder und Filter ausgeblendet und durch Motto-Party ‚80er Jahre'
+ * ersetzt").
+ */
+export function MottoPartyBanner({
+  name, matchingSongs, totalSongs,
+}: {
+  /** Motto name from the settings (e.g. „80er Jahre") — may be empty. */
+  name: string;
+  /** Songs matching the motto config (filterSongsByMotto). */
+  matchingSongs: number;
+  /** Total songs in the library. */
+  totalSongs: number;
+}) {
+  const { t } = useTranslation();
+  const displayName = name.trim() || t('unifiedSetup.mottoPartyLabel');
+
+  return (
+    <Card
+      className="mb-6 border-purple-400/30 bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-amber-500/15"
+      data-testid="motto-party-banner"
+    >
+      <CardContent className="pt-6">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl shrink-0 shadow-lg shadow-purple-500/30"
+            aria-hidden="true"
+          >
+            🎉
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-purple-300 font-semibold uppercase tracking-wider">
+              {t('unifiedSetup.mottoPartyLabel')}
+            </p>
+            <h3 className="text-white font-bold text-xl truncate" data-testid="motto-party-banner-name">
+              {displayName}
+            </h3>
+            <p className="text-white/50 text-sm">
+              {t('unifiedSetup.mottoPartySongs').replace('{n}', String(matchingSongs)).replace('{m}', String(totalSongs))}
+            </p>
+          </div>
+          <Badge className="bg-purple-500/25 text-purple-300 border border-purple-400/30 shrink-0">
+            🎉 {t('settingsMotto.activeBadge')}
+          </Badge>
+        </div>
+        <p className="text-xs text-white/40 mt-3 pt-3 border-t border-white/10">
+          {t('unifiedSetup.mottoPartyHint')}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ===================== SONG SELECTION GRID =====================
 
 export function SongSelectionGrid({

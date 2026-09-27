@@ -69,6 +69,8 @@ export const StorageKeys = {
   PLAYER_DEVICE_PREFERENCES: 'karaoke-player-device-preferences',
   PTM_SHARED_MIC_ID: 'karaoke-ptm-shared-mic-id',
   PTM_SHARED_MIC_NAME: 'karaoke-ptm-shared-mic-name',
+  /** Motto-Party configuration (JSON MottoPartyConfig) — themed game mode */
+  MOTTO_PARTY: 'karaoke-motto-party',
 
   // --- Daily Challenge ---
   CHALLENGE_MODE: 'karaoke-challenge-mode',
