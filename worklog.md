@@ -374,3 +374,163 @@ Stage Summary:
 - Settings-Tour komplett: 6 Kapitel, 15 Schritte, schaltet Tabs live um; über das ?-Menü auch kapitelweise abspielbar
 - ?-Hilfebutton sitzt in der Hauptmenüleiste (statt schwebendem FAB); Dialog über Custom-Event entkoppelt
 - Commits: R27 (Remount-Fix) + R28 (Kosmetik) getrennt committet
+
+---
+Task ID: r30-d
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Chinese + Russian
+
+Work Log:
+- Read EN source (en/tutorial.ts, 649 lines / 362 string keys: help menu, overlay controls, first-launch offer, 8 tours with optional `details` deep-dives).
+- Terminology research in existing zh/ru locale files (core/library/mobile/settings/party/profile/game): zh uses Simplified Chinese with 你-register (confirmed); ru uses formal вы-register with «ёлочки» quotes (confirmed). Reused established terms.
+- Created src/lib/i18n/locales/zh/tutorial.ts (Simplified Chinese) — full translation, identical key structure/order, `export const tutorialTranslations`.
+- Created src/lib/i18n/locales/ru/tutorial.ts (Russian, formal вы) — full translation, same structure.
+- Wired both into the locale barrels: import after mobileTranslations + added as last entry of the merge array in zh/index.ts and ru/index.ts.
+- Verification via bun scripts: key parity en=362 / zh=362 / ru=362, missing=[], extra=[]; per-key \n-count parity (107 newline escapes mirrored per string); {n} placeholder parity (only stepsCount, exactly once: zh '{n} 个步骤', ru 'Шагов: {n}'); barrel exposes 362 tutorial.* keys for both languages; zero values identical to EN (no untranslated strings); leftover-English grep only hits comments + allowed terms (Karaoke ZERO, UltraStar, MIDI, ASIO, YouTube, QR, XP, P1/P2, BPM, K-Pop, SingStar, FIFO, AppData, Wi-Fi, key names Esc/Enter/Delete/Space/Shift/Ctrl, example URL, "Dancing Qun → Dancing Queen" fuzzy-search demo kept EN deliberately).
+- Post-check polish: fixed 2 accidental EN words in RU draft ("achieved", "covers"), replaced mixed "Drag & drop"/"play/пауза"/"LAN-IP" with Russian wording, fixed ru openSong typo, zh "AND 逻辑" → "（条件同时满足）", jukebox phrasing.
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/zh/tutorial.ts (648 lines), src/lib/i18n/locales/ru/tutorial.ts (648 lines) — 362/362 keys each, native-quality, friendly party-app tone.
+- Files edited: src/lib/i18n/locales/zh/index.ts, src/lib/i18n/locales/ru/index.ts (tutorialTranslations import + merge-array entry).
+- Key terminology decisions (zh): Library=曲库, Queue=队列/播放队列, Tour=导览, Party=派对, Companion=伴侣/伴侣应用, Profile=档案, Duel=对决, Duet=二重唱, Single=单人, Jukebox=点唱机, Golden note=金色音符, Tap mode=打拍模式, Metadata Studio=元数据工作室, Battle Royale=大逃杀, Pass-the-Mic=传麦克风, Medley=串烧大赛, Missing Words=填词大挑战, Blind Karaoke=盲唱 K 歌, Companion Singalong=手机伴唱, Theme Party=主题派对, Viral Charts=热门榜单, Sync & Backup=同步与备份, Genres & Languages=风格与语言.
+- Key terminology decisions (ru): Библиотека, Очередь, Тур, Вечеринка, Компаньон/приложение-компаньон, Профиль, Дуэль, Дуэт, Соло, Джукбокс, Золотая нота, Режим Tap, Студия метаданных, Королевская битва, Передай микрофон, Медли-батл, Пропавшие слова, Слепое караоке, «Компаньон: спой вместе», Тематическая вечеринка, Вирусные чарты, Синхронизация и резервное копирование, Жанры и языки.
+- No issues found; structure/types untouched (plain object literal — no tsc impact expected, coordinator runs tsc later).
+
+---
+Task ID: r30-a
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Spanish + French
+
+Work Log:
+- Read worklog + EN source (src/lib/i18n/locales/en/tutorial.ts, 649 lines, 362 keys: help menu, overlay controls, first-launch offer, 8 tours incl. details deep-dives).
+- Terminology research in existing es/fr files (core, library, mobile, settings, party, profile): ES uses informal "tú", FR dominant register is "vous" (199 vs 45 tu-forms) → adopted tú/vous consistently. Reused established terms: Biblioteca/Bibliothèque, Cola/File d'attente, Ajustes/Paramètres, Logros/Succès, Duelo-Dúo/Duel-Duo, Pasa el Micrófono/Passe le Micro, Concurso de Medley (ES), Battle Royale (kept), "Companion Sing-A-Long" (kept, matches party.ts), "Valora mi Canción" (ES) / "Rate my Song" (FR, kept as in fr/party.ts), Modo Tap/Mode Tap, notas doradas/notes dorées, tabla de clasificación/classement(s), Compañero/Compagnon + "app compañera"/"app compagnon", "en ligne" for online in FR (per fr/profile.ts), "tour"/"visite guidée" for tour (FR "tour" = game round, avoided clash).
+- Created src/lib/i18n/locales/es/tutorial.ts + fr/tutorial.ts: identical key structure/order to EN, values translated natively; {n} placeholders, \n escapes, arrows/keys (→ ← Esc), product names (Karaoke ZERO, UltraStar, MIDI, ASIO, YouTube, QR, MP3), emojis, note-type chars (: * F R G), keyboard shortcuts (Ctrl+Z, ⌫, ↑/↓, Enter/Supr…) all preserved. FR apostrophes escaped as \' throughout.
+- Wired both barrel files (es/index.ts, fr/index.ts): import + merge-array entry after mobileTranslations.
+- Post-review consistency pass on FR: replaced "tableaux" with "classements" (leaderboard, per fr/core+profile) and "online" with "en ligne" (per fr/profile.ts: "compte en ligne", "classement en ligne") in ~15 strings.
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/es/tutorial.ts, src/lib/i18n/locales/fr/tutorial.ts (362/362 keys each)
+- Files edited: src/lib/i18n/locales/es/index.ts, src/lib/i18n/locales/fr/index.ts (tutorial import + merge entry)
+- Verification (bun import + flat-key diff): en: 362, es: 362, fr: 362 — missing: [], extra: [] for both; barrel merge contains all 362 tutorial.* keys and top-level "tutorial" object for both languages
+- Value-level checks: no empty values, all {n} placeholders and \n newline counts match EN exactly; keys identical to EN are legit same-words only (Jukebox, General/Audio/Chat ES; Gameplay/Microphone/Mobile/Webcam/Chat FR — matching established settings-tab labels)
+- Leftover-English grep clean (only object keys like `steps:` and legit loanwords: WiFi, FIFO, localhost, open source, build, bracket, presets, toast)
+- No build/tsc/dev-server touched (per task rules); tsc verification left to coordinator
+
+---
+Task ID: r30-b
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Italian + Portuguese
+
+Work Log:
+- Read en/tutorial.ts (362 string keys: help menu, overlay controls, first-launch offer, 8 tours) and skimmed it/pt core/library/mobile/profile/settings/party/medleyTournament translations to lock terminology & register (IT: informal "tu" — "Clicca, scegli, crea"; PT: pt-BR, implicit "você" — "Clique, escolha, crie").
+- Created src/lib/i18n/locales/it/tutorial.ts and src/lib/i18n/locales/pt/tutorial.ts: identical key structure/order to EN, values fully translated, header comments noting EN as base. All apostrophes escaped (\''), {n} placeholder preserved, \n/\n\n escapes preserved (107 lines with \n in each file, same as EN), arrows/·/Esc kept in helpFooter, product names kept (Karaoke ZERO, UltraStar, MIDI, ASIO, YouTube, QR code, Jukebox, Companion, Metadata Studio, Battle Royale, Sync & Backup).
+- Terminology reused from existing it/pt files: Libreria/Biblioteca, Coda/Fila, Festa/Modo Festa, Profili/Perfis, Obiettivi/Conquisti, Classifiche/Rankings, Note dorate/Notas douradas, Singolo·Duello·Duetto / Solo·Duelo·Dueto, Passa il Microfone/Passe o Microfone, Karaoke Cieco/Karaokê Cego, Parole Mancanti/Palavras Faltantes, Concorso Medley/Concurso de Medley, Valuta la mia Canzone/Avalie Minha Música, slot (IT)/espaço (PT) for challenge slots, preset (both), XP/livello/nível/rango/rank. "Companion" kept as product name in both (matches existing usage "app Companion"/"Companion-Chat"); profile claiming = "reclamare/reclamato" (IT) / "reivindicar/reivindicado" (PT).
+- Wired barrels: it/index.ts and pt/index.ts get `import { tutorialTranslations } from './tutorial';` after mobile + `tutorialTranslations,` as last merge entry (same pattern as de/index.ts).
+- Verification (bun -e, both languages): en: 362, it: 362, pt: 362 — missing: [], extra: []. Barrel check: `tutorial.*` keys = 362 for both it and pt. rg for leftover English ("the |and |with " etc.): 0 value matches; identical-to-EN values are only intentional keepers (Jukebox, Layout, Metadata Studio, Webcam, Sync & Backup, Chat, Audio[IT]).
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/it/tutorial.ts, src/lib/i18n/locales/pt/tutorial.ts (full 362-key coverage, no English fallback needed for tutorial domain in it/pt)
+- Files edited: src/lib/i18n/locales/it/index.ts, src/lib/i18n/locales/pt/index.ts (tutorial import + merge entry)
+- Verification: key parity 362/362/362 (en/it/pt), barrels resolve 362 tutorial keys each, files parse cleanly via bun import (apostrophe escaping OK), no untranslated keys
+- Note for coordinator: tsc/build not run per task rules (coordinator runs it); structure is key-identical to en so no type drift expected. Existing it/pt settings.ts files lack the R23–R28 settings tab keys (settingsTabs.syncBackup/taxonomy/mottoParty, settingsIntros) — they fall back to EN in the UI today; tutorial tab names were translated naturally (Generi & Lingue/Gêneros & Idiomas, Festa a Tema/Festa Temática, Classifiche Virali/Tendências) and will match once settings tabs are translated too.
+
+---
+Task ID: r30-f
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Swedish + Norwegian
+
+Work Log:
+- Read worklog (last ~150 lines) for project state and conventions (i18n: per-language domain files + barrel via deepMerge; en/de are source, other langs previously en-fallback).
+- Read the full EN source `src/lib/i18n/locales/en/tutorial.ts` (649 lines, 362 string keys: ?-help menu, overlay controls, first-launch offer, 8 tours basic/editor/settings/profile/queue/chat/companion/achievements with title/body/details per step).
+- Terminology mining in existing sv/no translations (core, library, settings, profile, party, mobile, game): established terms reused 1:1 — SV: Bibliotek, Kö/Låtkö, Festläge/Festspel, Companion (kept), Profiler/Karaktärer, Prestationer, Redigerare/Editorn, Inställningar, Duell/Duett/Solo, Veckoutmaning, Spellista, Guldnoter, Kombo, Tryckläge, Metadata-studio, Sällsynthet (Vanlig/Ovanlig/Sällsynt/Episk/Legendär), Nivå, Synkkod, "Lägg till i Kö", Ge över Micen, Medleytävling, Saknade Ord, Blind Karaoke, Lätt/Medel/Svårt/Expert, Viral-hits; NO: Bibliotek, Kø/Sangkø, Festmodus/Festleker, Prestasjoner, Redigerer, Innstillinger, Gi mikrofonen, Medleykonkurranse, Manglende ord, Blind karaoke, Gylne/gullnoter, Sjeldenhet (Vanlig/Uvanlig/Sjelden/Episk/Legendarisk), Lett/Middels/Vanskelig/Ekspert, «…»-anførselstegn, Viral-lister, Trykk-modus.
+- Register: informal "du" in both languages (matches existing sv/no files); NO written in Bokmål.
+- Created `src/lib/i18n/locales/sv/tutorial.ts` and `src/lib/i18n/locales/no/tutorial.ts` — identical key structure/order to EN, values fully translated (no en-fallback gaps), friendly karaoke-app tone, short UI labels kept short.
+- Preserved: {n} placeholder (stepsCount), \n and \n\n sequences, "Karaoke ZERO", proper nouns (UltraStar, MIDI, ASIO, YouTube, QR-kod, MP3, JSON, TXT, Android, iOS, URL), arrows/keys in helpFooter (→ ← Esc), keyboard shortcuts (Ctrl+Z, Ctrl+Q, ⌫, ↑/↓/←/→), A–Ö (sv) / A–Å (no) alphabet ranges.
+- Wired both barrel files `sv/index.ts` + `no/index.ts`: import tutorialTranslations after mobile + appended as last entry of the deepMerge array.
+- Verification (bun): en: 362, sv: 362, no: 362 keys; missing: [], extra: [] for both; key order positionally identical to EN; barrel merge exposes 362 tutorial.* keys in sv and no; {n} only in stepsCount (both); 107 newline strings / 97 blank-line separators — exact match with EN in both langs; 25 arrow-containing strings in all three; no empty values; no leftover English function words (checked with targeted regex — only false positives like sv "all", no "for" which are native words); module imports evaluate cleanly (syntax valid).
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/sv/tutorial.ts (650 lines), src/lib/i18n/locales/no/tutorial.ts (651 lines)
+- Files edited: src/lib/i18n/locales/sv/index.ts, src/lib/i18n/locales/no/index.ts (tutorial import + merge entry)
+- Full tutorial/tour i18n coverage for sv + no (previously en-fallback); all 362 keys translated per language
+- Terminology decisions: "Tour"→"rundtur" (both), "claiming"→"koppla/koble til (en profil)" (natural phrasing instead of anglicism), "Theme Party"→"Temafest", "Sync & Backup"→"Synk & Backup", "noise gate"→"brusport", "slots"→"luckor"(sv)/"luger"(no), "autoplay"→"autospel"(sv)/"autospilling"(no), "Gameplay" tab kept as "Gameplay" (sv, per existing settings.ts) / "Spilling" (no, per existing settings.ts), "Companion" kept untranslated (established in all existing sv/no files), Battle Royale / Companion Singalong / Freestyle / Rap kept as mode names.
+- No blockers; note for coordinator: tsc not run per instructions (imports/eval verified via bun instead).
+
+---
+Task ID: r30-e
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Dutch + Polish
+
+Work Log:
+- Read worklog + EN source `src/lib/i18n/locales/en/tutorial.ts` (362 string keys: help menu, overlay controls, first-launch offer, 8 tours incl. `details` deep-dives).
+- Terminology research in existing nl/pl files (core/library/mobile/settings/party/profile): NL informal "je", PL informal "ty/Twoje" (both confirmed). Reused established terms: NL Bibliotheek/Wachtrij/Profielen/Instellingen/Editor/Prestaties/Companion/Highscores/leaderboard (loanword)/"Toevoegen aan wachtrij"/"Begin met zingen"/"Party Modus"/Geef de Mic/Companion Sing-A-Long/Viral Charts; PL Biblioteka/Kolejka/Profile/Ustawienia/Edytor/Osiągnięcia/codzienne wyzwanie/Najlepsze wyniki/"Zacznij śpiewać"/"Tryb imprezy"/Przekaż mikrofon/Śpiew z Companionem/„Dodaj do kolejki"/„Odtwórz następną piosenkę"/tab names Ogólne·Rozgrywka·Wygląd·Grafika / Dźwięk·Mobilne·O programie; PL rank titles from profile.ts (Gwiazda wschodząca, Legenda karaoke), NL (Rising Star, Karaoke-legende). PL uses „…” quotes, NL straight quotes like EN.
+- Created `src/lib/i18n/locales/nl/tutorial.ts` (651 lines) and `src/lib/i18n/locales/pl/tutorial.ts` (651 lines) — same key structure/order as EN, values translated; {n} placeholders, \n escapes, arrows (→ ←), key names in helpFooter, emojis and product/tech nouns (Karaoke ZERO, UltraStar, MIDI, ASIO, YouTube, QR, Metadata Studio, Companion) preserved.
+- Wired both into barrels `nl/index.ts` + `pl/index.ts` (import after mobile + `tutorialTranslations,` as last merge entry).
+- Verification (bun -e): en=362, nl=362, pl=362 keys; missing=[] extra=[] for both; barrel tutorial.* keys = 362 for both; placeholder ({n}) and \n-count parity checks pass; quote-balance/double-space/odd-escape checks clean; no leftover English function words (rg checks empty).
+- Deliberately EN-identical values (loanwords/proper nouns, consistent with existing locale files): NL 13 (Filters, Jukebox, Highscores, Metadata Studio, Gameplay, Audio, Webcam, Online & Companion, Online leaderboards, Companion & Autoplay, Chat, Companion App), PL 3 (Jukebox, Metadata Studio, Audio).
+- Fixed one PL typo found in self-review (zskanuj → zeskanuj).
+- Noted pre-existing issues (NOT touched, outside task scope): nl/core.ts + pl/core.ts `desktopChat.openChat/closeChat` contain leftover German ("Chat öffnen"/"Chat schließen"); nl/settings.ts:71 `onlineActivitiesDesc` is untranslated English.
+
+Stage Summary:
+- Created: src/lib/i18n/locales/nl/tutorial.ts, src/lib/i18n/locales/pl/tutorial.ts (full 362-key coverage each, no EN fallback gaps)
+- Edited: src/lib/i18n/locales/nl/index.ts, src/lib/i18n/locales/pl/index.ts (tutorial wired into deepMerge barrel)
+- Verification: key parity 362/362/362, missing/extra [] both languages, barrel exposes 362 tutorial keys each, placeholder/newline structure intact — all green
+
+---
+Task ID: r30-c
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Japanese + Korean
+
+Work Log:
+- Read worklog + EN source (src/lib/i18n/locales/en/tutorial.ts, 362 keys: help menu UI, overlay controls, first-launch offer, 8 tours with chapters/steps/title+body+details).
+- Terminology mining in existing ja/ko files (core, library, mobile, party, profile, settings, medleyTournament) to stay consistent:
+  - JA: ライブラリ, キュー/曲キュー, パーティーモード, コンパニオン(アプリ), プロファイル (nav label キャラクター), チャット, 設定, エディター, 実績, ハイスコア, ジュークボックス, デイリー/ウィークリーチャレンジ, ゴールデンノート, レアリティ(コモン/レア/エピック/レジェンダリー), バトルロイヤル, マイクパス, メドレーコンテスト, 消えた言葉, ブラインドカラオケ, トーナメント, コンパニオン・シング・アロング. New terms decided: ツアー (tour), テーマパーティー (Theme Party), 紐付け (companion "claiming"), メタデータスタジオ, タップモード, パート (editor voices P1/P2).
+  - KO: 라이브러리, 대기열/곡 대기열, 파티 모드, 컴패니언 앱, 프로필, 채팅, 설정, 에디터, 업적, 최고 점수, 주크박스, 일일/주간 챌린지, 골든 노트, 희귀도(커먼/레어/에픽/레전더리), 배틀로얄, 마이크 넘기기, 메들리 대회, 빈칸 채우기, 블라인드 가라오케, 토너먼트, 컴패니언 싱얼롱, 라이징 스타/가라오케 레전드. New: 투어, 테마 파티, 연동 (claiming), 메타데이터 스튜디오, 탭 모드, 파트.
+  - Style matched: JA です/ます (short labels plain), KO 합니다/해요체 mix with ~하세요 imperatives — as in existing files.
+- Created src/lib/i18n/locales/ja/tutorial.ts + ko/tutorial.ts: identical key structure/order, values translated naturally; preserved {n} placeholders, \n/\n\n escapes, emojis, Karaoke ZERO, tech terms (UltraStar/MIDI/ASIO/YouTube/QRコード/MP3/JSON/TXT/URL), helpFooter arrows (→ ← Esc), key names (Ctrl+Q, Enter, Delete, ⌫).
+- Wired barrels: ja/index.ts + ko/index.ts — added `import { tutorialTranslations } from './tutorial';` after mobile import, `tutorialTranslations,` as last entry of merge array.
+- Verification (bun runtime import + flat-key diff): ja 362/362 keys, ko 362/362 keys, missing [] extra [] for both; barrels expose 362 tutorial.* keys each. English-leftover scan over all values: only intentional Latin (XP, PC, OK, UI, Wi-Fi, K-POP, file extensions, product/tech terms). {n} present exactly once per file.
+- Minor polish after review pass: JA コピー ボタン→コピーボタン, キック→強制切断（キック）; KO "채점 on/off"→"채점 켜기/끄기" (matches existing KO convention of avoiding raw on/off).
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/ja/tutorial.ts, src/lib/i18n/locales/ko/tutorial.ts (full native translations of all 362 tutorial keys, no EN fallback needed).
+- Files edited: src/lib/i18n/locales/ja/index.ts, src/lib/i18n/locales/ko/index.ts (barrel wiring, pattern identical to other domains).
+- Verification: key parity 362/362 (missing [] extra []) for both languages; barrel tutorial.* count = 362 each; imports parse cleanly under bun (syntax valid).
+- No build/tsc run per task instructions (coordinator runs it). No issues found; "claiming" localized as 紐付け (ja) / 연동 (ko) since no prior term existed.
+
+---
+Task ID: r30-g
+Agent: translate-tutorials (general-purpose)
+Task: i18n translation of tutorial texts into Danish + Finnish
+
+Work Log:
+- Read EN source `src/lib/i18n/locales/en/tutorial.ts` (649 lines, 362 string keys: help menu UI, overlay controls, first-launch offer + 8 tours with title/body/details per step).
+- Terminology research in existing da/fi files (core/library/mobile/party/profile/settings/game): established terms reused — DA: Bibliotek, Kø, Fest/Festtilstand, Præstationer, rundtur (neu), Solo/Duel/Duet, brik (=daily-challenge slot, per da/mobile.ts), niveau/rang, rangliste, Companion (kept), party-mode names kept as in da/party.ts (Battle Royale, Pass the Mic, Medley Contest, Tournament Mode, Missing Words, Blind Karaoke, Companion Sing-A-Long); rarities Almindelig/Sjælden/Epic/Legendarisk; "Smid ud" for kick. FI: Kirjasto, Jono, Juhlat/Juhlatila, Saavutukset, kierros/opastettu kierros (neu), Yksinpeli/Kaksinkamppailu/Duetto, paikka (=slot, per fi/mobile.ts), taso/ranking, tulostaulukko, Companion (kept), Mikrofonin vaihto/Medley-kisa/Puuttuvat sanat/Sokea karaoke; rarities Yleinen/Harvinainen/Eeppinen/Legendaarinen; "Potkaise" for kick. Informal "du" (DA) / sinä-muoto with possessive suffixes (FI) matching existing files.
+- Created `src/lib/i18n/locales/da/tutorial.ts` + `src/lib/i18n/locales/fi/tutorial.ts` — identical key structure/order to EN, values only translated, {n} placeholders and \n escapes preserved, product/tech terms (Karaoke ZERO, UltraStar, MIDI, ASIO, YouTube, QR-kode/QR-koodi, MP3, JSON, TXT, Android, iOS, URL) and arrows/Esc kept.
+- Wired both barrel files (`da/index.ts`, `fi/index.ts`): added `import { tutorialTranslations } from './tutorial';` after mobile import + `tutorialTranslations,` as last merge-array entry. Central registry locales/index.ts already imports the barrels — no further wiring needed.
+- Quality passes: fixed one unescaped DA apostrophe (AI'en → AI\'en, caught by bun parse), a leading-space title, awkward compound "sprogtgenkendelse" rephrased, "performances-tilstand" → "ydelsestilstand" (established da/settings term), minor polish. Checked for leftover EN words (only intentional proper nouns/mode names), duplicated words, double spaces, leading spaces.
+
+Stage Summary:
+- Files created: src/lib/i18n/locales/da/tutorial.ts, src/lib/i18n/locales/fi/tutorial.ts (362 keys each, full coverage — no EN fallback in tutorial domain for da/fi).
+- Files edited: src/lib/i18n/locales/da/index.ts, src/lib/i18n/locales/fi/index.ts (tutorial import + merge entry).
+- Verification: flat-key diff vs EN → en: 362, da: 362, fi: 362, missing: [], extra: [] (both); barrel check → tutorial keys through daTranslations/fiTranslations: 362 each; bun import of both files parses cleanly (TS syntax valid). tsc/build intentionally NOT run (coordinator's job per protocol).
+- Terminology decisions: "Tour" = DA "rundtur" / FI "kierros" (no prior term existed); "Theme Party" = DA "Temafest" / FI "Teemajuhlat" (tab not yet translated in da/fi settings — EN fallback shows there, but tour texts read naturally); DA keeps English party-mode names exactly as the existing da UI does; FI uses its translated mode names.
+
+---
+Task ID: r30 (Koordination)
+Agent: main (Z.ai Code)
+Task: i18n-Übersetzung der Tutorials in alle 16 Sprachen + Umbenennung „R24-Werte" → „Standardwerte" im deutschen Loudness-Correction-Text
+
+Work Log:
+- R24-Leak behoben: src/lib/i18n/locales/de/tutorial.ts (Settings-Tour, Kapitel Audio, Schritt graphicsound, details) — „die R24-Standardwerte sind gut gewählt" → „die Standardwerte sind gut gewählt". EN-Text war bereits korrekt („the defaults are well chosen"); kein weiterer R-Wert-Leak in User-Texten (rg-Audit über alle Locale-Dateien).
+- 7 parallele Übersetzungs-Agenten (r30-a…r30-g) haben tutorial.ts für alle 14 fehlenden Sprachen erstellt (es, fr, it, pt, ja, ko, zh, ru, nl, pl, sv, no, da, fi — je 362 Keys, Struktur identisch zu EN) + Einbindung in die jeweiligen index.ts-Barrels (Import + letzter deepMerge-Eintrag).
+- Zentrale Verifikation: npx tsc --noEmit Exit 0; bun run lint 0 Errors (825 Warnungen = prä-existentes Niveau); eigener Key-Paritäts-Audit über ALLE 16 Locales (362/362 Keys, 0 missing/extra, {n}-Platzhalter- und \n-Parität pro Key, keine leeren Werte) → ALL 16 LOCALES PASS.
+- Qualitäts-Stichprobe aller 14 neuen Sprachen (welcome-body + UI-Labels): natürlich-idiomatisch, Register konsistent mit bestehenden Locale-Dateien (es tú / fr vous / it tu / pt pt-BR / ja です・ます / ko 합니다 / zh 简体 / ru вы+«ёлочки» / nl je / pl ty+„…" / sv-no-da du+rundtur / fi sinä).
+- E2E-Browser-QA (agent-browser): FR — UI komplett französisch, Hilfemenü (?-Button) mit französischen Tour-/Kapitelnamen („VISITE COMPLÈTE", „2 étapes"), Tour-Schritt + „Plus d'infos"-Ausklappbereich mit Deep-Dive-Text korrekt; DE — Settings-Tour Kapitel „Audio & Mikrofon", Schritt graphicsound, „Mehr erfahren" zeigt live „…die Standardwerte sind gut gewählt" (R24 weg); JA — Hilfemenü „ヘルプとツアー", Kapitel „歌い始める 5ステップ", Schritt mit „詳しく見る"-Button, natürlicher japanischer Text. QA-Shots: qa-shots/r30-fr-tour-details.png, r30-de-standardwerte-fix.png, r30-ja-tour.png. dev.log während QA fehlerfrei.
+- Sprache danach zurück auf de gesetzt, Browser-Session geschlossen.
+
+Stage Summary:
+- Tutorial-Texte sind jetzt in ALLEN 16 unterstützten Sprachen vollständig übersetzt (vorher nur de+en, Rest EN-Fallback): 14 neue tutorial.ts-Dateien + 14 Barrel-Anbindungen.
+- „R24-Werte"-Leak im deutschen Loudness-Text behoben — heißt jetzt „Standardwerte" (live im Browser verifiziert).
+- Bekannte Grenze (von Agenten berichtet, prä-existent): it/pt/zh/ru/da/fi settings.ts kennen die neueren Settings-Tab-Keys (taxonomy/motto/syncBackup, settingsIntros) noch nicht → dort zeigt der Tab-Balken EN-Fallback; die Tutorial-Texte verwenden bereits die natürlichen Entsprechungen. Die Tutorial-Übersetzung ist davon unberührt.
+- Commit folgt als „R30".

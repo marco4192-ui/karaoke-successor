@@ -262,7 +262,7 @@ export const tutorialTranslations = {
         graphicsound: {
           title: 'Audio',
           body: 'Ausgabegerät (inkl. ASIO), Master- und Preview-Lautstärke, Mikrofon-Empfindlichkeit, Loudness-Normalisierung und YouTube-Videoqualität.',
-          details: 'ASIO: nur relevant für Windows + ASIO-fähige Soundkarten — reduziert Latenz beim Mikrofon-Monitoring.\n\nLoudness-Normalisierung gleicht die Lautstärke unterschiedlicher Songs an — die R24-Standardwerte sind gut gewählt.\n\nYouTube-Qualität: betrifft Songs mit YouTube-Videoquelle; höhere Qualität = mehr Bandbreite.',
+          details: 'ASIO: nur relevant für Windows + ASIO-fähige Soundkarten — reduziert Latenz beim Mikrofon-Monitoring.\n\nLoudness-Normalisierung gleicht die Lautstärke unterschiedlicher Songs an — die Standardwerte sind gut gewählt.\n\nYouTube-Qualität: betrifft Songs mit YouTube-Videoquelle; höhere Qualität = mehr Bandbreite.',
         },
         microphone: {
           title: 'Mikrofon',
