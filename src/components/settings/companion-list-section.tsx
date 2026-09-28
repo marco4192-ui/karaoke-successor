@@ -225,7 +225,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
 
   if (isLoading) {
     return (
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white/5 border-white/10" data-testid="companion-list-loading">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -242,7 +242,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   }
 
   return (
-    <Card className="bg-white/5 border-white/10">
+    <Card className="bg-white/5 border-white/10" data-testid="companion-list-card">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

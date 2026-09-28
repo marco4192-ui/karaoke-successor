@@ -1,11 +1,22 @@
 import type { Screen } from '@/types/screens';
 
-/** Available tours (basic functions + editor + settings). */
-export type TourId = 'basic' | 'editor' | 'settings';
+/** Available tours (basics, editor, settings, profile, queue, chat,
+ *  companion, achievements). */
+export type TourId =
+  | 'basic'
+  | 'editor'
+  | 'settings'
+  | 'profile'
+  | 'queue'
+  | 'chat'
+  | 'companion'
+  | 'achievements';
 
 /**
  * One step of a guided tour. All texts live in i18n under
- * `tutorial.<tourId>.steps.<stepId>.title` / `.body`.
+ * `tutorial.<tourId>.steps.<stepId>.title` / `.body` — plus an optional
+ * `.details` deep-dive text that the user can expand via the "More info"
+ * button in the tooltip (short body first, details on demand).
  */
 export interface TourStep {
   id: string;
@@ -22,8 +33,10 @@ export interface TourStep {
    *    (NEVER discards unsaved changes — if the confirm dialog shows, the
    *    tour falls back to the centered tooltip instead).
    *  - 'settings-open-tab': activate the settings tab named in `settingsTab`
-   *    (uses the same custom event the companion remote control uses). */
-  action?: 'editor-open-first-song' | 'editor-close-song' | 'settings-open-tab';
+   *    (uses the same custom event the companion remote control uses).
+   *  - 'chat-open-panel': open the desktop chat panel (karaoke-open-chat
+   *    custom event — the tour closes it again on stop via karaoke-close-chat). */
+  action?: 'editor-open-first-song' | 'editor-close-song' | 'settings-open-tab' | 'chat-open-panel';
   /** Settings tab to activate when action === 'settings-open-tab'. */
   settingsTab?: 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'taxonomy' | 'motto' | 'viral' | 'sync' | 'about';
   /** Interactive step: a click-catcher over the spotlight forwards the click

@@ -18,9 +18,11 @@ interface CharacterSettingsCardProps {
   profile: PlayerProfile;
   onlineEnabled: boolean;
   onDelete: () => void;
+  /** Stable data-testid anchor for tours / E2E. */
+  testId?: string;
 }
 
-export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: CharacterSettingsCardProps) {
+export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId }: CharacterSettingsCardProps) {
   const { t } = useTranslation();
   const { updateProfile } = useGameStore();
   const [isEditingCharacter, setIsEditingCharacter] = useState(false);
@@ -87,7 +89,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   };
 
   return (
-    <Card className="bg-white/5 border-white/10">
+    <Card className="bg-white/5 border-white/10" data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">{t('characterScreen.settingsTitle')}</CardTitle>
       </CardHeader>

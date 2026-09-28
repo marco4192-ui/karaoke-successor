@@ -154,7 +154,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative w-full max-w-sm bg-[#0d0d1a]/95 backdrop-blur-xl border-l border-white/10 flex flex-col animate-[slide-in-right_0.2s_ease-out]">
+      <div className="relative w-full max-w-sm bg-[#0d0d1a]/95 backdrop-blur-xl border-l border-white/10 flex flex-col animate-[slide-in-right_0.2s_ease-out]" data-testid="chat-panel">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <h2 className="text-base font-bold flex items-center gap-2 text-white">
@@ -166,7 +166,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="chat-messages">
           {messages.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <p className="text-white/30 text-sm">{(t('desktopChat.noMessages') || 'Noch keine Nachrichten')}</p>
@@ -233,6 +233,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
               <select
                 value={selectedPlayerId}
                 onChange={(e) => setSelectedPlayerId(e.target.value)}
+                data-testid="chat-player-select"
                 className="w-full appearance-none bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 pr-7 text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors cursor-pointer"
               >
                 {players.length === 0 && (
@@ -260,6 +261,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
+              data-testid="chat-input"
               placeholder={(t('desktopChat.placeholder') || 'Nachricht eingeben...')}
               maxLength={200}
               className="flex-1 bg-white/10 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-500/50 transition-colors"
@@ -267,6 +269,7 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
             <button
               onClick={handleSend}
               disabled={!inputText.trim() || sending || !selectedPlayerId}
+              data-testid="chat-send"
               className="px-4 py-2 rounded-full bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               {(t('desktopChat.send') || 'Senden')}

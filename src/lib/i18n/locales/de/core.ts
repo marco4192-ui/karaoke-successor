@@ -228,6 +228,7 @@ queueScreen: {
   rule5: '• Companion-App-Anfragen erscheinen mit einem Cyan-Rand',
   rule6: '• Klicke auf einen Song, um ihn sofort abzuspielen',
   companion: '📱 Companion',
+  viaCompanion: 'Über die Companion-App hinzugefügt',
 },
 queueNextSong: {
   label: 'Als nächstes',

@@ -520,9 +520,9 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8" data-testid="daily-challenge-screen">
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold mb-2">{t('dailyChallengeScreen.title')}</h1>
+        <h1 className="text-3xl font-bold mb-2" data-testid="daily-challenge-title">{t('dailyChallengeScreen.title')}</h1>
         <p className="text-white/60">{t('dailyChallengeScreen.description')}</p>
       </div>
 

@@ -86,6 +86,7 @@ export function QueueItemCard({
       key={item.id}
       role="listitem"
       tabIndex={0}
+      data-testid={`queue-item-${item.id}`}
       className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none ${
         draggedIndex === index ? 'opacity-50' : ''
       }`}
@@ -115,8 +116,13 @@ export function QueueItemCard({
           </p>
         </div>
 
-        {/* Game Mode */}
+        {/* Game Mode + companion origin */}
         <div className="flex items-center gap-2">
+          {item.isFromCompanion && (
+            <Badge className="bg-purple-500/80 text-[10px] px-1.5" title={t('queueScreen.viaCompanion')}>
+              📱
+            </Badge>
+          )}
           {getGameModeBadge(item.gameMode, t)}
         </div>
 

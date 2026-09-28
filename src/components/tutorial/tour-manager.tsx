@@ -98,6 +98,17 @@ function openSettingsTabWithRetry(tab: string, attempt = 0): void {
   if (attempt < 20) setTimeout(() => openSettingsTabWithRetry(tab, attempt + 1), 250);
 }
 
+/** Open the desktop chat panel (chat tour). Dispatches the
+ *  `karaoke-open-chat` custom event — karaoke-app.tsx listens for it and
+ *  sets showChatPanel(true). Retry-polling until the panel is visible,
+ *  because navigation to the screen renders asynchronously. */
+function openChatPanelWithRetry(attempt = 0): void {
+  if (typeof document === 'undefined') return;
+  if (document.querySelector('[data-testid="chat-panel"]')) return; // already open
+  window.dispatchEvent(new CustomEvent('karaoke-open-chat'));
+  if (attempt < 20) setTimeout(() => openChatPanelWithRetry(attempt + 1), 250);
+}
+
 export function TourController({ children, navigate, screen }: TourControllerProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<ActiveTour | null>(null);
@@ -105,6 +116,9 @@ export function TourController({ children, navigate, screen }: TourControllerPro
   const [mounted, setMounted] = useState(false);
   const stateRef = useRef<ActiveTour | null>(null);
   stateRef.current = state;
+  // Whether THIS tour opened the chat panel — only then is it closed again
+  // on stop (a panel the user opened themselves stays untouched).
+  const chatOpenedByTourRef = useRef(false);
 
   // ── First-launch offer: once, on the home screen, when idle ──
   useEffect(() => {
@@ -132,6 +146,17 @@ export function TourController({ children, navigate, screen }: TourControllerPro
     return { tour, steps: tour.chapters.flatMap(c => c.steps), chapterId: 'all' as const };
   }, []);
 
+  /** Centralized UI cleanup — runs on EVERY tour exit path (skip button,
+   *  Escape key, and running past the last step). If THIS tour opened the
+   *  chat panel, close it again: the tour must never leave UI behind it
+   *  didn't find open. A panel the user opened themselves stays untouched. */
+  const cleanupTourUi = useCallback(() => {
+    if (chatOpenedByTourRef.current) {
+      chatOpenedByTourRef.current = false;
+      window.dispatchEvent(new CustomEvent('karaoke-close-chat'));
+    }
+  }, []);
+
   const advanceTo = useCallback((active: ActiveTour, rawIndex: number) => {
     const steps = active.steps;
     let index = rawIndex;
@@ -144,6 +169,7 @@ export function TourController({ children, navigate, screen }: TourControllerPro
       // Only the COMPLETE tour earns the "completed" badge — playing a
       // single chapter does not mark the whole tour as done.
       if (active.chapterId === 'all') markTourDone(active.tour.id);
+      cleanupTourUi();
       setState(null);
       return;
     }
@@ -158,10 +184,14 @@ export function TourController({ children, navigate, screen }: TourControllerPro
     if (step.navigate) navigate(step.navigate);
     if (step.action === 'editor-open-first-song') openEditorSongWithRetry();
     if (step.action === 'editor-close-song') closeEditorSongWithRetry();
+    if (step.action === 'chat-open-panel') {
+      chatOpenedByTourRef.current = true;
+      openChatPanelWithRetry();
+    }
     if (step.action === 'settings-open-tab' && step.settingsTab) {
       openSettingsTabWithRetry(step.settingsTab);
     }
-  }, [navigate]);
+  }, [navigate, cleanupTourUi]);
 
   const startTour = useCallback((tourId: TourId, opts?: { chapterId?: string }) => {
     const { tour, steps, chapterId } = flattenSteps(tourId, opts?.chapterId);
@@ -175,7 +205,10 @@ export function TourController({ children, navigate, screen }: TourControllerPro
     advanceTo(active, 0);
   }, [flattenSteps, advanceTo, navigate]);
 
-  const stopTour = useCallback(() => setState(null), []);
+  const stopTour = useCallback(() => {
+    cleanupTourUi();
+    setState(null);
+  }, [cleanupTourUi]);
 
   const next = useCallback(() => {
     const active = stateRef.current;
@@ -208,6 +241,14 @@ export function TourController({ children, navigate, screen }: TourControllerPro
   }), [startTour, stopTour, state]);
 
   const step = state ? state.steps[state.index] : null;
+  // Optional deep-dive text: t() returns the key itself when missing —
+  // only pass a details string when the translation actually exists.
+  const stepDetails = useMemo(() => {
+    if (!state || !step) return undefined;
+    const key = `tutorial.${state.tour.id}.steps.${step.id}.details`;
+    const val = t(key);
+    return val === key ? undefined : val;
+  }, [state, step, t]);
   const chapterOfStep = useMemo(() => {
     if (!state) return null;
     // When playing a single chapter, its identity is fixed
@@ -236,6 +277,7 @@ export function TourController({ children, navigate, screen }: TourControllerPro
           step={step}
           title={t(`tutorial.${state.tour.id}.steps.${step.id}.title`)}
           body={t(`tutorial.${state.tour.id}.steps.${step.id}.body`)}
+          details={stepDetails}
           stepNumber={state.index + 1}
           totalSteps={state.steps.length}
           chapterIcon={chapterOfStep.icon}

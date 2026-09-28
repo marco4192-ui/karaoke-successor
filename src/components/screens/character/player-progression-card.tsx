@@ -10,19 +10,21 @@ import { getCountryFlag } from './country-options';
 interface PlayerProgressionCardProps {
   profile: PlayerProfile;
   onToggleActive?: () => void;
+  /** Stable data-testid anchor for tours / E2E. */
+  testId?: string;
 }
 
-export function PlayerProgressionCard({ profile, onToggleActive }: PlayerProgressionCardProps) {
+export function PlayerProgressionCard({ profile, onToggleActive, testId }: PlayerProgressionCardProps) {
   const { t } = useTranslation();
   const profileXP = profile.xp || 0;
   const playerLevel = getLevelForXP(profileXP);
   const playerRank = getRankForXP(profileXP);
 
   return (
-    <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
+    <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30" data-testid={testId}>
       <CardHeader>
         <CardTitle className="flex items-center gap-4">
-          <div className="relative">
+          <div className="relative" data-testid="profile-progression-avatar">
             <div 
               className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden border-2 border-purple-400"
               style={{ backgroundColor: profile.color }}
@@ -67,7 +69,7 @@ export function PlayerProgressionCard({ profile, onToggleActive }: PlayerProgres
       </CardHeader>
       <CardContent>
         {/* XP Progress Bar */}
-        <div className="mb-4">
+        <div className="mb-4" data-testid="profile-xp-bar">
           <div className="flex justify-between text-sm mb-1">
             <span className="text-white/60">{t('playerProgression.progressToNext')}</span>
             <span className="text-purple-400">{playerLevel?.progress.toFixed(1)}%</span>
@@ -85,7 +87,7 @@ export function PlayerProgressionCard({ profile, onToggleActive }: PlayerProgres
         </div>
         
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="profile-stats-grid">
           <div className="bg-white/5 rounded-lg p-3 text-center">
             <div className="text-xl font-bold text-cyan-400">{profile.gamesPlayed || 0}</div>
             <div className="text-xs text-white/60">{t('playerProgression.songsPlayed')}</div>

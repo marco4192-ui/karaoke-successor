@@ -66,7 +66,7 @@ export function MobileDeviceMicrophoneSection() {
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '');
   
   return (
-    <Card className="bg-white/5 border-white/10">
+    <Card className="bg-white/5 border-white/10" data-testid="mobile-qr-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PhoneIcon className="w-5 h-5 text-cyan-400" />
@@ -77,7 +77,7 @@ export function MobileDeviceMicrophoneSection() {
       <CardContent>
         <div className="grid md:grid-cols-2 gap-6">
           {/* QR Code Section */}
-          <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg">
+          <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg" data-testid="mobile-qr-code">
             <div className="text-center mb-4">
               <h4 className="font-medium mb-1">{t('settingsMobileDevice.scanToConnect')}</h4>
               <p className="text-xs text-white/60">{t('settingsMobileDevice.openCamera')}</p>
@@ -101,7 +101,7 @@ export function MobileDeviceMicrophoneSection() {
           
           {/* Connection Info */}
           <div className="space-y-4">
-            <div className="p-4 bg-white/5 rounded-lg">
+            <div className="p-4 bg-white/5 rounded-lg" data-testid="mobile-connection-info">
               <h4 className="font-medium mb-2">{t('settingsMobileDevice.connectionUrl')}</h4>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-black/30 px-3 py-2 rounded text-sm text-cyan-400 overflow-hidden text-ellipsis">

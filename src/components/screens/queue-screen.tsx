@@ -337,16 +337,16 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8" data-testid="queue-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t('queue.title')}</h1>
+        <h1 className="text-3xl font-bold mb-2" data-testid="queue-title">{t('queue.title')}</h1>
         <p className="text-white/60">
           {unifiedQueue.length} {t('queueScreen.songsInQueue')}
         </p>
       </div>
 
       {unifiedQueue.length === 0 ? (
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white/5 border-white/10" data-testid="queue-empty">
           <CardContent className="py-12 text-center">
             <QueueIcon className="w-16 h-16 text-white/20 mx-auto mb-4" />
             <p className="text-white/60">{t('queueScreen.noSongs')}</p>
@@ -354,7 +354,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
           </CardContent>
         </Card>
       ) : (
-        <div role="list" aria-label="Warteschlange" className="space-y-2 mb-6">
+        <div role="list" aria-label="Warteschlange" data-testid="queue-list" className="space-y-2 mb-6">
           {unifiedQueue.map((item, index) => (
             <QueueItemCard
               key={item.id}
@@ -380,6 +380,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
           <Button
             variant="outline"
             onClick={clearQueue}
+            data-testid="queue-clear"
             className="border-white/20 text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
           >
             {t('queueScreen.clearAll')}
@@ -387,6 +388,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
           {unifiedQueue[0] && (
             <Button
               onClick={() => playFromQueue(unifiedQueue[0])}
+              data-testid="queue-play-next"
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
             >
               {t('queueScreen.playNextSong')}

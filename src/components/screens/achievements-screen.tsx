@@ -37,15 +37,15 @@ export function AchievementsScreen() {
   const levelInfo = viewProfile ? getXPLevel(viewProfile.xp || 0) : null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8" data-testid="achievements-screen">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">{t('achievementsScreen.title')}</h1>
+        <h1 className="text-3xl font-bold mb-2" data-testid="achievements-title">{t('achievementsScreen.title')}</h1>
         <p className="text-white/60">{t('achievementsScreen.description')}</p>
       </div>
 
       {/* Player selector — every player earns and keeps their own achievements */}
       {activeProfiles.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 flex-wrap" role="tablist" aria-label={t('achievementsScreen.viewPlayer')}>
+        <div className="flex items-center gap-2 mb-6 flex-wrap" role="tablist" aria-label={t('achievementsScreen.viewPlayer')} data-testid="achievements-player-selector">
           <span className="text-sm text-white/50 mr-1">{t('achievementsScreen.viewPlayer')}:</span>
           {activeProfiles.map((profile) => (
             <button
@@ -78,7 +78,7 @@ export function AchievementsScreen() {
       )}
 
       {/* Stats — of the viewed player */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" data-testid="achievements-stats">
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-yellow-400">{unlockedCount}/{ACHIEVEMENT_DEFINITIONS.length}</div>
@@ -106,7 +106,7 @@ export function AchievementsScreen() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6" data-testid="achievements-filters">
         <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}
           className={filter === 'all' ? 'bg-cyan-500' : 'border-white/20 text-white'}>
           {t('achievementsScreen.all')}
@@ -136,7 +136,7 @@ export function AchievementsScreen() {
           <p>{t('achievementsScreen.noMatches')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" data-testid="achievements-grid">
           {filteredAchievements.map(achievement => {
             const isUnlocked = unlockedIds.has(achievement.id);
             const rarityColor = getRarityColor(achievement.rarity);

@@ -9,7 +9,7 @@ interface QueueRulesCardProps {
 
 export function QueueRulesCard({ t }: QueueRulesCardProps) {
   return (
-    <Card className="bg-white/5 border-white/10 mt-8">
+    <Card className="bg-white/5 border-white/10 mt-8" data-testid="queue-rules">
       <CardHeader>
         <CardTitle className="text-lg">{t('queueScreen.rules')}</CardTitle>
       </CardHeader>

@@ -10,13 +10,15 @@ interface CharacterCardProps {
   isSelected: boolean;
   isActiveProfile: boolean;
   onClick: () => void;
+  /** Stable data-testid anchor for tours / E2E (e.g. profile-card-<id>). */
+  testId?: string;
   /** Whether this character is currently claimed by a connected companion */
   isClaimedByCompanion?: boolean;
   /** Name of the companion device that claimed this character */
   claimedByDevice?: string;
 }
 
-export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, isClaimedByCompanion, claimedByDevice }: CharacterCardProps) {
+export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, testId, isClaimedByCompanion, claimedByDevice }: CharacterCardProps) {
   const { t } = useTranslation();
   const level = getLevelForXP(profile.xp || 0);
   const rank = getRankForXP(profile.xp || 0);
@@ -25,6 +27,7 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
   return (
     <div
       onClick={onClick}
+      data-testid={testId}
       className={`
         w-28 p-3 rounded-xl cursor-pointer transition-all relative
         ${isSelected

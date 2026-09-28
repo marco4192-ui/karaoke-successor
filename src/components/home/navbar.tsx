@@ -34,39 +34,39 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
         </button>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <NavButton active={screen === 'library'} onClick={() => setScreen('library')}>
+          <NavButton active={screen === 'library'} onClick={() => setScreen('library')} testId="navbar-library">
             <LibraryIcon className="w-5 h-5" /> {t('nav.library')}
           </NavButton>
-          <NavButton active={screen === 'party'} onClick={() => setScreen('party')}>
+          <NavButton active={screen === 'party'} onClick={() => setScreen('party')} testId="navbar-party">
             <PartyIcon className="w-5 h-5" /> {t('nav.party')}
           </NavButton>
-          <NavButton active={screen === 'dailyChallenge'} onClick={() => setScreen('dailyChallenge')}>
+          <NavButton active={screen === 'dailyChallenge'} onClick={() => setScreen('dailyChallenge')} testId="navbar-daily">
             <StarIcon className="w-5 h-5" /> {t('nav.daily')}
           </NavButton>
-          <NavButton active={screen === 'queue'} onClick={() => setScreen('queue')}>
+          <NavButton active={screen === 'queue'} onClick={() => setScreen('queue')} testId="navbar-queue">
             <QueueIcon className="w-5 h-5" /> {t('nav.queue')}
             {isMounted && queueLength > 0 && (
               <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">{queueLength}</Badge>
             )}
           </NavButton>
-          <NavButton active={screen === 'profile'} onClick={() => setScreen('profile')}>
+          <NavButton active={screen === 'profile'} onClick={() => setScreen('profile')} testId="navbar-profile">
             <UserIcon className="w-5 h-5" /> {t('nav.profiles')}
           </NavButton>
-          <NavButton active={screen === 'highscores'} onClick={() => setScreen('highscores')}>
+          <NavButton active={screen === 'highscores'} onClick={() => setScreen('highscores')} testId="navbar-highscores">
             <TrophyIcon className="w-5 h-5" /> {t('nav.highscores')}
           </NavButton>
-          <NavButton active={screen === 'achievements'} onClick={() => setScreen('achievements')}>
+          <NavButton active={screen === 'achievements'} onClick={() => setScreen('achievements')} testId="navbar-achievements">
             <TrophyIcon className="w-5 h-5" /> {t('nav.achievements')}
           </NavButton>
-          <NavButton active={screen === 'jukebox'} onClick={() => setScreen('jukebox')}>
+          <NavButton active={screen === 'jukebox'} onClick={() => setScreen('jukebox')} testId="navbar-jukebox">
             <MusicIcon className="w-5 h-5" /> {t('nav.jukebox')}
           </NavButton>
-          <NavButton active={screen === 'settings'} onClick={() => setScreen('settings')}>
+          <NavButton active={screen === 'settings'} onClick={() => setScreen('settings')} testId="navbar-settings">
             <SettingsIcon className="w-5 h-5" /> {t('nav.settings')}
           </NavButton>
           {/* Chat Button */}
           {onToggleChat && (
-            <NavButton active={false} onClick={onToggleChat}>
+            <NavButton active={false} onClick={onToggleChat} testId="navbar-chat-button">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
@@ -129,10 +129,11 @@ export function FullscreenToggleButton({ isFullscreen, toggleFullscreen }: { isF
 }
 
 // ===================== NAV BUTTON =====================
-function NavButton({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+function NavButton({ children, active, onClick, testId }: { children: React.ReactNode; active: boolean; onClick: () => void; testId?: string }) {
   return (
     <button
       onClick={onClick}
+      data-testid={testId}
       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
         active
           ? 'bg-[#ff2d95]/20 text-[#ff2d95] retro-box-glow-pink'

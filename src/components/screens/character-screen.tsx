@@ -123,20 +123,21 @@ export function CharacterScreen() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8" data-testid="profile-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">{t('characterScreen.title')}</h1>
+        <h1 className="text-3xl font-bold mb-1" data-testid="profile-title">{t('characterScreen.title')}</h1>
         <p className="text-white/60">{t('characterScreen.description')}</p>
       </div>
 
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white/5 rounded-xl border border-white/10" data-testid="profile-top-bar">
         <div className="flex items-center gap-3">
           <GlobeIcon className="w-5 h-5 text-cyan-400" />
           <span className="text-sm text-white/80">{t('characterScreen.onlineLeaderboard')}</span>
           <button
             onClick={() => setOnlineEnabled(!onlineEnabled)}
+            data-testid="profile-online-toggle"
             className={`relative w-12 h-6 rounded-full transition-colors ${onlineEnabled ? 'bg-cyan-500' : 'bg-white/20'}`}
           >
             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${onlineEnabled ? 'left-7' : 'left-1'}`} />
@@ -168,6 +169,7 @@ export function CharacterScreen() {
           <Button
             onClick={() => setShowLoginDialog(true)}
             variant="outline"
+            data-testid="profile-online-login"
             className="gap-2 border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
           >
             <CloudDownloadIcon className="w-4 h-4" />
@@ -177,6 +179,7 @@ export function CharacterScreen() {
         
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
+          data-testid="profile-create-button"
           className="bg-gradient-to-r from-cyan-500 to-purple-500 gap-2"
         >
           <PlusIcon className="w-4 h-4" />
@@ -200,10 +203,10 @@ export function CharacterScreen() {
       />
 
       {/* Character List */}
-      <div className="mb-6">
+      <div className="mb-6" data-testid="profile-list">
         <h2 className="text-lg font-semibold mb-3 text-white/80">{t('characterScreen.yourProfiles').replace('{n}', String(profiles.length))}</h2>
         {profiles.length === 0 ? (
-          <Card className="bg-white/5 border-white/10">
+          <Card className="bg-white/5 border-white/10" data-testid="profile-empty">
             <CardContent className="py-8 text-center text-white/60">
               <UserIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>{t('characterScreen.noProfiles')}</p>
@@ -215,6 +218,7 @@ export function CharacterScreen() {
               <CharacterCard
                 key={profile.id}
                 profile={profile}
+                testId={`profile-card-${profile.id}`}
                 isSelected={displayedProfileId === profile.id}
                 isActiveProfile={activeProfileId === profile.id}
                 isClaimedByCompanion={!!claimedProfileIds[profile.id]}
@@ -234,12 +238,14 @@ export function CharacterScreen() {
         <div className="space-y-6">
           <PlayerProgressionCard
             profile={displayedProfile}
+            testId="profile-progression-card"
             onToggleActive={() => updateProfile(displayedProfile.id, {
               isActive: !(displayedProfile.isActive ?? true),
             })}
           />
           <CharacterSettingsCard
             profile={displayedProfile}
+            testId="profile-settings-card"
             onlineEnabled={onlineEnabled}
             onDelete={() => {
               deleteProfile(displayedProfile.id);

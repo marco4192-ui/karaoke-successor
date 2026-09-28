@@ -3,8 +3,11 @@
 /**
  * ?-Hilfemenü (R28: Auslöser sitzt in der HAUPTMENÜLEISTE, nicht mehr als
  * schwebender Button) mit Dialog:
- *  - Komplette Touren (Grundfunktionen / Editor / Settings) erneut ansehen
+ *  - Komplette Touren erneut ansehen (R29: 8 Touren — Grundfunktionen,
+ *    Profile, Warteschlange, Chat, Companion, Erfolge, Editor, Settings)
  *  - Thematisch gegliederte Kapitel einzeln abspielen
+ *  - Touren in Gruppen sortiert (Erste Schritte / Bereiche / Profis),
+ *    damit die Liste bei 8 Touren übersichtlich bleibt
  *
  * Die NavBar rendert den ?-Button und öffnet den Dialog über das
  * `karaoke-open-help` Custom-Event (kleinste Kopplung — die NavBar braucht
@@ -20,6 +23,16 @@ import { isTourDone } from '@/lib/tutorial/storage';
 import type { TourId } from '@/lib/tutorial/types';
 
 export const OPEN_HELP_EVENT = 'karaoke-open-help';
+
+/** Logical tour groups — keeps the dialog organized with 8 tours. */
+const TOUR_GROUPS: Array<{ labelKey: string; tours: TourId[] }> = [
+  { labelKey: 'tutorial.groupGettingStarted', tours: ['basic'] },
+  {
+    labelKey: 'tutorial.groupAreas',
+    tours: ['profile', 'queue', 'chat', 'companion', 'achievements'],
+  },
+  { labelKey: 'tutorial.groupAdvanced', tours: ['editor', 'settings'] },
+];
 
 export function HelpMenu() {
   const { t } = useTranslation();
@@ -37,8 +50,6 @@ export function HelpMenu() {
     window.addEventListener(OPEN_HELP_EVENT, openFromNavBar);
     return () => window.removeEventListener(OPEN_HELP_EVENT, openFromNavBar);
   }, []);
-
-  const tourIds: TourId[] = ['basic', 'editor', 'settings'];
 
   const handleStart = (tourId: TourId, chapterId?: string) => {
     setOpen(false);
@@ -76,64 +87,79 @@ export function HelpMenu() {
           {t('tutorial.helpDialogDesc')}
         </p>
 
-        <div className="space-y-6">
-          {tourIds.map((tourId) => {
-            const tour = TOURS[tourId];
-            const done = mounted && isTourDone(tourId);
-            return (
-              <section key={tourId} aria-label={t(`tutorial.${tourId}.title`)}>
-                {/* Tour header + full tour button */}
-                <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <span className="text-2xl" aria-hidden>{tour.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white flex items-center gap-2 flex-wrap">
-                      {t(`tutorial.${tourId}.title`)}
-                      {done && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 rounded-full px-2 py-0.5">
-                          <Check className="w-3 h-3" /> {t('tutorial.completedBadge')}
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-xs text-[#b8b8d0]/80">{t(`tutorial.${tourId}.desc`)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleStart(tourId)}
-                    className="retro-btn retro-btn-cyan text-xs font-bold rounded-lg px-4 py-2 inline-flex items-center gap-1.5 transition-all hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
-                    data-testid={`help-start-${tourId}`}
-                    disabled={isTourActive}
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    {t('tutorial.startFullTour')}
-                  </button>
-                </div>
+        <div className="space-y-8">
+          {TOUR_GROUPS.map((group) => (
+            <div key={group.labelKey}>
+              {/* Group label */}
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-[#00e5ff]/80">
+                  {t(group.labelKey)}
+                </h3>
+                <div className="flex-1 h-px bg-gradient-to-r from-cyan-500/40 to-transparent" />
+              </div>
 
-                {/* Chapter chips */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {tour.chapters.map((chapter) => (
-                    <button
-                      key={chapter.id}
-                      type="button"
-                      onClick={() => handleStart(tourId, chapter.id)}
-                      data-testid={`help-chapter-${tourId}-${chapter.id}`}
-                      className="group flex items-center gap-3 rounded-lg border border-white/12 bg-white/[0.04] px-3.5 py-2.5 text-left transition-all hover:border-cyan-400/50 hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
-                    >
-                      <span className="text-xl flex-shrink-0" aria-hidden>{chapter.icon}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-bold text-white truncate">
-                          {t(`tutorial.${tourId}.chapters.${chapter.id}`)}
-                        </span>
-                        <span className="block text-[11px] text-[#b8b8d0]/70">
-                          {t('tutorial.stepsCount').replaceAll('{n}', String(chapter.steps.length))}
-                        </span>
-                      </span>
-                      <Play className="w-4 h-4 text-white/25 group-hover:text-cyan-300 flex-shrink-0 transition-colors" />
-                    </button>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+              <div className="space-y-6">
+                {group.tours.map((tourId) => {
+                  const tour = TOURS[tourId];
+                  if (!tour) return null;
+                  const done = mounted && isTourDone(tourId);
+                  return (
+                    <section key={tourId} aria-label={t(`tutorial.${tourId}.title`)}>
+                      {/* Tour header + full tour button */}
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <span className="text-2xl" aria-hidden>{tour.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-white flex items-center gap-2 flex-wrap">
+                            {t(`tutorial.${tourId}.title`)}
+                            {done && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 rounded-full px-2 py-0.5">
+                                <Check className="w-3 h-3" /> {t('tutorial.completedBadge')}
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-xs text-[#b8b8d0]/80">{t(`tutorial.${tourId}.desc`)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleStart(tourId)}
+                          className="retro-btn retro-btn-cyan text-xs font-bold rounded-lg px-4 py-2 inline-flex items-center gap-1.5 transition-all hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+                          data-testid={`help-start-${tourId}`}
+                          disabled={isTourActive}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          {t('tutorial.startFullTour')}
+                        </button>
+                      </div>
+
+                      {/* Chapter chips */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {tour.chapters.map((chapter) => (
+                          <button
+                            key={chapter.id}
+                            type="button"
+                            onClick={() => handleStart(tourId, chapter.id)}
+                            data-testid={`help-chapter-${tourId}-${chapter.id}`}
+                            className="group flex items-center gap-3 rounded-lg border border-white/12 bg-white/[0.04] px-3.5 py-2.5 text-left transition-all hover:border-cyan-400/50 hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+                          >
+                            <span className="text-xl flex-shrink-0" aria-hidden>{chapter.icon}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-bold text-white truncate">
+                                {t(`tutorial.${tourId}.chapters.${chapter.id}`)}
+                              </span>
+                              <span className="block text-[11px] text-[#b8b8d0]/70">
+                                {t('tutorial.stepsCount').replaceAll('{n}', String(chapter.steps.length))}
+                              </span>
+                            </span>
+                            <Play className="w-4 h-4 text-white/25 group-hover:text-cyan-300 flex-shrink-0 transition-colors" />
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         <p className="text-[11px] text-white/40 mt-6 text-center">

@@ -221,6 +221,21 @@ export default function KaraokeZERO() {
   // ── Desktop chat panel ──
   const [showChatPanel, setShowChatPanel] = useState(false);
 
+  // Tour hook-up (R29 chat tour): the TourController opens/closes the chat
+  // panel via custom events — same low coupling as the help menu (?-button).
+  // `karaoke-open-chat` only ever OPENS (never toggles), so a step that
+  // navigates away and back doesn't accidentally close the panel mid-tour.
+  useEffect(() => {
+    const openChat = () => setShowChatPanel(true);
+    const closeChat = () => setShowChatPanel(false);
+    window.addEventListener('karaoke-open-chat', openChat);
+    window.addEventListener('karaoke-close-chat', closeChat);
+    return () => {
+      window.removeEventListener('karaoke-open-chat', openChat);
+      window.removeEventListener('karaoke-close-chat', closeChat);
+    };
+  }, []);
+
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
   }, [party.pauseDialogAction]);

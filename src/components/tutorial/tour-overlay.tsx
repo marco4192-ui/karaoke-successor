@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X, MousePointerClick } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X, MousePointerClick } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { cn } from '@/lib/utils';
 import type { TourStep } from '@/lib/tutorial/types';
@@ -25,6 +25,8 @@ interface TourOverlayProps {
   /** Resolved localized texts (provided by the TourController). */
   title: string;
   body: string;
+  /** Optional deep-dive text — shown via the expandable "More info" button. */
+  details?: string;
   stepNumber: number; // 1-based
   totalSteps: number;
   chapterIcon: string;
@@ -57,7 +59,7 @@ function isRectVisible(r: Rect): boolean {
 }
 
 export function TourOverlay({
-  step, title, body, stepNumber, totalSteps, chapterIcon, chapterTitle,
+  step, title, body, details, stepNumber, totalSteps, chapterIcon, chapterTitle,
   hasNext, hasPrev, onNext, onPrev, onSkip, onForwardClick,
 }: TourOverlayProps) {
   const { t } = useTranslation();
@@ -65,6 +67,9 @@ export function TourOverlay({
   const [targetFound, setTargetFound] = useState<boolean | null>(null);
   const forwardedRef = useRef(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  // "More info" expansion state — the overlay remounts per step (keyed),
+  // so the expansion always starts collapsed on the next step.
+  const [showDetails, setShowDetails] = useState(false);
   // Real (measured) tooltip height — used for placement checks and
   // clamping, so long texts can never push the card off-screen.
   const [tooltipH, setTooltipH] = useState(220);
@@ -265,6 +270,33 @@ export function TourOverlay({
             {body}
           </p>
         </div>
+
+        {/* Expandable deep-dive (only when the step has a details text) */}
+        {details && (
+          <div data-testid="tour-details-section">
+            <button
+              type="button"
+              onClick={() => setShowDetails(v => !v)}
+              aria-expanded={showDetails}
+              data-testid="tour-details-toggle"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300/90 hover:text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 hover:border-cyan-300/50 rounded-full px-3 py-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+            >
+              {showDetails
+                ? <><ChevronUp className="w-3 h-3" /> {t('tutorial.lessDetails')}</>
+                : <><ChevronDown className="w-3 h-3" /> {t('tutorial.moreDetails')}</>}
+            </button>
+            {showDetails && (
+              <div
+                className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-950/30 px-3 py-2.5 max-h-52 overflow-y-auto"
+                data-testid="tour-details-text"
+              >
+                <p className="text-xs text-[#cdd6f4] leading-relaxed whitespace-pre-line">
+                  {details}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex items-center gap-2 mt-auto">

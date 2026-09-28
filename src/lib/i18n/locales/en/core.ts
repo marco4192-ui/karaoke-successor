@@ -241,7 +241,8 @@ export const coreTranslations = {
     rule4: '• Select a character before adding to queue',
     rule5: '• Companion app requests appear with a cyan border',
     rule6: '• Click a song to play it immediately',
-    companion: '📱 Companion'
+    companion: '📱 Companion',
+    viaCompanion: 'Added via the companion app'
   },
 
   queueNextSong: {
