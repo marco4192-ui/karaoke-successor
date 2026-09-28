@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { MusicIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -80,6 +81,9 @@ export function AboutTab({
 
   return (
     <div className="space-y-6">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="about" />
+
       <Card className="retro-gradient-card retro-border-pink rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">

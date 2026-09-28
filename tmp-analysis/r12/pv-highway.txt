@@ -1,0 +1,26 @@
+      {/* ─────────── 3. NOTE HIGHWAY (flex-1, majority of space) ─────────── */}
+      {showNoteHighway && (
+        <div className="flex-1 min-h-0 px-3">
+          <NoteHighway
+            visibleNotes={visibleNotes}
+            currentTime={currentTime}
+            pitchStats={pitchStats ?? { minPitch: 48, maxPitch: 72, pitchRange: 24 }}
+            singLinePosition={SING_LINE_POSITION}
+            noteWindow={NOTE_WINDOW}
+            visibleTop={VISIBLE_TOP}
+            visibleRange={VISIBLE_RANGE}
+            // Ghost notes (user request): per-player strips / single-player
+            // performance pipeline — wrong-pitch misses render as ghost bars
+            // at the sung pitch (per-player colour), hits fill the strips.
+            // Flat fill only as long as no samples exist at all.
+            playerStrips={stripsActive ? playerStrips : undefined}
+            playerNames={stripsActive ? activePlayers.map(p => ({ id: p.id, name: p.name })) : undefined}
+            notePerformance={soloStrip ? soloStrip.performance : undefined}
+            playerColor={soloStrip ? soloStrip.color : undefined}
+            flatNoteFill={!stripsActive && !soloStrip ? '#22d3ee' : undefined}
+          />
+        </div>
+      )}
+
+      {/* If highway is hidden, this spacer pushes lyrics down */}
+      {!showNoteHighway && <div className="flex-1" />}

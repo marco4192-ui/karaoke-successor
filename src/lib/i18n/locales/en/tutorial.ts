@@ -21,7 +21,7 @@ export const tutorialTranslations = {
     offerBody: 'Want a quick walk-through of the basics? In 2 minutes you\'ll know daily challenges, sing modes, the library and party games.',
     offerStart: 'Start tour',
     offerLater: 'Maybe later',
-    offerHint: 'Available anytime via the ? icon at the bottom right.',
+    offerHint: 'Available anytime via the ? icon in the menu bar.',
 
     // ═══ Basic tour ═══
     basic: {
@@ -101,11 +101,86 @@ export const tutorialTranslations = {
         },
         settingsView: {
           title: 'The settings tabs',
-          body: 'Pick a section at the top: General (language), Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (phone connection) and more.',
+          body: 'Pick a section at the top: General (language), Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (phone connection) and more.\n\nEvery tab opens with a short intro — and the dedicated settings tour walks you through all of it.',
         },
         finish: {
           title: 'Done! 🎉',
-          body: 'You know the basics now.\n\nTip: the ? icon at the bottom right brings you back anytime — including individual topic chapters and the editor tour.',
+          body: 'You know the basics now.\n\nTip: the ? icon in the menu bar brings you back anytime — including individual topic chapters and the settings and editor tours.',
+        },
+      },
+    },
+
+    // ═══ Settings tour (R26) ═══
+    settings: {
+      title: 'Settings',
+      desc: 'Every settings tab — from language and microphones to theme party and backup.',
+      chapters: {
+        overview: 'Overview',
+        basics: 'Basic settings',
+        devices: 'Devices',
+        library: 'Library & theme',
+        backup: 'Backup & wrap-up',
+      },
+      steps: {
+        welcome: {
+          title: 'The settings ⚙️',
+          body: 'This tour is all about the settings: every tab, what lives inside it, and when it matters.\n\nWe will hop from tab to tab together — no clicking required on your part.',
+        },
+        tabBar: {
+          title: 'The tab bar',
+          body: 'The settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Genres & Languages, Theme Party, Viral Charts, Sync & Backup, and About.\n\nEach tab opens with a short intro explaining what to expect inside.',
+        },
+        generalTab: {
+          title: 'General',
+          body: 'The basics: app language (applies instantly, 16 languages), default difficulty for new rounds, and online mode.\n\nTip: the AI providers for harmonize and audio analysis are configured here too.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Fine-tune the experience: toggle the score display, combo counter and particles while singing, enable replay recording, and use comforts like auto-fullscreen and warning cues.',
+        },
+        appearanceTab: {
+          title: 'Appearance',
+          body: 'The look: themes restyle the entire app, lyric style and size adapt the lyrics. Plus background videos, note display (sealed/exact) and the performance mode for weaker machines.',
+        },
+        graphicSoundTab: {
+          title: 'Audio',
+          body: 'Everything sound: pick the audio output device, set preview and master volume, choose the YouTube video quality — and loudness normalization automatically evens out loud/quiet songs (89 dB target).',
+        },
+        microphoneTab: {
+          title: 'Microphone',
+          body: 'Your voice is the controller: add microphones (up to 4, USB and SingStar mics work too), adjust sensitivity and gain, test noise and echo suppression.\n\nPhones appear here as soon as they are connected via the Mobile tab.',
+        },
+        mobileTab: {
+          title: 'Mobile — the companion app',
+          body: 'Smartphones as microphones and controllers: manage paired devices and assign their microphones to players — pairing works via QR code or connection code over the same Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Your webcam as a live singing background: pick the source and fine-tune mirroring, blur and overlay opacity — or disable the background entirely.',
+        },
+        libraryTab: {
+          title: 'Library',
+          body: 'Song management: set the folder to scan (the library fills itself from it) and check the statistics.\n\nThe danger zone resets the library or all data — high scores and profiles survive a library reset.',
+        },
+        taxonomyTab: {
+          title: 'Genres & languages',
+          body: 'Your own vocabulary for the library: create custom genres and languages — they instantly appear in every dropdown and are treated as equal categories by harmonization.',
+        },
+        mottoTab: {
+          title: 'Theme party',
+          body: 'The party genius: enable it, give it a name (e.g. “80s Party”) and define search fields + filters — from then on the motto replaces all in-game filters and every song selection only draws from matching songs.',
+        },
+        viralTab: {
+          title: 'Viral charts',
+          body: 'Choose the country of the viral charts (Germany, USA, Japan …) — the viral hits then show up as a filter in the library. The refresh button pulls the latest entries.',
+        },
+        syncTab: {
+          title: 'Sync & backup',
+          body: 'The moving helper: export everything (songs, high scores, profiles, playlists, settings — optionally including song media) to a file and restore it on the same or another device.\n\nThe preview shows exactly what a backup contains before you restore it.',
+        },
+        finish: {
+          title: 'Setup complete! ✅',
+          body: 'You now know every settings tab.\n\nEach tab also explains itself in its short intro — and the ? icon in the menu bar brings you back to this tour anytime.',
         },
       },
     },
@@ -175,7 +250,7 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Ready to build! 🛠️',
-          body: 'You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon at the bottom right brings you back to these chapters anytime.',
+          body: 'You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon (in the menu bar, here in the editor also at the bottom right) brings you back to these chapters anytime.',
         },
       },
     },

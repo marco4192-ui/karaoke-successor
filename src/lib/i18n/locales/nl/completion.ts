@@ -1338,7 +1338,7 @@ export const completionTranslations = {
     offerBody: 'Zin in een korte rondleiding langs de basis? In 2 minuten ken je dagelijkse uitdagingen, zingmodi, de bibliotheek en partygames.',
     offerStart: 'Tour starten',
     offerLater: 'Misschien later',
-    offerHint: 'Altijd beschikbaar via het ?-icoon rechtsonder.',
+    offerHint: 'Altijd beschikbaar via het ?-icoon in de menubalk.',
     basic: {
       title: 'Basis',
       desc: 'De complete ronde: uitdagingen, zingmodi, bibliotheek, feest & meer.',
@@ -1416,14 +1416,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'De instellingstabbladen',
-          body: 'Kies bovenaan een sectie: Algemeen (taal), Gameplay, Uiterlijk, Graphics & Geluid, Microfoon, Mobiel (telefoonverbinding) en meer.',
+          body: 'Kies bovenaan een sectie: Algemeen (taal), Gameplay, Uiterlijk, Graphics & Geluid, Microfoon, Mobiel (telefoonverbinding) en meer.\n\nElk tabblad opent met een korte intro — en de speciale instellingentour loopt met je langs alles.',
         },
         finish: {
           title: 'Klaar! 🎉',
-          body: 'Je kent nu de basis.\n\nTip: het ?-icoon rechtsonder brengt je altijd terug — inclusief losse hoofdstukken per onderwerp en de editor-tour.',
+          body: 'Je kent nu de basis.\n\nTip: het ?-icoon in de menubalk brengt je altijd terug — inclusief losse hoofdstukken per onderwerp en de tours van de instellingen en de editor.',
         },
       },
     },
+    // ═══ Instellingen-tour (R26) ═══
+    settings: {
+      title: 'Instellingen',
+      desc: 'Elk instellingentabblad — van taal en microfoons tot themafeest en backup.',
+      chapters: {
+        overview: 'Overzicht',
+        basics: 'Basisinstellingen',
+        devices: 'Apparaten',
+        library: 'Bibliotheek & thema',
+        backup: 'Backup & afronding',
+      },
+      steps: {
+        welcome: {
+          title: 'De instellingen ⚙️',
+          body: 'Deze tour gaat helemaal over de instellingen: elk tabblad, wat erin zit en wanneer het ertoe doet.\n\nWe springen samen van tabblad naar tabblad — jij hoeft zelf nergens op te klikken.',
+        },
+        tabBar: {
+          title: 'De tabbalk',
+          body: 'De instellingen zijn ingedeeld in tabbladen: Algemeen, Gameplay, Weergave, Grafisch / Geluid, Microfoon, Mobiele Companion, Webcam, Bibliotheek, Genres & talen, Themafeest, Viral Charts, Sync & backup en Over.\n\nElk tabblad opent met een korte intro die uitlegt wat je erin kunt verwachten.',
+        },
+        generalTab: {
+          title: 'Algemeen',
+          body: 'De basis: app-taal (direct van kracht, 16 talen), standaardmoeilijkheid voor nieuwe rondes en de online modus.\n\nTip: de AI-aanbieders voor Harmonize en audio-analyse configureer je hier ook.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Fijnafstelling van de ervaring: zet scoreweergave, comboteller en deeleffecten tijdens het zingen aan of uit, schakel replay-opnames in en gebruik gemakken zoals automatisch volledig scherm en waarschuwingssignalen.',
+        },
+        appearanceTab: {
+          title: 'Weergave',
+          body: 'Het uiterlijk: thema\'s restylen de hele app, songtekststijl en -grootte passen de lyrics aan. Plus achtergrondvideo\'s, notenweergave (laser/exact) en de prestatiemodus voor zwakkere machines.',
+        },
+        graphicSoundTab: {
+          title: 'Grafisch / Geluid',
+          body: 'Alles over geluid: kies het audio-uitvoerapparaat, stel het voorvertonings- en hoofdvolume in, kies de YouTube-videokwaliteit — en volumenormalisatie trekt luide en stille nummers automatisch gelijk (89 dB-doel).',
+        },
+        microphoneTab: {
+          title: 'Microfoon',
+          body: 'Jouw stem is de controller: voeg microfoons toe (tot 4, USB- en SingStar-mics werken ook), stel gevoeligheid en versterking in, test ruisonderdrukking en echo-onderdrukking.\n\nTelefoons verschijnen hier zodra ze via het tabblad Mobiele Companion zijn verbonden.',
+        },
+        mobileTab: {
+          title: 'Mobiel — de companion-app',
+          body: 'Smartphones als microfoon en controller: beheer gekoppelde apparaten en wijs hun microfoons toe aan spelers — koppelen kan via QR-code of verbindingscode over hetzelfde Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Jouw webcam als live zangachtergrond: kies de bron en stel spiegeling, blur en overlay-doorzichtigheid fijn af — of zet de achtergrond helemaal uit.',
+        },
+        libraryTab: {
+          title: 'Bibliotheek',
+          body: 'Nummerbeheer: stel de map in die gescand wordt (de bibliotheek vult zich vanzelf) en bekijk de statistieken.\n\nDe gevarenzone reset de bibliotheek of alle gegevens — highscores en profielen overleven een bibliotheek-reset.',
+        },
+        taxonomyTab: {
+          title: 'Genres & talen',
+          body: 'Jouw eigen vocabulaire voor de bibliotheek: maak eigen genres en talen aan — ze verschijnen direct in elke keuzelijst en harmoniseren behandelt ze als volwaardige categorieën.',
+        },
+        mottoTab: {
+          title: 'Themafeest',
+          body: 'Het feestgenie: zet het aan, geef het een naam (bijv. "Jaren 80-feest") en stel zoekvelden + filters in — vanaf dan vervangt het thema alle filters in het spel en elke nummerselectie put alleen nog uit passende nummers.',
+        },
+        viralTab: {
+          title: 'Viral Charts',
+          body: 'Kies het land van de viral charts (Duitsland, VS, Japan …) — de virale hits verschijnen daarna als filter in de bibliotheek. De vernieuw-knop haalt de nieuwste entries op.',
+        },
+        syncTab: {
+          title: 'Sync & backup',
+          body: 'De verhuishulp: exporteer alles (nummers, highscores, profielen, afspeellijsten, instellingen — optioneel inclusief nummermedia) naar een bestand en zet het terug op hetzelfde of een ander apparaat.\n\nDe voorvertoning laat precies zien wat er in een backup zit voordat je hem terugzet.',
+        },
+        finish: {
+          title: 'Klaar met instellen! ✅',
+          body: 'Je kent nu elk instellingentabblad.\n\nElk tabblad legt zichzelf ook uit in zijn korte intro — en het ?-icoon in de menubalk brengt je altijd terug naar deze tour.',
+        },
+      },
+    },
+
     editor: {
       title: 'Editor-tour',
       desc: 'Noten, songtekst, stemmen & harmoniseren — de gereedschapskist voor nummers.',
@@ -1488,7 +1563,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Klaar om te bouwen! 🛠️',
-          body: 'Je kent nu de gereedschapskist van de editor.\n\nOnthoud: Ctrl+Z redt alles, en het ?-icoon rechtsonder brengt je altijd terug naar deze hoofdstukken.',
+          body: 'Je kent nu de gereedschapskist van de editor.\n\nOnthoud: Ctrl+Z redt alles, en het ?-icoon (in de menubalk, hier in de editor ook rechtsonder) brengt je altijd terug naar deze hoofdstukken.',
         },
       },
     },

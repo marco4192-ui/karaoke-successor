@@ -1344,7 +1344,7 @@ export const completionTranslations = {
     offerBody: 'Vill du ha en snabb genomgång av grunderna? Om 2 minuter kan du dagliga utmaningar, sjung-lägena, biblioteket och festspelen.',
     offerStart: 'Starta rundturen',
     offerLater: 'Kanske senare',
-    offerHint: 'Tillgänglig när som helst via ?-ikonen längst ner till höger.',
+    offerHint: 'Tillgänglig när som helst via ?-ikonen i menyraden.',
     basic: {
       title: 'Grunderna',
       desc: 'Rundturen: utmaningar, sjung-lägen, bibliotek, fest & mer.',
@@ -1422,14 +1422,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Inställningsflikarna',
-          body: 'Välj ett avsnitt överst: Allmänt (språk), Spel, Utseende, Grafik & Ljud, Mikrofon, Mobil (telefonanslutning) och mer.',
+          body: 'Välj ett avsnitt överst: Allmänt (språk), Spel, Utseende, Grafik & Ljud, Mikrofon, Mobil (telefonanslutning) och mer.\n\nVarje flik öppnar med en kort intro — och den dedikerade inställningsrundturen går igenom allt med dig.',
         },
         finish: {
           title: 'Klart! 🎉',
-          body: 'Du kan grunderna nu.\n\nTips: ?-ikonen längst ner till höger tar dig tillbaka när som helst — inklusive enskilda ämneskapitel och editor-rundturen.',
+          body: 'Du kan grunderna nu.\n\nTips: ?-ikonen i menyraden tar dig tillbaka när som helst — inklusive enskilda ämneskapitel och rundturerna för inställningar och editorn.',
         },
       },
     },
+    // ═══ Inställnings-rundtur (R26) ═══
+    settings: {
+      title: 'Inställningar',
+      desc: 'Alla inställningsflikar — från språk och mikrofoner till temafest och backup.',
+      chapters: {
+        overview: 'Översikt',
+        basics: 'Grundinställningar',
+        devices: 'Enheter',
+        library: 'Bibliotek & tema',
+        backup: 'Backup & avslutning',
+      },
+      steps: {
+        welcome: {
+          title: 'Inställningarna ⚙️',
+          body: 'Den här rundturen handlar helt om inställningarna: varje flik, vad som finns i den och när den spelar roll.\n\nVi hoppar mellan flikarna tillsammans — du behöver inte klicka på något själv.',
+        },
+        tabBar: {
+          title: 'Flikraden',
+          body: 'Inställningarna är uppdelade i flikar: Allmänt, Gameplay, Utseende, Grafik / Ljud, Mikrofon, Mobil Companion, Webbkamera, Bibliotek, Genrer & Språk, Temafest, Viral Charts, Synk & Backup och Om.\n\nVarje flik öppnar med en kort intro som förklarar vad som väntar där.',
+        },
+        generalTab: {
+          title: 'Allmänt',
+          body: 'Grunderna: appspråk (slår igenom direkt, 16 språk), standardsvårighet för nya rundor och onlineläget.\n\nTips: AI-leverantörerna för Harmonize och ljudanalys konfigureras också här.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Finjustering av upplevelsen: slå på/av poängvisning, komboräknare och partiklar medan du sjunger, aktivera reprysinspelning och använd bekvämligheter som auto-helskärm och varningssignaler.',
+        },
+        appearanceTab: {
+          title: 'Utseende',
+          body: 'Utseendet: teman restylar hela appen, textstil och -storlek anpassar låttexterna. Dessutom bakgrundsvideor, notvisning (laser/exakt) och prestationsläget för svagare maskiner.',
+        },
+        graphicSoundTab: {
+          title: 'Grafik / Ljud',
+          body: 'Allt om ljudet: välj ljudutgångsenheten, ställ in förhands- och huvudvolymen, välj YouTube-videokvaliteten — och volymnormaliseringen jämnar automatiskt ut höga och tysta låtar (89 dB-mål).',
+        },
+        microphoneTab: {
+          title: 'Mikrofon',
+          body: 'Din röst är kontrollen: lägg till mikrofoner (upp till 4, USB- och SingStar-mics funkar också), justera känslighet och förstärkning, testa brus- och ekodämpningen.\n\nTelefoner dyker upp här så snart de är anslutna via fliken Mobil Companion.',
+        },
+        mobileTab: {
+          title: 'Mobil — companion-appen',
+          body: 'Smartphones som mikrofon och kontroll: hantera parkopplade enheter och tilldela deras mikrofoner till spelarna — parkopplingen sker via QR-kod eller anslutningskod över samma Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webbkamera',
+          body: 'Ditt webbkamera som live-bakgrund medan du sjunger: välj källan och finjustera spegling, blur och overlay-opacitet — eller stäng av bakgrunden helt.',
+        },
+        libraryTab: {
+          title: 'Bibliotek',
+          body: 'Låthanteringen: välj mappen som skannas (biblioteket fyller sig självt) och kolla statistiken.\n\nRiskzonen återställer biblioteket eller all data — highscores och profiler överlever en biblioteksåterställning.',
+        },
+        taxonomyTab: {
+          title: 'Genrer & Språk',
+          body: 'Ditt eget ordförråd för biblioteket: skapa egna genrer och språk — de dyker upp direkt i alla rullgardinsmenyer och behandlas av harmoniseringen som fullvärdiga kategorier.',
+        },
+        mottoTab: {
+          title: 'Temafest',
+          body: 'Festgeniet: aktivera, ge den ett namn (t.ex. "80-talsfest") och definiera sökfält + filter — från och med nu ersätter temat alla filter i spelet och varje låtval drar bara från matchande låtar.',
+        },
+        viralTab: {
+          title: 'Viral Charts',
+          body: 'Välj landet för viral charts (Tyskland, USA, Japan …) — de virala hitsen dyker sedan upp som filter i biblioteket. Uppdatera-knappen hämtar de senaste posterna.',
+        },
+        syncTab: {
+          title: 'Synk & Backup',
+          body: 'Flytthjälpen: exportera allt (låtar, highscores, profiler, spellistor, inställningar — vid behov även låtmedier) till en fil och återställ det på samma eller en annan enhet.\n\nFörhandsvisningen visar exakt vad en backup innehåller innan du återställer den.',
+        },
+        finish: {
+          title: 'Klart med inställningarna! ✅',
+          body: 'Du kan nu alla inställningsflikar.\n\nVarje flik förklarar också sig själv i sin korta intro — och ?-ikonen i menyraden tar dig tillbaka till den här rundturen när som helst.',
+        },
+      },
+    },
+
     editor: {
       title: 'Editor-rundtur',
       desc: 'Noter, texter, stämmor & harmonisering — låtverktygslådan.',
@@ -1494,7 +1569,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Redo att bygga! 🛠️',
-          body: 'Du kan nu editorns verktygslåda.\n\nKom ihåg: Ctrl+Z räddar allt, och ?-ikonen längst ner till höger tar dig tillbaka till dessa kapitel när som helst.',
+          body: 'Du kan nu editorns verktygslåda.\n\nKom ihåg: Ctrl+Z räddar allt, och ?-ikonen (i menyraden, här i editorn även längst ner till höger) tar dig tillbaka till dessa kapitel när som helst.',
         },
       },
     },

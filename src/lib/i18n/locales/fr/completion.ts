@@ -1086,7 +1086,7 @@ export const completionTranslations = {
     offerBody: 'Envie d\'un petit tour des bases ? En 2 minutes, tu connaîtras les défis quotidiens, les modes de chant, la bibliothèque et les jeux de fête.',
     offerStart: 'Commencer le tour',
     offerLater: 'Peut-être plus tard',
-    offerHint: 'Disponible à tout moment via l\'icône ? en bas à droite.',
+    offerHint: 'Disponible à tout moment via l\'icône ? dans la barre de menu.',
     basic: {
       title: 'Les bases',
       desc: 'Le tour complet : défis, modes de chant, bibliothèque, fête et plus.',
@@ -1164,14 +1164,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Les onglets des paramètres',
-          body: 'Choisis une section en haut : Général (langue), Jeu, Apparence, Graphismes et Son, Microphone, Mobile (connexion téléphone) et plus.',
+          body: 'Choisis une section en haut : Général (langue), Jeu, Apparence, Graphismes et Son, Microphone, Mobile (connexion téléphone) et plus.\n\nChaque onglet s\'ouvre sur une courte intro — et le tour des paramètres dédié te guide à travers tout.',
         },
         finish: {
           title: 'Terminé ! 🎉',
-          body: 'Tu connais maintenant les bases.\n\nAstuce : l\'icône ? en bas à droite te ramène à tout moment — y compris les chapitres par sujet et le tour de l\'éditeur.',
+          body: 'Tu connais maintenant les bases.\n\nAstuce : l\'icône ? dans la barre de menu te ramène à tout moment — y compris les chapitres par sujet et les tours des paramètres et de l\'éditeur.',
         },
       },
     },
+    // ═══ Tour des paramètres (R26) ═══
+    settings: {
+      title: 'Paramètres',
+      desc: 'Tous les onglets des paramètres — de la langue et des micros à la fête à thème et à la sauvegarde.',
+      chapters: {
+        overview: 'Vue d\'ensemble',
+        basics: 'Réglages de base',
+        devices: 'Appareils',
+        library: 'Bibliothèque et thème',
+        backup: 'Sauvegarde et conclusion',
+      },
+      steps: {
+        welcome: {
+          title: 'Les paramètres ⚙️',
+          body: 'Ce tour est entièrement consacré aux paramètres : chaque onglet, ce qu\'il abrite et quand il compte.\n\nNous sauterons d\'onglet en onglet ensemble — aucun clic nécessaire de ta part.',
+        },
+        tabBar: {
+          title: 'La barre d\'onglets',
+          body: 'Les paramètres sont organisés en onglets : Général, Gameplay, Apparence, Graphismes / Son, Microphone, Compagnon Mobile, Webcam, Bibliothèque, Genres et Langues, Fête à Thème, Charts Viraux, Synchronisation et Sauvegarde, et À Propos.\n\nChaque onglet s\'ouvre sur une courte intro qui explique ce qui t\'y attend.',
+        },
+        generalTab: {
+          title: 'Général',
+          body: 'L\'essentiel : langue de l\'app (appliquée aussitôt, 16 langues), difficulté par défaut des nouvelles manches et mode en ligne.\n\nAstuce : les fournisseurs d\'IA pour Harmonize et l\'analyse audio se configurent ici aussi.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Le réglage fin de l\'expérience : active ou désactive l\'affichage du score, le compteur de combo et les particules pendant que tu chantes, active l\'enregistrement des replays et profite des conforts comme le plein écran auto et les signaux d\'avertissement.',
+        },
+        appearanceTab: {
+          title: 'Apparence',
+          body: 'Le look : les thèmes restylent toute l\'app, le style et la taille des paroles adaptent les lyrics. Plus les vidéos de fond, l\'affichage des notes (laser/exact) et le mode performance pour les machines moins puissantes.',
+        },
+        graphicSoundTab: {
+          title: 'Graphismes / Son',
+          body: 'Tout le son : choisis le périphérique de sortie audio, règle le volume d\'aperçu et le volume général, choisis la qualité vidéo YouTube — et la normalisation du volume équilibre automatiquement les chansons fortes et calmes (cible : 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Microphone',
+          body: 'Ta voix est la manette : ajoute des microphones (jusqu\'à 4, les micros USB et SingStar fonctionnent aussi), règle la sensibilité et le gain, teste la réduction du bruit et de l\'écho.\n\nLes téléphones apparaissent ici dès qu\'ils sont connectés via l\'onglet Compagnon Mobile.',
+        },
+        mobileTab: {
+          title: 'Mobile — l\'app compagnon',
+          body: 'Des smartphones comme micros et manettes : gère les appareils appairés et attribue leurs micros aux joueurs — l\'appairage se fait par QR code ou code de connexion via le même Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Ta webcam comme fond en direct pendant que tu chantes : choisis la source et règle l\'effet miroir, le flou et l\'opacité de l\'overlay — ou désactive carrément le fond.',
+        },
+        libraryTab: {
+          title: 'Bibliothèque',
+          body: 'La gestion des chansons : définis le dossier à scanner (la bibliothèque se remplit toute seule) et consulte les statistiques.\n\nLa zone de danger réinitialise la bibliothèque ou toutes les données — les scores et les profils survivent à une réinitialisation de la bibliothèque.',
+        },
+        taxonomyTab: {
+          title: 'Genres et Langues',
+          body: 'Ton propre vocabulaire pour la bibliothèque : crée des genres et des langues personnalisés — ils apparaissent aussitôt dans tous les menus déroulants et l\'harmonisation les traite comme des catégories à part entière.',
+        },
+        mottoTab: {
+          title: 'Fête à Thème',
+          body: 'Le génie des soirées : active-le, donne-lui un nom (p. ex. "Fête Années 80") et définis les champs de recherche + filtres — dès lors, le thème remplace tous les filtres du jeu et chaque sélection de chansons ne puise que dans les chansons qui collent.',
+        },
+        viralTab: {
+          title: 'Charts Viraux',
+          body: 'Choisis le pays des charts viraux (Allemagne, États-Unis, Japon …) — les hits viraux s\'affichent alors comme filtre dans la bibliothèque. Le bouton d\'actualisation récupère les dernières entrées.',
+        },
+        syncTab: {
+          title: 'Synchronisation et Sauvegarde',
+          body: 'L\'assistant de déménagement : exporte tout (chansons, scores, profils, playlists, réglages — éventuellement avec les médias des chansons) dans un fichier et restaure-le sur le même appareil ou un autre.\n\nL\'aperçu montre exactement ce que contient une sauvegarde avant de la restaurer.',
+        },
+        finish: {
+          title: 'Configuration terminée ! ✅',
+          body: 'Tu connais maintenant tous les onglets des paramètres.\n\nChaque onglet s\'explique aussi tout seul dans sa courte intro — et l\'icône ? de la barre de menu te ramène à ce tour à tout moment.',
+        },
+      },
+    },
+
     editor: {
       title: 'Tour de l\'éditeur',
       desc: 'Notes, paroles, voix et harmonisation — la boîte à outils des chansons.',
@@ -1236,7 +1311,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Prêt à construire ! 🛠️',
-          body: 'Tu connais maintenant la boîte à outils de l\'éditeur.\n\nSouviens-toi : Ctrl+Z sauve tout, et l\'icône ? en bas à droite te ramène à ces chapitres à tout moment.',
+          body: 'Tu connais maintenant la boîte à outils de l\'éditeur.\n\nSouviens-toi : Ctrl+Z sauve tout, et l\'icône ? (dans la barre de menu, ici dans l\'éditeur aussi en bas à droite) te ramène à ces chapitres à tout moment.',
         },
       },
     },

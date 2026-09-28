@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Cámara Web',
   viralCharts: 'Charts Virales',
 },
+// R26: Textos de introducción para cada submenú de ajustes (breve explicación del menú)
+settingsTabIntro: {
+  general: 'Lo básico de la app: idioma, dificultad predeterminada para las rondas nuevas y el modo online para partidas multijugador.',
+  gameplay: 'El ajuste fino de la experiencia: indicaciones en pantalla mientras cantas, efectos de partículas, grabación de repeticiones y comodidades como pantalla completa automática y señales de aviso.',
+  appearance: 'El aspecto de la app: tema de color, estilo y tamaño de la letra, videos de fondo, visualización de notas y modo rendimiento para equipos más modestos.',
+  graphicSound: 'Todo sobre sonido y reproducción: dispositivo de salida de audio, volumen de vista previa y general, calidad de video de YouTube y normalización de volumen para una mezcla equilibrada.',
+  microphone: 'Tu voz cuenta — literalmente: añade micrófonos, ajusta la sensibilidad y la ganancia y prueba en directo la supresión de ruido y eco.',
+  mobile: 'La app compañera: conecta smartphones como micrófono y mando, gestiona los dispositivos emparejados y asigna sus micrófonos a los jugadores.',
+  webcam: 'Tu cámara web como fondo en directo mientras cantas: elige la fuente y configura el espejado, el desenfoque y el ajuste fino del overlay.',
+  library: 'Gestiona tus canciones: define la carpeta para el escaneo de la biblioteca, consulta las estadísticas y restablece la biblioteca o todos los datos en la zona de peligro.',
+  viral: 'Configura los charts virales: elige de qué países llegan los éxitos virales para los filtros y las selecciones de canciones.',
+  sync: 'Respalda todo, recupera todo: exporta canciones, puntuaciones, perfiles y ajustes a un archivo — y restáuralos en el mismo u otro dispositivo.',
+  about: 'Versión, tecnología bajo el capó y créditos — todo sobre Karaoke ZERO en un solo lugar.',
+},
 settingsGameplay: {
   title: 'Ajustes de Juego',
   description: 'Personaliza la experiencia de juego a tus preferencias.',

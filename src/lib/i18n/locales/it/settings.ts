@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Webcam',
   viralCharts: 'Classifiche Virali',
 },
+// R26: Testi d'introduzione per ogni sottomenu delle impostazioni (breve spiegazione del menu)
+settingsTabIntro: {
+  general: 'Le basi dell\'app: lingua, difficoltà predefinita per le nuove partite e modalità online per le feste in multigiocatore.',
+  gameplay: 'La regolazione fine dell\'esperienza: indicazioni a schermo mentre canti, effetti particellari, registrazione dei replay e comfort come schermo intero automatico e segnali d\'avviso.',
+  appearance: 'Il look dell\'app: tema colore, stile e dimensione del testo, video di sfondo, visualizzazione delle note e modalità prestazioni per macchine più deboli.',
+  graphicSound: 'Tutto su suono e riproduzione: dispositivo di uscita audio, volume dell\'anteprima e volume generale, qualità video di YouTube e normalizzazione del volume per un mix equilibrato.',
+  microphone: 'La tua voce conta — letteralmente: aggiungi microfoni, regola sensibilità e guadagno e prova dal vivo la soppressione di rumore ed eco.',
+  mobile: 'L\'app compagna: collega smartphone come microfono e controller, gestisci i dispositivi abbinati e assegna i loro microfoni ai giocatori.',
+  webcam: 'La webcam come sfondo in diretta mentre canti: scegli la sorgente e configura specchiatura, sfocatura e messa a punto dell\'overlay.',
+  library: 'Gestisci le tue canzoni: imposta la cartella per la scansione della libreria, consulta le statistiche e ripristina la libreria o tutti i dati nella zona pericolosa.',
+  viral: 'Configura le classifiche virali: scegli da quali paesi arrivano gli hit virali per filtri e selezioni di canzoni.',
+  sync: 'Salva tutto, recupera tutto: esporta canzoni, punteggi, profili e impostazioni su un file — e ripristinali sullo stesso dispositivo o su un altro.',
+  about: 'Versione, tecnologia sotto il cofano e crediti — tutto su Karaoke ZERO in un solo posto.',
+},
 settingsGameplay: {
   title: 'Impostazioni di Gioco',
   description: 'Personalizza l\'esperienza di gioco secondo le tue preferenze.',

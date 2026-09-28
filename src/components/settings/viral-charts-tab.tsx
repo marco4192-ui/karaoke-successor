@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { useTranslation } from '@/lib/i18n/translations';
 
 const COUNTRY_OPTIONS = [
@@ -44,7 +45,7 @@ function formatDate(ts: number): string {
   });
 }
 
-export function ViralChartsSettings() {
+export function ViralChartsSettings({ standalone = false }: { standalone?: boolean } = {}) {
   const [country, setCountry] = useState('de');
   const [status, setStatus] = useState<ViralChartsStatus | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -99,7 +100,8 @@ export function ViralChartsSettings() {
   };
 
   if (!isTauri()) {
-    return (
+    // R26: Auch der Tauri-Platzhalter zeigt im Standalone-Tab die Intro-Karte
+    const tauriCard = (
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -113,11 +115,20 @@ export function ViralChartsSettings() {
         </CardContent>
       </Card>
     );
+    if (standalone) {
+      return (
+        <div className="space-y-6">
+          <SettingsTabIntro tab="viral" />
+          {tauriCard}
+        </div>
+      );
+    }
+    return tauriCard;
   }
 
   const selectedCountryData = COUNTRY_OPTIONS.find(c => c.code === country);
 
-  return (
+  const chartCard = (
     <Card className="bg-white/5 border-white/10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -207,4 +218,16 @@ export function ViralChartsSettings() {
       </CardContent>
     </Card>
   );
+
+  // R26: Als eigener Settings-Tab mit Einleitungstext; eingebettet in der
+  // Bibliotheksverwaltung (library-tab) weiterhin ohne Intro-Karte.
+  if (standalone) {
+    return (
+      <div className="space-y-6">
+        <SettingsTabIntro tab="viral" />
+        {chartCard}
+      </div>
+    );
+  }
+  return chartCard;
 }

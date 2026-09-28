@@ -1,0 +1,12 @@
+ConvertToSongOptions
+DetectedFormat
+MIDIKaraokeData
+MIDILyricEvent
+MIDITrackData
+convertToSong
+detectFileFormat
+parseAssKaraoke
+parseKaraokeMugen
+parseMIDIKaraoke
+parseSingStarData
+parseStepMania

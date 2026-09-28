@@ -28,6 +28,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
     { id: 'taxonomy', label: t('settingsTabs.taxonomy'), icon: () => <span>🏷️</span>, color: 'purple' },
     { id: 'motto', label: t('settingsTabs.mottoParty'), icon: () => <span>🎉</span>, color: 'purple' },
+    { id: 'viral', label: t('settingsTabs.viralCharts'), icon: () => <span>🔥</span>, color: 'cyan' },
     { id: 'sync', label: t('settingsTabs.syncBackup'), icon: () => <span>💾</span>, color: 'green' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },
   ];

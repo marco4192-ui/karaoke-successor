@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Web-kamera',
   viralCharts: 'Viraalilistat',
 },
+// R26: Intro texts for every settings submenu (short menu explanation)
+settingsTabIntro: {
+  general: 'Sovelluksen perusasiat: kieli, uusien kierrosten oletusvaikeustaso ja moninpeli-juhlissa tarvittava verkkotila.',
+  gameplay: 'Kokemuksen hienosäätö: näytöt laulaessa, partikkelitehosteet, toistojen tallennus sekä mukavuudet kuten automaattinen koko näyttö ja varoitukset.',
+  appearance: 'Sovelluksen ulkoasu: väriteema, sanoituksen tyyli ja koko, taustavideot, nuottien näkymä sekä suorituskykytila heikommille koneille.',
+  graphicSound: 'Kaikki ääneen ja toistoon liittyvä: äänen ulostulolaite, esikuuntelu- ja pää-äänenvoimakkuus, YouTube-videon laatu sekä äänenvoimakkuuden normalisointi tasapainoiseen miksaukseen.',
+  microphone: 'Äänesi ratkaisee — kirjaimellisesti: lisää mikrofoneja, säädä herkkyys ja vahvistus sekä kokeile kohinan ja kaiun poistoa livenä.',
+  mobile: 'Companion-sovellus: yhdistä älypuhelimet mikrofoneiksi ja ohjaimiksi, hallitse paritettuja laitteita ja määritä niiden mikrofonit pelaajille.',
+  webcam: 'Web-kamerasi live-laulutaustana: valitse lähde ja säädä peilaus, sumennus ja peittokuvan hienosäätö.',
+  library: 'Hallitse kappaleitasi: aseta kirjaston skannauskansio, katso tilastot ja nollaa kirjasto tai kaikki tiedot vaaravyöhykkeellä.',
+  viral: 'Määritä viraalilistat: valitse, mistä maista suodattimien ja kappalevalintojen viraalihitit tulevat.',
+  sync: 'Varmuuskopioi kaikki, palauta kaikki: vie kappaleet, huipputulokset, profiilit ja asetukset tiedostoon — ja palauta ne samalla tai toisella laitteella.',
+  about: 'Versio, koneen sisällä oleva tekniikka ja kiitokset — kaikki Karaoke ZEROsta yhdessä paikassa.',
+},
 settingsGameplay: {
   title: 'Peliasetukset',
   description: 'Mukauta pelikokemus omiin mieltymyksiisi.',

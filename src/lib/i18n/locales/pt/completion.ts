@@ -1344,7 +1344,7 @@ export const completionTranslations = {
     offerBody: 'Quer um passeio rápido pelo básico? Em 2 minutos você conhece os desafios diários, os modos de canto, a biblioteca e os jogos de festa.',
     offerStart: 'Iniciar tour',
     offerLater: 'Talvez depois',
-    offerHint: 'Disponível a qualquer momento pelo ícone ? no canto inferior direito.',
+    offerHint: 'Disponível a qualquer momento pelo ícone ? na barra de menu.',
     basic: {
       title: 'Básico',
       desc: 'A volta completa: desafios, modos de canto, biblioteca, festa e mais.',
@@ -1422,14 +1422,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'As abas de configurações',
-          body: 'Escolha uma seção no topo: Geral (idioma), Jogo, Aparência, Gráficos e Som, Microfone, Mobile (conexão do celular) e mais.',
+          body: 'Escolha uma seção no topo: Geral (idioma), Jogo, Aparência, Gráficos e Som, Microfone, Mobile (conexão do celular) e mais.\n\nCada aba abre com uma breve introdução — e o tour dedicado às configurações guia você por tudo isso.',
         },
         finish: {
           title: 'Pronto! 🎉',
-          body: 'Agora você conhece o básico.\n\nDica: o ícone ? no canto inferior direito traz você de volta a qualquer momento — incluindo os capítulos por tema e o tour do editor.',
+          body: 'Agora você conhece o básico.\n\nDica: o ícone ? na barra de menu traz você de volta a qualquer momento — incluindo os capítulos por tema e os tours de configurações e do editor.',
         },
       },
     },
+    // ═══ Tour de configurações (R26) ═══
+    settings: {
+      title: 'Configurações',
+      desc: 'Todas as abas das configurações — do idioma e dos microfones à festa temática e ao backup.',
+      chapters: {
+        overview: 'Visão geral',
+        basics: 'Configurações básicas',
+        devices: 'Dispositivos',
+        library: 'Biblioteca e tema',
+        backup: 'Backup e conclusão',
+      },
+      steps: {
+        welcome: {
+          title: 'As configurações ⚙️',
+          body: 'Este tour é todo sobre as configurações: cada aba, o que mora dentro dela e quando ela importa.\n\nVamos pular de aba em aba juntos — você não precisa clicar em nada.',
+        },
+        tabBar: {
+          title: 'A barra de abas',
+          body: 'As configurações são organizadas em abas: Geral, Jogabilidade, Aparência, Gráficos / Som, Microfone, App Companheiro Móvel, Webcam, Biblioteca, Gêneros e Idiomas, Festa Temática, Tendências, Sincronização e Backup e Sobre.\n\nCada aba abre com uma breve introdução explicando o que esperar lá dentro.',
+        },
+        generalTab: {
+          title: 'Geral',
+          body: 'O básico: idioma do app (aplicado na hora, 16 idiomas), dificuldade padrão para as novas rodadas e o modo online.\n\nDica: os provedores de IA para Harmonize e análise de áudio também são configurados aqui.',
+        },
+        gameplayTab: {
+          title: 'Jogabilidade',
+          body: 'O ajuste fino da experiência: ative ou desative a exibição de pontos, o contador de combo e as partículas enquanto canta, ative a gravação de replays e use comodidades como tela cheia automática e sinais de aviso.',
+        },
+        appearanceTab: {
+          title: 'Aparência',
+          body: 'O visual: os temas mudam a cara do app inteiro, estilo e tamanho adaptam a letra. Mais vídeos de fundo, exibição de notas (laser/exata) e o modo de desempenho para máquinas mais fracas.',
+        },
+        graphicSoundTab: {
+          title: 'Gráficos / Som',
+          body: 'Todo o som: escolha o dispositivo de saída de áudio, ajuste o volume de prévia e o geral, escolha a qualidade de vídeo do YouTube — e a normalização de volume equilibra automaticamente músicas altas e suaves (alvo de 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Microfone',
+          body: 'Sua voz é o controle: adicione microfones (até 4, mics USB e SingStar também funcionam), ajuste sensibilidade e ganho, teste a supressão de ruído e eco.\n\nOs celulares aparecem aqui assim que forem conectados pela aba do app companheiro.',
+        },
+        mobileTab: {
+          title: 'Mobile — o app companheiro',
+          body: 'Smartphones como microfone e controle: gerencie os dispositivos pareados e atribua os microfones deles aos jogadores — o pareamento funciona por código QR ou código de conexão no mesmo Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Sua webcam como fundo ao vivo enquanto você canta: escolha a fonte e ajuste espelhamento, desfoque e opacidade da sobreposição — ou desative o fundo por completo.',
+        },
+        libraryTab: {
+          title: 'Biblioteca',
+          body: 'A gestão das músicas: defina a pasta a escanear (a biblioteca se enche sozinha a partir dela) e confira as estatísticas.\n\nA zona de perigo redefine a biblioteca ou todos os dados — recordes e perfis sobrevivem a uma redefinição da biblioteca.',
+        },
+        taxonomyTab: {
+          title: 'Gêneros e Idiomas',
+          body: 'Seu próprio vocabulário para a biblioteca: crie gêneros e idiomas personalizados — eles aparecem na hora em todos os menus suspensos e a harmonização os trata como categorias de pleno direito.',
+        },
+        mottoTab: {
+          title: 'Festa Temática',
+          body: 'O gênio das festas: ative, dê um nome (ex. "Festa Anos 80") e defina os campos de busca + filtros — a partir daí o tema substitui todos os filtros do jogo e toda seleção de músicas só retira das músicas correspondentes.',
+        },
+        viralTab: {
+          title: 'Tendências',
+          body: 'Escolha o país das tendências (Alemanha, EUA, Japão …) — os hits virais aparecem então como filtro na biblioteca. O botão de atualizar busca as entradas mais recentes.',
+        },
+        syncTab: {
+          title: 'Sincronização e Backup',
+          body: 'O ajudante de mudança: exporte tudo (músicas, recordes, perfis, playlists, configurações — opcionalmente com as mídias das músicas) para um arquivo e restaure no mesmo ou em outro dispositivo.\n\nA prévia mostra exatamente o que um backup contém antes de você restaurá-lo.',
+        },
+        finish: {
+          title: 'Configuração concluída! ✅',
+          body: 'Agora você conhece todas as abas das configurações.\n\nCada aba também se explica sozinha na introdução curta dela — e o ícone ? na barra de menu traz você de volta a este tour a qualquer momento.',
+        },
+      },
+    },
+
     editor: {
       title: 'Tour do editor',
       desc: 'Notas, letras, vozes e harmonização — a caixa de ferramentas das músicas.',
@@ -1494,7 +1569,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Pronto para construir! 🛠️',
-          body: 'Agora você conhece a caixa de ferramentas do editor.\n\nLembre-se: Ctrl+Z salva tudo, e o ícone ? no canto inferior direito traz você de volta a esses capítulos a qualquer momento.',
+          body: 'Agora você conhece a caixa de ferramentas do editor.\n\nLembre-se: Ctrl+Z salva tudo, e o ícone ? (na barra de menu, aqui no editor também no canto inferior direito) traz você de volta a esses capítulos a qualquer momento.',
         },
       },
     },

@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Webcam',
   viralCharts: 'Charts Viraux',
 },
+// R26 : Textes d'introduction pour chaque sous-menu des paramètres (courte explication du menu)
+settingsTabIntro: {
+  general: 'L\'essentiel de l\'app : langue, difficulté par défaut des nouvelles manches et mode en ligne pour les parties multijoueur.',
+  gameplay: 'Le réglage fin de l\'expérience : affichages à l\'écran pendant que tu chantes, effets de particules, enregistrement des replays et conforts comme le plein écran auto et les signaux d\'avertissement.',
+  appearance: 'Le look de l\'app : thème de couleurs, style et taille des paroles, vidéos de fond, affichage des notes et mode performance pour les machines moins puissantes.',
+  graphicSound: 'Tout le son et la lecture : périphérique de sortie audio, volume d\'aperçu et volume général, qualité vidéo YouTube et normalisation du volume pour un mixage équilibré.',
+  microphone: 'Ta voix compte — littéralement : ajoute des microphones, règle la sensibilité et le gain, et teste en direct la réduction du bruit et de l\'écho.',
+  mobile: 'L\'app compagnon : connecte des smartphones comme micros et manettes, gère les appareils appairés et attribue leurs micros aux joueurs.',
+  webcam: 'Ta webcam comme fond en direct pendant que tu chantes : choisis la source et règle l\'effet miroir, le flou et la finition de l\'overlay.',
+  library: 'Gère tes chansons : définis le dossier pour le scan de la bibliothèque, consulte les statistiques et réinitialise la bibliothèque ou toutes les données dans la zone de danger.',
+  viral: 'Configure les charts viraux : choisis les pays d\'où viennent les hits viraux pour les filtres et les sélections de chansons.',
+  sync: 'Sauvegarde tout, restaure tout : exporte chansons, scores, profils et réglages dans un fichier — et restaure-les sur le même appareil ou un autre.',
+  about: 'Version, technique sous le capot et crédits — tout sur Karaoke ZERO au même endroit.',
+},
 settingsGameplay: {
   title: 'Paramètres de Gameplay',
   description: 'Personnalisez l\'expérience de gameplay selon vos préférences.',

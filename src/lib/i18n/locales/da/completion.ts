@@ -1338,7 +1338,7 @@ export const completionTranslations = {
     offerBody: 'Vil du have en hurtig gennemgang af det grundlæggende? Om 2 minutter kender du daglige udfordringer, syngetilstande, biblioteket og selskabslegene.',
     offerStart: 'Start rundtur',
     offerLater: 'Måske senere',
-    offerHint: 'Altid tilgængelig via ?-ikonet nederst til højre.',
+    offerHint: 'Altid tilgængelig via ?-ikonet i menulinjen.',
     basic: {
       title: 'Grundlæggende',
       desc: 'Rundturen: Udfordringer, syngetilstande, bibliotek, fest & mere.',
@@ -1416,14 +1416,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Indstillingsfanerne',
-          body: 'Vælg en sektion øverst: Generelt (sprog), Gameplay, Udseende, Grafik & lyd, Mikrofon, Mobil (telefonforbindelse) og mere.',
+          body: 'Vælg en sektion øverst: Generelt (sprog), Gameplay, Udseende, Grafik & lyd, Mikrofon, Mobil (telefonforbindelse) og mere.\n\nHver fane åbner med en kort intro — og den dedikerede indstillings-rundtur guider dig gennem det hele.',
         },
         finish: {
           title: 'Færdig! 🎉',
-          body: 'Du kender nu det grundlæggende.\n\nTip: ?-ikonet nederst til højre bringer dig tilbage når som helst — inklusive enkelte emnekapitler og editor-rundturen.',
+          body: 'Du kender nu det grundlæggende.\n\nTip: ?-ikonet i menulinjen bringer dig tilbage når som helst — inklusive enkelte emnekapitler og rundturerne for indstillinger og editor.',
         },
       },
     },
+    // ═══ Indstillings-rundtur (R26) ═══
+    settings: {
+      title: 'Indstillinger',
+      desc: 'Alle indstillingsfaner — fra sprog og mikrofoner til temafest og backup.',
+      chapters: {
+        overview: 'Overblik',
+        basics: 'Basisindstillinger',
+        devices: 'Enheder',
+        library: 'Bibliotek & tema',
+        backup: 'Backup & afslutning',
+      },
+      steps: {
+        welcome: {
+          title: 'Indstillingerne ⚙️',
+          body: 'Denne rundtur handler udelukkende om indstillingerne: alle faner, hvad der bor i dem, og hvornår de betyder noget.\n\nVi hopper fra fane til fane sammen — du skal ikke selv klikke på noget.',
+        },
+        tabBar: {
+          title: 'Fanebladslinjen',
+          body: 'Indstillingerne er opdelt i faner: Generelt, Gameplay, Udseende, Grafik / Lyd, Mikrofon, Mobil companion, Webcam, Bibliotek, Genrer & sprog, Temafest, Viral Charts, Synk & backup og Om.\n\nHver fane åbner med en kort intro, der forklarer, hvad du kan forvente.',
+        },
+        generalTab: {
+          title: 'Generelt',
+          body: 'Det grundlæggende: appsprog (virker med det samme, 16 sprog), standard sværhedsgrad for nye runder og online-tilstanden.\n\nTip: AI-udbyderne til Harmonize og lydanalyse konfigureres også her.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Finjustering af oplevelsen: slå scorevisning, combo-tæller og partikler til eller fra mens du synger, aktivér replay-optagelse og brug bekvemmeligheder som auto-fuldskærm og advarselssignaler.',
+        },
+        appearanceTab: {
+          title: 'Udseende',
+          body: 'Looket: temaer giver hele appen nyt udseende, sangtekststil og -størrelse tilpasser teksterne. Desuden baggrundsvideoer, nodevisning (laser/nøjagtig) og ydelsestilstanden til svagere maskiner.',
+        },
+        graphicSoundTab: {
+          title: 'Grafik / Lyd',
+          body: 'Alt om lyd: vælg lydudgangsenheden, indstil forhånds- og hovedlydstyrken, vælg YouTube-videokvaliteten — og lydstyrke-normaliseringen udligner automatisk høje og stille sange (89 dB-mål).',
+        },
+        microphoneTab: {
+          title: 'Mikrofon',
+          body: 'Din stemme er styringen: tilføj mikrofoner (op til 4, USB- og SingStar-mics virker også), justér følsomhed og forstærkning, test støj- og ekko-dæmpning.\n\nTelefoner vises her, så snart de er forbundet via Mobil-fanen.',
+        },
+        mobileTab: {
+          title: 'Mobil — companion-appen',
+          body: 'Smartphones som mikrofon og styring: administrér parrede enheder og tildel deres mikrofoner til spillerne — parring foregår via QR-kode eller forbindelseskode over samme Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Dit webcam som live-sangbaggrund: vælg kilden og finjustér spejling, blur og overlay-gennemsigtighed — eller slå baggrunden helt fra.',
+        },
+        libraryTab: {
+          title: 'Bibliotek',
+          body: 'Sangadministration: vælg mappen der scannes (biblioteket fylder sig selv) og tjek statistikkerne.\n\nFarezonen nulstiller biblioteket eller alle data — highscores og profiler overlever en nulstilling af biblioteket.',
+        },
+        taxonomyTab: {
+          title: 'Genrer & sprog',
+          body: 'Dit eget ordforråd til biblioteket: opret egne genrer og sprog — de vises med det samme i alle rullemenuer og behandles af harmoniseringen som fuldværdige kategorier.',
+        },
+        mottoTab: {
+          title: 'Temafest',
+          body: 'Festgeniet: aktivér den, giv den et navn (f.eks. "80\'er-fest") og definér søgefelter + filtre — fra da af erstatter temaet alle filtre i spillet, og hvert sangvalg trækker kun fra matchende sange.',
+        },
+        viralTab: {
+          title: 'Viral Charts',
+          body: 'Vælg landet for viral charts (Tyskland, USA, Japan …) — de virale hits vises derefter som filter i biblioteket. Opdater-knappen henter de nyeste poster.',
+        },
+        syncTab: {
+          title: 'Synk & backup',
+          body: 'Flyttehjælperen: eksportér alt (sange, highscores, profiler, spillelister, indstillinger — evt. inkl. sangmedier) til en fil og gendan det på samme eller en anden enhed.\n\nForhåndsvisningen viser præcis, hvad en backup indeholder, før du gendanner den.',
+        },
+        finish: {
+          title: 'Opsætning fuldført! ✅',
+          body: 'Du kender nu alle indstillingsfaner.\n\nHver fane forklarer også sig selv i sin korte intro — og ?-ikonet i menulinjen bringer dig tilbage til denne rundtur når som helst.',
+        },
+      },
+    },
+
     editor: {
       title: 'Editor-rundtur',
       desc: 'Noder, sangtekst, stemmer & harmonisering — sangens værktøjskasse.',
@@ -1488,7 +1563,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Klar til at bygge! 🛠️',
-          body: 'Du kender nu editorens værktøjskasse.\n\nHusk: Ctrl+Z redder det hele, og ?-ikonet nederst til højre bringer dig tilbage til disse kapitler når som helst.',
+          body: 'Du kender nu editorens værktøjskasse.\n\nHusk: Ctrl+Z redder det hele, og ?-ikonet (i menulinjen, her i editoren også nederst til højre) bringer dig tilbage til disse kapitler når som helst.',
         },
       },
     },

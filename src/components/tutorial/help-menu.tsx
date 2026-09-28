@@ -1,9 +1,15 @@
 'use client';
 
 /**
- * ?-Hilfemenü — schwebender Button (unten rechts, auf allen nicht-immersiven
- * Screens sichtbar) mit Dialog:
- *  - Komplette Touren (Grundfunktionen / Editor) erneut ansehen
+ * ?-Hilfemenü — Dialog mit allen verfügbaren Touren.
+ *
+ * R26 (Nutzerwunsch): Der Aufruf des Hilfemenüs liegt in der HAUPTMENÜLEISTE
+ * (NavBar-Button "?. Die Komponente ist daher jetzt gesteuert
+ * (open/onOpenChange); der schwebende Button wird nur noch als Fallback auf
+ * immersiven Screens ohne Menüleiste gerendert (derzeit: Editor).
+ *
+ * Dialog-Inhalt:
+ *  - Komplette Touren (Grundfunktionen / Editor / Einstellungen) erneut ansehen
  *  - Thematisch gegliederte Kapitel einzeln abspielen
  */
 
@@ -15,37 +21,46 @@ import { TOURS } from '@/lib/tutorial/tours';
 import { isTourDone } from '@/lib/tutorial/storage';
 import type { TourId } from '@/lib/tutorial/types';
 
-export function HelpMenu() {
+interface HelpMenuProps {
+  /** Dialog geöffnet (kontrolliert — Öffner wohnt in der NavBar). */
+  open: boolean;
+  onOpenChange: (_open: boolean) => void;
+  /** Schwebenden ?-Button rendern (nur auf Screens ohne Menüleiste, z. B. Editor). */
+  floating?: boolean;
+}
+
+export function HelpMenu({ open, onOpenChange, floating = false }: HelpMenuProps) {
   const { t } = useTranslation();
   const { startTour, isTourActive } = useTourController();
-  const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration guard
     setMounted(true);
   }, []);
 
-  const tourIds: TourId[] = ['basic', 'editor'];
+  const tourIds: TourId[] = ['basic', 'settings', 'editor'];
 
   const handleStart = (tourId: TourId, chapterId?: string) => {
-    setOpen(false);
+    onOpenChange(false);
     // Small delay so the dialog closes before the tour anchors
     setTimeout(() => startTour(tourId, chapterId ? { chapterId } : undefined), 120);
   };
 
   return (
     <>
-      {/* Floating ?-button */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        data-testid="help-menu-button"
-        aria-label={t('tutorial.helpButtonTitle')}
-        title={t('tutorial.helpButtonTitle')}
-        className="fixed bottom-5 right-5 z-[95] w-12 h-12 rounded-full retro-gradient-card retro-border-cyan retro-box-glow-cyan flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
-      >
-        <HelpCircle className="w-6 h-6 text-[#00e5ff]" />
-      </button>
+      {/* Floating ?-button — only on immersive screens without a nav bar */}
+      {floating && (
+        <button
+          type="button"
+          onClick={() => onOpenChange(true)}
+          data-testid="help-menu-button-fab"
+          aria-label={t('tutorial.helpButtonTitle')}
+          title={t('tutorial.helpButtonTitle')}
+          className="fixed bottom-5 right-5 z-[95] w-12 h-12 rounded-full retro-gradient-card retro-border-cyan retro-box-glow-cyan flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+        >
+          <HelpCircle className="w-6 h-6 text-[#00e5ff]" />
+        </button>
+      )}
 
       {/* Help dialog */}
       {open && (
@@ -55,12 +70,12 @@ export function HelpMenu() {
           role="dialog"
           aria-modal="true"
           aria-label={t('tutorial.helpDialogTitle')}
-          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget) onOpenChange(false); }}
         >
           <div className="retro-gradient-card retro-border-cyan retro-box-glow-cyan rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 relative">
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors rounded-md p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label={t('common.close')}
               data-testid="help-menu-close"

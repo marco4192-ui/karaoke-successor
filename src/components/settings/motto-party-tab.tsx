@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { useMottoParty } from '@/hooks/use-motto-party';
@@ -125,15 +126,8 @@ export function MottoPartyTab() {
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 theme-adaptive-text">
-            🎉 {t('settingsMotto.title')}
-          </CardTitle>
-          <CardDescription>{t('settingsMotto.desc')}</CardDescription>
-        </CardHeader>
-      </Card>
+      {/* ── Header (R26: einheitliche Intro-Karte mit settings-intro-Anker) ── */}
+      <SettingsTabIntro tab="motto" />
 
       {/* ── Activation ── */}
       <Card

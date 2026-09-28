@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Kamera internetowa',
   viralCharts: 'Wirusowe listy',
 },
+// R26: Intro texts for every settings submenu (short menu explanation)
+settingsTabIntro: {
+  general: 'Podstawy aplikacji: język, domyślna trudność dla nowych rund i tryb online na imprezy wieloosobowe.',
+  gameplay: 'Dostrajanie doświadczenia: elementy na ekranie podczas śpiewania, efekty cząsteczkowe, nagrywanie powtórek oraz udogodnienia, jak automatyczny pełny ekran i sygnały ostrzegawcze.',
+  appearance: 'Wygląd aplikacji: motyw kolorystyczny, styl i rozmiar tekstu piosenki, wideo w tle, sposób wyświetlania nut i tryb wydajności dla słabszych maszyn.',
+  graphicSound: 'Wszystko, co dźwięk i odtwarzanie: urządzenie wyjścia audio, głośność podglądu i główna, jakość wideo z YouTube oraz normalizacja głośności dla zrównoważonego miksu.',
+  microphone: 'Twój głos się liczy — dosłownie: dodawaj mikrofony, reguluj czułość i wzmocnienie oraz testuj na żywo tłumienie szumów i echa.',
+  mobile: 'Aplikacja kompana: podłącz smartfony jako mikrofony i kontrolery, zarządzaj sparowanymi urządzeniami i przypisuj ich mikrofony graczom.',
+  webcam: 'Twoja kamera internetowa jako tło na żywo podczas śpiewania: wybierz źródło i ustaw lustrzane odbicie, rozmycie oraz dostrajanie nakładki.',
+  library: 'Zarządzaj piosenkami: ustaw folder do skanowania biblioteki, przejrzyj statystyki i zresetuj bibliotekę albo wszystkie dane w strefie zagrożenia.',
+  viral: 'Skonfiguruj wirusowe listy przebojów: wybierz kraje, z których pochodzą wirusowe hity dla filtrów i wyboru piosenek.',
+  sync: 'Zrób kopię wszystkiego, przywróć wszystko: wyeksportuj piosenki, najlepsze wyniki, profile i ustawienia do pliku — i przywróć je na tym samym lub innym urządzeniu.',
+  about: 'Wersja, technologia pod maską i twórcy — wszystko o Karaoke ZERO w jednym miejscu.',
+},
 settingsGameplay: {
   title: 'Ustawienia rozgrywki',
   description: 'Dostosuj rozgrywkę do swoich preferencji.',

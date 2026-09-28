@@ -1,0 +1,1064 @@
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Crown, ArrowLeft } from 'lucide-react';
+import {
+  clearHallOfFame,
+  getMatchesByBracketType,
+  getLBRoundName,
+  type TournamentBracket,
+  type TournamentPlayer,
+  type TournamentMatch,
+} from '@/lib/game/tournament';
+import { PlayerProfile } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
+import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
+import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
+import { useTournamentSetup, useTournamentBracket, useTournamentResults, type MaxPlayers } from '@/hooks/use-tournament';
+
+interface TournamentScreenProps {
+  profiles: PlayerProfile[];
+  onStartTournament: (_bracket: TournamentBracket, _songDuration: number) => void;
+  onBack: () => void;
+}
+
+export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: TournamentScreenProps) {
+  const { t } = useTranslation();
+  const setup = useTournamentSetup(profiles, onStartTournament);
+
+  if (setup.showHallOfFame) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" onClick={() => setup.setShowHallOfFame(false)} className="text-white/60">
+            ← {t('tournament.back')}
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{t('tournament.hallOfFame')}</h1>
+            <p className="text-white/60">{t('tournament.hallOfFameDesc')}</p>
+          </div>
+        </div>
+        {setup.hallOfFameEntries.length === 0 ? (
+          <div className="text-center py-12 text-white/40">
+            <div className="text-5xl mb-4">🏆</div>
+            <p>{t('tournament.hallOfFameEmpty')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {setup.hallOfFameEntries.map((entry, i) => (
+              <Card key={entry.id} className="bg-white/5 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        {entry.champion.avatar ? (
+                          <img src={entry.champion.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                            style={{ backgroundColor: entry.champion.color }}>
+                            {entry.champion.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-bold">{entry.champion.name}</div>
+                          <div className="text-xs text-white/40">
+                            {entry.playerCount} {t('tournament.players').toLowerCase()} · {entry.totalRounds} {t('tournament.rounds').toLowerCase()}
+                            {entry.tournamentType === 'double' && ` · ${t('tournament.doubleElimination')}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs text-white/50">
+                        {t('tournament.runnerUp')}: {entry.runnerUp.name} · Score: {entry.championScore} · Accuracy: {entry.championAccuracy.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-white/40">
+                      {new Date(entry.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <Button variant="ghost" onClick={clearHallOfFame} className="text-red-400/60 hover:text-red-400 mx-auto block mt-4">
+              {t('tournament.clearHallOfFame')}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" onClick={onBack} className="text-white/60">
+          ← {t('tournament.back')}
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold">{t('tournament.title')}</h1>
+          <p className="text-white/60">{t('tournament.settings')}</p>
+        </div>
+        <Button variant="ghost" onClick={() => setup.setShowHallOfFame(true)} className="text-amber-400 hover:text-amber-300">
+          🏆 {t('tournament.hallOfFame')}
+        </Button>
+      </div>
+
+      {setup.error && (
+        <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 text-red-400">
+          {setup.error}
+        </div>
+      )}
+
+      {/* Tournament Settings */}
+      <Card className="bg-white/5 border-white/10 mb-6">
+        <CardHeader>
+          <CardTitle>{t('tournament.settings')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* #4 Tournament Type */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.tournamentType')}</label>
+            <div className="flex gap-2">
+              {(['single', 'double'] as const).map(type => (
+                <Button
+                  key={type}
+                  variant={setup.tournamentType === type ? 'default' : 'outline'}
+                  onClick={() => setup.setTournamentType(type)}
+                  className={setup.tournamentType === type ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                >
+                  {type === 'single' ? t('tournament.singleElimination') : t('tournament.doubleElimination')}
+                </Button>
+              ))}
+            </div>
+            {setup.tournamentType === 'double' && (
+              <p className="text-xs text-amber-400/70 mt-1">{t('tournament.doubleEliminationDesc')}</p>
+            )}
+          </div>
+
+          {/* Max Players */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.bracketSize')}</label>
+            <div className="flex gap-2 flex-wrap">
+              {([2, 4, 8, 16, 32] as const).map(size => (
+                <Button
+                  key={size}
+                  variant={setup.maxPlayers === size ? 'default' : 'outline'}
+                  onClick={() => {
+                    setup.handleSetMaxPlayers(size as MaxPlayers);
+                  }}
+                  className={setup.maxPlayers === size ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                >
+                  {size} {size === 2 ? t('tournament.duel') : t('tournament.players')}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Short Mode */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('tournament.shortMode')}</label>
+              <p className="text-sm text-white/60">{t('tournament.shortModeDesc')}</p>
+            </div>
+            <Button
+              variant={setup.shortMode ? 'default' : 'outline'}
+              onClick={() => setup.setShortMode(!setup.shortMode)}
+              className={setup.shortMode ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+            >
+              {setup.shortMode ? t('tournament.short') : t('tournament.fullSong')}
+            </Button>
+          </div>
+
+          {/* Difficulty */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.difficulty')}</label>
+            <div className="flex gap-2">
+              {(['easy', 'medium', 'hard'] as const).map(diff => (
+                <Button
+                  key={diff}
+                  variant={setup.difficulty === diff ? 'default' : 'outline'}
+                  onClick={() => setup.setGlobalDifficulty(diff)}
+                  className={setup.difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                >
+                  {diff === 'easy' ? t('tournament.easy') : diff === 'medium' ? t('tournament.medium') : t('tournament.hard')}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* #6 Dynamic Difficulty */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('tournament.dynamicDifficulty')}</label>
+              <p className="text-sm text-white/60">{t('tournament.dynamicDifficultyDesc')}</p>
+            </div>
+            <Button
+              variant={setup.dynamicDifficulty ? 'default' : 'outline'}
+              onClick={() => setup.setDynamicDifficulty(!setup.dynamicDifficulty)}
+              className={setup.dynamicDifficulty ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+            >
+              {setup.dynamicDifficulty ? t('tournament.on') : t('tournament.off')}
+            </Button>
+          </div>
+
+          {/* #3 Tiebreak Mode */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.tiebreakMode')}</label>
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { key: 'coinflip' as const, label: t('tournament.tiebreakCoinflip'), desc: t('tournament.tiebreakCoinflipDesc') },
+                { key: 'accuracy' as const, label: t('tournament.tiebreakAccuracy'), desc: t('tournament.tiebreakAccuracyDesc') },
+                { key: 'combo' as const, label: t('tournament.tiebreakCombo'), desc: t('tournament.tiebreakComboDesc') },
+                { key: 'goldenmic' as const, label: t('tournament.tiebreakGoldenmic'), desc: t('tournament.tiebreakGoldenmicDesc') },
+              ]).map(tb => (
+                <Button
+                  key={tb.key}
+                  variant={setup.tiebreakMode === tb.key ? 'default' : 'outline'}
+                  onClick={() => setup.setTiebreakMode(tb.key)}
+                  className={setup.tiebreakMode === tb.key ? 'bg-orange-500 hover:bg-orange-600' : 'border-white/20'}
+                  title={tb.desc}
+                >
+                  {tb.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* #8 Song Selection Mode */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.songSelectionMode')}</label>
+            <div className="flex gap-2">
+              {([
+                { key: 'random' as const, label: t('tournament.songRandom') },
+                { key: 'vote' as const, label: t('tournament.songVote') },
+              ]).map(mode => (
+                <Button
+                  key={mode.key}
+                  variant={setup.songSelectionMode === mode.key ? 'default' : 'outline'}
+                  onClick={() => setup.setSongSelectionMode(mode.key)}
+                  className={setup.songSelectionMode === mode.key ? 'bg-pink-500 hover:bg-pink-600' : 'border-white/20'}
+                >
+                  {mode.label}
+                </Button>
+              ))}
+            </div>
+            {setup.songSelectionMode === 'vote' && (
+              <p className="text-xs text-pink-400/70 mt-1">{t('tournament.songVoteDesc')}</p>
+            )}
+          </div>
+
+          {/* #9 Seeding Mode */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.seedingMode')}</label>
+            <div className="flex gap-2">
+              {([
+                { key: 'random' as const, label: t('tournament.seedingRandom') },
+                { key: 'strength' as const, label: t('tournament.seedingStrength') },
+              ]).map(mode => (
+                <Button
+                  key={mode.key}
+                  variant={setup.seedingMode === mode.key ? 'default' : 'outline'}
+                  onClick={() => setup.setSeedingMode(mode.key)}
+                  className={setup.seedingMode === mode.key ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
+                >
+                  {mode.label}
+                </Button>
+              ))}
+            </div>
+            {setup.seedingMode === 'strength' && (
+              <p className="text-xs text-indigo-400/70 mt-1">{t('tournament.seedingStrengthDesc')}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Player Selection */}
+      <Card className="bg-white/5 border-white/10 mb-6">
+        <CardHeader>
+          <CardTitle>{t('tournament.selectPlayers').replace('{n}', String(setup.selectedPlayers.length)).replace('{m}', String(setup.maxPlayers))}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {setup.activeProfiles.map(profile => {
+              const isSelected = setup.selectedPlayers.includes(profile.id);
+              return (
+                <div
+                  key={profile.id}
+                  onClick={() => setup.togglePlayer(profile.id)}
+                  className={`p-4 rounded-lg cursor-pointer transition-all ${
+                    isSelected 
+                      ? 'bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-2 border-amber-500' 
+                      : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {profile.avatar ? (
+                      <img src={profile.avatar} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                        style={{ backgroundColor: profile.color }}
+                      >
+                        {profile.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="font-medium truncate">{profile.name}</span>
+                    {isSelected && <span className="ml-auto text-amber-400">✓</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {setup.activeProfiles.length < 2 && (
+            <p className="text-yellow-400 mt-4">
+              {t('tournament.noActiveProfiles')}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Start Button */}
+      <Button
+        onClick={setup.handleStartTournament}
+        disabled={setup.selectedPlayers.length < 2}
+        className="w-full py-6 text-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
+      >
+        {t('tournament.startTournament').replace('{n}', String(setup.selectedPlayers.length))}
+      </Button>
+    </div>
+  );
+}
+
+// Tournament Bracket View Component
+interface TournamentBracketViewProps {
+  bracket: TournamentBracket;
+  currentMatch: TournamentMatch | null;
+  onPlayMatch: (_match: TournamentMatch) => void;
+  onManualWinner?: (_matchId: string, _winnerId: string) => void;
+  onRepeatMatch?: () => void;
+  matchAborted?: boolean;
+  onAbortHandled?: () => void;
+  shortMode: boolean;
+  showResults?: boolean;
+  onShowResults?: () => void;
+  /** Bug 12c: opens the party-leave confirmation dialog (NOT an immediate
+   *  exit) — tournament-game is an immersive screen with no NavBar, so the
+   *  bracket view needs its own way back to the menu. */
+  onLeaveToMenu?: () => void;
+}
+
+export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults, onLeaveToMenu }: TournamentBracketViewProps) {
+  const { t } = useTranslation();
+  const {
+    stats,
+    playableMatches,
+    nextMatch,
+    effectiveDiff,
+    showDiffBadge,
+    isSeededByStrength,
+    fanFavorites,
+    bracketScale,
+    availSize,
+    manualWinnerMatch,
+    bracketWrapperRef,
+    bracketInnerRef,
+    setManualWinnerMatch,
+  } = useTournamentBracket(bracket, currentMatch, showResults);
+
+  // #11 / Bug 12c: graceful fallback if the key is missing in a locale
+  const backToMenuLabel = t('tournament.backToMainMenu');
+  const backToMenuText = backToMenuLabel === 'tournament.backToMainMenu' ? 'Back to Main Menu' : backToMenuLabel;
+
+  return (
+    <div className="relative max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
+      {/* Bug 12c: "← Back to Main Menu" — tournament-game is an immersive
+          screen (NavBar hidden), so without this button there is no visible
+          way back. Opens the party-leave CONFIRMATION dialog, never an
+          immediate exit. Small + unobtrusive in the top-left corner. */}
+      {onLeaveToMenu && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onLeaveToMenu}
+          aria-label={backToMenuText}
+          title={backToMenuText}
+          className="absolute top-2 left-2 z-20 h-9 px-2.5 sm:px-3 text-xs text-white/50 hover:text-white/90 hover:bg-white/10"
+          data-testid="tournament-back-to-menu"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="hidden sm:inline ml-1">{backToMenuText}</span>
+        </Button>
+      )}
+
+      {/* Tournament Header — compact */}
+      <div className="text-center mb-1 shrink-0">
+        <h1 className="text-2xl font-bold mb-0.5">{t('tournament.bracketTitle')}</h1>
+        <div className="flex items-center justify-center gap-3 text-white/60 text-sm">
+          <span>{t('tournament.roundOfOf').replace('{n}', String(stats.currentRound)).replace('{m}', String(stats.totalRounds))}</span>
+          <span>·</span>
+          <span>{t('tournament.playersRemaining').replace('{n}', String(stats.remainingPlayers))}</span>
+          {shortMode && <Badge className="bg-green-500/20 text-green-400 text-xs">60s</Badge>}
+          {bracket.settings.tournamentType === 'double' && <Badge className="bg-purple-500/20 text-purple-400 text-xs">{t('tournament.doubleEliminationShort')}</Badge>}
+          {bracket.grandFinalsResetNeeded && <Badge className="bg-red-500/20 text-red-400 text-xs">{t('tournament.grandFinalsReset')}</Badge>}
+          {showDiffBadge && <Badge className="bg-orange-500/20 text-orange-400 text-xs">{t('tournament.' + effectiveDiff)}</Badge>}
+          {bracket.settings.songSelectionMode === 'vote' && <Badge className="bg-pink-500/20 text-pink-400 text-xs">{t('tournament.songVote')}</Badge>}
+          {isSeededByStrength && <Badge className="bg-indigo-500/20 text-indigo-400 text-xs">{t('tournament.seeded')}</Badge>}
+          {fanFavorites.length > 0 && <Badge className="bg-rose-500/20 text-rose-400 text-xs">{t('tournament.crowdVoting')}</Badge>}
+        </div>
+      </div>
+
+      {/* Champion Display — compact */}
+      {bracket.champion && (
+        <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 rounded-xl p-4 mb-2 text-center shrink-0">
+          <div className="text-4xl mb-1">👑</div>
+          <h2 className="text-xl font-bold text-amber-400 mb-1">{t('tournament.champion')}</h2>
+          <div className="flex items-center justify-center gap-3">
+            {bracket.champion.avatar ? (
+              <img src={bracket.champion.avatar} alt={bracket.champion.name} className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold"
+                style={{ backgroundColor: bracket.champion.color }
+              }>
+                {bracket.champion.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="text-2xl font-bold">{bracket.champion.name}</span>
+          </div>
+          {onShowResults && (
+            <Button
+              onClick={onShowResults}
+              className="mt-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-sm"
+            >
+              {t('tournament.viewResults')}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Next Match Preview — slim single-row bar (frees vertical space for the bracket) */}
+      {nextMatch && !bracket.champion && (
+        <div className="mb-2 shrink-0 flex items-center gap-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/15 via-purple-500/15 to-pink-500/15 px-3 py-2">
+          <span className="text-lg animate-pulse shrink-0" aria-hidden="true">🎤</span>
+          <span className="hidden lg:block text-sm font-bold text-white/80 shrink-0">{t('tournament.nextDuel')}</span>
+          <div className="flex-1 min-w-0 flex items-center justify-center gap-3">
+            <NextPlayerChip player={nextMatch.player1} />
+            <span className="shrink-0 text-white/35 text-xs font-bold" aria-hidden="true">{t('tournament.vs')}</span>
+            <NextPlayerChip player={nextMatch.player2} />
+          </div>
+          <Button
+            onClick={() => onPlayMatch(nextMatch)}
+            size="sm"
+            className="shrink-0 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+          >
+            ▶ {t('tournament.startNextMatch')}
+          </Button>
+          {onManualWinner && nextMatch.player1 && nextMatch.player2 && (
+            <Button
+              onClick={() => setManualWinnerMatch(nextMatch)}
+              variant="ghost"
+              size="sm"
+              title={t('matchAbort.setWinner')}
+              aria-label={t('matchAbort.setWinner')}
+              className="shrink-0 h-8 w-8 p-0 text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10"
+            >
+              <Crown className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Bracket — fills remaining space, auto-scaled and aligned to top */}
+      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-start justify-center pt-1">
+        <div
+          ref={bracketInnerRef}
+          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'top center' }}
+        >
+          {bracket.settings.tournamentType === 'double' ? (
+            <DoubleEliminationBracketView
+              bracket={bracket}
+              currentMatch={currentMatch}
+              onPlayMatch={onPlayMatch}
+              playableMatches={playableMatches}
+              t={t}
+            />
+          ) : (
+            <TournamentBracketButterfly
+              bracket={bracket}
+              currentMatch={currentMatch}
+              onPlayMatch={onPlayMatch}
+              availSize={availSize}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Fan Favorites — crowd vote results */}
+      {fanFavorites.length > 0 && (
+        <div className="mt-1 bg-gradient-to-r from-rose-500/10 to-pink-500/10 rounded-lg p-1.5 shrink-0">
+          <h4 className="text-xs text-white/60 mb-1">{t('tournament.fanFavorites')}</h4>
+          <div className="flex flex-wrap gap-1">
+            {fanFavorites.slice(0, 5).map((fav, i) => (
+              <div key={fav.playerId} className="bg-white/5 rounded px-2 py-0.5 text-xs border border-rose-500/20">
+                <span className={i === 0 ? 'text-amber-400' : 'text-white/60'}>
+                  {i === 0 ? '❤️' : `${i + 1}.`}
+                </span>{' '}
+                <span className={i === 0 ? 'text-amber-300 font-medium' : 'text-white/80'}>{fav.playerName}</span>
+                <span className="text-rose-400/60 ml-1">{fav.totalVotes}{t('tournament.votes')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Manual Winner Dialog — shown when user clicks "Set Winner Manually" from the bracket */}
+      {manualWinnerMatch && onManualWinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
+              <p className="text-sm text-white/50 mt-1">
+                {manualWinnerMatch.player1?.name} vs {manualWinnerMatch.player2?.name}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {[manualWinnerMatch.player1, manualWinnerMatch.player2].map((player) => {
+                if (!player) return null;
+                return (
+                  <Button
+                    key={player.id}
+                    onClick={() => {
+                      onManualWinner(manualWinnerMatch.id, player.id);
+                      setManualWinnerMatch(null);
+                    }}
+                    className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20"
+                  >
+                    <span className="flex items-center gap-3 w-full">
+                      {player.avatar ? (
+                        <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: player.color }}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-medium">{player.name}</span>
+                      <span className="ml-auto text-amber-400">{t('matchAbort.asWinner')}</span>
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              onClick={() => setManualWinnerMatch(null)}
+              variant="ghost"
+              className="w-full mt-3 py-2 text-sm text-white/40 hover:text-white/60"
+            >
+              {t('matchAbort.back')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Match Abort Dialog */}
+      {matchAborted && currentMatch && onManualWinner && onRepeatMatch && onAbortHandled && (
+        <MatchAbortDialog
+          match={currentMatch}
+          onManualWinner={(matchId, winnerId) => {
+            onManualWinner(matchId, winnerId);
+            onAbortHandled();
+          }}
+          onRepeatMatch={() => {
+            onRepeatMatch();
+            onAbortHandled();
+          }}
+          onDismiss={() => {
+            onAbortHandled();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// #7 Tournament Results Screen
+interface TournamentResultsProps {
+  bracket: TournamentBracket;
+  onBack: () => void;
+  onNewTournament: () => void;
+  /** Item 11: leave the tournament completely and return to the main menu */
+  onExitToMenu: () => void;
+}
+
+export function TournamentResultsScreen({ bracket, onBack, onNewTournament, onExitToMenu }: TournamentResultsProps) {
+  const { t } = useTranslation();
+  const { placements, fanFavorites } = useTournamentResults(bracket);
+  // Item 11: graceful fallback if the key is missing in a locale
+  const backToMenuLabel = t('tournament.backToMainMenu');
+  const backToMenuText = backToMenuLabel === 'tournament.backToMainMenu' ? 'Back to Main Menu' : backToMenuLabel;
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="text-center mb-6">
+        <div className="text-5xl mb-2">🏆</div>
+        <h1 className="text-3xl font-bold text-amber-400">{t('tournament.resultsTitle')}</h1>
+        <p className="text-white/60">{t('tournament.resultsSubtitle')}</p>
+      </div>
+
+      {/* Podium — Top 3 */}
+      {placements.length >= 2 && (
+        <div className="flex items-end justify-center gap-3 mb-6">
+          {/* 2nd place */}
+          {placements[1] && (
+            <div className="text-center flex-1 max-w-[140px]">
+              <div className="text-3xl mb-1">🥈</div>
+              <PlayerResultCard placement={placements[1]} t={t} />
+            </div>
+          )}
+          {/* 1st place */}
+          {placements[0] && (
+            <div className="text-center flex-1 max-w-[160px]">
+              <div className="text-4xl mb-1">🥇</div>
+              <PlayerResultCard placement={placements[0]} t={t} highlight />
+            </div>
+          )}
+          {/* 3rd place */}
+          {placements[2] && (
+            <div className="text-center flex-1 max-w-[140px]">
+              <div className="text-3xl mb-1">🥉</div>
+              <PlayerResultCard placement={placements[2]} t={t} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Full standings */}
+      <Card className="bg-white/5 border-white/10 mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">{t('tournament.fullStandings')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {placements.map(p => (
+              <div key={p.player.id} className={`flex items-center gap-3 p-2 rounded-lg ${p.placement === 1 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-white/5'}`}>
+                <div className="w-8 text-center font-bold text-white/60">#{p.placement}</div>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
+                  style={{ backgroundColor: p.player.color }}>
+                  {p.player.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium truncate">{p.player.name}</span>
+                </div>
+                <div className="text-right text-xs text-white/50">
+                  <div>{p.totalScore} {t('tournament.points')}</div>
+                  <div>{p.totalAccuracy.toFixed(1)}% {t('tournament.accuracy').toLowerCase()}</div>
+                  <div>{p.matchesWon}W / {p.matchesLost}L</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Match history highlights */}
+      {(() => {
+        const completedMatches = bracket.matches.filter(m => m.completed && !m.isBye);
+        const tiebreaks = completedMatches.filter(m => m.isTiebreak);
+        const highScores = [...completedMatches].sort((a, b) => Math.max(b.score1, b.score2) - Math.max(a.score1, a.score2)).slice(0, 3);
+        return (
+          (tiebreaks.length > 0 || highScores.length > 0) && (
+            <Card className="bg-white/5 border-white/10 mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg">{t('tournament.highlights')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {tiebreaks.length > 0 && (
+                  <div className="text-sm">
+                    <span className="text-orange-400">⚡ {t('tournament.tiebreakMatches')}: </span>
+                    {tiebreaks.map(m => (
+                      <span key={m.id} className="text-white/60">
+                        {m.player1?.name} vs {m.player2?.name} ({m.winner?.name} {t('tournament.won')})
+                      </span>
+                    )).reduce((prev, curr, i) => <>{prev}{i > 0 && ', '}{curr}</>, <></>)}
+                  </div>
+                )}
+                {highScores.map((m, i) => (
+                  <div key={m.id} className="flex items-center gap-2 text-sm text-white/60">
+                    <span>{i === 0 ? '🔥' : i === 1 ? '⚡' : '✨'}</span>
+                    <span>{m.player1?.name} {m.score1} - {m.score2} {m.player2?.name}</span>
+                    {m.songTitle && <span className="text-white/30">({m.songTitle})</span>}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )
+        );
+      })()}
+
+      {/* #10 Fan Favorites — Spectator Crowd Vote Results */}
+      {fanFavorites.length > 0 && (
+        <Card className="bg-gradient-to-br from-rose-500/5 to-pink-500/5 border-rose-500/20 mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">{t('tournament.fanFavoriteTitle')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {fanFavorites.slice(0, 5).map((fav, i) => (
+                <div key={fav.playerId} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-white/5'}`}>
+                  <div className="w-8 text-center text-lg">{i === 0 ? '❤️' : i === 1 ? '🧡' : i === 2 ? '💛' : `#${i + 1}`}</div>
+                  <div className="flex-1">
+                    <span className="font-medium">{fav.playerName}</span>
+                    <span className="text-xs text-white/40 ml-2">({fav.matchesVoted} {t('tournament.matchesVoted')})</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-rose-400">{fav.totalVotes}</span>
+                    <span className="text-xs text-white/40 ml-1">{t('tournament.votes')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action buttons — Item 11: explicit exit options after the final
+          results (previously only the ESC key could leave the tournament). */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            onClick={onExitToMenu}
+            variant="outline"
+            className="flex-1 h-12 border-white/20 hover:bg-white/10"
+          >
+            🏠 {backToMenuText}
+          </Button>
+          <Button
+            onClick={onNewTournament}
+            className="flex-1 h-12 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
+          >
+            🏆 {t('tournament.newTournament')}
+          </Button>
+        </div>
+        <Button
+          onClick={onBack}
+          variant="ghost"
+          className="w-full text-white/50 hover:text-white/80"
+        >
+          ← {t('tournament.backToBracket')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Player result card for podium display
+function PlayerResultCard({ placement, t, highlight }: { placement: { player: TournamentPlayer; totalScore: number; totalAccuracy: number; matchesWon: number; matchesLost: number }; t: (_key: string) => string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-lg p-3 ${highlight ? 'bg-amber-500/20 border border-amber-500/40' : 'bg-white/5 border border-white/10'}`}>
+      <div className="flex items-center justify-center gap-2 mb-1">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+          style={{ backgroundColor: placement.player.color }}>
+          {placement.player.name.charAt(0).toUpperCase()}
+        </div>
+        <span className={`font-bold ${highlight ? 'text-amber-400' : ''}`}>{placement.player.name}</span>
+      </div>
+      <div className="text-xs text-white/50 space-y-0.5">
+        <div>{placement.totalScore} {t('tournament.points')}</div>
+        <div>{placement.totalAccuracy.toFixed(1)}% {t('tournament.accuracy').toLowerCase()}</div>
+      </div>
+    </div>
+  );
+}
+
+// Player chip for the slim next-match preview bar
+function NextPlayerChip({ player }: { player: TournamentPlayer | null }) {
+  const { t } = useTranslation();
+  if (!player) {
+    return (
+      <div className="flex items-center gap-1.5 min-w-0 px-1">
+        <div className="w-7 h-7 rounded-full bg-white/10 shrink-0" aria-hidden="true" />
+        <span className="text-sm text-white/30 truncate">{t('tournament.tbd')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 min-w-0 px-1">
+      {player.avatar ? (
+        <img src={player.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+      ) : (
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+          style={{ backgroundColor: player.color }}
+          aria-hidden="true"
+        >
+          {player.name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <span className="text-sm font-medium truncate">{player.name}</span>
+    </div>
+  );
+}
+
+// ─── #4 Double Elimination Bracket View ──────────────────────────
+// Shows both Winners and Losers brackets side by side with Grand Finals
+
+function DoubleEliminationBracketView({
+  bracket,
+  currentMatch,
+  onPlayMatch,
+  playableMatches,
+  t,
+}: {
+  bracket: TournamentBracket;
+  currentMatch: TournamentMatch | null;
+  onPlayMatch: (_match: TournamentMatch) => void;
+  playableMatches: TournamentMatch[];
+  t: (_key: string) => string;
+}) {
+  const wbMatches = getMatchesByBracketType(bracket, 'winners');
+  const lbMatches = getMatchesByBracketType(bracket, 'losers');
+  const gfMatches = getMatchesByBracketType(bracket, 'grand_finals');
+  const playableIds = new Set(playableMatches.map(m => m.id));
+
+  const wbRounds = bracket.totalRounds;
+  const lbTotalRounds = bracket.losersTotalRounds;
+
+  // Group WB matches by round
+  const wbByRound: TournamentMatch[][] = [];
+  for (let r = 1; r <= wbRounds; r++) {
+    wbByRound.push(wbMatches.filter(m => m.round === r));
+  }
+
+  // Group LB matches by round
+  const lbByRound: TournamentMatch[][] = [];
+  for (let r = 1; r <= lbTotalRounds; r++) {
+    lbByRound.push(lbMatches.filter(m => m.round === r));
+  }
+
+  return (
+    <div className="flex gap-8 items-start">
+      {/* ─── Winners Bracket ─── */}
+      <div>
+        <div className="text-center mb-2">
+          <h2 className="text-sm font-bold text-cyan-400">{t('tournament.winnersBracket')}</h2>
+        </div>
+        <div className="flex gap-2">
+          {wbByRound.map((roundMatches, ri) => (
+            <div key={ri} className="flex flex-col gap-2">
+              <div className="text-[10px] text-white/40 text-center mb-1">
+                {ri === wbRounds - 1 ? t('tournament.final') : ri === wbRounds - 2 ? t('tournament.semiFinals') : t('tournament.roundOf').replace('{n}', String(ri + 1))}
+              </div>
+              {roundMatches.map(m => (
+                <DEMatchCard
+                  key={m.id}
+                  match={m}
+                  isCurrent={currentMatch?.id === m.id}
+                  isPlayable={playableIds.has(m.id)}
+                  onPlay={onPlayMatch}
+                  isGF={false}
+                  t={t}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Losers Bracket ─── */}
+      {lbByRound.length > 0 && (
+        <div>
+          <div className="text-center mb-2">
+            <h2 className="text-sm font-bold text-red-400">{t('tournament.losersBracket')}</h2>
+          </div>
+          <div className="flex gap-2">
+            {lbByRound.map((roundMatches, ri) => (
+              <div key={ri} className="flex flex-col gap-2">
+                <div className="text-[10px] text-white/40 text-center mb-1">
+                  {getLBRoundName(ri + 1, wbRounds, lbTotalRounds, t)}
+                </div>
+                {roundMatches.map(m => (
+                  <DEMatchCard
+                    key={m.id}
+                    match={m}
+                    isCurrent={currentMatch?.id === m.id}
+                    isPlayable={playableIds.has(m.id)}
+                    onPlay={onPlayMatch}
+                    isGF={false}
+                    t={t}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Grand Finals ─── */}
+      <div>
+        <div className="text-center mb-2">
+          <h2 className="text-sm font-bold text-amber-400">{t('tournament.grandFinals')}</h2>
+        </div>
+        <div className="flex flex-col gap-2">
+          {/* GF1 */}
+          {gfMatches.filter(m => m.id === 'GF1').map(m => (
+            <div key={m.id} className="relative">
+              <DEMatchCard
+                match={m}
+                isCurrent={currentMatch?.id === m.id}
+                isPlayable={playableIds.has(m.id)}
+                onPlay={onPlayMatch}
+                isGF
+                t={t}
+              />
+            </div>
+          ))}
+          {/* GF2 (Reset) — only show if needed */}
+          {bracket.grandFinalsResetNeeded && gfMatches.filter(m => m.id === 'GF2').map(m => (
+            <div key={m.id}>
+              <DEMatchCard
+                match={m}
+                isCurrent={currentMatch?.id === m.id}
+                isPlayable={playableIds.has(m.id)}
+                onPlay={onPlayMatch}
+                isGF
+                isReset
+                t={t}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DE Match Card (compact, for DE bracket view — min-height so wrapped
+// player names grow the card instead of being truncated, Bug 11a) ───────
+
+function DESmallPlayer({ player, isWinner }: { player: TournamentPlayer | null; isWinner?: boolean }) {
+  const { t } = useTranslation();
+  if (!player) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs min-w-0">
+        <div className="w-6 h-6 rounded-full bg-white/10 shrink-0 border border-dashed border-white/20" aria-hidden="true" />
+        <span className="text-white/30 break-words leading-tight">{t('tournament.tbd')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 text-xs min-w-0">
+      {player.avatar ? (
+        <img
+          src={player.avatar}
+          alt=""
+          className="w-6 h-6 rounded-full object-cover shrink-0 border border-white/15"
+        />
+      ) : (
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0 border border-white/15"
+          style={{ backgroundColor: player.color }}
+          aria-hidden="true"
+        >
+          {player.name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      {isWinner && <span className="text-[10px] shrink-0" aria-hidden="true">👑</span>}
+      <span className={`break-words leading-tight min-w-0 ${isWinner ? 'font-bold text-green-300' : 'font-medium'}`}>{player.name}</span>
+    </div>
+  );
+}
+
+function DEMatchCard({
+  match,
+  isCurrent,
+  isPlayable,
+  onPlay,
+  isGF = false,
+  isReset = false,
+  t,
+}: {
+  match: TournamentMatch;
+  isCurrent: boolean;
+  isPlayable: boolean;
+  onPlay: (_m: TournamentMatch) => void;
+  isGF?: boolean;
+  isReset?: boolean;
+  t: (_key: string) => string;
+}) {
+  const clickable = isPlayable && !match.completed;
+
+  const borderColor = isGF
+    ? isReset ? 'border-red-500/50' : 'border-amber-500/50'
+    : match.bracketType === 'losers'
+      ? 'border-red-500/30'
+      : 'border-cyan-500/30';
+
+  const glowClass = isCurrent && !match.completed
+    ? isGF
+      ? 'shadow-lg shadow-amber-500/30'
+      : match.bracketType === 'losers'
+        ? 'shadow-lg shadow-red-500/20'
+        : 'shadow-lg shadow-cyan-500/20'
+    : '';
+
+  return (
+    <div
+      className={`relative rounded-lg p-1.5 px-2 transition-all border ${borderColor} ${
+        match.completed
+          ? 'bg-white/10'
+          : isPlayable
+            ? 'bg-white/5 cursor-pointer hover:bg-white/10'
+            : 'bg-white/5 opacity-50'
+      } ${clickable ? 'hover:scale-105' : ''} ${glowClass}`}
+      onClick={clickable ? () => onPlay(match) : undefined}
+      style={{ minWidth: 150, minHeight: 80 }}
+    >
+      {/* Player 1 — min-height row: wrapping names grow the card (Bug 11a) */}
+      <div className={`flex items-center gap-1 rounded text-xs min-h-[28px] py-0.5 ${match.winner?.id === match.player1?.id ? 'bg-green-500/25' : ''}`}>
+        <DESmallPlayer player={match.player1} isWinner={match.completed && match.winner?.id === match.player1?.id} />
+        {match.completed && (
+          <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'}`}>
+            {match.score1}
+          </span>
+        )}
+        {!match.completed && match.bracketType === 'losers' && match.player1 && (
+          <span className="ml-auto text-[9px] text-red-400/60">{t('tournament.firstLoss')}</span>
+        )}
+      </div>
+
+      <div className="text-center text-white/30 text-[9px] my-0.5 flex items-center justify-center gap-1">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="font-bold tracking-wider">{t('tournament.vs')}</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
+
+      {/* Player 2 — min-height row: wrapping names grow the card (Bug 11a) */}
+      <div className={`flex items-center gap-1 rounded text-xs min-h-[28px] py-0.5 ${match.winner?.id === match.player2?.id ? 'bg-green-500/25' : ''}`}>
+        <DESmallPlayer player={match.player2} isWinner={match.completed && match.winner?.id === match.player2?.id} />
+        {match.completed && (
+          <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'}`}>
+            {match.score2}
+          </span>
+        )}
+        {!match.completed && match.bracketType === 'losers' && match.player2 && (
+          <span className="ml-auto text-[9px] text-red-400/60">{t('tournament.firstLoss')}</span>
+        )}
+      </div>
+
+      {/* Playable ▶ badge (replaces the old text row) */}
+      {clickable && (
+        <div
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-cyan-500 text-white text-[9px] font-bold flex items-center justify-center shadow shadow-cyan-500/60 animate-pulse pointer-events-none"
+          aria-hidden="true"
+        >
+          ▶
+        </div>
+      )}
+    </div>
+  );
+}

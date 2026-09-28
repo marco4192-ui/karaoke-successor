@@ -11,6 +11,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/translations';
 import {
@@ -102,6 +103,9 @@ export function SyncTab() {
 
   return (
     <div className="space-y-6" data-testid="settings-sync-tab">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="sync" />
+
       {/* ── R14 (user request 5): AppData persistence status ── */}
       <div
         className={`rounded-lg border p-3 text-xs ${isTauriApp()

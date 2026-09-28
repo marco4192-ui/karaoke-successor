@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FolderIcon, TrashIcon } from '@/components/settings/settings-icons';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
 import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
@@ -176,6 +177,9 @@ export function LibraryTab({
 
   return (
     <div className="space-y-6">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="library" />
+
       {/* Songs Base Folder */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>

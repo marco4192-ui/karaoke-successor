@@ -1338,7 +1338,7 @@ export const completionTranslations = {
     offerBody: 'Chcesz szybki przewodnik po podstawach? W 2 minuty poznasz codzienne wyzwania, tryby śpiewania, bibliotekę i gry imprezowe.',
     offerStart: 'Rozpocznij samouczek',
     offerLater: 'Może później',
-    offerHint: 'Dostępne zawsze przez ikonę ? w prawym dolnym rogu.',
+    offerHint: 'Dostępne zawsze przez ikonę ? na pasku menu.',
     basic: {
       title: 'Podstawy',
       desc: 'Pełna pętla: wyzwania, tryby śpiewania, biblioteka, impreza i więcej.',
@@ -1416,11 +1416,86 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Karty ustawień',
-          body: 'Wybierz sekcję na górze: Ogólne (język), Rozgrywka, Wygląd, Grafika i dźwięk, Mikrofon, Mobilne (połączenie z telefonem) i więcej.',
+          body: 'Wybierz sekcję na górze: Ogólne (język), Rozgrywka, Wygląd, Grafika i dźwięk, Mikrofon, Mobilne (połączenie z telefonem) i więcej.\n\nKażda karta zaczyna się krótkim wstępem — a dedykowany samouczek ustawień przeprowadzi Cię przez to wszystko.',
         },
         finish: {
           title: 'Gotowe! 🎉',
-          body: 'Znasz już podstawy.\n\nWskazówka: ikona ? w prawym dolnym rogu zawsze Cię tu przywróci — także do pojedynczych rozdziałów i samouczka edytora.',
+          body: 'Znasz już podstawy.\n\nWskazówka: ikona ? na pasku menu zawsze Cię tu przywróci — także do pojedynczych rozdziałów oraz samouczków ustawień i edytora.',
+        },
+      },
+    },
+
+    // ═══ Samouczek ustawień (R26) ═══
+    settings: {
+      title: 'Ustawienia',
+      desc: 'Każda karta ustawień — od języka i mikrofonów po imprezę tematyczną i kopię zapasową.',
+      chapters: {
+        overview: 'Przegląd',
+        basics: 'Podstawowe ustawienia',
+        devices: 'Urządzenia',
+        library: 'Biblioteka i motyw',
+        backup: 'Kopia zapasowa i zakończenie',
+      },
+      steps: {
+        welcome: {
+          title: 'Ustawienia ⚙️',
+          body: 'Ten samouczek dotyczy wyłącznie ustawień: każda karta, to, co w niej znajdziesz, i kiedy się przydaje.\n\nBędziemy razem przeskakiwać z karty na kartę — nie musisz nic klikać.',
+        },
+        tabBar: {
+          title: 'Pasek kart',
+          body: 'Ustawienia są podzielone na karty: Ogólne, Rozgrywka, Wygląd, Grafika / Dźwięk, Mikrofon, Mobilny kompan, Kamera internetowa, Biblioteka, Gatunki i języki, Impreza tematyczna, Wirusowe listy, Sync i kopia zapasowa oraz O programie.\n\nKażda karta zaczyna się krótkim wstępem wyjaśniającym, co czeka w środku.',
+        },
+        generalTab: {
+          title: 'Ogólne',
+          body: 'Podstawy: język aplikacji (działa od razu, 16 języków), domyślna trudność dla nowych rund i tryb online.\n\nWskazówka: tutaj konfiguruje się też dostawców AI do harmonizacji i analizy audio.',
+        },
+        gameplayTab: {
+          title: 'Rozgrywka',
+          body: 'Dostrajanie doświadczenia: włączaj i wyłączaj wyświetlanie wyniku, licznik combo i cząsteczki podczas śpiewania, uruchom nagrywanie powtórek i korzystaj z udogodnień, jak automatyczny pełny ekran i sygnały ostrzegawcze.',
+        },
+        appearanceTab: {
+          title: 'Wygląd',
+          body: 'Optyka: motywy zmieniają wygląd całej aplikacji, styl i rozmiar tekstu dopasowują lyricsy. Do tego wideo w tle, wyświetlanie nut (laser/dokładne) i tryb wydajności dla słabszych maszyn.',
+        },
+        graphicSoundTab: {
+          title: 'Grafika / Dźwięk',
+          body: 'Wszystko, co dźwięk: wybierz urządzenie wyjścia audio, ustaw głośność podglądu i główną, określ jakość wideo z YouTube — a normalizacja głośności automatycznie wyrówna głośne i ciche piosenki (cel: 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Mikrofon',
+          body: 'Twoim kontrolerem jest głos: dodawaj mikrofony (do 4, działają też mikrofony USB i SingStar), reguluj czułość i wzmocnienie, testuj tłumienie szumów i echa.\n\nTelefony pojawią się tutaj, gdy tylko połączą się przez kartę Mobilny kompan.',
+        },
+        mobileTab: {
+          title: 'Mobilny kompan — aplikacja kompana',
+          body: 'Smartfony jako mikrofony i kontrolery: zarządzaj sparowanymi urządzeniami i przypisuj ich mikrofony graczom — parowanie działa przez kod QR lub kod połączenia w tej samej sieci Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Kamera internetowa',
+          body: 'Twoja kamera internetowa jako tło na żywo podczas śpiewania: wybierz źródło i dostrój lustrzane odbicie, rozmycie i przezroczystość nakładki — albo całkowicie wyłącz tło.',
+        },
+        libraryTab: {
+          title: 'Biblioteka',
+          body: 'Zarządzanie piosenkami: ustaw folder do skanowania (biblioteka wypełni się sama) i przejrzyj statystyki.\n\nStrefa zagrożenia resetuje bibliotekę lub wszystkie dane — najlepsze wyniki i profile przeżywają reset biblioteki.',
+        },
+        taxonomyTab: {
+          title: 'Gatunki i języki',
+          body: 'Twój własny słownik dla biblioteki: twórz własne gatunki i języki — natychmiast pojawiają się w każdej liście rozwijanej, a harmonizacja traktuje je jak równorzędne kategorie.',
+        },
+        mottoTab: {
+          title: 'Impreza tematyczna',
+          body: 'Geniusz imprezowy: włącz ją, nadaj nazwę (np. "Impreza lat 80.") i zdefiniuj pola wyszukiwania + filtry — od tego momentu motyw zastępuje wszystkie filtry w grze, a każdy wybór piosenki czerpie tylko z pasujących utworów.',
+        },
+        viralTab: {
+          title: 'Wirusowe listy',
+          body: 'Wybierz kraj wirusowych list przebojów (Niemcy, USA, Japonia …) — wirusowe hity pojawią się potem jako filtr w bibliotece. Przycisk odświeżania pobiera najnowsze wpisy.',
+        },
+        syncTab: {
+          title: 'Sync i kopia zapasowa',
+          body: 'Pomocnik przy przeprowadzce: wyeksportuj wszystko (piosenki, najlepsze wyniki, profile, listy odtwarzania, ustawienia — opcjonalnie z mediami piosenek) do pliku i przywróć na tym samym lub innym urządzeniu.\n\nPodgląd pokazuje dokładnie, co zawiera kopia zapasowa, zanim ją przywrócisz.',
+        },
+        finish: {
+          title: 'Konfiguracja zakończona! ✅',
+          body: 'Znasz teraz każdą kartę ustawień.\n\nKażda karta wyjaśnia się dodatkowo w swoim krótkim wstępie — a ikona ? na pasku menu zawsze przywróci Cię do tego samouczka.',
         },
       },
     },
@@ -1488,7 +1563,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Gotowy do budowania! 🛠️',
-          body: 'Znasz już skrzynkę narzędziową edytora.\n\nPamiętaj: Ctrl+Z uratuje wszystko, a ikona ? w prawym dolnym rogu zawsze przywróci Cię do tych rozdziałów.',
+          body: 'Znasz już skrzynkę narzędziową edytora.\n\nPamiętaj: Ctrl+Z uratuje wszystko, a ikona ? (na pasku menu, tutaj w edytorze także w prawym dolnym rogu) zawsze przywróci Cię do tych rozdziałów.',
         },
       },
     },

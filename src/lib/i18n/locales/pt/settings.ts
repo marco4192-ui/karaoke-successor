@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Webcam',
   viralCharts: 'Tendências',
 },
+// R26: Textos de introdução para cada submenu das configurações (breve explicação do menu)
+settingsTabIntro: {
+  general: 'O básico do app: idioma, dificuldade padrão para as novas rodadas e o modo online para festas multijogador.',
+  gameplay: 'O ajuste fino da experiência: exibições na tela enquanto você canta, efeitos de partículas, gravação de replays e comodidades como tela cheia automática e sinais de aviso.',
+  appearance: 'O visual do app: tema de cores, estilo e tamanho da letra, vídeos de fundo, exibição das notas e modo de desempenho para máquinas mais fracas.',
+  graphicSound: 'Tudo sobre som e reprodução: dispositivo de saída de áudio, volume de prévia e volume geral, qualidade de vídeo do YouTube e normalização de volume para um mix equilibrado.',
+  microphone: 'Sua voz conta — literalmente: adicione microfones, ajuste sensibilidade e ganho e teste ao vivo a supressão de ruído e eco.',
+  mobile: 'O app companheiro: conecte smartphones como microfone e controle, gerencie os dispositivos pareados e atribua os microfones deles aos jogadores.',
+  webcam: 'Sua webcam como fundo ao vivo enquanto você canta: escolha a fonte e configure espelhamento, desfoque e o ajuste fino da sobreposição.',
+  library: 'Gerencie suas músicas: defina a pasta para o escaneamento da biblioteca, veja as estatísticas e redefina a biblioteca ou todos os dados na zona de perigo.',
+  viral: 'Configure as tendências: escolha de quais países vêm os hits virais para os filtros e as seleções de músicas.',
+  sync: 'Faça backup de tudo, restaure tudo: exporte músicas, recordes, perfis e configurações para um arquivo — e restaure no mesmo ou em outro dispositivo.',
+  about: 'Versão, tecnologia por baixo do capô e créditos — tudo sobre o Karaoke ZERO em um só lugar.',
+},
 settingsGameplay: {
   title: 'Configurações de Jogabilidade',
   description: 'Personalize a experiência de jogo de acordo com suas preferências.',

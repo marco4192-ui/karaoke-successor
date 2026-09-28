@@ -137,6 +137,21 @@ export const settingsTranslations = {
     mottoParty: 'Theme Party',
   },
 
+  // R26: Intro texts for every settings submenu (short menu explanation)
+  settingsTabIntro: {
+    general: 'The app basics: language, default difficulty for new rounds, and online mode for multiplayer parties.',
+    gameplay: 'Fine-tune the experience: on-screen displays while singing, particle effects, replay recording, and comforts like auto-fullscreen and warning cues.',
+    appearance: 'The look of the app: color theme, lyric style and size, background videos, note display, and performance mode for weaker machines.',
+    graphicSound: 'Everything sound and playback: audio output device, preview and master volume, YouTube video quality, and loudness normalization for a balanced mix.',
+    microphone: 'Your voice counts — literally: add microphones, adjust sensitivity and gain, and test noise and echo suppression live.',
+    mobile: 'The companion app: connect smartphones as microphones and controllers, manage paired devices, and assign their microphones to players.',
+    webcam: 'Your webcam as a live singing background: pick the source and set up mirroring, blur, and overlay fine-tuning.',
+    library: 'Manage your songs: set the folder for library scanning, view statistics, and reset the library or all data in the danger zone.',
+    viral: 'Configure the viral charts: choose which countries the viral hits for filters and song selections come from.',
+    sync: 'Back up everything, restore everything: export songs, high scores, profiles, and settings to a file — and restore them on the same or another device.',
+    about: 'Version, tech under the hood, and credits — everything about Karaoke ZERO in one place.',
+  },
+
   settingsTaxonomy: {
     title: 'Genres & Languages',
     desc: 'Create, view and delete your own genre and language entries. Custom entries appear in every dropdown (editor, new song dialog, Metadata Studio) and are treated as canonical main categories by the harmonization pipeline.',

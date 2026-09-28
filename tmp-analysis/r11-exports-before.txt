@@ -1,0 +1,12 @@
+export function convertToSong
+export function detectFileFormat
+export function parseAssKaraoke
+export function parseKaraokeMugen
+export function parseMIDIKaraoke
+export function parseSingStarData
+export function parseStepMania
+export interface ConvertToSongOptions
+export interface MIDIKaraokeData
+export interface MIDILyricEvent
+export interface MIDITrackData
+export type DetectedFormat

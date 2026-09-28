@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';
 import {
@@ -163,6 +164,9 @@ export function AppearanceTab({
 
   return (
     <div className="space-y-6">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="appearance" />
+
       {/* Performance Mode */}
       <Card className={`bg-white/5 border-white/10 ${isLowPerf ? 'border-orange-500/50' : ''}`}>
         <CardHeader>

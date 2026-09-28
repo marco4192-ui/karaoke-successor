@@ -1,7 +1,7 @@
 import type { Screen } from '@/types/screens';
 
-/** Available tours (basic functions + editor). */
-export type TourId = 'basic' | 'editor';
+/** Available tours (basic functions, settings, editor). */
+export type TourId = 'basic' | 'settings' | 'editor';
 
 /**
  * One step of a guided tour. All texts live in i18n under
@@ -20,8 +20,12 @@ export interface TourStep {
    *    — skipped when a song is already open in the editor).
    *  - 'editor-close-song': leave the opened song back to the list view
    *    (NEVER discards unsaved changes — if the confirm dialog shows, the
-   *    tour falls back to the centered tooltip instead). */
-  action?: 'editor-open-first-song' | 'editor-close-song';
+   *    tour falls back to the centered tooltip instead).
+   *  - 'settings-open-tab': switch the settings screen to the tab named in
+   *    `actionArg` (reuses the existing 'remote-settings-tab' event). */
+  action?: 'editor-open-first-song' | 'editor-close-song' | 'settings-open-tab';
+  /** Optional argument for the step-entry action (e.g. the settings tab id). */
+  actionArg?: string;
   /** Interactive step: a click-catcher over the spotlight forwards the click
    *  to the real target (React handlers fire) and the tour advances. */
   clickToContinue?: boolean;

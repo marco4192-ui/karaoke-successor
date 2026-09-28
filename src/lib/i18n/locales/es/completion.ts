@@ -1086,7 +1086,7 @@ export const completionTranslations = {
     offerBody: '¿Quieres un recorrido rápido por lo básico? En 2 minutos conocerás los desafíos diarios, los modos de canto, la biblioteca y los juegos de fiesta.',
     offerStart: 'Empezar tour',
     offerLater: 'Quizá más tarde',
-    offerHint: 'Disponible en cualquier momento con el icono ? de abajo a la derecha.',
+    offerHint: 'Disponible en cualquier momento con el icono ? de la barra de menú.',
     basic: {
       title: 'Lo básico',
       desc: 'El recorrido completo: desafíos, modos de canto, biblioteca, fiesta y más.',
@@ -1164,14 +1164,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Las pestañas de ajustes',
-          body: 'Elige una sección arriba: General (idioma), Juego, Apariencia, Gráficos y Sonido, Micrófono, Móvil (conexión del teléfono) y más.',
+          body: 'Elige una sección arriba: General (idioma), Juego, Apariencia, Gráficos y Sonido, Micrófono, Móvil (conexión del teléfono) y más.\n\nCada pestaña se abre con una breve introducción — y el tour de ajustes dedicado te guía a través de todo.',
         },
         finish: {
           title: '¡Listo! 🎉',
-          body: 'Ya conoces lo básico.\n\nConsejo: el icono ? de abajo a la derecha te trae de vuelta en cualquier momento — incluidos los capítulos por tema y el tour del editor.',
+          body: 'Ya conoces lo básico.\n\nConsejo: el icono ? de la barra de menú te trae de vuelta en cualquier momento — incluidos los capítulos por tema y los tours de ajustes y del editor.',
         },
       },
     },
+    // ═══ Tour de ajustes (R26) ═══
+    settings: {
+      title: 'Ajustes',
+      desc: 'Todas las pestañas de los ajustes — del idioma y los micrófonos a la fiesta temática y la copia de seguridad.',
+      chapters: {
+        overview: 'Vista general',
+        basics: 'Ajustes básicos',
+        devices: 'Dispositivos',
+        library: 'Biblioteca y temática',
+        backup: 'Copia de seguridad y cierre',
+      },
+      steps: {
+        welcome: {
+          title: 'Los ajustes ⚙️',
+          body: 'Este tour está dedicado por completo a los ajustes: todas las pestañas, lo que encontrarás en cada una y cuándo importan.\n\nSaltaremos juntos de pestaña en pestaña — no tienes que hacer ningún clic.',
+        },
+        tabBar: {
+          title: 'La barra de pestañas',
+          body: 'Los ajustes se organizan en pestañas: General, Juego, Apariencia, Gráficos / Sonido, Micrófono, Compañero Móvil, Cámara Web, Biblioteca, Géneros e Idiomas, Fiesta Temática, Charts Virales, Sincronización y Copia de Seguridad y Acerca de.\n\nCada pestaña se abre con una breve introducción que explica qué esperar dentro.',
+        },
+        generalTab: {
+          title: 'General',
+          body: 'Lo básico: idioma de la app (se aplica al instante, 16 idiomas), dificultad predeterminada para las rondas nuevas y modo online.\n\nConsejo: los proveedores de IA de Harmonize y del análisis de audio también se configuran aquí.',
+        },
+        gameplayTab: {
+          title: 'Juego',
+          body: 'El ajuste fino de la experiencia: activa o desactiva la puntuación, el contador de combo y las partículas mientras cantas, activa la grabación de repeticiones y usa comodidades como la pantalla completa automática y las señales de aviso.',
+        },
+        appearanceTab: {
+          title: 'Apariencia',
+          body: 'El aspecto: los temas cambian toda la app, el estilo y el tamaño adaptan la letra. Además videos de fondo, visualización de notas (láser/exacto) y el modo rendimiento para equipos más modestos.',
+        },
+        graphicSoundTab: {
+          title: 'Gráficos / Sonido',
+          body: 'Todo el sonido: elige el dispositivo de salida de audio, ajusta el volumen de vista previa y el general, escoge la calidad de video de YouTube — y la normalización de volumen equilibra automáticamente las canciones fuertes y suaves (objetivo de 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Micrófono',
+          body: 'Tu voz es el mando: añade micrófonos (hasta 4, los USB y los de SingStar también valen), ajusta la sensibilidad y la ganancia, prueba la supresión de ruido y eco.\n\nLos teléfonos aparecen aquí en cuanto se conectan desde la pestaña Compañero Móvil.',
+        },
+        mobileTab: {
+          title: 'Móvil — la app compañera',
+          body: 'Smartphones como micrófono y mando: gestiona los dispositivos emparejados y asigna sus micrófonos a los jugadores — el emparejamiento funciona por código QR o código de conexión a través del mismo Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Cámara Web',
+          body: 'Tu cámara web como fondo en directo mientras cantas: elige la fuente y ajusta el espejado, el desenfoque y la opacidad del overlay — o desactiva el fondo por completo.',
+        },
+        libraryTab: {
+          title: 'Biblioteca',
+          body: 'La gestión de canciones: define la carpeta que se escanea (la biblioteca se llena sola a partir de ella) y consulta las estadísticas.\n\nLa zona de peligro restablece la biblioteca o todos los datos — las puntuaciones y los perfiles sobreviven a un restablecimiento de la biblioteca.',
+        },
+        taxonomyTab: {
+          title: 'Géneros e Idiomas',
+          body: 'Tu propio vocabulario para la biblioteca: crea géneros e idiomas propios — aparecen al instante en todos los desplegables y la armonización los trata como categorías de pleno derecho.',
+        },
+        mottoTab: {
+          title: 'Fiesta Temática',
+          body: 'El genio de las fiestas: actívala, ponle un nombre (p. ej. "Fiesta de los 80") y define campos de búsqueda + filtros — desde entonces la temática sustituye todos los filtros del juego y cada selección de canciones solo saca de las canciones que encajan.',
+        },
+        viralTab: {
+          title: 'Charts Virales',
+          body: 'Elige el país de los charts virales (Alemania, EE. UU., Japón …) — los éxitos virales aparecerán entonces como filtro en la biblioteca. El botón de actualizar trae las últimas entradas.',
+        },
+        syncTab: {
+          title: 'Sincronización y Copia de Seguridad',
+          body: 'El ayudante de mudanzas: exporta todo (canciones, puntuaciones, perfiles, playlists, ajustes — opcionalmente con los medios de las canciones) a un archivo y restáuralo en el mismo u otro dispositivo.\n\nLa vista previa muestra exactamente qué contiene una copia de seguridad antes de restaurarla.',
+        },
+        finish: {
+          title: '¡Configuración completada! ✅',
+          body: 'Ya conoces todas las pestañas de los ajustes.\n\nCada pestaña, además, se explica sola en su breve introducción — y el icono ? de la barra de menú te trae de vuelta a este tour cuando quieras.',
+        },
+      },
+    },
+
     editor: {
       title: 'Tour del editor',
       desc: 'Notas, letras, voces y armonización — la caja de herramientas de las canciones.',
@@ -1236,7 +1311,7 @@ export const completionTranslations = {
         },
         finish: {
           title: '¡Listo para construir! 🛠️',
-          body: 'Ya conoces la caja de herramientas del editor.\n\nRecuerda: Ctrl+Z lo salva todo, y el icono ? de abajo a la derecha te devuelve a estos capítulos en cualquier momento.',
+          body: 'Ya conoces la caja de herramientas del editor.\n\nRecuerda: Ctrl+Z lo salva todo, y el icono ? (en la barra de menú, aquí en el editor también abajo a la derecha) te devuelve a estos capítulos en cualquier momento.',
         },
       },
     },

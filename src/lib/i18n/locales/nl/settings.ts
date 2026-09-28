@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Webcam',
   viralCharts: 'Viral Charts',
 },
+// R26: Introductieteksten voor elk instellingensubmenu (korte menu-uitleg)
+settingsTabIntro: {
+  general: 'De basis van de app: taal, standaardmoeilijkheid voor nieuwe rondes en de online modus voor multiplayer-feesten.',
+  gameplay: 'Fijnafstelling van de ervaring: weergaven op het scherm tijdens het zingen, deeleffecten, replay-opnames en gemakken zoals automatisch volledig scherm en waarschuwingssignalen.',
+  appearance: 'Het uiterlijk van de app: kleurthema, stijl en grootte van de songtekst, achtergrondvideo\'s, notenweergave en prestatiemodus voor zwakkere machines.',
+  graphicSound: 'Alles over geluid en weergave: audio-uitvoerapparaat, voorvertonings- en hoofdvolume, YouTube-videokwaliteit en volumenormalisatie voor een gebalanceerde mix.',
+  microphone: 'Jouw stem telt — letterlijk: voeg microfoons toe, stel gevoeligheid en versterking in en test ruisonderdrukking en echo-onderdrukking live.',
+  mobile: 'De companion-app: verbind smartphones als microfoon en controller, beheer gekoppelde apparaten en wijs hun microfoons toe aan spelers.',
+  webcam: 'Jouw webcam als live zangachtergrond: kies de bron en stel spiegeling, blur en fijnafstelling van de overlay in.',
+  library: 'Beheer je nummers: stel de map in voor het scannen van de bibliotheek, bekijk de statistieken en reset de bibliotheek of alle gegevens in de gevarenzone.',
+  viral: 'Configureer de viral charts: kies uit welke landen de virale hits voor filters en nummerselecties komen.',
+  sync: 'Alles backuppen, alles terugzetten: exporteer nummers, highscores, profielen en instellingen naar een bestand — en zet ze terug op hetzelfde of een ander apparaat.',
+  about: 'Versie, techniek onder de motorkap en credits — alles over Karaoke ZERO op één plek.',
+},
 settingsGameplay: {
   title: 'Gameplay-instellingen',
   description: 'Pas de gameplay-ervaring aan naar jouw voorkeuren.',

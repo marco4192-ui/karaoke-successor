@@ -6,6 +6,7 @@ import { Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translation
 import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons';
 import { getShortcutReference } from '@/hooks/use-keyboard-shortcuts';
 import { AiProviderSection } from '@/components/settings/ai-provider-section';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 
 interface GeneralTabProps {
   language: string;
@@ -28,6 +29,9 @@ export function GeneralTab({
 }: GeneralTabProps) {
   return (
     <div className="space-y-6">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="general" />
+
       {/* Language Settings */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>

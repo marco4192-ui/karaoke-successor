@@ -1344,7 +1344,7 @@ export const completionTranslations = {
     offerBody: 'Vuoi una panoramica rapida delle basi? In 2 minuti conoscerai sfide giornaliere, modalità di canto, libreria e giochi di festa.',
     offerStart: 'Avvia il tour',
     offerLater: 'Forse più tardi',
-    offerHint: 'Disponibile in ogni momento tramite l\'icona ? in basso a destra.',
+    offerHint: 'Disponibile in ogni momento tramite l\'icona ? nella barra dei menu.',
     basic: {
       title: 'Basi',
       desc: 'Il giro completo: sfide, modalità di canto, libreria, festa e altro.',
@@ -1422,14 +1422,89 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Le schede delle impostazioni',
-          body: 'Scegli una sezione in alto: Generale (lingua), Gioco, Aspetto, Grafica e Suono, Microfono, Mobile (connessione telefono) e altro.',
+          body: 'Scegli una sezione in alto: Generale (lingua), Gioco, Aspetto, Grafica e Suono, Microfono, Mobile (connessione telefono) e altro.\n\nOgni scheda si apre con una breve introduzione — e il tour dedicato alle impostazioni ti accompagna attraverso tutto.',
         },
         finish: {
           title: 'Fatto! 🎉',
-          body: 'Ora conosci le basi.\n\nSuggerimento: l\'icona ? in basso a destra ti riporta qui in ogni momento — inclusi i singoli capitoli per argomento e il tour dell\'editor.',
+          body: 'Ora conosci le basi.\n\nSuggerimento: l\'icona ? nella barra dei menu ti riporta qui in ogni momento — inclusi i singoli capitoli per argomento e i tour delle impostazioni e dell\'editor.',
         },
       },
     },
+    // ═══ Tour delle impostazioni (R26) ═══
+    settings: {
+      title: 'Impostazioni',
+      desc: 'Tutte le schede delle impostazioni — da lingua e microfoni fino alla festa a tema e al backup.',
+      chapters: {
+        overview: 'Panoramica',
+        basics: 'Impostazioni di base',
+        devices: 'Dispositivi',
+        library: 'Libreria e tema',
+        backup: 'Backup e conclusione',
+      },
+      steps: {
+        welcome: {
+          title: 'Le impostazioni ⚙️',
+          body: 'Questo tour è tutto dedicato alle impostazioni: ogni scheda, cosa ci trovi dentro e quando serve.\n\nSalteremo insieme da una scheda all\'altra — non dovrai cliccare nulla.',
+        },
+        tabBar: {
+          title: 'La barra delle schede',
+          body: 'Le impostazioni sono organizzate in schede: Generale, Gioco, Aspetto, Grafica / Suono, Microfono, Compagno Mobile, Webcam, Libreria, Generi e Lingue, Festa a Tema, Classifiche Virali, Sync e Backup e Informazioni.\n\nOgni scheda si apre con una breve introduzione che spiega cosa aspettarti.',
+        },
+        generalTab: {
+          title: 'Generale',
+          body: 'Le basi: lingua dell\'app (applicata all\'istante, 16 lingue), difficoltà predefinita per le nuove partite e modalità online.\n\nSuggerimento: qui si configurano anche i provider di IA di Harmonize e dell\'analisi audio.',
+        },
+        gameplayTab: {
+          title: 'Gioco',
+          body: 'La regolazione fine dell\'esperienza: attiva o disattiva punteggio, contatore combo e particelle mentre canti, attiva la registrazione dei replay e usa i comfort come lo schermo intero automatico e i segnali d\'avviso.',
+        },
+        appearanceTab: {
+          title: 'Aspetto',
+          body: 'Il look: i temi restilizzano l\'intera app, stile e dimensione del testo adattano le lyrics. In più video di sfondo, visualizzazione delle note (laser/esatta) e la modalità prestazioni per macchine più deboli.',
+        },
+        graphicSoundTab: {
+          title: 'Grafica / Suono',
+          body: 'Tutto il suono: scegli il dispositivo di uscita audio, regola il volume dell\'anteprima e quello generale, scegli la qualità video di YouTube — e la normalizzazione del volume bilancia automaticamente i brani forti e delicati (obiettivo: 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Microfono',
+          body: 'La tua voce è il controller: aggiungi microfoni (fino a 4, funzionano anche i mic USB e SingStar), regola sensibilità e guadagno, prova la soppressione di rumore ed eco.\n\nI telefoni compaiono qui appena si collegano dalla scheda Compagno Mobile.',
+        },
+        mobileTab: {
+          title: 'Mobile — l\'app compagna',
+          body: 'Smartphone come microfoni e controller: gestisci i dispositivi abbinati e assegna i loro microfoni ai giocatori — l\'abbinamento funziona tramite QR code o codice di connessione sulla stessa rete Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'La tua webcam come sfondo in diretta mentre canti: scegli la sorgente e regola specchiatura, sfocatura e opacità dell\'overlay — oppure disattiva del tutto lo sfondo.',
+        },
+        libraryTab: {
+          title: 'Libreria',
+          body: 'La gestione delle canzoni: imposta la cartella da scansionare (la libreria si riempie da sola) e controlla le statistiche.\n\nLa zona pericolosa ripristina la libreria o tutti i dati — punteggi e profili sopravvivono a un ripristino della libreria.',
+        },
+        taxonomyTab: {
+          title: 'Generi e Lingue',
+          body: 'Il tuo vocabolario personale per la libreria: crea generi e lingue tuoi — compaiono subito in ogni menu a tendina e l\'armonizzazione li tratta come categorie a pieno titolo.',
+        },
+        mottoTab: {
+          title: 'Festa a Tema',
+          body: 'Il genio delle feste: attivala, dalle un nome (es. "Festa Anni \'80") e definisci campi di ricerca + filtri — da quel momento il tema sostituisce tutti i filtri di gioco e ogni selezione di canzoni attinge solo da quelle corrispondenti.',
+        },
+        viralTab: {
+          title: 'Classifiche Virali',
+          body: 'Scegli il paese delle classifiche virali (Germania, USA, Giappone …) — gli hit virali compariranno quindi come filtro nella libreria. Il pulsante di aggiornamento recupera le ultime voci.',
+        },
+        syncTab: {
+          title: 'Sync e Backup',
+          body: 'L\'aiuto per il trasloco: esporta tutto (canzoni, punteggi, profili, playlist, impostazioni — a piacere anche i media delle canzoni) in un file e ripristinalo sullo stesso dispositivo o su un altro.\n\nL\'anteprima mostra esattamente cosa contiene un backup prima di ripristinarlo.',
+        },
+        finish: {
+          title: 'Configurazione completata! ✅',
+          body: 'Ora conosci ogni scheda delle impostazioni.\n\nOgni scheda si spiega anche da sola nella sua breve introduzione — e l\'icona ? della barra dei menu ti riporta a questo tour in ogni momento.',
+        },
+      },
+    },
+
     editor: {
       title: 'Tour dell\'editor',
       desc: 'Note, testo, voci e armonizzazione — la cassetta degli attrezzi per le canzoni.',
@@ -1494,7 +1569,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Pronto a costruire! 🛠️',
-          body: 'Ora conosci la cassetta degli attrezzi dell\'editor.\n\nRicorda: Ctrl+Z salva tutto, e l\'icona ? in basso a destra ti riporta a questi capitoli in ogni momento.',
+          body: 'Ora conosci la cassetta degli attrezzi dell\'editor.\n\nRicorda: Ctrl+Z salva tutto, e l\'icona ? (nella barra dei menu, qui nell\'editor anche in basso a destra) ti riporta a questi capitoli in ogni momento.',
         },
       },
     },

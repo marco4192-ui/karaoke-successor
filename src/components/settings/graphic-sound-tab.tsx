@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { AudioOutputSection } from '@/components/settings/audio-output-section';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 import { StorageKeys, setItem } from '@/lib/storage';
 
 interface GraphicSoundTabProps {
@@ -37,6 +38,9 @@ export function GraphicSoundTab({
 }: GraphicSoundTabProps) {
   return (
     <div className="space-y-6">
+      {/* R26: Einleitungstext */}
+      <SettingsTabIntro tab="graphicSound" />
+
       {/* Audio Output / ASIO Device Selection */}
       <AudioOutputSection />
 

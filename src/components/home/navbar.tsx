@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
+import { HelpCircle } from 'lucide-react';
 import type { Screen } from '@/types/screens';
 
 
@@ -14,10 +15,12 @@ interface NavBarProps {
   isFullscreen: boolean;
   toggleFullscreen: () => void;
   onToggleChat?: () => void;
+  /** R26: Öffnet das Hilfe-/Tutorial-Menü (Dialog). */
+  onOpenHelp?: () => void;
 }
 
 // ===================== NAVIGATION BAR =====================
-export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen, onToggleChat }: NavBarProps) {
+export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen, onToggleChat, onOpenHelp }: NavBarProps) {
   const { t } = useTranslation();
   return (
     <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#ff2d95]/20">
@@ -71,6 +74,18 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
               </svg>
               {(t('desktopChat.title') || 'Chat')}
             </NavButton>
+          )}
+          {/* Help / Tutorials Button — R26: '?' jetzt in der Hauptmenüleiste */}
+          {onOpenHelp && (
+            <button
+              onClick={onOpenHelp}
+              className="flex items-center justify-center w-9 h-9 rounded-full text-white/70 hover:text-[#00e5ff] hover:bg-white/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+              title={t('tutorial.helpButtonTitle')}
+              aria-label={t('tutorial.helpButtonTitle')}
+              data-testid="help-menu-button"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
           )}
           {/* Fullscreen Toggle Button */}
           <button

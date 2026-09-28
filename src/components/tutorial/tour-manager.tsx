@@ -77,6 +77,22 @@ function closeEditorSongWithRetry(attempt = 0): void {
   void attempt;
 }
 
+/** Switch the settings screen to another tab (R26: Settings-Tour).
+ *  Reuses the existing 'remote-settings-tab' event that the settings
+ *  screen already listens to (built for companion remote control).
+ *  The event only fires when the settings screen is MOUNTED — after a
+ *  screen navigation that happens asynchronously, so we poll for the
+ *  tab bar and dispatch as soon as it appears (idempotent). */
+function openSettingsTabWithRetry(tab: string, attempt = 0): void {
+  if (typeof document === 'undefined') return;
+  const tabBar = document.querySelector('[data-testid="settings-tab-bar"]');
+  if (tabBar) {
+    window.dispatchEvent(new CustomEvent('remote-settings-tab', { detail: { tab } }));
+    return;
+  }
+  if (attempt < 40) setTimeout(() => openSettingsTabWithRetry(tab, attempt + 1), 250);
+}
+
 export function TourController({ children, navigate, screen }: TourControllerProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<ActiveTour | null>(null);
@@ -137,6 +153,7 @@ export function TourController({ children, navigate, screen }: TourControllerPro
     if (step.navigate) navigate(step.navigate);
     if (step.action === 'editor-open-first-song') openEditorSongWithRetry();
     if (step.action === 'editor-close-song') closeEditorSongWithRetry();
+    if (step.action === 'settings-open-tab' && step.actionArg) openSettingsTabWithRetry(step.actionArg);
   }, [navigate]);
 
   const startTour = useCallback((tourId: TourId, opts?: { chapterId?: string }) => {

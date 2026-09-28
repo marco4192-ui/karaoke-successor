@@ -1338,7 +1338,7 @@ export const completionTranslations = {
     offerBody: 'Haluatko nopean läpikäynnin perusteista? 2 minuutin kuluttua tunnet päivittäiset haasteet, laulutilat, kirjaston ja juhlapelit.',
     offerStart: 'Aloita kierros',
     offerLater: 'Ehkä myöhemmin',
-    offerHint: 'Saatavilla milloin tahansa ?-kuvakkeesta oikeasta alakulmasta.',
+    offerHint: 'Saatavilla milloin tahansa ?-kuvakkeesta valikkopalkissa.',
     basic: {
       title: 'Perusteet',
       desc: 'Kierros: Haasteet, laulutilat, kirjasto, juhlat & muuta.',
@@ -1416,11 +1416,86 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Asetusten välilehdet',
-          body: 'Valitse osio ylhäältä: Yleiset (kieli), Pelikokemus, Ulkonäkö, Grafiikka & ääni, Mikrofoni, Mobiili (puhelin yhteys) ja muuta.',
+          body: 'Valitse osio ylhäältä: Yleiset (kieli), Pelikokemus, Ulkonäkö, Grafiikka & ääni, Mikrofoni, Mobiili (puhelin yhteys) ja muuta.\n\nJokainen välilehti avautuu lyhyellä johdannolla — ja oma asetuskierros opastaa sinut kaiken läpi.',
         },
         finish: {
           title: 'Valmista! 🎉',
-          body: 'Tunnet nyt perusteet.\n\nVinkki: ?-kuvake oikeassa alakulmassa palauttaa sinut milloin tahansa — mukaan lukien yksittäiset aihekatvaukset ja editorikierroksen.',
+          body: 'Tunnet nyt perusteet.\n\nVinkki: ?-kuvake valikkopalkissa palauttaa sinut milloin tahansa — mukaan lukien yksittäiset aihekatvaukset sekä asetus- ja editorikierrokset.',
+        },
+      },
+    },
+
+    // ═══ Asetuskierros (R26) ═══
+    settings: {
+      title: 'Asetukset',
+      desc: 'Jokainen asetusvälilehti — kielestä ja mikrofoneista teemajuhliin ja varmuuskopioihin.',
+      chapters: {
+        overview: 'Yleiskatsaus',
+        basics: 'Perusasetukset',
+        devices: 'Laitteet',
+        library: 'Kirjasto & teema',
+        backup: 'Varmuuskopio & lopetus',
+      },
+      steps: {
+        welcome: {
+          title: 'Asetukset ⚙️',
+          body: 'Tämä kierros kertoo kaiken asetuksista: jokainen välilehti, mitä niissä on ja milloin ne ovat tärkeitä.\n\nHyppäämme yhdessä välilehdeltä toiselle — sinun ei tarvitse klikata mitään.',
+        },
+        tabBar: {
+          title: 'Välilehtipalkki',
+          body: 'Asetukset on järjestetty välilehtiin: Yleiset, Pelikokemus, Ulkonäkö, Grafiikka / Ääni, Mikrofoni, Mobiili-companion, Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Viraalilistat, Synkronointi & varmuuskopiot ja Tietoja.\n\nJokainen välilehti avautuu lyhyellä johdannolla, joka kertoo, mitä sisällä odottaa.',
+        },
+        generalTab: {
+          title: 'Yleiset',
+          body: 'Perusasiat: sovelluksen kieli (voimaan heti, 16 kieltä), uusien kierrosten oletusvaikeustaso ja verkkotila.\n\nVinkki: Myös yhtenäistyksen ja äänianalyysin tekoälytarjoajat määritetään täällä.',
+        },
+        gameplayTab: {
+          title: 'Pelikokemus',
+          body: 'Kokemuksen hienosäätö: kytke päälle ja pois pistenäyttö, combolaskuri ja partikkelit laulaessa, ota toistotallennus käyttöön ja hyödynnä mukavuudet kuten automaattinen koko näyttö ja varoitukset.',
+        },
+        appearanceTab: {
+          title: 'Ulkonäkö',
+          body: 'Ulkoasu: teemat muuttavat koko sovelluksen ilmettä, sanoituksen tyyli ja koko sovittavat sanoitusta. Lisäksi taustavideot, nuottien näkymä (laser/tarkka) ja suorituskykytila heikommille koneille.',
+        },
+        graphicSoundTab: {
+          title: 'Grafiikka / Ääni',
+          body: 'Kaikki ääni: valitse äänen ulostulolaite, säädä esikuuntelu- ja pää-äänenvoimakkuus, valitse YouTube-videon laatu — ja äänenvoimakkuuden normalisointi tasoittaa lujat ja hiljaiset kappaleet automaattisesti (tavoite 89 dB).',
+        },
+        microphoneTab: {
+          title: 'Mikrofoni',
+          body: 'Äänesi on ohjain: lisää mikrofoneja (enintään 4, USB- ja SingStar-mikit toimivat myös), säädä herkkyys ja vahvistus, kokeile kohinan ja kaiun poistoa.\n\nPuhelimet ilmestyvät tänne heti, kun ne on yhdistetty Mobiili-companion-välilehden kautta.',
+        },
+        mobileTab: {
+          title: 'Mobiili-companion — companion-sovellus',
+          body: 'Älypuhelimet mikrofoneina ja ohjaimina: hallitse paritettuja laitteita ja määritä niiden mikrofonit pelaajille — paritus toimii QR-koodilla tai yhdistyskoodilla saman Wi-Fin kautta.',
+        },
+        webcamTab: {
+          title: 'Web-kamera',
+          body: 'Web-kamerasi live-laulutaustana: valitse lähde ja hienosäädä peilaus, sumennus ja peittokuvan läpinäkyvyys — tai poista tausta käytöstä kokonaan.',
+        },
+        libraryTab: {
+          title: 'Kirjasto',
+          body: 'Kappaleiden hallinta: aseta skannattava kansio (kirjasto täyttää itse itsensä) ja katso tilastot.\n\nVaaravyöhyke nollaa kirjaston tai kaikki tiedot — huipputulokset ja profiilit selviävät kirjaston nollauksesta.',
+        },
+        taxonomyTab: {
+          title: 'Genret & kielet',
+          body: 'Oma sanastosi kirjastoon: luo omia genrejä ja kieliä — ne ilmestyvät heti jokaiseen pudotusvalikkoon, ja yhtenäistäminen kohtelee niitä tasavertaisina kategorioina.',
+        },
+        mottoTab: {
+          title: 'Teemajuhlat',
+          body: 'Juhlaviisas: ota käyttöön, anna nimi (esim. "80-luvun juhlat") ja määritä hakukentät + suodattimet — siitä lähtien teema korvaa kaikki suodattimet pelissä, ja jokainen kappalevalinta arpoo vain sopivista kappaleista.',
+        },
+        viralTab: {
+          title: 'Viraalilistat',
+          body: 'Valitse viraalilistojen maa (Saksa, USA, Japani …) — viraalihitit ilmestyvät suodattimeksi kirjastoon. Päivityspainike hakee uusimmat sisällöt.',
+        },
+        syncTab: {
+          title: 'Synkronointi & varmuuskopiot',
+          body: 'Muuttajan apuri: vie kaikki (kappaleet, huipputulokset, profiilit, soittolistat, asetukset — haluttaessa mukaan kappaleiden mediat) tiedostoon ja palauta samalla tai toisella laitteella.\n\nEsikatselu näyttää tarkkaan, mitä varmuuskopio sisältää, ennen palautusta.',
+        },
+        finish: {
+          title: 'Valmis! ✅',
+          body: 'Tunnet nyt jokaisen asetusvälilehden.\n\nJokainen välilehti selittää itsensä myös lyhyessä johdannossaan — ja ?-kuvake valikkopalkissa palauttaa sinut tähän kierrokseen milloin tahansa.',
         },
       },
     },
@@ -1488,7 +1563,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Valmis rakentamaan! 🛠️',
-          body: 'Tunnet nyt editorin työkalupakin.\n\nMuista: Ctrl+Z pelastaa kaiken, ja ?-kuvake oikeassa alakulmassa palauttaa sinut näihin lukuihin milloin tahansa.',
+          body: 'Tunnet nyt editorin työkalupakin.\n\nMuista: Ctrl+Z pelastaa kaiken, ja ?-kuvake (valikkopalkissa, täällä editorissa myös oikeassa alakulmassa) palauttaa sinut näihin lukuihin milloin tahansa.',
         },
       },
     },

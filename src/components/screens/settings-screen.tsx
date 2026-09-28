@@ -30,6 +30,7 @@ import { MottoPartyTab } from '@/components/settings/motto-party-tab';
 import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-section';
 import { CompanionListSection } from '@/components/settings/companion-list-section';
 import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-bar';
+import { SettingsTabIntro } from '@/components/settings/settings-tab-intro';
 // Hooks
 import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
@@ -230,7 +231,7 @@ function SettingsScreen() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex justify-start mb-6">
+      <div className="flex justify-start mb-6" data-testid="settings-tab-bar">
         <div className="inline-flex">
           <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
         </div>
@@ -295,12 +296,16 @@ function SettingsScreen() {
 
       {activeTab === 'microphone' && (
         <div className="space-y-6">
+          {/* R26: Einleitungstext */}
+          <SettingsTabIntro tab="microphone" />
           <MicrophoneSettingsPanel />
         </div>
       )}
 
       {activeTab === 'mobile' && (
         <div className="space-y-6">
+          {/* R26: Einleitungstext */}
+          <SettingsTabIntro tab="mobile" />
           <CompanionListSection isVisible={activeTab === 'mobile'} />
           <MobileDeviceMicrophoneSection />
         </div>
@@ -334,7 +339,7 @@ function SettingsScreen() {
 
       {activeTab === 'motto' && <MottoPartyTab />}
 
-      {activeTab === 'viral' && <ViralChartsSettings />}
+      {activeTab === 'viral' && <ViralChartsSettings standalone />}
 
       {activeTab === 'sync' && <SyncTab />}
 

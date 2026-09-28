@@ -21,7 +21,7 @@ export const tutorialTranslations = {
     offerBody: 'Möchtest du eine kurze Führung durch die Grundfunktionen? In 2 Minuten kennst du Daily-Challenges, Sing-Modi, Bibliothek und Party-Spiele.',
     offerStart: 'Tour starten',
     offerLater: 'Vielleicht später',
-    offerHint: 'Jederzeit über das ?-Symbol unten rechts erneut verfügbar.',
+    offerHint: 'Jederzeit über das ?-Symbol in der Menüleiste erneut verfügbar.',
 
     // ═══ Grundfunktionen-Tour ═══
     basic: {
@@ -101,11 +101,86 @@ export const tutorialTranslations = {
         },
         settingsView: {
           title: 'Die Einstellungs-Reiter',
-          body: 'Oben wählt du den Bereich: Allgemein (Sprache), Gameplay, Darstellung, Grafik & Sound, Mikrofon, Mobil (Handy-Anbindung) und mehr.',
+          body: 'Oben wählt du den Bereich: Allgemein (Sprache), Gameplay, Darstellung, Grafik & Sound, Mikrofon, Mobil (Handy-Anbindung) und mehr.\n\nJeder Reiter beginnt mit einer kurzen Einleitung — und die eigene Einstellungen-Tour erklärt alles im Detail.',
         },
         finish: {
           title: 'Geschafft! 🎉',
-          body: 'Du kennst jetzt die Grundlagen.\n\nTipp: Das ?-Symbol unten rechts bringt dich jederzeit zurück — auch zu einzelnen Themen-Kapiteln oder zur Editor-Tour.',
+          body: 'Du kennst jetzt die Grundlagen.\n\nTipp: Das ?-Symbol in der Menüleiste bringt dich jederzeit zurück — auch zu einzelnen Themen-Kapiteln oder zur Einstellungen- und Editor-Tour.',
+        },
+      },
+    },
+
+    // ═══ Einstellungen-Tour (R26) ═══
+    settings: {
+      title: 'Einstellungen',
+      desc: 'Alle Reiter der Einstellungen — von Sprache über Mikrofon bis Motto-Party und Backup.',
+      chapters: {
+        overview: 'Überblick',
+        basics: 'Basis-Einstellungen',
+        devices: 'Geräte',
+        library: 'Bibliothek & Motto',
+        backup: 'Sicherung & Abschluss',
+      },
+      steps: {
+        welcome: {
+          title: 'Die Einstellungen ⚙️',
+          body: 'Diese Tour widmet sich ausschließlich den Einstellungen: alle Reiter, was du darin findest und wann sie wichtig werden.\n\nWir springen gemeinsam von Reiter zu Reiter — du musst nichts anklicken.',
+        },
+        tabBar: {
+          title: 'Die Reiter-Leiste',
+          body: 'Die Einstellungen sind in Reiter gegliedert: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile, Webcam, Bibliothek, Genres & Sprachen, Motto-Party, Virale Charts, Sync & Backup und Über.\n\nJeder Reiter beginnt mit einer kurzen Einleitung, die erklärt, was dich darin erwartet.',
+        },
+        generalTab: {
+          title: 'Allgemein',
+          body: 'Die Grundeinstellungen: App-Sprache (sofort wirksam, 16 Sprachen), Standard-Schwierigkeit für neue Runden und der Online-Modus.\n\nTipp: Hier stellst du auch die KI-Anbieter für Harmonize und Audio-Analyse ein.',
+        },
+        gameplayTab: {
+          title: 'Gameplay',
+          body: 'Das Feintuning fürs Spielerlebnis: Punkteanzeige, Combo-Counter und Partikel während des Singens ein-/ausschalten, Replay-Aufnahmen aktivieren und Komfortfunktionen wie Auto-Vollbild und Vorwarnungs-Hinweise nutzen.',
+        },
+        appearanceTab: {
+          title: 'Darstellung',
+          body: 'Die Optik: Themes ändern das komplette Erscheinungsbild, Songtext-Stil und -Größe passen die Lyrics an. Dazu Hintergrund-Videos, Noten-Darstellung (Versiegelt/Exakt) und der Leistungsmodus für schwächere Rechner.',
+        },
+        graphicSoundTab: {
+          title: 'Audio',
+          body: 'Alles rund um den Klang: Audio-Ausgabegerät wählen, Vorschau- und Gesamtlautstärke regeln, die YouTube-Videoqualität festlegen — und die Lautstärke-Harmonisierung gleicht laut/leise Songs automatisch an (89 dB Ziel).',
+        },
+        microphoneTab: {
+          title: 'Mikrofon',
+          body: 'Deine Stimme ist das Spielgerät: Mikrofone hinzufügen (bis zu 4, auch USB- und SingStar-Mics), Empfindlichkeit und Verstärkung justieren, Rausch- und Echo-Unterdrückung testen.\n\nHandys erscheinen hier, sobald sie über den Mobile-Reiter verbunden sind.',
+        },
+        mobileTab: {
+          title: 'Mobile — die Companion-App',
+          body: 'Smartphones als Mikrofon und Steuerung: Gekoppelte Geräte verwalten, deren Mikrofone den Spielern zuweisen — die Verbindung läuft per QR-Code oder Verbindungscode über dasselbe WLAN.',
+        },
+        webcamTab: {
+          title: 'Webcam',
+          body: 'Die Webcam als Live-Hintergrund beim Singen: Quelle wählen, Spiegelung, Blur-Effekt und Overlay-Transparenz feinjustieren — oder den Hintergrund komplett deaktivieren.',
+        },
+        libraryTab: {
+          title: 'Bibliothek',
+          body: 'Die Songs-Verwaltung: Ordner für den Scan festlegen (die Bibliothek füllt sich dann automatisch), Statistiken einsehen.\n\nDer Gefahrenbereich setzt die Bibliothek oder alle Daten zurück — Highscores und Profile bleiben bei einem Bibliotheks-Reset erhalten.',
+        },
+        taxonomyTab: {
+          title: 'Genres & Sprachen',
+          body: 'Dein eigener Wortschatz für die Bibliothek: Eigene Genres und Sprachen anlegen — sie erscheinen sofort in allen Auswahllisten und werden von der Harmonisierung als gleichwertige Kategorien berücksichtigt.',
+        },
+        mottoTab: {
+          title: 'Motto-Party',
+          body: 'Das Party-Genie: Aktivieren, einen Motto-Namen vergeben (z. B. „80er Jahre Party“) und Suchfelder + Filter festlegen — ab dann ersetzt das Motto alle Filter im Spiel und jede Song-Auswahl greift nur noch auf passende Songs zu.',
+        },
+        viralTab: {
+          title: 'Virale Charts',
+          body: 'Hier bestimmst du das Land der Viral-Charts (Deutschland, USA, Japan …) — die viralen Hits landen dann als Filter in der Bibliothek. Der Aktualisieren-Knopf holt die neuesten Einträge ab.',
+        },
+        syncTab: {
+          title: 'Sync & Backup',
+          body: 'Der Umzugs-Helfer: Alles (Songs, Highscores, Profile, Playlists, Einstellungen — optional inkl. Song-Medien) als Datei exportieren und auf demselben oder einem anderen Gerät wiederherstellen.\n\nDie Vorschau zeigt vor dem Einspielen exakt, was im Backup steckt.',
+        },
+        finish: {
+          title: 'Einrichtung abgeschlossen! ✅',
+          body: 'Du kennst jetzt jeden Einstellungs-Reiter.\n\nJeder Reiter erklärt sich zusätzlich selbst in seiner kurzen Einleitung — und das ?-Symbol in der Menüleiste bringt dich jederzeit zu dieser Tour zurück.',
         },
       },
     },
@@ -175,7 +250,7 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Bereit zum Bauen! 🛠️',
-          body: 'Du kennst jetzt den Editor-Baukasten.\n\nDenk dran: Strg+Z rettet alles, und das ?-Symbol unten rechts bringt dich jederzeit zu diesen Kapiteln zurück.',
+          body: 'Du kennst jetzt den Editor-Baukasten.\n\nDenk dran: Strg+Z rettet alles, und das ?-Symbol (in der Menüleiste, hier im Editor auch unten rechts) bringt dich jederzeit zu diesen Kapiteln zurück.',
         },
       },
     },

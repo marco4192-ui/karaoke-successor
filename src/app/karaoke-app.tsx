@@ -204,6 +204,9 @@ export default function KaraokeZERO() {
   // ── Desktop chat panel ──
   const [showChatPanel, setShowChatPanel] = useState(false);
 
+  // ── R26: Hilfe-/Tutorial-Dialog — Aufruf über das '?' in der Hauptmenüleiste ──
+  const [helpOpen, setHelpOpen] = useState(false);
+
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
   }, [party.pauseDialogAction]);
@@ -615,9 +618,9 @@ export default function KaraokeZERO() {
   }
 
   // ===================== MAIN RENDER =====================
-  // Help FAB visibility: hidden on running games & immersive screens —
-  // except the editor (the editor tutorial lives there).
-  const helpFabHidden = (IMMERSIVE_SCREENS.has(screen) && screen !== 'editor') || screen === 'results' || screen === 'mobile';
+  // R26: Das '?' für Hilfe & Tutorials wohnt jetzt in der Hauptmenüleiste
+  // (NavBar) — auf immersiven Screens ohne NavBar (z. B. Editor) dient der
+  // schwebende Button als Fallback.
 
   return (
     <TourController navigate={handleTourNavigate} screen={screen}>
@@ -641,6 +644,7 @@ export default function KaraokeZERO() {
           isFullscreen={isFullscreen}
           toggleFullscreen={toggleFullscreen}
           onToggleChat={() => setShowChatPanel((v) => !v)}
+          onOpenHelp={() => setHelpOpen(true)}
         />
       )}
 
@@ -953,7 +957,11 @@ export default function KaraokeZERO() {
         />
       )}
     </div>
-    {!helpFabHidden && <HelpMenu />}
+    <HelpMenu
+      open={helpOpen}
+      onOpenChange={setHelpOpen}
+      floating={screen === 'editor'}
+    />
     </TourController>
   );
 }

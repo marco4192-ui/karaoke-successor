@@ -1,0 +1,5 @@
+57|interface SheetMusicNote {
+62|interface SheetMusicVoice {
+69|interface SheetMusicAnalysis {
+185|function SheetMusicDialog({ open, onOpenChange, onImport, hasExistingNotes }: SheetMusicDialogProps) {
+1013|default SheetMusicDialog;

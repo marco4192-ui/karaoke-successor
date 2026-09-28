@@ -134,6 +134,20 @@ settingsTabs: {
   taxonomy: 'Genres & Sprachen',
   mottoParty: 'Motto-Party',
 },
+// R26: Einleitungstexte für jedes Settings-Submenu (kurze Menu-Erläuterung)
+settingsTabIntro: {
+  general: 'Die Grundeinstellungen der App: Sprache, Standard-Schwierigkeit für neue Runden und der Online-Modus für Mehrspieler-Partys.',
+  gameplay: 'Feinjustierung des Spielerlebnisses: Anzeigen während des Singens, Partikel-Effekte, Replay-Aufnahmen und Komfortfunktionen wie Auto-Vollbild und Vorwarnungs-Hinweise.',
+  appearance: 'Die Optik der App: Farb-Theme, Songtext-Stil und -Größe, Hintergrund-Videos, Noten-Darstellung und der Leistungsmodus für schwächere Rechner.',
+  graphicSound: 'Alles rund um Klang und Wiedergabe: Audio-Ausgabegerät, Vorschau- und Gesamtlautstärke, YouTube-Videoqualität und die Lautstärke-Harmonisierung für ein ausgewogenes Klangbild.',
+  microphone: 'Deine Stimme zählt — wortwörtlich: Mikrofone hinzufügen, Empfindlichkeit und Verstärkung justieren sowie Rausch- und Echo-Unterdrückung live testen.',
+  mobile: 'Die Companion-App: Smartphones als Mikrofon und Steuerung verbinden, gekoppelte Geräte verwalten und deren Mikrofone den Spielern zuweisen.',
+  webcam: 'Die Webcam als Live-Hintergrund beim Singen: Quelle wählen sowie Spiegelung, Blur und Overlay-Feintuning einstellen.',
+  library: 'Deine Songs verwalten: Ordner für den Bibliotheks-Scan festlegen, Statistiken einsehen und im Gefahrenbereich die Bibliothek oder alle Daten zurücksetzen.',
+  viral: 'Virale Charts konfigurieren: Hier legst du fest, aus welchen Ländern die viralen Hits für Filter und Song-Auswahlen stammen.',
+  sync: 'Alles sichern, alles zurückholen: Songs, Highscores, Profile und Einstellungen als Datei exportieren — und auf demselben oder einem anderen Gerät wiederherstellen.',
+  about: 'Version, verwendete Technik und Mitwirkende — alles über Karaoke ZERO an einem Ort.',
+},
 settingsTaxonomy: {
   title: 'Genres & Sprachen',
   desc: 'Eigene Genre- und Sprach-Einträge anlegen, anzeigen und löschen. Eigene Einträge erscheinen in allen Auswahllisten (Editor, Neuer Song, Metadata Studio) und werden von der Harmonisierung als kanonische Hauptkategorien berücksichtigt.',

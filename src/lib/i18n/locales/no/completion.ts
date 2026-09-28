@@ -1344,7 +1344,7 @@ export const completionTranslations = {
     offerBody: 'Vil du ha en rask gjennomgang av det grunnleggende? Om 2 minutter kan du daglige utfordringer, synge-modusene, biblioteket og festlekene.',
     offerStart: 'Start omvisningen',
     offerLater: 'Kanskje senere',
-    offerHint: 'Tilgjengelig når som helst via ?-ikonet nederst til høyre.',
+    offerHint: 'Tilgjengelig når som helst via ?-ikonet i menylinjen.',
     basic: {
       title: 'Grunnleggende',
       desc: 'Rundturen: utfordringer, synge-moduser, bibliotek, fest & mer.',
@@ -1422,11 +1422,86 @@ export const completionTranslations = {
         },
         settingsView: {
           title: 'Innstillingsfanene',
-          body: 'Velg en seksjon øverst: Generelt (språk), Spilling, Utseende, Grafikk & Lyd, Mikrofon, Mobil (telefontilkobling) og mer.',
+          body: 'Velg en seksjon øverst: Generelt (språk), Spilling, Utseende, Grafikk & Lyd, Mikrofon, Mobil (telefontilkobling) og mer.\n\nHver fane åpnes med en kort introduksjon — og den dedikerte innstillingsomvisningen tar deg gjennom alt.',
         },
         finish: {
           title: 'Ferdig! 🎉',
-          body: 'Du kan det grunnleggende nå.\n\nTips: ?-ikonet nederst til høyre tar deg tilbake når som helst — inkludert enkeltemne-kapitler og omvisningen i redigeringsprogrammet.',
+          body: 'Du kan det grunnleggende nå.\n\nTips: ?-ikonet i menylinjen tar deg tilbake når som helst — inkludert enkeltemne-kapitler samt omvisningene i innstillingene og redigeringsprogrammet.',
+        },
+      },
+    },
+
+    // ═══ Innstillingsomvisning (R26) ═══
+    settings: {
+      title: 'Innstillinger',
+      desc: 'Hver eneste innstillingsfane — fra språk og mikrofoner til temafest og sikkerhetskopi.',
+      chapters: {
+        overview: 'Oversikt',
+        basics: 'Grunninnstillinger',
+        devices: 'Enheter',
+        library: 'Bibliotek & tema',
+        backup: 'Sikkerhetskopi & avslutning',
+      },
+      steps: {
+        welcome: {
+          title: 'Innstillingene ⚙️',
+          body: 'Denne omvisningen handler kun om innstillingene: hver fane, hva som finnes i dem, og når de betyr noe.\n\nVi hopper fra fane til fane sammen — du trenger ikke klikke selv.',
+        },
+        tabBar: {
+          title: 'Fanerekken',
+          body: 'Innstillingene er organisert i faner: Generelt, Spilling, Utseende, Grafikk / Lyd, Mikrofon, Mobil Companion, Webkamera, Bibliotek, Sjangre & Språk, Temafest, Viral-lister, Synk & Sikkerhetskopi og Om.\n\nHver fane åpnes med en kort introduksjon som forklarer hva du kan forvente.',
+        },
+        generalTab: {
+          title: 'Generelt',
+          body: 'Det grunnleggende: appspråk (brukes umiddelbart, 16 språk), standard vanskelighetsgrad for nye runder og nettmodus.\n\nTips: AI-leverandørene for harmonisering og lydanalyse konfigureres også her.',
+        },
+        gameplayTab: {
+          title: 'Spilling',
+          body: 'Finjuster opplevelsen: slå av og på poengvisning, komboteller og partikler under sangen, aktiver opptak av replays og bruk komfort som automatisk fullskjerm og varselstegn.',
+        },
+        appearanceTab: {
+          title: 'Utseende',
+          body: 'Utseendet: temaer gir hele appen et nytt preg, tekststil og -størrelse tilpasser teksten. I tillegg bakgrunnsvideoer, notefremvisning (laser/nøyaktig) og ytelsesmodusen for svakere maskiner.',
+        },
+        graphicSoundTab: {
+          title: 'Grafikk / Lyd',
+          body: 'Alt om lyd: velg lydutgangsenhet, sett forhåndslytte- og hovedvolum, velg videokvalitet på YouTube — og lydnivå-normalisering jevner automatisk ut høye og stille sanger (89 dB-mål).',
+        },
+        microphoneTab: {
+          title: 'Mikrofon',
+          body: 'Stemmen din er kontrolleren: legg til mikrofoner (opptil 4, USB- og SingStar-mikrofoner fungerer også), juster følsomhet og forsterkning, test støy- og ekko-undertrykkelse.\n\nTelefoner dukker opp her så snart de er koblet til via Mobil Companion-fanen.',
+        },
+        mobileTab: {
+          title: 'Mobil Companion — companion-appen',
+          body: 'Smarttelefoner som mikrofoner og kontrollere: administrer parede enheter og tilordne mikrofonene deres til spillerne — paring skjer via QR-kode eller koblingskode over samme Wi-Fi.',
+        },
+        webcamTab: {
+          title: 'Webkamera',
+          body: 'Webkameraet ditt som bakgrunn i sanntid under sangen: velg kilde og finjuster speiling, uskarphet og overleggets gjennomsiktighet — eller deaktiver bakgrunnen helt.',
+        },
+        libraryTab: {
+          title: 'Bibliotek',
+          body: 'Sangadministrasjon: angi mappen som skal skannes (biblioteket fyller seg selv), og sjekk statistikken.\n\nFaresonen tilbakestiller biblioteket eller alle data — rekorder og profiler overlever en bibliotek-tilbakestilling.',
+        },
+        taxonomyTab: {
+          title: 'Sjangre & Språk',
+          body: 'Ditt eget vokabular for biblioteket: lag egne sjangre og språk — de vises umiddelbart i alle nedtrekkslister, og harmoniseringen behandler dem som likeverdige kategorier.',
+        },
+        mottoTab: {
+          title: 'Temafest',
+          body: 'Festgeniet: aktiver den, gi den et navn (f.eks. "80-tallsfest") og definer søkefelt + filtre — fra da av erstatter mottoet alle filtre i spillet, og hvert sangvalg trekker kun fra treffende sanger.',
+        },
+        viralTab: {
+          title: 'Viral-lister',
+          body: 'Velg landet for viral-listene (Tyskland, USA, Japan …) — de virale hitene dukker deretter opp som et filter i biblioteket. Oppdater-knappen henter de nyeste oppføringene.',
+        },
+        syncTab: {
+          title: 'Synk & Sikkerhetskopi',
+          body: 'Flyttehjelperen: eksporter alt (sanger, rekorder, profiler, spillelister, innstillinger — eventuelt inkludert sangmedier) til en fil og gjenopprett det på samme eller en annen enhet.\n\nForhåndsvisningen viser nøyaktig hva en sikkerhetskopi inneholder før du gjenoppretter den.',
+        },
+        finish: {
+          title: 'Oppsettet er ferdig! ✅',
+          body: 'Du kjenner nå hver eneste innstillingsfane.\n\nHver fane forklarer også seg selv i sin korte introduksjon — og ?-ikonet i menylinjen tar deg tilbake til denne omvisningen når som helst.',
         },
       },
     },
@@ -1494,7 +1569,7 @@ export const completionTranslations = {
         },
         finish: {
           title: 'Klar til å bygge! 🛠️',
-          body: 'Du kjenner nå verktøykassen til redigeringsprogrammet.\n\nHusk: Ctrl+Z redder alt, og ?-ikonet nederst til høyre tar deg tilbake til disse kapitlene når som helst.',
+          body: 'Du kjenner nå verktøykassen til redigeringsprogrammet.\n\nHusk: Ctrl+Z redder alt, og ?-ikonet (i menylinjen, her i redigeringsprogrammet også nederst til høyre) tar deg tilbake til disse kapitlene når som helst.',
         },
       },
     },

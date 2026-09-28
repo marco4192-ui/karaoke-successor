@@ -1,0 +1,1202 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
+import { Song } from '@/types/game';
+import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { getPlaylistById } from '@/lib/playlist-manager';
+import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
+import { fuzzyScore } from '@/lib/fuzzy-search';
+import { getBool, getJsonOptional, setJson } from '@/lib/storage';
+import { StorageKeys } from '@/lib/storage';
+import { RepeatMode } from './jukebox-types';
+import type { JukeboxSongSuggestion, UseJukeboxReturn } from './jukebox-types';
+import {
+  createVideoBreakSong,
+  getSongPlatformVideo,
+  isVideoBreak,
+} from './video-break';
+
+/** Track recently played songs for F7 exclusion */
+interface RecentlyPlayedEntry {
+  songId: string;
+  playedAt: number;
+}
+
+export function useJukebox(refs?: {
+  containerRef?: React.RefObject<HTMLDivElement | null>;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
+}): UseJukeboxReturn {
+  // ==================== STATE ====================
+
+  // --- Filter / Config State ---
+  const [filterGenre, setFilterGenre] = useState<string>('all');
+  const [filterArtist, setFilterArtist] = useState<string>('');
+  // Era/decade filter (decade start year, e.g. '1980') — for themed parties
+  const [filterEra, setFilterEra] = useState<string>('all');
+  // Exact year filter (e.g. '1985') — finer than the era/decade filter
+  const [filterYear, setFilterYear] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [shuffle, setShuffle] = useState(true);
+  const [repeat, setRepeat] = useState<RepeatMode>('all');
+  // F11: Duration filter bounds (seconds)
+  const [minDuration, setMinDuration] = useState(0);
+  const [maxDuration, setMaxDuration] = useState(0);
+  // F10: Max songs in playlist (0 = unlimited)
+  const [maxSongs, setMaxSongs] = useState(0);
+  // N4: Auto-stop timer in minutes (0 = no timer)
+  const [timerMinutes, setTimerMinutes] = useState(0);
+  // F7: Recently played exclusion in minutes (0 = off)
+  const [recentlyPlayedMinutes, setRecentlyPlayedMinutes] = useState(30);
+
+  // Pool change counter — incremented by PoolSelector to trigger re-filtering
+  const [poolChangeCounter, setPoolChangeCounter] = useState(0);
+
+  // --- Playback State ---
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [playlist, setPlaylist] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [youtubeTime, setYoutubeTime] = useState(0);
+  // #12: Tracked playback time & duration (seconds)
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // F3: Mute state
+  const [isMuted, setIsMuted] = useState(false);
+  const [previousVolume, setPreviousVolume] = useState(0.7);
+  const [hidePlaylist, setHidePlaylist] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
+  // #3: Loading state for song switching
+  const [isLoading, setIsLoading] = useState(false);
+  // N8: Wishlist song attribution
+  const [currentSongRequestedBy, setCurrentSongRequestedBy] = useState<string | null>(null);
+  // Pause flag for streaming-platform videos (driven via isPlaying prop)
+  const [platformPaused, setPlatformPaused] = useState(false);
+  // Repeat-one restart counter for platform videos — bumping the key remounts
+  // the platform player which restarts playback from the beginning.
+  const [platformRestartKey, setPlatformRestartKey] = useState(0);
+
+  // --- Song Library ---
+  const [songs, setSongs] = useState<Song[]>([]);
+
+  // --- N4: Timer ---
+  const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
+
+  // --- N9: Statistics ---
+  const [songsPlayed, setSongsPlayed] = useState(0);
+  const genreCountRef = useRef<Map<string, number>>(new Map());
+  const requesterCountRef = useRef<Map<string, number>>(new Map());
+
+  // ==================== REFS ====================
+
+  // Track manual vs random song IDs
+  const manualIdsRef = useRef(new Set<string>());
+  // Track already-processed wishlist items to avoid duplicates
+  const processedWishlistRef = useRef(new Set<string>());
+  // Map songId → requester name for N8 attribution
+  const songRequesterRef = useRef<Map<string, string>>(new Map());
+  // F7: Recently played history
+  const recentlyPlayedRef = useRef<RecentlyPlayedEntry[]>([]);
+  // Stable refs for use inside callbacks without re-triggering effects
+  const defaultContainerRef = useRef<HTMLDivElement | null>(null);
+  const defaultVideoRef = useRef<HTMLVideoElement | null>(null);
+  const defaultAudioRef = useRef<HTMLAudioElement | null>(null);
+  const containerRef = refs?.containerRef ?? defaultContainerRef;
+  const videoRef = refs?.videoRef ?? defaultVideoRef;
+  const audioRef = refs?.audioRef ?? defaultAudioRef;
+  // Refs for stable access inside callbacks
+  const songsRef = useRef(songs);
+  songsRef.current = songs;
+  const playlistRef = useRef(playlist);
+  playlistRef.current = playlist;
+  const currentIndexRef = useRef(currentIndex);
+  currentIndexRef.current = currentIndex;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+  const currentSongRef = useRef(currentSong);
+  currentSongRef.current = currentSong;
+  const shuffleRef = useRef(shuffle);
+  shuffleRef.current = shuffle;
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
+
+  // ==================== LOAD SONGS ====================
+
+  useEffect(() => {
+    const loadSongs = async () => {
+      const allSongs = await getAllSongsAsync();
+      setSongs(allSongs);
+    };
+    loadSongs();
+  }, []);
+
+  // ==================== GENRES & ARTISTS ====================
+
+  const genres = useMemo(() => {
+    const genreSet = new Set<string>();
+    songs.forEach(s => { if (s.genre) genreSet.add(s.genre); });
+    return ['all', ...Array.from(genreSet).sort()];
+  }, [songs]);
+
+  const artists = useMemo(() => {
+    const artistSet = new Set<string>();
+    songs.forEach(s => { if (s.artist) artistSet.add(s.artist); });
+    return Array.from(artistSet).sort();
+  }, [songs]);
+
+  // Era (decade) options derived from the library years, ascending
+  const eras = useMemo(() => ['all', ...getAvailableDecades(songs)], [songs]);
+
+  // Exact year options derived from the library years, newest first
+  const years = useMemo(() => {
+    const yearSet = new Set<number>();
+    songs.forEach(s => { if (s.year) yearSet.add(s.year); });
+    return ['all', ...Array.from(yearSet).sort((a, b) => b - a).map(String)];
+  }, [songs]);
+
+  // ==================== SEARCH SUGGESTIONS (fuzzy ranking) ====================
+
+  // Deferred query keeps typing smooth while the fuzzy scoring of the whole
+  // library catches up (React renders the input with the fresh value first).
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  /** Best fuzzy matches for the current search query (descending score, max 8). */
+  const searchSuggestions = useMemo<JukeboxSongSuggestion[]>(() => {
+    const q = deferredSearchQuery.trim();
+    if (!q) return [];
+    const scored: JukeboxSongSuggestion[] = [];
+    for (const song of songs) {
+      const score = Math.max(
+        fuzzyScore(q, song.title),
+        fuzzyScore(q, song.artist) * 0.98,
+        song.album ? fuzzyScore(q, song.album) * 0.9 : 0,
+      );
+      if (score > 0) scored.push({ song, score });
+    }
+    scored.sort((a, b) => b.score - a.score || a.song.title.localeCompare(b.song.title));
+    return scored.slice(0, 8);
+  }, [deferredSearchQuery, songs]);
+
+  // ==================== FILTER SONGS ====================
+
+  const filteredSongs = useMemo(() => {
+    let filtered = songs;
+
+    // F8: If a saved playlist exists, filter to those IDs
+    const savedPlaylistIds = getJsonOptional<string[]>(StorageKeys.JUKEBOX_PLAYLIST);
+    if (savedPlaylistIds && savedPlaylistIds.length > 0) {
+      const idSet = new Set(savedPlaylistIds);
+      filtered = filtered.filter(s => idSet.has(s.id));
+    }
+
+    // Genre filter
+    if (filterGenre !== 'all') {
+      filtered = filtered.filter(s => s.genre?.toLowerCase().includes(filterGenre.toLowerCase()));
+    }
+    // Artist filter
+    if (filterArtist) {
+      filtered = filtered.filter(s => s.artist === filterArtist);
+    }
+    // Era (decade) filter — matches songs whose year falls into the decade
+    if (filterEra !== 'all') {
+      filtered = filtered.filter(s => songMatchesEra(s, filterEra));
+    }
+    // Year filter — exact year match (finer than the era/decade filter)
+    if (filterYear !== 'all') {
+      const year = parseInt(filterYear, 10);
+      filtered = filtered.filter(s => s.year === year);
+    }
+    // Search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.title.toLowerCase().includes(query) ||
+        s.artist.toLowerCase().includes(query) ||
+        s.album?.toLowerCase().includes(query)
+      );
+    }
+    // F11: Duration filter
+    if (minDuration > 0) {
+      filtered = filtered.filter(s => (s.duration / 1000) >= minDuration);
+    }
+    if (maxDuration > 0) {
+      filtered = filtered.filter(s => (s.duration / 1000) <= maxDuration);
+    }
+    // F7: Recently played exclusion
+    if (recentlyPlayedMinutes > 0) {
+      const cutoff = Date.now() - recentlyPlayedMinutes * 60 * 1000;
+      recentlyPlayedRef.current = recentlyPlayedRef.current.filter(e => e.playedAt > cutoff - 60 * 60 * 1000);
+      const recentIds = new Set(
+        recentlyPlayedRef.current
+          .filter(e => e.playedAt > cutoff)
+          .map(e => e.songId)
+      );
+      if (recentIds.size > 0) {
+        filtered = filtered.filter(s => !recentIds.has(s.id));
+      }
+    }
+    return filtered;
+  }, [songs, filterGenre, filterArtist, filterEra, filterYear, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes, poolChangeCounter]);
+
+  // ==================== DERIVED STATE ====================
+
+  /** Effective playback state: platform videos pause via platformPaused,
+   *  HTML5 media via the media elements themselves (isPlaying stays true). */
+  const isMediaPlaying = isPlaying && !platformPaused;
+
+  const upNext = useMemo(() => {
+    return playlist.slice(currentIndex + 1, currentIndex + 6);
+  }, [playlist, currentIndex]);
+
+  // N9: Top genres
+  const topGenres = useMemo(() => {
+    return Array.from(genreCountRef.current.entries())
+      .map(([genre, count]) => ({ genre, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref-based, update triggered by songsPlayed
+  }, [songsPlayed]);
+
+  // N9: Top requesters
+  const topRequesters = useMemo(() => {
+    return Array.from(requesterCountRef.current.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref-based
+  }, [songsPlayed]);
+
+  // ==================== PREPARE SONG ====================
+
+  const prepareSong = useCallback(async (song: Song): Promise<Song> => {
+    const withLyrics = await getSongByIdWithLyrics(song.id);
+    return withLyrics || await ensureSongUrls(song);
+  }, []);
+
+  // ==================== GENERATE PLAYLIST ====================
+
+  const generatePlaylist = useCallback(async () => {
+    if (filteredSongs.length === 0) return false;
+
+    let newPlaylist = [...filteredSongs];
+
+    // Shuffle if enabled
+    if (shuffle) {
+      for (let i = newPlaylist.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newPlaylist[i], newPlaylist[j]] = [newPlaylist[j], newPlaylist[i]];
+      }
+    }
+
+    // #1 FIX: Mark ALL songs that are known wishlist items in manualIdsRef
+    // Use processedWishlistRef to know which are wishlist songs
+    for (const song of newPlaylist) {
+      if (processedWishlistRef.current.has(song.id)) {
+        manualIdsRef.current.add(song.id);
+      }
+    }
+
+    // N1: Interleave wishlist songs in round-robin order among random songs
+    // Collect wishlist songs that are in the pool and their requesters
+    const wishlistSongs: { song: Song; requester: string }[] = [];
+    const randomSongs: Song[] = [];
+
+    for (const song of newPlaylist) {
+      const requester = songRequesterRef.current.get(song.id);
+      if (requester && manualIdsRef.current.has(song.id)) {
+        wishlistSongs.push({ song, requester });
+      } else {
+        randomSongs.push(song);
+      }
+    }
+
+    // Interleave: one random, one wishlist, one random, ...
+    if (wishlistSongs.length > 0) {
+      const interleaved: Song[] = [];
+      const maxLen = Math.max(randomSongs.length, wishlistSongs.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (i < randomSongs.length) interleaved.push(randomSongs[i]);
+        if (i < wishlistSongs.length) interleaved.push(wishlistSongs[i].song);
+      }
+      newPlaylist = interleaved;
+    }
+
+    // #15 FIX: No separate wishlist fetch here — polling effect handles live insertion
+
+    // F10: Limit playlist size
+    if (maxSongs > 0) {
+      newPlaylist = newPlaylist.slice(0, maxSongs);
+    }
+
+    // Prepare first song
+    const firstSong = newPlaylist[0];
+    if (firstSong) {
+      const preparedSong = await prepareSong(firstSong);
+      newPlaylist = [preparedSong, ...newPlaylist.slice(1)];
+    }
+
+    setPlaylist(newPlaylist);
+    setCurrentIndex(0);
+    setCurrentSong(newPlaylist[0] || null);
+    setCurrentTime(0);
+    setDuration(newPlaylist[0]?.duration ? newPlaylist[0].duration / 1000 : 0);
+    return true;
+  }, [filteredSongs, shuffle, prepareSong, maxSongs]);
+
+  // ==================== INSERT MANUAL SONG ====================
+
+  const insertManualSongRef = useRef<(song: Song, requester?: string) => void>(() => {});
+
+  const insertManualSong = useCallback((song: Song, requester?: string) => {
+    // Don't insert duplicates
+    if (playlistRef.current.some(s => s.id === song.id)) return;
+
+    // Track requester
+    if (requester) {
+      songRequesterRef.current.set(song.id, requester);
+      requesterCountRef.current.set(requester, (requesterCountRef.current.get(requester) || 0) + 1);
+    }
+
+    setPlaylist(prev => {
+      const newPlaylist = [...prev];
+      const ci = currentIndexRef.current;
+      // N1: Find the first 'random' song after currentIndex to insert before it
+      const insertIdx = newPlaylist.findIndex((s, idx) => idx > ci && !manualIdsRef.current.has(s.id));
+      if (insertIdx === -1) {
+        newPlaylist.push(song);
+      } else {
+        newPlaylist.splice(insertIdx, 0, song);
+      }
+      manualIdsRef.current.add(song.id);
+      return newPlaylist;
+    });
+  }, []);
+
+  insertManualSongRef.current = insertManualSong;
+
+  // ==================== VIDEO QUEUE (Video Breaks) ====================
+
+  const playNextRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
+  /**
+   * Insert a song into the queue AFTER the last user-requested song (i.e.
+   * before the next random song) — ref-synced so sequential inserts in the
+   * same tick (link lists!) keep their order and are immediately visible to
+   * playNext(). Returns the insert position or -1 when skipped (duplicate).
+   */
+  const insertSongIntoQueue = useCallback((song: Song, requester?: string): number => {
+    const currentPlaylist = playlistRef.current;
+    if (currentPlaylist.some(s => s.id === song.id)) return -1;
+
+    if (requester) {
+      songRequesterRef.current.set(song.id, requester);
+    }
+
+    const newPlaylist = [...currentPlaylist];
+    const ci = currentIndexRef.current;
+    const insertIdx = newPlaylist.findIndex((s, idx) => idx > ci && !manualIdsRef.current.has(s.id));
+    const target = insertIdx === -1 ? newPlaylist.length : insertIdx;
+    newPlaylist.splice(target, 0, song);
+    manualIdsRef.current.add(song.id);
+
+    // Keep the ref in sync IMMEDIATELY — setState is async and same-tick
+    // callers (list inserts, playNext) must see the new queue.
+    playlistRef.current = newPlaylist;
+    setPlaylist(newPlaylist);
+    return target;
+  }, []);
+
+  const addVideoToQueue = useCallback((url: string, label?: string, requester?: string): boolean => {
+    const video = createVideoBreakSong(url, label);
+    if (!video) return false;
+
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // No queue at all → the video starts immediately
+      if (requester) songRequesterRef.current.set(video.id, requester);
+      manualIdsRef.current.add(video.id);
+      playlistRef.current = [video];
+      currentSongRef.current = video;
+      currentIndexRef.current = 0;
+      isPlayingRef.current = true;
+      setPlaylist([video]);
+      setCurrentIndex(0);
+      setCurrentSong(video);
+      setCurrentSongRequestedBy(requester ?? null);
+      setCurrentTime(0);
+      setDuration(0);
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      setSongsPlayed(prev => prev + 1);
+      return true;
+    }
+
+    if (!running) {
+      // Stopped jukebox with an existing queue → the video becomes the next
+      // item and playback resumes with it right away.
+      insertSongIntoQueue(video, requester);
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → insert after the last user song (before the next random song)
+    insertSongIntoQueue(video, requester);
+    return true;
+  }, [insertSongIntoQueue]);
+
+  const addVideoToQueueRef = useRef(addVideoToQueue);
+  addVideoToQueueRef.current = addVideoToQueue;
+
+  const addVideoListToQueue = useCallback((links: Array<{ url: string; label?: string }>): number => {
+    let queued = 0;
+    for (const link of links) {
+      if (!link?.url?.trim()) continue;
+      if (addVideoToQueueRef.current(link.url, link.label)) queued++;
+    }
+    return queued;
+  }, []);
+
+  // ==================== SONG QUEUE (search suggestions) ====================
+
+  /**
+   * Queue a library song following the same rules as addVideoToQueue():
+   * running jukebox → inserted after the last user song; idle jukebox →
+   * the song starts playing immediately (preparing it first so media URLs
+   * exist). Returns false for duplicates.
+   */
+  const addSongToQueue = useCallback(async (song: Song, requester?: string): Promise<boolean> => {
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // No queue at all → the song starts immediately
+      try {
+        const prepared = await prepareSong(song);
+        if (requester) songRequesterRef.current.set(prepared.id, requester);
+        manualIdsRef.current.add(prepared.id);
+        playlistRef.current = [prepared];
+        currentSongRef.current = prepared;
+        currentIndexRef.current = 0;
+        isPlayingRef.current = true;
+        setPlaylist([prepared]);
+        setCurrentIndex(0);
+        setCurrentSong(prepared);
+        setCurrentSongRequestedBy(requester ?? null);
+        setCurrentTime(0);
+        setDuration(prepared.duration ? prepared.duration / 1000 : 0);
+        setPlatformPaused(false);
+        setIsPlaying(true);
+        setSongsPlayed(prev => prev + 1);
+        return true;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.debug('[useJukebox] addSongToQueue failed:', error);
+        return false;
+      }
+    }
+
+    if (!running) {
+      // Stopped jukebox with an existing queue → the song becomes the next
+      // item and playback resumes with it right away.
+      const inserted = insertSongIntoQueue(song, requester);
+      if (inserted === -1) return false;
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → insert after the last user song (before the next random song)
+    return insertSongIntoQueue(song, requester) !== -1;
+  }, [insertSongIntoQueue, prepareSong]);
+
+  const addSongToQueueRef = useRef(addSongToQueue);
+  addSongToQueueRef.current = addSongToQueue;
+
+  /** Queue a list of library songs in order (search "add all").
+   *  Sequential awaits keep the order and make each insert visible to the
+   *  next call. Returns the number of successfully queued songs. */
+  const addSongsToQueue = useCallback(async (songsToQueue: Song[], requester?: string): Promise<number> => {
+    let queued = 0;
+    for (const song of songsToQueue) {
+      if (await addSongToQueueRef.current(song, requester)) queued++;
+    }
+    return queued;
+  }, []);
+
+  const removeQueueVideo = useCallback((songId: string): boolean => {
+    const currentPlaylist = playlistRef.current;
+    const idx = currentPlaylist.findIndex(s => s.id === songId);
+    if (idx === -1) return false;
+    // Never remove the currently playing item (use Next instead)
+    if (idx === currentIndexRef.current) return false;
+
+    const newPlaylist = currentPlaylist.filter(s => s.id !== songId);
+    playlistRef.current = newPlaylist;
+    setPlaylist(newPlaylist);
+    if (idx < currentIndexRef.current) {
+      const shifted = currentIndexRef.current - 1;
+      currentIndexRef.current = shifted;
+      setCurrentIndex(shifted);
+    }
+    manualIdsRef.current.delete(songId);
+    songRequesterRef.current.delete(songId);
+    return true;
+  }, []);
+
+  /** Library playlist → jukebox: fresh start (stored order) or enqueue while running. */
+  const enqueueLibraryPlaylist = useCallback(async (playlistId: string): Promise<boolean> => {
+    const pl = getPlaylistById(playlistId);
+    if (!pl || pl.songIds.length === 0) return false;
+
+    const full = pl.songIds
+      .map(id => songsRef.current.find(s => s.id === id))
+      .filter((s): s is Song => !!s);
+    if (full.length === 0) return false;
+
+    const running = isPlayingRef.current && playlistRef.current.length > 0;
+
+    if (!running && playlistRef.current.length === 0) {
+      // Fresh start: play EXACTLY this playlist in stored order
+      const prepared = await prepareSong(full[0]);
+      const newPlaylist = [prepared, ...full.slice(1)];
+      full.forEach(s => manualIdsRef.current.add(s.id));
+      playlistRef.current = newPlaylist;
+      currentSongRef.current = prepared;
+      currentIndexRef.current = 0;
+      isPlayingRef.current = true;
+      setPlaylist(newPlaylist);
+      setCurrentIndex(0);
+      setCurrentSong(prepared);
+      setCurrentSongRequestedBy(null);
+      setCurrentTime(0);
+      setDuration(prepared.duration ? prepared.duration / 1000 : 0);
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      setSongsPlayed(0);
+      genreCountRef.current.clear();
+      requesterCountRef.current.clear();
+      if (timerMinutes > 0) setTimerRemaining(timerMinutes * 60);
+      return true;
+    }
+
+    if (!running) {
+      // Stopped with an existing queue → enqueue after the current position and resume
+      full.forEach(s => insertSongIntoQueue(s));
+      isPlayingRef.current = true;
+      setPlatformPaused(false);
+      setIsPlaying(true);
+      playNextRef.current();
+      return true;
+    }
+
+    // Running → enqueue all songs after the last user song, in stored order
+    full.forEach(s => insertSongIntoQueue(s));
+    return true;
+  }, [prepareSong, insertSongIntoQueue, timerMinutes]);
+
+  // Companion App: video link arrives via the remote-command bridge
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ url?: string; label?: string; requester?: string }>).detail;
+      if (!detail?.url) return;
+      addVideoToQueueRef.current(detail.url, detail.label, detail.requester);
+    };
+    window.addEventListener('jukebox:video-add', handler as EventListener);
+    return () => window.removeEventListener('jukebox:video-add', handler as EventListener);
+  }, []);
+
+  // ==================== WISHLIST POLLING ====================
+
+  useEffect(() => {
+    if (songsRef.current.length === 0) return;
+    let active = true;
+    const pollWishlist = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=getjukebox');
+        const data = await res.json();
+        if (!active || !data.success || !Array.isArray(data.wishlist)) return;
+        for (const item of data.wishlist) {
+          const key = `${item.songId}-${item.addedBy}`;
+          if (processedWishlistRef.current.has(key)) continue;
+          processedWishlistRef.current.add(key);
+          // Mark as manual
+          manualIdsRef.current.add(item.songId);
+          // Track requester for N8
+          songRequesterRef.current.set(item.songId, item.addedBy);
+          // Resolve wishlist item to full Song object
+          const fullSong = songsRef.current.find(s => s.id === item.songId);
+          if (fullSong && playlistRef.current.length > 0) {
+            insertManualSongRef.current(fullSong, item.addedBy);
+          }
+        }
+      } catch (error) {
+        // #25 FIX: Log instead of ignoring
+        // eslint-disable-next-line no-console
+        console.debug('[useJukebox] Wishlist poll failed:', error);
+      }
+    };
+    pollWishlist();
+    const interval = setInterval(pollWishlist, 5000);
+    return () => { active = false; clearInterval(interval); };
+  // #2 FIX: Only run once when songs are first loaded
+   
+  }, []); // Intentionally empty — songsRef is always current
+
+  // ==================== PLAY NEXT ====================
+
+  const playNext = useCallback(async () => {
+    if (playlistRef.current.length === 0) return;
+    let nextIndex = currentIndexRef.current + 1;
+    if (nextIndex >= playlistRef.current.length) {
+      // A queue that contains ONLY video links ends after the last video —
+      // looping a video list like a song pool is almost never wanted.
+      const onlyVideoBreaks = playlistRef.current.every(s => isVideoBreak(s));
+      if (repeat === 'all' && !onlyVideoBreaks) {
+        nextIndex = 0;
+      } else {
+        isPlayingRef.current = false;
+        setIsPlaying(false);
+        return;
+      }
+    }
+    setIsLoading(true);
+    try {
+      const nextSong = playlistRef.current[nextIndex];
+      const preparedSong = await prepareSong(nextSong);
+      // F7: Track as recently played
+      recentlyPlayedRef.current.push({ songId: nextSong.id, playedAt: Date.now() });
+      // N9: Update statistics
+      setSongsPlayed(prev => prev + 1);
+      if (nextSong.genre) {
+        genreCountRef.current.set(nextSong.genre, (genreCountRef.current.get(nextSong.genre) || 0) + 1);
+      }
+      // N8: Set requester attribution
+      const requester = songRequesterRef.current.get(nextSong.id) || null;
+      setCurrentSongRequestedBy(requester);
+      if (requester) {
+        requesterCountRef.current.set(requester, (requesterCountRef.current.get(requester) || 0) + 1);
+      }
+      currentSongRef.current = preparedSong;
+      currentIndexRef.current = nextIndex;
+      setCurrentIndex(nextIndex);
+      setCurrentSong(preparedSong);
+      setCurrentTime(0);
+      setPlatformPaused(false);
+      setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[useJukebox] playNext failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [playlist, currentIndex, repeat, prepareSong]);
+
+  playNextRef.current = playNext;
+
+  // ==================== PLAY PREVIOUS ====================
+
+  const playPrevious = useCallback(async () => {
+    if (playlistRef.current.length === 0) return;
+    // #10 FIX: At index 0, restart current song instead of wrapping
+    if (currentIndexRef.current === 0) {
+      // Restart current song
+      if (videoRef.current) videoRef.current.currentTime = 0;
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const prevIndex = currentIndexRef.current - 1;
+      const prevSong = playlistRef.current[prevIndex];
+      const preparedSong = await prepareSong(prevSong);
+      const requester = songRequesterRef.current.get(prevSong.id) || null;
+      setCurrentSongRequestedBy(requester);
+      currentSongRef.current = preparedSong;
+      currentIndexRef.current = prevIndex;
+      setPlatformPaused(false);
+      setCurrentIndex(prevIndex);
+      setCurrentSong(preparedSong);
+      setCurrentTime(0);
+      setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[useJukebox] playPrevious failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [playlist, currentIndex, prepareSong, videoRef, audioRef]);
+
+  // ==================== HANDLE MEDIA END ====================
+
+  const handleMediaEnd = useCallback(() => {
+    if (repeat === 'one' && currentSongRef.current) {
+      const videoHasEmbeddedAudio = currentSongRef.current.hasEmbeddedAudio || !currentSongRef.current.audioUrl;
+      // Streaming-platform videos: restart via player remount (key bump)
+      if (getSongPlatformVideo(currentSongRef.current)) {
+        setPlatformPaused(false);
+        setCurrentTime(0);
+        setPlatformRestartKey(k => k + 1);
+        return;
+      }
+      if (currentSongRef.current.videoBackground && videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+      }
+      if (currentSongRef.current.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+    } else {
+      playNext();
+    }
+  }, [repeat, playNext]);
+
+  // ==================== START / STOP JUKEBOX ====================
+
+  const startJukebox = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // #5 FIX: Catch errors from generatePlaylist
+      const success = await generatePlaylist();
+      if (success) {
+        setIsPlaying(true);
+        setSongsPlayed(0);
+        genreCountRef.current.clear();
+        requesterCountRef.current.clear();
+        // N4: Start timer if configured
+        if (timerMinutes > 0) {
+          setTimerRemaining(timerMinutes * 60);
+        }
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[useJukebox] startJukebox failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [generatePlaylist, timerMinutes]);
+
+  const stopJukebox = useCallback(() => {
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    setPlatformPaused(false);
+    if (videoRef.current) videoRef.current.pause();
+    if (audioRef.current) audioRef.current.pause();
+    setTimerRemaining(null);
+  }, [videoRef, audioRef]);
+
+  // ==================== N4: TIMER ====================
+
+  useEffect(() => {
+    if (timerRemaining === null || timerRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setTimerRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          stopJukebox();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRemaining, stopJukebox]);
+
+  // ==================== JUKEBOX START EVENT LISTENER ====================
+
+  useEffect(() => {
+    const handleStartSignal = () => {
+      startJukebox();
+    };
+    window.addEventListener('jukebox:start', handleStartSignal);
+    return () => window.removeEventListener('jukebox:start', handleStartSignal);
+  }, [startJukebox]);
+
+  // ==================== POOL CHANGE EVENT LISTENER ====================
+
+  useEffect(() => {
+    const handlePoolChange = () => {
+      setPoolChangeCounter(c => c + 1);
+    };
+    window.addEventListener('jukebox-pool-changed', handlePoolChange);
+    return () => window.removeEventListener('jukebox-pool-changed', handlePoolChange);
+  }, []);
+
+  // ==================== FULLSCREEN ====================
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement === containerRef.current) {
+      document.exitFullscreen();
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    }
+  }, [containerRef]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [containerRef]);
+
+  // Listen for jukebox:fullscreen event from companion remote control
+  useEffect(() => {
+    const handleJukeboxFullscreen = () => {
+      toggleFullscreen();
+    };
+    window.addEventListener('jukebox:fullscreen', handleJukeboxFullscreen);
+    return () => window.removeEventListener('jukebox:fullscreen', handleJukeboxFullscreen);
+  }, [toggleFullscreen]);
+
+  // ==================== PLAY / PAUSE ====================
+
+  const togglePlayPause = useCallback(() => {
+    const song = currentSongRef.current;
+    if (!song) return;
+
+    // Streaming-platform videos (video break or platform #VIDEO) are driven
+    // via the isPlaying prop — pause them through the platformPaused flag.
+    if (getSongPlatformVideo(song)) {
+      setPlatformPaused(p => !p);
+      return;
+    }
+
+    // #18 FIX: Only play the correct media element
+    const videoHasEmbeddedAudio = song.hasEmbeddedAudio || !song.audioUrl;
+
+    if (song.videoBackground && videoRef.current) {
+      if (videoRef.current.paused) videoRef.current.play().catch(() => {});
+      else videoRef.current.pause();
+    }
+    if (song.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
+      if (audioRef.current.paused) audioRef.current.play().catch(() => {});
+      else audioRef.current.pause();
+    }
+  }, [videoRef, audioRef]);
+
+  // Reset the platform pause flag whenever the current media changes
+  useEffect(() => {
+    setPlatformPaused(false);
+  }, [currentSong?.id]);
+
+  // ==================== F3: MUTE TOGGLE ====================
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      // Unmute: restore previous volume
+      setVolume(previousVolume);
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      setPreviousVolume(volume);
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [isMuted, volume, previousVolume]);
+
+  // ==================== F1: SEEK TO ====================
+
+  const seekTo = useCallback((fraction: number) => {
+    const song = currentSongRef.current;
+    if (!song) return;
+    const songDuration = song.duration / 1000; // ms to seconds
+    const targetTime = Math.max(0, Math.min(fraction, 1)) * songDuration;
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = targetTime;
+    }
+    if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+    }
+    setCurrentTime(targetTime);
+  }, [videoRef, audioRef]);
+
+  // ==================== VOLUME ====================
+
+  // Loudness normalization: per-song attenuation factor toward the 89 dB
+  // reference, folded multiplicatively into the volume write below.
+  // Element-level attenuation only (element.volume cannot boost) — analysis
+  // failures yield factor 1 (unchanged volume) and never block playback.
+  // State is tagged with the analyzed songId so a stale (previous song's)
+  // factor is ignored while the new song's analysis is still running.
+  const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; factor: number }>({ songId: null, factor: 1 });
+  const jukeboxSongId = currentSong?.id;
+  const loudnessFactor = loudnessGain.songId === jukeboxSongId ? loudnessGain.factor : 1;
+  useEffect(() => {
+    let cancelled = false;
+    const audioUrl = currentSong?.audioUrl;
+    if (!jukeboxSongId || !audioUrl || !getBool(StorageKeys.LOUDNESS_NORMALIZATION, true)) return;
+    getSongLoudnessGainDb(jukeboxSongId, audioUrl)
+      .then((gainDb) => {
+        if (cancelled) return;
+        setLoudnessGain({ songId: jukeboxSongId, factor: gainDb <= 0 ? Math.pow(10, gainDb / 20) : 1 });
+      })
+      .catch(() => {
+        // Never throw — analysis failure means factor 1.
+      });
+    return () => { cancelled = true; };
+  }, [jukeboxSongId, currentSong?.audioUrl]);
+
+  useEffect(() => {
+    const v = Math.min(1, Math.max(0, volume * loudnessFactor));
+    if (videoRef.current) videoRef.current.volume = v;
+    if (audioRef.current) audioRef.current.volume = v;
+    // If user moves slider while muted, unmute
+    if (volume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  }, [volume, loudnessFactor, videoRef, audioRef, isMuted]);
+
+  // ==================== #4 FIX: ROBUST AUTO-PLAY ====================
+
+  useEffect(() => {
+    if (!isPlaying || !currentSong) return;
+    const videoHasEmbeddedAudio = currentSong.hasEmbeddedAudio || !currentSong.audioUrl;
+
+    let retries = 0;
+    const maxRetries = 15;
+
+    const attemptPlay = () => {
+      let played = false;
+      if (currentSong.videoBackground && videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+        played = true;
+      }
+      if (currentSong.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+        played = true;
+      }
+      return played;
+    };
+
+    // Try immediately, then retry if media not ready
+    const played = attemptPlay();
+    if (!played) {
+      const retryInterval = setInterval(() => {
+        const didPlay = attemptPlay();
+        retries++;
+        if (didPlay || retries >= maxRetries) {
+          clearInterval(retryInterval);
+        }
+      }, 100);
+      return () => clearInterval(retryInterval);
+    }
+  }, [isPlaying, currentSong, videoRef, audioRef]);
+
+  // ==================== #12: TIME TRACKING ====================
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    const videoEl = videoRef.current;
+    if (!audioEl && !videoEl) return;
+
+    const handleTimeUpdate = () => {
+      // Use audio/video time (YouTube uses youtubeTime)
+      const time = (audioEl?.currentTime || 0) || (videoEl?.currentTime || 0);
+      setCurrentTime(time);
+      if (audioEl?.duration) setDuration(audioEl.duration);
+      if (videoEl?.duration) setDuration(videoEl.duration);
+    };
+
+    const handleLoadedMetadata = () => {
+      if (audioEl?.duration) setDuration(audioEl.duration);
+      if (videoEl?.duration) setDuration(videoEl.duration);
+    };
+
+    audioEl?.addEventListener('timeupdate', handleTimeUpdate);
+    audioEl?.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoEl?.addEventListener('timeupdate', handleTimeUpdate);
+    videoEl?.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      audioEl?.removeEventListener('timeupdate', handleTimeUpdate);
+      audioEl?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      videoEl?.removeEventListener('timeupdate', handleTimeUpdate);
+      videoEl?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+    // currentSong is needed because audioRef/videoRef are stable ref objects;
+    // the <audio>/<video> DOM elements only mount when a song is set, so
+    // we must re-run this effect each time currentSong changes to attach
+    // listeners to the newly mounted elements.
+  }, [audioRef, videoRef, currentSong]);
+
+  // ==================== F5: ENERGY SAVING ====================
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden — we don't pause, but reduce processing
+        // The lyrics interval will still run but do less work
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // ==================== LYRICS TRACKING ====================
+
+  useEffect(() => {
+    // F5: Skip lyrics updates when tab is hidden
+    if (document.hidden) return;
+    if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
+
+    const updateCurrentLyric = () => {
+      const currentTimeMs = youtubeTime > 0
+        ? youtubeTime
+        : (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000;
+      for (let i = currentSong.lyrics.length - 1; i >= 0; i--) {
+        if (currentTimeMs >= currentSong.lyrics[i].startTime) {
+          setCurrentLyricIndex(i);
+          break;
+        }
+      }
+    };
+    const interval = setInterval(updateCurrentLyric, 100);
+    return () => clearInterval(interval);
+  }, [showLyrics, currentSong, youtubeTime, audioRef, videoRef]);
+
+  // ==================== CLEANUP ON UNMOUNT ====================
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    const videoEl = videoRef.current;
+    return () => {
+      if (audioEl) audioEl.pause();
+      if (videoEl) videoEl.pause();
+      setPlaylist([]);
+      setCurrentSong(null);
+      setCurrentIndex(0);
+      setIsPlaying(false);
+      setTimerRemaining(null);
+      manualIdsRef.current = new Set();
+      processedWishlistRef.current = new Set();
+      songRequesterRef.current.clear();
+      recentlyPlayedRef.current = [];
+      genreCountRef.current.clear();
+      requesterCountRef.current.clear();
+      // Clear saved playlist
+      try { setJson(StorageKeys.JUKEBOX_PLAYLIST, []); } catch { /* ignore */ }
+    };
+  }, [audioRef, videoRef]);
+
+  // ==================== #17: LIVE SHUFFLE TOGGLE ====================
+
+  const handleSetShuffle = useCallback((newShuffle: boolean) => {
+    setShuffle(newShuffle);
+    if (!newShuffle || !isPlayingRef.current) return;
+
+    // Reshuffle remaining songs (from currentIndex+1 onward) while keeping current song
+    setPlaylist(prev => {
+      const alreadyPlayed = prev.slice(0, currentIndexRef.current + 1);
+      const remaining = prev.slice(currentIndexRef.current + 1);
+
+      if (remaining.length <= 1) return prev;
+
+      // Fisher-Yates shuffle on remaining
+      const shuffled = [...remaining];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      return [...alreadyPlayed, ...shuffled];
+    });
+  }, []);
+
+  // ==================== N10: EXPORT PLAYLIST ====================
+
+  const exportPlaylist = useCallback(() => {
+    return JSON.stringify(playlistRef.current.map(s => ({
+      id: s.id,
+      title: s.title,
+      artist: s.artist,
+      duration: s.duration,
+    })), null, 2);
+  }, []);
+
+  // ==================== COMPANION REMOTE CONTROL EVENTS ====================
+
+  useEffect(() => {
+    const handlers: Array<[string, EventListener]> = [
+      ['jukebox:stop', () => { stopJukebox(); }],
+      ['jukebox:toggle_play', () => { togglePlayPause(); }],
+      ['jukebox:next', () => { playNext(); }],
+      ['jukebox:prev', () => { playPrevious(); }],
+      ['jukebox:shuffle', () => { handleSetShuffle(!shuffleRef.current); }],
+      ['jukebox:repeat', () => {
+        const modes: RepeatMode[] = ['all', 'none', 'one'];
+        const curIdx = modes.indexOf(repeatRef.current);
+        setRepeat(modes[(curIdx + 1) % modes.length]);
+      }],
+      ['jukebox:volume_up', () => { setVolume(v => Math.min(1, v + 0.1)); }],
+      ['jukebox:volume_down', () => { setVolume(v => Math.max(0, v - 0.1)); }],
+      ['jukebox:lyrics_toggle', () => { setShowLyrics(s => !s); }],
+      ['jukebox:playlist_toggle', () => { setHidePlaylist(h => !h); }],
+    ];
+    handlers.forEach(([evt, fn]) => window.addEventListener(evt, fn));
+    return () => { handlers.forEach(([evt, fn]) => window.removeEventListener(evt, fn)); };
+  }, [stopJukebox, togglePlayPause, playNext, playPrevious, handleSetShuffle, setRepeat, setVolume, setShowLyrics, setHidePlaylist]);
+
+  // ==================== YOUTUBE TIME → STATE TIME ====================
+
+  useEffect(() => {
+    if (youtubeTime > 0 && currentSong) {
+      setCurrentTime(youtubeTime / 1000);
+      // Video breaks have duration 0 until the player reports it — never
+      // stomp a player-reported duration back to the (unknown) song duration.
+      if (currentSong.duration > 0) {
+        setDuration(currentSong.duration / 1000);
+      }
+    }
+  }, [youtubeTime, currentSong]);
+
+  // ==================== RETURN ====================
+
+  return {
+    // Filters
+    filterGenre, filterArtist, filterEra, filterYear, searchQuery, shuffle, repeat,
+    minDuration, maxDuration, maxSongs, timerMinutes, recentlyPlayedMinutes,
+    setFilterGenre, setFilterArtist, setFilterEra, setFilterYear, setSearchQuery,
+    setShuffle: handleSetShuffle, setRepeat,
+    setMinDuration, setMaxDuration, setMaxSongs, setTimerMinutes, setRecentlyPlayedMinutes,
+    // Playback
+    isPlaying, isMediaPlaying, currentSong, playlist, currentIndex, platformPaused, platformRestartKey,
+    youtubeTime, currentTime, duration, isAdPlaying,
+    volume, isFullscreen, isMuted, previousVolume,
+    hidePlaylist, showLyrics, currentLyricIndex, isLoading,
+    currentSongRequestedBy,
+    setVolume, setHidePlaylist, setShowLyrics,
+    setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
+    setIsAdPlaying, setYoutubeTime, setCurrentTime, setDuration,
+    // Derived
+    genres, artists, eras, years, filteredSongs, upNext, searchSuggestions,
+    songsPlayed, topGenres, topRequesters, timerRemaining,
+    // Video queue (video breaks) + library playlists
+    addVideoToQueue, addVideoListToQueue, removeQueueVideo, enqueueLibraryPlaylist,
+    // Song queue (search suggestions)
+    addSongToQueue, addSongsToQueue,
+    // Actions
+    startJukebox, stopJukebox, playNext, playPrevious,
+    handleMediaEnd, toggleFullscreen, togglePlayPause,
+    toggleMute, seekTo,
+    exportPlaylist,
+    // Library
+    songs,
+  };
+}

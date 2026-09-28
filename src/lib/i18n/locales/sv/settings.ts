@@ -112,6 +112,20 @@ settingsTabs: {
   webcam: 'Webbkamera',
   viralCharts: 'Viral Charts',
 },
+// R26: Introduktionstexter för varje undermeny i inställningarna (kort menyförklaring)
+settingsTabIntro: {
+  general: 'Appens grunder: språk, standardsvårighet för nya rundor och onlineläge för flerspelarfester.',
+  gameplay: 'Finjustering av upplevelsen: visningar på skärmen medan du sjunger, partikeleffekter, reprysinspelning och bekvämligheter som auto-helskärm och varningssignaler.',
+  appearance: 'Appens utseende: färgtema, textstil och -storlek, bakgrundsvideor, notvisning och prestationsläge för svagare maskiner.',
+  graphicSound: 'Allt om ljud och uppspelning: ljudutgångsenhet, förhands- och huvudvolym, YouTube-videokvalitet och volymnormalisering för en balanserad mix.',
+  microphone: 'Din röst räknas — bokstavligen: lägg till mikrofoner, justera känslighet och förstärkning och testa brus- och ekodämpning live.',
+  mobile: 'Companion-appen: anslut smartphones som mikrofon och kontroll, hantera parkopplade enheter och tilldela deras mikrofoner till spelarna.',
+  webcam: 'Ditt webbkamera som live-bakgrund medan du sjunger: välj källan och ställ in spegling, blur och finjustering av overlayet.',
+  library: 'Hantera dina låtar: välj mappen för biblioteksskanningen, titta på statistiken och återställ biblioteket eller all data i riskzonen.',
+  viral: 'Konfigurera viral charts: välj vilka länder de virala hitsen till filter och låtval kommer från.',
+  sync: 'Säkerhetskopiera allt, återställ allt: exportera låtar, highscores, profiler och inställningar till en fil — och återställ dem på samma eller en annan enhet.',
+  about: 'Version, tekniken under huven och credits — allt om Karaoke ZERO på ett ställe.',
+},
 settingsGameplay: {
   title: 'Spelinställningar',
   description: 'Anpassa gameplay-upplevelsen efter dina preferenser.',
