@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: '歌曲太短',
   songTooShortDesc: '歌曲不到60秒...',
   songTooShortPassTheMic: '歌曲不到60秒，不能用于Pass the Mic。',
+  medleyNoSnippets: '没有适合串烧的歌曲',
+  medleyNoSnippetsDesc: '没有歌曲长于片段时长。请缩短片段时长或添加更长的歌曲。',
   tournamentError: '比赛错误',
   minPlayers: '至少需要2名玩家...',
   minPlayersRequired: '至少需要2名玩家。你选择了{n}名玩家。',

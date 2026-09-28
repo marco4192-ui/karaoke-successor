@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: '曲が短すぎます',
   songTooShortDesc: '曲が60秒未満です...',
   songTooShortPassTheMic: '曲が60秒未満のため、パス・ザ・マイクでは使用できません。',
+  medleyNoSnippets: 'メドレー用の楽曲がありません',
+  medleyNoSnippetsDesc: 'スニペット時間に対して十分な長さの楽曲がありません。スニペット時間を短くするか、もっと長い楽曲を追加してください。',
   tournamentError: 'トーナメントエラー',
   minPlayers: '少なくとも2人のプレイヤーが必要です...',
   minPlayersRequired: '少なくとも2人のプレイヤーが必要です。{n}人のプレイヤーを選択しました。',

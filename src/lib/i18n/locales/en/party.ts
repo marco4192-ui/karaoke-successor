@@ -41,6 +41,8 @@ export const partyTranslations = {
     songTooShort: 'Song too short',
     songTooShortDesc: 'The song is shorter than 60 seconds...',
     songTooShortPassTheMic: 'The song is shorter than 60 seconds and cannot be used for Pass the Mic.',
+  medleyNoSnippets: 'No songs for the medley',
+  medleyNoSnippetsDesc: 'No song is long enough for the snippet duration. Lower the snippet duration or add longer songs.',
     tournamentError: 'Tournament Error',
     minPlayers: 'At least 2 players are required...',
     minPlayersRequired: 'At least 2 players are required. You selected {n} players.',

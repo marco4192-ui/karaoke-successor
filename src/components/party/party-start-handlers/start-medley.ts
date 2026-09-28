@@ -6,11 +6,25 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 
 export async function startMedley(ctx: StartHandlerContext): Promise<void> {
-  const { result, party, setScreen, filteredSongs } = ctx;
+  const { result, party, setScreen, filteredSongs, toast, t } = ctx;
   const s = result.settings as { snippetCount?: number; snippetDuration?: number; playMode?: string };
   const snippetCount = s.snippetCount || 5;
   const snippetDuration = s.snippetDuration || 30;
   const medleySongList = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
+
+  // Guard (Quality-Round): generateMedleySnippets filters out every song
+  // shorter than the snippet duration. If the pool comes back EMPTY we must
+  // NOT switch to the 'medley-game' screen — MedleyGameSection renders
+  // nothing without medleySongs, leaving the user on a blank dark screen
+  // with no way back. Stay in the setup and explain via toast instead.
+  if (medleySongList.length === 0) {
+    toast({
+      title: t('partySetup.medleyNoSnippets'),
+      description: t('partySetup.medleyNoSnippetsDesc'),
+      variant: 'destructive',
+    });
+    return;
+  }
 
   // Pre-restore URLs AND lyrics for all snippet songs (needed for
   // Tauri file:// paths and IndexedDB-stored lyrics) — same as PTM medley.

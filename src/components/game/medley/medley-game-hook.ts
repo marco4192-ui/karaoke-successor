@@ -1,5 +1,5 @@
 /**
- * Medley Contest — Core Game Logic Hook
+ * Medley Contest — Core Game Logic Hook (Orchestrator)
  *
  * Composes focused sub-hooks for audio, features, team bonuses,
  * and elimination.  This hook owns the game loop, phase management,
@@ -16,156 +16,36 @@
  * - Feature #16: Mystery mode — expose mystery state for UI
  * - Feature #17: Highlight tracking per snippet
  * - Feature #18: Team bonus mechanics — synergy, comeback, MVP
+ *
+ * R7: the monolith was split into focused modules under ./hooks/ —
+ * medley-hook-types (public types), use-medley-phase, use-medley-pitch-detection,
+ * use-medley-scoring (tick points + visual samples), use-medley-game-loop,
+ * use-medley-transition, use-medley-round-actions — alongside the pre-existing
+ * use-medley-audio / -features / -team-bonuses / -elimination.  This file
+ * remains the public orchestrator; its export surface is unchanged.
  */
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { shouldSkipPitch, createMedleyTickScoringState, evaluateMedleyTick, type MedleyTickScoringState } from '@/lib/game/party-scoring';
-import { calculateScoringMetadata, evaluateTick, type TickNoteKind, type ScoringMetadata } from '@/lib/game/scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
-import type { Note, LyricLine, PitchDetectionResult, Song, Difficulty } from '@/types/game';
-import { EMPTY_PLAYER_SCORE, isFreestyleNote } from '@/types/game';
-import type {
-  MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
-  MedleyGamePhase, MedleyRoundResult, MedleyScoringEvent,
-  VoiceModifier, MedleyHighlight, TeamBonusResult,
-} from './medley-types';
-import { getDynamicDifficulty } from './medley-scoring';
+import type { MedleyPlayer } from './medley-types';
+import { EMPTY_PLAYER_SCORE } from '@/types/game';
 
 // ── Sub-hook imports ──
 import { useMedleyAudio } from './hooks/use-medley-audio';
 import { useMedleyFeatures } from './hooks/use-medley-features';
 import { useMedleyTeamBonuses } from './hooks/use-medley-team-bonuses';
 import { useMedleyElimination } from './hooks/use-medley-elimination';
+import { useMedleyPhase } from './hooks/use-medley-phase';
+import { useMedleyPitchDetection } from './hooks/use-medley-pitch-detection';
+import { useMedleyScoring } from './hooks/use-medley-scoring';
+import { useMedleyGameLoop } from './hooks/use-medley-game-loop';
+import { useMedleyTransition } from './hooks/use-medley-transition';
+import { useMedleyRoundActions } from './hooks/use-medley-round-actions';
+import type { MedleyGameState, MedleyGameScreenProps } from './hooks/medley-hook-types';
 
-// ===================== PROPS =====================
-
-export interface MedleyGameScreenProps {
-  players: MedleyPlayer[];
-  songs: MedleySong[];
-  settings: MedleySettings;
-  matchups: SnippetMatchup[];
-  /** @deprecated Pass for forward-compat; currently unused by hook */
-  _seriesHistory?: MedleyRoundResult[];
-  onRoundComplete: (_result: MedleyRoundResult, _updatedPlayers: MedleyPlayer[]) => void;
-  onEndGame: () => void;
-  /**
-   * Regenerates the snippet list for the NEXT round (Fix 7): must return a
-   * prepared MedleySong[] with DIFFERENT songs than the current round
-   * (whenever the pool allows) and swap it into the party store / the
-   * screen's `songs` state. Returning null falls back to replaying the
-   * current round's songs.
-   */
-  onPrepareNextRoundSongs?: () => Promise<MedleySong[] | null>;
-}
-
-// ===================== RETURN TYPE =====================
-
-/** One recorded performance sample (per note, optionally per player). */
-type MedleyNotePerfSample = { time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string };
-
-interface MedleyGameState {
-  // Phase
-  phase: MedleyGamePhase;
-  transitionCount: number;
-
-  // Current snippet
-  currentSnippet: MedleySong | null;
-  currentSnippetIdx: number;
-  snippetNotes: Note[];
-  snippetLyrics: LyricLine[];
-
-  // Audio
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  /** Separate video ref for audio fallback — NOT shared with GameBackground */
-  fallbackVideoRef: React.RefObject<HTMLVideoElement | null>;
-  audioUrl: string | null;
-  audioError: string | null;
-  /** Item 5/7: media ready flag — drives the snippet loading overlay. */
-  mediaReady: boolean;
-  /** Item 5: preparing the next round's snippets — drives its loading overlay. */
-  isPreparingNextRound: boolean;
-  currentTimeMs: number;
-  isPlaying: boolean;
-  /** Effective (possibly repositioned) snippet start — absolute-time consumers must use this. */
-  effectiveStartMs: number;
-  restoredSong: Song | null;
-
-  // Players (display copy)
-  playersDisplay: MedleyPlayer[];
-
-  // Scoring helpers
-  snippetProgress: number;
-  totalProgress: number;
-  currentMatchup: SnippetMatchup | null;
-  currentLyricLine: LyricLine | null;
-
-  // Feature #5: Scoring events for UI popups
-  lastScoringEvents: MedleyScoringEvent[];
-
-  // Unified HUD: per-note performance samples for the NoteHighway
-  // (colored tick fills + wrong-singing ghost bars, as in other modes).
-  // Medley (user item 6.1): samples also carry the singer's color and sung
-  // pitch so wrong notes render per player in that player's base color.
-  notePerformance: Map<string, MedleyNotePerfSample[]>;
-
-  // Multi-player strips (Fix 6): the SAME samples keyed by player → note,
-  // so each player's strip renders hits/misses in their own single color.
-  notePerformanceByPlayer: Map<string, Map<string, MedleyNotePerfSample[]>>;
-
-  // Feature #9: Dynamic difficulty
-  currentDynamicDifficulty: Difficulty | null;
-
-  // Feature #10: Elimination
-  isEliminationMode: boolean;
-  eliminationOrder: string[];
-  activePlayerCount: number;
-  totalPlayerCount: number;
-  /** True when exactly 2 players remain in elimination mode (final face-off) */
-  finalFaceOff: boolean;
-
-  // Feature #15: Voice modifier
-  activeModifier: VoiceModifier;
-  modifierJustRevealed: boolean;
-
-  // Feature #16: Mystery mode
-  isMysteryMode: boolean;
-  mysteryReveal: boolean;
-  mysteryRevealSong: MedleySong | null;
-
-  // Feature #17: Highlights
-  highlights: MedleyHighlight[];
-
-  // Feature #18: Team bonuses
-  synergyTriggered: boolean;
-  comebackTriggered: boolean;
-  comebackTeamId: number | null;
-  /** Whether comeback multiplier is active during the current snippet (set before snippet starts) */
-  comebackActiveTeamId: number | null;
-  /** Full team bonus result data for results screens */
-  teamBonusResult: TeamBonusResult;
-
-  // Pitch detection
-  multiPitch: ReturnType<typeof useMultiPitchDetector>;
-
-  // Team
-  isTeam: boolean;
-
-  // Display settings (from useGameSettings)
-  showBackgroundVideo: boolean;
-  useAnimatedBackground: boolean;
-
-  // Actions
-  handleStart: () => Promise<void>;
-  /** Start the next round directly (no intro screen) — user item 6.2 / Fix 7 */
-  handleNextRound: () => Promise<void>;
-  handleEndEarly: () => void;
-  handleRoundComplete: () => void;
-  handleShowFinalResults: () => void;
-  forceRender: () => void;
-}
+// Public props interface stays importable from this module (path stability).
+export type { MedleyGameScreenProps };
 
 // ===================== HOOK =====================
 
@@ -194,28 +74,9 @@ export function useMedleyGame({
   onPrepareNextRoundSongsRef.current = onPrepareNextRoundSongs;
 
   // ── Phase ──
-  const [phase, setPhaseRaw] = useState<MedleyGamePhase>('intro');
-  // Plain setter alias — the ptm-phase-changed event for companion mirroring
-  // is dispatched from the [phase] effect below, AFTER the phase commits.
-  // (Previously it was dispatched synchronously inside setPhase, which — when
-  // called from a state-updater function — fired listener setStates during
-  // this component's render, triggering React's
-  // "Cannot update a component while rendering a different component" warning.)
-  const setPhase = useCallback((newPhase: MedleyGamePhase | ((prev: MedleyGamePhase) => MedleyGamePhase)) => {
-    setPhaseRaw(newPhase);
-}, []);
-  const phaseRef = useRef<MedleyGamePhase>('intro');
-  const [transitionCount, setTransitionCount] = useState(3);
-  // Guard: snippet index already advanced out of its transition (idempotency)
-  const lastTransitionAdvanceRef = useRef<number>(-1);
-  // Keep phaseRef in sync (used in async callbacks to avoid stale closures)
-  useEffect(() => { phaseRef.current = phase; }, [phase]);
-
-  // ── Dispatch phase for companion mirroring whenever it commits ──
-  // Covers the initial 'intro' phase on mount AND every later transition.
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase } }));
-  }, [phase]);
+  const {
+    phase, setPhase, phaseRef, transitionCount, setTransitionCount, lastTransitionAdvanceRef,
+  } = useMedleyPhase();
 
   // ── Current snippet ──
   const [currentSnippetIdx, setCurrentSnippetIdx] = useState(0);
@@ -258,116 +119,16 @@ export function useMedleyGame({
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
-  // ── Feature #5: Scoring events for UI feedback ──
-  const [lastScoringEvents, setLastScoringEvents] = useState<MedleyScoringEvent[]>([]);
-  const scoringEventsRef = useRef<MedleyScoringEvent[]>([]);
-
-  // ── Unified HUD: per-note performance samples for the NoteHighway ──
-  const notePerformanceRef = useRef<Map<string, MedleyNotePerfSample[]>>(new Map());
-  const [notePerformance, setNotePerformance] = useState<Map<string, MedleyNotePerfSample[]>>(new Map());
-  // Throttle UI update for scoring events to ~100ms
-  const lastScoringUiUpdateRef = useRef(0);
-
-  // ── Multi-player strips (Fix 6): per-player performance samples ──
-  // playerId → noteKey → samples (same samples as notePerformanceRef, just
-  // also bucketed per player so each strip renders one single color).
-  const notePerformanceByPlayerRef = useRef<Map<string, Map<string, MedleyNotePerfSample[]>>>(new Map());
-  const [notePerformanceByPlayer, setNotePerformanceByPlayer] = useState<Map<string, Map<string, MedleyNotePerfSample[]>>>(new Map());
-
-  // Per-player tick-based scoring state for Medley (10,000 total points)
-  const medleyTickScoringStatesRef = useRef<Map<string, MedleyTickScoringState>>(new Map());
-
-  // Tick-based scoring metadata for current snippet (10,000 max points)
-  // Lazily computed on first scorePlayer call per snippet.
-  const snippetScoringMetaRef = useRef<ScoringMetadata | null>(null);
-  const lastSnippetIdxForMetaRef = useRef<number>(-1);
-
-  // Reset tick scoring states when snippet changes
-  useEffect(() => {
-    medleyTickScoringStatesRef.current.clear();
-    for (const p of playersRef.current) {
-      medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
-    }
-    snippetScoringMetaRef.current = null;
-    // Vibrato filter references the previous snippet's pitch context — reset
-    lastVisualSungPitchRef.current = new Map();
-    // Dropout-bridge timestamps are snippet-relative too (absTime restarts)
-    lastVisualValidAtRef.current = new Map();
-    // Also clear the per-note performance samples: each snippet has its own
-    // notes (keys may repeat across snippets via the `note-{startTime}`
-    // fallback), so stale fills/wrong-note marks must not bleed into the
-    // next snippet's freshly pre-colored note stream. The game loop re-syncs
-    // the UI state from this ref on its next tick (~50ms).
-    notePerformanceRef.current.clear();
-    notePerformanceByPlayerRef.current.clear();
-  }, [currentSnippetIdx]);
-
-  // ── New round's songs arrival (Fix 7) ──
-  // When the parent swaps in a NEW songs array (next round was prepared by
-  // handleNextRound), rewind to the first snippet. Armed ONLY by
-  // handleNextRound, so the first mount (and any spurious identity churn
-  // mid-round) never rewinds progress.
-  const nextRoundSongsArmedRef = useRef(false);
-  const lastSongsIdentityRef = useRef(medleySongs);
-  useEffect(() => {
-    if (lastSongsIdentityRef.current === medleySongs) return; // first mount / same array
-    lastSongsIdentityRef.current = medleySongs;
-    if (!nextRoundSongsArmedRef.current) return;
-    nextRoundSongsArmedRef.current = false;
-    setCurrentSnippetIdx(0);
-    setCurrentTimeMs(0);
-    lastTransitionAdvanceRef.current = -1;
-    notePerformanceRef.current = new Map();
-    notePerformanceByPlayerRef.current = new Map();
-    setNotePerformance(new Map());
-    setNotePerformanceByPlayer(new Map());
-  }, [medleySongs]);
-
-  // ── Multi-pitch detection (one detector per player) ──
-  const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
-    initialPlayers.map(p => ({
-      playerId: p.id,
-      type: p.inputType,
-      deviceId: p.micId,
-      mobileClientId: p.mobileClientId,
-      stereoChannel: p.stereoChannel,
-    })),
-    [initialPlayers],
-  );
-
-  const multiPitch = useMultiPitchDetector({
-    players: playerConfigs,
-    difficulty: settings.difficulty,
-    autoStart: false,
+  // ── Multi-pitch detection (one detector per player) + isSongPlaying sync ──
+  const {
+    multiPitch, multiPitchRef, setDifficultyOnDetector, lastIsSongPlayingRef,
+  } = useMedleyPitchDetection({
+    initialPlayers,
+    settings,
+    phase,
+    isPlaying,
+    setIsSongPlaying,
   });
-
-  // Ref für multiPitch — useMultiPitchDetector gibt bei jedem Render ein neues Objekt zurück.
-  // Wird in Effekts/Callbacks verwendet, um unnötige Neustarts zu vermeiden.
-  const multiPitchRef = useRef(multiPitch);
-  multiPitchRef.current = multiPitch;
-
-  // ── Song playing status (ref-guarded to prevent React #185) ──
-  const lastIsSongPlayingRef = useRef(false);
-  useEffect(() => {
-    const newVal = isPlaying && phase === 'playing';
-    if (lastIsSongPlayingRef.current !== newVal) {
-      lastIsSongPlayingRef.current = newVal;
-      setIsSongPlaying(newVal);
-    }
-  }, [isPlaying, phase, setIsSongPlaying]);
-
-  // ── Cleanup: reset isSongPlaying on unmount ──
-  useEffect(() => {
-    return () => {
-      setIsSongPlaying(false);
-      lastIsSongPlayingRef.current = false;
-    };
-  }, [setIsSongPlaying]);
-
-  // ── Callback to set difficulty on the pitch detector (used by features hook) ──
-  const setDifficultyOnDetector = useCallback((diff: Difficulty) => {
-    multiPitchRef.current.setDifficulty(diff);
-  }, []);
 
   // ==================== COMPOSE SUB-HOOKS ====================
   // Features hook is called first so activeModifier is available for audio.
@@ -433,759 +194,141 @@ export function useMedleyGame({
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
 
-  // ── Finalize is no longer needed with tick-based scoring (points are awarded per tick). ──
-  // Kept as a no-op for backward compat with callers.
-  const finalizeSnippetScores = useCallback((_activeIds: string[]) => {
-    // Tick-based scoring awards points immediately — nothing to finalize at snippet end.
-  }, []);
+  // ── Tick-based scoring (10,000 points) + visual performance samples ──
+  const {
+    lastScoringEvents,
+    notePerformance, setNotePerformance, notePerformanceRef,
+    notePerformanceByPlayer, setNotePerformanceByPlayer, notePerformanceByPlayerRef,
+    scoringEventsRef, lastScoringUiUpdateRef,
+    medleyTickScoringStatesRef, snippetScoringMetaRef, lastSnippetIdxForMetaRef,
+    finalizeSnippetScores, scorePlayer,
+    setLastScoringEvents,
+  } = useMedleyScoring({
+    playersRef,
+    currentSnippet,
+    currentSnippetIdx,
+    medleySongs,
+    settings,
+    audio,
+    teamBonuses,
+  });
 
-  // ── Visual sample vibrato filter (per player) ──
-  // Same approach as the normal game / PTM: samples that only jitter around
-  // the last accepted pitch (±0.5 semitones, typical vibrato) are SNAPPED to
-  // it but still RECORDED — steady singing renders as a continuous fill
-  // instead of regular every-other-tick gaps.
-  const lastVisualSungPitchRef = useRef<Map<string, number | null>>(new Map());
-  const VIBRATO_THRESHOLD_SEMITONES = 0.5;
-
-  // ROUND 2 (user report: regular gaps in long steady notes): timestamp of
-  // each player's last VALID detection (non-null + above the volume gate).
-  // The multi-pitch pipeline stores every 60 Hz detector frame INCLUDING
-  // note:null dropouts (noise gate / volume gate / no-YIN frames) — unlike
-  // the normal game, whose ~40 fps state sync overwrites single-frame
-  // dropouts before sampling. Bridging dropouts for 150 ms reproduces that
-  // low-pass behaviour: steady tones keep painting hit samples (continuous
-  // fill), real silence (>150 ms) correctly renders miss samples. Also
-  // covers companion players on the 100 ms HTTP polling fallback.
-  const lastVisualValidAtRef = useRef<Map<string, number>>(new Map());
-  const VISUAL_DROPOUT_BRIDGE_MS = 150;
-
-  // Long sustained notes (medley snippets often hold 10s+ tones) need more
-  // than 100 samples at 50 ms cadence — the old cap made the head of every
-  // note >5 s render as empty (= Miss) segments. 400 covers 20 s.
-  const MAX_NOTE_PERF_SAMPLES = 400;
-
-  /** Note kind for visual tick evaluation — freestyle/rap ignore pitch. */
-  const visualKind = (note: Note): TickNoteKind => {
-    if (note.isRap) return 'rap';
-    if (isFreestyleNote(note)) return 'freestyle';
-    return 'normal';
-  };
-
-  // ── Score a single player based on THEIR pitch result (tick-based: 10,000 total points) ──
-  const scorePlayer = useCallback((
-    playerId: string,
-    pitch: PitchDetectionResult | null,
-    absTime: number,
-  ) => {
-    // Skip eliminated players
-    const player = playersRef.current.find(p => p.id === playerId);
-    if (player?.isEliminated) return;
-    if (!currentSnippet) return;
-
-    // Use dynamic difficulty for pitch filtering when available
-    const effectiveDiff = settings.dynamicDifficulty
-      ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
-      : settings.difficulty;
-
-    const pIdx = playersRef.current.findIndex(p => p.id === playerId);
-    if (pIdx === -1) return;
-    const p = playersRef.current[pIdx];
-
-    // Find the note the singline is currently passing — used BOTH for the
-    // point evaluation and the visual fill samples below.
-    const activeNoteForPerf = audio.snippetNotes.find(
-      n => absTime >= n.startTime && absTime < n.startTime + n.duration,
-    );
-
-    // ── ROUND 2: visual fill samples FIRST, on EVERY call, decoupled from
-    // the scoring gates below. The old order (!pitch / shouldSkipPitch /
-    // pitch.note == null early-returns BEFORE sampling) meant every detector
-    // dropout left a 50 ms HOLE in the note fill — and the renderer paints
-    // empty segments as Miss, so steady tones showed regular “Aussetzer”
-    // (user report). Now: bridge short dropouts (≤150 ms, see
-    // lastVisualValidAtRef) with the last accepted pitch; record explicit
-    // miss samples only for real silence. The POINT evaluation below keeps
-    // its original gating unchanged.
-    if (activeNoteForPerf) {
-      const perfNoteId = activeNoteForPerf.id || `note-${activeNoteForPerf.startTime}`;
-
-      // Resolve the visual pitch: fresh detection if valid, else the held
-      // pitch while inside the bridge window, else null (miss).
-      // ROUND 3 (user report: Aussetzer STILL in medley, never in single
-      // player): single player's sampleVisualTicks and PTM's visual sampler
-      // accept ANY frame the detector reported a pitch for
-      // (note != null && frequency != null) — they apply NO volume gate to
-      // the VISUAL fill. shouldSkipPitch's volumeThreshold gate here dropped
-      // quiet-but-valid frames (soft singing / mic distance), which the
-      // renderer painted as miss segments → the reported regular gaps.
-      // Volume gating now applies to the POINT path ONLY — exactly like
-      // single player (checkNoteHits gates points, sampleVisualTicks doesn't).
-      const pitchIsValid = !!pitch && pitch.note != null && pitch.frequency != null;
-      let sungPitch: number | null;
-      if (pitchIsValid && pitch?.note != null) {
-        sungPitch = pitch.note;
-        // Vibrato snap per player (see lastVisualSungPitchRef above)
-        const lastAccepted = lastVisualSungPitchRef.current.get(playerId) ?? null;
-        if (lastAccepted !== null) {
-          let wrapped = Math.abs(pitch.note - lastAccepted) % 12;
-          if (wrapped > 6) wrapped = 12 - wrapped;
-          if (wrapped < VIBRATO_THRESHOLD_SEMITONES) {
-            sungPitch = lastAccepted;
-          } else {
-            lastVisualSungPitchRef.current.set(playerId, pitch.note);
-          }
-        } else {
-          lastVisualSungPitchRef.current.set(playerId, pitch.note);
-        }
-        lastVisualValidAtRef.current.set(playerId, absTime);
-      } else {
-        const lastValidAt = lastVisualValidAtRef.current.get(playerId) ?? -Infinity;
-        const held = lastVisualSungPitchRef.current.get(playerId) ?? null;
-        sungPitch = held !== null && absTime - lastValidAt <= VISUAL_DROPOUT_BRIDGE_MS
-          ? held
-          : null;
-      }
-
-      // Evaluate — freestyle/rap notes ignore pitch, null records a miss
-      // (same semantics as the normal game's sampleVisualTicks).
-      let accuracy = 0;
-      let isHit = false;
-      if (sungPitch !== null) {
-        const visualTick = evaluateTick(sungPitch, activeNoteForPerf.pitch, effectiveDiff, visualKind(activeNoteForPerf));
-        accuracy = visualTick.accuracy;
-        isHit = visualTick.isHit;
-      }
-
-      let perfSamples = notePerformanceRef.current.get(perfNoteId);
-      if (!perfSamples) {
-        perfSamples = [];
-        notePerformanceRef.current.set(perfNoteId, perfSamples);
-      }
-      perfSamples.push({ time: absTime, accuracy, hit: isHit, sungPitch, playerColor: p.color });
-      if (perfSamples.length > MAX_NOTE_PERF_SAMPLES) {
-        notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-MAX_NOTE_PERF_SAMPLES));
-      }
-
-      // Multi-player strips (Fix 6): the same sample, bucketed into the
-      // singer's own map so their strip renders hits/misses in their color.
-      let playerPerfMap = notePerformanceByPlayerRef.current.get(playerId);
-      if (!playerPerfMap) {
-        playerPerfMap = new Map();
-        notePerformanceByPlayerRef.current.set(playerId, playerPerfMap);
-      }
-      let playerSamples = playerPerfMap.get(perfNoteId);
-      if (!playerSamples) {
-        playerSamples = [];
-        playerPerfMap.set(perfNoteId, playerSamples);
-      }
-      playerSamples.push({ time: absTime, accuracy, hit: isHit, sungPitch, playerColor: p.color });
-      if (playerSamples.length > MAX_NOTE_PERF_SAMPLES) {
-        playerPerfMap.set(perfNoteId, playerSamples.slice(-MAX_NOTE_PERF_SAMPLES));
-      }
-    }
-
-    // ── Scoring gates (POINTS only — the visual samples above already ran) ──
-    if (!pitch) return;
-    if (shouldSkipPitch(pitch, effectiveDiff)) return;
-    if (pitch.note == null) return;
-
-    // Get or create per-player tick scoring state
-    let tickState = medleyTickScoringStatesRef.current.get(playerId);
-    if (!tickState) {
-      tickState = createMedleyTickScoringState();
-      medleyTickScoringStatesRef.current.set(playerId, tickState);
-    }
-
-    // Lazy-compute scoring metadata for this snippet (only once per snippet
-    // change) — MUST happen before the point evaluation below so the first
-    // scored tick of a snippet already sees valid pointsPerTick.
-    if (lastSnippetIdxForMetaRef.current !== currentSnippetIdx && audio.snippetNotes.length > 0) {
-      const metaBeat = audio.beatDurationRef.current || 500;
-      const notesForMeta = audio.snippetNotes.map(n => ({
-        duration: n.duration,
-        isGolden: n.isGolden ?? false,
-      }));
-      // Fix 8: the 10,000-point tick budget spans the WHOLE game (all
-      // snippets), NOT per snippet — 5 snippets previously allowed ~40k
-      // points. Each snippet gets 10000 / snippetCount; the golden 2×
-      // multiplier inside calculateScoringMetadata is kept as is.
-      const perSnippetBudget = medleySongs.length > 0
-        ? Math.round(10000 / medleySongs.length)
-        : 10000;
-      snippetScoringMetaRef.current = calculateScoringMetadata(notesForMeta, metaBeat, 'medium', perSnippetBudget);
-      lastSnippetIdxForMetaRef.current = currentSnippetIdx;
-    }
-
-    // ── Beat-throttled POINT evaluation (the 10,000-point budget assumes
-    // exactly one scored tick per beat — see calculateScoringMetadata).
-    const beatDuration = audio.beatDurationRef.current || 500;
-    const result = evaluateMedleyTick(
-      pitch.note, absTime, audio.snippetNotes, effectiveDiff, beatDuration, tickState, snippetScoringMetaRef.current,
-    );
-
-    // ── Throttled tick: points/combo/miss were NOT evaluated — treat as
-    // no-op (the visual sample above already covered the display).
-    if (result.throttled) {
-      playersRef.current[pIdx] = { ...p };
-      return;
-    }
-
-    if (result.points > 0) {
-      let points = result.points;
-      if (teamBonuses.comebackActiveTeamIdRef.current !== null && p.team === teamBonuses.comebackActiveTeamIdRef.current) {
-        points = Math.round(points * 1.5);
-      }
-      p.score += points;
-      p.combo++;
-      if (p.combo > p.maxCombo) p.maxCombo = p.combo;
-
-      // Count a note as "hit" when ticks are hit (using ticksHit as proxy)
-      p.notesHit = tickState.ticksHit;
-
-      scoringEventsRef.current.push({
-        playerId,
-        points,
-        hit: true,
-        golden: false,
-        timestamp: Date.now(),
-      });
-    } else if (result.hit) {
-      // Tick evaluated but no points (shouldn't happen with valid scoringMeta, but handle gracefully)
-      p.combo++;
-      if (p.combo > p.maxCombo) p.maxCombo = p.combo;
-    } else {
-      p.combo = 0;
-      p.notesMissed++;
-
-      scoringEventsRef.current.push({
-        playerId,
-        points: -10,
-        hit: false,
-        golden: false,
-        timestamp: Date.now(),
-      });
-    }
-
-    playersRef.current[pIdx] = { ...p };
-  }, [audio.snippetNotes, audio.beatDurationRef, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, teamBonuses.comebackActiveTeamIdRef]);
-
-  // ==================== GAME LOOP ====================
-
-  // ── Audio stall fallback timer ──
-  // If audio fails to play or stalls, auto-advance after a grace period.
-  // Uses a long grace period (8s) to avoid false positives during loading.
-  // Also freezes during pause (isPausedRef).
-  // Suppressed while isPreparingRef is true (audio still loading).
+  // ── New round's songs arrival (Fix 7) ──
+  // When the parent swaps in a NEW songs array (next round was prepared by
+  // handleNextRound), rewind to the first snippet. Armed ONLY by
+  // handleNextRound, so the first mount (and any spurious identity churn
+  // mid-round) never rewinds progress.
+  const nextRoundSongsArmedRef = useRef(false);
+  const lastSongsIdentityRef = useRef(medleySongs);
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSnippet || audio.isPausedRef.current) return;
-    // Don't start stall detection while audio is still being prepared
-    if (audio.isPreparingRef.current) return;
-
-    const effective = audio.effectiveSnippetRef.current;
-    const effectiveStart = effective?.startTime ?? currentSnippet.startTime;
-    const effectiveEnd = effective?.endTime ?? currentSnippet.endTime;
-    const snippetDuration = effectiveEnd - effectiveStart;
-    let stallDetected = false;
-    let stallCheckCount = 0;
-    const STALL_CHECK_LIMIT = 16; // 16 × 500ms = 8 seconds grace period
-
-    const checkInterval = setInterval(() => {
-      if (audio.isPausedRef.current) return;
-      // Don't trigger fallback while still preparing
-      if (audio.isPreparingRef.current) { stallCheckCount = 0; return; }
-      const audioEl = audio.audioRef.current;
-      const fallbackVideo = audio.fallbackVideoRef.current;
-      // Audio or video is playing fine — no stall
-      const anyMediaPlaying = (audioEl && !audioEl.paused) || (fallbackVideo && !fallbackVideo.paused);
-      if (anyMediaPlaying) {
-        stallCheckCount = 0;
-        return;
-      }
-      stallCheckCount++;
-      if (stallCheckCount >= STALL_CHECK_LIMIT && !stallDetected) {
-        stallDetected = true;
-        const fallbackStartTime = Date.now();
-        const startMs = currentTimeMs;
-        // eslint-disable-next-line no-console
-        console.warn('[Medley] Running in fallback mode (no audio)');
-        clearInterval(checkInterval);
-        audio.fallbackTimerRef.current = setInterval(() => {
-          if (audio.isPausedRef.current) return;
-          const elapsed = Date.now() - fallbackStartTime;
-          const time = startMs + elapsed;
-          setCurrentTimeMs(time);
-
-          if (time >= snippetDuration) {
-            if (audio.fallbackTimerRef.current) clearInterval(audio.fallbackTimerRef.current);
-            audio.fallbackTimerRef.current = null;
-            setIsPlaying(false);
-
-            const activeIds = getActivePlayerIds();
-            // Finalize pending note scores before transitioning
-            finalizeSnippetScores(activeIds);
-
-            activeIds.forEach(id => {
-              const p = playersRef.current.find(p => p.id === id);
-              if (p) p.snippetsSung++;
-            });
-            features.buildSnippetHighlight(currentSnippetIdx);
-            teamBonuses.checkSynergy();
-            teamBonuses.finalizeComeback();
-            teamBonuses.syncTeamBonusResult();
-            if (isEliminationMode) {
-              elimination.eliminateLowestScorer();
-              const remainingAfterElim = playersRef.current.filter(p => !p.isEliminated);
-              if (remainingAfterElim.length <= 1) {
-                setPhase('round-results');
-                return;
-              }
-            }
-            forceRender();
-
-            if (currentSnippetIdx < medleySongs.length - 1) {
-              setPhase('transition');
-            } else {
-              setPhase('round-results');
-            }
-          }
-        }, 80);
-      }
-    }, 500);
-
-    return () => {
-      clearInterval(checkInterval);
-      if (audio.fallbackTimerRef.current) { clearInterval(audio.fallbackTimerRef.current); audio.fallbackTimerRef.current = null; }
-    };
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length, pauseDialogAction, finalizeSnippetScores]);
-
-  // ── Game loop ──
-  // rAF-driven (same pattern as use-ptm-time-tracking.ts): the media clock is
-  // read every display frame and currentTimeMs syncs at ~40 fps (25 ms), so
-  // the note highway GLIDES instead of stepping at the old 50 ms interval
-  // (20 fps — the choppiest mode in the app). Scoring, event sync and
-  // forceRender keep their original 50 ms cadence, keeping per-second React
-  // work identical to the previous setInterval implementation.
-  useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
-
-    let rafId = 0;
-    let lastTimeSync = 0; // 25 ms cadence — smooth currentTimeMs for the highway
-    let lastTick = 0;     // 50 ms cadence — scoring / events / transitions
-
-    const loop = () => {
-      rafId = requestAnimationFrame(loop);
-
-      // Don't advance while paused
-      if (audio.isPausedRef.current) return;
-
-      // Read time from whichever media element is actually playing (like PTM)
-      const audioEl = audio.audioRef.current;
-      const fallbackVideo = audio.fallbackVideoRef.current;
-      let songTimeMs: number | null = null;
-      if (audioEl && !audioEl.paused && audioEl.readyState >= 2) {
-        songTimeMs = audioEl.currentTime * 1000;
-      } else if (fallbackVideo && !fallbackVideo.paused && fallbackVideo.readyState >= 2) {
-        songTimeMs = fallbackVideo.currentTime * 1000;
-      }
-      if (songTimeMs === null) return;
-
-      // Cancel fallback timer now that real media is driving time
-      if (audio.fallbackTimerRef.current) {
-        clearInterval(audio.fallbackTimerRef.current);
-        audio.fallbackTimerRef.current = null;
-      }
-
-      const effectiveStart = audio.effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
-      const effectiveEnd = audio.effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
-      const snippetTime = songTimeMs - effectiveStart;
-
-      const perfNow = performance.now();
-
-      // ── Smooth time sync (~40 fps) — this is what makes the notes glide ──
-      if (perfNow - lastTimeSync >= 25) {
-        lastTimeSync = perfNow;
-        setCurrentTimeMs(snippetTime);
-      }
-
-      // ── Full logic tick (50 ms — original cadence) ──
-      if (perfNow - lastTick < 50) return;
-      lastTick = perfNow;
-
-      // Check snippet end
-      if (songTimeMs >= effectiveEnd) {
-        // Finalize pending note scores for active players before transitioning
-        const activeIds = getActivePlayerIds();
-        finalizeSnippetScores(activeIds);
-
-        // Stop whichever media is playing
-        if (audioEl && !audioEl.paused) audioEl.pause();
-        if (audio.fallbackVideoRef.current && !audio.fallbackVideoRef.current.paused) audio.fallbackVideoRef.current.pause();
-        if (audioEl) audioEl.playbackRate = 1.0; // Reset playback rate
-        setIsPlaying(false);
-
-        // Count snippet as sung for active players
-        activeIds.forEach(id => {
-          const p = playersRef.current.find(p => p.id === id);
-          if (p) p.snippetsSung++;
-        });
-
-        // Feature #17: Build highlight for this snippet
-        features.buildSnippetHighlight(currentSnippetIdx);
-
-        // Feature #18: Check team synergy at snippet end
-        teamBonuses.checkSynergy();
-        // Feature #18: Finalize comeback bonus (if active on last snippet)
-        teamBonuses.finalizeComeback();
-        // Sync team bonus result to state for UI
-        teamBonuses.syncTeamBonusResult();
-
-        forceRender();
-
-        // Feature #10: Elimination — eliminate lowest scorer after snippet
-        if (isEliminationMode) {
-          elimination.eliminateLowestScorer();
-          // Feature #10: If only 1 player remains, end game immediately
-          const remainingAfterElim = playersRef.current.filter(p => !p.isEliminated);
-          if (remainingAfterElim.length <= 1) {
-            setPhase('round-results');
-            return;
-          }
-        }
-
-        // Feature #16: Mystery mode — show reveal
-        if (settings.mysteryMode) {
-          features.setMysteryReveal(true);
-          features.setMysteryRevealSong(currentSnippet);
-          // After 2 seconds, continue to transition/round-results
-          setTimeout(() => {
-            features.setMysteryReveal(false);
-            features.setMysteryRevealSong(null);
-            if (currentSnippetIdx < medleySongs.length - 1) {
-              setPhase('transition');
-            } else {
-              setPhase('round-results');
-            }
-          }, 2000);
-          return;
-        }
-
-        // Move to next or round-results
-        if (currentSnippetIdx < medleySongs.length - 1) {
-          setPhase('transition');
-        } else {
-          setPhase('round-results');
-        }
-        return;
-      }
-
-      // Score ALL active players individually using their own pitch
-      const absTime = effectiveStart + snippetTime;
-      const activeIds = getActivePlayerIds();
-      for (const pid of activeIds) {
-        const playerPitch = multiPitchRef.current.getPlayerPitch(pid);
-        scorePlayer(pid, playerPitch, absTime);
-      }
-
-      // Feature #5: Push scoring events to UI state (throttled to ~100ms)
-      const now = Date.now();
-      if (now - lastScoringUiUpdateRef.current > 80 && scoringEventsRef.current.length > 0) {
-        lastScoringUiUpdateRef.current = now;
-        setLastScoringEvents([...scoringEventsRef.current]);
-        // Keep events for 1.5 seconds, then discard
-        const cutoff = now - 1500;
-        scoringEventsRef.current = scoringEventsRef.current.filter(e => e.timestamp > cutoff);
-      }
-
-      // Unified HUD: sync note performance samples to state (~100ms) for the NoteHighway
-      if (notePerformanceRef.current.size > 0) {
-        setNotePerformance(new Map(notePerformanceRef.current));
-      }
-      // Multi-player strips: sync the per-player buckets in the same tick
-      if (notePerformanceByPlayerRef.current.size > 0) {
-        setNotePerformanceByPlayer(new Map(
-          Array.from(notePerformanceByPlayerRef.current.entries(),
-            ([pid, m]) => [pid, new Map(m)] as const),
-        ));
-      }
-
-      // Keep display state in sync with ref mutations for live score updates
-      forceRender();
-    };
-
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, forceRender, isEliminationMode, elimination.eliminateLowestScorer, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, settings.mysteryMode, medleySongs.length, teamBonuses.syncTeamBonusResult, finalizeSnippetScores]);
-
-  // ── Transition: pulse then next snippet ──
-  // Item 7: the countdown effect OWNS the advance. The previous split design
-  // (countdown effect + separate advance effect reading the transitionCount
-  // STATE) had a race: when phase flipped to 'transition', the advance effect
-  // ran in the same commit with the STALE transitionCount (0 from the previous
-  // countdown) and skipped the screen entirely — which made snippet switches
-  // alternate between instant cuts and loading gaps. Keeping the counter in a
-  // local closure removes the stale-state read: every transition now shows the
-  // SAME short countdown before advancing.
-  useEffect(() => {
-    if (phase !== 'transition') return;
-    const transitionTime = Math.max(0, settings.transitionTime ?? 3);
-    let count = transitionTime;
-    setTransitionCount(count);
-
-    const advance = () => {
-      // Idempotency guard (StrictMode remounts / late re-renders)
-      if (lastTransitionAdvanceRef.current === currentSnippetIdx) return;
-      lastTransitionAdvanceRef.current = currentSnippetIdx;
-
-      const nextIdx = currentSnippetIdx + 1;
-      setCurrentSnippetIdx(nextIdx);
-      setPhase('playing');
-      setIsPlaying(true); // CRITICAL: must re-enable playing for the next snippet
-      setCurrentTimeMs(0);
-      // Fresh note stream: clear the previous snippet's per-note performance
-      // samples (fills + wrong-note marks) so they cannot bleed into the new
-      // snippet's notes via repeated `note-{startTime}` keys.
-      notePerformanceRef.current.clear();
-      notePerformanceByPlayerRef.current.clear();
-      setNotePerformance(new Map());
-      setNotePerformanceByPlayer(new Map());
-      audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires for new snippet
-      // Feature #18: Pre-check comeback boost before the last snippet starts
-      teamBonuses.preCheckComeback(nextIdx);
-    };
-
-    if (count <= 0) {
-      // Zero-length transitions advance (almost) immediately — still on the
-      // next tick so the phase change settles without a mid-render state storm.
-      const t = setTimeout(advance, 50);
-      return () => clearTimeout(t);
-    }
-
-    // Pure countdown tick — NO side effects inside the state updater.
-    // (React may invoke updaters during render / twice in StrictMode; putting
-    // setPhase / ref mutations / callbacks in there previously caused
-    // "Cannot update a component while rendering a different component".)
-    const interval = setInterval(() => {
-      count -= 1;
-      setTransitionCount(count);
-      if (count <= 0) {
-        clearInterval(interval);
-        advance();
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks
-  }, [phase, currentSnippetIdx]);
-
-  // ==================== ACTIONS ====================
-
-  // ── Start game ──
-  const handleStart = useCallback(async () => {
-    if (medleySongs.length === 0) return;
-    elimination.resetFinalFaceOff();
-    setCurrentTimeMs(0);
-
-    // Initialize multi-pitch detection (non-blocking).
-    try {
-      const ok = await multiPitch.initialize();
-      if (ok) multiPitch.start();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[Medley] Multi-pitch init failed:', e);
-    }
-
-    // Start playing immediately (no countdown phase)
-    audio.cancelFallbackTimer();
-    audio.effectiveSnippetRef.current = null;
-    setPhase('playing');
-    setIsPlaying(true);
-    setCurrentTimeMs(0);
-    audio.lastPlayPhaseRef.current = ''; // Reset so the play effect fires
-  }, [multiPitch, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef, elimination.resetFinalFaceOff]);
-
-  // ── Next round (user item 6.2, Fix 7) ──
-  // The "Next Round" button on the round-results screen previously called
-  // onEndGame(), throwing the user back to the overall start screen. Instead,
-  // reset the per-round state and jump DIRECTLY into the next round — only
-  // the very first game start shows the intro screen.
-  //
-  // Fix 7: BEFORE resetting, the parent's `onPrepareNextRoundSongs` generates
-  // a FRESH snippet list with DIFFERENT songs than the round just finished
-  // (whenever the library pool allows) and swaps it into the party store +
-  // the screen's `songs` state. The returned array arms the identity-based
-  // reset effect above (belt-and-braces for late-arriving re-renders).
-  // Item 5: isPreparingNextRound drives a visible loading overlay — preparing
-  // URLs + lyrics for the whole next round takes a moment and previously
-  // showed NO feedback at all.
-  const [isPreparingNextRound, setIsPreparingNextRound] = useState(false);
-  const handleNextRound = useCallback(async () => {
-    if (medleySongs.length === 0) return;
-
-    // ── Prepare the next round's songs BEFORE resetting anything ──
-    let newSongs: MedleySong[] | null = null;
-    setIsPreparingNextRound(true);
-    try {
-      if (onPrepareNextRoundSongsRef.current) {
-        try {
-          newSongs = await onPrepareNextRoundSongsRef.current();
-        } catch {
-          newSongs = null;
-        }
-      }
-    } finally {
-      setIsPreparingNextRound(false);
-    }
-    nextRoundSongsArmedRef.current = !!(newSongs && newSongs.length > 0);
-
-    // Rewind to the first snippet
+    if (lastSongsIdentityRef.current === medleySongs) return; // first mount / same array
+    lastSongsIdentityRef.current = medleySongs;
+    if (!nextRoundSongsArmedRef.current) return;
+    nextRoundSongsArmedRef.current = false;
     setCurrentSnippetIdx(0);
     setCurrentTimeMs(0);
-
-    // Re-arm the audio pipeline for snippet 0 (prepare + play effects).
-    // useMedleyAudio re-prepares per snippet song id (its prepare effect is
-    // keyed on [currentSnippet?.song.id, currentSnippetIdx]), so the new
-    // round's snippet 0 gets loaded + played automatically.
-    audio.cancelFallbackTimer();
-    audio.effectiveSnippetRef.current = null;
-    audio.lastPlayPhaseRef.current = '';
-
-    // Reset the snippet-advance guard (transition idempotency)
     lastTransitionAdvanceRef.current = -1;
-
-    // Clear per-round visuals: note fills / wrong-note marks / popup state
     notePerformanceRef.current = new Map();
     notePerformanceByPlayerRef.current = new Map();
     setNotePerformance(new Map());
     setNotePerformanceByPlayer(new Map());
-    scoringEventsRef.current = [];
-    setLastScoringEvents([]);
+  }, [medleySongs]);
 
-    // Reset per-player tick scoring states for the fresh round. Critical for
-    // single-snippet medleys (e.g. team 1v1) where the snippet index does not
-    // change and the [currentSnippetIdx] reset effect would never re-run.
-    medleyTickScoringStatesRef.current.clear();
-    for (const p of playersRef.current) {
-      medleyTickScoringStatesRef.current.set(p.id, createMedleyTickScoringState());
-    }
-    snippetScoringMetaRef.current = null;
-    lastSnippetIdxForMetaRef.current = -1; // force re-computation for snippet 0
+  // ==================== GAME LOOP ====================
 
-    // Reset per-round features (highlights, mystery) + elimination state
-    features.resetRound();
-    if (isEliminationMode) elimination.resetRound();
+  useMedleyGameLoop({
+    phase,
+    isPlaying,
+    currentSnippet,
+    currentSnippetIdx,
+    medleySongs,
+    settings,
+    pauseDialogAction,
+    currentTimeMs,
+    isEliminationMode,
+    playersRef,
+    multiPitchRef,
+    audio,
+    features,
+    teamBonuses,
+    elimination,
+    getActivePlayerIds,
+    finalizeSnippetScores,
+    scorePlayer,
+    setPhase,
+    setIsPlaying,
+    setCurrentTimeMs,
+    scoringEventsRef,
+    setLastScoringEvents,
+    lastScoringUiUpdateRef,
+    notePerformanceRef,
+    notePerformanceByPlayerRef,
+    setNotePerformance,
+    setNotePerformanceByPlayer,
+    forceRender,
+  });
 
-    // Reset team-bonus bookkeeping for the fresh round
-    teamBonuses.teamBonusResultRef.current = {
-      synergyPoints: {},
-      comebackTeamId: null,
-      comebackMultiplier: 1,
-      mvpPlayerId: null,
-      teamBonusTotal: {},
-    };
-    teamBonuses.comebackActiveTeamIdRef.current = null;
-    teamBonuses.syncTeamBonusResult();
+  // ── Transition: pulse then next snippet (countdown owns the advance) ──
+  useMedleyTransition({
+    phase,
+    currentSnippetIdx,
+    settings,
+    lastTransitionAdvanceRef,
+    setTransitionCount,
+    setCurrentSnippetIdx,
+    setPhase,
+    setIsPlaying,
+    setCurrentTimeMs,
+    notePerformanceRef,
+    notePerformanceByPlayerRef,
+    setNotePerformance,
+    setNotePerformanceByPlayer,
+    audio,
+    teamBonuses,
+  });
 
-    forceRender();
+  // ==================== ACTIONS ====================
 
-    // Go DIRECTLY into the next round — no intro screen, no re-setup.
-    // Scores stay cumulative across rounds (series standings).
-    setPhase('playing');
-    setIsPlaying(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks
-  }, [medleySongs.length, audio.cancelFallbackTimer, audio.effectiveSnippetRef, audio.lastPlayPhaseRef, features.resetRound, elimination.resetRound, isEliminationMode, teamBonuses.syncTeamBonusResult, teamBonuses.teamBonusResultRef, teamBonuses.comebackActiveTeamIdRef, forceRender]);
-
-  // ── Round complete ──
-  const handleRoundComplete = useCallback(() => {
-    // Final sync of team bonus result before recording
-    teamBonuses.syncTeamBonusResult();
-    teamBonuses.computeMVP();
-    teamBonuses.syncTeamBonusResult(); // Sync again after MVP is computed
-
-    const roundResult: MedleyRoundResult = {
-      playedAt: Date.now(),
-      snippetCount: medleySongs.length,
-      playMode: settings.playMode,
-      playerScores: {},
-      teamScores: isTeam
-        ? {
-            teamA: playersRef.current.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0),
-            teamB: playersRef.current.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0),
-          }
-        : undefined,
-      eliminationOrder: isEliminationMode ? [...elimination.eliminationOrderRef.current] : undefined,
-      snippetHighlights: features.highlightsRef.current.length > 0 ? [...features.highlightsRef.current] : undefined,
-      teamBonusResult: isTeam && settings.teamBonusesEnabled ? { ...teamBonuses.teamBonusResultRef.current } : undefined,
-    };
-    for (const p of playersRef.current) {
-      roundResult.playerScores[p.id] = {
-        score: p.score,
-        notesHit: p.notesHit,
-        notesMissed: p.notesMissed,
-        maxCombo: p.maxCombo,
-        snippetsSung: p.snippetsSung,
-      };
-    }
-
-    onRoundComplete(roundResult, [...playersRef.current]);
-  }, [medleySongs.length, isTeam, isEliminationMode, onRoundComplete, settings.playMode, settings.teamBonusesEnabled, teamBonuses.computeMVP, teamBonuses.syncTeamBonusResult, teamBonuses.teamBonusResultRef, elimination.eliminationOrderRef, features.highlightsRef]);
-
-  // ── End song early ──
-  const handleEndEarly = useCallback(() => {
-    if (audio.audioRef.current) {
-      audio.audioRef.current.pause();
-      audio.audioRef.current.playbackRate = 1.0; // Reset playback rate
-    }
-    if (audio.fallbackVideoRef.current) {
-      audio.fallbackVideoRef.current.pause();
-    }
-    audio.cancelFallbackTimer();
-    setIsPlaying(false);
-    setIsSongPlaying(false);
-    // NOTE: Do NOT call multiPitch.stop() here. Pitch detection must remain
-    // alive across snippets — it is only started once in handleStart() and
-    // cleaned up on unmount / full game end.
-
-    // Count snippet as sung for active players
-    const activeIds = getActivePlayerIds();
-    // Finalize pending note scores for active players before transitioning
-    finalizeSnippetScores(activeIds);
-    activeIds.forEach(id => {
-      const p = playersRef.current.find(p => p.id === id);
-      if (p) p.snippetsSung++;
-    });
-
-    // Feature #17: Build highlight for this snippet
-    features.buildSnippetHighlight(currentSnippetIdx);
-
-    // Feature #18: Check team synergy at snippet end
-    teamBonuses.checkSynergy();
-    // Feature #18: Finalize comeback bonus (if active on last snippet)
-    teamBonuses.finalizeComeback();
-    // Sync team bonus result to state for UI
-    teamBonuses.syncTeamBonusResult();
-
-    forceRender();
-
-    if (currentSnippetIdx < medleySongs.length - 1) {
-      setPhase('transition');
-    } else {
-      setPhase('round-results');
-    }
-  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, finalizeSnippetScores, features.buildSnippetHighlight, teamBonuses.checkSynergy, teamBonuses.finalizeComeback, teamBonuses.syncTeamBonusResult, setIsSongPlaying, forceRender, audio.cancelFallbackTimer, audio.audioRef, audio.fallbackVideoRef]);
-
-  // ── Cleanup on unmount ──
-  // DO-NOT-CHANGE: Dependency must be [] (not [multiPitch]).
-  // useMultiPitchDetector returns a new object every render, so [multiPitch]
-  // caused the cleanup to fire on every re-render, which cleared the
-  // countdown interval mid-countdown (killing the game start).
-  useEffect(() => {
-    return () => {
-      multiPitch.stop();
-      audio.cancelFallbackTimer();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const {
+    isPreparingNextRound,
+    handleStart,
+    handleNextRound,
+    handleRoundComplete,
+    handleEndEarly,
+  } = useMedleyRoundActions({
+    medleySongs,
+    settings,
+    isTeam,
+    isEliminationMode,
+    currentSnippetIdx,
+    playersRef,
+    onRoundComplete,
+    onPrepareNextRoundSongsRef,
+    multiPitch,
+    audio,
+    features,
+    teamBonuses,
+    elimination,
+    getActivePlayerIds,
+    finalizeSnippetScores,
+    setPhase,
+    setIsPlaying,
+    setCurrentSnippetIdx,
+    setCurrentTimeMs,
+    setIsSongPlaying,
+    nextRoundSongsArmedRef,
+    lastTransitionAdvanceRef,
+    scoringEventsRef,
+    setLastScoringEvents,
+    medleyTickScoringStatesRef,
+    snippetScoringMetaRef,
+    lastSnippetIdxForMetaRef,
+    notePerformanceRef,
+    notePerformanceByPlayerRef,
+    setNotePerformance,
+    setNotePerformanceByPlayer,
+    forceRender,
+  });
 
   // ── Helpers ──
   const snippetProgress = currentSnippet

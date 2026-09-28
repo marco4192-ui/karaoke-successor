@@ -1,149 +1,45 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useGameStore } from '@/lib/game/store';
-import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
-import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
+/**
+ * PARTY GAME MODE SCREENS — orchestrator (task R9 split).
+ *
+ * Public surface unchanged: `export function PartyGameScreens` (imported by
+ * karaoke-app.tsx). This file owns the cross-screen state (Rate my Song
+ * results/series round, challenge overlay, next-song preparation feedback)
+ * and the tournament state/handlers via useTournamentScreens, then composes
+ * the screen blocks from ./game-screens/ in the EXACT original fragment
+ * order (starting screen → PTM → tournament voting/bracket/results →
+ * Battle Royale → CPTM → Medley → Missing Words/Blind → Rate my Song →
+ * preparation overlay), so the rendered DOM is identical.
+ *
+ * Modules (all JSX/handler bodies extracted byte-identically):
+ * - game-screens/use-tournament-screens.ts  — tournament state + handlers
+ * - game-screens/tournament-screens.tsx     — starting screen + voting/bracket/results
+ * - game-screens/ptm-game-section.tsx       — Pass the Mic game screen
+ * - game-screens/battle-royale-section.tsx  — Battle Royale screen + brSongPool
+ * - game-screens/cptm-game-section.tsx      — Companion Sing-A-Long screen
+ * - game-screens/medley-game-section.tsx    — Medley Contest screen
+ * - game-screens/competitive-game-sections.tsx — Missing Words + Blind screens
+ * - game-screens/rate-my-song-screens.tsx   — Rate my Song screens (+ rms-starting-screen.tsx)
+ * - game-screens/prepare-next-medley-round.ts — Medley Fix 7 next-round snippets
+ * - game-screens/types.ts                   — shared types (props, MicOverlayState)
+ */
+
+import { useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
-import { shuffleArray } from '@/lib/utils';
-import { TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
-import { BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
-import { PtmGameScreen } from '@/components/game/ptm-game-screen';
-import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
-import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
-import type { MedleySong } from '@/components/game/medley/medley-types';
-import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
-import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
-import { CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
-import { PartyStartingScreen } from '@/components/game/party-starting-screen';
-import { TournamentSongVoteOverlay } from '@/components/game/tournament-song-vote-overlay';
-import { RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
-import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
-import { toast } from '@/hooks/use-toast';
-import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
-import type { Screen } from '@/types/screens';
-import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs, buildGameSetupResult } from './party-game-helpers';
-
-interface PartyGameScreensProps {
-  screen: Screen;
-  setScreen: (_s: Screen) => void;
-}
-
-// ── Medley next round: regenerate snippets with NEW songs (Fix 7) ──
-// Mirrors start-medley.ts: generate a fresh snippet list — EXCLUDING the songs
-// used in the round just finished when the filtered pool is large enough
-// (pool.length > snippetCount * 2), otherwise falling back to the full pool —
-// then prepare URLs + lyrics per snippet exactly like the initial start
-// (ensureSongUrls + loadSongLyrics + snippet repositioning).
-async function prepareNextMedleyRound(party: import('@/lib/game/party-store').PartyStore): Promise<MedleySong[] | null> {
-  try {
-    const settings = party.medleySettings;
-    // Item 6: ALWAYS mirror the round just played — the configured snippet
-    // count from medleySettings, else the CURRENT round's actual count (the
-    // user always gets the same number of snippets per round). The old
-    // fallback (players * 2) made a 5-snippet game jump to 8 snippets with
-    // 4 players on the very next round.
-    const snippetCount = settings?.snippetCount && settings.snippetCount > 0
-      ? settings.snippetCount
-      : (party.medleySongs.length > 0 ? party.medleySongs.length : 5);
-    const snippetDuration = settings?.snippetDuration
-      || (party.medleySongs[0]?.duration ? Math.round(party.medleySongs[0].duration / 1000) : 30)
-      || 30;
-
-    // Pool: full library with the same filters as the original start (the
-    // unified setup result's settings carry the filter fields).
-    const filters = party.unifiedSetupResult?.settings;
-    const fullPool = filterSongs(
-      getAllSongs(),
-      filters?.filterGenre,
-      filters?.filterLanguage,
-      filters?.filterCombined,
-      filters?.filterReleaseYear,
-      filters?.filterEra,
-      filters?.filterSearch,
-    );
-
-    // Exclude the current round's songs when enough alternatives exist.
-    const currentSongIds = new Set(party.medleySongs.map(m => m.song.id));
-    let pool = fullPool;
-    if (fullPool.length > snippetCount * 2 && currentSongIds.size > 0) {
-      const excluding = fullPool.filter(s => !currentSongIds.has(s.id));
-      if (excluding.length >= snippetCount) pool = excluding;
-    }
-    if (pool.length === 0) return null;
-
-    const medleySongList = generateMedleySnippets(pool, snippetCount, snippetDuration);
-
-    // Pre-restore URLs AND lyrics for all snippet songs (same as the initial
-    // start — needed for Tauri file:// paths and IndexedDB-stored lyrics).
-    const preparedSnippets = await Promise.all(
-      medleySongList.map(async snippet => {
-        try {
-          let prepared = await ensureSongUrls(snippet.song);
-
-          // Also load lyrics if not present (storedTxt / relativeTxtPath)
-          if (!prepared.lyrics || prepared.lyrics.length === 0) {
-            try {
-              const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-              const lyrics = await loadSongLyrics(prepared);
-              if (lyrics.length > 0) {
-                prepared = { ...prepared, lyrics };
-              }
-            } catch { /* non-critical */ }
-          }
-
-          // Re-position the snippet if the now-loaded lyrics have no notes
-          // overlapping the generated range (same as start-medley.ts).
-          let adjustedSnippet = snippet;
-          if (prepared.lyrics && prepared.lyrics.length > 0) {
-            const hasOverlap = prepared.lyrics.some(line =>
-              line.notes.some(n =>
-                n.startTime < snippet.endTime && (n.startTime + n.duration) > snippet.startTime,
-              ),
-            );
-            if (!hasOverlap) {
-              const allNotes = prepared.lyrics.flatMap(l => l.notes);
-              if (allNotes.length > 0) {
-                const snippetMs = snippet.duration;
-                const firstNote = allNotes[0].startTime;
-                const lastNote = allNotes[allNotes.length - 1].startTime;
-                const noteRangeEnd = lastNote + 5000;
-                const maxStart = Math.max(firstNote, noteRangeEnd - snippetMs);
-                let bestStart = firstNote;
-                let bestCount = 0;
-                for (let pos = Math.max(firstNote, 10000); pos <= maxStart; pos += 2000) {
-                  const count = allNotes.filter(n => n.startTime >= pos && n.startTime <= pos + snippetMs).length;
-                  if (count > bestCount) { bestCount = count; bestStart = pos; }
-                }
-                const newEnd = Math.min(bestStart + snippetMs, prepared.duration);
-                adjustedSnippet = { ...snippet, startTime: bestStart, endTime: newEnd, duration: newEnd - bestStart };
-              }
-            }
-          }
-
-          return { ...adjustedSnippet, song: prepared };
-        } catch {
-          return snippet;
-        }
-      })
-    );
-
-    if (preparedSnippets.length === 0) return null;
-    party.setMedleySongs(preparedSnippets);
-    return preparedSnippets;
-  } catch {
-    return null;
-  }
-}
+import { useTournamentScreens } from './game-screens/use-tournament-screens';
+import { TournamentStartingScreenBlock, TournamentGameScreens } from './game-screens/tournament-screens';
+import { PtmGameSection } from './game-screens/ptm-game-section';
+import { BattleRoyaleGameSection } from './game-screens/battle-royale-section';
+import { CptmGameSection } from './game-screens/cptm-game-section';
+import { MedleyGameSection } from './game-screens/medley-game-section';
+import { CompetitiveGameSections } from './game-screens/competitive-game-sections';
+import { RateMySongScreens } from './game-screens/rate-my-song-screens';
+import type { PartyGameScreensProps } from './game-screens/types';
 
 // ===================== PARTY GAME MODE SCREENS =====================
 export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
-  const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
-  const rmsGameMode = useGameStore((s) => s.gameState.gameMode);
-  const party = usePartyStore();
   const { t } = useTranslation();
 
   // State for Rate my Song results
@@ -159,1019 +55,89 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // moment and previously froze the results screen with NO indication.
   const [isPreparingNextSong, setIsPreparingNextSong] = useState(false);
 
-  // #7 Tournament results screen
-  const [showTournamentResults, setShowTournamentResults] = useState(false);
-
-  // #8 Tournament song voting state
-  const [tournamentVotingActive, setTournamentVotingActive] = useState(false);
-
-  // ── Battle Royale song pool (user rule 6.5) ──
-  // BR used to receive ALL non-duet songs, so the genre/era/language filters
-  // from the party setup only applied to round 1 (the host-voted song) and
-  // every follow-up round pulled from the unfiltered library. The pool now
-  // mirrors the setup filters (same filterSongs call as party-setup-section)
-  // so EVERY round — random picks, vote options, medley snippets — respects
-  // the configured restrictions.
-  const brSongPool = useMemo(() => {
-    const all = getNonDuetSongs();
-    const s = party.unifiedSetupResult?.settings as
-      | { filterGenre?: string; filterLanguage?: string; filterCombined?: boolean; filterReleaseYear?: string; filterEra?: string; filterSearch?: string }
-      | undefined;
-    const hasFilter = !!(
-      s && (s.filterGenre || s.filterLanguage || s.filterReleaseYear || s.filterEra || s.filterSearch)
-    );
-    if (!s || !hasFilter) return all;
-    const filtered = filterSongs(
-      all,
-      s.filterGenre,
-      s.filterLanguage,
-      s.filterCombined,
-      s.filterReleaseYear,
-      s.filterEra,
-      s.filterSearch,
-    );
-    // Degenerate filter (nothing matches) → fall back to the full pool so a
-    // running game never runs out of songs mid-match.
-    return filtered.length > 0 ? filtered : all;
-  }, [party.unifiedSetupResult]);
-
-  // ── Tournament starting-screen state (replaces the old 3-2-1 mic overlay) ──
-  // After selecting the next pairing ("Start Next Match"), the mode starting
-  // screen shows both players + their mic assignment + the song (if voted).
-  // The match starts via the explicit Start button — not via a countdown.
-  const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; votedSong: import('@/types/game').Song | null } | null>(null);
-
-  // Dispatch the intro phase while the tournament starting screen is visible
-  // so companion mirrors show the mode intro.
-  useEffect(() => {
-    if (micOverlay) {
-      window.dispatchEvent(new CustomEvent('ptm-phase-changed', { detail: { phase: 'intro' } }));
-    }
-  }, [micOverlay]);
-
-  // Helper: fetch connected companion profiles and compute mic assignments
-  const startMatchWithMicOverlay = useCallback(async (
-    match: import('@/lib/game/tournament').TournamentMatch,
-    preSelectedSong?: import('@/types/game').Song | null,
-  ) => {
-    if (!match.player1 || !match.player2) return;
-
-    // Set up mic assignments: check companion connections
-    let p1Mic = t('partyGameScreens.microphone1');
-    let p2Mic = t('partyGameScreens.microphone2');
-
-    try {
-      const res = await fetch('/api/mobile?action=getprofiles');
-      if (res.ok) {
-        const data = await res.json();
-        const connectedProfiles: Array<{ id: string; name: string; clientId?: string }> = Array.isArray(data) ? data : [];
-
-        const p1Companion = connectedProfiles.find(p =>
-          match.player1 && (p.id === match.player1.id || p.name === match.player1.name)
-        );
-        const p2Companion = connectedProfiles.find(p =>
-          match.player2 && (p.id === match.player2.id || p.name === match.player2.name)
-        );
-
-        // Companion-connected players sing via companion app
-        if (p1Companion) p1Mic = t('partyGameScreens.companion');
-        if (p2Companion) p2Mic = t('partyGameScreens.companion');
-      }
-    } catch {
-      // Silently fail — default to Mic 1 / Mic 2
-    }
-
-    // Store the match and pre-selected song in party store
-    party.setCurrentTournamentMatch(match);
-    if (preSelectedSong) party.setTournamentVotedSong(preSelectedSong);
-
-    // Show the tournament starting screen (players, mic assignment, song)
-    setMicOverlay({
-      p1Name: match.player1.name,
-      p2Name: match.player2.name,
-      p1Mic,
-      p2Mic,
-      votedSong: preSelectedSong ?? null,
-    });
-  }, [party.setCurrentTournamentMatch, party.setTournamentVotedSong, t]);
-
-  // ── Start (or vote-for) a tournament duel ──
-  // Shared by the desktop bracket view (card click / next-match button) and
-  // the companion "open duels" list (remote-party-start-match event): when
-  // the tournament uses song voting, the 3-song vote overlay opens first,
-  // otherwise the duel's starting screen is shown directly.
-  const handlePlayTournamentMatch = useCallback((match: import('@/lib/game/tournament').TournamentMatch) => {
-    if (!match.player1 || !match.player2) return;
-    const bracket = party.tournamentBracket;
-    if (bracket && bracket.settings.songSelectionMode === 'vote') {
-      // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
-      const usedIds = new Set(party.tournamentUsedSongIds);
-      const pool = getNonDuetSongs().filter(s => {
-        if (usedIds.has(s.id)) return false;
-        const genre = bracket.settings.filterGenre;
-        const lang = bracket.settings.filterLanguage;
-        if (genre && genre !== 'all') {
-          if (!s.genre || s.genre !== genre) return false;
-        }
-        if (lang && lang !== 'all') {
-          if (!s.language || s.language !== lang) return false;
-        }
-        return true;
-      });
-      if (pool.length >= 3) {
-        const shuffled = shuffleArray(pool).slice(0, 3);
-        party.setTournamentVotingSongs(shuffled);
-        party.setTournamentVotingMatch(match);
-        setTournamentVotingActive(true);
-      } else {
-        void startMatchWithMicOverlay(match);
-      }
-    } else {
-      startMatchWithMicOverlay(match);
-    }
-  }, [party, startMatchWithMicOverlay]);
-
-  // ── Companion "open duels" list: start a specific duel from a companion app ──
-  // The companion sends `party_start_match:<matchId>` which arrives here as a
-  // remote-party-start-match CustomEvent. Guards mirror the desktop UI rules:
-  // only while the bracket is on screen, no duel/vote pending, match open.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { matchId } = (e as CustomEvent<{ matchId?: string }>).detail || {};
-      if (!matchId || screen !== 'tournament-game') return;
-      const partyNow = usePartyStore.getState();
-      const bracket = partyNow.tournamentBracket;
-      if (!bracket) return;
-      if (partyNow.currentTournamentMatch || partyNow.tournamentVotingMatch || micOverlay) return;
-      const match = bracket.matches.find(m => m.id === matchId);
-      if (!match || match.completed || match.isBye || !match.player1 || !match.player2) return;
-      handlePlayTournamentMatch(match);
-    };
-    window.addEventListener('remote-party-start-match', handler);
-    return () => window.removeEventListener('remote-party-start-match', handler);
-  }, [screen, handlePlayTournamentMatch, micOverlay]);
-
-  // #1 #2 #5 #6 Helper: Pick a tournament song (no repeats, filter, trim duration)
-  const pickTournamentSong = useCallback((): import('@/types/game').Song | null => {
-    const bracket = party.tournamentBracket;
-    if (!bracket) return null;
-
-    // #5 Apply genre/language filters
-    let pool = getNonDuetSongs();
-    const genre = bracket.settings.filterGenre;
-    const lang = bracket.settings.filterLanguage;
-    if (genre && genre !== 'all' && lang && lang !== 'all') {
-      pool = filterSongs(pool, genre, lang, true);
-    } else if (genre && genre !== 'all') {
-      pool = filterSongs(pool, genre, 'all', true);
-    } else if (lang && lang !== 'all') {
-      pool = filterSongs(pool, 'all', lang, true);
-    }
-
-    // #2 Exclude already-used songs
-    const usedIds = new Set(party.tournamentUsedSongIds);
-    let available = pool.filter(s => !usedIds.has(s.id));
-
-    // If all songs are used, reset the pool
-    if (available.length === 0) {
-      party.resetTournamentUsedSongIds();
-      available = pool;
-    }
-
-    if (available.length === 0) return null;
-
-    const chosen = available[Math.floor(Math.random() * available.length)];
-
-    // #1 Trim song duration for short mode
-    if (party.tournamentSongDuration === 60) {
-      const trimmed = trimSongToShortMode(chosen);
-      party.addTournamentUsedSongId(chosen.id);
-      return trimmed;
-    }
-
-    party.addTournamentUsedSongId(chosen.id);
-    return chosen;
-  }, [party]);
-
-  // ── Launch the selected tournament match (invoked by the starting screen's Start button) ──
-  const launchTournamentMatch = useCallback(() => {
-    if (!micOverlay) return;
-
-    const match = party.currentTournamentMatch;
-    if (!match) return;
-    if (!match.player1 || !match.player2) return;
-
-    setMicOverlay(null);
-
-    // Reset game state for new match
-    resetGame();
-    setPlayers([]);
-
-    // Store mic assignments in unifiedSetupResult for MicIndicator display
-    const p1IsCompanion = micOverlay.p1Mic === t('partyGameScreens.companion');
-    const p2IsCompanion = micOverlay.p2Mic === t('partyGameScreens.companion');
-    const setupResult = buildGameSetupResult({
-      mode: 'tournament',
-      players: [
-        { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: p1IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p1Mic },
-        { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: p2IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p2Mic },
-      ],
-      difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium',
-      settings: {},
-    });
-    party.setUnifiedSetupResult(setupResult);
-
-    // Add both players for the duel
-    if (match.player1) addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
-    if (match.player2) addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
-
-    // #6 Set dynamic difficulty if enabled
-    const bracket = party.tournamentBracket;
-    if (bracket && bracket.settings.dynamicDifficulty) {
-      const effectiveDiff = getEffectiveDifficulty(
-        bracket.settings.difficulty,
-        bracket.currentRound,
-        bracket.totalRounds,
-        true,
-      );
-      useGameStore.getState().setDifficulty(effectiveDiff);
-    }
-
-    setGameMode('duel');
-
-    // #8 Use voted song if available, otherwise pick randomly
-    const votedSong = party.tournamentVotedSong;
-    party.setTournamentVotedSong(null);
-    const song = votedSong || pickTournamentSong();
-    if (song) {
-      setSong(song);
-      setScreen('game');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; specific fields used in body
-  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, party.setUnifiedSetupResult, party.tournamentBracket, party.tournamentVotedSong, t, pickTournamentSong]);
-
-  // ── Item 11: Tournament final-results exit actions ──
-  // "Back to Main Menu": leave the tournament completely. Uses the SAME
-  // cleanup as the ESC / "End Party" path (handlePartyModeEnd in
-  // karaoke-app.tsx): force-reset ALL party state (bracket, votes, mode,
-  // setup draft) + reset the game state, then go home — no leaks.
-  const handleTournamentExitToMenu = useCallback(() => {
-    party.resetPartyState(true);
-    resetGame();
-    setGameMode('standard');
-    setShowTournamentResults(false);
-    setScreen('home');
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; sub-setters are stable
-  }, [party.resetPartyState, resetGame, setGameMode, setScreen]);
-
-  // "New Tournament": go DIRECTLY to the tournament settings (unified party
-  // setup) with the players of the last tournament pre-selected — still
-  // fully changeable. The old bracket (incl. results, votes, used songs) is
-  // cleared completely so nothing bleeds into the new tournament.
-  // NOTE: unifiedSetupResult is NOT restored from here — every duel
-  // overwrites it with just the 2 current players (see launchTournamentMatch).
-  // The bracket holds the full original player list + settings; per-player
-  // device assignments persist in localStorage and are picked up by the
-  // setup hook automatically.
-  const handleTournamentNew = useCallback(() => {
-    const bracket = party.tournamentBracket;
-    if (bracket && bracket.players.length > 0) {
-      const s = bracket.settings;
-      party.setSetupDraft({
-        selectedPlayers: bracket.players.map(p => p.id),
-        settings: {
-          maxPlayers: s.maxPlayers,
-          shortMode: s.songDuration === 60,
-          tournamentType: s.tournamentType,
-          tiebreakMode: s.tiebreakMode,
-          dynamicDifficulty: s.dynamicDifficulty,
-          songSelectionMode: s.songSelectionMode,
-          seedingMode: s.seedingMode,
-        },
-        difficulty: s.difficulty ?? 'medium',
-        inputMode: 'mixed',
-        selectedMicId: null,
-        selectedMicName: null,
-        filterGenre: s.filterGenre ?? 'all',
-        filterLanguage: s.filterLanguage ?? 'all',
-        filterCombined: true,
-        filterReleaseYear: 'all',
-        filterEra: 'all',
-      });
-    }
-
-    // Clear the finished tournament completely (same fields as
-    // resetPartyState's tournament block — clean slate for the new one)
-    party.setTournamentBracket(null);
-    party.setCurrentTournamentMatch(null);
-    party.setTournamentVotedSong(null);
-    party.setTournamentVotingSongs([]);
-    party.setTournamentVotingMatch(null);
-    party.resetTournamentUsedSongIds();
-    party.setTournamentMatchAborted(false);
-    party.resetTournamentCrowdVotes();
-    party.setPtmMedleySnippets([]);
-    setShowTournamentResults(false);
-    party.setSelectedGameMode('tournament');
-    setScreen('party-setup');
-  }, [party, setScreen]);
-
-  // ── Companion "New Tournament" trigger (Item 11, optional mirror action) ──
-  // The companion champion view sends `party_new_tournament`, which arrives
-  // here as a remote-party-new-tournament CustomEvent. Only active while the
-  // final results are on screen — mirrors the desktop button rules.
-  useEffect(() => {
-    const handler = () => {
-      if (screen !== 'tournament-game' || !showTournamentResults) return;
-      handleTournamentNew();
-    };
-    window.addEventListener('remote-party-new-tournament', handler);
-    return () => window.removeEventListener('remote-party-new-tournament', handler);
-  }, [screen, showTournamentResults, handleTournamentNew]);
+  // Tournament state + handlers (#7 results screen, #8 song voting, mic-overlay
+  // starting screen, companion remote triggers) — moved verbatim into
+  // use-tournament-screens (game-screens/use-tournament-screens.ts); the hook
+  // keeps the orchestrator's store subscriptions, so re-render behavior and
+  // callback freshness are unchanged.
+  const {
+    micOverlay,
+    showTournamentResults,
+    setShowTournamentResults,
+    tournamentVotingActive,
+    setTournamentVotingActive,
+    startMatchWithMicOverlay,
+    handlePlayTournamentMatch,
+    pickTournamentSong,
+    launchTournamentMatch,
+    handleTournamentExitToMenu,
+    handleTournamentNew,
+  } = useTournamentScreens({ screen, setScreen });
 
   return (
     <>
-      {/* Tournament Starting Screen — shown after selecting the next pairing.
-          Shows both players with their mic assignment and the voted song (if any).
-          The match starts via the explicit Start button.
-          NOTE: no "starts first" highlight — a DUEL is sung by both players
-          simultaneously, so both duelists are shown equally. */}
-      {micOverlay && party.currentTournamentMatch?.player1 && party.currentTournamentMatch?.player2 && (
-        <PartyStartingScreen
-          overlay
-          modeIcon="🏆"
-          modeTitle={t('tournament.startingTitle')}
-          modeColor="from-amber-500 to-yellow-500"
-          players={[
-            {
-              id: party.currentTournamentMatch.player1.id,
-              name: micOverlay.p1Name,
-              avatar: party.currentTournamentMatch.player1.avatar,
-              color: party.currentTournamentMatch.player1.color || '#FF6B6B',
-              micName: micOverlay.p1Mic,
-              playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone',
-            },
-            {
-              id: party.currentTournamentMatch.player2.id,
-              name: micOverlay.p2Name,
-              avatar: party.currentTournamentMatch.player2.avatar,
-              color: party.currentTournamentMatch.player2.color || '#4ECDC4',
-              micName: micOverlay.p2Mic,
-              playerType: micOverlay.p2Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone',
-            },
-          ]}
-          song={micOverlay.votedSong}
-          subtitle={t('tournament.roundOfOf').replace('{n}', String(party.tournamentBracket?.currentRound ?? 1)).replace('{m}', String(party.tournamentBracket?.totalRounds ?? 1))}
-          onStart={launchTournamentMatch}
-          testId="tournament-starting-screen"
-        />
-      )}
+      {/* Tournament Starting Screen — shown after selecting the next pairing
+          (game-screens/tournament-screens.tsx: TournamentStartingScreenBlock). */}
+      <TournamentStartingScreenBlock
+        micOverlay={micOverlay}
+        launchTournamentMatch={launchTournamentMatch}
+      />
 
-      {/* Pass the Mic Game Screen — dedicated PTM screen with note highway */}
-      {screen === 'pass-the-mic-game' && party.passTheMicSong && (
-        <PtmGameScreen
-          players={party.passTheMicPlayers}
-          song={party.passTheMicSong}
-          segments={party.passTheMicSegments}
-          settings={party.passTheMicSettings}
-          onUpdateGame={(players, segments) => {
-            party.setPassTheMicPlayers(players);
-            party.setPassTheMicSegments(segments);
-          }}
-          onEndGame={() => {
-            // User report: leaving a party mode via BACK must TERMINATE it.
-            // Round 2 of this fix: the previous version still called
-            // setGameMode('pass-the-mic') for series with history — but
-            // resetGame() deliberately PRESERVES the game-store gameMode, so
-            // that stale 'pass-the-mic' survived the party reset and every
-            // Library song pick afterwards started a broken "pass-the-mic"
-            // GameScreen (the ended mode re-routed the pick). Back ALWAYS
-            // terminates now: full party reset + game store back to standard.
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('party-setup');
-          }}
-          onNavigate={async (targetScreen) => {
-            // Handle special PTM next-song navigation
-            if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
-              setIsPreparingNextSong(true);
-              try {
-                const playerCount = party.passTheMicPlayers.length || 2;
-                const segDur = party.passTheMicSettings?.segmentDuration;
-                const action = await preparePtmNextSong(
-                  targetScreen === 'ptm-next-random' ? 'random' : 'medley',
-                  playerCount,
-                  segDur,
-                );
+      {/* Pass the Mic Game Screen — dedicated PTM screen with note highway
+          (game-screens/ptm-game-section.tsx). */}
+      <PtmGameSection
+        screen={screen}
+        setScreen={setScreen}
+        setIsPreparingNextSong={setIsPreparingNextSong}
+      />
 
-                if (action.mode === 'random') {
-                  party.setPassTheMicSegments(action.result.segments);
-                  party.setPassTheMicSong(action.result.song);
-                  party.setPassTheMicSettings({
-                    ...(party.passTheMicSettings || { segmentDuration: 30, difficulty: 'medium', micId: '', micName: '' }),
-                    segmentDuration: action.result.segmentDuration,
-                  });
-                  party.setPtmMedleySnippets([]);
-                  party.setIsSongPlaying(false);
-                  setScreen('pass-the-mic-game');
-                } else if (action.mode === 'medley') {
-                  party.setPtmMedleySnippets(action.result.medleySnippets);
-                  party.setPassTheMicSegments(action.result.segments);
-                  party.setPassTheMicSong(action.result.song);
-                  party.setPassTheMicSettings({
-                    ...(party.passTheMicSettings || { segmentDuration: 30, difficulty: 'medium', micId: '', micName: '' }),
-                    segmentDuration: action.result.segmentDuration,
-                  });
-                  party.setIsSongPlaying(false);
-                  setScreen('pass-the-mic-game');
-                } else {
-                  // Fallback to library — still a next-round pick
-                  party.setNextRoundPick('ptm');
-                  setScreen('library');
-                }
-              } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error('[PTM] Failed to prepare next song:', err);
-                toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
-                party.setNextRoundPick('ptm');
-                setScreen('library');
-              } finally {
-                setIsPreparingNextSong(false);
-              }
-            } else if (targetScreen === 'song-voting') {
-              // Next-round vote: picking a song returns DIRECTLY into the PTM
-              // game (intro phase) with the same players — no setup detour.
-              const filters = party.unifiedSetupResult?.settings;
-              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined, 'all', 3, filters?.filterSearch);
-              party.setVotingSongs(suggested);
-              party.setNextRoundPick('ptm');
-              setScreen('song-voting');
-            } else if (targetScreen === 'library') {
-              // Next-round library pick: returns directly into the PTM game
-              party.setNextRoundPick('ptm');
-              setScreen('library');
-            } else {
-              setScreen(targetScreen as Screen);
-            }
-          }}
+      {/* Tournament Song Voting Overlay (#8), Tournament Game Screen and
+          Results Screen (#7) (game-screens/tournament-screens.tsx). */}
+      <TournamentGameScreens
+        screen={screen}
+        setScreen={setScreen}
+        tournamentVotingActive={tournamentVotingActive}
+        setTournamentVotingActive={setTournamentVotingActive}
+        startMatchWithMicOverlay={startMatchWithMicOverlay}
+        handlePlayTournamentMatch={handlePlayTournamentMatch}
+        pickTournamentSong={pickTournamentSong}
+        showTournamentResults={showTournamentResults}
+        setShowTournamentResults={setShowTournamentResults}
+        handleTournamentExitToMenu={handleTournamentExitToMenu}
+        handleTournamentNew={handleTournamentNew}
+      />
 
-        />
-      )}
+      {/* Battle Royale Game Screen (game-screens/battle-royale-section.tsx). */}
+      <BattleRoyaleGameSection screen={screen} setScreen={setScreen} />
 
-      {/* Tournament Song Voting Overlay (#8) — unified design (VS header, animated cards, keyboard picking) */}
-      {tournamentVotingActive && party.tournamentVotingSongs.length > 0 && party.tournamentVotingMatch && (
-        <TournamentSongVoteOverlay
-          match={party.tournamentVotingMatch}
-          roundLabel={t('tournament.roundOfOf')
-            .replace('{n}', String(party.tournamentVotingMatch.round))
-            .replace('{m}', String(party.tournamentBracket?.totalRounds ?? 1))}
-          songs={party.tournamentVotingSongs}
-          onPick={(song) => {
-            setTournamentVotingActive(false);
-            party.setTournamentVotingSongs([]);
-            party.setTournamentVotedSong(song);
-            party.addTournamentUsedSongId(song.id);
-            startMatchWithMicOverlay(party.tournamentVotingMatch!, song);
-          }}
-          onSkip={() => {
-            setTournamentVotingActive(false);
-            party.setTournamentVotingSongs([]);
-            party.setTournamentVotingMatch(null);
-          }}
-        />
-      )}
+      {/* Companion Sing-A-Long Game Screen, powered by the CPTM segment engine
+          (game-screens/cptm-game-section.tsx). */}
+      <CptmGameSection
+        screen={screen}
+        setScreen={setScreen}
+        setIsPreparingNextSong={setIsPreparingNextSong}
+      />
 
-      {/* Tournament Game Screen */}
-      {screen === 'tournament-game' && party.tournamentBracket && !showTournamentResults && (
-        <TournamentBracketView
-          bracket={party.tournamentBracket}
-          currentMatch={party.currentTournamentMatch}
-          matchAborted={party.tournamentMatchAborted}
-          onPlayMatch={handlePlayTournamentMatch}
-          onManualWinner={(matchId, winnerId) => {
-            if (!party.tournamentBracket) return;
-            // Look up the match from the bracket (works for both abort dialog and manual selection)
-            const match = party.tournamentBracket.matches.find(m => m.id === matchId);
-            if (!match) return;
-            const isP1Winner = winnerId === match.player1?.id;
-            // Use 100 for winner, 0 for loser to clearly indicate the choice
-            const updated = recordMatchResult(
-              party.tournamentBracket,
-              matchId,
-              isP1Winner ? 100 : 0,
-              isP1Winner ? 0 : 100,
-            );
-            party.setTournamentBracket(updated);
-            party.setCurrentTournamentMatch(null);
-          }}
-          onRepeatMatch={() => {
-            if (!party.currentTournamentMatch) return;
-            const match = party.currentTournamentMatch;
-            if (!match.player1 || !match.player2) return;
-            resetGame();
-            setPlayers([]);
-            addPlayer({
-              id: match.player1.id,
-              name: match.player1.name,
-              avatar: match.player1.avatar,
-              color: match.player1.color,
-            });
-            addPlayer({
-              id: match.player2.id,
-              name: match.player2.name,
-              avatar: match.player2.avatar,
-              color: match.player2.color,
-            });
-            setGameMode('duel');
-            const song = pickTournamentSong();
-            if (song) setSong(song);
-            setScreen('game');
-          }}
-          onAbortHandled={() => {
-            party.setTournamentMatchAborted(false);
-          }}
-          shortMode={party.tournamentSongDuration === 60}
-          showResults={showTournamentResults}
-          onShowResults={() => setShowTournamentResults(true)}
-          // Bug 12c: visible way back to the menu on the immersive bracket
-          // screen — opens the party-leave CONFIRMATION dialog (handled in
-          // karaoke-app.tsx), never an immediate exit.
-          onLeaveToMenu={() => party.setPauseDialogAction('party-leave')}
-        />
-      )}
+      {/* Medley Contest Game Screen — dedicated screen with multi-pitch
+          detection (game-screens/medley-game-section.tsx). */}
+      <MedleyGameSection screen={screen} setScreen={setScreen} />
 
-      {/* #7 Tournament Results Screen */}
-      {screen === 'tournament-game' && party.tournamentBracket && showTournamentResults && (
-        <TournamentResultsScreen
-          bracket={party.tournamentBracket}
-          onBack={() => setShowTournamentResults(false)}
-          onExitToMenu={handleTournamentExitToMenu}
-          onNewTournament={handleTournamentNew}
-        />
-      )}
+      {/* Missing Words + Blind Karaoke Competitive Games
+          (game-screens/competitive-game-sections.tsx). */}
+      <CompetitiveGameSections screen={screen} setScreen={setScreen} />
 
-      {/* Battle Royale Game Screen */}
-      {screen === 'battle-royale-game' && party.battleRoyaleGame && (
-        <BattleRoyaleGameView
-          game={party.battleRoyaleGame}
-          songs={brSongPool}
-          onUpdateGame={(game) => party.setBattleRoyaleGame(game)}
-          onEndGame={() => {
-            // TERMINATE the mode (user report): back = full party reset, no
-            // lingering selectedGameMode that would re-route Library picks.
-            // resetGame+standard also clears the game-store gameMode that the
-            // start handler set (resetGame alone preserves it by design).
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('home');
-          }}
-          onBack={() => {
-            // Round-setup BACK used to only clear battleRoyaleGame —
-            // selectedGameMode survived, so the party stayed "active"
-            // (Library picks re-routed to party setup, ESC re-opened the
-            // leave dialog). Back here terminates too (user report: back
-            // must end the mode).
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('party');
-          }}
-        />
-      )}
-
-      {/* Companion Sing-A-Long Game Screen (powered by CPTM segment engine) */}
-      {screen === 'companion-singalong-game' && party.cptmSong && party.cptmSegments.length > 0 && (
-        <CptmGameScreen
-          players={party.cptmPlayers}
-          song={party.cptmSong}
-          segments={party.cptmSegments}
-          settings={party.cptmSettings}
-          onUpdateGame={(players, segments) => {
-            party.setCptmPlayers(players);
-            party.setCptmSegments(segments);
-          }}
-          onEndGame={() => {
-            // TERMINATE the mode (user report): back = full party reset.
-            // Round 2: the old hasSeriesHistory branch routed to the Library
-            // WITHOUT clearing the game-store gameMode — cptm-series.ts sets
-            // 'companion-singalong' there, and resetGame() preserves gameMode,
-            // so Library picks afterwards started a broken companion-mode
-            // GameScreen. Terminate unconditionally now.
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('party-setup');
-          }}
-          onNavigate={async (targetScreen) => {
-            // Handle next-song navigation (same pattern as PtM)
-            if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
-              setIsPreparingNextSong(true);
-              try {
-                const playerCount = party.cptmPlayers.length || 2;
-                const segDur = party.cptmSettings?.segmentDuration;
-                const action = await preparePtmNextSong(
-                  targetScreen === 'ptm-next-random' ? 'random' : 'medley',
-                  playerCount,
-                  segDur,
-                );
-                if (action.mode === 'random') {
-                  party.setCptmSegments(action.result.segments);
-                  party.setCptmSong(action.result.song);
-                  party.setIsSongPlaying(false);
-                  setScreen('companion-singalong-game');
-                } else if (action.mode === 'medley') {
-                  party.setPtmMedleySnippets(action.result.medleySnippets);
-                  party.setCptmSegments(action.result.segments);
-                  party.setCptmSong(action.result.song);
-                  party.setIsSongPlaying(false);
-                  setScreen('companion-singalong-game');
-                } else {
-                  // Fallback to library — still a next-round pick
-                  party.setNextRoundPick('cptm');
-                  setScreen('library');
-                }
-              } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error('[CompanionSingAlong] Failed to prepare next song:', err);
-                toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
-                party.setNextRoundPick('cptm');
-                setScreen('library');
-              } finally {
-                setIsPreparingNextSong(false);
-              }
-            } else if (targetScreen === 'song-voting') {
-              const filters = party.unifiedSetupResult?.settings;
-              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined, 'all', 3, filters?.filterSearch);
-              party.setVotingSongs(suggested);
-              party.setNextRoundPick('cptm');
-              setScreen('song-voting');
-            } else if (targetScreen === 'library') {
-              // Next-round library pick: returns directly into the CPTM game
-              party.setNextRoundPick('cptm');
-              setScreen('library');
-            } else {
-              setScreen(targetScreen as Screen);
-            }
-          }}
-        />
-      )}
-
-      {/* Medley Contest Game Screen — dedicated screen with multi-pitch detection */}
-      {screen === 'medley-game' && party.medleySongs.length > 0 && party.medleySettings && (
-        <MedleyGameScreen
-          players={party.medleyPlayers}
-          songs={party.medleySongs}
-          settings={party.medleySettings}
-          matchups={party.medleyMatches}
-          _seriesHistory={party.medleySeriesHistory}
-          onRoundComplete={(result, updatedPlayers) => {
-            party.setMedleyPlayers(updatedPlayers);
-            party.setMedleySeriesHistory([...party.medleySeriesHistory, result]);
-            // Feature #13: Save to leaderboard
-            try {
-              for (const p of updatedPlayers) {
-                const scores = result.playerScores[p.id];
-                if (!scores) continue;
-                const entry = {
-                  playerId: p.id,
-                  playerName: p.name,
-                  playerColor: p.color,
-                  score: scores.score,
-                  notesHit: scores.notesHit,
-                  notesMissed: scores.notesMissed,
-                  maxCombo: scores.maxCombo,
-                  snippetsSung: scores.snippetsSung,
-                  snippetCount: result.snippetCount,
-                  playMode: party.medleySettings?.playMode || 'ffa',
-                };
-                addMedleyEntry(entry);
-                addDailyMedleyEntry(entry);
-              }
-            } catch { /* ignore storage errors */ }
-          }}
-          onEndGame={() => {
-            // User report ("Mode terminieren"): back after the final results
-            // used to leave selectedGameMode='medley' set — the Library then
-            // re-routed every song pick back INTO the Medley Contest. The
-            // forced reset terminates the whole party context.
-            // Round 2: also clear the GAME-STORE gameMode — resetGame()
-            // preserves it by design, and a stale party mode there re-routes
-            // Library picks into a broken GameScreen after the reset.
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('home');
-          }}
-          // Fix 7: "Next Round" regenerates a snippet list with DIFFERENT
-          // songs (when the pool allows) before the next round starts.
-          onPrepareNextRoundSongs={() => prepareNextMedleyRound(party)}
-        />
-      )}
-      {/* Missing Words Competitive Game */}
-      {screen === 'missing-words-game' && party.competitiveGame && (
-        <CompetitiveGameView
-          game={party.competitiveGame}
-          songs={getNonDuetSongs()}
-          modeType='missing-words'
-          onUpdateGame={(game) => party.setCompetitiveGame(game)}
-          onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-            // Round 2: resetGame+standard clears the game-store gameMode too
-            // (onPlayMatch sets 'missing-words' there and resetGame preserves
-            // it — stale party modes re-route Library picks into a broken
-            // GameScreen).
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('home');
-          }}
-          onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
-            const comp = party.competitiveGame;
-            if (!comp) return;
-            resetGame();
-            setPlayers([]);
-            const p1Color = comp.players.find(p => p.id === p1Id)?.color || '#FF6B6B';
-            const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
-            addPlayer({ id: p1Id, name: p1Name, color: p1Color });
-            addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult = buildGameSetupResult({
-              mode: 'missing-words',
-              players: [
-                { id: p1Id, name: p1Name, color: p1Color },
-                { id: p2Id, name: p2Name, color: p2Color },
-              ],
-              difficulty: comp.settings.difficulty,
-              settings: {
-                missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
-                bestOf: comp.settings.bestOf,
-                granularity: comp.settings.missingWordsGranularity,
-                hardcoreMissingWords: comp.settings.hardcoreMissingWords,
-                escalating: comp.settings.escalating,
-              },
-            });
-            party.setUnifiedSetupResult(setupResult);
-            setGameMode('missing-words');
-            setSong(song);
-            setScreen('game');
-          }}
-          onPlaySolo={(pId, pName, song) => {
-            const comp = party.competitiveGame;
-            if (!comp) return;
-            resetGame();
-            setPlayers([]);
-            const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
-            addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult = buildGameSetupResult({
-              mode: 'missing-words',
-              players: [{ id: pId, name: pName, color: pColor }],
-              difficulty: comp.settings.difficulty,
-              settings: {
-                missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
-                bestOf: comp.settings.bestOf,
-                granularity: comp.settings.missingWordsGranularity,
-                hardcoreMissingWords: comp.settings.hardcoreMissingWords,
-                escalating: comp.settings.escalating,
-              },
-            });
-            party.setUnifiedSetupResult(setupResult);
-            setGameMode('missing-words');
-            setSong(song);
-            setScreen('game');
-          }}
-        />
-      )}
-
-      {/* Blind Karaoke Competitive Game */}
-      {screen === 'blind-game' && party.competitiveGame && (
-        <CompetitiveGameView
-          game={party.competitiveGame}
-          songs={getNonDuetSongs()}
-          modeType='blind'
-          onUpdateGame={(game) => party.setCompetitiveGame(game)}
-          onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-            // Round 2: resetGame+standard clears the game-store gameMode too
-            // (onPlayMatch sets 'blind' there and resetGame preserves it —
-            // stale party modes re-route Library picks into a broken
-            // GameScreen).
-            party.resetPartyState(true);
-            resetGame();
-            setGameMode('standard');
-            setScreen('home');
-          }}
-          onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
-            const comp = party.competitiveGame;
-            if (!comp) return;
-            resetGame();
-            setPlayers([]);
-            const p1Color = comp.players.find(p => p.id === p1Id)?.color || '#FF6B6B';
-            const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
-            addPlayer({ id: p1Id, name: p1Name, color: p1Color });
-            addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult = buildGameSetupResult({
-              mode: 'blind',
-              players: [
-                { id: p1Id, name: p1Name, color: p1Color },
-                { id: p2Id, name: p2Name, color: p2Color },
-              ],
-              difficulty: comp.settings.difficulty,
-              settings: {
-                blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
-                bestOf: comp.settings.bestOf,
-                hardcore: comp.settings.hardcore,
-                escalating: comp.settings.escalating,
-              },
-            });
-            party.setUnifiedSetupResult(setupResult);
-            setGameMode('blind');
-            setSong(song);
-            setScreen('game');
-          }}
-          onPlaySolo={(pId, pName, song) => {
-            const comp = party.competitiveGame;
-            if (!comp) return;
-            resetGame();
-            setPlayers([]);
-            const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
-            addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult = buildGameSetupResult({
-              mode: 'blind',
-              players: [{ id: pId, name: pName, color: pColor }],
-              difficulty: comp.settings.difficulty,
-              settings: {
-                blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
-                bestOf: comp.settings.bestOf,
-                hardcore: comp.settings.hardcore,
-                escalating: comp.settings.escalating,
-              },
-            });
-            party.setUnifiedSetupResult(setupResult);
-            setGameMode('blind');
-            setSong(song);
-            setScreen('game');
-          }}
-        />
-      )}
-
-      {/* Rate my Song — Mode Starting Screen (before the game screen).
-          Shown after "Ready to Play": singers get into position, then press Start. */}
-      {screen === 'rate-my-song-game' && party.rateMySongSettings && (
-        <RmsStartingScreen
-          setScreen={setScreen}
-        />
-      )}
-
-      {/* Challenge Pre-Singing Overlay (Rate my Song) */}
-      {screen === 'game' && rmsGameMode === 'rate-my-song' && party.rateMySongCurrentChallenge && !challengeOverlayDismissed && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 border border-purple-500/30 rounded-2xl p-8 max-w-md text-center animate-fade-in">
-            <div className="text-5xl mb-4">{party.rateMySongCurrentChallenge.icon}</div>
-            <h2 className="text-xl font-bold text-white mb-2">
-              {t(`rateMySong.challenges.${party.rateMySongCurrentChallenge.id}.title`)}
-            </h2>
-            <p className="text-white/70 text-sm mb-6">
-              {t(`rateMySong.challenges.${party.rateMySongCurrentChallenge.id}.description`)}
-            </p>
-            <p className="text-amber-400 text-xs mb-4">{t('rateMySong.bonusPointsIfMastered')}</p>
-            <button
-              onClick={() => setChallengeOverlayDismissed(true)}
-              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-medium hover:from-purple-400 hover:to-pink-400 transition-all"
-              data-testid="party-rms-challenge-dismiss-button"
-            >
-              {t('rateMySong.letsGo')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Rate my Song — After song ends, go to rating screen */}
-      {screen === 'rate-my-song-rating' && party.rateMySongSettings && (
-        (() => {
-          const rms = party.rateMySongSettings;
-          const rmsSong = getAllSongs().find(s => s.id === rms.songId);
-          return (
-        <RateMySongRatingScreen
-          songTitle={rmsSong?.title || ''}
-          songArtist={rmsSong?.artist || ''}
-          singingPlayers={party.rateMySongPlayerIds.map(id => {
-            const p = profiles.find(pr => pr.id === id);
-            return { id, name: p?.name || t('game.player'), color: p?.color || '#FF6B6B' };
-          })}
-          allProfiles={profiles}
-          categoriesEnabled={rms.categoriesEnabled}
-          anonymousRating={rms.anonymousRating}
-          challengesEnabled={rms.challengesEnabled}
-          currentChallenge={party.rateMySongCurrentChallenge}
-          onSubmit={(ratings) => {
-            const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-            // Resolve spectator bets
-            if (party.rateMySongSettings?.bettingEnabled) {
-              const totalBetPoints = ratings.reduce((sum, r) => sum + (r.betPoints || 0), 0);
-              if (totalBetPoints > 0) {
-                toast({ title: t('rateMySong.bettingResultTitle'), description: t('rateMySong.bettingResultDesc').replace('{n}', String(totalBetPoints)) });
-              }
-            }
-            const result: RateMySongResult = {
-              songTitle: rmsSong?.title || '',
-              songArtist: rmsSong?.artist || '',
-              ratings,
-              averageRating: Math.round(avg * 10) / 10,
-              challengeBonus: ratings.some(r => r.challengeMastered) ? 50 : 0,
-            };
-            // Notify if challenge bonus earned
-            if (result.challengeBonus && result.challengeBonus > 0) {
-              toast({ title: '🏆 ' + t('rateMySong.challengeMastered'), description: t('rateMySong.challengeBonusDesc').replace('{n}', String(result.challengeBonus)) });
-            }
-            setRateMySongResult(result);
-            // Save round to series history ONCE at submit time, not during render
-            const totalRounds = rms.seriesRounds || 1;
-            const isSeries = totalRounds > 1;
-            if (isSeries && ratings.length > 0) {
-              party.addRateMySongSeriesRound(ratings);
-            }
-            setScreen('rate-my-song-results');
-          }}
-          onBack={() => setScreen('party')}
-        />
-          );
-        })()
-      )}
-
-      {/* Rate my Song — Results */}
-      {screen === 'rate-my-song-results' && (() => {
-        if (!rateMySongResult || !party.rateMySongSettings) return null;
-        const rms = party.rateMySongSettings;
-        const rmsSong = getAllSongs().find(s => s.id === rms.songId);
-        const totalRounds = rms.seriesRounds || 1;
-        const isLastRound = rateMySongSeriesRound >= totalRounds;
-        const isSeries = totalRounds > 1;
-
-        // If last round of a series, show series results
-        if (isSeries && isLastRound) {
-          return (
-            <RateMySongSeriesResultsScreen
-              seriesHistory={party.rateMySongSeriesHistory}
-              onEnd={() => {
-                // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-                // Round 2: resetGame+standard also clears the game-store
-                // gameMode ('rate-my-song' — set by the start handler and
-                // preserved by resetGame, re-routing Library picks).
-                party.resetPartyState(true);
-                resetGame();
-                setGameMode('standard');
-                setRateMySongResult(null);
-                setRateMySongSeriesRound(1);
-                setScreen('home');
-              }}
-            />
-          );
-        }
-
-        return (
-          <RateMySongResultsScreen
-            result={rateMySongResult}
-            songId={rms.songId}
-            songGenre={rmsSong?.genre}
-            categoriesEnabled={rms.categoriesEnabled}
-            challengesEnabled={rms.challengesEnabled}
-            seriesRound={rateMySongSeriesRound}
-            seriesTotalRounds={totalRounds}
-            onPlayAgain={() => {
-              setRateMySongResult(null);
-              // Advance series round
-              if (isSeries && !isLastRound) {
-                setRateMySongSeriesRound(prev => prev + 1);
-              } else {
-                setRateMySongSeriesRound(1);
-              }
-              // Draw new challenge for next round
-              if (rms.challengesEnabled) {
-                const prevChallenge = party.rateMySongCurrentChallenge;
-                const challenge = getRandomChallenge(prevChallenge?.id);
-                party.setRateMySongCurrentChallenge(challenge);
-              }
-              // Unified flow: "Play Again" returns to the unified party setup
-              // (mode, players, song selection, "Ready to Play") instead of the
-              // legacy setup screen — the flow stays identical every round.
-              party.setSelectedGameMode('rate-my-song');
-              setScreen('party-setup');
-            }}
-            onEnd={() => {
-              // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-              // Round 2: resetGame+standard also clears the game-store gameMode
-              // ('rate-my-song' — preserved by resetGame, re-routing picks).
-              party.resetPartyState(true);
-              resetGame();
-              setGameMode('standard');
-              setRateMySongResult(null);
-              setRateMySongSeriesRound(1);
-              setScreen('home');
-            }}
-          />
-        );
-      })()}
+      {/* Rate my Song — mode starting screen, challenge overlay, rating and
+          results screens (game-screens/rate-my-song-screens.tsx). */}
+      <RateMySongScreens
+        screen={screen}
+        setScreen={setScreen}
+        rateMySongResult={rateMySongResult}
+        setRateMySongResult={setRateMySongResult}
+        rateMySongSeriesRound={rateMySongSeriesRound}
+        setRateMySongSeriesRound={setRateMySongSeriesRound}
+        challengeOverlayDismissed={challengeOverlayDismissed}
+        setChallengeOverlayDismissed={setChallengeOverlayDismissed}
+      />
 
       {/* Item 5: next-song / medley-snippet preparation overlay (PTM & CPTM).
           Fixed + high z so it covers the frozen results screen while the
@@ -1185,47 +151,3 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     </>
   );
 }
-
-// ===================== RATE MY SONG STARTING SCREEN =====================
-// Mode starting screen between "Ready to Play" and the actual game screen.
-// Shows mode name, singers (boxes) and the song (unless randomly selected).
-function RmsStartingScreen({ setScreen }: { setScreen: (_s: Screen) => void }) {
-  const { t } = useTranslation();
-  const party = usePartyStore();
-  const profiles = useGameStore((s) => s.profiles);
-  const currentSong = useGameStore((s) => s.gameState.currentSong);
-
-  const songSelection = party.unifiedSetupResult?.songSelection;
-  // Song name only shown when it was explicitly chosen (library/vote)
-  const showSong = (songSelection === 'library' || songSelection === 'vote') ? currentSong : null;
-
-  const players: import('@/components/game/party-starting-screen').PartyStartingPlayer[] = (party.rateMySongPlayerIds ?? [])
-    .map((id, index) => {
-      const profile = profiles.find(p => p.id === id);
-      const setupPlayer = party.unifiedSetupResult?.players?.find(p => p.id === id);
-      return {
-        id,
-        name: profile?.name ?? setupPlayer?.name ?? `P${index + 1}`,
-        avatar: profile?.avatar ?? setupPlayer?.avatar,
-        color: profile?.color ?? setupPlayer?.color ?? '#FF6B6B',
-        micName: setupPlayer?.micName,
-        playerType: setupPlayer?.playerType,
-        isStartPlayer: index === 0,
-      };
-    });
-
-  return (
-    <PartyStartingScreen
-      modeIcon="⭐"
-      modeTitle={t('gameModes.rateMySong.title')}
-      modeColor="from-amber-500 to-orange-500"
-      players={players}
-      song={showSong}
-      subtitle={party.rateMySongSettings?.duration === 'short' ? t('modeSettings.short60s') : undefined}
-      startPlayerLabel={t('partyStarting.startsFirst')}
-      onStart={() => setScreen('game')}
-      testId="rate-my-song-starting-screen"
-    />
-  );
-}
-

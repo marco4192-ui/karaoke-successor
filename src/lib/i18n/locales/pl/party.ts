@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Piosenka jest za krótka',
   songTooShortDesc: 'Piosenka jest krótsza niż 60 sekund...',
   songTooShortPassTheMic: 'Piosenka jest krótsza niż 60 sekund i nie może być użyta do "Podaj mikrofon".',
+  medleyNoSnippets: 'Brak piosenek do medleya',
+  medleyNoSnippetsDesc: 'Żadna piosenka nie jest wystarczająco długa dla czasu fragmentu. Skróć czas fragmentu lub dodaj dłuższe piosenki.',
   tournamentError: 'Błąd turnieju',
   minPlayers: 'Wymagani co najmniej 2 gracze...',
   minPlayersRequired: 'Wymagani co najmniej 2 gracze. Wybrałeś {n} graczy.',

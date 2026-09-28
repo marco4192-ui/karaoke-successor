@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Nummer te kort',
   songTooShortDesc: 'Het nummer is korter dan 60 seconden...',
   songTooShortPassTheMic: 'Het nummer is korter dan 60 seconden en kan niet worden gebruikt voor Geef de microfoon door.',
+  medleyNoSnippets: 'Geen nummers voor de medley',
+  medleyNoSnippetsDesc: 'Geen nummer is lang genoeg voor de snippetduur. Verlaag de snippetduur of voeg langere nummers toe.',
   tournamentError: 'Toernooifout',
   minPlayers: 'Minimaal 2 spelers vereist...',
   minPlayersRequired: 'Minimaal 2 spelers vereist. Je hebt {n} spelers geselecteerd.',

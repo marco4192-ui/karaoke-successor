@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Sang for kort',
   songTooShortDesc: 'Sangen er kortere end 60 sekunder...',
   songTooShortPassTheMic: 'Sangen er kortere end 60 sekunder og kan ikke bruges til Giv mikrofonen videre.',
+  medleyNoSnippets: 'Ingen sange til medleyen',
+  medleyNoSnippetsDesc: 'Ingen sange er lange nok til snippet-varigheden. Sænk snippet-varigheden eller tilføj længere sange.',
   tournamentError: 'Turneringsfejl',
   minPlayers: 'Mindst 2 spillere kræves...',
   minPlayersRequired: 'Mindst 2 spillere kræves. Du valgte {n} spillere.',

@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Kappale liian lyhyt',
   songTooShortDesc: 'Kappale on alle 60 sekuntia pitkä...',
   songTooShortPassTheMic: 'Kappale on alle 60 sekuntia pitkä eikä sovi mikrofonin siirto -peliin.',
+  medleyNoSnippets: 'Ei kappaleita medleyhin',
+  medleyNoSnippetsDesc: 'Mikään kappale ei ole tarpeeksi pitkä pätkän kestoon. Lyhennä pätkän kestoa tai lisää pidempiä kappaleita.',
   tournamentError: 'Turnausvirhe',
   minPlayers: 'Vähintään 2 pelaajaa tarvitaan...',
   minPlayersRequired: 'Vähintään 2 pelaajaa tarvitaan. Valitsit {n} pelaajaa.',

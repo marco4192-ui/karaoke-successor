@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: '곡이 너무 짧습니다',
   songTooShortDesc: '곡 길이가 60초 미만입니다...',
   songTooShortPassTheMic: '곡 길이가 60초 미만으로 Pass the Mic에 사용할 수 없습니다.',
+  medleyNoSnippets: '메들리용 노래 없음',
+  medleyNoSnippetsDesc: '스니펫 길이보다 긴 노래가 없습니다. 스니펫 길이를 줄이거나 더 긴 노래를 추가하세요.',
   tournamentError: '토너먼트 오류',
   minPlayers: '최소 2명의 플레이어가 필요합니다...',
   minPlayersRequired: '최소 2명의 플레이어가 필요합니다. {n}명을 선택했습니다.',

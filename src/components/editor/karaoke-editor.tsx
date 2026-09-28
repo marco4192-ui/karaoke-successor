@@ -4,98 +4,38 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Song, Note, LyricLine } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/i18n/translations';
-import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline, type NoteHistoryMode } from './timeline/timeline';
-import { Button } from '@/components/ui/button';
-import { BookOpen, X } from 'lucide-react';
-import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { midiPitchToFrequency } from '@/lib/utils';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
 import { snapTimeToBeat } from '@/lib/editor/beat-utils';
-import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
 import { useTapNotePlacement } from '@/hooks/use-tap-note-placement';
 import { EditorHeader, type EditorHeaderPanel } from './editor-header';
 import { EditorSubHeader } from './editor-sub-header';
-import { ShortcutsPanel } from './shortcuts-panel';
 import { VideoSyncOverlay } from './video-sync-overlay';
-import {
-  MidiImportDialog,
-  pickMidiFileArrayBuffer,
-  midiTrackToComparisonNotes,
-  type MidiImportResult,
-  type ComparisonNote,
-} from './midi-import-dialog';
+import { MidiImportDialog } from './midi-import-dialog';
 // Sheet music (Notenblatt) recognition via VLM (5) — same import contract
 import { SheetMusicDialog } from './sheet-music-dialog';
-import { parseMIDIKaraoke } from '@/lib/parsers/multi-format-import';
 import { isMidiSongMusic } from '@/lib/audio/midi-synth';
-import { MidiAudioSource } from '@/components/game/midi-audio-source';
-import { toast } from '@/hooks/use-toast';
-import { EditorSongInfoTab } from './editor-song-info-tab';
-import { EditorMetadataTab } from './editor-metadata-tab';
-import { EditorLyricsTab } from './editor-lyrics-tab';
-import { AudioAnalysisPanel } from './audio-analysis-panel';
-import { AIAssistantPanel } from './panels/ai-assistant-panel';
 import type { DetectedNote } from '@/hooks/use-audio-analysis';
 import { noteTypeFlags, type NoteType, type DuetPlayer } from '@/types/game';
-
-interface KaraokeEditorProps {
-  song: Song;
-  onSave: (_song: Song) => void;
-  onCancel: () => void;
-}
-
-// Max time gap between consecutive tap notes before a new lyric line starts
-const TAP_LINE_GAP_MS = 1400;
-
-/** Sort notes by startTime and recompute the line's text + endTime. */
-function finalizeLine(line: LyricLine): LyricLine {
-  const notes = [...line.notes].sort((a, b) => a.startTime - b.startTime);
-  const lastNote = notes[notes.length - 1];
-  return {
-    ...line,
-    notes,
-    text: notes.map(n => n.lyric).join(' '),
-    endTime: lastNote ? lastNote.startTime + lastNote.duration : line.endTime,
-  };
-}
-
-/**
- * Group flat notes (time order) into lyric lines using insertNote's
- * TAP_LINE_GAP_MS rule (gap ≤ 1400 ms keeps the line; chords/overlapping
- * notes stay together). Used by the MIDI/KAR note import (3.2).
- */
-function groupNotesIntoLines(notes: Note[]): LyricLine[] {
-  const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
-  const lines: LyricLine[] = [];
-  let current: Note[] = [];
-  let lastEnd = Number.NEGATIVE_INFINITY;
-
-  const flush = () => {
-    if (current.length === 0) return;
-    lines.push(finalizeLine({
-      id: uuidv4(),
-      text: '',
-      startTime: current[0].startTime,
-      endTime: current[current.length - 1].startTime + current[current.length - 1].duration,
-      notes: current,
-    }));
-    current = [];
-  };
-
-  for (const note of sorted) {
-    if (current.length > 0 && note.startTime - lastEnd > TAP_LINE_GAP_MS) {
-      flush();
-    }
-    current.push(note);
-    lastEnd = Math.max(lastEnd, note.startTime + note.duration);
-  }
-  flush();
-
-  return lines;
-}
+// R5 module split — focused sub-modules of the editor orchestrator:
+import type { KaraokeEditorProps, EditorNoteJumpCommand } from './karaoke-editor/types';
+import {
+  finalizeLine,
+  insertNoteIntoLyrics,
+  reassignNoteLineInLyrics,
+  applyDetectedNotesToLyrics,
+} from './karaoke-editor/note-operations';
+import { resolveAnalysisAudioPath } from './karaoke-editor/analysis-audio-path';
+import { useNoteHistory } from './karaoke-editor/use-note-history';
+import { useEditorSave } from './karaoke-editor/use-editor-save';
+import { useEditorImports } from './karaoke-editor/use-editor-imports';
+import { EditorLeftPanel } from './karaoke-editor/left-panel';
+import { EditorHeaderPanelSidebar } from './karaoke-editor/header-panel-sidebar';
+import { EditorCancelConfirmDialog } from './karaoke-editor/cancel-confirm-dialog';
+import { EditorAudioSourceBridge } from './karaoke-editor/audio-source-bridge';
 
 export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
   const { t } = useTranslation();
@@ -108,8 +48,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [activeNoteType, setActiveNoteType] = useState<NoteType>('normal');
   const activeNoteTypeRef = useRef<NoteType>('normal');
   useEffect(() => { activeNoteTypeRef.current = activeNoteType; }, [activeNoteType]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   // Header dropdown panel (metadata / audio analysis / AI assistant)
   const [activePanel, setActivePanel] = useState<EditorHeaderPanel>('none');
   // ── First-mount boot overlay ──
@@ -129,13 +67,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [snapEnabled, setSnapEnabled] = useState(true);
   // Video sync overlay (video + notes side by side, with timecode control)
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
-  // ── MIDI/KAR import (3.2) + comparison overlay (3.5) ──
-  const [showMidiImport, setShowMidiImport] = useState(false);
-  // ── Sheet music (Notenblatt) recognition via VLM (5) ──
-  const [showSheetMusicImport, setShowSheetMusicImport] = useState(false);
-  // Pure editor state — NEVER serialized, never in the undo history.
-  const [comparisonNotes, setComparisonNotes] = useState<ComparisonNote[] | null>(null);
-  const [comparisonVisible, setComparisonVisible] = useState(true);
 
   useEffect(() => {
     // Mount the heavy editor tree one frame after the overlay painted.
@@ -174,14 +105,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setCurrentSong(next);
   }, []);
 
-  // Track pending "live" changes (drag / slider / typing) that still need a
-  // history commit — prevents history flooding while keeping undo correct.
-  const dirtyLiveRef = useRef(false);
-
-  // Ref to track save-result dismissal timer so it can be cleared on unmount
-  const saveResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // ── Restore media URLs for Tauri (audioUrl from relativeAudioPath) ──
   useEffect(() => {
     const restoreUrls = async () => {
@@ -204,18 +127,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     restoreUrls();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Clear save-result + commit timers on unmount to prevent leaks
-  useEffect(() => {
-    return () => {
-      if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
-      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-    };
-  }, []);
-
+  // ── Lyrics history / undo-redo (R5 module: ./karaoke-editor/use-note-history) ──
   const {
-    pushHistory, undo: historyUndo, redo: historyRedo,
-    canUndo, canRedo, hasUnsavedChanges, markDirty, markSaved,
-  } = useEditorHistory(initialSong.lyrics);
+    applyLyrics, handleCommitHistory, scheduleCommit,
+    undo, redo, canUndo, canRedo, hasUnsavedChanges, markDirty, markSaved,
+  } = useNoteHistory({ initialLyrics: initialSong.lyrics, currentSongRef, setSongInternal });
+
+  // ── Save flow, file-first (R5 module: ./karaoke-editor/use-editor-save) ──
+  const { isSaving, saveResult, handleSave, handleSaveOnly } = useEditorSave({ currentSongRef, markSaved, onSave });
 
   const {
     isPlaying, currentTime, audioRef,
@@ -271,100 +190,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
-  // ── Central lyrics mutation + history helper ──
-  const applyLyrics = useCallback((newLyrics: LyricLine[], mode: NoteHistoryMode = 'push') => {
-    setSongInternal({ ...currentSongRef.current, lyrics: newLyrics });
-    switch (mode) {
-      case 'push':
-        pushHistory(newLyrics);
-        dirtyLiveRef.current = false;
-        break;
-      case 'replace':
-        // Push overwriting the top entry (tap-mode: create + duration = one undo step)
-        pushHistory(newLyrics, { replace: true });
-        dirtyLiveRef.current = false;
-        break;
-      case 'live':
-        markDirty();
-        dirtyLiveRef.current = true;
-        break;
-      case 'commit':
-        if (dirtyLiveRef.current) {
-          pushHistory(newLyrics);
-          dirtyLiveRef.current = false;
-        }
-        break;
-    }
-  }, [setSongInternal, pushHistory, markDirty]);
-
-  /** Push the accumulated live changes as a single history entry. */
-  const handleCommitHistory = useCallback(() => {
-    if (commitTimerRef.current) {
-      clearTimeout(commitTimerRef.current);
-      commitTimerRef.current = null;
-    }
-    if (dirtyLiveRef.current) {
-      pushHistory(currentSongRef.current.lyrics);
-      dirtyLiveRef.current = false;
-    }
-  }, [pushHistory]);
-
-  /** Debounced auto-commit (keyboard repeats: arrows / typing). */
-  const scheduleCommit = useCallback(() => {
-    if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-    commitTimerRef.current = setTimeout(() => {
-      commitTimerRef.current = null;
-      if (dirtyLiveRef.current) {
-        pushHistory(currentSongRef.current.lyrics);
-        dirtyLiveRef.current = false;
-      }
-    }, 700);
-  }, [pushHistory]);
-
-  const undo = useCallback(() => {
-    const lyrics = historyUndo();
-    if (lyrics) {
-      setSongInternal({ ...currentSongRef.current, lyrics });
-      dirtyLiveRef.current = false;
-    }
-  }, [historyUndo, setSongInternal]);
-
-  const redo = useCallback(() => {
-    const lyrics = historyRedo();
-    if (lyrics) {
-      setSongInternal({ ...currentSongRef.current, lyrics });
-      dirtyLiveRef.current = false;
-    }
-  }, [historyRedo, setSongInternal]);
-
   // ── Move a note to a different line when its startTime clearly left the own line ──
-  const reassignNoteLine = useCallback((lyrics: LyricLine[], noteId: string): LyricLine[] => {
-    const srcLine = lyrics.find(l => l.notes.some(n => n.id === noteId));
-    if (!srcLine) return lyrics;
-    const note = srcLine.notes.find(n => n.id === noteId);
-    if (!note) return lyrics;
-
-    // Find a line whose time range strictly contains the note
-    const targetLine = lyrics.find(l =>
-      l.id !== srcLine.id &&
-      note.startTime >= l.startTime &&
-      note.startTime <= l.endTime
-    );
-    if (!targetLine) return lyrics; // stays in its own line
-
-    const srcNotes = srcLine.notes.filter(n => n.id !== noteId);
-    const updatedTarget = finalizeLine({ ...targetLine, notes: [...targetLine.notes, note] });
-
-    return lyrics
-      .map(l => {
-        if (l.id === srcLine.id) {
-          return srcNotes.length > 0 ? finalizeLine({ ...srcLine, notes: srcNotes }) : null;
-        }
-        if (l.id === targetLine.id) return updatedTarget;
-        return l;
-      })
-      .filter((l): l is LyricLine => l !== null);
-  }, []);
+  // (pure logic lives in ./karaoke-editor/note-operations.ts — R5 module split;
+  //  thin stable wrapper keeps the original identity + dep arrays intact)
+  const reassignNoteLine = useCallback((lyrics: LyricLine[], noteId: string): LyricLine[] =>
+    reassignNoteLineInLyrics(lyrics, noteId), []);
 
   const handleNoteUpdate = useCallback((noteId: string, updates: Partial<Note>, mode: NoteHistoryMode = 'push') => {
     const prev = currentSongRef.current;
@@ -432,36 +262,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setSelectedNoteIds(new Set());
   }, [effectiveSelection, applyLyrics, selectedNoteId]);
 
-  /** Insert a note into the lyrics structure. `groupLine` merges close tap notes into the previous line. */
-  const insertNote = useCallback((lyrics: LyricLine[], newNote: Note, groupLine: boolean): LyricLine[] => {
-    const startTime = newNote.startTime;
-    const targetLine = lyrics.find(line => startTime >= line.startTime && startTime <= line.endTime);
-
-    if (targetLine) {
-      return lyrics.map(line =>
-        line.id === targetLine.id
-          ? finalizeLine({ ...line, notes: [...line.notes, newNote] })
-          : line
-      );
-    }
-
-    if (groupLine) {
-      // Line grouping: append to the last line when the gap is small (tap flow)
-      const lastLine = lyrics[lyrics.length - 1];
-      if (lastLine) {
-        const lastNote = lastLine.notes[lastLine.notes.length - 1];
-        const lastEnd = lastNote ? lastNote.startTime + lastNote.duration : lastLine.endTime;
-        const gap = startTime - lastEnd;
-        if (gap >= 0 && gap <= TAP_LINE_GAP_MS) {
-          const updated = finalizeLine({ ...lastLine, notes: [...lastLine.notes, newNote] });
-          return [...lyrics.slice(0, -1), updated];
-        }
-      }
-    }
-
-    const newLine: LyricLine = { id: uuidv4(), text: newNote.lyric, startTime, endTime: startTime + 2000, notes: [newNote] };
-    return [...lyrics, newLine].sort((a, b) => a.startTime - b.startTime);
-  }, []);
+  /** Insert a note into the lyrics structure. `groupLine` merges close tap notes into the previous line.
+   *  (pure logic lives in ./karaoke-editor/note-operations.ts — R5 module split;
+   *  thin stable wrapper keeps the original identity + dep arrays intact) */
+  const insertNote = useCallback((lyrics: LyricLine[], newNote: Note, groupLine: boolean): LyricLine[] =>
+    insertNoteIntoLyrics(lyrics, newNote, groupLine), []);
 
   /** R7 2.2: creates a note with the ACTIVE note type (sub-header segmented
    *  control). The type flags map 1:1 to the UltraStar TXT characters. */
@@ -486,72 +291,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     });
     applyLyrics(newLyrics, mode);
   }, [applyLyrics]);
-
-  // ── Save flow (file-first) ──
-  // The txt file is written BEFORE updating the library / closing the editor.
-  // If the write fails the user stays in the editor with a visible error —
-  // previously the editor closed and the library diverged from the file.
-  const showSaveResult = useCallback((result: SaveResult) => {
-    setSaveResult(result);
-    if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
-    saveResultTimerRef.current = setTimeout(() => setSaveResult(null), 5000);
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    setIsSaving(true);
-    setSaveResult(null);
-    try {
-      const songToSave = currentSongRef.current;
-      const result = await saveSongToTxt(songToSave);
-      if (result.success) {
-        markSaved();
-        // Persist to the in-memory library (upsert — 1.3: a NEW song from
-        // the New Song dialog is only added to the library at this point),
-        // then close via the parent
-        const { upsertSong } = await import('@/lib/game/song-library');
-        await upsertSong(songToSave);
-        onSave(songToSave);
-      } else {
-        // Stay open — the file could not be written
-        showSaveResult(result);
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Save error:', error);
-      showSaveResult({
-        success: false,
-        message: `${t('editor.saveError')}: ${error instanceof Error ? error.message : t('editor.unknownError')}`,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [onSave, markSaved, showSaveResult, t]);
-
-  // Save only — persist to file but stay in the editor
-  const handleSaveOnly = useCallback(async () => {
-    setIsSaving(true);
-    setSaveResult(null);
-    try {
-      const songToSave = currentSongRef.current;
-      const result = await saveSongToTxt(songToSave);
-      if (result.success) {
-        markSaved();
-        // Upsert (1.3): also persists a brand-new song on "save only"
-        const { upsertSong } = await import('@/lib/game/song-library');
-        await upsertSong(songToSave);
-      }
-      showSaveResult(result);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Save error:', error);
-      showSaveResult({
-        success: false,
-        message: `${t('editor.saveError')}: ${error instanceof Error ? error.message : t('editor.unknownError')}`,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [markSaved, showSaveResult, t]);
 
   // --- Tap Note Placement (Ultrastar-style) ---
   // Create note on space-down, set duration on space-up
@@ -605,7 +344,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // The command pattern ({noteId, nonce}) flows into the Timeline, which owns
   // the scroll/pitch-center state; the nonce makes repeated jumps to the same
   // note retrigger. Selection happens here (also covers the first click).
-  const [noteJumpCommand, setNoteJumpCommand] = useState<{ noteId: string; nonce: number } | null>(null);
+  const [noteJumpCommand, setNoteJumpCommand] = useState<EditorNoteJumpCommand | null>(null);
   const handleNoteJump = useCallback((note: Note) => {
     setSelectedNoteId(note.id);
     setSelectedNoteIds(new Set([note.id]));
@@ -896,55 +635,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // --- Audio Analysis: Apply detected notes ---
   // Only updates pitch/frequency of existing notes that match detected notes.
   // Song text, timing, and note durations are NEVER changed.
+  // (pure matching logic lives in ./karaoke-editor/note-operations.ts — R5)
   const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
-    const prev = currentSongRef.current;
-    const existingNotes = prev.lyrics.flatMap(line => line.notes);
-
-    // Build a map: existingNote.id → best matching detected note (by time overlap)
-    const pitchMap = new Map<string, { pitch: number; frequency: number; confidence: number }>();
-
-    for (const en of existingNotes) {
-      let bestOverlap = 0;
-      let bestDetected: DetectedNote | null = null;
-      const enEnd = en.startTime + en.duration;
-
-      for (const dn of detectedNotes) {
-        const dnEnd = dn.start_time_ms + dn.duration_ms;
-        const overlap = Math.max(0, Math.min(enEnd, dnEnd) - Math.max(en.startTime, dn.start_time_ms));
-        if (overlap > bestOverlap) {
-          bestOverlap = overlap;
-          bestDetected = dn;
-        }
-      }
-
-      // Only update if overlap is significant (at least 20% of the existing note)
-      if (bestDetected && bestOverlap > en.duration * 0.2) {
-        pitchMap.set(en.id, {
-          pitch: bestDetected.midi_note,
-          frequency: bestDetected.frequency,
-          confidence: bestDetected.confidence,
-        });
-      }
-    }
-
-    if (pitchMap.size === 0) return; // Nothing to update
-
-    // Update only pitch/frequency on matching existing notes — preserve everything else
-    const newLyrics = prev.lyrics.map(line => ({
-      ...line,
-      notes: line.notes.map(note => {
-        const update = pitchMap.get(note.id);
-        if (!update) return note;
-        return {
-          ...note,
-          pitch: update.pitch,
-          frequency: update.frequency,
-          analysisConfidence: update.confidence,
-          isGolden: update.confidence >= 0.8 ? true : note.isGolden,
-        };
-      }),
-    }));
-
+    const newLyrics = applyDetectedNotesToLyrics(currentSongRef.current.lyrics, detectedNotes);
+    if (!newLyrics) return; // Nothing to update
     applyLyrics(newLyrics, 'push');
   }, [applyLyrics]);
 
@@ -954,124 +648,36 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     markDirty();
   }, [setSongInternal, markDirty]);
 
-  // ── MIDI/KAR note import (3.2) ──
-  // The dialog delivers FINAL Note[] (ms times beat-snapped to the MIDI BPM,
-  // syllables already assigned, '~' placeholders). Here: group into lyric
-  // lines (insertNote's TAP_LINE_GAP_MS rule) and apply — existing notes are
-  // replaced (the dialog already confirmed that with the user). BPM/GAP are
-  // set from the MIDI tempo map (same pattern as handleApplyBpm). The song's
-  // audio stays untouched — the MIDI is ONLY the pitch/timing basis.
-  const handleMidiImport = useCallback((result: MidiImportResult) => {
-    const lines = groupNotesIntoLines(result.notes);
-    // ONE undo step ('push', not 'replace') — the pre-import notes stay
-    // restorable via Ctrl+Z even though they were fully replaced.
-    applyLyrics(lines, 'push');
-    setSongInternal({
-      ...currentSongRef.current,
-      bpm: Math.max(1, Math.round(result.bpm)),
-      gap: result.gap,
-    });
-    markDirty();
-    setShowMidiImport(false);
-    // The old selection died with the old notes
-    setSelectedNoteId(undefined);
-    setSelectedNoteIds(new Set());
-    // Jump to the first imported note so the result is immediately visible
-    // (scrolls + pitch-centers the timeline on it)
-    const firstNote = result.notes[0];
-    if (firstNote) handleNoteJump(firstNote);
-  }, [applyLyrics, setSongInternal, markDirty, handleNoteJump]);
-
-  // ── Sheet music (Notenblatt) recognition (5) ──
-  // The dialog delivers the SAME MidiImportResult shape (pitch + timing
-  // basis, '~' placeholders, bpm from the detected tempo, gap 0) — so it
-  // reuses the exact MIDI import code path above; only the dialog differs.
-  const handleSheetMusicImport = useCallback((result: MidiImportResult) => {
-    handleMidiImport(result);
-    setShowSheetMusicImport(false);
-  }, [handleMidiImport]);
-
-  // ── MIDI/KAR comparison overlay (3.5) ──
-  // First click: file picker → parse → auto-pick melody track → beats on the
-  // CURRENT song grid (the song is NOT changed). Further clicks toggle the
-  // visibility; the ✕ in the timeline legend chip clears the reference.
-  const handleToggleMidiComparison = useCallback(async () => {
-    if (comparisonNotes) {
-      setComparisonVisible(prev => !prev);
-      return;
-    }
-
-    const picked = await pickMidiFileArrayBuffer(t('editor.midiImport.comparisonButton'));
-    if (!picked) return; // user cancelled the picker
-
-    const midi = parseMIDIKaraoke(picked.buffer);
-    if (!midi) {
-      toast({ title: t('editor.midiImport.parseError'), variant: 'destructive' });
-      return;
-    }
-    const track =
-      midi.tracks.find(tr => tr.index === midi.melodyTrackIndex && tr.noteCount > 0) ??
-      midi.tracks.find(tr => tr.noteCount > 0);
-    if (!track) {
-      toast({ title: t('editor.midiImport.noTracks'), variant: 'destructive' });
-      return;
-    }
-
-    const { bpm, gap } = currentSongRef.current;
-    setComparisonNotes(midiTrackToComparisonNotes(track, bpm, gap));
-    setComparisonVisible(true);
-  }, [comparisonNotes, t]);
+  // ── MIDI/KAR + Notenblatt import & comparison overlay
+  //    (R5 module: ./karaoke-editor/use-editor-imports) ──
+  const {
+    showMidiImport, setShowMidiImport,
+    showSheetMusicImport, setShowSheetMusicImport,
+    handleMidiImport, handleSheetMusicImport, handleToggleMidiComparison,
+    comparisonNotes, comparisonVisible, setComparisonNotes,
+  } = useEditorImports({
+    currentSongRef,
+    applyLyrics,
+    setSongInternal,
+    markDirty,
+    onNoteJump: handleNoteJump,
+    setSelectedNoteId,
+    setSelectedNoteIds,
+  });
 
   // Determine the audio file path for analysis — resolve relative paths to absolute.
   // Falls back to the video file path so that video-embedded audio can be analyzed.
-  const analysisAudioPath = useMemo(() => {
-    // Helper to check if a path looks like an absolute filesystem path.
-    const isAbsolute = (p: string) =>
-      p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p) || p.startsWith('\\\\');
-
-    // Step 1: Use relativeAudioPath + baseFolder if available.
-    // This is the primary path for Tauri — constructs an absolute path.
-    if (currentSong.relativeAudioPath && currentSong.baseFolder) {
-      const normalizedBase = normalizeFilePath(currentSong.baseFolder);
-      const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
-
-      // FIX: If relativeAudioPath is already an absolute path, don't prepend baseFolder
-      // (this prevents "D:/Songs/D:/Songs/Artist/song.mp3" doubling).
-      if (isAbsolute(normalizedRelative)) {
-        return normalizedRelative;
-      }
-      return `${normalizedBase}/${normalizedRelative}`;
-    }
-
-    // Step 2: Use audioUrl only if it's a filesystem path (not blob/http).
-    // Blob URLs and http URLs can't be read by the Rust backend.
-    if (currentSong.audioUrl && isAbsolute(currentSong.audioUrl) && !currentSong.audioUrl.startsWith('blob:')) {
-      return currentSong.audioUrl;
-    }
-
-    // Step 3: Fallback to video file path (audio may be embedded in the video).
-    // CRITICAL: Check relativeVideoPath FIRST (it's a usable filesystem path),
-    // then videoBackground only if it's an absolute filesystem path (not blob/http).
-    // A blob videoBackground from playback would shadow a valid relativeVideoPath.
-    const videoRelative = currentSong.relativeVideoPath;
-    const isVideoAbsolute = currentSong.videoBackground &&
-      isAbsolute(currentSong.videoBackground) &&
-      !currentSong.videoBackground.startsWith('blob:') &&
-      !currentSong.videoBackground.startsWith('http');
-    const videoPath = videoRelative || (isVideoAbsolute ? currentSong.videoBackground : undefined);
-    if (videoPath && !currentSong.youtubeUrl) {
-      const normalizedPath = normalizeFilePath(videoPath);
-      if (isAbsolute(normalizedPath)) {
-        return normalizedPath;
-      }
-      if (currentSong.baseFolder) {
-        const normalizedBase = normalizeFilePath(currentSong.baseFolder);
-        return `${normalizedBase}/${normalizedPath}`;
-      }
-    }
-
-    return null;
-  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.relativeVideoPath, currentSong.youtubeUrl]);
+  // (pure logic lives in ./karaoke-editor/analysis-audio-path.ts — R5)
+  const analysisAudioPath = useMemo(
+    () => resolveAnalysisAudioPath({
+      audioUrl: currentSong.audioUrl,
+      relativeAudioPath: currentSong.relativeAudioPath,
+      baseFolder: currentSong.baseFolder,
+      videoBackground: currentSong.videoBackground,
+      relativeVideoPath: currentSong.relativeVideoPath,
+      youtubeUrl: currentSong.youtubeUrl,
+    }),
+    [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.relativeVideoPath, currentSong.youtubeUrl]);
 
   return (
     <div className="relative flex flex-col h-full bg-slate-950 text-white">
@@ -1104,32 +710,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             it inherits the full height the sub-header used to occupy, so the
             lyrics box grew by that strip at the top. */}
         {heavyMounted && (
-          <aside className="w-80 flex-shrink-0 bg-slate-900 border-r border-slate-700 flex flex-col min-h-0" data-testid="editor-left-panel">
-            {/* Section: Liedtext */}
-            <section className="flex-1 min-h-0 flex flex-col">
-              <div className="px-3 py-2 bg-slate-800/70 border-b border-slate-700 flex items-center gap-2 shrink-0">
-                <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-                <h2 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">{t('editor.leftPanel.lyrics')}</h2>
-              </div>
-              <div className="flex-1 min-h-0">
-                <EditorLyricsTab
-                  song={currentSong}
-                  currentTime={currentTime}
-                  selectedNoteId={selectedNoteId}
-                  onNoteSelect={handleNoteSelect}
-                  onTimeChange={handleTimeChange}
-                  onNoteJump={handleNoteJump}
-                />
-              </div>
-            </section>
-
-            {/* Section: Shortcuts (renamed, punchier labels — R8: compacted) */}
-            <section className="flex-shrink-0 max-h-[40%] min-h-0 flex flex-col border-t border-slate-700">
-              <div className="flex-1 min-h-0 overflow-y-auto editor-panel-scroll">
-                <ShortcutsPanel />
-              </div>
-            </section>
-          </aside>
+          <EditorLeftPanel
+            song={currentSong}
+            currentTime={currentTime}
+            selectedNoteId={selectedNoteId}
+            onNoteSelect={handleNoteSelect}
+            onTimeChange={handleTimeChange}
+            onNoteJump={handleNoteJump}
+          />
         )}
 
         {/* ── Middle column (R8/3): the sub-header sits flush above the
@@ -1194,66 +782,24 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             top dropdown that squeezed the timeline. Content scrolls naturally
             inside the aside. */}
         {heavyMounted && activePanel !== 'none' && (
-          <aside
-            className="w-96 flex-shrink-0 overflow-y-auto border-l border-white/10 bg-slate-900/95 animate-in slide-in-from-right duration-300 editor-panel-scroll"
-            data-testid={`editor-header-panel-${activePanel}`}
-          >
-            {/* Small header row: panel title + close */}
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 truncate">
-                {activePanel === 'metadata'
-                  ? t('editor.header.panelMetadata')
-                  : activePanel === 'analysis'
-                    ? t('editor.header.panelAnalysis')
-                    : t('editor.header.panelAI')}
-              </h2>
-              <button
-                onClick={() => setActivePanel('none')}
-                className="p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors shrink-0"
-                title={t('editor.header.closePanel')}
-                aria-label={t('editor.header.closePanel')}
-              >
-                <X className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-            </div>
-
-            {activePanel === 'metadata' && (
-              <div className="grid grid-cols-1 divide-y divide-slate-700">
-                <EditorSongInfoTab
-                  song={currentSong}
-                  allNotesCount={allNotes.length}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-                <EditorMetadataTab
-                  song={currentSong}
-                  onSongChange={setSongInternal}
-                  onSetUnsavedChanges={() => markDirty()}
-                />
-              </div>
-            )}
-
-            {activePanel === 'analysis' && (
-              <AudioAnalysisPanel
-                audioFilePath={analysisAudioPath}
-                onApplyNotes={handleApplyDetectedNotes}
-                onApplyBpm={handleApplyBpm}
-              />
-            )}
-
-            {activePanel === 'ai' && (
-              <AIAssistantPanel
-                song={currentSong}
-                onSongUpdate={(updates) => {
-                  setSongInternal({ ...currentSongRef.current, ...updates });
-                  markDirty();
-                }}
-                onLyricsUpdate={(lyrics) => {
-                  applyLyrics(lyrics, 'push');
-                }}
-              />
-            )}
-          </aside>
+          <EditorHeaderPanelSidebar
+            activePanel={activePanel}
+            song={currentSong}
+            allNotesCount={allNotes.length}
+            analysisAudioPath={analysisAudioPath}
+            onClose={() => setActivePanel('none')}
+            onSongChange={setSongInternal}
+            onMarkDirty={markDirty}
+            onApplyNotes={handleApplyDetectedNotes}
+            onApplyBpm={handleApplyBpm}
+            onSongUpdate={(updates) => {
+              setSongInternal({ ...currentSongRef.current, ...updates });
+              markDirty();
+            }}
+            onLyricsUpdate={(lyrics) => {
+              applyLyrics(lyrics, 'push');
+            }}
+          />
         )}
       </div>
 
@@ -1272,23 +818,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         </div>
       )}
 
-      {currentSong.audioUrl && !midiMusicActive && (
-        <audio ref={audioRef} src={currentSong.audioUrl} onEnded={() => setIsPlaying(false)} />
-      )}
-      {/* MIDI music: bridge assigns the synth adapter to audioRef (playback
-          via useEditorPlayback — play/pause/seek/playbackRate all supported) */}
-      {currentSong.audioUrl && midiMusicActive && (
-        <MidiAudioSource
-          audioRef={audioRef}
-          audioUrl={currentSong.audioUrl}
-          songId={currentSong.id}
-          onEnded={() => setIsPlaying(false)}
-        />
-      )}
-      {/* Fallback: play audio from video file when no separate audio exists */}
-      {!currentSong.audioUrl && currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && (
-        <audio ref={audioRef} src={currentSong.videoBackground} onEnded={() => setIsPlaying(false)} />
-      )}
+      {/* Hidden audio sources (R5 module: ./karaoke-editor/audio-source-bridge) */}
+      <EditorAudioSourceBridge
+        audioUrl={currentSong.audioUrl}
+        videoBackground={currentSong.videoBackground}
+        songId={currentSong.id}
+        midiMusicActive={midiMusicActive}
+        audioRef={audioRef}
+        onEnded={() => setIsPlaying(false)}
+      />
 
       {/* Video sync overlay — video + notes side by side with timecode control */}
       {showVideoOverlay && hasVideo && (
@@ -1321,45 +859,12 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
       {/* Cancel confirmation — guard against losing unsaved changes */}
       {showCancelConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">⚠️</span>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-sm">{t('editor.header.cancelConfirmTitle')}</h3>
-                <p className="text-white/60 text-xs mt-0.5">{t('editor.header.cancelConfirmDesc')}</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowCancelConfirm(false)}
-                className="flex-1 border-white/20 text-white/80 hover:bg-white/10"
-                data-testid="editor-cancel-keep-button"
-              >
-                {t('editor.header.cancelConfirmKeep')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setShowCancelConfirm(false); onCancel(); }}
-                className="flex-1 border-red-500/40 text-red-400 hover:bg-red-500/10"
-                data-testid="editor-cancel-discard-button"
-              >
-                {t('editor.header.cancelConfirmDiscard')}
-              </Button>
-              <Button
-                onClick={() => { setShowCancelConfirm(false); handleSave(); }}
-                disabled={isSaving}
-                className="flex-1 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700"
-                data-testid="editor-cancel-save-button"
-              >
-                {t('editor.header.cancelConfirmSave')}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <EditorCancelConfirmDialog
+          isSaving={isSaving}
+          onKeepEditing={() => setShowCancelConfirm(false)}
+          onDiscard={() => { setShowCancelConfirm(false); onCancel(); }}
+          onSave={() => { setShowCancelConfirm(false); handleSave(); }}
+        />
       )}
     </div>
   );

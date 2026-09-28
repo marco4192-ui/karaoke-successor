@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Låten för kort',
   songTooShortDesc: 'Låten är kortare än 60 sekunder...',
   songTooShortPassTheMic: 'Låten är kortare än 60 sekunder och kan inte användas för Ge över Micen.',
+  medleyNoSnippets: 'Inga låtar för medleyt',
+  medleyNoSnippetsDesc: 'Ingen låt är tillräckligt lång för snippet-längden. Minska snippet-längden eller lägg till längre låtar.',
   tournamentError: 'Turneringsfel',
   minPlayers: 'Minst 2 spelare krävs...',
   minPlayersRequired: 'Minst 2 spelare krävs. Du valde {n} spelare.',

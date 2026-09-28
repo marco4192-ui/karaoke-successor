@@ -38,6 +38,8 @@ partySetup: {
   songTooShort: 'Canzone troppo corta',
   songTooShortDesc: 'La canzone dura meno di 60 secondi...',
   songTooShortPassTheMic: 'La canzone dura meno di 60 secondi e non può essere usata per Passa il Microfono.',
+  medleyNoSnippets: 'Nessuna canzone per il medley',
+  medleyNoSnippetsDesc: 'Nessuna canzone è abbastanza lunga per la durata dello snippet. Riduci la durata dello snippet o aggiungi canzoni più lunghe.',
   tournamentError: 'Errore Torneo',
   minPlayers: 'Servono almeno 2 giocatori...',
   minPlayersRequired: 'Servono almeno 2 giocatori. Hai selezionato {n} giocatori.',
