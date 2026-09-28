@@ -134,6 +134,20 @@ settingsTabs: {
   taxonomy: 'Genres & Sprachen',
   mottoParty: 'Motto-Party',
 },
+// R28: Einleitungstexte für alle Settings-Submenus (Muster wie settingsTaxonomy.desc)
+settingsIntros: {
+  general: 'Grundeinstellungen der App: Sprache der Oberfläche, Standard-Schwierigkeit für neue Runden, Online-Aktivitäten und die Liste aller Tastaturkürzel. Änderungen wirken sich sofort aus — manche (z. B. die Sprache) ohne Neustart.',
+  gameplay: 'Feintuning fürs Spielgefühl: Punktevergabe (Scoring), Partikeleffekte bei Treffern, Autoplay der nächsten Queue-Songs und weitere Verhaltensschalter für Runden und Ergebnisse. Perfekt, um die Partystimmung vs. Performance abzuwägen.',
+  appearance: 'Passe die Optik an: Themes, animierter Hintergrund oder eigenes Hintergrundvideo, Textstil und Größe der Songtexte, Notenanzeige und der Performance-Modus für schwächere Rechner.',
+  graphicsound: 'Alles rund ums Audio: Ausgabegerät (inkl. ASIO für geringe Latenz), Master- und Preview-Lautstärke, Mikrofon-Empfindlichkeit, Loudness-Normalisierung und die YouTube-Videoqualität.',
+  microphone: 'Mikrofon-Setup und Test: Geräteauswahl, Empfindlichkeit, Noise-Gate und Live-Pegel-Check. Hier kannst du auch Einstellungen als Presets sichern und Smartphones als drahtlose Mikrofone einbinden.',
+  mobile: 'Companion-Verwaltung: Verbinde Smartphones per QR-Code als Mikrofon, Fernbedienung oder Mitsinger. Du siehst alle verbundenen Geräte, deren Verbindungscode und kannst Verbindungen trennen.',
+  webcam: 'Nutze deine Webcam als animierten Song-Hintergrund. Du kannst Auflösung, Spiegelung, Sättigung, Blur und weitere Video-Effekte konfigurieren — plus einer Kamera-Vorschau.',
+  library: 'Verwaltung deiner Song-Bibliothek: Songs-Ordner festlegen (jeder Unterordner = ein Song) und einlesen, Bibliothek zurücksetzen oder alle Daten löschen. Zusätzlich der Import aus anderen Karaoke-Systemen (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).',
+  viral: 'Die Viral-Charts: eine sich automatisch aktualisierende Liste aktueller Hits. Steuere hier, wie viele Songs in der Bibliothek als „Viral“ markiert werden und filtere danach — ideal, um auf Partys die neuesten Songs anzubieten.',
+  sync: 'Sync & Backup: Profile, Highscores und Einstellungen zwischen Geräten synchronisieren und Sicherungen erstellen bzw. wiederherstellen. Im Desktop-Build werden Spielerdaten zusätzlich dauerhaft im AppData-Ordner gespiegelt.',
+  about: 'Alles über Karaoke ZERO: Version, Plattform, mitwirkende Projekte und Lizenzen — plus die Projekt-Beschreibung und Support-Links.',
+},
 settingsTaxonomy: {
   title: 'Genres & Sprachen',
   desc: 'Eigene Genre- und Sprach-Einträge anlegen, anzeigen und löschen. Eigene Einträge erscheinen in allen Auswahllisten (Editor, Neuer Song, Metadata Studio) und werden von der Harmonisierung als kanonische Hauptkategorien berücksichtigt.',

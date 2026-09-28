@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 const COUNTRY_OPTIONS = [
   { code: 'de', name: 'settingsViralCharts.country.de', flag: '🇩🇪' },
@@ -100,25 +101,42 @@ export function ViralChartsSettings() {
 
   if (!isTauri()) {
     return (
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>&#128293;</span> {t('settingsViralCharts.title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-white/60 text-sm">
-            {t('settingsViralCharts.tauriOnly')} {t('settingsViralCharts.tauriOnlyDesc')}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* R28: Einleitungstext */}
+        <SettingsIntroCard
+          icon="🔥"
+          title={t('settingsTabs.viralCharts')}
+          description={t('settingsIntros.viral')}
+          testId="settings-intro-viral"
+        />
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>&#128293;</span> {t('settingsViralCharts.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm">
+              {t('settingsViralCharts.tauriOnly')} {t('settingsViralCharts.tauriOnlyDesc')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   const selectedCountryData = COUNTRY_OPTIONS.find(c => c.code === country);
 
   return (
-    <Card className="bg-white/5 border-white/10">
+    <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="🔥"
+        title={t('settingsTabs.viralCharts')}
+        description={t('settingsIntros.viral')}
+        testId="settings-intro-viral"
+      />
+      <Card className="bg-white/5 border-white/10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">&#128293;</span> {t('settingsViralCharts.title')}
@@ -206,5 +224,6 @@ export function ViralChartsSettings() {
         </p>
       </CardContent>
     </Card>
+    </div>
   );
 }

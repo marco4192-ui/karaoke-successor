@@ -1,7 +1,7 @@
 import type { Screen } from '@/types/screens';
 
-/** Available tours (basic functions + editor). */
-export type TourId = 'basic' | 'editor';
+/** Available tours (basic functions + editor + settings). */
+export type TourId = 'basic' | 'editor' | 'settings';
 
 /**
  * One step of a guided tour. All texts live in i18n under
@@ -20,8 +20,12 @@ export interface TourStep {
    *    — skipped when a song is already open in the editor).
    *  - 'editor-close-song': leave the opened song back to the list view
    *    (NEVER discards unsaved changes — if the confirm dialog shows, the
-   *    tour falls back to the centered tooltip instead). */
-  action?: 'editor-open-first-song' | 'editor-close-song';
+   *    tour falls back to the centered tooltip instead).
+   *  - 'settings-open-tab': activate the settings tab named in `settingsTab`
+   *    (uses the same custom event the companion remote control uses). */
+  action?: 'editor-open-first-song' | 'editor-close-song' | 'settings-open-tab';
+  /** Settings tab to activate when action === 'settings-open-tab'. */
+  settingsTab?: 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'taxonomy' | 'motto' | 'viral' | 'sync' | 'about';
   /** Interactive step: a click-catcher over the spotlight forwards the click
    *  to the real target (React handlers fire) and the tour advances. */
   clickToContinue?: boolean;

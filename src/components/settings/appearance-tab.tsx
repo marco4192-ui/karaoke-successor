@@ -13,6 +13,7 @@ import {
 } from '@/lib/game/note-color-profiles';
 import { PaletteIcon } from '@/components/settings/settings-icons';
 import { StorageKeys, setItem, setBool } from '@/lib/storage';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 // ═══════════════════════════════════════════════════════════════
 //  NOTE DISPLAY PREVIEWS (mirror the real note-bar rendering)
@@ -163,6 +164,13 @@ export function AppearanceTab({
 
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="🎨"
+        title={tx('settingsTabs.appearance')}
+        description={tx('settingsIntros.appearance')}
+        testId="settings-intro-appearance"
+      />
       {/* Performance Mode */}
       <Card className={`bg-white/5 border-white/10 ${isLowPerf ? 'border-orange-500/50' : ''}`}>
         <CardHeader>

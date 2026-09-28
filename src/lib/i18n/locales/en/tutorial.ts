@@ -21,7 +21,7 @@ export const tutorialTranslations = {
     offerBody: 'Want a quick walk-through of the basics? In 2 minutes you\'ll know daily challenges, sing modes, the library and party games.',
     offerStart: 'Start tour',
     offerLater: 'Maybe later',
-    offerHint: 'Available anytime via the ? icon at the bottom right.',
+    offerHint: 'Available anytime via the ? icon in the menu bar.',
 
     // ═══ Basic tour ═══
     basic: {
@@ -105,7 +105,7 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Done! 🎉',
-          body: 'You know the basics now.\n\nTip: the ? icon at the bottom right brings you back anytime — including individual topic chapters and the editor tour.',
+          body: 'You know the basics now.\n\nTip: the ? icon in the menu bar brings you back anytime — including individual topic chapters, the editor tour and the settings tour.',
         },
       },
     },
@@ -175,7 +175,83 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Ready to build! 🛠️',
-          body: 'You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon at the bottom right brings you back to these chapters anytime.',
+          body: 'You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon in the menu bar brings you back to these chapters anytime.',
+        },
+      },
+    },
+
+    // ═══ Settings tour (R28) ═══
+    settings: {
+      title: 'Settings',
+      desc: 'All settings at a glance: tabs, general settings, audio, library, companion devices and backup.',
+      chapters: {
+        overview: 'Overview',
+        basics: 'Basic settings',
+        sound: 'Audio & Microphone',
+        library: 'Library & Theme',
+        devices: 'Devices & Companion',
+        data: 'Sync, Backup & Info',
+      },
+      steps: {
+        welcome: {
+          title: 'The settings 👋',
+          body: 'This tour walks you through the settings exclusively — tab by tab.\n\nI automatically switch to each tab and explain what you find there.',
+        },
+        tabBar: {
+          title: 'The tab bar',
+          body: 'All settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nSince R28, a short intro text at the top of each tab explains what it does.',
+        },
+        general: {
+          title: 'General',
+          body: 'Interface language, default difficulty, online activities and the complete keyboard shortcut overview.',
+        },
+        gameplay: {
+          title: 'Gameplay',
+          body: 'Scoring on/off, particle effects, queue autoplay and more behavior switches for rounds and results.',
+        },
+        appearance: {
+          title: 'Appearance',
+          body: 'Themes, animated background or your own background video, lyrics style and size, note display and the performance mode for weaker machines.',
+        },
+        graphicsound: {
+          title: 'Audio',
+          body: 'Output device (incl. ASIO), master and preview volume, microphone sensitivity, loudness normalization and YouTube video quality.',
+        },
+        microphone: {
+          title: 'Microphone',
+          body: 'Device selection, sensitivity, noise gate and live level — plus presets. Smartphones are connected via the Mobile tab.',
+        },
+        libraryTab: {
+          title: 'Library',
+          body: 'Set the songs folder (each subfolder = one song) and scan it, reset the library or delete all data — plus the import from other karaoke systems.',
+        },
+        taxonomy: {
+          title: 'Genres & Languages',
+          body: 'Create your own genre and language entries — they appear in all dropdowns and feed into the AI harmonization.',
+        },
+        motto: {
+          title: 'Theme Party',
+          body: 'Set the whole game to a theme (e.g. an 80s party): when active, the theme replaces all search fields and filters — every song selection only draws from matching songs.',
+        },
+        mobile: {
+          title: 'Mobile & Companion',
+          body: 'Connect smartphones via QR code — as microphone, remote control or sing-along device. You see all connected devices and their connection codes.',
+        },
+        webcam: {
+          title: 'Webcam',
+          body: 'Use the webcam as an animated song background: resolution, mirroring, saturation, blur and more effects — with a live preview.',
+        },
+        sync: {
+          title: 'Sync & Backup',
+          body: 'Create and restore backups, synchronize data between devices. In the desktop build, player data is also mirrored permanently to the AppData folder.',
+        },
+        about: {
+          title: 'About',
+          body: 'Version, platform, licenses and contributing projects — the digital imprint of Karaoke ZERO.',
+        },
+        finish: {
+          title: 'Fully configured! ⚙️',
+          body: 'You now know all the settings.\n\nThe ? icon in the menu bar brings you back to this tour anytime — chapter by chapter if you like.',
         },
       },
     },

@@ -11,6 +11,7 @@ import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { nativePickFolder } from '@/lib/native-fs';
 import { safePrompt } from '@/lib/safe-dialog';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 // ── Inline confirm/prompt dialog (bypasses Tauri's broken window.confirm) ──
 
@@ -176,6 +177,13 @@ export function LibraryTab({
 
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="📂"
+        title={tx('settings.tabLibrary')}
+        description={t('settingsIntros.library')}
+        testId="settings-intro-library"
+      />
       {/* Songs Base Folder */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>

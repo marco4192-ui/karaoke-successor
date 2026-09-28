@@ -21,7 +21,7 @@ export const tutorialTranslations = {
     offerBody: 'Möchtest du eine kurze Führung durch die Grundfunktionen? In 2 Minuten kennst du Daily-Challenges, Sing-Modi, Bibliothek und Party-Spiele.',
     offerStart: 'Tour starten',
     offerLater: 'Vielleicht später',
-    offerHint: 'Jederzeit über das ?-Symbol unten rechts erneut verfügbar.',
+    offerHint: 'Jederzeit über das ?-Symbol in der Menüleiste erneut verfügbar.',
 
     // ═══ Grundfunktionen-Tour ═══
     basic: {
@@ -105,7 +105,7 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Geschafft! 🎉',
-          body: 'Du kennst jetzt die Grundlagen.\n\nTipp: Das ?-Symbol unten rechts bringt dich jederzeit zurück — auch zu einzelnen Themen-Kapiteln oder zur Editor-Tour.',
+          body: 'Du kennst jetzt die Grundlagen.\n\nTipp: Das ?-Symbol in der Menüleiste bringt dich jederzeit zurück — auch zu einzelnen Themen-Kapiteln, zur Editor-Tour oder zur Settings-Tour.',
         },
       },
     },
@@ -175,7 +175,83 @@ export const tutorialTranslations = {
         },
         finish: {
           title: 'Bereit zum Bauen! 🛠️',
-          body: 'Du kennst jetzt den Editor-Baukasten.\n\nDenk dran: Strg+Z rettet alles, und das ?-Symbol unten rechts bringt dich jederzeit zu diesen Kapiteln zurück.',
+          body: 'Du kennst jetzt den Editor-Baukasten.\n\nDenk dran: Strg+Z rettet alles, und das ?-Symbol in der Menüleiste bringt dich jederzeit zu diesen Kapiteln zurück.',
+        },
+      },
+    },
+
+    // ═══ Settings-Tour (R28) ═══
+    settings: {
+      title: 'Einstellungen',
+      desc: 'Alle Einstellungen im Überblick: Tabs, Grundeinstellungen, Audio, Bibliothek, Companion-Geräte und Backup.',
+      chapters: {
+        overview: 'Überblick',
+        basics: 'Basis-Einstellungen',
+        sound: 'Audio & Mikrofon',
+        library: 'Bibliothek & Motto',
+        devices: 'Geräte & Companion',
+        data: 'Sync, Backup & Info',
+      },
+      steps: {
+        welcome: {
+          title: 'Die Einstellungen 👋',
+          body: 'Diese Tour führt dich ausschließlich durch die Einstellungen — Tab für Tab.\n\nIch wechsle automatisch in den jeweiligen Tab und erkläre, was du dort findest.',
+        },
+        tabBar: {
+          title: 'Die Tab-Leiste',
+          body: 'Alle Einstellungen sind in Tabs gegliedert: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile, Webcam, Bibliothek, Genres & Sprachen, Motto-Party, Sync & Backup und Über.\n\nSeit R28 erklärt ein kurzer Einleitungstext oben in jedem Tab, wozu er dient.',
+        },
+        general: {
+          title: 'Allgemein',
+          body: 'Sprache der Oberfläche, Standard-Schwierigkeit, Online-Aktivitäten und die komplette Tastaturkürzel-Übersicht.',
+        },
+        gameplay: {
+          title: 'Gameplay',
+          body: 'Scoring an/aus, Partikel-Effekte, Autoplay der Queue und weitere Verhaltens-Schalter für Runden und Ergebnisse.',
+        },
+        appearance: {
+          title: 'Darstellung',
+          body: 'Themes, animierter Hintergrund oder eigenes Hintergrundvideo, Lyrics-Stil und -Größe, Noten-Anzeige und der Performance-Modus für schwächere Rechner.',
+        },
+        graphicsound: {
+          title: 'Audio',
+          body: 'Ausgabegerät (inkl. ASIO), Master- und Preview-Lautstärke, Mikrofon-Empfindlichkeit, Loudness-Normalisierung und YouTube-Videoqualität.',
+        },
+        microphone: {
+          title: 'Mikrofon',
+          body: 'Geräteauswahl, Empfindlichkeit, Noise-Gate und Live-Pegel — plus Presets. Smartphones bindest du über den Mobile-Tab ein.',
+        },
+        libraryTab: {
+          title: 'Bibliothek',
+          body: 'Songs-Ordner festlegen (jeder Unterordner = ein Song) und einlesen, Bibliothek zurücksetzen oder alle Daten löschen — plus der Import aus anderen Karaoke-Systemen.',
+        },
+        taxonomy: {
+          title: 'Genres & Sprachen',
+          body: 'Eigene Genre- und Sprach-Einträge anlegen — sie erscheinen in allen Auswahllisten und fließen in die KI-Harmonisierung ein.',
+        },
+        motto: {
+          title: 'Motto-Party',
+          body: 'Stelle das ganze Spiel auf ein Motto ein (z. B. „80er Jahre Party“): Bei aktivem Motto ersetzt es alle Suchfelder und Filter — jede Song-Auswahl greift nur noch auf passende Songs zu.',
+        },
+        mobile: {
+          title: 'Mobile & Companion',
+          body: 'Smartphones per QR-Code verbinden — als Mikrofon, Fernbedienung oder Mitsing-Gerät. Du siehst alle verbundenen Geräte und ihre Verbindungscodes.',
+        },
+        webcam: {
+          title: 'Webcam',
+          body: 'Webcam als animierten Song-Hintergrund nutzen: Auflösung, Spiegelung, Sättigung, Blur und weitere Effekte — mit Live-Vorschau.',
+        },
+        sync: {
+          title: 'Sync & Backup',
+          body: 'Sicherungen erstellen und wiederherstellen, Daten zwischen Geräten synchronisieren. Im Desktop-Build werden Spielerdaten zusätzlich dauerhaft im AppData-Ordner gespiegelt.',
+        },
+        about: {
+          title: 'Über',
+          body: 'Version, Plattform, Lizenzen und mitwirkende Projekte — das digitale Impressum von Karaoke ZERO.',
+        },
+        finish: {
+          title: 'Fertig konfiguriert! ⚙️',
+          body: 'Du kennst jetzt alle Einstellungen.\n\nDas ?-Symbol in der Menüleiste bringt dich jederzeit zu dieser Tour zurück — auch kapitelweise.',
         },
       },
     },

@@ -13,6 +13,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 import {
   createBackup, downloadBackup, parseBackupFile, restoreBackup,
   summarizeBackup, type BackupFile, type BackupSummary, type RestoreSummary,
@@ -102,6 +103,13 @@ export function SyncTab() {
 
   return (
     <div className="space-y-6" data-testid="settings-sync-tab">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="💾"
+        title={t('settingsTabs.syncBackup')}
+        description={t('settingsIntros.sync')}
+        testId="settings-intro-sync"
+      />
       {/* ── R14 (user request 5): AppData persistence status ── */}
       <div
         className={`rounded-lg border p-3 text-xs ${isTauriApp()

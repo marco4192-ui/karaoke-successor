@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { MusicIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 import { Monitor, Cpu, PackageCheck, PackageX, Server } from 'lucide-react';
 
 interface AboutTabProps {
@@ -80,6 +81,13 @@ export function AboutTab({
 
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="ℹ️"
+        title={tx('settings.tabAbout')}
+        description={t('settingsIntros.about')}
+        testId="settings-intro-about"
+      />
       <Card className="retro-gradient-card retro-border-pink rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">

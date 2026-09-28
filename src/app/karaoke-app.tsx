@@ -1334,9 +1334,9 @@ export default function KaraokeZERO() {
   }
 
   // ===================== MAIN RENDER =====================
-  // Help FAB visibility: hidden on running games & immersive screens —
-  // except the editor (the editor tutorial lives there).
-  const helpFabHidden = (IMMERSIVE_SCREENS.has(screen) && screen !== 'editor') || screen === 'results' || screen === 'mobile';
+  // R28: der ?-Hilfe-Button sitzt in der Hauptmenüleiste (NavBar) — auf
+  // immersiven Screens ist die NavBar ausgeblendet, dort gibt es daher
+  // bewusst keinen Hilfe-Aufruf (Spiel-Screens bleiben frei von Ablenkung).
 
   return (
     <TourController navigate={handleTourNavigate} screen={screen}>
@@ -1672,7 +1672,10 @@ export default function KaraokeZERO() {
         />
       )}
     </div>
-    {!helpFabHidden && <HelpMenu />}
+    {/* R28: HelpMenu — der Auslöser (?-Button) sitzt jetzt in der Hauptmenüleiste
+        (NavBar); das Dialog-Modul lauscht permanent auf das karaoke-open-help-Event
+        und rendert null, wenn geschlossen. */}
+    <HelpMenu />
     </TourController>
   );
 }

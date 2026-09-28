@@ -30,6 +30,7 @@ import { MottoPartyTab } from '@/components/settings/motto-party-tab';
 import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-section';
 import { CompanionListSection } from '@/components/settings/companion-list-section';
 import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-bar';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 // Hooks
 import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
@@ -37,7 +38,7 @@ import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
 // ===================== SETTINGS SCREEN =====================
 function SettingsScreen() {
-  const { language, setLanguage, translations } = useTranslation();
+  const { t, language, setLanguage, translations } = useTranslation();
   const { setDifficulty, gameState, onlineEnabled, setOnlineEnabled } = useGameStore();
 
   // Folder scanning hook — encapsulates all library management logic
@@ -295,12 +296,26 @@ function SettingsScreen() {
 
       {activeTab === 'microphone' && (
         <div className="space-y-6">
+          {/* R28: Einleitungstext */}
+          <SettingsIntroCard
+            icon="🎤"
+            title={t('settingsTabs.microphone')}
+            description={t('settingsIntros.microphone')}
+            testId="settings-intro-microphone"
+          />
           <MicrophoneSettingsPanel />
         </div>
       )}
 
       {activeTab === 'mobile' && (
         <div className="space-y-6">
+          {/* R28: Einleitungstext */}
+          <SettingsIntroCard
+            icon="📱"
+            title={t('settingsTabs.mobileCompanion')}
+            description={t('settingsIntros.mobile')}
+            testId="settings-intro-mobile"
+          />
           <CompanionListSection isVisible={activeTab === 'mobile'} />
           <MobileDeviceMicrophoneSection />
         </div>

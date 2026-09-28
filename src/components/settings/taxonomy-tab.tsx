@@ -383,7 +383,7 @@ export function TaxonomyTab() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white/5 border-white/10" data-testid="settings-intro-taxonomy">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 theme-adaptive-text">
             🏷️ {t('settingsTaxonomy.title')}

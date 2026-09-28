@@ -77,6 +77,27 @@ function closeEditorSongWithRetry(attempt = 0): void {
   void attempt;
 }
 
+/** Activate a settings tab (R28 settings tour). Reuses the same custom
+ *  event the companion remote control uses to switch settings tabs.
+ *  Navigation to the settings screen renders asynchronously — the listener
+ *  may not be registered when the first dispatch fires, so we retry until
+ *  the tab button is actually active (the active variant carries one of
+ *  the bg-<color>-500 classes from the tab bar; the outline variant only
+ *  has bg-white/10) or the retry budget is exhausted. */
+function openSettingsTabWithRetry(tab: string, attempt = 0): void {
+  if (typeof document === 'undefined') return;
+  const btn = document.querySelector(`[data-testid="settings-tab-${tab}"]`);
+  const isActive = !!btn && /bg-(cyan|green|purple)-500/.test(btn.className);
+  if (isActive) return; // active variant reached
+  if (!btn && attempt < 40) {
+    // Settings screen not mounted yet — retry until it appears.
+    setTimeout(() => openSettingsTabWithRetry(tab, attempt + 1), 250);
+    return;
+  }
+  window.dispatchEvent(new CustomEvent('remote-settings-tab', { detail: { tab } }));
+  if (attempt < 20) setTimeout(() => openSettingsTabWithRetry(tab, attempt + 1), 250);
+}
+
 export function TourController({ children, navigate, screen }: TourControllerProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<ActiveTour | null>(null);
@@ -137,6 +158,9 @@ export function TourController({ children, navigate, screen }: TourControllerPro
     if (step.navigate) navigate(step.navigate);
     if (step.action === 'editor-open-first-song') openEditorSongWithRetry();
     if (step.action === 'editor-close-song') closeEditorSongWithRetry();
+    if (step.action === 'settings-open-tab' && step.settingsTab) {
+      openSettingsTabWithRetry(step.settingsTab);
+    }
   }, [navigate]);
 
   const startTour = useCallback((tourId: TourId, opts?: { chapterId?: string }) => {

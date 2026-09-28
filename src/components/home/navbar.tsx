@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
+import { OPEN_HELP_EVENT } from '@/components/tutorial/help-menu';
 import type { Screen } from '@/types/screens';
 
 
@@ -72,6 +73,17 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
               {(t('desktopChat.title') || 'Chat')}
             </NavButton>
           )}
+          {/* R28: ?-Hilfe-Button (Tutorials) — auf Nutzerwunsch in der Hauptmenüleiste */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent(OPEN_HELP_EVENT))}
+            data-testid="navbar-help-button"
+            aria-label={t('tutorial.helpButtonTitle')}
+            title={t('tutorial.helpButtonTitle')}
+            className="flex items-center justify-center w-9 h-9 rounded-full border border-cyan-400/40 bg-cyan-500/10 hover:bg-cyan-500/25 hover:border-cyan-300/60 text-[#00e5ff] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+          >
+            ?
+          </button>
           {/* Fullscreen Toggle Button */}
           <button
             onClick={toggleFullscreen}

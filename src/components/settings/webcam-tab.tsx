@@ -5,6 +5,7 @@ import { WebcamSettingsPanel, WebcamBackground } from '@/components/game/webcam-
 import { WebcamBackgroundConfig } from '@/components/game/webcam-background';
 import { InfoIcon, WebcamIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 interface WebcamTabProps {
   webcamConfig: WebcamBackgroundConfig;
@@ -18,6 +19,13 @@ export function WebcamTab({
   const { t } = useTranslation();
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="📷"
+        title={t('settingsTabs.webcam')}
+        description={t('settingsIntros.webcam')}
+        testId="settings-intro-webcam"
+      />
       {/* 1. Info Card — About Webcam Background */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>

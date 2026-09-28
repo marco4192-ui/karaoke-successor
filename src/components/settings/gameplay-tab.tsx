@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { GamepadIcon } from '@/components/settings/settings-icons';
 import { StorageKeys, getBool, getJson, setBool, setJson, setItem } from '@/lib/storage';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 interface GameplayTabProps {
   tx: (_key: string) => string;
@@ -64,6 +65,13 @@ export function GameplayTab({ tx, setHasChanges }: GameplayTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="🎮"
+        title={tx('settingsTabs.gameplay')}
+        description={tx('settingsIntros.gameplay')}
+        testId="settings-intro-gameplay"
+      />
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

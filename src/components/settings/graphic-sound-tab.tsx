@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { AudioOutputSection } from '@/components/settings/audio-output-section';
 import { StorageKeys, setItem } from '@/lib/storage';
+import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 interface GraphicSoundTabProps {
   previewVolume: number;
@@ -37,6 +38,13 @@ export function GraphicSoundTab({
 }: GraphicSoundTabProps) {
   return (
     <div className="space-y-6">
+      {/* R28: Einleitungstext */}
+      <SettingsIntroCard
+        icon="🎵"
+        title={tx('settingsTabs.graphicSound')}
+        description={tx('settingsIntros.graphicsound')}
+        testId="settings-intro-graphicsound"
+      />
       {/* Audio Output / ASIO Device Selection */}
       <AudioOutputSection />
 

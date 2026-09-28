@@ -137,6 +137,21 @@ export const settingsTranslations = {
     mottoParty: 'Theme Party',
   },
 
+  // R28: intro texts for all settings submenus (pattern like settingsTaxonomy.desc)
+  settingsIntros: {
+    general: 'Core app settings: interface language, default difficulty for new rounds, online activities and the list of all keyboard shortcuts. Changes apply immediately — some (like the language) without a restart.',
+    gameplay: 'Fine-tune the game feel: scoring, particle effects on hits, autoplay of the next queue songs and more behavior switches for rounds and results. Perfect for balancing party vibes vs. performance.',
+    appearance: 'Make it yours: themes, animated background or your own background video, lyrics style and size, note display and the performance mode for weaker machines.',
+    graphicsound: 'Everything audio: output device (incl. ASIO for low latency), master and preview volume, microphone sensitivity, loudness normalization and the YouTube video quality.',
+    microphone: 'Microphone setup and testing: device selection, sensitivity, noise gate and a live level check. You can also save settings as presets and connect smartphones as wireless microphones.',
+    mobile: 'Companion management: connect smartphones via QR code as microphone, remote control or sing-along device. You see all connected devices, their connection codes and can disconnect them.',
+    webcam: 'Use your webcam as an animated song background. Configure resolution, mirroring, saturation, blur and other video effects — plus a camera preview.',
+    library: 'Manage your song library: set the songs folder (each subfolder = one song) and scan it, reset the library or delete all data. Also home to the import from other karaoke systems (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).',
+    viral: 'The Viral Charts: an automatically updating list of current hits. Control how many songs in your library get flagged as "viral" and filter by it — perfect for offering the latest songs at parties.',
+    sync: 'Sync & Backup: synchronize profiles, highscores and settings between devices and create or restore backups. In the desktop build, player data is additionally mirrored permanently to the AppData folder.',
+    about: 'Everything about Karaoke ZERO: version, platform, contributing projects and licenses — plus the project description and support links.',
+  },
+
   settingsTaxonomy: {
     title: 'Genres & Languages',
     desc: 'Create, view and delete your own genre and language entries. Custom entries appear in every dropdown (editor, new song dialog, Metadata Studio) and are treated as canonical main categories by the harmonization pipeline.',
