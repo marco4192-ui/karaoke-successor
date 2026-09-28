@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Показать фото',
   photoUploaded: 'Фото загружено',
   noPhoto: 'Нет фото',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Ваши результаты будут загружены в глобальную таблицу лидеров.',
+  privacyHintDesc: 'Вы можете в любой момент отключить это в настройках профиля.',
   storageMode: {
     title: 'Хранение профиля',
     local: 'Только локально',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: 'Скрыть QR-код',
   showQrCode: 'Показать QR-код',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: 'Участвуйте в онлайн-таблице лидеров и делитесь результатами с другими игроками',
   loadProfile: 'Загрузить онлайн-профиль',
 },
 characterCard: {

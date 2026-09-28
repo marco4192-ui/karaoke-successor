@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: 'Sinä #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: 'Ei tuloksia vielä',
+  loading: 'Ladataan...',
 },
 songStart: {
   micAssignment: '🎤 Liitä mikrofoni',

@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Foto tonen',
   photoUploaded: 'Foto geüpload',
   noPhoto: 'Geen foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Je scores worden geüpload naar het wereldwijde leaderboard.',
+  privacyHintDesc: 'Je kunt je op elk moment afmelden in de profielinstellingen.',
   storageMode: {
     title: 'Profielopslag',
     local: 'Alleen lokaal',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: 'QR Code verbergen',
   showQrCode: 'QR Code tonen',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: 'Doe mee aan het online leaderboard en deel je scores met andere spelers',
   loadProfile: 'Onlineprofiel laden',
 },
 characterCard: {

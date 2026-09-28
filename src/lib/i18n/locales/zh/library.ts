@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: '你排名 #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: '还没有分数记录',
+  loading: '加载中...',
 },
 songStart: {
   micAssignment: '🎤 分配麦克风',

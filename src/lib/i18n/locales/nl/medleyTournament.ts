@@ -164,7 +164,7 @@ medley: {
   winner: 'Winnaar',
   tieTitle: 'Gelijkspel!',
   tieSubtitle: 'De besten delen de hoogste score — deze keer geen kampioen.',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 Medley-wedstrijd!',
   shareWinner: '🏆 Winnaar: {name} ({score} ptn)',
   shareBestCombo: '🔥 Beste combo: {n}x',
 },

@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 새 글로벌 최고 점수!',
   uploadedRank: '업로드 완료! 순위 #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: '업로드 완료! 순위 #{n} (검증됨)',
   uploadFailed: '업로드 실패',
   noResults: '결과가 없습니다',
   accuracyLabel: '{n}% 정확도',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% 정확도',
   maxComboLabel: '{n}x 최고 콤보',
   totalPoints: '총점',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: '플레이어 또는 곡 검색…',
+  searchNoResults: '"{q}"에 대한 결과가 없어요',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: '검색어와 일치하는 플레이어가 없어요',
 },
 keyboardShortcuts: {
   esc: '일시정지 / 뒤로 / 종료',

@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Nytt globalt rekord!',
   uploadedRank: 'Uppladdat! Rank #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Uppladdat! Rank #{n} (Verifierat)',
   uploadFailed: 'Uppladdning misslyckades',
   noResults: 'Inga resultat tillgängliga',
   accuracyLabel: '{n}% noggrannhet',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% noggrannhet',
   maxComboLabel: '{n}x max-kombo',
   totalPoints: 'totalpoäng',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Sök spelare eller låtar...',
+  searchNoResults: 'Inga resultat för "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Inga spelare matchade din sökning',
 },
 keyboardShortcuts: {
   esc: 'Pausa / Tillbaka / Avsluta',

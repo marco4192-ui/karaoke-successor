@@ -374,7 +374,7 @@ companion: {
   player2: 'プレイヤー2',
   releaseControl: '操作を解放',
   acquireControl: '操作を取得',
-  controlLocked: '操作はロック中',
+  controlLocked: '操作: {name}',
 },
 remoteControl: {
   back: '← 戻る',

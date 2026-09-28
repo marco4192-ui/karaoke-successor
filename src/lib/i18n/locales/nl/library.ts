@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: 'Jij #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: 'Nog geen scores',
+  loading: 'Laden...',
 },
 songStart: {
   micAssignment: '🎤 Microfoon toewijzen',

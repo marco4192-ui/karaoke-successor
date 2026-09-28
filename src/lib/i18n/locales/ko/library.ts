@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: '순위 #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: '아직 점수가 없어요',
+  loading: '불러오는 중…',
 },
 songStart: {
   micAssignment: '🎤 마이크 할당',

@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Uploader til global rangliste...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Ikke verificeret (uden bevis)',
+  verifiedDesc: 'Denne score blev verificeret af anti-cheat-systemet',
+  unverifiedDesc: 'Der var ikke vedhæftet anti-cheat-bevis for denne score',
 },
 shareSection: {
   title: '📤 Del dit resultat',

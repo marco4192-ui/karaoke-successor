@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 新しいグローバルハイスコア！',
   uploadedRank: 'アップロード完了！順位 #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'アップロード完了！順位 #{n}（検証済み）',
   uploadFailed: 'アップロード失敗',
   noResults: '結果がありません',
   accuracyLabel: '{n}% 正確率',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% 正確さ',
   maxComboLabel: '{n}x 最大コンボ',
   totalPoints: '合計ポイント',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'プレイヤーまたは曲を検索…',
+  searchNoResults: '「{q}」の結果はありません',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: '検索に一致するプレイヤーが見つかりません',
 },
 keyboardShortcuts: {
   esc: '一時停止 / 戻る / 終了',

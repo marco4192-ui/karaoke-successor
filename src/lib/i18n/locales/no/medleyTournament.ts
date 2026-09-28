@@ -430,7 +430,7 @@ rateMySong: {
       description: 'Ha et selvsikkert smil på ansiktet HELE tiden',
     },
     airGuitarSolo: {
-      title: 'Air Guitar Solo',
+      title: 'Luftgitarsolo',
       description: 'Gjør en air guitar-solo under et instrumentalt parti',
     },
     micDrop: {

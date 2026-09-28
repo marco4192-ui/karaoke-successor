@@ -164,7 +164,7 @@ medley: {
   winner: 'Voittaja',
   tieTitle: 'Tasapeli!',
   tieSubtitle: 'Parhaat jakavat korkeimmat pisteet — tällä kertaa ei mestaria.',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 Medley-kisa!',
   shareWinner: '🏆 Voittaja: {name} ({score} pistettä)',
   shareBestCombo: '🔥 Paras combo: {n}x',
 },

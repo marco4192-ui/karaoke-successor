@@ -164,7 +164,7 @@ medley: {
   winner: '获胜者',
   tieTitle: '平局！',
   tieSubtitle: '最佳选手得分并列——本次没有冠军。',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 串烧大赛！',
   shareWinner: '🏆 获胜者：{name}（{score} 分）',
   shareBestCombo: '🔥 最佳连击：{n}x',
 },

@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Uusi globaali huipputulos!',
   uploadedRank: 'Ladattu! Sijoitus #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Ladattu! Sija #{n} (vahvistettu)',
   uploadFailed: 'Lataus epäonnistui',
   noResults: 'Tuloksia ei saatavilla',
   accuracyLabel: '{n}% tarkkuus',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% tarkkuus',
   maxComboLabel: '{n}x max-kombo',
   totalPoints: 'pistettä yhteensä',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Hae pelaajia tai kappaleita...',
+  searchNoResults: 'Ei tuloksia haulle "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Haustasi vastaavia pelaajia ei löytynyt',
 },
 keyboardShortcuts: {
   esc: 'Tauko / Takaisin / Poistu',

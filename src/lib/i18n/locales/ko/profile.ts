@@ -21,8 +21,8 @@ profile: {
   showPhoto: '사진 표시',
   photoUploaded: '사진이 업로드되었습니다',
   noPhoto: '사진 없음',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: '점수가 전체 리더보드에 업로드됩니다.',
+  privacyHintDesc: '프로필 설정에서 언제든 중단할 수 있어요.',
   storageMode: {
     title: '프로필 저장 방식',
     local: '로컬만',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: '이 QR 코드를 스캔하여 컴패니언 앱에서 이 프로필에 직접 연결하세요.',
   hideQrCode: 'QR 코드 숨기기',
   showQrCode: 'QR 코드 보기',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: '리더보드 참여',
+  leaderboardParticipationDesc: '온라인 리더보드에 참여해 다른 플레이어들과 점수를 공유하세요',
   loadProfile: '온라인 프로필 불러오기',
 },
 characterCard: {

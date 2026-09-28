@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Ny global rekord!',
   uploadedRank: 'Opplastet! Rangering #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Opplastet! Rangering #{n} (Verifisert)',
   uploadFailed: 'Opplasting mislyktes',
   noResults: 'Ingen resultater tilgjengelige',
   accuracyLabel: '{n}% presisjon',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% presisjon',
   maxComboLabel: '{n}x maks combo',
   totalPoints: 'totalt antall poeng',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Søk spillere eller sanger...',
+  searchNoResults: 'Ingen resultater for "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Ingen spillere matchet søket ditt',
 },
 keyboardShortcuts: {
   esc: 'Pause / Tilbake / Avslutt',

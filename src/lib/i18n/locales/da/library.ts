@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: 'Du #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: 'Ingen scores endnu',
+  loading: 'Indlæser...',
 },
 songStart: {
   micAssignment: '🎤 Tildel mikrofon',

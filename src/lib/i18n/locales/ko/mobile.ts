@@ -374,7 +374,7 @@ companion: {
   player2: '플레이어 2',
   releaseControl: '제어 해제',
   acquireControl: '제어 가져오기',
-  controlLocked: '제어 잠김',
+  controlLocked: '제어: {name}',
 },
 remoteControl: {
   back: '← 뒤로',

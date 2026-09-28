@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Nowy globalny rekord!',
   uploadedRank: 'Przesłano! Pozycja #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Przesłano! Pozycja #{n} (zweryfikowany)',
   uploadFailed: 'Przesyłanie nie powiodło się',
   noResults: 'Brak wyników',
   accuracyLabel: '{n}% celności',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% celności',
   maxComboLabel: '{n}x max kombo',
   totalPoints: 'łącznie punktów',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Szukaj graczy lub piosenek...',
+  searchNoResults: 'Brak wyników dla "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Nie znaleziono graczy pasujących do wyszukiwania',
 },
 keyboardShortcuts: {
   esc: 'Pauza / Wstecz / Wyjście',

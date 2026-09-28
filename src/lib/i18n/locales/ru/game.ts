@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Новый глобальный рекорд!',
   uploadedRank: 'Загружено! Место #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Загружено! Место #{n} (верифицировано)',
   uploadFailed: 'Ошибка загрузки',
   noResults: 'Нет результатов',
   accuracyLabel: '{n}% точность',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% точность',
   maxComboLabel: '{n}x макс. комбо',
   totalPoints: 'всего очков',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Поиск игроков или песен...',
+  searchNoResults: 'Нет результатов для «{q}»',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Игроки по вашему запросу не найдены',
 },
 keyboardShortcuts: {
   esc: 'Пауза / Назад / Выход',

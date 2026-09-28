@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: '전체 리더보드에 업로드 중...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: '검증된 점수',
+  unverified: '미검증 (증거 없음)',
+  verifiedDesc: '이 점수는 안티치트 시스템으로 검증되었습니다',
+  unverifiedDesc: '이 점수에는 안티치트 증거가 포함되어 있지 않아요',
 },
 shareSection: {
   title: '📤 점수 공유하기',

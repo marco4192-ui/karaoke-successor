@@ -357,6 +357,16 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
     song.isDuet = true;
   }
 
+  // Trim trailing empty voice-name slots: a classic P1/P2 duet yields
+  // ['John', 'Jane'] (not ['John', 'Jane', '', '']). Interior empties stay
+  // (unnamed middle voices keep their P1/P2/P4/P8 index mapping).
+  if (song.duetPlayerNames) {
+    while (song.duetPlayerNames.length && song.duetPlayerNames[song.duetPlayerNames.length - 1] === '') {
+      song.duetPlayerNames.pop();
+    }
+    if (song.duetPlayerNames.length === 0) delete song.duetPlayerNames;
+  }
+
   return song;
 }
 

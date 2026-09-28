@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Vis bilde',
   photoUploaded: 'Bilde lastet opp',
   noPhoto: 'Ingen bilde',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Poengsummene dine lastes opp til den globale ledertavlen.',
+  privacyHintDesc: 'Du kan melde deg ut når som helst i profilinnstillingene.',
   storageMode: {
     title: 'Profillagring',
     local: 'Kun lokalt',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: 'Skjul QR Code',
   showQrCode: 'Vis QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: 'Delta på den nettbaserte ledertavlen og del poengsummene dine med andre spillere',
   loadProfile: 'Last inn online-profil',
 },
 characterCard: {

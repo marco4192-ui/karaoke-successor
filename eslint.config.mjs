@@ -75,6 +75,10 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "scripts/**",
     // Legacy PHP leaderboard service (no JS tooling)
     "leaderboard-api/**",
+    // QA scratch space (E2E seed/verify scripts, not app code)
+    "qa-test-song/**", "qa-shots/**",
+    // i18n audit tooling (analysis scripts, excluded from tsconfig too)
+    "tmp-analysis/**",
   ]
 }];
 

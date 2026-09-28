@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 新全球最高分！',
   uploadedRank: '上传成功！排名第#{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: '已上传！排名 #{n}（已验证）',
   uploadFailed: '上传失败',
   noResults: '没有结果',
   accuracyLabel: '{n}%准确度',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% 准确度',
   maxComboLabel: '{n}x 最大连击',
   totalPoints: '总积分',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: '搜索玩家或歌曲...',
+  searchNoResults: '没有“{q}”的结果',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: '未找到符合条件的玩家',
 },
 keyboardShortcuts: {
   esc: '暂停 / 返回 / 退出',

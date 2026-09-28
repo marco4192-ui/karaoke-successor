@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Laster opp til global ledertavle...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Verifisert poengsum',
+  unverified: 'Uverifisert (uten bevis)',
+  verifiedDesc: 'Denne poengsummen ble verifisert av anti-cheat-systemet',
+  unverifiedDesc: 'Anti-cheat-bevis ble ikke inkludert for denne poengsummen',
 },
 shareSection: {
   title: '📤 Del poengsummen din',

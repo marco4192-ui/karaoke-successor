@@ -21,8 +21,8 @@ profile: {
   showPhoto: '写真を表示',
   photoUploaded: '写真がアップロードされました',
   noPhoto: '写真なし',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'スコアはグローバルリーダーボードにアップロードされます。',
+  privacyHintDesc: 'プロフィール設定からいつでもオプトアウトできます。',
   storageMode: {
     title: 'プロフィールの保存方法',
     local: 'ローカルのみ',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'このQRコードをスキャンして、コンパニオンアプリでこのプロファイルに直接接続してください。',
   hideQrCode: 'QRコードを非表示',
   showQrCode: 'QRコードを表示',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'リーダーボード参加',
+  leaderboardParticipationDesc: 'オンラインリーダーボードに参加して、他のプレイヤーとスコアを共有しましょう',
   loadProfile: 'オンラインプロフィールを読み込む',
 },
 characterCard: {

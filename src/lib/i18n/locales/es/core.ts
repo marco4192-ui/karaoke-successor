@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Subiendo a la tabla de clasificación global...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Sin verificar (sin comprobante)',
+  verifiedDesc: 'Esta puntuación fue verificada por el sistema anti-trampas',
+  unverifiedDesc: 'No se incluyó comprobante anti-trampas para esta puntuación',
 },
 shareSection: {
   title: '📤 Compartir tu Puntuación',

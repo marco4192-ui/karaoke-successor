@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Ny global highscore!',
   uploadedRank: 'Uploadet! Rang #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Uploadet! Rang #{n} (verificeret)',
   uploadFailed: 'Upload mislykkedes',
   noResults: 'Ingen resultater tilgængelige',
   accuracyLabel: '{n}% nøjagtighed',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% nøjagtighed',
   maxComboLabel: '{n}x maks. kombo',
   totalPoints: 'total point',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Søg spillere eller sange...',
+  searchNoResults: 'Ingen resultater for "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Ingen spillere fundet, der matcher din søgning',
 },
 keyboardShortcuts: {
   esc: 'Pause / Tilbage / Afslut',

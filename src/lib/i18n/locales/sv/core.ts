@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Laddar upp till globala poänglistan...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Verifierat resultat',
+  unverified: 'Overifierat (utan bevis)',
+  verifiedDesc: 'Detta resultat verifierades av anti-cheat-systemet',
+  unverifiedDesc: 'Anti-cheat-bevis inkluderades inte för detta resultat',
 },
 shareSection: {
   title: '📤 Dela Ditt Resultat',

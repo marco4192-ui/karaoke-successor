@@ -1,172 +1,54 @@
 'use client';
 
+/**
+ * Editor timeline — orchestrator.
+ *
+ * R2 refactor: the former 1743-line monolith was split into focused modules
+ * inside src/components/editor/timeline/ (constants, types, drag-interaction
+ * hook, toolbar, pitch lane, grid, comparison overlay, note-details band,
+ * pitch minimap). This file keeps the Timeline component itself: layout
+ * computation (lanes, zoom, pitch centers), click/jump/zoom handlers,
+ * playhead-follow auto-scroll and the composition of the sub-components.
+ *
+ * The public surface is unchanged:
+ * - `export default Timeline` (same path, same props → see TimelineProps)
+ * - named exports TAP_LINE_GAP_MS + NoteHistoryMode stay importable from
+ *   this module (re-exported from their new homes).
+ */
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { Note, Song, NoteType, DuetPlayer } from '@/types/game';
-import { midiToNoteName, getNoteType, noteTypeFlags, NOTE_TYPE_CHARS } from '@/types/game';
-import { NoteBlock } from './note-block';
+import type { Note } from '@/types/game';
 import { LyricTrack } from './lyric-track';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge, Magnet, Columns2, Info, ChevronUp, X } from 'lucide-react';
-import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { useTranslation } from '@/lib/i18n/translations';
+import { PitchLaneView } from './pitch-lane';
+import { TimelineToolbar } from './timeline-toolbar';
+import { NoteDetailsBand } from './note-details-band';
+import { PitchMinimap } from './pitch-minimap';
+import { ComparisonLegend } from './comparison-overlay';
+import { useTimelineDrag } from './use-timeline-interaction';
+import { useTimelineAutoScroll } from './use-timeline-auto-scroll';
+import { formatTime } from './timeline-utils';
 import { snapTimeToBeat } from '@/lib/editor/beat-utils';
+import type { PitchLane, TimelineProps } from './timeline-types';
+import {
+  VISIBLE_PITCH_RANGE,
+  SPLIT_PITCH_RANGE,
+  SPLIT_PITCH_RANGE_MULTI,
+  LEFT_GUTTER,
+  MIN_ZOOM,
+  MAX_ZOOM,
+  ZOOM_PRESETS,
+  TOTAL_MIN_PITCH,
+  TOTAL_MAX_PITCH,
+  basePixelsPerSecond,
+  lyricTrackHeight,
+  minimapHeight,
+  noteInfoHeight,
+} from './timeline-constants';
 
-/**
- * History mode for note updates:
- * - 'push'   → update state AND push a history entry (discrete actions)
- * - 'live'   → update state only, mark dirty (dragging, slider, typing)
- * - 'commit' → push a history entry from the current state (drag release, blur)
- * - 'replace' → push overwriting the top entry (tap-mode: create + duration = one step)
- */
-export type NoteHistoryMode = 'push' | 'live' | 'commit' | 'replace';
-
-// Visible pitch range per lane (2 octaves = 24 semitones).
-// R9 (user request 1.1): was 3 octaves/36 semitones — the per-semitone lane
-// rows were so flat that the note bars looked thin. Halving the visible
-// range makes each row ~50% taller → note bars ≥50% thicker. The pitch
-// ladder auto-centers on the notes' median and Shift+wheel scrolls, so
-// notes outside the window stay reachable.
-const VISIBLE_OCTAVES = 2;
-const VISIBLE_PITCH_RANGE = VISIBLE_OCTAVES * 12;
-// Split-view lanes (duet) show 16 semitones each — ~50% thicker note bars
-// than the old 24-semitave lanes; trio/quartet lanes show 10 semitones.
-const SPLIT_PITCH_RANGE = 16;
-const SPLIT_PITCH_RANGE_MULTI = 10;
-
-interface TimelineProps {
-  song: Song;
-  currentTime: number;
-  isPlaying: boolean;
-  selectedNoteId?: string;
-  /** Multi-selection set (YASS-style Ctrl+Click) */
-  selectedNoteIds?: Set<string>;
-  /** Beat snapping enabled (magnet) */
-  snapEnabled?: boolean;
-  onToggleSnap?: () => void;
-  playbackRate?: number;
-  onPlaybackRateChange?: (_rate: number) => void;
-  onTimeChange: (_time: number) => void;
-  onPlayPause: () => void;
-  onNoteSelect: (_noteId: string | undefined) => void;
-  /** Ctrl+Click on a note — toggle it in the multi-selection */
-  onNoteCtrlToggle: (_noteId: string) => void;
-  onNoteUpdate: (_noteId: string, _updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
-  /** Push the accumulated live changes as one history entry (drag release etc.) */
-  onCommitHistory: () => void;
-  onNoteAdd: (_startTime: number, _pitch: number) => void;
-  onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
-  /** Jump command from the lyrics panel (left sidebar): double-click on a
-   *  word scrolls/centers the timeline on that note. `nonce` makes repeated
-   *  jumps to the SAME note retrigger (new object identity alone is not
-   *  enough when parents memoize the command). */
-  noteJumpCommand?: { noteId: string; nonce: number } | null;
-  /** MIDI/KAR comparison overlay (3.5): non-interactive reference notes drawn in
-   *  the note lanes (beat grid of the CURRENT song — the song is never changed). */
-  comparisonNotes?: Array<{ beat: number; lengthBeats: number; pitch: number }> | null;
-  /** Remove the comparison reference entirely (✕ in the legend chip). */
-  onClearComparison?: () => void;
-}
-
-// Left gutter width for the pitch labels (must match ml-8 / w-8 usage below)
-const LEFT_GUTTER = 32;
-// Max time gap between two tap notes before a new lyric line starts
-export const TAP_LINE_GAP_MS = 1400;
-
-// ── Zoom: presets from 5% up to 1000% ──
-// R14 (user request 3): 500% is the new 100% — basePixelsPerSecond was
-// raised 100 → 500 so the DEFAULT zoom (1 = "100%") shows the detail level
-// the old 500% had. MIN_ZOOM went 0.25 → 0.05 so the overview range (whole
-// song visible) is preserved: 5% × 500px/s = 25px/s = exactly the old 25%.
-const MIN_ZOOM = 0.05;
-const MAX_ZOOM = 10;
-const ZOOM_PRESETS = [0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
-
-// ── R14 note-drag feel (user requests 1 + 2) ──
-/** Hysteresis margin (in pitch rows) for stepping between semitone levels
- *  during a vertical note drag. Prevents flicker right at a row boundary. */
-const PITCH_DRAG_HYSTERESIS = 0.25;
-/** Half-width (in pitch rows) of the sticky "home" band around the note's
- *  ORIGINAL pitch: leaving it needs a deliberate full-row move, and any
- *  return drag catches it as soon as the mouse is within half a row of the
- *  grab point — so the original position can no longer be "jumped over". */
-const PITCH_DRAG_HOME_ROWS = 1.0;
-/** Mouse pixels before the drag axis is decided (dominant direction wins). */
-const DRAG_AXIS_DEADZONE_PX = 4;
-/** A drag stays on its locked axis until the mouse moves this many pitch
- *  rows on the OTHER axis — then both axes unlock (legacy 2D behaviour). */
-const DRAG_AXIS_ESCAPE_ROWS = 2.5;
-
-/**
- * R14: map a continuous vertical mouse offset (in pitch rows, positive = up)
- * to a semitone delta with hysteresis + a sticky home band.
- *
- * - Level 0 (original pitch) is double-sticky: it takes ±PITCH_DRAG_HOME_ROWS
- *   rows to LEAVE it, but coming back it is caught at ±(HOME − 0.5) rows —
- *   which makes returning to the original pitch easy and reliable (user
- *   request 1: the note used to "jump over" its original position).
- * - Non-zero levels step at k±0.5 rows ± hysteresis, so the pitch never
- *   flickers between two adjacent semitones at a boundary.
- * - Large jumps (fast drags, coalesced mousemove events) land on the
- *   nearest step instead of inching from the last one.
- */
-function pitchDeltaWithHysteresis(rows: number, last: number): number {
-  const H = PITCH_DRAG_HYSTERESIS;
-  const HOME = PITCH_DRAG_HOME_ROWS;
-
-  if (last === 0) {
-    // Leaving the original pitch requires a deliberate full-row move.
-    if (rows > HOME) {
-      let d = 1;
-      while (rows > d + 0.5 + H) d += 1;
-      return d;
-    }
-    if (rows < -HOME) {
-      let d = -1;
-      while (rows < d - 0.5 - H) d -= 1;
-      return d;
-    }
-    return 0;
-  }
-
-  // Stepping between levels (hysteresis at every boundary).
-  let delta = last;
-  while (rows > delta + 0.5 + H) delta += 1;
-  while (rows < delta - 0.5 - H) delta -= 1;
-
-  // Sticky home: descending back toward the start always catches 0 early.
-  if (delta > 0 && rows < HOME - 0.5) delta = 0;
-  if (delta < 0 && rows > -(HOME - 0.5)) delta = 0;
-
-  return delta;
-}
-
-/** All five note types with their TXT chars, for the DropUp menu. */
-const NOTE_TYPE_OPTIONS: Array<{ value: NoteType; char: string; }> = [
-  { value: 'normal', char: ':' },
-  { value: 'golden', char: '*' },
-  { value: 'freestyle', char: 'F' },
-  { value: 'rap', char: 'R' },
-  { value: 'rapGolden', char: 'G' },
-];
-
-/** One renderable pitch lane (combined mode = a single lane over all notes). */
-interface PitchLane {
-  key: string;
-  /** Badge label shown at the lane's left edge (split view: "P1"/"P2"). */
-  badge?: string;
-  badgeClass?: string;
-  notes: Note[];
-  /** Top offset of the lane INSIDE the notes area, in px. */
-  topOffset: number;
-  height: number;
-  minPitch: number;
-  maxPitch: number;
-  pitchHeight: number;
-}
+// Historical import surface of this module — keep stable (karaoke-editor.tsx,
+// editor-note-tab.tsx import these from './timeline/timeline').
+export { TAP_LINE_GAP_MS } from './timeline-constants';
+export type { NoteHistoryMode } from './timeline-types';
 
 export function Timeline({
   song,
@@ -190,27 +72,9 @@ export function Timeline({
   comparisonNotes = null,
   onClearComparison,
 }: TimelineProps) {
-  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastScrollCheckRef = useRef<number>(0);
   const [zoom, setZoom] = useState(1);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
-  const [dragState, setDragState] = useState<{
-    noteId: string;
-    startX: number;
-    startY: number;
-    type: 'move' | 'resize-left' | 'resize-right';
-    originalNote: Note;
-    /** Pitch height of the lane the note lives in (vertical → pitch dragging). */
-    pitchHeight: number;
-    moved: boolean;
-    /** R14: axis intent — locks the drag to the dominant axis so horizontal
-     *  drags never change pitch (and vice versa) until a deliberate escape. */
-    axis: 'undecided' | 'horizontal' | 'vertical' | 'free';
-    /** R14: last applied pitch delta (semitones) — hysteresis anchor. */
-    lastPitchDelta: number;
-  } | null>(null);
   // Viewport size (measured via ResizeObserver → responsive pitch grid)
   const [viewport, setViewport] = useState({ width: 1200, height: 700 });
   // Duet split view — both vocal tracks on separate pitch ladders
@@ -238,19 +102,8 @@ export function Timeline({
   }, []);
 
   // ── Layout constants ──────────────────────────────────────────
-  // R14 (user request 3): 100 → 500. The zoom label still shows zoom*100%,
-  // so "100%" now displays the old "500%" detail level.
-  const basePixelsPerSecond = 500;
+  // (timeline-constants.ts — basePixelsPerSecond, pitch range, track heights)
   const pixelsPerSecond = basePixelsPerSecond * zoom;
-  const TOTAL_MIN_PITCH = 24; // C1
-  const TOTAL_MAX_PITCH = 96; // C7 (6-octave total range)
-  const lyricTrackHeight = 40;
-  const minimapHeight = 44;
-  // Height reserved for the note-details band between lyric track and minimap.
-  // R8: the useless pitch-graph strip above the lanes was removed — its 60 px
-  // go 1:1 into this band (108 → 168), so the pitch ladder keeps its size and
-  // just moves up while the primary input fields get roomier controls.
-  const noteInfoHeight = 168;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
 
@@ -412,6 +265,26 @@ export function Timeline({
   // Shared formula with the export/parser: beat n occurs at GAP + n * 15000/BPM
   const snapTime = useCallback((t: number) => snapTimeToBeat(t, song.bpm, song.gap, snapEnabled), [snapEnabled, song.bpm, song.gap]);
 
+  // ── Drag interaction (R2: extracted to use-timeline-interaction.ts) ──
+  // Playhead scrub + R14 axis-locked note drag (hysteresis, sticky home band).
+  const {
+    isDraggingPlayhead,
+    dragState,
+    handlePlayheadMouseDown,
+    handleNoteDragStart,
+  } = useTimelineDrag({
+    containerRef,
+    allNotes,
+    lanes,
+    pixelsPerSecond,
+    scrollOffset,
+    totalDuration,
+    snapTime,
+    onTimeChange,
+    onNoteUpdate,
+    onCommitHistory,
+  });
+
   // Calculate playhead position
   const playheadPosition = (currentTime / 1000) * pixelsPerSecond - scrollOffset;
 
@@ -475,12 +348,6 @@ export function Timeline({
     }
   }, [totalWidth, zoom, zoomAt, duetSplit]);
 
-  // Handle playhead drag
-  const handlePlayheadMouseDown = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsDraggingPlayhead(true);
-  }, []);
-
   // Empty-space click: deselect (note-adding is handled per lane below)
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
     if (dragState) return;
@@ -507,129 +374,6 @@ export function Timeline({
       onNoteAdd(snapTime(clickedTime), clickedPitch);
     }
   }, [scrollOffset, pixelsPerSecond, snapTime, onNoteAdd]);
-
-  // Handle mouse move for playhead drag + note drag (live updates, no history flood)
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDraggingPlayhead) {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const x = e.clientX - rect.left - LEFT_GUTTER + scrollOffset;
-        const newTime = (x / pixelsPerSecond) * 1000;
-        onTimeChange(Math.max(0, Math.min(totalDuration, newTime)));
-      }
-
-      if (dragState) {
-        const deltaX = e.clientX - dragState.startX;
-        const deltaY = e.clientY - dragState.startY;
-        const deltaTime = (deltaX / pixelsPerSecond) * 1000;
-
-        if (dragState.type === 'move') {
-          // R14 (user requests 1 + 2): axis-locked 2D move with hysteresis.
-          // - The first significant mouse movement locks the drag to its
-          //   dominant axis: horizontal drags only change the time (no more
-          //   accidental pitch changes), vertical drags only the pitch (no
-          //   more accidental time/line changes).
-          // - A deliberate ≥2.5-row move on the other axis unlocks both axes.
-          // - Pitch uses pitchDeltaWithHysteresis (sticky home band) so the
-          //   original pitch is always easy to reach again.
-          const pitchHeight = dragState.pitchHeight > 0 ? dragState.pitchHeight : 12;
-          const rows = -deltaY / pitchHeight; // positive = up
-
-          if (dragState.axis === 'undecided') {
-            if (Math.abs(deltaX) >= DRAG_AXIS_DEADZONE_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-              dragState.axis = 'horizontal';
-            } else if (Math.abs(deltaY) >= DRAG_AXIS_DEADZONE_PX && Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
-              dragState.axis = 'vertical';
-            } else if (Math.abs(deltaX) >= 8 || Math.abs(deltaY) >= 8) {
-              // moved, but no clear dominance → legacy free 2D behaviour
-              dragState.axis = 'free';
-            }
-          }
-          if (dragState.axis === 'horizontal' && Math.abs(deltaY) > DRAG_AXIS_ESCAPE_ROWS * pitchHeight) {
-            dragState.axis = 'free';
-          } else if (dragState.axis === 'vertical' && Math.abs(deltaX) > DRAG_AXIS_ESCAPE_ROWS * pitchHeight) {
-            dragState.axis = 'free';
-          }
-
-          const allowTime = dragState.axis === 'horizontal' || dragState.axis === 'free';
-          const allowPitch = dragState.axis === 'vertical' || dragState.axis === 'free';
-
-          const updates: Partial<Note> = {};
-          if (allowTime) {
-            updates.startTime = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
-          }
-          if (allowPitch) {
-            const nextDelta = pitchDeltaWithHysteresis(rows, dragState.lastPitchDelta);
-            if (nextDelta !== dragState.lastPitchDelta) dragState.lastPitchDelta = nextDelta;
-            if (nextDelta !== 0) {
-              updates.pitch = Math.max(0, Math.min(127, dragState.originalNote.pitch + nextDelta));
-            }
-          }
-
-          // Only mark the gesture as "moved" (→ history entry) when a value
-          // actually CHANGED — hand tremor inside the dead zone no longer
-          // creates phantom undo steps.
-          const changed =
-            (updates.startTime !== undefined && updates.startTime !== dragState.originalNote.startTime) ||
-            (updates.pitch !== undefined && updates.pitch !== dragState.originalNote.pitch);
-          if (changed) dragState.moved = true;
-          if (Object.keys(updates).length > 0) {
-            onNoteUpdate(dragState.noteId, updates, 'live');
-          }
-        } else if (dragState.type === 'resize-left') {
-          const newStart = snapTime(Math.max(0, dragState.originalNote.startTime + deltaTime));
-          const newDuration = dragState.originalNote.duration - (newStart - dragState.originalNote.startTime);
-          if (newDuration > 100) {
-            if (newStart !== dragState.originalNote.startTime || newDuration !== dragState.originalNote.duration) {
-              dragState.moved = true;
-            }
-            onNoteUpdate(dragState.noteId, {
-              startTime: newStart,
-              duration: newDuration
-            }, 'live');
-          }
-        } else if (dragState.type === 'resize-right') {
-          // Snap the note END to the beat grid when magnet is on
-          const originalEnd = dragState.originalNote.startTime + dragState.originalNote.duration;
-          const newEnd = snapTime(originalEnd + deltaTime);
-          const newDuration = Math.max(100, newEnd - dragState.originalNote.startTime);
-          if (newDuration !== dragState.originalNote.duration) dragState.moved = true;
-          onNoteUpdate(dragState.noteId, { duration: newDuration }, 'live');
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isDraggingPlayhead) setIsDraggingPlayhead(false);
-      if (dragState) {
-        // One history entry per drag gesture (not per mousemove frame)
-        if (dragState.moved) onCommitHistory();
-        setDragState(null);
-      }
-    };
-
-    if (isDraggingPlayhead || dragState) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDraggingPlayhead, dragState, scrollOffset, pixelsPerSecond, totalDuration, onTimeChange, onNoteUpdate, onCommitHistory, snapTime]);
-
-  // Handle note drag start — captures the lane's pitch height so vertical
-  // mouse movement maps to semitone steps during the drag.
-  // R14: axis starts undecided; the dominant first move locks it.
-  const handleNoteDragStart = useCallback((noteId: string, startX: number, startY: number, type: 'move' | 'resize-left' | 'resize-right') => {
-    const note = allNotes.find(n => n.id === noteId);
-    if (note) {
-      const lane = lanes.find(l => l.notes.some(n => n.id === noteId));
-      setDragState({ noteId, startX, startY, type, originalNote: { ...note }, pitchHeight: lane?.pitchHeight ?? 12, moved: false, axis: 'undecided', lastPitchDelta: 0 });
-    }
-  }, [allNotes, lanes]);
 
   // Handle note click — Ctrl/Cmd+Click toggles the multi-selection (YASS-style).
   // R9 (user request 1.2): clicking an ALREADY-selected note whose rectangle
@@ -734,209 +478,37 @@ export function Timeline({
     setScrollOffset(0);
   }, []);
 
-  // Keep refs for values the scroll loop needs without re-triggering the effect
-  const currentTimeRef = useRef(currentTime);
-  const scrollOffsetRef = useRef(scrollOffset);
-  const ppsRef = useRef(pixelsPerSecond);
-  useEffect(() => {
-    currentTimeRef.current = currentTime;
-    scrollOffsetRef.current = scrollOffset;
-    ppsRef.current = pixelsPerSecond;
-  }, [currentTime, scrollOffset, pixelsPerSecond]);
-
-  // Auto-scroll while playing — reads currentTime from a ref so the effect
-  // is only mounted/unmounted when isPlaying changes, NOT every frame.
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    let animationId: number;
-
-    const tick = () => {
-      const container = containerRef.current;
-      if (!container) {
-        animationId = requestAnimationFrame(tick);
-        return;
-      }
-
-      const now = Date.now();
-      if (now - lastScrollCheckRef.current > 80) {
-        lastScrollCheckRef.current = now;
-
-        const playheadX = (currentTimeRef.current / 1000) * ppsRef.current;
-        const visibleWidth = container.clientWidth;
-        const currentScroll = scrollOffsetRef.current;
-
-        if (playheadX < currentScroll || playheadX > currentScroll + visibleWidth - 120) {
-          setScrollOffset(Math.max(0, playheadX - 120));
-        }
-      }
-
-      animationId = requestAnimationFrame(tick);
-    };
-
-    animationId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  }, [isPlaying]);
-
-  // Format time display
-  const formatTime = (ms: number): string => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    const millis = Math.floor((ms % 1000) / 10);
-    return `${minutes}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(2, '0')}`;
-  };
-
-  // Format with full milliseconds (m:ss.mmm) for the note-details band
-  const formatTimeMs = (ms: number): string => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const millis = Math.round(ms % 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
-  };
+  // ── Auto-scroll while playing (R2: extracted to use-timeline-auto-scroll.ts) ──
+  useTimelineAutoScroll({
+    containerRef,
+    isPlaying,
+    currentTime,
+    scrollOffset,
+    pixelsPerSecond,
+    setScrollOffset,
+  });
 
   return (
     <div className="flex flex-col h-full bg-slate-950 rounded-lg overflow-hidden">
-      {/* Timeline Controls */}
-      <div className="flex items-center gap-2 p-2 bg-slate-900 border-b border-slate-700">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onTimeChange(0)}
-          className="text-slate-400 hover:text-white"
-        >
-          <SkipBack className="w-4 h-4" />
-        </Button>
-
-        <Button
-          size="sm"
-          variant="default"
-          onClick={onPlayPause}
-          className={cn(
-            'w-10 h-10 rounded-full',
-            isPlaying ? 'bg-purple-600 hover:bg-purple-700' : 'bg-cyan-600 hover:bg-cyan-700'
-          )}
-        >
-          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-        </Button>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onTimeChange(totalDuration)}
-          className="text-slate-400 hover:text-white"
-        >
-          <SkipForward className="w-4 h-4" />
-        </Button>
-
-        <div className="flex-1 flex items-center gap-2 px-4">
-          <span className="text-cyan-400 font-mono text-sm min-w-[80px]">
-            {formatTime(currentTime)}
-          </span>
-          <Slider
-            value={[currentTime]}
-            max={totalDuration}
-            step={100}
-            onValueChange={([value]) => onTimeChange(value)}
-            className="flex-1"
-            hideThumb
-          />
-          <span className="text-slate-400 font-mono text-sm min-w-[80px]">
-            {formatTime(totalDuration)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          {/* Playback speed selector */}
-          <div className="flex items-center gap-0.5 mr-1">
-            <Gauge className="w-3 h-3 text-slate-500" />
-            {EDITOR_PLAYBACK_RATES.map(({ value, label }) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={playbackRate === value ? 'default' : 'ghost'}
-                className={cn(
-                  'h-7 px-1.5 text-[10px]',
-                  playbackRate === value
-                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                    : 'text-slate-400 hover:text-white'
-                )}
-                onClick={() => onPlaybackRateChange?.(value)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-
-          <span className="text-slate-600 text-xs mx-1">|</span>
-
-          {/* Duet split view — both vocal tracks on separate pitch ladders */}
-          {hasPlayerNotes && (
-            <Button
-              size="sm"
-              variant={duetSplit ? 'default' : 'ghost'}
-              onClick={() => setDuetSplit(prev => !prev)}
-              title={t('editor.timeline.duetSplit')}
-              aria-pressed={duetSplit}
-              data-testid="editor-duet-split-toggle"
-              className={duetSplit
-                ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                : 'text-slate-400 hover:text-white'}
-            >
-              <Columns2 className="w-4 h-4" />
-            </Button>
-          )}
-
-          {/* Beat snap toggle (magnet) */}
-          {onToggleSnap && (
-            <Button
-              size="sm"
-              variant={snapEnabled ? 'default' : 'ghost'}
-              onClick={onToggleSnap}
-              title={t('editor.timeline.snap')}
-              className={snapEnabled
-                ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                : 'text-slate-400 hover:text-white'}
-              data-testid="editor-snap-toggle"
-            >
-              <Magnet className="w-4 h-4" />
-            </Button>
-          )}
-
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleZoomOut}
-            disabled={zoom <= MIN_ZOOM}
-            className="text-slate-400 hover:text-white"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-slate-400 text-xs min-w-[50px] text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleZoomIn}
-            disabled={zoom >= MAX_ZOOM}
-            className="text-slate-400 hover:text-white"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleZoomReset}
-            className="text-slate-400 hover:text-white"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      {/* Timeline Controls (transport bar — timeline-toolbar.tsx) */}
+      <TimelineToolbar
+        currentTime={currentTime}
+        totalDuration={totalDuration}
+        isPlaying={isPlaying}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={onPlaybackRateChange}
+        onTimeChange={onTimeChange}
+        onPlayPause={onPlayPause}
+        hasPlayerNotes={hasPlayerNotes}
+        duetSplit={duetSplit}
+        onToggleDuetSplit={() => setDuetSplit(prev => !prev)}
+        snapEnabled={snapEnabled}
+        onToggleSnap={onToggleSnap}
+        zoom={zoom}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomReset={handleZoomReset}
+      />
 
       {/* Timeline Content */}
       <div
@@ -948,163 +520,43 @@ export function Timeline({
         {/* Notes area (R8: the pitch-graph/waveform strip that used to sit here
             was removed — the pitch ladder starts directly at the top now, right
             below the transport bar / sub-header) — one lane (combined) or up to
-            four lanes (duet/trio/quartet split) */}
+            four lanes (duet/trio/quartet split) — see pitch-lane.tsx */}
         <div
           className="absolute left-0 right-0"
           style={{
             top: 0,
             height: lanesTotalHeight,
           }}
->
+        >
           {lanes.map(lane => (
-            <div
+            <PitchLaneView
               key={lane.key}
-              className="absolute left-0 right-0"
-              style={{ top: lane.topOffset, height: lane.height }}
-              onClick={makeLaneClick(lane)}
-            >
-              {/* Background grid — beat lines match the UltraStar export formula
-                  (beatDuration = 15000/BPM, beats offset by GAP) */}
-              <TimelineGrid
-                viewportWidth={viewport.width - LEFT_GUTTER}
-                pixelsPerSecond={pixelsPerSecond}
-                scrollOffset={scrollOffset}
-                bpm={song.bpm}
-                gap={song.gap}
-                minPitch={lane.minPitch}
-                maxPitch={lane.maxPitch}
-                pitchHeight={lane.pitchHeight}
-              />
-
-              {/* ── MIDI/KAR comparison overlay (3.5) ──
-                  Hollow, dashed outline blocks in the SAME coordinate space as
-                  NoteBlock (beat → x via the current song's bpm/gap, pitch → y),
-                  but pointer-events-none and painted BELOW the real notes.
-                  Pure editor state — never serialized, never exported. */}
-              {comparisonNotes && comparisonNotes.length > 0 && (
-                <div
-                  className="absolute inset-0 ml-8 pointer-events-none"
-                  aria-hidden
-                  data-testid="editor-comparison-layer"
-                >
-                  {comparisonNotes
-                    .filter(cn => cn.pitch >= lane.minPitch && cn.pitch <= lane.maxPitch)
-                    .map((cn, i) => {
-                      // Inverse of the export formula: beat n sits at GAP + n·15000/BPM
-                      const startMs = song.gap + cn.beat * detailBeatDuration;
-                      const startX = (startMs / 1000) * pixelsPerSecond - scrollOffset;
-                      const width = Math.max(6, (cn.lengthBeats * detailBeatDuration / 1000) * pixelsPerSecond);
-                      const blockHeight = Math.min(lane.pitchHeight - 1, Math.round(lane.pitchHeight * 0.96) + 4);
-                      // 2px vertical offset keeps overlaps with real notes readable
-                      const y = (lane.maxPitch - cn.pitch) * lane.pitchHeight + (lane.pitchHeight - blockHeight) / 2 + 2;
-                      if (startX + width < 0 || startX > viewport.width) return null;
-                      return (
-                        <div
-                          key={`cmp-${i}`}
-                          className="absolute rounded border-2 border-dashed border-amber-500/70 bg-amber-500/5 opacity-60"
-                          style={{
-                            left: `${startX}px`,
-                            top: `${y}px`,
-                            width: `${width}px`,
-                            height: `${blockHeight}px`,
-                          }}
-                        />
-                      );
-                    })}
-                </div>
-              )}
-
-              {/* Pitch labels */}
-              <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/80 border-r border-slate-700 z-20">
-                {Array.from({ length: Math.floor(lane.maxPitch - lane.minPitch) + 1 }, (_, i) => {
-                  const pitch = Math.round(lane.maxPitch) - i;
-                  if (pitch % 12 === 0) { // Show C notes
-                    return (
-                      <div
-                        key={pitch}
-                        className="absolute right-0 text-[10px] text-cyan-400 pr-1 font-mono"
-                        style={{ top: i * lane.pitchHeight - 6 }}
-                      >
-                        C{Math.floor(pitch / 12) - 1}
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-
-              {/* Lane badge (duet split) */}
-              {lane.badge && (
-                <div className={cn(
-                  'absolute left-10 top-1 z-20 px-2 py-0.5 rounded-md border text-[10px] font-semibold tracking-wide backdrop-blur-sm pointer-events-none',
-                  lane.badgeClass,
-                )}>
-                  {lane.badge}
-                </div>
-              )}
-
-              {/* Lane divider (between split lanes) */}
-              {lane.key !== 'combined' && lanes[lanes.length - 1]?.key !== lane.key && (
-                <div className="absolute left-0 right-0 bottom-0 h-px bg-slate-600 z-10 pointer-events-none" />
-              )}
-
-              {/* Notes */}
-              <div className="absolute inset-0 ml-8">
-                {lane.notes.map(note => (
-                  <NoteBlock
-                    key={note.id}
-                    note={note}
-                    isSelected={selectedNoteId === note.id}
-                    isMultiSelected={selectedNoteIds?.has(note.id) && selectedNoteId !== note.id}
-                    isPlayingNote={
-                      isPlaying &&
-                      currentTime >= note.startTime &&
-                      currentTime < note.startTime + note.duration
-                    }
-                    zoom={zoom}
-                    pixelsPerSecond={pixelsPerSecond}
-                    scrollOffset={scrollOffset}
-                    maxPitch={lane.maxPitch}
-                    pitchHeight={lane.pitchHeight}
-                    onClick={handleNoteClick}
-                    onDragStart={handleNoteDragStart}
-                  />
-                ))}
-              </div>
-            </div>
+              lane={lane}
+              isLastLane={lanes[lanes.length - 1]?.key === lane.key}
+              viewportWidth={viewport.width}
+              pixelsPerSecond={pixelsPerSecond}
+              scrollOffset={scrollOffset}
+              zoom={zoom}
+              bpm={song.bpm}
+              gap={song.gap}
+              comparisonNotes={comparisonNotes}
+              detailBeatDuration={detailBeatDuration}
+              selectedNoteId={selectedNoteId}
+              selectedNoteIds={selectedNoteIds}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              onLaneClick={makeLaneClick(lane)}
+              onNoteClick={handleNoteClick}
+              onNoteDragStart={handleNoteDragStart}
+            />
           ))}
         </div>
 
         {/* ── MIDI/KAR comparison legend chip (3.5) ──
             Non-blocking (pointer-events-none) except the ✕ clear button,
-            which removes the reference overlay entirely. */}
+            which removes the reference overlay entirely (comparison-overlay.tsx). */}
         {comparisonNotes && comparisonNotes.length > 0 && (
-          <div
-            className="absolute z-30 flex items-center gap-1.5 pl-1.5 pr-1 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-semibold tracking-wide backdrop-blur-sm pointer-events-none"
-            style={{ top: 4, left: LEFT_GUTTER + 8 }}
-            data-testid="editor-comparison-legend"
-          >
-            <span
-              className="w-3.5 h-2 rounded-sm border border-dashed border-amber-400/80 bg-amber-500/10"
-              aria-hidden
-            />
-            {t('editor.midiImport.comparisonLegend')}
-            {onClearComparison && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClearComparison();
-                }}
-                className="pointer-events-auto p-0.5 rounded hover:bg-amber-500/30 text-amber-300 transition-colors"
-                title={t('editor.midiImport.comparisonClear')}
-                aria-label={t('editor.midiImport.comparisonClear')}
-                data-testid="editor-comparison-clear"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+          <ComparisonLegend onClearComparison={onClearComparison} />
         )}
 
         {/* Lyric track */}
@@ -1114,7 +566,7 @@ export function Timeline({
             top: lanesTotalHeight,
             height: lyricTrackHeight
           }}
->
+        >
           <LyricTrack
             notes={allNotes}
             pixelsPerSecond={pixelsPerSecond}
@@ -1126,58 +578,18 @@ export function Timeline({
           />
         </div>
 
-        {/* ── Note details band ("Noten-Details") ──
-            R7 redesign: the input fields from the old left-panel note tab
-            live HERE now — Lyric, Pitch (MIDI), Start (ms) and Duration (ms)
-            are the primary editing surface, plus a DropUp menu for the note
-            type (opens upward — the band sits at the bottom of the screen).
-            R8: the band inherits the full height of the removed pitch graph —
-            roomier inputs, compact chips.
-            Non-duplicate info (frequency, beat, line, voice) stays as chips.
-            Clicks are stopped so interacting with the band keeps the selection. */}
-        <div
-          className="absolute left-0 right-0 z-20 border-t border-slate-700 bg-slate-900/70 cursor-default overflow-hidden"
-          style={{
-            top: lanesTotalHeight + lyricTrackHeight,
-            bottom: minimapHeight,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          data-testid="editor-note-details-band"
-        >
-          <div className="h-full flex flex-col px-3 py-2 min-w-0">
-            {/* Header row: title + selection count */}
-            <div className="flex items-center gap-2 shrink-0 min-w-0">
-              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
-                <Info className="w-3 h-3 text-cyan-400" aria-hidden />
-                {t('editor.noteDetails.title')}
-              </h3>
-              {multiSelectCount > 1 && (
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0"
-                  data-testid="editor-note-details-count"
-                >
-                  {t('editor.noteDetails.selectedCount').replace('{count}', String(multiSelectCount))}
-                </span>
-              )}
-            </div>
-
-            {selectedDetailNote ? (
-              <NoteDetailsInputs
-                key={selectedDetailNote.id}
-                note={selectedDetailNote}
-                beat={detailBeat}
-                lineIndex={selectedLineIndex}
-                onNoteUpdate={onNoteUpdate}
-                onLyricChange={onLyricChange}
-                onCommitHistory={onCommitHistory}
-              />
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-xs text-slate-600">
-                {t('editor.noteDetails.hint')}
-              </div>
-            )}
-          </div>
-        </div>
+        {/* ── Note details band ("Noten-Details") — note-details-band.tsx ── */}
+        <NoteDetailsBand
+          top={lanesTotalHeight + lyricTrackHeight}
+          bottom={minimapHeight}
+          selectedNote={selectedDetailNote}
+          beat={detailBeat}
+          lineIndex={selectedLineIndex}
+          multiSelectCount={multiSelectCount}
+          onNoteUpdate={onNoteUpdate}
+          onLyricChange={onLyricChange}
+          onCommitHistory={onCommitHistory}
+        />
 
         {/* Playhead — spans waveform + lanes + lyric track (minimap has its own) */}
         <div
@@ -1223,519 +635,6 @@ export function Timeline({
           }}
         />
       </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Note details band chip — one compact stat (label + value)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function DetailChip({ label, value, testId, title }: {
-  label: string;
-  value: React.ReactNode;
-  testId?: string;
-  title?: string;
-}) {
-  return (
-    <div
-      className="flex flex-col justify-center gap-0.5 px-2.5 py-1 rounded-md bg-slate-800/70 border border-slate-700 shrink-0"
-      title={title}
-      data-testid={testId}
-    >
-      <span className="text-[9px] uppercase tracking-wider text-slate-500 leading-none">{label}</span>
-      <span className="text-xs text-slate-100 font-medium leading-tight whitespace-nowrap">{value}</span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Note details inputs — the PRIMARY editing surface for the selected note.
-// Lives in the band below the timeline (R7 task 2.3): Lyric, Pitch (MIDI),
-// Start (ms), Duration (ms) as standard inputs with up/down steppers, plus
-// a DropUp (opens upward) to pick the note type.
-// Non-duplicate info stays as compact chips: frequency, beat, line, voice.
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Parses a number input safely — null for empty/invalid (skip the update). */
-function parseNum(value: string): number | null {
-  if (value.trim() === '') return null;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-function NoteDetailsInputs({
-  note,
-  beat,
-  lineIndex,
-  onNoteUpdate,
-  onLyricChange,
-  onCommitHistory,
-}: {
-  note: Note;
-  beat: number;
-  lineIndex: number;
-  onNoteUpdate: (_noteId: string, _updates: Partial<Note>, _mode?: NoteHistoryMode) => void;
-  onLyricChange: (_noteId: string, _newLyric: string, _mode?: NoteHistoryMode) => void;
-  onCommitHistory: () => void;
-}) {
-  const { t } = useTranslation();
-
-  // Local drafts — number inputs must not fight the user mid-typing.
-  // key={note.id} on the component resets drafts when the selection changes.
-  const [lyricDraft, setLyricDraft] = useState(note.lyric);
-  const [pitchDraft, setPitchDraft] = useState(String(note.pitch));
-  const [startDraft, setStartDraft] = useState(String(Math.round(note.startTime)));
-  const [durationDraft, setDurationDraft] = useState(String(Math.round(note.duration)));
-
-  // Keep drafts in sync when the note is changed externally (drag, undo, …)
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync drafts on external note changes
-  useEffect(() => {
-    setLyricDraft(note.lyric);
-    setPitchDraft(String(note.pitch));
-    setStartDraft(String(Math.round(note.startTime)));
-    setDurationDraft(String(Math.round(note.duration)));
-  }, [note.id, note.lyric, note.pitch, note.startTime, note.duration]);
-
-  const noteType = getNoteType(note);
-
-  const stopKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setLyricDraft(note.lyric);
-      setPitchDraft(String(note.pitch));
-      setStartDraft(String(Math.round(note.startTime)));
-      setDurationDraft(String(Math.round(note.duration)));
-      e.currentTarget.blur();
-    }
-    e.stopPropagation();
-  };
-
-  // R8: the band got the pitch-graph's 60 px — inputs grow from h-7 to h-9
-  // (text-sm) so the primary editing surface is comfortable to hit with the
-  // mouse. The lyric field lost ⅔ of its width: notes carry syllables, not prose.
-  const labelClass = 'text-[10px] uppercase tracking-wider text-slate-500 leading-none mb-1 block';
-  const inputClass = 'h-9 bg-slate-800 border-slate-600 text-sm text-slate-100 px-2 font-mono';
-
-  return (
-    <div className="flex-1 min-h-0 flex flex-col justify-center gap-1 min-w-0">
-      {/* Inputs row — the standard editing fields with up/down steppers */}
-      <div className="flex items-end gap-2 min-w-0 flex-wrap">
-        {/* Note type — DropUp (opens upward; the band sits at the screen bottom) */}
-        <div className="shrink-0">
-          <span className={labelClass}>{t('editor.noteDetails.type')}</span>
-          <Select
-            value={noteType}
-            onValueChange={(value: NoteType) => onNoteUpdate(note.id, noteTypeFlags(value), 'push')}
-          >
-            <SelectTrigger
-              className="h-9 w-auto min-w-[130px] gap-1.5 bg-slate-800 border-slate-600 text-sm px-2.5"
-              data-testid="editor-note-details-type"
-              aria-label={t('editor.noteDetails.type')}
-            >
-              <span className="font-mono font-bold text-slate-400">{NOTE_TYPE_CHARS[noteType]}</span>
-              <SelectValue />
-              <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
-            </SelectTrigger>
-            <SelectContent side="top" position="popper">
-              {NOTE_TYPE_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  <span className="flex items-center gap-2">
-                    <span className="font-mono font-bold w-3 text-center">{opt.char}</span>
-                    {t(`editor.noteType.${opt.value}`)}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Lyric — R8: narrowed to ⅓ (notes carry syllables, not prose). Was flex-1. */}
-        <div className="shrink-0 w-40">
-          <label htmlFor="band-lyric" className={labelClass}>{t('editor.noteTab.lyric')}</label>
-          <Input
-            id="band-lyric"
-            value={lyricDraft}
-            onChange={(e) => {
-              setLyricDraft(e.target.value);
-              onLyricChange(note.id, e.target.value, 'live');
-            }}
-            onBlur={() => {
-              if (lyricDraft.trim() === '' || lyricDraft === note.lyric) onCommitHistory();
-              else onLyricChange(note.id, lyricDraft.trim(), 'push');
-            }}
-            onKeyDown={stopKeys}
-            className="h-9 bg-slate-800 border-slate-600 text-sm text-slate-100 px-2"
-            data-testid="editor-note-details-lyric"
-          />
-        </div>
-
-        {/* Pitch (MIDI) — typing + up/down steppers; note name beside */}
-        <div className="shrink-0">
-          <label htmlFor="band-pitch" className={labelClass}>{t('editor.noteDetails.pitch')}</label>
-          <div className="flex items-center gap-1.5">
-            <Input
-              id="band-pitch"
-              type="number"
-              min={0}
-              max={127}
-              step={1}
-              value={pitchDraft}
-              onChange={(e) => {
-                setPitchDraft(e.target.value);
-                const pitch = parseNum(e.target.value);
-                if (pitch === null) return;
-                onNoteUpdate(note.id, { pitch: Math.max(0, Math.min(127, Math.round(pitch))) }, 'live');
-              }}
-              onBlur={() => {
-                setPitchDraft(String(note.pitch));
-                onCommitHistory();
-              }}
-              onKeyDown={stopKeys}
-              className={cn(inputClass, 'w-20')}
-              data-testid="editor-note-details-pitch"
-            />
-            <span className="text-cyan-400 font-mono text-sm font-semibold whitespace-nowrap pb-1" data-testid="editor-note-details-pitch-name">
-              {midiToNoteName(note.pitch)}
-            </span>
-          </div>
-        </div>
-
-        {/* Start time (ms) */}
-        <div className="shrink-0">
-          <label htmlFor="band-start" className={labelClass}>{t('editor.noteTab.startTime')}</label>
-          <Input
-            id="band-start"
-            type="number"
-            min={0}
-            step={25}
-            value={startDraft}
-            onChange={(e) => {
-              setStartDraft(e.target.value);
-              const startTime = parseNum(e.target.value);
-              if (startTime === null) return;
-              onNoteUpdate(note.id, { startTime: Math.max(0, Math.round(startTime)) }, 'live');
-            }}
-            onBlur={() => {
-              setStartDraft(String(Math.round(note.startTime)));
-              onCommitHistory();
-            }}
-            onKeyDown={stopKeys}
-            className={cn(inputClass, 'w-28')}
-            data-testid="editor-note-details-start"
-          />
-        </div>
-
-        {/* Duration (ms) */}
-        <div className="shrink-0">
-          <label htmlFor="band-duration" className={labelClass}>{t('editor.noteTab.duration')}</label>
-          <Input
-            id="band-duration"
-            type="number"
-            min={50}
-            step={25}
-            value={durationDraft}
-            onChange={(e) => {
-              setDurationDraft(e.target.value);
-              const duration = parseNum(e.target.value);
-              if (duration === null) return;
-              onNoteUpdate(note.id, { duration: Math.max(50, Math.round(duration)) }, 'live');
-            }}
-            onBlur={() => {
-              setDurationDraft(String(Math.round(note.duration)));
-              onCommitHistory();
-            }}
-            onKeyDown={stopKeys}
-            className={cn(inputClass, 'w-28')}
-            data-testid="editor-note-details-duration"
-          />
-        </div>
-      </div>
-
-      {/* Non-duplicate info — kept as compact chips */}
-      <div className="flex items-center gap-2 overflow-x-auto editor-panel-scroll">
-        <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-frequency">
-          {t('editor.noteDetails.frequency')}: <span className="text-slate-300 font-mono">{note.frequency.toFixed(1)} Hz</span>
-        </span>
-        <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-beat">
-          {t('editor.noteDetails.beat')}: <span className="text-slate-300 font-mono">#{beat.toFixed(2)}</span>
-        </span>
-        {lineIndex >= 0 && (
-          <span className="text-[11px] text-slate-500 whitespace-nowrap" data-testid="editor-note-details-line">
-            {t('editor.noteDetails.line')}: <span className="text-slate-300 font-mono">#{lineIndex + 1}</span>
-          </span>
-        )}
-        {note.player && note.player !== 'both' && (
-          <span
-            className={cn(
-              'px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap',
-              note.player === 'P1'
-                ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
-                : note.player === 'P2'
-                  ? 'bg-purple-500/15 text-purple-300 border-purple-400/30'
-                  : note.player === 'P4'
-                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
-                    : 'bg-orange-500/15 text-orange-300 border-orange-400/30',
-            )}
-            data-testid="editor-note-details-player"
-          >
-            {note.player}
-          </span>
-        )}
-        {note.isFreestyle && (
-          <span className="text-[11px] text-pink-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.freestyleHint')}</span>
-        )}
-        {note.isRap && !note.isGolden && (
-          <span className="text-[11px] text-emerald-400/80 whitespace-nowrap">♪ {t('editor.noteDetails.rapHint')}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Pitch minimap — footer pitch graph for fast maneuvering
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface PitchMinimapProps {
-  notes: Note[];
-  totalDuration: number;
-  width: number;
-  height: number;
-  pixelsPerSecond: number;
-  scrollOffset: number;
-  viewportWidth: number;
-  currentTime: number;
-  /** Seek + (optionally) center the timeline viewport on the position. */
-  onScrub: (_timeMs: number, _centerViewport: boolean) => void;
-}
-
-function PitchMinimap({
-  notes,
-  totalDuration,
-  width,
-  height,
-  pixelsPerSecond,
-  scrollOffset,
-  viewportWidth,
-  currentTime,
-  onScrub,
-}: PitchMinimapProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingRef = useRef(false);
-
-  // Pitch range of the song's notes (padded)
-  const pitchRange = useMemo(() => {
-    if (notes.length === 0) return { min: 48, max: 72 };
-    let min = Infinity;
-    let max = -Infinity;
-    for (const n of notes) {
-      if (n.pitch < min) min = n.pitch;
-      if (n.pitch > max) max = n.pitch;
-    }
-    return { min: Math.max(0, min - 2), max: Math.min(127, max + 2) };
-  }, [notes]);
-
-  // ── Drawing ──
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-
-    const durationSec = totalDuration / 1000;
-    const usable = durationSec > 0 ? width : 0;
-    const timeToX = (ms: number) => (durationSec > 0 ? (ms / totalDuration) * usable : 0);
-    const pitchToY = (pitch: number) => {
-      const range = Math.max(1, pitchRange.max - pitchRange.min);
-      return height - 4 - ((pitch - pitchRange.min) / range) * (height - 8);
-    };
-
-    // Background
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-    ctx.fillRect(0, 0, width, height);
-
-    // Minute grid lines
-    if (durationSec > 0) {
-      const minutePx = (60 / durationSec) * usable;
-      if (minutePx > 8) {
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
-        ctx.lineWidth = 1;
-        for (let sec = 60; sec < durationSec; sec += 60) {
-          const x = timeToX(sec * 1000);
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Notes (pitch graph)
-    for (const note of notes) {
-      const x = timeToX(note.startTime);
-      const w = Math.max(1.5, timeToX(note.startTime + note.duration) - x);
-      const y = pitchToY(note.pitch);
-      const h = 2.5;
-      if (note.player === 'P2') ctx.fillStyle = 'rgba(168, 85, 247, 0.85)';
-      else if (note.player === 'P1') ctx.fillStyle = 'rgba(34, 211, 238, 0.85)';
-      else if (note.player === 'P4') ctx.fillStyle = 'rgba(16, 185, 129, 0.85)'; // emerald — matches dropdown
-      else if (note.player === 'P8') ctx.fillStyle = 'rgba(249, 115, 22, 0.85)'; // orange — matches dropdown
-      else if (note.isGolden) ctx.fillStyle = 'rgba(251, 191, 36, 0.9)';
-      else if (note.isBonus) ctx.fillStyle = 'rgba(236, 72, 153, 0.85)';
-      else ctx.fillStyle = 'rgba(6, 182, 212, 0.8)';
-      ctx.fillRect(x, y - h / 2, w, h);
-    }
-
-    // Viewport rectangle (current timeline window)
-    const viewX = (scrollOffset / Math.max(1, pixelsPerSecond * (totalDuration / 1000))) * usable;
-    const viewW = (viewportWidth / Math.max(1, pixelsPerSecond * (totalDuration / 1000))) * usable;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
-    ctx.fillRect(viewX, 0, viewW, height);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(viewX + 0.5, 0.5, Math.max(2, viewW - 1), height - 1);
-
-    // Playhead
-    const px = timeToX(currentTime);
-    ctx.strokeStyle = 'rgba(168, 85, 247, 0.95)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(px, 0);
-    ctx.lineTo(px, height);
-    ctx.stroke();
-  }, [notes, width, height, totalDuration, scrollOffset, pixelsPerSecond, viewportWidth, currentTime, pitchRange]);
-
-  // ── Pointer interaction: click/drag = seek + center the viewport ──
-  const timeFromEvent = useCallback((clientX: number): number => {
-    const canvas = canvasRef.current;
-    if (!canvas) return 0;
-    const rect = canvas.getBoundingClientRect();
-    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
-    return frac * totalDuration;
-  }, [totalDuration]);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation();
-    draggingRef.current = true;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    onScrub(timeFromEvent(e.clientX), true);
-  }, [onScrub, timeFromEvent]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!draggingRef.current) return;
-    e.stopPropagation();
-    onScrub(timeFromEvent(e.clientX), true);
-  }, [onScrub, timeFromEvent]);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    draggingRef.current = false;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-  }, []);
-
-  return (
-    <div
-      className="absolute bottom-0 left-0 right-0 ml-8 border-t border-slate-700 bg-slate-900 z-20"
-      style={{ height }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full cursor-pointer touch-none"
-        style={{ width: '100%', height }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      />
-    </div>
-  );
-}
-
-// Timeline grid component
-function TimelineGrid({
-  viewportWidth,
-  pixelsPerSecond,
-  scrollOffset,
-  bpm,
-  gap,
-  minPitch,
-  maxPitch,
-  pitchHeight
-}: {
-  viewportWidth: number;
-  pixelsPerSecond: number;
-  scrollOffset: number;
-  bpm: number;
-  gap: number;
-  minPitch: number;
-  maxPitch: number;
-  pitchHeight: number;
-}) {
-  // UltraStar beat formula — MUST match generateUltraStarTxt / the parser:
-  // beatDuration = 15000 / BPM (ms per beat), beat n occurs at GAP + n * beatDuration.
-  // (The old grid used 60000/BPM without GAP — beats were 4× too wide and offset.)
-  const beatDuration = 15000 / (bpm > 0 ? bpm : 120);
-  const pixelsPerBeat = (beatDuration / 1000) * pixelsPerSecond;
-
-  // Generate beat lines for the visible range only
-  const beatLines: React.JSX.Element[] = [];
-  if (pixelsPerBeat > 4 && isFinite(pixelsPerBeat)) {
-    const firstBeat = Math.floor((scrollOffset - (gap / 1000) * pixelsPerSecond) / pixelsPerBeat);
-    const lastBeat = Math.ceil((scrollOffset + viewportWidth - (gap / 1000) * pixelsPerSecond) / pixelsPerBeat);
-
-    for (let beat = firstBeat; beat <= lastBeat; beat++) {
-      const x = beat * pixelsPerBeat + (gap / 1000) * pixelsPerSecond - scrollOffset;
-      if (x < -1 || x > viewportWidth + 1) continue;
-      const isDownbeat = ((beat % 4) + 4) % 4 === 0;
-
-      beatLines.push(
-        <div
-          key={`beat-${beat}`}
-          className={cn(
-            'absolute top-0 bottom-0 w-px',
-            isDownbeat ? 'bg-slate-600' : 'bg-slate-800'
-          )}
-          style={{ left: `${x}px` }}
-        />
-      );
-    }
-  }
-
-  // Generate pitch lines
-  const pitchLines: React.JSX.Element[] = [];
-  for (let pitch = Math.ceil(minPitch); pitch <= Math.floor(maxPitch); pitch++) {
-    const y = (maxPitch - pitch) * pitchHeight;
-    const isC = pitch % 12 === 0;
-    const isSharp = [1, 3, 6, 8, 10].includes(pitch % 12);
-
-    pitchLines.push(
-      <div
-        key={`pitch-${pitch}`}
-        className={cn(
-          'absolute left-0 right-0 h-px',
-          isC ? 'bg-slate-600' : isSharp ? 'bg-slate-900' : 'bg-slate-800'
-        )}
-        style={{ top: `${y}px` }}
-      />
-    );
-  }
-
-  return (
-    <div className="absolute inset-0 ml-8 pointer-events-none">
-      {/* Pitch grid */}
-      <div className="absolute inset-0">{pitchLines}</div>
-
-      {/* Beat lines */}
-      <div className="absolute inset-0">{beatLines}</div>
     </div>
   );
 }

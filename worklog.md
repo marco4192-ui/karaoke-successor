@@ -305,3 +305,299 @@ Stage Summary:
 - Neue Songs im Browser behalten jetzt ihre Cover/Audio/Video-Dateien dauerhaft (Media-DB, wie der alte Converter vor R15) — vorher gingen die Dateien beim Picker bereits verloren
 - Gespeicherte note-lose Songs werden nicht mehr aus der Library gelöscht (Datenverlust-Fix)
 - Hinweis für den User: Bestehende Songs, deren Cover bereits nie persistiert wurden (vor diesem Fix erstellt), zeigen jetzt den sauberen Musik-Platzhalter statt des Fehler-Icons; einmal neu importiert/ gespeichert bleiben sie dauerhaft erhalten.
+
+---
+Task ID: Q4
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für ZH (Chinesisch vereinfacht) und RU (Russisch) ergänzen (completion.ts + barrel + battleRoyale-Sonderfall + suspicious-identical review)
+
+Work Log:
+- Input: tmp-analysis/missing-zh.json / missing-ru.json (je 1136 fehlende Keys, EN-Quellen identisch); DE-Vollübersetzung als semantische Referenz extrahiert (/tmp/missing-zh-with-de.txt).
+- Terminologie-Recherche in bestehenden ZH/RU-Dateien (曲库/风格/伴侣应用/音符/黄金音符/连击/节拍准确度; библиотека/жанр/компаньон/ноты/золотые ноты/комбо/точность тиков) — neue dailyTypes.names der 23 Basistypen übernehmen exakt die Namen der bestehenden (alten Schema-)dailyTypes-Blöcke in zh/mobile.ts + ru/mobile.ts für Konsistenz.
+- ZH: src/lib/i18n/locales/zh/completion.ts NEU (1135 Keys, inkrementell in 4 Schritten: core+library → game+settings → party+mobile → tutorial); Barrel index.ts: completionTranslations als letztes deepMerge-Element registriert; SONDERFALL extendedDesc.battleRoyale in party.ts: ⚔️-Bullet ('⚔️ 平局进入10秒加时赛 — 再由掷硬币决出胜负！') an Index 4 eingefügt → 7 Elemente.
+- RU: src/lib/i18n/locales/ru/completion.ts NEU (1135 Keys, gleiche Struktur); Barrel registriert; party.ts ⚔️-Bullet ('⚔️ Ничья — 10-секундный тай-брейк, потом решает монетка!') an Index 4 → 7 Elemente. RU neue Texte in informeller ты-Form (Task-Vorgabe; Bestand mixed, neuere Strings nutzen ты).
+- Platzhalter {n}/{m}/{name}/… und Emojis exakt erhalten (automatischer Check: 0 Mismatches in den neuen Keys); Zahlenformate lokalisiert (RU 5 000+, 1,75x; ZH 10,000 → 10,000/XP-Block wie bestehende Datei).
+- Suspicious-identical pro Sprache geprüft (ZH 15 Einträge, RU 17): ZH 16 Werte echt unübersetzt → direkt in Original-Dateien übersetzt (core.uploadStatus ×3, library.songLeaderboardPreview ×2, game.resultsScreen/highscoreScreen ×4, settings.onlineActivities ×3, medleyTournament.shareHeader ×1, profile ×3); RU ebenfalls 16 Werte (analog). Legitim identisch belassen: "Bubblegum Pop" → "Pop"-Genre-Beispiele, "Blue Yeti, AT2020", "1 vs 1"/"2 vs 2", "🎵 {title} — {artist}", "BPM:", "ABBA, Mamma Mia, …" (Proper Nouns/Lehnwörter/Abkürzungen).
+- Verifikation: `bun run tmp-analysis/verify-lang.ts zh` → „zh: 5342 keys, 0 still missing"; ru → „ru: 5342 keys, 0 still missing"; `npx tsc --noEmit` → Exit 0. Regression: en/de/es/it/ja/nl/sv/da weiterhin 0 missing (fr/pt/ko/pl/no/fi sind Aufgaben paralleler Agenten, unangetastet). extract-missing.ts NICHT ausgeführt.
+
+Stage Summary:
+- ZH: 1136 Keys übersetzt (1135 in completion.ts + 1 Sonderfall battleRoyale-Bullet in party.ts), 16 suspicious-identical Werte gefixt, verify-lang „0 still missing", tsc Exit 0.
+- RU: 1136 Keys übersetzt (1135 + 1 Sonderfall), 16 suspicious-identical Werte gefixt, verify-lang „0 still missing", tsc Exit 0.
+- Nur zulässige Dateien verändert: je Sprache completion.ts (NEU), index.ts, party.ts (nur extendedDesc.battleRoyale), Original-Dateien nur für suspicious-identical WERTE.
+- Nebenbefunde (NICHT gefixt, außerhalb des Scopes — Original-Werte ohne suspicious-Flag): Präexistierende Platzhalter-Bugs in tournament.accuracy (zh+ru: überflüssiges {n}), competitiveWords.bestOf (zh: {n} doppelt), partyStarting.startPlayerHint + companion.controlLocked (zh+ru: {name} fehlt); 1-Wort-Anglizismen wie uploadStatus.verified 'Verified score' (unter 3-Wort-Schwelle) blieben bewusst unberührt.
+
+---
+
+Task ID: Q8
+Agent: QA & Test (Funktions-Smoke-Tour alle Game-Bereiche)
+Task: Vollständiger Funktions-Smoke-Test der App (Home, Library+Motto, Settings-Tabs, Editor, Party-Modi, Daily, Jukebox, Queue, Profil, Highscores, Companion /mobile, Sprachumschaltung de↔es, Console-Errors, Responsive 390px).
+
+Work Log:
+- Demo-Zustand wiederhergestellt: agent-browser startete mit FRISCHEM Browser-Profil (IndexedDB/localStorage leer, UI Englisch, „0 Songs"). Neuer Seeder `qa-test-song/seed-q8-demo.js` (5 Songs ABBA 1976/Queen 1975/Nena 1983/MJ 1982/Beatles 1968 mit SVG-Data-URL-Covern → IndexedDB karaoke-successor-custom-songs + ID-Index + Motto „80er Jahre Party" Ära 1980 aktiv + karaoke-language=de) — via `agent-browser eval "$(cat qa-test-song/seed-q8-demo.js)"` gefolgt von Reload. Profil „QA Tester" über die UI erstellt (R11-Auto-Aktivierung greift).
+- Home ✓: Navbar (11 Einträge), Hero, Single/Duell/Duett/Party/Jukebox/Bestenlisten/Erfolge/Einstellungen-Karten, Daily- („Tages-Challenge", 100 XP, „DAILY STARTEN") + Weekly-Card („1960er-Woche", 250 XP), Profil-Bereich, Companion-QR-Sektion. Nav-Klicks navigieren ✓.
+- Library ✓ (kritisch): Motto-Banner 1× (`motto-party-banner`), Suchfeld 0× (#song-search), Filter-Zeile 0× (library-filter-row), Sortier-Dropdown 1× (library-motto-sort) + funktional (title-desc → Thriller vor 99 Luftballons live bestätigt), NUR die 2 Ära-1980-Songs (99 Luftballons, Thriller). **Cover-Check (R26-Regression): alle Covers `complete && naturalWidth>0` — kein Broken-Image-Icon** (Grid + Song-Start-Modal + nach allen Navigationen + nach Server-Restart). Song-Klick öffnet Song-Start-Modal (Easy/Medium/Hard, Solo/Duell, Favorisieren, Punkte, Warteschlange, Playlist, Starten) — „Warteschlange" fügt Song hinzu (Nav-Badge „Warteschlange 1"). Playlists-View ✓ (3 System-Playlists + Erstellen/Import).
+- Settings ✓: Alle 12 Tabs durchgeklickt (Allgemein, Gameplay, 🎨 Darstellung, Audio [graphicsound], Mikrofon, Mobile/Companion, Webcam, Bibliothek inkl. Viral-Charts-Section, 🏷️ Genres & Sprachen, 🎉 Motto-Party, 💾 Sync & Backup, Über) — kein Crash, alle rendern. Motto-Tab: Toggle + Name (16/60) + Logik-Umschalter + Live-Vorschau („2 von 5 Songs passen zum Motto") + Banner-Preview; Toggle OFF→ON getestet, danach WIEDER EINSCHALTEN (Demo-Zustand erhalten). Taxonomy-Tab: Genre- (Pop · 3, Rock · 2 = korrekte Usage-Counts aus den 5 Demo-Songs) + Sprach-Listen, Eigene/Standard-Badges.
+- Editor ✓ (über Library → „Editor F10"): Song-Liste (5 Songs + Duett-/Genre-/Jahr-Filter-Chips), Song geöffnet → Noten-Editor (4 Noten/1 Zeile sichtbar, Transponieren/Tap-Modus/MIDI-Import-Buttons), Metadaten-Panel (Titel/Künstler/BPM) ✓, Abbrechen ohne Speichern ✓. Hinweis: Info/Metadaten sind Panels (R8-Redefinition), kein separates Tab-Interface mehr — kein Bug.
+- Party ✓: 10 Modus-Karten (Reich das Mikro, Companion Sing-A-Long, Medley Contest, Fehlende Wörter, Blindes Karaoke, Turniermodus, Battle Royale, Bewerte meinen Song, Online-Multiplayer …). PTM-Setup geöffnet: MOTTO-PARTY-Banner im Setup, Spieler-Auswahl funktional (QA Tester wählbar, 0/8→1/8), Song-Auswahl korrekt gesperrt <2 Spieler, Verlassen mit Confirm-Dialog („Party-Modus verlassen?") ✓ ohne Spielstart.
+- Daily Challenge ✓: Nach Spielerwahl — 5 Challenge-Slots (Prismen-Combo „Aktiv" + 4 „Gesperrt"), Badge-Stufen, 5 Schwierigkeitsstufen, Tabs (Herausforderungen/Wöchentliche/Modi/Rangliste/Abzeichen).
+- Jukebox ✓ (Pool-Stats 5 Songs/2 Genres/5 Künstler, Genre/Künstler/Ära/Jahr-Filter, Wiedergabe-Modi, Video-Links, Playlists-Dialog). Queue ✓: Song-Add via Modal ✓, Screen zeigt Eintrag + Regeln ✓, Remove ✓, Leer-Zustand („Keine Songs in der Warteschlange") ✓. Profil ✓ (Fortschritt/Level/XP/Stats). Highscores ✓ (Rang-Titel). Erfolge ✓ (0/100, Filter, Badges).
+- Companion /mobile ✓ (2. Tab): Profil-Onboarding (Bestehendes Profil „QA Tester" wählbar → Bestätigen) → Home-Ansicht mit Tab-Bar (Start/Bibliothek/Party/Täglich/Warteschlange/Jukebox/Highscores/Erfolge/Profile/Einstellungen), Verbindung mit Code („REEG"/„YME3"/„CSR9" — connectionCode, KEIN Bug). Bibliothek-Mirror: `mirror-library-motto-banner` 1×, 0 Selects/Suchfeld, nur 2 Motto-Songs — Live-Sync via Desktop funktioniert. Alle 10 Companion-Views per Sweep geprüft.
+- Sprachumschaltung ✓: Settings → Español → Nav „Biblioteca/Fiesta/Diario/Cola/Perfiles/Puntuaciones/Logros/Ajustes", Settings-Tabs + Hero („La experiencia de karaoke definitiva… EMPEZAR A CANTAR / MODO FIESTA / Reto Diario") vollständig spanisch; zurück auf Deutsch ✓ (lang=de). **Raw-Key-Sweep über ALLE Desktop-Screens + alle Settings-Tabs + alle 10 Companion-Views: null rohe Translation-Keys.**
+- Responsive ✓: Home + Library @390×844 — kein horizontaler Overflow (scrollWidth 390 = innerWidth), Motto-Banner + 2 Song-Cards sichtbar.
+- Console/Errors: KEINE Hydration-Errors, KEINE API-Fehler (alle /api/mobile-Calls 200). Erwartet/headless-bedingt: mic-NotFoundError (2×, dokumentiert graceful) + 3× „[SongLibrarySync] Error syncing songs: Failed to fetch" — stammten aus 2 Dev-Server-Ausfällen während des Runs (Prozess wurdeExtern beendet, kein Crash-Stack in dev.log; Next.js „1 Issue"-Badge zeelte exakt diesen abgefangenen console.error).
+- Dev-Server-Ausfälle: 2× während des Runs gestorben (mid-line Abbruch in dev.log, kein App-Crash; vermutlich Sandbox-Prozess-Management Kollision mit parallelen Agent-Restarts) → beide Male per Double-Fork neu gestartet, danach Recovery beider Tabs verifiziert.
+
+Fixes (klein, direkt):
+1. `src/components/screens/mobile/mobile-offline-indicator.tsx` — „Du bist offline"-Banner war bei ONLINE-Gerät nur per `-translate-y-full` versteckt, blieb aber im Accessibility-Tree sichtbar (Screen-Reader/a11y-Snapshots meldeten fälschlich „offline"). Fix: `aria-hidden={!isOffline}` (live verifiziert: aria-hidden=true während online).
+2. `src/hooks/use-song-library-sync.ts` — Robustheits-Fix: `lastSyncedCountRef` wurde VOR dem fetch gesetzt → schlug der Sync fehl (Server kurz weg), wurde er NIE wiederholt (Count-Check überspringt alle 30s-Ticks bis zur Bibliotheks-Änderung). Jetzt wird der Count erst NACH erfolgreichen POST gesetzt — fehlgeschlagene Syncs retrien im nächsten Tick.
+3. `tsconfig.json` — „tmp-analysis" (Scratch-Verzeichnis des parallelen i18n-Agenten) in exclude aufgenommen: dessen verify-lang.ts (4 TS7053-Fehler) brach `npx tsc --noEmit` (und damit den Build-Typecheck). Nach Fix: Exit 0, 0 Fehler.
+
+Verifikation: `npx tsc --noEmit` Exit 0 · dev.log nach Restart clean (nur 200er) · Demo-Zustand am Ende verifiziert: 5 Songs, Motto „80er Jahre Party" (Ära 1980) AKTIV, Sprache de, Queue leer, Companion-Tab auf Start. QA-Shots: 33× `qa-shots/q8-*.png`.
+
+Stage Summary:
+- Alle 14 Prüfbereiche BESTANDEN (✓) — App ist funktional vollständig durchgängig: Motto-Party-Integration (Desktop-Library + Party-Setup + Companion-Sync), Cover-Fix (R26) stabil, Sprachumschaltung sauber ohne rohe Keys, responsive ohne Overflow.
+- 3 kleine Fixes (a11y-Banner, Sync-Retry, tsconfig-exclude), keine größeren Bugs gefunden.
+- Console clean bis auf headless-bedingte Mic-Errors + transient Fetch-Errors aus 2 Dev-Server-Ausfällen (Umgebung, kein App-Bug).
+- Für Folge-Runden: Dev-Server starb 2× ohne App-Crash (Sandbox-Prozess-Management) — neu starten via Double-Fork-Konvention; Seeder für Demo-Fixtures liegt jetzt als Datei bereit (`qa-test-song/seed-q8-demo.js`), falls der Browser erneut frisch startet.
+
+---
+Task ID: Q2
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für Italienisch (it) und Portugiesisch (pt) ergänzen (completion.ts + barrel + party-Bullet + suspicious-identical review)
+
+Work Log:
+- Spec gelesen (tmp-analysis/I18N-AGENT-SPEC.md), missing-it.json / missing-pt.json analysiert: je 1136 fehlende Keys, identische Key-Mengen & EN-Quelltexte; Domänen: core 124, library 239, game 159, settings 131, party 30, mobile 358, tutorial 95.
+- Bestehende IT/PT-Dateien konsultiert für Terminologie & Ton (IT: canzone/libreria/duetto/obiettivi/badge, formell-informelle tu-Form; PT: PT-BR-Konventionen — gênero, idioma, você, Buscar, Conquistas, Emblemas, karaokê, ranking, App Companheiro, Passa o Mic).
+- IT: src/lib/i18n/locales/it/completion.ts NEU (1135 Keys, ~1500 Zeilen, inkrementell in 4 Chunks geschrieben: core+library → game+settings → party(ohne extendedDesc)+mobile → tutorial). Alle dailyTypes.names (150, kurz & griffig, z.B. "Sharp Aim"→"Mira Precisa", "Gold Rush"→"Febbre dell'Oro" konsistent zur bestehenden IT-Datei), patterns (63), weeklyTypes.names (77)/patterns (24), Editor-MIDI-Import+Partitur, gameHud/VoiceFX, challenges (49), battleRoyale, settingsTaxonomy, settingsMotto ("Festa a Tema"), syncBackup, unifiedSetup, tutorial-Tour komplett übersetzt.
+- IT: Barrel it/index.ts — completionTranslations als letztes Element ins deepMerge-Array registriert.
+- IT: SONDERFALL party.ts extendedDesc.battleRoyale — '⚔️ In caso di pareggio: sfida lampo di 10s — poi decide la moneta!' an Index 4 eingefügt, Array jetzt 7 Elemente.
+- IT suspicious-identical: 38 Leaf-Werte geprüft, 17 echte EN-Reste in Original-Dateien übersetzt (uploadStatus×3, songLeaderboardPreview×2, uploadedRankVerified, highscoreScreen-Suche×3, settings.onlineActivities/disableOnline×3, shareHeader→'🎵 Concorso Medley!', wallOfFame→'Muro della Fama', profile.privacyHint×2, leaderboardParticipationDesc); 21 als legitim identisch belassen (BPM:, Battle Royale, Hall of Fame [wie in DE beibehalten], 1 vs 1, Genre-Mapping-Beispiele, CREPE/Deep Learning, Backend:, Sample-Rates, Mikro-Modellnamen, ABBA/Mamma-Mia-Placeholder, File: [IT-Lehnwort]).
+- PT: gleicher Workflow — src/lib/i18n/locales/pt/completion.ts NEU (1135 Keys, 4 Chunks), Barrel pt/index.ts registriert, party.ts-Bullet '⚔️ Empate vai para um duelo relâmpago de 10s — e depois a moeda decide!' an Index 4 (7 Elemente).
+- PT suspicious-identical: 34 Leaf-Werte geprüft, 17 fixiert (uploadStatus×3, songLeaderboardPreview×2, uploadedRankVerified→'Enviado! Rank #{n} (Verificado)', highscoreScreen×3, settings×3, shareHeader→'🎵 Concurso de Medley!', estimatedDuration→'Cerca de {n} min.', companion.title→'📱 Cantar Juntos', profile×3); 17 legitim (davon PT-spezifisch: songHighscoreModal.local "Local" = gleiches Wort im PT, min., 1 vs 1 usw.).
+- Qualitäts-Verifikation per Script: 0 Platzhalter-Mismatches ({n}/{m}/{name}/{genre}… exakt erhalten), Emojis erhalten, keine Extra-Keys; "≤90 BPM" idiomatisch als "90 BPM o meno" (IT) / "até 90 BPM" (PT) gelöst.
+- Verifikation: `bun run tmp-analysis/verify-lang.ts it` → "5342 keys, 0 still missing"; gleiches für pt → "5342 keys, 0 still missing". `npx tsc --noEmit` → Exit 0 (nach Abschluss des parallelen NL-Agenten; einmalige Race-Phase abgewartet). extract-missing.ts NICHT ausgeführt.
+
+Stage Summary:
+- IT: 1136 Keys übersetzt (1135 in completion.ts + 1 battleRoyale-Bullet in party.ts), 17/38 suspicious-identical-Werte fixiert, verify-lang "0 still missing", tsc Exit 0.
+- PT: 1136 Keys übersetzt (1135 in completion.ts + 1 battleRoyale-Bullet in party.ts), 17/34 suspicious-identical-Werte fixiert, verify-lang "0 still missing", tsc Exit 0.
+- Besondere Entscheidungen: "Theme Party"→IT "Festa a Tema"/PT "Festa Temática" mit "motto/tema"-Terminologie konsistent durchgezogen; "Hall of Fame" wie im DE-Referenzfile als Lehnwort belassen, "Wall of Fame" dagegen übersetzt (IT 'Muro della Fama' wie PT 'Muro da Fama'); dailyTypes-Namen nutzen die bereits existierenden IT/PT-Kurznamen (Punteggio Alto/Mira Precisa, Pontuação Alta/Mira Afiada …) als Basis; PT-BR-Rechtschreibung (gênero, você, karaokê) konform zur bestehenden pt-Datei.
+
+---
+Task ID: Q3
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für Japanisch (ja) und Koreanisch (ko) ergänzen (completion.ts + Barrel + suspicious-identical review)
+
+Work Log:
+- missing-ja.json / missing-ko.json analysiert (je 1136 fehlende Keys, identische EN-Quelltexte); bestehende ja/ko-Dateien auf Ton & Terminologie gecheckt (JA: デイリーチャレンジ/正確率/ノーツ/ハイスコア, katakana-lastige Challenge-Namen; KO: 일일 챌린지/정확도/노트/최고 점수, loanword+native mix).
+- src/lib/i18n/locales/ja/completion.ts NEU (1135 Keys): core (homeScreen/Jukebox/DailyBadges), library (Motto, Playlist-Queue, Instrumental-Export, MIDI-Import, Editor incl. midiImport/sheetMusic/toolsPanel/noteDetails/subHeader/shortcuts/timeline), game (gameHud Vocal-Filter + Voice FX, 61 Challenges, Battle-Royale-HUD), settings (AI-Provider, Taxonomy, Motto-Party, About, Sync&Backup), party (unifiedSetup-Gerätezuweisung, modeSettings), mobile (BR-Voting/Singing-Monitor, dailyChallengeScreen, dailyTypes names 150 + patterns 63, weeklyTypes names 74 + patterns 24), tutorial (Basis- + Editor-Tour, vollständig). Inkrementell in 6 Write/Edit-Schritten geschrieben.
+- Barrel src/lib/i18n/locales/ja/index.ts: completionTranslations importiert und als LETZTES Element ins deepMerge-Array.
+- SONDERFALL ja/party.ts: '⚔️ 同点なら10秒のショーダウン — それでも決まらなければコイントスで決着！' im Array extendedDesc.battleRoyale an Index 4 eingefügt → 7 Elemente, 👑 bleibt letzter (Key .6 wiederhergestellt).
+- Idem für Koreanisch: src/lib/i18n/locales/ko/completion.ts NEU (1135 Keys, gleiche Struktur), Barrel ko/index.ts erweitert, '⚔️ 동점이면 10초 쇼다운 — 그래도 가리지 못하면 동전 던지기로 결정!' in ko/party.ts an Index 4.
+- suspiciousIdenticalByFile geprüft (ja: 23, ko: 26 Einträge): je 16 echte unübersetzte Englisch-Strings in Original-Dateien übersetzt (uploadStatus ×3, songLeaderboardPreview ×2, uploadedRankVerified, highscoreScreen-Suche ×3, settings-Online ×3, medley shareHeader, profile-privacy ×2, leaderboardParticipationDesc) + je 3 Konsistenz-Nachbarn im selben Block (uploadStatus.verified, settings.onlineActivities, characterScreen.leaderboardParticipation). Legitim identisch belassen: BPM:, 44100 Hz (CD), Blue Yeti/AT2020, "1 vs 1"/"2 vs 2", '🎵 {title} — {artist}', Genre-Beispiel-Tags ("Bubblegum Pop" → "Pop"), Suchfeld-Platzhalter 'ABBA, Mamma Mia, …' (KO-only Einträge).
+- Bonus-Platzhalter-Bugfixes (pränexistent, literal {n}/{name} sichtbar in UI): JA homeScreen.inactiveProfiles ({n} entfernt), tournament.accuracy ×2 Dateien ({n}% entfernt), partyStarting.startPlayerHint ({name} ergänzt), companion.controlLocked ({name} ergänzt); KO tournament.accuracy ×2, partyStarting.startPlayerHint, companion.controlLocked.
+- Verifikation: bun run tmp-analysis/verify-lang.ts ja → "5342 keys, 0 still missing" (Exit 0); ko → "5342 keys, 0 still missing" (Exit 0). Zusätzlicher Integritätscheck: 0 Platzhalter-Mismatches ({n}/{name}/... vs EN), 0 leere Werte, 0 Overrides bestehender Keys durch completion (deepMerge-Kollisionen), 1136/1136 Keys pro Sprache. npx tsc --noEmit → Exit 0. ESLint auf allen neuen/geänderten Dateien: clean. extract-missing.ts NICHT ausgeführt (Race-Gefahr).
+
+Stage Summary:
+- ja: 1136 Keys übersetzt (1135 completion.ts + 1 Battle-Royale-Bullet in party.ts) — verify-lang: 5342 keys, 0 still missing; tsc Exit 0; 16/23 suspicious-identical gefixt (+3 Konsistenz-Nachbarn), 7 legitim belassen; 4 Platzhalter-Bugfixes.
+- ko: 1136 Keys übersetzt (1135 completion.ts + 1 Battle-Royale-Bullet in party.ts) — verify-lang: 5342 keys, 0 still missing; tsc Exit 0; 16/26 suspicious-identical gefixt (+3 Konsistenz-Nachbarn), 10 legitim belassen; 3 Platzhalter-Bugfixes.
+- Übersetzungsstil: JA です/ます + etablierte Katakana-Begriffe (デイリーチャレンジ, パーフェクトノート, ハイスコア), KO 해요체/합니다체 wie Bestand; dailyTypes.names kurz & griffig, erste 22 exakt an bestehende dailyTypes-Blöcke angeglichen; Fachbegriffe (Karaoke ZERO, UltraStar, BPM, AI-Anbieter) unübersetzt; Emojis und Platzhalter exakt erhalten.
+
+---
+Task ID: Q1
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für Spanisch (es) und Französisch (fr) ergänzen (completion.ts + barrel + suspicious-identical review)
+
+Work Log:
+- Spec tmp-analysis/I18N-AGENT-SPEC.md gelesen, missing-es.json / missing-fr.json analysiert (je 1136 fehlende Keys: core 124, library 239, game 159, settings 131, party 30, mobile 358, tutorial 95).
+- ES: src/lib/i18n/locales/es/completion.ts NEU (1135 Keys, inkrementell geschrieben: core+library → game+settings → party+mobile → tutorial). Terminologie an bestehende ES-Dateien angelehnt (tú-Form, "App Compañera", "tabla de clasificación", "huecos" für Slots, Dúo/Duelo/Individual, Popurrí, Fiesta Temática für Theme Party, Zahlen 10.000/5.000 mit Punkt).
+- ES: completionTranslations als letztes Element in es/index.ts deepMerge-Array registriert (Barrel hatte bisher kein tutorial-Import — tutorial-Block steckt komplett in completion.ts).
+- ES Sonderfall: extendedDesc.battleRoyale in es/party.ts — ⚔️-Bullet ("Los empates van a un desempate de 10 s — ¡y luego decide la moneda!") an Index 4 eingefügt, Array jetzt 7 Elemente (👑 zuletzt) → fehlender Key extendedDesc.battleRoyale.6 erfüllt.
+- ES suspicious-identical: 15 Werte in Original-Dateien übersetzt (core.uploadStatus ×3, library.songLeaderboardPreview ×2, game.resultsScreen ×1, game.highscoreScreen ×3, settings ×3, profile ×3 [privacyHint/Desc + leaderboardParticipationDesc]); 14 weitere als legitim identisch belassen (Proper Nouns "Battle Royale"/"Medley Contest", Lehnwörter "Local"/"Backend"/"min.", "BPM:", CREPE, 44100 Hz, ABBA-Beispiel, Genre-Mappings).
+- FR: src/lib/i18n/locales/fr/completion.ts NEU (1135 Keys, gleiche Struktur). Tu-Form passend zu den neuesten FR-Blöcken (dailyTypes "Atteins/Réussis"), "App Compagnon", "classement", "emplacements", Duo/Duel/Solo, Medley & Pass the Mic & Missing Words & Blind Karaoke als etablierte Eigennamen der FR-UI, "Fête à Thème", französische Typografie (1,75x / 10 000 / « »).
+- FR: Barrel fr/index.ts um completionTranslations erweitert (letztes Element).
+- FR Sonderfall: ⚔️-Bullet in fr/party.ts battleRoyale-Array an Index 4 ("Les égalités partent en départage de 10 s — puis c'est pile ou face qui décide !"), 7 Elemente.
+- FR suspicious-identical: 18 Werte gefixt (uploadStatus ×3, songLeaderboardPreview ×2, resultsScreen ×1, highscoreScreen ×3, settings ×3, profile ×3, modeSettings bestOf3/5/7 → "Meilleur des N" konsistent zu bestOf: 'Meilleur des {n}'); Hall of Fame / Pass the Mic / Rate my Song / comebackBoost als legitime Lehnwörter bzw. Modus-Eigennamen belassen (FR-Datei nutzt sie selbst durchgängig).
+- Qualitäts-Selbstcheck per Skript: Placeholder-Parität EN↔ES/FR für ALLE 5342 Keys geprüft — 0 Abweichungen in den neuen Keys (6 gemeldete Mismatches sind prä-existente Alt-Keys: tournament.accuracy, partyStarting.startPlayerHint, companion.controlLocked — unangetastet gelassen); Emoji-Parität 0 Probleme; 0 Key-Overlaps zwischen completion.ts und den Original-Dateien (deepMerge-Überschreib-Sicherheit bewiesen).
+- Verifikation: bun run tmp-analysis/verify-lang.ts es → "es: 5342 keys, 0 still missing"; fr → "fr: 5342 keys, 0 still missing". npx tsc --noEmit → Exit 0 (zwischenzeitliche TS1005-Fehler stammten von parallel schreibenden Agenten it/sv/nl/pt/no/pl, finaler Lauf komplett clean). extract-missing.ts wurde NICHT ausgeführt.
+
+Stage Summary:
+- ES: 1136 Keys übersetzt (1135 in completion.ts + 1 ⚔️-Bullet in party.ts), 15 suspicious-identical-Werte fixiert, 14 als legitim belassen; verify-lang: 0 still missing; tsc Exit 0.
+- FR: 1136 Keys übersetzt (1135 + 1 ⚔️-Bullet), 18 suspicious-identical-Werte fixiert, 16 als legitim belassen; verify-lang: 0 still missing; tsc Exit 0.
+- Beide Sprachen jetzt bei voller EN-Parität (5342 flache Keys) — inkl. dailyTypes.names (150 knackige Challenge-Namen, Wiederverwendung der etablierten Namen aus den alten dailyTypes-Blöcken), weeklyTypes (77+24), Editor-MIDI/Partitur-Import, Tutorial-Touren, Motto-Party, Taxonomy, Sync-Backup, gameHud Voice-FX/Vocal-Filter, BR-Eliminierungs-Rhythmus.
+
+---
+Task ID: Q6
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für Schwedisch (sv) und Norwegisch (no) ergänzen (completion.ts + barrel + suspicious-identical review)
+
+Work Log:
+- SV: missing-sv.json analysiert (1136 fehlende Keys, identische Key-Menge/Struktur wie alle Sprachen: core 124, library 239, game 159, settings 131, party 30, mobile 358, tutorial 95). Bestehende sv-Dateien gelesen für Terminologie (låt/utmaning/noggrannhet/kombo/„Grand Finale"/informelles du).
+- SV: src/lib/i18n/locales/sv/completion.ts NEU angelegt (1135 Keys, inkrementell in 4 Schritten: core+library → game+settings → party+mobile → tutorial) — alle Blöcke laut missingByFile außer party.extendedDesc. dailyTypes.names (150) als kurze, griffige schwedische Challenge-Namen („Skarpt Öga", „Guldrusch", „Kombokoloss", „Perfekt Norrsken", „Kort & Gott" etc.), patterns mit exakt erhaltenen Platzhaltern {n}/{m}/{genre}/{decade}/{duration}/{range}/{word}/{bpm}/{rating}/{difficulty}.
+- SV: Barrel sv/index.ts — completionTranslations als letztes Element ins deepMerge-Array registriert.
+- SV: SONDERFALL extendedDesc.battleRoyale: in party.ts den fehlenden 5. Bullet '⚔️ Vid oavgjort: 10 sekunders sudden death — sedan avgör myntkastet!' an Index 4 eingefügt (Array jetzt 7 Elemente, 👑 bleibt letzter) — schließt extendedDesc.battleRoyale.6.
+- SV suspicious-identical: 12 echte unübersetzte Englisch-Strings direkt in Original-Dateien übersetzt (core uploadStatus ×4, library songLeaderboardPreview ×4 inkl. Cluster worldwide/local, game uploadedRankVerified + highscoreScreen-Suche ×3, settings Online-Activities-Gruppe ×4, profile privacyHint/privacyHintDesc/leaderboardParticipationDesc). Bewusst unverändert gelassen (legitim): Battle Royale, Hall of Fame/Wall of Fame, BPM:, Artist:, „ABBA, Mamma Mia, …", CREPE (Deep Learning), Medley Contest!, COMEBACK ×1.5, AGC, Backend:, Position:/Region:, 44100 Hz (CD), Blue Yeti, Video GAP (ms), Genre-Beispiel-Strings.
+- NO: gleicher Workflow vollständig wiederholt — missing-no.json (identische 1136 Keys), Terminologie aus bestehenden no-Dateien übernommen (sang/sjanger/presisjon/ledertavle/rekke/spiller/redigeringsprogrammet/Trykk-modus/KI+AI-Mischung wie bestehend). completion.ts NEU (1135 Keys) mit EIGSTÄNDIGEM Norwegisch (kein sv-Copy): „Skarpt Blikk", „Gullrusj", „Tikk Takk"-Serie, „Dobbel Trøbbel", „Prikkfritt", „Null Bom", „Noteelv/Notefjell", „luftspeiling", „Gull i Massevis", „Kort og Godt", 1970-/1980-årene, {decade}-tallet, hvert {n}. sekund, høyst/én-sang-Formulierungen.
+- NO: Barrel no/index.ts registriert; party.ts battleRoyale Index-4-Bullet '⚔️ Ved uavgjort: 10 sekunders sudden death — deretter avgjør myntkastet!' eingefügt (7 Elemente).
+- NO suspicious-identical: 14 Strings gefixt (gleichen Kategorien wie sv PLUS party modeSettings.bracket2 „2 — Duel" → „2 — Duell" und medleyTournament rateMySong.challenges.airGuitarSolo.title → „Luftgitarsolo").
+- Verifikation: bun run tmp-analysis/verify-lang.ts sv → „5342 keys, 0 still missing — OK"; no → „5342 keys, 0 still missing — OK" (jeweils Exit 0). Zusätzlicher No-Override-Check: alle 1135 completion-Keys pro Sprache waren zuvor missing, 0 bestehende Werte überschrieben. npx tsc --noEmit → Exit 0, 0 Errors (transienter Syntaxfehler in pl/completion.ts eines Parallel-Agenten und 3 implizit-any-Fehler in tmp-analysis/verify-lang.ts waren zwischenzeitlich/statisch nicht durch Q6 verursacht und sind inzwischen behoben).
+- Nur Q6-Zieldateien verändert; extract-missing.ts nie ausgeführt.
+
+Stage Summary:
+- sv: 1136 Keys übersetzt (1135 in neuer completion.ts + 1 Sonderfall-Bullet in party.ts), verify-lang „0 still missing" (5342/5342), tsc Exit 0, 12 suspicious-identical-Strings fixiert (weitere ~15 als legitim identisch belassen).
+- no: 1136 Keys übersetzt (1135 completion.ts + 1 party.ts-Bullet), verify-lang „0 still missing" (5342/5342), tsc Exit 0, 14 suspicious-identical-Strings fixiert.
+- sv und no sind eigenständige Sprachversionen (sv „låt/även om/Träff/Högst", no „sang/også/Presisjon/høyst"; unterschiedliche Challenge-Namen & Idiome), Ton & Terminologie konsistent mit den bestehenden Dateien beider Sprachen.
+
+---
+Task ID: Q5
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für NL + PL ergänzen (completion.ts + barrel + suspicious-identical review)
+
+Work Log:
+- NL (Niederländisch):
+  - src/lib/i18n/locales/nl/completion.ts NEU angelegt (1494 Zeilen, inkrementell in 7 Chunks geschrieben): alle 1135 fehlenden Keys aus missing-nl.json natürlich übersetzt (je-Form) — dailyTypes.names (150 knackige Challenge-Namen, z. T. angelehnt an bestehende NL-Challenges), dailyTypes.patterns/weeklyTypes.patterns (Placeholder {n}/{m}/{genre}/{language}/{decade}/… exakt erhalten), editor.midiImport + sheetMusic (Bladmuziek-Import, pagina\'s escaping), gameHud (Zangfilter, Voice FX Studio), challenges (58 Spielmodifikatoren), battleRoyale, settingsTaxonomy/settingsMotto (Themafeest), syncBackup, unifiedSetup (Zingapparaat-toewijzing), tutorial (Basics + Editor-Tour), dailyBadges (Wiederverwendung der Legacy-Namen Weekkrijger/Maandmeester/Eeuwkampioon aus core.ts-Altblock).
+  - Barrel nl/index.ts: completionTranslations als letztes Element ins deepMerge-Array registriert.
+  - SONDERFALL party.ts extendedDesc.battleRoyale: '⚔️ Bij gelijkspel volgt een showdown van 10 seconden — daarna beslist de munt!' an Index 4 eingefügt → 7 Elemente (👑 bleibt letzter).
+  - suspicious-identical (59 Einträge geprüft): 18 echte Fixes in Original-Dateien — core.ts (wifiStep3, uploadStatus unverified/verifiedDesc/unverifiedDesc), library.ts (songLeaderboardPreview noScores/loading, audioAnalysis crepe 'CREPE (Deep Learning)' — analog zu 'YIN (3-laags)'), game.ts (uploadedRankVerified 'Geüpload! Rang #{n} (geverifieerd)', highscoreScreen searchPlaceholder/searchNoResults/noSearchResults), profile.ts (privacyHint, privacyHintDesc, leaderboardParticipationDesc), settings.ts (onlineActivitiesDesc, disableOnline, disableOnlineDesc), medleyTournament.ts (shareHeader '🎵 Medley-wedstrijd!' — konsistent mit setupTitle/gameTitle). 41 Einträge als legitim identisch belassen: BPM:, Genre-Mapping-Beispiele ("Bubblegum Pop" → "Pop"), Video GAP (ms), tag1/tag2/tag3, Battle Royale/Best of {n}/Hall of Fame (etablierte Gaming-Lehnwörter), "Win 5 duels" (6× — gilt zufällig als korrektes Niederländisch: Imperativ 'win' + 'duels' identisch), "Online account ✓" (NL-identisch), Filters:/Backend:/min./1 vs 1 (NL-identisch), Rate my Song/Missing Words (bewusst englische Modusnamen), Blue Yeti/AT2020, Hz-Angaben, ABBA/Mamma-Mia-Beispiel, ⚔️/🎵-Placeholder-Strings, COMEBACK ×1.5.
+  - Verifikation: bun run tmp-analysis/verify-lang.ts nl → "nl: 5342 keys, 0 still missing" (Exit 0). Kollisionscheck: 0 completion-Keys überschreiben bestehende Werte (deepMerge-Override sicher). Placeholder-Integrität: 100 % (6 gefundene Mismatches in tournament.accuracy/partyStarting.startPlayerHint/companion.controlLocked sind prä-existent, nicht Teil der fehlenden Keys, unberührt gelassen).
+- PL (Polnisch):
+  - src/lib/i18n/locales/pl/completion.ts NEU angelegt (1494 Zeilen, 8 Chunks): alle 1135 Keys informell (ty, großgeschriebenes Twoje/Twój passend zur bestehenden Datei) übersetzt — Terminologie aus bestehenden Blöcken übernommen: dailyTypes.names (22 Namen 1:1 aus dem Legacy-dailyTypes-Block in mobile.ts übernommen: Celne oko, Gorączka złota, Król comebacku …), nuty/perfekcyjne/złote nuty, celność, combo, seria, duel (polonisierter Gebrauch wie in profile.ts), tabela wyników, aplikacja kompana, Tygodniowe/codzienne wyzwanie; Zahlenformat 5 000/10 000 XP und Dezimalkommata (1,75x) polnisch-korrekt.
+  - Barrel pl/index.ts registriert; SONDERFALL party.ts battleRoyale: '⚔️ Przy remisie następuje 10-sekundowe starcie — potem decyduje rzut monetą!' an Index 4 → 7 Elemente.
+  - suspicious-identical (44 Einträge geprüft): 17 echte Fixes — core.ts (uploadStatus ×3: 'Niezweryfikowany (bez dowodu)' etc.), library.ts (noScores 'Jeszcze brak wyników', loading 'Ładowanie...', crepe 'CREPE (Deep Learning)' — analog 'YIN (3-warstwowy)'), game.ts (uploadedRankVerified 'Przesłano! Pozycja #{n} (zweryfikowany)', searchPlaceholder/searchNoResults/noSearchResults), profile.ts (privacyHint/privacyHintDesc/leaderboardParticipationDesc), settings.ts (onlineActivitiesDesc/disableOnline/disableOnlineDesc), medleyTournament.ts (shareHeader '🎵 Konkurs medleyowy!'). 27 legitim identisch belassen (BPM:, Region:, Backend:, Genre-Mappings, Video GAP, tag1/2/3, 👑 Battle Royale, 1 vs 1/2 vs 2, ⚔️/🎵-Placeholder, COMEBACK ×1.5, Blue Yeti/AT2020, Hz-Werte, ABBA/Mamma Mia, 2 — Duel).
+  - Verifikation: bun run tmp-analysis/verify-lang.ts pl → "pl: 5342 keys, 0 still missing" (Exit 0); 0 Kollisionen; Placeholder-Integrität 100 %.
+- Beide: npx tsc --noEmit → Exit 0 (die 3 anfänglichen Fehler in tmp-analysis/verify-lang.ts wurden zwischenzeitlich via tsconfig-exclude "tmp-analysis" behoben — nicht durch diese Task; alle src/-Dateien waren von Anfang an fehlerfrei).
+- extract-missing.ts wurde NICHT ausgeführt (Race-Gefahr); nur verify-lang.ts verwendet.
+
+Stage Summary:
+- NL: 1136/1136 Keys komplett (1135 in completion.ts + 1 via party.ts-Bullet-Einfügung), 18 suspicious-identical Strings übersetzt, 41 als legitim belassen; verify-lang nl: 0 still missing, tsc Exit 0.
+- PL: 1136/1136 Keys komplett (1135 + 1 party.ts-Bullet), 17 suspicious-identical Strings übersetzt, 27 legitim; verify-lang pl: 0 still missing, tsc Exit 0.
+- Keine anderen Dateien verändert; beide Sprachen haben jetzt vollständige Parität mit EN (5342 Flatten-Keys inkl. je 59 unschädlicher Legacy-Extras).
+
+---
+Task ID: Q7
+Agent: i18n-completion
+Task: Fehlende i18n-Keys für Dänisch (da) und Finnisch (fi) ergänzen (completion.ts + barrel + extendedDesc-Sonderfall + suspicious-identical review)
+
+Work Log:
+- DA: missing-da.json (1136 Keys) gelesen, Terminologie aus bestehenden da/-Dateien abgeleitet (noder/node-combo, "gyldne noder", "Ram X … i en enkelt sang", streak-Lehnwort, "Spilleliste", "rangliste", du-Form, 10.000/1,75x-Zahlenformate).
+- src/lib/i18n/locales/da/completion.ts NEU angelegt (1135 Keys: core homeScreen/jukeboxPlayer/dailyChallenge/dailyBadges + library songStart/importAlternateFormat/editor komplett inkl. midiImport+sheetMusic + game gameHud/challenges/battleRoyale + settings aiProvider/taxonomy/motto/syncBackup + party unifiedSetup/modeSettings + mobile/dailyTypes.names (150, existierende dailyTypes-Namen wiederverwendet)/dailyTypes.patterns (62)/weeklyTypes + tutorial); inkrementell in 4 Schritten geschrieben (Write + 3 Edit-Appends).
+- DA-Barrel da/index.ts: completionTranslations als letztes deepMerge-Element registriert.
+- DA-SONDERFALL: extendedDesc.battleRoyale in da/party.ts — '⚔️ Uafgjorte går til et 10 sek. opgør — så afgør mønten!' an Index 4 eingefügt (7 Elemente, 👑 bleibt letzter).
+- DA suspicious-identical (47 geprüft): 16 echte Übersetzungen in Original-Dateien (uploadStatus unverified/verifiedDesc/unverifiedDesc, songLeaderboardPreview noScores/loading, uploadedRankVerified, highscoreScreen searchPlaceholder/searchNoResults/noSearchResults, profile privacyHint/privacyHintDesc/leaderboardParticipationDesc, settings onlineActivitiesDesc/disableOnline/disableOnlineDesc, agcLabel → 'AGC (automatisk forstærkningskontrol)'); 31 als legitim belassen (Modusnamen-Konvention "Pass the Mic"/"Rate my Song"/"Hall of Fame"/"Wall of Fame"/"Air Guitar Solo"/"Battle Royale"/"Companion Sing-A-Long"/"Medley Contest", Highscores-Lehnwort, BPM:/Video GAP/44100 Hz/Blue Yeti/CREPE, Genre-Tag-Beispiele, "ABBA, Mamma Mia, …", "🔥 COMEBACK ×1.5").
+- FI: missing-fi.json (1136 Keys) — komplett eigenständige Übersetzung (nicht DA-verwandt): huipputulokset, "Osu {n}+ kultaiseen nuottiin", "Saa {n}+ pistettä", päivittäisputki, "Mikrofonin siirto" (FI übersetzt den Modusnamen, anders als DA!), nuottiviivasto, sävelkorkeustikkaat, 5 000/1,75x-Formate, sinä-Form.
+- src/lib/i18n/locales/fi/completion.ts NEU (1135 Keys, gleiche Struktur), fi/index.ts-Barrel erweitert, fi/party.ts extendedDesc.battleRoyale: '⚔️ Tasatulokset ratkeavat 10 sek:n kaksintaistelussa — sitten kolikko päättää!' an Index 4 (7 Elemente).
+- FI suspicious-identical (29 geprüft): 16 übersetzt (core uploadStatus ×3, noScores/loading, uploadedRankVerified, searchPlaceholder/searchNoResults/noSearchResults, onlineActivitiesDesc/disableOnline/disableOnlineDesc, shareHeader → '🎵 Medley-kisa!', privacyHint/privacyHintDesc, leaderboardParticipationDesc); 13 legitim belassen (BPM:, Genre-Tags, Video GAP, 👑 Battle Royale, Sample-Rates, Blue Yeti/AT2020, ABBA-Platzhalter, mysteryReveal-Platzhalter).
+- Verifikation: Key-Diff-Check completion vs. missing-*.json → exakte Übereinstimmung (1135 + 1 Sonderfall, keine bestehenden Keys überschrieben); Platzhalter-/Emoji-Parity-Check für alle 2270 Completion-Keys → 0 Issues; bun run tmp-analysis/verify-lang.ts da → "5342 keys, 0 still missing"; fi → "5342 keys, 0 still missing"; npx tsc --noEmit → Exit 0. extract-missing.ts NICHT ausgeführt.
+
+Stage Summary:
+- DA + FI vollständig auf EN-Parity (je 1136 Keys übersetzt: 1135 in completion.ts + 1 extendedDesc.battleRoyale-Sonderfall in party.ts; verify-lang: je 0 missing, tsc Exit 0).
+- 76 suspicious-identical-Strings geprüft: 32 echte Lücken in Original-Dateien übersetzt (DA 16, FI 16), 44 als legitime Proper Nouns/Lehnwörter/Technika belassen.
+- Besondere Entscheidungen: DA behält englische Modusnamen ("Pass the Mic", "Hall of Fame") als etablierte Konvention, FI übersetzt sie ("Mikrofonin siirto", "Medley-kisa"); dailyTypes.names der ersten 22 Keys wiederverwenden die bereits existierenden DA/FI-Challenge-Namen; showdownLabel → DA "Opgør!", FI "Kaksintaistelu!" konsistent zum extendedDesc-Bullet.
+---
+Task ID: R3
+Agent: refactoring
+Task: src/lib/game/achievements.ts (1499 Zeilen, Daten/Logik-Trennung) + src/components/editor/metadata-studio.tsx (1637 Zeilen, Sub-Komponenten auslagern) — NULL Verhaltensänderung, alle Import-Pfade stabil
+
+Work Log:
+- Import-Lage analysiert: '@/lib/game/achievements' → nur achievements-screen.tsx (ACHIEVEMENT_DEFINITIONS, getRarityColor) + use-post-game-processing.ts (checkAndUnlockAchievements); '@/components/editor/metadata-studio' → nur editor-screen.tsx ({ MetadataStudio }); STUDIO_RECOMMENDED_BATCH/Studio*-Typen bisher extern ungenutzt, aber weiter über alten Pfad stabil gehalten.
+
+Ziel 1 — Achievements (Daten/Logik-Trennung):
+- NEU src/lib/game/achievement-definitions-core.ts (531 Zeilen): Base-Set (Performance/Progression/Social/Special/Daily&Weekly/Extended Performance/Social&Variety, 42 Achievements) — per sed aus den Original-Zeilen 35–552 geschnitten.
+- NEU src/lib/game/achievement-definitions-expansion-performance.ts (269 Zeilen): 100-Achievement-Expansion Part 1 — Extended Performance + Cumulative Note Grinders (21).
+- NEU src/lib/game/achievement-definitions-expansion-progression.ts (464 Zeilen): Part 2 — Long-Term Progression + Daily&Weekly Grinders + Social Grinders + Specials&Variety (37).
+- NEU src/lib/game/achievement-definitions.ts (54 Zeilen): AchievementDefinition-Interface (jetzt exportiert — einzigste Abweichung, rein Typ-Ebene) + Merge `ACHIEVEMENT_DEFINITIONS = [...CORE, ...EXPANSION_PERFORMANCE, ...EXPANSION_PROGRESSION]` in exakter Original-Reihenfolge. Daten-Dateien binden den Typ via `import type` (keine Runtime-Kante, isolatedModules-sicher).
+- achievements.ts 1499 → 256 Zeilen: Logik-Sektion (getLocalizedAchievement, checkAndUnlockAchievements, meetsRequirement, getRarityColor + AchievementGameContext/AchievementCheckResult) unverändert + `export { ACHIEVEMENT_DEFINITIONS };` + `export type { AchievementDefinition }` für Pfad-Stabilität.
+- Integrität per diff bewiesen: 1225 Daten-Zeilen byte-identisch (Original-Array-Body vs. Concat der 3 Dateien), Logik-Sektion byte-identisch, 100/100 Achievement-IDs in Original-Reihenfolge.
+
+Ziel 2 — Metadata-Studio (Ordner src/components/editor/metadata-studio/):
+- metadata-studio.tsx 1637 → 866 Zeilen: bleibt Orchestrator am ALTEN Pfad mit `export function MetadataStudio` + Re-Exports (STUDIO_RECOMMENDED_BATCH, StudioScope/StudioMode/StudioWriteTarget). Besitzt weiterhin allen State + die komplette Run/Apply-Logik (handleRun/handleApplyAll/handleApplySingle/handleRuleStart/handleApplyManualPicks/handleApplyManualEdits/StartLyricsWarmup/filterSuggestions) + kleinen Prop-Plumbing-Callback-Layer (toggleField, handleManualPickChange, handleManualEditChange, handleSkipAllManual, handleRestoreSkippedManual, handleAbortRuleJob) + Collapsible-Header inline.
+- NEU metadata-studio/types.ts (58): Studio-Typen + MetadataStudioProps + StudioFields/StudioProgress/ManualEditDraft/StudioTranslate (kein any).
+- NEU metadata-studio/constants.ts (22): STUDIO_RECOMMENDED_BATCH + SECONDS_PER_SONG_WORST_CASE inkl. Original-Mess-Kommentar.
+- NEU metadata-studio/hooks.ts (130): useRuleHarmonizerState (Singleton-Subscription) + useManualPreview (30s-Listen-Preview mit Generation-Counter/ensureSongUrls-Fallback/Auto-Stop) — Logik 1:1 aus der Komponente gehoben.
+- NEU metadata-studio/studio-config-bar.tsx (129): segButton/fieldToggle-Atome + Scope/Fields/Mode/WriteTarget-Reihen + Local-Hint.
+- NEU metadata-studio/rule-mode-panel.tsx (263): Rule-Modus komplett — Plan-Info-Zeile, 8-Item-Preview, "nichts zu harmonisieren"-State, Manual-Genre-Review-Liste (Play/Skip/Restore/SkipAll/Apply/Dropdown).
+- NEU metadata-studio/manual-edit-panel.tsx (242): Manual-Edit-Modus (R5-1) — Per-Song-Editierliste mit Current→Editor nebeneinander, Amber-Ring bei Änderung.
+- NEU metadata-studio/run-controls.tsx (215): RunControls (Select-Songs/Deselect/Rule-Start/Run + Hints + Batch-Empfehlung) + BigBatchConfirmDialog.
+- NEU metadata-studio/status-section.tsx (228): LoadingBanner (Phase/Progress/Elapsed/Cancel) + RuleDoneBanner + StatusFeedback (Error/NotAnalyzed/LocalApplied/TxtProgress/FileErrors/Warmup).
+- NEU metadata-studio/suggestions-panel.tsx (176): SuggestionsPanel (ConfidenceFilter/SuggestionRow/Dismiss/ApplyAll-Bar) + ApplyAllWarningDialog.
+- Modulgrenzen nach realen DOM-Blöcken (Reihenfolge bleibt exakt: Config → Rule-Panel → Manual-Panel → Run-Row+Hint → Loading → RuleDone → Status → Suggestions → Warn-Modal → BigBatch-Modal); JSX byte-genau, nur Identifier-Substitutionen (setX → onX-Callbacks, selectedIds.size → selectionCount usw.); Fragments statt Kindelemente direkt → identisches DOM.
+- Beweisführung per diff: alle 31 statischen + alle dynamischen data-testids erhalten, alle t('editor.*')-Aufrufe identisch in Key+Anzahl.
+
+Verifikation:
+- npx tsc --noEmit → Exit 0 (zweimal; zwischenzeitlicher Fehler in timeline/use-timeline-interaction.ts eines Parallel-Agenten war transient und ist weg).
+- bun run lint → 0 errors (775 warnings, alle prä-existent; meine Dateien: exakt die 4 react-hooks/set-state-in-effect-Warnings, die das Original auch hatte — via git-show-Vergleich des Originals belegt, 0 neu).
+- Dev-Server: war bei Task-Start DOWN (kein Prozess auf :3000, OOM-Kill laut dmesg, 4-GB-Sandbox + Turbopack-Compile ~1.5 GB RSS). 3× neu gestartet per `setsid nohup npx tsx server.ts >> dev.log 2>&1` (append, KEIN rm -rf .next, KEIN tee-Overwrite von dev.log — ein Parallel-Agent hat dev.log zwischenzeitlich via bun-run-dev truncatiert, nicht R3). Finaler Zustand: läuft, curl http://localhost:3000/ → 200 (mehrfach, auch Stabilitätscheck nach 25 s).
+- Smoke per agent-browser (Screenshots qa-shots/r3-*.png): Home ✓; Erfolge-Screen ✓ (100 Achievement-Karten gerendert, Reihenfolge "Erste Note/Perfekte Zehn/Combo-Meister…" wie Original, getRarityColor aktiv); Bibliothek → Editor F10 → Metadata-Studio geöffnet ✓: Config-Bar (Scope/Fields/Mode/Target), Run-Controls (Starten disabled ohne Auswahl — Originalverhalten), Rule-Modus ("✅ Alle Genres sind bereits harmonisiert." + 🧹-Button disabled), Manual-Modus (5 Rows; Interaktionstest: Jahr 1976→1974 geändert → "✏️ 1 von 5 Songs geändert" + Amber-Ring + Übernehmen enabled; Jahr = Current-Wert → korrekt NICHT als Änderung gezählt), 💾-Nur-lokal-Hint toggelt. 
+- tail dev.log: ausschließlich 200er, keine Compile-/Runtime-Fehler durch das Refactoring (nur bekannte metadataBase-Warnung + DEP0169 + Socket.IO-Connects/Disconnects).
+
+Risiken / Anmerkungen:
+- AchievementDefinition jetzt exportiert (vorher modul-privat) — additiv, Typ-only, kein Runtime-Effekt.
+- Typ-Only-Zirkularität achievement-definitions.ts ⇄ Daten-Dateien via `import type` — runtime-sicher, von tsc/eslint bestätigt.
+- Orchestrator 866 Zeilen (Ziel ~650 galt für NEUE Dateien; alle 9 neuen Dateien ≤531): weitere Auslagerung der Run/Apply-Handler hätte ~15 State-Setter als Props durchgereicht — Kohärenz-/Risiko-Abwägung gegen NULL-Verhaltensänderung entschieden dagegen.
+- Dev-Server-Instabilität (OOM + parallele Agenten) ist umgebungsbedingt, nicht refactor-bedingt; Server läuft aktuell detached weiter.
+
+Stage Summary:
+- achievements.ts 1499 → 256 Zeilen Logik-Modul; 4 neue Dateien (54/269/464/531 Zeilen), Daten byte-identisch (100/100 Achievements, diff-bewiesen), beide Import-Stellen unverändert lauffähig.
+- metadata-studio.tsx 1637 → 866 Zeilen Orchestrator + 9 neue Module in src/components/editor/metadata-studio/ (types/constants/hooks + 6 View-Blöcke); alle data-testids + i18n-Keys diff-bewiesen erhalten; editor-screen.tsx-Import unverändert.
+- tsc Exit 0, lint 0 errors (0 neue Warnings), curl 200, Smoke-Test beider Screens erfolgreich (qa-shots/r3-*.png), dev.log sauber.
+---
+Task ID: R2
+Agent: refactoring (Editor-Timeline)
+Task: src/components/editor/timeline/timeline.tsx (1743 Zeilen, Monolith) inFocused Module auslagern — NULL Verhaltensänderung, alte Import-Pfade stabil halten
+
+Work Log:
+- Import-Stellen analysiert (rg): karaoke-editor.tsx (`import { Timeline, type NoteHistoryMode } from './timeline/timeline'`) + editor-note-tab.tsx (`import type { NoteHistoryMode } from './timeline/timeline'`) — TAP_LINE_GAP_MS wird nirgends aus timeline.tsx importiert (karaoke-editor hat eine eigene lokale Kopie), trotzdem als Named-Export über den alten Pfad erhalten.
+- 11 neue Dateien in src/components/editor/timeline/, allesamt ≤ ~400 Zeilen; timeline.tsx bleibt Orchestrator mit unverändertem öffentlichen Interface (export default Timeline, export function Timeline, re-export TAP_LINE_GAP_MS + NoteHistoryMode):
+  - timeline-constants.ts (75) — alle Modul-Konstanten verbatim (VISIBLE_PITCH_RANGE, SPLIT_PITCH_RANGE(_MULTI), LEFT_GUTTER, TAP_LINE_GAP_MS, MIN/MAX_ZOOM, ZOOM_PRESETS, R14-Drag-Konstanten PITCH_DRAG_*, DRAG_AXIS_*, NOTE_TYPE_OPTIONS) + die Layout-Konstanten 1:1 aus dem Komponenten-Body gehoben (basePixelsPerSecond 500, TOTAL_MIN/MAX_PITCH, lyricTrackHeight, minimapHeight, noteInfoHeight — Namen bewusst unverändert, pure Literale ohne Prop-Abhängigkeit).
+  - timeline-types.ts (92) — NoteHistoryMode, TimelineProps, PitchLane, NoteDragState (vorher inline im useState), NEU TimelineComparisonNote (struktur-identisch zum bisherigen Inline-Typ des comparisonNotes-Props).
+  - timeline-utils.ts (21) — formatTime/formatTimeMs (pure Helfer).
+  - use-timeline-interaction.ts (234) — useTimelineDrag-Hook: komplettes Drag-System (Playhead-Scrub + R14 Axis-Lock-Noten-Drag mit Hysterese/Sticky-Home + resize-left/right + Live-Updates + ein History-Entry pro Geste) inkl. pitchDeltaWithHysteresis als Modul-Privatfunktion; Effect-Body + Dep-Array 1:1 kopiert (containerRef zusätzlich in die Deps — stabiler Ref, kein Verhaltensunterschied, vermeidet neue exhaustive-deps-Warnung).
+  - use-timeline-auto-scroll.ts (80) — useTimelineAutoScroll-Hook: Ref-Sync-Effekt (currentTime/scrollOffset/pps) + rAF-Loop mit 80ms-Throttle (Playhead-Follow während Wiedergabe), lastScrollCheckRef mit umgezogen.
+  - timeline-toolbar.tsx (200) — TimelineToolbar (Transportleiste: Skip/Play/Pause, Zeit-Slider, Playback-Raten, Duett-Split-Toggle, Beat-Magnet, Zoom-Buttons); die zwei inline-Setter-Aufrufe wurden zu Props onToggleDuetSplit/onZoom*, data-testids (editor-duet-split-toggle, editor-snap-toggle) erhalten.
+  - pitch-lane.tsx (159) — PitchLaneView: ein Pitch-Lane-Block (TimelineGrid + ComparisonLayer + C-Pitch-Labels + Lane-Badge + Lane-Divider + NoteBlock-Map); Divider-Bedingung lanes[last].key !== lane.key → isLastLane-Prop (semantisch identisch bei unique Keys).
+  - timeline-grid.tsx (90) — TimelineGrid (Beat- + Pitch-Linien, UltraStar-Formel 15000/BPM + GAP) mit benanntem Props-Interface.
+  - comparison-overlay.tsx (115) — ComparisonLayer (MIDI/KAR-Ghost-Notes pro Lane, gestrichelt amber, pointer-events-none) + ComparisonLegend (Chip mit ✕ Clear-Button).
+  - note-details-band.tsx (384) — DetailChip (ungenuztz wie im Original, Warnung bleibt) + parseNum + NoteDetailsInputs (Haupt-Editierfläche: Lyric/Pitch/Start/Dauer + Typ-DropUp + Info-Chips, Draft-Sync-Effect) + neue Wrapper-Komponente NoteDetailsBand (Band-Container + Header + Auswahl/Hinweis — vorher inline JSX).
+  - pitch-minimap.tsx (172) — PitchMinimap (Footer-Pitch-Graph-Canvas mit Minute-Grid, Player-Farben, Viewport-Rechteck, Playhead; Pointer-Scrub).
+- timeline.tsx (1743 → 642) — Orchestrator: Viewport-ResizeObserver, Layout-Ableitungen (allNotes/hasPlayerNotes/presentVoices/pitchHeights), Pitch-Center-Logik + Song-Wechsel-Reset, lanes-Memo, ausgewählte Noten-Details, snapTime, Playhead-Position, Scroll-Clamp, zoomAt/HandleScroll (Ctrl+Scroll geankert, Shift+Wheel Pitch-Scroll), Klick-Handler (Deselect, Shift+Klick Noten-Add, Ctrl+Klick Multi-Select, Stacked-Note-Cycle R9), Jump-to-Note, Zoom-Handler + Komposition der Sub-Komponenten. Playhead-JSX bleibt inline. `const { t } = useTranslation()` entfiel im Orchestrator (alle t()-Nutzer sind jetzt in den Sub-Komponenten, die rufen useTranslation selbst — reiner Context-Read, kein Verhaltensunterschied).
+- Kommentare (R7/R8/R9/R14-Rationale etc.), eslint-disable-Direktiven, data-testids und i18n-Keys vollständig erhalten; kein `any` in neuen Props-Interfaces; keine Logik-/Bedingungsänderung.
+- Verifikation: `npx tsc --noEmit` → Exit 0 (2 zwischenzeitliche Fehler stammten von einem parallelen Agenten in src/lib/game/daily-challenge/ und verschwanden von selbst). `bun run lint` → 0 Errors, 775 Warnungen (timeline-Ordner: 10 Warnungen = 11 Baseline-Warnungen 1:1 übernommen; −1 weil die bisher ungenutzte lokale formatTimeMs jetzt exportierter Util ist — keine neue Warnung, keine entfernt außer dieser). curl http://localhost:3000/ → 200 (Dev-Server war zwischenzeitlich 2× vom Sandbox-Prozess-Management gestorben → jeweils per Double-Fork-Konvention neu gestartet). E2E-Smoke (agent-browser, Deutsch, Demo-Fixtures via seed-q8-demo.js, Library → Editor F10 → Dancing Queen): Timeline rendert komplett — Toolbar (Play, Zeit 0:00.00, Zoom-Label 100%, Raten-Buttons), Pitch-Lanes mit 4 Noten + 15 Grid-Linien + C3/C4-Labels, Lyric-Track („la la"), Noten-Details-Band, Playhead, Minimap-Canvas; Interaktionen live bewiesen: Notenklick → Details-Band füllt sich (lyric „la ", pitch 62 → „D4", Beat #16.00), echter CDP-Maus-Noten-Drag → 1000ms→1125ms exakt auf den Beat gerastert bei unverändertem Pitch (R14-Axis-Lock + Magnet, snapEnabled ist default true), Playhead-Drag → 0:00.00→0:00.39 (198px @500px/s), Zoom 100%→150%→100%, Play → Zeit läuft + Pause-Icon + Auto-Scroll hat den Viewport auf den Playhead nachgeführt (Noten gecullt = Scroll aktiv). VLM-Review des Screenshots bestätigt alle 7 UI-Regionen. QA-Shot: qa-shots/r2-editor-timeline.png. dev.log: nur 200er, 0 Compile-Fehler, 0 500er. Headless-Artefakte dokumentiert: Nach HMR-Full-Reloads eines parallelen Agenten liefert requestAnimationFrame (heavyMounted im Editor) teils keine Frames → Timeline mountet erst nach frischem Reload (kein Bug, Umgebungseffekt).
+
+Stage Summary:
+- timeline.tsx 1743 → 642 Zeilen (Orchestrator); 11 neue Module je 21–384 Zeilen (alle < 650), Gesamtumfang 2264 Zeilen (Mehraufwand = Props-Interfaces + Modul-Doku).
+- Modulgrenzen: Konstanten / Typen / Utils / Drag-Interaktion (Hook) / Auto-Scroll (Hook) / Toolbar / Lane / Grid / Vergleichs-Overlay / Details-Band / Minimap — jede Grenze folgt einem realen Render- oder Logikblock der Original-Komponente.
+- NULL Verhaltensänderung: Effect-Bodies, Dep-Arrays, JSX, Kommentare, data-testids, i18n-Keys unverändert; einzige bewusste Nicht-Verhaltens-Anpassungen: t()/useTranslation entfiel im Orchestrator (nur noch in Sub-Komponenten), containerRef in Drag-Effect-Deps (stabiler Ref), Inline-Handler → Props (gleiche Semantik).
+- Öffentliche Import-Oberfläche stabil: default Timeline + TAP_LINE_GAP_MS + NoteHistoryMode weiterhin über './timeline/timeline' importierbar (re-exports); einzige Importeure karaoke-editor.tsx + editor-note-tab.tsx unangetastet.
+- Verifikation komplett: tsc Exit 0 · Lint 0 Errors (Warnungen auf prä-existentem Niveau, −1 durch formatTimeMs-Export) · curl 200 · E2E-Smoke mit Drag/Zoom/Play/Auto-Scroll-Beweisen + VLM-Screenshot-Review · dev.log clean.
+- Risiken: gering — Drag-Logik nutzt weiterhin Mutation des State-Objekts im mousemove-Handler (bewusst unverändert übernommen); das duetSplit-Toggle erzeugt jetzt beim Render eine neue Inline-Arrow-Prop (vorher auch inline im JSX, kein Memo betroffen); DetailChip bleibt absichtlich ungenutzt (Dead Code wie im Original).
+
+---
+Task ID: R1
+Agent: refactor (durch Lead-Agent verifiziert & abgeschlossen — Sub-Agent erreichte Turn-Limit nach fertiger Arbeit, vor Worklog/Schluss-Verifikation)
+Task: daily-challenge.ts (2166 Zeilen) + daily-challenge-screen.tsx (1746 Zeilen) auslagern
+
+Work Log:
+- src/lib/game/daily-challenge.ts → 16 Module in src/lib/game/daily-challenge/ (types, registry, gates, evaluation, slots, weekly, quests, badges, best-results, date-utils, localization, stats, storage-keys, submission, utils, index) + index.ts re-export; daily-challenge.ts ist jetzt 8-Zeilen-Barrel → Import-Pfad '@/lib/game/daily-challenge' für alle 4 Importeure stabil
+- src/components/screens/daily-challenge-screen.tsx (1746) → Orchestrator (108 Zeilen) + 9 Module in src/components/screens/daily-challenge/ (use-daily-challenge-data.ts 532, daily-tab 367, weekly-tab 278, modes-tab 242, leaderboard-tab 198, badges-tab, player-selection-card, player-progress-section, helpers)
+- Lead-Agent-Verifikation nach Turn-Limit-Abbruch: npx tsc --noEmit Exit 0 · Lint 0 Errors (775 Warnungen) · vitest 256/256 · E2E agent-browser: Daily-Challenge-Screen rendert, Spieler-Auswahl (Profil "QA Quality" erstellt), alle 5 Tabs (Herausforderungen/Wöchentlich/Modi/Rangliste/Abzeichen) funktional — Challenge-Slots 1-5 mit Namen+Schwierigkeit+XP, Badge-Stufen heute 0/5, Abzeichen-Grid, Reset-Timer. Screenshots: qa-shots/q-round-daily-challenge.png, q-round-daily-weekly-tab.png, q-round-daily-badges-tab.png
+
+Stage Summary:
+- Größte Lib- und Screen-Datei des Projekts sauber in Module aufgeteilt (max. Modul 597 Zeilen), null Verhaltensänderung, alle Import-Pfade stabil. Hinweis: agent-browser-Pointer-Klicks auf die Tab-Leiste werden von einem Overlay-Button verdeckt (JS-Klick problemlos) — nur Test-Artefakt, keine UI-Störung sichtbar.
+
+---
+Task ID: Q-ROUND (Lead-Agent Koordination)
+Agent: Lead (Z.ai Code)
+Task: Quality-Runde — Datei-Prüfung, Auslagerungspotenziale, Game-Funktions-Check, i18n-Vollständigkeit & -Qualität
+
+Work Log:
+- Audit: Alle 16 Sprachen vs. EN verglichen (tmp-analysis/extract-missing.ts): DE fehlten 38 Keys, 14 weitere Sprachen fehlten je 1136 Keys (dailyTypes/editor-midiImport/tutorial/motto/taxonomy/syncBackup/gameHud/challenges/...)
+- BUGFIX DE: dailyBadges-Block war in de/core.ts versehentlich IN dailyChallenge verschachtelt (Zeile 514 in Block ab 434) → auf Top-Level verschoben; DE jetzt 5283 Keys = 0 fehlend
+- 7 parallele i18n-Agenten (Q1-Q7): completion.ts-Muster (NEUE Datei pro Sprache + deepMerge-Barrel-Registrierung) statt riskanter chirurgischer Merges; battleRoyale-Sonderbullet an Index 4 in je party.ts; suspicious-identical-Review (EN-identische Strings): je 12-18 echte Lücken pro Sprache übersetzt, legitime (Proper Nouns/Lehnwörter) belassen
+- QA-Agent Q8: 14 Bereiche E2E-geprüft (alle ✓, Cover-Regression bestanden, Motto-Party konsistent Desktop/Party/Companion, Sprachumschaltung de→es→de sauber, keine Raw-Keys, keine Console-Errors); 3 Klein-Fixes: aria-hidden am Offline-Banner (a11y), Sync-Count erst nach erfolgreichem POST (use-song-library-sync.ts), tmp-analysis in tsconfig exclude
+- Refactoring (R1-R3): daily-challenge Lib+Screen (s.o.), timeline.tsx 1743→642 + 11 Module, metadata-studio.tsx 1637→866 + 9 Module, achievements.ts 1499→256 + 4 Daten-/Logik-Dateien (byte-identisch via sed/diff bewiesen)
+- Test-Fixes (pre-existing Failures): ultrastar-parser duetPlayerNames — Trailing-Empty-Slots werden getrimmt (['John','Jane'] statt ['John','Jane','',''], Index-Semantik P1/P2/P4/P8 bleibt); medley getAvailableLanguages-Test auf die dokumentierte Others/<5-Songs-Regel (language-filter.ts) aktualisiert + Kanonisierung (de→German) berücksichtigt
+- ESLint-Ignores bereinigt: qa-test-song/, qa-shots/, tmp-analysis/ (Sandbox-Artefakte) → Warnungen von 854 auf 775 gesenkt
+
+Stage Summary:
+- ALLE 16 Sprachen jetzt bei vollständiger EN-Parität: de 5283, alle anderen 5342 Keys, 0 fehlend (verify-lang.ts × 16 = OK); vitest 256/256 bestanden (vorher 253/255); tsc Exit 0; Lint 0 Errors/775 Warnungen
+- Datei-Größen: 5 größte Dateien 2166/1746/1743/1637/1499 → jetzt max. 866 Zeilen Orchestrator; keine neue Datei > ~650 Zeilen
+- Ausstehend/Risiken: (a) karaoke-app.tsx (1624) + use-battle-royale-game.ts (1462) + mirror-party-setup-lite.tsx (1314) + medley-game-hook.ts (1309) sind weitere Auslagerungskandidaten (bewusst nicht in dieser Runde: App-Root = hohes Risiko); (b) pre-existing Placeholder-Bugs in Einzelsprachen (z.B. tournament.accuracy {n}-Leiche in zh/ru, partyStarting.startPlayerHint fehlendes {name} in zh/ru/nl/pl) — kleine Follow-up-Runde empfohlen; (c) Dev-Server stirbt gelegentlich in der Sandbox (OOM/Prozess-Management) → Double-Fork-Neustart ist etablierte Konvention

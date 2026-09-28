@@ -164,7 +164,7 @@ medley: {
   winner: 'Vincitore',
   tieTitle: 'Pareggio!',
   tieSubtitle: 'I migliori condividono il punteggio più alto — niente campione questa volta.',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 Concorso Medley!',
   shareWinner: '🏆 Vincitore: {name} ({score} pt)',
   shareBestCombo: '🔥 Miglior combo: {n}x',
 },
@@ -398,7 +398,7 @@ rateMySong: {
   challengeBonus: '+{n} Bonus Sfida!',
   confettiMessage: 'ESIBIZIONE INCREDIBILE!',
   genreStats: 'Statistiche per Genere',
-  wallOfFame: 'Wall of Fame',
+  wallOfFame: 'Muro della Fama',
   scoreLabel: 'Punteggio: {n}',
   challenges: {
     accent: {

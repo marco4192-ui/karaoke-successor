@@ -31,7 +31,6 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       if (allSongs.length === lastSyncedCountRef.current) {
         return;
       }
-      lastSyncedCountRef.current = allSongs.length;
 
       const simplifiedSongs = allSongs
         .filter(song => song.id && song.title) // Skip songs without id or title
@@ -59,6 +58,11 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
           payload: simplifiedSongs,
         }),
       });
+
+      // Mark as synced only AFTER a successful POST — a failed sync (e.g.
+      // server briefly unreachable) must retry on the next 30s tick instead
+      // of being skipped forever because the count was already recorded.
+      lastSyncedCountRef.current = allSongs.length;
 
     } catch (error) {
       // eslint-disable-next-line no-console

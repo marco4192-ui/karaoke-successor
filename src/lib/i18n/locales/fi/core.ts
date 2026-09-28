@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Ladataan globaaliin tulostaulukkoon...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Vahvistamaton (ei todistetta)',
+  verifiedDesc: 'Tämä tulos vahvistettiin huijauksenestojärjestelmällä',
+  unverifiedDesc: 'Huijauksenestotodistetta ei sisällytetty tähän tulokseen',
 },
 shareSection: {
   title: '📤 Jaa tuloksesi',

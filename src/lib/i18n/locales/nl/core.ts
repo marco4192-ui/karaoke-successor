@@ -42,7 +42,7 @@ homeScreen: {
   mobileCompanionDesc: 'Gebruik je smartphone als microfoon of afstandsbediening! Scan de QR-code om te verbinden.',
   wifiStep1: '1. Zelfde WiFi-netwerk',
   wifiStep2: '2. Scan QR met camera',
-  wifiStep3: '3. Open link in browser',
+  wifiStep3: '3. Open de link in de browser',
   detectingNetwork: 'Netwerkadres detecteren...',
   selectCharacter: 'Selecteer je profiel',
   inactiveProfiles: 'inactief profiel(en) verborgen. Schakel ze in bij Profielinstellingen.',
@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Uploaden naar wereldwijd leaderboard...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Niet geverifieerd (zonder bewijs)',
+  verifiedDesc: 'Deze score is geverifieerd door het anti-cheat-systeem',
+  unverifiedDesc: 'Voor deze score is geen anti-cheat-bewijs meegestuurd',
 },
 shareSection: {
   title: '📤 Deel je score',

@@ -177,7 +177,7 @@ results: {
 resultsScreen: {
   newGlobalHighscore: '🎉 Nieuwe wereldwijde highscore!',
   uploadedRank: 'Geüpload! Rang #{n}',
-  uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
+  uploadedRankVerified: 'Geüpload! Rang #{n} (geverifieerd)',
   uploadFailed: 'Uploaden mislukt',
   noResults: 'Geen resultaten beschikbaar',
   accuracyLabel: '{n}% nauwkeurigheid',
@@ -249,8 +249,8 @@ highscoreScreen: {
   accuracyLabel: '{n}% nauwkeurigheid',
   maxComboLabel: '{n}x max combo',
   totalPoints: 'totaal punten',
-  searchPlaceholder: 'Search players or songs...',
-  searchNoResults: 'No results for "{q}"',
+  searchPlaceholder: 'Zoek spelers of nummers...',
+  searchNoResults: 'Geen resultaten voor "{q}"',
   verified: 'Verified',
   unverified: 'Unverified',
   songsPlayed: '{n} songs',
@@ -259,7 +259,7 @@ highscoreScreen: {
   globalRank: 'Global Rank',
   localHighlight: 'Your profile',
   top100: 'Top 100',
-  noSearchResults: 'No players found matching your search',
+  noSearchResults: 'Geen spelers gevonden die overeenkomen met je zoekopdracht',
 },
 keyboardShortcuts: {
   esc: 'Pauzeren / Terug / Afsluiten',

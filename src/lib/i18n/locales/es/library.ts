@@ -178,8 +178,8 @@ songLeaderboardPreview: {
   youRank: 'Tú #{rank}',
   worldwide: 'Worldwide',
   local: 'Local',
-  noScores: 'No scores yet',
-  loading: 'Loading...',
+  noScores: 'Aún no hay puntuaciones',
+  loading: 'Cargando...',
 },
 songStart: {
   micAssignment: '🎤 Asignar micrófono',

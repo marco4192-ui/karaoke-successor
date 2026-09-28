@@ -21,8 +21,8 @@ profile: {
   showPhoto: '显示照片',
   photoUploaded: '照片已上传',
   noPhoto: '无照片',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: '你的成绩将被上传到全球排行榜。',
+  privacyHintDesc: '你可以随时在档案设置中退出。',
   storageMode: {
     title: '档案存储方式',
     local: '仅本地',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: '隐藏二维码',
   showQrCode: '显示二维码',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: '参与在线排行榜，与其他玩家分享你的成绩',
   loadProfile: '加载在线档案',
 },
 characterCard: {

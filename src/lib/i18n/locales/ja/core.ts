@@ -45,7 +45,7 @@ homeScreen: {
   wifiStep3: '3. ブラウザでリンクを開く',
   detectingNetwork: 'ネットワークアドレスを検出中...',
   selectCharacter: 'キャラクターを選択',
-  inactiveProfiles: '非アクティブなプロファイル({n}件)が非表示です。プロファイル設定で有効にしてください。',
+  inactiveProfiles: '非アクティブなプロファイルが非表示です。プロファイル設定で有効にしてください。',
 },
 common: {
   loading: '読み込み中...',
@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'グローバルリーダーボードにアップロード中...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: '検証済みスコア',
+  unverified: '未検証（証拠なし）',
+  verifiedDesc: 'このスコアはアンチチートシステムによって検証済みです',
+  unverifiedDesc: 'このスコアにはアンチチートの証拠が含まれていません',
 },
 shareSection: {
   title: '📤 あなたのスコアをシェア',

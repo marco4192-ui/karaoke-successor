@@ -9,6 +9,7 @@ import { partyTranslations } from './party';
 import { medleyTournamentTranslations } from './medleyTournament';
 import { profileTranslations } from './profile';
 import { mobileTranslations } from './mobile';
+import { completionTranslations } from './completion';
 import { deepMerge } from '../deep-merge';
 
 export const noTranslations = [
@@ -20,4 +21,5 @@ export const noTranslations = [
   medleyTournamentTranslations,
   profileTranslations,
   mobileTranslations,
+  completionTranslations,
 ].reduce(deepMerge, {} as Record<string, unknown>);

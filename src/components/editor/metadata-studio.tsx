@@ -20,10 +20,17 @@
  *
  * Engine is the shared pipeline (R2 cache → R6 factual lookup → LLM chunks R3)
  * — identical results to the former cards, one UI.
+ *
+ * R3 refactor: this file is now the ORCHESTRATOR — it owns all state and the
+ * run/apply logic. The view blocks live in ./metadata-studio/:
+ *   types.ts (studio types) · constants.ts (batch constants) ·
+ *   hooks.ts (rule-job state + listen preview) · studio-config-bar.tsx ·
+ *   rule-mode-panel.tsx · manual-edit-panel.tsx · run-controls.tsx ·
+ *   status-section.tsx · suggestions-panel.tsx
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Song } from '@/types/game';
 import { updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
@@ -35,8 +42,6 @@ import {
   HarmonizeStats,
 } from '@/lib/ai/harmonize-client';
 import {
-  SuggestionRow,
-  ConfidenceFilter,
   fieldPassesThreshold,
   countApplicableSongs,
 } from '@/components/editor/harmonize-shared';
@@ -45,61 +50,28 @@ import {
   planRuleLanguageHarmonization,
   planManualGenreReview,
   ruleHarmonizer,
-  RuleHarmonizeJobState,
 } from '@/lib/editor/rule-harmonizer';
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
-import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
-export type StudioScope = 'all' | 'selection';
-export type StudioMode = 'fill' | 'harmonize' | 'rule' | 'manual';
-export type StudioWriteTarget = 'txt' | 'local';
+import { STUDIO_RECOMMENDED_BATCH } from './metadata-studio/constants';
+import { useManualPreview, useRuleHarmonizerState } from './metadata-studio/hooks';
+import type {
+  ManualEditDraft,
+  MetadataStudioProps,
+  StudioMode,
+  StudioScope,
+  StudioWriteTarget,
+} from './metadata-studio/types';
+import { StudioConfigBar } from './metadata-studio/studio-config-bar';
+import { RuleModePanel } from './metadata-studio/rule-mode-panel';
+import { ManualEditPanel } from './metadata-studio/manual-edit-panel';
+import { BigBatchConfirmDialog, RunControls } from './metadata-studio/run-controls';
+import { LoadingBanner, RuleDoneBanner, StatusFeedback } from './metadata-studio/status-section';
+import { ApplyAllWarningDialog, SuggestionsPanel } from './metadata-studio/suggestions-panel';
 
-interface MetadataStudioProps {
-  songs: Song[];
-  /** Current multi-selection (select mode) — live counts in the scope toggle. */
-  selectedIds: Set<string>;
-  /** Expanded state is lifted so the floating select bar can open the studio. */
-  open: boolean;
-  onToggle: () => void;
-  /** Incremented when opened from the select bar → re-focus the "selection" scope. */
-  selectionFocusToken?: number;
-  /** Select mode is live (song cards show checkboxes) — the Select-Songs
-   *  button inside the studio toggles it (user request: the button belongs
-   *  to the studio, placed next to Run). */
-  selectMode: boolean;
-  onToggleSelectMode: () => void;
-  /** Clears the whole multi-selection (Deselect button next to Select-Songs). */
-  onClearSelection: () => void;
-  onApplied: () => void;
-  t: (key: string) => string;
-}
-
-/**
- * Recommended batch size for the AI pipeline (user request: real measured
- * value, not a good-will number).
- *
- * Measured in THIS sandbox (full 12-song chunks):
- *  - factual lookup (MusicBrainz ~1 req/s + Deezer): ~65 s per 12 songs ≈ 5.4 s/song
- *  - LLM analysis:                                  ~8.5 s per 12 songs ≈ 0.7 s/song
- *  - txt apply:                                     ~0.1 s/song
- * ⇒ worst case ≈ 6 s per song (fill-missing with empty genre/year/language).
- * 20 songs ≈ 2 min worst case — the accepted waiting-time ceiling.
- */
-export const STUDIO_RECOMMENDED_BATCH = 20;
-/** Worst-case seconds per song for the estimated-time display. */
-const SECONDS_PER_SONG_WORST_CASE = 6;
-
-/** Subscribe to the singleton rule-harmonizer background job state. */
-function useRuleHarmonizerState(): RuleHarmonizeJobState {
-  const [state, setState] = useState<RuleHarmonizeJobState>(() => ruleHarmonizer.getState());
-  useEffect(() => {
-    const unsubscribe = ruleHarmonizer.subscribe(() => setState(ruleHarmonizer.getState()));
-    setState(ruleHarmonizer.getState());
-    return unsubscribe;
-  }, []);
-  return state;
-}
+// Stable public surface of the old module path (types + measured constant).
+export { STUDIO_RECOMMENDED_BATCH } from './metadata-studio/constants';
+export type { StudioScope, StudioMode, StudioWriteTarget } from './metadata-studio/types';
 
 export function MetadataStudio({
   songs,
@@ -238,7 +210,7 @@ export function MetadataStudio({
   /** Per-song edited values (songId → raw input strings). An edit only
    *  counts as "changed" when it differs from the current value (see
    *  manualUpdatesFor) — unchanged entries are never applied. */
-  const [manualEdits, setManualEdits] = useState<Record<string, { genre?: string; language?: string; year?: string }>>({});
+  const [manualEdits, setManualEdits] = useState<Record<string, ManualEditDraft>>({});
   const [manualEditApplyProgress, setManualEditApplyProgress] = useState<{ done: number; total: number } | null>(null);
 
   /** Full song lookup for the manual-review preview (items only carry
@@ -249,100 +221,8 @@ export function MetadataStudio({
     return map;
   }, [songs]);
 
-  // ── Manual-review audio preview ──
-  // Lets the user LISTEN to a song before picking a main genre (user request:
-  // a title alone doesn't reveal the genre of "Comedy"/"AI"/"Oldies" songs,
-  // and researching each one externally isn't practical).
-  const [manualPreviewId, setManualPreviewId] = useState<string | null>(null);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewStopTimerRef = useRef<number | null>(null);
-  /** Generation counter — invalidates in-flight async previews after stop. */
-  const previewGenRef = useRef(0);
-
-  const stopManualPreview = useCallback(() => {
-    previewGenRef.current++;
-    if (previewStopTimerRef.current !== null) {
-      window.clearTimeout(previewStopTimerRef.current);
-      previewStopTimerRef.current = null;
-    }
-    const audio = previewAudioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.removeAttribute('src');
-      audio.load(); // release media resources
-      previewAudioRef.current = null;
-    }
-    setManualPreviewId(null);
-  }, []);
-
-  /** Play / stop a 30-second preview of a manual-review song. Audio-URL
-   *  first (restored via ensureSongUrls in Tauri), video container fallback
-   *  (mp4/webm audio track plays fine in an <audio> element). */
-  const toggleManualPreview = useCallback(async (songId: string) => {
-    if (manualPreviewId === songId) {
-      stopManualPreview();
-      return; // toggle off
-    }
-    stopManualPreview();
-    const generation = previewGenRef.current;
-    const song = songById.get(songId);
-    if (!song) return;
-
-    let target = song;
-    if (!target.audioUrl) {
-      try { target = await ensureSongUrls(song); } catch { /* keep original */ }
-    }
-    if (generation !== previewGenRef.current) return; // cancelled meanwhile
-
-    const src = target.audioUrl || target.videoUrl || target.videoBackground;
-    if (!src) return;
-
-    const audio = new Audio();
-    audio.volume = 0.5;
-    audio.src = src;
-    previewAudioRef.current = audio;
-
-    const startTime = target.previewStart && target.previewStart > 0
-      ? target.previewStart
-      : target.preview?.startTime
-        ? target.preview.startTime / 1000
-        : 0;
-
-    const startPlay = () => {
-      if (generation !== previewGenRef.current || previewAudioRef.current !== audio) return;
-      try {
-        if (startTime > 0 && Number.isFinite(audio.duration) && audio.duration >= startTime) {
-          audio.currentTime = startTime;
-        }
-      } catch { /* seeking unsupported — play from 0 */ }
-      audio.play().catch(() => {
-        if (previewAudioRef.current === audio) stopManualPreview();
-      });
-    };
-    audio.addEventListener('loadedmetadata', startPlay, { once: true });
-    audio.addEventListener('ended', () => {
-      if (previewAudioRef.current !== audio) return;
-      previewAudioRef.current = null;
-      if (previewStopTimerRef.current !== null) {
-        window.clearTimeout(previewStopTimerRef.current);
-        previewStopTimerRef.current = null;
-      }
-      setManualPreviewId(null);
-    });
-
-    setManualPreviewId(songId);
-
-    // Auto-stop after the preview window (same default as the library preview)
-    const durationSec = target.previewDuration && target.previewDuration > 0
-      ? target.previewDuration
-      : target.preview?.duration
-        ? target.preview.duration / 1000
-        : 30;
-    previewStopTimerRef.current = window.setTimeout(() => stopManualPreview(), durationSec * 1000);
-  }, [manualPreviewId, songById, stopManualPreview]);
-
-  // Release audio resources when the studio unmounts
-  useEffect(() => () => stopManualPreview(), [stopManualPreview]);
+  // ── Manual-review audio preview (listen before you assign/edit) ──
+  const { manualPreviewId, toggleManualPreview, stopManualPreview } = useManualPreview(songById);
 
   /** Skip one manual-review song (keeps its genre as-is for this session). */
   const skipManualSong = useCallback((songId: string) => {
@@ -494,6 +374,39 @@ export function MetadataStudio({
     }
   }, [scopeSongs, manualUpdatesFor, writeTarget, onApplied]);
 
+  // ── Field / pick / edit plumbing for the extracted panels ──
+
+  /** Toggle one metadata field (scope of fill/harmonize/manual editing). */
+  const toggleField = useCallback((key: 'genre' | 'language' | 'year') => {
+    setFields(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  /** Genre pick in the manual-review dropdown (songId → main genre). */
+  const handleManualPickChange = useCallback((songId: string, genre: string) => {
+    setManualPicks(prev => ({ ...prev, [songId]: genre }));
+  }, []);
+
+  /** Draft edit in the manual-edit list (merged into the song's draft). */
+  const handleManualEditChange = useCallback((songId: string, patch: Partial<ManualEditDraft>) => {
+    setManualEdits(prev => ({ ...prev, [songId]: { ...prev[songId], ...patch } }));
+  }, []);
+
+  /** Skip ALL open manual-review songs (stops a running preview). */
+  const handleSkipAllManual = useCallback(() => {
+    stopManualPreview();
+    setSkippedManualIds(prev => {
+      const next = new Set(prev);
+      for (const m of manualReview) next.add(m.songId);
+      return next;
+    });
+    setManualPicks({});
+  }, [manualReview, stopManualPreview]);
+
+  /** Restore all session-skipped manual-review songs. */
+  const handleRestoreSkippedManual = useCallback(() => {
+    setSkippedManualIds(new Set());
+  }, []);
+
   const ruleJob = useRuleHarmonizerState();
   const ruleRunning = ruleJob.status === 'running';
   /** Completion banner (user item 7): stays visible after the job finishes
@@ -506,6 +419,11 @@ export function MetadataStudio({
   const ruleDoneVisible =
     (ruleJob.status === 'done' || ruleJob.status === 'aborted') &&
     ruleJob.total > 0 && !ruleDoneDismissed;
+
+  /** Abort the background rule job (loading banner button). */
+  const handleAbortRuleJob = useCallback(() => {
+    ruleHarmonizer.abort();
+  }, []);
 
   /** Null out fields the user deselected; in fill mode keep only empty fields. */
   const filterSuggestions = useCallback((
@@ -742,49 +660,8 @@ export function MetadataStudio({
     }
   }, [rulePlan, writeTarget, onApplied]);
 
-  // ── Small UI atoms ──
-  const segButton = (
-    active: boolean, onClick: () => void, label: React.ReactNode, testId: string, color = 'violet',
-  ) => (
-    <button
-      onClick={onClick}
-      data-testid={testId}
-      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
-        active
-          ? color === 'violet'
-            ? 'bg-violet-500/20 border-violet-500/60 text-violet-200'
-            : color === 'cyan'
-              ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-200'
-              : 'bg-amber-500/20 border-amber-500/60 text-amber-200'
-          : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
-  const fieldToggle = (key: 'genre' | 'language' | 'year', icon: string) => (
-    <button
-      onClick={() => setFields(prev => ({ ...prev, [key]: !prev[key] }))}
-      aria-pressed={fields[key]}
-      data-testid={`studio-field-${key}`}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
-        fields[key]
-          ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
-          : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
-      }`}
-    >
-      <span>{icon}</span>
-      <span>{t(`editor.songInfoTab.${key}`)}</span>
-      {fields[key]
-        ? <span className="text-emerald-400">✓</span>
-        : <span className="text-white/30">○</span>}
-    </button>
-  );
-
   const applicableCount = countApplicableSongs(suggestions, minConfidence);
   const noFieldsSelected = !fields.genre && !fields.language && !fields.year;
-  const rulePreview = rulePlan.slice(0, 8);
 
   return (
     <div className="bg-white/[0.03] border border-white/10 rounded-xl overflow-hidden" data-testid="metadata-studio">
@@ -824,811 +701,163 @@ export function MetadataStudio({
 
       {open && (
         <div className="px-4 pb-4 space-y-3 border-t border-white/10 pt-3">
-          {/* ── Scope ── */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioScope')}</span>
-            {segButton(scope === 'all', () => setScope('all'),
-              t('editor.studioScopeAll').replace('{n}', String(songs.length)), 'studio-scope-all')}
-            {segButton(scope === 'selection', () => setScope('selection'),
-              t('editor.studioScopeSelection').replace('{n}', String(selectedIds.size)), 'studio-scope-selection')}
-          </div>
+          {/* ── Scope / fields / mode / write target ── */}
+          <StudioConfigBar
+            scope={scope}
+            onScopeChange={setScope}
+            mode={mode}
+            onModeChange={setMode}
+            writeTarget={writeTarget}
+            onWriteTargetChange={setWriteTarget}
+            fields={fields}
+            onToggleField={toggleField}
+            songsCount={songs.length}
+            selectionCount={selectedIds.size}
+            t={t}
+          />
 
-          {/* ── Fields ── */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioFields')}</span>
-            {fieldToggle('genre', '🎸')}
-            {fieldToggle('language', '🌐')}
-            {fieldToggle('year', '📅')}
-          </div>
-
-          {/* ── Mode ── */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioMode')}</span>
-            {segButton(mode === 'fill', () => setMode('fill'), t('editor.studioModeFill'), 'studio-mode-fill')}
-            {segButton(mode === 'harmonize', () => setMode('harmonize'), t('editor.studioModeHarmonize'), 'studio-mode-harmonize')}
-            {segButton(mode === 'rule', () => setMode('rule'), t('editor.studioModeRule'), 'studio-mode-rule', 'cyan')}
-            {segButton(mode === 'manual', () => setMode('manual'), `✏️ ${t('editor.studioModeManual')}`, 'studio-mode-manual', 'amber')}
-          </div>
-
-          {/* ── Write target ── */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioWriteTarget')}</span>
-            {segButton(writeTarget === 'txt', () => setWriteTarget('txt'), '📄 ' + t('editor.studioWriteTxt'), 'studio-target-txt', 'cyan')}
-            {segButton(writeTarget === 'local', () => setWriteTarget('local'), '💾 ' + t('editor.studioWriteLocal'), 'studio-target-local', 'amber')}
-          </div>
-          {writeTarget === 'local' && (
-            <p className="text-[10px] text-amber-300/70 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5 leading-relaxed" data-testid="studio-local-hint">
-              ⚠️ {t('editor.studioWriteLocalHint')}
-            </p>
+          {/* ── Rule mode: plan info + preview + manual review list ── */}
+          {mode === 'rule' && (
+            <RuleModePanel
+              rulePlan={rulePlan}
+              ruleGenrePlanCount={ruleGenrePlanCount}
+              ruleLanguagePlanCount={ruleLanguagePlanCount}
+              ruleRunning={ruleRunning}
+              manualReview={manualReview}
+              skippedManualCount={skippedManualCount}
+              manualPicks={manualPicks}
+              onManualPickChange={handleManualPickChange}
+              onSkipManualSong={skipManualSong}
+              onSkipAllManual={handleSkipAllManual}
+              onRestoreSkippedManual={handleRestoreSkippedManual}
+              onApplyManualPicks={handleApplyManualPicks}
+              manualApplyProgress={manualApplyProgress}
+              songById={songById}
+              previewSongId={manualPreviewId}
+              onTogglePreview={toggleManualPreview}
+              allGenres={allGenres}
+              t={t}
+            />
           )}
 
-          {/* ── Mode-specific info ── */}
-          {mode === 'rule' && !ruleRunning && rulePlan.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[11px] text-cyan-300/80 font-medium">
-                {t('editor.ruleHarmonizeCount').replace('{count}', String(rulePlan.length))}
-                <span className="text-white/40 font-normal">
-                  {' '}(🎸 {ruleGenrePlanCount} · 🌐 {ruleLanguagePlanCount})
-                </span>
-              </p>
-              {/* Non-harmonizable remainder (user item 7): songs the rules
-                  can NEVER fix (pseudo-genres) — always visible so the user
-                  immediately sees what stays untouched. */}
-              {manualReview.length > 0 && (
-                <p className="text-[10px] text-amber-300/80">
-                  ⚠️ {t('editor.ruleHarmonizeNotFixable').replace('{count}', String(manualReview.length))}
-                </p>
-              )}
-              <div className="max-h-32 overflow-y-auto space-y-1 pr-1 text-[10px] font-mono" data-testid="studio-rule-preview">
-                {rulePreview.map(item => (
-                  <div key={`${item.field}-${item.songId}`} className="flex items-center gap-1.5 text-white/50">
-                    <span className="flex-shrink-0" title={item.field === 'language' ? 'Sprache' : 'Genre'}>
-                      {item.field === 'language' ? '🌐' : '🎸'}
-                    </span>
-                    <span className="truncate flex-1" title={`${item.artist} — ${item.title}`}>
-                      {item.field === 'language' ? item.currentLanguage : item.currentGenre}
-                    </span>
-                    <span className="text-white/30">→</span>
-                    <span className="text-cyan-300 truncate">
-                      {item.field === 'language' ? item.newLanguage : item.newGenre}
-                    </span>
-                  </div>
-                ))}
-                {rulePlan.length > rulePreview.length && (
-                  <p className="text-white/30 pt-1">+{rulePlan.length - rulePreview.length} …</p>
-                )}
-              </div>
-            </div>
-          )}
-          {mode === 'rule' && rulePlan.length === 0 && !ruleRunning && (
-            <div className="space-y-1">
-              <p className="text-[11px] text-white/40">✅ {t('editor.ruleHarmonizeNothing')}</p>
-              {manualReview.length > 0 && (
-                <p className="text-[10px] text-amber-300/80">
-                  ⚠️ {t('editor.ruleHarmonizeNotFixable').replace('{count}', String(manualReview.length))}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* ── Manual genre correction list (rule mode) ──
-              Songs with pseudo-genres ("AI", "Oldies", "A Cappella", "TV"…)
-              that no logical rule can map. The user picks the correct main
-              genre per song from the 23-genre dropdown, then applies — or
-              skips them (kept as-is). Rendered as long as there are open
-              items OR skipped ones (so the restore link stays reachable
-              even after "Skip all"). */}
-          {mode === 'rule' && (manualReview.length > 0 || skippedManualCount > 0) && (
-            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="studio-manual-review">
-              {manualReview.length > 0 && (<>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] text-amber-300 font-medium">
-                  ✋ {t('editor.manualReviewCount').replace('{count}', String(manualReview.length))}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-white/40 tabular-nums">
-                    {Object.keys(manualPicks).filter(k => manualReview.some(m => m.songId === k)).length}/{manualReview.length}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={manualReview.length === 0 || manualApplyProgress !== null}
-                    onClick={() => {
-                      stopManualPreview();
-                      setSkippedManualIds(prev => {
-                        const next = new Set(prev);
-                        for (const m of manualReview) next.add(m.songId);
-                        return next;
-                      });
-                      setManualPicks({});
-                    }}
-                    className="h-7 px-3 border-white/20 text-white/70 hover:bg-white/10 hover:text-white text-[11px]"
-                    title={t('editor.manualReviewSkipAllHint')}
-                    data-testid="studio-manual-skip-all"
-                  >
-                    ⏭️ {t('editor.manualReviewSkipAll')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={manualApplyProgress !== null || Object.values(manualPicks).length === 0}
-                    onClick={handleApplyManualPicks}
-                    className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
-                    data-testid="studio-manual-apply"
-                  >
-                    {manualApplyProgress
-                      ? `${manualApplyProgress.done}/${manualApplyProgress.total}`
-                      : t('editor.manualReviewApply')}
-                  </Button>
-                </div>
-              </div>
-              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualReviewDesc')}</p>
-              </>)}
-              {skippedManualCount > 0 && (
-                <p className="text-[10px] text-white/35 flex items-center gap-2 flex-wrap" data-testid="studio-manual-skipped-info">
-                  <span>⏭️ {t('editor.manualReviewSkippedInfo').replace('{count}', String(skippedManualCount))}</span>
-                  <button
-                    onClick={() => setSkippedManualIds(new Set())}
-                    className="underline underline-offset-2 hover:text-white/70 text-white/50 transition-colors"
-                    data-testid="studio-manual-restore"
-                  >
-                    {t('editor.manualReviewRestore')}
-                  </button>
-                </p>
-              )}
-              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1" data-testid="studio-manual-review-list">
-                {manualReview.map(item => {
-                  const previewSong = songById.get(item.songId);
-                  const hasAudio = !!(previewSong && (
-                    previewSong.audioUrl || previewSong.relativeAudioPath || previewSong.storedMedia
-                    || previewSong.videoUrl || previewSong.videoBackground || previewSong.relativeVideoPath
-                  ));
-                  const isPlaying = manualPreviewId === item.songId;
-                  return (
-                    <div
-                      key={item.songId}
-                      className={`flex flex-wrap sm:flex-nowrap items-center gap-2 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
-                        isPlaying ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
-                      }`}
-                    >
-                      {/* Listen-before-you-assign preview (user feedback point 1) */}
-                      <button
-                        onClick={() => void toggleManualPreview(item.songId)}
-                        disabled={!hasAudio}
-                        className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
-                          isPlaying
-                            ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
-                            : hasAudio
-                              ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
-                              : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
-                        }`}
-                        title={!hasAudio
-                          ? t('editor.manualReviewNoAudio')
-                          : isPlaying
-                            ? t('editor.manualReviewStopPreview')
-                            : t('editor.manualReviewPlay')}
-                        aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${item.title}`}
-                        data-testid={`studio-manual-play-${item.songId}`}
-                      >
-                        {isPlaying
-                          ? <Square className="w-3 h-3" />
-                          : <Play className="w-3 h-3 ml-0.5" />}
-                      </button>
-                      {/* Title + Artist */}
-                      <div className="flex-1 min-w-[140px] sm:min-w-[200px]">
-                        <p className="text-[11px] text-white/85 font-medium truncate" title={item.title}>{item.title}</p>
-                        <p className="text-[10px] text-white/40 truncate" title={item.artist}>{item.artist}</p>
-                      </div>
-                      {/* Current (pseudo) genre */}
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-amber-200/90 whitespace-nowrap">
-                        {item.currentGenre}
-                      </span>
-                      <span className="text-white/30 text-[10px]">→</span>
-                      {/* Main genre dropdown (23 genres) */}
-                      <select
-                        value={manualPicks[item.songId] ?? ''}
-                        onChange={e => setManualPicks(prev => ({ ...prev, [item.songId]: e.target.value }))}
-                        className="bg-gray-800 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white focus:border-amber-500 focus:outline-none min-w-[110px]"
-                        aria-label={`${t('editor.manualReviewApply')}: ${item.title}`}
-                        data-testid={`studio-manual-select-${item.songId}`}
-                      >
-                        <option value="">{t('editor.manualReviewChoose')}</option>
-                        {allGenres.map(g => (
-                          <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
-                        ))}
-                      </select>
-                      {/* Skip — keep this song's genre as-is (user feedback point 2) */}
-                      <button
-                        onClick={() => skipManualSong(item.songId)}
-                        className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
-                        title={t('editor.manualReviewSkip')}
-                        aria-label={`${t('editor.manualReviewSkip')}: ${item.title}`}
-                        data-testid={`studio-manual-skip-${item.songId}`}
-                      >
-                        <SkipForward className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Manual edit mode (R5-1) ──
-              Direct per-song editing for ALL songs in scope: the current
-              value + an editor side by side for every ACTIVE field (genre
-              dropdown, language/year free text). Changed inputs get an amber
-              ring; the Apply button in the header replaces the Run button. */}
+          {/* ── Manual edit mode (R5-1) ── */}
           {mode === 'manual' && (
-            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="manual-edit-panel">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-[11px] text-amber-300 font-medium">
-                  ✏️ {t('editor.manualEditChangedCount')
-                    .replace('{changed}', String(manualEditChangedCount))
-                    .replace('{total}', String(scopeSongs.length))}
-                </p>
-                <Button
-                  size="sm"
-                  disabled={manualEditChangedCount === 0 || manualEditApplyProgress !== null}
-                  onClick={handleApplyManualEdits}
-                  title={manualEditChangedCount === 0 ? t('editor.manualEditNoChanges') : undefined}
-                  className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
-                  data-testid="manual-edit-apply"
-                >
-                  {manualEditApplyProgress
-                    ? `${manualEditApplyProgress.done}/${manualEditApplyProgress.total}`
-                    : t('editor.manualReviewApply')}
-                </Button>
-              </div>
-              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualEditHint')}</p>
-              {scopeSongs.length === 0 ? (
-                <p className="text-[10px] text-white/40" data-testid="manual-edit-empty">
-                  ☑️ {t('editor.manualEditEmptyScope')}
-                </p>
-              ) : (
-                <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1" data-testid="manual-edit-list">
-                  {scopeSongs.map(song => {
-                    const edit = manualEdits[song.id];
-                    const updates = manualUpdatesFor(song);
-                    const changedFields =
-                      (updates.genre !== undefined ? 1 : 0) +
-                      (updates.language !== undefined ? 1 : 0) +
-                      (updates.year !== undefined ? 1 : 0);
-                    return (
-                      <div
-                        key={song.id}
-                        data-testid={`manual-edit-row-${song.id}`}
-                        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
-                          manualPreviewId === song.id ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
-                        }`}
-                      >
-                        {/* Listen-before-you-edit preview (same as the rule-based
-                            manual review list — user request: parity). */}
-                        {(() => {
-                          const hasAudio = !!(
-                            song.audioUrl || song.relativeAudioPath || song.storedMedia
-                            || song.videoUrl || song.videoBackground || song.relativeVideoPath
-                          );
-                          const isPlaying = manualPreviewId === song.id;
-                          return (
-                            <button
-                              onClick={() => void toggleManualPreview(song.id)}
-                              disabled={!hasAudio}
-                              className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
-                                isPlaying
-                                  ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
-                                  : hasAudio
-                                    ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
-                                    : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
-                              }`}
-                              title={!hasAudio
-                                ? t('editor.manualReviewNoAudio')
-                                : isPlaying
-                                  ? t('editor.manualReviewStopPreview')
-                                  : t('editor.manualReviewPlay')}
-                              aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${song.title}`}
-                              data-testid={`manual-edit-play-${song.id}`}
-                            >
-                              {isPlaying
-                                ? <Square className="w-3 h-3" />
-                                : <Play className="w-3 h-3 ml-0.5" />}
-                            </button>
-                          );
-                        })()}
-                        {/* Title + Artist */}
-                        <div className="flex-1 min-w-[130px] sm:min-w-[180px]">
-                          <p className="text-[11px] text-white/85 font-medium truncate" title={song.title}>{song.title}</p>
-                          <p className="text-[10px] text-white/40 truncate" title={song.artist}>{song.artist}</p>
-                        </div>
-
-                        {/* Genre: current value + genre dropdown (23 genres) */}
-                        {fields.genre && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.genre ? 'border-white/15 text-amber-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.genre || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <select
-                            value={edit?.genre ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], genre: e.target.value },
-                            }))}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none min-w-[110px] ${
-                              updates.genre !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.genre')}: ${song.title}`}
-                            data-testid={`manual-edit-genre-${song.id}`}
-                          >
-                            <option value="">{t('editor.manualReviewChoose')}</option>
-                            {allGenres.map(g => (
-                              <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
-                            ))}
-                          </select>
-                        </>)}
-
-                        {/* Language: current value + free text input */}
-                        {fields.language && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.language ? 'border-white/15 text-purple-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.language || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <input
-                            type="text"
-                            value={edit?.language ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], language: e.target.value },
-                            }))}
-                            placeholder={t('editor.songInfoTab.language')}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-28 ${
-                              updates.language !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.language')}: ${song.title}`}
-                            data-testid={`manual-edit-language-${song.id}`}
-                          />
-                        </>)}
-
-                        {/* Year: current value + numeric input (4 digits) */}
-                        {fields.year && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.year ? 'border-white/15 text-emerald-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.year || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={4}
-                            value={edit?.year ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], year: e.target.value.replace(/[^0-9]/g, '') },
-                            }))}
-                            placeholder={t('editor.songInfoTab.yearPlaceholder')}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-16 text-center ${
-                              updates.year !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.year')}: ${song.title}`}
-                            data-testid={`manual-edit-year-${song.id}`}
-                          />
-                        </>)}
-
-                        {/* Changed-field count for this row (subtle amber) */}
-                        {changedFields > 0 && (
-                          <span className="text-[10px] text-amber-300 font-mono whitespace-nowrap">
-                            ✏️ {changedFields}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <ManualEditPanel
+              scopeSongs={scopeSongs}
+              fields={fields}
+              edits={manualEdits}
+              onEditChange={handleManualEditChange}
+              getUpdates={manualUpdatesFor}
+              changedCount={manualEditChangedCount}
+              applyProgress={manualEditApplyProgress}
+              onApply={handleApplyManualEdits}
+              previewSongId={manualPreviewId}
+              onTogglePreview={toggleManualPreview}
+              allGenres={allGenres}
+              t={t}
+            />
           )}
 
-          {/* ── Run / progress ── */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Select-Songs button — moved INTO the studio (user request:
-                it only serves the studio, so it lives next to Run). */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onToggleSelectMode}
-              className={selectMode
-                ? 'bg-violet-500 hover:bg-violet-400 border-violet-500 text-white font-semibold text-xs'
-                : 'border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 text-xs'}
-              data-testid="studio-select-songs"
-            >
-              {selectMode
-                ? `✕ ${t('editor.exitSelectMode')}`
-                : `☑️ ${t('editor.enterSelectMode')}${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
-            </Button>
-
-            {/* Deselect — clears the whole multi-selection (user request:
-                same prominence as Select, only enabled with a selection). */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onClearSelection}
-              disabled={selectedIds.size === 0}
-              title={selectedIds.size === 0 ? undefined : `${t('editor.studioDeselect')} (${selectedIds.size})`}
-              className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 text-xs disabled:opacity-40"
-              data-testid="studio-deselect-songs"
-            >
-              {t('editor.studioDeselect')}{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
-            </Button>
-
-            {/* Manual mode (R5-1): no Run button — the Apply button inside
-                the manual edit list replaces it (direct editing, no AI job). */}
-            {mode !== 'manual' && (mode === 'rule' ? (
-              <Button
-                size="sm"
-                onClick={handleRuleStart}
-                disabled={ruleRunning || rulePlan.length === 0 || !!applyProgress || (scope === 'selection' && selectedIds.size === 0)}
-                className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs"
-                data-testid="studio-rule-start"
-              >
-                🧹 {applyProgress
-                  ? `${applyProgress.done}/${applyProgress.total}`
-                  : ruleRunning
-                    ? `${ruleJob.done}/${ruleJob.total}`
-                    : t('editor.ruleHarmonizeStart')}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleRunClick}
-                disabled={isLoading || noFieldsSelected || selectedIds.size === 0}
-                title={selectedIds.size === 0 ? t('editor.studioRunNeedsSelection') : undefined}
-                className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
-                data-testid="studio-run"
-              >
-                {isLoading ? (
-                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
-                ) : null}
-                {t('editor.studioStart')}
-                {!isLoading && mode === 'fill' && runSubset.length > 0 && selectedIds.size > 0 && (
-                  <span className="opacity-70">({runSubset.length})</span>
-                )}
-              </Button>
-            ))}
-
-            {/* No selection yet → explicit hint next to the greyed Run.
-                Rule mode with scope 'all' needs NO selection (the plan covers
-                every song) — showing the hint there made the disabled Run
-                feel like "nothing happens" (user item 7). */}
-            {mode !== 'manual' && selectedIds.size === 0 && (mode !== 'rule' || scope === 'selection') && (
-              <p className="text-[11px] text-amber-300/80">☑️ {t('editor.studioRunNeedsSelection')}</p>
-            )}
-            {noFieldsSelected && (
-              <p className="text-[11px] text-amber-300/80">{t('editor.studioNoFields')}</p>
-            )}
-          </div>
-
-          {/* ── Measured batch-size recommendation (real timings, see
-              STUDIO_RECOMMENDED_BATCH above) ── */}
-          {mode !== 'rule' && mode !== 'manual' && (
-            <p className="text-[10px] text-white/40 leading-relaxed" data-testid="studio-batch-hint">
-              💡 {t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}
-            </p>
-          )}
+          {/* ── Run / progress + batch-size hint ── */}
+          <RunControls
+            mode={mode}
+            scope={scope}
+            selectionCount={selectedIds.size}
+            selectMode={selectMode}
+            onToggleSelectMode={onToggleSelectMode}
+            onClearSelection={onClearSelection}
+            ruleRunning={ruleRunning}
+            rulePlanCount={rulePlan.length}
+            ruleJobDone={ruleJob.done}
+            ruleJobTotal={ruleJob.total}
+            applyProgress={applyProgress}
+            isLoading={isLoading}
+            noFieldsSelected={noFieldsSelected}
+            runSubsetCount={runSubset.length}
+            onRuleStart={handleRuleStart}
+            onRunClick={handleRunClick}
+            t={t}
+          />
 
           {/* ── Loading banner (obvious loading screen while the pipeline
               runs — phase, progress bar, elapsed time, cancel) ── */}
           {(isLoading || ruleRunning) && (
-            <div className="rounded-xl border border-violet-500/30 bg-violet-500/[0.07] p-3 space-y-2.5" data-testid="studio-loading-banner">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="inline-block w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                <span className="text-xs font-semibold text-violet-200">
-                  {ruleRunning
-                    ? t('editor.ruleHarmonizeStart')
-                    : progress
-                      ? t(progress.phase === 'lookup' ? 'editor.studioPhaseLookup' : 'editor.studioPhaseAi')
-                      : t('editor.studioPhaseCache')}
-                </span>
-                <span className="ml-auto font-mono text-[11px] text-white/50 tabular-nums">
-                  {ruleRunning
-                    ? `${ruleJob.done}/${ruleJob.total}`
-                    : progress
-                      ? `${progress.done}/${progress.total}`
-                      : '…'}
-                  {isLoading && runStartedAt !== null && ` · ${elapsedSec}s`}
-                </span>
-                {isLoading && (
-                  <button
-                    onClick={handleAbortRun}
-                    className="text-[10px] px-2 py-1 rounded-lg border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors whitespace-nowrap"
-                    data-testid="studio-cancel-job"
-                  >
-                    {t('editor.studioCancelJob')}
-                  </button>
-                )}
-                {ruleRunning && (
-                  <button
-                    onClick={() => ruleHarmonizer.abort()}
-                    className="text-[10px] px-2 py-1 rounded-lg border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors whitespace-nowrap"
-                  >
-                    {t('editor.ruleHarmonizeAbort')}
-                  </button>
-                )}
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-300"
-                  style={{
-                    width: ruleRunning
-                      ? `${ruleJob.total > 0 ? Math.round((ruleJob.done / ruleJob.total) * 100) : 0}%`
-                      : progress && progress.total > 0
-                        ? `${Math.round((progress.done / progress.total) * 100)}%`
-                        : '8%',
-                  }}
-                />
-              </div>
-              <p className="text-[10px] text-white/40">
-                {t('editor.studioLoadingHint')}
-              </p>
-            </div>
+            <LoadingBanner
+              isLoading={isLoading}
+              ruleRunning={ruleRunning}
+              progress={progress}
+              ruleJobDone={ruleJob.done}
+              ruleJobTotal={ruleJob.total}
+              runStartedAt={runStartedAt}
+              elapsedSec={elapsedSec}
+              onAbortRun={handleAbortRun}
+              onAbortRuleJob={handleAbortRuleJob}
+              t={t}
+            />
           )}
 
           {/* ── Rule-harmonization completion banner (user item 7) ──
               Persistent green feedback after the background job finished,
               so a finished harmonization is recognizable at a glance. */}
           {ruleDoneVisible && (
-            <div
-              className={`flex items-center gap-2 rounded-lg p-2 border ${
-                ruleJob.status === 'done'
-                  ? 'bg-emerald-500/10 border-emerald-500/30'
-                  : 'bg-amber-500/10 border-amber-500/30'
-              }`}
-              data-testid="studio-rule-done"
-            >
-              <span className="text-sm leading-none">{ruleJob.status === 'done' ? '✅' : '⏹️'}</span>
-              <p className={`text-[10px] flex-1 ${ruleJob.status === 'done' ? 'text-emerald-200/90' : 'text-amber-200/90'}`}>
-                {ruleJob.status === 'done'
-                  ? t('editor.ruleHarmonizeDone')
-                      .replace('{done}', String(ruleJob.done))
-                      .replace('{errors}', String(ruleJob.errors))
-                  : t('editor.ruleHarmonizeAborted')
-                      .replace('{done}', String(ruleJob.done))
-                      .replace('{total}', String(ruleJob.total))}
-              </p>
-              <button
-                onClick={() => setRuleDoneDismissed(true)}
-                className="text-white/40 hover:text-white/80 text-xs"
-                aria-label="Dismiss"
-              >
-                ✕
-              </button>
-            </div>
+            <RuleDoneBanner
+              ruleJob={ruleJob}
+              onDismiss={() => setRuleDoneDismissed(true)}
+              t={t}
+            />
           )}
 
-          {/* ── Error / stats / local-applied feedback ── */}
-          {error && (
-            <p className="text-xs text-red-400" data-testid="studio-error">{error}</p>
-          )}
-          {stats && stats.notAnalyzed > 0 && (
-            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-not-analyzed">
-              <span className="text-sm leading-none">⚠️</span>
-              <p className="text-[10px] text-amber-200/90 flex-1">
-                {t('editor.aiBatchNotAnalyzed').replace('{count}', String(stats.notAnalyzed))}
-              </p>
-            </div>
-          )}
-          {localAppliedInfo !== null && (
-            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2" data-testid="studio-local-applied">
-              <span className="text-sm leading-none">💾</span>
-              <p className="text-[10px] text-emerald-200/90 flex-1">
-                {t('editor.studioLocalApplied').replace('{n}', String(localAppliedInfo))}
-              </p>
-              <button onClick={() => setLocalAppliedInfo(null)} className="text-white/40 hover:text-white/80 text-xs" aria-label="Dismiss">✕</button>
-            </div>
-          )}
-
-          {/* ── txt persistence progress + file errors ── */}
-          {applyProgress && (
-            <div className="flex items-center gap-2 text-[11px] text-white/60">
-              <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-              <span className="font-mono tabular-nums">
-                {t('editor.aiBatchSavingFiles')
-                  .replace('{current}', String(applyProgress.done))
-                  .replace('{total}', String(applyProgress.total))}
-              </span>
-            </div>
-          )}
-          {fileErrors !== null && (
-            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-file-error">
-              <span className="text-sm leading-none">⚠️</span>
-              <p className="text-[10px] text-amber-200/90 flex-1">
-                {t('editor.aiBatchFileErrors').replace('{count}', String(fileErrors))}
-              </p>
-              <button onClick={() => setFileErrors(null)} className="text-white/40 hover:text-white/80 text-xs" aria-label="Dismiss">✕</button>
-            </div>
-          )}
-
-          {/* ── Lyrics warm-up indicator (txt mode) ── */}
-          {warmupProgress && (
-            <div className="flex items-center gap-2 text-[11px] text-white/50">
-              <span>📖</span>
-              <span className="font-mono tabular-nums">
-                {t('editor.aiBatchWarmup')
-                  .replace('{current}', String(warmupProgress.done))
-                  .replace('{total}', String(warmupProgress.total))}
-              </span>
-            </div>
-          )}
+          {/* ── Error / stats / progress / warm-up feedback ── */}
+          <StatusFeedback
+            error={error}
+            stats={stats}
+            localAppliedInfo={localAppliedInfo}
+            applyProgress={applyProgress}
+            fileErrors={fileErrors}
+            warmupProgress={warmupProgress}
+            onDismissLocalApplied={() => setLocalAppliedInfo(null)}
+            onDismissFileErrors={() => setFileErrors(null)}
+            t={t}
+          />
 
           {/* ── Suggestion list ── */}
           {suggestions.length > 0 && (
-            <>
-              <div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-white/10">
-                <ConfidenceFilter value={minConfidence} onChange={setMinConfidence} t={t} />
-                {stats && (
-                  <p className="text-[10px] text-white/40 truncate">
-                    {t('editor.aiBatchStatsLine')
-                      .replace('{cache}', String(stats.fromCache))
-                      .replace('{facts}', String(stats.factualHits))
-                      .replace('{ai}', String(stats.total - stats.fromCache))}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1" data-testid="studio-suggestions">
-                {suggestions.map(s => (
-                  <SuggestionRow
-                    key={s.songId}
-                    suggestion={s}
-                    minConfidence={minConfidence}
-                    onApply={handleApplySingle}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { setSuggestions([]); setStats(null); }}
-                  className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                  data-testid="studio-dismiss"
-                >
-                  {t('editor.aiBatchClose')}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowWarning(true)}
-                  disabled={applicableCount === 0 || !!applyProgress}
-                  className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs disabled:opacity-40"
-                  data-testid="studio-apply-all"
-                >
-                  {t('editor.aiApplyAll')} ({applicableCount}
-                  {applicableCount !== suggestions.length ? `/${suggestions.length}` : ''})
-                </Button>
-              </div>
-            </>
+            <SuggestionsPanel
+              suggestions={suggestions}
+              stats={stats}
+              minConfidence={minConfidence}
+              onMinConfidenceChange={setMinConfidence}
+              applicableCount={applicableCount}
+              applyProgress={applyProgress}
+              onApplySingle={handleApplySingle}
+              onDismiss={() => { setSuggestions([]); setStats(null); }}
+              onRequestApplyAll={() => setShowWarning(true)}
+              t={t}
+            />
           )}
 
           {/* ── Apply-all warning (txt mode modifies source files) ── */}
           {showWarning && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-              <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">⚠️</span>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm">{t('editor.aiHarmonizeWarnTitle')}</h3>
-                    <p className="text-white/60 text-xs mt-0.5">{t('editor.aiHarmonizeWarnSubtitle')}</p>
-                  </div>
-                </div>
-
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-white/70 space-y-2">
-                  {writeTarget === 'txt' ? (
-                    <>
-                      <p>{t('editor.aiHarmonizeWarn1')}</p>
-                      <ul className="list-disc list-inside space-y-1 text-white/60">
-                        <li>{t('editor.aiHarmonizeWarn2')}</li>
-                        <li>{t('editor.aiHarmonizeWarn3')}</li>
-                        <li>{t('editor.aiHarmonizeWarn4')}</li>
-                      </ul>
-                    </>
-                  ) : (
-                    <p>{t('editor.studioWriteLocalWarn').replace('{count}', String(applicableCount))}</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{applicableCount}</span>
-                  <span>{t('editor.aiHarmonizeWarnCount')}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-[11px] text-white/50 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
-                  <span>🛡️</span>
-                  <span>{t('editor.aiBatchThresholdNote').replace('{value}', String(minConfidence))}</span>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowWarning(false)}
-                    disabled={!!applyProgress}
-                    className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                  >
-                    {t('editor.aiHarmonizeWarnCancel')}
-                  </Button>
-                  <Button
-                    onClick={handleApplyAll}
-                    disabled={!!applyProgress}
-                    className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
-                  >
-                    {applyProgress
-                      ? `${applyProgress.done}/${applyProgress.total}`
-                      : t('editor.aiHarmonizeWarnConfirm')}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ApplyAllWarningDialog
+              writeTarget={writeTarget}
+              applicableCount={applicableCount}
+              minConfidence={minConfidence}
+              applyProgress={applyProgress}
+              onApplyAll={handleApplyAll}
+              onCancel={() => setShowWarning(false)}
+              t={t}
+            />
           )}
 
           {/* ── Big-batch confirmation (run with more songs than the measured
               recommendation → explicit time estimate before the job starts) ── */}
           {confirmBigBatch && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-              <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl" data-testid="studio-big-batch-dialog">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">⏳</span>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm">{t('editor.studioBigBatchTitle')}</h3>
-                    <p className="text-white/60 text-xs mt-0.5">
-                      {t('editor.studioBigBatchDesc')
-                        .replace('{n}', String(runSubset.length))
-                        .replace('{min}', String(Math.max(1, Math.ceil(runSubset.length * SECONDS_PER_SONG_WORST_CASE / 60))))}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-[11px] text-white/60 space-y-1.5">
-                  <p>{t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}</p>
-                  <p className="text-white/40">{t('editor.studioBigBatchTip')}</p>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfirmBigBatch(false)}
-                    className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                  >
-                    {t('editor.aiHarmonizeWarnCancel')}
-                  </Button>
-                  <Button
-                    onClick={() => { setConfirmBigBatch(false); void handleRun(); }}
-                    className="flex-1 bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
-                    data-testid="studio-big-batch-confirm"
-                  >
-                    {t('editor.studioBigBatchConfirm')}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <BigBatchConfirmDialog
+              runSubsetCount={runSubset.length}
+              onConfirm={() => { setConfirmBigBatch(false); void handleRun(); }}
+              onCancel={() => setConfirmBigBatch(false)}
+              t={t}
+            />
           )}
         </div>
       )}

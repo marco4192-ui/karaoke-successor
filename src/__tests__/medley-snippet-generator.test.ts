@@ -266,7 +266,23 @@ describe('Medley Snippet Generator', () => {
   });
 
   describe('getAvailableLanguages()', () => {
-    it('returns sorted unique languages with "all" first', () => {
+    it('returns sorted unique languages with "all" first (≥5-song threshold met)', () => {
+      // Shared language-filter rule 3 (lib/game/language-filter.ts): a language
+      // needs ≥ MIN_SONGS_FOR_OWN_LANGUAGE_ENTRY (5) songs for its own entry.
+      const songs = [
+        ...Array.from({ length: 5 }, () => createMockSong({ language: 'en' })),
+        ...Array.from({ length: 5 }, () => createMockSong({ language: 'de' })),
+      ];
+
+      const langs = getAvailableLanguages(songs);
+      expect(langs[0]).toBe('all');
+      // Languages are canonicalized (meta-normalizer): de → German, en → English
+      expect(langs).toContain('German');
+      expect(langs).toContain('English');
+      expect(langs).not.toContain('Others');
+    });
+
+    it('collapses languages below the 5-song threshold into "Others"', () => {
       const songs = [
         createMockSong({ language: 'en' }),
         createMockSong({ language: 'de' }),
@@ -275,8 +291,9 @@ describe('Medley Snippet Generator', () => {
 
       const langs = getAvailableLanguages(songs);
       expect(langs[0]).toBe('all');
-      expect(langs).toContain('de');
-      expect(langs).toContain('en');
+      expect(langs).toContain('Others');
+      expect(langs).not.toContain('de');
+      expect(langs).not.toContain('en');
     });
 
     it('returns only "all" for empty song list', () => {

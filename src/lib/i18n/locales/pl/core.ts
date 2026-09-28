@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Przesyłanie do globalnej tabeli wyników...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Niezweryfikowany (bez dowodu)',
+  verifiedDesc: 'Ten wynik został zweryfikowany przez system anty-cheat',
+  unverifiedDesc: 'Do tego wyniku nie dołączono dowodu anty-cheat',
 },
 shareSection: {
   title: '📤 Udostępnij swój wynik',

@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Pokaż zdjęcie',
   photoUploaded: 'Zdjęcie przesłane',
   noPhoto: 'Brak zdjęcia',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Twoje wyniki zostaną przesłane do globalnej tabeli wyników.',
+  privacyHintDesc: 'Możesz zrezygnować w każdej chwili w ustawieniach profilu.',
   storageMode: {
     title: 'Miejsce zapisu profilu',
     local: 'Tylko lokalnie',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: 'Ukryj QR Code',
   showQrCode: 'Pokaż QR Code',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: 'Bierz udział w internetowej tabeli wyników i dziel się swoimi wynikami z innymi graczami',
   loadProfile: 'Wczytaj profil online',
 },
 characterCard: {

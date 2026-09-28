@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Näytä kuva',
   photoUploaded: 'Kuva ladattu',
   noPhoto: 'Ei kuvaa',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Tuloksesi ladataan globaaliin tulostaulukkoon.',
+  privacyHintDesc: 'Voit kieltäytyä milloin tahansa profiilin asetuksista.',
   storageMode: {
     title: 'Profiilin tallennus',
     local: 'Vain paikallisesti',
@@ -93,7 +93,7 @@ characterScreen: {
   hideQrCode: 'Piilota QR-koodi',
   showQrCode: 'Näytä QR-koodi',
   leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipationDesc: 'Osallistu verkkotulostaulukkoon ja jaa tuloksesi muiden pelaajien kanssa',
   loadProfile: 'Lataa verkkoprofiili',
 },
 characterCard: {

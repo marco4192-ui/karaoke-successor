@@ -164,7 +164,7 @@ medley: {
   winner: 'Zwycięzca',
   tieTitle: 'Remis!',
   tieSubtitle: 'Najlepsi dzielą najwyższy wynik — tym razem bez mistrza.',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 Konkurs medleyowy!',
   shareWinner: '🏆 Zwycięzca: {name} ({score} pkt)',
   shareBestCombo: '🔥 Najlepsze combo: {n}x',
 },

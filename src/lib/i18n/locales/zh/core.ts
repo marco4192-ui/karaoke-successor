@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: '正在上传到全球排行榜...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: '未验证（无凭证）',
+  verifiedDesc: '该成绩已通过反作弊系统验证',
+  unverifiedDesc: '该成绩未附带反作弊凭证',
 },
 shareSection: {
   title: '📤 分享你的分数',

@@ -314,7 +314,7 @@ mobileNav: {
   profile: 'Perfil',
 },
 companion: {
-  title: '📱 Companion Sing-A-Long',
+  title: '📱 Cantar Juntos',
   subtitle: 'Seu telefone acende aleatoriamente — é sua vez de cantar!',
   back: '← Voltar',
   backToParty: "Voltar para a Festa",

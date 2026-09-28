@@ -110,9 +110,9 @@ offlineBanner: {
 uploadStatus: {
   uploading: 'Загрузка в глобальную таблицу лидеров...',
   verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  unverified: 'Не верифицировано (без подтверждения)',
+  verifiedDesc: 'Этот результат верифицирован античит-системой',
+  unverifiedDesc: 'Для этого результата не было приложено античит-подтверждение',
 },
 shareSection: {
   title: '📤 Поделиться результатом',

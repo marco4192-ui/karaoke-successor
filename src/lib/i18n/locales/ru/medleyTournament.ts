@@ -164,7 +164,7 @@ medley: {
   winner: 'Победитель',
   tieTitle: 'Ничья!',
   tieSubtitle: 'Лучшие делят высший счёт — чемпиона в этот раз нет.',
-  shareHeader: '🎵 Medley Contest!',
+  shareHeader: '🎵 Медли-батл!',
   shareWinner: '🏆 Победитель: {name} ({score} очков)',
   shareBestCombo: '🔥 Лучшая серия: {n}x',
 },
