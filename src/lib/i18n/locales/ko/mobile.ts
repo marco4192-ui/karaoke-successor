@@ -188,6 +188,7 @@ mobileClient: {
   back: '← 뒤로',
   connecting: '서버에 연결 중...',
   retryConnection: '연결 재시도',
+  reconnecting: '재연결 중…',
   getReady: '준비하세요!',
   youreSinging: '부르는 중!',
   disconnect: '연결 끊기',

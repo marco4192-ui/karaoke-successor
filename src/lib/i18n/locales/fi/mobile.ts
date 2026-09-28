@@ -188,6 +188,7 @@ mobileClient: {
   back: '← Takaisin',
   connecting: 'Yhdistetään palvelimeen...',
   retryConnection: 'Yritä yhteyttä uudelleen',
+  reconnecting: 'Yhdistetään uudelleen…',
   getReady: 'VALMISTAUDU!',
   youreSinging: 'LAULAT NYT!',
   disconnect: 'Katkaise yhteys',

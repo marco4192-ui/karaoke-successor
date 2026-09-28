@@ -188,6 +188,7 @@ mobileClient: {
   back: '← 戻る',
   connecting: 'サーバーに接続中...',
   retryConnection: '再接続',
+  reconnecting: '再接続中…',
   getReady: '準備はいいか？',
   youreSinging: 'あなたの番！',
   disconnect: '切断',

@@ -109,10 +109,17 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
+
+  // Declared early (before the socket effect below) because the socket's
+  // 'connect' handler uses them for instant recovery. reconnectInternal is
+  // defined further down and bridged via reconnectInternalRef to avoid
+  // declaration-order issues.
+  const reconnectBackoffRef = useRef<number>(0);
+  const wakeUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectInternalRef = useRef<(_isWakeUp?: boolean) => Promise<void>>(async () => {});
 
   // Socket.IO connection ref
   const socketRef = useRef<Socket | null>(null);
@@ -145,9 +152,15 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   }, []);
 
   // ─── Socket.IO Connection (real-time, replaces polling) ───
+  // NOTE: deps intentionally do NOT include `isConnected`. Tearing the socket
+  // down on a transient disconnect flap destroyed the companion's real-time
+  // path and forced full HTTP re-connects (incl. new clientId) — Socket.IO's
+  // own reconnection (1-8s backoff) recovers far faster and its 'connect'
+  // handler flips the UI back online instantly. The socket lives exactly as
+  // long as we have a clientId (null after a user-initiated disconnect).
   useEffect(() => {
     // Only connect Socket.IO after we have a clientId from HTTP
-    if (!clientId || !isConnected) return;
+    if (!clientId) return;
 
     const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -167,6 +180,15 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       socketConnectedRef.current = true;
       // Register as companion with our clientId
       socket.emit('companion:register', { clientId });
+      // Instant recovery: the socket reconnected on its own (e.g. after a
+      // WiFi/sandbox hiccup) — no need to wait for the HTTP retry loop.
+      reconnectBackoffRef.current = 0;
+      if (!isConnectedRef.current) {
+        setIsConnected(true);
+        // Re-validate the HTTP session (refreshes the clientId's activity
+        // and re-syncs profile/gamestate) without generating a new one.
+        reconnectInternalRef.current(true).catch(() => {});
+      }
     });
 
     socket.on('disconnect', (reason) => {
@@ -271,7 +293,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       socketRef.current = null;
       socketConnectedRef.current = false;
     };
-  }, [clientId, isConnected, processGameStateUpdate]);
+  }, [clientId, processGameStateUpdate]);
 
   // ─── HTTP Fallback: Slow polling only when Socket.IO is NOT connected ───
   // This provides resilience if WebSocket fails or isn't available.
@@ -400,12 +422,18 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         callbacksRef.current.onError('Failed to connect to server');
       }
     } catch {
-      reconnectBackoffRef.current = Math.min(reconnectBackoffRef.current * 2 + 1000, 60000);
+      // Cap at 10s (was 60s): a karaoke party session must not sit on a
+      // dead "Retry Connection" screen for a minute — the socket reconnect
+      // (1-8s backoff) usually wins the race anyway.
+      reconnectBackoffRef.current = Math.min(reconnectBackoffRef.current * 2 + 1000, 10000);
       callbacksRef.current.onError('Connection failed - is the server running?');
     } finally {
       isConnectingRef.current = false;
     }
   }, [processGameStateUpdate]);
+  // Bridge for the socket 'connect' handler (declared above the socket
+  // effect) — always points at the latest reconnectInternal.
+  reconnectInternalRef.current = reconnectInternal;
 
   // Connect — idempotent, safe to call multiple times
   const connect = useCallback(async () => {
@@ -505,13 +533,13 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       }
 
       if (missedHeartbeats >= MAX_MISSED) {
+        // Mark the connection as down. NO setTimeout-reconnect here: this
+        // effect's cleanup runs the moment setIsConnected(false) re-renders
+        // the component, which previously cleared the just-scheduled
+        // reconnect timer — the companion then sat on the retry screen
+        // until a visibility/focus event fired. The dedicated retry effect
+        // below owns reconnection (it re-schedules itself safely).
         setIsConnected(false);
-        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = setTimeout(() => {
-          if (isConnectedRef.current === false) {
-            reconnectInternal(true).catch(() => {});
-          }
-        }, reconnectBackoffRef.current);
       }
     };
 
@@ -521,15 +549,41 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
-  }, [isConnected, clientId, reconnectInternal]);
+    // reconnectInternal intentionally removed: it is no longer called here.
+  }, [isConnected, clientId]);
+
+  // ─── Auto-reconnect retry loop ───
+  // Runs whenever the connection is down and owns the retry schedule. Each
+  // attempt bumps `retryTick`, which re-runs this effect and schedules the
+  // next attempt after the current backoff — unlike a ref-held timer this
+  // can never be torn down by its own state update. The isConnecting guard
+  // inside reconnectInternal serializes concurrent attempts (e.g. the
+  // initial mount connect or a socket-driven reconnect).
+  const [retryTick, setRetryTick] = useState(0);
+  useEffect(() => {
+    if (isConnected) return;
+    let cancelled = false;
+    const delay = Math.max(reconnectBackoffRef.current, 1000);
+    const timer = setTimeout(async () => {
+      await reconnectInternal(true).catch(() => {});
+      if (!cancelled) setRetryTick((t) => t + 1);
+    }, delay);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isConnected, retryTick, reconnectInternal, clientId]);
 
   // Shared wake-up handler
-  const wakeUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reconnectBackoffRef = useRef<number>(0);
-
   const handleWakeUp = useCallback(() => {
+    // Only act when the page is actually VISIBLE again. visibilitychange
+    // also fires when a tab is HIDDEN (e.g. a 2-tab desktop+companion E2E
+    // or a phone switched away) — running the HTTP-heartbeat probe from a
+    // hidden, throttled tab produced false-negative disconnects that tore
+    // down the whole companion UI. A hidden tab relies on Socket.IO's own
+    // reconnection instead.
+    if (document.visibilityState !== 'visible') return;
     if (wakeUpTimerRef.current) return;
     wakeUpTimerRef.current = setTimeout(() => { wakeUpTimerRef.current = null; }, 2000);
 
@@ -538,6 +592,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       socketRef.current.connect();
       return;
     }
+    // Socket healthy → nothing to wake up.
+    if (socketConnectedRef.current) return;
 
     // Fallback: HTTP heartbeat
     const currentClientId = clientIdRef.current;
@@ -547,13 +603,17 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'heartbeat', clientId: currentClientId }),
     }).then((r) => {
-      if (!r.ok) {
+      // Only declare the connection dead if the socket hasn't recovered
+      // while the (possibly slow) fetch was in flight.
+      if (!r.ok && !socketConnectedRef.current) {
         setIsConnected(false);
         reconnectInternal(true).catch(() => {});
       }
     }).catch(() => {
-      setIsConnected(false);
-      reconnectInternal(true).catch(() => {});
+      if (!socketConnectedRef.current) {
+        setIsConnected(false);
+        reconnectInternal(true).catch(() => {});
+      }
     });
   }, [reconnectInternal]);
 

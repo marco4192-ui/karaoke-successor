@@ -188,6 +188,7 @@ mobileClient: {
   back: '← Atrás',
   connecting: 'Conectando al servidor...',
   retryConnection: 'Reintentar Conexión',
+  reconnecting: 'Reconectando…',
   getReady: '¡PREPÁRATE!',
   youreSinging: '¡ESTÁS CANTANDO!',
   disconnect: 'Desconectar',

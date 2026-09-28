@@ -189,6 +189,7 @@ mobileClient: {
   back: '← 返回',
   connecting: '正在连接服务器...',
   retryConnection: '重新连接',
+  reconnecting: '正在重新连接…',
   getReady: '准备！',
   youreSinging: '轮到你了！',
   disconnect: '断开连接',

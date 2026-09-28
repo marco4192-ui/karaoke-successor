@@ -188,6 +188,7 @@ mobileClient: {
   back: '← Tilbage',
   connecting: 'Forbinder til server...',
   retryConnection: 'Prøv forbindelse igen',
+  reconnecting: 'Genopretter forbindelsen…',
   getReady: 'GØR DIG KLAR!',
   youreSinging: 'DU SYNGER!',
   disconnect: 'Afbryd',

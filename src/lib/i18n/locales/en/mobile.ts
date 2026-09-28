@@ -205,6 +205,7 @@ export const mobileTranslations = {
     back: '← Back',
     connecting: 'Connecting to server...',
     retryConnection: 'Retry Connection',
+    reconnecting: 'Reconnecting…',
     getReady: 'GET READY!',
     youreSinging: 'YOU\'RE SINGING!',
     disconnect: 'Disconnect'

@@ -201,6 +201,7 @@ mobileClient: {
   back: '← Zurück',
   connecting: 'Verbindung zum Server...',
   retryConnection: 'Verbindung wiederholen',
+  reconnecting: 'Verbindung wird wiederhergestellt…',
   getReady: 'MACH EUCH BEREIT!',
   youreSinging: 'DU SINGST JETZT!',
   disconnect: 'Verbindung trennen',

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -77,6 +78,19 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     onSongEnd: () => { data.loadGameResults(); data.loadQueue(); },
     onBrSinging: (payload) => setBrSinging(payload),
   });
+
+  // ── Connection resilience (Companion-Remount-Fix) ──
+  // Once the companion has been online, a transient disconnect must NOT
+  // swap the whole app for the "connecting" spinner — that unmounted
+  // MirrorView (and with it every overlay, search text and scroll
+  // position) on each connection flap. We keep the last UI mounted and
+  // show a slim reconnect banner instead. `hasConnectedOnce` is reset on
+  // an explicit user disconnect (✕) to preserve the original logout flow.
+  const [hasConnectedOnce, setHasConnectedOnce] = useState(false);
+  useEffect(() => {
+    if (isConnected) setHasConnectedOnce(true);
+  }, [isConnected]);
+  const isReconnecting = !isConnected && hasConnectedOnce;
 
   // ── Live Battle-Royale singing monitor (per-player pitch/hit/ghost data
   // pushed by the desktop at ~2 Hz while a BR round plays) ──
@@ -196,6 +210,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setProfile(null); setProfileName(''); setProfileColor('#06B6D4'); setAvatarPreview(null);
     removeItem(StorageKeys.MOBILE_PROFILE); removeItem(StorageKeys.CLIENT_ID);
     setActiveDesktopScreen('home');
+    // Back to the original logout flow: connecting-spinner → fresh session.
+    setHasConnectedOnce(false);
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     reconnectTimerRef.current = setTimeout(() => connect(), 500);
   }, [disconnect, connect]);
@@ -370,6 +386,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const isMountedRef2 = useRef(true);
   useEffect(() => {
     if (!isConnected || !clientId) return;
+    // Reset on every (re)run: the cleanup sets this to false, and without
+    // the reset the lock poll would freeze forever after a reconnect with
+    // a changed clientId — a stale "locked/not locked" state that made the
+    // whole remote-control UX feel flaky.
+    isMountedRef2.current = true;
     const pollLock = async () => {
       try {
         const res = await fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`);
@@ -420,7 +441,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       <MobileErrorBoundary>
 
       {/* ====== HEADER ====== */}
-      {isConnected && profile && !isSinging && (
+      {(isConnected || isReconnecting) && profile && !isSinging && (
         <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center justify-between px-3 py-2.5">
             {/* Links: Profil-Button */}
@@ -510,8 +531,21 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       )}
 
+      {/* ====== RECONNECT BANNER (keeps the app mounted through transient
+          disconnects — see hasConnectedOnce above) ====== */}
+      {isReconnecting && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-center gap-2 bg-amber-500/15 border-b border-amber-400/30 px-3 py-2"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-amber-300 animate-spin" aria-hidden="true" />
+          <span className="text-xs font-medium text-amber-200">{t('mobileClient.reconnecting')}</span>
+        </div>
+      )}
+
       {/* ====== MAIN CONTENT ====== */}
-      {!isConnected ? (
+      {!isConnected && !hasConnectedOnce ? (
         <div className="flex flex-col items-center justify-center p-8">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mb-4" />
           <p className="text-white/60 mb-4">{t('mobileClient.connecting')}</p>
@@ -672,7 +706,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {/* ====== FOOTER: Horiz. scrollbar Navigation ====== */}
-      {isConnected && profile && !showProfile && !isSinging && (
+      {(isConnected || isReconnecting) && profile && !showProfile && !isSinging && (
         <MobileBottomNav
           activeScreen={activeFooterScreen}
           onNavigate={handleFooterNavigate}

@@ -189,6 +189,7 @@ mobileClient: {
   back: '← Terug',
   connecting: 'Verbinden met server...',
   retryConnection: 'Verbinding opnieuw proberen',
+  reconnecting: 'Opnieuw verbinden…',
   getReady: 'MAAK JE KLAAR!',
   youreSinging: 'JE BENT AAN HET ZINGEN!',
   disconnect: 'Verbreken',

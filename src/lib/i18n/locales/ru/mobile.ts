@@ -189,6 +189,7 @@ mobileClient: {
   back: '← Назад',
   connecting: 'Подключение к серверу...',
   retryConnection: 'Повторить подключение',
+  reconnecting: 'Переподключение…',
   getReady: 'ПРИГОТОВЬТЕСЬ!',
   youreSinging: 'ВЫ ПОЁТЕ!',
   disconnect: 'Отключиться',
