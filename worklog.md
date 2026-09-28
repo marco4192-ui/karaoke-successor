@@ -305,3 +305,46 @@ Stage Summary:
 - Neue Songs im Browser behalten jetzt ihre Cover/Audio/Video-Dateien dauerhaft (Media-DB, wie der alte Converter vor R15) — vorher gingen die Dateien beim Picker bereits verloren
 - Gespeicherte note-lose Songs werden nicht mehr aus der Library gelöscht (Datenverlust-Fix)
 - Hinweis für den User: Bestehende Songs, deren Cover bereits nie persistiert wurden (vor diesem Fix erstellt), zeigen jetzt den sauberen Musik-Platzhalter statt des Fehler-Icons; einmal neu importiert/ gespeichert bleiben sie dauerhaft erhalten.
+
+---
+Task ID: r27
+Agent: main (Z.ai Code)
+Task: User-Bug-Report „Die Companion-Ansicht remountet zyklisch durch den Gamestate-Sync" — Ursache finden und beheben.
+
+Work Log:
+- Empirische Beweisführung mit Agent-Browser (2 Sessions: Desktop `/` + Companion `/mobile`, Companion als „Dave" verbunden):
+  1. DOM-Identitäts-Probe (Eigenschafts-Marker auf Knoten, 8s warten): 24 ersetzte Knoten kurz nach Load; 10s-IDLE-Probe danach: 0 Tote → kein permanenter, aber ein zyklischer Remount unter bestimmten Bedingungen.
+  2. View-Text-Sampling alle 500ms: Companion-Ansicht flippte alle ~2s zwischen HOME und LIBRARY hin und her = der zyklische Remount, live aufgezeichnet.
+  3. Server-Spielstand-Sampling (`/api/mobile?action=gamestate`): `currentScreen` alternierte home↔library, obwohl der Desktop-Screen stabil 'library' war.
+  4. Fetch-Hook Desktop: alle 5 Posts in 9s sagten 'library' → der Desktop ist NICHT der zweite Schreiber.
+  5. Temporäre Server-Log-Instrumentierung: ZWEI Schreiber — ip=127.0.0.1 (QA-Desktop, 'library') und ip=21.0.0.1 (Gateway = der offene Preview-Tab des Users, 'home'). Beide laufen den 2s-SyncScreen-Loop aus karaoke-app.tsx; Server-merge = last-writer-wins → Companion-View flippert bei jedem POST-Paar.
+- Zweiter Teufehler: Companion-Footer-Navigation (lokaler Klick + remote_command) wird von STALE Pushes überrollt, bis der Desktop das Kommando verarbeitet (~1–2 Beats) → pro Navigation 2 Remounts (lokal → stale → confirmed).
+- Fix 1 — Single-Writer-Election (Server): `mutableState.gamestateWriter {id, lastAt}` + GAMESTATE_WRITER_TTL=5000ms; POST /api/mobile case 'gamestate' lehnt fremde senderId mit 409 ab, solange der Owner frisch postet (takeover nach 5s Stille). Fehlende senderId (alte Tabs) = 'legacy'-Identität, nimmt also auch an der Wahl teil. `??=`-Self-Heal für Hot-Reloads (geteilter globalThis-Container überlebt Module-Reloads — hat ansonsten gecrasht).
+- Fix 2 — Desktop-Konflikt-Handling (karaoke-app.tsx syncScreen): senderId (neues lib/desktop-instance.ts, crypto.randomUUID pro Page-Load) in jedem gamestate-POST (auch use-mobile-game-sync + use-mobile-client + pushDifficulty); 409 → 15s-Backoff + Toast (rate-limitiert: sofort + max. alle 5 Min); Hidden-Tab-Pause (document.hidden → kein POST) + visibilitychange-Sofortsync.
+- Fix 3 — Companion-Grace-Window (mobile-client-view.tsx): `localNav {screen, at}` State bei Footer-Klick; 3,5s lang gewinnen lokale Navigationswahlen über widersprechende Pushes (Party-Screens ausgenommen — dort gewinnt immer der Desktop); Bestätigungs-Push (desktop === localNav.screen) beendet das Fenster sofort; Timer-Expiry = Self-Healing (verlorenes Kommando → Rückfall auf Desktop-Screen OHNE Flip-Flop). mirrorScreenId + activeFooterScreen bevorzugen localNav während des Fensters.
+- i18n: `desktopSync.conflictToast` (de+en).
+- E2E verifiziert: API-Spielstand stabil (8 Samples, 0 Wechsel — vorher 6+); Companion 14s 0 Flips (vorher Flip alle ~2s); Load+12s DOM-Probe 0 Knoten-Tode; Navigation = 1 sauberer Wechsel + 1 sauberer Self-Healing-Rückfall; Election per curl (B kriegt 409, A bleibt 200); Conflict-Toast auf dem unterliegenden Desktop live abgefangen. QA-Shots: r27-desktop-conflict-toast.png, r27-companion-stable.png. Debug-Logging entfernt. `npx tsc --noEmit` Exit 0; Lint 0 Errors (825 Warnungen = prä-existierendes Niveau).
+
+Stage Summary:
+- Zyklischer Companion-Remount vollständig behoben (2 konkurrierende Desktop-Instanzen + Navigation-Bounce)
+- Single-Writer-Election macht Multi-Fenster-Szenarien konsistent: erster aktiver Desktop besitzt den Feed, andere pausieren mit Toast, Takeover nach 5s Stille
+- Companion-Navigation fühlt sich nun sofort an (kein Zurückspringen mehr während der Desktop das Kommando verarbeitet)
+- Hinweis: Das Szenario „zwei sichtbare Desktop-Fenster" bleibt per Design eindeutig (ein Owner) — der unterlegene Tab bekommt Feedback per Toast statt stiller Verwirrung.
+
+---
+Task ID: r28
+Agent: main (Z.ai Code)
+Task: „Das mach noch die kosmetischen Dinge" — 1. Einleitungstexte für alle Settings-Submenus (wie Genres & Sprachen / Motto-Party), 2. Settings-exklusives Tutorial, 3. ?-Button in der Hauptmenüleiste.
+
+Work Log:
+- 1) Einleitungstexte: Neue geteilte Komponente `settings-intro-card.tsx` (Card mit Icon + Titel + CardDescription, `data-testid="settings-intro-{tab}"` als Tour-Anker); eingebaut in ALLE Tabs: general, gameplay, appearance, graphic-sound, webcam, library, viral (beide Returns), sync, about (jeweiliges Tab-File) + microphone & mobile (in settings-screen.tsx, da dort komponiert); taxonomy + motto bekamen nur den Testid auf ihren bestehenden R23/R24-Header-Karten. i18n `settingsIntros.*` (11 Texte, de+en) im Muster von settingsTaxonomy.desc.
+- 2) Settings-Tour: `src/lib/tutorial/tours/settings-tour.ts` (id 'settings', startScreen 'settings', 6 Kapitel: overview/basics/sound/library/devices/data, 15 Schritte). Neuer TourStep-Typ `action: 'settings-open-tab'` + `settingsTab` (types.ts); tour-manager.tsx: openSettingsTabWithRetry() — dispatched das bestehende `remote-settings-tab`-Event (Companion-Remote-Protocol) mit Retry-Polling, bis der Tab-Button aktiv ist (/bg-(cyan|green|purple)-500/ gegen bg-white/10 des Outline-Variants abgegrenzt). Registry + TourId erweitert; HelpMenu listet jetzt basic/editor/settings.
+- 3) ?-Button: NavBar bekommt runden Cyan-?-Button (data-testid navbar-help-button), dispatched `karaoke-open-help` Custom-Event; HelpMenu (help-menu.tsx rewrite) lauscht permanent, rendert null wenn geschlossen; schwebender FAB unten rechts ENTFERNT; karaoke-app rendert HelpMenu jetzt unconditional (Dialog-Teil); „unten rechts"-Texte in tutorial-i18n auf „in der Menüleiste" aktualisiert (de+en, auch basic/editor-finish-Texte).
+- i18n: komplette Settings-Tour-Texte (15 Schritte × title/body + 6 Kapitel + tour title/desc, de+en).
+- E2E verifiziert (Agent-Browser): ?-Button in NavBar vorhanden, alter FAB weg; Dialog öffnet vom NavBar-Button aus und listet Basics/Editor/Settings; Settings-Tour komplett durchgeklickt — alle 12 Tabs schalten sich live (general → gameplay → appearance → graphicsound → microphone → library → taxonomy → motto → mobile → webcam → sync → about → END); alle 12 Intro-Karten vorhanden mit Text (EN geprüft); deutsche Texte verifiziert (Sprache auf de gestellt: „Grundeinstellungen der App: Sprache der Oberfläche…"); VLM-Screenshot-Review bestätigt Intro-Karte + ?-Button + 3 Touren. QA-Shots: r28-settings-intro-de.png, r28-help-menu-navbar-de.png, r28-settings-tour-about.png. `npx tsc --noEmit` Exit 0; Lint 0 Errors (825 Warnungen). Companion-Stabilität (R27) nach allen Änderungen re-verifiziert: 0 Flips in 10s.
+
+Stage Summary:
+- Alle 12 Settings-Tabs haben jetzt einheitliche Einleitungstexte (de+en), ankerbar für Touren
+- Settings-Tour komplett: 6 Kapitel, 15 Schritte, schaltet Tabs live um; über das ?-Menü auch kapitelweise abspielbar
+- ?-Hilfebutton sitzt in der Hauptmenüleiste (statt schwebendem FAB); Dialog über Custom-Event entkoppelt
+- Commits: R27 (Remount-Fix) + R28 (Kosmetik) getrennt committet
