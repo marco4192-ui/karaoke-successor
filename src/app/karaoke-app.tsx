@@ -17,6 +17,8 @@ import { recordMatchResult, getPlayableMatches } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useViralCharts } from '@/hooks/use-viral-charts';
+import { getDesktopInstanceId } from '@/lib/desktop-instance';
+import { toast } from '@/hooks/use-toast';
 
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
@@ -119,6 +121,17 @@ export default function KaraokeZERO() {
   // so the immediate dialog-push effect can trigger an out-of-band companion
   // sync without duplicating the POST logic.
   const syncScreenRef = useRef<(() => Promise<void>) | null>(null);
+
+  // R27: gamestate single-writer election — when another desktop instance
+  // (leftover browser tab, second window) owns the server-side gamestate
+  // feed, this instance's 2s posts get 409. We then back off for a while and
+  // inform the user once (repeated toasts would be spam). Retrying after the
+  // backoff allows takeover when the other instance is closed.
+  const syncConflictRef = useRef<{ pausedUntil: number; toastsShown: number; lastToastAt: number }>({
+    pausedUntil: 0,
+    toastsShown: 0,
+    lastToastAt: 0,
+  });
 
   // ── Track who initiated the pause (for companion overlay) ──
   const [pauseInitiator, setPauseInitiator] = useState<string | null>(null);
@@ -926,6 +939,17 @@ export default function KaraokeZERO() {
   useEffect(() => {
     const syncScreen = async () => {
       try {
+        // R27a: Hidden-tab pause — a backgrounded karaoke tab must not fight
+        // the visible instance for the gamestate feed (its 2s posts made
+        // companion views flip-flop = cyclic remount). Skipping the POST
+        // entirely also spares the server the payload computation + traffic.
+        if (typeof document !== 'undefined' && document.hidden) return;
+
+        // R27b: Conflict backoff — another desktop instance currently owns
+        // the gamestate feed (server answered 409 recently). Wait before
+        // retrying so we don't hammer the election with every 2s tick.
+        if (Date.now() < syncConflictRef.current.pausedUntil) return;
+
         // ── Build intro data for ALL party game modes ──
         // Read the party store fresh at call time (NOT via closure) — the effect
         // deps intentionally exclude the party store object; otherwise every
@@ -1137,12 +1161,10 @@ export default function KaraokeZERO() {
           }
         }
 
-        // Debug: log party intro sync state
-        if (isPartyGameScreen) {
-          // eslint-disable-next-line no-console
-          console.log('[Party-Sync] screen=%s, ptmPhase=%s, isPartyIntro=%s, hasIntroData=%s',
-            screen, ptmPhase, isPartyIntro, !!introData);
-        }
+        // R27c: Identify this instance for the server-side single-writer
+        // election (prevents two running desktops from overwriting each
+        // other's gamestate pushes every 2 s).
+        const senderId = getDesktopInstanceId();
         // Party screen: sync the recent-parties history so the mobile mirror
         // can render the same "Recent Parties" section (avatars stripped —
         // data-URL avatars would bloat the 2s-poll payload).
@@ -1172,11 +1194,13 @@ export default function KaraokeZERO() {
             // history is best-effort for the mirror
           }
         }
-        await fetch('/api/mobile', {
+        const syncRes = await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'gamestate',
+            // R27c: instance ID for the server-side single-writer election
+            senderId,
             payload: {
               ...useGameStore.getState().gameState,
               // BR: keep the companion's currentSong in sync with the current
@@ -1218,6 +1242,22 @@ export default function KaraokeZERO() {
             },
           }),
         });
+
+        // R27d: Single-writer election response — 409 means another desktop
+        // instance (second window / leftover tab) currently owns the gamestate
+        // feed. Back off for 15 s (retrying afterwards allows takeover once
+        // the other instance closes) and inform the user. The toast is
+        // rate-limited: once immediately, then at most every 5 minutes.
+        if (syncRes.status === 409) {
+          const conflict = syncConflictRef.current;
+          conflict.pausedUntil = Date.now() + 15000;
+          const now = Date.now();
+          if (now - conflict.lastToastAt > 5 * 60 * 1000) {
+            conflict.lastToastAt = now;
+            conflict.toastsShown += 1;
+            toast({ description: t('desktopSync.conflictToast') });
+          }
+        }
       } catch {
         // Non-critical — screen sync failure doesn't affect the app
       }
@@ -1230,7 +1270,21 @@ export default function KaraokeZERO() {
     // fresh state via usePartyStore.getState(). Including it re-ran this effect
     // on every per-frame score update (~40/s during competitive games),
     // spamming the mobile sync endpoint and the console log.
-  }, [screen, pauseInitiator, ptmPhase, isPartyActiveDirect, isPartyGameScreen]);
+  }, [screen, pauseInitiator, ptmPhase, isPartyActiveDirect, isPartyGameScreen, t]);
+
+  // R27e: Resume the companion sync immediately when this tab becomes visible
+  // again — pairs with the hidden-tab pause at the top of syncScreen so a
+  // freshly focused window takes over the gamestate feed without waiting
+  // for the next 2 s tick.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void syncScreenRef.current?.();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   // ── Tournament bracket live push ──
   // Bracket changes (duel started / finished, manual winner, vote started or

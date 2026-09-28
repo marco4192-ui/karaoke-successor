@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Song } from '@/types/game';
+import { getDesktopInstanceId } from '@/lib/desktop-instance';
 
 /**
  * Hook for syncing game state to mobile companion clients.
@@ -52,6 +53,9 @@ export function useMobileGameSync(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'gamestate',
+            // R27: instance ID for the server-side single-writer election —
+            // posts from the same desktop instance always pass.
+            senderId: getDesktopInstanceId(),
             payload: {
               currentSong: { id: song.id, title: song.title, artist: song.artist },
               isPlaying: isPlayingRef.current,

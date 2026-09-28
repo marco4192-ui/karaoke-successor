@@ -217,8 +217,23 @@ function createMutableState() {
     // Companion Playlist-Sync: Desktop speichert Playlists hier,
     // damit Companion sie lesen kann (localStorage nicht im API-Route verfuegbar)
     playlists: [] as Array<{ id: string; name: string; isSystem?: boolean }>,
+
+    // R27: Single-writer election for 'gamestate' POSTs. Two concurrently
+    // running desktop instances (e.g. app window + leftover browser tab)
+    // otherwise fight over mutableState.gameState every 2 s — the companion
+    // mirror view flip-flops between both screens (= cyclic remount).
+    // First sender owns the feed; others get 409 while the owner is fresh
+    // (posted within GAMESTATE_WRITER_TTL ms).
+    gamestateWriter: {
+      id: null as string | null,
+      lastAt: 0,
+    },
   };
 }
+
+/** R27: How long a gamestate writer stays "fresh" (owner) without posting.
+ * The desktop sync loop posts every 2 s, so 5 s covers two missed beats. */
+export const GAMESTATE_WRITER_TTL = 5000;
 
 type MutableState = ReturnType<typeof createMutableState>;
 

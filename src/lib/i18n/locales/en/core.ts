@@ -530,6 +530,9 @@ export const coreTranslations = {
       challengeSong: 'Challenge',
       waitingForOpponent: 'Waiting for opponent...',
     },
+    desktopSync: {
+      conflictToast: 'Another desktop window is currently syncing the companion views — syncing from this window has been paused. Close the other window to take over from here.',
+    },
     songChallenge: {
       challengeBtn: 'Challenge',
       acceptBtn: 'Accept Challenge',

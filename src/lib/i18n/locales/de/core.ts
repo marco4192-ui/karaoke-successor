@@ -550,6 +550,9 @@ desktopChat: {
   challengeSong: 'Herausforderung',
   waitingForOpponent: 'Warte auf Gegner...',
 },
+desktopSync: {
+  conflictToast: 'Ein anderes Desktop-Fenster synchronisiert gerade die Companion-Ansichten — die Synchronisierung von diesem Fenster wurde pausiert. Schließe das andere Fenster, um es von hier zu übernehmen.',
+},
 songChallenge: {
   challengeBtn: 'Herausfordern',
   acceptBtn: 'Herausforderung annehmen',

@@ -37,6 +37,15 @@ interface MobileClientViewProps {
   profileId?: string;
 }
 
+// R27: desktop screens where companions ALWAYS follow the desktop (party flow)
+// — the local-navigation grace window never overrides these.
+function isDesktopPartyScreen(desktop: string): boolean {
+  return desktop === 'party' || desktop === 'party-setup'
+    || desktop === 'song-voting'
+    || desktop === 'game' || desktop.endsWith('-game')
+    || desktop === 'results';
+}
+
 export function MobileClientView({ profileId }: MobileClientViewProps) {
   const { t } = useTranslation();
   const [profile, setProfile] = useState<MobileProfile | null>(null);
@@ -291,22 +300,52 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // ===================== SCREEN SYNC (desktop → companion) =====================
   // Always sync for party/game/setup screens so ALL companions follow the
   // desktop during party mode. For regular screens, only sync when controlling.
+
+  // R27: Local-navigation grace window. When the user taps a footer tab, the
+  // companion switches locally and sends a remote_command to the desktop.
+  // Until the desktop processes it (~1-2 gamestate beats), the 2s pushes
+  // still carry the OLD screen — without this window the mirror view bounced
+  // local → stale → confirmed (= two full remounts per navigation).
+  // While `localNav` is active (≤ 3.5 s), locally chosen screens take
+  // priority over contradicting sync pushes. Party screens are exempt: the
+  // desktop MUST always win there (game flow).
+  const [localNav, setLocalNav] = useState<{ screen: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!localNav) return;
+    const remaining = Math.max(0, 3500 - (Date.now() - localNav.at));
+    // Self-healing expiry: if the desktop never confirms (command lost),
+    // the grace window closes and the next sync push wins again.
+    const timer = setTimeout(() => setLocalNav(null), remaining);
+    return () => clearTimeout(timer);
+  }, [localNav]);
+
   useEffect(() => {
     const desktop = gameState.currentScreen;
     if (!desktop) return;
     // Party-related screens: always follow desktop, even for non-controlling companions
-    const isPartyScreen = desktop === 'party' || desktop === 'party-setup'
-      || desktop === 'song-voting'
-      || desktop === 'game' || desktop.endsWith('-game')
-      || desktop === 'results';
+    const isPartyScreen = isDesktopPartyScreen(desktop);
+    if (localNav) {
+      if (desktop === localNav.screen) {
+        // Desktop confirmed our navigation → close the grace window early
+        setLocalNav(null);
+      } else if (!isPartyScreen) {
+        // Stale push inside the grace window (desktop hasn't processed our
+        // remote_command yet) — ignore it, keep the locally chosen view.
+        return;
+      }
+    }
     if (isPartyScreen || controlled) {
       setActiveDesktopScreen(desktop);
     }
-  }, [gameState.currentScreen, controlled]);
+  }, [gameState.currentScreen, controlled, localNav]);
 
   // ===================== COMPUTED MIRROR ID =====================
   const mirrorScreenId = useMemo((): MirrorScreenId => {
-    const screen = activeDesktopScreen || gameState.currentScreen;
+    // R27: during the local-navigation grace window, the locally chosen
+    // screen wins over the (possibly stale) synced screen.
+    const screen = (localNav && !(gameState.currentScreen && isDesktopPartyScreen(gameState.currentScreen))
+      ? localNav.screen
+      : null) || activeDesktopScreen || gameState.currentScreen;
     const base = screenToMirrorId(screen);
     // When Desktop is in a party game intro phase, show the mode-specific intro screen.
     // Check BOTH activeDesktopScreen and gameState.currentScreen to handle
@@ -342,12 +381,14 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       return 'ptm-intro';
     }
     return base;
-  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase, gameState.ptmIntroData, gameState.tournamentBracketData]);
+  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase, gameState.ptmIntroData, gameState.tournamentBracketData, localNav]);
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
   const activeFooterScreen = useMemo(() => {
+    // R27: highlight the locally chosen tab during the grace window
+    if (localNav && !(gameState.currentScreen && isDesktopPartyScreen(gameState.currentScreen))) return localNav.screen;
     return activeDesktopScreen || 'home';
-  }, [activeDesktopScreen]);
+  }, [activeDesktopScreen, localNav, gameState.currentScreen]);
 
   // ===================== FOOTER NAVIGATION =====================
   const handleFooterNavigate = useCallback((screen: string) => {
@@ -357,6 +398,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       setShowSongRunningOverlay(true);
       return;
     }
+    // R27: open the local-navigation grace window — locally chosen screens
+    // take priority over contradicting 2s sync pushes for ≤ 3.5 s (see above).
+    setLocalNav({ screen, at: Date.now() });
     if (isControlling) {
       // Controlling companion: update local state and send command to desktop
       setActiveDesktopScreen(screen);

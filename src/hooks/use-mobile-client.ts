@@ -8,6 +8,7 @@ import type { Song, GameMode } from '@/types/game';
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useCompanionSync } from '@/hooks/use-companion-sync';
 import { useSongLibrarySync } from '@/hooks/use-song-library-sync';
+import { getDesktopInstanceId } from '@/lib/desktop-instance';
 
 interface UseMobileClientOptions {
   song: Song | null;
@@ -171,7 +172,13 @@ export function useMobileClient({
         await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'gamestate', payload }),
+          body: JSON.stringify({
+            type: 'gamestate',
+            // R27: instance ID for the server-side single-writer election —
+            // posts from the same desktop instance always pass.
+            senderId: getDesktopInstanceId(),
+            payload,
+          }),
           signal: controller.signal,
         });
       } catch (error) {
@@ -218,7 +225,12 @@ export function useMobileClient({
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'gamestate', payload: { difficulty } }),
+      body: JSON.stringify({
+        type: 'gamestate',
+        // R27: instance ID for the server-side single-writer election
+        senderId: getDesktopInstanceId(),
+        payload: { difficulty },
+      }),
     }).catch(() => {});
   }, []);
 

@@ -15,13 +15,14 @@ import {
   MAX_JUKEBOX_PER_CLIENT,
   MAX_TOURNAMENT_VOTES,
   tournamentVoteRegistry,
+  GAMESTATE_WRITER_TTL,
 } from './mobile-state';
 
 // ===================== POST HANDLER =====================
 export async function handlePostRequest(request: NextRequest): Promise<Response> {
   try {
     const body = await request.json();
-    const { type, payload, clientId } = body;
+    const { type, payload, clientId, senderId } = body;
 
     switch (type) {
       case 'register': {
@@ -157,6 +158,30 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!requireAuthOrRemoteHolder(request, clientId)) {
           return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN or hold remote control.' }, { status: 401 });
         }
+
+        // R27: Single-writer election — while another desktop instance is
+        // actively posting gamestate (fresh within TTL), reject this writer
+        // with 409 instead of letting both instances overwrite each other
+        // every 2 s (which made companion mirror views remount cyclically).
+        // The losing desktop pauses its sync loop and shows a toast.
+        // Posts without a senderId (stale pre-R27 desktop tabs) map to the
+        // shared 'legacy' identity so they also participate — a legacy tab
+        // then competes with (and defers to / owns against) new instances
+        // instead of silently corrupting the feed for everyone.
+        // NOTE: `??=` self-heals dev hot-reloads — the shared mutableState
+        // container survives module reloads and may predate this key.
+        const writer = (mutableState.gamestateWriter ??= { id: null, lastAt: 0 });
+        const effectiveSenderId = typeof senderId === 'string' && senderId ? senderId : 'legacy';
+        const writerFresh = writer.id !== null && Date.now() - writer.lastAt < GAMESTATE_WRITER_TTL;
+        if (writerFresh && writer.id !== effectiveSenderId) {
+          return Response.json(
+            { success: false, conflict: true, message: 'Another desktop window is currently syncing gamestate.' },
+            { status: 409 },
+          );
+        }
+        writer.id = effectiveSenderId;
+        writer.lastAt = Date.now();
+
         const gsPayload = payload as typeof mutableState.gameState;
         // Clear tournament vote dedup when matchId changes
         if (gsPayload.tournamentMatchId !== mutableState.gameState.tournamentMatchId) {
