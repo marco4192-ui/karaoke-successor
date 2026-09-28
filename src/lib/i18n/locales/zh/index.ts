@@ -10,6 +10,7 @@ import { medleyTournamentTranslations } from './medleyTournament';
 import { profileTranslations } from './profile';
 import { mobileTranslations } from './mobile';
 import { tutorialTranslations } from './tutorial';
+import { deltaTranslations } from './delta';
 import { deepMerge } from '../deep-merge';
 
 export const zhTranslations = [
@@ -22,4 +23,5 @@ export const zhTranslations = [
   profileTranslations,
   mobileTranslations,
   tutorialTranslations,
+  deltaTranslations,
 ].reduce(deepMerge, {} as Record<string, unknown>);
