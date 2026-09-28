@@ -375,7 +375,7 @@ companion: {
   player2: 'Spelare 2',
   releaseControl: 'Släpp kontrollen',
   acquireControl: 'Ta över kontrollen',
-  controlLocked: 'Kontrollen låst',
+  controlLocked: 'Kontroll: {name}',
 },
 remoteControl: {
   back: '← Tillbaka',

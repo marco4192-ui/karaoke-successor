@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'Kunne ikke lese MIDI-filen.',
       noTracks: 'Ingen notespor funnet i denne filen.',
       sheetMusic: {
+        pdfPages: 'PDF-sider',
         button: 'Nodearkimport',
         title: 'Nodearkgjenkjenning (AI)',
         description: 'Gjenkjenn noter (tonehøyde + timing) fra et nodearkbilde eller en PDF med AI og importer dem som notebas — sangens musikkfil forblir urørt. PDF-er rendres side for side og kan analyseres hver for seg eller som helhet. Gjenkjenningen er AI-assistert og bør gjennomgås; stavelser kan valgfritt tildeles, noter uten stavelse får "~".',
@@ -949,6 +950,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Venter…',
     brVoteWaiting: 'Venter på alternativene…',
     brVoteDone: 'Stemmen din er levert!',
     brVoteEliminated: 'Eliminert — ingen stemme denne runden.',
@@ -1496,5 +1498,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tonehøyde: {n} Hz',
+    noPitch: 'Ingen tonehøyde oppdaget',
+  },
+  mobileMicView: {
+    permissionDenied: 'Mikrofontilgang blokkert',
+    permissionDesc: 'Mikrofontillatelsen ble avslått. Aktiver den i nettleserinnstillingene for å synge.',
+    howToAllow: 'Slik tillater du mikrofontilgang:',
+    step1: 'Åpne nettleserinnstillingene (vanligvis 🔒/ⓘ-ikonet ved siden av adresselinjen).',
+    step2: 'Finn delen for mikrofon/tillatelser.',
+    step3: 'Sett mikrofonen til «Tillat» og last siden på nytt.',
+    moreHelp: 'Mer hjelp',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Innstillinger-appen → Safari (eller Chrome) → Mikrofon → tillat for dette nettstedet.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Innstillinger → Apper → Chrome → Tillatelser → Mikrofon → tillat.',
+    desktop: 'Nettleser på datamaskinen:',
+    desktopSteps: 'Klikk på 🔒/ⓘ-ikonet i adresselinjen → Mikrofon → Tillat, og last inn på nytt.',
+    tapToRetry: 'Prøv igjen',
+    adPlaying: 'Reklame spilles',
+    gamePaused: 'Spillet er satt på pause under reklamen.',
+    skipAd: 'Hopp over reklame',
+    volumeLevel: 'Volumnivå',
+    currentPitch: 'Nåværende tonehøyde',
+    tapToStop: 'Trykk for å stoppe mikrofonen',
+    tapToSing: 'Trykk for å synge! 🎤',
   },
 };

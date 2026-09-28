@@ -345,6 +345,7 @@ export const completionTranslations = {
       parseError: 'Nie udało się odczytać pliku MIDI.',
       noTracks: 'W tym pliku nie znaleziono ścieżek z nutami.',
       sheetMusic: {
+        pdfPages: 'Strony PDF',
         button: 'Import z zapisu nutowego',
         title: 'Rozpoznawanie zapisu nutowego (AI)',
         description: 'Rozpoznaj nuty (wysokość dźwięku + czas) z obrazu zapisu nutowego lub PDF za pomocą AI i zaimportuj je jako bazę nut — plik muzyczny piosenki pozostaje bez zmian. Pliki PDF są renderowane strona po stronie i można je analizować pojedynczo lub w całości. Rozpoznawanie wspiera się na AI i warto je sprawdzić; sylaby można przypisać opcjonalnie, nuty bez sylaby dostają "~".',
@@ -944,6 +945,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Oczekiwanie…',
     brVoteWaiting: 'Czekanie na opcje…',
     brVoteDone: 'Twój głos oddany!',
     brVoteEliminated: 'Wyeliminowany — w tej rundzie bez głosowania.',
@@ -1490,5 +1492,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Wysokość dźwięku: {n} Hz',
+    noPitch: 'Nie wykryto wysokości dźwięku',
+  },
+  mobileMicView: {
+    permissionDenied: 'Dostęp do mikrofonu zablokowany',
+    permissionDesc: 'Uprawnienie do mikrofonu zostało odrzucone. Włącz je w ustawieniach przeglądarki, aby śpiewać.',
+    howToAllow: 'Jak zezwolić na dostęp do mikrofonu:',
+    step1: 'Otwórz ustawienia przeglądarki (zwykle ikona 🔒/ⓘ obok paska adresu).',
+    step2: 'Znajdź sekcję mikrofon/uprawnienia.',
+    step3: 'Ustaw mikrofon na „Zezwalaj” i odśwież stronę.',
+    moreHelp: 'Więcej pomocy',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Aplikacja Ustawienia → Safari (lub Chrome) → Mikrofon → zezwól dla tej witryny.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Ustawienia → Aplikacje → Chrome → Uprawnienia → Mikrofon → zezwalaj.',
+    desktop: 'Przeglądarka na komputerze:',
+    desktopSteps: 'Kliknij ikonę 🔒/ⓘ na pasku adresu → Mikrofon → Zezwalaj, a następnie odśwież.',
+    tapToRetry: 'Spróbuj ponownie',
+    adPlaying: 'Odtwarzanie reklamy',
+    gamePaused: 'Gra jest wstrzymana podczas reklamy.',
+    skipAd: 'Pomiń reklamę',
+    volumeLevel: 'Poziom głośności',
+    currentPitch: 'Bieżąca wysokość dźwięku',
+    tapToStop: 'Dotknij, aby zatrzymać mikrofon',
+    tapToSing: 'Dotknij, aby śpiewać! 🎤',
   },
 };

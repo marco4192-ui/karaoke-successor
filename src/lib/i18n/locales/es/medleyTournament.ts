@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Clasificación final de todos los jugadores',
   fullStandings: 'Clasificación Completa',
   points: 'Puntos',
-  accuracy: 'Precisión: {n}%',
+  accuracy: 'Precisión',
   won: 'ganó',
   highlights: 'Momentos Destacados',
   tiebreakMatches: 'Partidas de Desempate',

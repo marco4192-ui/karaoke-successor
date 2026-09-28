@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Итоговое положение всех игроков',
   fullStandings: 'Полная таблица',
   points: 'Очки',
-  accuracy: 'Точность: {n}%',
+  accuracy: 'Точность',
   won: 'победил',
   highlights: 'Лучшие моменты',
   tiebreakMatches: 'Дополнительные матчи',

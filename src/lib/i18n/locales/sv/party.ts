@@ -579,7 +579,7 @@ partyStarting: {
   startPlayer: 'BÖRJAR SJUNGA',
   startsFirst: 'Sjunger först',
   duelSing: 'Duell',
-  startPlayerHint: 'Denna spelare sjunger första segmentet',
+  startPlayerHint: '{name} sjunger först — gör dig redo!',
   companion: '📱 Companion-app',
   startButton: '🎤 Börja sjunga!',
   hint: 'Sångarna kan inta sina positioner — starta när alla är redo.',

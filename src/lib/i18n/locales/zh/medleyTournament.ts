@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: '所有玩家的最终排名',
   fullStandings: '完整排名',
   points: '分数',
-  accuracy: '准确率：{n}%',
+  accuracy: '准确率',
   won: '胜',
   highlights: '精彩回顾',
   tiebreakMatches: '平局比赛',

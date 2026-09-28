@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'Não foi possível ler o arquivo MIDI.',
       noTracks: 'Nenhuma trilha de notas encontrada neste arquivo.',
       sheetMusic: {
+        pdfPages: 'Páginas do PDF',
         button: 'Importação de Partitura',
         title: 'Reconhecimento de Partitura (IA)',
         description: 'Reconheça notas (tom + timing) de uma imagem ou PDF de partitura via IA e importe-as como base das notas — o arquivo de música da canção permanece intacto. Os PDFs são renderizados página por página e podem ser analisados individualmente ou no conjunto. O reconhecimento é auxiliado por IA e deve ser revisado; as sílabas podem ser atribuídas opcionalmente, e notas sem sílaba recebem "~".',
@@ -949,6 +950,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'À espera…',
     brVoteWaiting: 'Aguardando as opções…',
     brVoteDone: 'Seu voto foi registrado!',
     brVoteEliminated: 'Eliminado — sem voto nesta rodada.',
@@ -1496,5 +1498,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tom: {n} Hz',
+    noPitch: 'Nenhum tom detetado',
+  },
+  mobileMicView: {
+    permissionDenied: 'Acesso ao microfone bloqueado',
+    permissionDesc: 'A permissão do microfone foi negada. Ativa-a nas definições do navegador para poder cantar.',
+    howToAllow: 'Como permitir o acesso ao microfone:',
+    step1: 'Abre as definições do navegador (normalmente o ícone 🔒/ⓘ junto à barra de endereço).',
+    step2: 'Procura a secção de microfone/permissões.',
+    step3: 'Define o microfone como "Permitir" e recarrega a página.',
+    moreHelp: 'Mais ajuda',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Ajustes → Safari (ou Chrome) → Microfone → permitir para este site.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Definições → Aplicações → Chrome → Permissões → Microfone → permitir.',
+    desktop: 'Navegador de computador:',
+    desktopSteps: 'Clica no ícone 🔒/ⓘ na barra de endereço → Microfone → Permitir e recarrega.',
+    tapToRetry: 'Tentar novamente',
+    adPlaying: 'Anúncio em reprodução',
+    gamePaused: 'O jogo está em pausa durante o anúncio.',
+    skipAd: 'Ignorar anúncio',
+    volumeLevel: 'Nível de volume',
+    currentPitch: 'Tom atual',
+    tapToStop: 'Toca para parar o microfone',
+    tapToSing: 'Toca para cantar! 🎤',
   },
 };

@@ -374,7 +374,7 @@ companion: {
   player2: 'Pelaaja 2',
   releaseControl: 'Vapauta hallinta',
   acquireControl: 'Ota hallinta',
-  controlLocked: 'Hallinta lukittu',
+  controlLocked: 'Ohjaus: {name}',
 },
 remoteControl: {
   back: '← Takaisin',

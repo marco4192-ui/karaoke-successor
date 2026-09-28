@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Eindstand van alle spelers',
   fullStandings: 'Volledige stand',
   points: 'Punten',
-  accuracy: 'Nauwkeurigheid: {n}%',
+  accuracy: 'Nauwkeurigheid',
   won: 'gewonnen',
   highlights: 'Hoogtepunten',
   tiebreakMatches: 'Tiebreak-wedstrijden',

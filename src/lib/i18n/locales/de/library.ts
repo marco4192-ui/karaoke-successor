@@ -634,6 +634,7 @@ editor: {
       pdfRenderError: 'PDF konnte nicht gelesen oder gerendert werden — bitte prüfen, ob es sich um eine gültige PDF-Datei handelt.',
       pdfRendering: 'PDF wird verarbeitet (Seiten werden gerendert)…',
       pdfPage: 'Seite {page} / {total}',
+      pdfPages: 'PDF-Seiten',
       pdfPrevPage: 'Vorherige Seite',
       pdfNextPage: 'Nächste Seite',
       pdfPageCap: 'max. {max} Seiten',

@@ -375,7 +375,7 @@ companion: {
   player2: 'Speler 2',
   releaseControl: 'Bediening vrijgeven',
   acquireControl: 'Bediening overnemen',
-  controlLocked: 'Bediening vergrendeld',
+  controlLocked: 'Bediening: {name}',
 },
 remoteControl: {
   back: '← Terug',

@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Slutställning för alla spelare',
   fullStandings: 'Fullständig Slutställning',
   points: 'Poäng',
-  accuracy: 'Noggrannhet: {n}%',
+  accuracy: 'Noggrannhet',
   won: 'vann',
   highlights: 'Höjdpunkter',
   tiebreakMatches: 'Oavgjort-matcher',

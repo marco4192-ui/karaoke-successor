@@ -579,7 +579,7 @@ partyStarting: {
   startPlayer: 'ПОЁТ ПЕРВЫМ',
   startsFirst: 'Поёт первым',
   duelSing: 'Дуэль',
-  startPlayerHint: 'Этот игрок поёт первый отрезок',
+  startPlayerHint: '{name} поёт первым — приготовьтесь!',
   companion: '📱 Приложение-компаньон',
   startButton: '🎤 Поехали!',
   hint: 'Певцы могут занять позиции — начинайте, когда все будут готовы.',

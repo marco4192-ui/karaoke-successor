@@ -579,7 +579,7 @@ partyStarting: {
   startPlayer: 'INIZIA A CANTARE',
   startsFirst: 'Canta per primo',
   duelSing: 'Duello',
-  startPlayerHint: 'Questo giocatore canta il primo segmento',
+  startPlayerHint: '{name} canta per primo — preparati!',
   companion: '📱 App Companion',
   startButton: '🎤 Inizia a cantare!',
   hint: 'I cantanti possono mettersi in posizione — inizia quando tutti sono pronti.',

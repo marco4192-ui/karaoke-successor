@@ -151,6 +151,7 @@ mobile: {
   cptmPlayers: "Spieler",
   cptmYou: "du",
   cptmWaitingForStart: "Warte auf die nächste Runde…",
+  cptmWaiting: "Warten…",
   // ── Battle Royale In-Game-Spiegel (Item 8.1) ──
   brGameSingNow: "MITSINGEN!",
   brGameYourVoice: "Deine Stimme",
@@ -1102,5 +1103,30 @@ achievements: {
     title: 'Genre-Entdecker',
     description: 'Sing Lieder aus 3 Genres',
   },
+},
+
+// Mobile-Mikrofon-Ansicht (Handy als Mikrofon) — QR-Fix: Keys wurden referenziert, aber nie definiert
+mobileMicView: {
+  permissionDenied: 'Mikrofonzugriff blockiert',
+  permissionDesc: 'Die Mikrofon-Berechtigung wurde verweigert. Aktiviere sie in den Browser-Einstellungen, um zu singen.',
+  howToAllow: 'So erlaubst du den Mikrofonzugriff:',
+  step1: 'Öffne die Browser-Einstellungen (meist das 🔒-/ⓘ-Symbol neben der Adressleiste).',
+  step2: 'Finde den Bereich Mikrofon/Berechtigungen.',
+  step3: 'Stelle das Mikrofon auf „Zulassen“ und lade die Seite neu.',
+  moreHelp: 'Weitere Hilfe',
+  iOS: 'iPhone/iPad (Safari/Chrome):',
+  iOSSteps: 'Einstellungen-App → Safari (oder Chrome) → Mikrofon → für diese Website erlauben.',
+  android: 'Android (Chrome):',
+  androidSteps: 'Einstellungen → Apps → Chrome → Berechtigungen → Mikrofon → erlauben.',
+  desktop: 'Desktop-Browser:',
+  desktopSteps: 'Klicke auf das 🔒-/ⓘ-Symbol in der Adressleiste → Mikrofon → Zulassen, dann neu laden.',
+  tapToRetry: 'Erneut versuchen',
+  adPlaying: 'Werbung läuft',
+  gamePaused: 'Das Spiel ist während der Werbung pausiert.',
+  skipAd: 'Werbung überspringen',
+  volumeLevel: 'Lautstärkepegel',
+  currentPitch: 'Aktuelle Tonhöhe',
+  tapToStop: 'Tippen, um das Mikrofon zu stoppen',
+  tapToSing: 'Tippen zum Singen! 🎤',
 },
 };

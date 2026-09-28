@@ -661,6 +661,7 @@ export const libraryTranslations = {
         pdfRenderError: 'The PDF could not be read or rendered — please check that it is a valid PDF file.',
         pdfRendering: 'Processing PDF (rendering pages)…',
         pdfPage: 'Page {page} / {total}',
+        pdfPages: 'PDF pages',
         pdfPrevPage: 'Previous page',
         pdfNextPage: 'Next page',
         pdfPageCap: 'max. {max} pages',

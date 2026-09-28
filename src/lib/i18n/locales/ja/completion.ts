@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'MIDIファイルを読み込めませんでした。',
       noTracks: 'このファイルにはノートトラックが見つかりません。',
       sheetMusic: {
+        pdfPages: 'PDFページ',
         button: '楽譜インポート',
         title: '楽譜認識（AI）',
         description: '楽譜の画像やPDFをAIで認識してノート（音程+タイミング）を取り込み、ノート素材としてインポート — 曲の音楽ファイルは変更されません。PDFはページごとにレンダリングされ、個別または一括で分析できます。認識はAI支援のため、内容の確認をおすすめします。音節は任意で割り当て可能。音節のないノートには「~」が付きます。',
@@ -945,6 +946,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: '待機中…',
     brVoteWaiting: 'オプションを待機中…',
     brVoteDone: '投票しました！',
     brVoteEliminated: '脱落済み — 今回の投票はありません。',
@@ -1491,5 +1493,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: '音程: {n} Hz',
+    noPitch: '音程を検出できません',
+  },
+  mobileMicView: {
+    permissionDenied: 'マイクアクセスがブロックされました',
+    permissionDesc: 'マイクの権限が拒否されました。歌うにはブラウザの設定で許可してください。',
+    howToAllow: 'マイクアクセスを許可する方法：',
+    step1: 'ブラウザの設定を開きます（通常はアドレスバー横の 🔒/ⓘ アイコン）。',
+    step2: 'マイク／権限のセクションを見つけます。',
+    step3: 'マイクを「許可」にしてページを再読み込みします。',
+    moreHelp: 'さらにヘルプ',
+    iOS: 'iPhone/iPad（Safari/Chrome）：',
+    iOSSteps: '設定アプリ → Safari（または Chrome）→ マイク → このサイトを許可。',
+    android: 'Android（Chrome）：',
+    androidSteps: '設定 → アプリ → Chrome → 権限 → マイク → 許可。',
+    desktop: 'デスクトップブラウザ：',
+    desktopSteps: 'アドレスバーの 🔒/ⓘ アイコンをクリック → マイク → 許可、その後再読み込み。',
+    tapToRetry: '再試行',
+    adPlaying: '広告再生中',
+    gamePaused: '広告の間、ゲームは一時停止中です。',
+    skipAd: '広告をスキップ',
+    volumeLevel: '音量レベル',
+    currentPitch: '現在の音程',
+    tapToStop: 'タップしてマイクを停止',
+    tapToSing: 'タップして歌おう！🎤',
   },
 };

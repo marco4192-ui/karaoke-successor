@@ -374,7 +374,7 @@ companion: {
   player2: 'Spiller 2',
   releaseControl: 'Frigiv kontrollen',
   acquireControl: 'Overtag kontrollen',
-  controlLocked: 'Kontrollen låst',
+  controlLocked: 'Kontrol: {name}',
 },
 remoteControl: {
   back: '← Tilbage',

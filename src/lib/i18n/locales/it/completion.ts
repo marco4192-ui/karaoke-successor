@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'Impossibile leggere il file MIDI.',
       noTracks: 'Nessuna traccia di note trovata in questo file.',
       sheetMusic: {
+        pdfPages: 'Pagine del PDF',
         button: 'Importazione Spartito',
         title: 'Riconoscimento Spartito (AI)',
         description: 'Riconosci note (tono + timing) da un\'immagine o da un PDF di uno spartito tramite AI e importale come base per le note — il file musicale della canzone resta invariato. I PDF vengono renderizzati pagina per pagina e possono essere analizzati singolarmente o nell\'insieme. Il riconoscimento è assistito dall\'AI e andrebbe verificato; le sillabe possono essere assegnate facoltativamente, le note senza sillaba ricevono "~".',
@@ -949,6 +950,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'In attesa…',
     brVoteWaiting: 'In attesa delle opzioni…',
     brVoteDone: 'Il tuo voto è stato registrato!',
     brVoteEliminated: 'Eliminato — nessun voto questo turno.',
@@ -1496,5 +1498,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tono: {n} Hz',
+    noPitch: 'Nessun tono rilevato',
+  },
+  mobileMicView: {
+    permissionDenied: 'Accesso al microfono bloccato',
+    permissionDesc: 'L\'autorizzazione del microfono è stata negata. Attivala nelle impostazioni del browser per cantare.',
+    howToAllow: 'Come consentire l\'accesso al microfono:',
+    step1: 'Apri le impostazioni del browser (di solito l\'icona 🔒/ⓘ accanto alla barra degli indirizzi).',
+    step2: 'Trova la sezione microfono/permessi.',
+    step3: 'Imposta il microfono su "Consenti" e ricarica la pagina.',
+    moreHelp: 'Altro aiuto',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Impostazioni → Safari (o Chrome) → Microfono → consenti per questo sito.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Impostazioni → App → Chrome → Autorizzazioni → Microfono → consenti.',
+    desktop: 'Browser desktop:',
+    desktopSteps: 'Clicca sull\'icona 🔒/ⓘ nella barra degli indirizzi → Microfono → Consenti, poi ricarica.',
+    tapToRetry: 'Riprova',
+    adPlaying: 'Pubblicità in riproduzione',
+    gamePaused: 'Il gioco è in pausa durante la pubblicità.',
+    skipAd: 'Salta pubblicità',
+    volumeLevel: 'Livello del volume',
+    currentPitch: 'Tono attuale',
+    tapToStop: 'Tocca per fermare il microfono',
+    tapToSing: 'Tocca per cantare! 🎤',
   },
 };

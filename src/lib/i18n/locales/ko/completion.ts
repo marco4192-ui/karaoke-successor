@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'MIDI 파일을 읽지 못했어요.',
       noTracks: '이 파일에는 노트 트랙이 없어요.',
       sheetMusic: {
+        pdfPages: 'PDF 페이지',
         button: '악보 가져오기',
         title: '악보 인식 (AI)',
         description: '악보 이미지나 PDF를 AI로 인식해 노트(음정+타이밍)를 노트 소스로 가져와요 — 곡의 음악 파일은 그대로입니다. PDF는 페이지별로 렌더링되어 개별 또는 전체 분석이 가능해요. 인식은 AI 지원이므로 검토를 권장합니다. 음절은 선택적으로 할당할 수 있고, 음절 없는 노트에는 "~"가 붙어요.',
@@ -945,6 +946,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: '대기 중…',
     brVoteWaiting: '선택지를 기다리는 중…',
     brVoteDone: '투표 완료!',
     brVoteEliminated: '탈락 상태 — 이번 라운드에는 투표가 없어요.',
@@ -1491,5 +1493,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: '음정: {n} Hz',
+    noPitch: '음정이 감지되지 않음',
+  },
+  mobileMicView: {
+    permissionDenied: '마이크 접근이 차단되었습니다',
+    permissionDesc: '마이크 권한이 거부되었습니다. 노래하려면 브라우저 설정에서 허용해 주세요.',
+    howToAllow: '마이크 접근을 허용하는 방법:',
+    step1: '브라우저 설정을 엽니다 (보통 주소창 옆의 🔒/ⓘ 아이콘).',
+    step2: '마이크/권한 섹션을 찾습니다.',
+    step3: '마이크를 "허용"으로 설정하고 페이지를 새로고침합니다.',
+    moreHelp: '더 많은 도움말',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: '설정 앱 → Safari(또는 Chrome) → 마이크 → 이 웹사이트 허용.',
+    android: 'Android (Chrome):',
+    androidSteps: '설정 → 앱 → Chrome → 권한 → 마이크 → 허용.',
+    desktop: '데스크톱 브라우저:',
+    desktopSteps: '주소창의 🔒/ⓘ 아이콘 클릭 → 마이크 → 허용, 그런 다음 새로고침.',
+    tapToRetry: '다시 시도',
+    adPlaying: '광고 재생 중',
+    gamePaused: '광고가 재생되는 동안 게임이 일시 중지되었습니다.',
+    skipAd: '광고 건너뛰기',
+    volumeLevel: '볼륨 수준',
+    currentPitch: '현재 음정',
+    tapToStop: '탭하여 마이크 중지',
+    tapToSing: '탭하여 노래하세요! 🎤',
   },
 };

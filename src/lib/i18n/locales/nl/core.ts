@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Nieuw bericht van {name}',
+  openChat: 'Chat openen',
+  closeChat: 'Chat sluiten',
   noMessages: 'Nog geen berichten',
   sendAs: 'Versturen als',
   noPlayers: 'Geen spelers',

@@ -271,6 +271,7 @@ export const completionTranslations = {
       parseError: 'No se pudo leer el archivo MIDI.',
       noTracks: 'No se encontraron pistas de notas en este archivo.',
       sheetMusic: {
+        pdfPages: 'Páginas del PDF',
         button: 'Importar Partitura',
         title: 'Reconocimiento de Partituras (IA)',
         description: 'Reconoce notas (tono + tiempo) a partir de una imagen o PDF de partitura mediante IA y las importa como base de notas — el archivo de música de la canción queda intacto. Los PDF se renderizan página a página y se pueden analizar individualmente o en conjunto. El reconocimiento está asistido por IA y conviene revisarlo; opcionalmente se pueden asignar sílabas, y las notas sin sílaba reciben "~".',
@@ -691,6 +692,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Esperando…',
     brVoteWaiting: 'Esperando las opciones…',
     brVoteDone: '¡Voto registrado!',
     brVoteEliminated: 'Eliminado — sin voto en esta ronda.',
@@ -1238,5 +1240,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tono: {n} Hz',
+    noPitch: 'No se detecta tono',
+  },
+  mobileMicView: {
+    permissionDenied: 'Acceso al micrófono bloqueado',
+    permissionDesc: 'Se denegó el permiso del micrófono. Actívalo en la configuración del navegador para poder cantar.',
+    howToAllow: 'Cómo permitir el acceso al micrófono:',
+    step1: 'Abre la configuración del navegador (normalmente el icono 🔒/ⓘ junto a la barra de direcciones).',
+    step2: 'Busca la sección de micrófono/permisos.',
+    step3: 'Cambia el micrófono a "Permitir" y recarga la página.',
+    moreHelp: 'Más ayuda',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Ajustes → Safari (o Chrome) → Micrófono → permitir para este sitio web.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Ajustes → Aplicaciones → Chrome → Permisos → Micrófono → permitir.',
+    desktop: 'Navegador de escritorio:',
+    desktopSteps: 'Haz clic en el icono 🔒/ⓘ de la barra de direcciones → Micrófono → Permitir y recarga.',
+    tapToRetry: 'Reintentar',
+    adPlaying: 'Anuncio en reproducción',
+    gamePaused: 'El juego está en pausa durante el anuncio.',
+    skipAd: 'Saltar anuncio',
+    volumeLevel: 'Nivel de volumen',
+    currentPitch: 'Tono actual',
+    tapToStop: 'Toca para detener el micrófono',
+    tapToSing: '¡Toca para cantar! 🎤',
   },
 };

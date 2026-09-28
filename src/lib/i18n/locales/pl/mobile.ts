@@ -375,7 +375,7 @@ companion: {
   player2: 'Gracz 2',
   releaseControl: 'Zwolnij kontrolę',
   acquireControl: 'Przejmij kontrolę',
-  controlLocked: 'Kontrola zablokowana',
+  controlLocked: 'Kontrola: {name}',
 },
 remoteControl: {
   back: '← Wróć',

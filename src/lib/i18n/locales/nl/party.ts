@@ -579,7 +579,7 @@ partyStarting: {
   startPlayer: 'BEGINT MET ZINGEN',
   startsFirst: 'Zingt eerst',
   duelSing: 'Duel',
-  startPlayerHint: 'Deze speler zingt het eerste deel',
+  startPlayerHint: '{name} zingt eerst — maak je klaar!',
   companion: '📱 Companion-app',
   startButton: '🎤 Beginnen met zingen!',
   hint: 'Zangers kunnen op hun plek gaan staan — start als iedereen klaar is.',

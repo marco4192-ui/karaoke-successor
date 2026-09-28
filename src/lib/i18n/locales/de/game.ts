@@ -13,6 +13,12 @@ share: {
   scoredPoints: 'Ich habe gerade {score} Punkte bei "{title}" von {artist} erreicht!',
   callToAction: 'Spiele {branding} und versuche meinen Score zu schlagen!',
 },
+
+// Tonhöhen-Graph-Status-Chip (Game-Screen) — QR-Fix: Keys wurden referenziert, aber nie definiert
+pitchGraph: {
+  pitch: 'Tonhöhe: {n} Hz',
+  noPitch: 'Keine Tonhöhe erkannt',
+},
 scoreEvents: {
   perfect: 'PERFEKT',
   great: 'GUT',

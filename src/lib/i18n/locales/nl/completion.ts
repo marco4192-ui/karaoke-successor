@@ -345,6 +345,7 @@ export const completionTranslations = {
       parseError: 'Kon het MIDI-bestand niet lezen.',
       noTracks: 'Geen notentracks gevonden in dit bestand.',
       sheetMusic: {
+        pdfPages: 'PDF-pagina\'s',
         button: 'Bladmuziek-import',
         title: 'Bladmuziekherkenning (AI)',
         description: 'Herken noten (toonhoogte + timing) uit een bladmuziekafbeelding of PDF via AI en importeer ze als notenbasis — het muziekbestand van het nummer blijft onaangeroerd. PDF\'s worden pagina voor pagina gerenderd en kunnen afzonderlijk of als geheel worden geanalyseerd. De herkenning is AI-ondersteund en verdient controle; lettergrepen kunnen optioneel worden toegewezen, noten zonder lettergreep krijgen "~".',
@@ -944,6 +945,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Wachten…',
     brVoteWaiting: 'Wachten op de opties…',
     brVoteDone: 'Je stem is uitgebracht!',
     brVoteEliminated: 'Geëlimineerd — deze ronde niet stemmen.',
@@ -1490,5 +1492,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Toonhoogte: {n} Hz',
+    noPitch: 'Geen toonhoogte gedetecteerd',
+  },
+  mobileMicView: {
+    permissionDenied: 'Microfoontoegang geblokkeerd',
+    permissionDesc: 'De microfoontoestemming is geweigerd. Schakel deze in de browserinstellingen in om te zingen.',
+    howToAllow: 'Zo sta je microfoontoegang toe:',
+    step1: 'Open de browserinstellingen (meestal het 🔒/ⓘ-pictogram naast de adresbalk).',
+    step2: 'Zoek de sectie microfoon/rechten.',
+    step3: 'Zet de microfoon op "Toestaan" en laad de pagina opnieuw.',
+    moreHelp: 'Meer hulp',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Instellingen-app → Safari (of Chrome) → Microfoon → toestaan voor deze website.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Instellingen → Apps → Chrome → Rechten → Microfoon → toestaan.',
+    desktop: 'Desktopbrowser:',
+    desktopSteps: 'Klik op het 🔒/ⓘ-pictogram in de adresbalk → Microfoon → Toestaan en laad opnieuw.',
+    tapToRetry: 'Opnieuw proberen',
+    adPlaying: 'Advertentie wordt afgespeeld',
+    gamePaused: 'Het spel is gepauzeerd tijdens de advertentie.',
+    skipAd: 'Advertentie overslaan',
+    volumeLevel: 'Volumeniveau',
+    currentPitch: 'Huidige toonhoogte',
+    tapToStop: 'Tik om de microfoon te stoppen',
+    tapToSing: 'Tik om te zingen! 🎤',
   },
 };

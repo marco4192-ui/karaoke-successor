@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Classement final de tous les joueurs',
   fullStandings: 'Classement Complet',
   points: 'Points',
-  accuracy: 'Précision : {n}%',
+  accuracy: 'Précision',
   won: 'gagné',
   highlights: 'Points Forts',
   tiebreakMatches: 'Matchs de Tiebreak',

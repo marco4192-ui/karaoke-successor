@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Endelig stilling for alle spillere',
   fullStandings: 'Fuld stilling',
   points: 'Point',
-  accuracy: 'Præcision: {n}%',
+  accuracy: 'Præcision',
   won: 'vandt',
   highlights: 'Højdepunkter',
   tiebreakMatches: 'Tiebreak-kampe',

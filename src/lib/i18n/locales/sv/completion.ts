@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: 'Kunde inte läsa MIDI-filen.',
       noTracks: 'Inga notspår hittades i denna fil.',
       sheetMusic: {
+        pdfPages: 'PDF-sidor',
         button: 'Notbladsimport',
         title: 'Notbladsigenkänning (AI)',
         description: 'Känn igen noter (tonhöjd + timing) från en notbladbild eller PDF via AI och importera dem som notbas — låtens musikfil lämnas orörd. PDF:er renderas sida för sida och kan analyseras var för sig eller som helhet. Igenkänningen är AI-assisterad och bör granskas; stavelser kan tilldelas valfritt, noter utan stavelse får "~".',
@@ -949,6 +950,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Väntar…',
     brVoteWaiting: 'Väntar på alternativen…',
     brVoteDone: 'Din röst är lagd!',
     brVoteEliminated: 'Eliminerad — ingen röst denna omgång.',
@@ -1496,5 +1498,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tonhöjd: {n} Hz',
+    noPitch: 'Ingen tonhöjd upptäckt',
+  },
+  mobileMicView: {
+    permissionDenied: 'Mikrofonåtkomst blockerad',
+    permissionDesc: 'Mikrofonbehörigheten nekades. Aktivera den i webbläsarens inställningar för att kunna sjunga.',
+    howToAllow: 'Så tillåter du mikrofonåtkomst:',
+    step1: 'Öppna webbläsarens inställningar (oftast ikonen 🔒/ⓘ bredvid adressfältet).',
+    step2: 'Hitta avsnittet mikrofon/behörigheter.',
+    step3: 'Ställ in mikrofonen på "Tillåt" och ladda om sidan.',
+    moreHelp: 'Mer hjälp',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Inställningar → Safari (eller Chrome) → Mikrofon → tillåt för denna webbplats.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Inställningar → Appar → Chrome → Behörigheter → Mikrofon → tillåt.',
+    desktop: 'Webbläsare på datorn:',
+    desktopSteps: 'Klicka på ikonen 🔒/ⓘ i adressfältet → Mikrofon → Tillåt och ladda om.',
+    tapToRetry: 'Försök igen',
+    adPlaying: 'Reklam spelas',
+    gamePaused: 'Spelet är pausat under reklamen.',
+    skipAd: 'Hoppa över reklam',
+    volumeLevel: 'Volymnivå',
+    currentPitch: 'Nuvarande tonhöjd',
+    tapToStop: 'Tryck för att stoppa mikrofonen',
+    tapToSing: 'Tryck för att sjunga! 🎤',
   },
 };

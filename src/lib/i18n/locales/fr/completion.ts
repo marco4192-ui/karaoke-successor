@@ -271,6 +271,7 @@ export const completionTranslations = {
       parseError: 'Impossible de lire le fichier MIDI.',
       noTracks: 'Aucune piste de notes trouvée dans ce fichier.',
       sheetMusic: {
+        pdfPages: 'Pages du PDF',
         button: 'Importer une Partition',
         title: 'Reconnaissance de Partitions (IA)',
         description: 'Reconnaît des notes (hauteur + minutage) à partir d\'une image ou d\'un PDF de partition via l\'IA et les importe comme base de notes — le fichier musique de la chanson reste intact. Les PDF sont rendus page par page et peuvent être analysés individuellement ou en entier. La reconnaissance est assistée par IA et mérite une vérification ; les syllabes peuvent être attribuées en option, les notes sans syllabe reçoivent "~".',
@@ -691,6 +692,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'En attente…',
     brVoteWaiting: 'En attente des options…',
     brVoteDone: 'Ton vote est enregistré !',
     brVoteEliminated: 'Éliminé — pas de vote ce tour-ci.',
@@ -1238,5 +1240,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Hauteur : {n} Hz',
+    noPitch: 'Aucune hauteur détectée',
+  },
+  mobileMicView: {
+    permissionDenied: 'Accès au micro bloqué',
+    permissionDesc: 'L\'autorisation du micro a été refusée. Active-la dans les réglages du navigateur pour chanter.',
+    howToAllow: 'Comment autoriser l\'accès au micro :',
+    step1: 'Ouvre les réglages du navigateur (généralement l\'icône 🔒/ⓘ à côté de la barre d\'adresse).',
+    step2: 'Trouve la section micro/autorisations.',
+    step3: 'Règle le micro sur « Autoriser » et recharge la page.',
+    moreHelp: 'Plus d\'aide',
+    iOS: 'iPhone/iPad (Safari/Chrome) :',
+    iOSSteps: 'Réglages → Safari (ou Chrome) → Micro → autoriser pour ce site.',
+    android: 'Android (Chrome) :',
+    androidSteps: 'Réglages → Applications → Chrome → Autorisations → Micro → autoriser.',
+    desktop: 'Navigateur sur ordinateur :',
+    desktopSteps: 'Clique sur l\'icône 🔒/ⓘ dans la barre d\'adresse → Micro → Autoriser, puis recharge.',
+    tapToRetry: 'Réessayer',
+    adPlaying: 'Publicité en cours',
+    gamePaused: 'Le jeu est en pause pendant la publicité.',
+    skipAd: 'Passer la publicité',
+    volumeLevel: 'Niveau sonore',
+    currentPitch: 'Hauteur actuelle',
+    tapToStop: 'Appuie pour arrêter le micro',
+    tapToSing: 'Appuie pour chanter ! 🎤',
   },
 };

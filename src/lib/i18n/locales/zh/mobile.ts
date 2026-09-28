@@ -375,7 +375,7 @@ companion: {
   player2: '玩家 2',
   releaseControl: '释放控制',
   acquireControl: '接管控制',
-  controlLocked: '控制已锁定',
+  controlLocked: '控制：{name}',
 },
 remoteControl: {
   back: '← 返回',

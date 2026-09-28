@@ -15,6 +15,12 @@ export const gameTranslations = {
     callToAction: 'Play {branding} and try to beat my score!',
   },
 
+  // Pitch graph status chip (game screen) — QR fix: keys were referenced but never defined
+  pitchGraph: {
+    pitch: 'Pitch: {n} Hz',
+    noPitch: 'No pitch detected',
+  },
+
   scoreEvents: {
     perfect: 'PERFECT',
     great: 'GREAT',

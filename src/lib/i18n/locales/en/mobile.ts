@@ -154,6 +154,7 @@ export const mobileTranslations = {
   cptmPlayers: "Players",
   cptmYou: "you",
   cptmWaitingForStart: "Waiting for the next turn…",
+  cptmWaiting: "Waiting…",
   // ── Battle Royale in-game mirror (Item 8.1) ──
   brGameSingNow: "SING ALONG!",
   brGameYourVoice: "Your voice",
@@ -1104,5 +1105,30 @@ export const mobileTranslations = {
     scoreMaster: { title: 'Score Master', description: 'Reach 10,000 total points' },
     playlistBuilder: { title: 'Playlist Builder', description: 'Queue 5 songs' },
     genreExplorer: { title: 'Genre Explorer', description: 'Sing songs from 3 genres' },
+  },
+
+  // Mobile mic screen (phone as microphone) — QR fix: keys were referenced but never defined
+  mobileMicView: {
+    permissionDenied: 'Microphone Access Blocked',
+    permissionDesc: 'Microphone permission was denied. Enable it in your browser settings to sing.',
+    howToAllow: 'How to allow microphone access:',
+    step1: 'Open the browser settings (usually the 🔒/ⓘ icon next to the address bar).',
+    step2: 'Find the microphone/permissions section.',
+    step3: 'Set the microphone to "Allow" and reload the page.',
+    moreHelp: 'More help',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Settings app → Safari (or Chrome) → Microphone → allow for this website.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Settings → Apps → Chrome → Permissions → Microphone → allow.',
+    desktop: 'Desktop browser:',
+    desktopSteps: 'Click the 🔒/ⓘ icon in the address bar → Microphone → Allow, then reload.',
+    tapToRetry: 'Try again',
+    adPlaying: 'Ad playing',
+    gamePaused: 'The game is paused during the ad.',
+    skipAd: 'Skip ad',
+    volumeLevel: 'Volume level',
+    currentPitch: 'Current pitch',
+    tapToStop: 'Tap to stop the microphone',
+    tapToSing: 'Tap to sing! 🎤',
   },
 };

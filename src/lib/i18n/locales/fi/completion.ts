@@ -345,6 +345,7 @@ export const completionTranslations = {
       parseError: 'MIDI-tiedostoa ei voitu lukea.',
       noTracks: 'Tiedostosta ei löytynyt nuottiraitoja.',
       sheetMusic: {
+        pdfPages: 'PDF-sivut',
         button: 'Nuottikuvan tuonti',
         title: 'Nuottikuvan tunnistus (tekoäly)',
         description: 'Tunnista nuotteja (sävelkorkeus + ajoitus) nuottikuvasta tai PDF:stä tekoälyn avulla ja tuo ne nuottipohjaksi — kappaleen musiikkitiedostoa ei kosketa. PDF:t renderöidään sivu kerrallaan ja ne voidaan analysoida yksitellen tai kokonaisuutena. Tunnistus on tekoälyavusteista ja tulisi tarkistaa; tavut voidaan liittää valinnaisesti, tavuttomat nuotit saavat "~".',
@@ -944,6 +945,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Odotetaan…',
     brVoteWaiting: 'Odotetaan vaihtoehtoja…',
     brVoteDone: 'Äänesi on annettu!',
     brVoteEliminated: 'Eliminoitu — ei äänestystä tällä kierroksella.',
@@ -1490,5 +1492,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Sävelkorkeus: {n} Hz',
+    noPitch: 'Sävelkorkeutta ei havaittu',
+  },
+  mobileMicView: {
+    permissionDenied: 'Mikrofonin käyttö estetty',
+    permissionDesc: 'Mikrofonin käyttöoikeus evättiin. Ota se käyttöön selaimen asetuksissa laulaaksesi.',
+    howToAllow: 'Näin sallit mikrofonin käytön:',
+    step1: 'Avaa selaimen asetukset (yleensä 🔒/ⓘ-kuvake osoitepalkin vieressä).',
+    step2: 'Etsi mikrofoni/käyttöoikeudet-osio.',
+    step3: 'Aseta mikrofoni asentoon "Salli" ja lataa sivu uudelleen.',
+    moreHelp: 'Lisää apua',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Asetukset-sovellus → Safari (tai Chrome) → Mikrofoni → salli tälle sivustolle.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Asetukset → Sovellukset → Chrome → Käyttöoikeudet → Mikrofoni → salli.',
+    desktop: 'Tietokoneen selain:',
+    desktopSteps: 'Napsauta osoitepalkin 🔒/ⓘ-kuvaketta → Mikrofoni → Salli ja lataa uudelleen.',
+    tapToRetry: 'Yritä uudelleen',
+    adPlaying: 'Mainos toistetaan',
+    gamePaused: 'Peli on tauolla mainoksen aikana.',
+    skipAd: 'Ohita mainos',
+    volumeLevel: 'Äänenvoimakkuustaso',
+    currentPitch: 'Nykyinen sävelkorkeus',
+    tapToStop: 'Napauta lopettaaksesi mikrofonin',
+    tapToSing: 'Napauta laulaaksesi! 🎤',
   },
 };

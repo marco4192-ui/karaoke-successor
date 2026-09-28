@@ -35,16 +35,16 @@ export function createShareableCard(entry: HighscoreEntry): ShareableScoreCard {
 // Generate shareable text
 function generateShareText(card: ShareableScoreCard): string {
   return [
-    `🎤 ${t('game.share.scoredPoints').replace('{score}', card.score.toLocaleString()).replace('{title}', card.songTitle).replace('{artist}', card.artist)}`,
+    `🎤 ${t('share.scoredPoints').replace('{score}', card.score.toLocaleString()).replace('{title}', card.songTitle).replace('{artist}', card.artist)}`,
     '',
     card.rankTitle,
-    `📊 ${t('game.share.accuracy')}: ${card.accuracy.toFixed(1)}%`,
-    `🔥 ${t('game.share.maxCombo')}: ${card.maxCombo}x`,
-    `⭐ ${t('game.share.rating')}: ${card.rating.toUpperCase()}`,
-    `🎮 ${t('game.share.mode')}: ${card.gameMode.toUpperCase()}`,
-    `💬 ${t('game.share.difficulty')}: ${card.difficulty.toUpperCase()}`,
+    `📊 ${t('share.accuracy')}: ${card.accuracy.toFixed(1)}%`,
+    `🔥 ${t('share.maxCombo')}: ${card.maxCombo}x`,
+    `⭐ ${t('share.rating')}: ${card.rating.toUpperCase()}`,
+    `🎮 ${t('share.mode')}: ${card.gameMode.toUpperCase()}`,
+    `💬 ${t('share.difficulty')}: ${card.difficulty.toUpperCase()}`,
     '',
-    t('game.share.callToAction').replace('{branding}', t('core.branding')),
+    t('share.callToAction').replace('{branding}', t('core.branding')),
   ].join('\n');
 }
 
@@ -100,13 +100,13 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillText(card.score.toLocaleString(), 300, 240);
   ctx.font = '16px Inter, sans-serif';
   ctx.fillStyle = '#8888aa';
-  ctx.fillText(t('game.share.points'), 300, 265);
+  ctx.fillText(t('share.points'), 300, 265);
   
   // Stats row
   const stats = [
-    { label: t('game.share.accuracy'), value: `${card.accuracy.toFixed(1)}%` },
-    { label: t('game.share.maxCombo'), value: `${card.maxCombo}x` },
-    { label: t('game.share.rating'), value: card.rating.toUpperCase() },
+    { label: t('share.accuracy'), value: `${card.accuracy.toFixed(1)}%` },
+    { label: t('share.maxCombo'), value: `${card.maxCombo}x` },
+    { label: t('share.rating'), value: card.rating.toUpperCase() },
   ];
   
   stats.forEach((stat, i) => {
@@ -124,7 +124,7 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillStyle = '#ff00ff';
   ctx.font = '18px Inter, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(t('game.share.playerLabel').replace('{name}', card.playerName), 20, 380);
+  ctx.fillText(t('share.playerLabel').replace('{name}', card.playerName), 20, 380);
   
   // Date
   const date = new Date(card.playedAt).toLocaleDateString();
@@ -186,7 +186,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     const file = new File([blob], 'score-card.png', { type: 'image/png' });
     
     await navigator.share({
-      title: t('game.share.shareTitle'),
+      title: t('share.shareTitle'),
       text,
       files: [file],
     });
@@ -195,7 +195,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     // Fallback to text only
     try {
       await navigator.share({
-        title: t('game.share.shareTitle'),
+        title: t('share.shareTitle'),
         text,
       });
       return true;

@@ -346,6 +346,7 @@ export const completionTranslations = {
       parseError: '无法读取 MIDI 文件。',
       noTracks: '此文件中未找到音符轨道。',
       sheetMusic: {
+        pdfPages: 'PDF 页面',
         button: '乐谱导入',
         title: '乐谱识别（AI）',
         description: '通过 AI 从乐谱图片或 PDF 识别音符（音高 + 时序）并作为音符基础导入 — 歌曲的音乐文件保持不变。PDF 会逐页渲染，可以单页或整体分析。识别由 AI 辅助，结果需要复核；可选择分配音节，没有音节的音符记为“~”。',
@@ -949,6 +950,7 @@ export const completionTranslations = {
 
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: '等待中…',
     brVoteWaiting: '等待选项…',
     brVoteDone: '投票成功！',
     brVoteEliminated: '已被淘汰 — 本轮无投票权。',
@@ -1496,5 +1498,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: '音高：{n} Hz',
+    noPitch: '未检测到音高',
+  },
+  mobileMicView: {
+    permissionDenied: '麦克风访问被阻止',
+    permissionDesc: '麦克风权限被拒绝。请在浏览器设置中启用才能演唱。',
+    howToAllow: '如何允许麦克风访问：',
+    step1: '打开浏览器设置（通常是地址栏旁边的 🔒/ⓘ 图标）。',
+    step2: '找到麦克风/权限部分。',
+    step3: '将麦克风设为“允许”并重新加载页面。',
+    moreHelp: '更多帮助',
+    iOS: 'iPhone/iPad（Safari/Chrome）：',
+    iOSSteps: '设置 App → Safari（或 Chrome）→ 麦克风 → 允许此网站。',
+    android: 'Android（Chrome）：',
+    androidSteps: '设置 → 应用 → Chrome → 权限 → 麦克风 → 允许。',
+    desktop: '桌面浏览器：',
+    desktopSteps: '点击地址栏中的 🔒/ⓘ 图标 → 麦克风 → 允许，然后重新加载。',
+    tapToRetry: '重试',
+    adPlaying: '广告播放中',
+    gamePaused: '广告播放期间游戏已暂停。',
+    skipAd: '跳过广告',
+    volumeLevel: '音量级别',
+    currentPitch: '当前音高',
+    tapToStop: '点按停止麦克风',
+    tapToSing: '点按开始演唱！🎤',
   },
 };

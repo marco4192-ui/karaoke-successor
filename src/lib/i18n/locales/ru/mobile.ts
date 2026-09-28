@@ -375,7 +375,7 @@ companion: {
   player2: 'Игрок 2',
   releaseControl: 'Отпустить управление',
   acquireControl: 'Взять управление',
-  controlLocked: 'Управление занято',
+  controlLocked: 'Управление: {name}',
 },
 remoteControl: {
   back: '← Назад',

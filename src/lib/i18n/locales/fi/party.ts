@@ -579,7 +579,7 @@ partyStarting: {
   startPlayer: 'ALOITTAA LAULUN',
   startsFirst: 'Laulaa ensin',
   duelSing: 'Duelli',
-  startPlayerHint: 'Tämä pelaaja laulaa ensimmäisen osan',
+  startPlayerHint: '{name} laulaa ensin — valmistaudu!',
   companion: '📱 Companion-sovellus',
   startButton: '🎤 Aloita laulu!',
   hint: 'Laulajat voivat asettua paikoilleen — aloita, kun kaikki ovat valmiita.',

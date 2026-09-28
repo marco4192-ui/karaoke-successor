@@ -345,6 +345,7 @@ export const completionTranslations = {
       parseError: 'Kunne ikke læse MIDI-filen.',
       noTracks: 'Ingen nodespor fundet i denne fil.',
       sheetMusic: {
+        pdfPages: 'PDF-sider',
         button: 'Nodeark-import',
         title: 'Nodeark-genkendelse (AI)',
         description: 'Genkend noder (tonehøjde + timing) fra et nodeark-billede eller en PDF via AI og importér dem som nodegrundlag — sangens musikfil røres ikke. PDF\'er renderes side for side og kan analyseres individuelt eller samlet. Genkendelsen er AI-understøttet og bør gennemses; stavelser kan valgfrit tildeles, noder uden stavelse får "~".',
@@ -944,6 +945,7 @@ export const completionTranslations = {
   },
   // ══════════ mobile ══════════
   mobile: {
+    cptmWaiting: 'Venter…',
     brVoteWaiting: 'Venter på valgmulighederne…',
     brVoteDone: 'Din stemme er afgivet!',
     brVoteEliminated: 'Elimineret — ingen stemme denne runde.',
@@ -1490,5 +1492,34 @@ export const completionTranslations = {
         },
       },
     },
+  },
+
+  // ══ QR-Runde: zuvor fehlende Keys (mobileMicView, pitchGraph, cptmWaiting, pdfPages) ══
+  pitchGraph: {
+    pitch: 'Tonehøjde: {n} Hz',
+    noPitch: 'Ingen tonehøjde registreret',
+  },
+  mobileMicView: {
+    permissionDenied: 'Mikrofonadgang blokeret',
+    permissionDesc: 'Mikrofontilladelsen blev afvist. Aktivér den i browserindstillingerne for at synge.',
+    howToAllow: 'Sådan tillader du mikrofonadgang:',
+    step1: 'Åbn browserindstillingerne (normalt 🔒/ⓘ-ikonet ved siden af adresselinjen).',
+    step2: 'Find sektionen mikrofon/tilladelser.',
+    step3: 'Indstil mikrofonen til "Tillad" og genindlæs siden.',
+    moreHelp: 'Mere hjælp',
+    iOS: 'iPhone/iPad (Safari/Chrome):',
+    iOSSteps: 'Indstillings-appen → Safari (eller Chrome) → Mikrofon → tillad for dette websted.',
+    android: 'Android (Chrome):',
+    androidSteps: 'Indstillinger → Apps → Chrome → Tilladelser → Mikrofon → tillad.',
+    desktop: 'Browser på computeren:',
+    desktopSteps: 'Klik på 🔒/ⓘ-ikonet i adresselinjen → Mikrofon → Tillad, og genindlæs.',
+    tapToRetry: 'Prøv igen',
+    adPlaying: 'Reklame afspilles',
+    gamePaused: 'Spillet er sat på pause under reklamen.',
+    skipAd: 'Spring reklamen over',
+    volumeLevel: 'Lydstyrkeniveau',
+    currentPitch: 'Nuværende tonehøjde',
+    tapToStop: 'Tryk for at stoppe mikrofonen',
+    tapToSing: 'Tryk for at synge! 🎤',
   },
 };

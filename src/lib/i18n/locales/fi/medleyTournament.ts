@@ -249,7 +249,7 @@ tournament: {
   resultsSubtitle: 'Kaikkien pelaajien lopulliset sijoitukset',
   fullStandings: 'Kokonaissijoitukset',
   points: 'Pisteet',
-  accuracy: 'Tarkkuus: {n}%',
+  accuracy: 'Tarkkuus',
   won: 'voitti',
   highlights: 'Kohokohdat',
   tiebreakMatches: 'Tasapeliottelut',

@@ -102,7 +102,7 @@ export function createPlaylist(name: string, description?: string): Playlist {
   const playlists = getPlaylists();
   
   if (playlists.length >= DEFAULT_PLAYLIST_SETTINGS.maxPlaylists) {
-    throw new Error(t('library.playlists.maxPlaylistsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxPlaylists)));
+    throw new Error(t('playlists.maxPlaylistsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxPlaylists)));
   }
   
   const now = Date.now();
@@ -171,7 +171,7 @@ export function addSongToPlaylist(playlistId: string, songId: string): boolean {
   if (!playlist) return false;
   
   if (playlist.songIds.length >= DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist) {
-    throw new Error(t('library.playlists.maxSongsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist)));
+    throw new Error(t('playlists.maxSongsReached').replace('{n}', String(DEFAULT_PLAYLIST_SETTINGS.maxSongsPerPlaylist)));
   }
   
   // Don't add duplicates
