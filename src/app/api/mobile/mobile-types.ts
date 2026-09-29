@@ -165,4 +165,12 @@ export interface HostProfile {
   color: string;
   createdAt: number;
   isActive?: boolean;
+  /** R33/P9: unlocked achievement ids for the companion Achievements mirror */
+  achievements?: string[];
+  /** R33/P9: XP + level for the companion Achievements/Daily mirrors */
+  xp?: number;
+  level?: number;
+  /** R33/P9: stats for the companion profile cards */
+  songsPlayed?: number;
+  gamesPlayed?: number;
 }

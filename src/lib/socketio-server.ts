@@ -32,13 +32,29 @@ interface CompanionSocket extends Socket {
 // ─── Socket.IO Server Instance ───
 let io: SocketIOServer | null = null;
 
-/** Connected Desktop host socket (there should only be one) */
-let hostSocket: HostSocket | null = null;
+/** Connected Desktop host sockets.
+ *
+ * R33/P1 FIX: The desktop app opens MULTIPLE Socket.IO connections that all
+ * emit 'host:register' — useGlobalRemoteControl (navigation commands) and
+ * useMobileClient (state pushes) are BOTH always mounted in karaoke-app, and
+ * useRemoteControl (game commands) joins while a game runs. With a single
+ * `hostSocket` variable (last-wins), commands were routed to whichever socket
+ * registered last — useMobileClient's socket does NOT listen for 'command',
+ * so companion commands silently vanished (the "inverted remote control"
+ * bug). Tracking ALL host sockets and broadcasting commands to every one of
+ * them makes routing robust regardless of registration order. */
+const hostSockets = new Set<HostSocket>();
+
+/** Backwards-compatible single-host accessor (any connected host). */
+function getAnyHostSocket(): HostSocket | null {
+  for (const s of hostSockets) return s;
+  return null;
+}
 
 /** Desktop sockets subscribed to live pitch pushes (the Socket.IO pitch feed).
- *  Deliberately separate from hostSocket: pitch streaming must never
- *  interfere with command routing, which stays bound to the single
- *  hostSocket. The pitch-feed sockets register via 'host:pitch-subscribe'
+ *  Deliberately separate from the host sockets: pitch streaming must never
+ *  interfere with command routing, which stays bound to the registered
+ *  hostSockets. The pitch-feed sockets register via 'host:pitch-subscribe'
  *  and do NOT emit 'host:register'. */
 const pitchFeedSockets = new Set<Socket>();
 
@@ -71,11 +87,12 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
     // ─── Host (Desktop) Events ───
     socket.on('host:register', () => {
-      // Desktop registers itself as the host
+      // Desktop registers itself as a host (there may be several sockets
+      // from the same desktop page — see the R33 note on hostSockets).
       (socket as HostSocket)._isHost = true;
-      hostSocket = socket;
+      hostSockets.add(socket as HostSocket);
       // eslint-disable-next-line no-console
-      console.log(`[Socket.IO] Desktop host registered: ${socket.id}`);
+      console.log(`[Socket.IO] Desktop host registered: ${socket.id} (${hostSockets.size} total)`);
 
       // Send current game state to host on registration
       socket.emit('host:registered', {
@@ -169,9 +186,9 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
         },
       });
 
-      // Notify host of new companion
-      if (hostSocket) {
-        hostSocket.emit('companion:connected', {
+      // Notify all host sockets of the new companion
+      for (const host of hostSockets) {
+        host.emit('companion:connected', {
           clientId: data.clientId,
           clientName: data.clientName,
           companionCount: companionSockets.size,
@@ -195,9 +212,18 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       // Also store in mutableState for backward compatibility (HTTP polling fallback)
       mutableState.remoteControlState.pendingCommands.push(command as typeof mutableState.remoteControlState.pendingCommands[number]);
 
-      // Push to Desktop host instantly via WebSocket
-      if (hostSocket) {
-        hostSocket.emit('command', command);
+      // Push to ALL Desktop host sockets instantly via WebSocket. When at
+      // least one host is connected, the command is considered delivered —
+      // clear it from the pending queue so it is not replayed by the HTTP
+      // fallback polling later (double navigation).
+      if (hostSockets.size > 0) {
+        for (const host of hostSockets) {
+          host.emit('command', command);
+        }
+        mutableState.remoteControlState.pendingCommands =
+          mutableState.remoteControlState.pendingCommands.filter(
+            (c) => c.timestamp !== command.timestamp || c.fromClientId !== command.fromClientId,
+          );
       }
 
       // eslint-disable-next-line no-console
@@ -293,15 +319,15 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       if ((socket as HostSocket)._isHost) {
         // eslint-disable-next-line no-console
         console.log(`[Socket.IO] Desktop host disconnected: ${socket.id} (${reason})`);
-        if (hostSocket === socket) hostSocket = null;
+        hostSockets.delete(socket as HostSocket);
       } else {
         const companionSocket = socket as CompanionSocket;
         const clientId = companionSocket._clientId;
         if (clientId) {
           companionSockets.delete(clientId);
-          // Notify host
-          if (hostSocket) {
-            hostSocket.emit('companion:disconnected', {
+          // Notify all host sockets
+          for (const host of hostSockets) {
+            host.emit('companion:disconnected', {
               clientId,
               companionCount: companionSockets.size,
             });
@@ -351,8 +377,17 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
   // The desktop only polls `getcommands` while its WebSocket is DOWN; when the
   // socket is up, this forward is the only way HTTP commands reach it.
   mobileEvents.on(EVENTS.REMOTE_COMMAND, (data: { command: { type: string; data?: unknown; timestamp: number; fromClientId: string; fromClientName: string } }) => {
-    if (hostSocket) {
-      hostSocket.emit('command', data.command);
+    // R33/P1: deliver to ALL connected host sockets (see hostSockets note).
+    // With at least one live host the command is delivered — clear it from
+    // the pending queue so the HTTP fallback doesn't replay it.
+    if (hostSockets.size > 0) {
+      for (const host of hostSockets) {
+        host.emit('command', data.command);
+      }
+      mutableState.remoteControlState.pendingCommands =
+        mutableState.remoteControlState.pendingCommands.filter(
+          (c) => !(c.type === data.command.type && c.timestamp === data.command.timestamp && c.fromClientId === data.command.fromClientId),
+        );
     }
   });
 
@@ -369,10 +404,11 @@ export function getIO(): SocketIOServer | null {
 }
 
 /**
- * Get the host socket (for sending commands directly to Desktop).
+ * Get a host socket (for sending directly to the Desktop).
+ * R33: there may be several host sockets — returns any connected one.
  */
 export function getHostSocket(): HostSocket | null {
-  return hostSocket;
+  return getAnyHostSocket();
 }
 
 /**

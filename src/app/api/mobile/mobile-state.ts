@@ -169,6 +169,33 @@ function createMutableState() {
     // Song Library - Cached songs from main app for companion clients
     songLibrary: [] as SongSummary[],
 
+    // R33/P5/P6: Desktop settings snapshot (localStorage values + webcam
+    // config) pushed inside the 2s gamestate POST. Companions read it via
+    // GET action=settingssnapshot so their Settings mirror shows REAL desktop
+    // values instead of hardcoded defaults.
+    settingsSnapshot: null as null | {
+      values: Record<string, string>;
+      webcam: Record<string, unknown> | null;
+      defaultDifficulty?: string;
+      updatedAt: number;
+    },
+
+    // R33/P13: Mini cover thumbnails (96px JPEG data-URLs) keyed by songId.
+    // Uploaded by the desktop (use-song-library-sync), served to companions
+    // via GET action=songcover&songId=… as image/jpeg.
+    songCovers: {} as Record<string, string>,
+
+    // R33/P10: Top-100 local highscores pushed by the desktop.
+    highscores: [] as Array<Record<string, unknown>>,
+
+    // R33/P12: Daily-Challenge snapshots per profile (slots/weekly/streak/
+    // badges/level) pushed by the desktop for the companion Daily mirror.
+    dailyByProfile: {} as Record<string, unknown>,
+
+    // R33/P8: Jukebox mirror state (filters, pool, shuffle, repeat, …)
+    // pushed by useJukebox on every relevant change.
+    jukeboxState: null as unknown as Record<string, unknown> | null,
+
     // Host Profiles - Characters from main app for companion to choose from
     // (Cannot use localStorage in API route - must store in server memory)
     hostProfiles: [] as HostProfile[],

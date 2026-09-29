@@ -19,6 +19,8 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 import { getDesktopInstanceId } from '@/lib/desktop-instance';
 import { toast } from '@/hooks/use-toast';
+import { buildSettingsSnapshot } from '@/lib/companion/settings-snapshot';
+import { buildDailySnapshots } from '@/lib/companion/daily-snapshot';
 
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
@@ -1253,6 +1255,15 @@ export default function KaraokeZERO() {
                 };
               })(),
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
+              // R33/P16: the DEFAULT difficulty setting (not the in-game
+              // override) — the companion pre-selects its queue difficulty
+              // from this value.
+              defaultDifficulty: useGameStore.getState().persistedDifficulty
+                || getItem(StorageKeys.DEFAULT_DIFFICULTY)
+                || 'medium',
+              // R33/P5/P6: settings snapshot (localStorage values + webcam
+              // config) so the companion Settings mirror shows real values.
+              settingsSnapshot: buildSettingsSnapshot(),
               recentParties: recentPartiesPayload,
             },
           }),
@@ -1313,6 +1324,78 @@ export default function KaraokeZERO() {
     const id = setTimeout(() => { void syncScreenRef.current?.(); }, 250);
     return () => clearTimeout(id);
   }, [tournamentBracketObj, currentTournamentMatchObj, tournamentVotingMatchObj]);
+
+  // ── R33/P10: Highscores push for the companion Highscores mirror ──
+  // Push the top-100 local highscores whenever they change (cheap JSON
+  // compare) or every 15 s as a keep-alive after server restarts.
+  const highscoresObj = useGameStore.getState().highscores;
+  const highscoresRef = useRef<string>('');
+  useEffect(() => {
+    const pushHighscores = () => {
+      try {
+        const entries = (useGameStore.getState().highscores ?? []).slice(0, 100).map(h => ({
+          playerId: h.playerId,
+          playerName: h.playerName,
+          playerColor: h.playerColor,
+          songTitle: h.songTitle,
+          artist: h.artist,
+          score: h.score,
+          accuracy: h.accuracy,
+          maxCombo: h.maxCombo,
+          difficulty: h.difficulty,
+          gameMode: h.gameMode,
+          date: h.date,
+        }));
+        const serialized = JSON.stringify(entries);
+        if (serialized === highscoresRef.current) return; // unchanged
+        highscoresRef.current = serialized;
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'highscores', payload: { entries } }),
+        }).catch(() => { /* ignore */ });
+      } catch { /* non-critical */ }
+    };
+    pushHighscores();
+    const interval = setInterval(pushHighscores, 15000);
+    return () => clearInterval(interval);
+  }, [highscoresObj?.length, profiles]);
+
+  // ── R33/P12: Daily-Challenge snapshot push for the companion Daily mirror ──
+  // Per-profile slots/weekly/streak/badges. Computed every 5 s (cheap,
+  // localStorage reads only) and pushed via POST type:'dailystate'.
+  useEffect(() => {
+    const pushDaily = () => {
+      try {
+        const allProfiles = useGameStore.getState().profiles ?? [];
+        if (allProfiles.length === 0) return;
+        const daily = buildDailySnapshots(allProfiles);
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'dailystate', payload: { daily } }),
+        }).catch(() => { /* ignore */ });
+      } catch { /* non-critical */ }
+    };
+    pushDaily();
+    const interval = setInterval(pushDaily, 5000);
+    return () => clearInterval(interval);
+  }, [profiles]);
+
+  // ── R33/P11: Global profile-toggle handler from the companion ──
+  // profile_toggle:<id>:<0|1> used to only work while the character screen
+  // was mounted. Handle it globally so the controlling companion can
+  // activate/deactivate players from ANY desktop screen (idempotent with the
+  // character-screen listener — both set the same isActive value).
+  useEffect(() => {
+    const handleRemoteProfileToggle = (e: Event) => {
+      const { profileId, isActive } = (e as CustomEvent<{ profileId: string; isActive: boolean }>).detail || {};
+      if (!profileId) return;
+      useGameStore.getState().updateProfile(profileId, { isActive: !!isActive });
+    };
+    window.addEventListener('remote-profile-toggle', handleRemoteProfileToggle);
+    return () => window.removeEventListener('remote-profile-toggle', handleRemoteProfileToggle);
+  }, []);
 
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);

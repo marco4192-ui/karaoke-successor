@@ -406,6 +406,58 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         count: mutableState.songLibrary.length,
       });
 
+    // R33/P5/P6: Companion Settings mirror reads the desktop's real values
+    case 'settingssnapshot':
+      return Response.json({
+        success: true,
+        snapshot: mutableState.settingsSnapshot,
+      });
+
+    // R33/P13: Mini cover thumbnail for one song (96px JPEG data-URL cache)
+    case 'songcover': {
+      const songId = searchParams.get('songId');
+      if (!songId) {
+        return Response.json({ success: false, message: 'songId required' }, { status: 400 });
+      }
+      const dataUrl = mutableState.songCovers[songId];
+      if (!dataUrl) {
+        return Response.json({ success: false, message: 'No cover' }, { status: 404 });
+      }
+      const match = /^data:(image\/[a-zA-Z+]+);base64,(.*)$/s.exec(dataUrl);
+      if (!match) {
+        return Response.json({ success: false, message: 'Invalid cover data' }, { status: 500 });
+      }
+      const buffer = Buffer.from(match[2], 'base64');
+      return new Response(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': match[1],
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+
+    // R33/P10: Top-100 local highscores for the companion Highscores mirror
+    case 'gethighscores':
+      return Response.json({
+        success: true,
+        highscores: mutableState.highscores,
+      });
+
+    // R33/P12: Daily-Challenge snapshots per profile
+    case 'getdailystate':
+      return Response.json({
+        success: true,
+        daily: mutableState.dailyByProfile,
+      });
+
+    // R33/P8: Jukebox mirror state (filters, pool, shuffle, repeat, …)
+    case 'getjukeboxstate':
+      return Response.json({
+        success: true,
+        jukebox: mutableState.jukeboxState,
+      });
+
     // F4: Get chat messages (last 50)
     case 'getchat':
       return Response.json({

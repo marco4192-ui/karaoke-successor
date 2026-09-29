@@ -18,6 +18,30 @@ import {
   GAMESTATE_WRITER_TTL,
 } from './mobile-state';
 
+// ===================== R33 COMMAND CLASSIFICATION =====================
+// CONTROL commands drive the desktop (navigation, settings, playback, jukebox,
+// profiles, …) — they require the sender to hold the remote-control lock.
+// PARTICIPATION commands let any connected companion take part in the game
+// (party song picks, votes, pause requests, leaving a party) without holding
+// the lock. Everything unknown defaults to CONTROL (safe side).
+const PARTICIPATION_COMMANDS = new Set([
+  'party_select_song', 'party_vote', 'br_vote',
+  'companion_pause', 'companion_resume',
+  'party_show_leave', 'party_leave_confirm', 'party_leave_cancel',
+]);
+
+const PARTICIPATION_PREFIXES = [
+  'party_select_song:', 'party_vote:', 'br_vote:',
+];
+
+export function isControlCommand(commandType: string): boolean {
+  if (PARTICIPATION_COMMANDS.has(commandType)) return false;
+  for (const prefix of PARTICIPATION_PREFIXES) {
+    if (commandType.startsWith(prefix)) return false;
+  }
+  return true;
+}
+
 // ===================== POST HANDLER =====================
 export async function handlePostRequest(request: NextRequest): Promise<Response> {
   try {
@@ -187,6 +211,29 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (gsPayload.tournamentMatchId !== mutableState.gameState.tournamentMatchId) {
           tournamentVoteRegistry.clear();
         }
+
+        // R33/P5/P6: The desktop embeds a settings snapshot (localStorage
+        // values + webcam config + default difficulty) in its 2s gamestate
+        // POST. Extract it BEFORE merging (it is NOT part of MobileGameState)
+        // so the companion Settings mirror can read real desktop values via
+        // GET action=settingssnapshot.
+        const rawPayload = payload as Record<string, unknown>;
+        if (rawPayload.settingsSnapshot && typeof rawPayload.settingsSnapshot === 'object') {
+          const snap = rawPayload.settingsSnapshot as {
+            values?: Record<string, string>;
+            webcam?: Record<string, unknown> | null;
+            defaultDifficulty?: string;
+          };
+          mutableState.settingsSnapshot = {
+            values: snap.values && typeof snap.values === 'object' ? snap.values : {},
+            webcam: snap.webcam ?? null,
+            defaultDifficulty: snap.defaultDifficulty,
+            updatedAt: Date.now(),
+          };
+          // Do NOT leak the snapshot into the companion gamestate
+          delete rawPayload.settingsSnapshot;
+        }
+
         mutableState.gameState = { ...mutableState.gameState, ...gsPayload };
 
         // Notify Socket.IO server to push gamestate to all companions
@@ -696,15 +743,20 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const commandClient = mobileClients.get(clientId);
         if (!commandClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
-        // All companion-sent commands are allowed without explicit lock acquire.
-        // The companion is a trusted device on the local network (QR-scanned).
-        // Auto-acquire the lock if nobody holds it, so playback commands work.
-        if (!mutableState.remoteControlState.lockedBy) {
-          mutableState.remoteControlState.lockedBy = clientId;
-          mutableState.remoteControlState.lockedByName = commandClient.profile?.name || commandClient.name;
-          mutableState.remoteControlState.lockedAt = Date.now();
-          commandClient.hasRemoteControl = true;
-          mobileClients.set(clientId, commandClient);
+        // R33/P1+P14: Remote control is EXPLICIT now. The silent auto-acquire
+        // is gone — desktop-driving (CONTROL) commands are only accepted from
+        // the client that holds the remote lock ("Take Control"). Everyone
+        // else gets 403. PARTICIPATION commands (party song picks, votes,
+        // pause requests, party-leave flow) stay open to all companions so
+        // non-controlling players can still take part in party games, fill
+        // the queue (type:'queue' POST, unaffected) and use the chat.
+        const holdsLock = mutableState.remoteControlState.lockedBy === clientId;
+        if (!holdsLock && isControlCommand(String(commandPayload.command))) {
+          return Response.json({
+            success: false,
+            message: 'Remote control is not held — take control first',
+            requiresControl: true,
+          }, { status: 403 });
         }
         
         // Add command to pending queue for main app to pick up
@@ -895,6 +947,76 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           });
         }
         return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
+      }
+
+      // R33/P13: Desktop uploads mini cover thumbnails (96px JPEG data-URLs)
+      // for the companion library. Merged into the server-side cover cache —
+      // companions load them via GET action=songcover&songId=…
+      case 'songcovers': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const coversPayload = payload as { covers?: Record<string, string> };
+        if (coversPayload?.covers && typeof coversPayload.covers === 'object') {
+          const entries = Object.entries(coversPayload.covers).slice(0, 400);
+          for (const [songId, dataUrl] of entries) {
+            if (typeof songId === 'string' && typeof dataUrl === 'string'
+              && dataUrl.startsWith('data:image/') && dataUrl.length < 60000) {
+              mutableState.songCovers[songId] = dataUrl;
+            }
+          }
+          // Cap the cache at 600 covers (LRU-ish: keep the newest)
+          const coverIds = Object.keys(mutableState.songCovers);
+          if (coverIds.length > 600) {
+            for (const id of coverIds.slice(0, coverIds.length - 600)) {
+              delete mutableState.songCovers[id];
+            }
+          }
+          return Response.json({ success: true, message: 'Covers updated', count: entries.length });
+        }
+        return Response.json({ success: false, message: 'Invalid covers payload' }, { status: 400 });
+      }
+
+      // R33/P10: Desktop pushes the top-100 local highscores for the
+      // companion Highscores mirror (own-scores view).
+      case 'highscores': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const hsPayload = payload as { entries?: Array<Record<string, unknown>> };
+        if (Array.isArray(hsPayload?.entries)) {
+          mutableState.highscores = hsPayload.entries.slice(0, 100);
+          return Response.json({ success: true, count: mutableState.highscores.length });
+        }
+        return Response.json({ success: false, message: 'Invalid highscores payload' }, { status: 400 });
+      }
+
+      // R33/P12: Desktop pushes Daily-Challenge snapshots per profile
+      // (slots, weekly, streak, badges, level) for the companion Daily mirror.
+      case 'dailystate': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const dailyPayload = payload as { daily?: Record<string, unknown> };
+        if (dailyPayload?.daily && typeof dailyPayload.daily === 'object') {
+          mutableState.dailyByProfile = dailyPayload.daily;
+          return Response.json({ success: true, count: Object.keys(dailyPayload.daily).length });
+        }
+        return Response.json({ success: false, message: 'Invalid daily payload' }, { status: 400 });
+      }
+
+      // R33/P8: Desktop pushes the jukebox mirror state (filters, pool,
+      // shuffle, repeat, lyrics) so the companion Jukebox view is in sync.
+      case 'jukeboxstate': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const jbPayload = payload as Record<string, unknown>;
+        if (jbPayload && typeof jbPayload === 'object') {
+          mutableState.jukeboxState = jbPayload;
+          return Response.json({ success: true });
+        }
+        return Response.json({ success: false, message: 'Invalid jukebox state payload' }, { status: 400 });
       }
 
       // F4: Companion sends a chat message
