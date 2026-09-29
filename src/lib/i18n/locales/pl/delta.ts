@@ -915,7 +915,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Najlepsze wyniki",
     navJukeboxDesc: "Twórz playlisty i dodawaj piosenki do kolejki",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} trybów gry dla 2–24 graczy",
+    navPartyDesc: "{n} trybów gry maks. dla 32 graczy",
     navSectionTitle: "Odkryj aplikację",
     navSettingsDesc: "Audio, mikrofony, obraz",
     navSettingsTitle: "Ustawienia",
@@ -1074,7 +1074,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Wszystko o Karaoke ZERO: wersja, platforma, projekty składowe i licencje — plus opis projektu i linki do wsparcia.",
     appearance: "Dopasuj do siebie: motywy, animowane tło lub własne wideo w tle, styl i rozmiar tekstu, wyświetlanie nut oraz tryb wydajności dla słabszych maszyn.",
-    gameplay: "Dostrój odczucia z gry: punktacja, efekty cząsteczkowe przy trafieniach, autoodtwarzanie kolejnych piosenek z kolejki i inne przełączniki zachowań dla rund i wyników. Idealne do balansowania klimatu imprezy i wydajności.",
+    gameplay: "Dostrój odczucia z gry: wyświetlanie wyniku, efekty cząsteczkowe przy trafieniach, nagrywanie powtórek, automatyczny pełny ekran i inne przełączniki zachowań dla rund i wyników. Idealne do balansowania klimatu imprezy i wydajności.",
     general: "Podstawowe ustawienia aplikacji: język interfejsu, domyślna trudność nowych rund, aktywności online i lista wszystkich skrótów klawiszowych. Zmiany działają od razu — niektóre (jak język) bez restartu.",
     graphicsound: "Wszystko o audio: urządzenie wyjściowe (w tym ASIO dla niskich opóźnień), głośność główna i podglądu, czułość mikrofonu, normalizacja głośności i jakość wideo YouTube.",
     library: "Zarządzaj biblioteką piosenek: ustaw folder piosenek (każdy podfolder = jedna piosenka) i przeskanuj go, zresetuj bibliotekę lub usuń wszystkie dane. Także dom importu z innych systemów karaoke (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

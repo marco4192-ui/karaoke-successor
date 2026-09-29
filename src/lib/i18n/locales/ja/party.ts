@@ -32,7 +32,7 @@ party: {
   rateMySongDesc: '歌って友達に採点してもらおう！スコアリングなし — 純粋な楽しさ。ソロ、デュエル、デュエットモード。',
   onlineMultiplayerTitle: 'オンラインマルチプレイ',
   onlineMultiplayerDesc: '友達や世界中のプレイヤーと対戦！ルームを作成、マッチに参加してグローバルに競い合おう！',
-  newBadge: 'NEW',
+  newBadge: '新着',
 },
 partySetup: {
   songTooShort: '曲が短すぎます',

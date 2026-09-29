@@ -2,7 +2,7 @@
 
 export const partyTranslations = {
 partyHelpers: {
-  defaultMicName: 'Mic {n}',
+  defaultMicName: 'Mikrofon {n}',
 },
 party: {
   title: 'Festspel',
@@ -259,7 +259,7 @@ battleRoyale: {
   eliminatedInRound: 'Eliminerad i Omgång {n}',
   playersRemaining: '{n} spelare kvar',
   winner: 'VINNARE!',
-  mic: '🎤 Mic',
+  mic: '🎤 Mikrofon',
   companion: '📱 Companion',
   finalScore: 'Slutpoäng: {n}',
   returnToMenu: '🏠 Tillbaka till Meny',

@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Visa foto',
   photoUploaded: 'Foto uppladdat',
   noPhoto: 'Inget foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Dina poäng laddas upp till den globala topplistan.',
+  privacyHintDesc: 'Du kan när som helst välja bort detta i profilinställningarna.',
   storageMode: {
     title: 'Profilens lagring',
     local: 'Endast lokalt',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Skanna denna QR-kod för att ansluta direkt med denna profil i Companion-appen.',
   hideQrCode: 'Dölj QR Code',
   showQrCode: 'Visa QR Code',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Deltagande i topplistan',
+  leaderboardParticipationDesc: 'Delta i topplistan online och dela dina poäng med andra spelare',
   loadProfile: 'Ladda online-profil',
 },
 characterCard: {
@@ -141,7 +141,7 @@ achievements: {
   uncommon: 'Ovanlig',
   rare: 'Sällsynt',
   epic: 'Episk',
-  legendary: 'Legendär',
+  legendary: 'Legendarisk',
   first_note: {
     name: 'Första noten',
     description: 'Träffa din första not',
@@ -171,7 +171,7 @@ achievements: {
     description: 'Få över 90% noggrannhet',
   },
   score_8k: {
-    name: 'Rising Star',
+    name: 'Stjärnskott',
     description: 'Få över 8 000 poäng',
   },
   score_9k: {
@@ -179,7 +179,7 @@ achievements: {
     description: 'Få över 9 000 poäng',
   },
   score_9500: {
-    name: 'Flawless',
+    name: 'Fläckfri',
     description: 'Få över 9 500 poäng',
   },
   golden_collector: {
@@ -215,7 +215,7 @@ achievements: {
     description: 'Spela 20 spel',
   },
   party_time: {
-    name: 'Party Time!',
+    name: 'Festtid!',
     description: 'Spela ett partyläge',
   },
   duel_winner: {
@@ -235,7 +235,7 @@ achievements: {
     description: 'Få en kombo på 50+ efter att ha missat 10 noter',
   },
   speed_demon: {
-    name: 'Speed Demon',
+    name: 'Hastighetsdemon',
     description: 'Gör klart en låt i 1.5x hastighet',
   },
   blind_master: {
@@ -600,7 +600,7 @@ mobileAchievements: {
     description: 'Sjung din första låt',
   },
   ten_songs: {
-    title: 'Rising Star',
+    title: 'Stjärnskott',
     description: 'Sjung 10 låtar',
   },
   fifty_songs: {
@@ -612,7 +612,7 @@ mobileAchievements: {
     description: 'Få ett perfekt resultat (95%+)',
   },
   five_perfect: {
-    title: 'Flawless',
+    title: 'Fläckfri',
     description: 'Få 5 perfekta poäng',
   },
   high_score: {

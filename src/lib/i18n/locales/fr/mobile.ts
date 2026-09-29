@@ -28,7 +28,7 @@ mobile: {
   howToConnect3: 'Touchez la notification pour ouvrir le lien',
   howToConnect4: 'Autorisez l\'accès au microphone lorsque demandé',
   howToConnect5: 'Touchez le bouton microphone pour commencer à chanter!',
-  qrCodeAlt: 'QR Code',
+  qrCodeAlt: 'Code QR',
   mobileQueue: 'File Mobile',
   queueSongs: 'File : {n}/3 chansons',
   moreSongs: '+{n} chansons supplémentaires',

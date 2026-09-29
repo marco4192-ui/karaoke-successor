@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: '正在上传到全球排行榜...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: '已验证的分数',
+  unverified: '未验证（无证明）',
+  verifiedDesc: '该分数已通过反作弊系统验证',
+  unverifiedDesc: '该分数未附带反作弊证明',
 },
 shareSection: {
   title: '📤 分享你的分数',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: '来自{name}的新消息',
+  openChat: '打开聊天',
+  closeChat: '关闭聊天',
   noMessages: '暂无消息',
   sendAs: '发送身份',
   noPlayers: '暂无玩家',

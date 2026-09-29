@@ -916,7 +916,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Scores",
     navJukeboxDesc: "Créez des playlists et mettez des chansons en file",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} modes de jeu pour 2–24 joueurs",
+    navPartyDesc: "{n} modes de jeu pour jusqu'à 32 joueurs",
     navSectionTitle: "Explorez l'app",
     navSettingsDesc: "Audio, microphones, affichage",
     navSettingsTitle: "Paramètres",
@@ -1075,7 +1075,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Tout sur Karaoke ZERO : version, plateforme, projets contributeurs et licences — plus la description du projet et les liens d'assistance.",
     appearance: "Personnalisez : thèmes, fond animé ou votre propre vidéo de fond, style et taille des paroles, affichage des notes et le mode performance pour les machines modestes.",
-    gameplay: "Réglez le feeling du jeu : scoring, effets de particules aux réussites, lecture automatique des prochaines chansons de la file et d'autres interrupteurs de comportement pour les manches et les résultats. Parfait pour doser ambiance de fête et performances.",
+    gameplay: "Réglez le feeling du jeu : affichage du score, effets de particules aux réussites, enregistrement du replay, plein écran auto et d'autres interrupteurs de comportement pour les manches et les résultats. Parfait pour doser ambiance de fête et performances.",
     general: "Réglages de base : langue de l'interface, difficulté par défaut des nouvelles manches, activités en ligne et la liste de tous les raccourcis clavier. Les changements s'appliquent immédiatement — certains (comme la langue) sans redémarrage.",
     graphicsound: "Tout l'audio : périphérique de sortie (avec ASIO pour la faible latence), volume master et d'écoute, sensibilité du micro, normalisation du volume et qualité vidéo YouTube.",
     library: "Gérez votre bibliothèque de chansons : définissez le dossier des chansons (chaque sous-dossier = une chanson) et scannez-le, réinitialisez la bibliothèque ou supprimez toutes les données. C'est aussi le lieu de l'import depuis d'autres systèmes de karaoké (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

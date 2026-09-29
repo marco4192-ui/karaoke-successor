@@ -75,7 +75,7 @@ export const coreTranslations = {
     launchDuellSub: '2 mics · point duel',
     launchDuett: 'Duet',
     launchDuettSub: '2 voices · duet songs',
-    navPartyDesc: '{n} game modes for 2–24 players',
+    navPartyDesc: '{n} game modes for up to 32 players',
     navJukeboxTitle: 'Jukebox',
     navJukeboxDesc: 'Build playlists and queue up songs',
     navHighscoresTitle: 'Highscores',

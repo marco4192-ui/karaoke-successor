@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Vis foto',
   photoUploaded: 'Foto uploadet',
   noPhoto: 'Intet foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Dine scores bliver uploadet til den globale rangliste.',
+  privacyHintDesc: 'Du kan til enhver tid fravælge det i profilindstillingerne.',
   storageMode: {
     title: 'Profillagring',
     local: 'Kun lokalt',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Scan denne QR-kode for at forbinde direkte med denne profil i companion-appen.',
   hideQrCode: 'Skjul QR-kode',
   showQrCode: 'Vis QR-kode',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Ranglistedeltagelse',
+  leaderboardParticipationDesc: 'Deltag i den online rangliste og del dine scores med andre spillere',
   loadProfile: 'Indlæs onlineprofil',
 },
 characterCard: {
@@ -138,16 +138,16 @@ achievements: {
   playToUnlock: 'Spil sange for at låse op for præstationer!',
   rarity: 'Sjældenhed',
   common: 'Almindelig',
-  uncommon: 'Uncommon',
+  uncommon: 'Ualmindelig',
   rare: 'Sjælden',
-  epic: 'Epic',
+  epic: 'Episk',
   legendary: 'Legendarisk',
   first_note: {
     name: 'Første node',
     description: 'Ram din første node',
   },
   perfect_ten: {
-    name: 'Perfect Ten',
+    name: 'Perfekt ti\'er',
     description: 'Få 10 Perfect-hit i én sang',
   },
   combo_master: {
@@ -171,7 +171,7 @@ achievements: {
     description: 'Få over 90% præcision',
   },
   score_8k: {
-    name: 'Rising Star',
+    name: 'Stigende stjerne',
     description: 'Score over 8.000 point',
   },
   score_9k: {
@@ -179,15 +179,15 @@ achievements: {
     description: 'Score over 9.000 point',
   },
   score_9500: {
-    name: 'Flawless',
+    name: 'Fejlfri',
     description: 'Score over 9.500 point',
   },
   golden_collector: {
-    name: 'Golden Collector',
+    name: 'Guldsamler',
     description: 'Ram 10 gyldne noder',
   },
   golden_master: {
-    name: 'Golden Master',
+    name: 'Guldmeister',
     description: 'Ram 50 gyldne noder',
   },
   first_song: {
@@ -215,7 +215,7 @@ achievements: {
     description: 'Spil 20 spil',
   },
   party_time: {
-    name: 'Party Time!',
+    name: 'Partytid!',
     description: 'Spil en party-tilstand',
   },
   duel_winner: {
@@ -493,7 +493,7 @@ achievements: {
     description: 'Syng 100 duetter',
   },
   duels_5: {
-    name: 'Duelist',
+    name: 'Duellant',
     description: 'Vind 5 dueller',
   },
   duels_10: {
@@ -600,7 +600,7 @@ mobileAchievements: {
     description: 'Syng din første sang',
   },
   ten_songs: {
-    title: 'Rising Star',
+    title: 'Stigende stjerne',
     description: 'Syng 10 sange',
   },
   fifty_songs: {
@@ -612,7 +612,7 @@ mobileAchievements: {
     description: 'Få en perfekt score (95%+)',
   },
   five_perfect: {
-    title: 'Flawless',
+    title: 'Fejlfri',
     description: 'Få 5 perfekte scores',
   },
   high_score: {

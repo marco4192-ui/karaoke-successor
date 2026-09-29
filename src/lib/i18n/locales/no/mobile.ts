@@ -222,7 +222,7 @@ mobileViews: {
   removeFromQueue: 'Fjern fra kø',
   youJustPlayed: 'Du spilte nettopp',
   score: 'Poeng',
-  bestCombo: 'Beste Combo',
+  bestCombo: 'Beste kombo',
   rating: 'Vurdering',
   saveScoreCard: '📸 Lagre poengkort',
   scoreCopied: 'Poeng kopiert til utklippstavle!',

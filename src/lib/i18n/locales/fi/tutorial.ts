@@ -53,22 +53,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Pika-aloitus',
           body: '"Aloita laulaminen" vie sinut suoraan kirjastoon. "Juhlatila" avaa 9 juhlapeliä ryhmille.',
-          details: 'Pika-aloituskortit ovat oikoteitä yleisimpiin polkuihin:\n• "Aloita laulaminen" = avaa kirjasto, valitse kappale ja mennään (yksin, kaksinkamppailu tai duetto).\n• "Juhlatila" = pelikokoelma 2–24 pelaajalle, puhelimet voivat liittyä mikrofoneiksi.\n\nKaikki täällä näkyvä löytyy myös valikkopalkista — kortit säästävät vain klikkauksia.',
+          details: 'Pika-aloituskortit ovat oikoteitä yleisimpiin polkuihin:\n• "Aloita laulaminen" = avaa kirjasto, valitse kappale ja mennään (yksin, kaksinkamppailu tai duetto).\n• "Juhlatila" = pelikokoelma jopa 32 pelaajalle, puhelimet voivat liittyä mikrofoneiksi.\n\nKaikki täällä näkyvä löytyy myös valikkopalkista — kortit säästävät vain klikkauksia.',
         },
         dailyCard: {
           title: 'Päivittäishaaste',
           body: '5 paikkaa päivässä vaihtuvine tehtävine — mitä useamman paikan suoritat, sitä isompi XP-bonus. Uudet tehtävät ilmestyvät keskiyöllä.',
-          details: 'Näin järjestelmä toimii:\n• Jokainen viidestä paikasta sisältää eri tehtävätyypin (esim. "laula 80-luvun kappale", "kerää 8000 pistettä").\n• Paikat aukeavat järjestyksessä — paikka 2 vasta, kun paikka 1 on suoritettu (tai ohitettu).\n• Jokaisen paikan voi pelata useilla vaikeustasoilla; korkeammat antavat enemmän XP:tä (jopa 3× kerroin).\n• Bonus kasvaa suoritettujen paikkojen määrän mukaan: 5/5 tuo täyden päivittäisen bonuksen.\n\nTehtävät valitaan omasta kirjastostasi — valikoima mukautuu aina kappaleisiisi.',
+          details: 'Näin järjestelmä toimii:\n• Jokainen viidestä paikasta sisältää eri tehtävätyypin (esim. "laula 80-luvun kappale", "kerää 8000 pistettä").\n• Paikat aukeavat järjestyksessä — paikka 2 vasta, kun paikka 1 on suoritettu.\n• Jokaisen paikan voi pelata useilla vaikeustasoilla; korkeammat antavat enemmän XP:tä (jopa 3× kerroin).\n• Bonus kasvaa suoritettujen paikkojen määrän mukaan: 5/5 tuo täyden päivittäisen bonuksen.\n\nTehtävät valitaan omasta kirjastostasi — valikoima mukautuu aina kappaleisiisi.',
         },
         weeklyCard: {
           title: 'Viikkohaaste',
           body: 'Viikoittainen vastine: 5 paikkaa viikon mittaan suuremmilla XP-palkinnoilla. Täydellinen pitkän tähtäimen tavoitteisiin.',
-          details: 'Viikkohaasteet toimivat kuten päivittäiset, mutta:\n• 5 paikkaa ovat voimassa 7 päivää — ei päivittäistä nollausta, kerää omaan tahtiisi.\n• XP-palkinnot per paikka ovat paljon suurempia (esim. 500–2000 XP 100–400 XP:n sijaan).\n• Nollaus tapahtuu maanantaiaamuna.\n\nVinkki: päivittäinen ja viikoittainen kulkevat rinnakkain — pelaamalla molempia nousit tasolla nopeimmin.',
+          details: 'Viikkohaasteet toimivat kuten päivittäiset, mutta:\n• 5 paikkaa ovat voimassa 7 päivää — ei päivittäistä nollausta, kerää omaan tahtiisi.\n• XP-palkinnot per paikka ovat suurempia: perusarvo 250–500 XP päivittäisen 100–200 XP:n sijaan — ja vaikeustason kerroin (jopa 3×) tulee päälle.\n• Nollaus tapahtuu maanantaiaamuna.\n\nVinkki: päivittäinen ja viikoittainen kulkevat rinnakkain — pelaamalla molempia nousit tasolla nopeimmin.',
         },
         modeLauncher: {
           title: 'Laulu: yksin, kaksinkamppailu & duetto',
           body: '🎤 Yksinpeli: yksi pelaaja, yksi mikrofoni.\n⚔️ Kaksinkamppailu: kaksi pelaajaa SAMALLA kappaleella — enemmän pisteitä kerännyt voittaa.\n🎭 Duetto: kaksi ääntä kahdella raidalla — kirjasto näyttää automaattisesti vain sopivat duettokappaleet.',
-          details: 'Kolme tilaa tarkemmin:\n• Yksinpeli: klassinen karaoke — laulat kaikki nuotit, tuloksesi nousee tulostauluille.\n• Kaksinkamppailu: molemmat pelaajat laulavat samaa nuottiraitaa yhtä aikaa. Pisteet kasvavat erikseen — lopun vertailu näyttää, kuka oli parempi. Täydellinen uusintaotteluihin.\n• Duetto: kappaleessa on kaksi erillistä ääntä (P1/P2) — jokainen laulaa "omat" osansa, yhteiset fraasit tuovat joukkuebonuksen. Duettokappaleet löytyvät kirjaston 🎭-suodattimella.\n\nMikrofonit: voit yhdistää niin monta mikrofonia tai älypuhelinta kuin haluat (katso Asetukset → Mikrofoni).',
+          details: 'Kolme tilaa tarkemmin:\n• Yksinpeli: klassinen karaoke — laulat kaikki nuotit, tuloksesi nousee tulostauluille.\n• Kaksinkamppailu: molemmat pelaajat laulavat samaa nuottiraitaa yhtä aikaa. Pisteet kasvavat erikseen — lopun vertailu näyttää, kuka oli parempi. Täydellinen uusintaotteluihin.\n• Duetto: kappaleessa on kaksi erillistä ääntä (P1/P2) — jokainen laulaa "omat" osansa, yhteiset fraasit tuovat joukkuebonuksen. Duettokappaleet löytyvät kirjaston 🎭-suodattimella.\n\nMikrofonit: enintään 4 fyysistä mikrofonia sekä älypuhelimia lisäsyötteinä (katso Asetukset → Mikrofoni).',
         },
         libraryNav: {
           title: 'Kirjasto',
@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Suodattimet',
           body: 'Genre, kieli, vuosi, vuosikymmen, duetot ja viraalihitit — rajaa kirjasto juuri niin kuin haluat.',
-          details: 'Kaikki suodattimet yhdistyvät — esim. "Genre: Rock + Kieli: englanti + Aikakausi: 80-luku" näyttää täsmälleen 80-luvun englanninkieliset rockkappaleet.\n\nErikoissuodattimet:\n• Duetto: vain kappaleet, joissa kaksi ääniraitaa.\n• Viraalihitit: kappaleet, jotka ovat paraikaa viraalilistoilla (tiedot kohdasta Asetukset → Viraalilistat).\n• Omat genret ja kielet: luo omia kategorioita kohdassa Asetukset → Genret & kielet — ne ilmestyvät näihin suodattimiin heti.\n\n"Tyhjennä suodattimet" (✕) nollaa kaiken kerralla.',
+          details: 'Kaikki suodattimet yhdistyvät — esim. "Genre: Rock + Kieli: englanti + Aikakausi: 80-luku" näyttää täsmälleen 80-luvun englanninkieliset rockkappaleet.\n\nErikoissuodattimet:\n• Duetto: vain kappaleet, joissa kaksi ääniraitaa.\n• Viraalihitit: kappaleet, jotka ovat paraikaa viraalilistoilla (määritellään kohdassa Asetukset → Kirjasto).\n• Omat genret ja kielet: luo omia kategorioita kohdassa Asetukset → Genret & kielet — ne ilmestyvät näihin suodattimiin heti.\n\n"Tyhjennä suodattimet" (✕) nollaa kaiken kerralla.',
         },
         songCard: {
           title: 'Kappaleet',
@@ -92,8 +92,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Juhlatilat',
-          body: '9 peliä 2–24 pelaajalle: Battle Royale, Mikrofonin vaihto, Medley-kisa, turnaus, Puuttuvat sanat, Sokea karaoke ja muita — puhelimet voivat liittyä mikrofoneiksi.',
-          details: 'Yhdeksän tilaa silmäyksellä:\n• Battle Royale: kaikki laulavat, heikoin putoaa joka kierroksella — viimeinen laulaja voittaa.\n• Mikrofonin vaihto: mikrofoni kiertää pelaajalta toiselle — jokainen laulaa oman osansa.\n• Medley-kisa: joukkueet laulavat lyhyitä kappalepätkiä erikoissäännöillä.\n• Turnaus: eliminaatioturnauspuu kaksinkamppailuineen — voittaja kiipeää joka kierroksella.\n• Puuttuvat sanat: sanoituksista katoaa sanoja — laula puuttuva sana pisteisiin.\n• Sokea karaoke: ei nuottonäyttöä, vain korvat!\n• Arvioi kappaleeni & Companion-mukalaulu ja muita — jokainen tilakortti selittää itsensä.\n\nLähes kaikki tilat tukevat companion-sovellusta mikrofonina ja kaukosäätimenä.',
+          body: '9 peliä jopa 32 pelaajalle: Battle Royale, Mikrofonin vaihto, Medley-kisa, turnaus, Puuttuvat sanat, Sokea karaoke ja muita — puhelimet voivat liittyä mikrofoneiksi.',
+          details: 'Yhdeksän tilaa silmäyksellä:\n• Battle Royale: kaikki laulavat, heikoin putoaa joka kierroksella — viimeinen laulaja voittaa.\n• Mikrofonin vaihto: mikrofoni kiertää pelaajalta toiselle — jokainen laulaa oman osansa.\n• Medley-kisa: joukkueet laulavat lyhyitä kappalepätkiä erikoissäännöillä.\n• Turnaus: eliminaatioturnauspuu kaksinkamppailuineen — voittaja kiipeää joka kierroksella.\n• Puuttuvat sanat: sanoituksista katoaa sanoja — laula puuttuva sana pisteisiin.\n• Sokea karaoke: nuottonäyttö pimenee jaksoittain — vain korvat!\n• Arvioi kappaleeni & Companion-mukalaulu ja muita — jokainen tilakortti selittää itsensä.\n\nLähes kaikki tilat tukevat companion-sovellusta mikrofonina ja kaukosäätimenä.',
         },
         partyModes: {
           title: 'Tilavalitsin',
@@ -123,12 +123,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Asetukset',
           body: 'Mikrofonit, kieli, peliasetusten hienosäätö, ulkonäkö ja grafiikka — kaikki säätimet ovat täällä.',
-          details: 'Asetusten 12 välilehteä pikaisesti:\n• Yleiset: kieli, oletusvaikeustaso, verkkotoiminnot\n• Pelikokemus: pisteytys, partikkelit, jonon automaattitoisto\n• Ulkonäkö: teemat, sanoitustyyli, tausta\n• Grafiikka / Ääni: ulostulolaite, äänenvoimakkuus, YouTube-laatu\n• Mikrofoni: laitteet, herkkyys, kohinaraja, esiasetukset\n• Mobiili: companion-laitteiden yhdistäminen & hallinta\n• Web-kamera: kamera taustaksi\n• Kirjasto: kappalekansio, tuonti, nollaus\n• Genret & kielet: omat kategoriat\n• Teemajuhlat: teeman aktivointi & asetukset\n• Synkronointi & varmuuskopio: turvaverkot\n\nKaikille välilehdille on oma syvällinen asetuskierros ?-ohjevalikossa.',
+          details: 'Asetusten 12 välilehteä pikaisesti:\n• Yleiset: kieli, oletusvaikeustaso, verkkotoiminnot\n• Pelikokemus: pisteenäyttö, partikkelit, combo, toiston tallennus\n• Ulkonäkö: teemat, sanoitustyyli, tausta\n• Ääni: ulostulolaite, äänenvoimakkuus, normalisointi, YouTube-laatu\n• Mikrofoni: laitteet, herkkyys, kohinaraja, esiasetukset\n• Mobiili: companion-laitteiden yhdistäminen & hallinta\n• Web-kamera: kamera taustaksi\n• Kirjasto: kappalekansio, tuonti, viraalilistat, nollaus\n• Genret & kielet: omat kategoriat\n• Teemajuhlat: teeman aktivointi & asetukset\n• Synkronointi & varmuuskopio: turvaverkot\n• Tietoja: versio, alusta, lisenssit\n\nKaikille välilehdille on oma syvällinen asetuskierros ?-ohjevalikossa.',
         },
         settingsView: {
           title: 'Asetusten välilehdet',
-          body: 'Valitse osio ylhäältä: Yleiset (kieli), Pelikokemus, Ulkonäkö, Grafiikka / Ääni, Mikrofoni, Mobiili (puhelinyhteys) ja muuta.',
-          details: 'R28:sta lähtien jokaisen välilehden yläreunassa on lyhyt johdanto, joka kertoo sen tehtävän — sinun ei koskaan tarvitse arvailla, mihin asetus kuuluu.\n\nVastaava kierros: "Asetukset" ?-ohjevalikossa vie sinut läpi jokaisen välilehden.',
+          body: 'Valitse osio ylhäältä: Yleiset (kieli), Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili (puhelinyhteys) ja muuta.',
+          details: 'Jokaisen välilehden yläreunassa on lyhyt johdanto, joka kertoo sen tehtävän — sinun ei koskaan tarvitse arvailla, mihin asetus kuuluu.\n\nVastaava kierros: "Asetukset" ?-ohjevalikossa vie sinut läpi jokaisen välilehden.',
         },
         finish: {
           title: 'Valmista tuli! 🎉',
@@ -172,7 +172,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Työkalurivi',
           body: 'Kaikki nuoteille: lisää, monista, poista, jaa, yhdistä — plus nuottityypit, äänet ja naputustila (siitä kohta lisää).',
-          details: 'Työkalut järjestyksessä:\n• ➕ Lisää nuotti: laskeutuu toistokohtaan\n• ⧉ Monista: kopioi valitun nuotin heti sen perään\n• 🗑 Poista: poistaa valinnan\n• ✂ Jaa: yksi nuotti → kaksi (puolivälistä)\n• ⇄ Yhdistä: kaksi valittua → yksi\n\nValitse klikkaamalla; shift-klikkaus valitsee useita. Sitten näppäimistö jatkaa: ⌫ poistaa, ↑/↓ siirtää sävelkorkeutta, ←/→ siirtää ajassa.',
+          details: 'Työkalut järjestyksessä:\n• ➕ Lisää nuotti: laskeutuu toistokohtaan\n• ⧉ Monista: kopioi valitun nuotin heti sen perään\n• 🗑 Poista: poistaa valinnan\n• ✂ Jaa: yksi nuotti → kaksi (puolivälistä)\n• ⇄ Yhdistä: yhdistää valitun nuotin seuraavaan\n\nValitse klikkaamalla; shift-klikkaus valitsee useita. Sitten näppäimistö jatkaa: ⌫ poistaa, ↑/↓ siirtää sävelkorkeutta, ←/→ siirtää ajassa.',
         },
         lyricsPanel: {
           title: 'Sanoituspaneeli',
@@ -181,7 +181,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Nuottien muokkaus',
-          body: 'Nuotit ovat palikoita nuottikaistoilla: lisää, monista, poista, jaa (yksi nuotti → kaksi) ja yhdistä (kaksi → yksi).\n\nMuokkaa valittuja nuotteja vauhdikkaasti: ⌫ poistaa, ↑/↓ siirtää sävelkorkeutta.',
+          body: 'Nuotit ovat palikoita nuottikaistoilla: lisää, monista, poista, jaa (yksi nuotti → kaksi) ja yhdistä (seuraavan nuotin kanssa).\n\nMuokkaa valittuja nuotteja vauhdikkaasti: ⌫ poistaa, ↑/↓ siirtää sävelkorkeutta.',
           details: 'Tarkkuusvinkit:\n• Zoomaus: Ctrl+hiiren rulla aikajanan päällä — zoomaa sisään hienoon ajoitukseen.\n• Toisto: välilyönti käynnistää/pysäyttää, Shift+välilyönti toistaa vain valinnan.\n• Useiden nuottien siirtäminen: valitse kaikki, ↑/↓ siirtää koko nippua.\n\nAjoitukseen: nuotin alun pitää osua tavun alkukohtaan laulussa — aaltomuoto auttaa löytämään kohdat.',
         },
         noteTypes: {
@@ -212,7 +212,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Pikanäppäimet',
           body: 'Kaikki näppäimistön pikavalinnat silmäyksellä — editori on kosketinsoitin. Klikkaa itsesi läpi!',
-          details: 'Tärkeimmät pikavalinnat:\n• Ctrl+Z / Ctrl+Y: kumoa / tee uudelleen\n• Välilyönti: toista/keskeytä\n• ⌫: poista valitut nuotit\n• ↑/↓: siirrä sävelkorkeutta · ←/→: siirrä ajassa\n• S: jaa nuotti · M: yhdistä\n• 1–5: valitse nuottityyppi\n\nPikavalintapaneelissa voit katsella ja muokata näppäimiä.',
+          details: 'Tärkeimmät pikavalinnat:\n• Ctrl+Z / Ctrl+Y: kumoa / tee uudelleen\n• Välilyönti: toista/keskeytä\n• ⌫: poista valitut nuotit\n• ↑/↓: siirrä sävelkorkeutta (Shift = kokonainen oktaavi) · ←/→: siirrä ajassa (Shift = karkeasti)\n• M: yhdistä seuraavaan nuottiin\n• Ctrl+S: tallenna · Ctrl+C/V: kopioi/liitä nuotteja\n\nVasemman palkin pikavalintapaneeli näyttää kaikki näppäimet silmäyksellä.',
         },
         finish: {
           title: 'Rakentamaan! 🛠️',
@@ -238,12 +238,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Asetukset 👋',
           body: 'Tämä kierros kulkee vain asetusten parissa — välilehti kerrallaan.\n\nVaihdan automaattisesti jokaiseen välilehteen ja selitän, mitä sieltä löytyy.',
-          details: 'Välilehdet kierrosjärjestyksessä: Yleiset, Pelikokemus, Ulkonäkö, Grafiikka / Ääni, Mikrofoni, Mobiili (companion), Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Viraalilistat, Synkronointi & varmuuskopio sekä Tietoja.\n\nJokaisen välilehden yläreunassa on lyhyt johdanto — tämä kierros syventyy siihen vaihe vaiheelta.',
+          details: 'Välilehdet kierrosjärjestyksessä: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili (companion), Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Synkronointi & varmuuskopio sekä Tietoja.\n\nJokaisen välilehden yläreunassa on lyhyt johdanto — tämä kierros syventyy siihen vaihe vaiheelta.',
         },
         tabBar: {
           title: 'Välilehtipalkki',
-          body: 'Kaikki asetukset on järjestetty välilehdille: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili, Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Synkronointi & varmuuskopio ja Tietoja.\n\nR28:sta lähtien jokaisen välilehden yläreunassa oleva lyhyt johdanto kertoo, mitä se tekee.',
-          details: 'Suunnistusapu — kysy itseltäsi etsiessäsi…\n• "Miten peli TOIMII?" → Pelikokemus\n• "Miltä se NÄYTTÄÄ?" → Ulkonäkö\n• "Miltä se KUULOSTAA?" → Grafiikka / Ääni / Mikrofoni\n• "Yhdistä laitteita?" → Mobiili (companion) / Mikrofoni\n• "Kappaleeni?" → Kirjasto\n• "Varmuuskopioi tiedot?" → Synkronointi & varmuuskopio\n\nVälilehdet vierivät vaakasuunnassa kapeissa ikkunoissa — pyyhkäise oikealle.',
+          body: 'Kaikki asetukset on järjestetty välilehdille: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili, Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Synkronointi & varmuuskopio ja Tietoja.\n\nJokaisen välilehden yläreunassa oleva lyhyt johdanto kertoo, mitä se tekee.',
+          details: 'Suunnistusapu — kysy itseltäsi etsiessäsi…\n• "Miten peli TOIMII?" → Pelikokemus\n• "Miltä se NÄYTTÄÄ?" → Ulkonäkö\n• "Miltä se KUULOSTAA?" → Ääni / Mikrofoni\n• "Yhdistä laitteita?" → Mobiili (companion) / Mikrofoni\n• "Kappaleeni?" → Kirjasto\n• "Varmuuskopioi tiedot?" → Synkronointi & varmuuskopio\n\nVälilehdet vierivät vaakasuunnassa kapeissa ikkunoissa — pyyhkäise oikealle.',
         },
         general: {
           title: 'Yleiset',
@@ -252,13 +252,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Pelikokemus',
-          body: 'Pisteytys päälle/pois, partikkelitehosteet, jonon automaattitoisto ja muita toimintavalintoja kierroksiin ja tuloksiin.',
-          details: 'Tärkeimmät kytkimet:\n• Pisteytys: puhtaalle laulamiselle ilman pistenäyttöä.\n• Jonon automaattitoisto: kappaleen päätyttyä seuraava jonoalkio käynnistyy automaattisesti — ihanteellinen juhlailloille ilman juontajaa.\n• Partikkelit & tehosteet: poista käytöstä heikommilla koneilla.\n\nLisäksi: toiminta kierrosten jälkeen (tulossivu, välitön uusinta) ja combo-näytöt.',
+          body: 'Pisteenäyttö, partikkelitehosteet, combonäyttö, toiston tallennus, automaattinen koko näyttö ja muita toimintavalintoja kierroksiin ja tuloksiin.',
+          details: 'Tärkeimmät kytkimet:\n• Pisteenäyttö: rennolle laulamiselle ilman pisteiden näyttämistä.\n• Partikkelit & tehosteet: poista käytöstä heikommilla koneilla.\n• Toiston tallennus: tallentaa äänen ja webcamin laulamisen aikana — uusinta on nähtävissä tulosnäytöllä.\n• Automaattinen koko näyttö: siirtyy automaattisesti kokonäyttötilaan kappaleen alkaessa.\n• Varoitusäänet: lyhyt piippaus ennen sokko-osioita ja puuttuvia sanoja.\n\nLisäksi: combonäyttö ja muuta.',
         },
         appearance: {
           title: 'Ulkonäkö',
           body: 'Teemat, animoitu tausta tai oma taustavideosi, sanoitustyyli ja -koko, nuottonäyttö sekä suorituskykytila heikommille koneille.',
-          details: 'Sanoitustyyli: "Karaoke" (sanan täyttöväritys), "UltraStar" (tavupalikat) tai "Minimaalinen".\n\nTausta: teemojen lisäksi käy oma videokin — pelissä se pyörii nuottien takana himmennettynä.\n\nSuorituskykytila karsii animaatioita ja taustoja rajusti — kannattaa noin vuoden 2015 laitteista alkaen.',
+          details: 'Sanoitustyyli: 10 visuaalista teemaa — "Klassinen", "Konsertti", "Retro", "Neon", "Minimalistinen" jne.\n\nTausta: teemojen lisäksi käy oma videokin — pelissä se pyörii nuottien takana himmennettynä.\n\nSuorituskykytila karsii animaatioita ja taustoja rajusti — kannattaa noin vuoden 2015 laitteista alkaen.',
         },
         graphicsound: {
           title: 'Ääni',
@@ -268,7 +268,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Mikrofoni',
           body: 'Laitevalinta, herkkyys, kohinaraja ja reaaliaikainen taso — sekä esiasetukset. Älypuhelimet yhdistetään Mobiili-välilehdeltä.',
-          details: 'Esiasetukset: tyypilliset kokoonpanot ("dynaaminen laulumikki", "headset", "puhelin") asettavat herkkyyden ja kohinarajan järkevästi yhdistettynä.\n\nKohinaraja: suodattaa hengitykset ja huoneäänet — reaaliaikainen taso näyttää heti, mikä pääsee läpi.\n\nTärkeää moninpelissä: JOKAINEN pelaaja voi saada OMAN laitteen — jako tehdään aloitusikkunassa joka kierroksella.',
+          details: 'Esiasetukset: tyypilliset kokoonpanot ("Optimaalinen (suositeltu)", "Matala viive", "Korkea tarkkuus", "Meluisa ympäristö", "Syvät äänet (Basso)", "Korkeat äänet (Sopraano)") asettavat herkkyyden ja kohinarajan järkevästi yhdistettynä.\n\nKohinaraja: suodattaa hengitykset ja huoneäänet — reaaliaikainen taso näyttää heti, mikä pääsee läpi.\n\nTärkeää moninpelissä: JOKAINEN pelaaja voi saada OMAN laitteen — jako tehdään aloitusikkunassa joka kierroksella.',
         },
         libraryTab: {
           title: 'Kirjasto',
@@ -326,7 +326,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Pelaajaprofiilisi 👤',
           body: 'Profiilit ovat pelin identiteettejä: XP, taso, tilastot ja saavutukset elävät profiilissa — ja huipputulokset kantavat nimeäsi.\n\nTämä kierros näyttää, miten profiileja luodaan ja hallitaan.',
-          details: 'Miksi profiilit?\n• XP & taso: lauletut kappaleet, haasteet ja saavutukset keräävät kokemusta — taso nousee arvonimen myötä (aloittelija → karaokelegenda).\n• Tulostaulut: huipputulosmerkinnät näyttävät kuvasi.\n• Juhlatilat: jokainen pelaajavalinta nostetaan tästä listasta.\n• Companion-laitteet voivat "ottaa profiilin haltuunsa" ja laulaa sen identiteetillä.\n\nProfiilit elävät selaimen tallennustilassa (paikallisesti) tai verkkotilissä (synkronoituna) — valitset sen luonnin yhteydessä.',
+          details: 'Miksi profiilit?\n• XP & taso: lauletut kappaleet, haasteet ja saavutukset keräävät kokemusta — taso nousee rankingin nimen myötä (Aloittelija → Jumalallinen).\n• Tulostaulut: huipputulosmerkinnät näyttävät kuvasi.\n• Juhlatilat: jokainen pelaajavalinta nostetaan tästä listasta.\n• Companion-laitteet voivat "ottaa profiilin haltuunsa" ja laulaa sen identiteetillä.\n\nProfiilit elävät selaimen tallennustilassa (paikallisesti) tai verkkotilissä (synkronoituna) — valitset sen luonnin yhteydessä.',
         },
         topBar: {
           title: 'Toimintopalkki',
@@ -386,7 +386,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Yleiskuva',
         manage: 'Hallinta',
-        companion: 'Companion & automaattitoisto',
+        companion: 'Companion & pikanäppäimet',
       },
       steps: {
         welcome: {
@@ -419,7 +419,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Toista seuraava kappale',
           body: 'Painike käynnistää ylimmän alkion — vakiosiirto kierrosten välillä. Vaihtoehtoisesti klikkaa mitä tahansa korttia suoraan.',
-          details: 'Tulossivu jokaisen kappaleen jälkeen tarjoaa saman painikkeen ("Toista seuraava kappale") — vauhti jatkuu ilman poikkeamista jononäkymään.\n\nKun automaattitoisto on päällä (Asetukset → Pelikokemus), sovellus etenee itsestään.',
+          details: 'Tulossivu jokaisen kappaleen jälkeen tarjoaa saman painikkeen ("Toista seuraava kappale") — vauhti jatkuu ilman poikkeamista jononäkymään.\n\nJononäkymän "Toista seuraava kappale" -painike tekee saman — ylin alkio käynnistyy yhdellä klikkauksella.',
         },
         clearAll: {
           title: 'Tyhjennä kaikki',
@@ -436,13 +436,13 @@ export const tutorialTranslations = {
           details: 'Vieraiden näkökulmasta: valitse sovelluksessa kappale, valitse tila, lähetä — pyyntö laskeutuu tähän listaan.\n\nSinä isäntänä näet heti: kuka pyysi (pelaajan kuva) ja että kyseessä on puhelinpyyntö (📱). 3 alkion raja koskee profiilia kohden — myös puhelimen kautta.\n\nLisää companion-kierroksessa.',
         },
         autoplay: {
-          title: 'Automaattitoisto & pikakomento',
-          body: 'Ota automaattitoisto käyttöön (Asetukset → Pelikokemus), jolloin seuraava kappale käynnistyy automaattisesti joka kierroksen jälkeen. Ja: Ctrl+Q käynnistää ylimmän jonoalkion mistä tahansa.',
-          details: 'Automaattitoistoketju: kappale loppuu → tulossivu näkyy hetken → seuraava jonoalkio käynnistyy. Kun jono tyhjenee, ketju pysähtyy siististi.\n\nCtrl+Q toimii kaikkialta — klassikko silloin, kun seuraava kierros pitää saada rullaamaan heti.',
+          title: 'Pikanäppäin & virta',
+          body: 'Ctrl+Q käynnistää ylimmän jonoalkion mistä tahansa — klassikko silloin, kun seuraava kierros pitää saada rullaamaan heti.',
+          details: 'Kierrosten välinen virta: kappale loppuu → tulossivu → "Toista seuraava kappale" -painike (tai Ctrl+Q) pitää illan käynnissä.\n\nCtrl+Q toimii kaikkialta — poikkeaminen jononäkymään ei ole tarpeen.',
         },
         finish: {
           title: 'Jono odottaa! 🎧',
-          body: 'Tunnet nyt jonoon lisäämisen, järjestelyn ja säännöt.\n\nVinkki: yhdistä automaattitoisto + companion-pyynnöt, niin saat täysin itsestään pyörivän karaokeillan.',
+          body: 'Tunnet nyt jonoon lisäämisen, järjestelyn ja säännöt.\n\nVinkki: yhdistä Ctrl+Q-pikanäppäin + companion-pyynnöt, niin saat sujuvasti itsestään pyörivän karaokeillan.',
         },
       },
     },
@@ -473,7 +473,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'Historia',
           body: 'Viestisi näkyvät oikealla sinisenä (isäntänä), puhelimien viestit vasemmalla violetilla. Jokainen viesti kantaa aikaleimansa.',
-          details: 'Taustapäivitys: paneeli hakee uusia viestejä 3 sekunnin välein — et jää paitsi mistään, vaikka se pyörisi taustalla.\n\nTyöpöydän chat-ilmoitus (kello) näyttää lukemattomat viestit myös suljetulla paneelilla.',
+          details: 'Taustapäivitys: paneeli hakee uusia viestejä 3 sekunnin välein — et jää paitsi mistään, vaikka se pyörisi taustalla.\n\nValikkopalkin chat-painike pysyy paikallaan — uudet viestit ovat heti näkyvissä, kun avaat paneelin uudelleen.',
         },
         sendAs: {
           title: '"Lähetä tunnuksella"',
@@ -585,11 +585,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Saavutukset & edistyminen 🏆',
           body: 'Kaikki keräämäsi: saavutukset harvinaisuuksineen, XP-tasot arvonimineen ja päivittäishaasteet XP-moottorina.\n\nTämä kierros kulkee saavutusruudun ja haasteiden läpi.',
-          details: 'Kolme järjestelmää yhdessä:\n• XP: "polttoaine" — kappaleista, haasteista ja saavutuksista\n• Tasot & rankingit: nousevat XP:n myötä (aloittelija → legenda) ja näyttävät edistymisen silmäyksellä\n• Saavutukset: virstanpylväitä palkinnoineen — osa salaisia, kunnes avaat ne\n\nKaikki ripustuu profiiliin — kuka laulaa, se kerää (katso profiili-kierros).',
+          details: 'Kolme järjestelmää yhdessä:\n• XP: "polttoaine" — kappaleista, haasteista ja saavutuksista\n• Tasot & rankingit: nousevat XP:n myötä (Aloittelija → Jumalallinen) ja näyttävät edistymisen silmäyksellä\n• Saavutukset: virstanpylväitä palkinnoineen — osa salaisia, kunnes avaat ne\n\nKaikki ripustuu profiiliin — kuka laulaa, se kerää (katso profiili-kierros).',
         },
         navButton: {
           title: 'Saavutuspainike',
-          body: 'Valikkopalkissa pokaali vie saavutuksiin — sen vieressä oleva toinen pokaalipylväs näyttää tulostaulut.',
+          body: 'Valikkopalkissa ensimmäinen pokaali vie tulostauluihin (huipputulokset) — aivan sen vieressä oleva toinen pokaali avaa saavutukset.',
         },
         playerSelector: {
           title: 'Pelaajan valinta',
@@ -597,8 +597,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'Tilastokortit',
-          body: 'Neljä korttia silmäyksellä: avatut saavutukset, niistä ansaittu XP, täydellisyys prosentteina ja nykyinen taso arvonimineen.',
-          details: 'Prosenttikortti laskee: avatut ÷ kaikki saavutukset. 100 % on keräilijän kynnys — siitä saa yleensä oman salaisen saavutuksen.\n\nTasokortti näyttää lisäksi arvonimen ("Nouseva tähti", "Karaokelegenda" …) — nimet tulevat profiilin etenemisjärjestelmästä.',
+          body: 'Neljä korttia silmäyksellä: avatut saavutukset, niistä ansaittu XP, täydellisyys prosentteina ja nykyinen taso rankingin nimineen.',
+          details: 'Prosenttikortti laskee: avatut ÷ kaikki saavutukset. 100 % on keräilijän kynnys — siitä saa yleensä oman salaisen saavutuksen.\n\nTasokortti näyttää lisäksi rankingin nimen ("Oppilas", "Legenda", "Jumalallinen" …) — nimet tulevat profiilin etenemisjärjestelmästä.',
         },
         filters: {
           title: 'Suodattimet',
@@ -613,7 +613,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'Miten XP virtaa',
           body: 'XP tulee kolmesta lähteestä: lauletut kappaleet (vaikeustason mukaan), haasteet (päivittäiset/viikoittaiset) ja saavutukset. Tasot avaavat rankingit — ja joitakin ominaisuuksia, kuten profiilimerkit.',
-          details: 'XP-lähteet silmäyksellä:\n• Suoritettu kappale: perus-XP vaikeustason mukaan (helppo → ekspertti, nousevasti)\n• Päivittäispaikka: 100–400 XP + bonukset\n• Viikkopaikka: 500–2000 XP\n• Saavutus: kertaluontoinen per saavutus (25–1000 XP harvinaisuuden mukaan)\n\nProfiilinäkymän tasopalkki näyttää tien seuraavalle tasolle; ranking vaihtuu muutaman tason välein.',
+          details: 'XP-lähteet silmäyksellä:\n• Suoritettu kappale: perus-XP vaikeustason mukaan (helppo → ekspertti, nousevasti)\n• Päivittäispaikka: 100–200 XP perusarvo, ×0,5–3 vaikeustason mukaan, plus bonukset\n• Viikkopaikka: 250–500 XP perusarvo, ×0,5–3 vaikeustason mukaan\n• Saavutus: kertaluontoinen per saavutus (5–7500 XP saavutuksesta riippuen)\n\nProfiilinäkymän tasopalkki näyttää tien seuraavalle tasolle; ranking nousee XP:n myötä (Aloittelija → Jumalallinen).',
         },
         navDaily: {
           title: 'Haasteisiin',
@@ -627,17 +627,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Vaihe 2: 5 paikkaa',
           body: 'Viisi tehtäväpaikkaa päivässä, aukeavat järjestyksessä. Jokainen paikka näyttää tehtävän, pelattavat vaikeustasot ja XP-arvon — vaikeammat tasot moninkertaistavat.',
-          details: 'Paikkamekaniikka:\n• Paikat 2–5 aukeavat vasta, kun edellinen on suoritettu tai ohitettu — ketju pakottaa vaihteluun.\n• Jokainen tehtävä on ehto seuraavalle kappaleelle ("genre rock", "vähintään 80 % tarkkuus" …) — kirjasto suodattaa sopivat kappaleet automaattisesti.\n• Vaikeustason valinta per paikka: jopa 3× XP-kerroin eksperttitasolla.\n\nKeskiyöllä putoaa viisi tuoretta tehtävää — ketju alkaa alusta.',
+          details: 'Paikkamekaniikka:\n• Paikat 2–5 aukeavat vasta, kun edellinen on suoritettu — ketju pakottaa vaihteluun.\n• Jokainen tehtävä on ehto seuraavalle kappaleelle ("genre rock", "vähintään 80 % tarkkuus" …) — kirjasto suodattaa sopivat kappaleet automaattisesti.\n• Vaikeustason valinta per paikka: jopa 3× XP-kerroin tasolla Hullu.\n\nKeskiyöllä putoaa viisi tuoretta tehtävää — ketju alkaa alusta.',
         },
         badges: {
           title: 'Merkit & viikko',
-          body: 'Useamman paikan suorittaminen tuo päivittäisiä merkkejä (pronssi/hopea/kulta) lisä-XP:llä. Viikoittainen vastine kulkee 7 päivää suurilla palkinnoilla — sama mekaniikka, isompi potti.',
-          details: 'Merkkitasot per päivä:\n• Pronssi: 2 paikkaa\n• Hopea: 3–4 paikkaa\n• Kulta: kaikki 5 paikkaa — plus päivittäinen bonus-XP\n\nViikoittain: 5 paikkaa 7 päivän aikana, 500–2000 XP per paikka, nollaus maanantaisin. Päivittäisen JA viikoittaisen pelaaminen nostaa tasoa selvästi nopeammin kuin pelkät kappaleet.',
+          body: 'Paikkojen suorittaminen tuo päivittäisiä merkkejä (pronssi/hopea/kulta) lisä-XP:llä. Viikoittainen vastine kulkee 7 päivää suurilla palkinnoilla — sama mekaniikka, isompi potti.',
+          details: 'Merkkitasot per päivä:\n• Pronssi: 1 paikka\n• Hopea: 3 paikkaa\n• Kulta: kaikki 5 paikkaa — plus päivittäinen bonus-XP\n\nViikoittain: 5 paikkaa 7 päivän aikana, 250–500 XP perusarvo per paikka (× vaikeustason kerroin), nollaus maanantaisin. Päivittäisen JA viikoittaisen pelaaminen nostaa tasoa selvästi nopeammin kuin pelkät kappaleet.',
         },
         challengeModes: {
           title: 'Haastetilat',
-          body: 'Paikkojen lisäksi on vapaita haastetiloja muokkaimineen (esim. "2× tempo", "ei nuotteja") — omiin sääntöihin ja lisä-XP:hen päivittäistehtävien ulkopuolella.',
-          details: 'Tilat ovat vapaasti säädettävissä: valitse tila, yhdistä muokkaimia, XP-potti kasvaa vaikeuden myötä.\n\nSuoritukset avaavat uusia muokkaimia — haastealueen kokoelmakortti näyttää, mitä sinulla on.',
+          body: 'Paikkojen lisäksi on vapaita haastetiloja muokkaimineen (esim. "1,5× nopeus", "teksti piilotettu") — omiin sääntöihin ja lisä-XP:hen päivittäistehtävien ulkopuolella.',
+          details: 'Tilat ovat vapaasti valittavissa: valitse tila, sen muokkaimet tulevat automaattisesti voimaan, XP-palkinto kasvaa vaikeuden myötä.\n\nSuoritetut tilat avaavat ketjuun lisää jatkoja — mitä pidempään pelaat, sitä enemmän avautuu.',
         },
         finish: {
           title: 'Keräilyaika! 🏅',

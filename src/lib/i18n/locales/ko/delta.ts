@@ -916,7 +916,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "최고 점수",
     navJukeboxDesc: "플레이리스트를 만들고 곡을 대기열에 추가",
     navJukeboxTitle: "주크박스",
-    navPartyDesc: "2~24명을 위한 {n}가지 게임 모드",
+    navPartyDesc: "최대 32명을 위한 {n}가지 게임 모드",
     navSectionTitle: "앱 둘러보기",
     navSettingsDesc: "오디오, 마이크, 화면",
     navSettingsTitle: "설정",
@@ -1075,7 +1075,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Karaoke ZERO에 관한 모든 것: 버전, 플랫폼, 기여 프로젝트와 라이선스 — 프로젝트 소개와 지원 링크도 함께.",
     appearance: "나만의 스타일로: 테마, 애니메이션 배경 또는 직접 고른 배경 영상, 가사 스타일과 크기, 노트 표시, 저사양 기계용 성능 모드.",
-    gameplay: "게임 감각 미세 조정: 채점, 히트 시 파티클 효과, 대기열의 다음 곡 자동 재생 등 라운드와 결과를 위한 동작 스위치. 파티 분위기와 성능 사이의 균형 잡기에 딱이에요.",
+    gameplay: "게임 감각 미세 조정: 점수 표시, 히트 시 파티클 효과, 리플레이 녹화, 자동 전체화면 등 라운드와 결과를 위한 동작 스위치. 파티 분위기와 성능 사이의 균형 잡기에 딱이에요.",
     general: "핵심 앱 설정: 인터페이스 언어, 새 라운드 기본 난이도, 온라인 활동, 전체 키보드 단축키 목록. 변경 사항은 즉시 적용되고 일부(언어 등)는 재시작 없이 반영돼요.",
     graphicsound: "오디오의 모든 것: 출력 장치(저지연 ASIO 포함), 마스터/미리듣기 볼륨, 마이크 감도, 음량 정규화, YouTube 영상 화질.",
     library: "곡 라이브러리 관리: 곡 폴더 설정(하위 폴더 1개 = 곡 1곡)과 스캔, 라이브러리 초기화 또는 전체 데이터 삭제. 다른 노래방 시스템(UltraStar, MIDI/KAR, Mugen, SingStar, StepMania)에서 가져오기도 여기서.",

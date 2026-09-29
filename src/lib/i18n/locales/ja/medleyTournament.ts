@@ -189,7 +189,7 @@ tournament: {
   quarterFinals: '準々決勝',
   semiFinals: '準決勝',
   final: '決勝',
-  bye: 'BYE',
+  bye: '不戦勝',
   vs: 'VS',
   errorMaxPlayers: '最大{n}人のプレイヤーまで許可されます',
   errorMinPlayers: '最低2人のプレイヤーが必要です',

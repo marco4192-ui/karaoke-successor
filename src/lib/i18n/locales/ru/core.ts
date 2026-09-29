@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Загрузка в глобальную таблицу лидеров...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Подтверждённый результат',
+  unverified: 'Неподтверждённый (без доказательства)',
+  verifiedDesc: 'Этот результат был проверен системой античита',
+  unverifiedDesc: 'К этому результату не приложено доказательство античита',
 },
 shareSection: {
   title: '📤 Поделиться результатом',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Новое сообщение от {name}',
+  openChat: 'Открыть чат',
+  closeChat: 'Закрыть чат',
   noMessages: 'Сообщений пока нет',
   sendAs: 'Отправить как',
   noPlayers: 'Нет игроков',

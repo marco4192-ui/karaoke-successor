@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Näytä kuva',
   photoUploaded: 'Kuva ladattu',
   noPhoto: 'Ei kuvaa',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Tuloksesi lähetetään globaaliin tulostaulukkoon.',
+  privacyHintDesc: 'Voit kieltäytyä milloin tahansa profiilin asetuksissa.',
   storageMode: {
     title: 'Profiilin tallennus',
     local: 'Vain paikallisesti',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Skannaa tämä QR-koodi yhdistääksesi suoraan tähän profiiliin companion-sovelluksessa.',
   hideQrCode: 'Piilota QR-koodi',
   showQrCode: 'Näytä QR-koodi',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Osallistuminen online-tulostaulukkoon',
+  leaderboardParticipationDesc: 'Osallistu online-tulostaulukkoon ja jaa tuloksesi muiden pelaajien kanssa',
   loadProfile: 'Lataa verkkoprofiili',
 },
 characterCard: {
@@ -477,7 +477,7 @@ achievements: {
     description: 'Suorita 52 viikoittaista haastetta',
   },
   encore_10: {
-    name: 'Encore!',
+    name: 'Enkore!',
     description: 'Pelaa 10 peliä yhden päivän aikana',
   },
   duets_25: {

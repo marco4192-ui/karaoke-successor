@@ -29,7 +29,7 @@ home: {
   difficultyLevels: 'Níveis de Dificuldade',
   selectProfile: 'Selecione seu Perfil',
   createNew: 'Criar Novo',
-  qrCodeAlt: 'QR Code',
+  qrCodeAlt: 'Código QR',
 },
 homeScreen: {
   subtitle: 'A experiência de karaokê definitiva. Cante com todo o coração com detecção de tom em tempo real, compete com amigos e aproveite os jogos de festa!',
@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Enviando para o ranking global...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Pontuação verificada',
+  unverified: 'Não verificada (sem comprovante)',
+  verifiedDesc: 'Esta pontuação foi verificada pelo sistema anti-cheat',
+  unverifiedDesc: 'Nenhum comprovante anti-cheat foi incluído para esta pontuação',
 },
 shareSection: {
   title: '📤 Compartilhe Sua Pontuação',
@@ -173,7 +173,7 @@ queueScreen: {
   noSongs: 'Nenhuma música na fila',
   noSongsDesc: 'Adicione músicas da biblioteca ou via App Companheiro',
   duel: '⚔️ Duelo',
-  duet: '🎭 Duet',
+  duet: '🎭 Dueto',
   single: '🎤 Solo',
   playerDeactivated: 'Jogador desativado',
   play: '▶ Tocar',
@@ -198,7 +198,7 @@ queueScreen: {
 queueNextSong: {
   label: 'Próxima na Fila',
   duel: '⚔️ Duelo',
-  duet: '🎭 Duet',
+  duet: '🎭 Dueto',
   playNext: '▶ Tocar Próxima',
 },
 jukebox: {
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Nova mensagem de {name}',
+  openChat: 'Abrir Chat',
+  closeChat: 'Fechar Chat',
   noMessages: 'Ainda sem mensagens',
   sendAs: 'Enviar como',
   noPlayers: 'Sem jogadores',

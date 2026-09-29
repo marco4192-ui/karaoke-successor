@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Mostrar foto',
   photoUploaded: 'Foto enviada',
   noPhoto: 'Sem foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Suas pontuações serão enviadas para o ranking global.',
+  privacyHintDesc: 'Você pode desativar a qualquer momento nas Configurações de Perfil.',
   storageMode: {
     title: 'Armazenamento do perfil',
     local: 'Apenas local',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Escaneie este código QR para conectar diretamente com este perfil no companion app.',
   hideQrCode: 'Ocultar Código QR',
   showQrCode: 'Mostrar Código QR',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Participação no Ranking',
+  leaderboardParticipationDesc: 'Participe do ranking online e compartilhe suas pontuações com outros jogadores',
   loadProfile: 'Carregar Perfil Online',
 },
 characterCard: {

@@ -55,22 +55,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Avvio rapido',
           body: '"Inizia a Cantare" ti porta dritto alla libreria. "Modalità Festa" apre i 9 giochi di festa per i gruppi.',
-          details: 'Le schede di avvio rapido sono scorciatoie per i percorsi più comuni:\n• "Inizia a Cantare" = apri la libreria, scegli una canzone e via (da soli, in duello o in duetto).\n• "Modalità Festa" = la raccolta di giochi per 2–24 giocatori, con i telefoni che possono entrare come microfoni.\n\nTutto ciò che vedi qui è raggiungibile anche dalla barra dei menu — le schede servono solo a risparmiare clic.',
+          details: 'Le schede di avvio rapido sono scorciatoie per i percorsi più comuni:\n• "Inizia a Cantare" = apri la libreria, scegli una canzone e via (da soli, in duello o in duetto).\n• "Modalità Festa" = la raccolta di giochi per un massimo di 32 giocatori, con i telefoni che possono entrare come microfoni.\n\nTutto ciò che vedi qui è raggiungibile anche dalla barra dei menu — le schede servono solo a risparmiare clic.',
         },
         dailyCard: {
           title: 'Sfida giornaliera',
           body: '5 slot al giorno con compiti che ruotano — più slot completi, più cresce il tuo bonus XP. Compiti nuovi a mezzanotte.',
-          details: 'Come funziona il sistema:\n• Ognuno dei 5 slot contiene un tipo di compito diverso (es. "canta una canzone degli anni 80", "raggiungi 8000 punti").\n• Gli slot si sbloccano in sequenza — lo slot 2 solo dopo aver completato (o saltato) lo slot 1.\n• Ogni slot si gioca a diverse difficoltà; quelle più alte danno più XP (fino a un moltiplicatore 3×).\n• Il bonus cresce col numero di slot completati: 5/5 vale il bonus giornaliero pieno.\n\nI compiti attingono dalla TUA libreria — la selezione si adatta sempre alle tue canzoni.',
+          details: 'Come funziona il sistema:\n• Ognuno dei 5 slot contiene un tipo di compito diverso (es. "canta una canzone degli anni 80", "raggiungi 8000 punti").\n• Gli slot si sbloccano in sequenza — lo slot 2 solo dopo aver completato lo slot 1.\n• Ogni slot si gioca a diverse difficoltà; quelle più alte danno più XP (fino a un moltiplicatore 3×).\n• Il bonus cresce col numero di slot completati: 5/5 vale il bonus giornaliero pieno.\n\nI compiti attingono dalla TUA libreria — la selezione si adatta sempre alle tue canzoni.',
         },
         weeklyCard: {
           title: 'Sfida settimanale',
           body: 'La controparte settimanale: 5 slot distribuiti su tutta la settimana con ricompense XP più ricche. Perfetta per gli obiettivi a lungo termine.',
-          details: 'Le sfide settimanali funzionano come quelle giornaliere, ma:\n• I 5 slot durano 7 giorni — nessun reset giornaliero, procedi con i tuoi tempi.\n• Le ricompense XP per slot sono molto più ricche (es. 500–2000 XP invece di 100–400).\n• Il reset arriva il lunedì mattina.\n\nConsiglio: giornaliere e settimanali vanno in parallelo — giocare entrambe è il modo più rapido di salire di livello.',
+          details: 'Le sfide settimanali funzionano come quelle giornaliere, ma:\n• I 5 slot durano 7 giorni — nessun reset giornaliero, procedi con i tuoi tempi.\n• Le ricompense XP per slot sono più ricche: 250–500 XP base invece di 100–200 delle giornaliere — e il moltiplicatore di difficoltà (fino a 3×) si applica sopra.\n• Il reset arriva il lunedì mattina.\n\nConsiglio: giornaliere e settimanali vanno in parallelo — giocare entrambe è il modo più rapido di salire di livello.',
         },
         modeLauncher: {
           title: 'Cantare: Singolo, Duello e Duetto',
           body: '🎤 Singolo: un giocatore, un microfono.\n⚔️ Duello: due giocatori sulla STESSA canzone — vince chi fa più punti.\n🎭 Duetto: due voci su due tracce — la libreria mostra automaticamente solo le canzoni adatte al duetto.',
-          details: 'Le tre modalità nel dettaglio:\n• Singolo: karaoke classico — canti tutte le note e il tuo punteggio entra in classifica.\n• Duello: entrambi i giocatori cantano la stessa traccia di note contemporaneamente. I punti corrono separati — il confronto finale svela chi è stato migliore. Perfetto per le rivincite.\n• Duetto: la canzone ha due voci separate (P1/P2) — ognuno canta "le sue" parti, le frasi condivise valgono un bonus di squadra. Le canzoni per duetti si riconoscono dal filtro 🎭 nella libreria.\n\nMicrofoni: puoi assegnare tutti i microfoni e smartphone che vuoi (vedi Impostazioni → Microfono).',
+          details: 'Le tre modalità nel dettaglio:\n• Singolo: karaoke classico — canti tutte le note e il tuo punteggio entra in classifica.\n• Duello: entrambi i giocatori cantano la stessa traccia di note contemporaneamente. I punti corrono separati — il confronto finale svela chi è stato migliore. Perfetto per le rivincite.\n• Duetto: la canzone ha due voci separate (P1/P2) — ognuno canta "le sue" parti, le frasi condivise valgono un bonus di squadra. Le canzoni per duetti si riconoscono dal filtro 🎭 nella libreria.\n\nMicrofoni: fino a 4 microfoni fisici più gli smartphone come ingressi aggiuntivi (vedi Impostazioni → Microfono).',
         },
         libraryNav: {
           title: 'La libreria',
@@ -80,7 +80,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtri',
           body: 'Genere, lingua, anno, decennio, duetti e hit virali — taglia la libreria come preferisci.',
-          details: 'Tutti i filtri si combinano — es. "Genere: Rock + Lingua: Inglese + Epoca: anni 80" mostra esattamente i rock inglesi degli ottanta.\n\nFiltri speciali:\n• Duetto: solo canzoni con due tracce vocali.\n• Hit virali: le canzoni presenti nelle classifiche virali del momento (dati da Impostazioni → Classifiche Virali).\n• Generi e lingue personalizzati: crea le tue categorie in Impostazioni → Generi & Lingue — compaiono subito in questi filtri.\n\n"Cancella filtri" (✕) azzera tutto in un colpo solo.',
+          details: 'Tutti i filtri si combinano — es. "Genere: Rock + Lingua: Inglese + Epoca: anni 80" mostra esattamente i rock inglesi degli ottanta.\n\nFiltri speciali:\n• Duetto: solo canzoni con due tracce vocali.\n• Hit virali: le canzoni presenti nelle classifiche virali del momento (configurate in Impostazioni → Libreria).\n• Generi e lingue personalizzati: crea le tue categorie in Impostazioni → Generi & Lingue — compaiono subito in questi filtri.\n\n"Cancella filtri" (✕) azzera tutto in un colpo solo.',
         },
         songCard: {
           title: 'Le canzoni',
@@ -94,8 +94,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Modalità festa',
-          body: '9 giochi per 2–24 giocatori: Battle Royale, Passa il Microfono, Concorso Medley, torneo, Parole Mancanti, Karaoke Cieco e altro — i telefoni possono entrare come microfoni.',
-          details: 'Le 9 modalità in sintesi:\n• Battle Royale: cantano tutti, il più debole viene eliminato a ogni round — vince l\'ultimo in piedi.\n• Passa il Microfono: il microfono passa di mano in mano — ognuno canta la sua parte.\n• Concorso Medley: le squadre si esibiscono su brevi frammenti di canzoni con regole speciali.\n• Torneo: tabellone a eliminazione con duelli — il vincitore sale a ogni round.\n• Parole Mancanti: il testo viene oscurato — canta la parola mancante per fare punti.\n• Karaoke Cieco: niente note sullo schermo, solo orecchio!\n• Valuta la mia Canzone e Companion Sing-A-Long, e altre ancora — ogni scheda modalità si spiega da sola.\n\nQuasi tutte le modalità supportano l\'app companion come microfono e controller.',
+          body: '9 giochi per un massimo di 32 giocatori: Battle Royale, Passa il Microfono, Concorso Medley, torneo, Parole Mancanti, Karaoke Cieco e altro — i telefoni possono entrare come microfoni.',
+          details: 'Le 9 modalità in sintesi:\n• Battle Royale: cantano tutti, il più debole viene eliminato a ogni round — vince l\'ultimo in piedi.\n• Passa il Microfono: il microfono passa di mano in mano — ognuno canta la sua parte.\n• Concorso Medley: le squadre si esibiscono su brevi frammenti di canzoni con regole speciali.\n• Torneo: tabellone a eliminazione con duelli — il vincitore sale a ogni round.\n• Parole Mancanti: il testo viene oscurato — canta la parola mancante per fare punti.\n• Karaoke Cieco: la pista di note si oscura a tratti — solo orecchio!\n• Valuta la mia Canzone e Companion Sing-A-Long, e altre ancora — ogni scheda modalità si spiega da sola.\n\nQuasi tutte le modalità supportano l\'app companion come microfono e controller.',
         },
         partyModes: {
           title: 'La scelta della modalità',
@@ -125,12 +125,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Impostazioni',
           body: 'Microfoni, lingua, messa a punto del gioco, aspetto e grafica — tutti i comandi stanno qui.',
-          details: 'Le 12 schede delle impostazioni in un lampo:\n• Generale: lingua, difficoltà predefinita, online\n• Gioco: punteggio, particelle, riproduzione automatica della coda\n• Aspetto: temi, stile del testo, sfondo\n• Grafica & Suono: dispositivo di uscita, volume, qualità YouTube\n• Microfono: dispositivi, sensibilità, noise gate, preset\n• Mobile: collega e gestisci i dispositivi companion\n• Webcam: la webcam come sfondo\n• Libreria: cartella canzoni, importazione, ripristino\n• Generi & Lingue: categorie personalizzate\n• Festa a Tema: attiva e configura il tema\n• Sync & Backup: le tue sicurezze\n\nNel menu di aiuto ? c\'è un tour dedicato e approfondito che attraversa tutte le schede.',
+          details: 'Le 12 schede delle impostazioni in un lampo:\n• Generale: lingua, difficoltà predefinita, online\n• Gioco: punteggio, particelle, combo, registrazione dei replay\n• Aspetto: temi, stile del testo, sfondo\n• Audio: dispositivo di uscita, volume, loudness, qualità YouTube\n• Microfono: dispositivi, sensibilità, noise gate, preset\n• Mobile: collega e gestisci i dispositivi companion\n• Webcam: la webcam come sfondo\n• Libreria: cartella canzoni, importazione, classifiche virali, ripristino\n• Generi & Lingue: categorie personalizzate\n• Festa a Tema: attiva e configura il tema\n• Sync & Backup: le tue sicurezze\n• Informazioni: versione, piattaforma, licenze\n\nNel menu di aiuto ? c\'è un tour dedicato e approfondito che attraversa tutte le schede.',
         },
         settingsView: {
           title: 'Le schede delle impostazioni',
-          body: 'Scegli una sezione in alto: Generale (lingua), Gioco, Aspetto, Grafica & Suono, Microfono, Mobile (connessione telefoni) e altro.',
-          details: 'Dalla R28, in cima a ogni scheda c\'è una breve introduzione che spiega cosa fa — non dovrai mai indovinare a cosa serve un\'opzione.\n\nIl tour giusto: "Impostazioni" nel menu di aiuto ? ti accompagna attraverso tutte le schede.',
+          body: 'Scegli una sezione in alto: Generale (lingua), Gioco, Aspetto, Audio, Microfono, Mobile (connessione telefoni) e altro.',
+          details: 'In cima a ogni scheda c\'è una breve introduzione che spiega cosa fa — non dovrai mai indovinare a cosa serve un\'opzione.\n\nIl tour giusto: "Impostazioni" nel menu di aiuto ? ti accompagna attraverso tutte le schede.',
         },
         finish: {
           title: 'Fatto! 🎉',
@@ -174,7 +174,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Barra degli strumenti',
           body: 'Tutto per le note: aggiungere, duplicare, eliminare, dividere, unire — più tipi di nota, voci e modalità tap (tra poco).',
-          details: 'Gli strumenti in ordine:\n• ➕ Aggiungi nota: cade in corrispondenza della testina di riproduzione\n• ⧉ Duplica: copia la nota selezionata subito dopo\n• 🗑 Elimina: rimuove la selezione\n• ✂ Dividi: una nota → due (a metà)\n• ⇄ Unisci: due note selezionate → una\n\nSelezione con un clic; maiusc+clic per più note. Poi prende il comando la tastiera: ⌫ elimina, ↑/↓ trasporta, ←/→ sposta nel tempo.',
+          details: 'Gli strumenti in ordine:\n• ➕ Aggiungi nota: cade in corrispondenza della testina di riproduzione\n• ⧉ Duplica: copia la nota selezionata subito dopo\n• 🗑 Elimina: rimuove la selezione\n• ✂ Dividi: una nota → due (a metà)\n• ⇄ Unisci: unisce la nota selezionata con la successiva\n\nSelezione con un clic; maiusc+clic per più note. Poi prende il comando la tastiera: ⌫ elimina, ↑/↓ trasporta, ←/→ sposta nel tempo.',
         },
         lyricsPanel: {
           title: 'Pannello del testo',
@@ -183,7 +183,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Modificare le note',
-          body: 'Le note sono i blocchi sulle corsie del tono: aggiungere, duplicare, eliminare, dividere (una nota → due) e unire (due → una).\n\nModifica le note selezionate in fretta: ⌫ elimina, ↑/↓ trasporta.',
+          body: 'Le note sono i blocchi sulle corsie del tono: aggiungere, duplicare, eliminare, dividere (una nota → due) e unire (con la nota successiva).\n\nModifica le note selezionate in fretta: ⌫ elimina, ↑/↓ trasporta.',
           details: 'Consigli di precisione:\n• Zoom: Ctrl+rotella del mouse sulla timeline — ingrandisci per i dettagli fini.\n• Riproduzione: Spazio attiva/disattiva play/pausa, Shift+Spazio riproduce solo la selezione.\n• Trasportare più note: selezionale tutte, ↑/↓ muove l\'intero gruppo.\n\nPer i tempi: l\'inizio della nota deve coincidere con l\'attacco della sillaba nella voce — la forma d\'onda aiuta a trovare gli attacchi.',
         },
         noteTypes: {
@@ -214,7 +214,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Scorciatoie',
           body: 'Tutte le scorciatoie da tastiera a colpo d\'occhio — l\'editor è uno strumento su tastiera. Dagli un\'occhiata!',
-          details: 'Le scorciatoie più importanti:\n• Ctrl+Z / Ctrl+Y: annulla / ripeti\n• Spazio: play/pausa\n• ⌫: elimina le note selezionate\n• ↑/↓: trasporta · ←/→: sposta nel tempo\n• S: dividi la nota · M: unisci\n• 1–5: scegli il tipo di nota\n\nNel pannello delle scorciatoie puoi vedere e rimappare i tasti.',
+          details: 'Le scorciatoie più importanti:\n• Ctrl+Z / Ctrl+Y: annulla / ripeti\n• Spazio: play/pausa\n• ⌫: elimina le note selezionate\n• ↑/↓: trasporta (Shift = ottava intera) · ←/→: sposta nel tempo (Shift = passo più ampio)\n• M: unisci con la nota successiva\n• Ctrl+S: salva · Ctrl+C/V: copia/incolla le note\n\nIl pannello delle scorciatoie nella barra a sinistra mostra tutti i tasti a colpo d\'occhio.',
         },
         finish: {
           title: 'Pronto a costruire! 🛠️',
@@ -240,12 +240,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Le impostazioni 👋',
           body: 'Questo tour ti accompagna esclusivamente tra le impostazioni — scheda per scheda.\n\nPasso automaticamente a ogni scheda e ti spiego cosa ci trovi.',
-          details: 'Le schede nell\'ordine del tour: Generale, Gioco, Aspetto, Grafica & Suono, Microfono, Mobile (companion), Webcam, Libreria, Generi & Lingue, Festa a Tema, Classifiche Virali, Sync & Backup e Informazioni.\n\nOgni scheda apre con una breve introduzione — questo tour la approfondisce passo per passo.',
+          details: 'Le schede nell\'ordine del tour: Generale, Gioco, Aspetto, Audio, Microfono, Mobile (companion), Webcam, Libreria, Generi & Lingue, Festa a Tema, Sync & Backup e Informazioni.\n\nOgni scheda apre con una breve introduzione — questo tour la approfondisce passo per passo.',
         },
         tabBar: {
           title: 'La barra delle schede',
-          body: 'Tutte le impostazioni sono organizzate in schede: Generale, Gioco, Aspetto, Audio, Microfono, Mobile, Webcam, Libreria, Generi & Lingue, Festa a Tema, Sync & Backup e Informazioni.\n\nDalla R28, in cima a ogni scheda una breve introduzione spiega cosa fa.',
-          details: 'Per orientarti — quando cerchi qualcosa, chiediti…\n• "Come si COMPORTA il gioco?" → Gioco\n• "Come APPARE?" → Aspetto\n• "Come SUONA?" → Grafica & Suono / Microfono\n• "Collegare dispositivi?" → Mobile (companion) / Microfono\n• "Le mie canzoni?" → Libreria\n• "Salvare i dati?" → Sync & Backup\n\nSu finestre strette le schede scorrono in orizzontale — basta trascinare verso destra.',
+          body: 'Tutte le impostazioni sono organizzate in schede: Generale, Gioco, Aspetto, Audio, Microfono, Mobile, Webcam, Libreria, Generi & Lingue, Festa a Tema, Sync & Backup e Informazioni.\n\nIn cima a ogni scheda una breve introduzione spiega cosa fa.',
+          details: 'Per orientarti — quando cerchi qualcosa, chiediti…\n• "Come si COMPORTA il gioco?" → Gioco\n• "Come APPARE?" → Aspetto\n• "Come SUONA?" → Audio / Microfono\n• "Collegare dispositivi?" → Mobile (companion) / Microfono\n• "Le mie canzoni?" → Libreria\n• "Salvare i dati?" → Sync & Backup\n\nSu finestre strette le schede scorrono in orizzontale — basta trascinare verso destra.',
         },
         general: {
           title: 'Generale',
@@ -254,13 +254,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Gioco',
-          body: 'Punteggio on/off, effetti particellari, riproduzione automatica della coda e altre opzioni di comportamento per round e risultati.',
-          details: 'Gli interruttori chiave:\n• Punteggio: per cantare in puro divertimento, senza display del punteggio.\n• Riproduzione automatica della coda: finita una canzone, la voce successiva parte da sola — l\'ideale per le serate senza moderatore.\n• Particelle ed effetti: disattivali sulle macchine meno potenti.\n\nIn più: il comportamento dopo i round (schermata risultati, riavvio immediato) e i display dei combo.',
+          body: 'Punteggio, effetti particellari, visualizzazione combo, registrazione dei replay, schermo intero automatico e altre opzioni di comportamento per round e risultati.',
+          details: 'Gli interruttori chiave:\n• Punteggio: per cantare in puro divertimento, senza display del punteggio.\n• Particelle ed effetti: disattivali sulle macchine meno potenti.\n• Replay: registra audio e webcam mentre canti — il replay parte nella schermata dei risultati.\n• Schermo intero automatico: entra a schermo intero da solo quando inizia una canzone.\n• Segnali d\'avviso: brevi beep prima dei passaggi alla cieca e delle parole mancanti.\n\nIn più: visualizzazione combo e altro.',
         },
         appearance: {
           title: 'Aspetto',
           body: 'Temi, sfondo animato o un tuo video di sfondo, stile e dimensione del testo, visualizzazione delle note e la modalità prestazioni per le macchine meno potenti.',
-          details: 'Stile del testo: "Karaoke" (la parola si colora), "UltraStar" (blocchi per sillaba) o "Minimal".\n\nSfondo: oltre ai temi va bene anche un video personalizzato — nel gioco scorre dietro le note, oscurato.\n\nLa modalità prestazioni taglia animazioni e sfondi in modo drastico — ne vale la pena su hardware fino a circa il 2015.',
+          details: 'Stile del testo: 10 temi visivi — "Classico", "Concerto", "Retro", "Neon", "Minimalista" e altri.\n\nSfondo: oltre ai temi va bene anche un video personalizzato — nel gioco scorre dietro le note, oscurato.\n\nLa modalità prestazioni taglia animazioni e sfondi in modo drastico — ne vale la pena su hardware fino a circa il 2015.',
         },
         graphicsound: {
           title: 'Audio',
@@ -270,7 +270,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Microfono',
           body: 'Scelta del dispositivo, sensibilità, noise gate e livello in diretta — più i preset. Gli smartphone si collegano dalla scheda Mobile.',
-          details: 'Preset: le configurazioni tipiche ("microfono vocale dinamico", "headset", "telefono") impostano sensibilità e noise gate in combinazioni sensate.\n\nNoise gate: filtra respiri e rumori di stanza — il livello in diretta mostra in tempo reale cosa passa.\n\nImportante per il multigiocatore: OGNI giocatore può avere il PROPRIO dispositivo — l\'assegnazione si fa nella finestra di avvio, round per round.',
+          details: 'Preset: le configurazioni tipiche ("Ottimale", "Bassa Latenza", "Alta Precisione", "Ambiente Rumoroso", "Basso", "Soprano") impostano sensibilità e noise gate in combinazioni sensate.\n\nNoise gate: filtra respiri e rumori di stanza — il livello in diretta mostra in tempo reale cosa passa.\n\nImportante per il multigiocatore: OGNI giocatore può avere il PROPRIO dispositivo — l\'assegnazione si fa nella finestra di avvio, round per round.',
         },
         libraryTab: {
           title: 'Libreria',
@@ -328,7 +328,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'I tuoi profili giocatore 👤',
           body: 'I profili sono le identità del gioco: XP, livello, statistiche e obiettivi vivono sul profilo — e i punteggi portano il tuo nome.\n\nQuesto tour mostra come creare e gestire i profili.',
-          details: 'Perché i profili?\n• XP e livello: canzoni cantate, sfide e obiettivi accumulano esperienza — il livello sale insieme al titolo di rango (principiante → leggenda del karaoke).\n• Classifiche: le voci di punteggio mostrano il tuo avatar.\n• Modalità festa: ogni selezione dei giocatori parte da questo elenco.\n• I dispositivi companion possono "reclamare" un profilo e cantare con la sua identità.\n\nI profili vivono nella memoria del browser (locali) o in un account online (con sync) — decidi tu alla creazione.',
+          details: 'Perché i profili?\n• XP e livello: canzoni cantate, sfide e obiettivi accumulano esperienza — il livello sale insieme al nome di rango (Principiante → Divino).\n• Classifiche: le voci di punteggio mostrano il tuo avatar.\n• Modalità festa: ogni selezione dei giocatori parte da questo elenco.\n• I dispositivi companion possono "reclamare" un profilo e cantare con la sua identità.\n\nI profili vivono nella memoria del browser (locali) o in un account online (con sync) — decidi tu alla creazione.',
         },
         topBar: {
           title: 'La barra delle azioni',
@@ -388,7 +388,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Panoramica',
         manage: 'Gestione',
-        companion: 'Companion e riproduzione automatica',
+        companion: 'Companion e scorciatoie',
       },
       steps: {
         welcome: {
@@ -421,7 +421,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Riproduci prossima canzone',
           body: 'Il pulsante avvia la prima voce in coda — la mossa standard tra un round e l\'altro. In alternativa, clicca direttamente una scheda qualsiasi.',
-          details: 'La schermata risultati dopo ogni canzone offre lo stesso pulsante ("Riproduci Prossima Canzone") — il flusso continua senza passare dalla vista coda.\n\nCon la riproduzione automatica attiva (Impostazioni → Gioco) l\'app avanza da sola.',
+          details: 'La schermata risultati dopo ogni canzone offre lo stesso pulsante ("Riproduci Prossima Canzone") — il flusso continua senza passare dalla vista coda.\n\nIl pulsante "Riproduci Prossima Canzone" della vista coda fa lo stesso — la prima voce parte con un clic.',
         },
         clearAll: {
           title: 'Svuotare tutto',
@@ -438,13 +438,13 @@ export const tutorialTranslations = {
           details: 'Come funziona per gli ospiti: nell\'app scelgono una canzone, selezionano la modalità, inviano — la richiesta atterra in questo elenco.\n\nTu come host vedi subito: chi ha richiesto (l\'avatar del giocatore) e che si tratta di una richiesta da telefono (📱). Il limite di 3 vale per profilo — telefono incluso.\n\nApprofondimenti nel tour del companion.',
         },
         autoplay: {
-          title: 'Riproduzione automatica e scorciatoia',
-          body: 'Attiva la riproduzione automatica (Impostazioni → Gioco) e la canzone successiva parte da sola dopo ogni round. E poi: Ctrl+Q avvia la prima voce della coda da qualsiasi punto dell\'app.',
-          details: 'La catena automatica: canzone finita → risultati per un attimo → parte la voce successiva della coda. Quando la coda si svuota, la catena si ferma senza intoppi.\n\nCtrl+Q funziona da ovunque — il classico quando il prossimo round deve partire subito.',
+          title: 'Scorciatoia & flusso',
+          body: 'Ctrl+Q avvia la prima voce della coda da qualsiasi punto dell\'app — il classico quando il prossimo round deve partire subito.',
+          details: 'Il flusso tra i round: canzone finita → schermata risultati → il pulsante "Riproduci Prossima Canzone" (o Ctrl+Q) mantiene la serata in movimento.\n\nCtrl+Q funziona da ovunque — senza passare dalla vista coda.',
         },
         finish: {
           title: 'La coda aspetta! 🎧',
-          body: 'Ora conosci messa in coda, ordinamento e regole.\n\nConsiglio: unisci riproduzione automatica e richieste companion per una serata karaoke che gira da sola.',
+          body: 'Ora conosci messa in coda, ordinamento e regole.\n\nConsiglio: unisci la scorciatoia Ctrl+Q e le richieste companion per una serata karaoke che gira da sola.',
         },
       },
     },
@@ -475,7 +475,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'La cronologia',
           body: 'I tuoi messaggi compaiono a destra in ciano (come host), quelli dei telefoni a sinistra in viola. Ogni messaggio porta la propria ora.',
-          details: 'Aggiornamento in background: il pannello recupera i nuovi messaggi ogni 3 secondi — non ti sfugge nulla nemmeno quando lavora in background.\n\nLa notifica chat sul desktop (campanella) segnala i messaggi non letti anche a pannello chiuso.',
+          details: 'Aggiornamento in background: il pannello recupera i nuovi messaggi ogni 3 secondi — non ti sfugge nulla nemmeno quando lavora in background.\n\nIl pulsante della chat nella barra dei menu resta al suo posto — i nuovi messaggi sono lì appena riapri il pannello.',
         },
         sendAs: {
           title: '"Invia come"',
@@ -587,11 +587,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Obiettivi e progressi 🏆',
           body: 'Tutto ciò che collezioni: obiettivi con rarità, livelli XP con titoli di rango e le sfide giornaliere come motore degli XP.\n\nQuesto tour percorre la schermata obiettivi e le sfide.',
-          details: 'I tre sistemi insieme:\n• XP: il "carburante" — da canzoni, sfide e obiettivi\n• Livelli e ranghi: salgono con gli XP (principiante → leggenda) e mostrano i progressi a colpo d\'occhio\n• Obiettivi: traguardi con ricompense — alcuni restano segreti finché non li sblocchi\n\nTutto è agganciato al profilo — chi canta, raccoglie (vedi il tour dei profili).',
+          details: 'I tre sistemi insieme:\n• XP: il "carburante" — da canzoni, sfide e obiettivi\n• Livelli e ranghi: salgono con gli XP (Principiante → Divino) e mostrano i progressi a colpo d\'occhio\n• Obiettivi: traguardi con ricompense — alcuni restano segreti finché non li sblocchi\n\nTutto è agganciato al profilo — chi canta, raccoglie (vedi il tour dei profili).',
         },
         navButton: {
           title: 'Il pulsante degli obiettivi',
-          body: 'Nella barra dei menu il trofeo porta agli obiettivi — la colonna col secondo trofeo lì accanto mostra le classifiche.',
+          body: 'Nella barra dei menu il primo trofeo porta alle classifiche (punteggi) — il secondo trofeo lì accanto apre gli obiettivi.',
         },
         playerSelector: {
           title: 'Selezione del giocatore',
@@ -599,8 +599,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'Le schede statistiche',
-          body: 'Quattro schede a colpo d\'occhio: obiettivi sbloccati, XP raccolti, completezza in percentuale e livello attuale col titolo di rango.',
-          details: 'La scheda percentuale calcola: sbloccati ÷ obiettivi totali. Il 100% è la soglia del collezionista — di solito premiata con un obiettivo segreto tutto suo.\n\nLa scheda livello mostra inoltre il titolo di rango ("Stella Nascente", "Leggenda del Karaoke"…) — i titoli vengono dal sistema di progressione del profilo.',
+          body: 'Quattro schede a colpo d\'occhio: obiettivi sbloccati, XP raccolti da questi, completezza in percentuale e livello attuale col nome di rango.',
+          details: 'La scheda percentuale calcola: sbloccati ÷ obiettivi totali. Il 100% è la soglia del collezionista — di solito premiata con un obiettivo segreto tutto suo.\n\nLa scheda livello mostra inoltre il nome di rango ("Novizio", "Leggenda", "Divino"…) — i nomi vengono dal sistema di progressione del profilo.',
         },
         filters: {
           title: 'Filtri',
@@ -615,7 +615,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'Come scorrono gli XP',
           body: 'Gli XP arrivano da tre fonti: canzoni cantate (in base alla difficoltà), sfide (giornaliere/settimanali) e obiettivi. I livelli sbloccano i ranghi — e alcune funzioni come i badge del profilo.',
-          details: 'Le fonti di XP in sintesi:\n• Canzone terminata: XP base in base alla difficoltà (da facile a esperto, in crescita)\n• Slot giornaliero: 100–400 XP + bonus\n• Slot settimanale: 500–2000 XP\n• Obiettivo: una tantum per obiettivo (25–1000 XP secondo la rarità)\n\nLa barra livello nella schermata profili mostra la strada al livello successivo; i ranghi cambiano ogni pochi livelli.',
+          details: 'Le fonti di XP in sintesi:\n• Canzone terminata: XP base in base alla difficoltà (da facile a esperto, in crescita)\n• Slot giornaliero: 100–200 XP base, ×0,5–3 secondo la difficoltà, più bonus\n• Slot settimanale: 250–500 XP base, ×0,5–3 secondo la difficoltà\n• Obiettivo: una tantum per obiettivo (5–7500 XP a seconda dell\'obiettivo)\n\nLa barra livello nella schermata profili mostra la strada al livello successivo; il rango sale con gli XP (Principiante → Divino).',
         },
         navDaily: {
           title: 'Verso le sfide',
@@ -629,17 +629,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Passo 2: i 5 slot',
           body: 'Cinque slot di compiti al giorno, che si sbloccano in sequenza. Ogni slot mostra il compito, le difficoltà giocabili e il valore in XP — le difficoltà più alte moltiplicano.',
-          details: 'La meccanica degli slot:\n• Gli slot 2–5 si aprono solo dopo che il precedente è completato o saltato — la catena forza la varietà.\n• Ogni compito è una condizione sulla prossima canzone ("genere rock", "almeno 80% di precisione"…) — la libreria filtra automaticamente le canzoni adatte.\n• Scelta della difficoltà per slot: fino a 3× di XP a esperto.\n\nA mezzanotte cadono cinque compiti freschi — la catena riparte.',
+          details: 'La meccanica degli slot:\n• Gli slot 2–5 si aprono solo dopo che il precedente è completato — la catena forza la varietà.\n• Ogni compito è una condizione sulla prossima canzone ("genere rock", "almeno 80% di precisione"…) — la libreria filtra automaticamente le canzoni adatte.\n• Scelta della difficoltà per slot: fino a un moltiplicatore 3× di XP su Folle.\n\nA mezzanotte cadono cinque compiti freschi — la catena riparte.',
         },
         badges: {
           title: 'Badge e settimanale',
-          body: 'Completare più slot vale badge giornalieri (bronzo/argento/oro) con XP extra. La controparte settimanale corre per 7 giorni con ricompense ricche — stessa meccanica, bottino più grosso.',
-          details: 'I livelli dei badge giornalieri:\n• Bronzo: 2 slot\n• Argento: 3–4 slot\n• Oro: tutti e 5 gli slot — più il bonus XP giornaliero\n\nSettimanale: 5 slot su 7 giorni, 500–2000 XP a slot, reset il lunedì. Giocare giornaliere E settimanali fa salire di livello molto più in fretta delle sole canzoni.',
+          body: 'Completare gli slot vale badge giornalieri (bronzo/argento/oro) con XP extra. La controparte settimanale corre per 7 giorni con ricompense ricche — stessa meccanica, bottino più grosso.',
+          details: 'I livelli dei badge giornalieri:\n• Bronzo: 1 slot\n• Argento: 3 slot\n• Oro: tutti e 5 gli slot — più il bonus XP giornaliero\n\nSettimanale: 5 slot su 7 giorni, 250–500 XP base a slot (× moltiplicatore di difficoltà), reset il lunedì. Giocare giornaliere E settimanali fa salire di livello molto più in fretta delle sole canzoni.',
         },
         challengeModes: {
           title: 'Modalità sfida',
-          body: 'Oltre agli slot esistono modalità sfida libere con modificatori (es. "tempo 2×", "senza note") — per regole su misura e XP extra oltre i compiti giornalieri.',
-          details: 'Le modalità si configurano liberamente: scegli una modalità, combina i modificatori, il bottino di XP cresce con la difficoltà.\n\nI completamenti sbloccano nuovi modificatori — la scheda collezione nell\'area sfide mostra cosa hai già.',
+          body: 'Oltre agli slot esistono modalità sfida libere con modificatori (es. "velocità 1,5×", "testo nascosto") — per regole su misura e XP extra oltre i compiti giornalieri.',
+          details: 'Le modalità si scelgono liberamente: scegli una modalità, i suoi modificatori si applicano automaticamente, la ricompensa XP cresce con la difficoltà.\n\nI completamenti sbloccano sfide successive a catena — più giochi, più si apre.',
         },
         finish: {
           title: 'Ora di collezionare! 🏅',

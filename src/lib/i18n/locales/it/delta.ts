@@ -916,7 +916,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Punteggi",
     navJukeboxDesc: "Crea playlist e metti canzoni in coda",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} modalità di gioco per 2–24 giocatori",
+    navPartyDesc: "{n} modalità di gioco per fino a 32 giocatori",
     navSectionTitle: "Esplora l'app",
     navSettingsDesc: "Audio, microfoni, display",
     navSettingsTitle: "Impostazioni",
@@ -1075,7 +1075,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Tutto su Karaoke ZERO: versione, piattaforma, progetti che contribuiscono e licenze — più la descrizione del progetto e i link di supporto.",
     appearance: "Rendilo tuo: temi, sfondo animato o un tuo video di sfondo, stile e dimensione del testo, visualizzazione delle note e la modalità prestazioni per le macchine meno potenti.",
-    gameplay: "Messa a punto del gioco: punteggio, effetti particellari sui centri, riproduzione automatica delle prossime canzoni in coda e altri interruttori di comportamento per round e risultati. Perfetto per bilanciare atmosfera di festa e prestazioni.",
+    gameplay: "Messa a punto del gioco: punteggio, effetti particellari sui centri, registrazione dei replay, schermo intero automatico e altri interruttori di comportamento per round e risultati. Perfetto per bilanciare atmosfera di festa e prestazioni.",
     general: "Impostazioni principali dell'app: lingua dell'interfaccia, difficoltà predefinita per i nuovi round, attività online e l'elenco di tutte le scorciatoie da tastiera. Le modifiche si applicano subito — alcune (come la lingua) senza riavvio.",
     graphicsound: "Tutto l'audio: dispositivo di uscita (ASIO incluso per la bassa latenza), volume generale e di anteprima, sensibilità del microfono, normalizzazione del volume e qualità dei video YouTube.",
     library: "Gestisci la tua libreria di canzoni: imposta la cartella canzoni (ogni sottocartella = una canzone) e scansionala, ripristina la libreria o elimina tutti i dati. Qui trovi anche l'importazione da altri sistemi di karaoke (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

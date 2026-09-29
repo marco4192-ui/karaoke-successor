@@ -915,7 +915,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Highscores",
     navJukeboxDesc: "Byg spillelister og sæt sange i kø",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} spiltilstande for 2–24 spillere",
+    navPartyDesc: "{n} spiltilstande for op til 32 spillere",
     navSectionTitle: "Udforsk appen",
     navSettingsDesc: "Lyd, mikrofoner, visning",
     navSettingsTitle: "Indstillinger",
@@ -1074,7 +1074,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Alt om Karaoke ZERO: version, platform, bidragende projekter og licenser — plus projektbeskrivelsen og supportlinks.",
     appearance: "Gør den til din: temaer, animeret baggrund eller din egen baggrundsvideo, sangtekststil og -størrelse, nodevisning og ydelsestilstanden til svagere maskiner.",
-    gameplay: "Finjustér spilfølelsen: scoring, partikeleffekter ved træffere, autoplay af de næste sange i køen og flere adfærdsindstillinger for runder og resultater. Perfekt til at balancere feststemning og ydelse.",
+    gameplay: "Finjustér spilfølelsen: pointvisning, partikeleffekter ved træffere, replay-optagelse, automatisk fuldskærm og flere adfærdsindstillinger for runder og resultater. Perfekt til at balancere feststemning og ydelse.",
     general: "Grundlæggende app-indstillinger: grænsefladesprog, standard sværhedsgrad for nye runder, onlineaktiviteter og listen over alle tastaturgenveje. Ændringer træder i kraft straks — nogle (som sproget) uden genstart.",
     graphicsound: "Alt om lyd: outputenhed (inkl. ASIO til lav latenstid), master- og forhåndslydstyrke, mikrofonfølsomhed, loudness-normalisering og YouTube-videokvaliteten.",
     library: "Administrér dit sangbibliotek: sæt sangmappen (hver undermappe = én sang) og skan den, nulstil biblioteket eller slet alle data. Også hjem for importen fra andre karaoke-systemer (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

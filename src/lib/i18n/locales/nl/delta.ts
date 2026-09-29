@@ -915,7 +915,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Highscores",
     navJukeboxDesc: "Bouw afspeellijsten en zet nummers in de wachtrij",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} spelmodi voor 2–24 spelers",
+    navPartyDesc: "{n} spelmodi voor tot 32 spelers",
     navSectionTitle: "Ontdek de app",
     navSettingsDesc: "Audio, microfoons, beeldscherm",
     navSettingsTitle: "Instellingen",
@@ -1074,7 +1074,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Alles over Karaoke ZERO: versie, platform, bijdragende projecten en licenties — plus de projectbeschrijving en ondersteuningslinks.",
     appearance: "Maak het je eigen: thema's, geanimeerde achtergrond of je eigen achtergrondvideo, songtekststijl en -grootte, notenweergave en de prestatiemodus voor zwakkere machines.",
-    gameplay: "Fine-tune het spelgevoel: scoren, deeleffecten bij treffers, autoplay van de volgende wachtrijnummers en meer gedragsschakelaars voor rondes en resultaten. Perfect om partysfeer en prestaties in balans te houden.",
+    gameplay: "Fine-tune het spelgevoel: scoreweergave, deeleffecten bij treffers, opname van herhalingen, automatisch volledig scherm en meer gedragsschakelaars voor rondes en resultaten. Perfect om partysfeer en prestaties in balans te houden.",
     general: "Kerninstellingen van de app: interfacetaal, standaardmoeilijkheid voor nieuwe rondes, online activiteiten en de lijst met alle sneltoetsen. Wijzigingen gelden direct — sommige (zoals de taal) zonder herstart.",
     graphicsound: "Alles over audio: uitgangsapparaat (incl. ASIO voor lage latency), hoofd- en previewvolume, microfoongevoeligheid, loudness-normalisatie en de YouTube-videokwaliteit.",
     library: "Beheer je nummerbibliotheek: stel de nummersmap in (elke submap = één nummer) en scan die, reset de bibliotheek of verwijder alle gegevens. Ook het thuis van de import uit andere karaokesystemen (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

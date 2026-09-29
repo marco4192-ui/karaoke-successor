@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Przesyłanie do globalnej tabeli wyników...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Zweryfikowany wynik',
+  unverified: 'Niezweryfikowany (bez dowodu)',
+  verifiedDesc: 'Ten wynik został zweryfikowany przez system anty-cheat',
+  unverifiedDesc: 'W przypadku tego wyniku nie dołączono dowodu anty-cheat',
 },
 shareSection: {
   title: '📤 Udostępnij swój wynik',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Nowa wiadomość od {name}',
+  openChat: 'Otwórz czat',
+  closeChat: 'Zamknij czat',
   noMessages: 'Brak wiadomości',
   sendAs: 'Wyślij jako',
   noPlayers: 'Brak graczy',

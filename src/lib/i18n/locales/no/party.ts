@@ -2,7 +2,7 @@
 
 export const partyTranslations = {
 partyHelpers: {
-  defaultMicName: 'Mic {n}',
+  defaultMicName: 'Mikrofon {n}',
 },
 party: {
   title: 'Festleker',
@@ -460,7 +460,7 @@ modeSettings: {
   transitionTime: 'Overgangstid',
   transitionTimeDesc: 'Tid mellom utdrag',
   bracketSize: 'Bracket-størrelse',
-  bracket2: '2 — Duel',
+  bracket2: '2 — Duell',
   bracket4: '4 spillere',
   bracket8: '8 spillere',
   bracket16: '16 spillere',

@@ -85,7 +85,7 @@ medley: {
   perfect: 'Perfekt!',
   great: 'Fantastisk!',
   good: 'God',
-  miss: 'Miss!',
+  miss: 'Bom!',
   combo: 'KOMBO',
   megaCombo: 'MEGA KOMBO!',
   scoreBreakdown: 'Score-opdeling',
@@ -100,7 +100,7 @@ medley: {
   dynamicDifficulty: 'Dynamisk sværhedsgrad',
   dynamicDifficultyDesc: 'Nem → Svær på tværs af uddrag',
   currentDifficulty: 'Nuværende sværhedsgrad',
-  highway: 'Note-Highway',
+  highway: 'Node-Highway',
   elimination: '💀 Eliminering',
   eliminationDesc: 'Den svageste elimineres!',
   eliminated: 'Elimineret',
@@ -139,7 +139,7 @@ medley: {
   biggestFlop: 'Største flop',
   surprise: 'Overraskelse',
   shareResult: 'Del resultat',
-  shareText: 'Musik Karaoke App',
+  shareText: 'Musik- og karaokeapp',
   copied: 'Kopieret til udklipsholder!',
   flopComment: 'Bedre held næste gang...',
   teamBonuses: 'Holdbonus',
@@ -150,7 +150,7 @@ medley: {
   synergyTriggered: '⚡ SYNERGI! +300',
   comebackBoost: '🔥 COMEBACK ×1.5',
   comebackDesc: 'Bagudliggende hold får ×1.5',
-  comebackMultiplier: '×1.5 Multiplikator',
+  comebackMultiplier: '×1,5 multiplikator',
   mvpAward: 'MVP',
   mvpOfMatch: 'Kampens MVP',
   teamBonusBreakdown: 'Holdbonus-opdeling',
@@ -268,7 +268,7 @@ tournament: {
   seedingRandom: '🎲 Tilfældig',
   seedingStrength: '📊 Efter styrke',
   seedingStrengthDesc: 'Spillere seedes efter deres statistik (Hall of Fame, niveau, nøjagtighed)',
-  seeded: 'Seeded',
+  seeded: 'Seedet',
   crowdVoting: 'Publikum',
   fanFavorites: 'Fan-favoritter',
   fanFavoriteTitle: '❤️ Publikums fan-favoritter',
@@ -389,8 +389,8 @@ rateMySong: {
   hypeMeter: 'Hype-måler',
   liveReactions: 'Live-reaktioner',
   sendReaction: 'Send reaktion',
-  underFive: 'Under 5.0',
-  overSeven: 'Over 7.0',
+  underFive: 'Under 5,0',
+  overSeven: 'Over 7,0',
   roundOf: 'Runde {n} af {m}',
   totalScore: 'Total score',
   betCorrect: 'Væddemål korrekt! +1 point',
@@ -399,7 +399,7 @@ rateMySong: {
   confettiMessage: 'FANTASTISK OPTRÆDEN!',
   genreStats: 'Genre-statistik',
   wallOfFame: 'Wall of Fame',
-  scoreLabel: 'Score: {n}',
+  scoreLabel: 'Point: {n}',
   challenges: {
     accent: {
       title: 'Syng med accent',
@@ -410,11 +410,11 @@ rateMySong: {
       description: 'Hold op med at synge i 10 sekunder i midten, men fortsæt optræden',
     },
     danceBreak: {
-      title: 'Dance Break',
+      title: 'Dansepause',
       description: 'Lav mindst 3 dansebevægelser under sangen',
     },
     phoneSinger: {
-      title: 'Phone Singer',
+      title: 'Telefonsanger',
       description: 'Syng som om du optager en TikTok på din telefon',
     },
     supermarketStyle: {
@@ -426,11 +426,11 @@ rateMySong: {
       description: 'Start langsomt, gå super hurtigt i midten, langsomt igen',
     },
     smirkMode: {
-      title: 'Smirk Mode',
+      title: 'Smørret grin',
       description: 'Hold et selvsikkert smil på læben HELE tiden',
     },
     airGuitarSolo: {
-      title: 'Air Guitar Solo',
+      title: 'Air guitar-solo',
       description: 'Lav en air guitar-solo under et hvilket som helst instrumentalt afsnit',
     },
     micDrop: {
@@ -438,7 +438,7 @@ rateMySong: {
       description: 'Afslut sangen med et dramatisk mic drop-pose',
     },
     divaMode: {
-      title: 'Diva Mode',
+      title: 'Divatilstand',
       description: 'Syng med maksimalt drama, håndbevægelser og hårvift',
     },
     whisperStart: {
@@ -450,7 +450,7 @@ rateMySong: {
       description: 'Syng overdramatisk som en operasanger',
     },
     discoFever: {
-      title: 'Disco Fever',
+      title: 'Diskofeber',
       description: 'Tilføj disco-dansemoves ved hvert omkvæd',
     },
     emotionalRollercoaster: {
@@ -468,7 +468,7 @@ rateMySong: {
       description: 'Gennemfør 1 optræden',
     },
     goldenVoice: {
-      name: 'Golden Voice',
+      name: 'Gylden stemme',
       description: 'Få en bedømmelse >= 9.0',
     },
     crowdFavorite: {
@@ -488,19 +488,19 @@ rateMySong: {
       description: '20+ optrædener',
     },
     centurion: {
-      name: 'Centurion',
+      name: 'Centurio',
       description: '100+ publikumsbedømmelser i alt',
     },
     comebackKid: {
-      name: 'Comeback Kid',
+      name: 'Comebackbarn',
       description: 'Bedømmelse forbedres med 3+ point fra værste til bedste',
     },
   },
   ranks: {
-    newcomer: 'Newcomer',
+    newcomer: 'Nykommer',
     openMic: 'Open Mic',
-    regular: 'Regular',
-    star: 'Star',
+    regular: 'Stamgæst',
+    star: 'Stjerne',
     superstar: 'Superstar',
     legend: 'Legende',
   },

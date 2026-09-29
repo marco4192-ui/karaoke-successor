@@ -139,7 +139,7 @@ medley: {
   biggestFlop: 'Största Flopp',
   surprise: 'Överraskning',
   shareResult: 'Dela Resultat',
-  shareText: 'Musik Karaoke App',
+  shareText: 'Musikkaraokeappen',
   copied: 'Kopierat till urklipp!',
   flopComment: 'Bättre lycka nästa gång...',
   teamBonuses: 'Lagbonus',
@@ -150,7 +150,7 @@ medley: {
   synergyTriggered: '⚡ SYNERGI! +300',
   comebackBoost: '🔥 COMEBACK ×1.5',
   comebackDesc: 'Efterliggande lag får ×1.5',
-  comebackMultiplier: '×1.5 Multiplikator',
+  comebackMultiplier: '×1,5 multiplikator',
   mvpAward: 'MVP',
   mvpOfMatch: 'Matchens MVP',
   teamBonusBreakdown: 'Lagbonusuppdelning',
@@ -183,7 +183,7 @@ tournament: {
   selectPlayers: 'Välj Spelare ({n}/{m})',
   noActiveProfiles: '⚠️ Minst 2 aktiva profiler krävs...',
   startTournament: '🏆 Starta Turnerings ({n} Spelare)',
-  tbd: 'TBD',
+  tbd: 'Ej avgjord',
   roundOf: 'Omgång {n}',
   roundOf16: 'Åttondelsfinal',
   quarterFinals: 'Kvartsfinal',
@@ -410,7 +410,7 @@ rateMySong: {
       description: 'Sluta sjunga i 10 sekunder mitt i, fortsätt uppträda',
     },
     danceBreak: {
-      title: 'Dance Break',
+      title: 'Danspaus',
       description: 'Gör minst 3 dansrörelser under låten',
     },
     phoneSinger: {
@@ -450,7 +450,7 @@ rateMySong: {
       description: 'Sjung lika överdrivet som en operasångare',
     },
     discoFever: {
-      title: 'Disco Fever',
+      title: 'Diskofeber',
       description: 'Lägg till discodansrörelser vid varje refräng',
     },
     emotionalRollercoaster: {
@@ -492,7 +492,7 @@ rateMySong: {
       description: '100+ totala publikbetyg mottagna',
     },
     comebackKid: {
-      name: 'Comeback Kid',
+      name: 'Comeback-kung',
       description: 'Betyget förbättras med 3+ poäng från sämst till bäst',
     },
   },

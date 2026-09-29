@@ -361,7 +361,7 @@ companion: {
   switching: 'Wisselen...',
   getReady: 'Maak je klaar...',
   roundLabel: 'Ronde {n}:',
-  pts: 'pts',
+  pts: 'pt.',
   tieTitle: 'Gelijkspel!',
   tieSubtitle: 'Beide zangers delen de topscore — niemand krijgt de kroon.',
   endSongEarlyConfirm: 'Nummer echt vroegtijdig beëindigen?',
@@ -441,7 +441,7 @@ remoteControl: {
 },
 onlineMultiplayer: {
   backToParty: 'Terug naar feest',
-  title: 'Online Multiplayer',
+  title: 'Online multiplayer',
   comingSoon: 'Binnenkort beschikbaar',
   description: 'Zing tegen vrienden en spelers wereldwijd in realtime online gevechten. We werken hard om je de ultieme online karaoke-ervaring te brengen!',
   inDevelopment: 'In ontwikkeling',
@@ -739,7 +739,7 @@ achievements: {
     description: 'Behaal een perfecte score (95%+)',
   },
   flawless: {
-    title: 'Flawless',
+    title: 'Vlekkeloos',
     description: 'Behaal 5 perfecte scores',
   },
   scoreMaster: {

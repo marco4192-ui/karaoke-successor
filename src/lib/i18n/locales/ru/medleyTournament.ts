@@ -183,7 +183,7 @@ tournament: {
   selectPlayers: 'Выберите игроков ({n}/{m})',
   noActiveProfiles: '⚠️ Нужно минимум 2 активных профиля...',
   startTournament: '🏆 Начать турнир ({n} игроков)',
-  tbd: 'TBD',
+  tbd: 'Ожидается',
   roundOf: 'Раунд {n}',
   roundOf16: '1/8 финала',
   quarterFinals: 'Четвертьфинал',

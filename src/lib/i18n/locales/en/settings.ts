@@ -140,7 +140,7 @@ export const settingsTranslations = {
   // R28: intro texts for all settings submenus (pattern like settingsTaxonomy.desc)
   settingsIntros: {
     general: 'Core app settings: interface language, default difficulty for new rounds, online activities and the list of all keyboard shortcuts. Changes apply immediately — some (like the language) without a restart.',
-    gameplay: 'Fine-tune the game feel: scoring, particle effects on hits, autoplay of the next queue songs and more behavior switches for rounds and results. Perfect for balancing party vibes vs. performance.',
+    gameplay: 'Fine-tune the game feel: score display, particle effects on hits, replay recording, auto-fullscreen and more behavior switches for rounds and results. Perfect for balancing party vibes vs. performance.',
     appearance: 'Make it yours: themes, animated background or your own background video, lyrics style and size, note display and the performance mode for weaker machines.',
     graphicsound: 'Everything audio: output device (incl. ASIO for low latency), master and preview volume, microphone sensitivity, loudness normalization and the YouTube video quality.',
     microphone: 'Microphone setup and testing: device selection, sensitivity, noise gate and a live level check. You can also save settings as presets and connect smartphones as wireless microphones.',

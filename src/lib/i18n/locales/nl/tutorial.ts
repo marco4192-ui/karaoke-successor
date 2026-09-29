@@ -54,22 +54,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Snel starten',
           body: '"Begin met zingen" brengt je direct naar de bibliotheek. "Party Modus" opent de 9 partygames voor groepen.',
-          details: 'De snelstartkaarten zijn shortcuts voor de meest gebruikte routes:\n• "Begin met zingen" = bibliotheek openen, nummer kiezen, zingen (solo, duel of duet).\n• "Party Modus" = de spelcollectie voor 2–24 spelers, telefoons kunnen als microfoon meedoen.\n\nAlles wat je hier ziet, is ook via de menubalk te bereiken — de kaarten besparen je alleen klikwerk.',
+          details: 'De snelstartkaarten zijn shortcuts voor de meest gebruikte routes:\n• "Begin met zingen" = bibliotheek openen, nummer kiezen, zingen (solo, duel of duet).\n• "Party Modus" = de spelcollectie voor tot 32 spelers, telefoons kunnen als microfoon meedoen.\n\nAlles wat je hier ziet, is ook via de menubalk te bereiken — de kaarten besparen je alleen klikwerk.',
         },
         dailyCard: {
           title: 'Dagelijkse uitdaging',
           body: '5 vakken per dag met wisselende taken — hoe meer vakken je wist, hoe groter je XP-bonus. Verse taken verschijnen om middernacht.',
-          details: 'Zo werkt het systeem:\n• Elk van de 5 vakken bevat een ander type taak (bijv. "zing een nummer uit de jaren 80", "score 8000 punten").\n• Vakken ontgrendelen na elkaar — vak 2 pas als vak 1 voltooid (of overgeslagen) is.\n• Elk vak is speelbaar in meerdere moeilijkheidsgraden; hogere geven meer XP (tot 3× multiplier).\n• De bonus groeit met het aantal gewiste vakken: 5/5 levert de volledige dagbonus op.\n\nTaken komen uit JOUW bibliotheek — de selectie past zich altijd aan je nummers aan.',
+          details: 'Zo werkt het systeem:\n• Elk van de 5 vakken bevat een ander type taak (bijv. "zing een nummer uit de jaren 80", "score 8000 punten").\n• Vakken ontgrendelen na elkaar — vak 2 pas als vak 1 voltooid is.\n• Elk vak is speelbaar in meerdere moeilijkheidsgraden; hogere geven meer XP (tot 3× multiplier).\n• De bonus groeit met het aantal gewiste vakken: 5/5 levert de volledige dagbonus op.\n\nTaken komen uit JOUW bibliotheek — de selectie past zich altijd aan je nummers aan.',
         },
         weeklyCard: {
           title: 'Wekelijkse uitdaging',
           body: 'De wekelijkse tegenhanger: 5 vakken verspreid over de week met grotere XP-beloningen. Perfect voor langetermijndoelen.',
-          details: 'Wekelijkse uitdagingen werken als de dagelijkse, maar:\n• De 5 vakken lopen 7 dagen — geen dagelijkse reset, verzamel in je eigen tempo.\n• De XP-beloningen per vak zijn veel groter (bijv. 500–2000 XP in plaats van 100–400).\n• De reset valt op maandagochtend.\n\nTip: dagelijks en wekelijks lopen parallel — beide spelen is de snelste weg omhoog.',
+          details: 'Wekelijkse uitdagingen werken als de dagelijkse, maar:\n• De 5 vakken lopen 7 dagen — geen dagelijkse reset, verzamel in je eigen tempo.\n• De XP-beloningen per vak zijn groter: 250–500 XP basis in plaats van 100–200 dagelijks — en de moeilijkheidsmultiplier (tot 3×) komt daar bovenop.\n• De reset valt op maandagochtend.\n\nTip: dagelijks en wekelijks lopen parallel — beide spelen is de snelste weg omhoog.',
         },
         modeLauncher: {
           title: 'Zingen: Solo, Duel & Duet',
           body: '🎤 Solo: één speler, één microfoon.\n⚔️ Duel: twee spelers op HETZELFDE nummer — de meeste punten winnen.\n🎭 Duet: twee stemmen op twee sporen — de bibliotheek toont automatisch alleen geschikte duetnummers.',
-          details: 'De drie modi in detail:\n• Solo: klassieke karaoke — je zingt alle noten, je score landt in de highscores.\n• Duel: beide spelers zingen tegelijk hetzelfde notenspoor. De punten lopen apart — de vergelijking achteraf toont wie beter was. Perfect voor revanches.\n• Duet: het nummer heeft twee aparte stemmen (P1/P2) — iedereen zingt "zijn" delen, gedeelde zinnen leveren teambonus op. Duetnummers vind je in de bibliotheek met het 🎭-filter.\n\nMicrofoons: je kunt zoveel microfoons of smartphones toewijzen als je wilt (zie Instellingen → Microfoon).',
+          details: 'De drie modi in detail:\n• Solo: klassieke karaoke — je zingt alle noten, je score landt in de highscores.\n• Duel: beide spelers zingen tegelijk hetzelfde notenspoor. De punten lopen apart — de vergelijking achteraf toont wie beter was. Perfect voor revanches.\n• Duet: het nummer heeft twee aparte stemmen (P1/P2) — iedereen zingt "zijn" delen, gedeelde zinnen leveren teambonus op. Duetnummers vind je in de bibliotheek met het 🎭-filter.\n\nMicrofoons: tot 4 fysieke microfoons plus smartphones als extra invoer (zie Instellingen → Microfoon).',
         },
         libraryNav: {
           title: 'De bibliotheek',
@@ -79,7 +79,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filters',
           body: 'Genre, taal, jaar, decennium, duetnummers en virale hits — snijd de bibliotheek naar eigen hand.',
-          details: 'Alle filters combineer je — bijv. "Genre: Rock + Taal: Engels + Tijdperk: jaren 80" toont precies de Engelse rocksongs uit de jaren tachtig.\n\nSpeciale filters:\n• Duet: alleen nummers met twee stemsporen.\n• Virale hits: nummers die momenteel in de virale charts staan (gegevens uit Instellingen → Viral Charts).\n• Eigen genres & talen: maak je eigen categorieën aan bij Instellingen → Genres & Talen — ze verschijnen direct in deze filters.\n\n"Filters resetten" (✕) ruimt alles in één keer op.',
+          details: 'Alle filters combineer je — bijv. "Genre: Rock + Taal: Engels + Tijdperk: jaren 80" toont precies de Engelse rocksongs uit de jaren tachtig.\n\nSpeciale filters:\n• Duet: alleen nummers met twee stemsporen.\n• Virale hits: nummers die momenteel in de virale charts staan (geconfigureerd in Instellingen → Bibliotheek).\n• Eigen genres & talen: maak je eigen categorieën aan bij Instellingen → Genres & Talen — ze verschijnen direct in deze filters.\n\n"Filters resetten" (✕) ruimt alles in één keer op.',
         },
         songCard: {
           title: 'Nummers',
@@ -93,8 +93,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Partymodi',
-          body: '9 spellen voor 2–24 spelers: Battle Royale, Geef de Mic, Medley Contest, toernooi, Missing Words, Blind Karaoke en meer — telefoons doen mee als microfoon.',
-          details: 'De 9 modi in één oogopslag:\n• Battle Royale: iedereen zingt, de zwakste valt elke ronde af — de laatste overeind wint.\n• Geef de Mic: de microfoon gaat van speler naar speler — iedereen zingt zijn deel.\n• Medley Contest: teams zingen korte nummerfragmenten met speciale regels.\n• Toernooi: knockoutschema met duellen — de winnaar klimt elke ronde op.\n• Missing Words: woorden uit de songtekst verdwijnen — zing het ontbrekende woord voor de punten.\n• Blind Karaoke: geen notenweergave, alleen op het gehoor!\n• Rate my Song & Companion Sing-A-Long en meer — elke moduskaart legt zichzelf uit.\n\nBijna alle modi ondersteunen de companion-app als microfoon en afstandsbediening.',
+          body: '9 spellen voor tot 32 spelers: Battle Royale, Geef de Mic, Medley Contest, toernooi, Missing Words, Blind Karaoke en meer — telefoons doen mee als microfoon.',
+          details: 'De 9 modi in één oogopslag:\n• Battle Royale: iedereen zingt, de zwakste valt elke ronde af — de laatste overeind wint.\n• Geef de Mic: de microfoon gaat van speler naar speler — iedereen zingt zijn deel.\n• Medley Contest: teams zingen korte nummerfragmenten met speciale regels.\n• Toernooi: knockoutschema met duellen — de winnaar klimt elke ronde op.\n• Missing Words: woorden uit de songtekst verdwijnen — zing het ontbrekende woord voor de punten.\n• Blind Karaoke: de notenweergave verdwijnt in passages — alleen op het gehoor!\n• Rate my Song & Companion Sing-A-Long en meer — elke moduskaart legt zichzelf uit.\n\nBijna alle modi ondersteunen de companion-app als microfoon en afstandsbediening.',
         },
         partyModes: {
           title: 'De moduskiezer',
@@ -124,12 +124,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Instellingen',
           body: 'Microfoons, taal, gameplay-fijnafstelling, weergave en graphics — alle regelaars vind je hier.',
-          details: 'De 12 instellingstabbladen in een flits:\n• Algemeen: taal, standaardmoeilijkheid, online\n• Gameplay: scoring, deeltjes, wachtrij-autoplay\n• Weergave: thema\'s, songtekststijl, achtergrond\n• Grafisch / Geluid: uitgangsapparaat, volume, YouTube-kwaliteit\n• Microfoon: apparaten, gevoeligheid, noise gate, presets\n• Mobiel: companion-apparaten verbinden & beheren\n• Webcam: webcam als achtergrond\n• Bibliotheek: nummermap, import, reset\n• Genres & Talen: eigen categorieën\n• Themaparty: thema activeren & instellen\n• Sync & Back-up: zekerheden\n\nEr is een eigen, diepgaande instellingenrondleiding voor alle tabbladen in het ?-hulpmenu.',
+          details: 'De 12 instellingstabbladen in een flits:\n• Algemeen: taal, standaardmoeilijkheid, online\n• Gameplay: scoreweergave, deeltjes, combo, opname van herhalingen\n• Weergave: thema\'s, songtekststijl, achtergrond\n• Audio: uitgangsapparaat, volume, loudness, YouTube-kwaliteit\n• Microfoon: apparaten, gevoeligheid, noise gate, presets\n• Mobiel: companion-apparaten verbinden & beheren\n• Webcam: webcam als achtergrond\n• Bibliotheek: nummermap, import, virale charts, reset\n• Genres & Talen: eigen categorieën\n• Themaparty: thema activeren & instellen\n• Sync & Back-up: zekerheden\n• Over: versie, platform, licenties\n\nEr is een eigen, diepgaande instellingenrondleiding voor alle tabbladen in het ?-hulpmenu.',
         },
         settingsView: {
           title: 'De instellingstabbladen',
-          body: 'Kies bovenaan een sectie: Algemeen (taal), Gameplay, Weergave, Grafisch / Geluid, Microfoon, Mobiel (telefoonverbinding) en meer.',
-          details: 'Sinds R28 legt een korte introductietekst bovenaan elk tabblad uit wat het doet — je hoeft nooit meer te gokken waar een optie thuishoort.\n\nDe bijbehorende rondleiding: "Instellingen" in het ?-hulpmenu loopt met je langs elk tabblad.',
+          body: 'Kies bovenaan een sectie: Algemeen (taal), Gameplay, Weergave, Audio, Microfoon, Mobiel (telefoonverbinding) en meer.',
+          details: 'Een korte introductietekst bovenaan elk tabblad legt uit wat het doet — je hoeft nooit meer te gokken waar een optie thuishoort.\n\nDe bijbehorende rondleiding: "Instellingen" in het ?-hulpmenu loopt met je langs elk tabblad.',
         },
         finish: {
           title: 'Klaar! 🎉',
@@ -173,7 +173,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Werkbalk',
           body: 'Alles voor noten: toevoegen, dupliceren, verwijderen, splitsen, samenvoegen — plus noottypes, stemmen en tapmodus (komt zo).',
-          details: 'De tools op een rij:\n• ➕ Noot toevoegen: valt op de afspeelkop\n• ⧉ Dupliceren: kopieert de geselecteerde noot direct erachter\n• 🗑 Verwijderen: haalt de selectie weg\n• ✂ Splitsen: één noot → twee (in het midden)\n• ⇄ Samenvoegen: twee geselecteerde → één\n\nSelecteren via klikken; shift-klik voor meerdere. Daarna neemt het toetsenbord het over: ⌫ wist, ↑/↓ transponeert, ←/→ schuift.',
+          details: 'De tools op een rij:\n• ➕ Noot toevoegen: valt op de afspeelkop\n• ⧉ Dupliceren: kopieert de geselecteerde noot direct erachter\n• 🗑 Verwijderen: haalt de selectie weg\n• ✂ Splitsen: één noot → twee (in het midden)\n• ⇄ Samenvoegen: voegt de geselecteerde noot samen met de volgende\n\nSelecteren via klikken; shift-klik voor meerdere. Daarna neemt het toetsenbord het over: ⌫ wist, ↑/↓ transponeert, ←/→ schuift.',
         },
         lyricsPanel: {
           title: 'Songtekstpaneel',
@@ -182,7 +182,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Noten bewerken',
-          body: 'Noten zijn de blokken op de toonbanen: toevoegen, dupliceren, verwijderen, splitsen (één noot → twee) en samenvoegen (twee → één).\n\nBewerk geselecteerde noten in rap tempo: ⌫ wist, ↑/↓ transponeert.',
+          body: 'Noten zijn de blokken op de toonbanen: toevoegen, dupliceren, verwijderen, splitsen (één noot → twee) en samenvoegen (met de volgende noot).\n\nBewerk geselecteerde noten in rap tempo: ⌫ wist, ↑/↓ transponeert.',
           details: 'Precisietips:\n• Zoomen: Ctrl+muiswiel over de tijdlijn — zoom in voor fijn timingwerk.\n• Afspelen: Spatie wisselt tussen afspelen/pauze, Shift+Spati speelt alleen de selectie.\n• Meerdere noten transponeren: selecteer ze allemaal, ↑/↓ beweegt het hele stel.\n\nVoor de timing: de nootstart moet op de lettergreep-inzet in de zang vallen — de waveform helpt bij het vinden van de inzetten.',
         },
         noteTypes: {
@@ -213,7 +213,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Sneltoetsen',
           body: 'Alle sneltoetsen in één overzicht — de editor is een toetsenbordinstrument. Klik er doorheen!',
-          details: 'De belangrijkste sneltoetsen:\n• Ctrl+Z / Ctrl+Y: ongedaan maken / opnieuw\n• Spatie: afspelen/pauze\n• ⌫: geselecteerde noten verwijderen\n• ↑/↓: transponeren · ←/→: in de tijd schuiven\n• S: noot splitsen · M: samenvoegen\n• 1–5: noottype kiezen\n\nIn het sneltoetsenpaneel kun je toetsen bekijken en opnieuw toewijzen.',
+          details: 'De belangrijkste sneltoetsen:\n• Ctrl+Z / Ctrl+Y: ongedaan maken / opnieuw\n• Spatie: afspelen/pauze\n• ⌫: geselecteerde noten verwijderen\n• ↑/↓: transponeren (Shift = hele octaaf) · ←/→: in de tijd schuiven (Shift = grof)\n• M: samenvoegen met de volgende noot\n• Ctrl+S: opslaan · Ctrl+C/V: noten kopiëren/plakken\n\nHet sneltoetsenpaneel in de linkerbalk toont alle toetsen in één oogopslag.',
         },
         finish: {
           title: 'Klaar om te bouwen! 🛠️',
@@ -239,12 +239,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'De instellingen 👋',
           body: 'Deze rondleiding loopt uitsluitend langs de instellingen — tabblad voor tabblad.\n\nIk schakel automatisch naar elk tabblad en leg uit wat je er vindt.',
-          details: 'De tabbladen in de volgorde van de rondleiding: Algemeen, Gameplay, Weergave, Grafisch / Geluid, Microfoon, Mobiel (companion), Webcam, Bibliotheek, Genres & Talen, Themaparty, Viral Charts, Sync & Back-up en Over.\n\nElk tabblad heeft bovenaan een korte intro — deze rondleiding verdiept hem stap voor stap.',
+          details: 'De tabbladen in de volgorde van de rondleiding: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel (companion), Webcam, Bibliotheek, Genres & Talen, Themaparty, Sync & Back-up en Over.\n\nElk tabblad heeft bovenaan een korte intro — deze rondleiding verdiept hem stap voor stap.',
         },
         tabBar: {
           title: 'De tabbalk',
-          body: 'Alle instellingen zijn georganiseerd in tabbladen: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel, Webcam, Bibliotheek, Genres & Talen, Themaparty, Sync & Back-up en Over.\n\nSinds R28 legt een korte introductietekst bovenaan elk tabblad uit wat het doet.',
-          details: 'Hulp bij het zoeken — stel jezelf de vraag…\n• "Hoe gedraagt het spel ZICH?" → Gameplay\n• "Hoe ZIET het eruit?" → Weergave\n• "Hoe KLINKT het?" → Grafisch / Geluid / Microfoon\n• "Apparaten verbinden?" → Mobiel (companion) / Microfoon\n• "Mijn nummers?" → Bibliotheek\n• "Gegevens back-uppen?" → Sync & Back-up\n\nDe tabbladen scrollen horizontaal in smalle vensters — veeg gewoon naar rechts.',
+          body: 'Alle instellingen zijn georganiseerd in tabbladen: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel, Webcam, Bibliotheek, Genres & Talen, Themaparty, Sync & Back-up en Over.\n\nEen korte introductietekst bovenaan elk tabblad legt uit wat het doet.',
+          details: 'Hulp bij het zoeken — stel jezelf de vraag…\n• "Hoe gedraagt het spel ZICH?" → Gameplay\n• "Hoe ZIET het eruit?" → Weergave\n• "Hoe KLINKT het?" → Audio / Microfoon\n• "Apparaten verbinden?" → Mobiel (companion) / Microfoon\n• "Mijn nummers?" → Bibliotheek\n• "Gegevens back-uppen?" → Sync & Back-up\n\nDe tabbladen scrollen horizontaal in smalle vensters — veeg gewoon naar rechts.',
         },
         general: {
           title: 'Algemeen',
@@ -253,13 +253,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Gameplay',
-          body: 'Scoren aan/uit, deeltjeseffecten, wachtrij-autoplay en meer gedragsschakelaars voor rondes en resultaten.',
-          details: 'De belangrijkste schakelaars:\n• Scoren: voor puur plezier zingen zonder scoreweergave.\n• Wachtrij-autoplay: na een nummer start de volgende wachtrijinvoer automatisch — ideaal voor partijavonden zonder presentator.\n• Deeltjes & effecten: op zwakkere machines uitschakelen.\n\nDaarnaast: gedrag na rondes (resultscherm, direct herstarten) en combo-weergaven.',
+          body: 'Scoreweergave, deeltjeseffecten, comboweergave, opname van herhalingen, automatisch volledig scherm en meer gedragsschakelaars voor rondes en resultaten.',
+          details: 'De belangrijkste schakelaars:\n• Scoreweergave: voor puur plezier zingen zonder score op het scherm.\n• Deeltjes & effecten: op zwakkere machines uitschakelen.\n• Herhaling: neemt audio en webcam op tijdens het zingen — de herhaling draait op het resultaatenscherm.\n• Automatisch volledig scherm: schakelt automatisch naar volledig scherm wanneer een nummer start.\n• Waarschuwingssignalen: korte piepjes vóór blindgedeelten en passages met verborgen woorden.\n\nDaarnaast: comboweergave en meer.',
         },
         appearance: {
           title: 'Weergave',
           body: 'Thema\'s, geanimeerde achtergrond of je eigen achtergrondvideo, songtekststijl en -grootte, notenweergave en de prestatiemodus voor zwakkere machines.',
-          details: 'Songtekststijl: "Karaoke" (woordvulkleuring), "UltraStar" (lettergreepblokken) of "Minimaal".\n\nAchtergrond: naast thema\'s werkt ook een eigen video — in het spel draait hij gedimd achter de noten.\n\nDe prestatiemodus schrapt animaties en achtergronden drastisch — de moeite waard vanaf hardware van ± 2015.',
+          details: 'Songtekststijl: 10 visuele thema\'s — "Klassiek", "Concert", "Retro", "Neon", "Minimaal" en meer.\n\nAchtergrond: naast thema\'s werkt ook een eigen video — in het spel draait hij gedimd achter de noten.\n\nDe prestatiemodus schrapt animaties en achtergronden drastisch — de moeite waard vanaf hardware van ± 2015.',
         },
         graphicsound: {
           title: 'Audio',
@@ -269,7 +269,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Microfoon',
           body: 'Apparaatkeuze, gevoeligheid, noise gate en live niveau — plus presets. Smartphones verbind je via het tabblad Mobiel.',
-          details: 'Presets: typische opstellingen ("dynamische zangmicrofoon", "headset", "telefoon") zetten gevoeligheid + noise gate in verstandige combinaties.\n\nNoise gate: filtert ademhaling en ruimtegeluid — het live niveau toont in realtime wat erdoorheen komt.\n\nBelangrijk voor multiplayer: ELKE speler kan een EIGEN apparaat krijgen — de toewijzing gebeurt per ronde in het startvenster.',
+          details: 'Presets: typische opstellingen ("Optimaal", "Lage latentie", "Hoge nauwkeurigheid", "Rommige omgeving", "Bas", "Sopraan") zetten gevoeligheid + noise gate in verstandige combinaties.\n\nNoise gate: filtert ademhaling en ruimtegeluid — het live niveau toont in realtime wat erdoorheen komt.\n\nBelangrijk voor multiplayer: ELKE speler kan een EIGEN apparaat krijgen — de toewijzing gebeurt per ronde in het startvenster.',
         },
         libraryTab: {
           title: 'Bibliotheek',
@@ -327,7 +327,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Je spelerprofielen 👤',
           body: 'Profielen zijn de identiteiten in het spel: XP, niveau, statistieken en prestaties leven op het profiel — en highscores dragen je naam.\n\nDeze rondleiding toont hoe je profielen aanmaakt en beheert.',
-          details: 'Waarom profielen?\n• XP & niveau: gezongen nummers, uitdagingen en prestaties verzamelen ervaring — het niveau stijgt samen met de rangtitel (beginner → karaokelegende).\n• Leaderboards: highscore-items tonen je avatar.\n• Partymodi: elke spelersselectie trekt uit deze lijst.\n• Companion-apparaten kunnen een profiel "claimen" en onder die identiteit zingen.\n\nProfielen leven in de browseropslag (lokaal) of in een online account (sync) — dat kies je bij het aanmaken.',
+          details: 'Waarom profielen?\n• XP & niveau: gezongen nummers, uitdagingen en prestaties verzamelen ervaring — het niveau stijgt samen met de rangnaam (Beginner → Goddelijk).\n• Leaderboards: highscore-items tonen je avatar.\n• Partymodi: elke spelersselectie trekt uit deze lijst.\n• Companion-apparaten kunnen een profiel "claimen" en onder die identiteit zingen.\n\nProfielen leven in de browseropslag (lokaal) of in een online account (sync) — dat kies je bij het aanmaken.',
         },
         topBar: {
           title: 'De actiebalk',
@@ -387,7 +387,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Overzicht',
         manage: 'Beheren',
-        companion: 'Companion & Autoplay',
+        companion: 'Companion & Sneltoetsen',
       },
       steps: {
         welcome: {
@@ -420,7 +420,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Volgend nummer afspelen',
           body: 'De knop start de bovenste invoer — de standaardzet tussen rondes door. Klik anders direct op een willekeurige kaart.',
-          details: 'Het resultscherm na elk nummer biedt dezelfde knop ("Volgend nummer afspelen") — de flow loopt door zonder omweg naar de wachtrijweergave.\n\nMet autoplay ingeschakeld (Instellingen → Gameplay) schuift de app automatisch door.',
+          details: 'Het resultscherm na elk nummer biedt dezelfde knop ("Volgend nummer afspelen") — de flow loopt door zonder omweg naar de wachtrijweergave.\n\nDe knop "Volgend nummer afspelen" in de wachtrijweergave doet hetzelfde — de bovenste invoer start met één klik.',
         },
         clearAll: {
           title: 'Alles wissen',
@@ -437,13 +437,13 @@ export const tutorialTranslations = {
           details: 'Hoe het er voor gasten uitziet: in de app een nummer kiezen, de modus kiezen, indienen — het verzoek landt in deze lijst.\n\nJij als host ziet direct: wie het vroeg (speleravatar) en dat het een telefoonverzoek is (📱). De limiet van 3 geldt per profiel — ook via de telefoon.\n\nMeer in de companion-rondleiding.',
         },
         autoplay: {
-          title: 'Autoplay & sneltoets',
-          body: 'Schakel autoplay in (Instellingen → Gameplay) zodat het volgende nummer na elke ronde automatisch start. En: Ctrl+Q start overal de bovenste wachtrijinvoer.',
-          details: 'De autoplay-keten: nummer eindigt → resultaat kort tonen → de volgende wachtrijinvoer start. Is de wachtrij leeg, dan stopt de keten netjes.\n\nCtrl+Q werkt vanuit elke plek — de klassieker wanneer de volgende ronde direct moet rollen.',
+          title: 'Sneltoets & flow',
+          body: 'Ctrl+Q start overal de bovenste wachtrijinvoer — de klassieker wanneer de volgende ronde direct moet rollen.',
+          details: 'De flow tussen rondes: nummer eindigt → resultscherm → knop "Volgend nummer afspelen" (of Ctrl+Q) houdt de avond gaande.\n\nCtrl+Q werkt vanuit elke plek — geen omweg naar de wachtrijweergave nodig.',
         },
         finish: {
           title: 'De wachtrij wacht! 🎧',
-          body: 'Je kent nu het instellen, sorteren en de regels.\n\nTip: combineer autoplay + companion-verzoeken voor een volledig zelflopende karaoke-avond.',
+          body: 'Je kent nu het instellen, sorteren en de regels.\n\nTip: combineer de Ctrl+Q-sneltoets + companion-verzoeken voor een karaoke-avond die vanzelf doorloopt.',
         },
       },
     },
@@ -474,7 +474,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'De geschiedenis',
           body: 'Jouw berichten verschijnen rechts in cyaan (als host), bijdragen van telefoons links in paars. Elk bericht draagt zijn tijdstempel.',
-          details: 'Achtergrondupdates: het paneel haalt elke 3 seconden nieuwe berichten op — je mist niets, ook als het op de achtergrond draait.\n\nDe desktop-chatnotificatie (bel) toont ongelezen berichten zelfs met gesloten paneel.',
+          details: 'Achtergrondupdates: het paneel haalt elke 3 seconden nieuwe berichten op — je mist niets, ook als het op de achtergrond draait.\n\nDe chatknop in de menubalk blijft op zijn plek — nieuwe berichten staan er direct wanneer je het paneel heropent.',
         },
         sendAs: {
           title: '"Verzenden als"',
@@ -586,11 +586,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Prestaties & voortgang 🏆',
           body: 'Alles wat je verzamelt: prestaties met zeldzaamheden, XP-niveaus met rangtitels en de dagelijkse uitdagingen als XP-motor.\n\nDeze rondleiding loopt langs het prestatiescherm en de uitdagingen.',
-          details: 'De drie systemen samen:\n• XP: de "brandstof" — uit nummers, uitdagingen en prestaties\n• Niveaus & rangen: stijgen met XP (beginner → legende), tonen de voortgang in één oogopslag\n• Prestaties: mijlpalen met beloningen — sommige geheim tot je ze ontgrendelt\n\nAlles hangt aan het profiel — wie zingt, verzamelt (zie de profielrondleiding).',
+          details: 'De drie systemen samen:\n• XP: de "brandstof" — uit nummers, uitdagingen en prestaties\n• Niveaus & rangen: stijgen met XP (Beginner → Goddelijk), tonen de voortgang in één oogopslag\n• Prestaties: mijlpalen met beloningen — sommige geheim tot je ze ontgrendelt\n\nAlles hangt aan het profiel — wie zingt, verzamelt (zie de profielrondleiding).',
         },
         navButton: {
           title: 'De prestatieknop',
-          body: 'In de menubalk leidt de trofee naar de prestaties — de tweede trofeekolom ernaast toont de leaderboards.',
+          body: 'In de menubalk leidt de eerste trofee naar de leaderboards (highscores) — de tweede trofee ernaast opent de prestaties.',
         },
         playerSelector: {
           title: 'Spelerselectie',
@@ -598,8 +598,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'De statistiekkaarten',
-          body: 'Vier kaarten in één oogopslag: ontgrendelde prestaties, de daaruit verzamelde XP, compleetheid in procent en het huidige niveau met rangtitel.',
-          details: 'De procentkaart berekent: ontgrendeld ÷ alle prestaties. 100 % is de verzamelaarsdrempel — meestal beloond met een eigen geheime prestatie.\n\nDe niveaukaart toont daarnaast de rangtitel ("Rising Star", "Karaoke-legende" …) — de titels komen uit het voortgangssysteem van het profiel.',
+          body: 'Vier kaarten in één oogopslag: ontgrendelde prestaties, de daaruit verzamelde XP, compleetheid in procent en het huidige niveau met rangnaam.',
+          details: 'De procentkaart berekent: ontgrendeld ÷ alle prestaties. 100 % is de verzamelaarsdrempel — meestal beloond met een eigen geheime prestatie.\n\nDe niveaukaart toont daarnaast de rangnaam ("Leerling", "Legende", "Goddelijk" …) — de namen komen uit het voortgangssysteem van het profiel.',
         },
         filters: {
           title: 'Filters',
@@ -614,7 +614,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'Hoe XP stroomt',
           body: 'XP komt uit drie bronnen: gezongen nummers (per moeilijkheid), uitdagingen (dagelijks/wekelijks) en prestaties. Niveaus ontgrendelen rangen — en sommige functies zoals profielbadges.',
-          details: 'XP-bronnen in één overzicht:\n• Afgerond nummer: basis-XP per moeilijkheid (makkelijk → expert, stijgend)\n• Dagelijks vak: 100–400 XP + bonussen\n• Wekelijks vak: 500–2000 XP\n• Prestatie: eenmalig per prestatie (25–1000 XP naargelang zeldzaamheid)\n\nDe niveaubalk in het profielscherm toont de weg naar het volgende niveau; rangen wisselen elke paar niveaus.',
+          details: 'XP-bronnen in één overzicht:\n• Afgerond nummer: basis-XP per moeilijkheidsgraad (makkelijk → expert, stijgend)\n• Dagelijks vak: 100–200 XP basis, ×0,5–3 per moeilijkheidsgraad, plus bonussen\n• Wekelijks vak: 250–500 XP basis, ×0,5–3 per moeilijkheidsgraad\n• Prestatie: eenmalig per prestatie (5–7500 XP naargelang de prestatie)\n\nDe niveaubalk in het profielscherm toont de weg naar het volgende niveau; de rang klimt mee met XP (Beginner → Goddelijk).',
         },
         navDaily: {
           title: 'Naar de uitdagingen',
@@ -628,17 +628,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Stap 2: de 5 vakken',
           body: 'Vijf taakvakken per dag, die na elkaar ontgrendelen. Elk vak toont de taak, speelbare moeilijkheidsgraden en de XP-waarde — hogere moeilijkheidsgraden vermenigvuldigen.',
-          details: 'Vakmechanica:\n• Vakken 2–5 openen pas als de vorige is voltooid of overgeslagen — de keten dwingt afwisseling af.\n• Elke taak is een voorwaarde op het volgende nummer ("genre rock", "minstens 80 % nauwkeurigheid" …) — de bibliotheek filtert automatisch passende nummers.\n• Moeilijkheidskeuze per vak: tot 3× XP-multiplier op expert.\n\nOm middernacht vallen er vijf verse taken — de keten herstart.',
+          details: 'Vakmechanica:\n• Vakken 2–5 openen pas als de vorige is voltooid — de keten dwingt afwisseling af.\n• Elke taak is een voorwaarde op het volgende nummer ("genre rock", "minstens 80 % nauwkeurigheid" …) — de bibliotheek filtert automatisch passende nummers.\n• Moeilijkheidskeuze per vak: tot 3× XP-multiplier op "Gestoord".\n\nOm middernacht vallen er vijf verse taken — de keten herstart.',
         },
         badges: {
           title: 'Badges & wekelijks',
           body: 'Meerdere vakken wissen levert dagelijkse badges op (brons/zilver/goud) met extra XP. De wekelijkse tegenhanger loopt 7 dagen met vette beloningen — zelfde mechanica, grotere pot.',
-          details: 'Badgeniveaus per dag:\n• Brons: 2 vakken\n• Zilver: 3–4 vakken\n• Goud: alle 5 vakken — plus de dagelijkse bonus-XP\n\nWekelijks: 5 vakken over 7 dagen, 500–2000 XP per vak, reset op maandag. Dagelijks ÉN wekelijks spelen is aanzienlijk sneller dan nummers alleen.',
+          details: 'Badgeniveaus per dag:\n• Brons: 1 vak\n• Zilver: 3 vakken\n• Goud: alle 5 vakken — plus de dagelijkse bonus-XP\n\nWekelijks: 5 vakken over 7 dagen, 250–500 XP basis per vak (× moeilijkheidsmultiplier), reset op maandag. Dagelijks ÉN wekelijks spelen is aanzienlijk sneller dan nummers alleen.',
         },
         challengeModes: {
           title: 'Uitdagingsmodi',
-          body: 'Naast de vakken zijn er vrije uitdagingsmodi met modifiers (bijv. "2× tempo", "geen noten") — voor eigen regels en extra XP buiten de dagelijkse taken om.',
-          details: 'De modi zijn vrij configureerbaar: kies een modus, combineer modifiers, de XP-pot groeit met de moeilijkheid.\n\nVoltooien ontgrendelt nieuwe modifiers — de collectiekaart in het uitdagingsgebied toont wat je hebt.',
+          body: 'Naast de vakken zijn er vrije uitdagingsmodi met modifiers (bijv. "1,5× tempo", "songtekst verborgen") — voor eigen regels en extra XP buiten de dagelijkse taken om.',
+          details: 'De modi zijn vrij te kiezen: kies een modus, de modifiers gelden automatisch, de XP-beloning groeit met de moeilijkheid.\n\nVoltooide modi ontgrendelen geketende vervolguitdagingen — hoe langer je speelt, hoe meer er opent.',
         },
         finish: {
           title: 'Tijd om te verzamelen! 🏅',

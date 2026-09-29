@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Foto tonen',
   photoUploaded: 'Foto geüpload',
   noPhoto: 'Geen foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Je scores worden geüpload naar het wereldwijde leaderboard.',
+  privacyHintDesc: 'Je kunt dit op elk moment uitschakelen in de profielinstellingen.',
   storageMode: {
     title: 'Profielopslag',
     local: 'Alleen lokaal',
@@ -72,7 +72,7 @@ profileAuth: {
 characterScreen: {
   title: 'Profiel',
   description: 'Maak en beheer je zangersprofielen',
-  onlineLeaderboard: 'Online Leaderboard',
+  onlineLeaderboard: 'Online leaderboard',
   createProfile: 'Nieuw profiel aanmaken',
   yourProfiles: 'Je profielen ({n})',
   noProfiles: 'Nog geen profielen. Klik op "Nieuw profiel aanmaken" om te beginnen!',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Scan deze QR-code om direct verbinding te maken met dit profiel in de companion-app.',
   hideQrCode: 'QR Code verbergen',
   showQrCode: 'QR Code tonen',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Leaderboard-deelname',
+  leaderboardParticipationDesc: 'Neem deel aan het online leaderboard en deel je scores met andere spelers',
   loadProfile: 'Onlineprofiel laden',
 },
 characterCard: {
@@ -151,11 +151,11 @@ achievements: {
     description: 'Krijg 10 Perfecte hits in één nummer',
   },
   combo_master: {
-    name: 'Combo Master',
+    name: 'Combo-meester',
     description: 'Behaal een combo van 50 noten',
   },
   combo_king: {
-    name: 'Combo King',
+    name: 'Combo-koning',
     description: 'Behaal een combo van 100 noten',
   },
   combo_legend: {
@@ -171,15 +171,15 @@ achievements: {
     description: 'Behaal meer dan 90% nauwkeurigheid',
   },
   score_8k: {
-    name: 'Rising Star',
+    name: 'Rijzende ster',
     description: 'Score meer dan 8.000 punten',
   },
   score_9k: {
-    name: 'Score Master',
+    name: 'Scoremeester',
     description: 'Score meer dan 9.000 punten',
   },
   score_9500: {
-    name: 'Flawless',
+    name: 'Vlekkeloos',
     description: 'Score meer dan 9.500 punten',
   },
   golden_collector: {
@@ -215,7 +215,7 @@ achievements: {
     description: 'Speel 20 spellen',
   },
   party_time: {
-    name: 'Party Time!',
+    name: 'Feestje!',
     description: 'Speel een partymodus',
   },
   duel_winner: {
@@ -231,15 +231,15 @@ achievements: {
     description: 'Score minder dan 20% op een nummer',
   },
   comeback_king: {
-    name: 'Comeback King',
+    name: 'Comeback-koning',
     description: 'Bereik een combo van 50+ na 10 missers',
   },
   speed_demon: {
-    name: 'Speed Demon',
+    name: 'Snelheidsduivel',
     description: 'Voltooi een nummer op 1,5x snelheid',
   },
   blind_master: {
-    name: 'Blind Master',
+    name: 'Blindemeester',
     description: 'Voltooi een nummer in Blind Karaoke-modus',
   },
   daily_starter: {
@@ -600,7 +600,7 @@ mobileAchievements: {
     description: 'Zing je eerste nummer',
   },
   ten_songs: {
-    title: 'Rising Star',
+    title: 'Rijzende ster',
     description: 'Zing 10 nummers',
   },
   fifty_songs: {
@@ -612,11 +612,11 @@ mobileAchievements: {
     description: 'Behaal een perfecte score (95%+)',
   },
   five_perfect: {
-    title: 'Flawless',
+    title: 'Vlekkeloos',
     description: 'Behaal 5 perfecte scores',
   },
   high_score: {
-    title: 'Score Master',
+    title: 'Scoremeester',
     description: 'Bereik in totaal 10.000 punten',
   },
   queue_5: {

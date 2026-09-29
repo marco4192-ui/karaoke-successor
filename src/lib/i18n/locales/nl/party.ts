@@ -2,7 +2,7 @@
 
 export const partyTranslations = {
 partyHelpers: {
-  defaultMicName: 'Mic {n}',
+  defaultMicName: 'Microfoon {n}',
 },
 party: {
   title: 'Partygames',
@@ -13,7 +13,7 @@ party: {
   companionSingalongDesc: 'Je telefoon licht willekeurig op — dat is jouw teken om te zingen! Niemand weet wie er volgende is tot het knipperen!',
   medleyContest: 'Medley Contest',
   medleyContestDesc: 'Zing korte fragmenten van meerdere nummers achter elkaar. Hoeveel kun je er goed doen?',
-  missingWords: 'Missing Words',
+  missingWords: 'Ontbrekende Woorden',
   missingWordsDesc: 'Sommige songteksten verdwijnen! Kun je de juiste woorden op het juiste moment zingen?',
   duelMode: 'Duelmodus',
   duelModeDesc: 'Twee spelers zingen hetzelfde nummer naast elkaar. Wie scoort hoger?',
@@ -28,9 +28,9 @@ party: {
   tournamentModeDesc: 'Knock-outbrackets! 4-32 spelers strijden in sudden-death wedstrijden. Wie wordt kampioen?',
   battleRoyaleTitle: 'Battle Royale',
   battleRoyaleDesc: 'Alle spelers zingen tegelijk! De laagste score valt elke ronde af. De laatste zanger overeind wint!',
-  rateMySongTitle: 'Rate my Song',
+  rateMySongTitle: 'Beoordeel Mijn Nummer',
   rateMySongDesc: 'Zing een nummer en laat je vrienden je optreden beoordelen! Geen scoren — puur plezier. Solo-, Duel- of Duetmodus.',
-  onlineMultiplayerTitle: 'Online Multiplayer',
+  onlineMultiplayerTitle: 'Online multiplayer',
   onlineMultiplayerDesc: 'Speel tegen vrienden of vind tegenstanders online! Maak kamers, sluit je aan bij wedstrijden en strijd wereldwijd!',
   newBadge: 'NIEUW',
 },
@@ -145,7 +145,7 @@ tournament: {
   tiebreak: 'Tiebreakregel',
   dynamicDifficulty: 'Dynamische moeilijkheidsgraad',
   songSelection: 'Nummerkeuze',
-  seeding: 'Seeding',
+  seeding: 'Plaatsing',
 },
 competitiveWords: {
   missingWords: 'Ontbrekende woorden',
@@ -175,7 +175,7 @@ competitiveWords: {
   scoreboard: '— Scorebord',
   roundOf: 'Ronde {n} van {m}',
   lastRound: 'Laatste ronde: {n}',
-  pts: '{n} pts',
+  pts: '{n} pt.',
   bonus: '+{n} Bonus',
   roundsPlayed: '{n} rondes gespeeld',
   nextRound: 'Volgende ronde →',
@@ -322,8 +322,8 @@ battleRoyale: {
   roundResults: 'Ronde Resultaten',
   eliminatedPlayerName: '{name} is geëlimineerd!',
   survivedPlayers: 'Overlevende Spelers',
-  countdownGo: 'GO!',
-  noteHighwayLabel: 'Note Highway',
+  countdownGo: 'GA!',
+  noteHighwayLabel: 'Notenbaan',
   noteHighwayDesc: 'Echte notenweergave met zanglijn en pitch-indicator',
   noteShapeLabel: 'Notevorm',
   noteDisplayStyleLabel: 'Weergavestijl',
@@ -565,11 +565,11 @@ gameModes: {
     description: 'Muziekfragmenten worden blind! Solo, Co-op of Competitief.',
   },
   missingWords: {
-    title: 'Missing Words',
+    title: 'Ontbrekende Woorden',
     description: 'Woorden of fragmenten verdwijnen! Solo, Co-op of Competitief.',
   },
   rateMySong: {
-    title: 'Rate my Song',
+    title: 'Beoordeel Mijn Nummer',
     description: 'Zing een nummer en laat je vrienden je optreden beoordelen!',
   },
 },

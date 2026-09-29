@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Ladataan globaaliin tulostaulukkoon...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Varmennettu tulos',
+  unverified: 'Varmentamaton (ei näyttöä)',
+  verifiedDesc: 'Huijauksen estojärjestelmä varmensi tämän tuloksen',
+  unverifiedDesc: 'Tämän tuloksen yhteydessä ei ollut näyttöä huijauksen estosta',
 },
 shareSection: {
   title: '📤 Jaa tuloksesi',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Uusi viesti käyttäjältä {name}',
+  openChat: 'Avaa chat',
+  closeChat: 'Sulje chat',
   noMessages: 'Ei vielä viestejä',
   sendAs: 'Lähetä nimellä',
   noPlayers: 'Ei pelaajia',

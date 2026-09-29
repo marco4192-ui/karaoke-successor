@@ -32,7 +32,7 @@ party: {
   rateMySongDesc: '노래를 부르고 친구들에게 평가를 받으세요! 점수 없음 — 순수한 즐거움. 솔로, 듀얼, 듀엣 모드.',
   onlineMultiplayerTitle: '온라인 멀티플레이어',
   onlineMultiplayerDesc: '친구나 전 세계 플레이어와 대결! 방을 만들고 매치에 참여하여 글로벌 경쟁!',
-  newBadge: 'NEW',
+  newBadge: '신규',
 },
 partySetup: {
   songTooShort: '곡이 너무 짧습니다',

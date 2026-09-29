@@ -916,7 +916,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Pontuações",
     navJukeboxDesc: "Monte playlists e enfileire músicas",
     navJukeboxTitle: "Jukebox",
-    navPartyDesc: "{n} modos de jogo para 2–24 jogadores",
+    navPartyDesc: "{n} modos de jogo para até 32 jogadores",
     navSectionTitle: "Explore o app",
     navSettingsDesc: "Áudio, microfones, exibição",
     navSettingsTitle: "Configurações",
@@ -1075,7 +1075,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Tudo sobre o Karaoke ZERO: versão, plataforma, projetos contribuintes e licenças — além da descrição do projeto e dos links de apoio.",
     appearance: "Deixe com a sua cara: temas, plano de fundo animado ou seu próprio vídeo de fundo, estilo e tamanho da letra, exibição das notas e o modo de desempenho para máquinas mais fracas.",
-    gameplay: "Ajuste fino da jogabilidade: pontuação, efeitos de partículas nos acertos, reprodução automática das próximas músicas da fila e mais interruptores de comportamento para rodadas e resultados. Perfeito para equilibrar clima de festa e desempenho.",
+    gameplay: "Ajuste fino da jogabilidade: exibição de pontuação, efeitos de partículas nos acertos, gravação de replay, tela cheia automática e mais interruptores de comportamento para rodadas e resultados. Perfeito para equilibrar clima de festa e desempenho.",
     general: "Configurações principais do app: idioma da interface, dificuldade padrão para novas rodadas, atividades online e a lista completa de atalhos de teclado. As mudanças valem na hora — algumas (como o idioma) sem reiniciar.",
     graphicsound: "Tudo de áudio: dispositivo de saída (incl. ASIO para baixa latência), volume geral e de prévia, sensibilidade do microfone, normalização de volume e a qualidade dos vídeos do YouTube.",
     library: "Gerencie sua biblioteca de músicas: defina a pasta de músicas (cada subpasta = uma música) e escaneie, redefina a biblioteca ou apague todos os dados. Também é a casa da importação de outros sistemas de karaokê (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

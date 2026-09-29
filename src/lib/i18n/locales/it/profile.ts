@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Mostra foto',
   photoUploaded: 'Foto caricata',
   noPhoto: 'Nessuna foto',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'I tuoi punteggi verranno caricati nella classifica globale.',
+  privacyHintDesc: 'Puoi disattivarlo in qualsiasi momento nelle Impostazioni Profilo.',
   storageMode: {
     title: 'Archiviazione del profilo',
     local: 'Solo locale',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Scansiona questo QR code per connetterti direttamente con questo profilo nell\'app compagna.',
   hideQrCode: 'Nascondi QR Code',
   showQrCode: 'Mostra QR Code',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Partecipazione alla Classifica',
+  leaderboardParticipationDesc: 'Partecipa alla classifica online e condividi i tuoi punteggi con gli altri giocatori',
   loadProfile: 'Carica Profilo Online',
 },
 characterCard: {
@@ -553,7 +553,7 @@ achievementsScreen: {
   completion: 'Completamento',
   all: 'Tutti',
   categories: {
-    performance: 'performance',
+    performance: 'prestazioni',
     progression: 'progressione',
     social: 'sociale',
     special: 'speciale',

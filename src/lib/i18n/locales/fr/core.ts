@@ -29,7 +29,7 @@ home: {
   difficultyLevels: 'Niveaux de Difficulté',
   selectProfile: 'Sélectionnez votre Profil',
   createNew: 'Créer Nouveau',
-  qrCodeAlt: 'QR Code',
+  qrCodeAlt: 'Code QR',
 },
 homeScreen: {
   subtitle: 'L\'expérience karaoké ultime. Chantez avec détection de ton en temps réel, rivalisez avec des amis et profitez des jeux de fête !',
@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Envoi vers le classement mondial...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Score vérifié',
+  unverified: 'Non vérifié (aucune preuve)',
+  verifiedDesc: 'Ce score a été vérifié par le système anti-triche',
+  unverifiedDesc: 'Aucune preuve anti-triche n\'a été fournie pour ce score',
 },
 shareSection: {
   title: '📤 Partagez votre Score',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Nouveau message de {name}',
+  openChat: 'Ouvrir le chat',
+  closeChat: 'Fermer le chat',
   noMessages: 'Pas encore de messages',
   sendAs: 'Envoyer en tant que',
   noPlayers: 'Aucun joueur',

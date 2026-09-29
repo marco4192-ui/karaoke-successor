@@ -53,22 +53,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Quick start',
           body: '"Start Singing" takes you straight to the library. "Party Mode" opens the 9 party games for groups.',
-          details: 'The quick-start cards are shortcuts for the most common paths:\n• "Start Singing" = open the library, pick a song, go (solo, duel or duet).\n• "Party Mode" = the game collection for 2–24 players, phones can join as mics.\n\nEverything you see here is also reachable via the menu bar — the cards just save clicks.',
+          details: 'The quick-start cards are shortcuts for the most common paths:\n• "Start Singing" = open the library, pick a song, go (solo, duel or duet).\n• "Party Mode" = the game collection for up to 32 players, phones can join as mics.\n\nEverything you see here is also reachable via the menu bar — the cards just save clicks.',
         },
         dailyCard: {
           title: 'Daily challenge',
           body: '5 slots per day with rotating tasks — the more slots you clear, the bigger your XP bonus. Fresh tasks drop at midnight.',
-          details: 'How the system works:\n• Each of the 5 slots holds a different task type (e.g. "sing an 80s song", "score 8000 points").\n• Slots unlock in sequence — slot 2 only after slot 1 is completed (or skipped).\n• Every slot is playable in several difficulties; higher ones give more XP (up to 3× multiplier).\n• The bonus grows with the number of cleared slots: 5/5 earns the full daily bonus.\n\nTasks draw from YOUR library — the selection always adapts to your songs.',
+          details: 'How the system works:\n• Each of the 5 slots holds a different task type (e.g. "sing an 80s song", "score 8000 points").\n• Slots unlock in sequence — slot 2 only after slot 1 is completed.\n• Every slot is playable in several difficulties; higher ones give more XP (up to 3× multiplier).\n• The bonus grows with the number of cleared slots: 5/5 earns the full daily bonus.\n\nTasks draw from YOUR library — the selection always adapts to your songs.',
         },
         weeklyCard: {
           title: 'Weekly challenge',
           body: 'The weekly counterpart: 5 slots across the week with bigger XP rewards. Perfect for long-term goals.',
-          details: 'Weekly challenges work like the daily ones, but:\n• The 5 slots run for 7 days — no daily reset, collect at your own pace.\n• XP rewards per slot are much bigger (e.g. 500–2000 XP instead of 100–400).\n• Reset happens Monday morning.\n\nTip: daily and weekly run in parallel — playing both levels you fastest.',
+          details: 'Weekly challenges work like the daily ones, but:\n• The 5 slots run for 7 days — no daily reset, collect at your own pace.\n• XP rewards per slot are bigger: 250–500 XP base instead of 100–200 daily — and the difficulty multiplier (up to 3×) applies on top.\n• Reset happens Monday morning.\n\nTip: daily and weekly run in parallel — playing both levels you fastest.',
         },
         modeLauncher: {
           title: 'Sing: Single, Duel & Duet',
           body: '🎤 Single: one player, one mic.\n⚔️ Duel: two players on the SAME song — most points wins.\n🎭 Duet: two voices on two tracks — the library automatically shows only matching duet songs.',
-          details: 'The three modes in detail:\n• Single: classic karaoke — you sing all the notes, your score hits the leaderboards.\n• Duel: both players sing the same note track simultaneously. Points run separately — the comparison at the end shows who was better. Perfect for rematches.\n• Duet: the song has two separate voices (P1/P2) — everyone sings "their" parts, shared phrases earn team bonus. Duet songs are marked with the 🎭 filter in the library.\n\nMicrophones: you can assign as many mics or smartphones as you like (see Settings → Microphone).',
+          details: 'The three modes in detail:\n• Single: classic karaoke — you sing all the notes, your score hits the leaderboards.\n• Duel: both players sing the same note track simultaneously. Points run separately — the comparison at the end shows who was better. Perfect for rematches.\n• Duet: the song has two separate voices (P1/P2) — everyone sings "their" parts, shared phrases earn team bonus. Duet songs are marked with the 🎭 filter in the library.\n\nMicrophones: up to 4 physical microphones plus smartphones as additional inputs (see Settings → Microphone).',
         },
         libraryNav: {
           title: 'The library',
@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filters',
           body: 'Genre, language, year, decade, duet songs and viral hits — slice the library however you like.',
-          details: 'All filters combine — e.g. "Genre: Rock + Language: English + Era: 80s" shows exactly the English rock songs of the eighties.\n\nSpecial filters:\n• Duet: only songs with two voice tracks.\n• Viral hits: songs currently in the viral charts (data from Settings → Viral Charts).\n• Custom genres & languages: create your own categories in Settings → Genres & Languages — they appear in these filters immediately.\n\n"Reset filters" (✕) clears everything in one go.',
+          details: 'All filters combine — e.g. "Genre: Rock + Language: English + Era: 80s" shows exactly the English rock songs of the eighties.\n\nSpecial filters:\n• Duet: only songs with two voice tracks.\n• Viral hits: songs currently in the viral charts (configured in Settings → Library).\n• Custom genres & languages: create your own categories in Settings → Genres & Languages — they appear in these filters immediately.\n\n"Reset filters" (✕) clears everything in one go.',
         },
         songCard: {
           title: 'Songs',
@@ -92,8 +92,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Party modes',
-          body: '9 games for 2–24 players: Battle Royale, Pass-the-Mic, Medley contest, tournament, missing words, blind karaoke and more — phones can join as mics.',
-          details: 'The 9 modes at a glance:\n• Battle Royale: everyone sings, the weakest is eliminated each round — last man standing.\n• Pass-the-Mic: the mic rotates from player to player — everyone sings their part.\n• Medley contest: teams sing through short song snippets with special rules.\n• Tournament: elimination bracket with duels — the winner climbs every round.\n• Missing Words: lyrics get blanked out — sing the missing word to score.\n• Blind Karaoke: no note display, ears only!\n• Rate my Song & Companion Singalong and more — each mode card explains itself.\n\nAlmost all modes support the companion app as mic and controller.',
+          body: '9 games for up to 32 players: Battle Royale, Pass-the-Mic, Medley contest, tournament, missing words, blind karaoke and more — phones can join as mics.',
+          details: 'The 9 modes at a glance:\n• Battle Royale: everyone sings, the weakest is eliminated each round — last man standing.\n• Pass-the-Mic: the mic rotates from player to player — everyone sings their part.\n• Medley contest: teams sing through short song snippets with special rules.\n• Tournament: elimination bracket with duels — the winner climbs every round.\n• Missing Words: lyrics get blanked out — sing the missing word to score.\n• Blind Karaoke: the note display blacks out in passages — ears only!\n• Rate my Song & Companion Singalong and more — each mode card explains itself.\n\nAlmost all modes support the companion app as mic and controller.',
         },
         partyModes: {
           title: 'The mode picker',
@@ -123,12 +123,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Settings',
           body: 'Microphones, language, gameplay fine-tuning, appearance and graphics — all the knobs live here.',
-          details: 'The 12 settings tabs in a flash:\n• General: language, default difficulty, online\n• Gameplay: scoring, particles, queue autoplay\n• Appearance: themes, lyrics style, background\n• Graphics & Sound: output device, volume, YouTube quality\n• Microphone: devices, sensitivity, noise gate, presets\n• Mobile: connect & manage companion devices\n• Webcam: webcam as background\n• Library: songs folder, import, reset\n• Genres & Languages: custom categories\n• Theme Party: activate & configure the theme\n• Sync & Backup: safeties\n\nThere is a dedicated, in-depth settings tour for all tabs in the ? help menu.',
+          details: 'The 12 settings tabs in a flash:\n• General: language, default difficulty, online\n• Gameplay: score display, particles, combo, replay recording\n• Appearance: themes, lyrics style, background\n• Audio: output device, volume, loudness, YouTube quality\n• Microphone: devices, sensitivity, noise gate, presets\n• Mobile: connect & manage companion devices\n• Webcam: webcam as background\n• Library: songs folder, import, viral charts, reset\n• Genres & Languages: custom categories\n• Theme Party: activate & configure the theme\n• Sync & Backup: safeties\n• About: version, platform, licenses\n\nThere is a dedicated, in-depth settings tour for all tabs in the ? help menu.',
         },
         settingsView: {
           title: 'The settings tabs',
-          body: 'Pick a section at the top: General (language), Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (phone connection) and more.',
-          details: 'Since R28, a short intro text at the top of each tab explains what it does — you never have to guess where an option belongs.\n\nThe matching tour: "Settings" in the ? help menu walks you through every tab.',
+          body: 'Pick a section at the top: General (language), Gameplay, Appearance, Audio, Microphone, Mobile (phone connection) and more.',
+          details: 'A short intro text at the top of each tab explains what it does — you never have to guess where an option belongs.\n\nThe matching tour: "Settings" in the ? help menu walks you through every tab.',
         },
         finish: {
           title: 'Done! 🎉',
@@ -172,7 +172,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Toolbar',
           body: 'Everything for notes: add, duplicate, delete, split, merge — plus note types, voices and tap mode (coming up).',
-          details: 'The tools in order:\n• ➕ Add note: drops at the playhead\n• ⧉ Duplicate: copies the selected note right behind it\n• 🗑 Delete: removes the selection\n• ✂ Split: one note → two (at the middle)\n• ⇄ Merge: two selected → one\n\nSelection via click; shift-click for multiple. Then the keyboard takes over: ⌫ deletes, ↑/↓ transposes, ←/→ nudges.',
+          details: 'The tools in order:\n• ➕ Add note: drops at the playhead\n• ⧉ Duplicate: copies the selected note right behind it\n• 🗑 Delete: removes the selection\n• ✂ Split: one note → two (at the middle)\n• ⇄ Merge: joins the selected note with the next one\n\nSelection via click; shift-click for multiple. Then the keyboard takes over: ⌫ deletes, ↑/↓ transposes, ←/→ nudges.',
         },
         lyricsPanel: {
           title: 'Lyrics panel',
@@ -181,7 +181,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Editing notes',
-          body: 'Notes are the blocks on the pitch lanes: add, duplicate, delete, split (one note → two) and merge (two → one).\n\nEdit selected notes in tempo: ⌫ deletes, ↑/↓ transposes.',
+          body: 'Notes are the blocks on the pitch lanes: add, duplicate, delete, split (one note → two) and merge (with the next note).\n\nEdit selected notes in tempo: ⌫ deletes, ↑/↓ transposes.',
           details: 'Precision tips:\n• Zoom: Ctrl+mouse wheel over the timeline — zoom in for fine timing.\n• Playback: Space toggles play/pause, Shift+Space plays only the selection.\n• Transposing several notes: select them all, ↑/↓ moves the whole bundle.\n\nFor timing: the note start must hit the syllable onset in the vocals — the waveform helps find the onsets.',
         },
         noteTypes: {
@@ -212,7 +212,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Shortcuts',
           body: 'All keyboard shortcuts at a glance — the editor is a keyboard instrument. Click through!',
-          details: 'The most important shortcuts:\n• Ctrl+Z / Ctrl+Y: undo / redo\n• Space: play/pause\n• ⌫: delete selected notes\n• ↑/↓: transpose · ←/→: nudge in time\n• S: split note · M: merge\n• 1–5: pick note type\n\nInside the shortcuts panel you can view and remap keys.',
+          details: 'The most important shortcuts:\n• Ctrl+Z / Ctrl+Y: undo / redo\n• Space: play/pause\n• ⌫: delete selected notes\n• ↑/↓: transpose (Shift = whole octave) · ←/→: nudge in time (Shift = coarse)\n• M: merge with the next note\n• Ctrl+S: save · Ctrl+C/V: copy/paste notes\n\nThe shortcuts panel in the left bar shows all keys at a glance.',
         },
         finish: {
           title: 'Ready to build! 🛠️',
@@ -238,12 +238,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'The settings 👋',
           body: 'This tour walks you through the settings exclusively — tab by tab.\n\nI automatically switch to each tab and explain what you find there.',
-          details: 'The tabs in tour order: General, Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (companion), Webcam, Library, Genres & Languages, Theme Party, Viral Charts, Sync & Backup and About.\n\nEvery tab has a short intro on top — this tour deepens it step by step.',
+          details: 'The tabs in tour order: General, Gameplay, Appearance, Audio, Microphone, Mobile (companion), Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nEvery tab has a short intro on top — this tour deepens it step by step.',
         },
         tabBar: {
           title: 'The tab bar',
-          body: 'All settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nSince R28, a short intro text at the top of each tab explains what it does.',
-          details: 'Orientation help — when searching, ask yourself…\n• "How does the game BEHAVE?" → Gameplay\n• "How does it LOOK?" → Appearance\n• "How does it SOUND?" → Graphics & Sound / Microphone\n• "Connect devices?" → Mobile (companion) / Microphone\n• "My songs?" → Library\n• "Back up data?" → Sync & Backup\n\nThe tabs scroll horizontally on narrow windows — just swipe right.',
+          body: 'All settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nA short intro text at the top of each tab explains what it does.',
+          details: 'Orientation help — when searching, ask yourself…\n• "How does the game BEHAVE?" → Gameplay\n• "How does it LOOK?" → Appearance\n• "How does it SOUND?" → Audio / Microphone\n• "Connect devices?" → Mobile (companion) / Microphone\n• "My songs?" → Library\n• "Back up data?" → Sync & Backup\n\nThe tabs scroll horizontally on narrow windows — just swipe right.',
         },
         general: {
           title: 'General',
@@ -252,13 +252,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Gameplay',
-          body: 'Scoring on/off, particle effects, queue autoplay and more behavior switches for rounds and results.',
-          details: 'The key switches:\n• Scoring: for pure fun singing without a score display.\n• Queue autoplay: after a song ends, the next queue entry starts automatically — ideal for party nights without a moderator.\n• Particles & effects: disable on weaker machines.\n\nAdditionally: behavior after rounds (result screen, instant restart) and combo displays.',
+          body: 'Score display, particle effects, combo display, replay recording, auto-fullscreen and more behavior switches for rounds and results.',
+          details: 'The key switches:\n• Score display: for pure fun singing without a score readout.\n• Particles & effects: disable on weaker machines.\n• Replay: records audio and webcam while singing — the replay plays on the results screen.\n• Auto-fullscreen: enters fullscreen automatically when a song starts.\n• Warning cues: short beeps before blind and missing-word passages.\n\nAdditionally: combo display and more.',
         },
         appearance: {
           title: 'Appearance',
           body: 'Themes, animated background or your own background video, lyrics style and size, note display and the performance mode for weaker machines.',
-          details: 'Lyrics style: "Karaoke" (word fill coloring), "UltraStar" (syllable blocks) or "Minimal".\n\nBackground: besides themes, a custom video works too — in the game it runs behind the notes, dimmed.\n\nPerformance mode cuts animations and backgrounds drastically — worth it from ~2015 hardware.',
+          details: 'Lyrics style: 10 visual themes — "Classic", "Concert", "Retro", "Neon", "Minimal" and more.\n\nBackground: besides themes, a custom video works too — in the game it runs behind the notes, dimmed.\n\nPerformance mode cuts animations and backgrounds drastically — worth it from ~2015 hardware.',
         },
         graphicsound: {
           title: 'Audio',
@@ -268,7 +268,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Microphone',
           body: 'Device selection, sensitivity, noise gate and live level — plus presets. Smartphones are connected via the Mobile tab.',
-          details: 'Presets: typical setups ("dynamic vocal mic", "headset", "phone") set sensitivity + noise gate in sensible combinations.\n\nNoise gate: filters breaths and room noise — the live level shows in real time what gets through.\n\nImportant for multiplayer: EVERY player can get their OWN device — assignment happens in the start dialog per round.',
+          details: 'Presets: typical setups ("Optimal", "Low Latency", "High Accuracy", "Noisy Environment", "Bass", "Soprano") set sensitivity + noise gate in sensible combinations.\n\nNoise gate: filters breaths and room noise — the live level shows in real time what gets through.\n\nImportant for multiplayer: EVERY player can get their OWN device — assignment happens in the start dialog per round.',
         },
         libraryTab: {
           title: 'Library',
@@ -326,7 +326,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Your player profiles 👤',
           body: 'Profiles are the identities in the game: XP, level, statistics and achievements live on the profile — and highscores carry your name.\n\nThis tour shows how to create and manage profiles.',
-          details: 'Why profiles?\n• XP & level: sung songs, challenges and achievements collect experience — the level rises along with the rank title (beginner → karaoke legend).\n• Leaderboards: highscore entries show your avatar.\n• Party modes: every player selection draws from this list.\n• Companion devices can "claim" a profile and sing under its identity.\n\nProfiles live in browser storage (local) or in an online account (sync) — you choose when creating them.',
+          details: 'Why profiles?\n• XP & level: sung songs, challenges and achievements collect experience — the level rises along with the rank name (Beginner → Divine).\n• Leaderboards: highscore entries show your avatar.\n• Party modes: every player selection draws from this list.\n• Companion devices can "claim" a profile and sing under its identity.\n\nProfiles live in browser storage (local) or in an online account (sync) — you choose when creating them.',
         },
         topBar: {
           title: 'The action bar',
@@ -386,7 +386,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Overview',
         manage: 'Managing',
-        companion: 'Companion & Autoplay',
+        companion: 'Companion & Shortcuts',
       },
       steps: {
         welcome: {
@@ -419,7 +419,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Play next song',
           body: 'The button starts the top entry — the standard move between rounds. Alternatively click any card directly.',
-          details: 'The result screen after every song offers the same button ("Play next song") — the flow continues without a detour to the queue view.\n\nWith autoplay enabled (Settings → Gameplay) the app advances automatically.',
+          details: 'The result screen after every song offers the same button ("Play next song") — the flow continues without a detour to the queue view.\n\nThe queue view\'s "Play next song" button does the same — the top entry starts with one click.',
         },
         clearAll: {
           title: 'Clear everything',
@@ -436,13 +436,13 @@ export const tutorialTranslations = {
           details: 'How it looks for guests: in the app, pick a song, choose the mode, submit — the request lands in this list.\n\nYou as host see immediately: who requested (player avatar) and that it is a phone request (📱). The 3-item limit applies per profile — including via phone.\n\nMore in the companion tour.',
         },
         autoplay: {
-          title: 'Autoplay & shortcut',
-          body: 'Enable autoplay (Settings → Gameplay) so the next song starts automatically after each round. And: Ctrl+Q starts the top queue entry from anywhere.',
-          details: 'The autoplay chain: song ends → result shows briefly → the next queue entry starts. When the queue runs empty, the chain stops cleanly.\n\nCtrl+Q works from everywhere — the classic when the next round should roll immediately.',
+          title: 'Shortcut & flow',
+          body: 'Ctrl+Q starts the top queue entry from anywhere — the classic when the next round should roll immediately.',
+          details: 'The flow between rounds: song ends → result screen → "Play next song" button (or Ctrl+Q) keeps the evening going.\n\nCtrl+Q works from everywhere — no detour to the queue view needed.',
         },
         finish: {
           title: 'The queue is waiting! 🎧',
-          body: 'You now know enqueueing, sorting and the rules.\n\nTip: combine autoplay + companion requests for a fully self-running karaoke night.',
+          body: 'You now know enqueueing, sorting and the rules.\n\nTip: combine the Ctrl+Q shortcut + companion requests for a smoothly self-running karaoke night.',
         },
       },
     },
@@ -473,7 +473,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'The history',
           body: 'Your messages appear on the right in cyan (as host), contributions from phones on the left in purple. Every message carries its timestamp.',
-          details: 'Background updates: the panel pulls new messages every 3 seconds — you miss nothing even while it runs in the background.\n\nThe desktop chat notification (bell) shows unread messages even with the panel closed.',
+          details: 'Background updates: the panel pulls new messages every 3 seconds — you miss nothing even while it runs in the background.\n\nThe chat button in the menu bar stays put — new messages are right there the moment you reopen the panel.',
         },
         sendAs: {
           title: '"Send as"',
@@ -585,11 +585,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Achievements & progress 🏆',
           body: 'Everything you collect: achievements with rarities, XP levels with rank titles and the daily challenges as the XP engine.\n\nThis tour walks the achievements screen and the challenges.',
-          details: 'The three systems together:\n• XP: the "fuel" — from songs, challenges and achievements\n• Levels & ranks: rise with XP (beginner → legend), showing progress at a glance\n• Achievements: milestones with rewards — some secret until you unlock them\n\nEverything hangs on the profile — whoever sings, collects (see the profile tour).',
+          details: 'The three systems together:\n• XP: the "fuel" — from songs, challenges and achievements\n• Levels & ranks: rise with XP (Beginner → Divine), showing progress at a glance\n• Achievements: milestones with rewards — some secret until you unlock them\n\nEverything hangs on the profile — whoever sings, collects (see the profile tour).',
         },
         navButton: {
           title: 'The achievements button',
-          body: 'In the menu bar the trophy leads to the achievements — the second trophy column next to it shows the leaderboards.',
+          body: 'In the menu bar, the first trophy leads to the leaderboards (highscores) — the second trophy right next to it opens the achievements.',
         },
         playerSelector: {
           title: 'Player selection',
@@ -597,8 +597,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'The stat cards',
-          body: 'Four cards at a glance: unlocked achievements, XP collected from them, completeness in percent and the current level with rank title.',
-          details: 'The percent card computes: unlocked ÷ all achievements. 100 % is the collector\'s hurdle — usually rewarded with its own secret achievement.\n\nThe level card additionally shows the rank title ("Rising Star", "Karaoke Legend" …) — the titles come from the profile\'s progression system.',
+          body: 'Four cards at a glance: unlocked achievements, XP collected from them, completeness in percent and the current level with rank name.',
+          details: 'The percent card computes: unlocked ÷ all achievements. 100 % is the collector\'s hurdle — usually rewarded with its own secret achievement.\n\nThe level card additionally shows the rank name ("Novice", "Legend", "Divine" …) — the names come from the profile\'s progression system.',
         },
         filters: {
           title: 'Filters',
@@ -613,7 +613,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'How XP flows',
           body: 'XP comes from three sources: sung songs (by difficulty), challenges (daily/weekly) and achievements. Levels unlock ranks — and some features like profile badges.',
-          details: 'XP sources at a glance:\n• Finished song: base XP by difficulty (easy → expert, rising)\n• Daily slot: 100–400 XP + bonuses\n• Weekly slot: 500–2000 XP\n• Achievement: one-time per achievement (25–1000 XP by rarity)\n\nThe level bar in the profile screen shows the way to the next level; ranks change every few levels.',
+          details: 'XP sources at a glance:\n• Finished song: base XP by difficulty (easy → expert, rising)\n• Daily slot: 100–200 XP base, ×0.5–3 by difficulty, plus bonuses\n• Weekly slot: 250–500 XP base, ×0.5–3 by difficulty\n• Achievement: one-time per achievement (5–7500 XP depending on the achievement)\n\nThe level bar in the profile screen shows the way to the next level; the rank climbs with XP (Beginner → Divine).',
         },
         navDaily: {
           title: 'To the challenges',
@@ -627,17 +627,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Step 2: the 5 slots',
           body: 'Five task slots per day, unlocking in sequence. Each slot shows the task, playable difficulties and the XP value — higher difficulties multiply.',
-          details: 'Slot mechanics:\n• Slots 2–5 open only after the previous one is completed or skipped — the chain forces variety.\n• Every task is a condition on the next song ("genre rock", "at least 80 % accuracy" …) — the library automatically filters matching songs.\n• Difficulty choice per slot: up to 3× XP multiplier on expert.\n\nAt midnight five fresh tasks drop — the chain restarts.',
+          details: 'Slot mechanics:\n• Slots 2–5 open only after the previous one is completed — the chain forces variety.\n• Every task is a condition on the next song ("genre rock", "at least 80 % accuracy" …) — the library automatically filters matching songs.\n• Difficulty choice per slot: up to 3× XP multiplier on Insane.\n\nAt midnight five fresh tasks drop — the chain restarts.',
         },
         badges: {
           title: 'Badges & weekly',
-          body: 'Clearing several slots earns daily badges (bronze/silver/gold) with extra XP. The weekly counterpart runs 7 days with fat rewards — same mechanics, bigger pot.',
-          details: 'Badge tiers per day:\n• Bronze: 2 slots\n• Silver: 3–4 slots\n• Gold: all 5 slots — plus the daily bonus XP\n\nWeekly: 5 slots over 7 days, 500–2000 XP per slot, reset on Mondays. Playing daily AND weekly levels you significantly faster than songs alone.',
+          body: 'Clearing slots earns daily badges (bronze/silver/gold) with extra XP. The weekly counterpart runs 7 days with fat rewards — same mechanics, bigger pot.',
+          details: 'Badge tiers per day:\n• Bronze: 1 slot\n• Silver: 3 slots\n• Gold: all 5 slots — plus the daily bonus XP\n\nWeekly: 5 slots over 7 days, 250–500 XP base per slot (× difficulty multiplier), reset on Mondays. Playing daily AND weekly levels you significantly faster than songs alone.',
         },
         challengeModes: {
           title: 'Challenge modes',
-          body: 'Besides the slots there are free challenge modes with modifiers (e.g. "2× tempo", "no notes") — for custom rules and extra XP beyond the daily tasks.',
-          details: 'The modes are freely configurable: pick a mode, combine modifiers, the XP pot grows with difficulty.\n\nCompletions unlock new modifiers — the collection card in the challenge area shows what you have.',
+          body: 'Besides the slots there are free challenge modes with modifiers (e.g. "1.5× speed", "hidden lyrics") — for custom rules and extra XP beyond the daily tasks.',
+          details: 'The modes are freely selectable: pick a mode, its modifiers apply automatically, the XP reward grows with the difficulty.\n\nCompleted modes unlock chained follow-up challenges — the longer you play, the more opens up.',
         },
         finish: {
           title: 'Collection time! 🏅',

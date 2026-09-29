@@ -71,7 +71,7 @@ homeScreen: {
   launchDuellSub: '2 Mics · Punkteduell',
   launchDuett: 'Duett',
   launchDuettSub: '2 Stimmen · Duett-Songs',
-  navPartyDesc: '{n} Spielmodi für 2–24 Spieler',
+  navPartyDesc: '{n} Spielmodi für bis zu 32 Spieler',
   navJukeboxTitle: 'Jukebox',
   navJukeboxDesc: 'Playlist erstellen, Songs anstehen lassen',
   navHighscoresTitle: 'Bestenlisten',

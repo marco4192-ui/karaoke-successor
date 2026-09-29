@@ -53,22 +53,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Hurtig start',
           body: '"Start med at synge" fører dig direkte til biblioteket. "Festtilstand" åbner de 9 selskabslege til grupper.',
-          details: 'Hurtigstart-kortene er genveje til de mest almindelige veje:\n• "Start med at synge" = åbn biblioteket, vælg en sang, kør (solo, duel eller duet).\n• "Festtilstand" = spilsamlingen til 2–24 spillere, telefoner kan deltage som mikrofoner.\n\nAlt hvad du ser her, kan også nås via menulinjen — kortene sparer dig blot for klik.',
+          details: 'Hurtigstart-kortene er genveje til de mest almindelige veje:\n• "Start med at synge" = åbn biblioteket, vælg en sang, kør (solo, duel eller duet).\n• "Festtilstand" = spilsamlingen til op til 32 spillere, telefoner kan deltage som mikrofoner.\n\nAlt hvad du ser her, kan også nås via menulinjen — kortene sparer dig blot for klik.',
         },
         dailyCard: {
           title: 'Daglig udfordring',
           body: '5 brikker om dagen med skiftende opgaver — jo flere brikker du klarer, desto større XP-bonus. Nye opgaver kommer ved midnat.',
-          details: 'Sådan fungerer systemet:\n• Hver af de 5 brikker rummer en anden opgavetype (f.eks. "syng en sang fra 80\'erne", "score 8000 point").\n• Brikkerne låses op i rækkefølge — brik 2 først, når brik 1 er gennemført (eller sprunget over).\n• Hver brik kan spilles i flere sværhedsgrader; de højere giver mere XP (op til 3× multiplikator).\n• Bonussen vokser med antallet af klarerede brikker: 5/5 giver den fulde daglige bonus.\n\nOpgaverne trækkes fra dit eget bibliotek — udvalget tilpasser sig altid dine sange.',
+          details: 'Sådan fungerer systemet:\n• Hver af de 5 brikker rummer en anden opgavetype (f.eks. "syng en sang fra 80\'erne", "score 8000 point").\n• Brikkerne låses op i rækkefølge — brik 2 først, når brik 1 er gennemført.\n• Hver brik kan spilles i flere sværhedsgrader; de højere giver mere XP (op til 3× multiplikator).\n• Bonussen vokser med antallet af klarerede brikker: 5/5 giver den fulde daglige bonus.\n\nOpgaverne trækkes fra dit eget bibliotek — udvalget tilpasser sig altid dine sange.',
         },
         weeklyCard: {
           title: 'Ugentlig udfordring',
           body: 'Den ugentlige modstykke: 5 brikker hen over ugen med større XP-belønninger. Perfekt til langsigtede mål.',
-          details: 'Ugentlige udfordringer fungerer som de daglige, men:\n• De 5 brikker løber i 7 dage — ingen daglig nulstilling, saml i dit eget tempo.\n• XP-belønningerne pr. brik er langt større (f.eks. 500–2000 XP i stedet for 100–400).\n• Nulstilling sker mandag morgen.\n\nTip: daglig og ugentlig kører parallelt — spil begge dele, så stiger du hurtigst i niveau.',
+          details: 'Ugentlige udfordringer fungerer som de daglige, men:\n• De 5 brikker løber i 7 dage — ingen daglig nulstilling, saml i dit eget tempo.\n• XP-belønningerne pr. brik er større: 250–500 XP basis i stedet for 100–200 dagligt — og sværhedsgradens multiplikator (op til 3×) kommer oveni.\n• Nulstilling sker mandag morgen.\n\nTip: daglig og ugentlig kører parallelt — spil begge dele, så stiger du hurtigst i niveau.',
         },
         modeLauncher: {
           title: 'Syng: Solo, Duel & Duet',
           body: '🎤 Solo: én spiller, én mikrofon.\n⚔️ Duel: to spillere på SAMME sang — flest point vinder.\n🎭 Duet: to stemmer på to spor — biblioteket viser automatisk kun matchende duet-sange.',
-          details: 'De tre tilstande i detaljer:\n• Solo: klassisk karaoke — du synger alle noderne, din score ryger på ranglisterne.\n• Duel: begge spillere synger samme nodespor samtidig. Pointene tæller separat — sammenligningen til sidst viser, hvem der var bedst. Perfekt til revanche.\n• Duet: sangen har to separate stemmer (P1/P2) — alle synger "deres" partier, fælles fraser giver holdbonus. Duet-sange er markeret med 🎭-filteret i biblioteket.\n\nMikrofoner: du kan tildele lige så mange mikrofoner eller smartphones, du vil (se Indstillinger → Mikrofon).',
+          details: 'De tre tilstande i detaljer:\n• Solo: klassisk karaoke — du synger alle noderne, din score ryger på ranglisterne.\n• Duel: begge spillere synger samme nodespor samtidig. Pointene tæller separat — sammenligningen til sidst viser, hvem der var bedst. Perfekt til revanche.\n• Duet: sangen har to separate stemmer (P1/P2) — alle synger "deres" partier, fælles fraser giver holdbonus. Duet-sange er markeret med 🎭-filteret i biblioteket.\n\nMikrofoner: op til 4 fysiske mikrofoner plus smartphones som yderligere inputs (se Indstillinger → Mikrofon).',
         },
         libraryNav: {
           title: 'Biblioteket',
@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtre',
           body: 'Genre, sprog, år, årti, duet-sange og virale hits — skær biblioteket til, lige som du vil.',
-          details: 'Alle filtre kan kombineres — "Genre: Rock + Sprog: Engelsk + Æra: 80\'erne" viser præcis de engelske rocksange fra firserne.\n\nSærlige filtre:\n• Duet: kun sange med to stemmespor.\n• Virale hits: sange, der aktuelt er på de virale hitlister (data fra Indstillinger → Viral Charts).\n• Egne genrer & sprog: opret dine egne kategorier under Indstillinger → Genrer & Sprog — de dukker straks op i disse filtre.\n\n"Ryd filtre" (✕) rydder det hele på én gang.',
+          details: 'Alle filtre kan kombineres — "Genre: Rock + Sprog: Engelsk + Æra: 80\'erne" viser præcis de engelske rocksange fra firserne.\n\nSærlige filtre:\n• Duet: kun sange med to stemmespor.\n• Virale hits: sange, der aktuelt er på de virale hitlister (konfigureres under Indstillinger → Bibliotek).\n• Egne genrer & sprog: opret dine egne kategorier under Indstillinger → Genrer & Sprog — de dukker straks op i disse filtre.\n\n"Ryd filtre" (✕) rydder det hele på én gang.',
         },
         songCard: {
           title: 'Sange',
@@ -92,8 +92,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Festtilstande',
-          body: '9 spil til 2–24 spillere: Battle Royale, Pass the Mic, Medley Contest, Tournament Mode, Missing Words, Blind Karaoke og mere — telefoner kan være med som mikrofoner.',
-          details: 'De 9 tilstande med ét blik:\n• Battle Royale: alle synger, den svageste elimineres hver runde — sidste sanger står tilbage.\n• Pass the Mic: mikrofonen går videre fra spiller til spiller — alle synger deres del.\n• Medley Contest: hold synger korte sanguddrag med særlige regler.\n• Tournament Mode: elimineringsbracket med dueller — vinderen klatrer op for hver runde.\n• Missing Words: ord i sangteksten forsvinder — syng det manglende ord for at score.\n• Blind Karaoke: ingen nodevisning, kun ørerne!\n• Rate my Song & Companion Sing-A-Long m.m. — hvert tilstandskort forklarer sig selv.\n\nNæsten alle tilstande understøtter companion-appen som mikrofon og fjernbetjening.',
+          body: '9 spil til op til 32 spillere: Battle Royale, Pass the Mic, Medley Contest, Tournament Mode, Missing Words, Blind Karaoke og mere — telefoner kan være med som mikrofoner.',
+          details: 'De 9 tilstande med ét blik:\n• Battle Royale: alle synger, den svageste elimineres hver runde — sidste sanger står tilbage.\n• Pass the Mic: mikrofonen går videre fra spiller til spiller — alle synger deres del.\n• Medley Contest: hold synger korte sanguddrag med særlige regler.\n• Tournament Mode: elimineringsbracket med dueller — vinderen klatrer op for hver runde.\n• Missing Words: ord i sangteksten forsvinder — syng det manglende ord for at score.\n• Blind Karaoke: nodevisningen formørkes i passager — kun ørerne!\n• Rate my Song & Companion Sing-A-Long m.m. — hvert tilstandskort forklarer sig selv.\n\nNæsten alle tilstande understøtter companion-appen som mikrofon og fjernbetjening.',
         },
         partyModes: {
           title: 'Tilstandsvælgeren',
@@ -123,12 +123,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Indstillinger',
           body: 'Mikrofoner, sprog, finjustering af gameplay, udseende og grafik — alle knapperne bor her.',
-          details: 'De 12 indstillingsfaner hurtigt:\n• Generelt: sprog, standard sværhedsgrad, online\n• Gameplay: scoring, partikler, autoplay af køen\n• Udseende: temaer, sangtekststil, baggrund\n• Grafik / Lyd: outputenhed, lydstyrke, YouTube-kvalitet\n• Mikrofon: enheder, følsomhed, støjgrænse, presets\n• Mobil: forbind & administrér companion-enheder\n• Webcam: webcam som baggrund\n• Bibliotek: sangmappe, import, nulstilling\n• Genrer & Sprog: egne kategorier\n• Temafest: aktivér & konfigurér temaet\n• Synkronisering & Backup: sikkerhedskopier\n\nDer findes en selvstændig, grundig indstillings-rundtur til alle fanerne i ?-hjælpemenuen.',
+          details: 'De 12 indstillingsfaner hurtigt:\n• Generelt: sprog, standard sværhedsgrad, online\n• Gameplay: pointvisning, partikler, combo, replay-optagelse\n• Udseende: temaer, sangtekststil, baggrund\n• Lyd: outputenhed, lydstyrke, loudness, YouTube-kvalitet\n• Mikrofon: enheder, følsomhed, støjgrænse, presets\n• Mobil: forbind & administrér companion-enheder\n• Webcam: webcam som baggrund\n• Bibliotek: sangmappe, import, virale hitlister, nulstilling\n• Genrer & Sprog: egne kategorier\n• Temafest: aktivér & konfigurér temaet\n• Synk & Backup: sikkerhedskopier\n• Om: version, platform, licenser\n\nDer findes en selvstændig, grundig indstillings-rundtur til alle fanerne i ?-hjælpemenuen.',
         },
         settingsView: {
           title: 'Indstillingsfanerne',
-          body: 'Vælg en sektion i toppen: Generelt (sprog), Gameplay, Udseende, Grafik / Lyd, Mikrofon, Mobil (telefonforbindelse) og mere.',
-          details: 'Siden R28 forklarer en kort intro-tekst øverst i hver fane, hvad den gør — du behøver aldrig gætte, hvor en indstilling hører hjemme.\n\nDen matchende rundtur: "Indstillinger" i ?-hjælpemenuen går gennem alle fanerne.',
+          body: 'Vælg en sektion i toppen: Generelt (sprog), Gameplay, Udseende, Lyd, Mikrofon, Mobil (telefonforbindelse) og mere.',
+          details: 'En kort intro-tekst øverst i hver fane forklarer, hvad den gør — du behøver aldrig gætte, hvor en indstilling hører hjemme.\n\nDen matchende rundtur: "Indstillinger" i ?-hjælpemenuen går gennem alle fanerne.',
         },
         finish: {
           title: 'Færdig! 🎉',
@@ -172,7 +172,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Værktøjslinje',
           body: 'Alt til noderne: tilføj, duplikér, slet, opdel, flet — plus nodetyper, stemmer og tap-tilstand (det kommer om lidt).',
-          details: 'Værktøjerne i rækkefølge:\n• ➕ Tilføj node: lander ved afspilningshovedet\n• ⧉ Duplikér: kopierer den valgte node lige bag den\n• 🗑 Slet: fjerner markeringen\n• ✂ Opdel: én node → to (på midten)\n• ⇄ Flet: to valgte → én\n\nMarkér ved at klikke; shift-klik markerer flere. Så tager tastaturet over: ⌫ sletter, ↑/↓ transponerer, ←/→ forskubber.',
+          details: 'Værktøjerne i rækkefølge:\n• ➕ Tilføj node: lander ved afspilningshovedet\n• ⧉ Duplikér: kopierer den valgte node lige bag den\n• 🗑 Slet: fjerner markeringen\n• ✂ Opdel: én node → to (på midten)\n• ⇄ Flet: fletter den valgte node med den næste\n\nMarkér ved at klikke; shift-klik markerer flere. Så tager tastaturet over: ⌫ sletter, ↑/↓ transponerer, ←/→ forskubber.',
         },
         lyricsPanel: {
           title: 'Sangtekstpanelet',
@@ -181,7 +181,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Noderedigering',
-          body: 'Noder er blokkene på nodesporerne: tilføj, duplikér, slet, opdel (én node → to) og flet (to → én).\n\nRedigér valgte noder i tempo: ⌫ sletter, ↑/↓ transponerer.',
+          body: 'Noder er blokkene på nodesporerne: tilføj, duplikér, slet, opdel (én node → to) og flet (med den næste node).\n\nRedigér valgte noder i tempo: ⌫ sletter, ↑/↓ transponerer.',
           details: 'Præcisionstips:\n• Zoom: Ctrl+musehjul over tidslinjen — zoom ind for fin timing.\n• Afspilning: mellemrumstasten skifter afspil/pause, Shift+mellemrum afspiller kun markeringen.\n• Transponér flere noder: markér dem alle, ↑/↓ flytter hele bundtet.\n\nTil timingen: nodens start skal ramme stavelsens ansats i vokalen — bølgeformen hjælper med at finde ansatserne.',
         },
         noteTypes: {
@@ -212,7 +212,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Genveje',
           body: 'Alle tastaturgenveje med ét blik — editoren er et tastaturinstrument. Klik dig igennem!',
-          details: 'De vigtigste genveje:\n• Ctrl+Z / Ctrl+Y: fortryd / gendan\n• Mellemrum: afspil/pause\n• ⌫: slet valgte noder\n• ↑/↓: transponér · ←/→: forskub i tid\n• S: opdel node · M: flet\n• 1–5: vælg nodetype\n\nInde i genvejspanelet kan du se og ændre tastetildelinger.',
+          details: 'De vigtigste genveje:\n• Ctrl+Z / Ctrl+Y: fortryd / gendan\n• Mellemrum: afspil/pause\n• ⌫: slet valgte noder\n• ↑/↓: transponér (Shift = hel oktav) · ←/→: forskub i tid (Shift = groft)\n• M: flet med den næste node\n• Ctrl+S: gem · Ctrl+C/V: kopier/indsæt noder\n\nGenvejspanelet i venstre bjælke viser alle taster med ét blik.',
         },
         finish: {
           title: 'Klar til at bygge! 🛠️',
@@ -238,12 +238,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Indstillingerne 👋',
           body: 'Denne rundtur går udelukkende gennem indstillingerne — fane for fane.\n\nJeg skifter automatisk til hver fane og forklarer, hvad du finder der.',
-          details: 'Fanerne i rundtur-rækkefølge: Generelt, Gameplay, Udseende, Grafik / Lyd, Mikrofon, Mobil (companion), Webcam, Bibliotek, Genrer & Sprog, Temafest, Viral Charts, Synk & Backup samt Om.\n\nHver fane har en kort intro øverst — denne rundtur uddyber den trin for trin.',
+          details: 'Fanerne i rundtur-rækkefølge: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil (companion), Webcam, Bibliotek, Genrer & Sprog, Temafest, Synk & Backup samt Om.\n\nHver fane har en kort intro øverst — denne rundtur uddyber den trin for trin.',
         },
         tabBar: {
           title: 'Fanebjælken',
-          body: 'Alle indstillinger er organiseret i faner: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil, Webcam, Bibliotek, Genrer & Sprog, Temafest, Synk & Backup og Om.\n\nSiden R28 forklarer en kort intro-tekst øverst i hver fane, hvad den gør.',
-          details: 'Hjælp til orientering — spørg dig selv, når du leder…\n• "Hvordan OPFØRER spillet sig?" → Gameplay\n• "Hvordan SER det ud?" → Udseende\n• "Hvordan LYDER det?" → Grafik / Lyd / Mikrofon\n• "Forbinde enheder?" → Mobil (companion) / Mikrofon\n• "Mine sange?" → Bibliotek\n• "Sikkerhedskopiere data?" → Synk & Backup\n\nFanerne ruller vandret i smalle vinduer — bare swipe til højre.',
+          body: 'Alle indstillinger er organiseret i faner: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil, Webcam, Bibliotek, Genrer & Sprog, Temafest, Synk & Backup og Om.\n\nEn kort intro-tekst øverst i hver fane forklarer, hvad den gør.',
+          details: 'Hjælp til orientering — spørg dig selv, når du leder…\n• "Hvordan OPFØRER spillet sig?" → Gameplay\n• "Hvordan SER det ud?" → Udseende\n• "Hvordan LYDER det?" → Lyd / Mikrofon\n• "Forbinde enheder?" → Mobil (companion) / Mikrofon\n• "Mine sange?" → Bibliotek\n• "Sikkerhedskopiere data?" → Synk & Backup\n\nFanerne ruller vandret i smalle vinduer — bare swipe til højre.',
         },
         general: {
           title: 'Generelt',
@@ -252,13 +252,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Gameplay',
-          body: 'Scoring til/fra, partikeleffekter, autoplay af køen og flere adfærdsvalg for runder og resultater.',
-          details: 'De vigtigste til/fra-valg:\n• Scoring: til ren sjov-sang uden scorevisning.\n• Autoplay af køen: efter en sang starter det næste punkt i køen automatisk — ideelt til festaftener uden moderator.\n• Partikler & effekter: deaktivér på svagere maskiner.\n\nDesuden: adfærd efter runder (resultatskærm, genstart med det samme) og combo-visninger.',
+          body: 'Pointvisning, partikeleffekter, combo-visning, replay-optagelse, automatisk fuldskærm og flere adfærdsvalg for runder og resultater.',
+          details: 'De vigtigste til/fra-valg:\n• Pointvisning: til ren sjov-sang uden at se pointene.\n• Partikler & effekter: deaktivér på svagere maskiner.\n• Replay: optager lyd og webcam, mens du synger — replayet afspilles på resultatskærmen.\n• Automatisk fuldskærm: skifter automatisk til fuldskærm, når en sang starter.\n• Advarselslyde: korte bip før blindsektioner og manglende ord.\n\nDesuden: combo-visning og mere.',
         },
         appearance: {
           title: 'Udseende',
           body: 'Temaer, animeret baggrund eller din egen baggrundsvideo, sangtekststil og -størrelse, nodevisning og ydelsestilstanden til svagere maskiner.',
-          details: 'Sangtekststil: "Karaoke" (farvelægning efter udfyldning), "UltraStar" (stavelsesblokke) eller "Minimal".\n\nBaggrund: ud over temaer kan en egen video bruges — i spillet kører den bag noderne, nedtonet.\n\nYdelsestilstanden skærer kraftigt ned på animationer og baggrunde — det kan betale sig fra ca. 2015-hardware.',
+          details: 'Sangtekststil: 10 visuelle temaer — "Klassisk", "Koncert", "Retro", "Neon", "Minimal" m.fl.\n\nBaggrund: ud over temaer kan en egen video bruges — i spillet kører den bag noderne, nedtonet.\n\nYdelsestilstanden skærer kraftigt ned på animationer og baggrunde — det kan betale sig fra ca. 2015-hardware.',
         },
         graphicsound: {
           title: 'Lyd',
@@ -268,7 +268,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Mikrofon',
           body: 'Valg af enhed, følsomhed, støjgrænse og live-niveau — plus presets. Smartphones forbindes via Mobil-fanen.',
-          details: 'Presets: typiske opsætninger ("dynamisk vokalmikrofon", "headset", "telefon") sætter følsomhed + støjgrænse i fornuftige kombinationer.\n\nStøjgrænse: filtrerer åndedræt og rumstøj — live-niveauet viser i realtid, hvad der slipper igennem.\n\nVigtigt til multiplayer: HVER spiller kan få sin EGEN enhed — tildelingen sker i startdialogen pr. runde.',
+          details: 'Presets: typiske opsætninger ("Optimal (anbefalet)", "Lav forsinkelse", "Høj nøjagtighed", "Støjfyldt miljø", "Dybe stemmer (Bass)", "Høje stemmer (Sopran)") sætter følsomhed + støjgrænse i fornuftige kombinationer.\n\nStøjgrænse: filtrerer åndedræt og rumstøj — live-niveauet viser i realtid, hvad der slipper igennem.\n\nVigtigt til multiplayer: HVER spiller kan få sin EGEN enhed — tildelingen sker i startdialogen pr. runde.',
         },
         libraryTab: {
           title: 'Bibliotek',
@@ -326,7 +326,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Dine spillerprofiler 👤',
           body: 'Profiler er identiteterne i spillet: XP, niveau, statistik og præstationer lever på profilen — og highscores bærer dit navn.\n\nDenne rundtur viser, hvordan profiler oprettes og administreres.',
-          details: 'Hvorfor profiler?\n• XP & niveau: sungne sange, udfordringer og præstationer samler erfaring — niveauet stiger sammen med rangtitlen (nybegynder → karaoke-legende).\n• Ranglister: highscore-poster viser din avatar.\n• Festtilstande: hvert spillervalg trækker fra denne liste.\n• Companion-enheder kan "tilknytte" en profil og synge under dens identitet.\n\nProfiler lever i browserlagring (lokalt) eller i en onlinekonto (synkroniseret) — det vælger du ved oprettelsen.',
+          details: 'Hvorfor profiler?\n• XP & niveau: sungne sange, udfordringer og præstationer samler erfaring — niveauet stiger sammen med rangnavnet (Nybegynder → Guddommelig).\n• Ranglister: highscore-poster viser din avatar.\n• Festtilstande: hvert spillervalg trækker fra denne liste.\n• Companion-enheder kan "tilknytte" en profil og synge under dens identitet.\n\nProfiler lever i browserlagring (lokalt) eller i en onlinekonto (synkroniseret) — det vælger du ved oprettelsen.',
         },
         topBar: {
           title: 'Handlingsbjælken',
@@ -386,7 +386,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Overblik',
         manage: 'Administration',
-        companion: 'Companion & Autoplay',
+        companion: 'Companion & genveje',
       },
       steps: {
         welcome: {
@@ -419,7 +419,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Afspil næste sang',
           body: 'Knappen starter den øverste post — standardtrækket mellem runder. Alternativt: klik direkte på et hvilket som helst kort.',
-          details: 'Resultatskærmen efter hver sang tilbyder den samme knap ("Afspil næste sang") — flowet fortsætter uden omvejen til kø-visningen.\n\nMed autoplay slået til (Indstillinger → Gameplay) fortsætter appen automatisk.',
+          details: 'Resultatskærmen efter hver sang tilbyder den samme knap ("Afspil næste sang") — flowet fortsætter uden omvejen til kø-visningen.\n\nKø-visningens "Afspil næste sang"-knap gør det samme — den øverste post starter med ét klik.',
         },
         clearAll: {
           title: 'Ryd alt',
@@ -436,13 +436,13 @@ export const tutorialTranslations = {
           details: 'Sådan ser det ud for gæsterne: vælg en sang i appen, vælg tilstand, send — ønsket lander i denne liste.\n\nDu som vært ser straks: hvem der har ønsket (spiller-avatar), og at det er et telefonønske (📱). Grænsen på 3 gælder pr. profil — også via telefon.\n\nMere i companion-rundturen.',
         },
         autoplay: {
-          title: 'Autoplay & genvej',
-          body: 'Slå autoplay til (Indstillinger → Gameplay), så den næste sang starter automatisk efter hver runde. Og: Ctrl+Q starter den øverste kø-post fra hvor som helst.',
-          details: 'Autoplay-kæden: sangen slutter → resultatet vises kort → den næste kø-post starter. Når køen løber tom, stopper kæden rent.\n\nCtrl+Q virker fra alle steder — klassikeren, når den næste runde skal rulle med det samme.',
+          title: 'Genvej & forløb',
+          body: 'Ctrl+Q starter den øverste kø-post fra hvor som helst — klassikeren, når den næste runde skal rulle med det samme.',
+          details: 'Flowet mellem runderne: sangen slutter → resultatskærm → "Afspil næste sang"-knappen (eller Ctrl+Q) holder aftenen i gang.\n\nCtrl+Q virker fra alle steder — ingen omvej til kø-visningen nødvendig.',
         },
         finish: {
           title: 'Køen venter! 🎧',
-          body: 'Nu kender du kø-stilling, sortering og reglerne.\n\nTip: kombiner autoplay + companion-ønsker til en helt selvkørende karaokeaften.',
+          body: 'Nu kender du kø-stilling, sortering og reglerne.\n\nTip: kombiner Ctrl+Q-genvejen + companion-ønsker til en helt selvkørende karaokeaften.',
         },
       },
     },
@@ -473,7 +473,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'Historikken',
           body: 'Dine beskeder vises til højre i cyan (som vært), bidrag fra telefoner til venstre i lilla. Hver besked bærer sit tidsstempel.',
-          details: 'Baggrundsopdatering: panelet henter nye beskeder hvert 3. sekund — du går ikke glip af noget, selv når det kører i baggrunden.\n\nSkrivebordets chat-notifikation (klokken) viser ulæste beskeder, også med panelet lukket.',
+          details: 'Baggrundsopdatering: panelet henter nye beskeder hvert 3. sekund — du går ikke glip af noget, selv når det kører i baggrunden.\n\nChat-knappen i menulinjen bliver, hvor den er — nye beskeder ligger klar, i det øjeblik du åbner panelet igen.',
         },
         sendAs: {
           title: '"Send som"',
@@ -585,11 +585,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Præstationer & fremskridt 🏆',
           body: 'Alt hvad du samler: præstationer med sjældenheder, XP-niveauer med rangtitler og de daglige udfordringer som XP-motor.\n\nDenne rundtur går gennem præstationsskærmen og udfordringerne.',
-          details: 'De tre systemer sammen:\n• XP: "brændstoffet" — fra sange, udfordringer og præstationer\n• Niveauer & rang: stiger med XP (nybegynder → legende), viser fremskridt med ét blik\n• Præstationer: milepæle med belønninger — nogle hemmelige, indtil du låser dem op\n\nAlt hænger på profilen — hvem der synger, samler (se profil-rundturen).',
+          details: 'De tre systemer sammen:\n• XP: "brændstoffet" — fra sange, udfordringer og præstationer\n• Niveauer & rang: stiger med XP (Nybegynder → Guddommelig), viser fremskridt med ét blik\n• Præstationer: milepæle med belønninger — nogle hemmelige, indtil du låser dem op\n\nAlt hænger på profilen — hvem der synger, samler (se profil-rundturen).',
         },
         navButton: {
           title: 'Præstations-knappen',
-          body: 'I menulinjen fører trofæet til præstationerne — den anden trofæ-kolonne ved siden af viser ranglisterne.',
+          body: 'I menulinjen fører det første trofæ til ranglisterne (highscores) — det andet trofæ lige ved siden af åbner præstationerne.',
         },
         playerSelector: {
           title: 'Spillervalg',
@@ -597,8 +597,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'Statistik-kortene',
-          body: 'Fire kort med ét blik: oplåste præstationer, XP samlet fra dem, fuldstændighed i procent og det aktuelle niveau med rangtitel.',
-          details: 'Procent-kortet regner: oplåste ÷ alle præstationer. 100 % er samlerens tærskel — belønnes som regel med en egen hemmelig præstation.\n\nNiveau-kortet viser desuden rangtitlen ("Rising Star", "Karaoke-legende" …) — titlerne kommer fra profilens rangsystem.',
+          body: 'Fire kort med ét blik: oplåste præstationer, XP samlet fra dem, fuldstændighed i procent og det aktuelle niveau med rangnavn.',
+          details: 'Procent-kortet regner: oplåste ÷ alle præstationer. 100 % er samlerens tærskel — belønnes som regel med en egen hemmelig præstation.\n\nNiveau-kortet viser desuden rangnavnet ("Lærling", "Legende", "Guddommelig" …) — navnene kommer fra profilens rangsystem.',
         },
         filters: {
           title: 'Filtre',
@@ -613,7 +613,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'Sådan flyder XP',
           body: 'XP kommer fra tre kilder: sungne sange (efter sværhedsgrad), udfordringer (daglig/ugentlig) og præstationer. Niveauer låser op for rang — og enkelte funktioner som profil-badges.',
-          details: 'XP-kilder med ét blik:\n• Færdigsunget sang: basis-XP efter sværhedsgrad (nem → ekspert, stigende)\n• Daglig brik: 100–400 XP + bonusser\n• Ugentlig brik: 500–2000 XP\n• Præstation: én gang pr. præstation (25–1000 XP efter sjældenhed)\n\nNiveau-linjen på profilsiden viser vejen til næste niveau; rangen skifter hvert par niveauer.',
+          details: 'XP-kilder med ét blik:\n• Færdigsunget sang: basis-XP efter sværhedsgrad (nem → ekspert, stigende)\n• Daglig brik: 100–200 XP basis, ×0,5–3 efter sværhedsgrad, plus bonusser\n• Ugentlig brik: 250–500 XP basis, ×0,5–3 efter sværhedsgrad\n• Præstation: én gang pr. præstation (5–7500 XP afhængigt af præstationen)\n\nNiveau-linjen på profilsiden viser vejen til næste niveau; rangen stiger med XP (Nybegynder → Guddommelig).',
         },
         navDaily: {
           title: 'Videre til udfordringerne',
@@ -627,17 +627,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Trin 2: de 5 brikker',
           body: 'Fem opgavebrikker om dagen, som låses op i rækkefølge. Hver brik viser opgaven, spilbare sværhedsgrader og XP-værdien — højere grader multiplicerer.',
-          details: 'Brik-mekanik:\n• Brik 2–5 åbner først, når den foregående er gennemført eller sprunget over — kæden tvinger variation.\n• Hver opgave er en betingelse på den næste sang ("genren rock", "mindst 80 % præcision" …) — biblioteket filtrerer automatisk matchende sange.\n• Valg af sværhedsgrad pr. brik: op til 3× XP-multiplikator på ekspert.\n\nVed midnat kommer fem friske opgaver — kæden starter forfra.',
+          details: 'Brik-mekanik:\n• Brik 2–5 åbner først, når den foregående er gennemført — kæden tvinger variation.\n• Hver opgave er en betingelse på den næste sang ("genren rock", "mindst 80 % præcision" …) — biblioteket filtrerer automatisk matchende sange.\n• Valg af sværhedsgrad pr. brik: op til 3× XP-multiplikator på Vanvittig.\n\nVed midnat kommer fem friske opgaver — kæden starter forfra.',
         },
         badges: {
           title: 'Badges & ugentligt',
-          body: 'At klare flere brikker giver daglige badges (bronze/sølv/guld) med ekstra XP. Det ugentlige modstykke løber 7 dage med store belønninger — samme mekanik, større pulje.',
-          details: 'Badge-niveauer pr. dag:\n• Bronze: 2 brikker\n• Sølv: 3–4 brikker\n• Guld: alle 5 brikker — plus den daglige bonus-XP\n\nUgentligt: 5 brikker over 7 dage, 500–2000 XP pr. brik, nulstilling hver mandag. At spille dagligt OG ugentligt får dig markant hurtigere op i niveau end sange alene.',
+          body: 'Klarede brikker giver daglige badges (bronze/sølv/guld) med ekstra XP. Det ugentlige modstykke løber 7 dage med store belønninger — samme mekanik, større pulje.',
+          details: 'Badge-niveauer pr. dag:\n• Bronze: 1 brik\n• Sølv: 3 brikker\n• Guld: alle 5 brikker — plus den daglige bonus-XP\n\nUgentligt: 5 brikker over 7 dage, 250–500 XP basis pr. brik (× sværhedsgradens multiplikator), nulstilling hver mandag. At spille dagligt OG ugentligt får dig markant hurtigere op i niveau end sange alene.',
         },
         challengeModes: {
           title: 'Udfordringstilstande',
-          body: 'Ud over brikkerne findes frie udfordringstilstande med modifikatorer (f.eks. "2× tempo", "ingen noder") — til egne regler og ekstra XP ud over dagens opgaver.',
-          details: 'Tilstandene er frit konfigurerbare: vælg en tilstand, kombinér modifikatorer, XP-puljen vokser med sværhedsgraden.\n\nGennemføringer låser op for nye modifikatorer — samler-kortet i udfordringsområdet viser, hvad du har.',
+          body: 'Ud over brikkerne findes frie udfordringstilstande med modifikatorer (f.eks. "1,5× tempo", "skjult tekst") — til egne regler og ekstra XP ud over dagens opgaver.',
+          details: 'Tilstandene er frit valgfri: vælg en tilstand, dens modifikatorer træder automatisk i kraft, XP-belønningen vokser med sværhedsgraden.\n\nGennemførte tilstande låser op for kædede følge-udfordringer — jo længere du spiller, desto mere åbner sig.',
         },
         finish: {
           title: 'Samletid! 🏅',

@@ -2,7 +2,7 @@
 
 export const partyTranslations = {
 partyHelpers: {
-  defaultMicName: 'Mic {n}',
+  defaultMicName: 'Micrófono {n}',
 },
 party: {
   title: 'Juegos de Fiesta',
@@ -192,7 +192,7 @@ competitiveWords: {
   playMode: 'Modo de juego',
   modeCompetitive: 'Competitivo',
   modeSolo: 'Solo',
-  modeCoop: 'Co-op',
+  modeCoop: 'Cooperativo',
   modeCompetitiveDesc: '2-4 jugadores compiten en parejas durante varias rondas',
   modeSoloDesc: 'Canta solo y persigue el highscore',
   modeCoopDesc: 'Todos los jugadores cantan juntos por una puntuación compartida',
@@ -259,7 +259,7 @@ battleRoyale: {
   eliminatedInRound: 'Eliminado en la Ronda {n}',
   playersRemaining: '{n} jugadores restantes',
   winner: '¡GANADOR!',
-  mic: '🎤 Mic',
+  mic: '🎤 Micrófono',
   companion: '📱 Compañero',
   finalScore: 'Puntuación Final: {n}',
   returnToMenu: '🏠 Volver al Menú',
@@ -323,7 +323,7 @@ battleRoyale: {
   eliminatedPlayerName: '¡{name} fue eliminado!',
   survivedPlayers: 'Jugadores Sobrevivientes',
   countdownGo: '¡YA!',
-  noteHighwayLabel: 'Note Highway',
+  noteHighwayLabel: 'Pista de Notas',
   noteHighwayDesc: 'Visualización real de notas con línea de canto e indicador de tono',
   noteShapeLabel: 'Forma de Nota',
   noteDisplayStyleLabel: 'Estilo de Visualización',

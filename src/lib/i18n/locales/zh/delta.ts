@@ -916,7 +916,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "高分榜",
     navJukeboxDesc: "搭建播放列表、排歌点唱",
     navJukeboxTitle: "点唱机",
-    navPartyDesc: "{n} 种游戏模式，适合 2–24 人",
+    navPartyDesc: "{n} 种游戏模式，最多 32 人",
     navSectionTitle: "探索应用",
     navSettingsDesc: "音频、麦克风、显示",
     navSettingsTitle: "设置",
@@ -1075,7 +1075,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "关于 Karaoke ZERO 的一切：版本、平台、贡献项目和许可证——还有项目介绍与支持链接。",
     appearance: "打造你的风格：主题、动态背景或自定义背景视频、歌词样式与大小、音符显示，以及为较弱机器准备的性能模式。",
-    gameplay: "微调游戏手感：计分、命中粒子效果、队列自动播放，以及更多针对对局和结算的行为开关。在派对气氛与性能之间取得完美平衡。",
+    gameplay: "微调游戏手感：分数显示、命中粒子效果、回放录制、自动全屏，以及更多针对对局和结算的行为开关。在派对气氛与性能之间取得完美平衡。",
     general: "核心应用设置：界面语言、新对局的默认难度、在线活动以及完整的键盘快捷键列表。更改立即生效——部分（如语言）无需重启。",
     graphicsound: "音频相关的一切：输出设备（包括低延迟 ASIO）、主音量与预览音量、麦克风灵敏度、响度归一化和 YouTube 视频画质。",
     library: "管理你的曲库：设置歌曲文件夹（每个子文件夹 = 一首歌）并扫描、重置曲库或删除所有数据。从其他卡拉OK系统（UltraStar、MIDI/KAR、Mugen、SingStar、StepMania）导入的入口也在这里。",

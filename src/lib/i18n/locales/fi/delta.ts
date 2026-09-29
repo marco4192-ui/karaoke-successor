@@ -915,7 +915,7 @@ export const deltaTranslations = {
     navHighscoresTitle: "Huipputulokset",
     navJukeboxDesc: "Koosta soittolistoja ja lisää kappaleita jonoon",
     navJukeboxTitle: "Jukeboksi",
-    navPartyDesc: "{n} pelitilaa 2–24 pelaajalle",
+    navPartyDesc: "{n} pelitilaa jopa 32 pelaajalle",
     navSectionTitle: "Tutustu sovellukseen",
     navSettingsDesc: "Ääni, mikrofonit, näyttö",
     navSettingsTitle: "Asetukset",
@@ -1074,7 +1074,7 @@ export const deltaTranslations = {
   settingsIntros: {
     about: "Kaikki Karaoke ZEROsta: versio, alusta, osallistuvat projektit ja lisenssit — plus projektikuvaus ja tukilinkit.",
     appearance: "Tee siitä omasi: teemat, animoitu tausta tai oma taustavideosi, sanoitusten tyyli ja koko, nuottien näyttö sekä suoritustila heikommille koneille.",
-    gameplay: "Hienosäädä pelituntumaa: pisteytys, partikkelitehostukset osumista, jonon seuraavien kappaleiden automaattitoisto ja muut toimintakytkimet kierroksille ja tuloksille. Täydellinen juhlatunnelman ja suorituskyvyn tasapainottamiseen.",
+    gameplay: "Hienosäädä pelituntumaa: pisteenäyttö, partikkelitehosteet osumista, toiston tallennus, automaattinen koko näyttö ja muut toimintakytkimet kierroksille ja tuloksille. Täydellinen juhlatunnelman ja suorituskyvyn tasapainottamiseen.",
     general: "Sovelluksen ydinasetukset: käyttöliittymän kieli, oletusvaikeustaso uusille kierroksille, verkkotoiminnot sekä luettelo kaikista pikanäppäimistä. Muutokset tulevat voimaan heti — osa (kuten kieli) ilman uudelleenkäynnistystä.",
     graphicsound: "Kaikki äänestä: toistolaite (ml. ASIO matalaan viiveeseen), pää- ja esikuunteluäänenvoimakkuus, mikrofonin herkkyys, äänenvoimakkuuden normalisointi ja YouTuben videolaatu.",
     library: "Hallinnoi kappalekirjastoasi: aseta kappalekansio (jokainen alikansio = yksi kappale) ja skannaa se, nollaa kirjasto tai poista kaikki tiedot. Täällä on myös tuonti muista karaokejärjestelmistä (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).",

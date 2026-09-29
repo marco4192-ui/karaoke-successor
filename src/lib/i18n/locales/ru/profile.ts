@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Показать фото',
   photoUploaded: 'Фото загружено',
   noPhoto: 'Нет фото',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Ваши результаты будут загружаться в глобальную таблицу лидеров.',
+  privacyHintDesc: 'Вы можете в любой момент отказаться от этого в настройках профиля.',
   storageMode: {
     title: 'Хранение профиля',
     local: 'Только локально',
@@ -41,7 +41,7 @@ profile: {
 profileAuth: {
   accountTitle: 'Онлайн-аккаунт (необязательно)',
   accountDesc: 'Сохраните e-mail и пароль, чтобы загрузить этот профиль на другом устройстве. Вход возможен только внутри приложения для караоке — веб-версии для входа нет.',
-  email: 'E-mail',
+  email: 'Эл. почта',
   emailPlaceholder: 'vash@email.com',
   emailInvalid: 'Пожалуйста, введите корректный адрес e-mail',
   emailTaken: 'Этот e-mail уже зарегистрирован',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Отсканируйте этот QR-код для прямого подключения к этому профилю в приложении-компаньоне.',
   hideQrCode: 'Скрыть QR-код',
   showQrCode: 'Показать QR-код',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Участие в таблице лидеров',
+  leaderboardParticipationDesc: 'Участвуйте в онлайн-таблице лидеров и делитесь своими результатами с другими игроками',
   loadProfile: 'Загрузить онлайн-профиль',
 },
 characterCard: {

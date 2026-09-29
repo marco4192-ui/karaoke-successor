@@ -137,7 +137,7 @@ settingsTabs: {
 // R28: Einleitungstexte für alle Settings-Submenus (Muster wie settingsTaxonomy.desc)
 settingsIntros: {
   general: 'Grundeinstellungen der App: Sprache der Oberfläche, Standard-Schwierigkeit für neue Runden, Online-Aktivitäten und die Liste aller Tastaturkürzel. Änderungen wirken sich sofort aus — manche (z. B. die Sprache) ohne Neustart.',
-  gameplay: 'Feintuning fürs Spielgefühl: Punktevergabe (Scoring), Partikeleffekte bei Treffern, Autoplay der nächsten Queue-Songs und weitere Verhaltensschalter für Runden und Ergebnisse. Perfekt, um die Partystimmung vs. Performance abzuwägen.',
+  gameplay: 'Feintuning fürs Spielgefühl: Punkteanzeige, Partikeleffekte bei Treffern, Replay-Aufnahme, Auto-Vollbild und weitere Verhaltensschalter für Runden und Ergebnisse. Perfekt, um die Partystimmung vs. Performance abzuwägen.',
   appearance: 'Passe die Optik an: Themes, animierter Hintergrund oder eigenes Hintergrundvideo, Textstil und Größe der Songtexte, Notenanzeige und der Performance-Modus für schwächere Rechner.',
   graphicsound: 'Alles rund ums Audio: Ausgabegerät (inkl. ASIO für geringe Latenz), Master- und Preview-Lautstärke, Mikrofon-Empfindlichkeit, Loudness-Normalisierung und die YouTube-Videoqualität.',
   microphone: 'Mikrofon-Setup und Test: Geräteauswahl, Empfindlichkeit, Noise-Gate und Live-Pegel-Check. Hier kannst du auch Einstellungen als Presets sichern und Smartphones als drahtlose Mikrofone einbinden.',

@@ -109,10 +109,10 @@ offlineBanner: {
 },
 uploadStatus: {
   uploading: 'Laddar upp till globala poänglistan...',
-  verified: 'Verified score',
-  unverified: 'Unverified (no proof)',
-  verifiedDesc: 'This score was verified by the anti-cheat system',
-  unverifiedDesc: 'Anti-cheat proof was not included for this score',
+  verified: 'Verifierat resultat',
+  unverified: 'Overifierat (utan bevis)',
+  verifiedDesc: 'Detta resultat har verifierats av anti-fusksystemet',
+  unverifiedDesc: 'Inget anti-fuskbevis inkluderades för detta resultat',
 },
 shareSection: {
   title: '📤 Dela Ditt Resultat',
@@ -427,9 +427,9 @@ dailyChallenge: {
 desktopChat: {
   title: 'Companion-Chat',
   host: 'Host',
-  notificationNew: 'Neue Nachricht von {name}',
-  openChat: 'Chat öffnen',
-  closeChat: 'Chat schließen',
+  notificationNew: 'Nytt meddelande från {name}',
+  openChat: 'Öppna chatt',
+  closeChat: 'Stäng chatt',
   noMessages: 'Inga meddelanden än',
   sendAs: 'Skicka som',
   noPlayers: 'Inga spelare',

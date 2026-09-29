@@ -53,22 +53,22 @@ export const tutorialTranslations = {
         heroButtons: {
           title: 'Snabbstart',
           body: '"Börja Sjunga" tar dig direkt till biblioteket. "Festläge" öppnar de 9 festspelen för grupper.',
-          details: 'Snabbstartskorten är genvägar till de vanligaste vägarna:\n• "Börja Sjunga" = öppna biblioteket, välj en låt, kör (solo, duell eller duett).\n• "Festläge" = spelsamlingen för 2–24 spelare, telefoner kan ansluta som mikrofoner.\n\nAllt du ser här går också att nå via menyraden — korten sparar bara klick.',
+          details: 'Snabbstartskorten är genvägar till de vanligaste vägarna:\n• "Börja Sjunga" = öppna biblioteket, välj en låt, kör (solo, duell eller duett).\n• "Festläge" = spelsamlingen för upp till 32 spelare, telefoner kan ansluta som mikrofoner.\n\nAllt du ser här går också att nå via menyraden — korten sparar bara klick.',
         },
         dailyCard: {
           title: 'Daglig utmaning',
           body: '5 luckor per dag med roterande uppgifter — ju fler luckor du rensar, desto större XP-bonus. Färska uppgifter droppar vid midnatt.',
-          details: 'Så fungerar systemet:\n• Var och en av de 5 luckorna innehåller en egen uppgiftstyp (t.ex. "sjung en 80-talslåt", "få 8000 poäng").\n• Luckorna låses upp i tur och ordning — lucka 2 öppnas först när lucka 1 är klar (eller överhoppad).\n• Varje lucka går att spela i flera svårighetsgrader; de högre ger mer XP (upp till 3× multiplikator).\n• Bonusen växer med antalet rensade luckor: 5/5 ger hela den dagliga bonusen.\n\nUppgifterna dras från DITT bibliotek — urvalet anpassar sig alltid efter dina låtar.',
+          details: 'Så fungerar systemet:\n• Var och en av de 5 luckorna innehåller en egen uppgiftstyp (t.ex. "sjung en 80-talslåt", "få 8000 poäng").\n• Luckorna låses upp i tur och ordning — lucka 2 öppnas först när lucka 1 är klar.\n• Varje lucka går att spela i flera svårighetsgrader; de högre ger mer XP (upp till 3× multiplikator).\n• Bonusen växer med antalet rensade luckor: 5/5 ger hela den dagliga bonusen.\n\nUppgifterna dras från DITT bibliotek — urvalet anpassar sig alltid efter dina låtar.',
         },
         weeklyCard: {
           title: 'Veckoutmaning',
           body: 'Veckans motstycke: 5 luckor under veckan med större XP-belöningar. Perfekt för långsiktiga mål.',
-          details: 'Veckoutmaningarna fungerar som de dagliga, men:\n• De 5 luckorna gäller i 7 dagar — ingen daglig nollställning, samla i din egen takt.\n• XP-belöningarna per lucka är betydligt större (t.ex. 500–2000 XP istället för 100–400).\n• Nollställningen sker måndag morgon.\n\nTips: daglig och veckoutmaning körs parallellt — spela båda så stiger du i nivå snabbast.',
+          details: 'Veckoutmaningarna fungerar som de dagliga, men:\n• De 5 luckorna gäller i 7 dagar — ingen daglig nollställning, samla i din egen takt.\n• XP-belöningarna per lucka är större: 250–500 grund-XP i stället för 100–200 dagligen — och svårighetsmultiplikatorn (upp till 3×) kommer ovanpå.\n• Nollställningen sker måndag morgon.\n\nTips: daglig och veckoutmaning körs parallellt — spela båda så stiger du i nivå snabbast.',
         },
         modeLauncher: {
           title: 'Sjung: Solo, Duell & Duett',
           body: '🎤 Solo: en spelare, en mikrofon.\n⚔️ Duell: två spelare på SAMMA låt — flest poäng vinner.\n🎭 Duett: två röster på två spår — biblioteket visar automatiskt bara matchande duettlåtar.',
-          details: 'De tre lägena i detalj:\n• Solo: klassisk karaoke — du sjunger alla noter och din poäng hamnar på topplistorna.\n• Duell: båda spelarna sjunger samma notspår samtidigt. Poängen räknas var för sig — jämförelsen efteråt visar vem som var bäst. Perfekt för revansch.\n• Duett: låten har två separata röster (P1/P2) — var och en sjunger "sina" delar, gemensamma fraser ger lagbonus. Duettlåtar markeras med 🎭-filtret i biblioteket.\n\nMikrofoner: du kan koppla in hur många mikrofoner eller smarttelefoner du vill (se Inställningar → Mikrofon).',
+          details: 'De tre lägena i detalj:\n• Solo: klassisk karaoke — du sjunger alla noter och din poäng hamnar på topplistorna.\n• Duell: båda spelarna sjunger samma notspår samtidigt. Poängen räknas var för sig — jämförelsen efteråt visar vem som var bäst. Perfekt för revansch.\n• Duett: låten har två separata röster (P1/P2) — var och en sjunger "sina" delar, gemensamma fraser ger lagbonus. Duettlåtar markeras med 🎭-filtret i biblioteket.\n\nMikrofoner: upp till 4 fysiska mikrofoner plus smarttelefoner som ytterligare ingångar (se Inställningar → Mikrofon).',
         },
         libraryNav: {
           title: 'Biblioteket',
@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filter',
           body: 'Genre, språk, år, decennium, duettlåtar och viral-hits — skär biblioteket precis hur du vill.',
-          details: 'Alla filter kan kombineras — t.ex. visar "Genre: Rock + Språk: Engelska + Era: 80-tal" exakt de engelska rocklåtarna från åttiotalet.\n\nSpecialfilter:\n• Duett: bara låtar med två röstspår.\n• Viral-hits: låtar som just nu finns i de virala listorna (data från Inställningar → Viral Charts).\n• Egna genrer & språk: skapa egna kategorier under Inställningar → Genrer & Språk — de dyker upp direkt i filtren.\n\n"Rensa filter" (✕) nollställer allt på en gång.',
+          details: 'Alla filter kan kombineras — t.ex. visar "Genre: Rock + Språk: Engelska + Era: 80-tal" exakt de engelska rocklåtarna från åttiotalet.\n\nSpecialfilter:\n• Duett: bara låtar med två röstspår.\n• Viral-hits: låtar som just nu finns i de virala listorna (konfigureras under Inställningar → Bibliotek).\n• Egna genrer & språk: skapa egna kategorier under Inställningar → Genrer & Språk — de dyker upp direkt i filtren.\n\n"Rensa filter" (✕) nollställer allt på en gång.',
         },
         songCard: {
           title: 'Låtar',
@@ -92,8 +92,8 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Festlägen',
-          body: '9 spel för 2–24 spelare: Battle Royale, Ge över Micen, Medleytävling, turnering, Saknade Ord, Blind Karaoke och mer — telefoner kan ansluta som mikrofoner.',
-          details: 'De 9 lägena i korthet:\n• Battle Royale: alla sjunger, den svagaste åker ut varje omgång — sist kvar vinner.\n• Ge över Micen: miken vandrar från spelare till spelare — alla sjunger sin del.\n• Medleytävling: lag sjunger sig genom korta låtsnuttar med specialregler.\n• Turnering: utslagsträd med dueller — vinnaren klättrar varje omgång.\n• Saknade Ord: ord i texten blankas ut — sjung rätt ord för att få poäng.\n• Blind Karaoke: inga noter syns, bara öronen gäller!\n• Betygsätt min låt & Companion Singalong med mera — varje lägeskort förklarar sig självt.\n\nNästan alla lägen stödjer companion-appen som mikrofon och fjärrkontroll.',
+          body: '9 spel för upp till 32 spelare: Battle Royale, Ge över Micen, Medleytävling, turnering, Saknade Ord, Blind Karaoke och mer — telefoner kan ansluta som mikrofoner.',
+          details: 'De 9 lägena i korthet:\n• Battle Royale: alla sjunger, den svagaste åker ut varje omgång — sist kvar vinner.\n• Ge över Micen: miken vandrar från spelare till spelare — alla sjunger sin del.\n• Medleytävling: lag sjunger sig genom korta låtsnuttar med specialregler.\n• Turnering: utslagsträd med dueller — vinnaren klättrar varje omgång.\n• Saknade Ord: ord i texten blankas ut — sjung rätt ord för att få poäng.\n• Blind Karaoke: notvisningen förmörkas i passager — bara öronen gäller!\n• Betygsätt min låt & Companion Singalong med mera — varje lägeskort förklarar sig självt.\n\nNästan alla lägen stödjer companion-appen som mikrofon och fjärrkontroll.',
         },
         partyModes: {
           title: 'Lägeväljaren',
@@ -123,12 +123,12 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Inställningar',
           body: 'Mikrofoner, språk, finjustering av gameplay, utseende och grafik — alla reglage bor här.',
-          details: 'De 12 inställningsflixarna i korthet:\n• Allmänt: språk, standardsvårighetsgrad, online\n• Gameplay: poängsättning, partiklar, autospel av kön\n• Utseende: teman, textstil, bakgrund\n• Grafik / Ljud: utgångsenhet, volym, YouTube-kvalitet\n• Mikrofon: enheter, känslighet, brusport, förinställningar\n• Mobil: anslut & hantera companion-enheter\n• Webbkamera: webbkamera som bakgrund\n• Bibliotek: låtmapp, import, återställning\n• Genrer & Språk: egna kategorier\n• Temafest: aktivera & konfigurera tema\n• Synk & Backup: säkerhetskopior\n\nDet finns en egen, fördjupad inställningsrundtur för alla flikar i ?-hjälpmenyn.',
+          details: 'De 12 inställningsflikarna i korthet:\n• Allmänt: språk, standardsvårighetsgrad, online\n• Gameplay: poängvisning, partiklar, kombo, replay-inspelning\n• Utseende: teman, textstil, bakgrund\n• Ljud: utgångsenhet, volym, ljudnivånormalisering, YouTube-kvalitet\n• Mikrofon: enheter, känslighet, brusport, förinställningar\n• Mobil: anslut & hantera companion-enheter\n• Webbkamera: webbkamera som bakgrund\n• Bibliotek: låtmapp, import, virala listor, återställning\n• Genrer & Språk: egna kategorier\n• Temafest: aktivera & konfigurera tema\n• Synk & Backup: säkerhetskopior\n• Om: version, plattform, licenser\n\nDet finns en egen, fördjupad inställningsrundtur för alla flikar i ?-hjälpmenyn.',
         },
         settingsView: {
           title: 'Inställningsflixarna',
-          body: 'Välj ett avsnitt upptill: Allmänt (språk), Gameplay, Utseende, Grafik / Ljud, Mikrofon, Mobil (telefonanslutning) och mer.',
-          details: 'Sedan R28 förklarar en kort introtext överst i varje flik vad den gör — du behöver aldrig gissa var en inställning hör hemma.\n\nMatchande rundtur: "Inställningar" i ?-hjälpmenyn går igenom varje flik.',
+          body: 'Välj ett avsnitt upptill: Allmänt (språk), Gameplay, Utseende, Ljud, Mikrofon, Mobil (telefonanslutning) och mer.',
+          details: 'En kort introtext överst i varje flik förklarar vad den gör — du behöver aldrig gissa var en inställning hör hemma.\n\nMatchande rundtur: "Inställningar" i ?-hjälpmenyn går igenom varje flik.',
         },
         finish: {
           title: 'Klart! 🎉',
@@ -172,7 +172,7 @@ export const tutorialTranslations = {
         leftPanel: {
           title: 'Verktygsraden',
           body: 'Allt för noterna: lägg till, duplicera, ta bort, dela, slå ihop — plus nottyper, röster och tryckläge (kommer strax).',
-          details: 'Verktygen i ordning:\n• ➕ Lägg till not: droppar vid uppspelningshuvudet\n• ⧉ Duplicera: kopierar den markerade noten direkt bakom sig\n• 🗑 Ta bort: raderar markeringen\n• ✂ Dela: en not → två (på mitten)\n• ⇄ Slå ihop: två markerade → en\n\nMarkera med klick; shift-klick för flera. Sedan tar tangentbordet över: ⌫ raderar, ↑/↓ transponerar, ←/→ knuffar i tiden.',
+          details: 'Verktygen i ordning:\n• ➕ Lägg till not: droppar vid uppspelningshuvudet\n• ⧉ Duplicera: kopierar den markerade noten direkt bakom sig\n• 🗑 Ta bort: raderar markeringen\n• ✂ Dela: en not → två (på mitten)\n• ⇄ Slå ihop: sammanfogar den markerade noten med nästa\n\nMarkera med klick; shift-klick för flera. Sedan tar tangentbordet över: ⌫ raderar, ↑/↓ transponerar, ←/→ knuffar i tiden.',
         },
         lyricsPanel: {
           title: 'Textrutan',
@@ -181,7 +181,7 @@ export const tutorialTranslations = {
         },
         subHeaderTools: {
           title: 'Redigera noter',
-          body: 'Noterna är blocken på tonhöjdsbanorna: lägg till, duplicera, ta bort, dela (en not → två) och slå ihop (två → en).\n\nRedigera markerade noter i tempo: ⌫ raderar, ↑/↓ transponerar.',
+          body: 'Noterna är blocken på tonhöjdsbanorna: lägg till, duplicera, ta bort, dela (en not → två) och slå ihop (med nästa not).\n\nRedigera markerade noter i tempo: ⌫ raderar, ↑/↓ transponerar.',
           details: 'Precisionstips:\n• Zoom: Ctrl+mushjul över tidslinjen — zooma in för fin timing.\n• Uppspelning: mellanslag växlar spela/pausa, Shift+mellanslag spelar bara markeringen.\n• Transponera flera noter: markera alla, ↑/↓ flyttar hela bunten.\n\nFör timingen: notens start måste träffa stavelsens ansats i sången — vågformen hjälper dig hitta ansatserna.',
         },
         noteTypes: {
@@ -212,7 +212,7 @@ export const tutorialTranslations = {
         shortcuts: {
           title: 'Kortkommandon',
           body: 'Alla tangentkommandon samlat — editorn är ett tangentbordsinstrument. Klicka dig igenom!',
-          details: 'De viktigaste kortkommandona:\n• Ctrl+Z / Ctrl+Y: ångra / gör om\n• Mellanslag: spela/pausa\n• ⌫: radera markerade noter\n• ↑/↓: transponera · ←/→: knuffa i tiden\n• S: dela not · M: slå ihop\n• 1–5: välj nottyp\n\nI kortkommandopanelen kan du se och ändra tangenter.',
+          details: 'De viktigaste kortkommandona:\n• Ctrl+Z / Ctrl+Y: ångra / gör om\n• Mellanslag: spela/pausa\n• ⌫: radera markerade noter\n• ↑/↓: transponera (Shift = hel oktav) · ←/→: knuffa i tiden (Shift = grovt)\n• M: sammanfoga med nästa not\n• Ctrl+S: spara · Ctrl+C/V: kopiera/klistra in noter\n\nKortkommandopanelen i vänsterkolumnen visar alla tangenter med en blick.',
         },
         finish: {
           title: 'Redo att bygga! 🛠️',
@@ -238,12 +238,12 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Inställningarna 👋',
           body: 'Den här rundturen går uteslutande igenom inställningarna — flik för flik.\n\nJag växlar automatiskt till varje flik och förklarar vad du hittar där.',
-          details: 'Flikarna i rundtursordning: Allmänt, Gameplay, Utseende, Grafik / Ljud, Mikrofon, Mobil (companion), Webbkamera, Bibliotek, Genrer & Språk, Temafest, Viral Charts, Synk & Backup och Om.\n\nVarje flik har en kort intro överst — rundturen fördjupar den steg för steg.',
+          details: 'Flikarna i rundtursordning: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil (companion), Webbkamera, Bibliotek, Genrer & Språk, Temafest, Synk & Backup och Om.\n\nVarje flik har en kort intro överst — rundturen fördjupar den steg för steg.',
         },
         tabBar: {
           title: 'Flikraden',
-          body: 'Alla inställningar är ordnade i flikar: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil, Webbkamera, Bibliotek, Genrer & Språk, Temafest, Synk & Backup och Om.\n\nSedan R28 förklarar en kort introtext överst i varje flik vad den gör.',
-          details: 'Orienteringshjälp — när du söker, fråga dig…\n• "Hur BETEER sig spelet?" → Gameplay\n• "Hur SER det ut?" → Utseende\n• "Hur LÅTER det?" → Grafik / Ljud / Mikrofon\n• "Koppla enheter?" → Mobil (companion) / Mikrofon\n• "Mina låtar?" → Bibliotek\n• "Säkerhetskopiera data?" → Synk & Backup\n\nFlikarna scrollar horisontellt i smala fönster — svep bara åt höger.',
+          body: 'Alla inställningar är ordnade i flikar: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil, Webbkamera, Bibliotek, Genrer & Språk, Temafest, Synk & Backup och Om.\n\nEn kort introtext överst i varje flik förklarar vad den gör.',
+          details: 'Orienteringshjälp — när du söker, fråga dig…\n• "Hur BETEER sig spelet?" → Gameplay\n• "Hur SER det ut?" → Utseende\n• "Hur LÅTER det?" → Ljud / Mikrofon\n• "Koppla enheter?" → Mobil (companion) / Mikrofon\n• "Mina låtar?" → Bibliotek\n• "Säkerhetskopiera data?" → Synk & Backup\n\nFlikarna scrollar horisontellt i smala fönster — svep bara åt höger.',
         },
         general: {
           title: 'Allmänt',
@@ -252,13 +252,13 @@ export const tutorialTranslations = {
         },
         gameplay: {
           title: 'Gameplay',
-          body: 'Poängsättning på/av, partikeleffekter, autospel av kön och fler beteendeomkopplare för rundor och resultat.',
-          details: 'De viktigaste omkopplarna:\n• Poängsättning: för ren nöjesång utan poängvisning.\n• Autospel av kön: när en låt tar slut startar nästa köpost automatiskt — perfekt för festkvällar utan programledare.\n• Partiklar & effekter: stäng av på svagare maskiner.\n\nDärtill: beteende efter rundor (resultatskärm, omedelbar omstart) och kombovisningar.',
+          body: 'Poängvisning, partikeleffekter, kombovisning, replay-inspelning, automatisk helskärm och fler beteendeomkopplare för rundor och resultat.',
+          details: 'De viktigaste omkopplarna:\n• Poängvisning: för ren nöjesång utan poängutläsning.\n• Partiklar & effekter: stäng av på svagare maskiner.\n• Replay: spelar in ljud och webbkamera medan du sjunger — reprisen spelas upp på resultatskärmen.\n• Automatisk helskärm: går automatiskt in i helskärmsläge när en låt startas.\n• Varningsljud: kort pip före blindpassager och passager med saknade ord.\n\nDärtill: kombovisning och mer.',
         },
         appearance: {
           title: 'Utseende',
           body: 'Teman, animerad bakgrund eller egen bakgrundsvideo, textstil och storlek, notvisning och prestandaläget för svagare maskiner.',
-          details: 'Textstil: "Karaoke" (färgläggning av ordet), "UltraStar" (stavelserutor) eller "Minimal".\n\nBakgrund: förutom teman fungerar en egen video — i spelet körs den bakom noterna, nedtonad.\n\nPrestandaläget skär kraftigt ner på animationer och bakgrunder — lönt från ~2015-hårdvara.',
+          details: 'Textstil: 10 visuella teman — "Klassisk", "Konsert", "Retro", "Neon", "Minimalistisk" och fler.\n\nBakgrund: förutom teman fungerar en egen video — i spelet körs den bakom noterna, nedtonad.\n\nPrestandaläget skär kraftigt ner på animationer och bakgrunder — lönt från ~2015-hårdvara.',
         },
         graphicsound: {
           title: 'Ljud',
@@ -268,7 +268,7 @@ export const tutorialTranslations = {
         microphone: {
           title: 'Mikrofon',
           body: 'Enhetsval, känslighet, brusport och live-nivå — plus förinställningar. Smartphones ansluts via fliken Mobil.',
-          details: 'Förinställningar: typiska uppsättningar ("dynamisk sångmikrofon", "headset", "telefon") ställer in känslighet + brusport i förnuftiga kombinationer.\n\nBrusport: filtrerar andetag och rumsbrus — live-nivån visar i realtid vad som släpps igenom.\n\nViktigt för flera spelare: VARJE spelare kan få en EGEN enhet — tilldelningen sker i startdialogen per runda.',
+          details: 'Förinställningar: typiska uppsättningar ("Optimal", "Låg Latens", "Hög Noggrannhet", "Bullrig Miljö", "Djupa Röster (Bas)", "Höga Röster (Sopran)") ställer in känslighet + brusport i förnuftiga kombinationer.\n\nBrusport: filtrerar andetag och rumsbrus — live-nivån visar i realtid vad som släpps igenom.\n\nViktigt för flera spelare: VARJE spelare kan få en EGEN enhet — tilldelningen sker i startdialogen per runda.',
         },
         libraryTab: {
           title: 'Bibliotek',
@@ -326,7 +326,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Dina spelarprofiler 👤',
           body: 'Profilerna är identiteterna i spelet: XP, nivå, statistik och prestationer lever på profilen — och highscores bär ditt namn.\n\nRundturen visar hur du skapar och hanterar profiler.',
-          details: 'Varför profiler?\n• XP & nivå: sjungna låtar, utmaningar och prestationer samlar erfarenhet — nivån stiger tillsammans med rangtiteln (nybörjare → karaoke-legend).\n• Topplistor: highscoreposter visar din avatar.\n• Festlägen: varje spelarval drar från den här listan.\n• Companion-enheter kan "koppla" en profil och sjunga under dess identitet.\n\nProfiler lever i webbläsarlagringen (lokalt) eller i ett onlinekonto (synk) — du väljer när du skapar dem.',
+          details: 'Varför profiler?\n• XP & nivå: sjungna låtar, utmaningar och prestationer samlar erfarenhet — nivån stiger tillsammans med rangnamnet (Nybörjare → Gudomlig).\n• Topplistor: highscoreposter visar din avatar.\n• Festlägen: varje spelarval drar från den här listan.\n• Companion-enheter kan "koppla" en profil och sjunga under dess identitet.\n\nProfiler lever i webbläsarlagringen (lokalt) eller i ett onlinekonto (synk) — du väljer när du skapar dem.',
         },
         topBar: {
           title: 'Åtgärdsraden',
@@ -386,7 +386,7 @@ export const tutorialTranslations = {
       chapters: {
         overview: 'Överblick',
         manage: 'Hantering',
-        companion: 'Companion & Autospel',
+        companion: 'Companion & Genvägar',
       },
       steps: {
         welcome: {
@@ -419,7 +419,7 @@ export const tutorialTranslations = {
         playNext: {
           title: 'Spela nästa låt',
           body: 'Knappen startar den översta posten — standarddraget mellan rundorna. Alternativt: klicka direkt på valfritt kort.',
-          details: 'Resultatskärmen efter varje låt erbjuder samma knapp ("Spela Nästa Låt") — flytet fortsätter utan omväg till kövyn.\n\nMed autospel aktiverat (Inställningar → Gameplay) går appen vidare automatiskt.',
+          details: 'Resultatskärmen efter varje låt erbjuder samma knapp ("Spela Nästa Låt") — flytet fortsätter utan omväg till kövyn.\n\nKöns "Spela Nästa Låt"-knapp gör samma sak — den översta posten startar med ett klick.',
         },
         clearAll: {
           title: 'Rensa allt',
@@ -436,13 +436,13 @@ export const tutorialTranslations = {
           details: 'Så ser det ut för gästerna: välj en låt i appen, välj läge, skicka in — önskemålet landar i den här listan.\n\nDu som värd ser direkt: vem som önskade (spelaravatar) och att det är en telefonförfrågan (📱). Gränsen på 3 gäller per profil — även via telefon.\n\nMer i companion-rundturen.',
         },
         autoplay: {
-          title: 'Autospel & genväg',
-          body: 'Aktivera autospel (Inställningar → Gameplay) så startar nästa låt automatiskt efter varje runda. Och: Ctrl+Q startar den översta köposten var som helst ifrån.',
-          details: 'Autospelskedjan: låten tar slut → resultatet visas kort → nästa köpost startar. När kön tar slut stannar kedjan rent.\n\nCtrl+Q funkar överallt — en klassiker när nästa runda ska rulla direkt.',
+          title: 'Genväg & flöde',
+          body: 'Ctrl+Q startar den översta köposten var som helst ifrån — klassikern när nästa runda ska rulla direkt.',
+          details: 'Flytet mellan rundorna: låten tar slut → resultatskärm → knappen "Spela Nästa Låt" (eller Ctrl+Q) håller kvällen igång.\n\nCtrl+Q funkar överallt — ingen omväg till kövyn behövs.',
         },
         finish: {
           title: 'Kön väntar! 🎧',
-          body: 'Nu kan du köläggning, sortering och reglerna.\n\nTips: kombinera autospel + companion-önskemål för en helt självkörande karaokekväll.',
+          body: 'Nu kan du köläggning, sortering och reglerna.\n\nTips: kombinera genvägen Ctrl+Q + companion-önskemål för en karaokekväll som sköter sig själv.',
         },
       },
     },
@@ -473,7 +473,7 @@ export const tutorialTranslations = {
         messages: {
           title: 'Historiken',
           body: 'Dina meddelanden syns till höger i cyan (som värd), bidrag från telefoner till vänster i lila. Varje meddelande bär sin tidsstämpel.',
-          details: 'Bakgrundsuppdatering: panelen hämtar nya meddelanden var tredje sekund — du missar inget även när den körs i bakgrunden.\n\nSkrivbordschattens avisering (klockan) visar olästa meddelanden även med panelen stängd.',
+          details: 'Bakgrundsuppdatering: panelen hämtar nya meddelanden var tredje sekund — du missar inget även när den körs i bakgrunden.\n\nChattknappen i menyraden sitter kvar — nya meddelanden ligger på plats direkt när du öppnar panelen igen.',
         },
         sendAs: {
           title: '"Skicka som"',
@@ -585,11 +585,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Prestationer & framsteg 🏆',
           body: 'Allt du samlar: prestationer med sällsyntheter, XP-nivåer med rangtitlar och de dagliga utmaningarna som XP-maskin.\n\nRundturen går igenom prestations-skärmen och utmaningarna.',
-          details: 'De tre systemen tillsammans:\n• XP: "bränslet" — från låtar, utmaningar och prestationer\n• Nivåer & rang: stiger med XP (nybörjare → legend) och visar framsteget med en blick\n• Prestationer: milstolpar med belöningar — vissa hemliga tills du låser upp dem\n\nAllt hänger på profilen — den som sjunger samlar (se profil-rundturen).',
+          details: 'De tre systemen tillsammans:\n• XP: "bränslet" — från låtar, utmaningar och prestationer\n• Nivåer & rang: stiger med XP (Nybörjare → Gudomlig) och visar framsteget med en blick\n• Prestationer: milstolpar med belöningar — vissa hemliga tills du låser upp dem\n\nAllt hänger på profilen — den som sjunger samlar (se profil-rundturen).',
         },
         navButton: {
           title: 'Prestationsknappen',
-          body: 'I menyraden leder pokalen till prestationerna — den andra pokalkolumnen bredvid visar topplistorna.',
+          body: 'I menyraden leder den första pokalen till topplistorna (rekorden) — den andra pokalen precis bredvid öppnar prestationerna.',
         },
         playerSelector: {
           title: 'Spelarval',
@@ -597,8 +597,8 @@ export const tutorialTranslations = {
         },
         stats: {
           title: 'Statistikkorten',
-          body: 'Fyra kort på en gång: upplåsta prestationer, XP insamlade från dem, fullföljande i procent och aktuell nivå med rangtitel.',
-          details: 'Procentkortet räknar: upplåsta ÷ alla prestationer. 100 % är samlarstrecket — belönas oftast med en egen hemlig prestation.\n\nNivåkortet visar dessutom rangtiteln ("Rising Star", "Karaoke-legend" …) — titlarna kommer från profilens framstegssystem.',
+          body: 'Fyra kort på en gång: upplåsta prestationer, XP insamlade från dem, fullständighet i procent och aktuell nivå med rangnamn.',
+          details: 'Procentkortet räknar: upplåsta ÷ alla prestationer. 100 % är samlarstrecket — belönas oftast med en egen hemlig prestation.\n\nNivåkortet visar dessutom rangnamnet ("Lärling", "Legend", "Gudomlig" …) — namnen kommer från profilens framstegssystem.',
         },
         filters: {
           title: 'Filter',
@@ -613,7 +613,7 @@ export const tutorialTranslations = {
         xpSystem: {
           title: 'Så flödar XP',
           body: 'XP kommer från tre källor: sjungna låtar (efter svårighetsgrad), utmaningar (dagliga/veckovisa) och prestationer. Nivåer låser upp rang — och vissa funktioner som profilmärken.',
-          details: 'XP-källorna i korthet:\n• Avslutad låt: grund-XP efter svårighetsgrad (lätt → expert, stigande)\n• Daglig lucka: 100–400 XP + bonusar\n• Veckolucka: 500–2000 XP\n• Prestation: engångsbelöning per prestation (25–1000 XP efter sällsynthet)\n\nNivåmätaren på profilsidan visar vägen till nästa nivå; rangerna byts med några nivåers mellanrum.',
+          details: 'XP-källorna i korthet:\n• Avslutad låt: grund-XP efter svårighetsgrad (lätt → expert, stigande)\n• Daglig lucka: 100–200 grund-XP, ×0,5–3 efter svårighetsgrad, plus bonusar\n• Veckolucka: 250–500 grund-XP, ×0,5–3 efter svårighetsgrad\n• Prestation: engångsbelöning per prestation (5–7500 XP beroende på prestationen)\n\nNivåmätaren på profilsidan visar vägen till nästa nivå; rangen klättrar med XP (Nybörjare → Gudomlig).',
         },
         navDaily: {
           title: 'Till utmaningarna',
@@ -627,17 +627,17 @@ export const tutorialTranslations = {
         slots: {
           title: 'Steg 2: de 5 luckorna',
           body: 'Fem uppgiftsluckor per dag som låses upp i ordning. Varje lucka visar uppgiften, spelbara svårighetsgrader och XP-värdet — högre svårighetsgrader multiplicerar.',
-          details: 'Luckmekaniken:\n• Luckorna 2–5 öppnas först när den föregående är klar eller överhoppad — kedjan tvingar fram variation.\n• Varje uppgift är ett villkor på nästa låt ("genren rock", "minst 80 % träffsäkerhet" …) — biblioteket filtrerar automatiskt fram matchande låtar.\n• Svårighetsval per lucka: upp till 3× XP-multiplikator på expert.\n\nVid midnatt droppar fem färska uppgifter — kedjan startar om.',
+          details: 'Luckmekaniken:\n• Luckorna 2–5 öppnas först när den föregående är klar — kedjan tvingar fram variation.\n• Varje uppgift är ett villkor på nästa låt ("genren rock", "minst 80 % träffsäkerhet" …) — biblioteket filtrerar automatiskt fram matchande låtar.\n• Svårighetsval per lucka: upp till 3× XP-multiplikator på Galet.\n\nVid midnatt droppar fem färska uppgifter — kedjan startar om.',
         },
         badges: {
           title: 'Märken & veckan',
-          body: 'Att rensa flera luckor ger dagliga märken (brons/silver/guld) med extra XP. Veckomotstycket körs 7 dagar med feta belöningar — samma mekanik, större pott.',
-          details: 'Märkesnivåer per dag:\n• Brons: 2 luckor\n• Silver: 3–4 luckor\n• Guld: alla 5 luckor — plus den dagliga bonus-XP:n\n\nVeckovis: 5 luckor över 7 dagar, 500–2000 XP per lucka, nollställning på måndagar. Att spela dagligen OCH veckovis ger dig nivåer betydligt snabbare än enbart låtar.',
+          body: 'Att rensa luckor ger dagliga märken (brons/silver/guld) med extra XP. Veckomotstycket körs 7 dagar med feta belöningar — samma mekanik, större pott.',
+          details: 'Märkesnivåer per dag:\n• Brons: 1 lucka\n• Silver: 3 luckor\n• Guld: alla 5 luckor — plus den dagliga bonus-XP:n\n\nVeckovis: 5 luckor över 7 dagar, 250–500 grund-XP per lucka (× svårighetsmultiplikatorn), nollställning på måndagar. Att spela dagligen OCH veckovis ger dig nivåer betydligt snabbare än enbart låtar.',
         },
         challengeModes: {
           title: 'Utmaningslägen',
-          body: 'Förutom luckorna finns fria utmaningslägen med modifierare (t.ex. "2× tempo", "inga noter") — för egna regler och extra XP utöver de dagliga uppgifterna.',
-          details: 'Lägena är fritt konfigurerbara: välj ett läge, kombinera modifierare, XP-potten växer med svårigheten.\n\nGenomföranden låser upp nya modifierare — samlarkortet i utmaningsområdet visar vad du har.',
+          body: 'Förutom luckorna finns fria utmaningslägen med modifierare (t.ex. "1,5× tempo", "text dold") — för egna regler och extra XP utöver de dagliga uppgifterna.',
+          details: 'Lägena är fritt valbara: välj ett läge, dess modifierare tillämpas automatiskt, XP-belöningen växer med svårighetsgraden.\n\nAvklarade lägen låser upp kedjade följeutmaningar — ju längre du spelar, desto mer öppnas.',
         },
         finish: {
           title: 'Dags att samla! 🏅',

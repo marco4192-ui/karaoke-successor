@@ -145,7 +145,7 @@ tournament: {
   tiebreak: 'Regra de Desempate',
   dynamicDifficulty: 'Dificuldade Dinâmica',
   songSelection: 'Seleção de Música',
-  seeding: 'Seeding',
+  seeding: 'Seed',
 },
 competitiveWords: {
   missingWords: 'Palavras Faltando',
@@ -323,7 +323,7 @@ battleRoyale: {
   eliminatedPlayerName: '{name} foi eliminado!',
   survivedPlayers: 'Jogadores Sobreviventes',
   countdownGo: 'JÁ!',
-  noteHighwayLabel: 'Note Highway',
+  noteHighwayLabel: 'Pista de Notas',
   noteHighwayDesc: 'Exibição real de notas com linha de canto e indicador de pitch',
   noteShapeLabel: 'Forma das Notas',
   noteDisplayStyleLabel: 'Estilo de Exibição',

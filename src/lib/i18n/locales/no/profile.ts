@@ -21,8 +21,8 @@ profile: {
   showPhoto: 'Vis bilde',
   photoUploaded: 'Bilde lastet opp',
   noPhoto: 'Ingen bilde',
-  privacyHint: 'Your scores will be uploaded to the global leaderboard.',
-  privacyHintDesc: 'You can opt out at any time in Profile Settings.',
+  privacyHint: 'Poengene dine lastes opp til den globale ledertavlen.',
+  privacyHintDesc: 'Du kan når som helst velge bort dette i profilinnstillingene.',
   storageMode: {
     title: 'Profillagring',
     local: 'Kun lokalt',
@@ -92,8 +92,8 @@ characterScreen: {
   companionAppLinkDesc: 'Skann denne QR-koden for å koble direkte med denne profilen i companion-appen.',
   hideQrCode: 'Skjul QR Code',
   showQrCode: 'Vis QR Code',
-  leaderboardParticipation: 'Leaderboard Participation',
-  leaderboardParticipationDesc: 'Participate in the online leaderboard and share your scores with other players',
+  leaderboardParticipation: 'Deltakelse på ledertavlen',
+  leaderboardParticipationDesc: 'Delta i ledertavlen på nett og del poengene dine med andre spillere',
   loadProfile: 'Last inn online-profil',
 },
 characterCard: {
@@ -121,7 +121,7 @@ playerProgression: {
   xpNeeded: 'XP nødvendig',
   songsPlayed: 'Sanger spilt',
   goldenNotes: 'Gylne noter',
-  bestCombo: 'Beste Combo',
+  bestCombo: 'Beste kombo',
   totalScore: 'Total poengsum',
   achievementsTitle: 'Prestasjoner',
   more: '+{n} flere',
@@ -171,7 +171,7 @@ achievements: {
     description: 'Få over 90% presisjon',
   },
   score_8k: {
-    name: 'Rising Star',
+    name: 'Stjerneskudd',
     description: 'Få over 8 000 poeng',
   },
   score_9k: {
@@ -600,7 +600,7 @@ mobileAchievements: {
     description: 'Syng din første sang',
   },
   ten_songs: {
-    title: 'Rising Star',
+    title: 'Stjerneskudd',
     description: 'Syng 10 sanger',
   },
   fifty_songs: {
