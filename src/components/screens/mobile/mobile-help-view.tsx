@@ -94,12 +94,8 @@ const HELP_CHAPTERS: HelpChapter[] = [
   },
 ];
 
-// Custom-Scrollbar (gleiche Optik wie die anderen Companion-Views).
-const SCROLL_AREA =
-  'overflow-y-auto overscroll-contain pr-1.5 -mr-1 ' +
-  '[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent] ' +
-  '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent ' +
-  '[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20';
+// Custom-Scrollbar (gleiche Neon-Optik wie die anderen Companion-Views, globals.css R38).
+const SCROLL_AREA = 'overflow-y-auto overscroll-contain pr-1.5 -mr-1 kz-scroll';
 
 // ===================== Komponente =====================
 

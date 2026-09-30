@@ -59,12 +59,8 @@ const CATEGORY_FILTERS: { id: CategoryFilter; labelKey: string; fallback: string
   { id: 'special',     labelKey: 'achievementsScreen.categories.special',     fallback: 'Speziell' },
 ];
 
-/** Gemeinsame Scroll-Klasse: dunkle schlanke Scrollbar (Tailwind 4 arbitrary). */
-const SCROLL_AREA =
-  'overflow-y-auto overscroll-contain pr-1 ' +
-  '[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent] ' +
-  '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent ' +
-  '[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20';
+/** Gemeinsame Scroll-Klasse: schlanke Neon-Scrollbar (globals.css R38). */
+const SCROLL_AREA = 'overflow-y-auto overscroll-contain pr-1 kz-scroll';
 
 // ===================== Hilfsfunktionen =====================
 

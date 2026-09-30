@@ -191,9 +191,7 @@ export function MirrorQueueLite({
             Custom-Scrollbar); Cover laden lazy nur fuer sichtbare Zeilen. */}
         <div
           className={
-            'flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1 -mr-1 ' +
-            '[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent] ' +
-            '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15'
+            'flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1 -mr-1 kz-scroll'
           }
         >
           {activeItems.map((item, index) => {

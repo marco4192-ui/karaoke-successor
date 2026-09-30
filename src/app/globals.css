@@ -829,12 +829,151 @@
   100% { transform: translateX(-100%); }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   NEON GAME SCROLLBARS (R38)
+   Ersetzt die grauen OS-/Windows-Scrollbars durch ein theme-abhängiges
+   Neon-Design. Farben folgen --theme-primary/--theme-secondary aus
+   applyTheme() (themes.ts); Fallback = Neon-Nights-Cyan/Magenta.
+   - Firefox: schlanke Leiste + Einfarb-Daumen (Gradients nicht möglich)
+   - WebKit/Chromium (Tauri-WebView, Chrome, Edge): Neon-Pille mit Glow,
+     transparentem Rand (background-clip: padding-box) und Hover/Active-
+     Verstärkung
+   - Radix-ScrollAreas blenden die native Leiste selbst aus
+     ([data-radix-scroll-area-viewport] hat höhere Spezifität als `*`
+     und gewinnt deshalb) → keine Doppel-Scrollbars
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Globale Vorgabe für ALLE Scrollleisten (Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.45) transparent;
+  scrollbar-color: color-mix(in srgb, var(--theme-primary, #00ffff) 50%, transparent) transparent;
+}
+
+/* Globale Vorgabe (WebKit/Chromium): schlanke Neon-Pille */
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  background-color: rgba(0, 229, 255, 0.45);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary, #00ffff) 60%, transparent),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 42%, transparent)
+  );
+  box-shadow: 0 0 7px color-mix(in srgb, var(--theme-primary, #00ffff) 28%, transparent);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 229, 255, 0.75);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary, #00ffff) 85%, transparent),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 65%, transparent)
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-primary, #00ffff) 45%, transparent);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: rgba(0, 229, 255, 0.95);
+  background-image: linear-gradient(
+    180deg,
+    var(--theme-primary, #00ffff),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 80%, transparent)
+  );
+  box-shadow: 0 0 14px color-mix(in srgb, var(--theme-primary, #00ffff) 60%, transparent);
+}
+
+/* Schlank-Variante (6px) für Listen in Karten — Mobile-Mirrors, Queues,
+   Reader. Farben/Verhalten kommen aus den globalen Regeln oben. */
+.kz-scroll {
+  scrollbar-width: thin;
+}
+
+.kz-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.kz-scroll::-webkit-scrollbar-thumb {
+  border-width: 1px;
+}
+
+/* Radix-ScrollArea-Daumen (ersetzt das alte graue bg-border) */
+.kz-scroll-thumb {
+  background-color: rgba(0, 229, 255, 0.45);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary, #00ffff) 65%, transparent),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 50%, transparent)
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 7px color-mix(in srgb, var(--theme-primary, #00ffff) 30%, transparent);
+}
+
+.kz-scroll-thumb:hover {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary, #00ffff) 90%, transparent),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 70%, transparent)
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-primary, #00ffff) 45%, transparent);
+}
+
+.kz-scroll-thumb:active {
+  background-image: linear-gradient(
+    180deg,
+    var(--theme-primary, #00ffff),
+    color-mix(in srgb, var(--theme-secondary, #ff00ff) 80%, transparent)
+  );
+}
+
+/* Hilfsklassen — wurden in mehreren Komponenten genutzt, waren aber
+   nirgendwo definiert (tote Klassen → fette native Leisten).
+   Jetzt echte Utilities. */
+.no-scrollbar,
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-width: 1px;
+}
+
 /* ===================== Party Session History ===================== */
 
-/* Horizontal session cards: slim, subtle scrollbar that appears on hover */
+/* Horizontal session cards: schlanke Neon-Leiste (Farben global R38) */
 .party-history-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
   scroll-snap-type: x proximity;
 }
 
@@ -844,20 +983,6 @@
 
 .party-history-scroll::-webkit-scrollbar {
   height: 6px;
-}
-
-.party-history-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.party-history-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-
-.party-history-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
 }
 
 /* Hide scrollbar entirely on touch devices (swipe is natural there) */
@@ -872,56 +997,26 @@
 
 /* ===================== Taxonomy lists (Settings → Genres & Languages) ==== */
 
-/* Vertical entry lists: slim, subtle scrollbar that appears on hover */
+/* Vertical entry lists: schlanke Neon-Leiste (Farben global R38) */
 .taxonomy-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
 .taxonomy-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
-.taxonomy-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.taxonomy-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-
-.taxonomy-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
-}
-
 /* force recompile r8 */
 
 /* ===================== Party Setup Sidebar ===================== */
 
-/* Setup sidebar (game explanation + companion QR): slim vertical scrollbar */
+/* Setup sidebar (game explanation + companion QR): schlanke Neon-Leiste (Farben global R38) */
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
 .sidebar-scroll::-webkit-scrollbar {
   width: 6px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-
-.sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
 }
 
 /* ===================== Jukebox — Neon Lounge ===================== */
@@ -1010,53 +1105,26 @@
 .jukebox-blob-a { animation: blob-float-a 11s ease-in-out infinite; }
 .jukebox-blob-b { animation: blob-float-b 14s ease-in-out infinite; }
 
-/* Playlist sidebar slim scrollbar */
+/* Playlist sidebar: schlanke Neon-Leiste (Farben global R38) */
 .jukebox-queue-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
 }
 
 .jukebox-queue-scroll::-webkit-scrollbar { width: 6px; }
-.jukebox-queue-scroll::-webkit-scrollbar-track { background: transparent; }
-.jukebox-queue-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 3px;
-}
-.jukebox-queue-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-}
 
-/* Editor side/header panel slim scrollbar */
+/* Editor side/header panel: schlanke Neon-Leiste (Farben global R38) */
 .editor-panel-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
 .editor-panel-scroll::-webkit-scrollbar { width: 6px; }
-.editor-panel-scroll::-webkit-scrollbar-track { background: transparent; }
-.editor-panel-scroll::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.22);
-  border-radius: 3px;
-}
-.editor-panel-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-}
 
-/* MIDI track picker slim scrollbar (import screen) */
+/* MIDI track picker (import screen): schlanke Neon-Leiste (Farben global R38) */
 .midi-track-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.35) transparent;
 }
 
 .midi-track-scroll::-webkit-scrollbar { width: 6px; }
-.midi-track-scroll::-webkit-scrollbar-track { background: transparent; }
-.midi-track-scroll::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.22);
-  border-radius: 3px;
-}
-.midi-track-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.4);
-}
 
 /* Reduced motion: stop decorative animations */
 @media (prefers-reduced-motion: reduce) {
