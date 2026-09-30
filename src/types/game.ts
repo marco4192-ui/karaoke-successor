@@ -292,6 +292,11 @@ export interface GameState {
   missingWordsIndices: number[];
   currentLineIndex: number;
   results: GameResult | null;
+  /** R39/P5: Gesangs-Geräte des aktuellen Songs (Standard-Spiel, gesetzt
+   *  beim Start aus Bibliothek/Queue): true = dieser Spieler singt über die
+   *  Companion-App (Handy-Mikrofon), false/undefined = Desktop-Mikrofon.
+   *  Steuert u. a., ob die Companion-Pitch-Quelle auf P2 gelegt wird. */
+  deviceAssignment?: { p1Companion: boolean; p2Companion: boolean };
 }
 
 export interface GameResult {
@@ -337,6 +342,13 @@ export interface QueueItem {
   companionCode?: string;
   // Status
   status?: 'pending' | 'playing' | 'completed';
+  // R39/P4+P5: Singing device per player — 'companion' = sing via the
+  // companion app (phone mic), 'microphone' = sing via a desktop mic.
+  playerMicSource?: 'companion' | 'microphone';
+  partnerMicSource?: 'companion' | 'microphone';
+  // Display names of the chosen desktop mics (queue badges / mirror UI)
+  playerMicName?: string;
+  partnerMicName?: string;
 }
 
 export interface PitchDetectionResult {

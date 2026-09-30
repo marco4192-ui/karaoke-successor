@@ -125,7 +125,12 @@ export function UnifiedPartySetup({
   // key as dep so the 2s connection poll does not re-trigger the POST.
   const connectedKey = Array.from(connectedProfileIds).sort().join(',');
   useEffect(() => {
-    if (selectedPlayers.length === 0 && !songSelection) return; // nothing to mirror yet
+    // R39/P6: Der Setup-Push läuft jetzt IMMER solange der Setup-Screen
+    // gemountet ist — auch wenn noch nichts ausgewählt ist. Vorher kehrte er
+    // bei leerer Auswahl früh zurück: Die Companion-Party-Settings zeigten
+    // dann KEINE verfügbaren Mics und erkannten Companion-verbundene Spieler
+    // nicht (mics + connectedProfileIds kamen schlicht nie an). Die Debounce-
+    // Logik (400 ms, deps nur bei echten Änderungen) verhindert Spam.
     const connectedIds = connectedKey ? connectedKey.split(',') : [];
     const timer = setTimeout(() => {
       const payload = {

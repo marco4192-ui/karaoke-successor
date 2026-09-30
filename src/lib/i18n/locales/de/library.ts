@@ -203,6 +203,7 @@ songStart: {
   micAssignment: '🎤 Mikrofon zuweisen',
   automatic: '— Automatisch —',
   micAssignmentLabel: '🎤 Mikrofon-Zuweisung',
+  companionApp: 'Companion-App',
   player1: 'Spieler 1',
   player2: 'Spieler 2',
   part1: 'Teil 1',

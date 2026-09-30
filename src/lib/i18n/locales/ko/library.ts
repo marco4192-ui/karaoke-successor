@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 마이크 할당',
   automatic: '— 자동 —',
   micAssignmentLabel: '🎤 마이크 할당',
+  companionApp: '컴패니언 앱',
   player1: '플레이어 1',
   player2: '플레이어 2',
   part1: '파트 1',

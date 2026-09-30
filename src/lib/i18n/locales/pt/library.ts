@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 Atribuir microfone',
   automatic: '— Automático —',
   micAssignmentLabel: '🎤 Atribuição de Microfone',
+  companionApp: 'App Companheiro',
   player1: 'Jogador 1',
   player2: 'Jogador 2',
   part1: 'Parte 1',

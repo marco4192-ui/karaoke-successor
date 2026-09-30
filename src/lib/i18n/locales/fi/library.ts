@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 Liitä mikrofoni',
   automatic: '— Automaattinen —',
   micAssignmentLabel: '🎤 Mikrofonin liittäminen',
+  companionApp: 'Companion-sovellus',
   player1: 'Pelaaja 1',
   player2: 'Pelaaja 2',
   part1: 'Osa 1',

@@ -366,7 +366,9 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
       if (data.success) {
         const serverQueue = data.queue || [];
         setQueue(serverQueue);
-        const pendingCount = serverQueue.filter((q: { status: string }) => q.status === 'pending').length;
+        // R39/P7: Slots zählen nur Handy-Wünsche — die gespiegelten Desktop-
+        // Items (isDesktop) belegen keine Companion-Slots.
+        const pendingCount = serverQueue.filter((q: { status: string; isDesktop?: boolean }) => q.status === 'pending' && !q.isDesktop).length;
         setSlotsRemaining(Math.max(0, 3 - pendingCount));
       }
     } catch (error) {

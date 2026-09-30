@@ -34,6 +34,148 @@ export const mobileTranslations = {
     localOnlyNote: 'Den här hjälpen körs helt på din telefon — den styr inte skrivbordet.',
   },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Guidade tutorials för Companion-appen — kapitel för kapitel på bara några minuter. Som i huvudappen, fast på din telefon.',
+  backToOverview: 'Tillbaka till översikten',
+  stepOf: 'Steg {n} av {m}',
+  stepCount: '{n} steg',
+  reset: 'Återställ tutorials',
+  moreDetails: 'Läs mer',
+  back: 'Tillbaka',
+  next: 'Nästa',
+  finish: 'Klar',
+
+  start: {
+    title: 'Kom igång',
+    desc: 'Anslut, skapa din profil och lär känna appen',
+    s1: {
+      t: 'Anslut till skrivbordet',
+      b: 'Skanna QR-koden på skrivbordets startsida eller öppna companion-länken. Telefonen och datorn måste vara i samma WiFi-nätverk — koden uppe till höger i rubriken bekräftar anslutningen.',
+      d: 'Tappas anslutningen återansluter appen automatiskt. Annars — kontrollera WiFi och tryck på "Försök ansluta igen".',
+    },
+    s2: {
+      t: 'Din spelarprofil',
+      b: 'Skapa en profil med namn, färg och foto. Tryck på din avatar uppe till vänster för att redigera den när som helst — synkronisering med skrivbordet sker automatiskt.',
+    },
+    s3: {
+      t: 'Appen i korthet',
+      b: 'Flikfältet längst ner lotsar dig genom alla delar: start, bibliotek, fest, utmaning, kö, jukebox, poäng, prestationer och inställningar. Uppe till höger hittar du hjälp (?) och chatt (💬).',
+    },
+    s4: {
+      t: 'Spellägen på startsidan',
+      b: 'Rutorna visar spellägena: solo (1 spelare), duell (2 mickar), duett (2 röster) och festläge med 9 spellägen för upp till 32 spelare. Ett tryck öppnar biblioteket med läget förvalt.',
+    },
+  },
+
+  songs: {
+    title: 'Beställa låtar',
+    desc: 'Sök i biblioteket, välj läge och enhet, köa upp',
+    s1: {
+      t: 'Hitta en låt',
+      b: 'I biblioteket söker du via sökfältet (titel, artist, genre) eller filtrerar på genre, språk, decennium och virala hits. Ett tryck på en låt öppnar låtalternativen.',
+    },
+    s2: {
+      t: 'Läge och svårighetsgrad',
+      b: 'Uppe väljer du solo, duell eller duett (vid duell/duett även en partner). Där under ställer du in svårighetsgraden — skrivbordets standard visas som tips.',
+    },
+    s3: {
+      t: 'Välj sjungenhet',
+      b: '"Sjungenhet" avgör vad du sjunger i: 📱 Companion-appen (din telefons mikrofon — förvald för anslutna spelare) eller 🎤 en mikrofon på skrivbordet. Din partner får också en egen enhet.',
+      d: 'Valet läggs i kön tillsammans med låten — skrivbordet vet därmed exakt vilken röst som kommer varifrån vid start.',
+    },
+    s4: {
+      t: 'I kön',
+      b: '"Lägg i kön" skickar in låten — upp till 3 låtar per spelare. Alternativt lägger du låten på en spellista eller utmanar någon i chatten.',
+    },
+  },
+
+  queue: {
+    title: 'Kön',
+    desc: 'Hantera önskemål, sortera och (med kontroll) starta',
+    s1: {
+      t: 'Hela kön',
+      b: 'Köfliken visar alla önskemål — även låtar som köats från skrivbordet (🖥️-markering). Vem som önskat låten syns på avataren; 📱 betyder: den sjungs via Companion-appen.',
+    },
+    s2: {
+      t: 'Ta bort och sortera',
+      b: 'Med ✕ tar du bort dina egna låtar. Genom att dra i greppet (⠿) flyttar du låtar till en annan position.',
+      d: 'Som kontrollerande enhet får du ta bort VALFRI låt och ordna om hela köordningen.',
+    },
+    s3: {
+      t: 'Med kontroll: starta låtar',
+      b: 'Håller du kontrollen får du två extra knappar: "Spela nästa låt" startar den första låten i kön, "Rensa alla" tömmer hela kön — plus en ▶-spelknapp på varje låt.',
+    },
+  },
+
+  singing: {
+    title: 'Sjung med mobilen',
+    desc: 'Mobilen som mikrofon, visning och tips',
+    s1: {
+      t: 'Automatisk start',
+      b: 'När det är din tur att sjunga startar din mikrofon automatiskt — i festläget precis som i Companion Sing-A-Long. I Battle Royale och Medley sjunger alla companion-spelare samtidigt.',
+    },
+    s2: {
+      t: 'Volym och tonvisning',
+      b: 'Balken under rubriken visar live volymen och den upptäckta tonen i din sång. I spelet ser du text, tonhöjdsvisning och poäng speglade.',
+      d: 'Första gången frågar webbläsaren om mikrofonåtkomst — tryck på "Tillåt". Behörigheten kan du ändra senare i webbläsarens webbplatsinställningar.',
+    },
+    s3: {
+      t: 'Träffa bättre',
+      b: 'Håll mobilen nära munnen och sjung högt och tydligt. Musik som spelas direkt vid enheten (högtalare bredvid mobilen) stör tonigenkänningen — hörlurar på skrivbordet är idealiskt.',
+    },
+  },
+
+  party: {
+    title: 'Festspel',
+    desc: 'Ge micken, singalong, Battle Royale m.m.',
+    s1: {
+      t: 'Delta utan kontroll',
+      b: 'Festspelen körs på skrivbordet — du deltar direkt från mobilen: välja låtar, rösta, sjunga. Kontroll behövs INTE.',
+    },
+    s2: {
+      t: 'Spellägena',
+      b: 'Ge micken (en skrivbordsmikrofon går runt till alla), Companion Sing-A-Long (alla sjunger i mobilen), Battle Royale, Medley, turnering, Saknade ord, Blind Karaoke och Betygsätt min låt.',
+      d: 'Obs: i "Ge micken" sjunger ALLA i samma skrivbordsmikrofon — där fungerar mobilen bara som fjärrkontroll och spegel.',
+    },
+    s3: {
+      t: 'Rösta och välja låtar',
+      b: 'Vid låtomröstningar dyker kandidaterna upp direkt i din mobil — ett tryck räcker. I festuppstarten ser du spelare, mickar och inställningar speglade live och kan (med kontroll) ändra allt från mobilen.',
+    },
+  },
+
+  control: {
+    title: 'Fjärrkontroll och chatt',
+    desc: 'Styr skrivbordet, lås, chatta',
+    s1: {
+      t: 'Ta kontroll',
+      b: '"Ta Kontroll" (startsidan) kopplar din mobil till skrivbordet: dina flikar styr datorn — start, bibliotek, fest, kö, jukebox, poäng, prestationer och inställningar.',
+    },
+    s2: {
+      t: 'Bara en kontrollerande enhet',
+      b: 'Exakt EN enhet styr i taget. Håller någon annan kontrollen visar startsidan vem det är. Med "Släpp Kontroll" frigör du platsen.',
+      d: 'Områden med 🔒 (fest, utmaning, jukebox, inställningar) kräver kontrollen — din egen profil och biblioteket är alltid öppna.',
+    },
+    s3: {
+      t: 'Chatt och extra',
+      b: 'Tryck på 💬 uppe till höger för att chatta med alla — utmaningar hamnar direkt i chatten. Därtill finns jukebox-önskelistan, daglig utmaning, poäng och prestationer som egna flikar.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Välj ett spelläge och önska en låt',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Sjungenhet',
+deviceMe: 'Jag sjunger med',
+devicePartner: 'Partnern sjunger med',
+deviceCompanion: 'Companion-app',
+deviceMic: 'Mikrofon',
+deviceMicAuto: 'Mikrofon automatiskt',
+deviceNoMics: 'Inga mikrofoner konfigurerade på skrivbordet — standardmikrofonen används.',
+deviceConnectedBadge: 'ansluten',
+
 mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Kontroll övertagen',

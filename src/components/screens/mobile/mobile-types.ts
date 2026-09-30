@@ -118,7 +118,12 @@ export interface QueueItem {
   difficulty?: 'easy' | 'medium' | 'hard';
   playerMicSource?: 'companion' | 'microphone';
   partnerMicSource?: 'companion' | 'microphone';
+  playerMicName?: string;
+  partnerMicName?: string;
   duetPartsSwapped?: boolean;
+  /** R39/P7: Eintrag spiegelt die lokale Desktop-Queue (syncdesktopqueue) —
+   *  Play/Remove/Reorder laufen für diese Items über Desktop-Remote-Commands. */
+  isDesktop?: boolean;
 }
 
 export interface JukeboxWishlistItem {
@@ -325,6 +330,9 @@ export interface GameState {
   partyLibrarySong?: { id: string; title: string; artist: string } | null;
   // Whether party mode is active on the desktop (for showing Leave Party button)
   isPartyModeActive?: boolean;
+  // R39/P4: Verfügbare Desktop-Mikrofone (aus MULTI_MIC_CONFIG, 2s-Push) —
+  // für die Gesangs-Gerät-Auswahl im Song-Overlay der Bibliothek.
+  availableMics?: Array<{ id: string; name: string }>;
   // Desktop leave/pause dialog state (synced 1:1 with desktop)
   desktopDialog?: 'party-leave' | 'song-pause' | 'song-end-early' | null;
   // Who initiated the pause (for overlay display)

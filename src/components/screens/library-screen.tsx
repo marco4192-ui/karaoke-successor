@@ -315,10 +315,25 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
     if (startOptions.partyMode && startOptions.players.length > 0) addPlayers(startOptions.players);
     else if (startOptions.mode === 'single') { const pid = startOptions.players[0] || activeProfileId; if (pid) addPlayers([pid]); }
     else if ((startOptions.mode === 'duel' || startOptions.mode === 'duet') && startOptions.players.length >= 2) addPlayers(startOptions.players);
-    
+
     const resolvedGameMode: GameMode = startOptions.partyMode || (startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard');
     setDifficulty(startOptions.difficulty);
     setGameMode(resolvedGameMode);
+    // R39/P5: Gesangs-Geräte ins GameState schreiben — steuert im Standard-
+    // Spiel, ob die Companion-Pitch-Quelle auf P1/P2 gelegt wird (siehe
+    // useDuetP2Pitch + game-screen-hook). COMPANION_DEVICE = Sentinel 'companion'.
+    {
+      const isDual = resolvedGameMode === 'duel' || resolvedGameMode === 'duet';
+      useGameStore.setState(s => ({
+        gameState: {
+          ...s.gameState,
+          deviceAssignment: {
+            p1Companion: isDual ? startOptions.micIdP1 === 'companion' : startOptions.micId === 'companion',
+            p2Companion: isDual ? startOptions.micIdP2 === 'companion' : false,
+          },
+        },
+      }));
+    }
     setShowSongModal(false);
     
     onSelectSong(songWithUrls, resolvedGameMode);

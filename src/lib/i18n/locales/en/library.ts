@@ -216,6 +216,7 @@ export const libraryTranslations = {
     micAssignment: '🎤 Assign microphone',
     automatic: '— Automatic —',
     micAssignmentLabel: '🎤 Microphone Assignment',
+    companionApp: 'Companion App',
     player1: 'Player 1',
     player2: 'Player 2',
     part1: 'Part 1',

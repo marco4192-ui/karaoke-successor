@@ -34,6 +34,148 @@ export const mobileTranslations = {
     localOnlyNote: 'Denne hjælp kører helt på din telefon — den styrer ikke skrivebordet.',
   },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Guidede tutorials til Companion-appen — kapitel for kapitel på få minutter. Ligesom i hovedappen, bare på din telefon.',
+  backToOverview: 'Tilbage til oversigten',
+  stepOf: 'Trin {n} af {m}',
+  stepCount: '{n} trin',
+  reset: 'Nulstil tutorials',
+  moreDetails: 'Læs mere',
+  back: 'Tilbage',
+  next: 'Næste',
+  finish: 'Færdig',
+
+  start: {
+    title: 'Kom godt i gang',
+    desc: 'Forbind, opret din profil og lær appen at kende',
+    s1: {
+      t: 'Forbind til skrivebordet',
+      b: 'Skann QR-koden på skrivebordets startside, eller åbn companion-linket. Telefonen og pc\'en skal være i samme WiFi-netværk — koden øverst til højre i headeren bekræfter forbindelsen.',
+      d: 'Mistes forbindelsen, genopretter appen automatisk. Ellers — tjek WiFi\'et og tryk på "Prøv forbindelse igen".',
+    },
+    s2: {
+      t: 'Din spillerprofil',
+      b: 'Opret en profil med navn, farve og foto. Tryk på din avatar øverst til venstre for at redigere den når som helst — synkronisering med skrivebordet sker automatisk.',
+    },
+    s3: {
+      t: 'Appen i oversigt',
+      b: 'Tabulatorbjælken i bunden fører dig gennem alle områder: start, bibliotek, fest, udfordring, kø, jukebox, point, præstationer og indstillinger. Øverst til højre finder du hjælp (?) og chat (💬).',
+    },
+    s4: {
+      t: 'Spiltilstande på startsiden',
+      b: 'Felterne viser spiltilstandene: solo (1 spiller), duel (2 mikrofoner), duet (2 stemmer) og festtilstand med 9 spiltilstande for op til 32 spillere. Et tryk åbner biblioteket med tilstanden valgt på forhånd.',
+    },
+  },
+
+  songs: {
+    title: 'Bestille sange',
+    desc: 'Gennemse biblioteket, vælg tilstand og enhed, sæt i kø',
+    s1: {
+      t: 'Find en sang',
+      b: 'I biblioteket søger du via søgefeltet (titel, kunstner, genre) eller filtrerer på genre, sprog, årti og virale hits. Et tryk på en sang åbner sangindstillingerne.',
+    },
+    s2: {
+      t: 'Tilstand og sværhedsgrad',
+      b: 'Øverst vælger du solo, duel eller duet (ved duel/duet også en partner). Dernede indstiller du sværhedsgraden — skrivebordets standard vises som hint.',
+    },
+    s3: {
+      t: 'Vælg syngeenhed',
+      b: '"Syngeenhed" afgør, hvad du synger i: 📱 Companion-appen (din telefons mikrofon — forvalgt for tilsluttede spillere) eller 🎤 en mikrofon på skrivebordet. Din partner får også sin egen enhet.',
+      d: 'Valget lægges i køen sammen med sangen — så ved skrivebordet ved start præcis, hvilken stemme der kommer hvorfra.',
+    },
+    s4: {
+      t: 'I køen',
+      b: '"Tilføj til kø" indsender sangen — op til 3 sange pr. spiller. Alternativt lægger du sangen på en playliste eller udfordrer nogen i chatten.',
+    },
+  },
+
+  queue: {
+    title: 'Køen',
+    desc: 'Administrer ønsker, sortér og (med kontrol) start',
+    s1: {
+      t: 'Hele køen',
+      b: 'Kø-fanebladet viser alle ønsker — også sange i kø fra skrivebordet (🖥️-mærke). Hvem der har bedt om sangen, ses på avataren; 📱 betyder: den synges via Companion-appen.',
+    },
+    s2: {
+      t: 'Fjerne og sortere',
+      b: 'Med ✕ fjerner du dine egne sange. Træk i håndtaget (⠿) for at flytte sange til en anden position.',
+      d: 'Som styrende enhed må du fjerne ENHVER sang og omarrangere hele rækkefølgen.',
+    },
+    s3: {
+      t: 'Med kontrol: starte sange',
+      b: 'Har du kontrollen, får du to ekstra knapper: "Afspil næste sang" starter den første sang i køen, "Ryd alle" tømmer hele køen — plus en ▶-afspilningsknap på hver sang.',
+    },
+  },
+
+  singing: {
+    title: 'Synge med telefonen',
+    desc: 'Telefonen som mikrofon, visning og tips',
+    s1: {
+      t: 'Automatisk start',
+      b: 'Når det er din tur som sanger, starter din mikrofon automatisk — i festtilstand ligesom i Companion Sing-A-Long. I Battle Royale og Medley synger alle companion-spillere på samme tid.',
+    },
+    s2: {
+      t: 'Volumen og tonevisning',
+      b: 'Bjælken under headeren viser live volumen og den genkendte tone i din sang. I spillet ser du sangtekst, tonehøjdevisning og point spejlet.',
+      d: 'Første gang spørger browseren om mikrofonadgang — tryk på "Tillad". Adgangsrettigheden kan du ændre senere i browserens webstedsindstillinger.',
+    },
+    s3: {
+      t: 'Bedre præcision',
+      b: 'Hold telefonen tæt på munden og syng højt og tydeligt. Musik, der afspilles direkte ved enheden (højttalere ved siden af telefonen), forstyrrer tongenkendelsen — hovedtelefoner på skrivebordet er ideelle.',
+    },
+  },
+
+  party: {
+    title: 'Festspil',
+    desc: 'Pass the Mic, singalong, Battle Royale m.m.',
+    s1: {
+      t: 'Deltage uden kontrol',
+      b: 'Festspillene kører på skrivebordet — du deltager direkte fra telefonen: vælge sange, stemme, synge. Kontrol behøver du IKKE.',
+    },
+    s2: {
+      t: 'Spiltilstandene',
+      b: 'Pass the Mic (én skrivebordsmikrofon går videre til alle), Companion Sing-A-Long (alle synger på telefonen), Battle Royale, Medley, turnering, Manglende ord, Blind karaoke og Bedøm min sang.',
+      d: 'Bemærk: I "Pass the Mic" synger ALLE i den samme skrivebordsmikrofon — dér fungerer telefonen kun som fjernbetjening og spejl.',
+    },
+    s3: {
+      t: 'Stemme og vælge sange',
+      b: 'Ved sangafstemninger dukker kandidaterne direkte op på din telefon — ét tryk er nok. I festopsætningen ser du spillere, mikrofoner og indstillinger spejlet live, og du kan (med kontrol) ændre det hele fra telefonen.',
+    },
+  },
+
+  control: {
+    title: 'Fjernbetjening og chat',
+    desc: 'Styr skrivebordet, lås, chat',
+    s1: {
+      t: 'Tag kontrol',
+      b: '"Tag kontrol" (startsiden) forbinder din telefon med skrivebordet: dine faneblade styrer pc\'en — start, bibliotek, fest, kø, jukebox, point, præstationer og indstillinger.',
+    },
+    s2: {
+      t: 'Kun én styrende enhed',
+      b: 'Nøjagtig ÉN enhed styrer ad gangen. Holder en anden kontrollen, viser startsiden, hvem det er. Med "Frigiv kontrol" frigør du pladsen.',
+      d: 'Områder med 🔒 (fest, udfordring, jukebox, indstillinger) kræver kontrollen — din egen profil og biblioteket er altid åbne.',
+    },
+    s3: {
+      t: 'Chat og ekstra',
+      b: 'Tryk på 💬 øverst til højre for at chatte med alle — udfordringer lander direkte i chatten. Dertil kommer jukebox-ønskelisten, daglig udfordring, point og præstationer som egne faneblade.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Vælg en spiltilstand og ønsk dig en sang',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Syngeenhed',
+deviceMe: 'Jeg synger med',
+devicePartner: 'Partneren synger med',
+deviceCompanion: 'Companion-app',
+deviceMic: 'Mikrofon',
+deviceMicAuto: 'Mikrofon automatisk',
+deviceNoMics: 'Ingen mikrofoner konfigureret på skrivebordet — standardmikrofonen bruges.',
+deviceConnectedBadge: 'tilsluttet',
+
 mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Kontrol overtaget',

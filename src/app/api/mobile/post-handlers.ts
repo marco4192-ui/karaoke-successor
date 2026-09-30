@@ -385,6 +385,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           difficulty?: 'easy' | 'medium' | 'hard';
           playerMicSource?: 'companion' | 'microphone';
           partnerMicSource?: 'companion' | 'microphone';
+          playerMicId?: string;
+          partnerMicId?: string;
+          playerMicName?: string;
+          partnerMicName?: string;
           duetPartsSwapped?: boolean;
         };
         // Input validation: songTitle and songArtist max 200 chars
@@ -483,6 +487,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           difficulty: queuePayload.difficulty,
           playerMicSource: queuePayload.playerMicSource,
           partnerMicSource: queuePayload.partnerMicSource,
+          // R39/P4: gewähltes Desktop-Mikrofon (Konfig-ID + Anzeigename) —
+          // der Desktop löst die ID beim Start auf (resolveMicDeviceId).
+          playerMicId: queuePayload.playerMicId,
+          partnerMicId: queuePayload.partnerMicId,
+          playerMicName: queuePayload.playerMicName,
+          partnerMicName: queuePayload.partnerMicName,
           duetPartsSwapped: queuePayload.duetPartsSwapped,
         };
         
@@ -500,7 +510,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       }
 
       case 'reorderqueue': {
-        // Reorder pending queue items — only the user's own items
+        // Reorder pending queue items.
+        // R39/P7: The remote-lock holder (controlling companion) may reorder
+        // ALL pending items (full-queue drag&drop on the phone, main-app
+        // parity); everyone else can still reorder only their OWN items.
         if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
         }
@@ -514,16 +527,23 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           return Response.json({ success: false, message: 'Invalid ordered IDs' }, { status: 400 });
         }
 
-        // Get all pending items belonging to this user
-        const userPendingItems = mutableState.songQueue.filter(
-          q => q.companionCode === reorderClient.connectionCode && q.status === 'pending'
-        );
+        // R39/P7: Remote-lock holders reorder across ALL pending items; the
+        // desktop host (auth) too.
+        const reorderHoldsLock = mutableState.remoteControlState.lockedBy === clientId;
+        const reorderAll = reorderHoldsLock || requireAuth(request);
 
-        // Verify all orderedIds belong to this user and are pending
+        // Get all pending items belonging to this user
+        const userPendingItems = reorderAll
+          ? mutableState.songQueue.filter(q => q.status === 'pending')
+          : mutableState.songQueue.filter(
+            q => q.companionCode === reorderClient.connectionCode && q.status === 'pending'
+          );
+
+        // Verify all orderedIds belong to the allowed set and are pending
         const userPendingIds = new Set(userPendingItems.map(q => q.id));
         for (const id of reorderPayload.orderedIds) {
           if (!userPendingIds.has(id)) {
-            return Response.json({ success: false, message: 'Cannot reorder items that are not yours' }, { status: 403 });
+            return Response.json({ success: false, message: reorderAll ? 'Unknown or non-pending item' : 'Cannot reorder items that are not yours' }, { status: 403 });
           }
         }
 
@@ -559,32 +579,116 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       }
 
       case 'removequeue': {
-        // Remove song from queue — only the creator (matching companionCode) can remove
+        // Remove song from queue — the creator (matching companionCode) can
+        // always remove their own items. R39/P7: the remote-lock holder
+        // (controlling companion) may remove ANY pending item — the ✕-buttons
+        // on the phone previously did nothing for songs wished by others,
+        // although the queue view (main-app parity) shows them all.
         const removePayload = payload as { itemId: string };
         const requestingClient = mobileClients.get(clientId);
         if (!requestingClient) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
         }
         const itemIndex = mutableState.songQueue.findIndex(q => q.id === removePayload.itemId);
-        
+
         if (itemIndex !== -1) {
           const item = mutableState.songQueue[itemIndex];
-          // Ownership check: only the companion that added this song can remove it
-          if (item.companionCode !== requestingClient.connectionCode) {
+          // Ownership check: own songs always; other songs only with the
+          // remote lock (or desktop host auth).
+          const removeOwnsItem = item.companionCode === requestingClient.connectionCode;
+          const removeHoldsLock = mutableState.remoteControlState.lockedBy === clientId;
+          if (!removeOwnsItem && !removeHoldsLock && !requireAuth(request)) {
             return Response.json({ success: false, message: 'You can only remove your own songs' }, { status: 403 });
           }
           // Don't allow removing a song that is currently playing
           if (item.status === 'playing') {
             return Response.json({ success: false, message: 'Cannot remove a song that is currently playing' }, { status: 400 });
           }
-          if (requestingClient.queueCount > 0) {
+          if (removeOwnsItem && requestingClient.queueCount > 0) {
             requestingClient.queueCount--;
+            mobileClients.set(clientId, requestingClient);
           }
           mutableState.songQueue.splice(itemIndex, 1);
-          mobileClients.set(clientId, requestingClient);
           return Response.json({ success: true, message: 'Song removed from queue' });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
+
+      case 'clearqueue': {
+        // R39/P7: Clear the ENTIRE companion queue (all pending items, all
+        // requesters). Called by the desktop's Clear-All (host auth) and by
+        // the controlling companion (remote lock). Playing items keep their
+        // status (the running song is not aborted by a queue clear).
+        const clearClient = mobileClients.get(clientId);
+        const clearAuthorized = requireAuth(request)
+          || (clientId && clearClient && mutableState.remoteControlState.lockedBy === clientId);
+        if (!clearAuthorized) {
+          return Response.json({ success: false, message: 'Remote control is not held — take control first' }, { status: 403 });
+        }
+        const clearedCount = mutableState.songQueue.filter(q => q.status === 'pending').length;
+        // Reset every companion's queue counter (their pending songs are gone)
+        for (const [cId, client] of mobileClients.entries()) {
+          if (client.queueCount > 0) {
+            client.queueCount = 0;
+            mobileClients.set(cId, client);
+          }
+        }
+        mutableState.songQueue = mutableState.songQueue.filter(q => q.status === 'playing');
+        // R39/P7: Desktop-local entries are cleared as well — Clear All means
+        // the whole queue (the desktop clears its zustand queue itself via
+        // the remote-queue-clear event; this keeps both sides consistent).
+        mutableState.desktopQueue = [];
+        return Response.json({ success: true, message: 'Queue cleared', clearedCount });
+      }
+
+      case 'syncdesktopqueue': {
+        // R39/P7: The desktop mirrors its local (zustand) queue here so the
+        // companion queue view can show the FULL queue (main-app parity).
+        // Host auth only — companions never write this.
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const syncPayload = payload as { items?: Array<{
+          id: string;
+          songId: string;
+          songTitle: string;
+          songArtist: string;
+          playerName?: string;
+          partnerName?: string;
+          gameMode?: 'single' | 'duel' | 'duet';
+          status?: string;
+          addedAt?: number;
+          playerMicSource?: 'companion' | 'microphone';
+          partnerMicSource?: 'companion' | 'microphone';
+          playerMicName?: string;
+          partnerMicName?: string;
+        }> };
+        if (!Array.isArray(syncPayload.items)) {
+          return Response.json({ success: false, message: 'Invalid items' }, { status: 400 });
+        }
+        mutableState.desktopQueue = syncPayload.items
+          .filter(it => it && typeof it.id === 'string' && typeof it.songId === 'string')
+          .slice(0, 100)
+          .map(it => ({
+            id: it.id,
+            songId: it.songId,
+            songTitle: it.songTitle || '',
+            songArtist: it.songArtist || '',
+            addedBy: it.playerName || 'Desktop',
+            addedAt: typeof it.addedAt === 'number' ? it.addedAt : Date.now(),
+            companionCode: 'desktop',
+            status: (it.status === 'playing' ? 'playing' : 'pending') as 'pending' | 'playing',
+            playerId: undefined,
+            playerName: it.playerName,
+            partnerName: it.partnerName,
+            gameMode: it.gameMode,
+            playerMicSource: it.playerMicSource,
+            partnerMicSource: it.partnerMicSource,
+            playerMicName: it.playerMicName,
+            partnerMicName: it.partnerMicName,
+            isDesktop: true as const,
+          }));
+        return Response.json({ success: true, count: mutableState.desktopQueue.length });
       }
 
       case 'markplaying': {

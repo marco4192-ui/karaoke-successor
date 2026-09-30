@@ -35,7 +35,11 @@ export function useQueueNextSong(onPlayAgain: () => void) {
         if (!response.ok) return;
         const data = await response.json();
         if (data.success && data.queue && data.queue.length > 0) {
-          const nextItem = data.queue.find((q: { status: string }) => q.status === 'pending');
+          // R39/P7: Desktop-Queue-Einträge (isDesktop) sind ausgeschlossen —
+          // sie leben in der lokalen zustand-Queue, und "Nächster Song" auf
+          // der Ergebnisseite meint die Companion-Wünsche (vorheriges Verhalten).
+          const companionOnly = data.queue.filter((q: { isDesktop?: boolean }) => !q.isDesktop);
+          const nextItem = companionOnly.find((q: { status: string }) => q.status === 'pending');
           if (nextItem) {
             setNextQueueItem({
               id: nextItem.id,

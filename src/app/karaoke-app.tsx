@@ -980,6 +980,40 @@ export default function KaraokeZERO() {
     syncSongLibrary();
   }, [syncSongLibrary, screen]);
 
+  // ── R39/P7: Lokale Queue zum Server spiegeln ──
+  // Der kontrollierende Companion zeigt die GESAMTE Warteschlange (wie die
+  // Haupt-App) — dafür syncen wir die lokale zustand-Queue (nur ausstehende
+  // Items, Song-Metadaten + Spieler) alle 2 s bzw. sofort bei Änderung via
+  // POST syncdesktopqueue. Der Server merged sie in getqueue (isDesktop).
+  const queueSyncRef = useRef<string>('');
+  useEffect(() => {
+    const items = queue
+      .filter(q => q.status !== 'completed' && q.song)
+      .map(q => ({
+        id: q.id,
+        songId: q.song.id,
+        songTitle: q.song.title,
+        songArtist: q.song.artist || '',
+        playerName: q.playerName,
+        partnerName: q.partnerName,
+        gameMode: q.gameMode,
+        status: q.status,
+        addedAt: q.addedAt,
+        playerMicSource: q.playerMicSource,
+        partnerMicSource: q.partnerMicSource,
+        playerMicName: q.playerMicName,
+        partnerMicName: q.partnerMicName,
+      }));
+    const serialized = JSON.stringify(items);
+    if (serialized === queueSyncRef.current) return;
+    queueSyncRef.current = serialized;
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'syncdesktopqueue', payload: { items } }),
+    }).catch(() => { /* ignore — next queue change retries */ });
+  }, [queue]);
+
   // ── Sync current screen to mobile companions (every 2s) ──
   useEffect(() => {
     const syncScreen = async () => {
@@ -1348,6 +1382,11 @@ export default function KaraokeZERO() {
                 };
               })(),
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
+              // R39/P4: Verfügbare Desktop-Mikrofone (MULTI_MIC_CONFIG) —
+              // die Companion-Library braucht sie für die Gesangs-Gerät-
+              // Auswahl im Song-Overlay (Mic vs. Companion-App). Kleine
+              // Liste (id + Name), bleibt im 2s-Payload unkritisch.
+              availableMics: readAvailableMicsForCompanions(),
               // R33/P16+: defaultDifficulty + settingsSnapshot are NO LONGER
               // embedded here (that pushed ~1 KB+ every 2 s without any
               // change). They go through the dedicated push-on-change effect
@@ -1999,6 +2038,29 @@ export default function KaraokeZERO() {
 // Collapse-State — persistiert im localStorage-Key
 // 'karaoke-hotkeys-collapsed' (Standard: aufgeklappt).
 const HOTKEYS_COLLAPSE_STORAGE_KEY = 'karaoke-hotkeys-collapsed';
+
+// ===================== R39/P4: Desktop-Mikrofone für Companions =====================
+/** Liest die konfigurierten Desktop-Mikrofone (MULTI_MIC_CONFIG) und macht
+ *  sie als schlanke {id, name}-Liste für den 2s-Gamestate-Push bereit. Die
+ *  Companion-Library nutzt sie für die Gesangs-Gerät-Auswahl (Mic vs.
+ *  Companion-App) im Song-Overlay. SSR-sicher (window-Guard) und fail-safe
+ *  (kaputtes JSON → leere Liste). */
+function readAvailableMicsForCompanions(): Array<{ id: string; name: string }> {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = getItem(StorageKeys.MULTI_MIC_CONFIG);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as {
+      assignedMics?: Array<{ id?: string; customName?: string; deviceName?: string }>;
+    };
+    return (parsed.assignedMics ?? [])
+      .filter((m): m is { id: string; customName?: string; deviceName?: string } => typeof m.id === 'string' && m.id.length > 0)
+      .map(m => ({ id: m.id, name: m.customName || m.deviceName || 'Mikrofon' }));
+  } catch {
+    return [];
+  }
+}
+
 
 /** Die wichtigsten globalen Kürzel (key = Anzeige, label = mobile.hotkeys.*). */
 const HOME_HOTKEY_ENTRIES: Array<{ keys: string; i18nKey: string; wide?: boolean }> = [

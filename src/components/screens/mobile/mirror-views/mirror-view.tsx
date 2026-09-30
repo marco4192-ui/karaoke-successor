@@ -158,6 +158,19 @@ export interface MirrorViewProps {
   /** R33/P2: Profil-Karte antippen → Profil-Bearbeitung (eigenes Profil
    *  bleibt auch ohne Steuerung erlaubt). */
   onOpenProfile?: () => void;
+
+  /** R39/P1: Spielmodus-Kachel der Startseite → Bibliothek mit vorgewähltem
+   *  Modus öffnen (Shell setzt den Preset-State und navigiert lokal). */
+  onLaunchMode?: (mode: 'single' | 'duel' | 'duet') => void;
+
+  /** R39/P7: Vorgewählter Spielmodus für die Bibliothek (Setzen durch die
+   *  Spielmodus-Kacheln der Startseite; null = kein Preset). */
+  libraryPresetMode?: 'single' | 'duel' | 'duet' | null;
+
+  /** R39/P7: Der eigene Verbindungscode — für nicht-steuernde Companion,
+   *  damit Drag&Drop in der Queue nur die EIGENEN Items neu ordnet (Server
+   * erlaubt fremde Items nur mit Fernsteuerungs-Lock). */
+  ownCompanionCode?: string | null;
 }
 
 // ===================== Hauptkomponente =====================
@@ -265,6 +278,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   profile,
   onLocalNavigate,
   onOpenProfile,
+  onLaunchMode,
+  libraryPresetMode,
+  ownCompanionCode,
 }) {
   const navBase = { onNavigate, gameState };
   const desktopMirrorBase = { onSendDesktopCommand };
@@ -308,6 +324,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
               onLocalNavigate={onLocalNavigate}
               onOpenProfile={onOpenProfile}
               profile={profile}
+              onLaunchMode={onLaunchMode}
             />
           </SafeView>
         </div>
@@ -350,6 +367,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onDuetPartsSwappedChange={onDuetPartsSwappedChange}
             addedQueuePosition={addedQueuePosition}
             onOpenChat={onOpenChat}
+            initialGameMode={libraryPresetMode ?? undefined}
             {...navBase}
             {...desktopMirrorBase}
           />
@@ -368,6 +386,8 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onRemoveFromQueue={onRemoveFromQueue}
             onReorderQueue={onReorderQueue}
             availableProfiles={availableProfiles}
+            isControlling={isControlling}
+            ownCompanionCode={ownCompanionCode}
             {...navBase}
             {...desktopMirrorBase}
           />

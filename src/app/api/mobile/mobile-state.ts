@@ -172,6 +172,14 @@ function createMutableState() {
     // Queue for song requests from mobile clients
     songQueue: [] as QueueItem[],
 
+    // R39/P7: Desktop-locale Queue (zustand) — der Desktop spiegelt seine
+    // lokale Warteschlange hierher (POST syncdesktopqueue), damit die
+    // Companion-Queue die GESAMTE Warteschlange zeigt (wie die Haupt-App),
+    // nicht nur die Handy-Wünsche. Desktop-Einträge tragen isDesktop: true
+    // und werden von den Desktop-Konsumenten (queue-screen,
+    // use-queue-next-song) herausgefiltert, um Doppel anzuzeigen zu vermeiden.
+    desktopQueue: [] as Array<QueueItem & { isDesktop?: true }>,
+
     // Jukebox wishlist
     jukeboxWishlist: [] as QueueItem[],
 
@@ -204,6 +212,13 @@ function createMutableState() {
     // Uploaded by the desktop (use-song-library-sync), served to companions
     // via GET action=songcover&songId=… as image/jpeg.
     songCovers: {} as Record<string, string>,
+
+    // R39/P2: Server-side proxy cache for REMOTE covers (http/https from the
+    // song library). The desktop's canvas thumbnail generation fails for
+    // CORS-tainted remote images — the server fetches them itself (Node has
+    // no CORS) and serves them same-origin to the companion app. Entries:
+    // raw bytes + content-type, TTL 24 h, capped at 300 songs.
+    remoteCoverCache: new Map<string, { buf: Buffer; type: string; at: number }>(),
 
     // R33/P10: Top-100 local highscores pushed by the desktop.
     highscores: [] as Array<Record<string, unknown>>,

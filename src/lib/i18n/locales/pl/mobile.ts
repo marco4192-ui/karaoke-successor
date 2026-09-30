@@ -34,6 +34,148 @@ export const mobileTranslations = {
     localOnlyNote: 'Ta pomoc działa w całości na Twoim telefonie — nie steruje desktopem.',
   },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Interaktywne samouczki aplikacji Companion — rozdział po rozdziale w kilka minut. Tak jak w aplikacji głównej, tylko na twoim telefonie.',
+  backToOverview: 'Wróć do przeglądu',
+  stepOf: 'Krok {n} z {m}',
+  stepCount: '{n} kroków',
+  reset: 'Resetuj samouczki',
+  moreDetails: 'Dowiedz się więcej',
+  back: 'Wstecz',
+  next: 'Dalej',
+  finish: 'Gotowe',
+
+  start: {
+    title: 'Pierwsze kroki',
+    desc: 'Połącz się, utwórz profil i poznaj aplikację',
+    s1: {
+      t: 'Połącz z desktopem',
+      b: 'Zeskanuj kod QR na stronie startowej desktopa lub otwórz link Companiona. Telefon i komputer muszą być w tej samej sieci WiFi — kod w prawym górnym rogu nagłówka potwierdza połączenie.',
+      d: 'Jeśli połączenie się zerwie, aplikacja połączy się ponownie automatycznie. W przeciwnym razie sprawdź WiFi i dotknij „Ponów połączenie”.',
+    },
+    s2: {
+      t: 'Twój profil gracza',
+      b: 'Utwórz profil z imieniem, kolorem i zdjęciem. Dotknij swojego awatara w lewym górnym rogu, aby w każdej chwili go edytować — synchronizacja z desktopem odbywa się automatycznie.',
+    },
+    s3: {
+      t: 'Aplikacja w pigułce',
+      b: 'Pasek kart na dole przeprowadzi cię przez wszystkie sekcje: start, biblioteka, impreza, wyzwanie, kolejka, jukebox, najlepsze wyniki, osiągnięcia i ustawienia. W prawym górnym rogu znajdziesz pomoc (?) i czat (💬).',
+    },
+    s4: {
+      t: 'Tryby gry na stronie startowej',
+      b: 'Kafelki pokazują tryby gry: solo (1 gracz), duel (2 mikrofony), duet (2 głosy) oraz tryb imprezy z 9 trybami dla maksymalnie 32 graczy. Dotknięcie otwiera bibliotekę z uprzednio wybranym trybem.',
+    },
+  },
+
+  songs: {
+    title: 'Zamawianie piosenek',
+    desc: 'Przeglądaj bibliotekę, wybierz tryb i urządzenie, dodaj do kolejki',
+    s1: {
+      t: 'Znajdź piosenkę',
+      b: 'W bibliotece szukasz przez pole wyszukiwania (tytuł, artysta, gatunek) albo filtrujesz po gatunku, języku, dekadzie i viralowych hitach. Dotknięcie piosenki otwiera jej opcje.',
+    },
+    s2: {
+      t: 'Tryb i trudność',
+      b: 'U góry wybierasz solo, duel lub duet (przy duelu/duecie dodatkowo partnera). Niżej ustawiasz trudność — domyślna wartość z desktopu widnieje jako podpowiedź.',
+    },
+    s3: {
+      t: 'Wybór urządzenia do śpiewania',
+      b: '„Urządzenie do śpiewania” określa, czym śpiewasz: 📱 aplikacja Companion (mikrofon twojego telefonu — wstępnie wybrana dla połączonych graczy) lub 🎤 mikrofon na desktopie. Twój partner też dostaje własne urządzenie.',
+      d: 'Wybór trafia do kolejki razem z piosenką — desktop wie więc przy starcie dokładnie, który głos skąd pochodzi.',
+    },
+    s4: {
+      t: 'Do kolejki',
+      b: '„Dodaj do kolejki” wysyła piosenkę — do 3 piosenek na gracza. Alternatywnie dodasz piosenkę do playlisty albo rzucisz komuś wyzwanie na czacie.',
+    },
+  },
+
+  queue: {
+    title: 'Kolejka',
+    desc: 'Zarządzaj zamówieniami, sortuj i (ze sterowaniem) uruchamiaj',
+    s1: {
+      t: 'Pełna kolejka',
+      b: 'Zakładka Kolejka pokazuje wszystkie zamówienia — także piosenki dodane z desktopu (oznaczenie 🖥️). Kto zamówił piosenkę, widać przy awatarze; 📱 znaczy: będzie śpiewana przez aplikację Companion.',
+    },
+    s2: {
+      t: 'Usuwanie i sortowanie',
+      b: 'Przez ✕ usuwasz własne piosenki. Przeciąganie za uchwyt (⠿) przenosi piosenki na inną pozycję.',
+      d: 'Jako urządzenie sterujące możesz usunąć KAŻDĄ piosenkę i ułożyć całą kolejność od nowa.',
+    },
+    s3: {
+      t: 'Sterując: start piosenek',
+      b: 'Trzymając sterowanie, dostajesz dwa dodatkowe przyciski: „Odtwórz następną piosenkę” startuje pierwszą piosenkę z kolejki, „Wyczyść wszystko” opróżnia całą kolejkę — plus przycisk ▶ przy każdej piosence.',
+    },
+  },
+
+  singing: {
+    title: 'Śpiewanie przez telefon',
+    desc: 'Telefon jako mikrofon, podgląd i wskazówki',
+    s1: {
+      t: 'Automatyczny start',
+      b: 'Gdy przychodzi twoja kolej, mikrofon włącza się sam — w trybie imprezy tak samo jak w companion-singalongu. W Battle Royale i Medley śpiewają wszyscy gracze Companiona jednocześnie.',
+    },
+    s2: {
+      t: 'Głośność i podgląd nut',
+      b: 'Pasek pod nagłówkiem pokazuje na żywo głośność i rozpoznaną nutę twojego śpiewu. W grze widzisz tekst, wskaźnik wysokości dźwięku i wynik w lustrze.',
+      d: 'Pierwszy raz przeglądarka zapyta o dostęp do mikrofonu — dotknij „Zezwól”. Uprawnienie zmienisz później w ustawieniach witryny w przeglądarce.',
+    },
+    s3: {
+      t: 'Lepsza celność',
+      b: 'Trzymaj telefon blisko ust i śpiewaj głośno i wyraźnie. Muzyka grająca tuż przy urządzeniu (głośniki obok telefonu) przeszkadza rozpoznawaniu dźwięku — słuchawki na desktopie to ideał.',
+    },
+  },
+
+  party: {
+    title: 'Gry imprezowe',
+    desc: 'Przekaż mikrofon, singalong, Battle Royale i więcej',
+    s1: {
+      t: 'Udział bez sterowania',
+      b: 'Gry imprezowe działają na desktopie — ty bierzesz udział prosto z telefonu: wybieranie piosenek, głosowanie, śpiewanie. Sterowanie nie jest ci do tego POTRZEBNE.',
+    },
+    s2: {
+      t: 'Tryby gry',
+      b: 'Przekaż mikrofon (jeden mikrofon z desktopu krąży między wszystkimi), companion-singalong (każdy śpiewa z telefonu), Battle Royale, Medley, turniej, Brakujące słowa, Ślepe karaoke i Oceń mój utwór.',
+      d: 'Uwaga: w „Przekaż mikrofon” śpiewają WSZYSCY do tego samego mikrofonu desktopu — tam telefon służy tylko jako pilot i lustro.',
+    },
+    s3: {
+      t: 'Głosowanie i wybór piosenek',
+      b: 'W głosowaniach na piosenki kandydaci pojawiają się prosto na twoim telefonie — wystarczy dotknięcie. W konfiguracji imprezy widzisz graczy, mikrofony i ustawienia na żywo w lustrze i możesz (ze sterowaniem) zmienić wszystko z telefonu.',
+    },
+  },
+
+  control: {
+    title: 'Pilot i czat',
+    desc: 'Steruj desktopem, blokuj, czatuj',
+    s1: {
+      t: 'Przejmij kontrolę',
+      b: '„Przejmij kontrolę” (strona startowa) łączy twój telefon z desktopem: twoje karty sterują komputerem — start, biblioteka, impreza, kolejka, jukebox, najlepsze wyniki, osiągnięcia i ustawienia.',
+    },
+    s2: {
+      t: 'Tylko jedno urządzenie sterujące',
+      b: 'Dokładnie JEDNO urządzenie steruje w danym momencie. Jeśli kontrolę trzyma ktoś inny, strona startowa pokaże, kto to. „Zwolnij kontrolę” zwalnia miejsce.',
+      d: 'Sekcje z 🔒 (impreza, wyzwanie, jukebox, ustawienia) wymagają sterowania — twój profil i biblioteka są zawsze otwarte.',
+    },
+    s3: {
+      t: 'Czat i dodatki',
+      b: 'Dotknij 💬 w prawym górnym rogu, aby czatować ze wszystkimi — wyzwania trafiają prosto na czat. Do tego lista życzeń jukeboxa, codzienne wyzwanie, najlepsze wyniki i osiągnięcia jako osobne karty.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Wybierz tryb gry i zamów piosenkę',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Urządzenie do śpiewania',
+deviceMe: 'Ja śpiewam przez',
+devicePartner: 'Partner śpiewa przez',
+deviceCompanion: 'Aplikacja kompana',
+deviceMic: 'Mikrofon',
+deviceMicAuto: 'Mikrofon automatycznie',
+deviceNoMics: 'Brak skonfigurowanych mikrofonów na desktopie — zostanie użyty mikrofon domyślny.',
+deviceConnectedBadge: 'połączono',
+
 mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Kontrola przejęta',

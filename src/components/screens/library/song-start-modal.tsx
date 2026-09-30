@@ -11,6 +11,12 @@ import { StorageKeys, getItem, getNumber } from '@/lib/storage';
 import { getInstrumentalExportBlocker, exportInstrumentalWav, downloadInstrumental } from '@/lib/audio/instrumental-export';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SafeImage } from './safe-image';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
+
+// R39/P5: Sentinel-Wert für „Spieler singt über die Companion-App“ in den
+// micId/micIdP1/micIdP2-Feldern der StartOptions (gleiches Muster wie die
+// Mic-IDs, nur eben kein Desktop-Mikrofon).
+const COMPANION_DEVICE = 'companion';
 
 // ===================== MIC SELECTOR (Single mode) =====================
 function useSavedMics() {
@@ -35,11 +41,23 @@ function useSavedMics() {
   return savedMics;
 }
 
-function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (_id: string | undefined) => void }) {
-  const { t } = useTranslation();
+function MicSelector({
+  micId,
+  onMicChange,
+  playerConnectedViaCompanion,
+  t,
+}: {
+  micId?: string;
+  onMicChange: (_id: string | undefined) => void;
+  /** R39/P5: true, wenn der gewählte Spieler über die Companion-App verbunden
+   *  ist — dann wird die Companion-App als Option angeboten (und vom Modal
+   *  vorausgewählt). */
+  playerConnectedViaCompanion?: boolean;
+  t: (_key: string) => string;
+}) {
   const savedMics = useSavedMics();
 
-  if (savedMics.length === 0) return null;
+  if (savedMics.length === 0 && !playerConnectedViaCompanion) return null;
 
   return (
     <div>
@@ -50,9 +68,12 @@ function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (_id
         className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
       >
         <option value="">{t('songStart.automatic')}</option>
+        {playerConnectedViaCompanion && (
+          <option value={COMPANION_DEVICE}>📱 {t('songStart.companionApp') === 'songStart.companionApp' ? 'Companion-App' : t('songStart.companionApp')}</option>
+        )}
         {savedMics.map(mic => (
           <option key={mic.id} value={mic.id}>
-            {mic.customName || mic.deviceName}
+            🎤 {mic.customName || mic.deviceName}
           </option>
         ))}
       </select>
@@ -66,6 +87,8 @@ function DualMicSelector({
   micIdP1, micIdP2,
   onMicP1Change, onMicP2Change,
   p1Label, p2Label,
+  p1ConnectedViaCompanion,
+  p2ConnectedViaCompanion,
 }: {
   p1Id: string; p2Id: string;
   profiles: { id: string; name: string; color: string; avatar?: string }[];
@@ -73,14 +96,19 @@ function DualMicSelector({
   onMicP1Change: (_id: string | undefined) => void;
   onMicP2Change: (_id: string | undefined) => void;
   p1Label?: string; p2Label?: string;
+  /** R39/P5: Companion-App als Option für P1/P2 anbieten, wenn der Spieler
+   *  über die Companion-App verbunden ist. */
+  p1ConnectedViaCompanion?: boolean;
+  p2ConnectedViaCompanion?: boolean;
 }) {
   const { t } = useTranslation();
   const savedMics = useSavedMics();
 
-  if (savedMics.length === 0) return null;
+  if (savedMics.length === 0 && !p1ConnectedViaCompanion && !p2ConnectedViaCompanion) return null;
 
   const p1Profile = profiles.find(p => p.id === p1Id);
   const p2Profile = profiles.find(p => p.id === p2Id);
+  const companionLabel = t('songStart.companionApp') === 'songStart.companionApp' ? 'Companion-App' : t('songStart.companionApp');
 
   return (
     <div>
@@ -106,9 +134,12 @@ function DualMicSelector({
             className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option value="">{t('songStart.automatic')}</option>
+            {p1ConnectedViaCompanion && (
+              <option value={COMPANION_DEVICE}>📱 {companionLabel}</option>
+            )}
             {savedMics.map(mic => (
               <option key={mic.id} value={mic.id}>
-                {mic.customName || mic.deviceName}
+                🎤 {mic.customName || mic.deviceName}
               </option>
             ))}
           </select>
@@ -133,9 +164,12 @@ function DualMicSelector({
             className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option value="">{t('songStart.automatic')}</option>
+            {p2ConnectedViaCompanion && (
+              <option value={COMPANION_DEVICE}>📱 {companionLabel}</option>
+            )}
             {savedMics.map(mic => (
               <option key={mic.id} value={mic.id}>
-                {mic.customName || mic.deviceName}
+                🎤 {mic.customName || mic.deviceName}
               </option>
             ))}
           </select>
@@ -168,6 +202,59 @@ export function SongStartModal({
   const { t } = useTranslation();
   const songIsDuet = isDuetSong(selectedSong);
   const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  // ── R39/P5: Companion-Verbindungen — verbundene Spieler bekommen die
+  // Companion-App als Gesangs-Gerät VORausgewählt (jederzeit änderbar). ──
+  const { connectedProfileIds } = useCompanionConnections(true);
+  const savedMics = useSavedMics();
+
+  // „Vorausgewählt, aber veränderbar“: Solange der Nutzer den Geräte-Selector
+  // nicht selbst bedient hat, folgt die Auswahl dem Verbindungsstatus. Bei
+  // Spielerwechsel (Andere Kachel gewählt) wird die Berührungs-Markierung
+  // zurückgesetzt — der neue Spieler bekommt seinen Default.
+  const deviceTouchedRef = useRef<{ p1?: boolean; p2?: boolean }>({});
+  const prevPlayersKeyRef = useRef('');
+  const playersKey = startOptions.players.join('|');
+  useEffect(() => {
+    if (playersKey !== prevPlayersKeyRef.current) {
+      prevPlayersKeyRef.current = playersKey;
+      deviceTouchedRef.current = {};
+    }
+  }, [playersKey]);
+  useEffect(() => {
+    if (!showSongModal || startOptions.partyMode) return;
+    const pid1 = startOptions.players[0] || activeProfileId;
+    const pid2 = startOptions.players[1];
+    const want1 = pid1 && connectedProfileIds.has(pid1) ? COMPANION_DEVICE : undefined;
+    const want2 = pid2 && connectedProfileIds.has(pid2) ? COMPANION_DEVICE : undefined;
+    setStartOptions(prev => {
+      const next = { ...prev };
+      let changed = false;
+      if (!deviceTouchedRef.current.p1) {
+        if (prev.mode === 'single' && prev.micId !== want1) { next.micId = want1; changed = true; }
+        if ((prev.mode === 'duel' || prev.mode === 'duet') && prev.micIdP1 !== want1) { next.micIdP1 = want1; changed = true; }
+      }
+      if (!deviceTouchedRef.current.p2 && (prev.mode === 'duel' || prev.mode === 'duet') && prev.micIdP2 !== want2) {
+        next.micIdP2 = want2;
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- preselection only
+  }, [showSongModal, startOptions.players, startOptions.mode, connectedProfileIds, activeProfileId]);
+
+  /** Löst ein micId-Feld (COMPANION_DEVICE oder MULTI_MIC_CONFIG-ID) in die
+   *  Queue-Item-Felder (source + micId + Anzeigename) auf. */
+  const resolveDevice = (deviceId: string | undefined): {
+    source: 'companion' | 'microphone'; micId?: string; micName?: string;
+  } => {
+    if (deviceId === COMPANION_DEVICE) return { source: 'companion' };
+    if (deviceId) {
+      const mic = savedMics.find(m => m.id === deviceId);
+      return { source: 'microphone', micId: deviceId, micName: mic?.customName || mic?.deviceName };
+    }
+    return { source: 'microphone' };
+  };
 
   // ── Instrumental export (feature idea #17) ──
   const instrumentalBlocker = getInstrumentalExportBlocker(selectedSong);
@@ -261,12 +348,24 @@ export function SongStartModal({
       const partnerId = startOptions.players[1] || undefined;
       const partnerProfile = partnerId ? profiles.find(p => p.id === partnerId) : undefined;
 
+      // R39/P5: Gesangs-Geräte aus den Selektoren übernehmen — Single nutzt
+      // micId, Duel/Duet nutzen micIdP1/micIdP2 (micId als Single-Fallback).
+      const isDual = startOptions.mode === 'duel' || startOptions.mode === 'duet';
+      const playerDevice = resolveDevice(isDual ? startOptions.micIdP1 : startOptions.micId);
+      const partnerDevice = isDual ? resolveDevice(startOptions.micIdP2) : undefined;
+
       addToQueue(selectedSong, selectedPlayerId, selectedProfile?.name || t('common.player'), {
         partnerId,
         partnerName: partnerProfile?.name,
         gameMode: startOptions.mode === 'duel' ? 'duel' 
                  : startOptions.mode === 'duet' ? 'duet' 
                  : 'single',
+        playerMicSource: playerDevice.source,
+        playerMicId: playerDevice.micId,
+        playerMicName: playerDevice.micName,
+        partnerMicSource: partnerDevice?.source,
+        partnerMicId: partnerDevice?.micId,
+        partnerMicName: partnerDevice?.micName,
       });
     }
     setShowSongModal(false);
@@ -645,13 +744,15 @@ export function SongStartModal({
           </div>
         </div>
         
-        {/* Microphone Assignment — below scrollable area */}
+        {/* Microphone / Device Assignment — below scrollable area */}
         <div className="flex-shrink-0 pt-2">
-          {/* Single mode mic selector */}
+          {/* Single mode mic selector (R39/P5: + Companion-App für verbundene Spieler) */}
           {!startOptions.partyMode && startOptions.mode === 'single' && startOptions.players.length === 1 && (
             <MicSelector
               micId={startOptions.micId}
-              onMicChange={(id) => setStartOptions(prev => ({ ...prev, micId: id }))}
+              onMicChange={(id) => { deviceTouchedRef.current.p1 = true; setStartOptions(prev => ({ ...prev, micId: id })); }}
+              playerConnectedViaCompanion={connectedProfileIds.has(startOptions.players[0])}
+              t={t}
             />
           )}
           {/* Duel mode dual mic selector */}
@@ -662,8 +763,10 @@ export function SongStartModal({
               profiles={profiles}
               micIdP1={startOptions.micIdP1}
               micIdP2={startOptions.micIdP2}
-              onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
-              onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+              onMicP1Change={(id) => { deviceTouchedRef.current.p1 = true; setStartOptions(prev => ({ ...prev, micIdP1: id })); }}
+              onMicP2Change={(id) => { deviceTouchedRef.current.p2 = true; setStartOptions(prev => ({ ...prev, micIdP2: id })); }}
+              p1ConnectedViaCompanion={connectedProfileIds.has(startOptions.players[0])}
+              p2ConnectedViaCompanion={connectedProfileIds.has(startOptions.players[1])}
               p1Label={t('songStart.p1')}
               p2Label={t('songStart.p2')}
             />
@@ -676,8 +779,10 @@ export function SongStartModal({
               profiles={profiles}
               micIdP1={startOptions.micIdP1}
               micIdP2={startOptions.micIdP2}
-              onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
-              onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+              onMicP1Change={(id) => { deviceTouchedRef.current.p1 = true; setStartOptions(prev => ({ ...prev, micIdP1: id })); }}
+              onMicP2Change={(id) => { deviceTouchedRef.current.p2 = true; setStartOptions(prev => ({ ...prev, micIdP2: id })); }}
+              p1ConnectedViaCompanion={connectedProfileIds.has(startOptions.players[0])}
+              p2ConnectedViaCompanion={connectedProfileIds.has(startOptions.players[1])}
               p1Label={selectedSong.duetPlayerNames?.[0] || t('songStart.part1')}
               p2Label={selectedSong.duetPlayerNames?.[1] || t('songStart.part2')}
             />

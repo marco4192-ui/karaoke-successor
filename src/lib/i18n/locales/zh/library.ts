@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 分配麦克风',
   automatic: '— 自动 —',
   micAssignmentLabel: '🎤 麦克风分配',
+  companionApp: '伴侣应用',
   player1: '玩家1',
   player2: '玩家2',
   part1: '声部1',

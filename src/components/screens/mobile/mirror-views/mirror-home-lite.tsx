@@ -7,7 +7,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 // ===================== i18n-Hilfsfunktion =====================
 // R33-Konvention: lokale tOr-Wrapper — t(key) === key bedeutet "nicht
 // übersetzt" → deutschen Fallback nutzen. Neue Keys landen zusätzlich in
-// src/lib/i18n/pending-keys/r33-c.json (Koordinator übernimmt sie später in
+// src/lib/i18n/pending-keys/ (Koordinator übernimmt sie später in
 // die Sprachdateien).
 function tOr(t: (key: string) => string, key: string, fallback: string): string {
   return t(key) === key ? fallback : t(key);
@@ -34,6 +34,8 @@ interface MirrorHomeLiteProps {
   onOpenProfile?: () => void;
   /** R33/P8: Profil-Karte (nicht-steuernd) — Name/Avatar/Farbe. */
   profile?: MobileProfile | null;
+  /** R39/P1: Spielmodus-Kachel → Bibliothek mit vorgewähltem Modus öffnen. */
+  onLaunchMode?: (mode: 'single' | 'duel' | 'duet') => void;
 }
 
 // ===================== Hilfsfunktionen =====================
@@ -44,22 +46,125 @@ function haptic() {
   }
 }
 
-// ===================== P3: Desktop-Hotkeys =====================
-// Quelle: src/hooks/use-keyboard-shortcuts.ts (useGlobalKeyboardShortcuts).
-// Label-Keys existieren bereits (keyboardShortcuts.*) — hier mit deutschen
-// Fallbacks, falls eine Sprache sie (noch) nicht hat.
+// ===================== R39/P1: SPIELMODUS-KACHELN =====================
+// Ersetzt die früheren Desktop-Hotkeys auf der Companion-Startseite. Die
+// Kacheln spiegeln 1:1 die "Singen"-Kachel der Haupt-App (Single / Duell /
+// Duett) plus die Party-Modus-Karte — jeweils mit kurzen Knapp-Erklärungen
+// (dieselben i18n-Keys wie home-screen.tsx, damit alle 16 Sprachen sofort
+// mitziehen). Tap öffnet die Bibliothek mit vorgewähltem Modus; die Party-
+// Kachel navigiert zum Party-Bildschirm (Steuerung nötig — Lock-Toast regelt).
 
-const HOTKEYS: Array<{ keys: string; labelKey: string; fallback: string }> = [
-  { keys: 'Esc',      labelKey: 'keyboardShortcuts.esc',   fallback: 'Pause / Zurück / Exit' },
-  { keys: 'Enter',    labelKey: 'keyboardShortcuts.enter', fallback: 'Spiel fortsetzen (Pause)' },
-  { keys: 'F12',      labelKey: 'keyboardShortcuts.f12',   fallback: 'Vollbild umschalten' },
-  { keys: 'Ctrl+L',   labelKey: 'keyboardShortcuts.ctrlL', fallback: 'Suche in der Bibliothek' },
-  { keys: 'Ctrl+Q',   labelKey: 'keyboardShortcuts.ctrlQ', fallback: 'Nächsten Queue-Song starten' },
-  { keys: 'Ctrl+R',   labelKey: 'keyboardShortcuts.ctrlR', fallback: 'Zufälliger Song (Solo)' },
-  { keys: 'Ctrl+D',   labelKey: 'keyboardShortcuts.ctrlD', fallback: 'Zufälliger Song (Duell)' },
-  { keys: 'Ctrl+J',   labelKey: 'keyboardShortcuts.ctrlJ', fallback: 'Jukebox öffnen' },
-  { keys: 'F1–F10',   labelKey: 'keyboardShortcuts.f1f10', fallback: 'Menü-Screens (F1 Start … F9 Einstellungen)' },
-];
+const PARTY_GAME_COUNT = 9; // Parität mit home-screen.tsx
+
+function GameModeTiles({
+  t,
+  onLaunchMode,
+  onPartyNavigate,
+}: {
+  t: (key: string) => string;
+  onLaunchMode?: (mode: 'single' | 'duel' | 'duet') => void;
+  onPartyNavigate: () => void;
+}) {
+  const modes: Array<{
+    mode: 'single' | 'duel' | 'duet';
+    icon: string;
+    labelKey: string;
+    subKey: string;
+    fallbackLabel: string;
+    fallbackSub: string;
+    activeClass: string;
+  }> = [
+    {
+      mode: 'single',
+      icon: '🎤',
+      labelKey: 'homeScreen.launchSingle',
+      subKey: 'homeScreen.launchSingleSub',
+      fallbackLabel: 'Single',
+      fallbackSub: '1 Spieler',
+      activeClass: 'border-cyan-400/40 bg-cyan-500/15',
+    },
+    {
+      mode: 'duel',
+      icon: '⚔️',
+      labelKey: 'homeScreen.launchDuell',
+      subKey: 'homeScreen.launchDuellSub',
+      fallbackLabel: 'Duell',
+      fallbackSub: '2 Mics · Punkteduell',
+      activeClass: 'border-pink-400/40 bg-pink-500/15',
+    },
+    {
+      mode: 'duet',
+      icon: '🎭',
+      labelKey: 'homeScreen.launchDuett',
+      subKey: 'homeScreen.launchDuettSub',
+      fallbackLabel: 'Duett',
+      fallbackSub: '2 Stimmen · Duett-Songs',
+      activeClass: 'border-yellow-400/40 bg-yellow-500/15',
+    },
+  ];
+
+  return (
+    <div className="rounded-xl bg-white/5 border border-white/10 p-3.5">
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className="text-base">🎮</span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white/80">
+            {tOr(t, 'homeScreen.navSoloTitle', 'Singen')}
+          </p>
+          <p className="text-[11px] text-white/40 leading-snug">
+            {tOr(t, 'homeModesDesc', 'Wähle einen Spielmodus und wünsche dir einen Song')}
+          </p>
+        </div>
+      </div>
+
+      {/* Solo / Duell / Duett — 3er-Raster wie in der Haupt-App */}
+      <div className="grid grid-cols-3 gap-2">
+        {modes.map(({ mode, icon, labelKey, subKey, fallbackLabel, fallbackSub, activeClass }) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => { haptic(); onLaunchMode?.(mode); }}
+            aria-label={`${tOr(t, labelKey, fallbackLabel)} — ${tOr(t, subKey, fallbackSub)}`}
+            className={
+              'flex flex-col items-center gap-0.5 rounded-lg border border-white/15 bg-white/5 px-2 py-3 text-center ' +
+              'active:scale-[0.96] transition-transform ' + activeClass
+            }
+          >
+            <span className="text-xl leading-none" aria-hidden="true">{icon}</span>
+            <span className="text-sm font-bold text-white leading-tight">
+              {tOr(t, labelKey, fallbackLabel)}
+            </span>
+            <span className="text-[10px] text-white/50 leading-tight">
+              {tOr(t, subKey, fallbackSub)}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Party-Modus — breite Kachel darunter (wie die Party-Karte der Haupt-App) */}
+      <button
+        type="button"
+        onClick={() => { haptic(); onPartyNavigate(); }}
+        className={
+          'mt-2 flex w-full items-center gap-3 rounded-lg border border-pink-400/40 bg-pink-500/15 ' +
+          'px-3 py-3 text-left active:scale-[0.98] transition-transform'
+        }
+      >
+        <span className="text-2xl leading-none" aria-hidden="true">🎉</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white">
+            {tOr(t, 'home.partyMode', 'Party-Modus')}
+          </p>
+          <p className="text-[11px] text-white/50 leading-snug">
+            {tOr(t, 'homeScreen.navPartyDesc', '{n} Spielmodi für bis zu 32 Spieler')
+              .replace('{n}', String(PARTY_GAME_COUNT))}
+          </p>
+        </div>
+        <span className="text-white/30 text-xs" aria-hidden="true">›</span>
+      </button>
+    </div>
+  );
+}
 
 // ===================== Komponente =====================
 
@@ -76,6 +181,7 @@ export function MirrorHomeLite({
     onLocalNavigate,
     onOpenProfile,
     profile,
+    onLaunchMode,
   }: MirrorHomeLiteProps) {
     const { t } = useTranslation();
 
@@ -83,13 +189,21 @@ export function MirrorHomeLite({
     // Legacy-Alias erhalten (Spiegel-Dispatcher mappt es 1:1).
     const controlling = isControlling ?? lockedByMe ?? false;
 
-    const handleDesktopNav = useCallback(
-      (screen: string) => {
-        haptic();
-        onSendDesktopCommand(screen);
+    // R39/P1: Modus-Kachel → Bibliothek (lokal mit vorgewähltem Modus).
+    // Steuernde Companion schicken den Desktop zusätzlich auf die Bibliothek
+    // (gleiche Semantik wie Queue/Library-CTA-Navigation).
+    const handleLaunchMode = useCallback(
+      (mode: 'single' | 'duel' | 'duet') => {
+        onLaunchMode?.(mode);
+        if (controlling) onSendDesktopCommand('library');
       },
-      [onSendDesktopCommand],
+      [controlling, onSendDesktopCommand, onLaunchMode],
     );
+
+    const handlePartyNav = useCallback(() => {
+      if (controlling) onSendDesktopCommand('party');
+      else onLocalNavigate?.('party');
+    }, [controlling, onSendDesktopCommand, onLocalNavigate]);
 
     // R33/P8: Navigation zur Queue — steuernd via remote_command auf den
     // Desktop, nicht-steuernd rein lokal (kein Desktop-Einfluss).
@@ -161,6 +275,11 @@ export function MirrorHomeLite({
           )}
         </div>
       </div>
+    );
+
+    // ---------- Spielmodus-Kacheln (beide Varianten — R39/P1) ----------
+    const gameModeTiles = (
+      <GameModeTiles t={t} onLaunchMode={handleLaunchMode} onPartyNavigate={handlePartyNav} />
     );
 
     // ===================== VARIANTE A: STEUERNDER COMPANION (P8) =====================
@@ -239,35 +358,11 @@ export function MirrorHomeLite({
             </div>
           )}
 
-          {/* 3. Nächste Songs (Queue-Vorschau) */}
-          {queuePreview}
+          {/* 3. Spielmodus-Kacheln (R39/P1 — ersetzt die Hotkey-Liste) */}
+          {gameModeTiles}
 
-          {/* 4. Hotkeys-Karte (P3 — nur steuernd) */}
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3.5">
-            <div className="mb-2.5 flex items-center gap-2">
-              <span className="text-base">⌨️</span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white/80">
-                  {tOr(t, 'mobile.homeHotkeysTitle', 'Desktop-Hotkeys')}
-                </p>
-                <p className="text-[11px] text-white/40 leading-snug">
-                  {tOr(t, 'mobile.homeHotkeysDesc', 'Die wichtigsten Tastenkürzel am Desktop')}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {HOTKEYS.map((hk) => (
-                <div key={hk.keys} className="flex items-center gap-2.5">
-                  <span className="shrink-0 min-w-[64px] rounded-md bg-black/40 border border-white/15 px-2 py-1 text-center text-[10px] font-bold font-mono text-cyan-300/90">
-                    {hk.keys}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-white/60">
-                    {tOr(t, hk.labelKey, hk.fallback)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* 4. Nächste Songs (Queue-Vorschau) */}
+          {queuePreview}
         </div>
       );
     }
@@ -311,10 +406,13 @@ export function MirrorHomeLite({
           <span>{tOr(t, 'mobile.homeRequestSong', 'Song wünschen')}</span>
         </button>
 
-        {/* 3. Queue-Vorschau (nächste 3) */}
+        {/* 3. Spielmodus-Kacheln (R39/P1 — auch für Mitspieler) */}
+        {gameModeTiles}
+
+        {/* 4. Queue-Vorschau (nächste 3) */}
         {queuePreview}
 
-        {/* 4. Hinweis: Steuerung übernehmen für volle Kontrolle */}
+        {/* 5. Hinweis: Steuerung übernehmen für volle Kontrolle */}
         <div className="flex flex-col gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5">
           <div className="flex items-center gap-2.5">
             <span className="text-base">🔒</span>
@@ -341,4 +439,5 @@ export function MirrorHomeLite({
         </div>
       </div>
     );
-}MirrorHomeLite.displayName = 'MirrorHomeLite';
+}
+MirrorHomeLite.displayName = 'MirrorHomeLite';

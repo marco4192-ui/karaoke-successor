@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 Tilldela mikrofon',
   automatic: '— Automatisk —',
   micAssignmentLabel: '🎤 Mikrofontilldelning',
+  companionApp: 'Companion-app',
   player1: 'Spelare 1',
   player2: 'Spelare 2',
   part1: 'Del 1',

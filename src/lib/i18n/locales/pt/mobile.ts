@@ -34,6 +34,148 @@ mobileHelp: {
   localOnlyNote: 'Esta ajuda roda inteiramente no seu telefone — ela não controla o desktop.',
 },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Tutoriais guiados para o app Companheiro — capítulo por capítulo em poucos minutos. Como no app principal, só que no seu celular.',
+  backToOverview: 'Voltar à visão geral',
+  stepOf: 'Passo {n} de {m}',
+  stepCount: '{n} passos',
+  reset: 'Redefinir tutoriais',
+  moreDetails: 'Saiba mais',
+  back: 'Voltar',
+  next: 'Avançar',
+  finish: 'Concluir',
+
+  start: {
+    title: 'Primeiros passos',
+    desc: 'Conectar, criar seu perfil e conhecer o app',
+    s1: {
+      t: 'Conectar ao desktop',
+      b: 'Escaneie o QR code na página inicial do desktop ou abra o link Companheiro. Celular e PC precisam estar na mesma rede WiFi — o código no canto superior direito do cabeçalho confirma a conexão.',
+      d: 'Se a conexão cair, o app reconecta automaticamente. Caso contrário, verifique o WiFi e toque em "Tentar conexão de novo".',
+    },
+    s2: {
+      t: 'Seu perfil de jogador',
+      b: 'Crie um perfil com nome, cor e foto. Toque no seu avatar no canto superior esquerdo para editá-lo a qualquer momento — a sincronização com o desktop é automática.',
+    },
+    s3: {
+      t: 'O app em resumo',
+      b: 'A barra de abas embaixo leva você a todas as áreas: início, biblioteca, festa, desafio, fila, jukebox, pontuações, conquistas e configurações. No canto superior direito ficam ajuda (?) e chat (💬).',
+    },
+    s4: {
+      t: 'Modos de jogo na página inicial',
+      b: 'Os blocos mostram os modos de jogo: single (1 jogador), duelo (2 mics), dueto (2 vozes) e modo festa com 9 modos para até 32 jogadores. Um toque abre a biblioteca com o modo pré-selecionado.',
+    },
+  },
+
+  songs: {
+    title: 'Pedir músicas',
+    desc: 'Explorar a biblioteca, escolher modo e aparelho, enfileirar',
+    s1: {
+      t: 'Encontrar uma música',
+      b: 'Na biblioteca você busca pelo campo de busca (título, artista, gênero) ou filtra por gênero, idioma, década e hits virais. Um toque numa música abre as opções da música.',
+    },
+    s2: {
+      t: 'Modo e dificuldade',
+      b: 'Em cima você escolhe single, duelo ou dueto (em duelo/dueto, também um parceiro). Embaixo define a dificuldade — o padrão do desktop aparece como referência.',
+    },
+    s3: {
+      t: 'Escolher o aparelho de canto',
+      b: '"Aparelho de canto" define com o que se canta: 📱 App Companheiro (o microfone do seu celular — pré-selecionado para jogadores conectados) ou 🎤 um microfone no desktop. Seu parceiro também ganha o próprio aparelho.',
+      d: 'A escolha entra na fila junto com a música — assim o desktop sabe, na hora de começar, exatamente de onde vem cada voz.',
+    },
+    s4: {
+      t: 'Para a fila',
+      b: '"Adicionar à Fila" envia a música — até 3 músicas por jogador. Alternativamente você coloca a música numa playlist ou desafia alguém pelo chat.',
+    },
+  },
+
+  queue: {
+    title: 'Fila',
+    desc: 'Gerenciar pedidos, ordenar e (com controle) iniciar',
+    s1: {
+      t: 'A fila completa',
+      b: 'A aba Fila mostra todos os pedidos — inclusive as músicas enfileiradas do desktop (marca 🖥️). Quem pediu a música aparece no avatar; 📱 significa: vai ser cantada pelo app Companheiro.',
+    },
+    s2: {
+      t: 'Remover e ordenar',
+      b: 'Com ✕ você remove as suas músicas. Arrastando pela alça (⠿) você move músicas para outra posição.',
+      d: 'Como aparelho de controle, você pode remover QUALQUER música e reordenar a lista inteira.',
+    },
+    s3: {
+      t: 'Com controle: tocar músicas',
+      b: 'Estando com o controle, você ganha dois botões extras: "Tocar próxima música" inicia a primeira da fila, "Limpar tudo" esvazia a fila inteira — além de um botão ▶ em cada música.',
+    },
+  },
+
+  singing: {
+    title: 'Cantar com o celular',
+    desc: 'Celular como microfone, exibição e dicas',
+    s1: {
+      t: 'Início automático',
+      b: 'Quando é a sua vez de cantar, seu microfone liga sozinho — no modo festa assim como no Sing-A-Long do app. No Battle Royale e no Medley, todos os jogadores do app cantam ao mesmo tempo.',
+    },
+    s2: {
+      t: 'Volume e nota',
+      b: 'A barra embaixo do cabeçalho mostra ao vivo o volume e a nota detectada do seu canto. No jogo você vê letra, seu indicador de afinação e a pontuação espelhados.',
+      d: 'Na primeira vez o navegador pede acesso ao microfone — toque em "Permitir". Você pode mudar a permissão depois nas configurações do site no navegador.',
+    },
+    s3: {
+      t: 'Melhor aproveitamento',
+      b: 'Mantenha o celular perto da boca e cante alto e claro. Música tocando direto no aparelho (caixas ao lado do celular) atrapalha o reconhecimento de afinação — fones no desktop são o ideal.',
+    },
+  },
+
+  party: {
+    title: 'Jogos de festa',
+    desc: 'Passa o Mic, Sing-A-Long, Battle Royale e mais',
+    s1: {
+      t: 'Participar sem controle',
+      b: 'Os jogos de festa rodam no desktop — você participa direto do celular: escolher músicas, votar, cantar. Para isso você NÃO precisa de controle.',
+    },
+    s2: {
+      t: 'Os modos de jogo',
+      b: 'Passa o Mic (um mic do desktop circula entre todos), Sing-A-Long do app (cada um canta no celular), Battle Royale, Medley, torneio, palavras faltando, karaokê às cegas e Avalie minha Música.',
+      d: 'Atenção: no "Passa o Mic" TODOS cantam no mesmo mic do desktop — ali o celular funciona só como controle remoto e espelho.',
+    },
+    s3: {
+      t: 'Votar e escolher músicas',
+      b: 'Nas votações de músicas os candidatos aparecem direto no seu celular — um toque basta. Na configuração da festa você vê jogadores, mics e ajustes espelhados ao vivo e pode (com controle) mudar tudo pelo celular.',
+    },
+  },
+
+  control: {
+    title: 'Controle remoto e chat',
+    desc: 'Comandar o desktop, travar, conversar',
+    s1: {
+      t: 'Tomar controle',
+      b: '"Tomar Controle" (página inicial) conecta seu celular ao desktop: suas abas comandam o PC — início, biblioteca, festa, fila, jukebox, pontuações, conquistas e configurações.',
+    },
+    s2: {
+      t: 'Só um aparelho de controle',
+      b: 'Exatamente UM aparelho controla por vez. Se outra pessoa tem o controle, a página inicial mostra quem é. Com "Liberar Controle" você libera a vaga.',
+      d: 'Áreas com 🔒 (festa, desafio, jukebox, configurações) precisam do controle — seu próprio perfil e a biblioteca ficam sempre abertos.',
+    },
+    s3: {
+      t: 'Chat e extras',
+      b: 'Toque em 💬 no canto superior direito para conversar com todos — os desafios chegam direto no chat. Ainda tem lista de desejos do jukebox, desafio diário, pontuações e conquistas como abas próprias.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Escolha um modo de jogo e peça uma música',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Aparelho de canto',
+deviceMe: 'Eu canto com',
+devicePartner: 'Parceiro canta com',
+deviceCompanion: 'App Companheiro',
+deviceMic: 'Microfone',
+deviceMicAuto: 'Microfone automático',
+deviceNoMics: 'Nenhum microfone de desktop configurado — o microfone padrão será usado.',
+deviceConnectedBadge: 'conectado',
+
 mobile: {
 // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Controle assumido',

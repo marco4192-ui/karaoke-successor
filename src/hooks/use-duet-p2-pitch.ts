@@ -12,6 +12,12 @@ interface DuetP2PitchParams {
   mobilePitch: MobilePitchData | null;
   setP2DetectedPitch: (pitch: number | null) => void;
   difficulty: Difficulty;
+  /** R39/P5: true (Default), wenn P2 über die Companion-App singt — nur dann
+   *  wird die Companion-Pitch-Quelle auf P2 gelegt. Hat der Nutzer für P2
+   *  explizit ein Desktop-Mikrofon gewählt (deviceAssignment.p2Companion ===
+   *  false), bleibt P2 beim lokalen Zweit-Mikrofon und die Handy-Pitch-
+   *  Daten werden ignoriert. */
+  p2Companion?: boolean;
 }
 
 interface DuetP2PitchResult {
@@ -31,25 +37,28 @@ export function useDuetP2Pitch({
   mobilePitch,
   setP2DetectedPitch,
   difficulty,
+  p2Companion = true,
 }: DuetP2PitchParams): DuetP2PitchResult {
   const [p2Volume, setP2Volume] = useState(0);
 
   // Use mobile pitch for P2 in duet/duel mode
+  // R39/P5: only when P2 actually sings via companion (explicit device
+  // choice from the song-start modal / queue item overrides the default).
   useEffect(() => {
-    if (isDuetMode && mobilePitch) {
+    if (isDuetMode && p2Companion && mobilePitch) {
       queueMicrotask(() => {
         // Use MIDI note (not frequency) for visual display consistency.
         // MobilePitchData.note is already a MIDI note number.
         setP2DetectedPitch(mobilePitch.note);
         setP2Volume(mobilePitch.volume || 0);
       });
-    } else if (isDuetMode && !mobilePitch?.frequency) {
+    } else if (isDuetMode && p2Companion && !mobilePitch?.frequency) {
       queueMicrotask(() => {
         setP2DetectedPitch(null);
         setP2Volume(0);
       });
     }
-  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
+  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume, p2Companion]);
 
   // ── P2 Local Microphone: Initialize a second pitch detector for P2 in duet/duel mode ──
   // When two microphones are assigned (playerIndex 0 and 1), use the second one for P2
@@ -71,9 +80,12 @@ export function useDuetP2Pitch({
 
     if (!p2Mic?.deviceId || p2DetectorInitRef.current) return;
 
-    // Only initialize P2 detector if no mobile pitch is coming in
-    // (mobile companion takes priority for P2 pitch data)
-    if (mobilePitchRef.current?.frequency) return;
+    // R39/P5: initialize the local P2 mic even when a companion streams —
+    // when P2 explicitly chose a desktop mic (p2Companion === false), the
+    // companion feed is NOT wired to P2 and this detector is the source.
+    // (When p2Companion is true, the old behavior stays: companion takes
+    // priority and the local mic is only a fallback.)
+    if (p2Companion && mobilePitchRef.current?.frequency) return;
 
     let destroyed = false;
     const detector = new PitchDetector();

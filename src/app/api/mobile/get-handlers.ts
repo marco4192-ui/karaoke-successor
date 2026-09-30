@@ -255,10 +255,20 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       });
 
     case 'getqueue':
-      // Get current song queue with companion info
+      // Get current song queue with companion info.
+      // R39/P7: The queue now includes the DESKTOP's local queue entries
+      // (flagged isDesktop, synced via syncdesktopqueue) so the companion
+      // queue view shows the FULL queue like the main app. Desktop
+      // consumers (queue-screen, use-queue-next-song) filter isDesktop
+      // entries out to avoid duplicates with their local state.
       return Response.json({
         success: true,
-        queue: mutableState.songQueue.filter(q => q.status !== 'completed'),
+        queue: [
+          ...(mutableState.desktopQueue ?? []).map(q => ({ ...q, isDesktop: true })),
+          ...mutableState.songQueue,
+        ]
+          .filter(q => q.status !== 'completed')
+          .sort((a, b) => a.addedAt - b.addedAt),
         queueByCompanion: getQueueByCompanion(),
       });
 
@@ -427,22 +437,76 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         return Response.json({ success: false, message: 'songId required' }, { status: 400 });
       }
       const dataUrl = mutableState.songCovers[songId];
-      if (!dataUrl) {
-        return Response.json({ success: false, message: 'No cover' }, { status: 404 });
+      if (dataUrl) {
+        // Note: no regex /s flag — the tsconfig target predates ES2018.
+        const match = /^data:(image\/[a-zA-Z+]+);base64,([\s\S]*)$/.exec(dataUrl);
+        if (!match) {
+          return Response.json({ success: false, message: 'Invalid cover data' }, { status: 500 });
+        }
+        const buffer = Buffer.from(match[2], 'base64');
+        return new Response(new Uint8Array(buffer), {
+          status: 200,
+          headers: {
+            'Content-Type': match[1],
+            'Cache-Control': 'public, max-age=86400',
+          },
+        });
       }
-      // Note: no regex /s flag — the tsconfig target predates ES2018.
-      const match = /^data:(image\/[a-zA-Z+]+);base64,([\s\S]*)$/.exec(dataUrl);
-      if (!match) {
-        return Response.json({ success: false, message: 'Invalid cover data' }, { status: 500 });
+
+      // ── R39/P2: Server-seitiger Cover-Proxy (Fallback) ──
+      // Der Desktop kann Covers von fremden Servern (http/https) nicht per
+      // Canvas zu Thumbnails verkleinern — die Canvas ist CORS-tainted und
+      // toDataURL() schlägt fehl. Deshalb liefert der Server hier das
+      // Original-Bild direkt aus (Node-Fetch kennt kein CORS), zwischen-
+      // speichert es (24 h, max. 300 Einträge) und das Handy lädt es über
+      // die eigene Herkunft — CORS-problemlos. Das ist die Ursache dafür,
+      // dass die Companion-Library bisher NIE Thumbnails für Online-Covers
+      // zeigte, obwohl der Desktop sie anzeigt.
+      const song = mutableState.songLibrary.find(s => s.id === songId);
+      const remoteSrc = song?.coverImage;
+      // data:-URLs (im Song-Library-Sync enthalten) lassen sich direkt dekodieren
+      if (remoteSrc && remoteSrc.startsWith('data:image/')) {
+        const inlineMatch = /^data:(image\/[a-zA-Z+]+);base64,([\s\S]*)$/.exec(remoteSrc);
+        if (inlineMatch) {
+          const inlineBuf = Buffer.from(inlineMatch[2], 'base64');
+          return new Response(new Uint8Array(inlineBuf), {
+            status: 200,
+            headers: { 'Content-Type': inlineMatch[1], 'Cache-Control': 'public, max-age=86400' },
+          });
+        }
       }
-      const buffer = Buffer.from(match[2], 'base64');
-      return new Response(new Uint8Array(buffer), {
-        status: 200,
-        headers: {
-          'Content-Type': match[1],
-          'Cache-Control': 'public, max-age=86400',
-        },
-      });
+      if (remoteSrc && /^https?:/i.test(remoteSrc)) {
+        const cached = (mutableState.remoteCoverCache ??= new Map()).get(songId);
+        if (cached && Date.now() - cached.at < 24 * 3600 * 1000) {
+          return new Response(new Uint8Array(cached.buf), {
+            status: 200,
+            headers: { 'Content-Type': cached.type, 'Cache-Control': 'public, max-age=86400' },
+          });
+        }
+        try {
+          const ctl = new AbortController();
+          const to = setTimeout(() => ctl.abort(), 5000);
+          const res = await fetch(remoteSrc, { signal: ctl.signal });
+          clearTimeout(to);
+          if (res.ok) {
+            const type = res.headers.get('content-type') || 'image/jpeg';
+            if (type.startsWith('image/')) {
+              const buf = Buffer.from(await res.arrayBuffer());
+              if (buf.length <= 5 * 1024 * 1024) {
+                if ((mutableState.remoteCoverCache ??= new Map()).size > 300) mutableState.remoteCoverCache.clear();
+                mutableState.remoteCoverCache.set(songId, { buf, type, at: Date.now() });
+                return new Response(new Uint8Array(buf), {
+                  status: 200,
+                  headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=86400' },
+                });
+              }
+            }
+          }
+        } catch {
+          // Remote fetch failed — fall through to 404 (the tile shows initials)
+        }
+      }
+      return Response.json({ success: false, message: 'No cover' }, { status: 404 });
     }
 
     // R34: Lightweight list of songIds that have an uploaded cover thumbnail

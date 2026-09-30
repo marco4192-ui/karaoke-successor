@@ -295,6 +295,27 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setWebcamConfig(savedConfig);
   }, []);
 
+  // R39/P10: Live-Reload der Webcam-Config — wenn die Companion-App die
+  // Webcam per settings_set aktiviert/ändert (settingsChange-Event), wird
+  // die Konfiguration sofort übernommen. Vorher galt sie erst ab dem
+  // nächsten Song-Mount, wodurch der Enable-Button auf dem Handy wirkungslos
+  // erschien, obwohl der Desktop die Config bereits gespeichert hatte.
+  useEffect(() => {
+    const handleWebcamSettingsChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      if (detail?.key !== 'karaoke-webcam-config' || !detail?.companionSetting) return;
+      const next = loadWebcamConfig();
+      setWebcamConfig(prev => {
+        // Nur übernehmen, wenn sich wirklich etwas ändert (verhindert
+        // Endlos-Loops mit dem eigenen saveWebcamConfig).
+        const changed = JSON.stringify(prev) !== JSON.stringify(next);
+        return changed ? next : prev;
+      });
+    };
+    window.addEventListener('settingsChange', handleWebcamSettingsChange);
+    return () => window.removeEventListener('settingsChange', handleWebcamSettingsChange);
+  }, []);
+
   // Update webcam config and save to localStorage
   const updateWebcamConfig = useCallback((updates: Partial<WebcamBackgroundConfig>) => {
     setWebcamConfig(prev => {
@@ -387,6 +408,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     mobilePitch,
     setP2DetectedPitch,
     difficulty: gameState.difficulty,
+    // R39/P5: explizite Gerät-Auswahl — singt P2 laut Queue-Item/Start-Modal
+    // über die Companion-App, wird die Handy-Pitch auf P2 gelegt; sonst
+    // bleibt P2 beim Desktop-Mikrofon (Default true = altes Verhalten).
+    p2Companion: gameState.deviceAssignment?.p2Companion !== false,
   });
 
   // Mobile companion sync - periodic game state updates

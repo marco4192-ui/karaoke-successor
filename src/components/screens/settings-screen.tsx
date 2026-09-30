@@ -103,6 +103,11 @@ function SettingsScreen() {
 
   // Keep the note display state in sync when the companion app changes the
   // note settings remotely (settings_set → settingsChange event).
+  // R39/P10: WEBCAM_CONFIG is now also synced — the companion's "Webcam
+  // aktivieren" button writes the config via settings_set; without this
+  // listener the webcam tab kept its stale in-memory state (looked like the
+  // button "had no effect") and the next local save would have overwritten
+  // the companion's config with the stale values.
   useEffect(() => {
     const handleCompanionSetting = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
@@ -112,6 +117,10 @@ function SettingsScreen() {
       } else if (detail.key === StorageKeys.NOTE_SEALED_HIT_COLOR) {
         const raw = String(detail.value);
         setSealedHitColor(/^#[0-9a-fA-F]{6}$/.test(raw) ? raw : DEFAULT_SEALED_HIT_COLOR);
+      } else if (detail.key === StorageKeys.WEBCAM_CONFIG) {
+        // Reload the FULL config from localStorage (the companion sends the
+        // complete JSON blob) so the webcam tab reflects the change live.
+        setWebcamConfig(loadWebcamConfig());
       }
     };
     window.addEventListener('settingsChange', handleCompanionSetting);

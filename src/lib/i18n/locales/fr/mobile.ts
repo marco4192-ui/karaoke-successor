@@ -34,6 +34,148 @@ mobileHelp: {
   localOnlyNote: 'Cette aide tourne entièrement sur votre téléphone — elle ne contrôle pas le bureau.',
 },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Tutoriels guidés pour l\'app Companion — chapitre par chapitre en quelques minutes. Comme dans l\'app principale, mais pour votre téléphone.',
+  backToOverview: 'Retour à la vue d\'ensemble',
+  stepOf: 'Étape {n} sur {m}',
+  stepCount: '{n} étapes',
+  reset: 'Réinitialiser les tutoriels',
+  moreDetails: 'En savoir plus',
+  back: 'Retour',
+  next: 'Suivant',
+  finish: 'Terminé',
+
+  start: {
+    title: 'Premiers pas',
+    desc: 'Se connecter, créer son profil et découvrir l\'app',
+    s1: {
+      t: 'Connecter au bureau',
+      b: 'Scannez le QR code sur la page d\'accueil du bureau ou ouvrez le lien Companion. Le téléphone et le PC doivent être sur le même réseau WiFi — le code en haut à droite de l\'en-tête confirme la connexion.',
+      d: 'Si la connexion est perdue, l\'app se reconnecte automatiquement. Sinon, vérifiez le WiFi et touchez "Réessayer la connexion".',
+    },
+    s2: {
+      t: 'Votre profil de joueur',
+      b: 'Créez un profil avec nom, couleur et photo. Touchez votre avatar en haut à gauche pour le modifier à tout moment — la synchronisation avec le bureau se fait automatiquement.',
+    },
+    s3: {
+      t: 'L\'app en un coup d\'œil',
+      b: 'La barre d\'onglets en bas vous guide dans toutes les zones : accueil, bibliothèque, fête, défi, file, jukebox, scores, succès et paramètres. En haut à droite se trouvent l\'aide (?) et le chat (💬).',
+    },
+    s4: {
+      t: 'Modes de jeu sur la page d\'accueil',
+      b: 'Les tuiles affichent les modes de jeu : solo (1 joueur), duel (2 micros), duo (2 voix) et mode fête avec 9 modes de jeu pour jusqu\'à 32 joueurs. Un appui ouvre la bibliothèque avec le mode présélectionné.',
+    },
+  },
+
+  songs: {
+    title: 'Demander des chansons',
+    desc: 'Parcourir la bibliothèque, choisir mode et appareil, mettre en file',
+    s1: {
+      t: 'Trouver une chanson',
+      b: 'Dans la bibliothèque, vous cherchez via le champ de recherche (titre, artiste, genre) ou filtrez par genre, langue, décennie et hits viraux. Un appui sur une chanson ouvre les options de la chanson.',
+    },
+    s2: {
+      t: 'Mode et difficulté',
+      b: 'En haut, choisissez solo, duel ou duo (en duel/duo, un partenaire en plus). En dessous, réglez la difficulté — le standard du bureau s\'affiche en indication.',
+    },
+    s3: {
+      t: 'Choisir l\'appareil de chant',
+      b: '"Appareil de chant" détermine avec quoi on chante : 📱 App Companion (le micro de votre téléphone — présélectionné pour les joueurs connectés) ou 🎤 un micro sur le bureau. Votre partenaire reçoit aussi son propre appareil.',
+      d: 'Le choix part en file avec la chanson — le bureau sait ainsi au démarrage exactement d\'où vient chaque voix.',
+    },
+    s4: {
+      t: 'Dans la file',
+      b: '"Ajouter à la file" envoie la chanson — jusqu\'à 3 chansons par joueur. Autrement, ajoutez la chanson à une playlist ou défiez quelqu\'un par chat.',
+    },
+  },
+
+  queue: {
+    title: 'File d\'attente',
+    desc: 'Gérer les demandes, trier et (en contrôle) les lancer',
+    s1: {
+      t: 'La file complète',
+      b: 'L\'onglet File affiche toutes les demandes — y compris les chansons enfilées depuis le bureau (marque 🖥️). Qui a demandé la chanson se voit à l\'avatar ; 📱 signifie : elle sera chantée via l\'app Companion.',
+    },
+    s2: {
+      t: 'Retirer et trier',
+      b: 'Avec ✕ vous retirez vos propres chansons. Par glisser-déposer à la poignée (⠿), vous déplacez des chansons à une autre position.',
+      d: 'En tant qu\'appareil de contrôle, vous pouvez retirer N\'IMPORTE QUELLE chanson et réordonner toute la liste.',
+    },
+    s3: {
+      t: 'En contrôle : lancer des chansons',
+      b: 'Quand vous tenez le contrôle, vous recevez deux boutons en plus : "Jouer la chanson suivante" lance la première chanson de la file, "Tout effacer" vide la file entière — plus un bouton ▶ sur chaque chanson.',
+    },
+  },
+
+  singing: {
+    title: 'Chanter avec le téléphone',
+    desc: 'Le téléphone comme micro, affichage et conseils',
+    s1: {
+      t: 'Démarrage automatique',
+      b: 'Quand c\'est votre tour de chanter, votre micro démarre automatiquement — en mode fête comme dans le Sing-A-Long Companion. En Battle Royale et Medley, tous les joueurs Companion chantent en même temps.',
+    },
+    s2: {
+      t: 'Volume et note',
+      b: 'La barre sous l\'en-tête affiche en direct le volume et la note détectée de votre chant. En jeu, vous voyez les paroles, votre indicateur de hauteur et le score en miroir.',
+      d: 'La première fois, le navigateur demande l\'accès au micro — touchez "Autoriser". Vous pouvez modifier la permission plus tard dans les réglages du site du navigateur.',
+    },
+    s3: {
+      t: 'Meilleure précision',
+      b: 'Gardez le téléphone près de la bouche et chantez fort et clairement. La musique qui joue juste à côté de l\'appareil (enceintes à côté du téléphone) perturbe la détection de hauteur — le casque sur le bureau est idéal.',
+    },
+  },
+
+  party: {
+    title: 'Jeux de fête',
+    desc: 'Passe le Micro, Sing-A-Long, Battle Royale et plus',
+    s1: {
+      t: 'Participer sans contrôle',
+      b: 'Les jeux de fête tournent sur le bureau — vous participez directement depuis votre téléphone : choisir des chansons, voter, chanter. Vous n\'avez PAS besoin du contrôle pour ça.',
+    },
+    s2: {
+      t: 'Les modes de jeu',
+      b: 'Passe le Micro (un micro du bureau passe de main en main), Sing-A-Long Companion (chacun chante sur son téléphone), Battle Royale, Medley, tournoi, mots manquants, karaoké à l\'aveugle et Notez ma Chanson.',
+      d: 'Attention : dans "Passe le Micro", TOUT le monde chante dans le même micro du bureau — là, le téléphone ne sert que de télécommande et de miroir.',
+    },
+    s3: {
+      t: 'Voter et choisir des chansons',
+      b: 'Lors des votes de chansons, les candidats apparaissent directement sur votre téléphone — un appui suffit. Dans la configuration de fête, vous voyez joueurs, micros et réglages en miroir en direct et pouvez (en contrôle) tout changer depuis le téléphone.',
+    },
+  },
+
+  control: {
+    title: 'Télécommande et chat',
+    desc: 'Piloter le bureau, verrouiller, discuter',
+    s1: {
+      t: 'Prendre le contrôle',
+      b: '"Prendre le Contrôle" (page d\'accueil) connecte votre téléphone au bureau : vos onglets pilotent le PC — accueil, bibliothèque, fête, file, jukebox, scores, succès et paramètres.',
+    },
+    s2: {
+      t: 'Un seul appareil de contrôle',
+      b: 'Exactement UN appareil contrôle à la fois. Si quelqu\'un d\'autre tient le contrôle, la page d\'accueil vous montre qui c\'est. Avec "Libérer le Contrôle", vous libérez la place.',
+      d: 'Les zones avec 🔒 (fête, défi, jukebox, paramètres) exigent le contrôle — votre propre profil et la bibliothèque restent toujours ouverts.',
+    },
+    s3: {
+      t: 'Chat et extras',
+      b: 'Touchez 💬 en haut à droite pour discuter avec tout le monde — les défis atterrissent directement dans le chat. S\'y ajoutent la liste de souhaits du jukebox, le défi quotidien, les scores et les succès en onglets propres.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Choisissez un mode de jeu et demandez une chanson',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Appareil de chant',
+deviceMe: 'Je chante avec',
+devicePartner: 'Le partenaire chante avec',
+deviceCompanion: 'App Compagnon',
+deviceMic: 'Micro',
+deviceMicAuto: 'Micro automatique',
+deviceNoMics: 'Aucun micro de bureau configuré — le micro standard sera utilisé.',
+deviceConnectedBadge: 'connecté',
+
 mobile: {
 // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Contrôle pris',

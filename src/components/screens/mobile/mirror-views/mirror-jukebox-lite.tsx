@@ -450,6 +450,11 @@ export function MirrorJukeboxLite({
     }, [sendCommand, showNotice, pullStateSoon, t, scheduleOptimisticExpiry]);
 
     const [confirmEnqueueId, setConfirmEnqueueId] = useState<string | null>(null);
+
+    // R39/P8: Akkordeon-Zustand für "Playlists & Pool" — Pool-Panel ist
+    // standardmäßig geöffnet (zeigt den aktiven Pool), Playlists zu.
+    const [poolOpen, setPoolOpen] = useState(true);
+    const [playlistsOpen, setPlaylistsOpen] = useState(false);
     const enqueuePlaylist = useCallback((playlistId: string) => {
       setConfirmEnqueueId(null);
       sendCommand('jukebox_enqueue_playlist', { playlistId });
@@ -700,7 +705,7 @@ export function MirrorJukeboxLite({
           )}
         </div>
 
-        {/* ── R33/P8: Playlists & Song-Pool ── */}
+        {/* ── R39/P8: Playlists & Song-Pool — als Akkordeon ── */}
         <div className="rounded-xl bg-white/5 border border-white/10 p-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
@@ -717,121 +722,187 @@ export function MirrorJukeboxLite({
             </button>
           </div>
 
-          {/* "Alle Songs" — Pool zurücksetzen */}
-          <div className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
-            !activePoolId
-              ? 'border-cyan-400/40 bg-cyan-500/10'
-              : 'border-white/10 bg-white/[0.03]'
-          }`}>
-            <span className="text-base shrink-0">🎼</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">
-                {tOr(t, 'mobile.mirrorJukeboxPoolAll', 'Alle Songs')}
-              </p>
-              <p className="text-[11px] text-white/40">
-                {tOr(t, 'mobile.mirrorJukeboxPlaylistSongs', '{n} Songs').replace('{n}', String(librarySongs.length))}
-              </p>
-            </div>
-            {!activePoolId ? (
-              <span className="shrink-0 rounded-full bg-cyan-500/20 border border-cyan-400/40 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">
-                {tOr(t, 'mobile.mirrorJukeboxActivePool', 'Aktiver Pool')}
+          {/* ── Akkordeon-Panel 1: Song-Pool ── */}
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+            <button
+              onClick={() => { haptic(); setPoolOpen(v => !v); }}
+              aria-expanded={poolOpen}
+              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left active:bg-white/5 transition-colors"
+            >
+              <span className="text-base shrink-0">🎼</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                {tOr(t, 'mobile.mirrorJukeboxPoolPanel', 'Song-Pool')}
               </span>
-            ) : (
-              <button
-                onClick={() => setPool('')}
-                className="shrink-0 rounded-lg bg-cyan-500/15 border border-cyan-400/30 px-2.5 py-1.5 text-[11px] font-medium text-cyan-300 active:scale-95 transition-transform"
-                title={tOr(t, 'mobile.mirrorJukeboxSetPool', 'Als Pool festlegen')}
+              <span className="shrink-0 truncate text-[11px] text-cyan-300/80">
+                {activePoolId
+                  ? (playlists.find(pl => pl.id === activePoolId)?.name || tOr(t, 'mobile.mirrorJukeboxActivePool', 'Aktiver Pool'))
+                  : tOr(t, 'mobile.mirrorJukeboxPoolAll', 'Alle Songs')}
+              </span>
+              <span
+                className={'shrink-0 text-white/30 text-xs transition-transform duration-200 ' + (poolOpen ? 'rotate-90' : '')}
+                aria-hidden="true"
               >
-                📀 {tOr(t, 'mobile.mirrorJukeboxSetPool', 'Als Pool')}
-              </button>
-            )}
-          </div>
-
-          {/* Playlist-Liste */}
-          {playlists.map(pl => {
-            const isActive = activePoolId === pl.id;
-            const confirming = confirmEnqueueId === pl.id;
-            return (
-              <div
-                key={pl.id}
-                className={`mt-2 flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
-                  isActive
-                    ? 'border-cyan-400/40 bg-cyan-500/10'
-                    : 'border-white/10 bg-white/[0.03]'
-                }`}
-              >
-                <span className="text-base shrink-0">{pl.isSystem ? '⚙️' : '💿'}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate text-sm font-medium text-white">
-                    <span className="truncate">{pl.name}</span>
-                    {pl.isSystem && (
-                      <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/50">
-                        {tOr(t, 'mobile.mirrorJukeboxSystemBadge', 'System')}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-[11px] text-white/40">
-                    {tOr(t, 'mobile.mirrorJukeboxPlaylistSongs', '{n} Songs').replace('{n}', String(pl.songs?.length ?? 0))}
-                  </p>
-                </div>
-                {confirming ? (
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[10px] text-white/60">
-                      {tOr(t, 'mobile.mirrorJukeboxEnqueueConfirm', 'Einreihen?')}
-                    </span>
-                    <button
-                      onClick={() => enqueuePlaylist(pl.id)}
-                      className="rounded-lg bg-green-500/20 border border-green-400/40 px-2 py-1 text-[11px] font-bold text-green-300 active:scale-95 transition-transform"
-                      aria-label={tOr(t, 'mobile.mirrorJukeboxEnqueueConfirm', 'Einreihen?')}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      onClick={() => setConfirmEnqueueId(null)}
-                      className="rounded-lg bg-red-500/15 border border-red-400/30 px-2 py-1 text-[11px] font-bold text-red-400 active:scale-95 transition-transform"
-                      aria-label={t('mobile.mirrorJukeboxStop')}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {isActive ? (
-                      <span className="rounded-full bg-cyan-500/20 border border-cyan-400/40 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">
+                {'\u203A'}
+              </span>
+            </button>
+            <div
+              className={
+                'grid transition-[grid-template-rows] duration-200 ease-out ' +
+                (poolOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')
+              }
+            >
+              <div className="overflow-hidden">
+                <div className="px-2 pb-2 pt-0.5">
+                  {/* "Alle Songs" — Pool zurücksetzen */}
+                  <div className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
+                    !activePoolId
+                      ? 'border-cyan-400/40 bg-cyan-500/10'
+                      : 'border-white/10 bg-white/[0.03]'
+                  }`}>
+                    <span className="text-base shrink-0">🎼</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">
+                        {tOr(t, 'mobile.mirrorJukeboxPoolAll', 'Alle Songs')}
+                      </p>
+                      <p className="text-[11px] text-white/40">
+                        {tOr(t, 'mobile.mirrorJukeboxPlaylistSongs', '{n} Songs').replace('{n}', String(librarySongs.length))}
+                      </p>
+                    </div>
+                    {!activePoolId ? (
+                      <span className="shrink-0 rounded-full bg-cyan-500/20 border border-cyan-400/40 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">
                         {tOr(t, 'mobile.mirrorJukeboxActivePool', 'Aktiver Pool')}
                       </span>
-                    ) : !pl.isSystem ? (
+                    ) : (
                       <button
-                        onClick={() => setPool(pl.id)}
-                        className="rounded-lg bg-cyan-500/15 border border-cyan-400/30 px-2.5 py-1.5 text-[11px] font-medium text-cyan-300 active:scale-95 transition-transform"
+                        onClick={() => setPool('')}
+                        className="shrink-0 rounded-lg bg-cyan-500/15 border border-cyan-400/30 px-2.5 py-1.5 text-[11px] font-medium text-cyan-300 active:scale-95 transition-transform"
                         title={tOr(t, 'mobile.mirrorJukeboxSetPool', 'Als Pool festlegen')}
                       >
-                        📀
+                        📀 {tOr(t, 'mobile.mirrorJukeboxSetPool', 'Als Pool')}
                       </button>
-                    ) : null}
-                    <button
-                      onClick={() => { haptic(); setConfirmEnqueueId(pl.id); }}
-                      className="rounded-lg bg-fuchsia-500/15 border border-fuchsia-400/30 px-2.5 py-1.5 text-[11px] font-medium text-fuchsia-300 active:scale-95 transition-transform"
-                      title={tOr(t, 'mobile.mirrorJukeboxEnqueue', 'Zur Wunschliste')}
-                    >
-                      ➕
-                    </button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            );
-          })}
+            </div>
+          </div>
 
-          {!playlistsLoading && playlists.length === 0 && !playlistsError && (
-            <p className="mt-2 text-xs text-white/30">
-              {tOr(t, 'mobile.mirrorJukeboxPlaylistsEmpty', 'Keine Playlists vorhanden.')}
-            </p>
-          )}
-          {playlistsError && (
-            <p className="mt-2 text-xs text-red-400/80">
-              {tOr(t, 'mobile.mirrorJukeboxPlaylistsError', 'Playlists konnten nicht geladen werden.')}
-            </p>
-          )}
+          {/* ── Akkordeon-Panel 2: Playlists ── */}
+          <div className="mt-2 overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+            <button
+              onClick={() => { haptic(); setPlaylistsOpen(v => !v); }}
+              aria-expanded={playlistsOpen}
+              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left active:bg-white/5 transition-colors"
+            >
+              <span className="text-base shrink-0">💿</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                {tOr(t, 'mobile.mirrorJukeboxPlaylistsPanel', 'Playlists')}
+              </span>
+              <span className="shrink-0 text-[11px] text-white/40">{playlists.length}</span>
+              <span
+                className={'shrink-0 text-white/30 text-xs transition-transform duration-200 ' + (playlistsOpen ? 'rotate-90' : '')}
+                aria-hidden="true"
+              >
+                {'\u203A'}
+              </span>
+            </button>
+            <div
+              className={
+                'grid transition-[grid-template-rows] duration-200 ease-out ' +
+                (playlistsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')
+              }
+            >
+              <div className="overflow-hidden">
+                <div className="px-2 pb-2 pt-0.5 kz-scroll max-h-[50vh] overflow-y-auto">
+                  {/* Playlist-Liste */}
+                  {playlists.map(pl => {
+                    const isActive = activePoolId === pl.id;
+                    const confirming = confirmEnqueueId === pl.id;
+                    return (
+                      <div
+                        key={pl.id}
+                        className={`mt-2 flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
+                          isActive
+                            ? 'border-cyan-400/40 bg-cyan-500/10'
+                            : 'border-white/10 bg-white/[0.03]'
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{pl.isSystem ? '⚙️' : '💿'}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-1.5 truncate text-sm font-medium text-white">
+                            <span className="truncate">{pl.name}</span>
+                            {pl.isSystem && (
+                              <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/50">
+                                {tOr(t, 'mobile.mirrorJukeboxSystemBadge', 'System')}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-white/40">
+                            {tOr(t, 'mobile.mirrorJukeboxPlaylistSongs', '{n} Songs').replace('{n}', String(pl.songs?.length ?? 0))}
+                          </p>
+                        </div>
+                        {confirming ? (
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <span className="text-[10px] text-white/60">
+                              {tOr(t, 'mobile.mirrorJukeboxEnqueueConfirm', 'Einreihen?')}
+                            </span>
+                            <button
+                              onClick={() => enqueuePlaylist(pl.id)}
+                              className="rounded-lg bg-green-500/20 border border-green-400/40 px-2 py-1 text-[11px] font-bold text-green-300 active:scale-95 transition-transform"
+                              aria-label={tOr(t, 'mobile.mirrorJukeboxEnqueueConfirm', 'Einreihen?')}
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={() => setConfirmEnqueueId(null)}
+                              className="rounded-lg bg-red-500/15 border border-red-400/30 px-2 py-1 text-[11px] font-bold text-red-400 active:scale-95 transition-transform"
+                              aria-label={t('mobile.mirrorJukeboxStop')}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {isActive ? (
+                              <span className="rounded-full bg-cyan-500/20 border border-cyan-400/40 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">
+                                {tOr(t, 'mobile.mirrorJukeboxActivePool', 'Aktiver Pool')}
+                              </span>
+                            ) : !pl.isSystem ? (
+                              <button
+                                onClick={() => setPool(pl.id)}
+                                className="rounded-lg bg-cyan-500/15 border border-cyan-400/30 px-2.5 py-1.5 text-[11px] font-medium text-cyan-300 active:scale-95 transition-transform"
+                                title={tOr(t, 'mobile.mirrorJukeboxSetPool', 'Als Pool festlegen')}
+                              >
+                                📀
+                              </button>
+                            ) : null}
+                            <button
+                              onClick={() => { haptic(); setConfirmEnqueueId(pl.id); }}
+                              className="rounded-lg bg-fuchsia-500/15 border border-fuchsia-400/30 px-2.5 py-1.5 text-[11px] font-medium text-fuchsia-300 active:scale-95 transition-transform"
+                              title={tOr(t, 'mobile.mirrorJukeboxEnqueue', 'Zur Wunschliste')}
+                            >
+                              ➕
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {!playlistsLoading && playlists.length === 0 && !playlistsError && (
+                    <p className="mt-2 text-xs text-white/30">
+                      {tOr(t, 'mobile.mirrorJukeboxPlaylistsEmpty', 'Keine Playlists vorhanden.')}
+                    </p>
+                  )}
+                  {playlistsError && (
+                    <p className="mt-2 text-xs text-red-400/80">
+                      {tOr(t, 'mobile.mirrorJukeboxPlaylistsError', 'Playlists konnten nicht geladen werden.')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Video-Link: in die Desktop-Jukebox-Warteschlange einreihen */}

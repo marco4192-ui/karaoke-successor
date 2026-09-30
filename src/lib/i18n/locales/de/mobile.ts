@@ -34,7 +34,149 @@ export const mobileTranslations = {
     localOnlyNote: 'Diese Hilfe läuft komplett auf deinem Handy — sie steuert den Desktop nicht.',
   },
 
-mobile: {
+  // ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+  mobileTutorial: {
+    intro: 'Begleitete Tutorials für die Companion-App — Kapitel für Kapitel in wenigen Minuten. Wie in der Haupt-App, nur für dein Handy.',
+    backToOverview: 'Zurück zur Übersicht',
+    stepOf: 'Schritt {n} von {m}',
+    stepCount: '{n} Schritte',
+    reset: 'Tutorials zurücksetzen',
+    moreDetails: 'Mehr erfahren',
+    back: 'Zurück',
+    next: 'Weiter',
+    finish: 'Fertig',
+
+    start: {
+      title: 'Erste Schritte',
+      desc: 'Verbinden, Profil anlegen und die App kennenlernen',
+      s1: {
+        t: 'Mit dem Desktop verbinden',
+        b: 'Scanne den QR-Code auf der Startseite des Desktops oder öffne den Companion-Link. Handy und PC müssen im selben WLAN sein — der Code oben rechts im Header bestätigt die Verbindung.',
+        d: 'Geht die Verbindung verloren, verbindet sich die App automatisch neu. Prüfe sonst das WLAN und tippe auf „Verbindung wiederholen“.',
+      },
+      s2: {
+        t: 'Dein Spielerprofil',
+        b: 'Lege ein Profil mit Name, Farbe und Foto an. Tippe oben links auf deinen Avatar, um es jederzeit zu bearbeiten — Synchronisation mit dem Desktop passiert automatisch.',
+      },
+      s3: {
+        t: 'Die App im Überblick',
+        b: 'Die Tab-Leiste unten führt dich durch alle Bereiche: Start, Bibliothek, Party, Challenge, Queue, Jukebox, Highscores, Erfolge und Einstellungen. Oben rechts findest du Hilfe (?) und Chat (💬).',
+      },
+      s4: {
+        t: 'Spielmodi auf der Startseite',
+        b: 'Die Kacheln zeigen die Spielmodi: Single (1 Spieler), Duell (2 Mics), Duett (2 Stimmen) und Party-Modus mit 9 Spielmodi für bis zu 32 Spieler. Ein Tipp öffnet die Bibliothek mit vorgewähltem Modus.',
+      },
+    },
+
+    songs: {
+      title: 'Songs wünschen',
+      desc: 'Bibliothek durchsuchen, Modus und Gerät wählen, einreihen',
+      s1: {
+        t: 'Song finden',
+        b: 'In der Bibliothek suchst du per Suchfeld (Titel, Artist, Genre) oder filterst nach Genre, Sprache, Jahrzehnt und Viral-Hits. Ein Tipp auf einen Song öffnet die Song-Optionen.',
+      },
+      s2: {
+        t: 'Modus & Schwierigkeit',
+        b: 'Oben wählst du Solo, Duell oder Duett (bei Duell/Duett zusätzlich einen Partner). Darunter stellst du die Schwierigkeit ein — der Desktop-Standard ist als Hinweis dabei.',
+      },
+      s3: {
+        t: 'Gesangs-Gerät wählen',
+        b: '„Gesangs-Gerät“ legt fest, womit gesungen wird: 📱 Companion-App (dein Handy-Mikrofon — für verbundene Spieler vorausgewählt) oder 🎤 ein Mikrofon am Desktop. Auch dein Partner bekommt sein eigenes Gerät.',
+        d: 'Die Wahl wird mit dem Song in die Warteschlange gelegt — der Desktop weiß dann beim Start genau, welche Stimme von wo kommt.',
+      },
+      s4: {
+        t: 'In die Warteschlange',
+        b: '„Zur Warteschlange hinzufügen“ reicht den Song ein — bis zu 3 Songs pro Spieler. Alternativ legst du den Song auf eine Playlist oder forderst jemanden per Chat heraus.',
+      },
+    },
+
+    queue: {
+      title: 'Warteschlange',
+      desc: 'Wünsche verwalten, sortieren und (steuernd) starten',
+      s1: {
+        t: 'Die komplette Queue',
+        b: 'Der Queue-Tab zeigt alle Wünsche — auch die vom Desktop eingereihten Songs (🖥️-Kennzeichnung). Wer den Song gewünscht hat, siehst du am Avatar; 📱 heißt: gesungen wird über die Companion-App.',
+      },
+      s2: {
+        t: 'Entfernen & Sortieren',
+        b: 'Mit ✕ entfernst du deine eigenen Songs. Per Drag-and-Drop am Zieh-Griff (⠿) verschiebst du Songs an eine andere Position.',
+        d: 'Als steuerndes Gerät darfst du JEDEN Song entfernen und die komplette Reihenfolge neu ordnen.',
+      },
+      s3: {
+        t: 'Steuernd: Songs starten',
+        b: 'Hältst du die Steuerung, bekommst du zwei Extra-Buttons: „Nächsten Song spielen“ startet den ersten Queue-Song, „Alle entfernen“ leert die komplette Warteschlange — plus einen ▶-Play-Button an jedem Song.',
+      },
+    },
+
+    singing: {
+      title: 'Singen mit dem Handy',
+      desc: 'Handy als Mikrofon, Anzeige und Tipps',
+      s1: {
+        t: 'Automatischer Start',
+        b: 'Bist du als Sänger dran, startet dein Mikrofon automatisch — im Party-Modus genauso wie im Companion-Singalong. Bei Battle Royale und Medley singen alle Companion-Spieler gleichzeitig.',
+      },
+      s2: {
+        t: 'Lautstärke & Tonanzeige',
+        b: 'Die Leiste unter dem Header zeigt live Lautstärke und die erkannte Note deines Gesangs. Im Spiel siehst du Lyrics, deine Pitch-Anzeige und den Punktestand gespiegelt.',
+        d: 'Beim ersten Mal fragt der Browser nach Mikrofon-Zugriff — tippe auf „Erlauben“. Die Berechtigung kannst du später in den Browser-Einstellungen der Seite ändern.',
+      },
+      s3: {
+        t: 'Bessere Trefferquote',
+        b: 'Halte das Handy nah am Mund und sing laut & deutlich. Musik direkt am Gerät (Lautsprecher neben dem Handy) stört die Tonerkennung — Kopfhörer am Desktop sind ideal.',
+      },
+    },
+
+    party: {
+      title: 'Party-Spiele',
+      desc: 'Reich das Mikro, Singalong, Battle Royale & Co.',
+      s1: {
+        t: 'Mitmachen ohne Steuerung',
+        b: 'Party-Spiele laufen am Desktop — du machst direkt vom Handy aus mit: Songs auswählen, abstimmen, singen. Eine Steuerung brauchst du dafür NICHT.',
+      },
+      s2: {
+        t: 'Die Spielmodi',
+        b: 'Reich das Mikro (ein Desktop-Mikro wandert durch alle), Companion-Singalong (jeder singt am Handy), Battle Royale, Medley, Turnier, Fehlende Wörter, Blind-Karaoke und Rate meinen Song.',
+        d: 'Achtung: Bei „Reich das Mikro“ singt ALLE mit demselben Desktop-Mikrofon — das Handy dient dort nur als Fernbedienung und Spiegel.',
+      },
+      s3: {
+        t: 'Abstimmen & Songs wählen',
+        b: 'Bei Song-Abstimmungen erscheinen die Kandidaten direkt auf deinem Handy — ein Tipp genügt. In der Party-Einrichtung siehst du Spieler, Mics und Einstellungen live gespiegelt und kannst (steuernd) alles vom Handy aus ändern.',
+      },
+    },
+
+    control: {
+      title: 'Fernsteuerung & Chat',
+      desc: 'Desktop steuern, sperren, chatten',
+      s1: {
+        t: 'Kontrolle übernehmen',
+        b: '„Kontrolle übernehmen“ (Startseite) verbindet dein Handy mit dem Desktop: Deine Tabs steuern den PC — Start, Bibliothek, Party, Queue, Jukebox, Highscores, Erfolge und Einstellungen.',
+      },
+      s2: {
+        t: 'Nur ein Steuergerät',
+        b: 'Genau EIN Gerät steuert gleichzeitig. Hält jemand anders die Steuerung, zeigt dir die Startseite, wer es ist. Mit „Kontrolle abgeben“ gibst du den Platz frei.',
+        d: 'Bereiche mit 🔒 (Party, Challenge, Jukebox, Einstellungen) brauchen die Steuerung — dein eigenes Profil und die Bibliothek sind immer offen.',
+      },
+      s3: {
+        t: 'Chat & Extras',
+        b: 'Tippe oben rechts auf 💬, um mit allen zu chatten — Herausforderungen landen direkt im Chat. Dazu gibt’s Jukebox-Wunschliste, Daily-Challenge, Highscores und Erfolge als eigene Tabs.',
+      },
+    },
+  },
+
+  // ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+  homeModesDesc: 'Wähle einen Spielmodus und wünsche dir einen Song',
+
+  // ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+  deviceSectionTitle: 'Gesangs-Gerät',
+  deviceMe: 'Ich singe mit',
+  devicePartner: 'Partner singt mit',
+  deviceCompanion: 'Companion-App',
+  deviceMic: 'Mikrofon',
+  deviceMicAuto: 'Mikrofon automatisch',
+  deviceNoMics: 'Keine Desktop-Mikrofone konfiguriert — das Standard-Mikrofon wird genutzt.',
+  deviceConnectedBadge: 'verbunden',
+
+  mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Steuerung übernommen',
   toastControlReleased: 'Steuerung abgegeben',

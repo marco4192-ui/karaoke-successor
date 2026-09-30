@@ -83,6 +83,15 @@ interface GameStore {
      *  set ONLY by the playlist-to-queue flow when all pairings were
      *  deliberately configured (pre-planned evening with fixed pairings). */
     skipLimit?: boolean;
+    /** R39/P5: Gesangs-Gerät — Spieler singt über die Companion-App. */
+    playerMicSource?: 'companion' | 'microphone';
+    /** R39/P5: Gesangs-Gerät — Partner singt über die Companion-App. */
+    partnerMicSource?: 'companion' | 'microphone';
+    /** R39/P5: gewähltes Desktop-Mikrofon (MULTI_MIC_CONFIG-ID + Name). */
+    playerMicId?: string;
+    partnerMicId?: string;
+    playerMicName?: string;
+    partnerMicName?: string;
   }) => void;
   addCompanionToQueue: (_item: Omit<QueueItem, 'id' | 'addedAt'>) => void;
   removeFromQueue: (_itemId: string) => void;
@@ -482,6 +491,13 @@ export const useGameStore = create<GameStore>()(
           partnerName: options?.partnerName,
           gameMode: options?.gameMode || 'single',
           status: 'pending',
+          // R39/P5: Gesangs-Geräte-Auswahl aus dem Song-Start-Modal
+          playerMicSource: options?.playerMicSource,
+          partnerMicSource: options?.partnerMicSource,
+          playerMicId: options?.playerMicId,
+          partnerMicId: options?.partnerMicId,
+          playerMicName: options?.playerMicName,
+          partnerMicName: options?.partnerMicName,
         };
 
         set((state) => ({

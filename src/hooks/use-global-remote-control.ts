@@ -281,6 +281,43 @@ export function useGlobalRemoteControl({
         window.dispatchEvent(new CustomEvent('remote-party-show-leave', { detail: {} }));
         break;
 
+      // ── R39/P7: Queue-Steuerung durch den kontrollierenden Companion ──
+      // Alle vier Befehle navigieren zum Queue-Screen und feuern ein
+      // CustomEvent, das der QueueScreen verarbeitet (Muster wie bei der
+      // Jukebox-Steuerung). Der QueueScreen hält die komplette Play-Logik
+      // (playFromQueue mit Song-Auflösung, Spieler-Mapping, markplaying).
+      case 'queue_play_next':
+        navigateToScreen('queue');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-queue-play-next', { detail: {} }));
+        }, 350);
+        break;
+
+      case 'queue_play_item':
+        navigateToScreen('queue');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-queue-play-item', { detail: { itemId: (cmd.data as { itemId?: string })?.itemId } }));
+        }, 350);
+        break;
+
+      case 'queue_remove_local':
+        // Desktop-lokales (zustand) Queue-Item entfernen — Companion-Items
+        // laufen über die removequeue-API direkt am Server.
+        navigateToScreen('queue');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-queue-remove-local', { detail: { itemId: (cmd.data as { itemId?: string })?.itemId } }));
+        }, 350);
+        break;
+
+      case 'queue_reorder_all':
+        // Drag&Drop-Neuanordnung der GESAMTEN Queue (data.orderedIds):
+        // Desktop-Items → lokale reorderQueue, Companion-Items → Server-API.
+        navigateToScreen('queue');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-queue-reorder-all', { detail: { orderedIds: (cmd.data as { orderedIds?: string[] })?.orderedIds } }));
+        }, 350);
+        break;
+
       case 'party_leave_confirm':
         window.dispatchEvent(new CustomEvent('remote-party-leave-confirm', { detail: {} }));
         break;

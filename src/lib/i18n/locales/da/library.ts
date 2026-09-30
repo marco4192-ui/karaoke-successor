@@ -185,6 +185,7 @@ songStart: {
   micAssignment: '🎤 Tildel mikrofon',
   automatic: '— Automatisk —',
   micAssignmentLabel: '🎤 Mikrofontildeling',
+  companionApp: 'Companion-app',
   player1: 'Spiller 1',
   player2: 'Spiller 2',
   part1: 'Del 1',

@@ -35,6 +35,148 @@ export const mobileTranslations = {
     localOnlyNote: 'This help runs entirely on your phone — it does not control the desktop.',
   },
 
+  // ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+  mobileTutorial: {
+    intro: 'Guided tutorials for the companion app — chapter by chapter in just a few minutes. Just like in the main app, only for your phone.',
+    backToOverview: 'Back to overview',
+    stepOf: 'Step {n} of {m}',
+    stepCount: '{n} steps',
+    reset: 'Reset tutorials',
+    moreDetails: 'Learn more',
+    back: 'Back',
+    next: 'Next',
+    finish: 'Done',
+
+    start: {
+      title: 'Getting started',
+      desc: 'Connect, create your profile and get to know the app',
+      s1: {
+        t: 'Connect to the desktop',
+        b: 'Scan the QR code on the desktop home page or open the companion link. Phone and PC must be on the same WiFi network — the code in the top right of the header confirms the connection.',
+        d: 'If the connection drops, the app reconnects automatically. Otherwise check the WiFi and tap "Retry connection".',
+      },
+      s2: {
+        t: 'Your player profile',
+        b: 'Create a profile with a name, color and photo. Tap your avatar in the top left to edit it at any time — syncing with the desktop happens automatically.',
+      },
+      s3: {
+        t: 'The app at a glance',
+        b: 'The tab bar at the bottom guides you through every area: home, library, party, challenge, queue, jukebox, highscores, achievements and settings. In the top right you find help (?) and chat (💬).',
+      },
+      s4: {
+        t: 'Game modes on the home page',
+        b: 'The tiles show the game modes: single (1 player), duel (2 mics), duet (2 voices) and party mode with 9 game modes for up to 32 players. One tap opens the library with the mode preselected.',
+      },
+    },
+
+    songs: {
+      title: 'Requesting songs',
+      desc: 'Browse the library, pick mode and device, queue it up',
+      s1: {
+        t: 'Find a song',
+        b: 'In the library you search via the search field (title, artist, genre) or filter by genre, language, decade and viral hits. Tapping a song opens the song options.',
+      },
+      s2: {
+        t: 'Mode & difficulty',
+        b: 'At the top you pick single, duel or duet (for duel/duet you also choose a partner). Below that you set the difficulty — the desktop default is shown as a hint.',
+      },
+      s3: {
+        t: 'Choose the singing device',
+        b: '"Singing device" decides what you sing into: 📱 companion app (your phone\'s microphone — preselected for connected players) or 🎤 a microphone on the desktop. Your partner gets their own device, too.',
+        d: 'The choice is queued together with the song — so the desktop knows exactly at start time which voice comes from where.',
+      },
+      s4: {
+        t: 'Into the queue',
+        b: '"Add to queue" submits the song — up to 3 songs per player. Alternatively you can add the song to a playlist or challenge someone via chat.',
+      },
+    },
+
+    queue: {
+      title: 'Queue',
+      desc: 'Manage requests, sort and (as controller) start them',
+      s1: {
+        t: 'The full queue',
+        b: 'The queue tab shows all requests — including songs enqueued from the desktop (🖥️ marker). Who requested the song is shown by the avatar; 📱 means: it will be sung via the companion app.',
+      },
+      s2: {
+        t: 'Remove & sort',
+        b: 'Use ✕ to remove your own songs. Drag-and-drop at the drag handle (⠿) moves songs to a different position.',
+        d: 'As the controlling device you may remove ANY song and reorder the whole list.',
+      },
+      s3: {
+        t: 'As controller: start songs',
+        b: 'While you hold the control you get two extra buttons: "Play next song" starts the first queued song, "Clear all" empties the whole queue — plus a ▶ play button on every song.',
+      },
+    },
+
+    singing: {
+      title: 'Singing with your phone',
+      desc: 'Phone as microphone, display and tips',
+      s1: {
+        t: 'Automatic start',
+        b: 'When it is your turn as a singer, your microphone starts automatically — in party mode as well as in the Companion Sing-A-Long. In Battle Royale and Medley all companion players sing at the same time.',
+      },
+      s2: {
+        t: 'Volume & note display',
+        b: 'The bar below the header shows the volume and the detected note of your singing live. In the game you see lyrics, your pitch display and the score mirrored.',
+        d: 'The first time, the browser asks for microphone access — tap "Allow". You can change the permission later in the browser\'s site settings.',
+      },
+      s3: {
+        t: 'Better hit rate',
+        b: 'Hold the phone close to your mouth and sing loud & clear. Music playing right at the device (speakers next to the phone) disturbs pitch detection — headphones on the desktop are ideal.',
+      },
+    },
+
+    party: {
+      title: 'Party games',
+      desc: 'Pass the Mic, Sing-A-Long, Battle Royale & more',
+      s1: {
+        t: 'Joining without control',
+        b: 'Party games run on the desktop — you join in right from your phone: choose songs, vote, sing. You do NOT need control for that.',
+      },
+      s2: {
+        t: 'The game modes',
+        b: 'Pass the Mic (one desktop microphone is passed around), Companion Sing-A-Long (everyone sings on their phone), Battle Royale, Medley, tournament, missing words, blind karaoke and Rate my Song.',
+        d: 'Note: in "Pass the Mic" EVERYONE sings into the same desktop microphone — there the phone only works as a remote control and mirror.',
+      },
+      s3: {
+        t: 'Voting & choosing songs',
+        b: 'In song votes the candidates appear right on your phone — one tap is enough. In the party setup you see players, mics and settings mirrored live and can (as controller) change everything from your phone.',
+      },
+    },
+
+    control: {
+      title: 'Remote control & chat',
+      desc: 'Steer the desktop, lock it, chat',
+      s1: {
+        t: 'Take control',
+        b: '"Take Control" (home page) connects your phone to the desktop: your tabs drive the PC — home, library, party, queue, jukebox, highscores, achievements and settings.',
+      },
+      s2: {
+        t: 'Only one controlling device',
+        b: 'Exactly ONE device controls at a time. If someone else holds the control, the home page shows you who it is. "Release Control" frees the slot.',
+        d: 'Areas with 🔒 (party, challenge, jukebox, settings) need the control — your own profile and the library are always open.',
+      },
+      s3: {
+        t: 'Chat & extras',
+        b: 'Tap 💬 in the top right to chat with everyone — challenges land directly in the chat. On top there are the jukebox wishlist, daily challenge, highscores and achievements as their own tabs.',
+      },
+    },
+  },
+
+  // ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+  homeModesDesc: 'Pick a game mode and request a song',
+
+  // ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+  deviceSectionTitle: 'Singing device',
+  deviceMe: 'I sing with',
+  devicePartner: 'Partner sings with',
+  deviceCompanion: 'Companion App',
+  deviceMic: 'Microphone',
+  deviceMicAuto: 'Microphone automatic',
+  deviceNoMics: 'No desktop microphones configured — the default microphone will be used.',
+  deviceConnectedBadge: 'connected',
+
   mobile: {
     // ── R33: Companion-Neubau (P1-P19) ──
     toastControlAcquired: 'Control acquired',

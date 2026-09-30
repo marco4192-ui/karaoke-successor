@@ -419,11 +419,41 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     // guard → no echo loop); outgoing user edits push party_apply_config
     // to the desktop instantly (push, not poll).
     const setup = gameState.partySetupState;
-    const desktopMics = React.useMemo(() => setup?.mics ?? [], [setup?.mics]);
+    // R39/P6: Mic-Fallback — solange der Desktop (noch) keinen Setup-Push
+    // geschickt hat, greifen die verfügbaren Mics aus dem 2s-Gamestate-Push
+    // (gameState.availableMics, aus MULTI_MIC_CONFIG). Vorher blieb die
+    // Mic-Liste leer, obwohl am Desktop Mics konfiguriert waren.
+    const desktopMics = React.useMemo(
+      () => (setup?.mics && setup.mics.length > 0 ? setup.mics : (gameState.availableMics ?? [])),
+      [setup?.mics, gameState.availableMics]
+    );
     const micCount = desktopMics.length;
+    // R39/P6: Eigener Clients-Poll als Fallback für die Companion-Erkennung —
+    // connectedProfileIds aus dem Setup-Push, ergänzt um die live verbunde-
+    // nen Companion-Profile aus der Server-Clients-Liste (dieselbe Quelle
+    // wie useCompanionConnections am Desktop).
+    const [liveConnectedIds, setLiveConnectedIds] = React.useState<string[]>([]);
+    React.useEffect(() => {
+      let cancelled = false;
+      const poll = async () => {
+        try {
+          const res = await fetch('/api/mobile?action=clients', { cache: 'no-store' });
+          if (!res.ok) return;
+          const d = await res.json() as { clients?: Array<{ connected?: boolean; profile?: { id?: string } | null }> };
+          if (cancelled) return;
+          const ids = (d.clients ?? [])
+            .filter(c => c.connected && c.profile?.id)
+            .map(c => c.profile!.id as string);
+          setLiveConnectedIds(prev => (prev.length === ids.length && prev.every(id => ids.includes(id)) ? prev : ids));
+        } catch { /* keep last known state */ }
+      };
+      void poll();
+      const iv = setInterval(poll, 5000);
+      return () => { cancelled = true; clearInterval(iv); };
+    }, []);
     const connectedIds = React.useMemo(
-      () => new Set<string>(setup?.connectedProfileIds ?? []),
-      [setup?.connectedProfileIds]
+      () => new Set<string>([...(setup?.connectedProfileIds ?? []), ...liveConnectedIds]),
+      [setup?.connectedProfileIds, liveConnectedIds]
     );
     const deviceMode = modeInfo?.deviceAssignmentMode
       ?? (modeInfo?.sharedMic ? 'shared-mic' : modeInfo?.forceInputMode === 'companion' ? 'none' : 'flexible');

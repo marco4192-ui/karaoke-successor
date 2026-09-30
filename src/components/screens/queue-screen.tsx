@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
@@ -34,12 +34,97 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [needsPlayerSelection, setNeedsPlayerSelection] = useState<string[]>([]);
 
-  // Listen for remote companion queue clear
+  // R39/P7: Clear ALL queues — local zustand AND the companion queue on the
+  // server. Previously the Clear button (and the companion's clear_queue
+  // remote command) only cleared the LOCAL queue — companion wishes stayed
+  // and the button looked "broken".
+  const clearAllQueues = useCallback(() => {
+    clearQueue();
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'clearqueue', payload: {} }),
+    }).then(() => {
+      setCompanionQueue(prev => prev.filter(item => item.status === 'playing'));
+    }).catch(() => { /* ignore */ });
+  }, [clearQueue]);
+
+  // Listen for remote companion queue clear (R39/P7: now clears BOTH sides)
   useEffect(() => {
-    const handleRemoteClear = () => { clearQueue(); };
+    const handleRemoteClear = () => { clearAllQueues(); };
     window.addEventListener('remote-queue-clear', handleRemoteClear);
     return () => window.removeEventListener('remote-queue-clear', handleRemoteClear);
-  }, [clearQueue]);
+  }, [clearAllQueues]);
+
+  // ── R39/P7: Remote-Queue-Steuerung durch den kontrollierenden Companion ──
+  // Play next / Play item / Remove local item / Reorder all. Die Commands
+  // kommen über use-global-remote-control (queue_*) — dieser Screen ist
+  // nach dem Navigate gemountet und führt sie mit der bestehenden Logik aus.
+  // Refs halten die neuesten playFromQueue/unifiedQueue-Instanzen (beide
+  // werden erst UNTEN definiert — deshalb null-Initialisierung + Sync im
+  // Render-Block NACH den Definitionen, kein Zugriff während der TDZ).
+  const playFromQueueRef = useRef<((_item: UnifiedQueueItem) => Promise<void>) | null>(null);
+  const unifiedQueueRef = useRef<UnifiedQueueItem[]>([]);
+  type LocalQueueList = ReturnType<typeof useGameStore.getState>['queue'];
+  const queueRef = useRef<LocalQueueList>([]);
+  const removeFromQueueRef = useRef<typeof removeFromQueue>(removeFromQueue);
+  const reorderQueueRef = useRef<typeof reorderQueue>(reorderQueue);
+  const fetchCompanionQueueRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    const handlePlayNext = () => {
+      const first = unifiedQueueRef.current.find(item => item.status !== 'playing');
+      if (first) void playFromQueueRef.current?.(first);
+    };
+    const handlePlayItem = (e: Event) => {
+      const itemId = (e as CustomEvent).detail?.itemId as string | undefined;
+      if (!itemId) return;
+      const item = unifiedQueueRef.current.find(i => i.id === itemId);
+      if (item) void playFromQueueRef.current?.(item);
+    };
+    const handleRemoveLocal = (e: Event) => {
+      const itemId = (e as CustomEvent).detail?.itemId as string | undefined;
+      if (itemId) removeFromQueueRef.current(itemId);
+    };
+    const handleReorderAll = (e: Event) => {
+      const orderedIds = (e as CustomEvent).detail?.orderedIds as string[] | undefined;
+      if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
+      // Lokale (zustand) Pending-Items in ihre neue RELATIVE Reihenfolge
+      // bringen — über reorderQueue-Schritte (fromIndex → toIndex).
+      const localPending = queueRef.current.filter(q => q.status !== 'completed' && q.song);
+      const localIdsInOrder = orderedIds.filter(id => localPending.some(l => l.id === id));
+      const currentLocal = [...localPending];
+      for (const targetId of localIdsInOrder) {
+        const fromIndex = currentLocal.findIndex(l => l.id === targetId);
+        const targetPos = localIdsInOrder.indexOf(targetId);
+        if (fromIndex !== targetPos && fromIndex !== -1) {
+          reorderQueueRef.current(fromIndex, targetPos);
+          const [moved] = currentLocal.splice(fromIndex, 1);
+          currentLocal.splice(targetPos, 0, moved);
+        }
+      }
+      // Companion-Items in ihrer neuen Reihenfolge an den Server schicken
+      // (Desktop-Auth erlaubt das Umordnen ALLER Pending-Items am Server).
+      const companionIdsInOrder = orderedIds.filter(id => !localPending.some(l => l.id === id));
+      if (companionIdsInOrder.length > 1) {
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'reorderqueue', payload: { orderedIds: companionIdsInOrder } }),
+        }).then(() => fetchCompanionQueueRef.current()).catch(() => { /* ignore */ });
+      }
+    };
+    window.addEventListener('remote-queue-play-next', handlePlayNext);
+    window.addEventListener('remote-queue-play-item', handlePlayItem);
+    window.addEventListener('remote-queue-remove-local', handleRemoveLocal);
+    window.addEventListener('remote-queue-reorder-all', handleReorderAll);
+    return () => {
+      window.removeEventListener('remote-queue-play-next', handlePlayNext);
+      window.removeEventListener('remote-queue-play-item', handlePlayItem);
+      window.removeEventListener('remote-queue-remove-local', handleRemoveLocal);
+      window.removeEventListener('remote-queue-reorder-all', handleReorderAll);
+    };
+  }, []);
 
   // Load songs library
   useEffect(() => {
@@ -78,13 +163,16 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
   }, [profiles, queue, removeFromQueue]);
 
   // Fetch companion queue from API
+  // R39/P7: isDesktop entries (the desktop's own local queue mirrored to the
+  // server for the companion queue view) are FILTERED OUT here — the local
+  // zustand queue already renders them (no duplicates).
   const fetchCompanionQueue = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getqueue');
       if (!response.ok) return;
       const data = await response.json();
       if (data.success && data.queue) {
-        setCompanionQueue(data.queue.filter((item: CompanionQueueItem) => item.status === 'pending'));
+        setCompanionQueue(data.queue.filter((item: CompanionQueueItem) => item.status === 'pending' && !item.isDesktop));
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -138,6 +226,10 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
       partnerId: item.partnerId,
       partnerName: item.partnerName,
       gameMode: item.gameMode || 'single',
+      playerMicSource: item.playerMicSource,
+      partnerMicSource: item.partnerMicSource,
+      playerMicName: item.playerMicName,
+      partnerMicName: item.partnerMicName,
       isFromCompanion: true,
       companionCode: item.companionCode,
       status: item.status,
@@ -294,6 +386,17 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
         const profile = profiles.find(p => p.id === player.id);
         if (profile) addPlayer(profile);
       });
+      // R39/P4+P5: Gesangs-Geräte des Queue-Items ins GameState übernehmen —
+      // steuert, ob die Companion-Pitch-Quelle auf P1/P2 gelegt wird.
+      useGameStore.setState(s => ({
+        gameState: {
+          ...s.gameState,
+          deviceAssignment: {
+            p1Companion: item.playerMicSource === 'companion',
+            p2Companion: item.partnerMicSource === 'companion',
+          },
+        },
+      }));
     }
   };
 
@@ -335,6 +438,15 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
   const handleDragEnd = () => {
     setDraggedIndex(null);
   };
+
+  // R39/P7: Ref-Sync — die Remote-Listener oben (mount-stabil) lesen immer
+  // die frischeste playFromQueue/unifiedQueue/queue-Instanz.
+  playFromQueueRef.current = playFromQueue;
+  unifiedQueueRef.current = unifiedQueue;
+  queueRef.current = queue;
+  removeFromQueueRef.current = removeFromQueue;
+  reorderQueueRef.current = reorderQueue;
+  fetchCompanionQueueRef.current = fetchCompanionQueue;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8" data-testid="queue-screen">
@@ -379,7 +491,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={clearQueue}
+            onClick={clearAllQueues}
             data-testid="queue-clear"
             className="border-white/20 text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
           >

@@ -34,6 +34,148 @@ export const mobileTranslations = {
     localOnlyNote: 'Tämä ohje toimii kokonaan puhelimessasi — se ei ohjaa työpöytää.',
   },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Ohjatut tutoriaalit Companion-sovellukseen — luku kerrallaan muutamassa minuutissa. Samat ohjeet kuin pääsovelluksessa, mutta puhelimeen.',
+  backToOverview: 'Takaisin yleiskatsaukseen',
+  stepOf: 'Vaihe {n} / {m}',
+  stepCount: '{n} vaihetta',
+  reset: 'Nollaa tutoriaalit',
+  moreDetails: 'Lue lisää',
+  back: 'Takaisin',
+  next: 'Seuraava',
+  finish: 'Valmis',
+
+  start: {
+    title: 'Ensiaskeleet',
+    desc: 'Yhdistä, luo profiili ja tutustu sovellukseen',
+    s1: {
+      t: 'Yhdistä työpöytään',
+      b: 'Skannaa QR-koodi työpöydän etusivulta tai avaa companion-linkki. Puhelimen ja tietokoneen on oltava samassa WiFi-verkossa — koodi oikeassa yläkulmassa otsikkopalkissa vahvistaa yhteyden.',
+      d: 'Jos yhteys katkeaa, sovellus yhdistää uudelleen automaattisesti. Muuten tarkista WiFi ja napauta "Yritä yhteyttä uudelleen".',
+    },
+    s2: {
+      t: 'Pelaajaprofiilisi',
+      b: 'Luo profiili nimellä, värillä ja kuvalla. Napauta vasemmassa yläkulmassa olevaa avataria muokataksesi sitä milloin tahansa — synkronointi työpöydän kanssa tapahtuu automaattisesti.',
+    },
+    s3: {
+      t: 'Sovellus lyhyesti',
+      b: 'Alareunan välilehtipalkki johdattaa kaikkiin osioihin: etusivu, kirjasto, juhlat, haaste, jono, jukeboksi, pisteet, saavutukset ja asetukset. Oikeassa yläkulmassa ovat ohje (?) ja chat (💬).',
+    },
+    s4: {
+      t: 'Pelitilat etusivulla',
+      b: 'Laatat näyttävät pelitilat: soolo (1 pelaaja), kaksinkamppailu (2 mikrofonia), duetto (2 ääntä) sekä juhlatila, jossa on 9 pelitilaa jopa 32 pelaajalle. Napautus avaa kirjaston tila valmiiksi valittuna.',
+    },
+  },
+
+  songs: {
+    title: 'Kappaleiden tilaaminen',
+    desc: 'Selaa kirjastoa, valitse tila ja laite, lisää jonoon',
+    s1: {
+      t: 'Etsi kappale',
+      b: 'Kirjastossa voit hakea hakukentällä (nimi, artisti, genre) tai suodattaa genren, kielen, vuosikymmenen ja viraalihittien mukaan. Kappaleen napauttaminen avaa kappaleen valinnat.',
+    },
+    s2: {
+      t: 'Tila ja vaikeusaste',
+      b: 'Ylhäältä valitset soolon, kaksinkamppailun tai dueton (kaksinkamppailussa/duetossa myös parin). Alta asetat vaikeusasteen — työpöydän oletus näkyy vihjeenä.',
+    },
+    s3: {
+      t: 'Valitse laululaite',
+      b: '"Laululaite" määrittää, millä laulat: 📱 Companion-sovellus (puhelimesi mikrofoni — valittuna valmiiksi yhdistetyille pelaajille) tai 🎤 mikrofoni työpöydällä. Parisi saa oman laitteen.',
+      d: 'Valinta menee jonoon kappaleen mukana — työpöytä tietää käynnistyshetkellä tarkalleen, mistä mikäkin ääni tulee.',
+    },
+    s4: {
+      t: 'Jonoon',
+      b: '"Lisää jonoon" lähettää kappaleen — enintään 3 kappaletta per pelaaja. Vaihtoehtoisesti lisäät kappaleen soittolistalle tai haastat jonkun chattissa.',
+    },
+  },
+
+  queue: {
+    title: 'Jono',
+    desc: 'Hallinnoi tilauksia, järjestele ja (ohjaimella) käynnistä',
+    s1: {
+      t: 'Koko jono',
+      b: 'Jono-välilehti näyttää kaikki tilaukset — myös työpöydältä jonoon lisätyt kappaleet (🖥️-merkki). Kuka kappaleen tilasi, näkyy avatarista; 📱 tarkoittaa: lauletaan Companion-sovelluksella.',
+    },
+    s2: {
+      t: 'Poista ja järjestä',
+      b: '✕ poistaa omat kappaleesi. Vetokahvasta (⠿) raahaamalla siirrät kappaleita toiseen kohtaan.',
+      d: 'Ohjaavana laitteenä saat poistaa MINKÄ TAHANSA kappaleen ja järjestää koko listan uudelleen.',
+    },
+    s3: {
+      t: 'Ohjaavana: kappaleiden käynnistys',
+      b: 'Kun hallitset ohjausta, saat kaksi lisänappia: "Toista seuraava kappale" käynnistää jonon ensimmäisen kappaleen, "Tyhjennä kaikki" tyhjentää koko jonon — plus ▶-toistonappi jokaisessa kappaleessa.',
+    },
+  },
+
+  singing: {
+    title: 'Laulu puhelimella',
+    desc: 'Puhelin mikrofonina, näyttö ja vinkit',
+    s1: {
+      t: 'Automaattinen käynnistys',
+      b: 'Kun on sinun vuorosi laulaa, mikrofonisi käynnistyy automaattisesti — sekä juhlatilassa että Companion-mukalaulussa. Battle Royalessa ja Medley-kisassa kaikki companion-pelaajat laulavat yhtä aikaa.',
+    },
+    s2: {
+      t: 'Äänenvoimakkuus ja nuottinäyttö',
+      b: 'Palkki otsikkopalkin alla näyttää livenä laulusi äänenvoimakkuuden ja tunnistetun nuotin. Pelissä näet sanoitukset, sävelkorkeusnäytön ja pisteet peilattuna.',
+      d: 'Ensimmäisellä kerralla selain kysyy mikrofonin käyttöoikeutta — napauta "Salli". Voit muuttaa luvan myöhemmin selaimen sivustoasetuksista.',
+    },
+    s3: {
+      t: 'Parempi osumatarkkuus',
+      b: 'Pidä puhelin lähellä suuta ja laula äänekkäästi ja selkeästi. Laite vieressä soiva musiikki (kaiuttimet puhelimen vieressä) häiritsee nuotintunnistusta — työpöydällä käytettävät kuulokkeet ovat ihanteelliset.',
+    },
+  },
+
+  party: {
+    title: 'Juhlapelit',
+    desc: 'Mikrofonin vaihto, mukalaulu, Battle Royale ym.',
+    s1: {
+      t: 'Osallistuminen ilman ohjausta',
+      b: 'Juhlapelit pyörivät työpöydällä — sinä osallistut suoraan puhelimesta: kappaleiden valinta, äänestäminen, laulaminen. Ohjausta et tarvitse siihen.',
+    },
+    s2: {
+      t: 'Pelitilat',
+      b: 'Mikrofonin vaihto (yksi työpöydän mikrofoni kiertää kaikilla), Companion-mukalaulu (jokainen laulaa omasta puhelimesta), Battle Royale, Medley-kisa, turnaus, Puuttuvat sanat, Sokea karaoke ja Arvioi kappaleeni.',
+      d: 'Huomio: "Mikrofonin vaihdossa" KAIKKI laulavat samaa työpöydän mikrofonia — siinä puhelin toimii vain kaukosäätimenä ja peilinä.',
+    },
+    s3: {
+      t: 'Äänestäminen ja kappaleiden valinta',
+      b: 'Kappaleäänestyksissä ehdokkaat ilmestyvät suoraan puhelimeesi — yksi napautus riittää. Juhlien asetuksissa näet pelaajat, mikrofonit ja asetukset livenä peilattuna, ja voit (ohjaavana) muuttaa kaiken puhelimesta.',
+    },
+  },
+
+  control: {
+    title: 'Kaukosäädin ja chat',
+    desc: 'Ohjaa työpöytää, lukitse, chat',
+    s1: {
+      t: 'Ota hallinta',
+      b: '"Ota hallinta" (etusivu) yhdistää puhelimesi työpöytään: välilehtesi ohjaavat tietokonetta — etusivu, kirjasto, juhlat, jono, jukeboksi, pisteet, saavutukset ja asetukset.',
+    },
+    s2: {
+      t: 'Vain yksi ohjaava laite',
+      b: 'Tarkalleen YKSI laite ohjaa kerrallaan. Jos joku muu pitää hallintaa, etusivu näyttää, kuka on. "Luovuta hallinta" vapauttaa paikan.',
+      d: 'Osiot, joissa on 🔒 (juhlat, haaste, jukeboksi, asetukset), vaativat hallinnan — oma profiilisi ja kirjasto ovat aina auki.',
+    },
+    s3: {
+      t: 'Chat ja lisäherkut',
+      b: 'Napauta 💬 oikeassa yläkulmassa keskustellaksesi kaikkien kanssa — haasteet saapuvat suoraan chattiin. Lisäksi jukeboksin toivelistaa, päivän haaste, pisteet ja saavutukset ovat omina välilehtinään.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Valitse pelitila ja tilaa kappale',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Laululaite',
+deviceMe: 'Minä laulan laitteella',
+devicePartner: 'Pari laulaa laitteella',
+deviceCompanion: 'Companion-sovellus',
+deviceMic: 'Mikrofoni',
+deviceMicAuto: 'Mikrofoni automaattisesti',
+deviceNoMics: 'Työpöydälle ei ole määritetty mikrofoneja — oletusmikrofonia käytetään.',
+deviceConnectedBadge: 'yhdistetty',
+
 mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Hallinta otettu',

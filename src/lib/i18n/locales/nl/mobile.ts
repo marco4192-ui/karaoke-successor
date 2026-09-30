@@ -34,6 +34,148 @@ export const mobileTranslations = {
     localOnlyNote: 'Deze help draait volledig op je telefoon — hij bestuurt de desktop niet.',
   },
 
+// ── R39/P3: Interaktives Companion-Tutorial (Kapitel → Schritte, wie die Haupt-App) ──
+mobileTutorial: {
+  intro: 'Begeleide tutorials voor de companion-app — hoofdstuk voor hoofdstuk in een paar minuten. Net als in de hoofd-app, maar dan op je telefoon.',
+  backToOverview: 'Terug naar overzicht',
+  stepOf: 'Stap {n} van {m}',
+  stepCount: '{n} stappen',
+  reset: 'Tutorials resetten',
+  moreDetails: 'Meer informatie',
+  back: 'Terug',
+  next: 'Volgende',
+  finish: 'Klaar',
+
+  start: {
+    title: 'Aan de slag',
+    desc: 'Verbinden, profiel aanmaken en de app leren kennen',
+    s1: {
+      t: 'Verbinden met de desktop',
+      b: 'Scan de QR-code op de startpagina van de desktop of open de companion-link. Telefoon en pc moeten in hetzelfde WiFi-netwerk zitten — de code rechtsboven in de header bevestigt de verbinding.',
+      d: 'Verliest de app de verbinding, dan wordt automatisch opnieuw verbonden. Lukt dat niet, controleer dan de WiFi en tik op "Opnieuw verbinden".',
+    },
+    s2: {
+      t: 'Je spelerprofiel',
+      b: 'Maak een profiel aan met naam, kleur en foto. Tik linksboven op je avatar om het op elk moment aan te passen — synchronisatie met de desktop gebeurt automatisch.',
+    },
+    s3: {
+      t: 'De app in het kort',
+      b: 'De tabbalk onderaan leidt je door alle onderdelen: start, bibliotheek, feest, uitdaging, wachtrij, jukebox, highscores, prestaties en instellingen. Rechtsboven vind je hulp (?) en chat (💬).',
+    },
+    s4: {
+      t: 'Spelmodi op de startpagina',
+      b: 'De tegels tonen de spelmodi: solo (1 speler), duel (2 microfoons), duet (2 stemmen) en feestmodus met 9 spelmodi voor tot 32 spelers. Eén tik opent de bibliotheek met de modus vooraf gekozen.',
+    },
+  },
+
+  songs: {
+    title: 'Nummers aanvragen',
+    desc: 'Bibliotheek doorzoeken, modus en apparaat kiezen, in de wachtrij',
+    s1: {
+      t: 'Nummer zoeken',
+      b: 'In de bibliotheek zoek je via het zoekveld (titel, artiest, genre) of filter je op genre, taal, decennium en virale hits. Tik op een nummer om de nummeropties te openen.',
+    },
+    s2: {
+      t: 'Modus en moeilijkheid',
+      b: 'Bovenaan kies je solo, duel of duet (bij duel/duet ook een partner). Daaronder stel je de moeilijkheid in — de desktop-standaard staat als hint bij.',
+    },
+    s3: {
+      t: 'Zangapparaat kiezen',
+      b: '"Zangapparaat" bepaalt waarmee je zingt: 📱 companion-app (de microfoon van je telefoon — vooraf gekozen voor verbonden spelers) of 🎤 een microfoon op de desktop. Je partner krijgt ook een eigen apparaat.',
+      d: 'De keuze gaat samen met het nummer de wachtrij in — de desktop weet bij de start dus precies welke stem van waar komt.',
+    },
+    s4: {
+      t: 'De wachtrij in',
+      b: '"Aan wachtrij toevoegen" dient het nummer in — maximaal 3 nummers per speler. Als alternatief zet je het nummer op een playlist of daag je iemand uit via de chat.',
+    },
+  },
+
+  queue: {
+    title: 'Wachtrij',
+    desc: 'Aanvragen beheren, sorteren en (met besturing) starten',
+    s1: {
+      t: 'De volledige wachtrij',
+      b: 'Het wachtrij-tabblad toont alle aanvragen — ook de nummers die vanaf de desktop zijn toegevoegd (🖥️-markering). Wie het nummer heeft aangevraagd, zie je aan de avatar; 📱 betekent: er wordt gezongen via de companion-app.',
+    },
+    s2: {
+      t: 'Verwijderen en sorteren',
+      b: 'Met ✕ verwijder je je eigen nummers. Via drag-en-drop aan de sleepgreep (⠿) verplaats je nummers naar een andere positie.',
+      d: 'Als besturend apparaat mag je ELK nummer verwijderen en de volledige volgorde herschikken.',
+    },
+    s3: {
+      t: 'Besturend: nummers starten',
+      b: 'Houd je de besturing, dan krijg je twee extra knoppen: "Volgend nummer afspelen" start het eerste nummer uit de wachtrij, "Alles wissen" leegt de hele wachtrij — plus een ▶-afspeelknop bij elk nummer.',
+    },
+  },
+
+  singing: {
+    title: 'Zingen met je telefoon',
+    desc: 'Telefoon als microfoon, weergave en tips',
+    s1: {
+      t: 'Automatische start',
+      b: 'Ben jij aan de beurt als zanger, dan start je microfoon automatisch — in de feestmodus net als in de Companion Sing-A-Long. Bij Battle Royale en Medley zingen alle companion-spelers tegelijk.',
+    },
+    s2: {
+      t: 'Volume en notenweergave',
+      b: 'De balk onder de header toont live het volume en de gedetecteerde noot van je zang. In het spel zie je songteksten, je pitchweergave en de score gespiegeld.',
+      d: 'De eerste keer vraagt de browser om microfoontoegang — tik op "Toestaan". Je kunt de toestemming later wijzigen in de site-instellingen van de browser.',
+    },
+    s3: {
+      t: 'Beter raken',
+      b: 'Houd de telefoon dicht bij je mond en zing luid en duidelijk. Muziek die direct op het apparaat speelt (speakers naast de telefoon) stoort de toonherkenning — koptelefoons op de desktop zijn ideaal.',
+    },
+  },
+
+  party: {
+    title: 'Feestspellen',
+    desc: 'Geef de Mic, Sing-A-Long, Battle Royale en meer',
+    s1: {
+      t: 'Meedoen zonder besturing',
+      b: 'Feestspellen draaien op de desktop — je doet direct vanuit je telefoon mee: nummers kiezen, stemmen, zingen. Besturing heb je daar NIET voor nodig.',
+    },
+    s2: {
+      t: 'De spelmodi',
+      b: 'Geef de Mic (één desktop-microfoon gaat rond bij iedereen), Companion Sing-A-Long (iedereen zingt op de eigen telefoon), Battle Royale, Medley, toernooi, Ontbrekende Woorden, Blind Karaoke en Beoordeel Mijn Nummer.',
+      d: 'Let op: bij "Geef de Mic" zingt IEDEREEN in dezelfde desktop-microfoon — daar dient de telefoon alleen als afstandsbediening en spiegel.',
+    },
+    s3: {
+      t: 'Stemmen en nummers kiezen',
+      b: 'Bij nummerstemmingen verschijnen de kandidaten direct op je telefoon — één tik is genoeg. In de feestopzet zie je spelers, microfoons en instellingen live gespiegeld en kun je (besturend) alles vanaf je telefoon aanpassen.',
+    },
+  },
+
+  control: {
+    title: 'Afstandsbediening en chat',
+    desc: 'Desktop besturen, vergrendelen, chatten',
+    s1: {
+      t: 'Besturing overnemen',
+      b: '"Controle nemen" (startpagina) verbindt je telefoon met de desktop: je tabbladen sturen de pc — start, bibliotheek, feest, wachtrij, jukebox, highscores, prestaties en instellingen.',
+    },
+    s2: {
+      t: 'Slechts één besturend apparaat',
+      b: 'Precies ÉÉN apparaat bestuurt tegelijk. Heeft iemand anders de besturing, dan laat de startpagina zien wie dat is. Met "Controle loslaten" geef je de plek vrij.',
+      d: 'Onderdelen met 🔒 (feest, uitdaging, jukebox, instellingen) vereisen de besturing — je eigen profiel en de bibliotheek zijn altijd open.',
+    },
+    s3: {
+      t: 'Chat en extra\'s',
+      b: 'Tik rechtsboven op 💬 om met iedereen te chatten — uitdagingen landen direct in de chat. Daarnaast zijn er de jukebox-wenslijst, dagelijkse uitdaging, highscores en prestaties als eigen tabbladen.',
+    },
+  },
+},
+
+// ── R39/P1: Startseiten-Spielmodi-Kacheln ──
+homeModesDesc: 'Kies een spelmodus en vraag een nummer aan',
+
+// ── R39/P4: Gesangs-Gerät-Auswahl (Song-Overlay der Companion-Bibliothek) ──
+deviceSectionTitle: 'Zangapparaat',
+deviceMe: 'Ik zing met',
+devicePartner: 'Partner zingt met',
+deviceCompanion: 'Companion App',
+deviceMic: 'Microfoon',
+deviceMicAuto: 'Microfoon automatisch',
+deviceNoMics: 'Geen desktop-microfoons geconfigureerd — de standaardmicrofoon wordt gebruikt.',
+deviceConnectedBadge: 'verbonden',
+
 mobile: {
   // ── R33: Companion-Neubau (P1-P19) ──
   toastControlAcquired: 'Besturing overgenomen',

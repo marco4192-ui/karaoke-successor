@@ -55,6 +55,10 @@ interface MirrorLibraryLiteProps {
    *  "Desktop-Standard: …" über der Difficulty-Auswahl); die eigentliche
    *  Vorauswahl macht der Data-Hook (use-mobile-data.ts) — nicht doppelt. */
   settingsSnapshot?: DesktopSettingsSnapshot | null;
+  /** R39/P1: Von der Startseiten-Spielmodus-Kachel vorgewählter Modus.
+   *  Ein Effekt übernimmt ihn in den lokalen libGameMode-State, sobald er
+   *  sich ändert (null/undefined = kein Preset, lokale Auswahl bleibt). */
+  initialGameMode?: 'single' | 'duel' | 'duet';
 }
 
 // ===================== Helpers =====================
@@ -89,6 +93,98 @@ function isLikelyDuet(song: MobileSong): boolean {
 // (5 s / 15 s / 60 s) — ein 404 („noch nicht hochgeladen“) ist kein
 // Dauerzustand mehr.
 
+// ===================== R39/P4: Gesangs-Gerät-Auswahl =====================
+// Segmentierte Auswahl: 📱 Companion-App (Handy-Mikrofon) oder 🎤 ein
+// Desktop-Mikrofon (mit Unterauswahl des konkreten Mics). Vorausgewählt:
+// Companion für alle, die via Companion verbunden sind — jederzeit änderbar.
+
+function DevicePicker({
+  label,
+  name,
+  connectedViaCompanion,
+  device,
+  onDeviceChange,
+  availableMics,
+  t,
+}: {
+  label: string;
+  name?: string;
+  connectedViaCompanion: boolean;
+  device: string;
+  onDeviceChange: (d: string) => void;
+  availableMics: Array<{ id: string; name: string }>;
+  t: (_key: string) => string;
+}) {
+  const isCompanion = device === 'companion';
+  const selectedMic = availableMics.find(m => m.id === device);
+  return (
+    <div className="rounded-xl bg-white/5 border border-white/10 p-2.5">
+      <div className="flex items-center justify-between gap-2 mb-1 px-0.5">
+        <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">{label}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {name && <span className="truncate text-[11px] text-white/50 max-w-[90px]">{name}</span>}
+          {connectedViaCompanion && (
+            <span className="shrink-0 rounded-full bg-cyan-500/15 border border-cyan-400/25 px-1.5 py-0.5 text-[9px] font-semibold text-cyan-300/90">
+              {'\u{1F4F1} '}{tOr(t, 'deviceConnectedBadge', 'verbunden')}
+            </span>
+          )}
+        </span>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => { haptic(); onDeviceChange('companion'); }}
+          aria-pressed={isCompanion}
+          className={
+            'flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold border transition-all active:scale-[0.97] ' +
+            (isCompanion
+              ? 'bg-cyan-500/25 border-cyan-400/50 text-cyan-300'
+              : 'bg-white/5 border-white/10 text-white/45')
+          }
+        >
+          <span>{'\u{1F4F1}'}</span>
+          <span>{tOr(t, 'deviceCompanion', 'Companion-App')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { haptic(); onDeviceChange(availableMics[0]?.id || 'auto'); }}
+          aria-pressed={!isCompanion}
+          className={
+            'flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold border transition-all active:scale-[0.97] ' +
+            (!isCompanion
+              ? 'bg-purple-500/25 border-purple-400/50 text-purple-300'
+              : 'bg-white/5 border-white/10 text-white/45')
+          }
+        >
+          <span>{'\u{1F3A4}'}</span>
+          <span>{tOr(t, 'deviceMic', 'Mikrofon')}</span>
+        </button>
+      </div>
+      {/* Konkretes Desktop-Mikrofon wählen (nur im Mic-Modus) */}
+      {!isCompanion && (
+        availableMics.length > 0 ? (
+          <select
+            value={selectedMic ? device : 'auto'}
+            onChange={(e) => { haptic(); onDeviceChange(e.target.value || 'auto'); }}
+            className="mt-2 w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white cursor-pointer"
+          >
+            <option value="auto" className="bg-[#1a1a2e] text-white">
+              {tOr(t, 'deviceMicAuto', 'Mikrofon automatisch')}
+            </option>
+            {availableMics.map(m => (
+              <option key={m.id} value={m.id} className="bg-[#1a1a2e] text-white">{m.name}</option>
+            ))}
+          </select>
+        ) : (
+          <p className="mt-2 text-[10px] text-white/30 text-center">
+            {tOr(t, 'deviceNoMics', 'Keine Desktop-Mikrofone konfiguriert — das Standard-Mikrofon wird genutzt.')}
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
 // ===================== Component =====================
 
 export function MirrorLibraryLite({
@@ -104,12 +200,14 @@ export function MirrorLibraryLite({
     clientId,
     onLoadOpponents,
     difficulty,
-    playerMicSource,
-    partnerMicSource,
+    // R39/P4: playerMicSource/partnerMicSource bleiben als Props im Vertrag
+    // (Shell reicht sie durch), werden aber nicht mehr destrukturiert — die
+    // Geräte-Auswahl passiert jetzt pro Song im Overlay (ovPlayerDevice).
     duetPartsSwapped,
     onSendDesktopCommand,
     gameState,
     settingsSnapshot,
+    initialGameMode,
   }: MirrorLibraryLiteProps) {
     const { t } = useTranslation();
     const searchRef = useRef<HTMLInputElement>(null);
@@ -122,6 +220,14 @@ export function MirrorLibraryLite({
     // Lokaler Game-Mode (Single/Duell/Duett)
     const [libGameMode, setLibGameMode] = useState<GameMode>('single');
 
+    // R39/P1: Modus-Preset von der Startseiten-Kachel übernehmen (immer wenn
+    // sich der Preset-Wert ändert — die Shell setzt ihn beim Kachel-Tap).
+    useEffect(() => {
+      if (initialGameMode === 'single' || initialGameMode === 'duel' || initialGameMode === 'duet') {
+        setLibGameMode(initialGameMode);
+      }
+    }, [initialGameMode]);
+
     // ---- Overlay-State ----
     const [overlaySong, setOverlaySong] = useState<MobileSong | null>(null);
     const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'medium' | 'hard'>(difficulty || 'medium');
@@ -130,6 +236,15 @@ export function MirrorLibraryLite({
     const [ovPartnerId, setOvPartnerId] = useState<string | null>(null);
     const [ovAdding, setOvAdding] = useState(false);
     const [ovChallengeSent, setOvChallengeSent] = useState(false);
+
+    // R39/P4: Gesangs-Gerät — 'companion' (Handy) oder eine Mikrofon-ID aus
+    // der Desktop-Konfiguration (gameState.availableMics). Ich selbst bin
+    // standardmäßig Companion (ich wünsche vom Handy); der Partner wird
+    // automatisch auf Companion vorgewählt, wenn er via Companion verbunden
+    // ist, sonst auf ein Desktop-Mikrofon.
+    const [ovPlayerDevice, setOvPlayerDevice] = useState<string>('companion');
+    const [ovPartnerDevice, setOvPartnerDevice] = useState<string>('auto');
+    const availableMics = gameState.availableMics ?? [];
     // Playlist-Picker State
     const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
     const [playlists, setPlaylists] = useState<Array<{ id: string; name: string; isSystem?: boolean }>>([]);
@@ -245,9 +360,22 @@ export function MirrorLibraryLite({
       setOvDifficulty(difficulty || 'medium');
       setOvPartnerId(null);
       setOvChallengeSent(false);
+      // R39/P4: Gerät-Vorauswahl — ich selbst singe per Companion-App (der
+      // Wunsch kommt vom Handy), Partner defaults to 'auto' (wird beim
+      // Partnerwechsel neu bewertet, siehe Effekt unten).
+      setOvPlayerDevice('companion');
+      setOvPartnerDevice('auto');
       // Lade Gegner/Host-Profile fuer Duell/Duett-Auswahl
       onLoadOpponents();
     }, [onLoadOpponents, difficulty]);
+
+    // R39/P4: Partner-Gerät automatisch vorwählen, sobald ein Partner gewählt
+    // ist: via Companion verbunden → Companion-App, sonst Desktop-Mikrofon.
+    useEffect(() => {
+      if (!ovPartnerId) return;
+      const partnerConnected = opponents.some((o: { id: string }) => o.id === ovPartnerId);
+      setOvPartnerDevice(partnerConnected ? 'companion' : 'auto');
+    }, [ovPartnerId, opponents]);
 
     const closeOverlay = useCallback(() => {
       haptic();
@@ -255,10 +383,15 @@ export function MirrorLibraryLite({
     }, []);
 
     // Zur Queue: Direkt an die API senden mit lokalem Overlay-State.
+    // R39/P4: Gesangs-Gerät wird mitgeschickt — playerMicSource/partnerMicSource
+    // ('companion' | 'microphone') plus Mic-ID und Anzeigename, wenn ein
+    // Desktop-Mikrofon gewählt ist.
     const handleOverlayQueue = useCallback(async () => {
       if (!overlaySong || ovAdding || missingOpponent) return;
       setOvAdding(true);
       const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
+      const playerMic = availableMics.find(m => m.id === ovPlayerDevice);
+      const partnerMic = availableMics.find(m => m.id === ovPartnerDevice);
       try {
         const res = await fetch('/api/mobile', {
           method: 'POST',
@@ -274,8 +407,12 @@ export function MirrorLibraryLite({
               difficulty: ovDifficulty,
               partnerId: partner?.id || undefined,
               partnerName: partner?.name || undefined,
-              playerMicSource,
-              partnerMicSource,
+              playerMicSource: ovPlayerDevice === 'companion' ? 'companion' : 'microphone',
+              playerMicId: playerMic?.id,
+              playerMicName: playerMic?.name,
+              partnerMicSource: ovPartnerDevice === 'companion' ? 'companion' : 'microphone',
+              partnerMicId: partnerMic?.id,
+              partnerMicName: partnerMic?.name,
               duetPartsSwapped,
             },
           }),
@@ -283,7 +420,7 @@ export function MirrorLibraryLite({
         if (res.ok) closeOverlay();
       } catch { /* ignore */ }
       finally { setOvAdding(false); }
-    }, [overlaySong, ovAdding, missingOpponent, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, closeOverlay]);
+    }, [overlaySong, ovAdding, missingOpponent, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, ovPlayerDevice, ovPartnerDevice, availableMics, duetPartsSwapped, closeOverlay]);
 
     // DO-NOT-CHANGE: Playlist-Add via mobile API. Der Desktop muss den
     // 'playlist_add'-Action-Type unterstuetzen, um den Song in eine
@@ -816,6 +953,34 @@ export function MirrorLibraryLite({
                   </select>
                 </div>
               )}
+
+              {/* R39/P4: Gesangs-Gerät — Ich (immer Companion vorausgewählt,
+                  änderbar auf ein Desktop-Mikrofon) + Partner (nur Duell/
+                  Duett; Companion vorausgewählt, wenn via Companion verbunden) */}
+              <div className="mb-4 flex flex-col gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40 px-1">
+                  {tOr(t, 'deviceSectionTitle', 'Gesangs-Gerät')}
+                </h4>
+                <DevicePicker
+                  label={tOr(t, 'deviceMe', 'Ich singe mit')}
+                  connectedViaCompanion
+                  device={ovPlayerDevice}
+                  onDeviceChange={setOvPlayerDevice}
+                  availableMics={availableMics}
+                  t={t}
+                />
+                {needsChallenge && ovPartnerId && (
+                  <DevicePicker
+                    label={tOr(t, 'devicePartner', 'Partner singt mit')}
+                    name={allPartners.find(p => p.id === ovPartnerId)?.name}
+                    connectedViaCompanion={opponents.some((o: { id: string }) => o.id === ovPartnerId)}
+                    device={ovPartnerDevice}
+                    onDeviceChange={setOvPartnerDevice}
+                    availableMics={availableMics}
+                    t={t}
+                  />
+                )}
+              </div>
 
               {/* Trennlinie */}
               <div className="border-t border-white/10 my-4" />

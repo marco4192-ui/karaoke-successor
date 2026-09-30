@@ -155,6 +155,15 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   //    (Game-Mirror) kommen separat als forcedGameScreen dazu.
   const [menuScreen, setMenuScreen] = useState<string>('home');
 
+  // R39/P1: Von der Startseiten-Spielmodus-Kachel gewählter Modus. Wird an
+  // MirrorLibraryLite als initialGameMode durchgereicht — der Tap auf eine
+  // Kachel navigiert lokal zur Bibliothek UND wählt den Modus vor.
+  const [libraryPresetMode, setLibraryPresetMode] = useState<'single' | 'duel' | 'duet' | null>(null);
+  const handleLaunchMode = useCallback((mode: 'single' | 'duel' | 'duet') => {
+    setLibraryPresetMode(mode);
+    setMenuScreen('library');
+  }, []);
+
   // R33/P19: Hilfe-Overlay (für jeden jederzeit verfügbar)
   const [showHelp, setShowHelp] = useState(false);
 
@@ -992,6 +1001,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             onSendDesktopCommand={handleSendDesktopCommand}
             onLocalNavigate={handleFooterNavigate}
             onOpenProfile={() => setShowProfile(true)}
+            onLaunchMode={handleLaunchMode}
+            libraryPresetMode={libraryPresetMode}
+            ownCompanionCode={connectionCode || null}
             settingsSnapshot={settingsSnapshot}
             highscores={data.highscores}
             onLoadHighscores={data.loadHighscores}

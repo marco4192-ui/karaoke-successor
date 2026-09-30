@@ -53,8 +53,16 @@ export interface QueueItem {
   // Mic source preferences (companion = sing via phone, microphone = sing via main app mic)
   playerMicSource?: 'companion' | 'microphone';
   partnerMicSource?: 'companion' | 'microphone';
+  // R39/P4+P5: chosen desktop mic (MULTI_MIC_CONFIG id + display name)
+  playerMicId?: string;
+  partnerMicId?: string;
+  playerMicName?: string;
+  partnerMicName?: string;
   // Duet parts swapped flag
   duetPartsSwapped?: boolean;
+  // R39/P7: Entry originates from the DESKTOP's local (zustand) queue —
+  // synced via syncdesktopqueue. Desktop consumers filter these out.
+  isDesktop?: boolean;
 }
 
 export interface RemoteCommand {
@@ -122,6 +130,10 @@ export interface MobileGameState {
   partyGameMode?: string | null;
   // Whether party mode is active on the desktop
   isPartyModeActive?: boolean;
+  // R39/P4: Configured desktop microphones (MULTI_MIC_CONFIG) — pushed with
+  // the 2s gamestate so the companion library can offer mic vs. companion
+  // device selection in the song options overlay.
+  availableMics?: Array<{ id: string; name: string }>;
   // Recent party sessions synced from the desktop party screen (mobile mirror)
   recentParties?: Array<{
     id: string;
