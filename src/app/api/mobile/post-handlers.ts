@@ -22,11 +22,16 @@ import {
 // CONTROL commands drive the desktop (navigation, settings, playback, jukebox,
 // profiles, …) — they require the sender to hold the remote-control lock.
 // PARTICIPATION commands let any connected companion take part in the game
-// (party song picks, votes, pause requests, leaving a party) without holding
-// the lock. Everything unknown defaults to CONTROL (safe side).
+// (party song picks, votes, pause requests, ending the current song early,
+// leaving a party) without holding the lock. Everything unknown defaults to
+// CONTROL (safe side).
+// R37: companion_end_early was missing here — the phone mirrors' "Song
+// beenden" button was rejected with 403 for every NON-controlling companion
+// (i.e. the regular players), so it silently did nothing in Medley/CPTM/BR/PTM.
 const PARTICIPATION_COMMANDS = new Set([
   'party_select_song', 'party_vote', 'br_vote',
   'companion_pause', 'companion_resume',
+  'companion_end_early',
   'party_show_leave', 'party_leave_confirm', 'party_leave_cancel',
 ]);
 

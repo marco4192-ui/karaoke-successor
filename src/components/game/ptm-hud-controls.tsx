@@ -81,20 +81,31 @@ export function PtmHudControls({
   }, [isPlaying, setPauseDialogAction]);
 
   // Sync pause/resume state with party store (e.g. keyboard Escape sets it)
-  // Track previous pauseDialogAction to detect transitions in both directions.
-  const prevPauseDialogRef = useRef(pauseDialogAction);
+  // R37: latch-based (medley pattern). The old prev-based resume
+  // (`prev === 'song-pause' && now null`) missed 'song-pause' → 'party-leave'
+  // → null (desktop ESC-ESC → Back): at the null transition prev was
+  // 'party-leave', so a paused PTM song never resumed. The latch records
+  // "we paused via dialog" and resumes on the first null transition;
+  // togglePause itself is phase-guarded (resume only in 'playing'), so a
+  // song ended via EndSong (phase 'song-results') is not restarted.
+  // Pausing now also freezes for ANY open dialog (BR parity, R20-2): a
+  // 'party-leave' dialog opened while playing stops the song instead of
+  // letting it run behind the confirmation.
+  const wasPausedByDialogRef = useRef(false);
   useEffect(() => {
-    const prev = prevPauseDialogRef.current;
-    prevPauseDialogRef.current = pauseDialogAction;
-
-    if (prev === 'song-pause' && pauseDialogAction === null) {
-      // Dialog was dismissed (Resume clicked) — toggle back to playing
-      onTogglePause();
-    } else if (pauseDialogAction === 'song-pause' && isPlaying) {
-      // Pause triggered (button click or Escape) — toggle to paused
-      onTogglePause();
+    if (pauseDialogAction === null) {
+      if (wasPausedByDialogRef.current) {
+        wasPausedByDialogRef.current = false;
+        // Dialog dismissed (Resume clicked / Back) — toggle back to playing
+        onTogglePause(); // internally guarded: resumes only in phase 'playing'
+      }
+      return;
     }
-     
+    // Any open dialog ('song-pause', 'party-leave') while playing → pause
+    if (isPlaying) {
+      wasPausedByDialogRef.current = true;
+      onTogglePause(); // pauses
+    }
   }, [pauseDialogAction, isPlaying, onTogglePause]);
 
   return (

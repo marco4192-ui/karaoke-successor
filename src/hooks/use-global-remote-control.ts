@@ -289,11 +289,19 @@ export function useGlobalRemoteControl({
         window.dispatchEvent(new CustomEvent('remote-party-leave-cancel', { detail: {} }));
         break;
 
-      // --- Companion end song early in party mode → show party-leave dialog ---
+      // --- Companion end song early → per-mode EndSong handler (R37) ---
+      // SEMANTICS CHANGE: this used to dispatch a synthetic Escape keydown,
+      // which only ever opened the PAUSE dialog (and required a second press
+      // to reach the party-leave dialog). The button is labelled "Song beenden"
+      // / "End Song" — it must END THE CURRENT SONG like the desktop HUD's
+      // EndSongButton (medley: finish snippet with scoring → transition;
+      // PTM/CPTM: record round → song-results; BR: end round; standard
+      // game: endGameAndCleanup). karaoke-app routes the event; the active
+      // mode screen listens for 'karaoke-end-song'.
       case 'companion_end_early':
-        // Trigger the same flow as Escape key when in a party game:
-        // pause the game and show the party-leave dialog
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        window.dispatchEvent(new CustomEvent('remote-companion-end-early', {
+          detail: { fromName: cmd.fromClientName },
+        }));
         break;
 
       // --- Toggle fullscreen ---

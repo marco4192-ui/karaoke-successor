@@ -17,7 +17,6 @@ interface ManagedPlayer {
   type: PlayerType;
   detector: PitchDetector | null;
   mobileClientId?: string;
-  pollingInterval?: ReturnType<typeof setInterval>;
   /** Unsubscribe for the Socket.IO pitch feed (mobile players only). */
   pitchFeedUnsubscribe?: () => void;
   /** Timestamp of the last frame received via the Socket.IO pitch feed.
@@ -36,6 +35,16 @@ export class PitchDetectorManager {
   private callbacks: PitchDetectorManagerCallbacks | null = null;
   private difficulty: Difficulty = 'medium';
   private isRunning = false;
+
+  /** R37: SINGLE shared HTTP watchdog for ALL mobile players. Previously each
+   *  mobile player ran its OWN 100 ms interval — N players meant N × 10 Hz
+   *  getpitch requests from the host (e.g. a 4-phone medley = 2400 req/min),
+   *  which blew the shared rate bucket and 429-flooded the scoring pipeline
+   *  whenever companions ran HTTP-only (Socket.IO down, e.g. after standby).
+   *  One fetch per tick now serves every stale player; the tick is skipped
+   *  entirely while ALL feeds are socket-fresh. */
+  private mobileWatchdogInterval: ReturnType<typeof setInterval> | null = null;
+  private mobileWatchdogInFlight = false;
 
   /** Tracks which device streams are already open. Key is the deviceId (or '__default__' for undefined). */
   private deviceStreamMap: Map<string, MediaStream> = new Map();
@@ -264,15 +273,14 @@ export class PitchDetectorManager {
       }
     }
 
-    // Clear polling interval and socket feed subscription for mobile players
-    if (player.pollingInterval) {
-      clearInterval(player.pollingInterval);
-    }
+    // Clear socket feed subscription for mobile players (the shared HTTP
+    // watchdog is reference-counted via stopMobileWatchdogIfUnused below)
     player.pitchFeedUnsubscribe?.();
     player.pitchFeedUnsubscribe = undefined;
     player.lastSocketPitchAt = 0;
 
     this.players.delete(playerId);
+    this.stopMobileWatchdogIfUnused();
   }
 
   start(): void {
@@ -292,14 +300,11 @@ export class PitchDetectorManager {
     this.isRunning = false;
     this.players.forEach((player) => {
       player.detector?.stop();
-      if (player.pollingInterval) {
-        clearInterval(player.pollingInterval);
-        player.pollingInterval = undefined;
-      }
       player.pitchFeedUnsubscribe?.();
       player.pitchFeedUnsubscribe = undefined;
       player.lastSocketPitchAt = 0;
     });
+    this.stopMobileWatchdog();
   }
 
   getPlayerIds(): string[] {
@@ -310,14 +315,9 @@ export class PitchDetectorManager {
     const player = this.players.get(playerId);
     if (!player) return;
 
-    // Clear existing interval if any
-    if (player.pollingInterval) {
-      clearInterval(player.pollingInterval);
-    }
-
     // Socket.IO pitch feed: instant per-frame pushes for this player's phone
-    // (no 100 ms polling delay, no 200 ms phone-side batch flush). The HTTP
-    // poll below stays as a fallback watchdog — it is skipped while fresh
+    // (no 100 ms polling delay, no 200 ms phone-side batch flush). The shared
+    // HTTP watchdog below stays as a fallback — it is skipped while fresh
     // socket frames arrive.
     player.pitchFeedUnsubscribe?.();
     player.lastSocketPitchAt = 0;
@@ -335,22 +335,61 @@ export class PitchDetectorManager {
       });
     });
 
-    player.pollingInterval = setInterval(async () => {
-      // Watchdog: skip the HTTP poll while the socket feed delivers fresh frames
-      if (player.lastSocketPitchAt && Date.now() - player.lastSocketPitchAt < 400) return;
-      try {
-        const response = await fetch('/api/mobile?action=getpitch');
-        const data = await response.json();
-        // Server returns "pitches" array — find the pitch for THIS specific
-        // mobile client instead of blindly using pitches[0] (which could be
-        // another player's data when multiple companions are connected).
-        if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
+    this.ensureMobileWatchdog();
+  }
+
+  // ── R37: shared HTTP watchdog (ONE ticker for ALL mobile players) ──
+  // Replaces the per-player 100 ms intervals: a 4-phone medley previously
+  // produced 4 × 10 Hz = 2400 getpitch req/min from the host, which
+  // 429-flooded the shared rate bucket while companions ran HTTP-only.
+  // The single ticker fetches ONCE per 100 ms tick — and only when at least
+  // one player's socket feed is stale; results are distributed to the stale
+  // players only (socket-fresh players keep their newer pushed frames).
+  private ensureMobileWatchdog(): void {
+    if (this.mobileWatchdogInterval) return;
+    this.mobileWatchdogInterval = setInterval(() => {
+      void this.runMobileWatchdogTick();
+    }, 100);
+  }
+
+  private stopMobileWatchdog(): void {
+    if (this.mobileWatchdogInterval) {
+      clearInterval(this.mobileWatchdogInterval);
+      this.mobileWatchdogInterval = null;
+    }
+    this.mobileWatchdogInFlight = false;
+  }
+
+  private stopMobileWatchdogIfUnused(): void {
+    const hasMobilePlayer = Array.from(this.players.values()).some(p => p.type === 'mobile');
+    if (!hasMobilePlayer) this.stopMobileWatchdog();
+  }
+
+  private async runMobileWatchdogTick(): Promise<void> {
+    if (!this.isRunning || this.mobileWatchdogInFlight) return;
+    // Watchdog: any mobile player whose socket feed is stale needs the HTTP
+    // fallback. Socket-fresh players must NOT receive (older) HTTP frames.
+    const now = Date.now();
+    const stalePlayers = Array.from(this.players.values()).filter(
+      p => p.type === 'mobile' && p.mobileClientId && (!p.lastSocketPitchAt || now - p.lastSocketPitchAt >= 400),
+    );
+    if (stalePlayers.length === 0) return;
+
+    this.mobileWatchdogInFlight = true;
+    try {
+      const response = await fetch('/api/mobile?action=getpitch');
+      const data = await response.json();
+      // Server returns "pitches" array — match each stale player's entry by
+      // clientId (never blindly use pitches[0]: with multiple companions
+      // connected that could be another player's data).
+      if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
+        for (const player of stalePlayers) {
           const matchingEntry = data.pitches.find(
-            (p: { clientId?: string }) => p.clientId === mobileClientId
+            (p: { clientId?: string }) => p.clientId === player.mobileClientId
           );
           if (matchingEntry?.data) {
             const pitchData = matchingEntry.data;
-            this.callbacks?.onPitchDetected(playerId, {
+            this.callbacks?.onPitchDetected(player.id, {
               frequency: pitchData.frequency,
               note: pitchData.note,
               rawNote: pitchData.note,
@@ -361,11 +400,13 @@ export class PitchDetectorManager {
             });
           }
         }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.debug('[pitch-detector]: mobile pitch polling error', error);
       }
-    }, 100); // Poll every 100ms — sufficient for real-time sync, reduces server load
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[pitch-detector]: mobile pitch polling error', error);
+    } finally {
+      this.mobileWatchdogInFlight = false;
+    }
   }
 
   async destroy(): Promise<void> {

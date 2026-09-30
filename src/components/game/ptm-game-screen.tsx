@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
@@ -31,6 +32,24 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = usePtmGameLogic(props);
   const ptmSongSelection = usePartyStore((s) => s.ptmSongSelection);
+
+  // ── Companion "Song beenden" (R37) ──
+  // Any connected companion phone can end the current song early — same
+  // handler as the desktop HUD's EndSongButton: record the round with
+  // evaluation and advance to song-results. Guarded to the playing phase
+  // (a stray command during intro/results/transition is a no-op).
+  // NOTE: must be declared BEFORE the early returns below (Rules of Hooks).
+  const endSongPhaseRef = useRef(g.phase);
+  endSongPhaseRef.current = g.phase;
+  const endSongHandlerRef = useRef(g.handleEndSong);
+  endSongHandlerRef.current = g.handleEndSong;
+  useEffect(() => {
+    const onEndSong = () => {
+      if (endSongPhaseRef.current === 'playing') endSongHandlerRef.current();
+    };
+    window.addEventListener('karaoke-end-song', onEndSong);
+    return () => window.removeEventListener('karaoke-end-song', onEndSong);
+  }, []);
 
   // Guard: no song
   if (!g.effectiveSong) {

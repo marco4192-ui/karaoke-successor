@@ -7,7 +7,7 @@
  * components.  No game logic lives here — only JSX routing.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMedleyGame, type MedleyGameScreenProps } from './medley-game-hook';
@@ -95,6 +95,24 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
       setPauseDialogAction(null);
     }
   };
+
+  // ── Companion "Song beenden" (R37) ──
+  // Any connected companion phone can end the current snippet early (same
+  // handler as the desktop HUD's EndSongButton): finalize scores, build the
+  // highlight, advance to the transition / round-results phase. Guarded to
+  // the playing phase so a stray command during transition/results/intro is
+  // a no-op.
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const endEarlyRef = useRef(handleEndEarly);
+  endEarlyRef.current = handleEndEarly;
+  useEffect(() => {
+    const handleEndSong = () => {
+      if (phaseRef.current === 'playing') endEarlyRef.current();
+    };
+    window.addEventListener('karaoke-end-song', handleEndSong);
+    return () => window.removeEventListener('karaoke-end-song', handleEndSong);
+  }, []);
 
   // Total medley runtime (user item 6.4: "Gesamtlaufzeit" — one line)
   const medleyTotalMs = useMemo(

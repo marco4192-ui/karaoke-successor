@@ -272,22 +272,45 @@ export function useCptmGameLogic({
     }
   }, [isPlaying, phase, setIsSongPlaying]);
 
-  // ── Pause / Resume sync ──
+  // ── Round-recorded guard to prevent double recordRound() ──
+  // (Declared early: the pause/resume dialog effect below reads it to
+  // suppress an auto-resume for a round that ended via EndSong.)
+  const roundRecordedRef = useRef(false);
+
+  // ── Pause / Resume sync (R37: latch-based, medley pattern) ──
   // Mirrors the PTM pattern from ptm-hud-controls.tsx:
   // When pauseDialogAction is set (by ESC or PauseButton), pause audio + game loop.
   // When it's cleared (Resume clicked in SongPauseDialog), resume everything.
-  const prevPauseDialogActionRef = useRef(pauseDialogAction);
+  //
+  // R37 FIX (stuck resume): the old prev-based resume
+  // (`prev === 'song-pause' && now null`) missed the sequence
+  // 'song-pause' → 'party-leave' → null (desktop ESC-ESC → Back): at the null
+  // transition prev was 'party-leave', so a paused CPTM song NEVER resumed
+  // and hung until the round was manually ended. The wasPausedByDialogRef
+  // latch records "we paused via a dialog" and resumes on the FIRST null
+  // transition regardless of which dialog closed. Pausing now also freezes
+  // for ANY open dialog (BR parity, R20-2): a 'party-leave' dialog opened
+  // while playing stops the media instead of letting it run behind the
+  // confirmation.
+  const wasPausedByDialogRef = useRef(false);
   useEffect(() => {
-    const prev = prevPauseDialogActionRef.current;
-    prevPauseDialogActionRef.current = pauseDialogAction;
-
-    if (prev === 'song-pause' && pauseDialogAction === null && phase === 'playing') {
-      // Dialog dismissed (Resume clicked) — resume playback
-      audioRef.current?.play().catch(() => {});
-      videoRef.current?.play().catch(() => {});
-      setIsPlaying(true);
-      setIsSongPlaying(true);
-    } else if (pauseDialogAction === 'song-end-early') {
+    if (pauseDialogAction === null) {
+      if (wasPausedByDialogRef.current) {
+        wasPausedByDialogRef.current = false;
+        // Resume — only when still in the playing phase AND the round was
+        // not recorded meanwhile (song ended via 'song-end-early' or the
+        // companion EndSong command must NOT restart the media).
+        if (phase === 'playing' && !roundRecordedRef.current) {
+          audioRef.current?.play().catch(() => {});
+          videoRef.current?.play().catch(() => {});
+          setIsPlaying(true);
+          setIsSongPlaying(true);
+          lastIsSongPlayingRef.current = true;
+        }
+      }
+      return;
+    }
+    if (pauseDialogAction === 'song-end-early') {
       // Abort clicked in pause dialog for CPTM — end song with evaluation
       setPauseDialogAction(null);
       if (!roundRecordedRef.current) {
@@ -300,8 +323,11 @@ export function useCptmGameLogic({
         setPhase('song-results');
         sendCompanionTurnSignal(null, null, null, false);
       }
-    } else if (pauseDialogAction === 'song-pause' && isPlaying) {
-      // Pause triggered (button click or Escape) — pause everything
+      return;
+    }
+    // Any other open dialog ('song-pause', 'party-leave') while playing → freeze
+    if (isPlaying) {
+      wasPausedByDialogRef.current = true;
       audioRef.current?.pause();
       videoRef.current?.pause();
       setIsPlaying(false);
@@ -604,9 +630,6 @@ export function useCptmGameLogic({
       sendCompanionTurnSignal(null, null, null, false);
     }, 100);
   }, [recordRound, audioRef, videoRef, setIsPlaying, setPhase, setPauseDialogAction]);
-
-  // ── Round-recorded guard to prevent double recordRound() ──
-  const roundRecordedRef = useRef(false);
 
   // ── Handle ending the song early ──
   const handleEndSong = useCallback(() => {

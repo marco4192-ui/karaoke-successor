@@ -743,6 +743,30 @@ export default function KaraokeZERO() {
     return () => window.removeEventListener('remote-party-leave-cancel', handleLeaveCancel);
   }, [party.setPauseDialogAction]);
 
+  // ── Handle companion "Song beenden" (R37) ──
+  // companion_end_early now means EXACTLY what its label says: end the
+  // current song early, with per-mode semantics (medley snippet → transition,
+  // PTM/CPTM song → song-results, BR → round end, standard game → cleanup).
+  // Outside a party, keep the legacy Escape fallback (pause dialog → Abort →
+  // Library) — there is no mode screen listening for 'karaoke-end-song' on
+  // non-party screens anyway, and a paused standard song must stay operable.
+  useEffect(() => {
+    const handleCompanionEndEarly = () => {
+      if (!isPartyActiveDirect) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        return;
+      }
+      // Close any open pause dialog first (the phone's Abort button also
+      // lives inside the pause overlay) so the following phase change does
+      // not leave a stale 'song-pause' on screen. The mode hooks' latch
+      // guards (wasPausedRef) ensure no auto-resume fires for the ended song.
+      party.setPauseDialogAction(null);
+      window.dispatchEvent(new CustomEvent('karaoke-end-song', { detail: {} }));
+    };
+    window.addEventListener('remote-companion-end-early', handleCompanionEndEarly);
+    return () => window.removeEventListener('remote-companion-end-early', handleCompanionEndEarly);
+  }, [isPartyActiveDirect, party.setPauseDialogAction]);
+
   // ── Handle toggle-fullscreen event from remote control ──
   useEffect(() => {
     const handleToggleFullscreen = () => toggleFullscreen();

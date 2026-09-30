@@ -232,9 +232,13 @@ export function useMedleyGame({
   // The audio hook pauses the media elements, but we also need to set
   // isPlaying=false so the game loop interval is cleaned up, and
   // isSongPlaying is updated for companion sync.
+  // R37: freeze for ANY open dialog ('song-pause' AND 'party-leave' — BR
+  // parity, R20-2: media must never keep running behind a confirmation
+  // dialog). The wasPausedRef latch resumes on the first null transition;
+  // the phase check excludes snippets ended meanwhile (EndSong → transition).
   const wasPausedRef = useRef(false);
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause' && isPlaying) {
+    if (pauseDialogAction !== null && isPlaying) {
       wasPausedRef.current = true;
       setIsPlaying(false);
       setIsSongPlaying(false);

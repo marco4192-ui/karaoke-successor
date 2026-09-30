@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
 import { NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
@@ -51,6 +51,24 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const cptmSongSelection = usePartyStore((s) => s.cptmSongSelection);
   const cptmSettings = usePartyStore((s) => s.cptmSettings);
   const cptmDifficulty = cptmSettings?.difficulty ?? 'medium';
+
+  // ── Companion "Song beenden" (R37) ──
+  // Any connected companion phone can end the current song early — same
+  // handler as the desktop HUD's EndSongButton: record the round with
+  // evaluation, advance to song-results, signal the next turn. Guarded to
+  // the playing phase (stray commands elsewhere are no-ops).
+  // NOTE: must be declared BEFORE the early return below (Rules of Hooks).
+  const endSongPhaseRef = useRef(g.phase);
+  endSongPhaseRef.current = g.phase;
+  const endSongHandlerRef = useRef(g.handleEndSong);
+  endSongHandlerRef.current = g.handleEndSong;
+  useEffect(() => {
+    const onEndSong = () => {
+      if (endSongPhaseRef.current === 'playing') endSongHandlerRef.current();
+    };
+    window.addEventListener('karaoke-end-song', onEndSong);
+    return () => window.removeEventListener('karaoke-end-song', onEndSong);
+  }, []);
 
   // ── Guard: no effective song ──
   if (!g.effectiveSong) {

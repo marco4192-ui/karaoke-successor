@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
 import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
@@ -37,6 +38,24 @@ import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
   const { t } = useTranslation();
   const g = useGameScreenLogic(props);
+
+  // ── Companion "Song beenden" (R37) ──
+  // Any connected companion phone can end the current song early — same
+  // handler as the desktop HUD's EndSongButton (endGameAndCleanup → results).
+  // Covers standard songs, tournament duels, missing-words/blind series and
+  // rate-my-song on the game screen. Guarded to an actually playing song.
+  // NOTE: must be declared BEFORE the early return below (Rules of Hooks).
+  const endSongPlayingRef = useRef(g.isPlaying);
+  endSongPlayingRef.current = g.isPlaying;
+  const endSongHandlerRef = useRef(g.endGameAndCleanup);
+  endSongHandlerRef.current = g.endGameAndCleanup;
+  useEffect(() => {
+    const onEndSong = () => {
+      if (endSongPlayingRef.current) endSongHandlerRef.current();
+    };
+    window.addEventListener('karaoke-end-song', onEndSong);
+    return () => window.removeEventListener('karaoke-end-song', onEndSong);
+  }, []);
 
   if (!g.song) {
     return (

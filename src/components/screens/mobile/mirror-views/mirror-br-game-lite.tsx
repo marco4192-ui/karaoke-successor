@@ -544,6 +544,17 @@ export function MirrorBrGameLite({
                 {'\u2716'} {t('mobile.mirrorAbortSong') || 'Abort'}
               </button>
             </div>
+            {/* R37: "Song beenden" now really ENDS the current round (per-mode
+                EndSong handler). The explicit leave-party entry moved here so
+                phones keep a way to end the whole party: party_show_leave opens
+                the desktop leave dialog, which syncs back as showLeaveDialog. */}
+            <button
+              onClick={() => handleCmd('party_show_leave')}
+              className="w-full mt-3 py-2.5 rounded-xl text-xs font-medium text-white/50 border border-white/10 bg-white/5 active:bg-white/10 transition-all"
+              data-testid="mirror-leave-party"
+            >
+              {'\u{1F6AA}'} {t('dialogs.endParty') || 'End Party'}
+            </button>
           </div>
         </div>
       ) : null}

@@ -145,6 +145,22 @@ export function PlayingView({
 
   const currentSnippet = getCurrentMedleySnippet(game);
 
+  // ── Companion "Song beenden" (R37) ──
+  // Any connected companion phone can end the current round early — same
+  // handler as the desktop HUD's EndSongButton (onRoundEnd: finalize scores,
+  // elimination, advance). Guarded to a running round.
+  const roundEndStatusRef = useRef(game.status);
+  roundEndStatusRef.current = game.status;
+  const roundEndHandlerRef = useRef(onRoundEnd);
+  roundEndHandlerRef.current = onRoundEnd;
+  useEffect(() => {
+    const onEndSong = () => {
+      if (roundEndStatusRef.current === 'playing') roundEndHandlerRef.current();
+    };
+    window.addEventListener('karaoke-end-song', onEndSong);
+    return () => window.removeEventListener('karaoke-end-song', onEndSong);
+  }, []);
+
   // V3: "GO!" overlay state
   const [showGoOverlay, setShowGoOverlay] = useState(false);
 

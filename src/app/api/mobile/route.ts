@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleGetRequest } from './get-handlers';
 import { handlePostRequest } from './post-handlers';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
+import { isHostRequest } from './mobile-state';
 
 // ===================== ROUTE HANDLERS =====================
 
@@ -24,6 +25,17 @@ const GET_RATE_LIMITS: Record<string, number> = {
 };
 const DEFAULT_GET_LIMIT = 60; // catch-all for unlisted GET actions
 
+// R37: HOST getpitch budget. The 300/min limit is fine for a phone (they
+// barely call getpitch), but the DESKTOP polls it as an HTTP watchdog while a
+// companion's Socket.IO feed is down ("HTTP-only companion", e.g. after
+// standby): pitch-detector-manager polls at 10 Hz PER MOBILE PLAYER, plus the
+// game-screen/CPTM/BR watchdogs at 5-10 Hz — all from the host's loopback
+// IP. 2+ players easily exceed 1200 req/min and the shared 300/min bucket
+// 429-flooded the scoring pipeline (R36 open point). The host machine is
+// trusted (loopback TCP peer, spoof-safe via server.ts) and generates only
+// local traffic, so it gets a generous 100 req/s budget; phones keep 300/min.
+const HOST_GETPITCH_LIMIT = 6000;
+
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
   const { searchParams } = request.nextUrl;
@@ -31,9 +43,10 @@ export async function GET(request: NextRequest) {
 
   // Per-action rate limiting — use a compound key so each endpoint has an
   // independent sliding window (prevents a chatty getpitch from starving status).
-  const limit = action
-    ? (GET_RATE_LIMITS[action] ?? DEFAULT_GET_LIMIT)
-    : DEFAULT_GET_LIMIT;
+  const isHost = isHostRequest(request);
+  const limit = action === 'getpitch' && isHost
+    ? HOST_GETPITCH_LIMIT
+    : (action ? (GET_RATE_LIMITS[action] ?? DEFAULT_GET_LIMIT) : DEFAULT_GET_LIMIT);
   const bucket = action ? `${ip}:get:${action}` : `${ip}:get`;
 
   if (!checkRateLimit(bucket, limit)) {
