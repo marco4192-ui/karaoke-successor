@@ -43,15 +43,19 @@ const BLOB_CACHE_MAX = 2000;
 // still releasing memory for truly unused blobs.
 const pendingRevokes = new Map<string, ReturnType<typeof setTimeout>>();
 
-/** Revoke a blob URL immediately (for explicit replacement, not cache eviction). */
-function revokeBlobUrl(url: string) {
-  // Cancel any pending delayed revoke first
-  const pending = pendingRevokes.get(url);
-  if (pending) {
-    clearTimeout(pending);
+/** Schedule a DELAYED revoke (30 s) of a blob URL.
+ * Gives active consumers (e.g. <img>/<audio> mid-load) time to finish using
+ * the URL. If the URL is re-cached before the timeout fires, the revoke is
+ * cancelled in cacheBlobUrl(). Used both for cache eviction AND for
+ * replacement (R34: the old immediate revoke on replace caused intermittent
+ * broken covers — a parallel load could revoke a URL an <img> was loading). */
+function scheduleDelayedRevoke(url: string) {
+  const existing = pendingRevokes.get(url);
+  if (existing) clearTimeout(existing);
+  pendingRevokes.set(url, setTimeout(() => {
+    try { URL.revokeObjectURL(url); } catch { /* already revoked or GC'd */ }
     pendingRevokes.delete(url);
-  }
-  try { URL.revokeObjectURL(url); } catch { /* ignore if already revoked */ }
+  }, 30_000));
 }
 
 /** Evict the oldest entry from cache using DELAYED revocation. */
@@ -59,15 +63,7 @@ function evictBlobUrl(key: string) {
   const url = blobUrlCache.get(key);
   if (url) {
     blobUrlCache.delete(key);
-    // Delayed revoke — gives active consumers (e.g. <audio src="...">) time
-    // to finish using the URL. If the same URL is re-cached before the
-    // timeout fires, the revoke is cancelled in cacheBlobUrl().
-    const existing = pendingRevokes.get(url);
-    if (existing) clearTimeout(existing);
-    pendingRevokes.set(url, setTimeout(() => {
-      try { URL.revokeObjectURL(url); } catch { /* already revoked or GC'd */ }
-      pendingRevokes.delete(url);
-    }, 30_000));
+    scheduleDelayedRevoke(url);
   }
 }
 
@@ -80,11 +76,13 @@ function cacheBlobUrl(key: string, url: string) {
     pendingRevokes.delete(url);
   }
 
-  // If this key already exists in cache, revoke the OLD URL immediately
-  // (it's being replaced by a fresh load of the same file).
+  // If this key already exists in cache, the OLD URL is replaced by a fresh
+  // load of the same file. R34: use the same DELAYED revoke (30 s) as cache
+  // eviction — revoking immediately broke covers intermittently, because a
+  // consumer (<img>/<audio>) could still be mid-load on the old URL.
   const existingUrl = blobUrlCache.get(key);
   if (existingUrl && existingUrl !== url) {
-    revokeBlobUrl(existingUrl);
+    scheduleDelayedRevoke(existingUrl);
   }
 
   if (blobUrlCache.size >= BLOB_CACHE_MAX) {
@@ -100,35 +98,45 @@ function cacheBlobUrl(key: string, url: string) {
 // NOTE: Does NOT cache the result — callers are responsible for caching
 // to prevent aliasing bugs (multiple keys pointing to the same blob URL).
 async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
-
-  
-  try {
-    // Use native command — returns base64-encoded bytes (bypass ACL)
-    const osPath = toNativePath(fullPath);
-    const base64Data = await nativeReadFileBytes(osPath);
-    
-    // Decode base64 to binary
-    const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+  // R34 (cover-retry robustness): transient Tauri FS/IPC errors happen
+  // (IPC hiccups, temporarily busy backend). Retry up to 2 times with a
+  // short delay before giving up for good — a single hiccup must no longer
+  // surface as a permanently missing cover.
+  const MAX_ATTEMPTS = 3; // initial attempt + 2 retries
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    if (attempt > 1) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
+    try {
+      // Use native command — returns base64-encoded bytes (bypass ACL)
+      const osPath = toNativePath(fullPath);
+      const base64Data = await nativeReadFileBytes(osPath);
+      
+      // Decode base64 to binary
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
-    
-    // Determine MIME type from extension
-    const ext = '.' + fullPath.split('.').pop()?.toLowerCase();
-    const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
-    
-    // Create blob and URL
-    const blob = new Blob([bytes], { type: mimeType });
-    const blobUrl = URL.createObjectURL(blob);
-    
-    return blobUrl;
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[TauriFS] Failed to load file as blob:', fullPath, error);
-    return null;
+      
+      // Determine MIME type from extension
+      const ext = '.' + fullPath.split('.').pop()?.toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+      
+      // Create blob and URL
+      const blob = new Blob([bytes], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      return blobUrl;
+    } catch (error) {
+      lastError = error;
+    }
   }
+  // eslint-disable-next-line no-console
+  console.error('[TauriFS] Failed to load file as blob after ' + MAX_ATTEMPTS + ' attempts:', fullPath, lastError);
+  return null;
 }
 
 /**
@@ -215,15 +223,46 @@ async function findFileByScanningParentFolder(
   }
 }
 
+// R34 (blob-URL race fix): in-flight dedup — parallel calls for the same
+// (relativePath, baseFolder) share ONE load promise. Previously two parallel
+// loads for the same path each created their own blob URL; the second
+// cacheBlobUrl() replaced (and revoked) the first URL while an <img> was
+// still loading it → intermittently broken covers.
+const inflightMediaLoads = new Map<string, Promise<string | null>>();
+
 // Get a playable URL for a song media file (from songs folder)
 // This is the PRIMARY method for loading audio/video/cover in Tauri
 // IMPORTANT: In Tauri v2 with dev server, we need to load files directly and create blob URLs
 // because convertFileSrc doesn't work well with http://localhost:3000 origin
-export async function getSongMediaUrl(relativePath: string, baseFolder?: string): Promise<string | null> {
+export function getSongMediaUrl(relativePath: string, baseFolder?: string): Promise<string | null> {
   if (!isTauri()) {
-    return relativePath;
+    return Promise.resolve(relativePath);
   }
 
+  // Key on NORMALIZED paths — callers may pass mixed separators ("a\\b/c")
+  // that resolve to the same file internally; normalizing makes them share
+  // one in-flight promise too.
+  const dedupKey = (baseFolder ? normalizeFilePath(baseFolder) + '\u0000' : '') + normalizeFilePath(relativePath);
+  const existing = inflightMediaLoads.get(dedupKey);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = loadSongMediaUrlUncached(relativePath, baseFolder).then(
+    (result) => {
+      inflightMediaLoads.delete(dedupKey);
+      return result;
+    },
+    (error) => {
+      inflightMediaLoads.delete(dedupKey);
+      throw error;
+    },
+  );
+  inflightMediaLoads.set(dedupKey, promise);
+  return promise;
+}
+
+async function loadSongMediaUrlUncached(relativePath: string, baseFolder?: string): Promise<string | null> {
   try {
     // Priority 1: Use provided base folder
     // Priority 2: Use localStorage 'karaoke-songs-folder' (normalized)

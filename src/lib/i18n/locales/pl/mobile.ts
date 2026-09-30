@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Kontrola zwolniona',
   toastControlLost: 'Kontrola utracona',
   toastControlTaken: 'Kontrola już zajęta',
+  profileAssignedToast: 'Śpiewasz teraz jako {name} 🎤',
+  profileClearedToast: 'Profil zwolniony — inne urządzenie przejęło go',
   toastLockedNav: 'Wymaga pilota',
   homeControlYouTitle: 'Ty sterujesz desktopem',
   homeControlYouDesc: 'Twoje karty sterują desktopem — wszystkie obszary są otwarte.',

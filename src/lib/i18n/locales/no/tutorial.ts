@@ -540,7 +540,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Appens roller',
           body: 'Etter tilkobling tilbyr appen, avhengig av situasjonen:\n\n🎤 Mikrofonvisning med tonehøydevisning\n🎮 Fjernkontroll for skrivebordet\n🎵 Sanglesing + køønsker\n💬 Chat\n🪞 Live-speil av skjermen',
-          details: 'Rollene i detalj:\n• Mikrofon: telefonen måler tonehøyde og sender den live — skrivebordet viser notene som fra en «ekte» mikrofon. Fungerer i alle moduser (duell også: to telefoner!).\n• Fjernkontroll: skjermer, knapper og bekreftelser fra telefonen — nyttig for verten som beveger seg i rommet.\n• Sanglesing: hele biblioteket i telefonen — inkludert forhåndsvisning og køønsker med 📱-merket på skrivebordet.\n• Chat: meldinger til skrivebordet og andre gjester.\n• Speil: skrivebordsskjermen (spill, resultater) speiles i telefonen — gjestene ser alt fra plassene sine.',
+          details: 'Rollene i detalj:\n• Mikrofon: telefonen måler tonehøyde og sender den live — skrivebordet viser notene som fra en «ekte» mikrofon. Fungerer i nesten alle moduser (duell også: to telefoner!) — unntak f.eks. Gi mikrofonen: der deler alle den samme mikrofonen ved skrivebordet.\n• Fjernkontroll: skjermer, knapper og bekreftelser fra telefonen — nyttig for verten som beveger seg i rommet.\n• Sanglesing: hele biblioteket i telefonen — inkludert forhåndsvisning og køønsker med 📱-merket på skrivebordet.\n• Chat: meldinger til skrivebordet og andre gjester.\n• Speil: skrivebordsskjermen (spill, resultater) speiles i telefonen — gjestene ser alt fra plassene sine.',
         },
         chatRole: {
           title: 'Chat på skrivebordet',
@@ -552,8 +552,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Syng-med-moduser 🎶',
-          body: 'I festmodusene Companion Singalong og Gi mikrofonen synger gjestene rett via telefonene sine — tonehøydemålingen kjører i enheten, skrivebordet dirigerer.',
-          details: 'Companion Singalong: hver gjest får tekst + tonehøydevisning på telefonen — skrivebordet viser den felles notebanen.\n\nGi mikrofonen: mikrofonen går på rundgang — til og med blandet mellom telefon og fysisk mikrofon.\n\nFor begge: jo bedre WiFi, desto jevnere tonehøyde. Hvis det hakker, hjelper det å komme nærmere ruteren.',
+          body: 'I festmodusen Companion Singalong synger gjestene rett via telefonene sine — tonehøydemålingen kjører i enheten, skrivebordet dirigerer.',
+          details: 'Companion Singalong: hver gjest får tekst + tonehøydevisning på telefonen — skrivebordet viser den felles notebanen.\n\nGi mikrofonen: alle synger på tur i samme mikrofon ved skrivebordet — den sendes rett og slett videre. Telefonene fungerer her kun som fjernkontroll og live-speil, aldri som mikrofon.\n\nFor synging via telefonen: jo bedre WiFi, desto jevnere tonehøyde.',
         },
         takeControl: {
           title: 'Ta kontroll 🎮',
@@ -573,7 +573,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Gjester uten kontroll 🙋',
           body: 'De fleste gjestene trenger aldri fjernkontrollen: tilkoblede telefoner uten Ta kontroll er selvstendige companions — de ønsker sanger, chatter, synger med og sjekker egne prestasjoner uten å røre skrivebordet.',
-          details: 'Hva telefoner uten kontroll kan:\n• 🎵 Legge egne sanger i køen (med 📱-merket)\n• 💬 Delta i festchatten\n• 🎤 Synge i festmoduser (Companion Singalong, Gi mikrofonen)\n• 🗳️ Stemme i avstemninger (turnering, Battle Royale)\n• 🏆 Se egne highscores og prestasjoner',
+          details: 'Hva telefoner uten kontroll kan:\n• 🎵 Legge egne sanger i køen (med 📱-merket)\n• 💬 Delta i festchatten\n• 🎤 Synge i festmoduser (f.eks. Companion Singalong)\n• 🗳️ Stemme i avstemninger (turnering, Battle Royale)\n• 🏆 Se egne highscores og prestasjoner',
         },
         soloQueue: {
           title: 'Ønsker uten kontroll',
@@ -581,7 +581,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Syng med & stem',
-          body: 'Festdeltakelsen går alltid gjennom telefonene: i Companion Singalong og Gi mikrofonen synger gjestene rett på enheten sin, i turnering og Battle Royale stemmer de med et trykk — alt uten Ta kontroll.',
+          body: 'Festdeltakelsen går alltid gjennom telefonene: i Companion Singalong synger gjestene rett på enheten sin, i turnering og Battle Royale stemmer de med et trykk — alt uten Ta kontroll. Obs i Gi mikrofonen: der sendes bare skrivebordets mikrofon videre; telefonene styrer bare.',
         },
         soloStats: {
           title: 'Egne prestasjoner & highscores',

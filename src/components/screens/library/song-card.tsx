@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { SongCardProps } from './types';
 import { MusicIcon, PlayIcon } from '@/components/icons';
@@ -34,10 +34,49 @@ export function SongCard({
   // falls back to the clean MusicIcon placeholder instead. Failed srcs are
   // tracked per URL, so a changed src (e.g. a restored fresh blob URL)
   // simply renders again.
+  // R34 (cover-retry): the failed status is no longer permanent. onError
+  // plans a background retry after ~2.5 s (Versuch 2) and ~7 s (Versuch 3);
+  // only after 3 failed attempts per src does the fallback stay for good.
+  // While waiting for a retry the initials/icon fallback shows (as before).
+  // Successful loads clear the attempt counters for that src.
   const [failedSrcs, setFailedSrcs] = useState<Set<string>>(new Set());
+  const attemptsRef = useRef(new Map<string, number>());
+  const retryTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  // Clear all pending retry timers on unmount
+  useEffect(() => {
+    const timers = retryTimersRef.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
   const markFailed = (src?: string) => {
-    if (!src) return;
+    if (!src) return; // no retry for empty/undefined src
     setFailedSrcs(prev => prev.has(src) ? prev : new Set(prev).add(src));
+    const attempts = (attemptsRef.current.get(src) ?? 0) + 1;
+    attemptsRef.current.set(src, attempts);
+    if (attempts >= 3) return; // permanently failed after 3 attempts
+    // Schedule background retry: attempt 2 after ~2.5 s, attempt 3 after ~7 s more
+    const delay = attempts === 1 ? 2500 : 7000;
+    const existing = retryTimersRef.current.get(src);
+    if (existing) clearTimeout(existing);
+    retryTimersRef.current.set(src, setTimeout(() => {
+      retryTimersRef.current.delete(src);
+      // Reset the failed status for this src → the conditional <img> remounts
+      // (state bump) and the browser retries the load.
+      setFailedSrcs(prev => {
+        if (!prev.has(src)) return prev;
+        const next = new Set(prev);
+        next.delete(src);
+        return next;
+      });
+    }, delay));
+  };
+  const clearAttempts = (src?: string) => {
+    if (!src) return;
+    attemptsRef.current.delete(src);
   };
   const isFailed = (src?: string) => !!src && failedSrcs.has(src);
 
@@ -77,6 +116,7 @@ export function SongCard({
           <img 
             src={effectiveSong.backgroundImage} 
             alt="" 
+            onLoad={() => clearAttempts(effectiveSong.backgroundImage)}
             onError={() => markFailed(effectiveSong.backgroundImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               showBackgroundDuringPreview ? 'opacity-100' : 'opacity-0'
@@ -88,6 +128,7 @@ export function SongCard({
           <img 
             src={effectiveSong.coverImage} 
             alt={effectiveSong.title} 
+            onLoad={() => clearAttempts(effectiveSong.coverImage)}
             onError={() => markFailed(effectiveSong.coverImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               isPreviewing && songHasVideo ? 'opacity-0' : 'opacity-100'

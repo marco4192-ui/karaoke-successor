@@ -538,7 +538,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Los roles de la app',
           body: 'Tras conectarse, la app ofrece según el contexto:\n\n🎤 Vista de micro con visualización de tono\n🎮 Mando a distancia para el escritorio\n🎵 Explorador de canciones + peticiones de cola\n💬 Chat\n🪞 Espejo en vivo de la pantalla',
-          details: 'Los roles en detalle:\n• Micrófono: el teléfono mide el tono y lo transmite en vivo — el escritorio muestra las notas como las de un micro "de verdad". Funciona en todos los modos (también en duelo: ¡dos teléfonos!).\n• Mando a distancia: pantallas, botones y confirmaciones desde el teléfono — genial para anfitriones que recorren la sala.\n• Explorador de canciones: toda la biblioteca en el teléfono — incluida la vista previa y las peticiones de cola con la insignia 📱 en el escritorio.\n• Chat: mensajes al escritorio y a los demás invitados.\n• Espejo: la pantalla del escritorio (juego, resultados) se refleja en el teléfono — los invitados lo ven todo desde sus asientos.',
+          details: 'Los roles en detalle:\n• Micrófono: el teléfono mide el tono y lo transmite en vivo — el escritorio muestra las notas como las de un micro "de verdad". Funciona en casi todos los modos (también en duelo: ¡dos teléfonos!) — excepción p. ej. Pasa el Micrófono: allí todos comparten el mismo micro del escritorio.\n• Mando a distancia: pantallas, botones y confirmaciones desde el teléfono — genial para anfitriones que recorren la sala.\n• Explorador de canciones: toda la biblioteca en el teléfono — incluida la vista previa y las peticiones de cola con la insignia 📱 en el escritorio.\n• Chat: mensajes al escritorio y a los demás invitados.\n• Espejo: la pantalla del escritorio (juego, resultados) se refleja en el teléfono — los invitados lo ven todo desde sus asientos.',
         },
         chatRole: {
           title: 'Chat en el escritorio',
@@ -550,8 +550,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Modos de canto compartido 🎶',
-          body: 'En los modos de fiesta Companion Sing-A-Long y Pasa el Micrófono los invitados cantan directamente por sus teléfonos — la detección de tono corre en el dispositivo, el escritorio dirige.',
-          details: 'Companion Sing-A-Long: cada invitado ve la letra y la visualización de tono en su teléfono — el escritorio muestra la pista de notas compartida.\n\nPasa el Micrófono: el micro va rotando — incluso mezclando teléfono y micro físico.\n\nPara ambos: cuanto mejor la WiFi, más fluido el tono. Si se entrecorta, una máquina más cerca del router ayuda.',
+          body: 'En el modo de fiesta Companion Sing-A-Long los invitados cantan directamente por sus teléfonos — la detección de tono corre en el dispositivo, el escritorio dirige.',
+          details: 'Companion Sing-A-Long: cada invitado ve la letra y la visualización de tono en su teléfono — el escritorio muestra la pista de notas compartida.\n\nPasa el Micrófono: todos cantan por turnos al mismo micrófono del escritorio — simplemente se va pasando. Los teléfonos sirven aquí solo de mando y espejo en vivo, nunca de micrófono.\n\nPara cantar por teléfono: cuanto mejor la WiFi, más fluido el tono.',
         },
         takeControl: {
           title: 'Take Control 🎮',
@@ -571,7 +571,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Invitados sin control 🙋',
           body: 'La mayoría de los invitados nunca necesitan el mando: los teléfonos conectados sin Take Control son acompañantes autónomos — piden canciones, chatean, cantan y consultan sus propios logros sin tocar el escritorio.',
-          details: 'Lo que pueden hacer los teléfonos sin control:\n• 🎵 Encolar sus propias canciones (con la insignia 📱)\n• 💬 Unirse al chat de la fiesta\n• 🎤 Cantar en los modos de fiesta (Companion Sing-A-Long, Pasa el Micrófono)\n• 🗳️ Votar en las votaciones (torneo, Battle Royale)\n• 🏆 Ver sus propias puntuaciones y logros',
+          details: 'Lo que pueden hacer los teléfonos sin control:\n• 🎵 Encolar sus propias canciones (con la insignia 📱)\n• 💬 Unirse al chat de la fiesta\n• 🎤 Cantar en los modos de fiesta (p. ej. Companion Sing-A-Long)\n• 🗳️ Votar en las votaciones (torneo, Battle Royale)\n• 🏆 Ver sus propias puntuaciones y logros',
         },
         soloQueue: {
           title: 'Peticiones sin control',
@@ -579,7 +579,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Cantar y votar',
-          body: 'La participación en la fiesta pasa siempre por los teléfonos: en Companion Sing-A-Long y Pasa el Micrófono los invitados cantan directamente desde su dispositivo, en el torneo y en Battle Royale votan con un toque — todo sin Take Control.',
+          body: 'La participación en la fiesta pasa siempre por los teléfonos: en Companion Sing-A-Long los invitados cantan directamente desde su dispositivo, en el torneo y en Battle Royale votan con un toque — todo sin Take Control. Ojo con Pasa el Micrófono: allí solo se pasa el micro del escritorio; los teléfonos únicamente controlan.',
         },
         soloStats: {
           title: 'Logros y puntuaciones propios',

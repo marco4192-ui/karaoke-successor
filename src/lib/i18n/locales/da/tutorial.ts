@@ -539,7 +539,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Appens roller',
           body: 'Efter tilslutning tilbyder appen, afhængigt af kontekst:\n\n🎤 Mikrofonvisning med tonevisning\n🎮 Fjernbetjening af skrivebordet\n🎵 Sangbrowser + kø-ønsker\n💬 Chat\n🪞 Live-spejling af skærmen',
-          details: 'Rollerne i detaljer:\n• Mikrofon: telefonen måler tonehøjden og sender den live — skrivebordet viser noderne som fra en "rigtig" mikrofon. Virker i alle tilstande (også duel: to telefoner!).\n• Fjernbetjening: skærme, knapper og bekræftelser fra telefonen — smart for værter, der bevæger sig rundt i lokalet.\n• Sangbrowser: hele biblioteket på telefonen — inklusive forhåndsvisning og kø-ønsker med 📱-badges på skrivebordet.\n• Chat: beskeder til skrivebordet og de andre gæster.\n• Spejling: skrivebordsskærmen (spil, resultater) spejles på telefonen — gæsterne ser alt fra deres pladser.',
+          details: 'Rollerne i detaljer:\n• Mikrofon: telefonen måler tonehøjden og sender den live — skrivebordet viser noderne som fra en "rigtig" mikrofon. Virker i næsten alle tilstande (også duel: to telefoner!) — undtagelse f.eks. Pass the Mic: der deler alle den samme mikrofon på skrivebordet.\n• Fjernbetjening: skærme, knapper og bekræftelser fra telefonen — smart for værter, der bevæger sig rundt i lokalet.\n• Sangbrowser: hele biblioteket på telefonen — inklusive forhåndsvisning og kø-ønsker med 📱-badges på skrivebordet.\n• Chat: beskeder til skrivebordet og de andre gæster.\n• Spejling: skrivebordsskærmen (spil, resultater) spejles på telefonen — gæsterne ser alt fra deres pladser.',
         },
         chatRole: {
           title: 'Chat på skrivebordet',
@@ -551,8 +551,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Syng-med-tilstande 🎶',
-          body: 'I festtilstandene Companion Sing-A-Long og Pass the Mic synger gæsterne direkte via deres telefoner — tonegenkendelsen kører på enheden, skrivebordet dirigerer.',
-          details: 'Companion Sing-A-Long: hver gæst får sangtekst + tonevisning på telefonen — skrivebordet viser den fælles note-highway.\n\nPass the Mic: mikrofonen roterer — endda blandet mellem telefon og fysisk mikrofon.\n\nFor begge gælder: jo bedre WiFi, jo glattere tonehøjde. Hvis det hakker, hjælper en maskine tættere på routeren.',
+          body: 'I festtilstanden Companion Sing-A-Long synger gæsterne direkte via deres telefoner — tonegenkendelsen kører på enheden, skrivebordet dirigerer.',
+          details: 'Companion Sing-A-Long: hver gæst får sangtekst + tonevisning på telefonen — skrivebordet viser den fælles note-highway.\n\nPass the Mic: alle synger efter tur i den samme mikrofon på skrivebordet — den bliver simpelthen sendt videre. Telefonerne fungerer her udelukkende som fjernbetjening og live-spejling, aldrig som mikrofon.\n\nTil sang via telefonen: jo bedre WiFi, jo glattere tonehøjde.',
         },
         takeControl: {
           title: 'Tag kontrol 🎮',
@@ -572,7 +572,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Gæster uden kontrol 🙋',
           body: 'De fleste gæster behøver aldrig fjernbetjeningen: tilsluttede telefoner uden Tag kontrol er selvstændige companions — de ønsker sange, skriver i chatten, synger med og tjekker deres egne præstationer uden at røre skrivebordet.',
-          details: 'Hvad telefoner uden kontrol kan:\n• 🎵 Sætte egne sange i køen (med 📱-mærket)\n• 💬 Deltage i festchatten\n• 🎤 Synge i festtilstande (Companion Sing-A-Long, Pass the Mic)\n• 🗳️ Stemme i afstemninger (Tournament Mode, Battle Royale)\n• 🏆 Se egne highscores og præstationer',
+          details: 'Hvad telefoner uden kontrol kan:\n• 🎵 Sætte egne sange i køen (med 📱-mærket)\n• 💬 Deltage i festchatten\n• 🎤 Synge i festtilstande (f.eks. Companion Sing-A-Long)\n• 🗳️ Stemme i afstemninger (Tournament Mode, Battle Royale)\n• 🏆 Se egne highscores og præstationer',
         },
         soloQueue: {
           title: 'Ønsker uden kontrol',
@@ -580,7 +580,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Syng med & stem',
-          body: 'Festdeltagelsen går altid gennem telefonerne: i Companion Sing-A-Long og Pass the Mic synger gæsterne direkte på deres enhed, i Tournament Mode og Battle Royale stemmer de med et tryk — alt uden Tag kontrol.',
+          body: 'Festdeltagelsen går altid gennem telefonerne: i Companion Sing-A-Long synger gæsterne direkte på deres enhed, i Tournament Mode og Battle Royale stemmer de med et tryk — alt uden Tag kontrol. Bemærk ved Pass the Mic: der sendes kun skrivebordets mikrofon videre; telefonerne styrer kun.',
         },
         soloStats: {
           title: 'Egne præstationer & highscores',

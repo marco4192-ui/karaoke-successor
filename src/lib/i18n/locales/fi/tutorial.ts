@@ -539,7 +539,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Sovelluksen roolit',
           body: 'Yhdistämisen jälkeen sovellus tarjoaa tilanteen mukaan:\n\n🎤 Mikrofoninäkymän sävelkorkeusnäytöllä\n🎮 Kaukosäätimen työpöydälle\n🎵 Kappaleselaimen + jono-pyynnöt\n💬 Chatin\n🪞 Ruudun live-peilauksen',
-          details: 'Roolit tarkemmin:\n• Mikrofoni: puhelin mittaa sävelkorkeuden ja lähettää sen livenä — työpöytä näyttää nuotit kuin "oikealta" mikrofonilta. Toimii kaikissa tiloissa (myös kaksinkamppailussa: kaksi puhelinta!).\n• Kaukosäädin: ruudut, painikkeet ja vahvistukset puhelimesta — loistava isännälle, joka liikkuu huoneessa.\n• Kappaleselain: koko kirjasto puhelimessa — myös esikuuntelu ja jono-pyynnöt 📱-merkeillä työpöydällä.\n• Chat: viestejä työpöydälle ja muille vieraille.\n• Peilaus: työpöydän ruutu (peli, tulokset) peilautuu puhelimeen — vieraat näkevät kaiken omilta paikoiltaan.',
+          details: 'Roolit tarkemmin:\n• Mikrofoni: puhelin mittaa sävelkorkeuden ja lähettää sen livenä — työpöytä näyttää nuotit kuin "oikealta" mikrofonilta. Toimii lähes kaikissa tiloissa (myös kaksinkamppailussa: kaksi puhelinta!) — poikkeus esim. Mikrofonin vaihto: siellä kaikki jakavat saman työpöydän mikrofonin.\n• Kaukosäädin: ruudut, painikkeet ja vahvistukset puhelimesta — loistava isännälle, joka liikkuu huoneessa.\n• Kappaleselain: koko kirjasto puhelimessa — myös esikuuntelu ja jono-pyynnöt 📱-merkeillä työpöydällä.\n• Chat: viestejä työpöydälle ja muille vieraille.\n• Peilaus: työpöydän ruutu (peli, tulokset) peilautuu puhelimeen — vieraat näkevät kaiken omilta paikoiltaan.',
         },
         chatRole: {
           title: 'Chat työpöydällä',
@@ -551,8 +551,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Mukalaulutilat 🎶',
-          body: 'Juhlatiloissa Companion-mukalaulu ja Mikrofonin vaihto: vieraat laulavat suoraan puhelimiinsa — sävelkorkeuden tunnistus toimii laitteessa, työpöytä johtaa orkesteria.',
-          details: 'Companion-mukalaulu: jokainen vieras saa sanoitukset ja sävelkorkeusnäytön puhelimeensa — työpöytä näyttää yhteisen nuottiraidan.\n\nMikrofonin vaihto: mikrofoni kiertää — jopa sekaisin puhelimen ja fyysisen mikrofonin kesken.\n\nMolemmissa: mitä parempi WiFi, sitä sulavampi sävelkorkeus. Jos tökkii, auttaa kone, joka on lähempänä reititintä.',
+          body: 'Juhlatilassa Companion-mukalaulu vieraat laulavat suoraan puhelimiinsa — sävelkorkeuden tunnistus toimii laitteessa, työpöytä johtaa orkesteria.',
+          details: 'Companion-mukalaulu: jokainen vieras saa sanoitukset ja sävelkorkeusnäytön puhelimeensa — työpöytä näyttää yhteisen nuottiraidan.\n\nMikrofonin vaihto: kaikki laulavat vuorotellen samaan mikrofoniin työpöydällä — mikrofonia vain kierretään eteenpäin. Puhelimet toimivat tässä vain kaukosäätimenä ja live-peilinä, eivät koskaan mikrofonina.\n\nPuhelimella laulaessa: mitä parempi WiFi, sitä sulavampi sävelkorkeus.',
         },
         takeControl: {
           title: 'Ota hallinta 🎮',
@@ -572,7 +572,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Vieraat ilman hallintaa 🙋',
           body: 'Useimmat vieraat eivät tarvitse kaukosäädintä koskaan: ilman hallinnan ottamista yhdistetyt puhelimet ovat omatoimisia companioneita — ne pyytävät kappaleita, keskustelevat chatissa, laulavat mukana ja katsovat omia saavutuksiaan koskettamatta työpöytää.',
-          details: 'Mitä puhelimet ilman hallintaa voivat:\n• 🎵 Lisätä omia kappaleita jonoon (📱-merkillä)\n• 💬 Osallistua juhlachatiin\n• 🎤 Laulaa juhlatiloissa (Companion-mukalaulu, Mikrofonin vaihto)\n• 🗳️ Äänestää äänestyksissä (turnaus, Battle Royale)\n• 🏆 Katsoa omia huipputuloksia ja saavutuksia',
+          details: 'Mitä puhelimet ilman hallintaa voivat:\n• 🎵 Lisätä omia kappaleita jonoon (📱-merkillä)\n• 💬 Osallistua juhlachatiin\n• 🎤 Laulaa juhlatiloissa (esim. Companion-mukalaulu)\n• 🗳️ Äänestää äänestyksissä (turnaus, Battle Royale)\n• 🏆 Katsoa omia huipputuloksia ja saavutuksia',
         },
         soloQueue: {
           title: 'Pyynnöt ilman hallintaa',
@@ -580,7 +580,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Mukalaulu ja äänestäminen',
-          body: 'Juhliin osallistuminen kulkee aina puhelimien kautta: Companion-mukalaulussa ja Mikrofonin vaihdossa vieraat laulavat suoraan laitteellaan, turnauksessa ja Battle Royalessa he äänestävät napautuksella — kaikki ilman hallinnan ottamista.',
+          body: 'Juhliin osallistuminen kulkee aina puhelimien kautta: Companion-mukalaulussa vieraat laulavat suoraan laitteellaan, turnauksessa ja Battle Royalessa he äänestävät napautuksella — kaikki ilman hallinnan ottamista. Huom. Mikrofonin vaihdossa: siellä kiertää vain työpöydän mikrofoni; puhelimet vain ohjaavat.',
         },
         soloStats: {
           title: 'Omat saavutukset ja huipputulokset',

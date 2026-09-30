@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Steuerung abgegeben',
   toastControlLost: 'Steuerung verloren',
   toastControlTaken: 'Steuerung bereits vergeben',
+  profileAssignedToast: 'Du singst jetzt als {name} 🎤',
+  profileClearedToast: 'Profil freigegeben — ein anderes Gerät hat es übernommen',
   toastLockedNav: 'Nur mit Fernsteuerung',
   homeControlYouTitle: 'Du steuerst den Desktop',
   homeControlYouDesc: 'Deine Tabs steuern den Desktop — alle Bereiche sind offen.',

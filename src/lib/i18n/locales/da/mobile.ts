@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Kontrol frigivet',
   toastControlLost: 'Kontrol mistet',
   toastControlTaken: 'Kontrollen er allerede taget',
+  profileAssignedToast: 'Du synger nu som {name} 🎤',
+  profileClearedToast: 'Profilen frigivet — en anden enhed har overtaget',
   toastLockedNav: 'Kræver fjernbetjening',
   homeControlYouTitle: 'Du styrer skrivebordet',
   homeControlYouDesc: 'Dine faneblade styrer skrivebordet — alle områder er åbne.',

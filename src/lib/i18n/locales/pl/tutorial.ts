@@ -540,7 +540,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Role aplikacji',
           body: 'Po połączeniu aplikacja oferuje, zależnie od kontekstu:\n\n🎤 Widok mikrofonu z wyświetlaniem wysokości\n🎮 Pilot do komputera\n🎵 Przeglądarka piosenek + żądania do kolejki\n💬 Czat\n🪞 Żywe lustro ekranu',
-          details: 'Role szczegółowo:\n• Mikrofon: telefon mierzy wysokość dźwięku i przesyła ją na żywo — komputer pokazuje nuty jak z „prawdziwego” mikrofonu. Działa we wszystkich trybach (duel też: dwa telefony!).\n• Pilot: ekrany, przyciski i potwierdzenia z telefonu — świetne dla gospodarzy chodzących po sali.\n• Przeglądarka piosenek: cała biblioteka na telefonie — z podglądem i żądaniami do kolejki z odznaką 📱 na komputerze.\n• Czat: wiadomości do komputera i innych gości.\n• Lustro: ekran komputera (gra, wyniki) jest dublowany na telefonie — goście widzą wszystko ze swoich miejsc.',
+          details: 'Role szczegółowo:\n• Mikrofon: telefon mierzy wysokość dźwięku i przesyła ją na żywo — komputer pokazuje nuty jak z „prawdziwego” mikrofonu. Działa w prawie wszystkich trybach (duel też: dwa telefony!) — wyjątek np. Przekaż mikrofon: tam wszyscy dzielą ten sam mikrofon przy komputerze.\n• Pilot: ekrany, przyciski i potwierdzenia z telefonu — świetne dla gospodarzy chodzących po sali.\n• Przeglądarka piosenek: cała biblioteka na telefonie — z podglądem i żądaniami do kolejki z odznaką 📱 na komputerze.\n• Czat: wiadomości do komputera i innych gości.\n• Lustro: ekran komputera (gra, wyniki) jest dublowany na telefonie — goście widzą wszystko ze swoich miejsc.',
         },
         chatRole: {
           title: 'Czat na komputerze',
@@ -552,8 +552,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Tryby wspólnego śpiewu 🎶',
-          body: 'W trybach imprezowych Śpiew z Companionem i Przekaż mikrofon goście śpiewają wprost przez telefony — detekcja wysokości działa na urządzeniu, komputer dyryguje.',
-          details: 'Śpiew z Companionem: każdy gość dostaje tekst i wyświetlanie wysokości na telefonie — komputer pokazuje wspólną autostradę nut.\n\nPrzekaż mikrofon: mikrofon krąży — nawet na zmianę telefon i fizyczny mikrofon.\n\nW obu przypadkach: im lepsze Wi-Fi, tym płynniejsza wysokość. Jeśli się zacina, pomaga urządzenie bliżej routera.',
+          body: 'W trybie imprezowym Śpiew z Companionem goście śpiewają wprost przez telefony — detekcja wysokości działa na urządzeniu, komputer dyryguje.',
+          details: 'Śpiew z Companionem: każdy gość dostaje tekst i wyświetlanie wysokości na telefonie — komputer pokazuje wspólną autostradę nut.\n\nPrzekaż mikrofon: wszyscy śpiewają po kolei do tego samego mikrofonu przy komputerze — mikrofon po prostu idzie dalej. Telefony służą tu wyłącznie jako sterowanie i żywe lustro, nigdy jako mikrofon.\n\nPrzy śpiewaniu przez telefon: im lepsze Wi-Fi, tym płynniejsza wysokość.',
         },
         takeControl: {
           title: 'Przejmij kontrolę 🎮',
@@ -573,7 +573,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Goście bez kontroli 🙋',
           body: 'Większość gości wcale nie potrzebuje pilota: połączone telefony bez przejmowania kontroli to samodzielni kompani — zamawiają piosenki, czatują, śpiewają razem i oglądają własne osiągnięcia, nie dotykając desktopa.',
-          details: 'Co potrafią telefony bez kontroli:\n• 🎵 Dodawać własne piosenki do kolejki (z plakietką 📱)\n• 💬 Brać udział w czacie imprezowym\n• 🎤 Śpiewać w trybach imprezowych (Śpiew z Companionem, Przekaż mikrofon)\n• 🗳️ Głosować w głosowaniach (turniej, Battle Royale)\n• 🏆 Przeglądać własne najlepsze wyniki i osiągnięcia',
+          details: 'Co potrafią telefony bez kontroli:\n• 🎵 Dodawać własne piosenki do kolejki (z plakietką 📱)\n• 💬 Brać udział w czacie imprezowym\n• 🎤 Śpiewać w trybach imprezowych (np. Śpiew z Companionem)\n• 🗳️ Głosować w głosowaniach (turniej, Battle Royale)\n• 🏆 Przeglądać własne najlepsze wyniki i osiągnięcia',
         },
         soloQueue: {
           title: 'Zamówienia bez kontroli',
@@ -581,7 +581,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Wspólne śpiewanie i głosowanie',
-          body: 'Udział w imprezie zawsze idzie przez telefony: w Śpiewie z Companionem i Przekaż mikrofon goście śpiewają prosto ze swojego urządzenia, w turnieju i Battle Royale głosują dotknięciem — wszystko bez przejmowania kontroli.',
+          body: 'Udział w imprezie zawsze idzie przez telefony: w Śpiewie z Companionem goście śpiewają prosto ze swojego urządzenia, w turnieju i Battle Royale głosują dotknięciem — wszystko bez przejmowania kontroli. Uwaga na Przekaż mikrofon: tam krąży tylko mikrofon przy komputerze; telefony służą wyłącznie do sterowania.',
         },
         soloStats: {
           title: 'Własne osiągnięcia i wyniki',

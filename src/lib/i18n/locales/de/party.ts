@@ -410,6 +410,16 @@ unifiedSetup: {
   deviceNeedFlexible: '{n} Spieler benötigen noch ein Gerät — Mikrofon wählen oder Companion-App verbinden',
   deviceNeedGeneric: 'Weise zuerst jedem Spieler ein Sing-Gerät zu',
   deviceMicCount: '{n}× Mikro · {m}× App',
+  // ── R34: Companion-Gerät zuweisen (Spieler ohne Verbindung) ──
+  deviceConnect: 'Verbinden…',
+  assignDevicesTitle: 'Verbundene Geräte',
+  assignDeviceNoClients: 'Noch kein Gerät verbunden — öffne die Companion-App auf dem Handy oder scanne den QR-Code.',
+  assignDeviceToPlayer: 'Zuweisen',
+  assignDeviceUnassigned: 'ohne Profil',
+  assignDeviceAssignedTo: 'zugewiesen an: {name}',
+  assignDeviceQrHint: 'Oder QR scannen: Das Handy meldet sich direkt als {name} an und singt für diesen Spieler.',
+  assignDeviceDone: 'Zugewiesen ✓',
+  assignDeviceError: 'Zuweisung fehlgeschlagen — bitte erneut versuchen',
   // ── Companion QR (Seitenleiste) ──
   qrCompanionTitle: '📱 Companion-App verbinden',
   qrWlanHint: '⚠️ Verbinde dein Handy zuerst mit demselben WLAN wie dieser Computer und scanne dann den QR-Code.',

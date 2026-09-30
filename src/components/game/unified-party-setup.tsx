@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getYears, getDecades } from '@/lib/game/song-library';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector, MottoPartyBanner } from './unified-party-setup.components';
+import { CompanionAssignPanel } from './companion-assign-panel';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
 import { useMottoParty } from '@/hooks/use-motto-party';
@@ -66,12 +67,18 @@ export function UnifiedPartySetup({
 
   // Live companion connection status — needed for Singing Device Assignment
   // (companion players must be connected) and the player grid status dots.
-  const connectedProfileIds = useCompanionConnections(true);
+  // R34: `clients` additionally exposes devices WITHOUT a profile claim —
+  // they never matched a player before ("not connected" although online);
+  // the assign panel lets the host bind them explicitly.
+  const { connectedProfileIds, clients: companionClients } = useCompanionConnections(true);
 
   // Motto-Party (R24): while active, the whole Song Filter section is hidden
   // and replaced by the motto banner; filterSongs (song-library) restricts
   // every song pool to the motto-matching songs.
   const motto = useMottoParty();
+
+  // R34: which CPTM player's assign panel is open (device binding / profile QR)
+  const [cptmAssignOpen, setCptmAssignOpen] = useState<string | null>(null);
 
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
@@ -229,6 +236,7 @@ export function UnifiedPartySetup({
             micAssignments={micAssignments}
             deviceAssignments={deviceAssignments}
             connectedProfileIds={connectedProfileIds}
+            clients={companionClients}
             onAssignMic={assignMic}
             onRemoveMic={removeMicAssignment}
             onSetPlayerDevice={setPlayerDevice}
@@ -236,7 +244,9 @@ export function UnifiedPartySetup({
         )}
 
         {/* D3. CPTM: no Singing Device Assignment section — every player sings
-            via Companion App. Show the connection requirement instead. */}
+            via Companion App. Show the connection requirement instead.
+            R34: not-connected chips now open the assign panel (device list +
+            per-player profile QR) so unclaimed phones can be bound. */}
         {deviceMode === 'none' && selectedPlayers.length > 0 && (
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
             <p className="text-sm font-semibold text-purple-300 flex items-center gap-2">
@@ -249,18 +259,41 @@ export function UnifiedPartySetup({
                 {playersWithoutDevice.map(pid => {
                   const profile = activeProfiles.find(p => p.id === pid);
                   if (!profile) return null;
+                  const open = cptmAssignOpen === pid;
                   return (
                     <span
                       key={pid}
-                      className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-1"
+                      className={`flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border ${
+                        open
+                          ? 'text-cyan-300 bg-cyan-500/10 border-cyan-500/30'
+                          : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+                      }`}
                     >
                       <span aria-hidden="true">⚠</span>
                       {profile.name} — {t('unifiedSetup.deviceNotConnected')}
+                      <button
+                        type="button"
+                        onClick={() => setCptmAssignOpen(prev => prev === pid ? null : pid)}
+                        aria-expanded={open}
+                        className="ml-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 px-2 py-0.5 text-[10px] font-semibold hover:bg-cyan-500/30 transition-colors"
+                        data-testid={`cptm-connect-${profile.name}`}
+                      >
+                        🔗 {t('unifiedSetup.deviceConnect')}
+                      </button>
                     </span>
                   );
                 })}
               </div>
             )}
+            {cptmAssignOpen && (() => {
+              const target = activeProfiles.find(p => p.id === cptmAssignOpen);
+              if (!target) return null;
+              return (
+                <div className="mt-3">
+                  <CompanionAssignPanel playerProfile={target} clients={companionClients} />
+                </div>
+              );
+            })()}
           </div>
         )}
 

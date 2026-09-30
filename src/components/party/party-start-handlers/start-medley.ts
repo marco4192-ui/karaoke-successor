@@ -70,6 +70,35 @@ export async function startMedley(ctx: StartHandlerContext): Promise<void> {
 
   // Spieler konvertieren und in Team-Modus Teams zuweisen
   const medleyPlayers = toMedleyPlayers(result.players);
+
+  // R34: Companion-Spieler brauchen ihre SERVER-ClientID — der Multi-Pitch-
+  // Detektor matcht die Pitch-Daten anhand mobileClientId (socket feed +
+  // getpitch-Watchdog). Vorher wurde nur inputType:'mobile' gesetzt, aber
+  // NIE eine ClientID aufgelöst → Companion-Spielern in Medley fehlte der
+  // komplette Pitch-Detektor. Wir lösen die ClientID über das verbundene
+  // Gerät mit passender Profil-ID auf (gleiche Quelle wie die Setup-
+  // Verbindungserkennung).
+  try {
+    const clientsRes = await fetch('/api/mobile?action=clients');
+    if (clientsRes.ok) {
+      const clientsData = await clientsRes.json() as {
+        clients?: Array<{ id?: string; connected?: number | boolean; profile?: { id?: string } | null }>;
+      };
+      const clientByProfileId = new Map<string, string>();
+      for (const c of clientsData.clients ?? []) {
+        if (c.id && c.connected && c.profile?.id) clientByProfileId.set(c.profile.id, c.id);
+      }
+      for (const p of medleyPlayers) {
+        if (p.inputType === 'mobile') {
+          p.mobileClientId = clientByProfileId.get(p.id) ?? undefined;
+        }
+      }
+    }
+  } catch {
+    // best-effort — ohne ClientIDs bekommen Companion-Spieler keinen Pitch,
+    // aber das Spiel startet trotzdem (Mikrofon-Spieler sind unbeeinflusst)
+  }
+
   const medleySettings = result.settings as { playMode?: string };
   const playMode = medleySettings?.playMode || 'ffa';
 

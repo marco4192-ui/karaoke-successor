@@ -381,6 +381,16 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     io!.to('companions').emit('pause-state', data);
   });
 
+  // R34: A companion's profile was assigned/cleared server-side (party setup
+  // assign panel, settings, name-dedup rebind). Push it to THAT phone only —
+  // it adopts the profile instantly and sings as the right player.
+  mobileEvents.on(EVENTS.PROFILE_ASSIGNED, (data: { clientId: string; profile: Record<string, unknown> | null }) => {
+    const socket = companionSockets.get(data.clientId);
+    if (socket) {
+      socket.emit('companion:profile-assigned', { profile: data.profile });
+    }
+  });
+
   // HTTP-POSTed remote commands (e.g. mirror-view start buttons) → desktop host.
   // The desktop only polls `getcommands` while its WebSocket is DOWN; when the
   // socket is up, this forward is the only way HTTP commands reach it.

@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: '제어를 해제했어요',
   toastControlLost: '제어를 잃었어요',
   toastControlTaken: '이미 다른 기기가 제어 중이에요',
+  profileAssignedToast: '이제 {name}(으)로 노래해요 🎤',
+  profileClearedToast: '프로필이 해제되었어요 — 다른 기기가 가져갔어요',
   toastLockedNav: '원격 제어가 필요해요',
   homeControlYouTitle: '내가 데스크톱을 제어 중',
   homeControlYouDesc: '내 탭이 데스크톱을 움직여요 — 모든 영역이 열려 있어요.',

@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerProfile } from '@/types/game';
 import type { PlayerDeviceChoice } from './unified-party-setup.types';
+import type { CompanionClientInfo } from '@/hooks/use-companion-connections';
+import { CompanionAssignPanel } from './companion-assign-panel';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -146,6 +148,8 @@ interface SingingDeviceAssignmentProps {
   micAssignments: Record<string, string>;
   deviceAssignments: Record<string, PlayerDeviceChoice>;
   connectedProfileIds: Set<string>;
+  /** R34: full client list for the assign flow (devices without profile claim) */
+  clients: CompanionClientInfo[];
   onAssignMic: (_micId: string, _playerId: string) => void;
   onRemoveMic: (_micId: string) => void;
   onSetPlayerDevice: (_playerId: string, _choice: PlayerDeviceChoice) => void;
@@ -171,11 +175,13 @@ export function SingingDeviceAssignment({
   micAssignments,
   deviceAssignments,
   connectedProfileIds,
+  clients,
   onAssignMic,
   onRemoveMic,
   onSetPlayerDevice,
 }: SingingDeviceAssignmentProps) {
   const { t } = useTranslation();
+  const [assignOpenFor, setAssignOpenFor] = useState<string | null>(null);
   const micCount = savedMics.length;
   const flexibleNoFixedMic = mode === 'flexible' && micCount >= 2;
   const singleMic = mode === 'flexible' && micCount === 1 ? savedMics[0] : null;
@@ -239,8 +245,8 @@ export function SingingDeviceAssignment({
             const micDropdownDisabled = mode === 'flexible' && micCount === 0;
 
             return (
+              <React.Fragment key={playerId}>
               <div
-                key={playerId}
                 className={`flex flex-wrap sm:flex-nowrap items-center gap-3 p-3 rounded-xl border transition-colors ${
                   isCompanion && !isCompanionConnected
                     ? 'bg-amber-500/5 border-amber-500/30'
@@ -350,7 +356,33 @@ export function SingingDeviceAssignment({
                     <span className="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-400" aria-label={t('unifiedSetup.connected')} />
                   )}
                 </button>
+
+                {/* R34: connect/assign — visible whenever this player chose Companion
+                    but no device with their profile is online. Opens the assign panel
+                    (device list + per-player QR) instead of just warning. */}
+                {isCompanion && !isCompanionConnected && (
+                  <button
+                    type="button"
+                    onClick={() => setAssignOpenFor(prev => prev === playerId ? null : playerId)}
+                    aria-expanded={assignOpenFor === playerId}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold border transition-all shrink-0 ${
+                      assignOpenFor === playerId
+                        ? 'bg-cyan-500/25 border-cyan-400/50 text-cyan-100 ring-1 ring-cyan-400/40'
+                        : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
+                    }`}
+                    data-testid={`sda-connect-${profile.name}`}
+                  >
+                    <span aria-hidden="true">🔗</span>
+                    <span>{t('unifiedSetup.deviceConnect')}</span>
+                  </button>
+                )}
               </div>
+
+              {/* R34 assign panel — below the row, full width */}
+              {isCompanion && !isCompanionConnected && assignOpenFor === playerId && (
+                <CompanionAssignPanel playerProfile={profile} clients={clients} />
+              )}
+              </React.Fragment>
             );
           })}
         </div>

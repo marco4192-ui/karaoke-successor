@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Управление освобождено',
   toastControlLost: 'Управление потеряно',
   toastControlTaken: 'Управление уже занято',
+  profileAssignedToast: 'Теперь вы поёте как {name} 🎤',
+  profileClearedToast: 'Профиль освобождён — его заняло другое устройство',
   toastLockedNav: 'Только с пультом',
   homeControlYouTitle: 'Вы управляете компьютером',
   homeControlYouDesc: 'Ваши вкладки управляют компьютером — все разделы открыты.',

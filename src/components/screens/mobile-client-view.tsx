@@ -159,9 +159,14 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   // Connection
+  // R34: adoption ref — the socket callback is registered BEFORE pushToast
+  // exists, so it dispatches through this ref (set below once adoptServerProfile
+  // is defined).
+  const adoptServerProfileRef = useRef<(_p: import('./mobile/mobile-types').MobileProfile | null) => void>(() => {});
   const { clientId, connectionCode, isConnected, gameState, settingsSnapshot, connect, disconnect, syncProfile, cleanup, sendPitch } = useMobileConnection({
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
+    onProfileAssigned: (p) => adoptServerProfileRef.current(p),
     onGameStateUpdate: (_state) => {
       // R33/P16: Difficulty-Default kommt jetzt aus dem Settings-Snapshot
       // (Pull bei (Re)Connect + Push-on-Change) — KEIN Sync mehr über den
@@ -212,6 +217,74 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const dismissToast = useCallback((id: number) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
+
+  // ===================== R34: SERVER-SEITIGE PROFIL-ÜBERNAHME =====================
+  // Der Desktop kann ein Profil an dieses Handy zuweisen (Party-Setup-
+  // Zuweisungspanel, Settings) oder es nach einem Namens-Dedup-Rebind
+  // umziehen. Das Handy übernimmt es SOFORT (Socket-Push) bzw. spätestens
+  // über den 8s-Reconcile-Poll — vorher war das Handy "verbunden, aber
+  // unsichtbar", weil seine Profil-ID zu keinem Spieler passte.
+  const profileRef = useRef<MobileProfile | null>(null);
+  useEffect(() => { profileRef.current = profile; }, [profile]);
+
+  // Guard: lokale Profil-Änderungen haben 5s Vorrang, damit der Reconcile-Poll
+  // die eigene (noch nicht synchronisierte) Wahl nicht mit einem stale
+  // Server-Stand überschreibt.
+  const lastProfileMutationRef = useRef(0);
+  const markLocalProfileMutation = useCallback(() => {
+    lastProfileMutationRef.current = Date.now();
+  }, []);
+
+  const adoptServerProfile = useCallback((p: MobileProfile | null) => {
+    if (!p || !p.id) {
+      // Profile was cleared server-side (e.g. another device took over this
+      // profile via the assign panel) → drop back to the profile selection
+      // screen so this phone can't silently sing as the wrong player.
+      if (profileRef.current) {
+        profileRef.current = null;
+        setProfile(null);
+        setProfileName('');
+        setAvatarPreview(null);
+        removeItem(StorageKeys.MOBILE_PROFILE);
+        pushToast(tOr(t, 'mobile.profileClearedToast', 'Profil freigegeben — ein anderes Gerät hat es übernommen'), 'info');
+      }
+      return;
+    }
+    if (profileRef.current?.id === p.id) return; // already singing as this profile
+    profileRef.current = p;
+    setProfile(p);
+    setProfileName(p.name);
+    setProfileColor(p.color);
+    setAvatarPreview(p.avatar || null);
+    setJson(StorageKeys.MOBILE_PROFILE, p);
+    setShowProfile(false);
+    pushToast(tOr(t, 'mobile.profileAssignedToast', `Du singst jetzt als ${p.name} 🎤`).replace('{name}', p.name), 'success');
+  }, [pushToast, t]);
+  useEffect(() => { adoptServerProfileRef.current = adoptServerProfile; }, [adoptServerProfile]);
+
+  // Fallback-Reconcile: falls der Socket-Push verpasst wurde (z. B. genau im
+  // Reconnect-Moment zugewiesen), holt das Handy sein serverseitiges Profil
+  // selbstständig — dann stimmt die Zuordnung spätestens vor Spielstart.
+  useEffect(() => {
+    if (!isConnected || !clientId) return;
+    let cancelled = false;
+    const reconcile = async () => {
+      if (Date.now() - lastProfileMutationRef.current < 5000) return; // local change syncing
+      try {
+        const res = await fetch(`/api/mobile?action=profile&clientId=${encodeURIComponent(clientId)}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (cancelled || !d.success) return;
+        const serverProfile = (d.profile ?? null) as MobileProfile | null;
+        if (!serverProfile?.id) return;
+        if (profileRef.current?.id === serverProfile.id) return;
+        adoptServerProfileRef.current(serverProfile);
+      } catch { /* ignore */ }
+    };
+    reconcile();
+    const iv = setInterval(reconcile, 8000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [isConnected, clientId]);
 
   // Queue-Fehler → Toast (der Hook räumt queueError nach 3 s selbst ab)
   useEffect(() => {
@@ -298,6 +371,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             avatar: match.avatar || undefined,
             color: match.color, createdAt: match.createdAt || Date.now(),
           };
+          markLocalProfileMutation(); // R34: local change takes precedence over server reconcile
           setProfile(hostProfile); setProfileName(hostProfile.name);
           setProfileColor(hostProfile.color); setAvatarPreview(hostProfile.avatar || null);
           setJson(StorageKeys.MOBILE_PROFILE, hostProfile); syncProfile(hostProfile);
@@ -305,7 +379,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       })
       // eslint-disable-next-line no-console
       .catch(() => { console.warn('Failed to auto-adopt profile'); });
-  }, [profileId, isConnected, clientId, syncProfile]);
+  }, [profileId, isConnected, clientId, syncProfile, markLocalProfileMutation]);
 
   // Profile callbacks
   const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
@@ -313,9 +387,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     const newProfile: MobileProfile = hostProfile
       ? { id: hostProfile.id, name: hostProfile.name, avatar: hostProfile.avatar || avatarPreview || undefined, color: hostProfile.color, createdAt: hostProfile.createdAt || Date.now() }
       : { id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now() };
+    markLocalProfileMutation(); // R34: local change takes precedence over server reconcile
     setProfile(newProfile); setJson(StorageKeys.MOBILE_PROFILE, newProfile); syncProfile(newProfile);
     setShowProfile(false);
-  }, [profileName, avatarPreview, profileColor, syncProfile]);
+  }, [profileName, avatarPreview, profileColor, syncProfile, markLocalProfileMutation]);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -328,16 +403,18 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const handleSaveProfile = useCallback(() => {
     if (!profile) return;
     const updated = { ...profile, name: profileName, color: profileColor, avatar: avatarPreview || undefined };
+    markLocalProfileMutation(); // R34: local change takes precedence over server reconcile
     setProfile(updated); setJson(StorageKeys.MOBILE_PROFILE, updated); syncProfile(updated);
     setShowProfile(false);
-  }, [profile, profileName, profileColor, avatarPreview, syncProfile]);
+  }, [profile, profileName, profileColor, avatarPreview, syncProfile, markLocalProfileMutation]);
 
   const handleSwitchToHostProfile = useCallback((hostProfile: MobileProfile) => {
     const switchedProfile: MobileProfile = { id: hostProfile.id, name: hostProfile.name, avatar: hostProfile.avatar || undefined, color: hostProfile.color, createdAt: hostProfile.createdAt || Date.now() };
+    markLocalProfileMutation(); // R34: local change takes precedence over server reconcile
     setProfile(switchedProfile); setProfileName(switchedProfile.name); setProfileColor(switchedProfile.color);
     setAvatarPreview(switchedProfile.avatar || null); setJson(StorageKeys.MOBILE_PROFILE, switchedProfile); syncProfile(switchedProfile);
     setShowProfile(false);
-  }, [syncProfile]);
+  }, [syncProfile, markLocalProfileMutation]);
 
   const handleDisconnect = useCallback(async () => {
     await disconnect();

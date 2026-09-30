@@ -539,7 +539,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'The app\'s roles',
           body: 'After connecting the app offers, depending on context:\n\n🎤 Mic view with pitch display\n🎮 Remote control for the desktop\n🎵 Song browser + queue requests\n💬 Chat\n🪞 Live mirror of the screen',
-          details: 'The roles in detail:\n• Microphone: the phone measures pitch and transmits it live — the desktop shows the notes like from a "real" mic. Works for all modes (duel too: two phones!).\n• Remote control: screens, buttons and confirmations from the phone — great for hosts walking the room.\n• Song browser: the whole library on the phone — including preview and queue requests with the 📱 badge on the desktop.\n• Chat: messages to the desktop and other guests.\n• Mirror: the desktop screen (game, results) is mirrored on the phone — guests see everything from their seats.',
+          details: 'The roles in detail:\n• Microphone: the phone measures pitch and transmits it live — the desktop shows the notes like from a "real" mic. Works for almost all modes (duel too: two phones!) — exception e.g. Pass-the-Mic: there everyone shares the same desktop mic.\n• Remote control: screens, buttons and confirmations from the phone — great for hosts walking the room.\n• Song browser: the whole library on the phone — including preview and queue requests with the 📱 badge on the desktop.\n• Chat: messages to the desktop and other guests.\n• Mirror: the desktop screen (game, results) is mirrored on the phone — guests see everything from their seats.',
         },
         chatRole: {
           title: 'Chat on the desktop',
@@ -551,8 +551,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Sing-along modes 🎶',
-          body: 'In the party modes Companion Singalong and Pass-the-Mic guests sing straight over their phones — pitch detection runs on the device, the desktop orchestrates.',
-          details: 'Companion Singalong: every guest gets lyrics + pitch display on their phone — the desktop shows the shared note highway.\n\nPass-the-Mic: the mic rotates — even mixed between phone and physical mic.\n\nFor both: the better the Wi-Fi, the smoother the pitch. If it stutters, a machine closer to the router helps.',
+          body: 'In the party mode Companion Singalong guests sing straight over their phones — pitch detection runs on the device, the desktop orchestrates.',
+          details: 'Companion Singalong: every guest gets lyrics + pitch display on their phone — the desktop shows the shared note highway.\n\nPass-the-Mic: everyone takes turns singing into the same microphone at the desktop — it simply gets passed around. Phones act as remote control and live mirror only, never as the microphone.\n\nFor phone singing: the better the Wi-Fi, the smoother the pitch.',
         },
         takeControl: {
           title: 'Take Control 🎮',
@@ -572,7 +572,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Guests without control 🙋',
           body: 'Most guests never need the remote: connected phones without Take Control are standalone companions — they request songs, chat, sing along and check their own achievements without touching the desktop.',
-          details: 'What non-controlling phones can do:\n• 🎵 Queue their own songs (with the 📱 badge)\n• 💬 Join the party chat\n• 🎤 Sing in party modes (Companion Singalong, Pass-the-Mic)\n• 🗳️ Vote in polls (tournament, Battle Royale)\n• 🏆 View their own highscores and achievements',
+          details: 'What non-controlling phones can do:\n• 🎵 Queue their own songs (with the 📱 badge)\n• 💬 Join the party chat\n• 🎤 Sing in party modes (e.g. Companion Singalong)\n• 🗳️ Vote in polls (tournament, Battle Royale)\n• 🏆 View their own highscores and achievements',
         },
         soloQueue: {
           title: 'Requests without control',
@@ -580,7 +580,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Sing along & vote',
-          body: 'Party participation always runs through the phones: in Companion Singalong and Pass-the-Mic guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control.',
+          body: 'Party participation always runs through the phones: in Companion Singalong guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control. Note: in Pass-the-Mic only the desktop mic is passed around; phones just control.',
         },
         soloStats: {
           title: 'Own achievements & highscores',

@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Besturing vrijgegeven',
   toastControlLost: 'Besturing verloren',
   toastControlTaken: 'Besturing al bezet',
+  profileAssignedToast: 'Je zingt nu als {name} 🎤',
+  profileClearedToast: 'Profiel vrijgegeven — een ander apparaat heeft het overgenomen',
   toastLockedNav: 'Alleen met afstandsbediening',
   homeControlYouTitle: 'Jij bestuurt de desktop',
   homeControlYouDesc: 'Je tabs sturen de desktop — alle gebieden zijn open.',

@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: '操作を解放しました',
   toastControlLost: '操作が失われました',
   toastControlTaken: '操作はすでに取得されています',
+  profileAssignedToast: '今は{name}として歌います 🎤',
+  profileClearedToast: 'プロフィールを解放しました — 別のデバイスが引き継ぎました',
   toastLockedNav: 'リモート操作が必要です',
   homeControlYouTitle: 'あなたがデスクトップを操作中',
   homeControlYouDesc: 'あなたのタブがデスクトップを操作します — すべてのエリアが開放されています。',

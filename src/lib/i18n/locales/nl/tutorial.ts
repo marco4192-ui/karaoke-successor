@@ -540,7 +540,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'De rollen van de app',
           body: 'Na het verbinden biedt de app, afhankelijk van de context:\n\n🎤 Microfoonweergave met toonweergave\n🎮 Afstandsbediening voor de desktop\n🎵 Nummerbrowser + wachtrijverzoeken\n💬 Chat\n🪞 Live spiegel van het scherm',
-          details: 'De rollen in detail:\n• Microfoon: de telefoon meet de toonhoogte en zendt die live door — de desktop toont de noten alsof er een "echte" microfoon aanhangt. Werkt voor alle modi (duel ook: twee telefoons!).\n• Afstandsbediening: schermen, knoppen en bevestigingen vanaf de telefoon — ideaal voor hosts die door de ruimte lopen.\n• Nummerbrowser: de hele bibliotheek op de telefoon — inclusief voorbeeld en wachtrijverzoeken met de 📱-badge op de desktop.\n• Chat: berichten naar de desktop en andere gasten.\n• Spiegel: het desktopscherm (spel, resultaten) wordt gespiegeld op de telefoon — gasten zien alles vanuit hun stoel.',
+          details: 'De rollen in detail:\n• Microfoon: de telefoon meet de toonhoogte en zendt die live door — de desktop toont de noten alsof er een "echte" microfoon aanhangt. Werkt voor bijna alle modi (duel ook: twee telefoons!) — uitzondering bijv. Geef de Mic: daar deelt iedereen dezelfde desktopmicrofoon.\n• Afstandsbediening: schermen, knoppen en bevestigingen vanaf de telefoon — ideaal voor hosts die door de ruimte lopen.\n• Nummerbrowser: de hele bibliotheek op de telefoon — inclusief voorbeeld en wachtrijverzoeken met de 📱-badge op de desktop.\n• Chat: berichten naar de desktop en andere gasten.\n• Spiegel: het desktopscherm (spel, resultaten) wordt gespiegeld op de telefoon — gasten zien alles vanuit hun stoel.',
         },
         chatRole: {
           title: 'Chat op de desktop',
@@ -552,8 +552,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Meezingmodi 🎶',
-          body: 'In de partymodi Companion Sing-A-Long en Geef de Mic zingen gasten direct via hun telefoons — de toonherkenning draait op het apparaat, de desktop dirigeert.',
-          details: 'Companion Sing-A-Long: elke gast krijgt songtekst + toonweergave op de telefoon — de desktop toont de gedeelde notenbaan.\n\nGeef de Mic: de microfoon gaat rond — zelfs afgewisseld tussen telefoon en fysieke microfoon.\n\nVoor beide geldt: hoe beter het WiFi, hoe vloeiender de toon. Bij haperingen helpt een apparaat dichter bij de router.',
+          body: 'In de partymodus Companion Sing-A-Long zingen gasten direct via hun telefoons — de toonherkenning draait op het apparaat, de desktop dirigeert.',
+          details: 'Companion Sing-A-Long: elke gast krijgt songtekst + toonweergave op de telefoon — de desktop toont de gedeelde notenbaan.\n\nGeef de Mic: iedereen zingt om de beurt in dezelfde microfoon op de desktop — hij gaat simpelweg van hand tot hand. Telefoons dienen hier uitsluitend als besturing en live spiegel, nooit als microfoon.\n\nVoor zingen via de telefoon: hoe beter het WiFi, hoe vloeiender de toon.',
         },
         takeControl: {
           title: 'Besturing overnemen 🎮',
@@ -573,7 +573,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Gasten zonder besturing 🙋',
           body: 'De meeste gasten hebben de afstandsbediening nooit nodig: verbonden telefoons zonder overname zijn zelfstandige companions — ze vragen nummers aan, chatten, zingen mee en bekijken hun eigen prestaties zonder de desktop aan te raken.',
-          details: 'Wat niet-besturende telefoons kunnen:\n• 🎵 Eigen nummers in de wachtrij zetten (met de 📱-badge)\n• 💬 Meedoen met de feestchat\n• 🎤 Zingen in feestmodi (Companion Sing-A-Long, Geef de Mic)\n• 🗳️ Stemmen in polls (toernooi, Battle Royale)\n• 🏆 Eigen highscores en prestaties bekijken',
+          details: 'Wat niet-besturende telefoons kunnen:\n• 🎵 Eigen nummers in de wachtrij zetten (met de 📱-badge)\n• 💬 Meedoen met de feestchat\n• 🎤 Zingen in feestmodi (bijv. Companion Sing-A-Long)\n• 🗳️ Stemmen in polls (toernooi, Battle Royale)\n• 🏆 Eigen highscores en prestaties bekijken',
         },
         soloQueue: {
           title: 'Verzoeken zonder besturing',
@@ -581,7 +581,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Mezingen & stemmen',
-          body: 'Feestdeelname loopt altijd via de telefoons: in Companion Sing-A-Long en Geef de Mic zingen gasten direct via hun apparaat, in toernooi en Battle Royale stemmen ze met een tik — allemaal zonder besturing over te nemen.',
+          body: 'Feestdeelname loopt altijd via de telefoons: in Companion Sing-A-Long zingen gasten direct via hun apparaat, in toernooi en Battle Royale stemmen ze met een tik — allemaal zonder besturing over te nemen. Let op bij Geef de Mic: daar wordt alleen de desktopmicrofoon doorgegeven; telefoons sturen alleen.',
         },
         soloStats: {
           title: 'Eigen prestaties & highscores',

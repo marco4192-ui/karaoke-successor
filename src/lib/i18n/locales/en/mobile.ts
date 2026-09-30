@@ -41,6 +41,8 @@ export const mobileTranslations = {
     toastControlReleased: 'Control released',
     toastControlLost: 'Control lost',
     toastControlTaken: 'Control already taken',
+    profileAssignedToast: 'You now sing as {name} 🎤',
+    profileClearedToast: 'Profile released — another device took over',
     toastLockedNav: 'Requires remote control',
     homeControlYouTitle: 'You control the desktop',
     homeControlYouDesc: 'Your tabs drive the desktop — all areas are unlocked.',

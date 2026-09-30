@@ -1,0 +1,57 @@
+[
+  {
+    "key": "unifiedSetup.deviceConnect",
+    "en": "Connect…",
+    "de": "Verbinden…"
+  },
+  {
+    "key": "unifiedSetup.assignDevicesTitle",
+    "en": "Connected devices",
+    "de": "Verbundene Geräte"
+  },
+  {
+    "key": "unifiedSetup.assignDeviceNoClients",
+    "en": "No device connected yet — open the Companion App on a phone or scan the QR code.",
+    "de": "Noch kein Gerät verbunden — öffne die Companion-App auf dem Handy oder scanne den QR-Code."
+  },
+  {
+    "key": "unifiedSetup.assignDeviceToPlayer",
+    "en": "Assign",
+    "de": "Zuweisen"
+  },
+  {
+    "key": "unifiedSetup.assignDeviceUnassigned",
+    "en": "no profile",
+    "de": "ohne Profil"
+  },
+  {
+    "key": "unifiedSetup.assignDeviceAssignedTo",
+    "en": "assigned to: {name}",
+    "de": "zugewiesen an: {name}"
+  },
+  {
+    "key": "unifiedSetup.assignDeviceQrHint",
+    "en": "Or scan the QR: the phone signs in as {name} directly and sings for this player.",
+    "de": "Oder QR scannen: Das Handy meldet sich direkt als {name} an und singt für diesen Spieler."
+  },
+  {
+    "key": "unifiedSetup.assignDeviceDone",
+    "en": "Assigned ✓",
+    "de": "Zugewiesen ✓"
+  },
+  {
+    "key": "unifiedSetup.assignDeviceError",
+    "en": "Assignment failed — please try again",
+    "de": "Zuweisung fehlgeschlagen — bitte erneut versuchen"
+  },
+  {
+    "key": "mobile.profileAssignedToast",
+    "en": "You now sing as {name} 🎤",
+    "de": "Du singst jetzt als {name} 🎤"
+  },
+  {
+    "key": "mobile.profileClearedToast",
+    "en": "Profile released — another device took over",
+    "de": "Profil freigegeben — ein anderes Gerät hat es übernommen"
+  }
+]

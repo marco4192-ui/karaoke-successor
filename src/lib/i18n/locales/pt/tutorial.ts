@@ -541,7 +541,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Os papéis do app',
           body: 'Depois de conectar, o app oferece conforme o contexto:\n\n🎤 Visão de microfone com exibição de tom\n🎮 Controle remoto do desktop\n🎵 Navegação de músicas + pedidos para a fila\n💬 Chat\n🪞 Espelho ao vivo da tela',
-          details: 'Os papéis em detalhe:\n• Microfone: o celular mede o tom e transmite ao vivo — o desktop mostra as notas como de um microfone "de verdade". Funciona em todos os modos (duelo incluso: dois celulares!).\n• Controle remoto: telas, botões e confirmações pelo celular — ótimo para o host que circula pela sala.\n• Navegação de músicas: a biblioteca inteira no celular — com prévia e pedidos para a fila com o distintivo 📱 no desktop.\n• Chat: mensagens para o desktop e os outros convidados.\n• Espelho: a tela do desktop (jogo, resultados) é espelhada no celular — os convidados veem tudo do lugar deles.',
+          details: 'Os papéis em detalhe:\n• Microfone: o celular mede o tom e transmite ao vivo — o desktop mostra as notas como de um microfone "de verdade". Funciona em quase todos os modos (duelo incluso: dois celulares!) — exceção p. ex. Passe o Microfone: lá todo mundo divide o mesmo microfone do desktop.\n• Controle remoto: telas, botões e confirmações pelo celular — ótimo para o host que circula pela sala.\n• Navegação de músicas: a biblioteca inteira no celular — com prévia e pedidos para a fila com o distintivo 📱 no desktop.\n• Chat: mensagens para o desktop e os outros convidados.\n• Espelho: a tela do desktop (jogo, resultados) é espelhada no celular — os convidados veem tudo do lugar deles.',
         },
         chatRole: {
           title: 'O chat no desktop',
@@ -553,8 +553,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Modos de canto conjunto 🎶',
-          body: 'Nos modos de festa Companion Sing-A-Long e Passe o Microfone, os convidados cantam direto pelos celulares — a detecção de tom roda no aparelho, o desktop rege.',
-          details: 'Companion Sing-A-Long: cada convidado recebe letra e exibição de tom no celular — o desktop mostra a pista de notas compartilhada.\n\nPasse o Microfone: o microfone circula — até misturando celular e microfone físico.\n\nPara os dois: quanto melhor o Wi-Fi, mais suave o tom. Se engasgar, uma máquina mais perto do roteador ajuda.',
+          body: 'No modo de festa Companion Sing-A-Long os convidados cantam direto pelos celulares — a detecção de tom roda no aparelho, o desktop rege.',
+          details: 'Companion Sing-A-Long: cada convidado recebe letra e exibição de tom no celular — o desktop mostra a pista de notas compartilhada.\n\nPasse o Microfone: todos cantam por turnos no mesmo microfone do desktop — ele simplesmente vai passando de mão em mão. Os celulares aqui servem só de controle remoto e espelho ao vivo, nunca de microfone.\n\nPara cantar pelo celular: quanto melhor o Wi-Fi, mais suave o tom.',
         },
         takeControl: {
           title: 'Take Control 🎮',
@@ -574,7 +574,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Convidados sem controle 🙋',
           body: 'A maioria dos convidados nunca precisa do controle remoto: telefones conectados sem Take Control são acompanhantes autônomos — pedem músicas, conversam no chat, cantam junto e conferem as próprias conquistas sem tocar no desktop.',
-          details: 'O que os telefones sem controle podem fazer:\n• 🎵 Colocar as próprias músicas na fila (com o distintivo 📱)\n• 💬 Entrar no chat da festa\n• 🎤 Cantar nos modos de festa (Companion Sing-A-Long, Passe o Microfone)\n• 🗳️ Votar nas enquetes (torneio, Battle Royale)\n• 🏆 Ver as próprias pontuações e conquistas',
+          details: 'O que os telefones sem controle podem fazer:\n• 🎵 Colocar as próprias músicas na fila (com o distintivo 📱)\n• 💬 Entrar no chat da festa\n• 🎤 Cantar nos modos de festa (p. ex. Companion Sing-A-Long)\n• 🗳️ Votar nas enquetes (torneio, Battle Royale)\n• 🏆 Ver as próprias pontuações e conquistas',
         },
         soloQueue: {
           title: 'Pedidos sem controle',
@@ -582,7 +582,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Cantar junto e votar',
-          body: 'A participação na festa passa sempre pelos telefones: no Companion Sing-A-Long e no Passe o Microfone os convidados cantam direto do aparelho, no torneio e no Battle Royale votam com um toque — tudo sem Take Control.',
+          body: 'A participação na festa passa sempre pelos telefones: no Companion Sing-A-Long os convidados cantam direto do aparelho, no torneio e no Battle Royale votam com um toque — tudo sem Take Control. Atenção ao Passe o Microfone: lá só o microfone do desktop circula; os celulares apenas controlam.',
         },
         soloStats: {
           title: 'Conquistas e pontuações próprias',

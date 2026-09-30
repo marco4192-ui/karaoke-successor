@@ -437,6 +437,16 @@ export const partyTranslations = {
     deviceNeedFlexible: '{n} player(s) still need a device — choose microphone or connect the Companion App',
     deviceNeedGeneric: 'Assign a singing device to every player first',
     deviceMicCount: '{n} mic(s) · {m} via App',
+    // ── R34: assign companion device (players not connected yet) ──
+    deviceConnect: 'Connect…',
+    assignDevicesTitle: 'Connected devices',
+    assignDeviceNoClients: 'No device connected yet — open the Companion App on a phone or scan the QR code.',
+    assignDeviceToPlayer: 'Assign',
+    assignDeviceUnassigned: 'no profile',
+    assignDeviceAssignedTo: 'assigned to: {name}',
+    assignDeviceQrHint: 'Or scan the QR: the phone signs in as {name} directly and sings for this player.',
+    assignDeviceDone: 'Assigned ✓',
+    assignDeviceError: 'Assignment failed — please try again',
     // ── Companion QR (sidebar) ──
     qrCompanionTitle: '📱 Connect Companion App',
     qrWlanHint: '⚠️ First connect your phone to the same Wi-Fi network as this computer, then scan the QR code.',

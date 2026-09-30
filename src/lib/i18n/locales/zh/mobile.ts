@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: '已释放控制',
   toastControlLost: '控制已丢失',
   toastControlTaken: '控制权已被占用',
+  profileAssignedToast: '你现在以 {name} 的身份演唱 🎤',
+  profileClearedToast: '资料已释放 — 另一台设备已接管',
   toastLockedNav: '仅限远程控制',
   homeControlYouTitle: '你正在控制桌面端',
   homeControlYouDesc: '你的标签页驱动桌面端——所有区域都已解锁。',

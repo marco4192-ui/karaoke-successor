@@ -44,6 +44,9 @@ export function useCompanionSync(): {
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
   const syncVersionRef = useRef(0);
   const pollLoggerRef = useRef(createPollErrorLogger('CompanionSync'));
+  // R34: clientId → already rebound (prevents duplicate rebind POSTs while a
+  // rebind is in flight / until the server reflects the new profile id).
+  const reboundClientsRef = useRef<Set<string>>(new Set());
 
   // Sync companion profiles: fetch from server AND import into main app's character list
   const syncCompanionProfiles = useCallback(async () => {
@@ -58,8 +61,41 @@ export function useCompanionSync(): {
       if (myVersion !== syncVersionRef.current) return; // stale, newer call superseded
       if (data.success && data.profiles) {
         setCompanionProfiles(data.profiles);
+        // R34: profileId → clientId map (server-side) for the name-dedup rebind
+        const profileClients: Record<string, string> = data.profileClients ?? {};
         data.profiles.forEach((profile: CompanionProfile) => {
-          importProfileFromMobile(profile);
+          const merged = importProfileFromMobile(profile);
+          // R34 NAME-DEDUP REBIND: when the phone created its OWN profile with
+          // a name that matches an existing desktop profile, the store keeps
+          // the DESKTOP profile id — but the phone stays registered on the
+          // server under its phone-id → connection detection NEVER matched
+          // ("not connected" although online). Rebind the server client to
+          // the desktop profile so the ids line up again.
+          const clientId = profileClients[profile.id];
+          if (
+            merged && clientId && merged.id !== profile.id &&
+            !reboundClientsRef.current.has(clientId)
+          ) {
+            reboundClientsRef.current.add(clientId);
+            const rebindProfile = {
+              id: merged.id,
+              name: merged.name,
+              color: merged.color,
+              avatar: merged.avatar,
+              createdAt: merged.createdAt || Date.now(),
+            };
+            fetch('/api/mobile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'assigncharacter',
+                payload: { targetClientId: clientId, profile: rebindProfile },
+              }),
+            }).catch(() => {
+              // best-effort — retry on the next sync (allow rebind again)
+              reboundClientsRef.current.delete(clientId);
+            });
+          }
         });
       }
       pollLoggerRef.current.logSuccess();

@@ -538,7 +538,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Die Rollen der App',
           body: 'Nach dem Verbinden bietet die App je nach Kontext:\n\n🎤 Mikro-Ansicht mit Tonhöhen-Anzeige\n🎮 Fernbedienung für den Desktop\n🎵 Song-Browser + Queue-Wünsche\n💬 Chat\n🪞 Live-Mirror des Bildschirms',
-          details: 'Die Rollen im Detail:\n• Mikrofon: Das Handy misst die Tonhöhe und überträgt sie live — der Desktop zeigt die Noten wie von einem „echten" Mikro. Funktioniert für alle Modi (auch Duell: zwei Handys!).\n• Fernbedienung: Screens, Buttons und Bestätigungen vom Handy aus — gut für Party-Hosts, die durch den Raum laufen.\n• Song-Browser: Die komplette Bibliothek auf dem Handy — inklusive Vorschau und Warteschlangen-Wunsch mit 📱-Badge auf dem Desktop.\n• Chat: Nachrichten an den Desktop und andere Gäste.\n• Mirror: Der Bildschirm des Desktops (Spiel, Ergebnisse) wird auf dem Handy gespiegelt — die Gäste sehen alles von ihren Plätzen.',
+          details: 'Die Rollen im Detail:\n• Mikrofon: Das Handy misst die Tonhöhe und überträgt sie live — der Desktop zeigt die Noten wie von einem „echten" Mikro. Funktioniert für fast alle Modi (auch Duell: zwei Handys!) — Ausnahme z. B. Pass-the-Mic: dort teilen sich alle dasselbe Desktop-Mikro.\n• Fernbedienung: Screens, Buttons und Bestätigungen vom Handy aus — gut für Party-Hosts, die durch den Raum laufen.\n• Song-Browser: Die komplette Bibliothek auf dem Handy — inklusive Vorschau und Warteschlangen-Wunsch mit 📱-Badge auf dem Desktop.\n• Chat: Nachrichten an den Desktop und andere Gäste.\n• Mirror: Der Bildschirm des Desktops (Spiel, Ergebnisse) wird auf dem Handy gespiegelt — die Gäste sehen alles von ihren Plätzen.',
         },
         chatRole: {
           title: 'Chat am Desktop',
@@ -550,8 +550,8 @@ export const tutorialTranslations = {
         },
         singAlong: {
           title: 'Mitsing-Modi 🎶',
-          body: 'In den Party-Modi Companion-Singalong und Pass-the-Mic singen die Gäste direkt über ihre Handys — Tonhöhen-Erkennung läuft auf dem Gerät, der Desktop orchestriert.',
-          details: 'Companion-Singalong: Jeder Gast bekommt auf seinem Handy Lyrics + Tonhöhen-Anzeige — der Desktop zeigt die gemeinsame Note-Bahn.\n\nPass-the-Mic: Das Mikro wandert — auch zwischen Handy und physischem Mikro gemischt möglich.\n\nFür beide gilt: Je besser die WLAN-Qualität, desto flüssiger die Tonhöhe. Bei Zuckungen hilft ein Rechner näher am Router.',
+          body: 'Im Party-Modus Companion-Singalong singen die Gäste direkt über ihre Handys — die Tonhöhen-Erkennung läuft auf dem Gerät, der Desktop orchestriert.',
+          details: 'Companion-Singalong: Jeder Gast bekommt auf seinem Handy Lyrics + Tonhöhen-Anzeige — der Desktop zeigt die gemeinsame Note-Bahn.\n\nPass-the-Mic: Alle singen nacheinander in dasselbe Mikrofon am Desktop — es wird nur weitergereicht. Handys dienen hier ausschließlich als Steuerung und Live-Spiegel, nicht als Mikrofon.\n\nFürs Singen per Handy gilt: Je besser die WLAN-Qualität, desto flüssiger die Tonhöhe.',
         },
         takeControl: {
           title: 'Take Control 🎮',
@@ -571,7 +571,7 @@ export const tutorialTranslations = {
         soloOverview: {
           title: 'Gäste ohne Steuerung 🙋',
           body: 'Die meisten Gäste brauchen die Fernbedienung gar nicht: Verbundene Handys ohne Take Control sind eigenständige Begleiter — sie wünschen Songs, chatten, singen mit und schauen ihre eigenen Erfolge an, ohne den Desktop anzufassen.',
-          details: 'Was nicht-steuernde Handys alles können:\n• 🎵 Eigene Songs in die Warteschlange einreihen (mit 📱-Badge)\n• 💬 Am Party-Chat teilnehmen\n• 🎤 In Party-Modi mitsingen (Companion-Singalong, Pass-the-Mic)\n• 🗳️ Bei Abstimmungen mitwählen (Turnier, Battle Royale)\n• 🏆 Eigene Highscores und Erfolge ansehen',
+          details: 'Was nicht-steuernde Handys alles können:\n• 🎵 Eigene Songs in die Warteschlange einreihen (mit 📱-Badge)\n• 💬 Am Party-Chat teilnehmen\n• 🎤 In Party-Modi mitsingen (z. B. Companion-Singalong)\n• 🗳️ Bei Abstimmungen mitwählen (Turnier, Battle Royale)\n• 🏆 Eigene Highscores und Erfolge ansehen',
         },
         soloQueue: {
           title: 'Wünsche ohne Steuerung',
@@ -579,7 +579,7 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Mitsingen & Abstimmen',
-          body: 'Party-Partizipation läuft immer über die Handys: Bei Companion-Singalong und Pass-the-Mic singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control.',
+          body: 'Party-Partizipation läuft immer über die Handys: Im Companion-Singalong singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control. Achtung Pass-the-Mic: Dort wird nur das Desktop-Mikro weitergereicht, Handys steuern lediglich.',
         },
         soloStats: {
           title: 'Eigene Erfolge & Highscores',

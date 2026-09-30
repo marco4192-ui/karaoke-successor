@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Contrôle libéré',
   toastControlLost: 'Contrôle perdu',
   toastControlTaken: 'Contrôle déjà pris',
+  profileAssignedToast: 'Vous chantez désormais en tant que {name} 🎤',
+  profileClearedToast: 'Profil libéré — un autre appareil l\'a repris',
   toastLockedNav: 'Contrôle à distance requis',
   homeControlYouTitle: 'Vous contrôlez le bureau',
   homeControlYouDesc: 'Vos onglets pilotent le bureau — toutes les zones sont déverrouillées.',

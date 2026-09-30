@@ -67,6 +67,21 @@ export interface CompanionPitchEvent {
   };
 }
 
+/** Emitted when a companion's profile was changed server-side (R34):
+ *  desktop-initiated assignment (party setup assign panel, settings) or the
+ *  name-dedup rebind. The Socket.IO server pushes it to the phone which
+ *  adopts the profile instantly instead of waiting for its reconcile poll. */
+export interface ProfileAssignedEvent {
+  clientId: string;
+  profile: {
+    id: string;
+    name: string;
+    avatar?: string;
+    color: string;
+    createdAt: number;
+  } | null;
+}
+
 /** Emitted when Desktop wants to push a dialog/overlay state to Companions */
 export interface DesktopDialogEvent {
   dialog: string | null;
@@ -103,4 +118,7 @@ export const EVENTS = {
   // R33: Desktop pushes the settings snapshot ON CHANGE (values + webcam
   // config + default difficulty) — replaces the old 2s gamestate embedding.
   SETTINGS_SNAPSHOT: 'settings-snapshot-update',
+  // R34: A companion's profile was assigned/cleared server-side → the phone
+  // is notified instantly so it sings as the right player.
+  PROFILE_ASSIGNED: 'profile-assigned',
 } as const;

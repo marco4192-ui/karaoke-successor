@@ -862,6 +862,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'assigncharacter':
         // Assign a character profile to a companion (called from settings)
+        // R34: ALSO called from the party setup's assign panel to bind a
+        // connected-but-unclaimed device to a player.
         // Auth required: this is a privileged admin action
         if (!requireAuth(request)) {
           return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
@@ -873,6 +875,29 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           if (targetClientId) {
             const targetClient = mobileClients.get(targetClientId);
             if (!targetClient) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+            
+            // R34: keep the "one profile = one device" invariant — if ANOTHER
+            // client still holds the profile we're about to assign, clear it
+            // there (the phone flow kicks duplicates; clearing is the gentler
+            // desktop-side equivalent: the other device becomes available
+            // again instead of being disconnected).
+            if (assignPayload.profile?.id) {
+              const duplicateClientId = profileToClient.get(assignPayload.profile.id);
+              if (duplicateClientId && duplicateClientId !== targetClientId) {
+                const duplicateClient = mobileClients.get(duplicateClientId);
+                if (duplicateClient?.profile) {
+                  profileToClient.delete(duplicateClient.profile.id);
+                  duplicateClient.profile = null;
+                  duplicateClient.name = 'Mobile Device';
+                  mobileClients.set(duplicateClientId, duplicateClient);
+                  // Tell the losing phone its profile was cleared
+                  mobileEvents.emit(EVENTS.PROFILE_ASSIGNED, {
+                    clientId: duplicateClientId,
+                    profile: null,
+                  });
+                }
+              }
+            }
             
             // Clear old profile mapping
             if (targetClient.profile) {
@@ -889,6 +914,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             }
             
             mobileClients.set(targetClientId, targetClient);
+
+            // R34: notify the phone instantly (Socket.IO) so it adopts the
+            // assigned profile without waiting for its reconcile poll.
+            mobileEvents.emit(EVENTS.PROFILE_ASSIGNED, {
+              clientId: targetClientId,
+              profile: targetClient.profile,
+            });
             
             return Response.json({
               success: true,

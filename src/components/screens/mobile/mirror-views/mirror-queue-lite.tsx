@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { QueueItem, GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SongCoverTile } from './mirror-cover-tile';
 
 /** i18n with a hard fallback (mirror views load a lite dictionary — keys
  *  can be missing; then the German fallback keeps the UI usable). */
@@ -37,69 +38,12 @@ function haptic() {
 }
 
 // ===================== Mini-Cover-Kachel (R33/P13+P15) =====================
-
-/** Stabiler Farb-Hue aus der Song-ID (fuer die Initialen-Fallback-Kachel —
- *  deterministisch, ueberlebt Reloads & Tabs). */
-function songCoverHue(songId: string): number {
-  let h = 0;
-  for (let i = 0; i < songId.length; i++) h = (h * 31 + songId.charCodeAt(i)) | 0;
-  return Math.abs(h) % 360;
-}
-
-/** Max. 2 Initialen aus dem Songtitel ("Dancing Queen" → "DQ"). */
-function songInitials(title: string): string {
-  const parts = (title || '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/**
- * R33/P13: kleine, wiederverwendbare Cover-Kachel (bewusst KEIN Shared-File —
- * in mirror-library-lite & mirror-queue-lite dupliziert).
- * Lädt das 96px-JPEG-Mini-Cover vom Desktop:
- *   GET /api/mobile?action=songcover&songId=<id> → image/jpeg (Cache 1 Tag) | 404
- * mit loading="lazy" — nur sichtbare Einträge fordern das Cover an (kein
- * Prefetch). Bis das Bild da ist — oder wenn der Desktop keines geliefert
- * hat (404 → onError) — liegt darunter eine farbige Kachel mit den
- * Song-Initialen (Farbe = Hash der Song-ID). React.memo hält die Kachel
- * bei Queue-Updates billig.
- */
-const SongCoverTile = React.memo(function SongCoverTile({
-  songId,
-  title,
-  className = '',
-}: {
-  songId: string;
-  title: string;
-  className?: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  const hue = songCoverHue(songId);
-  return (
-    <div
-      aria-hidden="true"
-      className={'relative shrink-0 overflow-hidden ' + className}
-      style={{ background: `linear-gradient(135deg, hsl(${hue} 45% 38%), hsl(${(hue + 40) % 360} 50% 22%))` }}
-    >
-      {/* Initialen-Fallback (liegt UNTER dem Bild — sobald das JPEG da ist,
-          ueberdeckt es die Kachel) */}
-      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tracking-wider text-white/85 select-none">
-        {songInitials(title)}
-      </span>
-      {!failed && (
-        <img
-          src={'/api/mobile?action=songcover&songId=' + encodeURIComponent(songId)}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
-    </div>
-  );
-});
+// R34: SongCoverTile ist jetzt EINE geteilte Komponente (mirror-cover-tile.tsx,
+// vorher hier dupliziert) mit 3-Stufen-Fallback + verzögertem API-Retry
+// (5 s / 15 s / 60 s). Die Queue-Items (QueueItem) führen keine coverImage-
+// URL mit sich — Stufe 2 (inline data:/http:-URL) greift hier entsprechend
+// nur, wenn die Shell später mal eine mitgibt; Initialen-Kachel bleibt
+// der dauerhafte Fallback.
 
 // ===================== Component =====================
 
@@ -286,7 +230,8 @@ export function MirrorQueueLite({
                 {/* Drag handle */}
                 <span className="text-white/20 text-sm cursor-grab active:text-white/50 select-none">{'\u2805'}</span>
 
-                {/* R33/P13: Mini-Cover (40px, lazy) — Fallback: farbige
+                {/* R33/P13 + R34: Mini-Cover (40px, lazy) — geteilte Tile mit
+                    3-Stufen-Fallback + API-Retry; Fallback: farbige
                     Initialen-Kachel, solange kein JPEG vom Desktop kommt */}
                 <SongCoverTile songId={item.songId} title={item.songTitle} className="w-10 h-10 rounded-lg" />
 

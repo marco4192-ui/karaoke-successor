@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import { filterSongsByMotto } from '@/lib/game/motto-party';
 import type { MobileSong, GameMode, GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
+import { SongCoverTile } from './mirror-cover-tile';
 
 /** i18n with a hard fallback (mirror views load a lite dictionary — keys
  *  can be missing; then the German fallback keeps the UI usable). */
@@ -82,70 +83,11 @@ function isLikelyDuet(song: MobileSong): boolean {
   return false;
 }
 
-// ===================== Mini-Cover-Kachel (R33/P13+P15) =====================
-
-/** Stabiler Farb-Hue aus der Song-ID (fuer die Initialen-Fallback-Kachel —
- *  deterministisch, ueberlebt Reloads & Tabs). */
-function songCoverHue(songId: string): number {
-  let h = 0;
-  for (let i = 0; i < songId.length; i++) h = (h * 31 + songId.charCodeAt(i)) | 0;
-  return Math.abs(h) % 360;
-}
-
-/** Max. 2 Initialen aus dem Songtitel ("Dancing Queen" → "DQ"). */
-function songInitials(title: string): string {
-  const parts = (title || '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/**
- * R33/P13: kleine, wiederverwendbare Cover-Kachel (bewusst KEIN Shared-File —
- * in mirror-library-lite & mirror-queue-lite dupliziert).
- * Lädt das 96px-JPEG-Mini-Cover vom Desktop:
- *   GET /api/mobile?action=songcover&songId=<id> → image/jpeg (Cache 1 Tag) | 404
- * mit loading="lazy" — nur Einträge im/nah am Viewport fordern das Cover an
- * (kein Prefetch aller Covers). Bis das Bild geladen ist — oder wenn der
- * Desktop keines geliefert hat (404 → onError) — liegt darunter eine farbige
- * Kachel mit den Song-Initialen (Farbe = Hash der Song-ID). React.memo
- * haelt List-Re-Renders (Suche/Filter) billig.
- */
-const SongCoverTile = React.memo(function SongCoverTile({
-  songId,
-  title,
-  className = '',
-}: {
-  songId: string;
-  title: string;
-  className?: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  const hue = songCoverHue(songId);
-  return (
-    <div
-      aria-hidden="true"
-      className={'relative shrink-0 overflow-hidden ' + className}
-      style={{ background: `linear-gradient(135deg, hsl(${hue} 45% 38%), hsl(${(hue + 40) % 360} 50% 22%))` }}
-    >
-      {/* Initialen-Fallback (liegt UNTER dem Bild — sobald das JPEG da ist,
-          ueberdeckt es die Kachel) */}
-      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tracking-wider text-white/85 select-none">
-        {songInitials(title)}
-      </span>
-      {!failed && (
-        <img
-          src={'/api/mobile?action=songcover&songId=' + encodeURIComponent(songId)}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
-    </div>
-  );
-});
+// ===================== Mini-Cover-Kachel =====================
+// R34: SongCoverTile ist jetzt EINE geteilte Komponente (mirror-cover-tile.tsx,
+// vorher hier dupliziert) mit 3-Stufen-Fallback + verzögertem API-Retry
+// (5 s / 15 s / 60 s) — ein 404 („noch nicht hochgeladen“) ist kein
+// Dauerzustand mehr.
 
 // ===================== Component =====================
 
@@ -716,9 +658,10 @@ export function MirrorLibraryLite({
               className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all active:scale-[0.98] ' +
                 'bg-white/5 border border-white/10 active:bg-white/10'}
             >
-              {/* R33/P13: Mini-Cover (44px, lazy) — Fallback: farbige
-                  Initialen-Kachel, solange kein JPEG vom Desktop kommt */}
-              <SongCoverTile songId={song.id} title={song.title} className="w-11 h-11 rounded-lg" />
+              {/* R33/P13 + R34: Mini-Cover (44px, lazy) — 3-Stufen-Fallback:
+                  API-Thumbnail → song.coverImage (data:/http:, NICHT blob:)
+                  → farbige Initialen-Kachel */}
+              <SongCoverTile songId={song.id} title={song.title} coverImage={song.coverImage} className="w-11 h-11 rounded-lg" />
               {/* Song-Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

@@ -71,8 +71,8 @@
   },
   {
     "key": "tutorial.companion.steps.soloOverview.details",
-    "en": "What non-controlling phones can do:\n• 🎵 Queue their own songs (with the 📱 badge)\n• 💬 Join the party chat\n• 🎤 Sing in party modes (Companion Singalong, Pass-the-Mic)\n• 🗳️ Vote in polls (tournament, Battle Royale)\n• 🏆 View their own highscores and achievements",
-    "de": "Was nicht-steuernde Handys alles können:\n• 🎵 Eigene Songs in die Warteschlange einreihen (mit 📱-Badge)\n• 💬 Am Party-Chat teilnehmen\n• 🎤 In Party-Modi mitsingen (Companion-Singalong, Pass-the-Mic)\n• 🗳️ Bei Abstimmungen mitwählen (Turnier, Battle Royale)\n• 🏆 Eigene Highscores und Erfolge ansehen"
+    "en": "What non-controlling phones can do:\n• 🎵 Queue their own songs (with the 📱 badge)\n• 💬 Join the party chat\n• 🎤 Sing in party modes (e.g. Companion Singalong)\n• 🗳️ Vote in polls (tournament, Battle Royale)\n• 🏆 View their own highscores and achievements",
+    "de": "Was nicht-steuernde Handys alles können:\n• 🎵 Eigene Songs in die Warteschlange einreihen (mit 📱-Badge)\n• 💬 Am Party-Chat teilnehmen\n• 🎤 In Party-Modi mitsingen (z. B. Companion-Singalong)\n• 🗳️ Bei Abstimmungen mitwählen (Turnier, Battle Royale)\n• 🏆 Eigene Highscores und Erfolge ansehen"
   },
   {
     "key": "tutorial.companion.steps.soloQueue.title",
@@ -91,8 +91,8 @@
   },
   {
     "key": "tutorial.companion.steps.soloParty.body",
-    "en": "Party participation always runs through the phones: in Companion Singalong and Pass-the-Mic guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control.",
-    "de": "Party-Partizipation läuft immer über die Handys: Bei Companion-Singalong und Pass-the-Mic singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control."
+    "en": "Party participation always runs through the phones: in Companion Singalong guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control. Note: in Pass-the-Mic only the desktop mic is passed around; phones just control.",
+    "de": "Party-Partizipation läuft immer über die Handys: Im Companion-Singalong singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control. Achtung Pass-the-Mic: Dort wird nur das Desktop-Mikro weitergereicht, Handys steuern lediglich."
   },
   {
     "key": "tutorial.companion.steps.soloStats.title",

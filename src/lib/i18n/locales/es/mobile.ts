@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Control liberado',
   toastControlLost: 'Control perdido',
   toastControlTaken: 'El control ya está ocupado',
+  profileAssignedToast: 'Ahora cantas como {name} 🎤',
+  profileClearedToast: 'Perfil liberado — otro dispositivo lo ha tomado',
   toastLockedNav: 'Solo con control remoto',
   homeControlYouTitle: 'Tú controlas el escritorio',
   homeControlYouDesc: 'Tus pestañas dirigen el escritorio — todas las áreas están desbloqueadas.',

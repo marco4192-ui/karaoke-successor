@@ -317,9 +317,15 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
     case 'getprofiles': {
       // Get all companion profiles for main app to import
       const companionProfiles: MobileProfile[] = [];
+      // R34: parallel map profileId → clientId so the desktop can REBIND a
+      // client after a name-dedup merge (importProfileFromMobile keeps the
+      // desktop profile ID, but the phone stays registered under its own
+      // phone-ID → connection detection would never match).
+      const profileClients: Record<string, string> = {};
       mobileClients.forEach((client) => {
         if (client.profile) {
           companionProfiles.push(client.profile);
+          profileClients[client.profile.id] = client.id;
         }
       });
       
@@ -327,6 +333,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         success: true,
         profiles: companionProfiles,
         count: companionProfiles.length,
+        profileClients,
       });
     }
 
@@ -437,6 +444,16 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         },
       });
     }
+
+    // R34: Lightweight list of songIds that have an uploaded cover thumbnail
+    // on the server. The desktop polls this (60 s) for self-healing after a
+    // server restart — any locally tracked cover-songId missing from this
+    // list is re-uploaded on the next sync tick. Kept minimal on purpose.
+    case 'songcoverids':
+      return Response.json({
+        ok: true,
+        ids: Object.keys(mutableState.songCovers),
+      });
 
     // R33/P10: Top-100 local highscores for the companion Highscores mirror
     case 'gethighscores':

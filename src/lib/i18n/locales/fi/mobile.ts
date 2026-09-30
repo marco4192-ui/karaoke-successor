@@ -40,6 +40,8 @@ mobile: {
   toastControlReleased: 'Hallinta vapautettu',
   toastControlLost: 'Hallinta menetetty',
   toastControlTaken: 'Hallinta on jo varattu',
+  profileAssignedToast: 'Laulat nyt käyttäjänä {name} 🎤',
+  profileClearedToast: 'Profiili vapautettu — toinen laite otti sen haltuun',
   toastLockedNav: 'Vaatii kaukosäätimen',
   homeControlYouTitle: 'Sinä hallitset työpöytää',
   homeControlYouDesc: 'Välilehtesi ohjaavat työpöytää — kaikki alueet ovat auki.',

@@ -16,6 +16,11 @@ const GET_RATE_LIMITS: Record<string, number> = {
   gamestate: 180,  // companion polls at 2 Hz = 120/min; 180 gives headroom for reconnects
   status: 30,
   clients: 30,
+  // R34: lazy-loaded cover thumbnails — a large library easily requests
+  // more than 60 covers/min while scrolling (each tile = one request), so
+  // the old DEFAULT_GET_LIMIT (60/min) caused 429s → broken covers.
+  songcover: 300,
+  songcoverids: 300, // desktop self-healing poll (1/min) — headroom for retries
 };
 const DEFAULT_GET_LIMIT = 60; // catch-all for unlisted GET actions
 

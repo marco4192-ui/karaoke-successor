@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { getAllSongs } from '@/lib/game/song-library';
+import { getMedia } from '@/lib/db/media-db';
 import type { PlayerProfile, Song } from '@/types/game';
 import { StorageKeys, setJson } from '@/lib/storage';
 import { getPlaylists } from '@/lib/playlist-manager';
@@ -61,6 +62,21 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   // R33/P13: cover thumbnail state — last uploaded data-URL per songId
   const uploadedCoversRef = useRef<Record<string, string>>({});
 
+  // R34: failed thumbnail generations per src (CORS-tainted http URLs,
+  // timeouts, …). After 3 failed attempts a src is skipped for good, so the
+  // 10-per-tick budget isn't eaten by permanent failures (head-of-line
+  // blocking). A new src (e.g. a fresh blob: URL after a rescan) gets a
+  // fresh budget, and a successful generation clears the counter.
+  const coverFailCountsRef = useRef<Map<string, number>>(new Map());
+
+  // R34: cached blob: URLs for storedMedia covers. getAllSongs() (the sync
+  // cache the upload reads) does NOT carry restored cover URLs — they are
+  // only materialized in getAllSongsAsync() COPIES for the library grid.
+  // Without this map, Converter-imported songs (cover in media DB) were
+  // never uploaded to the companion. Loaded once per song, revoked on
+  // unmount.
+  const coverBlobUrlsRef = useRef<Map<string, string>>(new Map());
+
   // Sync song library to server for companion clients
   const syncSongLibrary = useCallback(async () => {
     try {
@@ -119,28 +135,56 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   // Generate 96 px JPEG thumbnails (canvas) for songs with a usable cover
   // image and upload ONLY the changed ones (hash-compared against the last
   // upload). Small batches (10 per tick) keep the main thread free.
+  // R34: blob: srcs are now INCLUDED for thumbnail generation — canvas can
+  // read same-origin blob: URLs, and the generated result is a data: URL
+  // the phone can load. (The setsongs POST above still must NOT send blob:
+  // URLs as coverImage — companions cannot access main-app blobs.)
   useEffect(() => {
     let cancelled = false;
 
     const uploadCovers = async () => {
       try {
         const allSongs = getAllSongs() as Song[];
-        const withCovers = allSongs
-          .filter(s => s.id && s.coverImage && !s.coverImage.startsWith('blob:'))
-          .slice(0, 400);
+        // R34: resolve cover srcs — inline covers (data:/http:/blob:) directly,
+        // storedMedia songs load their cover blob ONCE from the media DB
+        // (getAllSongs() doesn't carry the restored URLs — see note above).
+        const candidates: Array<{ id: string; src: string }> = [];
+        for (const s of allSongs) {
+          if (!s.id) continue;
+          if (s.coverImage) {
+            candidates.push({ id: s.id, src: s.coverImage });
+          } else if (s.storedMedia) {
+            let url = coverBlobUrlsRef.current.get(s.id);
+            if (!url) {
+              try {
+                const blob = await getMedia(s.id, 'cover');
+                if (blob && blob.size > 0) {
+                  url = URL.createObjectURL(blob);
+                  coverBlobUrlsRef.current.set(s.id, url);
+                }
+              } catch { /* no cover in media DB — song stays without thumbnail */ }
+            }
+            if (url) candidates.push({ id: s.id, src: url });
+          }
+        }
+        const withCovers = candidates.slice(0, 400);
 
         const changed: Record<string, string> = {};
         let checked = 0;
-        for (const song of withCovers) {
+        for (const { id: songId, src } of withCovers) {
           if (cancelled) return;
           if (checked >= 10) break; // batch cap per tick
-          const src = song.coverImage!;
-          if (uploadedCoversRef.current[song.id] === src) continue; // unchanged
+          if (uploadedCoversRef.current[songId] === src) continue; // unchanged
+          // R34: skip sources whose thumbnail generation permanently failed
+          if ((coverFailCountsRef.current.get(src) ?? 0) >= 3) continue;
           checked += 1;
           const thumb = await generateCoverThumbnail(src);
           if (thumb && !cancelled) {
-            changed[song.id] = thumb;
-            uploadedCoversRef.current[song.id] = src;
+            changed[songId] = thumb;
+            uploadedCoversRef.current[songId] = src;
+            coverFailCountsRef.current.delete(src);
+          } else if (!cancelled) {
+            coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
           }
         }
         if (Object.keys(changed).length > 0 && !cancelled) {
@@ -157,6 +201,45 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
 
     uploadCovers();
     const interval = setInterval(uploadCovers, 15000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  // R34: revoke the cached cover blob: URLs on unmount (no leak)
+  useEffect(() => () => {
+    for (const url of coverBlobUrlsRef.current.values()) {
+      try { URL.revokeObjectURL(url); } catch { /* already revoked */ }
+    }
+    coverBlobUrlsRef.current.clear();
+  }, []);
+
+  // ── R34: Self-Healing nach Server-Restart ──
+  // Uploaded covers live in the server's memory (mutableState.songCovers) —
+  // a server restart throws them away without the desktop noticing. Every
+  // 60 s a lightweight GET songcoverids fetches the list of songIds present
+  // on the server. Any locally tracked cover-songId that is NOT in that
+  // list is deleted from uploadedCoversRef, so the next 15 s upload tick
+  // re-uploads it. This heals the state after a server restart without
+  // requiring a desktop reload.
+  useEffect(() => {
+    let cancelled = false;
+    const healAfterServerRestart = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=songcoverids', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json() as { ok?: boolean; ids?: string[] };
+        if (cancelled || !data.ok || !Array.isArray(data.ids)) return;
+        const serverIds = new Set<string>(data.ids);
+        for (const songId of Object.keys(uploadedCoversRef.current)) {
+          if (!serverIds.has(songId)) {
+            delete uploadedCoversRef.current[songId];
+          }
+        }
+      } catch {
+        // Server unreachable — try again on the next tick
+      }
+    };
+    healAfterServerRestart();
+    const interval = setInterval(healAfterServerRestart, 60000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 

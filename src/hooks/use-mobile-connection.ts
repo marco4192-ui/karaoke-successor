@@ -15,6 +15,10 @@ interface UseMobileConnectionCallbacks {
   /** Live Battle-Royale singing feedback pushed by the desktop (~2 Hz,
    *  only while a BR round is playing). Optional — unused callbacks are fine. */
   onBrSinging?: (_data: BrSingingEvent) => void;
+  /** R34: the desktop assigned/cleared THIS phone's profile server-side
+   *  (party setup assign panel, settings, name-dedup rebind). The phone
+   *  adopts the profile instantly so it sings as the right player. */
+  onProfileAssigned?: (_profile: MobileProfile | null) => void;
 }
 
 interface RawGameState {
@@ -251,6 +255,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     // monitor pushed by the desktop while a BR round plays, ~2 Hz) ───
     socket.on('br-singing', (data: BrSingingEvent) => {
       callbacksRef.current.onBrSinging?.(data);
+    });
+
+    // ─── R34: profile assigned/cleared server-side (desktop assign panel,
+    // settings, name-dedup rebind) → adopt instantly ───
+    socket.on('companion:profile-assigned', (data: { profile: MobileProfile | null }) => {
+      callbacksRef.current.onProfileAssigned?.(data?.profile ?? null);
     });
 
     // ─── Receive PTM/party-mode phase changes ───
