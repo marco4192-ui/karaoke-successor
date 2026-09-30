@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { StorageKeys, setItem, removeItem, getString } from '@/lib/storage';
-import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
+import type { MobileProfile, GameState, DesktopSettingsSnapshot } from '@/components/screens/mobile/mobile-types';
 import type { BrSingingEvent } from '@/lib/socketio-events';
 
 interface UseMobileConnectionCallbacks {
@@ -108,6 +108,27 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
 
+  // R33/P16+: Desktop-Settings-Snapshot (Werte + Webcam-Config +
+  // Standard-Schwierigkeit). Wird NICHT mehr mit dem 2s-Gamestate gepusht —
+  // stattdessen zieht dieser Companion den Snapshot bei jeder (Neu-)Anmeldung
+  // (GET action=settingssnapshot) und abonniert den Socket.IO-Push-on-Change
+  // ('settings-snapshot'), den der Desktop nur bei tatsächlichen Änderungen
+  // auslöst. Das reduziert den Traffic massiv und hält die Werte trotzdem
+  // aktuell.
+  const [settingsSnapshot, setSettingsSnapshot] = useState<DesktopSettingsSnapshot | null>(null);
+  const loadSettingsSnapshot = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=settingssnapshot');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && data.snapshot && typeof data.snapshot === 'object') {
+        setSettingsSnapshot(data.snapshot as DesktopSettingsSnapshot);
+      }
+    } catch {
+      // Non-critical — the next (re)connect or push retries the pull.
+    }
+  }, []);
+
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false);
@@ -167,6 +188,10 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       socketConnectedRef.current = true;
       // Register as companion with our clientId
       socket.emit('companion:register', { clientId });
+      // R33/P16+: (Re)connect after absence — the desktop may have changed
+      // settings while this phone was offline. PULL the current snapshot
+      // (the server pushes changes live, but a pull heals any gap).
+      loadSettingsSnapshot();
     });
 
     socket.on('disconnect', (reason) => {
@@ -187,6 +212,15 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       gameStateRef.current = updated;
       setGameState(updated);
       callbacksRef.current.onGameStateUpdate(updated);
+    });
+
+    // ─── R33/P16+: Settings snapshot — push-on-change from the desktop ───
+    // Only fired when a desktop setting ACTUALLY changed (server-side change
+    // detection) — no periodic traffic.
+    socket.on('settings-snapshot', (data: { snapshot: DesktopSettingsSnapshot }) => {
+      if (data?.snapshot && typeof data.snapshot === 'object') {
+        setSettingsSnapshot(data.snapshot);
+      }
     });
 
     // ─── Receive pause state updates ───
@@ -271,7 +305,14 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       socketRef.current = null;
       socketConnectedRef.current = false;
     };
-  }, [clientId, isConnected, processGameStateUpdate]);
+  }, [clientId, isConnected, processGameStateUpdate, loadSettingsSnapshot]);
+
+  // R33/P16+: Pull the settings snapshot on EVERY (re)connect — fresh
+  // companions AND phones returning after absence (HTTP reconnect path,
+  // e.g. after server restart or connection-code reconnect).
+  useEffect(() => {
+    if (isConnected) loadSettingsSnapshot();
+  }, [isConnected, loadSettingsSnapshot]);
 
   // ─── HTTP Fallback: Slow polling only when Socket.IO is NOT connected ───
   // This provides resilience if WebSocket fails or isn't available.
@@ -600,6 +641,9 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     connectionCode,
     isConnected,
     gameState,
+    // R33/P16+: Desktop-Settings-Snapshot (Pull bei (Re)Connect + Push-on-Change)
+    settingsSnapshot,
+    loadSettingsSnapshot,
     connect,
     disconnect,
     syncProfile,

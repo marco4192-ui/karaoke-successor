@@ -100,4 +100,7 @@ export const EVENTS = {
   PAUSE_STATE: 'pause-state',
   REMOTE_COMMAND: 'remote-command',
   BR_SINGING_UPDATE: 'br-singing-update',
+  // R33: Desktop pushes the settings snapshot ON CHANGE (values + webcam
+  // config + default difficulty) — replaces the old 2s gamestate embedding.
+  SETTINGS_SNAPSHOT: 'settings-snapshot-update',
 } as const;

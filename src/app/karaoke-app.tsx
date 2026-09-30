@@ -1255,15 +1255,11 @@ export default function KaraokeZERO() {
                 };
               })(),
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
-              // R33/P16: the DEFAULT difficulty setting (not the in-game
-              // override) — the companion pre-selects its queue difficulty
-              // from this value.
-              defaultDifficulty: useGameStore.getState().persistedDifficulty
-                || getItem(StorageKeys.DEFAULT_DIFFICULTY)
-                || 'medium',
-              // R33/P5/P6: settings snapshot (localStorage values + webcam
-              // config) so the companion Settings mirror shows real values.
-              settingsSnapshot: buildSettingsSnapshot(),
+              // R33/P16+: defaultDifficulty + settingsSnapshot are NO LONGER
+              // embedded here (that pushed ~1 KB+ every 2 s without any
+              // change). They go through the dedicated push-on-change effect
+              // below (POST type:'settingssnapshot'), and companions PULL
+              // them on every (re)connect via GET action=settingssnapshot.
               recentParties: recentPartiesPayload,
             },
           }),
@@ -1324,6 +1320,52 @@ export default function KaraokeZERO() {
     const id = setTimeout(() => { void syncScreenRef.current?.(); }, 250);
     return () => clearTimeout(id);
   }, [tournamentBracketObj, currentTournamentMatchObj, tournamentVotingMatchObj]);
+
+  // ── R33/P16+: Settings snapshot — global push ON CHANGE only ──
+  // Replaces the old 2s gamestate embedding (values + webcam config +
+  // default difficulty were POSTed every 2 s regardless of changes). Now a
+  // cheap LOCAL check (localStorage read + JSON compare) runs every 5 s and
+  // POSTs ONLY when the snapshot actually changed. A 60 s keep-alive re-push
+  // heals server restarts (the store is in-memory), and companions
+  // additionally PULL the snapshot on every (re)connect — so a fresh or
+  // returning-after-absence companion always sees the real desktop values.
+  const settingsPushRef = useRef<{ serialized: string; lastPushAt: number }>({ serialized: '', lastPushAt: 0 });
+  useEffect(() => {
+    const pushSnapshot = (force = false) => {
+      try {
+        const snapshot = buildSettingsSnapshot();
+        const serialized = JSON.stringify(snapshot);
+        const ref = settingsPushRef.current;
+        const now = Date.now();
+        // Skip when unchanged AND the last successful push is fresh (< 60 s)
+        if (!force && serialized === ref.serialized && now - ref.lastPushAt < 60_000) return;
+        settingsPushRef.current = { serialized, lastPushAt: now };
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'settingssnapshot', payload: { snapshot } }),
+        }).catch(() => {
+          // Push failed (server hiccup) — allow an immediate retry on the
+          // next check instead of waiting for the 60 s keep-alive.
+          settingsPushRef.current.lastPushAt = 0;
+        });
+      } catch { /* non-critical */ }
+    };
+    pushSnapshot(true); // initial push so late-joining companions find data
+    const interval = setInterval(() => pushSnapshot(), 5000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        // Settings may have changed while this tab was hidden (second window)
+        // — re-check immediately, force keeps the keep-alive clock honest.
+        pushSnapshot(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
 
   // ── R33/P10: Highscores push for the companion Highscores mirror ──
   // Push the top-100 local highscores whenever they change (cheap JSON

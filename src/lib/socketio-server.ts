@@ -354,6 +354,14 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     io!.to('companions').emit('difficulty', data);
   });
 
+  // R33/P16+: Desktop pushed a CHANGED settings snapshot (dedicated push-on-
+  // change POST — no more 2s gamestate embedding). Forward to every connected
+  // companion so open Settings mirrors update instantly. Companions that
+  // (re)connect later PULL it via GET action=settingssnapshot instead.
+  mobileEvents.on(EVENTS.SETTINGS_SNAPSHOT, (data: { snapshot: Record<string, unknown> }) => {
+    io!.to('companions').emit('settings-snapshot', data);
+  });
+
   // Desktop pushes live Battle-Royale singing feedback (per-player
   // pitch/hit/miss monitor, ~2 Hz) → straight through to the companions.
   // Ephemeral data — nothing is persisted in mutableState.

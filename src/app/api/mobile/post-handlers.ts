@@ -212,11 +212,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           tournamentVoteRegistry.clear();
         }
 
-        // R33/P5/P6: The desktop embeds a settings snapshot (localStorage
-        // values + webcam config + default difficulty) in its 2s gamestate
-        // POST. Extract it BEFORE merging (it is NOT part of MobileGameState)
-        // so the companion Settings mirror can read real desktop values via
-        // GET action=settingssnapshot.
+        // R33/P5/P6 (BACKWARD COMPAT): Older desktop builds embedded a settings
+        // snapshot (localStorage values + webcam config + default difficulty)
+        // in their 2s gamestate POST. Extract it BEFORE merging (it is NOT
+        // part of MobileGameState) so the companion Settings mirror can read
+        // real desktop values via GET action=settingssnapshot. Current
+        // desktops use the dedicated POST type:'settingssnapshot' push-on-
+        // change instead — this path only serves stale tabs.
         const rawPayload = payload as Record<string, unknown>;
         if (rawPayload.settingsSnapshot && typeof rawPayload.settingsSnapshot === 'object') {
           const snap = rawPayload.settingsSnapshot as {
@@ -253,6 +255,45 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         
         return Response.json({ success: true, updated: true });
+      }
+
+      // R33/P16+: Desktop pushes the settings snapshot ON CHANGE only (no
+      // more 2s gamestate embedding — that wasted ~1 KB+ every 2 s without
+      // any change). Stored for GET action=settingssnapshot pulls and, when
+      // actually changed, broadcast to all connected companions via
+      // Socket.IO so open Settings mirrors update instantly.
+      case 'settingssnapshot': {
+        if (!requireAuthOrRemoteHolder(request, clientId)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN or hold remote control.' }, { status: 401 });
+        }
+        const snapPayload = (payload as { snapshot?: Record<string, unknown> }).snapshot;
+        if (!snapPayload || typeof snapPayload !== 'object') {
+          return Response.json({ success: false, message: 'Invalid settings snapshot payload' }, { status: 400 });
+        }
+        const values = (snapPayload.values && typeof snapPayload.values === 'object')
+          ? snapPayload.values as Record<string, string>
+          : {};
+        const webcam = (snapPayload.webcam && typeof snapPayload.webcam === 'object')
+          ? snapPayload.webcam as Record<string, unknown>
+          : null;
+        const defaultDifficulty = typeof snapPayload.defaultDifficulty === 'string'
+          ? snapPayload.defaultDifficulty
+          : undefined;
+
+        // Change detection — only broadcast when the snapshot actually
+        // differs (keep-alive re-pushes from the desktop don't spam companions).
+        const prev = mutableState.settingsSnapshot;
+        const keyOf = (v: Record<string, string> | undefined, w: Record<string, unknown> | null | undefined, d: string | undefined) =>
+          JSON.stringify({ v: v ?? {}, w: w ?? null, d: d ?? null });
+        const changed = !prev
+          || keyOf(prev.values, prev.webcam, prev.defaultDifficulty) !== keyOf(values, webcam, defaultDifficulty);
+
+        mutableState.settingsSnapshot = { values, webcam, defaultDifficulty, updatedAt: Date.now() };
+
+        if (changed) {
+          mobileEvents.emit(EVENTS.SETTINGS_SNAPSHOT, { snapshot: mutableState.settingsSnapshot });
+        }
+        return Response.json({ success: true, changed });
       }
 
       case 'br-singing': {

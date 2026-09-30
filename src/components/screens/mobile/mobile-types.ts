@@ -346,6 +346,66 @@ export interface PitchData {
 
 export type GameMode = 'single' | 'duel' | 'duet';
 
+// ===================== R33: Companion-Datenmodelle =====================
+
+/** R33/P5/P6/P16: Desktop-Settings-Snapshot — vom Desktop per Push-on-Change
+ *  (POST type:'settingssnapshot') und Socket.IO 'settings-snapshot' gepusht
+ *  sowie von jedem Companion bei (Neu-)Anmeldung via GET action=
+ *  settingssnapshot GEZOGEN (kein 2s-Polling mehr). */
+export interface DesktopSettingsSnapshot {
+  values: Record<string, string>;
+  webcam: Record<string, unknown> | null;
+  defaultDifficulty?: 'easy' | 'medium' | 'hard';
+  updatedAt?: number;
+}
+
+/** R33/P10: Eintrag der Top-100-Local-Highscores (Desktop-Push, nur lesend). */
+export interface MobileHighscoreEntry {
+  playerId: string;
+  playerName: string;
+  playerColor?: string;
+  songTitle: string;
+  artist?: string;
+  score: number;
+  accuracy?: number;
+  maxCombo?: number;
+  difficulty?: string;
+  gameMode?: string;
+  date?: string;
+}
+
+/** R33/P12: Daily-Challenge-Slot (Client-Kopie des Desktop-Snapshots). */
+export interface DailySlotEntry {
+  slot: number;
+  type: string;
+  icon: string;
+  target: number;
+  xp: number;
+  completed: boolean;
+  difficultiesMet: string[];
+}
+
+/** R33/P12: Daily-Challenge-Snapshot je Profil (Slots/Wochenziel/Streak/Badges). */
+export interface DailyProfileState {
+  date: string;
+  slots: DailySlotEntry[];
+  weekly: { weekKey: string; slots: DailySlotEntry[] };
+  streak: number;
+  totalCompleted: number;
+  badges: Array<{ id: string; icon: string; nameKey: string; unlockedAt: number }>;
+}
+
+/** R33/P8: Jukebox-Spiegelzustand (Filter/Pool/Shuffle/Repeat), vom Desktop
+ *  per POST type:'jukeboxstate' gepusht, Companion zieht ihn bei Bedarf. */
+export interface JukeboxMirrorState {
+  filters?: Record<string, unknown>;
+  poolPlaylistId?: string | null;
+  poolPlaylistName?: string | null;
+  shuffle?: boolean;
+  repeat?: boolean;
+  updatedAt?: number;
+}
+
 export const PROFILE_COLORS = [
   '#06B6D4', '#8B5CF6', '#EC4899', '#F59E0B',
   '#10B981', '#EF4444', '#3B82F6', '#F97316',

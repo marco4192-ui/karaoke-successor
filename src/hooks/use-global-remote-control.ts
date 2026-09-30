@@ -418,6 +418,39 @@ export function useGlobalRemoteControl({
         break;
       }
 
+      // ── R33/P8: Jukebox-Steuerung vom Companion (Server prüft Remote-Lock) ──
+      // Alle drei Befehle navigieren zum Jukebox-Screen und feuern ein
+      // CustomEvent, das der Jukebox-Screen (bzw. use-jukebox) verarbeitet:
+      case 'jukebox_set_filter': {
+        // data: { field: 'genre'|'artist'|'era'|'year', value } — Filter setzen/leeren
+        navigateToScreen('jukebox');
+        window.dispatchEvent(new CustomEvent('jukebox:set-filter', { detail: cmd.data ?? {} }));
+        break;
+      }
+
+      case 'jukebox_set_pool': {
+        // data: { playlistId: string } — Song-Pool auf eine Playlist festlegen
+        navigateToScreen('jukebox');
+        window.dispatchEvent(new CustomEvent('jukebox:set-pool', { detail: cmd.data ?? {} }));
+        break;
+      }
+
+      case 'jukebox_enqueue_playlist': {
+        // data: { playlistId: string } — komplette Playlist in die Wunschliste
+        navigateToScreen('jukebox');
+        window.dispatchEvent(new CustomEvent('jukebox:enqueue-playlist', { detail: cmd.data ?? {} }));
+        break;
+      }
+
+      // ── R33/P12: Daily-Challenge-Slot direkt vom Companion starten ──
+      case 'daily_start': {
+        // data: { slot: number } — navigiert zum Daily-Screen und startet
+        // den Slot (der Daily-Screen lauscht auf 'daily:start-slot').
+        navigateToScreen('dailyChallenge');
+        window.dispatchEvent(new CustomEvent('daily:start-slot', { detail: cmd.data ?? {} }));
+        break;
+      }
+
       // --- Settings tab navigation from companion accordion ---
       // --- Profile toggle, queue clear, jukebox clear ---
       default: {

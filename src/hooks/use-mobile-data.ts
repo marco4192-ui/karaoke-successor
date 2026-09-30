@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode } from '@/components/screens/mobile/mobile-types';
+import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode, MobileHighscoreEntry, DailyProfileState, JukeboxMirrorState } from '@/components/screens/mobile/mobile-types';
 
 // F19: Opponent profile for duel/duet mode
 export interface OpponentProfile {
@@ -17,6 +17,10 @@ interface UseMobileDataOptions {
   clientId: string | null;
   profile: MobileProfile | null;
   onNavigateToProfile: () => void;
+  /** R33/P16: Desktop-Default-Schwierigkeit (aus dem Settings-Snapshot, wird
+   *  bei (Re)Connect gezogen und per Push-on-Change aktualisiert). Die Queue-
+   * Vorauswahl folgt diesem Wert, bis der Nutzer selbst eine wählt. */
+  defaultDifficulty?: 'easy' | 'medium' | 'hard';
 }
 
 /**
@@ -69,7 +73,7 @@ function fuzzyScore(query: string, text: string): number {
   return qi === q.length ? score : 0;
 }
 
-export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMobileDataOptions) {
+export function useMobileData({ clientId, profile, onNavigateToProfile, defaultDifficulty }: UseMobileDataOptions) {
   // Song library state
   const [songs, setSongs] = useState<MobileSong[]>([]);
   const [songSearch, setSongSearch] = useState('');
@@ -97,6 +101,18 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
 
   // Queue wizard: difficulty, mic source, duet parts
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  // R33/P16: Sobald der Nutzer die Schwierigkeit selbst wählt, folgt die
+  // Vorauswahl nicht mehr dem Desktop-Default (bis zur nächsten Anmeldung).
+  const difficultyTouchedRef = useRef(false);
+  useEffect(() => {
+    if (!difficultyTouchedRef.current && defaultDifficulty) {
+      setDifficulty(defaultDifficulty);
+    }
+  }, [defaultDifficulty]);
+  const setDifficultyUser = useCallback((d: 'easy' | 'medium' | 'hard') => {
+    difficultyTouchedRef.current = true;
+    setDifficulty(d);
+  }, []);
   const [playerMicSource, setPlayerMicSource] = useState<'companion' | 'microphone'>('companion');
   const [partnerMicSource, setPartnerMicSource] = useState<'companion' | 'microphone'>('companion');
   const [duetPartsSwapped, setDuetPartsSwapped] = useState(false);
@@ -240,7 +256,9 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setShowSongOptions(null);
         setSelectedPartner(null);
         setSelectedGameMode('single');
-        setDifficulty('medium');
+        // R33/P16: Zurücksetzen auf den Desktop-Default (nicht hart 'medium')
+        setDifficulty(defaultDifficulty ?? 'medium');
+        difficultyTouchedRef.current = false;
         setPlayerMicSource('companion');
         setPartnerMicSource('companion');
         setDuetPartsSwapped(false);
@@ -257,7 +275,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
-  }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped, queue]);
+  }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped, queue, defaultDifficulty]);
 
   const reorderQueue = useCallback(async (orderedIds: string[]) => {
     if (!clientId) return;
@@ -442,6 +460,54 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
   }, [clientId]);
 
+  // ---- R33/P10: Highscores (Top-100, nur lesend — eigene Scores filterbar) ----
+  const [highscores, setHighscores] = useState<MobileHighscoreEntry[]>([]);
+  const loadHighscores = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=gethighscores');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && Array.isArray(data.highscores)) {
+        setHighscores(data.highscores);
+      }
+    } catch {
+      // eslint-disable-next-line no-console
+      console.debug('[useMobileData] loadHighscores failed');
+    }
+  }, []);
+
+  // ---- R33/P12: Daily-Challenge-Snapshots je Profil ----
+  const [dailyState, setDailyState] = useState<Record<string, DailyProfileState> | null>(null);
+  const loadDailyState = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=getdailystate');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && data.daily && typeof data.daily === 'object') {
+        setDailyState(data.daily as Record<string, DailyProfileState>);
+      }
+    } catch {
+      // eslint-disable-next-line no-console
+      console.debug('[useMobileData] loadDailyState failed');
+    }
+  }, []);
+
+  // ---- R33/P8: Jukebox-Spiegelzustand (Filter/Pool/Shuffle/Repeat) ----
+  const [jukeboxState, setJukeboxState] = useState<JukeboxMirrorState | null>(null);
+  const loadJukeboxState = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=getjukeboxstate');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && data.jukebox && typeof data.jukebox === 'object') {
+        setJukeboxState(data.jukebox as JukeboxMirrorState);
+      }
+    } catch {
+      // eslint-disable-next-line no-console
+      console.debug('[useMobileData] loadJukeboxState failed');
+    }
+  }, []);
+
   // ---- Helpers ----
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -481,7 +547,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     loadOpponents,
     // Queue wizard
     difficulty,
-    setDifficulty,
+    setDifficulty: setDifficultyUser,
     playerMicSource,
     setPlayerMicSource,
     partnerMicSource,
@@ -497,6 +563,15 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     addToJukeboxWishlist,
     removeFromJukeboxWishlist,
     loadJukeboxWishlist,
+    // R33/P8: Jukebox-Spiegelzustand
+    jukeboxState,
+    loadJukeboxState,
+    // R33/P10: Highscores
+    highscores,
+    loadHighscores,
+    // R33/P12: Daily-Challenge
+    dailyState,
+    loadDailyState,
     // Song Challenge (chat)
     sendSongChallenge,
     // Helpers
