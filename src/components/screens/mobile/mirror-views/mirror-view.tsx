@@ -524,6 +524,10 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       );
 
     // ---------- Profile-Verwaltung ----------
+    // R40: Tab wieder aktiv (Rücknahme von R39/P9) — steuernde Companions
+    // aktivieren/deaktivieren hier Spieler; mirrorIdentity liefert die live
+    // übernommene Profil-ID für den "Du"-Badge (zuverlässiger als der
+    // localStorage-Fallback in der View).
     case 'profile':
       return (
         <div className="min-h-[calc(100vh-8rem)]">
@@ -534,6 +538,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             availableProfiles={availableProfiles}
             {...desktopMirrorBase}
             {...mirrorData}
+            {...mirrorIdentity}
           />
           </SafeView>
         </div>

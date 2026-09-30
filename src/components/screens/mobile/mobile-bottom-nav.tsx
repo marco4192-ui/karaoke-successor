@@ -12,10 +12,12 @@ interface NavItem {
   fallback: string;
 }
 
-// R39/P9: Der Profiles-Tab ist aus der mobilen Tab-Leiste ENTFERNT —
-// das eigene Profil bleibt über den Header-Avatar erreichbar (auch ohne
-// Steuerung). Der Desktop-Profildialog (alle Profile verwalten) ist bewusst
-// nur am Desktop: Auf dem Handy ist er zu unübersichtlich.
+// R40: Der Profiles-Tab ist ZURÜCK — der Nutzer hat die R39/P9-Entscheidung
+// (Tab entfernen) ausdrücklich zurückgenommen ("Gedankenfehler"): Steuernde
+// Companions können damit Spieler aktivieren/deaktivieren (profile_toggle →
+// Desktop übernimmt isActive live). Für nicht-steuernde Companion ist der Tab
+// gesperrt (🔒) — das eigene Profil bleibt zusätzlich über den Header-Avatar
+// erreichbar (auch ohne Steuerung).
 const FOOTER_ITEMS: NavItem[] = [
   { screen: 'home',          icon: '🏠', labelKey: 'nav.home',        fallback: 'Start' },
   { screen: 'library',       icon: '🎵', labelKey: 'nav.library',      fallback: 'Bibliothek' },
@@ -25,6 +27,7 @@ const FOOTER_ITEMS: NavItem[] = [
   { screen: 'jukebox',       icon: '📻', labelKey: 'nav.jukebox',     fallback: 'Jukebox' },
   { screen: 'highscores',    icon: '🏆', labelKey: 'nav.highscores',  fallback: 'Highscores' },
   { screen: 'achievements',  icon: '🏅', labelKey: 'nav.achievements', fallback: 'Erfolge' },
+  { screen: 'profile',       icon: '👤', labelKey: 'nav.profiles',    fallback: 'Profile' },
   { screen: 'settings',      icon: '⚙️', labelKey: 'nav.settings',    fallback: 'Einstellungen' },
 ];
 

@@ -68,6 +68,15 @@ export interface SongStartModalProps {
     partnerId?: string;
     partnerName?: string;
     gameMode?: 'single' | 'duel' | 'duet';
+    /** R39/P5: Gesangs-Gerät — Spieler singt über die Companion-App. */
+    playerMicSource?: 'companion' | 'microphone';
+    /** R39/P5: Gesangs-Gerät — Partner singt über die Companion-App. */
+    partnerMicSource?: 'companion' | 'microphone';
+    /** R39/P5: gewähltes Desktop-Mikrofon (MULTI_MIC_CONFIG-ID + Name). */
+    playerMicId?: string;
+    partnerMicId?: string;
+    playerMicName?: string;
+    partnerMicName?: string;
   }) => void;
   toggleFavorite: (_songId: string) => boolean;
   setPlaylists: (_playlists: Playlist[]) => void;

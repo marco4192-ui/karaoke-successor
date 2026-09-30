@@ -346,6 +346,9 @@ export interface QueueItem {
   // companion app (phone mic), 'microphone' = sing via a desktop mic.
   playerMicSource?: 'companion' | 'microphone';
   partnerMicSource?: 'companion' | 'microphone';
+  // Chosen desktop mics (MULTI_MIC_CONFIG-ID + display name for badges)
+  playerMicId?: string;
+  partnerMicId?: string;
   // Display names of the chosen desktop mics (queue badges / mirror UI)
   playerMicName?: string;
   partnerMicName?: string;

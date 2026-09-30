@@ -69,8 +69,10 @@ function isGameFlowScreen(desktop: string): boolean {
 }
 
 // R33/P2+P14: Für nicht-steuernde Companion gesperrte Nav-Ziele.
-// (Profil-EDIT des eigenen Profils bleibt erlaubt — läuft über den
-// Header-Avatar, nicht über die Tab-Leiste.)
+// (R40: Der Profile-Tab ist zurück — Spieler aktivieren/deaktivieren ist
+// eine Steuerungs-Aktion, daher für nicht-steuernde gesperrt. Das EDIT des
+// eigenen Profils bleibt trotzdem erlaubt — läuft über den Header-Avatar,
+// nicht über die Tab-Leiste.)
 const NON_CONTROLLING_LOCKED_NAV = ['party', 'dailyChallenge', 'jukebox', 'profile', 'settings'];
 
 function isLockedForNonControlling(screen: string): boolean {
