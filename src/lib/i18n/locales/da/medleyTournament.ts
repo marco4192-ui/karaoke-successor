@@ -82,6 +82,7 @@ medley: {
   inputMode: 'Input-tilstand',
   noCompanions: 'Ingen companion-enheder forbundet',
   companionConnected: '{n} companion(s) forbundet',
+  companionOffline: 'offline — ikke forbundet',
   perfect: 'Perfekt!',
   great: 'Fantastisk!',
   good: 'God',

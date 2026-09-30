@@ -19,6 +19,12 @@ interface UseMobileConnectionCallbacks {
    *  (party setup assign panel, settings, name-dedup rebind). The phone
    *  adopts the profile instantly so it sings as the right player. */
   onProfileAssigned?: (_profile: MobileProfile | null) => void;
+  /** R35: the server lost this phone's client record (5-min inactivity purge
+   *  while the phone was in standby) and just recreated it from the socket
+   *  register/heartbeat. The profile claim was purged with the record — the
+   *  phone should re-claim its local profile so the desktop recognizes it
+   *  as "via Companion" connected again. */
+  onClientRestored?: () => void;
 }
 
 interface RawGameState {
@@ -261,6 +267,25 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     // settings, name-dedup rebind) → adopt instantly ───
     socket.on('companion:profile-assigned', (data: { profile: MobileProfile | null }) => {
       callbacksRef.current.onProfileAssigned?.(data?.profile ?? null);
+    });
+
+    // ─── R35: server recreated our purged client record (standby > 5 min) ───
+    // The profile claim was lost with the record — re-claim ours so the
+    // desktop shows this phone as connected again (via Companion).
+    // RACE GUARD: the event carries the recreated clientId. When it arrives
+    // over a STALE socket (we already reconnected under a NEW id via the
+    // 404-reconcile path), re-claiming would kick the NEW client off the
+    // profile (duplicate-profile removal) and trigger reconnect churn —
+    // ignore events for any id other than our current one.
+    socket.on('companion:client-restored', (data: { clientId?: string }) => {
+      if (data?.clientId && data.clientId !== clientIdRef.current) {
+        // eslint-disable-next-line no-console
+        console.debug('[Socket.IO Companion] Ignoring client-restored for stale clientId', data.clientId);
+        return;
+      }
+      // eslint-disable-next-line no-console
+      console.log('[Socket.IO Companion] Client record restored by server — re-claiming profile');
+      callbacksRef.current.onClientRestored?.();
     });
 
     // ─── Receive PTM/party-mode phase changes ───

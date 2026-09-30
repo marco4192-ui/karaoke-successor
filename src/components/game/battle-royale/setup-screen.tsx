@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
 import {
   createBattleRoyale,
   BattleRoyaleGame,
@@ -32,14 +33,46 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const [availableMics, setAvailableMics] = useState<Array<{ deviceId: string; label: string }>>([]);
   const [playerMicDevices, setPlayerMicDevices] = useState<Record<string, string>>({});
 
-  // Companion auto-registration
-  const [connectedCompanionClients, setConnectedCompanionClients] = useState<Array<{
-    id: string;
-    connectionCode: string;
-    name: string;
-    profile: { id: string; name: string; avatar?: string; color: string } | null;
-    hasPitch: boolean;
-  }>>([]);
+  // R35: LIVE companion clients (2 s poll — same source of truth as the
+  // unified party setup). Previously a ONE-TIME fetch on mount that ALSO
+  // required hasPitch (only true while a phone actively streams pitch —
+  // i.e. practically never in the setup), so companion players were never
+  // auto-detected and a phone connecting after the setup opened never
+  // appeared (“keine Verbindung” although online).
+  const { clients: liveClients } = useCompanionConnections(true);
+  const connectedCompanionClients = useMemo(
+    () => liveClients.filter(c => c.connected && c.profile),
+    [liveClients],
+  );
+
+  // Connection codes for the per-player label — the clients list excludes
+  // them (privacy), getpitch carries them. Refreshed every 10 s.
+  const [companionCodes, setCompanionCodes] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCodes = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=getpitch');
+        if (!res.ok) return;
+        const data = await res.json() as { success?: boolean; clients?: Array<{ id?: string; code?: string }> };
+        if (cancelled || !data.success || !Array.isArray(data.clients)) return;
+        const codes: Record<string, string> = {};
+        for (const c of data.clients) {
+          if (c.id && c.code) codes[c.id] = c.code;
+        }
+        setCompanionCodes(prev => {
+          if (Object.keys(prev).length === Object.keys(codes).length &&
+              Object.entries(codes).every(([k, v]) => prev[k] === v)) return prev;
+          return codes;
+        });
+      } catch { /* ignore */ }
+    };
+    fetchCodes();
+    const iv = setInterval(fetchCodes, 10000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
+  // Auto-registration state (R35: filled LIVE — see effect below)
   const [autoCompanionIds, setAutoCompanionIds] = useState<Set<string>>(new Set());
 
   // Core settings
@@ -98,39 +131,31 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
     enumerateMics();
   }, []);
 
-  // Auto-detect companion clients on mount
-  useEffect(() => {
-    const fetchCompanions = async () => {
-      try {
-        const res = await fetch('/api/mobile?action=clients');
-        const data = await res.json();
-        if (data.success && data.clients) {
-          setConnectedCompanionClients(data.clients);
-          const autoIds: string[] = [];
-          data.clients.forEach((client: typeof connectedCompanionClients[0]) => {
-            if (client.profile && client.hasPitch) {
-              autoIds.push(client.profile.id);
-            }
-          });
-          if (autoIds.length > 0) {
-            setAutoCompanionIds(new Set(autoIds));
-            setCompanionPlayers(prev => {
-              const merged = [...new Set([...prev, ...autoIds])];
-              return merged;
-            });
-          }
-        }
-      } catch {
-        // Silently fail
-      }
-    };
-    fetchCompanions();
-  }, []);
-
   const activeProfiles = useMemo(() =>
     profiles.filter(p => p.isActive !== false),
     [profiles]
   );
+
+  // Auto-detect companion clients LIVE (R35)
+  // Every connected device with a profile matching an active desktop profile
+  // becomes a companion player the MOMENT it connects — no hasPitch
+  // requirement, no mount-only snapshot. Guards prevent re-render loops.
+  // (Must live BELOW the activeProfiles declaration — deps are evaluated
+  // during render.)
+  useEffect(() => {
+    const autoIds = connectedCompanionClients.flatMap(c =>
+      c.profile && activeProfiles.some(p => p.id === c.profile?.id) ? [c.profile.id] : []
+    );
+    if (autoIds.length === 0) return;
+    setAutoCompanionIds(prev => {
+      const merged = new Set([...prev, ...autoIds]);
+      return merged.size === prev.size ? prev : merged;
+    });
+    setCompanionPlayers(prev => {
+      const merged = [...new Set([...prev, ...autoIds])];
+      return merged.length === prev.length ? prev : merged;
+    });
+  }, [connectedCompanionClients, activeProfiles]);
 
   const micAvailableProfiles = useMemo(() =>
     activeProfiles.filter(p => !autoCompanionIds.has(p.id)),
@@ -238,7 +263,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[players.length % PLAYER_COLORS.length],
         playerType: 'companion',
-        connectionCode: companionClient?.connectionCode,
+        // R35: code from the dedicated getpitch poll (clients list excludes it)
+        connectionCode: companionClient ? companionCodes[companionClient.id] : undefined,
       });
     });
 
@@ -725,11 +751,15 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                         <span className="text-[10px] text-white/50">
-                          {t('battleRoyale.companionCodeLabel').replace('{code}', companionClient.connectionCode)}
+                          {companionCodes[companionClient.id]
+                            ? t('battleRoyale.companionCodeLabel').replace('{code}', companionCodes[companionClient.id])
+                            : t('battleRoyale.companionAutoDetected')}
                         </span>
-                        <span className="text-[10px] text-white/30">
-                          · {t('battleRoyale.companionAutoDetected')}
-                        </span>
+                        {companionCodes[companionClient.id] && (
+                          <span className="text-[10px] text-white/30">
+                            · {t('battleRoyale.companionAutoDetected')}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

@@ -82,6 +82,7 @@ medley: {
   inputMode: '입력 모드',
   noCompanions: '연결된 컴패니언 기기가 없습니다',
   companionConnected: '{n}개의 컴패니언 연결됨',
+  companionOffline: '오프라인 — 연결 안 됨',
   perfect: '퍼펙트!',
   great: '대단해요!',
   good: '굿',

@@ -16,7 +16,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { mobileEvents, EVENTS, type CompanionCommandEvent } from './socketio-events';
-import { mutableState, mobileClients, latestPitchData } from '@/app/api/mobile/mobile-state';
+import { mutableState, mobileClients, connectionCodes, latestPitchData, registerClient, getUniqueConnectionCode } from '@/app/api/mobile/mobile-state';
 
 // ─── Types ───
 interface HostSocket extends Socket {
@@ -60,6 +60,52 @@ const pitchFeedSockets = new Set<Socket>();
 
 /** Map of companion clientId → socket for direct messaging */
 const companionSockets = new Map<string, CompanionSocket>();
+
+/**
+ * R35: Ensure the HTTP client record exists for a socket-registered companion.
+ *
+ * ROOT CAUSE (user report "Companion verbunden, aber nicht erkannt"): the
+ * server purges mobile clients after 5 minutes without activity
+ * (cleanupInactiveClients). While a phone is in standby the OS suspends JS
+ * timers AND the WebSocket — no heartbeats arrive, so the client record is
+ * purged (profile claim included). When the phone wakes, Socket.IO
+ * auto-reconnects and re-registers with the OLD clientId — but until now the
+ * register/heartbeat handlers silently ignored the missing client record:
+ * the phone looked connected (live socket, UI fine) while the server had NO
+ * client → the desktop's clients list showed nothing → "keine Verbindung,
+ * obwohl sie bestand".
+ *
+ * This helper recreates the record (fresh connection code, no profile — the
+ * phone re-claims its profile via the 'companion:client-restored' event) so
+ * the device is visible again. Returns true when the record was recreated.
+ */
+function ensureCompanionClient(clientId: string, clientName?: string): boolean {
+  const existing = mobileClients.get(clientId);
+  if (existing) {
+    existing.lastActivity = Date.now();
+    return false;
+  }
+  const connectionCode = getUniqueConnectionCode();
+  const recreated = {
+    id: clientId,
+    connectionCode,
+    type: 'microphone' as const,
+    name: clientName || 'Mobile Device',
+    connected: Date.now(),
+    lastActivity: Date.now(),
+    pitchData: null,
+    profile: null,
+    queueCount: 0,
+    hasRemoteControl: false,
+  };
+  // registerClient enforces the MAX_CLIENTS limit; on overflow the phone
+  // stays invisible — same as a fresh connect being rejected.
+  registerClient(clientId, recreated);
+  connectionCodes.set(connectionCode, clientId);
+  // eslint-disable-next-line no-console
+  console.log(`[Socket.IO] R35: client record recreated for ${clientId} (was purged by inactivity cleanup)`);
+  return true;
+}
 
 /**
  * Initialize Socket.IO on the given HTTP server.
@@ -177,6 +223,15 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
       socket.join('companions');
       companionSockets.set(data.clientId, socket as CompanionSocket);
+
+      // R35: the client record may have been purged while the phone was in
+      // standby (5-min inactivity cleanup). Recreate it so the desktop's
+      // clients list shows the device again, then tell the phone to re-claim
+      // its profile (the purge dropped the claim together with the record).
+      const restored = ensureCompanionClient(data.clientId, data.clientName);
+      if (restored) {
+        socket.emit('companion:client-restored', { clientId: data.clientId });
+      }
 
       // Send current game state immediately on registration
       socket.emit('gamestate', {
@@ -306,6 +361,13 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       const clientId = companionSocket._clientId;
       if (!clientId) return;
 
+      // R35: keep the activity timestamp fresh for existing records.
+      // Deliberately NO recreation here: a purge only happens when the socket
+      // was dead/suspended (no heartbeats → 5-min inactivity), so the phone
+      // ALWAYS re-registers via 'companion:register' when it wakes — that
+      // handler recreates the record. Recreating from heartbeats would only
+      // fire in races with STALE sockets (phone already reconnected under a
+      // new id) and leave phantom unassigned records behind.
       const client = mobileClients.get(clientId);
       if (client) {
         client.lastActivity = Date.now();

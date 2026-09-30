@@ -224,7 +224,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       const res = await fetch('/api/mobile?action=getprofiles');
       if (res.ok) {
         const data = await res.json();
-        const connectedProfiles: Array<{ id: string; name: string; clientId?: string }> = Array.isArray(data) ? data : [];
+        // R35: the endpoint returns { success, profiles, ... } — NOT a plain
+        // array. The old `Array.isArray(data) ? data : []` was ALWAYS empty,
+        // so the tournament starting screen never showed "Companion" as the
+        // players' singing source although they were connected.
+        const connectedProfiles: Array<{ id: string; name: string; clientId?: string }> =
+          Array.isArray(data) ? data : (Array.isArray(data?.profiles) ? data.profiles : []);
 
         const p1Companion = connectedProfiles.find(p =>
           match.player1 && (p.id === match.player1.id || p.name === match.player1.name)

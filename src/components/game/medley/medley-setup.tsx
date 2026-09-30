@@ -33,6 +33,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
 import { ToggleSwitch, InputModeToggle } from './medley-setup-components';
 import type { CompanionProfile } from './medley-setup-components';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
 
 // ===================== PROPS =====================
 
@@ -75,10 +76,6 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
   // Feature #2: Mobile client ID per player
   const [playerMobileClientIds, setPlayerMobileClientIds] = useState<Record<string, string>>({});
 
-  // Feature #2: Connected companion profiles
-  const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
-  const [companionsLoading, setCompanionsLoading] = useState(false);
-
   // Feature #6: Swap mode
   const [swapMode, setSwapMode] = useState(false);
   const [swapSelection, setSwapSelection] = useState<string[]>([]);
@@ -98,27 +95,21 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
     [allSongs, filterEra]
   );
 
-  // ── Feature #2: Fetch companion profiles ──
-  useEffect(() => {
-    let cancelled = false;
-    const fetchCompanions = async () => {
-      setCompanionsLoading(true);
-      try {
-        const res = await fetch('/api/mobile?action=getprofiles');
-        if (!res.ok) throw new Error('fetch failed');
-        const data = await res.json();
-        if (!cancelled && Array.isArray(data.profiles)) {
-          setCompanionProfiles(data.profiles);
-        }
-      } catch {
-        // Silently ignore — companion may not be running
-      } finally {
-        if (!cancelled) setCompanionsLoading(false);
-      }
-    };
-    fetchCompanions();
-    return () => { cancelled = true; };
-  }, []);
+  // ── Feature #2 / R35: LIVE companion status ──
+  // Previously a ONE-TIME getprofiles fetch on mount — a companion connecting
+  // AFTER the setup opened (the most common flow: open setup → scan QR) never
+  // appeared, so the setup claimed "kein Companion verbunden" although the
+  // phone was online. Now we poll the clients list every 2 s (same source of
+  // truth as the unified party setup) and derive the companion profiles,
+  // including each device's REAL clientId for the per-player picker.
+  const { clients: liveCompanionClients } = useCompanionConnections(true);
+  const companionProfiles = useMemo<CompanionProfile[]>(() =>
+    liveCompanionClients.flatMap(c =>
+      c.connected && c.profile
+        ? [{ id: c.profile.id, name: c.profile.name, color: c.profile.color, clientId: c.id }]
+        : []
+    ),
+    [liveCompanionClients]);
 
   // ── Derived ──
   const isElimination = playMode === 'elimination';
@@ -686,8 +677,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
             <p className="text-yellow-400 mb-4">{t('medley.noActiveProfiles')}</p>
           )}
 
-          {/* Feature #2: Companion status */}
-          {!companionsLoading && companionProfiles.length === 0 && (
+          {/* Feature #2 / R35: LIVE companion status (2s poll) */}
+          {companionProfiles.length === 0 && (
             <p className="text-white/30 text-xs mb-3">{t('medley.noCompanions')}</p>
           )}
           {companionProfiles.length > 0 && (

@@ -84,6 +84,7 @@ export const medleyTournamentTranslations = {
     inputMode: 'Input Mode',
     noCompanions: 'No companion devices connected',
     companionConnected: '{n} Companion(s) connected',
+    companionOffline: 'offline — not connected',
     // Scoring Transparency
     perfect: 'Perfect!',
     great: 'Great!',

@@ -82,6 +82,7 @@ medley: {
   inputMode: 'Режим ввода',
   noCompanions: 'Нет подключённых компаньонов',
   companionConnected: '{n} компаньонов подключено',
+  companionOffline: 'офлайн — нет подключения',
   perfect: 'Идеально!',
   great: 'Отлично!',
   good: 'Хорошо',

@@ -82,6 +82,7 @@ medley: {
   inputMode: 'Syöttötila',
   noCompanions: 'Ei companion-laitteita yhdistettynä',
   companionConnected: '{n} companion(ta) yhdistetty',
+  companionOffline: 'offline — ei yhteyttä',
   perfect: 'Täydellinen!',
   great: 'Loistava!',
   good: 'Hyvä',

@@ -6,6 +6,12 @@
  * ToggleSwitch — generic on/off toggle
  * InputModeToggle — Feature #2: switch between local mic and companion app
  * CompanionProfile — type used by both MedleySetup and InputModeToggle
+ *
+ * R35: companionProfiles now carries each device's REAL server clientId
+ * (previously the picker passed the PROFILE id as "mobileClientId" — a type
+ * confusion that stored the wrong id). The assigned-companion badge shows a
+ * LIVE connection state: green dot while the device is online, an amber
+ * warning when it disappeared (the list refreshes every 2 s).
  */
 
 import { useState } from 'react';
@@ -17,6 +23,8 @@ export interface CompanionProfile {
   id: string;
   name: string;
   color?: string;
+  /** R35: REAL server clientId of the connected device (for assignment). */
+  clientId?: string;
 }
 
 // ===================== TOGGLE COMPONENT =====================
@@ -53,20 +61,30 @@ export function InputModeToggle({
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
 
   if (companionProfiles.length === 0) {
-    // No companions available — just show current mode
+    // No companions available — just show current mode (R35: with a warning
+    // when a player is set to Companion but no device is online)
     return (
-      <span className={`text-xs px-2 py-0.5 rounded ${currentMode === 'local' ? 'bg-white/10 text-white/50' : 'bg-emerald-500/20 text-emerald-400'}`}>
-        {currentMode === 'local' ? '🎤' : '📱'}
+      <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded ${currentMode === 'local' ? 'bg-white/10 text-white/50' : 'bg-amber-500/20 text-amber-300'}`}>
+        {currentMode === 'local' ? '🎤' : '📱⚠'}
+        {currentMode === 'mobile' && t('medley.companionOffline')}
       </span>
     );
   }
 
   if (currentMode === 'mobile' && currentMobileClientId) {
-    const cp = companionProfiles.find(c => c.id === currentMobileClientId);
+    // R35: match by real clientId (legacy entries stored the profile id —
+    // keep them resolving so old selections still show their label)
+    const cp = companionProfiles.find(
+      c => c.clientId === currentMobileClientId || c.id === currentMobileClientId,
+    );
     return (
       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-        <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
           📱 {cp?.name || 'Companion'}
+          <span
+            className={`inline-block w-1.5 h-1.5 rounded-full ${cp ? 'bg-emerald-400' : 'bg-amber-400'}`}
+            aria-label={cp ? t('unifiedSetup.connected') : t('unifiedSetup.deviceNotConnected')}
+          />
         </span>
         <button
           onClick={() => { onToggle(); setShowCompanionPicker(false); }}
@@ -94,10 +112,11 @@ export function InputModeToggle({
           </button>
           {companionProfiles.map(cp => (
             <button
-              key={cp.id}
+              key={cp.clientId ?? cp.id}
               onClick={() => {
                 if (currentMode !== 'mobile') onToggle();
-                onAssignCompanion(cp.id);
+                // R35: assign the REAL server clientId (was: profile id)
+                onAssignCompanion(cp.clientId ?? cp.id);
                 setShowCompanionPicker(false);
               }}
               className="w-full text-left px-3 py-2 text-sm text-emerald-400 hover:bg-white/10 rounded-b-lg last:rounded-b-lg"

@@ -82,6 +82,7 @@ medley: {
   inputMode: '输入模式',
   noCompanions: '没有已连接的伴侣设备',
   companionConnected: '{n}个伴侣已连接',
+  companionOffline: '离线 — 未连接',
   perfect: '完美！',
   great: '优秀！',
   good: '不错',

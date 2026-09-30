@@ -167,6 +167,15 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
     onProfileAssigned: (p) => adoptServerProfileRef.current(p),
+    // R35: server recreated our purged client record (standby > 5 min) —
+    // the profile claim was lost with the record. Re-claim our local profile
+    // so the desktop recognizes this phone as "via Companion" again.
+    onClientRestored: () => {
+      if (profileRef.current) {
+        markLocalProfileMutation();
+        syncProfile(profileRef.current);
+      }
+    },
     onGameStateUpdate: (_state) => {
       // R33/P16: Difficulty-Default kommt jetzt aus dem Settings-Snapshot
       // (Pull bei (Re)Connect + Push-on-Change) — KEIN Sync mehr über den
@@ -265,6 +274,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // Fallback-Reconcile: falls der Socket-Push verpasst wurde (z. B. genau im
   // Reconnect-Moment zugewiesen), holt das Handy sein serverseitiges Profil
   // selbstständig — dann stimmt die Zuordnung spätestens vor Spielstart.
+  // R35: ein 404 bedeutet, dass der Server unseren Client-Datensatz gelöscht
+  // hat (5-Min-Inaktivitäts-Cleanup im Standby) — dann verbinden wir uns
+  // komplett neu (der Fresh-Connect stellt den Profil-Claim über die
+  // localStorage-Restore-Logik wieder her).
   useEffect(() => {
     if (!isConnected || !clientId) return;
     let cancelled = false;
@@ -272,6 +285,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       if (Date.now() - lastProfileMutationRef.current < 5000) return; // local change syncing
       try {
         const res = await fetch(`/api/mobile?action=profile&clientId=${encodeURIComponent(clientId)}`);
+        if (res.status === 404) {
+          // R35: client record purged server-side → full reconnect. The fresh
+          // connect re-creates the record AND re-claims our local profile,
+          // so the desktop recognizes this phone as connected again.
+          connect().catch(() => { /* next cycle retries */ });
+          return;
+        }
         if (!res.ok) return;
         const d = await res.json();
         if (cancelled || !d.success) return;
@@ -284,7 +304,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     reconcile();
     const iv = setInterval(reconcile, 8000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [isConnected, clientId]);
+  }, [isConnected, clientId, connect]);
 
   // Queue-Fehler → Toast (der Hook räumt queueError nach 3 s selbst ab)
   useEffect(() => {

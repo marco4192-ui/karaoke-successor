@@ -82,6 +82,7 @@ medley: {
   inputMode: 'Invoermodus',
   noCompanions: 'Geen companion-apparaten verbonden',
   companionConnected: '{n} Companion(s) verbonden',
+  companionOffline: 'offline — niet verbonden',
   perfect: 'Perfect!',
   great: 'Geweldig!',
   good: 'Goed',
