@@ -286,6 +286,19 @@ mobile: {
   brGameCountdown: "Gleich geht's los…",
   brGameEliminated: "raus",
   brGameSnippet: "Ausschnitt {n}/{m}",
+  // ── Medley-Wettbewerb — Live-Spiegel (R36) ──
+  medleyYouSingVs: "Du singst gegen {name}",
+  medleyUpNext: "Du bist als Nächstes dran",
+  medleyNextSnippetIn: "Nächster Song in {s}s",
+  medleyWaitingTurn: "Warte auf deinen Auftritt",
+  medleyMysterySong: "❓ Mystery-Song",
+  medleyRoundDone: "Runde beendet!",
+  // ── Queue-Fehler (R36: i18n statt englische Hardcoded-Strings) ──
+  queueErrorMax3Full: "Maximal 3 Songs in der Warteschlange. Warte, bis ein Song fertig ist!",
+  queueErrorMax3: "Maximal 3 Songs in der Warteschlange!",
+  queueErrorAddFailed: "Song konnte nicht hinzugefügt werden",
+  queueErrorReorderFailed: "Neu anordnen fehlgeschlagen",
+  queueErrorRemoveFailed: "Song konnte nicht entfernt werden",
   // ── Live-Gesangsmonitor (Geisternoten/Treffer, per Spieler) ──
   brSingingMonitor: "Gesang live",
   brSingingPitch: "Tonhöhe",

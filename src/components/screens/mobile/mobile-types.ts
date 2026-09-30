@@ -33,6 +33,7 @@ export type MirrorScreenId =
   | 'medley-intro'
   | 'battle-intro'
   | 'br-game'       // Battle Royale active game (live scores + own singing)
+  | 'medley-game'   // Medley Contest active game (live scores + own singing)
   | 'tournament-intro'
   | 'tournament-bracket'  // Tournament bracket on screen — open duels list with start buttons
   | 'competitive-intro'
@@ -69,6 +70,11 @@ export function screenToMirrorId(desktopScreen: string | undefined): MirrorScree
     // mapping the generic game mirror would show "no song" because BR
     // never sets the standard game-store song.
     'battle-royale-game': 'br-game',
+    // Medley Contest in-game (R36): dedicated mirror with snippet progress,
+    // turn/matchup signals (team mode), live roster scores and the
+    // companion's own singing visualization — same reason as BR: the medley
+    // hook never sets the standard game-store song.
+    'medley-game': 'medley-game',
   };
 
   if (desktopScreen in directMap) return directMap[desktopScreen];
@@ -154,6 +160,60 @@ export interface CptmMirrorPlayerInfo {
   color: string;
   score: number;
   segmentsSung: number;
+}
+
+/** Player roster entry for the Medley Contest companion game mirror (R36). */
+export interface MedleyMirrorPlayer {
+  /** Profile id — matches the companion's own profile id */
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+  inputType: 'local' | 'mobile';
+  eliminated: boolean;
+  snippetsSung: number;
+  /** Team index (0 = Team A, 1 = Team B) — team mode only */
+  team: number;
+}
+
+/** Team-mode matchup: the two players singing the current/next snippet. */
+export interface MedleyMirrorMatchup {
+  aId: string;
+  aName: string;
+  aColor: string;
+  bId: string;
+  bName: string;
+  bColor: string;
+}
+
+/** Live Medley Contest game data pushed by the desktop (R36) — analogous
+ *  to BrGameData, but with snippet/matchup/phase semantics of the medley
+ *  contest. Built in karaoke-app's 2s master sync from the medley hook's
+ *  sync snapshot (src/lib/game/medley-sync.ts). */
+export interface MedleyGameData {
+  phase: 'intro' | 'playing' | 'transition' | 'round-results' | 'final-results';
+  playMode: 'ffa' | 'team' | 'elimination';
+  /** Current snippet (0-based) and total snippet count of this round */
+  snippetIndex: number;
+  snippetCount: number;
+  songTitle?: string | null;
+  songArtist?: string | null;
+  /** Countdown seconds while phase === 'transition' */
+  transitionCount?: number;
+  /** Whether the snippet media is actually playing (false during pause) */
+  isPlaying: boolean;
+  /** Profile ids singing the CURRENT snippet — phones in this list start
+   *  their mic automatically (auto-sing, like BR's player list). */
+  activeProfileIds: string[];
+  players?: MedleyMirrorPlayer[];
+  /** Team mode: the matchup of the current snippet */
+  matchup?: MedleyMirrorMatchup | null;
+  /** Team mode: the matchup of the NEXT snippet (shown during transition) */
+  nextMatchup?: MedleyMirrorMatchup | null;
+  /** Elimination mode: profile ids in order of elimination */
+  eliminationOrder?: string[];
+  /** Feature #16: Mystery mode — song titles stay hidden while singing */
+  mysteryMode?: boolean;
 }
 
 /** Player roster entry for the Battle Royale companion game mirror. */
@@ -295,6 +355,9 @@ export interface GameState {
   } | null;
   // Battle Royale live in-game data (scores + current snippet song)
   brGameData?: BrGameData | null;
+  // Medley Contest live in-game data (R36): snippet progress, turn/matchup
+  // signals, live roster scores + the active singers for auto-sing.
+  medleyGameData?: MedleyGameData | null;
   // Tournament bracket mirror: while the bracket is shown on the desktop (no
   // duel pending), companions get the list of OPEN duels incl. start buttons.
   // Avatars are stripped to keep the payload small — colors + initials only.

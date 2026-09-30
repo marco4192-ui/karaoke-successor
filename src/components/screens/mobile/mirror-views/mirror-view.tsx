@@ -37,6 +37,7 @@ import { MirrorPtmIntroLite } from './mirror-ptm-intro-lite';
 import { MirrorMedleyIntroLite } from './mirror-medley-intro-lite';
 import { MirrorBattleIntroLite } from './mirror-battle-intro-lite';
 import { MirrorBrGameLite } from './mirror-br-game-lite';
+import { MirrorMedleyGameLite } from './mirror-medley-game-lite';
 import { MirrorTournamentIntroLite } from './mirror-tournament-intro-lite';
 import { MirrorTournamentBracketLite } from './mirror-tournament-bracket-lite';
 import { MirrorCompetitiveIntroLite } from './mirror-competitive-intro-lite';
@@ -606,6 +607,29 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             currentPitch={currentPitch ?? null}
             isMicListening={isMicListening ?? false}
             brSinging={brSinging ?? null}
+            onNavigate={onNavigate}
+            onSendDesktopCommand={onSendDesktopCommand}
+            isRemoteLocked={isRemoteLocked}
+            remoteLockedBy={remoteLockedBy}
+            onAcquireRemote={onAcquireRemote}
+            {...mirrorData}
+          />
+          </SafeView>
+        </div>
+      );
+
+    // ---------- Medley Contest aktives Spiel (Snippet-Fortschritt + eigenes Mitsingen) ----------
+    case 'medley-game':
+      return (
+        <div className="min-h-[calc(100vh-8rem)]">
+          <SafeView name="medley-game">
+          <MirrorMedleyGameLite
+            gameState={gameState}
+            clientId={clientId}
+            profileId={profileId ?? null}
+            profileName={profileName}
+            currentPitch={currentPitch ?? null}
+            isMicListening={isMicListening ?? false}
             onNavigate={onNavigate}
             onSendDesktopCommand={onSendDesktopCommand}
             isRemoteLocked={isRemoteLocked}

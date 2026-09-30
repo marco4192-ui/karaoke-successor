@@ -289,6 +289,19 @@ export const mobileTranslations = {
   brGameCountdown: "Starting…",
   brGameEliminated: "out",
   brGameSnippet: "Snippet {n}/{m}",
+  // ── Medley Contest live mirror (R36) ──
+  medleyYouSingVs: "You're singing against {name}",
+  medleyUpNext: "You're up next",
+  medleyNextSnippetIn: "Next song in {s}s",
+  medleyWaitingTurn: "Waiting for your turn",
+  medleyMysterySong: "❓ Mystery song",
+  medleyRoundDone: "Round complete!",
+  // ── Queue errors (R36: i18n instead of hardcoded English strings) ──
+  queueErrorMax3Full: "Maximum 3 songs in queue. Wait for a song to finish!",
+  queueErrorMax3: "Maximum 3 songs in queue!",
+  queueErrorAddFailed: "Failed to add song",
+  queueErrorReorderFailed: "Failed to reorder queue",
+  queueErrorRemoveFailed: "Failed to remove song",
   // ── Live singing monitor (ghost/hit feedback per player) ──
   brSingingMonitor: "Live singing",
   brSingingPitch: "Pitch",

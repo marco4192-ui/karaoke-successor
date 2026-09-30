@@ -49,6 +49,7 @@ interface RawGameState {
   ptmPhase?: GameState['ptmPhase'];
   ptmIntroData?: GameState['ptmIntroData'];
   brGameData?: GameState['brGameData'];
+  medleyGameData?: GameState['medleyGameData'];
   tournamentBracketData?: GameState['tournamentBracketData'];
   viralSongIds?: string[];
   mottoParty?: GameState['mottoParty'];
@@ -79,6 +80,7 @@ function parseGameState(raw: RawGameState): GameState {
     ptmPhase: raw.ptmPhase ?? null,
     ptmIntroData: raw.ptmIntroData ?? null,
     brGameData: raw.brGameData ?? null,
+    medleyGameData: raw.medleyGameData ?? null,
     tournamentBracketData: raw.tournamentBracketData ?? null,
     viralSongIds: raw.viralSongIds ?? [],
     mottoParty: raw.mottoParty ?? null,
@@ -103,6 +105,7 @@ const INITIAL_GAME_STATE: GameState = {
   partySetupState: null,
   ptmPhase: null,
   ptmIntroData: null,
+  medleyGameData: null,
   viralSongIds: [],
   mottoParty: null,
   difficulty: 'medium',

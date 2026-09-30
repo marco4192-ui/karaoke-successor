@@ -484,14 +484,30 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       const brMe = (gameState.brGameData.players ?? []).find(p => p.id === profile.id);
       if (brMe?.eliminated) stopMicrophone();
     }
-    const shouldSing = isMyTurn || isBrActivePlayer;
+    // R36: Medley Contest — das eigene Profil singt den AKTUELLEN Snippet
+    // (activeProfileIds: FFA = alle, Team = aktuelles Duell-Paar,
+    // Eliminierung = alle Nicht-Ausgeschiedenen). Genau wie bei BR startet
+    // das Mikrofon automatisch und die Pitch-Daten fließen über
+    // PitchDetectorManager (gematcht auf mobileClientId) ins Medley-Scoring.
+    const medley = gameState.medleyGameData;
+    const isMedleyActivePlayer =
+      !!medley &&
+      medley.phase === 'playing' &&
+      (medley.activeProfileIds ?? []).includes(profile.id);
+    // Auch im Medley: eliminierte Spieler (Eliminierungs-Modus) brauchen das
+    // Mikro nicht mehr — aktiv stoppen wie bei BR.
+    if (medley?.phase === 'playing' && isListening) {
+      const medleyMe = (medley.players ?? []).find(p => p.id === profile.id);
+      if (medleyMe?.eliminated) stopMicrophone();
+    }
+    const shouldSing = isMyTurn || isBrActivePlayer || isMedleyActivePlayer;
     if (shouldSing && !isListening && !autoSingDoneRef.current) {
       autoSingDoneRef.current = true;
 
       setTimeout(() => startMicrophone(), 500);
     }
     if (!shouldSing) autoSingDoneRef.current = false;
-  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
+  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, gameState.medleyGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
 
   // ===================== DESKTOP COMMANDS =====================
   // Wird von steuernden Companions für CONTROL-Commands genutzt (Nav) UND

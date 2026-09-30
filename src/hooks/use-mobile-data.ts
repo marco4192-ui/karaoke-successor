@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode, MobileHighscoreEntry, DailyProfileState, JukeboxMirrorState } from '@/components/screens/mobile/mobile-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // F19: Opponent profile for duel/duet mode
 export interface OpponentProfile {
@@ -74,6 +75,13 @@ function fuzzyScore(query: string, text: string): number {
 }
 
 export function useMobileData({ clientId, profile, onNavigateToProfile, defaultDifficulty }: UseMobileDataOptions) {
+  // R36: i18n für Queue-Fehlermeldungen (vorher englische Hardcoded-Strings).
+  // tRef statt t in den Deps: Callbacks behalten stabile Identitäten, nutzen
+  // aber immer die aktuelle Sprache (Sprachwechsel wirkt sofort).
+  const { t } = useTranslation();
+  const tRef = useRef(t);
+  tRef.current = t;
+
   // Song library state
   const [songs, setSongs] = useState<MobileSong[]>([]);
   const [songSearch, setSongSearch] = useState('');
@@ -221,7 +229,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
       return;
     }
     if (slotsRemaining <= 0) {
-      setQueueError('Maximum 3 songs in queue. Wait for a song to finish!');
+      setQueueError(tRef.current('mobile.queueErrorMax3Full') || 'Maximum 3 songs in queue. Wait for a song to finish!');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       return;
@@ -263,7 +271,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
         setPartnerMicSource('companion');
         setDuetPartsSwapped(false);
       } else if (data.queueFull) {
-        setQueueError('Maximum 3 songs in queue!');
+        setQueueError(tRef.current('mobile.queueErrorMax3') || 'Maximum 3 songs in queue!');
         setSlotsRemaining(0);
         if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
@@ -271,7 +279,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[useMobileData]: addToQueue failed', error);
-      setQueueError('Failed to add song');
+      setQueueError(tRef.current('mobile.queueErrorAddFailed') || 'Failed to add song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
@@ -310,14 +318,14 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
           return newQueue;
         });
       } else {
-        setQueueError(data.message || 'Failed to reorder queue');
+        setQueueError(data.message || tRef.current('mobile.queueErrorReorderFailed') || 'Failed to reorder queue');
         if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[useMobileData]: reorderQueue failed', error);
-      setQueueError('Failed to reorder queue');
+      setQueueError(tRef.current('mobile.queueErrorReorderFailed') || 'Failed to reorder queue');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
@@ -337,14 +345,14 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
         setQueue(prev => prev.filter(q => q.id !== itemId));
         setSlotsRemaining(prev => Math.min(3, prev + 1));
       } else {
-        setQueueError(data.message || 'Failed to remove song');
+        setQueueError(data.message || tRef.current('mobile.queueErrorRemoveFailed') || 'Failed to remove song');
         if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[useMobileData]: removeFromQueue failed', error);
-      setQueueError('Failed to remove song');
+      setQueueError(tRef.current('mobile.queueErrorRemoveFailed') || 'Failed to remove song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }

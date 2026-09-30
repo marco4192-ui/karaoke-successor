@@ -32,6 +32,7 @@ import type {
   VoiceModifier, MedleyHighlight, TeamBonusResult,
 } from './medley-types';
 import { getDynamicDifficulty } from './medley-scoring';
+import { setMedleySyncSnapshot, clearMedleySyncSnapshot, type MedleySyncMatchup } from '@/lib/game/medley-sync';
 
 // ── Sub-hook imports ──
 import { useMedleyAudio } from './hooks/use-medley-audio';
@@ -432,6 +433,53 @@ export function useMedleyGame({
     }
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
+
+  // ── R36: Companion-Sync — Snapshot für den 2s-Master-Push schreiben ──
+  // Der Medley-Hook hält seinen Live-State in Refs/state — statt alle
+  // Party-Store-Subscriber im Tick-Takt zu re-rendern, schreibt er einen
+  // kompakten Snapshot in ein Modul-Singleton (medley-sync.ts). Der
+  // Master-Sync-Loop in karaoke-app.tsx liest ihn FRISCH bei jedem 2s-Tick
+  // und baut daraus `medleyGameData` für die Companion-Handys — exakt das
+  // gleiche Architektur-Muster wie brGameData → Battle Royale.
+  // Deps: phase/Snippet/Countdown/isPlaying für Struktur­änderungen,
+  // ___playersDisplay für Live-Scores (forceRender tickt ~10 Hz im Spiel).
+  const buildSyncMatchup = useCallback((m: SnippetMatchup | null | undefined): MedleySyncMatchup | null =>
+    m
+      ? {
+          aId: m.playerA.id, aName: m.playerA.name, aColor: m.playerA.color,
+          bId: m.playerB.id, bName: m.playerB.name, bColor: m.playerB.color,
+        }
+      : null, []);
+  useEffect(() => {
+    const song = currentSnippet?.song ?? null;
+    setMedleySyncSnapshot({
+      phase,
+      playMode: settings.playMode,
+      snippetIndex: currentSnippetIdx,
+      snippetCount: medleySongs.length,
+      songId: song?.id ?? null,
+      songTitle: song?.title ?? null,
+      songArtist: song?.artist ?? null,
+      transitionCount,
+      isPlaying: isPlaying && phase === 'playing',
+      activeProfileIds: getActivePlayerIds(),
+      players: playersRef.current.map(p => ({
+        id: p.id, name: p.name, color: p.color, score: p.score,
+        inputType: p.inputType, isEliminated: p.isEliminated,
+        snippetsSung: p.snippetsSung, team: p.team,
+      })),
+      matchup: isTeam && currentSnippetIdx < matchups.length
+        ? buildSyncMatchup(matchups[currentSnippetIdx]) : null,
+      nextMatchup: isTeam && currentSnippetIdx + 1 < matchups.length
+        ? buildSyncMatchup(matchups[currentSnippetIdx + 1]) : null,
+      eliminationOrder: [...elimination.eliminationOrderRef.current],
+      mysteryMode: settings.mysteryMode,
+      updatedAt: Date.now(),
+    });
+  }, [phase, currentSnippetIdx, transitionCount, isPlaying, ___playersDisplay, currentSnippet, medleySongs.length, settings.playMode, settings.mysteryMode, getActivePlayerIds, isTeam, matchups, elimination.eliminationOrderRef, buildSyncMatchup]);
+
+  // R36: Snapshot beim Unmount freigeben — kein stale Medley-Datum für den Master-Push
+  useEffect(() => () => clearMedleySyncSnapshot(), []);
 
   // ── Finalize is no longer needed with tick-based scoring (points are awarded per tick). ──
   // Kept as a no-op for backward compat with callers.

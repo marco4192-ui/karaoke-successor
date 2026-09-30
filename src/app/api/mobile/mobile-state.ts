@@ -5,9 +5,27 @@ import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlSt
 
 // ===================== ADMIN PIN AUTH =====================
 // Configurable game PIN for protecting privileged endpoints.
-// Set via POST 'setpin' action or environment variable GAME_PIN.
+// Set via environment variable GAME_PIN.
 // If no PIN is configured, all requests are allowed (backward compatible).
 const adminPin: string | null = process.env.GAME_PIN || null;
+
+// ===================== HOST (DESKTOP) REQUEST DETECTION =====================
+// The desktop app (Tauri webview / local browser) reaches this server via
+// loopback, companion phones connect via LAN IP. server.ts strips any
+// client-supplied 'x-karaoke-tcp-addr' header and injects the REAL TCP peer
+// address, so this check cannot be spoofed from the network. Host requests
+// are exempt from the PIN: GAME_PIN protects privileged endpoints from
+// COMPANIONS, never from the host itself (R36 — previously every desktop
+// push like assigncharacter/gamestate/sethostprofiles failed with GAME_PIN
+// set, because nobody sends the pin header).
+// Fail-closed: requests without the header (e.g. when running `next dev`
+// directly without server.ts) are NOT treated as host.
+const LOOPBACK_TCP_ADDRS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+export function isHostRequest(req: NextRequest): boolean {
+  const tcpAddr = req.headers.get('x-karaoke-tcp-addr');
+  return !!tcpAddr && LOOPBACK_TCP_ADDRS.has(tcpAddr);
+}
 
 // ===================== BRUTE-FORCE PIN PROTECTION =====================
 // Tracks failed PIN attempts per IP with timestamps.
@@ -54,11 +72,13 @@ function clearFailedPinAttempts(ip: string): void {
  * Check if a request is authorized for privileged actions.
  * Returns true if authorized, false if not.
  * - If no PIN is configured, always returns true (backward compatible).
+ * - Host requests (loopback TCP peer, see isHostRequest) are always allowed.
  * - Checks for 'pin' header or 'pin' query parameter.
  * - Includes brute-force protection: blocks IPs with >5 failures in 60s for 5 minutes.
  */
 export function requireAuth(req: NextRequest): boolean {
   if (!adminPin) return true; // No PIN configured → allow all
+  if (isHostRequest(req)) return true; // Host machine (desktop app) → always trusted (R36)
 
   const ip = getClientIp(req);
 

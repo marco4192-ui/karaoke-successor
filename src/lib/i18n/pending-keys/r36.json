@@ -1,0 +1,57 @@
+[
+  {
+    "key": "mobile.medleyYouSingVs",
+    "en": "You're singing against {name}",
+    "de": "Du singst gegen {name}"
+  },
+  {
+    "key": "mobile.medleyUpNext",
+    "en": "You're up next",
+    "de": "Du bist als Nächstes dran"
+  },
+  {
+    "key": "mobile.medleyNextSnippetIn",
+    "en": "Next song in {s}s",
+    "de": "Nächster Song in {s}s"
+  },
+  {
+    "key": "mobile.medleyWaitingTurn",
+    "en": "Waiting for your turn",
+    "de": "Warte auf deinen Auftritt"
+  },
+  {
+    "key": "mobile.medleyMysterySong",
+    "en": "❓ Mystery song",
+    "de": "❓ Mystery-Song"
+  },
+  {
+    "key": "mobile.medleyRoundDone",
+    "en": "Round complete!",
+    "de": "Runde beendet!"
+  },
+  {
+    "key": "mobile.queueErrorMax3Full",
+    "en": "Maximum 3 songs in queue. Wait for a song to finish!",
+    "de": "Maximal 3 Songs in der Warteschlange. Warte, bis ein Song fertig ist!"
+  },
+  {
+    "key": "mobile.queueErrorMax3",
+    "en": "Maximum 3 songs in queue!",
+    "de": "Maximal 3 Songs in der Warteschlange!"
+  },
+  {
+    "key": "mobile.queueErrorAddFailed",
+    "en": "Failed to add song",
+    "de": "Song konnte nicht hinzugefügt werden"
+  },
+  {
+    "key": "mobile.queueErrorReorderFailed",
+    "en": "Failed to reorder queue",
+    "de": "Neu anordnen fehlgeschlagen"
+  },
+  {
+    "key": "mobile.queueErrorRemoveFailed",
+    "en": "Failed to remove song",
+    "de": "Song konnte nicht entfernt werden"
+  }
+]

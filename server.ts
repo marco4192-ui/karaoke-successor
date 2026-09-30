@@ -33,6 +33,17 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
+    // ─── R36: Trustworthy TCP peer address for host detection ───
+    // The desktop app (Tauri webview / local browser) talks to this server
+    // via loopback, companion phones connect via LAN IP. The API routes use
+    // this header to exempt the HOST from GAME_PIN protection (the PIN gates
+    // companions, never the host itself — fixing the R34/R35 risk that all
+    // desktop pushes failed when GAME_PIN was set).
+    // SECURITY: strip any client-supplied value FIRST, then inject the real
+    // socket address — a phone on the network cannot spoof its source IP.
+    delete req.headers['x-karaoke-tcp-addr'];
+    req.headers['x-karaoke-tcp-addr'] = req.socket.remoteAddress ?? '';
+
     const parsedUrl = parse(req.url!, true);
     handle(req, res, parsedUrl);
   });

@@ -27,6 +27,7 @@ import type { Screen } from '@/types/screens';
 import { IMMERSIVE_SCREENS } from '@/types/screens';
 // Mobile-mirror game-state shape (for the recent-parties sync payload)
 import type { GameState } from '@/components/screens/mobile/mobile-types';
+import { getMedleySyncSnapshot } from '@/lib/game/medley-sync';
 
 // Extracted hooks
 import { useScreenNavigation, computePartyModeActive } from '@/hooks/use-screen-navigation';
@@ -1090,6 +1091,54 @@ export default function KaraokeZERO() {
           }
         }
 
+        // ── R36: Medley Contest LIVE game data ─────────────────────────
+        // Same architecture as brGameData above: the medley game hook
+        // writes a compact snapshot into a module singleton
+        // (src/lib/game/medley-sync.ts); the master sync reads it fresh at
+        // every 2s tick and pushes it to the companion phones while the
+        // medley screen is active. The medley hook never sets the standard
+        // game-store song/isPlaying — so we ALSO inject currentSong/
+        // isPlaying/songEnded/gameMode here (same reason as brSongPayload:
+        // the 2s gameStore spread below would push stale values otherwise
+        // and fight the companion's auto-sing mic control).
+        let medleyGameData: GameState['medleyGameData'] = null;
+        let medleySongPayload: { id: string; title: string; artist: string } | null = null;
+        let medleyPlayingOverride: boolean | null = null;
+        if (screen === 'medley-game') {
+          const ms = getMedleySyncSnapshot();
+          if (ms) {
+            if (ms.songTitle) {
+              medleySongPayload = { id: ms.songId ?? '', title: ms.songTitle, artist: ms.songArtist ?? '' };
+            }
+            medleyPlayingOverride = ms.isPlaying;
+            medleyGameData = {
+              phase: ms.phase,
+              playMode: ms.playMode,
+              snippetIndex: ms.snippetIndex,
+              snippetCount: ms.snippetCount,
+              songTitle: ms.songTitle,
+              songArtist: ms.songArtist,
+              transitionCount: ms.transitionCount,
+              isPlaying: ms.isPlaying,
+              activeProfileIds: ms.activeProfileIds,
+              players: ms.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                color: p.color,
+                score: p.score,
+                inputType: p.inputType,
+                eliminated: p.isEliminated,
+                snippetsSung: p.snippetsSung,
+                team: p.team,
+              })),
+              matchup: ms.matchup,
+              nextMatchup: ms.nextMatchup,
+              eliminationOrder: ms.eliminationOrder.length > 0 ? ms.eliminationOrder : undefined,
+              mysteryMode: ms.mysteryMode || undefined,
+            };
+          }
+        }
+
         // ── Item 8.1: Battle Royale LIVE game data ─────────────────────
         // Pushed whenever the BR screen is active (intro AND playing) so the
         // companion BR in-game mirror can show the current (snippet) song,
@@ -1226,6 +1275,20 @@ export default function KaraokeZERO() {
               // BR: keep the companion's currentSong in sync with the current
               // BR (snippet) song instead of the (unset) standard song.
               ...(brSongPayload ? { currentSong: brSongPayload } : {}),
+              // R36: Medley — same injection pattern for the medley snippet
+              // song, PLUS explicit isPlaying/songEnded/gameMode overrides:
+              // the medley hook never touches the game-store gameState, so
+              // the spread above would push STALE values from a previous
+              // standard game (e.g. songEnded=true would keep companion
+              // mics from ever starting — the exact auto-sing stop flag).
+              ...(medleySongPayload ? { currentSong: medleySongPayload } : {}),
+              ...(screen === 'medley-game'
+                ? {
+                    isPlaying: medleyPlayingOverride ?? false,
+                    songEnded: false,
+                    gameMode: 'medley',
+                  }
+                : {}),
               currentScreen: screen,
               partyGameMode: partyNow.selectedGameMode || null,
               votingSongs: screen === 'song-voting' ? partyNow.votingSongs : [],
@@ -1240,6 +1303,9 @@ export default function KaraokeZERO() {
               // Always send the key (null when not on the BR screen) so a
               // finished BR game doesn't leave stale data on the companions.
               brGameData: screen === 'battle-royale-game' ? brGameData : null,
+              // R36: Same explicit-null pattern for medley — a finished
+              // medley must clear the companion's medley mirror state.
+              medleyGameData: screen === 'medley-game' ? medleyGameData : null,
               tournamentBracketData,
               viralSongIds: viralCharts.viralSongIds.size > 0 ? Array.from(viralCharts.viralSongIds) : [],
               // Motto-Party (R25): full config for the companion library —
