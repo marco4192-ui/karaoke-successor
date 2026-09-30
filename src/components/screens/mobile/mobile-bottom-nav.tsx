@@ -30,12 +30,17 @@ const FOOTER_ITEMS: NavItem[] = [
 interface MobileBottomNavProps {
   activeScreen: string;
   onNavigate: (screen: string) => void;
+  /** Legacy: komplett deaktivierte Items (nicht klickbar, kein Feedback). */
   disabledScreens?: string[];
+  /** R33/P2+P14: Gesperrte Items — ausgegraut mit Schloss-Badge; Tap löst
+   *  onLockedTap aus (z. B. Toast "Nur mit Fernsteuerung"). */
+  lockedScreens?: string[];
+  onLockedTap?: (screen: string) => void;
 }
 
 // ===================== Component =====================
 
-export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens }: MobileBottomNavProps) {
+export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens, lockedScreens, onLockedTap }: MobileBottomNavProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
@@ -57,6 +62,13 @@ export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens }: M
     onNavigate(screen);
   };
 
+  const handleLockedTap = (screen: string) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    onLockedTap?.(screen);
+  };
+
   return (
     <nav
       role="tablist"
@@ -68,35 +80,54 @@ export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens }: M
     >
       <div
         ref={scrollRef}
-        className="flex gap-1 overflow-x-auto no-scrollbar px-2 py-2"
+        className="flex gap-1 overflow-x-auto no-scrollbar px-2 py-1.5"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {FOOTER_ITEMS.map((item) => {
           const isDisabled = disabledScreens?.includes(item.screen);
+          const isLocked = !isDisabled && lockedScreens?.includes(item.screen);
           const isActive = activeScreen === item.screen ||
             (item.screen === 'home' && activeScreen === 'home') ||
             (item.screen === 'party' && activeScreen === 'party') ||
-            (item.screen === 'party-setup' && activeScreen === 'party-setup');
+            (item.screen === 'party' && activeScreen === 'party-setup');
           const label = t(item.labelKey) === item.labelKey ? item.fallback : t(item.labelKey);
           return (
             <button
               key={item.screen}
               ref={isActive ? activeRef : undefined}
-              onClick={() => !isDisabled && handleTap(item.screen)}
+              onClick={() => {
+                if (isLocked) handleLockedTap(item.screen);
+                else if (!isDisabled) handleTap(item.screen);
+              }}
               role="tab"
               aria-selected={isActive}
               aria-label={label}
-              aria-disabled={isDisabled}
+              aria-disabled={isDisabled || isLocked}
+              title={isLocked ? `${label} 🔒` : label}
               className={
-                'shrink-0 flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ' +
+                // Touch-Target ≥ 44px (P2): min-h/min-w garantieren die
+                // Daumenfreundlichkeit auch auf kleinen Smartphones.
+                'shrink-0 flex min-h-[44px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ' +
                 (isDisabled
                   ? 'text-white/15 opacity-40 pointer-events-none'
-                  : isActive
-                    ? 'bg-cyan-500/20 text-cyan-400'
-                    : 'text-white/40 active:text-white/70')
+                  : isLocked
+                    ? 'text-white/25 opacity-50 active:opacity-40'
+                    : isActive
+                      ? 'bg-cyan-500/20 text-cyan-400'
+                      : 'text-white/40 active:text-white/70')
               }
             >
-              <span className="text-lg leading-none">{item.icon}</span>
+              <span className="relative">
+                <span className={'text-lg leading-none ' + (isLocked ? 'grayscale' : '')}>{item.icon}</span>
+                {isLocked && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-1.5 -right-2 text-[9px] leading-none"
+                  >
+                    🔒
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-medium leading-tight whitespace-nowrap">{label}</span>
             </button>
           );

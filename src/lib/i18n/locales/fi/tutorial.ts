@@ -511,6 +511,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Yhdistäminen',
         features: 'Mitä sovellus osaa',
+        control: 'Kaukosäädin: Ota hallinta',
+        solo: 'Ilman hallintaa',
+        help: 'Companion-ohje laitteella',
         manage: 'Laitteiden hallinta',
       },
       steps: {
@@ -550,6 +553,52 @@ export const tutorialTranslations = {
           title: 'Mukalaulutilat 🎶',
           body: 'Juhlatiloissa Companion-mukalaulu ja Mikrofonin vaihto: vieraat laulavat suoraan puhelimiinsa — sävelkorkeuden tunnistus toimii laitteessa, työpöytä johtaa orkesteria.',
           details: 'Companion-mukalaulu: jokainen vieras saa sanoitukset ja sävelkorkeusnäytön puhelimeensa — työpöytä näyttää yhteisen nuottiraidan.\n\nMikrofonin vaihto: mikrofoni kiertää — jopa sekaisin puhelimen ja fyysisen mikrofonin kesken.\n\nMolemmissa: mitä parempi WiFi, sitä sulavampi sävelkorkeus. Jos tökkii, auttaa kone, joka on lähempänä reititintä.',
+        },
+        takeControl: {
+          title: 'Ota hallinta 🎮',
+          body: 'Puhelin ohjaa työpöytää nyt vain käskystä: "Ota hallinta" -painike companion-sovelluksessa hakee kaukosäätimen — ennen ja jälkeen sen puhelin napauttaa vain omista nimissään.',
+          details: '"Ota hallinta" -toiminnon mekanismi:\n• Hallinta varataan yksinomaan täsmälleen yhdelle laitteelle (etälukitus).\n• Työpöytä ja hallitseva puhelin pysyvät synkronoituina: kumpikin näkee heti, mitä toinen tekee.\n• Kaikki muut puhelimet näyttävät tilan "… hallitsee" ja odottavat.\n\nHallinta päättyy "Vapauta"-toiminnolla — tai automaattisesti, jos puhelin menettää yhteyden.',
+        },
+        controlSync: {
+          title: 'Työpöytä ja puhelin tahdissa',
+          body: 'Takaisin Mobiili-välilehdellä: isäntänä näet täällä kaikki laitteet. Kun puhelin ottaa hallinnan, se peilaa työpöydän näytön ja käyttää näyttöjä, painikkeita ja vahvistuksia — hiiri ja näppäimistö työpöydällä pysyvät täysin käytettävinä.',
+          details: 'Koska molemmat puolet toimivat synkronoidusti, kukaan ei voi "naputtaa karkuun": klikkaat työpöydällä — hallitseva puhelin seuraa; napautat puhelimella — työpöytä vaihtaa näyttöä.\n\nLaitelistassa tunnistat hallitsevan laitteen kaukosäädin-merkistä.',
+        },
+        controlHandover: {
+          title: 'Vain yksi kaukosäädin kerrallaan',
+          body: 'Hallinta on yksinomainen: kun yksi puhelin ohjaa, toinen ei voi ottaa sitä haltuunsa — sen painike näyttääkin, kuka juuri nyt ohjaa. Vapauttaminen tai yhteyden katkeaminen vapauttaa hallinnan heti.',
+          details: 'Hyvä tietää:\n• Isäntä voi klikkailla itse milloin tahansa — hallitseva puhelin seuraa (ja pitää hallinnan).\n• Jos hallitseva puhelin menettää yhteyden (akku, WiFi), hallinta palaa automaattisesti työpöydälle.\n• Myös laitelistasta potkaisu lopettaa hallinnan.',
+        },
+        soloOverview: {
+          title: 'Vieraat ilman hallintaa 🙋',
+          body: 'Useimmat vieraat eivät tarvitse kaukosäädintä koskaan: ilman hallinnan ottamista yhdistetyt puhelimet ovat omatoimisia companioneita — ne pyytävät kappaleita, keskustelevat chatissa, laulavat mukana ja katsovat omia saavutuksiaan koskettamatta työpöytää.',
+          details: 'Mitä puhelimet ilman hallintaa voivat:\n• 🎵 Lisätä omia kappaleita jonoon (📱-merkillä)\n• 💬 Osallistua juhlachatiin\n• 🎤 Laulaa juhlatiloissa (Companion-mukalaulu, Mikrofonin vaihto)\n• 🗳️ Äänestää äänestyksissä (turnaus, Battle Royale)\n• 🏆 Katsoa omia huipputuloksia ja saavutuksia',
+        },
+        soloQueue: {
+          title: 'Pyynnöt ilman hallintaa',
+          body: 'Ilman kaukosäädintäkin jokainen vieras lisää omia kappaleitaan jonoon: valitse kappale puhelimella, lisää jonoon — valmista. Pyyntö saapuu tänne 📱-merkillä ja lasketaan profiilin 3 kappaleen rajaan.',
+        },
+        soloParty: {
+          title: 'Mukalaulu ja äänestäminen',
+          body: 'Juhliin osallistuminen kulkee aina puhelimien kautta: Companion-mukalaulussa ja Mikrofonin vaihdossa vieraat laulavat suoraan laitteellaan, turnauksessa ja Battle Royalessa he äänestävät napautuksella — kaikki ilman hallinnan ottamista.',
+        },
+        soloStats: {
+          title: 'Omat saavutukset ja huipputulokset',
+          body: 'Jokaisella vieraalla on oma albuminsa: puhelimella voi katsella omia huipputuloksia ja saavutuksia — hallintaa ei tarvita. Mitä tahansa profiili ansaitseekin, vieras voi tarkistaa sen sohvalta käsin.',
+        },
+        soloLimits: {
+          title: 'Mikä pysyy lukossa',
+          body: 'Ilman hallintaa asetukset, profiilit, juhlien asettelu, päivittäiset haasteet ja Jukeboksi pysyvät poissa ulottuvilta — ne on varattu työpöydälle (tai companionille, jolla on hallinta).',
+          details: 'Miksi lukko? Nämä alueet muuttavat pelitilaa tai asetuksia kaikille: asetukset, profiilien hallinta, juhlien asettelu, päivittäiset haasteet ja Jukeboksi. Juuri tähän on eksplisiittinen hallinta — "Ota hallinta" avaa ne täsmälleen yhdelle puhelimelle.\n\nTyöpöydän isännällä on kaikki aina omassa hallinnassaan.',
+        },
+        helpButton: {
+          title: 'Ohje jokaisessa puhelimessa ❓',
+          body: 'Tunnet ?-valikon täältä valikkopalkista — jokainen yhdistetty puhelin saa oman "?"-painikkeen. Yksi napautus avaa companion-ohjeen suoraan laitteelle.',
+        },
+        helpLocal: {
+          title: 'Vain lukemista, ei koskaan ohjaamista',
+          body: 'Companion-ohje on puhdas lukunäkymä: se ei lähetä työpöydälle komentoja eikä käynnistä koskaan työpöydän kierrosta. Vieraat voivat avata sen milloin tahansa — myös silloin, kun joku laulaa tai ohjaa.',
+          details: 'Ohje on tarkoituksella erotettu ohjausjärjestelmästä: vieras, joka vain haluaa tarkistaa jotain ("Miten lisään kappaleen jonoon?"), ei vaikuta käynnissä olevaan iltaan mitenkään — ja kierrokset täällä työpöydällä pysyvät isännän asioina.\n\nAvaa se companion-sovelluksen "?"-painikkeesta; sulje se yksinkertaisesti sulkemalla näkymä.',
         },
         deviceList: {
           title: 'Laitelista',

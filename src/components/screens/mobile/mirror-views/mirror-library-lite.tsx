@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from '@/lib/i18n/translations';
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import { filterSongsByMotto } from '@/lib/game/motto-party';
-import type { MobileSong, GameMode, GameState, MobileView } from '../mobile-types';
+import type { MobileSong, GameMode, GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
 
 /** i18n with a hard fallback (mirror views load a lite dictionary — keys
  *  can be missing; then the German fallback keeps the UI usable). */
@@ -49,6 +49,11 @@ interface MirrorLibraryLiteProps {
   onNavigate: (v: MobileView) => void;
   onSendDesktopCommand: (screen: string) => void;
   onOpenChat: () => void;
+  /** R33/P16: Desktop-Settings-Snapshot — optionale Prop, die der Shell
+   *  durchreicht. Wird hier NUR als Anzeige-Hinweis genutzt (Badge
+   *  "Desktop-Standard: …" über der Difficulty-Auswahl); die eigentliche
+   *  Vorauswahl macht der Data-Hook (use-mobile-data.ts) — nicht doppelt. */
+  settingsSnapshot?: DesktopSettingsSnapshot | null;
 }
 
 // ===================== Helpers =====================
@@ -77,6 +82,71 @@ function isLikelyDuet(song: MobileSong): boolean {
   return false;
 }
 
+// ===================== Mini-Cover-Kachel (R33/P13+P15) =====================
+
+/** Stabiler Farb-Hue aus der Song-ID (fuer die Initialen-Fallback-Kachel —
+ *  deterministisch, ueberlebt Reloads & Tabs). */
+function songCoverHue(songId: string): number {
+  let h = 0;
+  for (let i = 0; i < songId.length; i++) h = (h * 31 + songId.charCodeAt(i)) | 0;
+  return Math.abs(h) % 360;
+}
+
+/** Max. 2 Initialen aus dem Songtitel ("Dancing Queen" → "DQ"). */
+function songInitials(title: string): string {
+  const parts = (title || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+/**
+ * R33/P13: kleine, wiederverwendbare Cover-Kachel (bewusst KEIN Shared-File —
+ * in mirror-library-lite & mirror-queue-lite dupliziert).
+ * Lädt das 96px-JPEG-Mini-Cover vom Desktop:
+ *   GET /api/mobile?action=songcover&songId=<id> → image/jpeg (Cache 1 Tag) | 404
+ * mit loading="lazy" — nur Einträge im/nah am Viewport fordern das Cover an
+ * (kein Prefetch aller Covers). Bis das Bild geladen ist — oder wenn der
+ * Desktop keines geliefert hat (404 → onError) — liegt darunter eine farbige
+ * Kachel mit den Song-Initialen (Farbe = Hash der Song-ID). React.memo
+ * haelt List-Re-Renders (Suche/Filter) billig.
+ */
+const SongCoverTile = React.memo(function SongCoverTile({
+  songId,
+  title,
+  className = '',
+}: {
+  songId: string;
+  title: string;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const hue = songCoverHue(songId);
+  return (
+    <div
+      aria-hidden="true"
+      className={'relative shrink-0 overflow-hidden ' + className}
+      style={{ background: `linear-gradient(135deg, hsl(${hue} 45% 38%), hsl(${(hue + 40) % 360} 50% 22%))` }}
+    >
+      {/* Initialen-Fallback (liegt UNTER dem Bild — sobald das JPEG da ist,
+          ueberdeckt es die Kachel) */}
+      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tracking-wider text-white/85 select-none">
+        {songInitials(title)}
+      </span>
+      {!failed && (
+        <img
+          src={'/api/mobile?action=songcover&songId=' + encodeURIComponent(songId)}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+    </div>
+  );
+});
+
 // ===================== Component =====================
 
 export function MirrorLibraryLite({
@@ -97,6 +167,7 @@ export function MirrorLibraryLite({
     duetPartsSwapped,
     onSendDesktopCommand,
     gameState,
+    settingsSnapshot,
   }: MirrorLibraryLiteProps) {
     const { t } = useTranslation();
     const searchRef = useRef<HTMLInputElement>(null);
@@ -226,12 +297,15 @@ export function MirrorLibraryLite({
     const openOverlay = useCallback((song: MobileSong) => {
       haptic();
       setOverlaySong(song);
-      setOvDifficulty('medium');
+      // R33/P16: Vorauswahl folgt dem Desktop-Default — der Data-Hook pflegt
+      // die difficulty-Prop (gamestate/defaultDifficulty, bis der User sie
+      // selbst ändert). Beim Overlay-Öffnen diesen Stand übernehmen.
+      setOvDifficulty(difficulty || 'medium');
       setOvPartnerId(null);
       setOvChallengeSent(false);
       // Lade Gegner/Host-Profile fuer Duell/Duett-Auswahl
       onLoadOpponents();
-    }, [onLoadOpponents]);
+    }, [onLoadOpponents, difficulty]);
 
     const closeOverlay = useCallback(() => {
       haptic();
@@ -362,7 +436,7 @@ export function MirrorLibraryLite({
       }
     }, [desktopPreviewSongId, onSendDesktopCommand]);
 
-    // Stop desktop preview when opening overlay (game start) or switching songs
+    // Stop desktop preview when opening the song-options overlay or switching songs
     const openOverlayWithPreviewStop = useCallback((song: MobileSong) => {
       // Party-Modus: Song direkt fuer Party auswaehlen, kein Overlay
       if (gameState.partyGameMode) {
@@ -374,44 +448,9 @@ export function MirrorLibraryLite({
       openOverlay(song);
     }, [handleStopDesktopPreview, openOverlay, gameState.partyGameMode, onSendDesktopCommand]);
 
-    // Spiel starten: Direkt an die API senden mit lokalem Overlay-State
-    // (gameMode, difficulty, partner), NICHT ueber use-mobile-data.ts das
-    // einen veralteten State haette.
-    const handleOverlayStart = useCallback(async () => {
-      if (!overlaySong || ovAdding || missingOpponent) return;
-      handleStopDesktopPreview();
-      setOvAdding(true);
-      const partner = ovPartnerId ? allPartners.find((p) => p.id === ovPartnerId) : null;
-      try {
-        const res = await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'queue',
-            clientId,
-            payload: {
-              songId: overlaySong.id,
-              songTitle: overlaySong.title,
-              songArtist: overlaySong.artist,
-              gameMode: libGameMode,
-              difficulty: ovDifficulty,
-              partnerId: partner?.id || undefined,
-              partnerName: partner?.name || undefined,
-              playerMicSource,
-              partnerMicSource,
-              duetPartsSwapped,
-            },
-          }),
-        });
-        if (res.ok) {
-          onSendDesktopCommand('play_queue');
-          closeOverlay();
-        }
-      } catch { /* ignore */ }
-      finally {
-        setOvAdding(false);
-      }
-    }, [overlaySong, ovAdding, missingOpponent, libGameMode, ovDifficulty, ovPartnerId, allPartners, clientId, playerMicSource, partnerMicSource, duetPartsSwapped, onSendDesktopCommand, closeOverlay, handleStopDesktopPreview]);
+    // R33/P17: "Spiel starten" (Song einreihen + play_queue) ENTFERNT —
+    //    Companions legen Songs NUR in die Warteschlange; wann gesungen
+    //    wird, entscheidet der Desktop. Uebrig bleibt handleOverlayQueue.
 
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
@@ -660,8 +699,16 @@ export function MirrorLibraryLite({
           </div>
         )}
 
-        {/* Songliste - Tap oeffnet Overlay */}
-        <div className="flex flex-col gap-1.5">
+        {/* Songliste - Tap oeffnet Overlay. Eigener Scroll-Bereich (max-h +
+            overflow-y-auto + schlanke Custom-Scrollbar), damit Suche/Filter
+            erreichbar bleiben; Cover laden lazy nur fuer sichtbare Zeilen. */}
+        <div
+          className={
+            'flex flex-col gap-1.5 max-h-[60vh] overflow-y-auto pr-1 -mr-1 ' +
+            '[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent] ' +
+            '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15'
+          }
+        >
           {displaySongs.map((song) => (
             <button
               key={song.id}
@@ -669,10 +716,9 @@ export function MirrorLibraryLite({
               className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all active:scale-[0.98] ' +
                 'bg-white/5 border border-white/10 active:bg-white/10'}
             >
-              {/* Song-Icon */}
-              <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-base">
-                {'\u{1F3B5}'}
-              </div>
+              {/* R33/P13: Mini-Cover (44px, lazy) — Fallback: farbige
+                  Initialen-Kachel, solange kein JPEG vom Desktop kommt */}
+              <SongCoverTile songId={song.id} title={song.title} className="w-11 h-11 rounded-lg" />
               {/* Song-Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -772,9 +818,20 @@ export function MirrorLibraryLite({
 
               {/* Schwierigkeit */}
               <div className="mb-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2 px-1">
-                  {t('mobileViews.difficulty') || 'Schwierigkeit'}
-                </h4>
+                <div className="flex items-center justify-between gap-2 mb-2 px-1">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                    {t('mobileViews.difficulty') || 'Schwierigkeit'}
+                  </h4>
+                  {/* R33/P16: Anzeige-Hinweis auf den Desktop-Default. Die
+                      Vorauswahl selbst macht der Data-Hook (difficulty-Prop).
+                      Ohne settingsSnapshot entfällt der Hinweis. */}
+                  {settingsSnapshot?.defaultDifficulty && (
+                    <span className="shrink-0 rounded-full bg-cyan-500/10 border border-cyan-400/25 px-2 py-0.5 text-[10px] font-semibold text-cyan-300/90">
+                      {'\u{1F5A5}\uFE0F '}{tOr(t, 'mobileViews.desktopDefaultDifficulty', 'Desktop-Standard')}:{' '}
+                      {DIFF_OPTIONS.find((d) => d.id === settingsSnapshot.defaultDifficulty)?.label || settingsSnapshot.defaultDifficulty}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   {DIFF_OPTIONS.map((d) => (
                     <button
@@ -829,16 +886,18 @@ export function MirrorLibraryLite({
                 </p>
               )}
 
-              {/* Aktions-Buttons */}
+              {/* Aktions-Buttons — R33/P17: NUR noch Queue/Playlist/Party/Chat,
+                  KEIN "Spiel starten" mehr: Der Desktop entscheidet, wann
+                  gesungen wird. */}
               <div className="flex flex-col gap-2.5">
-                {/* Zur Queue */}
+                {/* Zur Warteschlange hinzufuegen (jetzt primaere Aktion) */}
                 <button
                   onClick={handleOverlayQueue}
                   disabled={ovAdding || missingOpponent}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-semibold bg-cyan-500/20 border border-cyan-400/30 text-cyan-400 active:scale-[0.97] transition-all disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500/25 to-purple-500/25 border border-cyan-400/40 text-cyan-300 active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   <span className="text-base">{'\u{1F4CB}'}</span>
-                  <span>{t('mobileViews.queueTitle') || 'Zur Queue'}</span>
+                  <span>{tOr(t, 'mobileViews.queueAddAction', 'Zur Warteschlange hinzufügen')}</span>
                   {ovAdding && <span className="animate-spin text-xs">{'\u23F3'}</span>}
                 </button>
 
@@ -849,16 +908,6 @@ export function MirrorLibraryLite({
                 >
                   <span className="text-base">{'\u{1F4FB}'}</span>
                   <span>{t('mobile.mirrorPlaylist') || 'Zur Playlist'}</span>
-                </button>
-
-                {/* Spiel starten */}
-                <button
-                  onClick={handleOverlayStart}
-                  disabled={ovAdding || missingOpponent}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl p-3.5 text-sm font-bold bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400/20 text-white active:scale-[0.97] transition-all disabled:opacity-40"
-                >
-                  <span className="text-base">{'\u25B6\uFE0F'}</span>
-                  <span>{t('mobile.mirrorStartGame') || 'Spiel starten'}</span>
                 </button>
 
                 {/* Fuer Party auswaehlen (nur im Party-Setup Library-Modus) */}

@@ -3,6 +3,9 @@
 
 export const settingsTranslations = {
   settings: {
+    // ── R33/P5: Loudness-Normalisierung (89 dB Ziel) ──
+    loudnessNormalization: 'Volume normalization (89 dB target)',
+
     title: 'Settings',
     subtitle: 'Configure your karaoke experience',
     tabLibrary: 'Library',

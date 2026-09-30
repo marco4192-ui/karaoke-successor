@@ -10,7 +10,6 @@ import type { MobileProfile } from './mobile/mobile-types';
 import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
 import type { BrSingingEvent } from '@/lib/socketio-events';
 import { MobileChat } from './mobile/mobile-chat';
-import { ChatNotificationPopup } from './mobile/mobile-chat-notification';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
 // Mirror view
@@ -24,6 +23,9 @@ import {
 } from './mobile/mobile-views';
 import { MobileOfflineIndicator } from './mobile/mobile-offline-indicator';
 
+// R33/P19: Hilfe-Reader (rein lokal — keine Commands, keine Desktop-Tutorials)
+import { MobileHelpView } from './mobile/mobile-help-view';
+
 // Error boundary
 import { MobileErrorBoundary } from './mobile/mobile-error-boundary';
 
@@ -32,18 +34,102 @@ import { useMobileConnection } from '@/hooks/use-mobile-connection';
 import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
 
+// ===================== i18n-Hilfsfunktion (R33-Konvention) =====================
+// t(key) === key bedeutet "nicht übersetzt" → deutschen Fallback nutzen.
+// Neue Keys zusätzlich in src/lib/i18n/pending-keys/r33-c.json pflegen.
+function tOr(t: (key: string) => string, key: string, fallback: string): string {
+  return t(key) === key ? fallback : t(key);
+}
+
 // ===================== MOBILE CLIENT VIEW =====================
 interface MobileClientViewProps {
   profileId?: string;
 }
 
-// R27: desktop screens where companions ALWAYS follow the desktop (party flow)
-// — the local-navigation grace window never overrides these.
+// Desktop screens where the DESKTOP always wins over the localNav grace
+// window (party/game flow — the big screen must never be overridable by a
+// stale local tab highlight while a game runs).
 function isDesktopPartyScreen(desktop: string): boolean {
   return desktop === 'party' || desktop === 'party-setup'
     || desktop === 'song-voting'
     || desktop === 'game' || desktop.endsWith('-game')
     || desktop === 'results';
+}
+
+// R33/P1: Active GAME-FLOW screens. Nicht-steuernde Companion folgen dem
+// Desktop-Screen NIE für Menü-Screens — ABER während eines laufenden Spiels
+// zeigt jeder Companion den Game-Mirror, denn dort leben die
+// Partizipations-Overlays (Pause-Dialog, Party-Leave, Song-Voting,
+// BR-Singing-Monitor, Turn-Signale). Menu/config screens (party,
+// party-setup, settings, …) werden NICHT erzwungen.
+function isGameFlowScreen(desktop: string): boolean {
+  return desktop === 'game' || desktop.endsWith('-game')
+    || desktop === 'song-voting'
+    || desktop === 'results';
+}
+
+// R33/P2+P14: Für nicht-steuernde Companion gesperrte Nav-Ziele.
+// (Profil-EDIT des eigenen Profils bleibt erlaubt — läuft über den
+// Header-Avatar, nicht über die Tab-Leiste.)
+const NON_CONTROLLING_LOCKED_NAV = ['party', 'dailyChallenge', 'jukebox', 'profile', 'settings'];
+
+function isLockedForNonControlling(screen: string): boolean {
+  return NON_CONTROLLING_LOCKED_NAV.includes(screen) || screen === 'party-setup';
+}
+
+// ===================== Toast-Leiste (P7/P18) =====================
+interface MobileToastItem {
+  id: number;
+  text: string;
+  kind: 'info' | 'error' | 'success' | 'chat';
+  detail?: string;
+}
+
+/** Schlanke Toast-Leiste DIREKT ÜBER der unteren Menüleiste.
+ *  Auto-Dismiss nach 3 s, Slide-up-Animation, Tap schließt vorzeitig. */
+function ToastBar({ toasts, onDismiss }: { toasts: MobileToastItem[]; onDismiss: (id: number) => void }) {
+  if (toasts.length === 0) return null;
+  return (
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed left-3 right-3 z-40 flex flex-col gap-1.5"
+      style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
+    >
+      {toasts.map((toast) => (
+        <button
+          key={toast.id}
+          onClick={() => onDismiss(toast.id)}
+          className={
+            'pointer-events-auto flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left shadow-2xl backdrop-blur-md ' +
+            'transition-all duration-300 ease-out animate-[toast-slide-up_0.28s_ease-out] ' +
+            (toast.kind === 'error'
+              ? 'bg-red-950/90 border-red-500/40'
+              : toast.kind === 'success'
+                ? 'bg-emerald-950/90 border-emerald-500/40'
+                : 'bg-black/90 border-white/15')
+          }
+        >
+          <span className="shrink-0 text-sm leading-none" aria-hidden="true">
+            {toast.kind === 'error' ? '⚠️' : toast.kind === 'success' ? '✅' : toast.kind === 'chat' ? '💬' : 'ℹ️'}
+          </span>
+          <span className="min-w-0 flex-1">
+            {toast.detail && (
+              <span className={`block text-[11px] font-semibold leading-tight ${toast.kind === 'chat' ? 'text-cyan-400' : 'text-white/60'}`}>
+                {toast.detail}
+              </span>
+            )}
+            <span className="block truncate text-xs leading-snug text-white/85">{toast.text}</span>
+          </span>
+        </button>
+      ))}
+      <style>{`
+        @keyframes toast-slide-up {
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 export function MobileClientView({ profileId }: MobileClientViewProps) {
@@ -61,21 +147,25 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Aktiver Desktop-Screen (wird vom Footer gesteuert)
-  const [activeDesktopScreen, setActiveDesktopScreen] = useState<string>('home');
+  // R33/P1: menuScreen = aktuell angezeigter MENÜ-Screen.
+  //  - steuernder Companion: bidirektional — Tabs senden remote_command UND
+  //    gameState.currentScreen schreibt zurück (Desktop→Companion).
+  //  - nicht-steuernder Companion: wird NUR durch eigene Nav-Taps geschrieben
+  //    (er folgt dem Desktop-Screen nie — siehe P1). Aktive Spiel-Screens
+  //    (Game-Mirror) kommen separat als forcedGameScreen dazu.
+  const [menuScreen, setMenuScreen] = useState<string>('home');
 
-  // Punkt 6: Ladebildschirm-Animation bei Screen-Wechsel
-  const [isTransitioning] = useState(false);
+  // R33/P19: Hilfe-Overlay (für jeden jederzeit verfügbar)
+  const [showHelp, setShowHelp] = useState(false);
 
   // Connection
-  const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup, sendPitch } = useMobileConnection({
+  const { clientId, connectionCode, isConnected, gameState, settingsSnapshot, connect, disconnect, syncProfile, cleanup, sendPitch } = useMobileConnection({
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
     onGameStateUpdate: (_state) => {
-      // Sync difficulty from desktop global settings to companion
-      if (_state.difficulty && _state.difficulty !== data.difficulty) {
-        data.setDifficulty(_state.difficulty);
-      }
+      // R33/P16: Difficulty-Default kommt jetzt aus dem Settings-Snapshot
+      // (Pull bei (Re)Connect + Push-on-Change) — KEIN Sync mehr über den
+      // 2s-Gamestate (der würde die Nutzerwahl alle 2 s zerschießen).
       // Drop the live singing monitor as soon as the BR round stops playing
       // (keeps stale ghost/hit data from bleeding into other mirror views).
       if (!_state.brGameData || _state.brGameData.status !== 'playing') {
@@ -99,7 +189,56 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   });
 
   // Data (songs, queue, jukebox, results, partners)
-  const data = useMobileData({ clientId, profile, onNavigateToProfile: () => setShowProfile(true) });
+  // R33/P16: Difficulty-Vorauswahl folgt dem Desktop-Default aus dem
+  // Settings-Snapshot, bis der Nutzer selbst eine wählt.
+  const data = useMobileData({
+    clientId,
+    profile,
+    onNavigateToProfile: () => setShowProfile(true),
+    defaultDifficulty: settingsSnapshot?.defaultDifficulty,
+  });
+
+  // ===================== TOASTS (P7/P18) =====================
+  const [toasts, setToasts] = useState<MobileToastItem[]>([]);
+  const toastIdRef = useRef(0);
+  const pushToast = useCallback((text: string, kind: MobileToastItem['kind'] = 'info', detail?: string) => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev.slice(-2), { id, text, kind, detail }]); // max. 3 gestapelt
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
+  // Queue-Fehler → Toast (der Hook räumt queueError nach 3 s selbst ab)
+  useEffect(() => {
+    if (data.queueError) pushToast(data.queueError, 'error');
+  }, [data.queueError, pushToast]);
+
+  // Verbindungs-/Sonstige Fehler → Toast (nur im verbundenen Zustand;
+  // beim Verbinden bleibt die Inline-Anzeige im Ladebildschirm)
+  useEffect(() => {
+    if (error && isConnected) {
+      pushToast(error, 'error');
+      setError(null);
+    }
+  }, [error, isConnected, pushToast]);
+
+  // Chat-Popup (P18): neue Nachricht von anderen → schlanke Toast-Leiste
+  // über der Menüleiste (statt Popup oben am Bildschirmrand).
+  useEffect(() => {
+    if (chatPopupMessage) {
+      pushToast(
+        chatPopupMessage.text,
+        'chat',
+        chatPopupMessage.isHost ? `Host · ${chatPopupMessage.fromName}` : chatPopupMessage.fromName,
+      );
+      setChatPopupMessage(null);
+    }
+  }, [chatPopupMessage, pushToast]);
 
   // ===================== CHAT NOTIFICATION POLLING =====================
   useEffect(() => {
@@ -204,7 +343,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     await disconnect();
     setProfile(null); setProfileName(''); setProfileColor('#06B6D4'); setAvatarPreview(null);
     removeItem(StorageKeys.MOBILE_PROFILE); removeItem(StorageKeys.CLIENT_ID);
-    setActiveDesktopScreen('home');
+    setMenuScreen('home');
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     reconnectTimerRef.current = setTimeout(() => connect(), 500);
   }, [disconnect, connect]);
@@ -257,7 +396,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (!shouldSing) autoSingDoneRef.current = false;
   }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
 
-  // ===================== DESKTOP MIRRORING =====================
+  // ===================== DESKTOP COMMANDS =====================
+  // Wird von steuernden Companions für CONTROL-Commands genutzt (Nav) UND
+  // von ALLEN Companions für PARTICIPATION-Commands (companion_pause,
+  // party_leave_*, br_vote …) — der Server klassifiziert und lehnt
+  // Control-Commands ohne Lock mit 403 ab (R33/P1-Serverseite).
   const handleSendDesktopCommand = useCallback((screen: string, data?: unknown) => {
     if (!clientId || !profile) return;
     fetch('/api/mobile', {
@@ -273,40 +416,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     lockedByName: string | null;
   }>({ isLocked: false, lockedByMe: false, lockedByName: null });
 
-  // ===================== CONTROL STATE =====================
-  // "controlled" = this companion has the remote lock OR nobody has it (desktop drives).
-  // Only the controlling companion mirrors the desktop screen and can send commands.
-  const controlled = !remoteLock.isLocked || remoteLock.lockedByMe;
-  const hasReleasedRef = useRef(false);
-  const isControlling = controlled && !hasReleasedRef.current;
-
-  // ===================== SINGING STATE =====================
-  // Whether this companion user is the active singer OR in an active game screen
-  // (header/footer must be hidden during any game to prevent accidental navigation)
-  const isDesktopGameScreen = activeDesktopScreen === 'game' || !!activeDesktopScreen?.endsWith('-game');
-  const isSinging = profile && (
-    (gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null) ||
-    (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ||
-    // Also disable during any active game when this companion is participating
-    (gameState.isPlaying && !!gameState.currentSong && gameState.isPartyModeActive) ||
-    // Disable during any game screen (ptm-intro, game) regardless of singing state
-    isDesktopGameScreen
-  ) ? true : false;
+  // ===================== CONTROL STATE (P1 — KERNPUNKT) =====================
+  // isControlling = GENAU remoteLock.lockedByMe. Ohne Lock ist ein Companion
+  // NICHT steuernd und spiegelt den Desktop nicht (die alte
+  // `controlled = !isLocked || lockedByMe`-Logik ist ENTFERNT).
+  const isControlling = remoteLock.lockedByMe;
 
   // ===================== SONG-RUNNING WARNING (Issue 11) =====================
   const [showSongRunningOverlay, setShowSongRunningOverlay] = useState(false);
   const isSongRunning = gameState.isPlaying && !!gameState.currentSong;
 
   // ===================== SCREEN SYNC (desktop → companion) =====================
-  // Always sync for party/game/setup screens so ALL companions follow the
-  // desktop during party mode. For regular screens, only sync when controlling.
-
   // R27: Local-navigation grace window. When the user taps a footer tab, the
   // companion switches locally and sends a remote_command to the desktop.
   // Until the desktop processes it (~1-2 gamestate beats), the 2s pushes
   // still carry the OLD screen — without this window the mirror view bounced
   // local → stale → confirmed (= two full remounts per navigation).
-  // While `localNav` is active (≤ 3.5 s), locally chosen screens take
+  // While `localNav` is active (≤ 3,5 s), locally chosen screens take
   // priority over contradicting sync pushes. Party screens are exempt: the
   // desktop MUST always win there (game flow).
   const [localNav, setLocalNav] = useState<{ screen: string; at: number } | null>(null);
@@ -319,37 +445,71 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     return () => clearTimeout(timer);
   }, [localNav]);
 
+  // R33/P1: Nur der STEUERnde Companion folgt gameState.currentScreen
+  // (Desktop→Companion). Nicht-steuernde Companion schreiben menuScreen
+  // ausschließlich durch eigene Nav-Taps — Spiel-Screens kommen separat
+  // über forcedGameScreen (Partizipation via Game-Mirror-Overlays).
   useEffect(() => {
     const desktop = gameState.currentScreen;
-    if (!desktop) return;
-    // Party-related screens: always follow desktop, even for non-controlling companions
-    const isPartyScreen = isDesktopPartyScreen(desktop);
+    if (!desktop || !isControlling) return;
     if (localNav) {
       if (desktop === localNav.screen) {
         // Desktop confirmed our navigation → close the grace window early
         setLocalNav(null);
-      } else if (!isPartyScreen) {
+      } else if (!isDesktopPartyScreen(desktop)) {
         // Stale push inside the grace window (desktop hasn't processed our
         // remote_command yet) — ignore it, keep the locally chosen view.
         return;
       }
     }
-    if (isPartyScreen || controlled) {
-      setActiveDesktopScreen(desktop);
-    }
-  }, [gameState.currentScreen, controlled, localNav]);
+    setMenuScreen(desktop);
+  }, [gameState.currentScreen, isControlling, localNav]);
+
+  // ===================== EFFEKTIVER BILDSCHIRM =====================
+  // localNav (Grace-Window) gewinnt für steuernde Companion, außer der
+  // Desktop ist in einem Party-/Game-Flow-Screen (dort gewinnt der Desktop).
+  const localNavEffective = useMemo(() => {
+    if (!localNav) return null;
+    const desktop = gameState.currentScreen;
+    if (desktop && isDesktopPartyScreen(desktop)) return null;
+    return localNav.screen;
+  }, [localNav, gameState.currentScreen]);
+
+  // R33/P1: Nicht-steuernde Companion: erzwungener Game-Mirror während eines
+  // aktiven Spiels (game / *-game / song-voting / results) — dort laufen die
+  // Partizipations-Overlays. Menü-Screens werden NIEMALS erzwungen.
+  const forcedGameScreen = useMemo(() => {
+    if (isControlling) return null;
+    const desktop = gameState.currentScreen;
+    return desktop && isGameFlowScreen(desktop) ? desktop : null;
+  }, [isControlling, gameState.currentScreen]);
+
+  // Der tatsächlich gespiegelte Screen (Grundlage für MirrorView + isSinging).
+  const displayScreen = localNavEffective ?? forcedGameScreen ?? menuScreen ?? 'home';
+
+  // ===================== SINGING STATE =====================
+  // Whether this companion user is the active singer OR in an active game screen
+  // (header/footer must be hidden during any game to prevent accidental
+  // navigation). Basiert auf displayScreen — das erfasst sowohl die Desktop-
+  // Spiegelung des steuernden Companion als auch den erzwungenen Game-Mirror
+  // des nicht-steuernden (forcedGameScreen, P1).
+  const isDesktopGameScreen = displayScreen === 'game' || !!displayScreen?.endsWith('-game');
+  const isSinging = profile && (
+    (gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null) ||
+    (gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ||
+    // Also disable during any active game when this companion is participating
+    (gameState.isPlaying && !!gameState.currentSong && gameState.isPartyModeActive) ||
+    // Disable during any game screen (ptm-intro, game) regardless of singing state
+    isDesktopGameScreen
+  ) ? true : false;
 
   // ===================== COMPUTED MIRROR ID =====================
   const mirrorScreenId = useMemo((): MirrorScreenId => {
-    // R27: during the local-navigation grace window, the locally chosen
-    // screen wins over the (possibly stale) synced screen.
-    const screen = (localNav && !(gameState.currentScreen && isDesktopPartyScreen(gameState.currentScreen))
-      ? localNav.screen
-      : null) || activeDesktopScreen || gameState.currentScreen;
+    const screen = displayScreen;
     const base = screenToMirrorId(screen);
     // When Desktop is in a party game intro phase, show the mode-specific intro screen.
-    // Check BOTH activeDesktopScreen and gameState.currentScreen to handle
-    // the one-render delay where activeDesktopScreen hasn't updated yet.
+    // Check BOTH displayScreen and gameState.currentScreen to handle
+    // the one-render delay where the synced screen hasn't updated yet.
     const currentScreen = gameState.currentScreen || '';
     const isPartyGameScreen = screen === 'pass-the-mic-game' || screen === 'companion-singalong-game'
       || screen === 'medley-game' || screen === 'battle-royale-game'
@@ -381,36 +541,75 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       return 'ptm-intro';
     }
     return base;
-  }, [activeDesktopScreen, gameState.currentScreen, gameState.ptmPhase, gameState.ptmIntroData, gameState.tournamentBracketData, localNav]);
+  }, [displayScreen, gameState.currentScreen, gameState.ptmPhase, gameState.ptmIntroData, gameState.tournamentBracketData]);
 
   // Aktiver Footer-Tab: priorisiere lokalen State fuer sofortiges Highlight
-  const activeFooterScreen = useMemo(() => {
-    // R27: highlight the locally chosen tab during the grace window
-    if (localNav && !(gameState.currentScreen && isDesktopPartyScreen(gameState.currentScreen))) return localNav.screen;
-    return activeDesktopScreen || 'home';
-  }, [activeDesktopScreen, localNav, gameState.currentScreen]);
+  const activeFooterScreen = localNavEffective ?? menuScreen;
 
-  // ===================== FOOTER NAVIGATION =====================
+  // ===================== KONTROLL-WECHSEL (P7/P18 + P14) =====================
+  const prevControllingRef = useRef<boolean | null>(null);
+  const releasedByMeRef = useRef(false);
+  useEffect(() => {
+    const prev = prevControllingRef.current;
+    prevControllingRef.current = isControlling;
+    if (prev === null || prev === isControlling) return;
+
+    if (isControlling) {
+      // Steuerung übernommen → sofort auf den Desktop-Screen spiegeln
+      pushToast(tOr(t, 'mobile.toastControlAcquired', 'Steuerung übernommen'), 'success');
+      setMenuScreen(gameState.currentScreen || 'home');
+      return;
+    }
+
+    // Steuerung abgegeben (selbst) oder verloren (Lock weggenommen)
+    const releasedByMe = releasedByMeRef.current;
+    releasedByMeRef.current = false;
+    pushToast(
+      releasedByMe
+        ? tOr(t, 'mobile.toastControlReleased', 'Steuerung abgegeben')
+        : tOr(t, 'mobile.toastControlLost', 'Steuerung verloren'),
+      releasedByMe ? 'info' : 'error',
+    );
+    // Offenes Grace-Window schließen (gehört zur Steuerung)
+    setLocalNav(null);
+    // P14 Auto-Redirect: Ist der aktuelle Menü-Screen für nicht-steuernde
+    // Companion gesperrt (Settings/Party/…), geht es zurück zur Startseite.
+    // Reine Game-Flow-Screens ('game', '*-game', 'song-voting', 'results')
+    // werden ebenfalls auf 'home' zurückgesetzt — der laufende Game-Mirror
+    // bleibt davon unberührt (forcedGameScreen hat Vorrang), aber nach dem
+    // Spielende landet der Companion sauber auf seiner Startseite.
+    setMenuScreen(current => (isLockedForNonControlling(current) || isGameFlowScreen(current) ? 'home' : current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isControlling]);
+
+  // ===================== FOOTER NAVIGATION (P2/P14) =====================
   const handleFooterNavigate = useCallback((screen: string) => {
+    if (!isControlling) {
+      // Nicht-steuernd: gesperrte Tabs nur ankündigen, erlaubte lokal
+      // navigieren (KEIN remote_command — kein Desktop-Einfluss).
+      if (isLockedForNonControlling(screen)) {
+        pushToast(tOr(t, 'mobile.toastLockedNav', 'Nur mit Fernsteuerung'), 'info');
+        return;
+      }
+      setMenuScreen(screen);
+      return;
+    }
     // Issue 11: Song läuft und User navigiert weg → Overlay zeigen
     // But exempt party-setup: going back to setup doesn't leave the party
-    if (isControlling && isSongRunning && screen !== 'game' && screen !== 'party-setup' && screen !== activeDesktopScreen) {
+    if (isSongRunning && screen !== 'game' && screen !== 'party-setup' && screen !== menuScreen) {
       setShowSongRunningOverlay(true);
       return;
     }
     // R27: open the local-navigation grace window — locally chosen screens
     // take priority over contradicting 2s sync pushes for ≤ 3.5 s (see above).
     setLocalNav({ screen, at: Date.now() });
-    if (isControlling) {
-      // Controlling companion: update local state and send command to desktop
-      setActiveDesktopScreen(screen);
-      handleSendDesktopCommand(screen);
-    } else {
-      // Non-controlling companion: navigate locally only, no desktop influence
-      setActiveDesktopScreen(screen);
-    }
-  }, [isControlling, isSongRunning, activeDesktopScreen, handleSendDesktopCommand]);
+    // Steuernd: lokal umschalten UND remote_command an den Desktop senden
+    // (bidirektionale Synchronisation, P1).
+    setMenuScreen(screen);
+    handleSendDesktopCommand(screen);
+  }, [isControlling, isSongRunning, menuScreen, handleSendDesktopCommand, pushToast, t]);
 
+  // ===================== REMOTE LOCK POLLING =====================
   const isMountedRef2 = useRef(true);
   useEffect(() => {
     if (!isConnected || !clientId) return;
@@ -435,27 +634,47 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   const handleAcquireRemote = useCallback(async () => {
     if (!clientId) return;
-    hasReleasedRef.current = false;
     try {
-      await fetch('/api/mobile', {
+      const res = await fetch('/api/mobile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'remote_acquire', clientId }),
       });
-      setRemoteLock({ isLocked: true, lockedByMe: true, lockedByName: profile?.name || null });
+      const d = await res.json().catch(() => null);
+      if (d?.success) {
+        // Optimistisch übernehmen — der 3s-Poll korrigiert bei Abweichung.
+        setRemoteLock({ isLocked: true, lockedByMe: true, lockedByName: profile?.name || null });
+      } else {
+        // Ein anderes Gerät hält die Steuerung — Status übernehmen (kein
+        // optimistisches "lockedByMe" mehr, das war der alte Inversions-Bug).
+        setRemoteLock({ isLocked: true, lockedByMe: false, lockedByName: d?.lockedBy || null });
+        pushToast(
+          tOr(t, 'mobile.toastControlTaken', 'Steuerung bereits vergeben') + (d?.lockedBy ? ` (${d.lockedBy})` : ''),
+          'error',
+        );
+      }
     } catch { /* ignore */ }
-  }, [clientId, profile?.name]);
+  }, [clientId, profile?.name, pushToast, t]);
 
   const handleReleaseRemote = useCallback(async () => {
     if (!clientId) return;
-    hasReleasedRef.current = true;
+    releasedByMeRef.current = true;
     try {
       await fetch('/api/mobile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'remote_release', clientId }),
       });
-      setRemoteLock({ isLocked: false, lockedByMe: false, lockedByName: null });
     } catch { /* ignore */ }
+    setRemoteLock({ isLocked: false, lockedByMe: false, lockedByName: null });
   }, [clientId]);
+
+  // ===================== LAZY LOADS FÜR R33-MIRRORS =====================
+  // Highscores/Daily/Jukebox werden gezogen, sobald der Screen betreten wird
+  // (die Lite-Views können zusätzlich selbst laden — Loader sind idempotent).
+  useEffect(() => {
+    if (displayScreen === 'highscores') data.loadHighscores();
+    else if (displayScreen === 'dailyChallenge') data.loadDailyState();
+    else if (displayScreen === 'jukebox') { data.loadJukeboxState(); data.loadJukeboxWishlist(); }
+  }, [displayScreen, data.loadHighscores, data.loadDailyState, data.loadJukeboxState, data.loadJukeboxWishlist]);
 
   // ===================== RENDER =====================
   return (
@@ -467,7 +686,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       {isConnected && profile && !isSinging && (
         <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center justify-between px-3 py-2.5">
-            {/* Links: Profil-Button */}
+            {/* Links: Profil-Button (eigenes Profil — auch ohne Steuerung erlaubt, P2) */}
             <button
               onClick={() => setShowProfile(true)}
               className="flex items-center gap-2 active:opacity-70 transition-opacity"
@@ -483,13 +702,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               <span className="text-sm font-medium text-white/80 max-w-[100px] truncate">{profile.name}</span>
             </button>
 
-            {/* Rechts: Chat-Button, Verbindung-Info + Abmelden */}
+            {/* Rechts: Hilfe, Chat, Verbindung-Info + Abmelden */}
             <div className="flex items-center gap-2">
+              {/* R33/P19: Hilfe-Button — für JEDEN jederzeit (steuernd oder nicht) */}
+              <button
+                onClick={() => setShowHelp(true)}
+                className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/10 active:scale-90 transition-transform font-bold text-sm"
+                title={tOr(t, 'mobileHelp.title', 'Hilfe')}
+                aria-label={tOr(t, 'mobileHelp.title', 'Hilfe')}
+              >
+                ?
+              </button>
               {/* Chat-Button im Header */}
               <button
                 onClick={() => setShowChat(true)}
                 className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/10 active:scale-90 transition-transform"
                 title={t('mobile.mirrorChat')}
+                aria-label={t('mobile.mirrorChat')}
               >
                 <span className="text-sm leading-none">💬</span>
               </button>
@@ -501,6 +730,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                 onClick={handleDisconnect}
                 className="text-white/30 hover:text-red-400 text-lg leading-none transition-colors p-1"
                 title={t('mobileClient.disconnect')}
+                aria-label={t('mobileClient.disconnect')}
               >
                 ✕
               </button>
@@ -554,7 +784,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       )}
 
-      {/* ====== MAIN CONTENT ====== */}
+      {/* ====== MAIN CONTENT (scrollt; Menüleiste fixiert unten) ====== */}
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center p-8">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mb-4" />
@@ -590,128 +820,73 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       ) : (
         <div className="pb-16">
-          {/* MirrorView: Nur im Kontrollier-Modus oder waehrend des Spiels */}
-          {isControlling ? (
-            <MirrorView
-              mirrorScreenId={mirrorScreenId}
-              gameState={gameState}
-              clientId={clientId}
-              profileName={profile?.name || ''}
-              profileId={profile?.id || null}
-              currentPitch={currentPitch}
-              isMicListening={isListening}
-              brSinging={brSinging}
-              queue={data.queue}
-              slotsRemaining={data.slotsRemaining}
-              onRemoveFromQueue={data.removeFromQueue}
-              onReorderQueue={data.reorderQueue}
-              songSearch={data.songSearch}
-              onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading}
-              songsError={data.songsError}
-              songs={data.songs}
-              filteredSongs={data.filteredSongs}
-              showSongOptions={data.showSongOptions}
-              selectedGameMode={data.selectedGameMode}
-              selectedPartner={data.selectedPartner}
-              availablePartners={data.availablePartners}
-              opponents={data.opponents}
-              availableProfiles={data.availableProfiles}
-              onShowSongOptions={data.setShowSongOptions}
-              onSelectGameMode={data.setSelectedGameMode}
-              onSelectPartner={data.setSelectedPartner}
-              onAddToQueue={data.addToQueue}
-              onLoadPartners={data.loadAvailablePartners}
-              onLoadOpponents={data.loadOpponents}
-              onRefreshSongs={data.loadSongs}
-              formatDuration={data.formatDuration}
-              difficulty={data.difficulty}
-              onDifficultyChange={data.setDifficulty}
-              playerMicSource={data.playerMicSource}
-              onPlayerMicSourceChange={data.setPlayerMicSource}
-              partnerMicSource={data.partnerMicSource}
-              onPartnerMicSourceChange={data.setPartnerMicSource}
-              duetPartsSwapped={data.duetPartsSwapped}
-              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
-              addedQueuePosition={data.addedQueuePosition}
-              jukeboxWishlist={data.jukeboxWishlist}
-              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
-              onRefreshJukebox={data.loadJukeboxWishlist}
-              gameResults={data.gameResults}
-              onNavigate={() => {}}
-              onOpenChat={() => setShowChat(true)}
-              isRemoteLocked={false}
-              remoteLockedBy={null}
-              onAcquireRemote={handleAcquireRemote}
-              onReleaseRemote={handleReleaseRemote}
-              onSendDesktopCommand={handleSendDesktopCommand}
-            />
-          ) : (
-            <MirrorView
-              mirrorScreenId={mirrorScreenId}
-              gameState={gameState}
-              clientId={clientId}
-              profileName={profile?.name || ''}
-              profileId={profile?.id || null}
-              currentPitch={currentPitch}
-              isMicListening={isListening}
-              brSinging={brSinging}
-              queue={data.queue}
-              slotsRemaining={data.slotsRemaining}
-              onRemoveFromQueue={data.removeFromQueue}
-              onReorderQueue={data.reorderQueue}
-              songSearch={data.songSearch}
-              onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading}
-              songsError={data.songsError}
-              songs={data.songs}
-              filteredSongs={data.filteredSongs}
-              showSongOptions={data.showSongOptions}
-              selectedGameMode={data.selectedGameMode}
-              selectedPartner={data.selectedPartner}
-              availablePartners={data.availablePartners}
-              opponents={data.opponents}
-              availableProfiles={data.availableProfiles}
-              onShowSongOptions={data.setShowSongOptions}
-              onSelectGameMode={data.setSelectedGameMode}
-              onSelectPartner={data.setSelectedPartner}
-              onAddToQueue={data.addToQueue}
-              onLoadPartners={data.loadAvailablePartners}
-              onLoadOpponents={data.loadOpponents}
-              onRefreshSongs={data.loadSongs}
-              formatDuration={data.formatDuration}
-              difficulty={data.difficulty}
-              onDifficultyChange={data.setDifficulty}
-              playerMicSource={data.playerMicSource}
-              onPlayerMicSourceChange={data.setPlayerMicSource}
-              partnerMicSource={data.partnerMicSource}
-              onPartnerMicSourceChange={data.setPartnerMicSource}
-              duetPartsSwapped={data.duetPartsSwapped}
-              onDuetPartsSwappedChange={data.setDuetPartsSwapped}
-              addedQueuePosition={data.addedQueuePosition}
-              jukeboxWishlist={data.jukeboxWishlist}
-              onRemoveFromJukebox={data.removeFromJukeboxWishlist}
-              onRefreshJukebox={data.loadJukeboxWishlist}
-              gameResults={data.gameResults}
-              onNavigate={() => {}}
-              onOpenChat={() => setShowChat(true)}
-              isRemoteLocked={true}
-              remoteLockedBy={remoteLock.lockedByName}
-              onAcquireRemote={handleAcquireRemote}
-              onReleaseRemote={handleReleaseRemote}
-              onSendDesktopCommand={() => {}}
-            />
-          )}
-        </div>
-      )}
-
-      {/* ====== LADEBILDSCHIRM-OVERLAY (Punkt 6) ====== */}
-      {isTransitioning && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-gray-900/95 via-purple-900/95 to-gray-900/95 backdrop-blur-sm pointer-events-none">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-2 border-cyan-500/60 border-t-cyan-400 rounded-full animate-spin" />
-            <p className="text-sm text-white/50 animate-pulse">Wird geladen...</p>
-          </div>
+          {/* MirrorView — steuernd UND nicht-steuernd (P1): Der Dispatcher
+              erhält isControlling + den vollen R33-Datenvertrag. */}
+          <MirrorView
+            mirrorScreenId={mirrorScreenId}
+            gameState={gameState}
+            clientId={clientId}
+            profileName={profile?.name || ''}
+            profileId={profile?.id || null}
+            profile={profile}
+            currentPitch={currentPitch}
+            isMicListening={isListening}
+            brSinging={brSinging}
+            queue={data.queue}
+            slotsRemaining={data.slotsRemaining}
+            onRemoveFromQueue={data.removeFromQueue}
+            onReorderQueue={data.reorderQueue}
+            songSearch={data.songSearch}
+            onSongSearchChange={data.setSongSearch}
+            songsLoading={data.songsLoading}
+            songsError={data.songsError}
+            songs={data.songs}
+            filteredSongs={data.filteredSongs}
+            showSongOptions={data.showSongOptions}
+            selectedGameMode={data.selectedGameMode}
+            selectedPartner={data.selectedPartner}
+            availablePartners={data.availablePartners}
+            opponents={data.opponents}
+            availableProfiles={data.availableProfiles}
+            onShowSongOptions={data.setShowSongOptions}
+            onSelectGameMode={data.setSelectedGameMode}
+            onSelectPartner={data.setSelectedPartner}
+            onAddToQueue={data.addToQueue}
+            onLoadPartners={data.loadAvailablePartners}
+            onLoadOpponents={data.loadOpponents}
+            onRefreshSongs={data.loadSongs}
+            formatDuration={data.formatDuration}
+            difficulty={data.difficulty}
+            onDifficultyChange={data.setDifficulty}
+            playerMicSource={data.playerMicSource}
+            onPlayerMicSourceChange={data.setPlayerMicSource}
+            partnerMicSource={data.partnerMicSource}
+            onPartnerMicSourceChange={data.setPartnerMicSource}
+            duetPartsSwapped={data.duetPartsSwapped}
+            onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+            addedQueuePosition={data.addedQueuePosition}
+            jukeboxWishlist={data.jukeboxWishlist}
+            onRemoveFromJukebox={data.removeFromJukeboxWishlist}
+            onRefreshJukebox={data.loadJukeboxWishlist}
+            gameResults={data.gameResults}
+            onNavigate={() => {}}
+            onOpenChat={() => setShowChat(true)}
+            isRemoteLocked={remoteLock.isLocked && !remoteLock.lockedByMe}
+            remoteLockedBy={remoteLock.lockedByName}
+            isControlling={isControlling}
+            onAcquireRemote={handleAcquireRemote}
+            onReleaseRemote={handleReleaseRemote}
+            onSendDesktopCommand={handleSendDesktopCommand}
+            onLocalNavigate={handleFooterNavigate}
+            onOpenProfile={() => setShowProfile(true)}
+            settingsSnapshot={settingsSnapshot}
+            highscores={data.highscores}
+            onLoadHighscores={data.loadHighscores}
+            dailyState={data.dailyState}
+            onLoadDailyState={data.loadDailyState}
+            jukeboxState={data.jukeboxState}
+            onLoadJukeboxState={data.loadJukeboxState}
+          />
         </div>
       )}
 
@@ -720,11 +895,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         <MobileBottomNav
           activeScreen={activeFooterScreen}
           onNavigate={handleFooterNavigate}
-          disabledScreens={isControlling
-            ? []
-            : ['party', 'dailyChallenge', 'jukebox', 'highscores', 'achievements']}
+          lockedScreens={isControlling ? [] : NON_CONTROLLING_LOCKED_NAV}
+          onLockedTap={() => pushToast(tOr(t, 'mobile.toastLockedNav', 'Nur mit Fernsteuerung'), 'info')}
         />
       )}
+
+      {/* ====== TOAST-LEISTE (P7/P18 — direkt über der Menüleiste) ====== */}
+      <ToastBar toasts={toasts} onDismiss={dismissToast} />
 
       {/* ====== CHAT OVERLAY ====== */}
       {showChat && clientId && (
@@ -733,9 +910,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       )}
 
-      {/* ====== CHAT NOTIFICATION POPUP ====== */}
-      {chatPopupMessage && !showChat && (
-        <ChatNotificationPopup message={chatPopupMessage} onDismiss={() => setChatPopupMessage(null)} />
+      {/* ====== HILFE-OVERLAY (P19 — rein lokal, keine Commands) ====== */}
+      {showHelp && (
+        <MobileHelpView onClose={() => setShowHelp(false)} />
       )}
 
       {/* ====== SINGALONG OVERLAY ====== */}
@@ -827,7 +1004,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                   setShowSongRunningOverlay(false);
                   handleReleaseRemote();
                   // Navigate to home locally so the user can use free functions
-                  setActiveDesktopScreen('home');
+                  setMenuScreen('home');
                 }}
                 className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
               >

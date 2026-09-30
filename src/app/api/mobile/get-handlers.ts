@@ -423,7 +423,8 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       if (!dataUrl) {
         return Response.json({ success: false, message: 'No cover' }, { status: 404 });
       }
-      const match = /^data:(image\/[a-zA-Z+]+);base64,(.*)$/s.exec(dataUrl);
+      // Note: no regex /s flag — the tsconfig target predates ES2018.
+      const match = /^data:(image\/[a-zA-Z+]+);base64,([\s\S]*)$/.exec(dataUrl);
       if (!match) {
         return Response.json({ success: false, message: 'Invalid cover data' }, { status: 500 });
       }

@@ -511,6 +511,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Connecting',
         features: 'What the app can do',
+        control: 'Remote control: Take Control',
+        solo: 'Without control',
+        help: 'Help on the companion',
         manage: 'Managing devices',
       },
       steps: {
@@ -550,6 +553,52 @@ export const tutorialTranslations = {
           title: 'Sing-along modes 🎶',
           body: 'In the party modes Companion Singalong and Pass-the-Mic guests sing straight over their phones — pitch detection runs on the device, the desktop orchestrates.',
           details: 'Companion Singalong: every guest gets lyrics + pitch display on their phone — the desktop shows the shared note highway.\n\nPass-the-Mic: the mic rotates — even mixed between phone and physical mic.\n\nFor both: the better the Wi-Fi, the smoother the pitch. If it stutters, a machine closer to the router helps.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'A phone drives the desktop only on command now: the "Take control" button on the companion claims the remote — before and after that, the phone taps only for itself.',
+          details: 'The mechanism behind "Take control":\n• Control is reserved exclusively for exactly one device (remote lock).\n• Desktop and controlling phone stay in sync: each side instantly sees what the other does.\n• All remaining phones show the status "Controlled by …" and wait.\n\nControl ends via "Release" — or automatically when the phone loses the connection.',
+        },
+        controlSync: {
+          title: 'Desktop and phone in lockstep',
+          body: 'Back in the Mobile tab: as host you see all devices here. When a phone takes control it mirrors the desktop screen and operates screens, buttons and confirmations — mouse and keyboard on the desktop stay fully usable.',
+          details: 'Because both sides run synchronously nobody can "tap away": click on the desktop and the controlling phone follows — tap on the phone and the desktop switches screens.\n\nIn the device list you recognize the controlling device by its remote badge.',
+        },
+        controlHandover: {
+          title: 'Only one remote at a time',
+          body: 'Control is exclusive: while one phone steers, no second can take over — its button instead shows who is in control. Releasing or disconnecting frees the control instantly.',
+          details: 'Good to know:\n• The host can keep clicking anytime — the controlling phone follows (and keeps the control).\n• If the controlling phone loses the connection (battery, Wi-Fi), control automatically falls back to the desktop.\n• A kick from the device list also ends the control.',
+        },
+        soloOverview: {
+          title: 'Guests without control 🙋',
+          body: 'Most guests never need the remote: connected phones without Take Control are standalone companions — they request songs, chat, sing along and check their own achievements without touching the desktop.',
+          details: 'What non-controlling phones can do:\n• 🎵 Queue their own songs (with the 📱 badge)\n• 💬 Join the party chat\n• 🎤 Sing in party modes (Companion Singalong, Pass-the-Mic)\n• 🗳️ Vote in polls (tournament, Battle Royale)\n• 🏆 View their own highscores and achievements',
+        },
+        soloQueue: {
+          title: 'Requests without control',
+          body: 'Even without the remote every guest queues their own songs: pick a song on the phone, enqueue — done. The request lands here with the 📱 badge and counts towards the profile\'s 3-song limit.',
+        },
+        soloParty: {
+          title: 'Sing along & vote',
+          body: 'Party participation always runs through the phones: in Companion Singalong and Pass-the-Mic guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control.',
+        },
+        soloStats: {
+          title: 'Own achievements & highscores',
+          body: 'Every guest keeps their own album: on the phone they can view their own highscores and achievements — no Take Control needed. Whatever the profile earns, the guest can check from the couch.',
+        },
+        soloLimits: {
+          title: 'What stays locked',
+          body: 'Without control, settings, profiles, party setup, daily challenges and the jukebox stay off-limits — they remain reserved for the desktop (or a companion with Take Control).',
+          details: 'Why the lock? These areas change the game state or configuration for everyone: settings, profile management, party setup, daily challenges and the jukebox. That is what explicit control is for — "Take control" unlocks them for exactly one phone.\n\nThe desktop host always keeps everything in their own hands.',
+        },
+        helpButton: {
+          title: 'Help on every phone ❓',
+          body: 'You know the ? menu here in the menu bar — every connected phone gets its own "?" button. One tap opens the companion help right on the device.',
+        },
+        helpLocal: {
+          title: 'Read only, never control',
+          body: 'The companion help is a pure reading view: it sends no commands to the desktop and never starts a desktop tour. Guests can open it anytime — even while someone sings or controls.',
+          details: 'The help is deliberately kept apart from the control system: a guest who just wants to look something up ("How do I queue a song?") has zero influence on the running night — and the tours here on the desktop remain your host business.\n\nOpen it via the "?" button in the companion app; close it by simply closing the view.',
         },
         deviceList: {
           title: 'The device list',

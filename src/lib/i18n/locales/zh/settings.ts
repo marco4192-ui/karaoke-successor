@@ -2,6 +2,9 @@
 
 export const settingsTranslations = {
 settings: {
+// ── R33/P5: Loudness-Normalisierung (89 dB Ziel) ──
+  loudnessNormalization: '音量标准化（89 dB 目标）',
+
   title: '设置',
   subtitle: '配置你的卡拉OK体验',
   tabLibrary: '曲库',

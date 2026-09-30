@@ -510,6 +510,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Verbinden',
         features: 'Was die App kann',
+        control: 'Fernsteuerung: Take Control',
+        solo: 'Ohne Steuerung',
+        help: 'Companion-Hilfe vor Ort',
         manage: 'Geräte verwalten',
       },
       steps: {
@@ -549,6 +552,52 @@ export const tutorialTranslations = {
           title: 'Mitsing-Modi 🎶',
           body: 'In den Party-Modi Companion-Singalong und Pass-the-Mic singen die Gäste direkt über ihre Handys — Tonhöhen-Erkennung läuft auf dem Gerät, der Desktop orchestriert.',
           details: 'Companion-Singalong: Jeder Gast bekommt auf seinem Handy Lyrics + Tonhöhen-Anzeige — der Desktop zeigt die gemeinsame Note-Bahn.\n\nPass-the-Mic: Das Mikro wandert — auch zwischen Handy und physischem Mikro gemischt möglich.\n\nFür beide gilt: Je besser die WLAN-Qualität, desto flüssiger die Tonhöhe. Bei Zuckungen hilft ein Rechner näher am Router.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'Ein Handy steuert den Desktop nur noch auf Kommando: Der Button „Steuerung übernehmen“ auf dem Companion holt sich die Fernbedienung — vorher und danach tippt das Handy nur für sich selbst.',
+          details: 'Der Mechanismus hinter „Steuerung übernehmen“:\n• Die Steuerung wird exklusiv für genau ein Gerät reserviert (Remote-Lock).\n• Desktop und steuerndes Handy laufen synchron: Jede Seite sieht sofort, was die andere tut.\n• Alle übrigen Handys sehen den Status „Gesteuert von …“ und warten.\n\nDie Steuerung endet über „Freigeben“ — oder automatisch, wenn das Handy die Verbindung verliert.',
+        },
+        controlSync: {
+          title: 'Desktop und Handy im Gleichlauf',
+          body: 'Zurück im Mobile-Tab: Hier siehst du als Host alle Geräte. Übernimmt ein Handy die Steuerung, spiegelt es den Desktop-Bildschirm und bedient Screens, Buttons und Bestätigungen — Maus und Tastatur am Desktop bleiben voll nutzbar.',
+          details: 'Weil beide Seiten synchron laufen, kann niemand „davontippen“: Klickst du am Desktop, folgt das steuernde Handy — tippt das Handy, wechselt der Desktop den Screen.\n\nIn der Gerät-Liste erkennst du das steuernde Gerät am Fernbedienung-Badge.',
+        },
+        controlHandover: {
+          title: 'Nur eine Fernbedienung gleichzeitig',
+          body: 'Die Steuerung ist exklusiv: Während ein Handy steuert, kann kein zweites übernehmen — dessen Button zeigt stattdessen, wer gerade steuert. Freigeben oder Trennen gibt die Steuerung sofort wieder frei.',
+          details: 'Gut zu wissen:\n• Der Host kann jederzeit selbst weiterklicken — das steuernde Handy folgt (und behält dabei die Steuerung).\n• Verliert das steuernde Handy die Verbindung (Akku, WLAN), fällt die Steuerung automatisch an den Desktop zurück.\n• Ein Kick aus der Gerät-Liste beendet die Steuerung ebenfalls.',
+        },
+        soloOverview: {
+          title: 'Gäste ohne Steuerung 🙋',
+          body: 'Die meisten Gäste brauchen die Fernbedienung gar nicht: Verbundene Handys ohne Take Control sind eigenständige Begleiter — sie wünschen Songs, chatten, singen mit und schauen ihre eigenen Erfolge an, ohne den Desktop anzufassen.',
+          details: 'Was nicht-steuernde Handys alles können:\n• 🎵 Eigene Songs in die Warteschlange einreihen (mit 📱-Badge)\n• 💬 Am Party-Chat teilnehmen\n• 🎤 In Party-Modi mitsingen (Companion-Singalong, Pass-the-Mic)\n• 🗳️ Bei Abstimmungen mitwählen (Turnier, Battle Royale)\n• 🏆 Eigene Highscores und Erfolge ansehen',
+        },
+        soloQueue: {
+          title: 'Wünsche ohne Steuerung',
+          body: 'Auch ohne Fernbedienung reicht jeder Gast eigene Songs ein: Song auf dem Handy aussuchen, einreihen — fertig. Der Wunsch landet hier mit 📱-Badge und zählt fürs 3-Song-Limit des Profils.',
+        },
+        soloParty: {
+          title: 'Mitsingen & Abstimmen',
+          body: 'Party-Partizipation läuft immer über die Handys: Bei Companion-Singalong und Pass-the-Mic singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control.',
+        },
+        soloStats: {
+          title: 'Eigene Erfolge & Highscores',
+          body: 'Jeder Gast führt sein eigenes Sammelalbum: Auf dem Handy lassen sich die eigenen Highscores und Erfolge ansehen — ganz ohne Take Control. Was das Profil ersingt, sieht der Gast also auch von der Couch aus.',
+        },
+        soloLimits: {
+          title: 'Was gesperrt bleibt',
+          body: 'Ohne Steuerung bleiben Einstellungen, Profile, Party-Setup, Daily-Challenges und Jukebox außen vor — sie bleiben dem Desktop (oder einem Companion mit Take Control) vorbehalten.',
+          details: 'Warum die Sperre? Diese Bereiche verändern Spielstand oder Konfiguration für alle: Einstellungen, Profilverwaltung, Party-Setup, Daily-Challenges und Jukebox. Dafür gibt es die explizite Steuerung — „Steuerung übernehmen“ schaltet sie für genau ein Handy frei.\n\nDer Desktop-Host hat alles jederzeit selbst in der Hand.',
+        },
+        helpButton: {
+          title: 'Hilfe auf jedem Handy ❓',
+          body: 'Du kennst das ?-Menü hier in der Menüleiste — jedes verbundene Handy bekommt seinen eigenen „?“-Button. Ein Tipp darauf öffnet die Companion-Hilfe direkt auf dem Gerät.',
+        },
+        helpLocal: {
+          title: 'Nur lesen, nie steuern',
+          body: 'Die Companion-Hilfe ist eine reine Lese-Ansicht: Sie schickt keine Befehle an den Desktop und startet nie eine Desktop-Tour. Gäste können sie jederzeit öffnen — auch während jemand singt oder steuert.',
+          details: 'Damit bleibt die Hilfe bewusst vom Steuerungs-System getrennt: Ein Gast, der nur nachschlagen will („Wie reihe ich einen Song ein?“), nimmt keinerlei Einfluss auf den laufenden Abend — und die Touren hier am Desktop bleiben deine Host-Sache.\n\nGeöffnet wird sie über den „?“-Button in der Companion-App; beendet einfach durch Schließen.',
         },
         deviceList: {
           title: 'Geräte-Liste',

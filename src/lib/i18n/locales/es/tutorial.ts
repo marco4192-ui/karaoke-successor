@@ -510,6 +510,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Conexión',
         features: 'Lo que puede la app',
+        control: 'Control remoto: Take Control',
+        solo: 'Sin control',
+        help: 'Ayuda del Companion',
         manage: 'Gestionar dispositivos',
       },
       steps: {
@@ -549,6 +552,52 @@ export const tutorialTranslations = {
           title: 'Modos de canto compartido 🎶',
           body: 'En los modos de fiesta Companion Sing-A-Long y Pasa el Micrófono los invitados cantan directamente por sus teléfonos — la detección de tono corre en el dispositivo, el escritorio dirige.',
           details: 'Companion Sing-A-Long: cada invitado ve la letra y la visualización de tono en su teléfono — el escritorio muestra la pista de notas compartida.\n\nPasa el Micrófono: el micro va rotando — incluso mezclando teléfono y micro físico.\n\nPara ambos: cuanto mejor la WiFi, más fluido el tono. Si se entrecorta, una máquina más cerca del router ayuda.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'Un teléfono ahora maneja el escritorio solo bajo orden: el botón "Tomar control" del Companion se lleva el mando remoto — antes y después, el teléfono toca solo para sí mismo.',
+          details: 'El mecanismo detrás de "Tomar control":\n• El control se reserva de forma exclusiva para un único dispositivo (bloqueo remoto).\n• El escritorio y el teléfono que controla van sincronizados: cada lado ve al instante lo que hace el otro.\n• Los demás teléfonos muestran el estado "Controlado por …" y esperan.\n\nEl control termina con "Liberar" — o automáticamente si el teléfono pierde la conexión.',
+        },
+        controlSync: {
+          title: 'Escritorio y teléfono en sincronía',
+          body: 'De vuelta en la pestaña Móvil: aquí ves, como anfitrión, todos los dispositivos. Cuando un teléfono toma el control, refleja la pantalla del escritorio y maneja pantallas, botones y confirmaciones — el ratón y el teclado del escritorio siguen totalmente utilizables.',
+          details: 'Como ambos lados van sincronizados, nadie puede "tocar y salir corriendo": haces clic en el escritorio y el teléfono que controla sigue — tocas en el teléfono y el escritorio cambia de pantalla.\n\nEn la lista de dispositivos reconoces al que controla por su insignia de mando remoto.',
+        },
+        controlHandover: {
+          title: 'Solo un mando remoto a la vez',
+          body: 'El control es exclusivo: mientras un teléfono maneja, ningún otro puede tomarlo — su botón muestra en cambio quién controla. Liberar o desconectar devuelve el control al instante.',
+          details: 'Conviene saber:\n• El anfitrión puede seguir haciendo clic en cualquier momento — el teléfono que controla lo sigue (y conserva el control).\n• Si el teléfono que controla pierde la conexión (batería, WiFi), el control vuelve automáticamente al escritorio.\n• Una expulsión de la lista de dispositivos también termina el control.',
+        },
+        soloOverview: {
+          title: 'Invitados sin control 🙋',
+          body: 'La mayoría de los invitados nunca necesitan el mando: los teléfonos conectados sin Take Control son acompañantes autónomos — piden canciones, chatean, cantan y consultan sus propios logros sin tocar el escritorio.',
+          details: 'Lo que pueden hacer los teléfonos sin control:\n• 🎵 Encolar sus propias canciones (con la insignia 📱)\n• 💬 Unirse al chat de la fiesta\n• 🎤 Cantar en los modos de fiesta (Companion Sing-A-Long, Pasa el Micrófono)\n• 🗳️ Votar en las votaciones (torneo, Battle Royale)\n• 🏆 Ver sus propias puntuaciones y logros',
+        },
+        soloQueue: {
+          title: 'Peticiones sin control',
+          body: 'También sin mando, cada invitado encola sus propias canciones: elige una en el teléfono, encola — listo. La petición llega aquí con la insignia 📱 y cuenta para el límite de 3 canciones del perfil.',
+        },
+        soloParty: {
+          title: 'Cantar y votar',
+          body: 'La participación en la fiesta pasa siempre por los teléfonos: en Companion Sing-A-Long y Pasa el Micrófono los invitados cantan directamente desde su dispositivo, en el torneo y en Battle Royale votan con un toque — todo sin Take Control.',
+        },
+        soloStats: {
+          title: 'Logros y puntuaciones propios',
+          body: 'Cada invitado lleva su propio álbum: en el teléfono puede ver sus puntuaciones y logros — sin Take Control. Lo que el perfil consigue, el invitado lo comprueba incluso desde el sofá.',
+        },
+        soloLimits: {
+          title: 'Lo que sigue bloqueado',
+          body: 'Sin control, los ajustes, los perfiles, la configuración de fiesta, los retos diarios y la Jukebox quedan fuera — siguen reservados al escritorio (o a un Companion con Take Control).',
+          details: '¿Por qué el candado? Estas áreas cambian el estado o la configuración de la partida para todos: ajustes, gestión de perfiles, configuración de fiesta, retos diarios y Jukebox. Para eso existe el control explícito — "Tomar control" los desbloquea para exactamente un teléfono.\n\nEl anfitrión del escritorio siempre lo tiene todo en su mano.',
+        },
+        helpButton: {
+          title: 'Ayuda en cada teléfono ❓',
+          body: 'Conoces el menú ? de la barra de menú — cada teléfono conectado recibe su propio botón "?". Un toque abre la ayuda del Companion directamente en el dispositivo.',
+        },
+        helpLocal: {
+          title: 'Solo leer, nunca controlar',
+          body: 'La ayuda del Companion es una vista puramente de lectura: no envía comandos al escritorio y nunca inicia un tour del escritorio. Los invitados pueden abrirla en cualquier momento — incluso mientras alguien canta o controla.',
+          details: 'Así, la ayuda queda deliberadamente separada del sistema de control: un invitado que solo quiere consultar algo ("¿Cómo encolo una canción?") no influye para nada en la noche en marcha — y los tours aquí en el escritorio siguen siendo cosa del anfitrión.\n\nSe abre con el botón "?" de la app compañera; se cierra simplemente cerrando la vista.',
         },
         deviceList: {
           title: 'La lista de dispositivos',

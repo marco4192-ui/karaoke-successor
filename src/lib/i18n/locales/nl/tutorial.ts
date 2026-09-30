@@ -512,6 +512,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Verbinden',
         features: 'Wat de app kan',
+        control: 'Afstandsbediening: besturing overnemen',
+        solo: 'Zonder besturing',
+        help: 'Companion-hulp op het apparaat',
         manage: 'Apparaten beheren',
       },
       steps: {
@@ -551,6 +554,52 @@ export const tutorialTranslations = {
           title: 'Meezingmodi 🎶',
           body: 'In de partymodi Companion Sing-A-Long en Geef de Mic zingen gasten direct via hun telefoons — de toonherkenning draait op het apparaat, de desktop dirigeert.',
           details: 'Companion Sing-A-Long: elke gast krijgt songtekst + toonweergave op de telefoon — de desktop toont de gedeelde notenbaan.\n\nGeef de Mic: de microfoon gaat rond — zelfs afgewisseld tussen telefoon en fysieke microfoon.\n\nVoor beide geldt: hoe beter het WiFi, hoe vloeiender de toon. Bij haperingen helpt een apparaat dichter bij de router.',
+        },
+        takeControl: {
+          title: 'Besturing overnemen 🎮',
+          body: 'Een telefoon stuurt de desktop alleen nog op commando: de knop "Besturing overnemen" op de companion haalt de afstandsbediening op — daarvoor en daarna tikt de telefoon alleen voor zichzelf.',
+          details: 'Het mechanisme achter "Besturing overnemen":\n• De besturing wordt exclusief voor precies één apparaat gereserveerd (remote-lock).\n• Desktop en besturende telefoon blijven synchroon: elke kant ziet direct wat de andere doet.\n• Alle overige telefoons tonen de status "Bestuurd door …" en wachten.\n\nDe besturing eindigt via "Vrijgeven" — of automatisch wanneer de telefoon de verbinding verliest.',
+        },
+        controlSync: {
+          title: 'Desktop en telefoon in gelijke tred',
+          body: 'Terug in het tabblad Mobiel: als host zie je hier alle apparaten. Neemt een telefoon de besturing over, dan spiegelt hij het desktopscherm en bedient hij schermen, knoppen en bevestigingen — muis en toetsenbord op de desktop blijven volledig bruikbaar.',
+          details: 'Omdat beide kanten synchroon lopen, kan niemand "wegtikken": klik op de desktop en de besturende telefoon volgt — tik op de telefoon en de desktop wisselt van scherm.\n\nIn de apparaatlijst herken je het besturende apparaat aan zijn afstandsbedieningsbadge.',
+        },
+        controlHandover: {
+          title: 'Slechts één afstandsbediening tegelijk',
+          body: 'De besturing is exclusief: terwijl één telefoon stuurt, kan geen tweede overnemen — diens knop toont in plaats daarvan wie er nu stuurt. Vrijgeven of verbreken maakt de besturing direct weer vrij.',
+          details: 'Goed om te weten:\n• De host kan altijd zelf blijven klikken — de besturende telefoon volgt (en houdt de besturing).\n• Verliest de besturende telefoon de verbinding (accu, WiFi), dan valt de besturing automatisch terug naar de desktop.\n• Een kick uit de apparaatlijst beëindigt de besturing eveneens.',
+        },
+        soloOverview: {
+          title: 'Gasten zonder besturing 🙋',
+          body: 'De meeste gasten hebben de afstandsbediening nooit nodig: verbonden telefoons zonder overname zijn zelfstandige companions — ze vragen nummers aan, chatten, zingen mee en bekijken hun eigen prestaties zonder de desktop aan te raken.',
+          details: 'Wat niet-besturende telefoons kunnen:\n• 🎵 Eigen nummers in de wachtrij zetten (met de 📱-badge)\n• 💬 Meedoen met de feestchat\n• 🎤 Zingen in feestmodi (Companion Sing-A-Long, Geef de Mic)\n• 🗳️ Stemmen in polls (toernooi, Battle Royale)\n• 🏆 Eigen highscores en prestaties bekijken',
+        },
+        soloQueue: {
+          title: 'Verzoeken zonder besturing',
+          body: 'Ook zonder afstandsbediening zet elke gast eigen nummers in de wachtrij: kies een nummer op de telefoon, in de wachtrij zetten — klaar. Het verzoek landt hier met de 📱-badge en telt mee voor de limiet van 3 nummers per profiel.',
+        },
+        soloParty: {
+          title: 'Mezingen & stemmen',
+          body: 'Feestdeelname loopt altijd via de telefoons: in Companion Sing-A-Long en Geef de Mic zingen gasten direct via hun apparaat, in toernooi en Battle Royale stemmen ze met een tik — allemaal zonder besturing over te nemen.',
+        },
+        soloStats: {
+          title: 'Eigen prestaties & highscores',
+          body: 'Elke gast houdt zijn eigen album bij: op de telefoon kunnen ze eigen highscores en prestaties bekijken — besturing overnemen is niet nodig. Wat het profiel ook verdient, de gast kan het vanaf de bank controleren.',
+        },
+        soloLimits: {
+          title: 'Wat op slot blijft',
+          body: 'Zonder besturing blijven instellingen, profielen, feestopzet, dagelijkse uitdagingen en de jukebox buiten bereik — ze blijven voorbehouden aan de desktop (of een companion met overname).',
+          details: 'Waarom het slot? Deze gebieden veranderen de spelstatus of configuratie voor iedereen: instellingen, profielbeheer, feestopzet, dagelijkse uitdagingen en de jukebox. Daarvoor bestaat de expliciete besturing — "Besturing overnemen" ontgrendelt ze voor precies één telefoon.\n\nDe desktop-host houdt alles altijd zelf in handen.',
+        },
+        helpButton: {
+          title: 'Hulp op elke telefoon ❓',
+          body: 'Je kent het ?-menu hier in de menubalk — elke verbonden telefoon krijgt een eigen "?"-knop. Eén tik opent de companion-hulp direct op het apparaat.',
+        },
+        helpLocal: {
+          title: 'Alleen lezen, nooit besturen',
+          body: 'De companion-hulp is een pure leesweergave: hij stuurt geen commando\'s naar de desktop en start nooit een desktop-rondleiding. Gasten kunnen hem altijd openen — ook terwijl iemand zingt of bestuurt.',
+          details: 'De hulp staat bewust los van het besturingssysteem: een gast die alleen iets wil opzoeken ("Hoe zet ik een nummer in de wachtrij?") heeft nul invloed op de lopende avond — en de rondleidingen hier op de desktop blijven jouw hostzaken.\n\nOpen hem via de "?"-knop in de companion-app; sluit hem gewoon door de weergave te sluiten.',
         },
         deviceList: {
           title: 'De apparaatlijst',

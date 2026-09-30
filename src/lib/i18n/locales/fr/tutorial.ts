@@ -510,6 +510,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Connexion',
         features: 'Ce que l\'app sait faire',
+        control: 'Contrôle à distance : Take Control',
+        solo: 'Sans contrôle',
+        help: 'Aide du Companion',
         manage: 'Gérer les appareils',
       },
       steps: {
@@ -549,6 +552,52 @@ export const tutorialTranslations = {
           title: 'Modes de chant partagé 🎶',
           body: 'Dans les modes de fête Companion Sing-A-Long et Passe le Micro, les invités chantent directement via leurs téléphones — la détection de hauteur tourne sur l\'appareil, le bureau orchestre.',
           details: 'Companion Sing-A-Long : chaque invité a paroles + affichage de hauteur sur son téléphone — le bureau montre la piste de notes commune.\n\nPasse le Micro : le micro tourne — même en mélangeant téléphone et micro physique.\n\nPour les deux : meilleur est le WiFi, plus fluide est la hauteur. En cas de saccades, une machine plus proche du routeur aide.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'Un téléphone ne pilote désormais le bureau que sur commande : le bouton "Prendre le contrôle" du Companion s\'empare de la télécommande — avant et après, le téléphone ne tape que pour lui-même.',
+          details: 'Le mécanisme derrière "Prendre le contrôle" :\n• Le contrôle est réservé exclusivement à un seul appareil (verrou distant).\n• Le bureau et le téléphone qui contrôle restent synchronisés : chaque côté voit instantanément ce que fait l\'autre.\n• Tous les autres téléphones affichent le statut "Contrôlé par …" et attendent.\n\nLe contrôle se termine via "Libérer" — ou automatiquement si le téléphone perd la connexion.',
+        },
+        controlSync: {
+          title: 'Bureau et téléphone en synchro',
+          body: 'Retour dans l\'onglet Mobile : en tant qu\'hôte, vous voyez ici tous les appareils. Quand un téléphone prend le contrôle, il reflète l\'écran du bureau et actionne écrans, boutons et confirmations — souris et clavier du bureau restent pleinement utilisables.',
+          details: 'Comme les deux côtés tournent en synchro, personne ne peut "taper en avançant" : cliquez sur le bureau et le téléphone qui contrôle suit — touchez le téléphone et le bureau change d\'écran.\n\nDans la liste des appareils, vous reconnaissez l\'appareil qui contrôle à son badge de télécommande.',
+        },
+        controlHandover: {
+          title: 'Une seule télécommande à la fois',
+          body: 'Le contrôle est exclusif : pendant qu\'un téléphone pilote, aucun second ne peut prendre la main — son bouton indique plutôt qui contrôle. Libérer ou se déconnecter rend le contrôle instantanément.',
+          details: 'Bon à savoir :\n• L\'hôte peut continuer à cliquer à tout moment — le téléphone qui contrôle suit (et garde le contrôle).\n• Si le téléphone qui contrôle perd la connexion (batterie, WiFi), le contrôle revient automatiquement au bureau.\n• Un renvoi depuis la liste des appareils met aussi fin au contrôle.',
+        },
+        soloOverview: {
+          title: 'Invités sans contrôle 🙋',
+          body: 'La plupart des invités n\'ont jamais besoin de la télécommande : les téléphones connectés sans Take Control sont des compagnons autonomes — ils demandent des chansons, discutent, chantent et consultent leurs propres succès sans toucher au bureau.',
+          details: 'Ce que peuvent faire les téléphones sans contrôle :\n• 🎵 Mettre leurs propres chansons en file (avec le badge 📱)\n• 💬 Rejoindre le chat de la fête\n• 🎤 Chanter dans les modes fête (Companion Sing-A-Long, Passe le Micro)\n• 🗳️ Voter aux scrutins (tournoi, Battle Royale)\n• 🏆 Consulter leurs propres scores et succès',
+        },
+        soloQueue: {
+          title: 'Demandes sans contrôle',
+          body: 'Même sans télécommande, chaque invité met ses propres chansons en file : choisir une chanson sur le téléphone, la mettre en file — terminé. La demande arrive ici avec le badge 📱 et compte dans la limite de 3 chansons du profil.',
+        },
+        soloParty: {
+          title: 'Chanter et voter',
+          body: 'La participation à la fête passe toujours par les téléphones : en Companion Sing-A-Long et Passe le Micro, les invités chantent directement sur leur appareil ; au tournoi et en Battle Royale, ils votent d\'un geste — le tout sans Take Control.',
+        },
+        soloStats: {
+          title: 'Succès et scores personnels',
+          body: 'Chaque invité garde son propre album : sur le téléphone, il peut consulter ses scores et ses succès — sans Take Control. Ce que le profil gagne, l\'invité peut le vérifier depuis le canapé.',
+        },
+        soloLimits: {
+          title: 'Ce qui reste verrouillé',
+          body: 'Sans contrôle, paramètres, profils, configuration de la fête, défis quotidiens et Jukebox restent hors d\'atteinte — ils demeurent réservés au bureau (ou à un Companion avec Take Control).',
+          details: 'Pourquoi le cadenas ? Ces zones modifient l\'état du jeu ou la configuration pour tous : paramètres, gestion des profils, configuration de la fête, défis quotidiens et Jukebox. C\'est à cela que sert le contrôle explicite — "Prendre le contrôle" les déverrouille pour exactement un téléphone.\n\nL\'hôte du bureau garde toujours tout en main.',
+        },
+        helpButton: {
+          title: 'De l\'aide sur chaque téléphone ❓',
+          body: 'Vous connaissez le menu ? ici dans la barre de menu — chaque téléphone connecté reçoit son propre bouton "?". Un geste ouvre l\'aide du Companion directement sur l\'appareil.',
+        },
+        helpLocal: {
+          title: 'Lecture seule, jamais de contrôle',
+          body: 'L\'aide du Companion est une pure vue de lecture : elle n\'envoie aucune commande au bureau et ne lance jamais une visite du bureau. Les invités peuvent l\'ouvrir à tout moment — même pendant que quelqu\'un chante ou contrôle.',
+          details: 'L\'aide est volontairement tenue à l\'écart du système de contrôle : un invité qui veut juste vérifier un point ("Comment mettre une chanson en file ?") n\'a aucune influence sur la soirée en cours — et les visites ici sur le bureau restent votre affaire d\'hôte.\n\nOuvrez-la via le bouton "?" de l\'app compagnon ; fermez-la simplement en fermant la vue.',
         },
         deviceList: {
           title: 'La liste des appareils',

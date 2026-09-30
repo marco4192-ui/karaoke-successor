@@ -513,6 +513,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Conectando',
         features: 'O que o app faz',
+        control: 'Controle remoto: Take Control',
+        solo: 'Sem controle',
+        help: 'Ajuda do Companion',
         manage: 'Gerenciando dispositivos',
       },
       steps: {
@@ -552,6 +555,52 @@ export const tutorialTranslations = {
           title: 'Modos de canto conjunto 🎶',
           body: 'Nos modos de festa Companion Sing-A-Long e Passe o Microfone, os convidados cantam direto pelos celulares — a detecção de tom roda no aparelho, o desktop rege.',
           details: 'Companion Sing-A-Long: cada convidado recebe letra e exibição de tom no celular — o desktop mostra a pista de notas compartilhada.\n\nPasse o Microfone: o microfone circula — até misturando celular e microfone físico.\n\nPara os dois: quanto melhor o Wi-Fi, mais suave o tom. Se engasgar, uma máquina mais perto do roteador ajuda.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'Um telefone agora só comanda o desktop sob comando: o botão "Assumir controle" no Companion pega o controle remoto — antes e depois disso, o telefone toca apenas para si.',
+          details: 'O mecanismo por trás de "Assumir controle":\n• O controle é reservado exclusivamente para exatamente um aparelho (bloqueio remoto).\n• Desktop e telefone que controla ficam em sincronia: cada lado vê na hora o que o outro faz.\n• Todos os demais telefones mostram o status "Controlado por …" e aguardam.\n\nO controle termina com "Libertar" — ou automaticamente quando o telefone perde a conexão.',
+        },
+        controlSync: {
+          title: 'Desktop e telefone em sincronia',
+          body: 'De volta à aba Móvel: aqui você vê, como anfitrião, todos os aparelhos. Quando um telefone assume o controle, ele espelha a tela do desktop e opera telas, botões e confirmações — mouse e teclado no desktop continuam totalmente utilizáveis.',
+          details: 'Como os dois lados rodam em sincronia, ninguém consegue "tocar e fugir": clique no desktop e o telefone que controla acompanha — toque no telefone e o desktop troca de tela.\n\nNa lista de aparelhos você reconhece o aparelho que controla pelo badge de controle remoto.',
+        },
+        controlHandover: {
+          title: 'Só um controle remoto por vez',
+          body: 'O controle é exclusivo: enquanto um telefone comanda, nenhum segundo assume — o botão dele mostra em vez disso quem está no controle. Libertar ou desconectar devolve o controle na hora.',
+          details: 'Bom saber:\n• O anfitrião pode continuar clicando a qualquer momento — o telefone que controla acompanha (e mantém o controle).\n• Se o telefone que controla perder a conexão (bateria, WiFi), o controle volta automaticamente ao desktop.\n• Uma expulsão da lista de aparelhos também encerra o controle.',
+        },
+        soloOverview: {
+          title: 'Convidados sem controle 🙋',
+          body: 'A maioria dos convidados nunca precisa do controle remoto: telefones conectados sem Take Control são acompanhantes autônomos — pedem músicas, conversam no chat, cantam junto e conferem as próprias conquistas sem tocar no desktop.',
+          details: 'O que os telefones sem controle podem fazer:\n• 🎵 Colocar as próprias músicas na fila (com o distintivo 📱)\n• 💬 Entrar no chat da festa\n• 🎤 Cantar nos modos de festa (Companion Sing-A-Long, Passe o Microfone)\n• 🗳️ Votar nas enquetes (torneio, Battle Royale)\n• 🏆 Ver as próprias pontuações e conquistas',
+        },
+        soloQueue: {
+          title: 'Pedidos sem controle',
+          body: 'Mesmo sem controle remoto, cada convidado enfileira as próprias músicas: escolha uma música no telefone, coloque na fila — pronto. O pedido chega aqui com o distintivo 📱 e conta para o limite de 3 músicas do perfil.',
+        },
+        soloParty: {
+          title: 'Cantar junto e votar',
+          body: 'A participação na festa passa sempre pelos telefones: no Companion Sing-A-Long e no Passe o Microfone os convidados cantam direto do aparelho, no torneio e no Battle Royale votam com um toque — tudo sem Take Control.',
+        },
+        soloStats: {
+          title: 'Conquistas e pontuações próprias',
+          body: 'Cada convidado mantém seu próprio álbum: no telefone dá para ver as próprias pontuações e conquistas — sem Take Control. O que o perfil conquista, o convidado confere até do sofá.',
+        },
+        soloLimits: {
+          title: 'O que segue bloqueado',
+          body: 'Sem controle, definições, perfis, configuração da festa, desafios diários e Jukebox ficam de fora — seguem reservados ao desktop (ou a um Companion com Take Control).',
+          details: 'Por que o cadeado? Essas áreas mudam o estado do jogo ou a configuração para todos: definições, gestão de perfis, configuração da festa, desafios diários e Jukebox. É para isso que existe o controle explícito — "Assumir controle" desbloqueia para exatamente um telefone.\n\nO anfitrião do desktop sempre mantém tudo em suas mãos.',
+        },
+        helpButton: {
+          title: 'Ajuda em cada telefone ❓',
+          body: 'Você conhece o menu ? aqui na barra de menu — cada telefone conectado ganha seu próprio botão "?". Um toque abre a ajuda do Companion direto no aparelho.',
+        },
+        helpLocal: {
+          title: 'Só ler, nunca controlar',
+          body: 'A ajuda do Companion é uma visualização somente leitura: ela não envia comandos ao desktop e nunca inicia um tour do desktop. Os convidados podem abri-la a qualquer momento — mesmo enquanto alguém canta ou controla.',
+          details: 'Assim a ajuda fica deliberadamente separada do sistema de controle: um convidado que só quer consultar algo ("Como coloco uma música na fila?") não exerce nenhuma influência sobre a noite em andamento — e os tours aqui no desktop continuam assunto do anfitrião.\n\nAbra pelo botão "?" na app Companion; feche simplesmente fechando a visualização.',
         },
         deviceList: {
           title: 'A lista de dispositivos',

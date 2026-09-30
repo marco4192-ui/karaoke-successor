@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
-import type { GameState, MobileView } from '../mobile-types';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
+import type { GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
+import { StorageKeys } from '@/lib/storage';
 import { SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
 
 // ===================== Props =====================
@@ -14,6 +15,15 @@ interface MirrorSettingsLiteProps {
   gameState: GameState;
   onNavigate: (v: MobileView) => void;
   onSendDesktopCommand: (command: string) => void;
+  /** R33: Echter Desktop-Settings-Snapshot (StorageKey→Wert + Webcam-Config).
+   *  Kommt als optionale Prop vom MirrorView-Dispatcher. Fehlt er (noch nicht
+   *  gepusht), zeigt die Ansicht wie bisher die lokalen Default-Werte. */
+  settingsSnapshot?: DesktopSettingsSnapshot | null;
+  /** R33: true = dieses Handy hält die Fernsteuerung. Nur dann werden
+   *  Schreibbefehle wirklich gesendet (defensiv — die Companion-Shell blendet
+   *  die Settings-Ansicht ohnehin nur für Steuernde ein, der Server blockt
+   *  CONTROL-Kommandos ohne Remote-Lock). */
+  isControlling?: boolean;
 }
 
 // ===================== Sektionen =====================
@@ -39,31 +49,46 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   { id: 'about',        icon: '\u2139\uFE0F',  labelKey: 'settings.tabAbout',       fallback: 'About',        descKey: 'mobile.mirrorSettingsDescAbout',      descFallback: 'Version, Credits, Lizenzen' },
 ];
 
-// ===================== Lokale Storage-Keys =====================
+// ===================== Storage-Keys (echte Keys aus @/lib/storage) =====================
 
 const SK = {
-  DIFFICULTY: 'karaoke-default-difficulty',
-  SHOW_SCORE: 'karaoke-show-score',
-  SHOW_PARTICLES: 'karaoke-show-particles',
-  SHOW_COMBO: 'karaoke-show-combo',
-  REPLAY_ENABLED: 'karaoke-replay-enabled',
-  AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
-  BG_VIDEO: 'karaoke-bg-video',
-  ANIMATED_BG: 'karaoke-animated-bg',
-  PERFORMANCE_MODE: 'karaoke-performance-mode',
-  LYRICS_STYLE: 'karaoke-lyrics-style',
-  LYRICS_SIZE: 'karaoke-lyrics-size',
-  THEME: 'karaoke-theme',
-  MASTER_VOLUME: 'karaoke-master-volume',
-  PREVIEW_VOLUME: 'karaoke-preview-volume',
-  MIC_SENSITIVITY: 'karaoke-mic-sensitivity',
-  YOUTUBE_QUALITY: 'karaoke-youtube-quality',
-  LANGUAGE: 'karaoke-language',
-  NOTE_DISPLAY_MODE: 'karaoke-note-display-mode',
-  NOTE_SEALED_HIT_COLOR: 'karaoke-note-sealed-hit-color',
+  DIFFICULTY: StorageKeys.DEFAULT_DIFFICULTY,
+  SHOW_SCORE: StorageKeys.SHOW_SCORE,
+  SHOW_PARTICLES: StorageKeys.SHOW_PARTICLES,
+  SHOW_COMBO: StorageKeys.SHOW_COMBO,
+  REPLAY_ENABLED: StorageKeys.REPLAY_ENABLED,
+  AUTO_FULLSCREEN: StorageKeys.AUTO_FULLSCREEN,
+  WARNING_CUES: StorageKeys.WARNING_CUES,
+  BG_VIDEO: StorageKeys.BG_VIDEO,
+  ANIMATED_BG: StorageKeys.ANIMATED_BG,
+  PERFORMANCE_MODE: StorageKeys.PERFORMANCE_MODE,
+  LYRICS_STYLE: StorageKeys.LYRICS_STYLE,
+  LYRICS_SIZE: StorageKeys.LYRICS_SIZE,
+  THEME: StorageKeys.THEME,
+  MASTER_VOLUME: StorageKeys.MASTER_VOLUME,
+  PREVIEW_VOLUME: StorageKeys.PREVIEW_VOLUME,
+  MIC_SENSITIVITY: StorageKeys.MIC_SENSITIVITY,
+  YOUTUBE_QUALITY: StorageKeys.YOUTUBE_QUALITY,
+  LANGUAGE: StorageKeys.LANGUAGE,
+  NOTE_DISPLAY_MODE: StorageKeys.NOTE_DISPLAY_MODE,
+  NOTE_SEALED_HIT_COLOR: StorageKeys.NOTE_SEALED_HIT_COLOR,
+  LOUDNESS_NORMALIZATION: StorageKeys.LOUDNESS_NORMALIZATION,
+  WEBCAM_CONFIG: StorageKeys.WEBCAM_CONFIG,
 } as const;
 
+/** Alle skalaren Settings, die der Desktop im Snapshot liefert (ohne den
+ *  Webcam-JSON-Blob, der separat gehandhabt wird). */
+const SNAPSHOT_SETTING_KEYS: readonly string[] = [
+  SK.DIFFICULTY, SK.SHOW_SCORE, SK.SHOW_PARTICLES, SK.SHOW_COMBO, SK.REPLAY_ENABLED,
+  SK.AUTO_FULLSCREEN, SK.WARNING_CUES, SK.BG_VIDEO, SK.ANIMATED_BG, SK.PERFORMANCE_MODE,
+  SK.LYRICS_STYLE, SK.LYRICS_SIZE, SK.THEME, SK.NOTE_DISPLAY_MODE, SK.NOTE_SEALED_HIT_COLOR,
+  SK.MASTER_VOLUME, SK.PREVIEW_VOLUME, SK.MIC_SENSITIVITY, SK.YOUTUBE_QUALITY, SK.LANGUAGE,
+  SK.LOUDNESS_NORMALIZATION,
+];
+
 // ===================== Defaults =====================
+// Fallbacks, falls der Desktop-Snapshot (noch) nicht vorliegt.
+// Die Werte entsprechen den Desktop-Defaults (settings-screen.tsx).
 
 const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.DIFFICULTY]: 'medium',
@@ -72,6 +97,7 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.SHOW_COMBO]: true,
   [SK.REPLAY_ENABLED]: true,
   [SK.AUTO_FULLSCREEN]: false,
+  [SK.WARNING_CUES]: true,
   [SK.BG_VIDEO]: true,
   [SK.ANIMATED_BG]: false,
   [SK.PERFORMANCE_MODE]: 'full',
@@ -85,6 +111,41 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.MIC_SENSITIVITY]: 50,
   [SK.YOUTUBE_QUALITY]: 'default',
   [SK.LANGUAGE]: 'de',
+  [SK.LOUDNESS_NORMALIZATION]: true,
+};
+
+// ===================== Webcam-Config (Desktop-Format, webcam-types.ts) =====================
+
+type WebcamSizeModeLite = 'fullscreen' | '2:10' | '3:10' | '4:10';
+type WebcamPositionLite = 'top' | 'bottom' | 'left' | 'right';
+type WebcamFilterLite = 'none' | 'grayscale' | 'sepia' | 'contrast' | 'brightness' | 'saturate' | 'blur';
+
+function isWebcamSize(v: unknown): v is WebcamSizeModeLite {
+  return v === 'fullscreen' || v === '2:10' || v === '3:10' || v === '4:10';
+}
+function isWebcamPosition(v: unknown): v is WebcamPositionLite {
+  return v === 'top' || v === 'bottom' || v === 'left' || v === 'right';
+}
+function isWebcamFilter(v: unknown): v is WebcamFilterLite {
+  return v === 'none' || v === 'grayscale' || v === 'sepia' || v === 'contrast'
+    || v === 'brightness' || v === 'saturate' || v === 'blur';
+}
+
+/** 1:1-Kopie von DEFAULT_WEBCAM_CONFIG (webcam-types.ts) — bewusst als
+ *  Record geführt, damit unbekannte/zukünftige Desktop-Felder beim
+ *  Zurücksenden des kompletten JSON nicht verloren gehen. */
+const DEFAULT_WEBCAM_RECORD: Record<string, unknown> = {
+  enabled: false,
+  sizeMode: '2:10',
+  position: 'bottom',
+  deviceId: null,
+  mirrored: true,
+  opacity: 1,
+  borderRadius: 16,
+  showBorder: true,
+  borderColor: 'rgba(0, 255, 255, 0.5)',
+  filter: 'none',
+  zIndex: 5,
 };
 
 // ===================== Optionen-Listen =====================
@@ -151,6 +212,22 @@ function tOr(t: (_key: string) => string, key: string, fallback: string): string
   return t(key) === key ? fallback : t(key);
 }
 
+/** Snapshot-Werte kommen als Strings ('true'/'false'/'42') — sicher parsen. */
+function asBool(v: unknown, fallback: boolean): boolean {
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'string') return v === 'true';
+  return fallback;
+}
+
+function asNum(v: unknown, fallback: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function asStr(v: unknown, fallback: string): string {
+  return typeof v === 'string' && v.length > 0 ? v : fallback;
+}
+
 // ===================== Wiederverwendbare UI-Bausteine =====================
 
 /** Mobile Toggle Switch */
@@ -191,34 +268,72 @@ function Dropdown({ options, value, onChange }: {
   );
 }
 
-/** Tappable Number Buttons (mobile-freundlich statt Slider) */
-function TappableNumber({ value, min, max, step, unit, onChange }: {
-  value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
+/** Touch-Slider mit Commit-on-Release: Während des Ziehens wird nur der
+ *  lokale Wert angezeigt; erst beim Loslassen wird EIN Befehl an den Desktop
+ *  gesendet (kein Command-Spam bei jedem Slider-Tick). */
+function TouchSlider({ value, min, max, step, onChange }: {
+  value: number; min: number; max: number; step: number; onChange: (v: number) => void;
 }) {
-  const steps = [];
-  for (let v = min; v <= max; v += step) steps.push(v);
+  const [dragValue, setDragValue] = useState<number | null>(null);
+  const shown = dragValue !== null ? dragValue : value;
+  const commit = useCallback(() => {
+    if (dragValue !== null) {
+      haptic();
+      onChange(dragValue);
+      setDragValue(null);
+    }
+  }, [dragValue, onChange]);
   return (
-    <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-      {steps.map((s) => (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={shown}
+      onChange={(e) => setDragValue(Number(e.target.value))}
+      onPointerUp={commit}
+      onTouchEnd={commit}
+      onKeyUp={commit}
+      onBlur={commit}
+      onPointerCancel={() => setDragValue(null)}
+      className="w-full accent-cyan-500 cursor-pointer"
+    />
+  );
+}
+
+/** Kompakte Options-Pills (grid oder horizontal scrollbar) */
+function PillRow({ options, value, onSelect, layout }: {
+  options: { value: string; label: string }[];
+  value: string;
+  onSelect: (v: string) => void;
+  layout?: 'grid' | 'scroll';
+}) {
+  const cls = layout === 'scroll'
+    ? 'flex gap-1.5 overflow-x-auto no-scrollbar'
+    : 'grid grid-cols-4 gap-1.5';
+  return (
+    <div className={cls}>
+      {options.map((opt) => (
         <button
-          key={s}
-          onClick={() => { haptic(); onChange(s); }}
-          className={'shrink-0 rounded-lg px-3 py-2 text-xs font-semibold active:scale-95 transition-all border ' +
-            (value === s
-              ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400'
+          key={opt.value}
+          type="button"
+          onClick={() => { haptic(); onSelect(opt.value); }}
+          className={'shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-center active:scale-95 transition-all border ' +
+            (value === opt.value
+              ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-300'
               : 'bg-white/5 border-white/10 text-white/50')}
-        >{s}{unit || ''}</button>
+        >{opt.label}</button>
       ))}
     </div>
   );
 }
 
 /** Toggle-Zeile */
-function SettingToggle({ label, description, value, onToggle }: {
-  label: string; description?: string; value: boolean; onToggle: (v: boolean) => void;
+function SettingToggle({ label, description, value, onToggle, testId }: {
+  label: string; description?: string; value: boolean; onToggle: (v: boolean) => void; testId?: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-3">
+    <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-3" data-testid={testId}>
       <div className="min-w-0 mr-3">
         <span className="text-sm font-medium text-white">{label}</span>
         {description && <p className="text-[11px] text-white/30 mt-0.5">{description}</p>}
@@ -239,6 +354,20 @@ function DesktopOnlyHint({ text }: { text: string }) {
   );
 }
 
+/** Sticky Sub-View-Header mit Zurück-Button */
+function SubViewHeader({ icon, label, onBack }: { icon: string; label: string; onBack: () => void }) {
+  return (
+    <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-[#160f28]/95 backdrop-blur-md flex items-center gap-2.5">
+      <button
+        onClick={onBack}
+        className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm text-white/60 active:scale-95 transition-transform shrink-0"
+      >{'\u2190'}</button>
+      <span className="text-lg shrink-0">{icon}</span>
+      <h2 className="text-lg font-semibold text-white truncate">{label}</h2>
+    </div>
+  );
+}
+
 // ===================== Sub-View: General =====================
 
 function GeneralSettings({ settings, sendSetting, t }: {
@@ -254,7 +383,7 @@ function GeneralSettings({ settings, sendSetting, t }: {
         <div className="mt-2">
           <Dropdown
             options={LANGUAGES}
-            value={String(settings[SK.LANGUAGE] || 'de')}
+            value={asStr(settings[SK.LANGUAGE], 'de')}
             onChange={(v) => sendSetting(SK.LANGUAGE, v)}
           />
         </div>
@@ -265,7 +394,7 @@ function GeneralSettings({ settings, sendSetting, t }: {
         <span className="text-sm font-medium text-white">{tOr(t, 'settings.defaultDifficulty', 'Standard-Schwierigkeit')}</span>
         <div className="flex gap-2 mt-2">
           {(['easy', 'medium', 'hard'] as const).map((d) => {
-            const isActive = String(settings[SK.DIFFICULTY]) === d;
+            const isActive = asStr(settings[SK.DIFFICULTY], 'medium') === d;
             const labels: Record<string, string> = { easy: tOr(t, 'difficulty.easy', 'Leicht'), medium: tOr(t, 'difficulty.medium', 'Normal'), hard: tOr(t, 'difficulty.hard', 'Schwer') };
             const colors: Record<string, string> = { easy: 'bg-green-500/25 border-green-400/40 text-green-400', medium: 'bg-amber-500/25 border-amber-400/40 text-amber-400', hard: 'bg-red-500/25 border-red-400/40 text-red-400' };
             return (
@@ -284,18 +413,46 @@ function GeneralSettings({ settings, sendSetting, t }: {
 }
 
 // ===================== Sub-View: Gameplay =====================
+// Reihenfolge + Labels wie Desktop-Gameplay-Tab (gameplay-tab.tsx):
+// Punkteanzeige → Partikel → Combo → Replay → Auto-Vollbild → Warn-Sound-Cues.
 
 function GameplaySettings({ settings, sendSetting, t }: {
   settings: Record<string, string | boolean | number>;
   sendSetting: (key: string, val: string) => void;
   t: (_key: string) => string;
 }) {
-  const items = [
-    { key: SK.SHOW_SCORE, label: tOr(t, 'gameplay.showScore', 'Punkte-Anzeige'), desc: tOr(t, 'gameplay.showScoreDesc', 'Punkte w\u00E4hrend des Singens anzeigen') },
-    { key: SK.SHOW_PARTICLES, label: tOr(t, 'gameplay.showParticles', 'Partikel-Effekte'), desc: tOr(t, 'gameplay.showParticlesDesc', 'Visuelle Effekte bei guten Noten') },
-    { key: SK.SHOW_COMBO, label: tOr(t, 'gameplay.showCombo', 'Combo-Anzeige'), desc: tOr(t, 'gameplay.showComboDesc', 'Combo-Z\u00E4hler anzeigen') },
-    { key: SK.REPLAY_ENABLED, label: tOr(t, 'gameplay.replayEnabled', 'Replay'), desc: tOr(t, 'gameplay.replayEnabledDesc', 'Song nach Ende automatisch wiederholen') },
-    { key: SK.AUTO_FULLSCREEN, label: tOr(t, 'gameplay.autoFullscreen', 'Auto-Vollbild'), desc: tOr(t, 'gameplay.autoFullscreenDesc', 'Beim Singen automatisch Vollbild aktivieren') },
+  const items: Array<{ key: string; label: string; desc: string; testId?: string }> = [
+    {
+      key: SK.SHOW_SCORE,
+      label: tOr(t, 'settingsGameplay.scoring', 'Punkteanzeige'),
+      desc: tOr(t, 'settingsGameplay.scoringDesc', 'Zeigt den aktuellen Punktestand w\u00E4hrend des Singens an.'),
+    },
+    {
+      key: SK.SHOW_PARTICLES,
+      label: tOr(t, 'settingsGameplay.particles', 'Partikel-Effekte'),
+      desc: tOr(t, 'settingsGameplay.particlesDesc', 'Visuelle Effekte bei getroffenen Noten.'),
+    },
+    {
+      key: SK.SHOW_COMBO,
+      label: tOr(t, 'settingsGameplay.combo', 'Combo-Anzeige'),
+      desc: tOr(t, 'settingsGameplay.comboDesc', 'Zeigt den Combo-Counter bei aufeinanderfolgenden Treffern.'),
+    },
+    {
+      key: SK.REPLAY_ENABLED,
+      label: tOr(t, 'settingsGameplay.replay', 'Song-Replay aufnehmen'),
+      desc: tOr(t, 'settingsGameplay.replayDesc', 'Nimmt Audio und Webcam w\u00E4hrend des Singens auf.'),
+    },
+    {
+      key: SK.AUTO_FULLSCREEN,
+      label: tOr(t, 'settingsGameplay.autoFullscreen', 'Auto-Vollbild'),
+      desc: tOr(t, 'settingsGameplay.autoFullscreenDesc', 'Wechselt beim Spielstart automatisch in den Vollbild-Modus.'),
+    },
+    {
+      key: SK.WARNING_CUES,
+      label: tOr(t, 'settingsGameplay.warningCues', 'Warn-Sound-Cues'),
+      desc: tOr(t, 'settingsGameplay.warningCuesDesc', 'Kurze Signalt\u00F6ne vor Blind-/Wort-ausblenden-Passagen (Blind Karaoke & Missing Words).'),
+      testId: 'mirror-warning-cues',
+    },
   ];
   return (
     <div className="flex flex-col gap-2.5">
@@ -304,8 +461,9 @@ function GameplaySettings({ settings, sendSetting, t }: {
           key={item.key}
           label={item.label}
           description={item.desc}
-          value={!!settings[item.key]}
+          value={asBool(settings[item.key], DEFAULTS[item.key] === true)}
           onToggle={(v) => sendSetting(item.key, String(v))}
+          testId={item.testId}
         />
       ))}
     </div>
@@ -313,6 +471,9 @@ function GameplaySettings({ settings, sendSetting, t }: {
 }
 
 // ===================== Sub-View: Appearance =====================
+// R33/P4: EXAKT wie der Desktop-Appearance-Tab sortiert
+// (appearance-tab.tsx): Performance-Modus → Video/Hintergrund → Theme →
+// Notendarstellung → Lyrics-Stil/Größe.
 
 function AppearanceSettings({ settings, sendSetting, t }: {
   settings: Record<string, string | boolean | number>;
@@ -321,13 +482,13 @@ function AppearanceSettings({ settings, sendSetting, t }: {
 }) {
   return (
     <div className="flex flex-col gap-3">
-      {/* Performance-Modus */}
+      {/* 1. Performance-Modus */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.performanceMode', 'Performance-Modus')}</span>
         <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.performanceModeDesc', 'Reduzierte Animationen f\u00FCr schw\u00E4chere Ger\u00E4te')}</p>
         <div className="flex gap-2 mt-2">
           {(['full', 'low'] as const).map((m) => {
-            const isActive = String(settings[SK.PERFORMANCE_MODE]) === m;
+            const isActive = asStr(settings[SK.PERFORMANCE_MODE], 'full') === m;
             const labels: Record<string, string> = { full: tOr(t, 'appearance.perfFull', 'Voll'), low: tOr(t, 'appearance.perfLow', 'Reduziert') };
             return (
               <button
@@ -341,26 +502,25 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         </div>
       </div>
 
-      {/* Hintergrund-Video */}
+      {/* 2. Video / Hintergrund */}
       <SettingToggle
         label={tOr(t, 'appearance.bgVideo', 'Hintergrund-Video')}
-        value={!!settings[SK.BG_VIDEO]}
+        value={asBool(settings[SK.BG_VIDEO], true)}
         onToggle={(v) => sendSetting(SK.BG_VIDEO, String(v))}
       />
 
-      {/* Animierte Hintergrund */}
       <SettingToggle
         label={tOr(t, 'appearance.animatedBg', 'Animierter Hintergrund')}
-        value={!!settings[SK.ANIMATED_BG]}
+        value={asBool(settings[SK.ANIMATED_BG], false)}
         onToggle={(v) => sendSetting(SK.ANIMATED_BG, String(v))}
       />
 
-      {/* Farbschema (Theme) */}
+      {/* 3. Farbschema (Theme) */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.colorTheme', 'Farbschema')}</span>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {themes(t).map((th) => {
-            const isActive = String(settings[SK.THEME]) === th.value;
+            const isActive = asStr(settings[SK.THEME], 'neon-nights') === th.value;
             return (
               <button
                 key={th.value}
@@ -376,38 +536,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         </div>
       </div>
 
-      {/* Lyrics-Stil */}
-      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsStyle', 'Lyrics-Stil')}</span>
-        <div className="mt-2">
-          <Dropdown
-            options={lyricsStyles(t)}
-            value={String(settings[SK.LYRICS_STYLE] || 'classic')}
-            onChange={(v) => sendSetting(SK.LYRICS_STYLE, v)}
-          />
-        </div>
-      </div>
-
-      {/* Lyrics-Groesse */}
-      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsSize', 'Lyrics-Gr\u00F6\u00DFe')}</span>
-        <div className="flex gap-2 mt-2">
-          {(['small', 'medium', 'large'] as const).map((s) => {
-            const isActive = String(settings[SK.LYRICS_SIZE]) === s;
-            const labels: Record<string, string> = { small: tOr(t, 'settingsGraphicSound.lyricsSizeSmall', 'Small'), medium: tOr(t, 'settingsGraphicSound.lyricsSizeMedium', 'Normal'), large: tOr(t, 'settingsGraphicSound.lyricsSizeLarge', 'Large') };
-            return (
-              <button
-                key={s}
-                onClick={() => sendSetting(SK.LYRICS_SIZE, s)}
-                className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
-                  (isActive ? 'bg-pink-500/25 border-pink-400/40 text-pink-400' : 'bg-white/5 border-white/10 text-white/50')}
-              >{labels[s]}</button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Notendarstellung (sealed / exact) */}
+      {/* 4. Notendarstellung (sealed / exact) */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5" data-testid="mirror-note-display">
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.noteDisplayMode', 'Notendarstellung')}</span>
         <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'appearance.noteDisplayModeDesc', 'Look der Notenbalken im Spiel')}</p>
@@ -416,14 +545,14 @@ function AppearanceSettings({ settings, sendSetting, t }: {
           <button
             onClick={() => sendSetting(SK.NOTE_DISPLAY_MODE, 'sealed')}
             className={'rounded-lg px-3 py-2.5 active:scale-95 transition-all border flex flex-col gap-1.5 items-start ' +
-              (String(settings[SK.NOTE_DISPLAY_MODE]) !== 'exact'
+              (asStr(settings[SK.NOTE_DISPLAY_MODE], 'sealed') !== 'exact'
                 ? 'bg-green-500/25 border-green-400/40'
                 : 'bg-white/5 border-white/10 text-white/50')}
           >
             <div className="flex h-3.5 w-full rounded overflow-hidden gap-[2px]" aria-hidden="true">
               <div className="flex-[1.2]" style={{ backgroundColor: SEALED_GOLD_COLOR }} />
-              <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
-              <div className="flex-1" style={{ backgroundColor: String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR) }} />
+              <div className="flex-1" style={{ backgroundColor: asStr(settings[SK.NOTE_SEALED_HIT_COLOR], DEFAULT_SEALED_HIT_COLOR) }} />
+              <div className="flex-1" style={{ backgroundColor: asStr(settings[SK.NOTE_SEALED_HIT_COLOR], DEFAULT_SEALED_HIT_COLOR) }} />
               <div className="flex-[0.8]" style={{ backgroundColor: 'rgba(140, 21, 21, 0.45)', boxShadow: 'inset 0 0 3px rgba(0, 0, 0, 0.4)' }} />
               <div className="flex-[1.4] bg-white/[0.08]" />
             </div>
@@ -433,7 +562,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
           <button
             onClick={() => sendSetting(SK.NOTE_DISPLAY_MODE, 'exact')}
             className={'rounded-lg px-3 py-2.5 active:scale-95 transition-all border flex flex-col gap-1.5 items-start ' +
-              (String(settings[SK.NOTE_DISPLAY_MODE]) === 'exact'
+              (asStr(settings[SK.NOTE_DISPLAY_MODE], 'sealed') === 'exact'
                 ? 'bg-green-500/25 border-green-400/40'
                 : 'bg-white/5 border-white/10 text-white/50')}
           >
@@ -448,12 +577,12 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         </div>
 
         {/* Sealed: Treffer-Farb-Swatches */}
-        {String(settings[SK.NOTE_DISPLAY_MODE]) !== 'exact' && (
+        {asStr(settings[SK.NOTE_DISPLAY_MODE], 'sealed') !== 'exact' && (
           <div className="mt-2.5">
             <span className="text-[11px] text-white/40">{tOr(t, 'appearance.sealedHitColor', 'Treffer-Farbe')}</span>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {SEALED_HIT_COLOR_PRESETS.map((c) => {
-                const active = String(settings[SK.NOTE_SEALED_HIT_COLOR] || DEFAULT_SEALED_HIT_COLOR).toLowerCase() === c.toLowerCase();
+              {SEALED_HIT_COLOR_PRESETS.map((c: string) => {
+                const active = asStr(settings[SK.NOTE_SEALED_HIT_COLOR], DEFAULT_SEALED_HIT_COLOR).toLowerCase() === c.toLowerCase();
                 return (
                   <button
                     key={c}
@@ -469,41 +598,88 @@ function AppearanceSettings({ settings, sendSetting, t }: {
           </div>
         )}
       </div>
+
+      {/* 5. Lyrics-Stil */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsStyle', 'Lyrics-Stil')}</span>
+        <div className="mt-2">
+          <Dropdown
+            options={lyricsStyles(t)}
+            value={asStr(settings[SK.LYRICS_STYLE], 'classic')}
+            onChange={(v) => sendSetting(SK.LYRICS_STYLE, v)}
+          />
+        </div>
+      </div>
+
+      {/* 6. Lyrics-Groesse */}
+      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+        <span className="text-sm font-medium text-white">{tOr(t, 'appearance.lyricsSize', 'Lyrics-Gr\u00F6\u00DFe')}</span>
+        <div className="flex gap-2 mt-2">
+          {(['small', 'medium', 'large'] as const).map((s) => {
+            const isActive = asStr(settings[SK.LYRICS_SIZE], 'medium') === s;
+            const labels: Record<string, string> = { small: tOr(t, 'settingsGraphicSound.lyricsSizeSmall', 'Small'), medium: tOr(t, 'settingsGraphicSound.lyricsSizeMedium', 'Normal'), large: tOr(t, 'settingsGraphicSound.lyricsSizeLarge', 'Large') };
+            return (
+              <button
+                key={s}
+                onClick={() => sendSetting(SK.LYRICS_SIZE, s)}
+                className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold text-center active:scale-95 transition-transform border ' +
+                  (isActive ? 'bg-pink-500/25 border-pink-400/40 text-pink-400' : 'bg-white/5 border-white/10 text-white/50')}
+              >{labels[s]}</button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ===================== Sub-View: Graphics & Sound =====================
+// ===================== Sub-View: Graphics & Sound (Audio) =====================
+// Reihenfolge wie Desktop-Audio-Tab (graphic-sound-tab.tsx):
+// Master → Lautstärke-Normalisierung → Preview → Mikrofon → YouTube.
+// (ASIO/Ausgabegerät bleibt Desktop-only.)
 
 function GraphicSoundSettings({ settings, sendSetting, t }: {
   settings: Record<string, string | boolean | number>;
   sendSetting: (key: string, val: string) => void;
   t: (_key: string) => string;
 }) {
+  const master = asNum(settings[SK.MASTER_VOLUME], 100);
+  const preview = asNum(settings[SK.PREVIEW_VOLUME], 30);
+  const mic = asNum(settings[SK.MIC_SENSITIVITY], 50);
   return (
     <div className="flex flex-col gap-3">
       {/* Master-Lautstaerke */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.masterVolume', 'Master-Lautst\u00E4rke')}</span>
-          <span className="text-xs font-mono text-cyan-400">{settings[SK.MASTER_VOLUME]}%</span>
+          <span className="text-sm font-medium text-white">{tOr(t, 'settingsGraphicSound.masterVolume', 'Master-Lautst\u00E4rke')}</span>
+          <span className="text-xs font-mono text-cyan-400">{master}%</span>
         </div>
-        <TappableNumber
-          value={Number(settings[SK.MASTER_VOLUME]) || 100}
-          min={0} max={100} step={10} unit="%"
+        <TouchSlider
+          value={master}
+          min={0} max={100} step={1}
           onChange={(v) => sendSetting(SK.MASTER_VOLUME, String(v))}
         />
+        <p className="text-[11px] text-white/30 mt-1">{tOr(t, 'settingsGraphicSound.masterVolumeDesc', 'Gesamtlautst\u00E4rke der Wiedergabe w\u00E4hrend des Singens.')}</p>
       </div>
+
+      {/* P5: Lautstärke-Normalisierung (89 dB Ziel) — echter Desktop-Wert */}
+      <SettingToggle
+        label={tOr(t, 'settings.loudnessNormalization', 'Lautst\u00E4rke-Normalisierung (89 dB Ziel)')}
+        description={tOr(t, 'settings.loudnessNormalizationDesc', 'Gleicht laut/leise Songs an — laute Songs werden leiser, leise lauter geregelt (Ziel: 89 dB).')}
+        value={asBool(settings[SK.LOUDNESS_NORMALIZATION], true)}
+        onToggle={(v) => sendSetting(SK.LOUDNESS_NORMALIZATION, String(v))}
+        testId="mirror-loudness-normalization"
+      />
 
       {/* Preview-Lautstaerke */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.previewVolume', 'Preview-Lautst\u00E4rke')}</span>
-          <span className="text-xs font-mono text-cyan-400">{settings[SK.PREVIEW_VOLUME]}%</span>
+          <span className="text-sm font-medium text-white">{tOr(t, 'settings.previewVolume', 'Preview-Lautst\u00E4rke')}</span>
+          <span className="text-xs font-mono text-cyan-400">{preview}%</span>
         </div>
-        <TappableNumber
-          value={Number(settings[SK.PREVIEW_VOLUME]) || 30}
-          min={0} max={100} step={10} unit="%"
+        <TouchSlider
+          value={preview}
+          min={0} max={100} step={1}
           onChange={(v) => sendSetting(SK.PREVIEW_VOLUME, String(v))}
         />
       </div>
@@ -511,27 +687,180 @@ function GraphicSoundSettings({ settings, sendSetting, t }: {
       {/* Mikrofon-Empfindlichkeit */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.micSensitivity', 'Mikrofon-Empfindlichkeit')}</span>
-          <span className="text-xs font-mono text-cyan-400">{settings[SK.MIC_SENSITIVITY]}%</span>
+          <span className="text-sm font-medium text-white">{tOr(t, 'settings.micSensitivity', 'Mikrofon-Empfindlichkeit')}</span>
+          <span className="text-xs font-mono text-cyan-400">{mic}%</span>
         </div>
-        <TappableNumber
-          value={Number(settings[SK.MIC_SENSITIVITY]) || 50}
-          min={0} max={100} step={5} unit="%"
+        <TouchSlider
+          value={mic}
+          min={0} max={100} step={1}
           onChange={(v) => sendSetting(SK.MIC_SENSITIVITY, String(v))}
         />
+        <p className="text-[11px] text-white/30 mt-1">{tOr(t, 'settings.micSensitivityDesc', 'Mikrofon-Eingangsempfindlichkeit anpassen')}</p>
       </div>
 
       {/* YouTube-Qualitaet */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-        <span className="text-sm font-medium text-white">{tOr(t, 'graphicSound.youtubeQuality', 'YouTube-Qualit\u00E4t')}</span>
+        <span className="text-sm font-medium text-white">{tOr(t, 'settingsGraphicSound.youtubeQuality', 'YouTube-Qualit\u00E4t')}</span>
         <div className="mt-2">
           <Dropdown
             options={ytQuality(t)}
-            value={String(settings[SK.YOUTUBE_QUALITY] || 'default')}
+            value={asStr(settings[SK.YOUTUBE_QUALITY], 'default')}
             onChange={(v) => sendSetting(SK.YOUTUBE_QUALITY, v)}
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ===================== Sub-View: Webcam (R33/P6, telefonfreundlich) =====================
+// Steuert die echte Desktop-Webcam-Config (WEBCAM_CONFIG als JSON-Blob).
+// Jede Änderung wird als KOMPLETTES JSON via settings_set gesendet —
+// genau das Format, das der Desktop via saveWebcamConfig() speichert.
+
+function WebcamSettingsSection({ webcam, webcamKnown, snapshotAvailable, onUpdate, t }: {
+  webcam: Record<string, unknown>;
+  webcamKnown: boolean;
+  snapshotAvailable: boolean;
+  onUpdate: (updates: Record<string, unknown>) => void;
+  t: (_key: string) => string;
+}) {
+  const enabled = webcam.enabled === true;
+  const sizeMode = isWebcamSize(webcam.sizeMode) ? webcam.sizeMode : '2:10';
+  const position = isWebcamPosition(webcam.position) ? webcam.position : 'bottom';
+  const mirrored = webcam.mirrored !== false;
+  const filter = isWebcamFilter(webcam.filter) ? webcam.filter : 'none';
+  const opacityPct = Math.round(Math.min(1, Math.max(0.1, asNum(webcam.opacity, 1))) * 100);
+
+  // Echte Desktop-Werte (webcam-types.ts): Vollbild / 20% / 30% / 40% Höhe.
+  const sizeOptions = [
+    { value: 'fullscreen', label: tOr(t, 'webcamSettings.fullscreen', 'Vollbild') },
+    { value: '2:10', label: tOr(t, 'webcamSettings.smallStrip', '20%') },
+    { value: '3:10', label: tOr(t, 'webcamSettings.mediumStrip', '30%') },
+    { value: '4:10', label: tOr(t, 'webcamSettings.largeStrip', '40%') },
+  ];
+
+  // Echte Desktop-Positionen: Streifen oben/unten/links/rechts.
+  const positionOptions = [
+    { value: 'top', label: tOr(t, 'webcamSettings.top', 'Oben') },
+    { value: 'bottom', label: tOr(t, 'webcamSettings.bottom', 'Unten') },
+    { value: 'left', label: tOr(t, 'webcamSettings.left', 'Links') },
+    { value: 'right', label: tOr(t, 'webcamSettings.right', 'Rechts') },
+  ];
+
+  const filterOptions = [
+    { value: 'none', label: tOr(t, 'webcamSettings.filterNone', 'Keiner') },
+    { value: 'grayscale', label: tOr(t, 'webcamSettings.filterGrayscale', 'Graustufen') },
+    { value: 'sepia', label: tOr(t, 'webcamSettings.filterSepia', 'Sepia') },
+    { value: 'contrast', label: tOr(t, 'webcamSettings.filterContrast', 'Kontrast') },
+    { value: 'brightness', label: tOr(t, 'webcamSettings.filterBrightness', 'Helligkeit') },
+    { value: 'saturate', label: tOr(t, 'webcamSettings.filterVibrant', 'Lebhaft') },
+    { value: 'blur', label: tOr(t, 'webcamSettings.filterBlur', 'Weichzeichner') },
+  ];
+
+  // Noch keine Webcam-Config auf dem Desktop → kompakter Hinweis
+  // (+ Aktivieren-Button, der eine Standard-Config remote anlegt).
+  if (!webcamKnown) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-5 text-center" data-testid="mirror-webcam-empty">
+          <p className="text-sm text-white/50 leading-relaxed">
+            {snapshotAvailable
+              ? tOr(t, 'mobile.mirrorSettingsWebcamNone', 'Auf dem Desktop ist noch keine Webcam eingerichtet. Aktiviere sie hier, um eine Standard-Konfiguration anzulegen.')
+              : tOr(t, 'mobile.mirrorSettingsNoSnapshot', 'Desktop-Werte noch nicht empfangen — Standardwerte werden angezeigt')}
+          </p>
+          <button
+            type="button"
+            onClick={() => { haptic(); onUpdate({ enabled: true }); }}
+            className="mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold bg-cyan-500 text-white active:scale-[0.98] transition-transform"
+            data-testid="mirror-webcam-enable"
+          >
+            {tOr(t, 'webcamSettings.enableWebcam', 'Webcam aktivieren')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3" data-testid="mirror-webcam-section">
+      {/* An / Aus */}
+      <SettingToggle
+        label={tOr(t, 'webcamSettings.enableWebcam', 'Webcam aktivieren')}
+        description={tOr(t, 'webcamSettings.enableWebcamDesc', 'S\u00E4nger w\u00E4hrend des Auftritts filmen')}
+        value={enabled}
+        onToggle={(v) => onUpdate({ enabled: v })}
+        testId="mirror-webcam-toggle"
+      />
+
+      {enabled && (
+        <>
+          {/* Groesse */}
+          <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+            <span className="text-sm font-medium text-white">{tOr(t, 'webcamSettings.size', 'Gr\u00F6\u00DFe')}</span>
+            <p className="text-[11px] text-white/30 mt-0.5">{tOr(t, 'settingsWebcam.sizeOptionsDesc', 'Vollbild (gesamter Hintergrund) oder Overlays mit 20%, 30% bzw. 40% der Bildschirmh\u00F6he')}</p>
+            <div className="mt-2">
+              <PillRow
+                options={sizeOptions}
+                value={sizeMode}
+                onSelect={(v) => onUpdate({ sizeMode: v })}
+              />
+            </div>
+          </div>
+
+          {/* Position (nur im Streifen-Modus, wie Desktop) */}
+          {sizeMode !== 'fullscreen' && (
+            <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+              <span className="text-sm font-medium text-white">{tOr(t, 'webcamSettings.position', 'Position')}</span>
+              <div className="mt-2">
+                <PillRow
+                  options={positionOptions}
+                  value={position}
+                  onSelect={(v) => onUpdate({ position: v })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Spiegeln (Selfie-Modus) */}
+          <SettingToggle
+            label={tOr(t, 'webcamSettings.mirror', 'Spiegeln (Selfie-Modus)')}
+            value={mirrored}
+            onToggle={(v) => onUpdate({ mirrored: v })}
+          />
+
+          {/* Filter */}
+          <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+            <span className="text-sm font-medium text-white">{tOr(t, 'webcamSettings.filter', 'Filter')}</span>
+            <div className="mt-2">
+              <PillRow
+                options={filterOptions}
+                value={filter}
+                onSelect={(v) => onUpdate({ filter: v })}
+                layout="scroll"
+              />
+            </div>
+          </div>
+
+          {/* Deckkraft */}
+          <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium text-white">{tOr(t, 'webcamSettings.opacity', 'Deckkraft')}</span>
+              <span className="text-xs font-mono text-cyan-400">{opacityPct}%</span>
+            </div>
+            <TouchSlider
+              value={opacityPct}
+              min={10} max={100} step={10}
+              onChange={(v) => onUpdate({ opacity: v / 100 })}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Hinweis: Wann Änderungen auf dem Desktop ankommen */}
+      <p className="text-[11px] text-white/30 text-center px-2 leading-relaxed">
+        {tOr(t, 'mobile.mirrorSettingsWebcamSent', '\u00C4nderungen werden auf dem Desktop gespeichert und gelten ab dem n\u00E4chsten Song.')}
+      </p>
     </div>
   );
 }
@@ -635,18 +964,71 @@ function MobileSettings({ t }: { t: (_key: string) => string }) {
 
 // ===================== Hauptkomponente =====================
 
-export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteProps) {
+export function MirrorSettingsLite({ onSendDesktopCommand, settingsSnapshot, isControlling }: MirrorSettingsLiteProps) {
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<string | null>(null);
 
-    // Lokaler Einstellungs-State (startet mit Desktop-Defaults)
+    // Lokaler Einstellungs-State — startet mit Desktop-Defaults und wird per
+    // settingsSnapshot (Prop-Push vom Desktop) mit den ECHTEN Werten befüllt.
     const [settings, setSettings] = useState<Record<string, string | boolean | number>>(() => ({ ...DEFAULTS }));
 
-    // Einstellung senden + lokal aktualisieren
+    // Webcam-Config als rohes Record (Desktop-JSON 1:1) + Flag, ob der
+    // Desktop überhaupt eine Webcam-Config gespeichert hat.
+    const [webcam, setWebcam] = useState<Record<string, unknown>>(() => ({ ...DEFAULT_WEBCAM_RECORD }));
+    const [webcamKnown, setWebcamKnown] = useState(false);
+    const webcamRef = useRef<Record<string, unknown>>(webcam);
+
+    const applyWebcam = useCallback((next: Record<string, unknown>, known: boolean) => {
+      webcamRef.current = next;
+      setWebcam(next);
+      setWebcamKnown(known);
+    }, []);
+
+    // R33: Echte Desktop-Werte übernehmen, sobald der Snapshot ankommt bzw.
+    // sich ändert (Push-on-Change). Kein eigenes Fetchen nötig.
+    useEffect(() => {
+      if (!settingsSnapshot) return;
+      const values = settingsSnapshot.values || {};
+      setSettings(() => {
+        const next: Record<string, string | boolean | number> = {};
+        for (const key of SNAPSHOT_SETTING_KEYS) {
+          const v = values[key];
+          next[key] = (typeof v === 'string' && v.length > 0) ? v : DEFAULTS[key];
+        }
+        return next;
+      });
+      const rawCam = settingsSnapshot.webcam;
+      if (rawCam && typeof rawCam === 'object') {
+        applyWebcam({ ...DEFAULT_WEBCAM_RECORD, ...rawCam }, true);
+      } else {
+        applyWebcam({ ...DEFAULT_WEBCAM_RECORD }, false);
+      }
+    }, [settingsSnapshot, applyWebcam]);
+
+    // Einstellung senden + lokal aktualisieren (optimistic update).
+    // Muster exakt wie bisher: settings_set:<url-encoded key>:<url-encoded value>
     const sendSetting = useCallback((key: string, value: string) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
-      onSendDesktopCommand(`settings_set:${encodeURIComponent(key)}:${encodeURIComponent(value)}`);
-    }, [onSendDesktopCommand]);
+      if (isControlling !== false) {
+        onSendDesktopCommand(`settings_set:${encodeURIComponent(key)}:${encodeURIComponent(value)}`);
+      }
+    }, [onSendDesktopCommand, isControlling]);
+
+    // Webcam-Änderung: lokal sofort reagieren (optimistic) und das KOMPLETTE
+    // geänderte JSON an den Desktop senden (WEBCAM_CONFIG ist ein JSON-Blob —
+    // der Desktop schreibt ihn 1:1 in den StorageKey, wie saveWebcamConfig()).
+    const updateWebcam = useCallback((updates: Record<string, unknown>) => {
+      const merged: Record<string, unknown> = { ...webcamRef.current, ...updates };
+      // Desktop-Parität: beim Aktivieren nie im Vollbild-Modus starten
+      // (WebcamSettingsPanel-An/Aus-Logik).
+      if (updates.enabled === true && merged.sizeMode === 'fullscreen') {
+        merged.sizeMode = '2:10';
+      }
+      applyWebcam(merged, true);
+      if (isControlling !== false) {
+        onSendDesktopCommand(`settings_set:${encodeURIComponent(SK.WEBCAM_CONFIG)}:${encodeURIComponent(JSON.stringify(merged))}`);
+      }
+    }, [applyWebcam, onSendDesktopCommand, isControlling]);
 
     // Zurueck zur Liste
     const handleBack = useCallback(() => {
@@ -654,13 +1036,14 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
       setActiveSection(null);
     }, []);
 
-    // Sektion oeffnen
+    // Sektion oeffnen (+ Desktop-Tab mitwechseln lassen)
     const handleOpen = useCallback((id: string) => {
       haptic();
       setActiveSection(id);
-      // Auch Desktop-Tab wechseln
-      onSendDesktopCommand(`settings_tab:${id}`);
-    }, [onSendDesktopCommand]);
+      if (isControlling !== false) {
+        onSendDesktopCommand(`settings_tab:${id}`);
+      }
+    }, [onSendDesktopCommand, isControlling]);
 
     // -------- Sub-View: eine bestimmte Sektion --------
     if (activeSection) {
@@ -668,21 +1051,14 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
       const sectionLabel = sectionInfo ? tOr(t, sectionInfo.labelKey, sectionInfo.fallback) : '';
       const sectionIcon = sectionInfo?.icon || '';
 
-      // Desktop-only Sektionen (ohne Mobile - Mobile hat eigenen QR-Code-View)
-      if (['microphone', 'webcam', 'library'].includes(activeSection)) {
+      // Desktop-only Sektionen (komplexe Editor-/Device-Settings).
+      // Webcam ist seit R33/P6 voll steuerbar und gehört NICHT mehr dazu.
+      if (['microphone', 'library'].includes(activeSection)) {
         const descKey = sectionInfo?.descKey || '';
         const descFallback = sectionInfo?.descFallback || '';
         return (
           <div className="flex flex-col gap-3 px-4 pb-8">
-            {/* Header mit Zurueck */}
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={handleBack}
-                className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm text-white/60 active:scale-95 transition-transform"
-              >{'\u2190'}</button>
-              <span className="text-lg">{sectionIcon}</span>
-              <h2 className="text-lg font-semibold text-white">{sectionLabel}</h2>
-            </div>
+            <SubViewHeader icon={sectionIcon} label={sectionLabel} onBack={handleBack} />
             <DesktopOnlyHint text={tOr(t, descKey, descFallback)} />
           </div>
         );
@@ -690,15 +1066,7 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
 
       return (
         <div className="flex flex-col gap-3 px-4 pb-8">
-          {/* Header mit Zurueck */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={handleBack}
-              className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm text-white/60 active:scale-95 transition-transform"
-            >{'\u2190'}</button>
-            <span className="text-lg">{sectionIcon}</span>
-            <h2 className="text-lg font-semibold text-white">{sectionLabel}</h2>
-          </div>
+          <SubViewHeader icon={sectionIcon} label={sectionLabel} onBack={handleBack} />
 
           {/* Sub-View Inhalt */}
           {activeSection === 'general' && (
@@ -713,6 +1081,15 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
           {activeSection === 'graphicsound' && (
             <GraphicSoundSettings settings={settings} sendSetting={sendSetting} t={t} />
           )}
+          {activeSection === 'webcam' && (
+            <WebcamSettingsSection
+              webcam={webcam}
+              webcamKnown={webcamKnown}
+              snapshotAvailable={!!settingsSnapshot}
+              onUpdate={updateWebcam}
+              t={t}
+            />
+          )}
           {activeSection === 'about' && (
             <AboutSettings t={t} />
           )}
@@ -726,13 +1103,35 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
     // -------- Hauptansicht: Sektions-Liste --------
     return (
       <div className="flex flex-col gap-3 px-4 pb-8">
-        {/* Header */}
-        <div className="flex items-center gap-2 py-2">
-          <span className="text-2xl">\u2699\uFE0F</span>
+        {/* Header — R33/P2: der Emoji-Muell-Rest ('\u2699\uFE0F' als roher
+            JSX-Text) ist entfernt, stattdessen ein sinnvoller Untertitel. */}
+        <div className="py-2">
           <h2 className="text-lg font-semibold text-white">
             {t('mobile.mirrorSettings')}
           </h2>
+          <p className="text-[11px] text-white/40 mt-0.5">
+            {tOr(t, 'mobile.mirrorSettingsSubtitle', 'Desktop-Einstellungen live vom Handy aus steuern')}
+          </p>
         </div>
+
+        {/* Hinweis: Snapshot noch nicht da → Defaults sichtbar */}
+        {!settingsSnapshot && (
+          <div className="rounded-xl bg-amber-500/10 border border-amber-400/20 px-3 py-2 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            <p className="text-[11px] text-amber-200/70">
+              {tOr(t, 'mobile.mirrorSettingsNoSnapshot', 'Desktop-Werte noch nicht empfangen — Standardwerte werden angezeigt')}
+            </p>
+          </div>
+        )}
+
+        {/* Hinweis: keine Fernsteuerung (defensiv, Shell gated die View) */}
+        {isControlling === false && (
+          <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+            <p className="text-[11px] text-white/50">
+              {tOr(t, 'mobile.mirrorSettingsNeedControl', '\u00DCbernimm die Fernsteuerung, um \u00C4nderungen an den Desktop zu senden')}
+            </p>
+          </div>
+        )}
 
         {/* Settings-Buttons mit Beschreibung */}
         <div className="flex flex-col gap-2">
@@ -743,7 +1142,7 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
             const desc = t(section.descKey) === section.descKey
               ? section.descFallback
               : t(section.descKey);
-            const isDesktopOnly = ['microphone', 'webcam', 'library'].includes(section.id);
+            const isDesktopOnly = ['microphone', 'library'].includes(section.id);
             return (
               <button
                 key={section.id}
@@ -763,6 +1162,9 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
                   {isDesktopOnly && (
                     <span className="text-[9px] font-medium bg-white/10 text-white/30 px-1.5 py-0.5 rounded-full">DESKTOP</span>
                   )}
+                  {section.id === 'webcam' && webcamKnown && webcam.enabled === true && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                  )}
                   <span className="text-white/30 text-xs">{'\u2192'}</span>
                 </div>
               </button>
@@ -771,4 +1173,6 @@ export function MirrorSettingsLite({ onSendDesktopCommand }: MirrorSettingsLiteP
         </div>
       </div>
     );
-}MirrorSettingsLite.displayName = 'MirrorSettingsLite';
+}
+
+MirrorSettingsLite.displayName = 'MirrorSettingsLite';

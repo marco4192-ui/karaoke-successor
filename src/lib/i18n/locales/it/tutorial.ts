@@ -513,6 +513,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Connessione',
         features: 'Cosa sa fare l\'app',
+        control: 'Controllo remoto: Take Control',
+        solo: 'Senza controllo',
+        help: 'Aiuto del Companion',
         manage: 'Gestione dei dispositivi',
       },
       steps: {
@@ -552,6 +555,52 @@ export const tutorialTranslations = {
           title: 'Modalità di canto insieme 🎶',
           body: 'Nelle modalità festa Companion Sing-A-Long e Passa il Microfono gli ospiti cantano direttamente dal telefono — il rilevamento del tono gira sul dispositivo, il desktop dirige.',
           details: 'Companion Sing-A-Long: ogni ospite ha sul telefono testo e display del tono — il desktop mostra la pista di note condivisa.\n\nPassa il Microfono: il microfono ruota — perfino in mix tra telefono e microfono fisico.\n\nPer entrambe: meglio è il Wi-Fi, più fluido è il tono. Se scatta, un dispositivo più vicino al router aiuta.',
+        },
+        takeControl: {
+          title: 'Take Control 🎮',
+          body: 'Un telefono ora guida il desktop solo su comando: il pulsante "Prendi il controllo" sul Companion si prende il telecomando — prima e dopo, il telefono tocca solo per sé.',
+          details: 'Il meccanismo dietro "Prendi il controllo":\n• Il controllo è riservato in esclusiva a un solo dispositivo (blocco remoto).\n• Desktop e telefono che controlla restano sincronizzati: ogni lato vede subito cosa fa l\'altro.\n• Tutti gli altri telefoni mostrano lo stato "Controllato da …" e aspettano.\n\nIl controllo termina con "Rilascia" — o automaticamente se il telefono perde la connessione.',
+        },
+        controlSync: {
+          title: 'Desktop e telefono in sincrono',
+          body: 'Torniamo nella scheda Mobile: qui da host vedi tutti i dispositivi. Quando un telefono prende il controllo, rispecchia lo schermo del desktop e comanda schermate, pulsanti e conferme — mouse e tastiera sul desktop restano pienamente utilizzabili.',
+          details: 'Poiché entrambi i lati girano in sincrono, nessuno può "toccare e scappare": clicchi sul desktop e il telefono che controlla segue — tocchi sul telefono e il desktop cambia schermata.\n\nNella lista dei dispositivi riconosci il dispositivo che controlla dal badge del telecomando.',
+        },
+        controlHandover: {
+          title: 'Un solo telecomando alla volta',
+          body: 'Il controllo è esclusivo: mentre un telefono guida, nessun secondo può subentrare — il suo pulsante mostra invece chi sta controllando. Rilasciare o disconnettersi libera subito il controllo.',
+          details: 'Buono a sapersi:\n• L\'host può continuare a cliccare quando vuole — il telefono che controlla segue (e mantiene il controllo).\n• Se il telefono che controlla perde la connessione (batteria, WiFi), il controllo torna automaticamente al desktop.\n• Anche un kick dalla lista dei dispositivi termina il controllo.',
+        },
+        soloOverview: {
+          title: 'Ospiti senza controllo 🙋',
+          body: 'La maggior parte degli ospiti non ha mai bisogno del telecomando: i telefoni connessi senza Take Control sono compagni autonomi — richiedono canzoni, chattano, cantano e consultano i propri risultati senza toccare il desktop.',
+          details: 'Cosa possono fare i telefoni senza controllo:\n• 🎵 Mettere in coda le proprie canzoni (con il badge 📱)\n• 💬 Entrare nella chat della festa\n• 🎤 Cantare nelle modalità festa (Companion Sing-A-Long, Passa il Microfono)\n• 🗳️ Votare nei sondaggi (torneo, Battle Royale)\n• 🏆 Vedere i propri punteggi e risultati',
+        },
+        soloQueue: {
+          title: 'Richieste senza controllo',
+          body: 'Anche senza telecomando ogni ospite mette in coda le proprie canzoni: scegli una canzone sul telefono, mettila in coda — fatto. La richiesta arriva qui con il badge 📱 e conta per il limite di 3 canzoni del profilo.',
+        },
+        soloParty: {
+          title: 'Cantare e votare',
+          body: 'La partecipazione alla festa passa sempre dai telefoni: in Companion Sing-A-Long e Passa il Microfono gli ospiti cantano direttamente dal dispositivo, al torneo e in Battle Royale votano con un tocco — tutto senza Take Control.',
+        },
+        soloStats: {
+          title: 'Risultati e punteggi propri',
+          body: 'Ogni ospite ha il proprio album: sul telefono può consultare i propri punteggi e risultati — senza Take Control. Ciò che il profilo conquista, l\'ospite lo verifica anche dal divano.',
+        },
+        soloLimits: {
+          title: 'Cosa resta bloccato',
+          body: 'Senza controllo, impostazioni, profili, configurazione della festa, sfide giornaliere e Jukebox restano fuori — restano riservati al desktop (o a un Companion con Take Control).',
+          details: 'Perché il lucchetto? Queste aree cambiano lo stato di gioco o la configurazione per tutti: impostazioni, gestione dei profili, configurazione della festa, sfide giornaliere e Jukebox. Per questo esiste il controllo esplicito — "Prendi il controllo" li sblocca per esattamente un telefono.\n\nL\'host del desktop ha sempre tutto in mano.',
+        },
+        helpButton: {
+          title: 'Aiuto su ogni telefono ❓',
+          body: 'Conosci il menu ? qui nella barra dei menu — ogni telefono connesso riceve il proprio pulsante "?". Un tocco apre l\'aiuto del Companion direttamente sul dispositivo.',
+        },
+        helpLocal: {
+          title: 'Solo leggere, mai controllare',
+          body: 'L\'aiuto del Companion è una pura vista di lettura: non invia comandi al desktop e non avvia mai un tour del desktop. Gli ospiti possono aprirlo in qualsiasi momento — anche mentre qualcuno canta o controlla.',
+          details: 'Così l\'aiuto resta volutamente separato dal sistema di controllo: un ospite che vuole solo controllare una cosa ("Come metto in coda una canzone?") non influenza affatto la serata in corso — e i tour qui sul desktop restano affare dell\'host.\n\nSi apre con il pulsante "?" nell\'app Companion; si chiude semplicemente chiudendo la vista.',
         },
         deviceList: {
           title: 'L\'elenco dei dispositivi',

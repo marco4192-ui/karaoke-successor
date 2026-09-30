@@ -1,0 +1,32 @@
+[
+  {
+    "key": "mobileViews.desktopDefaultDifficulty",
+    "en": "Desktop default",
+    "de": "Desktop-Standard"
+  },
+  {
+    "key": "mobileViews.queueAddAction",
+    "en": "Add to queue",
+    "de": "Zur Warteschlange hinzufügen"
+  },
+  {
+    "key": "mobile.mirrorQueueEmptyTitle",
+    "en": "No requests yet",
+    "de": "Noch keine Wünsche"
+  },
+  {
+    "key": "mobile.mirrorQueueEmptyBrowse",
+    "en": "Browse the library and pick a song!",
+    "de": "Such dir einen Song in der Bibliothek!"
+  },
+  {
+    "key": "mobile.mirrorQueueDesktopControls",
+    "en": "The desktop decides when the singing starts",
+    "de": "Der Desktop bestimmt, wann gesungen wird"
+  },
+  {
+    "key": "mobile.queueSlotsFull",
+    "en": "All slots filled",
+    "de": "Alle Plätze belegt"
+  }
+]

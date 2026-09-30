@@ -56,6 +56,9 @@ import { DesktopChatPanel } from '@/components/ui/desktop-chat-panel';
 // so toggling the motto reaches the companion library without re-running
 // this effect on every store change.
 import { mottoParty } from '@/lib/game/motto-party';
+// R33/P8: module-level jukebox mirror snapshot — read fresh inside the 3s
+// jukebox-state push effect below (no re-render coupling).
+import { getJukeboxMirrorSnapshot } from '@/components/screens/jukebox/use-jukebox';
 
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
@@ -1367,6 +1370,69 @@ export default function KaraokeZERO() {
     };
   }, []);
 
+  // ── R33/P8: Jukebox state push for the companion Jukebox mirror ──
+  // Same push-on-change pattern as the settings snapshot above: a cheap LOCAL
+  // read (module-level mirror singleton from use-jukebox.ts — filters/shuffle/
+  // repeat written by the hook, pool derived fresh from storage) runs every
+  // 3 s and POSTs ONLY when the state actually changed. A 60 s keep-alive
+  // re-push heals server restarts (the companion data store is in-memory);
+  // companions additionally PULL via GET action=getjukeboxstate on view load.
+  const jukeboxPushRef = useRef<{ serialized: string; lastPushAt: number }>({ serialized: '', lastPushAt: 0 });
+  useEffect(() => {
+    const pushJukeboxState = (force = false) => {
+      try {
+        const snap = getJukeboxMirrorSnapshot();
+        // Compare WITHOUT updatedAt (a fresh timestamp would defeat the JSON
+        // compare) — the timestamp is only attached to the POSTed payload.
+        const serialized = JSON.stringify([
+          snap.filters, snap.poolPlaylistId, snap.poolPlaylistName, snap.shuffle, snap.repeat,
+        ]);
+        const ref = jukeboxPushRef.current;
+        const now = Date.now();
+        // Skip when unchanged AND the last successful push is fresh (< 60 s)
+        if (!force && serialized === ref.serialized && now - ref.lastPushAt < 60_000) return;
+        jukeboxPushRef.current = { serialized, lastPushAt: now };
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // NOTE: the server stores the payload OBJECT AS-IS (unlike
+          // 'dailystate', which extracts payload.daily) and GET getjukeboxstate
+          // returns it under the 'jukebox' key — so the payload must be the
+          // FLAT state object for use-mobile-data's data.jukebox read to work.
+          body: JSON.stringify({
+            type: 'jukeboxstate',
+            payload: {
+              filters: snap.filters,
+              poolPlaylistId: snap.poolPlaylistId || null,
+              poolPlaylistName: snap.poolPlaylistName,
+              shuffle: snap.shuffle,
+              repeat: snap.repeat,
+              updatedAt: now,
+            },
+          }),
+        }).catch(() => {
+          // Push failed (server hiccup) — allow an immediate retry on the
+          // next 3 s check instead of waiting for the 60 s keep-alive.
+          jukeboxPushRef.current.lastPushAt = 0;
+        });
+      } catch { /* non-critical */ }
+    };
+    pushJukeboxState(true); // initial push so late-joining companions find data
+    const interval = setInterval(() => pushJukeboxState(), 3000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        // Jukebox state may have changed while this tab was hidden —
+        // re-check immediately, force keeps the keep-alive clock honest.
+        pushJukeboxState(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   // ── R33/P10: Highscores push for the companion Highscores mirror ──
   // Push the top-100 local highscores whenever they change (cheap JSON
   // compare) or every 15 s as a keep-alive after server restarts.
@@ -1386,7 +1452,7 @@ export default function KaraokeZERO() {
           maxCombo: h.maxCombo,
           difficulty: h.difficulty,
           gameMode: h.gameMode,
-          date: h.date,
+          date: h.playedAt ? new Date(h.playedAt).toISOString() : undefined,
         }));
         const serialized = JSON.stringify(entries);
         if (serialized === highscoresRef.current) return; // unchanged
@@ -1512,7 +1578,16 @@ export default function KaraokeZERO() {
           ? 'pt-0 px-0 pb-0 w-full h-full'
           : 'px-4 pb-8 flex-1 min-h-0'
       }`}>
-        {screen === 'home' && <HomeScreen onNavigate={setScreen} onLaunchMode={handleLaunchMode} />}
+        {screen === 'home' && (
+          <>
+            <HomeScreen onNavigate={setScreen} onLaunchMode={handleLaunchMode} />
+            {/* R33-e (P3): Tastenkürzel-Karte — reine Anzeige-Karte unter dem
+                Home-Screen; einziger Zustand ist der lokale Collapse-State
+                (localStorage), KEINE Effekte/Sync-Logik. Komponente liegt
+                unten am Datei-Ende (HomeHotkeysCard). */}
+            <HomeHotkeysCard />
+          </>
+        )}
         {screen === 'library' && (
           <LibraryScreen
             partyPickActive={!!party.selectedGameMode}
@@ -1817,5 +1892,115 @@ export default function KaraokeZERO() {
         und rendert null, wenn geschlossen. */}
     <HelpMenu />
     </TourController>
+  );
+}
+
+// ═══ R33-e (P3): Tastenkürzel-Karte auf dem Desktop-Home-Screen ═══
+// Kompakte, einklappbare Karte unter dem Home-Screen mit den wichtigsten
+// globalen Tastenkürzeln. Die Kürzel sind ECHT (single source of truth:
+// src/hooks/use-keyboard-shortcuts.ts — Ctrl+L Suche, Ctrl+R/D Zufalls-Song,
+// Ctrl+Q Queue, Ctrl+J Jukebox, Esc/Enter Pause, F12 Vollbild, F1–F10
+// Screen-Navigation); die Anzeige-Sprache kommt aus mobile.hotkeys.*
+// (i18n; t() fällt bei fehlenden Übersetzungen automatisch auf EN zurück).
+//
+// Bewusst SEPARAT vom HomeScreen-Component gehalten (R33-e-Regel: nur der
+// Render-Bereich hier in karaoke-app.tsx, home-screen.tsx bleibt unberührt)
+// und bewusst OHNE jede State-/Sync-Logik: einziger Zustand ist der lokale
+// Collapse-State — persistiert im localStorage-Key
+// 'karaoke-hotkeys-collapsed' (Standard: aufgeklappt).
+const HOTKEYS_COLLAPSE_STORAGE_KEY = 'karaoke-hotkeys-collapsed';
+
+/** Die wichtigsten globalen Kürzel (key = Anzeige, label = mobile.hotkeys.*). */
+const HOME_HOTKEY_ENTRIES: Array<{ keys: string; i18nKey: string; wide?: boolean }> = [
+  { keys: 'Ctrl+L', i18nKey: 'mobile.hotkeys.ctrlL' },
+  { keys: 'Ctrl+R', i18nKey: 'mobile.hotkeys.ctrlR' },
+  { keys: 'Ctrl+D', i18nKey: 'mobile.hotkeys.ctrlD' },
+  { keys: 'Ctrl+Q', i18nKey: 'mobile.hotkeys.ctrlQ' },
+  { keys: 'Ctrl+J', i18nKey: 'mobile.hotkeys.ctrlJ' },
+  { keys: 'Esc', i18nKey: 'mobile.hotkeys.esc' },
+  { keys: 'Enter', i18nKey: 'mobile.hotkeys.enter' },
+  { keys: 'F12', i18nKey: 'mobile.hotkeys.f12' },
+  { keys: 'F1–F10', i18nKey: 'mobile.hotkeys.fkeys', wide: true },
+];
+
+function HomeHotkeysCard() {
+  const { t } = useTranslation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Persistierter Collapse-State — erst NACH dem Mount lesen (vermeidet
+  // SSR-/Hydration-Mismatch; Standard ist aufgeklappt, daher flackert die
+  // Karte nur für Nutzer, die sie zuvor bewusst eingeklappt haben).
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(HOTKEYS_COLLAPSE_STORAGE_KEY) === '1') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration sync (same pattern as HomeScreen)
+        setCollapsed(true);
+      }
+    } catch { /* localStorage nicht verfügbar (Privat-Modus) — aufgeklappt bleiben */ }
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed(prev => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(HOTKEYS_COLLAPSE_STORAGE_KEY, next ? '1' : '0');
+      } catch { /* ignore — Collapse funktioniert trotzdem für diese Session */ }
+      return next;
+    });
+  }, []);
+
+  return (
+    <section
+      aria-label={t('mobile.hotkeys.cardTitle')}
+      className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 mb-8"
+      data-testid="home-hotkeys-card"
+    >
+      <div className="retro-gradient-card retro-border-cyan rounded-xl">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-controls="home-hotkeys-list"
+          data-testid="home-hotkeys-toggle"
+          className="w-full flex items-center justify-between gap-3 p-5 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 transition-colors hover:bg-white/[0.03]"
+        >
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="text-2xl leading-none flex-shrink-0" aria-hidden>⌨️</span>
+            <span className="min-w-0">
+              <span className="block font-bold text-white">{t('mobile.hotkeys.cardTitle')}</span>
+              <span className="block text-xs text-[#b8b8d0]/80 leading-snug">{t('mobile.hotkeys.cardHint')}</span>
+            </span>
+          </span>
+          {/* Bildschirmleser: Zustand steckt in aria-expanded, die Aktion
+              zusätzlich explizit als sr-only-Text. */}
+          <span className="sr-only">{collapsed ? t('mobile.hotkeys.expand') : t('mobile.hotkeys.collapse')}</span>
+          <span
+            className={`text-white/40 text-sm flex-shrink-0 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
+            aria-hidden
+          >
+            ▾
+          </span>
+        </button>
+        {!collapsed && (
+          <div
+            id="home-hotkeys-list"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 px-5 pb-5"
+          >
+            {HOME_HOTKEY_ENTRIES.map(({ keys, i18nKey, wide }) => (
+              <div
+                key={keys}
+                className={`flex items-center gap-3 min-w-0 ${wide ? 'sm:col-span-2' : ''}`}
+                data-testid={`home-hotkey-${keys.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+              >
+                <kbd className="flex-shrink-0 px-2 py-1 rounded-md border border-white/15 bg-white/10 text-xs font-semibold font-mono text-white/85 whitespace-nowrap shadow-sm min-w-[3.25rem] text-center">
+                  {keys}
+                </kbd>
+                <span className="text-sm text-[#b8b8d0]/90 leading-snug">{t(i18nKey)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

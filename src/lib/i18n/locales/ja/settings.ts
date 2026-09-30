@@ -2,6 +2,9 @@
 
 export const settingsTranslations = {
 settings: {
+// ── R33/P5: Loudness-Normalisierung (89 dB Ziel) ──
+  loudnessNormalization: '音量のノーマライズ（89 dB目標）',
+
   title: '設定',
   subtitle: 'カラオケ体験をカスタマイズ',
   tabLibrary: 'ライブラリ',

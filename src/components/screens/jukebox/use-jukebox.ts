@@ -7,6 +7,7 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
 import { getPlaylistById } from '@/lib/playlist-manager';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
+import { getActiveJukeboxPoolId, setJukeboxPool } from './jukebox-pool';
 import { fuzzyScore } from '@/lib/fuzzy-search';
 import { getBool, getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
@@ -22,6 +23,103 @@ import {
 interface RecentlyPlayedEntry {
   songId: string;
   playedAt: number;
+}
+
+// ==================== R33/P8: MIRROR SNAPSHOT (module singleton) ====================
+// Read access for the global jukebox-state push in karaoke-app.tsx: the hook
+// below (re)writes its filter/playback config into this module-level snapshot
+// whenever it changes; the getter additionally derives the ACTIVE POOL fresh
+// from storage so pool changes from ANY jukebox surface are always seen.
+
+/** Compact jukebox config for the companion Jukebox mirror. */
+export interface JukeboxMirrorSnapshot {
+  filters: { genre: string; artist: string; era: string; year: string };
+  poolPlaylistId: string;
+  poolPlaylistName: string | null;
+  shuffle: boolean;
+  repeat: RepeatMode;
+}
+
+// Module singleton — defaults mirror the hook's initial state so the very
+// first push (before the jukebox screen was ever opened) reports sane values.
+let mirrorSnapshot: JukeboxMirrorSnapshot = {
+  filters: { genre: 'all', artist: '', era: 'all', year: 'all' },
+  poolPlaylistId: '',
+  poolPlaylistName: null,
+  shuffle: true,
+  repeat: 'all',
+};
+
+/**
+ * Current jukebox config for the companion mirror (R33/P8). The POOL part is
+ * derived FRESH from storage on every call (cheap localStorage read) — the
+ * pool may be changed by other jukebox surfaces (player header, controls bar,
+ * fullscreen header) or reset when this screen unmounts, none of which run
+ * through this hook's state.
+ */
+export function getJukeboxMirrorSnapshot(): JukeboxMirrorSnapshot {
+  let poolPlaylistId = '';
+  let poolPlaylistName: string | null = null;
+  try {
+    poolPlaylistId = getActiveJukeboxPoolId();
+    if (poolPlaylistId) poolPlaylistName = getPlaylistById(poolPlaylistId)?.name ?? null;
+  } catch {
+    /* storage unavailable — report an empty pool */
+  }
+  return { ...mirrorSnapshot, poolPlaylistId, poolPlaylistName };
+}
+
+// ==================== R33/P8: REMOTE-OP QUEUE (companion commands) ====================
+// jukebox_set_filter / jukebox_set_pool / jukebox_enqueue_playlist arrive as
+// window CustomEvents fired by use-global-remote-control RIGHT AFTER it
+// navigates to the jukebox screen — the event may fire while this screen is
+// still MOUNTING (React render + effects are async). The module-level
+// listeners below buffer the ops; the mounted hook instance drains the queue
+// on mount AND on every new op, so nothing is lost in the navigation gap.
+
+/** One buffered remote operation from the companion. */
+export type JukeboxRemoteOp =
+  | { kind: 'filter'; field: string; value: unknown }
+  | { kind: 'pool'; playlistId: string }
+  | { kind: 'enqueue'; playlistId: string };
+
+const pendingRemoteOps: JukeboxRemoteOp[] = [];
+const remoteOpSubscribers = new Set<() => void>();
+
+function bufferRemoteOp(op: JukeboxRemoteOp) {
+  pendingRemoteOps.push(op);
+  // Live hook instances drain immediately; without subscribers the op stays
+  // buffered until the next hook instance mounts.
+  remoteOpSubscribers.forEach(fn => fn());
+}
+
+if (typeof window !== 'undefined') {
+  // HMR guard: a hot reload re-evaluates this module — without the flag the
+  // OLD listeners would stay on window and every op would be buffered twice.
+  const w = window as Window & { __karaokeR33JukeboxOps?: boolean };
+  if (!w.__karaokeR33JukeboxOps) {
+    w.__karaokeR33JukeboxOps = true;
+    // 'jukebox:set-filter' — detail { field: 'genre'|'artist'|'era'|'year', value }
+    // (value null/''/'all' clears the filter)
+    window.addEventListener('jukebox:set-filter', ((e: Event) => {
+      const detail = (e as CustomEvent<{ field?: string; value?: unknown }>).detail;
+      if (!detail?.field) return;
+      bufferRemoteOp({ kind: 'filter', field: detail.field, value: detail.value });
+    }) as EventListener);
+    // 'jukebox:set-pool' — detail { playlistId } ('' = all songs / pool cleared)
+    window.addEventListener('jukebox:set-pool', ((e: Event) => {
+      const detail = (e as CustomEvent<{ playlistId?: string }>).detail;
+      if (typeof detail?.playlistId !== 'string') return;
+      bufferRemoteOp({ kind: 'pool', playlistId: detail.playlistId });
+    }) as EventListener);
+    // 'jukebox:enqueue-playlist' — detail { playlistId } → all playlist songs
+    // go into the jukebox queue (fresh start when idle, enqueued when running)
+    window.addEventListener('jukebox:enqueue-playlist', ((e: Event) => {
+      const detail = (e as CustomEvent<{ playlistId?: string }>).detail;
+      if (!detail?.playlistId) return;
+      bufferRemoteOp({ kind: 'enqueue', playlistId: detail.playlistId });
+    }) as EventListener);
+  }
 }
 
 export function useJukebox(refs?: {
@@ -604,6 +702,78 @@ export function useJukebox(refs?: {
     full.forEach(s => insertSongIntoQueue(s));
     return true;
   }, [prepareSong, insertSongIntoQueue, timerMinutes]);
+
+  // Ref-synced access for the R33/P8 remote-op drain below (enqueueLibrary
+  // depends on timerMinutes — the drain effect must not re-run for that).
+  const enqueueLibraryPlaylistRef = useRef(enqueueLibraryPlaylist);
+  enqueueLibraryPlaylistRef.current = enqueueLibraryPlaylist;
+
+  // ==================== R33/P8: COMPANION FILTER/POOL/ENQUEUE OPS ====================
+  // Applies buffered remote ops (see the module-level queue above). The events
+  // are fired by use-global-remote-control AFTER the server verified the
+  // remote lock (CONTROL classification) — no extra permission check needed.
+  const applyRemoteOp = useCallback((op: JukeboxRemoteOp) => {
+    if (op.kind === 'filter') {
+      const raw = op.value;
+      // null / undefined / '' / 'all' → clear the filter (desktop defaults)
+      const clear = raw === null || raw === undefined || raw === '' || raw === 'all';
+      const value = clear ? '' : String(raw);
+      switch (op.field) {
+        case 'genre': setFilterGenre(clear ? 'all' : value); break;
+        case 'artist': setFilterArtist(value); break;
+        case 'era': setFilterEra(clear ? 'all' : value); break;
+        case 'year': setFilterYear(clear ? 'all' : value); break;
+        default: break; // unknown filter field — ignore
+      }
+      return;
+    }
+    if (op.kind === 'pool') {
+      // '' clears the pool (all songs); setJukeboxPool notifies every
+      // mounted pool indicator (and our poolChangeCounter) via its event.
+      setJukeboxPool(op.playlistId);
+      return;
+    }
+    // 'enqueue' — playlist songs into the jukebox queue; starts playback
+    // when the jukebox is idle (existing enqueueLibraryPlaylist semantics).
+    // The library loads ASYNC on mount — when the companion triggered the
+    // navigation to this screen the songs may not be resolved yet, so retry
+    // briefly (the op would otherwise resolve zero songs and be lost).
+    const tryEnqueue = async (attempt: number): Promise<void> => {
+      const ok = await enqueueLibraryPlaylistRef.current(op.playlistId);
+      if (!ok && attempt < 10 && songsRef.current.length === 0) {
+        setTimeout(() => { void tryEnqueue(attempt + 1); }, 500);
+      }
+    };
+    void tryEnqueue(0);
+  }, []);
+
+  const applyRemoteOpRef = useRef(applyRemoteOp);
+  applyRemoteOpRef.current = applyRemoteOp;
+
+  useEffect(() => {
+    const drain = () => {
+      while (pendingRemoteOps.length > 0) {
+        const op = pendingRemoteOps.shift();
+        if (op) applyRemoteOpRef.current(op);
+      }
+    };
+    remoteOpSubscribers.add(drain);
+    drain(); // apply ops buffered while this screen was mounting / unmounted
+    return () => { remoteOpSubscribers.delete(drain); };
+  }, []);
+
+  // ==================== R33/P8: MIRROR SNAPSHOT SYNC ====================
+  // Write the filter/playback config into the module singleton so karaoke-app's
+  // jukebox-state push (3 s JSON-compare loop) sees changes. The pool is NOT
+  // written here — getJukeboxMirrorSnapshot() derives it fresh from storage.
+  useEffect(() => {
+    mirrorSnapshot = {
+      ...mirrorSnapshot,
+      filters: { genre: filterGenre, artist: filterArtist, era: filterEra, year: filterYear },
+      shuffle,
+      repeat,
+    };
+  }, [filterGenre, filterArtist, filterEra, filterYear, shuffle, repeat]);
 
   // Companion App: video link arrives via the remote-command bridge
   useEffect(() => {

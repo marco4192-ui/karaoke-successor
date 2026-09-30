@@ -27,9 +27,20 @@ export function useNetworkStatus() {
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
 
+    // R33: Reconciliation — some environments (headless browsers, embedded
+    // webviews, iOS Safari cold starts) capture a stale `false` on mount
+    // without ever firing an 'online` event, leaving the banner up forever
+    // although the network is up. Periodically + on visibility changes,
+    // re-read navigator.onLine as the source of truth.
+    const reconcile = () => setIsOnline(navigator.onLine);
+    const interval = setInterval(reconcile, 5000);
+    document.addEventListener('visibilitychange', reconcile);
+
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', reconcile);
     };
   }, []);
 

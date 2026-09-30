@@ -2,6 +2,9 @@
 
 export const settingsTranslations = {
 settings: {
+// ── R33/P5: Loudness-Normalisierung (89 dB Ziel) ──
+  loudnessNormalization: '음량 정규화 (89 dB 목표)',
+
   title: '설정',
   subtitle: '노래방 경험을 구성하세요',
   tabLibrary: '라이브러리',

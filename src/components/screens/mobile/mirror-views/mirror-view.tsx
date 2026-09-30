@@ -13,6 +13,11 @@ import type {
   MobileView,
   GameMode,
   PitchData,
+  MobileProfile,
+  DesktopSettingsSnapshot,
+  MobileHighscoreEntry,
+  DailyProfileState,
+  JukeboxMirrorState,
 } from '../mobile-types';
 
 // ===================== Lite-Ansichten =====================
@@ -114,6 +119,44 @@ export interface MirrorViewProps {
 
   // Desktop-Mirroring: sendet einen Navigations-Command an den Desktop
   onSendDesktopCommand: (screen: string, data?: unknown) => void;
+
+  // ─────────────────────────────────────────────────────────────────────
+  // R33-c PROPS-VERTRAG (OPTIONAL — andere Agenten bauen darauf, exakt
+  // diese Namen! Alle Felder werden aus mobile-client-view.tsx durchgereicht).
+  // ─────────────────────────────────────────────────────────────────────
+
+  /** R33/P1: GENAU remoteLock.lockedByMe — steuert die Variante
+   *  (steuernd = bidirektionale Spiegelung vs. nicht-steuernd = lokale
+   *  Navigation im erlaubten Menü). */
+  isControlling?: boolean;
+
+  /** R33/P5/P6/P16: Desktop-Settings-Snapshot (Werte + Webcam-Config +
+   *  Standard-Schwierigkeit) — vom Connection-Hook (Pull bei (Re)Connect +
+   *  Socket.IO-Push-on-Change). */
+  settingsSnapshot?: DesktopSettingsSnapshot | null;
+
+  /** R33/P10: Top-100-Local-Highscores (nur lesend, eigene filterbar). */
+  highscores?: MobileHighscoreEntry[];
+  onLoadHighscores?: () => void;
+
+  /** R33/P12: Daily-Challenge-Snapshots je Profil (Slots/Wochenziel/Streak/Badges). */
+  dailyState?: Record<string, DailyProfileState> | null;
+  onLoadDailyState?: () => void;
+
+  /** R33/P8: Jukebox-Spiegelzustand (Filter/Pool/Shuffle/Repeat). */
+  jukeboxState?: JukeboxMirrorState | null;
+  onLoadJukeboxState?: () => void;
+
+  /** R33/P8: Companion-Profil (Profil-Karte der nicht-steuernden Startseite). */
+  profile?: MobileProfile | null;
+
+  /** R33/P8: Lokale Navigation (nicht-steuernde Companion) — CTA → Bibliothek/Queue,
+   *  ohne remote_command an den Desktop. */
+  onLocalNavigate?: (screen: string) => void;
+
+  /** R33/P2: Profil-Karte antippen → Profil-Bearbeitung (eigenes Profil
+   *  bleibt auch ohne Steuerung erlaubt). */
+  onOpenProfile?: () => void;
 }
 
 // ===================== Hauptkomponente =====================
@@ -209,9 +252,40 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
   onAcquireRemote,
   onReleaseRemote,
   onSendDesktopCommand,
+  // R33-c Props-Vertrag
+  isControlling,
+  settingsSnapshot,
+  highscores,
+  onLoadHighscores,
+  dailyState,
+  onLoadDailyState,
+  jukeboxState,
+  onLoadJukeboxState,
+  profile,
+  onLocalNavigate,
+  onOpenProfile,
 }) {
   const navBase = { onNavigate, gameState };
   const desktopMirrorBase = { onSendDesktopCommand };
+
+  // R33-c: Die Vertrags-Requisiten als Spread weiterreichen. Spread statt
+  // expliziter Attribute, damit die Lite-Views (parallel von Agenten C/D/E
+  // neu gebaut) nur die Felder deklarieren müssen, die sie wirklich nutzen.
+  const mirrorData = {
+    isControlling,
+    settingsSnapshot,
+    highscores,
+    onLoadHighscores,
+    dailyState,
+    onLoadDailyState,
+    jukeboxState,
+    onLoadJukeboxState,
+  };
+
+  // R33: Identitäts-Requisiten als Spread (Agent D — eigene Scores/Achievements
+  // filtern nach profileId). Spread statt expliziter Attribute, damit die
+  // parallel neu gebauten Lite-Views nur deklarieren müssen, was sie nutzen.
+  const mirrorIdentity = { profileId: profileId ?? null };
 
   switch (mirrorScreenId) {
     // ---------- Startseite ----------
@@ -226,9 +300,13 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
               onSendDesktopCommand={onSendDesktopCommand}
               isRemoteLocked={isRemoteLocked}
               remoteLockedBy={remoteLockedBy}
-              lockedByMe={!isRemoteLocked}
+              lockedByMe={isControlling}
+              isControlling={isControlling}
               onAcquireRemote={onAcquireRemote}
               onReleaseRemote={onReleaseRemote}
+              onLocalNavigate={onLocalNavigate}
+              onOpenProfile={onOpenProfile}
+              profile={profile}
             />
           </SafeView>
         </div>
@@ -310,6 +388,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             remoteLockedBy={remoteLockedBy}
             onAcquireRemote={onAcquireRemote}
             {...desktopMirrorBase}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -330,6 +409,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             remoteLockedBy={remoteLockedBy}
             onAcquireRemote={onAcquireRemote}
             {...desktopMirrorBase}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -340,7 +420,9 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="settings">
-          <MirrorSettingsLite {...navBase} {...desktopMirrorBase} />
+          {/* R33/P2+P5+P6: Agent C baut die Settings-Mirror-Parität —
+              settingsSnapshot + isControlling kommen aus dem Props-Vertrag. */}
+          <MirrorSettingsLite {...navBase} {...desktopMirrorBase} {...mirrorData} />
           </SafeView>
         </div>
       );
@@ -350,7 +432,8 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="highscores">
-          <MirrorHighscoresLite {...navBase} {...desktopMirrorBase} />
+          {/* R33/P10: Agent D — eigene Highscores via gethighscores. */}
+          <MirrorHighscoresLite {...navBase} {...desktopMirrorBase} {...mirrorData} {...mirrorIdentity} />
           </SafeView>
         </div>
       );
@@ -360,7 +443,8 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="dailyChallenge">
-          <MirrorDailyLite {...navBase} {...desktopMirrorBase} />
+          {/* R33/P12: Agent D — Desktop-Parität (5 Tabs) + daily_start. */}
+          <MirrorDailyLite {...navBase} {...desktopMirrorBase} {...mirrorData} {...mirrorIdentity} />
           </SafeView>
         </div>
       );
@@ -370,7 +454,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="party">
-          <MirrorPartyLite {...navBase} {...desktopMirrorBase} />
+          <MirrorPartyLite {...navBase} {...desktopMirrorBase} {...mirrorData} />
           </SafeView>
         </div>
       );
@@ -394,12 +478,14 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="jukebox">
+          {/* R33/P8: Agent E — Filter/Pool/Shuffle/Repeat via jukeboxState. */}
           <MirrorJukeboxLite
             jukeboxWishlist={jukeboxWishlist}
             onRemoveFromJukebox={onRemoveFromJukebox}
             onRefreshJukebox={onRefreshJukebox}
             {...navBase}
             {...desktopMirrorBase}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -410,7 +496,8 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
       return (
         <div className="min-h-[calc(100vh-8rem)]">
           <SafeView name="achievements">
-          <MirrorAchievementsLite {...navBase} {...desktopMirrorBase} />
+          {/* R33/P9: Agent D — eigene Achievements via hostprofiles. */}
+          <MirrorAchievementsLite {...navBase} {...desktopMirrorBase} {...mirrorData} {...mirrorIdentity} />
           </SafeView>
         </div>
       );
@@ -425,6 +512,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onNavigate={onNavigate}
             availableProfiles={availableProfiles}
             {...desktopMirrorBase}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -440,6 +528,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onNavigate={onNavigate}
             availableProfiles={availableProfiles}
             {...desktopMirrorBase}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -522,6 +611,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             isRemoteLocked={isRemoteLocked}
             remoteLockedBy={remoteLockedBy}
             onAcquireRemote={onAcquireRemote}
+            {...mirrorData}
           />
           </SafeView>
         </div>
@@ -599,9 +689,13 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
             onSendDesktopCommand={onSendDesktopCommand}
             isRemoteLocked={isRemoteLocked}
             remoteLockedBy={remoteLockedBy}
-            lockedByMe={!isRemoteLocked}
+            lockedByMe={isControlling}
+            isControlling={isControlling}
             onAcquireRemote={onAcquireRemote}
             onReleaseRemote={onReleaseRemote}
+            onLocalNavigate={onLocalNavigate}
+            onOpenProfile={onOpenProfile}
+            profile={profile}
           />
           </SafeView>
         </div>

@@ -1,0 +1,17 @@
+[
+  { "key": "mobile.mirrorLoadError", "en": "Could not load data.", "de": "Daten konnten nicht geladen werden." },
+  { "key": "mobile.mirrorRetry", "en": "Retry", "de": "Erneut versuchen" },
+  { "key": "mobile.mirrorNoProfileLink", "en": "No profile linked. Connect the companion app to a profile to see your data.", "de": "Kein Profil verknüpft. Verbinde die Companion-App mit einem Profil, um deine Daten zu sehen." },
+  { "key": "mobile.mirrorProfileMissing", "en": "Your profile was not found on the desktop. Your achievements will appear here once the desktop profile syncs.", "de": "Dein Profil wurde auf dem Desktop nicht gefunden. Deine Erfolge erscheinen hier, sobald das Desktop-Profil synchronisiert ist." },
+  { "key": "mobile.mirrorOnlyMine", "en": "Only mine", "de": "Nur meine" },
+  { "key": "mobile.mirrorAll", "en": "All", "de": "Alle" },
+  { "key": "mobile.mirrorEntries", "en": "{n} entries", "de": "{n} Einträge" },
+  { "key": "mobile.mirrorDailyNoData", "en": "No daily data available for your profile.", "de": "Keine Daily-Daten für dein Profil vorhanden." },
+  { "key": "mobile.mirrorDailyControlHint", "en": "View only — take control to start challenges.", "de": "Nur Anzeige — übernimm die Steuerung, um Challenges zu starten." },
+  { "key": "mobile.mirrorDailyModesHint", "en": "Challenge modes are played on the desktop — this is the catalog.", "de": "Challenge-Modi werden auf dem Desktop gespielt — hier siehst du den Katalog." },
+  { "key": "mobile.mirrorSlotsToday", "en": "{n}/{m} slots today", "de": "{n}/{m} Slots heute" },
+  { "key": "mobile.mirrorPlayer", "en": "Player", "de": "Spieler" },
+  { "key": "mobile.mirrorProfileYou", "en": "You", "de": "Du" },
+  { "key": "mobile.mirrorProfileControlHint", "en": "View only — take control to activate or deactivate profiles.", "de": "Nur Anzeige — übernimm die Steuerung, um Profile zu aktivieren oder zu deaktivieren." },
+  { "key": "mobile.mirrorSongsShort", "en": "Songs", "de": "Songs" }
+]

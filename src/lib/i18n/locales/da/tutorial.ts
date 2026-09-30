@@ -511,6 +511,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Tilslutning',
         features: 'Appens muligheder',
+        control: 'Fjernbetjening: Tag kontrol',
+        solo: 'Uden kontrol',
+        help: 'Companion-hjælp på enheden',
         manage: 'Enhedsadministration',
       },
       steps: {
@@ -550,6 +553,52 @@ export const tutorialTranslations = {
           title: 'Syng-med-tilstande 🎶',
           body: 'I festtilstandene Companion Sing-A-Long og Pass the Mic synger gæsterne direkte via deres telefoner — tonegenkendelsen kører på enheden, skrivebordet dirigerer.',
           details: 'Companion Sing-A-Long: hver gæst får sangtekst + tonevisning på telefonen — skrivebordet viser den fælles note-highway.\n\nPass the Mic: mikrofonen roterer — endda blandet mellem telefon og fysisk mikrofon.\n\nFor begge gælder: jo bedre WiFi, jo glattere tonehøjde. Hvis det hakker, hjælper en maskine tættere på routeren.',
+        },
+        takeControl: {
+          title: 'Tag kontrol 🎮',
+          body: 'En telefon styrer skrivebordet kun på kommando nu: knappen "Tag kontrol" i companion-appen henter fjernbetjeningen — før og efter det trykker telefonen kun for sig selv.',
+          details: 'Mekanismen bag "Tag kontrol":\n• Kontrollen reserveres udelukkende til præcis én enhed (fjernlås).\n• Skrivebordet og den styrende telefon forbliver synkrone: hver side ser straks, hvad den anden gør.\n• Alle de øvrige telefoner viser statussen "Kontrolleret af …" og venter.\n\nKontrollen sluttes via "Frigiv" — eller automatisk, hvis telefonen mister forbindelsen.',
+        },
+        controlSync: {
+          title: 'Skrivebord og telefon i takt',
+          body: 'Tilbage i Mobil-fanen: som vært ser du alle enheder her. Når en telefon tager kontrol, spejler den skrivebordsskærmen og betjener skærme, knapper og bekræftelser — mus og tastatur på skrivebordet forbliver fuldt anvendelige.',
+          details: 'Fordi begge sider kører synkront, kan ingen "trykke sig væk": klikker du på skrivebordet, følger den styrende telefon — trykker du på telefonen, skifter skrivebordet skærm.\n\nI enhedslisten genkender du den styrende enhed på dens fjernbetjeningsmærke.',
+        },
+        controlHandover: {
+          title: 'Kun én fjernbetjening ad gangen',
+          body: 'Kontrollen er eksklusiv: mens én telefon styrer, kan ingen anden overtage — dens knap viser i stedet, hvem der styrer. Frigivelse eller frakobling giver straks kontrollen fri.',
+          details: 'Godt at vide:\n• Værten kan blive ved med at klikke når som helst — den styrende telefon følger (og bevarer kontrollen).\n• Mister den styrende telefon forbindelsen (batteri, WiFi), falder kontrollen automatisk tilbage til skrivebordet.\n• Et kick fra enhedslisten afslutter også kontrollen.',
+        },
+        soloOverview: {
+          title: 'Gæster uden kontrol 🙋',
+          body: 'De fleste gæster behøver aldrig fjernbetjeningen: tilsluttede telefoner uden Tag kontrol er selvstændige companions — de ønsker sange, skriver i chatten, synger med og tjekker deres egne præstationer uden at røre skrivebordet.',
+          details: 'Hvad telefoner uden kontrol kan:\n• 🎵 Sætte egne sange i køen (med 📱-mærket)\n• 💬 Deltage i festchatten\n• 🎤 Synge i festtilstande (Companion Sing-A-Long, Pass the Mic)\n• 🗳️ Stemme i afstemninger (Tournament Mode, Battle Royale)\n• 🏆 Se egne highscores og præstationer',
+        },
+        soloQueue: {
+          title: 'Ønsker uden kontrol',
+          body: 'Selv uden fjernbetjeningen sætter hver gæst egne sange i kø: vælg en sang på telefonen, sæt i kø — færdig. Ønsket lander her med 📱-mærket og tæller med i profilgrænsen på 3 sange.',
+        },
+        soloParty: {
+          title: 'Syng med & stem',
+          body: 'Festdeltagelsen går altid gennem telefonerne: i Companion Sing-A-Long og Pass the Mic synger gæsterne direkte på deres enhed, i Tournament Mode og Battle Royale stemmer de med et tryk — alt uden Tag kontrol.',
+        },
+        soloStats: {
+          title: 'Egne præstationer & highscores',
+          body: 'Hver gæst fører sit eget album: på telefonen kan de se egne highscores og præstationer — Tag kontrol er ikke nødvendigt. Hvad profilen end tjener, kan gæsten tjekke det fra sofaen.',
+        },
+        soloLimits: {
+          title: 'Hvad der forbliver låst',
+          body: 'Uden kontrol forbliver indstillinger, profiler, festopsætning, daglige udfordringer og jukeboxen utilgængelige — de er forbeholdt skrivebordet (eller en companion med Tag kontrol).',
+          details: 'Hvorfor låsen? Disse områder ændrer spilstatus eller konfiguration for alle: indstillinger, profilhåndtering, festopsætning, daglige udfordringer og jukeboxen. Derfor findes den eksplicitte kontrol — "Tag kontrol" låser dem op for præcis én telefon.\n\nSkrivebordsværten har altid alt i egen hånd.',
+        },
+        helpButton: {
+          title: 'Hjælp i hver telefon ❓',
+          body: 'Du kender ?-menuen her i menulinjen — hver tilsluttet telefon får sin egen "?"-knap. Et tryk åbner companion-hjælpen direkte på enheden.',
+        },
+        helpLocal: {
+          title: 'Kun læsning, aldrig styring',
+          body: 'Companion-hjælpen er en ren læsevisning: den sender ingen kommandoer til skrivebordet og starter aldrig en rundtur på skrivebordet. Gæster kan åbne den når som helst — også mens nogen synger eller styrer.',
+          details: 'Hjælpen holdes bevidst adskilt fra styringssystemet: en gæst, der kun vil slå noget op ("Hvordan sætter jeg en sang i køen?"), har nul indflydelse på den igangværende aften — og rundturerne her på skrivebordet forbliver værtens sag.\n\nÅbn den via "?"-knappen i companion-appen; luk den ganske enkelt ved at lukke visningen.',
         },
         deviceList: {
           title: 'Enhedslisten',

@@ -396,13 +396,14 @@ export interface DailyProfileState {
 }
 
 /** R33/P8: Jukebox-Spiegelzustand (Filter/Pool/Shuffle/Repeat), vom Desktop
- *  per POST type:'jukeboxstate' gepusht, Companion zieht ihn bei Bedarf. */
+ *  per POST type:'jukeboxstate' gepusht, Companion zieht ihn bei Bedarf.
+ *  repeat ist der echte Desktop-Wert: 'none' | 'one' | 'all'. */
 export interface JukeboxMirrorState {
   filters?: Record<string, unknown>;
   poolPlaylistId?: string | null;
   poolPlaylistName?: string | null;
   shuffle?: boolean;
-  repeat?: boolean;
+  repeat?: 'none' | 'one' | 'all';
   updatedAt?: number;
 }
 

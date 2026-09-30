@@ -1,0 +1,222 @@
+[
+  {
+    "key": "mobile.toastControlAcquired",
+    "en": "Control acquired",
+    "de": "Steuerung übernommen"
+  },
+  {
+    "key": "mobile.toastControlReleased",
+    "en": "Control released",
+    "de": "Steuerung abgegeben"
+  },
+  {
+    "key": "mobile.toastControlLost",
+    "en": "Control lost",
+    "de": "Steuerung verloren"
+  },
+  {
+    "key": "mobile.toastControlTaken",
+    "en": "Control already taken",
+    "de": "Steuerung bereits vergeben"
+  },
+  {
+    "key": "mobile.toastLockedNav",
+    "en": "Requires remote control",
+    "de": "Nur mit Fernsteuerung"
+  },
+  {
+    "key": "mobile.homeControlYouTitle",
+    "en": "You control the desktop",
+    "de": "Du steuerst den Desktop"
+  },
+  {
+    "key": "mobile.homeControlYouDesc",
+    "en": "Your tabs drive the desktop — all areas are unlocked.",
+    "de": "Deine Tabs steuern den Desktop — alle Bereiche sind offen."
+  },
+  {
+    "key": "mobile.homeCurrentSong",
+    "en": "Current song",
+    "de": "Aktueller Song"
+  },
+  {
+    "key": "mobile.homeHotkeysTitle",
+    "en": "Desktop hotkeys",
+    "de": "Desktop-Hotkeys"
+  },
+  {
+    "key": "mobile.homeHotkeysDesc",
+    "en": "The most important desktop shortcuts",
+    "de": "Die wichtigsten Tastenkürzel am Desktop"
+  },
+  {
+    "key": "mobile.homeRequestSong",
+    "en": "Request a song",
+    "de": "Song wünschen"
+  },
+  {
+    "key": "mobile.homeTakeControlForFull",
+    "en": "Take control for full access",
+    "de": "Steuerung übernehmen für volle Kontrolle"
+  },
+  {
+    "key": "mobile.homeControlByTitle",
+    "en": "Control held by {name}",
+    "de": "Steuerung liegt bei {name}"
+  },
+  {
+    "key": "mobile.homeControlFreeTitle",
+    "en": "No control active",
+    "de": "Keine Steuerung aktiv"
+  },
+  {
+    "key": "mobile.homeControlHintDesc",
+    "en": "Without control you can request songs, chat and join in.",
+    "de": "Ohne Steuerung kannst du Songs wünschen, chatten und mitspielen."
+  },
+  {
+    "key": "mobileHelp.title",
+    "en": "Help",
+    "de": "Hilfe"
+  },
+  {
+    "key": "mobileHelp.close",
+    "en": "Close",
+    "de": "Schließen"
+  },
+  {
+    "key": "mobileHelp.intro",
+    "en": "Companion app: everything about connection, remote control, joining in and singing — in five short chapters.",
+    "de": "Companion-App: Alles Wichtige zu Verbindung, Fernsteuerung, Mitspielen und Singen — in fünf kurzen Kapiteln."
+  },
+  {
+    "key": "mobileHelp.ch1Title",
+    "en": "Connection & microphone",
+    "de": "Verbindung & Mikrofon"
+  },
+  {
+    "key": "mobileHelp.ch1b1",
+    "en": "Scan the QR code on the desktop or open the companion link — phone and PC must be in the same WiFi network.",
+    "de": "Scanne den QR-Code auf dem Desktop oder öffne den Companion-Link — Handy und PC müssen im selben WLAN sein."
+  },
+  {
+    "key": "mobileHelp.ch1b2",
+    "en": "Create a profile (name, color, photo) — it syncs with the desktop automatically.",
+    "de": "Lege ein Profil an (Name, Farbe, Foto) — es wird automatisch mit dem Desktop synchronisiert."
+  },
+  {
+    "key": "mobileHelp.ch1b3",
+    "en": "The first time you sing, the browser asks for microphone access — tap \"Allow\".",
+    "de": "Beim ersten Singen fragt der Browser nach Mikrofon-Zugriff — tippe auf „Erlauben“."
+  },
+  {
+    "key": "mobileHelp.ch1b4",
+    "en": "The code in the top right of the header shows that the connection is up.",
+    "de": "Der Code oben rechts im Header zeigt dir, dass die Verbindung steht."
+  },
+  {
+    "key": "mobileHelp.ch2Title",
+    "en": "Remote control: take control",
+    "de": "Fernsteuerung: Kontrolle übernehmen"
+  },
+  {
+    "key": "mobileHelp.ch2b1",
+    "en": "With \"Take control\" your phone mirrors the desktop screen — you always see what is running on the PC.",
+    "de": "Mit „Kontrolle übernehmen“ spiegelt dein Handy den Desktop-Bildschirm — du siehst immer, was am PC läuft."
+  },
+  {
+    "key": "mobileHelp.ch2b2",
+    "en": "Your tab bar then drives the desktop: home, library, party, queue, jukebox, highscores, achievements, settings.",
+    "de": "Deine Tab-Leiste steuert dann den Desktop: Start, Bibliothek, Party, Queue, Jukebox, Highscores, Erfolge, Einstellungen."
+  },
+  {
+    "key": "mobileHelp.ch2b3",
+    "en": "From the start page you can pause or skip the current song.",
+    "de": "Auf der Startseite kannst du den laufenden Song pausieren oder überspringen."
+  },
+  {
+    "key": "mobileHelp.ch2b4",
+    "en": "Only ONE device controls at a time — \"Release control\" frees the slot.",
+    "de": "Nur EIN Gerät steuert gleichzeitig — „Kontrolle abgeben“ gibt den Platz frei."
+  },
+  {
+    "key": "mobileHelp.ch3Title",
+    "en": "Without control",
+    "de": "Ohne Steuerung"
+  },
+  {
+    "key": "mobileHelp.ch3b1",
+    "en": "Request songs: open the library, tap a song, pick your options (mode, difficulty, mic) and add it to the queue — up to 3 songs.",
+    "de": "Songs wünschen: Bibliothek öffnen, Song antippen, Optionen (Modus, Schwierigkeit, Mikro) wählen und in die Queue legen — bis zu 3 Songs."
+  },
+  {
+    "key": "mobileHelp.ch3b2",
+    "en": "Chat: tap 💬 in the top right and talk to the host and other players.",
+    "de": "Chat: Tippe oben rechts auf 💬 und schreibe mit Host und anderen Spielern."
+  },
+  {
+    "key": "mobileHelp.ch3b3",
+    "en": "Party: you vote in song votes, see turn signals and sing along when it is your turn — all via overlays, no control needed.",
+    "de": "Party: Du stimmst bei Song-Abstimmungen ab, siehst Turn-Signale und singst mit, wenn du dran bist — alles per Overlay, ganz ohne Steuerung."
+  },
+  {
+    "key": "mobileHelp.ch3b4",
+    "en": "You find your own achievements and highscores in the tab bar (🏅 achievements, 🏆 highscores).",
+    "de": "Eigene Erfolge und Highscores findest du in der Tab-Leiste (🏅 Erfolge, 🏆 Highscores)."
+  },
+  {
+    "key": "mobileHelp.ch3b5",
+    "en": "Areas with a lock (settings, profiles, party, challenge, jukebox) need remote control — you can always edit your own profile.",
+    "de": "Bereiche mit Schloss (Einstellungen, Profile, Party, Challenge, Jukebox) brauchen die Fernsteuerung — dein eigenes Profil kannst du immer bearbeiten."
+  },
+  {
+    "key": "mobileHelp.ch4Title",
+    "en": "Singing with your phone",
+    "de": "Singen mit dem Handy"
+  },
+  {
+    "key": "mobileHelp.ch4b1",
+    "en": "When it is your turn in the game the microphone starts automatically — in Battle Royale everyone sings at the same time.",
+    "de": "Ist dein Part im Spiel, startet das Mikrofon automatisch — bei Battle Royale singen alle gleichzeitig."
+  },
+  {
+    "key": "mobileHelp.ch4b2",
+    "en": "The slim bar below the header shows the volume and the detected note of your singing.",
+    "de": "Die schmale Leiste unter dem Header zeigt Lautstärke und die erkannte Note deines Gesangs."
+  },
+  {
+    "key": "mobileHelp.ch4b3",
+    "en": "Hold the phone close to your mouth and keep speaker music away from the device.",
+    "de": "Halte das Handy nah am Mund und halte Lautsprecher-Musik direkt am Gerät fern."
+  },
+  {
+    "key": "mobileHelp.ch5Title",
+    "en": "Troubleshooting",
+    "de": "Fehlerbehebung"
+  },
+  {
+    "key": "mobileHelp.ch5b1",
+    "en": "Connection lost: the app reconnects automatically. Otherwise check the WiFi and tap \"Retry connection\".",
+    "de": "Verbindung verloren: Die App verbindet sich automatisch neu. Prüfe sonst das WLAN und tippe auf „Verbindung wiederholen“."
+  },
+  {
+    "key": "mobileHelp.ch5b2",
+    "en": "No microphone/sound: check the microphone permission in the browser's site settings.",
+    "de": "Kein Mikrofon/Ton: Prüfe die Mikrofon-Berechtigung in den Browser-Einstellungen der Seite."
+  },
+  {
+    "key": "mobileHelp.ch5b3",
+    "en": "Mirror stays empty: the desktop (PC app) must be running and in the same network.",
+    "de": "Spiegel bleibt leer: Der Desktop (PC-App) muss laufen und im selben Netz sein."
+  },
+  {
+    "key": "mobileHelp.ch5b4",
+    "en": "Control not responding: another device holds the control — the status card on the start page shows who is controlling.",
+    "de": "Steuerung reagiert nicht: Ein anderes Gerät hat die Kontrolle — die Statuskarte auf der Startseite zeigt, wer steuert."
+  },
+  {
+    "key": "mobileHelp.localOnlyNote",
+    "en": "This help runs entirely on your phone — it does not control the desktop.",
+    "de": "Diese Hilfe läuft komplett auf deinem Handy — sie steuert den Desktop nicht."
+  }
+]

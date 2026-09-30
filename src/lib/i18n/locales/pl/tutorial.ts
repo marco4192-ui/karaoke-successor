@@ -512,6 +512,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Łączenie',
         features: 'Co potrafi aplikacja',
+        control: 'Zdalne sterowanie: przejmij kontrolę',
+        solo: 'Bez kontroli',
+        help: 'Pomoc Companiona na miejscu',
         manage: 'Zarządzanie urządzeniami',
       },
       steps: {
@@ -551,6 +554,52 @@ export const tutorialTranslations = {
           title: 'Tryby wspólnego śpiewu 🎶',
           body: 'W trybach imprezowych Śpiew z Companionem i Przekaż mikrofon goście śpiewają wprost przez telefony — detekcja wysokości działa na urządzeniu, komputer dyryguje.',
           details: 'Śpiew z Companionem: każdy gość dostaje tekst i wyświetlanie wysokości na telefonie — komputer pokazuje wspólną autostradę nut.\n\nPrzekaż mikrofon: mikrofon krąży — nawet na zmianę telefon i fizyczny mikrofon.\n\nW obu przypadkach: im lepsze Wi-Fi, tym płynniejsza wysokość. Jeśli się zacina, pomaga urządzenie bliżej routera.',
+        },
+        takeControl: {
+          title: 'Przejmij kontrolę 🎮',
+          body: 'Telefon przejmuje desktop teraz tylko na komendę: przycisk „Przejmij kontrolę” w aplikacji Companiona pobiera pilota — wcześniej i później telefon dotyka tylko we własnym imieniu.',
+          details: 'Mechanizm „Przejmij kontrolę”:\n• Kontrola jest zarezerwowana wyłącznie dla dokładnie jednego urządzenia (zdalna blokada).\n• Desktop i sterujący telefon pozostają zsynchronizowane: każda strona natychmiast widzi, co robi druga.\n• Wszystkie pozostałe telefony pokazują status „Kontrolowane przez …” i czekają.\n\nKontrola kończy się przez „Zwolnij” — albo automatycznie, gdy telefon straci połączenie.',
+        },
+        controlSync: {
+          title: 'Desktop i telefon w jednym rytmie',
+          body: 'Z powrotem w zakładce Mobilne: jako gospodarz widzisz tu wszystkie urządzenia. Gdy telefon przejmuje kontrolę, dubluje ekran desktopa i obsługuje ekrany, przyciski i potwierdzenia — mysz i klawiatura na desktopie pozostają w pełni użyteczne.',
+          details: 'Ponieważ obie strony działają synchronicznie, nikt nie może „odbiec klikaniem”: klikasz na desktopie — sterujący telefon podąża; dotykasz telefonu — desktop zmienia ekran.\n\nNa liście urządzeń rozpoznasz sterujące urządzenie po plakietce pilota.',
+        },
+        controlHandover: {
+          title: 'Tylko jeden pilot naraz',
+          body: 'Kontrola jest wyłączna: gdy jeden telefon steruje, żaden drugi nie może przejąć — jego przycisk pokazuje zamiast tego, kto teraz steruje. Zwolnienie lub rozłączenie natychmiast uwalnia kontrolę.',
+          details: 'Dobrze wiedzieć:\n• Gospodarz może klikać sam w każdej chwili — sterujący telefon podąża (i zachowuje kontrolę).\n• Jeśli sterujący telefon straci połączenie (bateria, WiFi), kontrola automatycznie wraca do desktopa.\n• Wyrzucenie z listy urządzeń również kończy kontrolę.',
+        },
+        soloOverview: {
+          title: 'Goście bez kontroli 🙋',
+          body: 'Większość gości wcale nie potrzebuje pilota: połączone telefony bez przejmowania kontroli to samodzielni kompani — zamawiają piosenki, czatują, śpiewają razem i oglądają własne osiągnięcia, nie dotykając desktopa.',
+          details: 'Co potrafią telefony bez kontroli:\n• 🎵 Dodawać własne piosenki do kolejki (z plakietką 📱)\n• 💬 Brać udział w czacie imprezowym\n• 🎤 Śpiewać w trybach imprezowych (Śpiew z Companionem, Przekaż mikrofon)\n• 🗳️ Głosować w głosowaniach (turniej, Battle Royale)\n• 🏆 Przeglądać własne najlepsze wyniki i osiągnięcia',
+        },
+        soloQueue: {
+          title: 'Zamówienia bez kontroli',
+          body: 'Nawet bez pilota każdy gość dodaje własne piosenki: wybierz piosenkę na telefonie, dodaj do kolejki — gotowe. Zamówienie trafia tutaj z plakietką 📱 i liczy się do limitu 3 piosenek profilu.',
+        },
+        soloParty: {
+          title: 'Wspólne śpiewanie i głosowanie',
+          body: 'Udział w imprezie zawsze idzie przez telefony: w Śpiewie z Companionem i Przekaż mikrofon goście śpiewają prosto ze swojego urządzenia, w turnieju i Battle Royale głosują dotknięciem — wszystko bez przejmowania kontroli.',
+        },
+        soloStats: {
+          title: 'Własne osiągnięcia i wyniki',
+          body: 'Każdy gość prowadzi własny album: na telefonie może obejrzeć swoje najlepsze wyniki i osiągnięcia — bez przejmowania kontroli. Cokolwiek zarobi profil, gość sprawdzi to prosto z kanapy.',
+        },
+        soloLimits: {
+          title: 'Co pozostaje zablokowane',
+          body: 'Bez kontroli ustawienia, profile, konfiguracja imprezy, wyzwania dnia i Jukebox pozostają niedostępne — są zarezerwowane dla desktopa (albo Companiona z przejętą kontrolą).',
+          details: 'Po co blokada? Te obszary zmieniają stan gry lub konfigurację dla wszystkich: ustawienia, zarządzanie profilami, konfiguracja imprezy, wyzwania dnia i Jukebox. Właśnie po to istnieje jawna kontrola — „Przejmij kontrolę” odblokowuje je dla dokładnie jednego telefonu.\n\nGospodarz desktopa zawsze trzyma wszystko we własnych rękach.',
+        },
+        helpButton: {
+          title: 'Pomoc na każdym telefonie ❓',
+          body: 'Znasz menu ? tutaj, w pasku menu — każdy połączony telefon dostaje własny przycisk „?”. Jedno dotknięcie otwiera pomoc Companiona prosto na urządzeniu.',
+        },
+        helpLocal: {
+          title: 'Tylko czytanie, nigdy sterowanie',
+          body: 'Pomoc Companiona to czysty widok do czytania: nie wysyła żadnych poleceń na desktop i nigdy nie uruchamia samouczka na desktopie. Goście mogą ją otworzyć w każdej chwili — nawet gdy ktoś śpiewa lub steruje.',
+          details: 'Pomoc jest świadomie oddzielona od systemu sterowania: gość, który chce tylko coś sprawdzić („Jak dodać piosenkę do kolejki?”), nie ma żadnego wpływu na bieżący wieczór — a samouczki tutaj na desktopie zostają sprawą gospodarza.\n\nOtworzysz ją przyciskiem „?” w aplikacji Companiona; zamykasz ją po prostu zamykając widok.',
         },
         deviceList: {
           title: 'Lista urządzeń',

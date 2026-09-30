@@ -511,6 +511,9 @@ export const tutorialTranslations = {
       chapters: {
         connect: 'Anslutning',
         features: 'Vad appen kan',
+        control: 'Fjärrkontroll: Ta kontroll',
+        solo: 'Utan kontroll',
+        help: 'Companion-hjälp på enheten',
         manage: 'Hantera enheter',
       },
       steps: {
@@ -550,6 +553,52 @@ export const tutorialTranslations = {
           title: 'Sjungalong-lägen 🎶',
           body: 'I festlägena Companion Singalong och Ge över Micen sjunger gästerna direkt via sina telefoner — tonhöjdsavkänningen körs i enheten, skrivbordet dirigerar.',
           details: 'Companion Singalong: varje gäst får text + tonhöjdsvisning i telefonen — skrivbordet visar den gemensamma notbanan.\n\nGe över Micen: miken roterar — till och med blandat mellan telefon och fysisk mikrofon.\n\nFör båda: ju bättre WiFi, desto jämnare tonhöjd. Hackar det hjälper det att flytta närmare routern.',
+        },
+        takeControl: {
+          title: 'Ta kontroll 🎮',
+          body: 'En telefon styr skrivbordet bara på kommando numera: knappen "Ta Kontroll" i companion-appen hämtar fjärrkontrollen — före och efter det trycker telefonen bara för sig själv.',
+          details: 'Mekanismen bakom "Ta Kontroll":\n• Kontrollen reserveras exklusivt för exakt en enhet (fjärrlås).\n• Skrivbordet och den styrande telefonen hålls synkroniserade: varje sida ser direkt vad den andra gör.\n• Alla övriga telefoner visar statusen "Kontrolleras av …" och väntar.\n\nKontrollen upphör via "Släpp" — eller automatiskt när telefonen tappar anslutningen.',
+        },
+        controlSync: {
+          title: 'Skrivbordet och telefonen i takt',
+          body: 'Tillbaka i fliken Mobil: som värd ser du alla enheter här. När en telefon tar kontrollen speglar den skrivbordsskärmen och manövrerar skärmar, knappar och bekräftelser — mus och tangentbord på skrivbordet förblir fullt användbara.',
+          details: 'Eftersom båda sidor kör synkront kan ingen "trycka ifrån": klicka på skrivbordet och den styrande telefonen följer — tryck på telefonen och skrivbordet byter skärm.\n\nI enhetslistan känner du igen den styrande enheten på dess fjärrkontrollsmärke.',
+        },
+        controlHandover: {
+          title: 'Bara en fjärrkontroll i taget',
+          body: 'Kontrollen är exklusiv: medan en telefon styr kan ingen annan ta över — dess knapp visar i stället vem som styr. Att släppa eller koppla ifrån frigör kontrollen direkt.',
+          details: 'Bra att veta:\n• Värden kan fortsätta klicka när som helst — den styrande telefonen följer (och behåller kontrollen).\n• Tappar den styrande telefonen anslutningen (batteri, WiFi) faller kontrollen automatiskt tillbaka på skrivbordet.\n• En kick från enhetslistan avslutar också kontrollen.',
+        },
+        soloOverview: {
+          title: 'Gäster utan kontroll 🙋',
+          body: 'De flesta gäster behöver aldrig fjärrkontrollen: anslutna telefoner utan Ta kontroll är självständiga companions — de önskar låtar, chattar, sjunger med och kollar sina egna prestationer utan att röra skrivbordet.',
+          details: 'Vad telefoner utan kontroll kan göra:\n• 🎵 Köa egna låtar (med 📱-märket)\n• 💬 Delta i partychatten\n• 🎤 Sjunga i partylägen (Companion Singalong, Ge över Micen)\n• 🗳️ Rösta i omröstningar (turnering, Battle Royale)\n• 🏆 Se egna highscores och prestationer',
+        },
+        soloQueue: {
+          title: 'Önskemål utan kontroll',
+          body: 'Även utan fjärrkontrollen köar varje gäst egna låtar: välj en låt på telefonen, köa — klart. Önskemålet landar här med 📱-märket och räknas mot profilgränsen på 3 låtar.',
+        },
+        soloParty: {
+          title: 'Sjung med & rösta',
+          body: 'Participerandet går alltid via telefonerna: i Companion Singalong och Ge över Micen sjunger gästerna direkt i sin enhet, i turnering och Battle Royale röstar de med ett tryck — allt utan Ta kontroll.',
+        },
+        soloStats: {
+          title: 'Egna prestationer & highscores',
+          body: 'Varje gäst har sitt eget album: på telefonen kan de se egna highscores och prestationer — ingen kontroll behövs. Vad profilen än tjänar kan gästen kolla från soffan.',
+        },
+        soloLimits: {
+          title: 'Vad som förblir låst',
+          body: 'Utan kontroll förblir inställningar, profiler, partyuppsättning, dagliga utmaningar och jukeboxen stängda — de är reserverade för skrivbordet (eller en companion med Ta kontroll).',
+          details: 'Varför låset? De här områdena ändrar spelstatus eller konfiguration för alla: inställningar, profilhantering, partyuppsättning, dagliga utmaningar och jukeboxen. Det är därför explicit kontroll finns — "Ta Kontroll" låser upp dem för exakt en telefon.\n\nSkrivbordsvärden har alltid allt i egna händer.',
+        },
+        helpButton: {
+          title: 'Hjälp i varje telefon ❓',
+          body: 'Du känner ?-menyn här i menylistan — varje ansluten telefon får en egen "?"-knapp. Ett tryck öppnar companion-hjälpen direkt på enheten.',
+        },
+        helpLocal: {
+          title: 'Bara läsning, aldrig kontroll',
+          body: 'Companion-hjälpen är en ren läsvy: den skickar inga kommandon till skrivbordet och startar aldrig en rundtur på skrivbordet. Gäster kan öppna den när som helst — även medan någon sjunger eller styr.',
+          details: 'Hjälpen hålls medvetet isär från kontrollsystemet: en gäst som bara vill slå upp något ("Hur köar jag en låt?") har noll inflytande på den pågående kvällen — och rundturerna här på skrivbordet förblir värdens eget.\n\nÖppna den via "?"-knappen i companion-appen; stäng den enkelt genom att stänga vyn.',
         },
         deviceList: {
           title: 'Enhetslistan',

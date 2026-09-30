@@ -1,0 +1,32 @@
+[
+  {
+    "key": "mobile.mirrorSettingsSubtitle",
+    "en": "Control the desktop settings live from your phone",
+    "de": "Desktop-Einstellungen live vom Handy aus steuern"
+  },
+  {
+    "key": "mobile.mirrorSettingsNoSnapshot",
+    "en": "Desktop values not received yet — showing defaults",
+    "de": "Desktop-Werte noch nicht empfangen — Standardwerte werden angezeigt"
+  },
+  {
+    "key": "mobile.mirrorSettingsNeedControl",
+    "en": "Take remote control to send changes to the desktop",
+    "de": "Übernimm die Fernsteuerung, um Änderungen an den Desktop zu senden"
+  },
+  {
+    "key": "mobile.mirrorSettingsWebcamNone",
+    "en": "No webcam is set up on the desktop yet. Activate it here to create a default configuration.",
+    "de": "Auf dem Desktop ist noch keine Webcam eingerichtet. Aktiviere sie hier, um eine Standard-Konfiguration anzulegen."
+  },
+  {
+    "key": "mobile.mirrorSettingsWebcamSent",
+    "en": "Changes are saved on the desktop and take effect with the next song.",
+    "de": "Änderungen werden auf dem Desktop gespeichert und gelten ab dem nächsten Song."
+  },
+  {
+    "key": "settings.loudnessNormalization",
+    "en": "Volume normalization (89 dB target)",
+    "de": "Lautstärke-Normalisierung (89 dB Ziel)"
+  }
+]
