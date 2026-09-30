@@ -160,8 +160,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Aún no hay canciones',
-          body: 'El editor necesita canciones en la biblioteca. Importa primero canciones (biblioteca → importar / escaneo de carpeta) y vuelve.',
-          details: 'Cómo conseguir canciones:\n• Ajustes → Biblioteca → define la carpeta de canciones: cada subcarpeta se lee como una canción (audio/vídeo + texto UltraStar).\n• Alternativamente, archivos sueltos con el diálogo de importación.\n• O crea una canción nueva en el editor ("Nueva Canción") y junta tú mismo letra + audio.',
+          body: 'El editor necesita canciones en la biblioteca. Importa primero canciones desde la carpeta de canciones (Ajustes → Biblioteca) y vuelve.',
+          details: 'Cómo conseguir canciones:\n• Ajustes → Biblioteca → define la carpeta de canciones: cada subcarpeta se lee como una canción (audio/vídeo + texto UltraStar).\n• O crea una canción nueva en el editor ("Nueva Canción") y junta tú mismo letra + audio.',
         },
         openSong: {
           title: 'Abrir una canción',
@@ -271,8 +271,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Biblioteca',
-          body: 'Define la carpeta de canciones (cada subcarpeta = una canción) y escanéala, reinicia la biblioteca o borra todos los datos — más la importación desde otros sistemas de karaoke.',
-          details: 'Formato de carpeta: una subcarpeta por canción con audio/vídeo + TXT (formato UltraStar). El escáner reconoce las combinaciones habituales (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportar de otros sistemas: ¿un archivo SingStar? ¿una colección UltraStar? El conversor de importación toma metadatos y letras automáticamente.\n\nCuidado con "borrar todos los datos": la doble confirmación pregunta dos veces — aun así, haz antes una copia (pestaña Sincronización y Copia).',
+          body: 'Define la carpeta de canciones (cada subcarpeta = una canción) y escanéala, reinicia la biblioteca o borra todos los datos.',
+          details: 'Formato de carpeta: una subcarpeta por canción con audio/vídeo + TXT (formato UltraStar). El escáner reconoce las combinaciones habituales (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nLos formatos de importación de otros proveedores de karaoke no se admiten por ahora.\n\nCuidado con "borrar todos los datos": la doble confirmación pregunta dos veces — aun así, haz antes una copia (pestaña Sincronización y Copia).',
         },
         taxonomy: {
           title: 'Géneros e Idiomas',

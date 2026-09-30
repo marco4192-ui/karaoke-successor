@@ -360,10 +360,14 @@ async function loadSongMediaUrlUncached(relativePath: string, baseFolder?: strin
 }
 
 // Clear blob URL cache (call when songs are re-scanned)
+// R41: DELAYED revocation (30 s) — the old immediate revoke killed every
+// visible cover the moment a rescan started (library grid mid-display, <img>
+// elements just about to load). The 30 s grace matches cacheBlobUrl's
+// replacement policy; the next getSongMediaUrl for the same path re-creates
+// a fresh URL and cancels the pending revoke (scheduleDelayedRevoke).
 export function clearBlobUrlCache(): void {
   for (const url of blobUrlCache.values()) {
-    URL.revokeObjectURL(url);
+    scheduleDelayedRevoke(url);
   }
   blobUrlCache.clear();
-
 }

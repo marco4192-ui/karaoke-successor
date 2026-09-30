@@ -6,6 +6,11 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { startAppDataSync } from '@/lib/game/appdata-sync';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
+import {
+  getVerifiedConnectedAudioInputs,
+  isSavedMicDeviceLive,
+  scheduleStaleMicPrune,
+} from '@/lib/audio/mic-device-resolver';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { TourController } from '@/components/tutorial/tour-manager';
 import { HelpMenu } from '@/components/tutorial/help-menu';
@@ -2051,11 +2056,23 @@ function readAvailableMicsForCompanions(): Array<{ id: string; name: string }> {
     const raw = getItem(StorageKeys.MULTI_MIC_CONFIG);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as {
-      assignedMics?: Array<{ id?: string; customName?: string; deviceName?: string }>;
+      assignedMics?: Array<{ id?: string; deviceId?: string; customName?: string; deviceName?: string }>;
     };
-    return (parsed.assignedMics ?? [])
-      .filter((m): m is { id: string; customName?: string; deviceName?: string } => typeof m.id === 'string' && m.id.length > 0)
-      .map(m => ({ id: m.id, name: m.customName || m.deviceName || 'Mikrofon' }));
+    const entries = parsed.assignedMics ?? [];
+    // R41/P10: Veraltete Devices rausfiltern — der Push darf nur Mics
+    // enthalten, deren Hardware noch angeschlossen ist. Der liveness-Check
+    // ist die SYNCHRONE Sicht auf den Resolver-Cache (null = unverifizierbar,
+    // z. B. vor Mikrofon-Freigabe im Browser → dann unverändert lassen).
+    const connected = getVerifiedConnectedAudioInputs();
+    const live = entries.filter(m =>
+      typeof m.id === 'string' && m.id.length > 0 && isSavedMicDeviceLive(m, connected));
+    if (connected !== null && live.length < entries.length) {
+      // Self-Heal: veraltete Einträge erkannt → persistente Config
+      // (gedrosselt, fire-and-forget) aufräumen; der nächste 2s-Tick liest
+      // dann saubere Daten.
+      scheduleStaleMicPrune();
+    }
+    return live.map(m => ({ id: m.id as string, name: m.customName || m.deviceName || 'Mikrofon' }));
   } catch {
     return [];
   }

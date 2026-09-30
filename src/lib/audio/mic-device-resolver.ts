@@ -34,6 +34,13 @@
  * provide real deviceIds (Chrome returns empty ids before any capture
  * permission was granted) — liveness is unverifiable and the stored id is
  * returned unchanged (previous behaviour, never breaks the working case).
+ *
+ * ── R41/P10: shared stale-mic cleanup ──
+ * pruneStaleSavedMics() / scheduleStaleMicPrune() / ensureMicDeviceWatch()
+ * extend the same liveness data to the PERSISTED config: entries whose real
+ * deviceId is gone are removed from MULTI_MIC_CONFIG (startup, devicechange,
+ * and before mic pickers render). isSavedMicDeviceLive() +
+ * getVerifiedConnectedAudioInputs() let list consumers filter synchronously.
  */
 
 import { StorageKeys, getItem, setJson, getJsonOptional } from '@/lib/storage';
@@ -156,6 +163,10 @@ function bindDeviceChangeListener(md: MediaDevices): void {
       // (and any in-flight setup) decides on current device state.
       connectedCheckedAt = 0;
       refreshConnectedDeviceIds(true);
+      // R41/P10: hardware changed → also prune persisted mic entries whose
+      // device is gone, so every mic-selection UI (party/mode setup,
+      // song-start modal, companion push) rebuilds from clean config.
+      scheduleStaleMicPrune(true);
     });
   } catch {
     /* non-fatal — staleness then relies on the TTL refresh alone */
@@ -271,6 +282,137 @@ export async function isMicIdConnected(
   const fresh = await enumerateAndUpdateConnected();
   if (fresh === null) return true; // cannot verify → assume the choice still works
   return resolveMicDeviceId(micId) !== undefined;
+}
+
+// ── R41/P10: Shared stale-mic cleanup (MULTI_MIC_CONFIG vs. live hardware) ──
+// The persisted config keeps mic entries for devices that were unplugged /
+// re-plugged (→ NEW browser deviceId) indefinitely: restoreMics() only SKIPS
+// them, nothing removes them. Every UI that reads MULTI_MIC_CONFIG directly
+// (party/mode setup dropdowns, song-start modal, the 2 s companion push)
+// then offers dead devices that silently fall back to the default mic.
+// The helpers below centralize the cleanup so all list sources share one
+// liveness definition. See isSavedMicDeviceLive for the pruning rules.
+
+/** DeviceId sentinel values that never map to concrete hardware and must
+ *  never be pruned: 'default' = system default device (functional even when
+ *  the browser doesn't enumerate it as an id), 'auto' / 'companion' = UI
+ *  sentinels from the game-setup layer (R39). */
+const NON_PRUNABLE_DEVICE_IDS = new Set(['default', 'auto', 'companion']);
+
+/**
+ * Liveness predicate for a persisted MULTI_MIC_CONFIG entry. Only entries
+ * tied to a REAL hardware deviceId (long hashes) can be verified; entries
+ * without a deviceId and sentinel ids are kept — consistent with
+ * resolveMicDeviceId's "never break the working case" rule.
+ * `connected === null` means the live device set is unverified (no capture
+ * permission yet / enumeration unavailable) → nothing is provably stale.
+ */
+export function isSavedMicDeviceLive(
+  entry: { deviceId?: string } | null | undefined,
+  connected: Set<string> | null,
+): boolean {
+  if (!connected) return true;
+  const deviceId = entry?.deviceId;
+  if (!deviceId || NON_PRUNABLE_DEVICE_IDS.has(deviceId)) return true;
+  return connected.has(deviceId);
+}
+
+/**
+ * Synchronous view of the connected audio-input deviceIds — the liveness
+ * cache behind resolveMicDeviceId. Returns `null` while the live set is
+ * unverified; kicks a background refresh when the cache is older than
+ * CONNECTED_TTL_MS. Safe to call frequently (e.g. from the 2 s companion
+ * gamestate push): enumeration never prompts for permission (deviceIds are
+ * available without labels) and is capped by the TTL / in-flight guards.
+ */
+export function getVerifiedConnectedAudioInputs(): Set<string> | null {
+  if (connectedCheckedAt === 0 || Date.now() - connectedCheckedAt > CONNECTED_TTL_MS) {
+    refreshConnectedDeviceIds();
+  }
+  return connectedDeviceIds;
+}
+
+/**
+ * R41/P10: Prune persisted MULTI_MIC_CONFIG entries whose real hardware
+ * deviceId is no longer connected. Runs one FRESH enumerateDevices
+ * round-trip first so the verdict reflects the CURRENT device state.
+ * Graceful no-op (returns 0) when the live set can't be verified
+ * (enumeration unavailable / pre-permission empty ids) or nothing is stale.
+ * Preserves: entries without a deviceId, sentinel ids ('default' / 'auto' /
+ * 'companion'), and every still-connected device — devices with an ACTIVE
+ * getUserMedia stream are always part of enumerateDevices, so mics in use
+ * are never pruned.
+ *
+ * SINGLE-FLIGHT: concurrent callers (central devicechange listener, app
+ * startup, mounted mic pickers) share one in-flight prune — avoids parallel
+ * enumerateDevices bursts and interleaved read-modify-write cycles on the
+ * localStorage config.
+ */
+let pruneInFlightPromise: Promise<number> | null = null;
+
+export function pruneStaleSavedMics(): Promise<number> {
+  if (pruneInFlightPromise) return pruneInFlightPromise;
+  pruneInFlightPromise = (async () => {
+    const fresh = await enumerateAndUpdateConnected();
+    if (fresh === null) return 0; // unverifiable → never prune on assumptions
+    const cfg = getJsonOptional<SavedMicConfig>(StorageKeys.MULTI_MIC_CONFIG);
+    const assigned = cfg?.assignedMics;
+    if (!cfg || !Array.isArray(assigned) || assigned.length === 0) return 0;
+    const kept = assigned.filter(mic => isSavedMicDeviceLive(mic, fresh));
+    if (kept.length === assigned.length) return 0;
+    try {
+      setJson(StorageKeys.MULTI_MIC_CONFIG, { ...cfg, assignedMics: kept });
+      // Keep the resolver's id-cache in sync with the persisted change.
+      rebuildCache();
+      const removed = assigned.length - kept.length;
+      // eslint-disable-next-line no-console
+      console.info(`[MicDeviceResolver] R41/P10: pruned ${removed} stale mic ${removed === 1 ? 'entry' : 'entries'} from MULTI_MIC_CONFIG (device no longer connected)`);
+      return removed;
+    } catch {
+      return 0; // localStorage unavailable — pruned in-memory only via next rebuild
+    }
+  })().finally(() => {
+    pruneInFlightPromise = null;
+  });
+  return pruneInFlightPromise;
+}
+
+/** Throttle window for event/poll-driven prunes (devicechange, 2 s push). */
+const PRUNE_THROTTLE_MS = 15_000;
+let lastPruneStartedAt = 0;
+let pruneScheduledInFlight = false;
+
+/**
+ * Throttled fire-and-forget variant of pruneStaleSavedMics() for event and
+ * poll paths: at most one prune per PRUNE_THROTTLE_MS (a prune already in
+ * flight is joined instead of re-run). `force` bypasses the throttle (used
+ * by the devicechange listener and app startup, where a topology change
+ * just happened).
+ */
+export function scheduleStaleMicPrune(force = false): void {
+  if (pruneScheduledInFlight) return;
+  if (!force && Date.now() - lastPruneStartedAt < PRUNE_THROTTLE_MS) return;
+  lastPruneStartedAt = Date.now();
+  pruneScheduledInFlight = true;
+  void pruneStaleSavedMics().finally(() => {
+    pruneScheduledInFlight = false;
+  });
+}
+
+/**
+ * R41/P10: Bind the central device watcher EARLY (app startup). The
+ * devicechange listener is otherwise bound lazily on the first enumeration;
+ * this guarantees hotplug events prune MULTI_MIC_CONFIG + refresh the
+ * liveness cache even if no mic resolution happened yet. Also kicks one
+ * initial prune so a fresh app start cleans up devices that disappeared
+ * while the app was closed.
+ */
+export function ensureMicDeviceWatch(): void {
+  const md = getMediaDevices();
+  if (!md) return;
+  bindDeviceChangeListener(md);
+  refreshConnectedDeviceIds();
+  scheduleStaleMicPrune(true);
 }
 
 /** Test hook: drop the cache (used after mic config edits). */

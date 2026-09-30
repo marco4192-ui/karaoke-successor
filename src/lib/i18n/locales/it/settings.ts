@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Cartella Base Canzoni',
-  desc: 'Tutte le canzoni vengono importate da questa cartella. Ogni sottocartella contiene una canzone.',
+  desc: 'Tutte le canzoni vengono importate da questa cartella. Ogni sottocartella contiene una canzone: un file di testo .txt con le marcature temporali, più i file audio, video e copertina.',
   placeholder: 'C:/Karaoke ZERO/Canzoni',
   scan: 'Scansiona',
   browse: 'Sfoglia',

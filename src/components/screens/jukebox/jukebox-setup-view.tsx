@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { getPlaylists } from '@/lib/playlist-manager';
 import { decadeShortLabel } from '@/lib/game/era-filter';
+import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import type { Song } from '@/types/game';
 import type { UseJukeboxReturn } from './jukebox-types';
 import { JukeboxPlaylistBrowser } from './jukebox-playlist-browser';
@@ -404,7 +405,9 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             aria-autocomplete="list"
             aria-controls="jukebox-search-suggestions"
             autoComplete="off"
-            className="h-12 pl-12 pr-4 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/60 focus-visible:shadow-[0_0_30px_rgba(34,211,238,0.12)] transition-all"
+            className={`h-12 pl-12 pr-4 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/60 focus-visible:shadow-[0_0_30px_rgba(34,211,238,0.12)] transition-all ${
+              j.searchQuery.trim() !== '' ? SEARCH_ACTIVE_FRAME : ''
+            }`}
           />
           {showSuggestions && (
             <div
@@ -517,7 +520,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   id="jukebox-playlist-select"
                   value={selectedPlaylistId}
                   onChange={(e) => handlePlaylistSelect(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/25 outline-none transition-all"
+                  className={`w-full rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/25 outline-none transition-all border ${
+                    selectedPlaylistId !== ''
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-white/5 border-white/10'
+                  }`}
                   style={selectStyle}
                 >
                   <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allSongs') || 'Alle Songs'}</option>
@@ -552,7 +559,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   id="jukebox-genre-select"
                   value={j.filterGenre}
                   onChange={(e) => j.setFilterGenre(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/25 outline-none transition-all"
+                  className={`w-full rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/25 outline-none transition-all border ${
+                    j.filterGenre !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-white/5 border-white/10'
+                  }`}
                   style={selectStyle}
                 >
                   {j.genres.map(genre => (
@@ -573,7 +584,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   id="jukebox-artist-select"
                   value={j.filterArtist}
                   onChange={(e) => j.setFilterArtist(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-fuchsia-500/50 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/25 outline-none transition-all"
+                  className={`w-full rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-fuchsia-500/50 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/25 outline-none transition-all border ${
+                    j.filterArtist !== ''
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-white/5 border-white/10'
+                  }`}
                   style={selectStyle}
                 >
                   <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allArtists')}</option>
@@ -593,7 +608,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   id="jukebox-era-select"
                   value={j.filterEra}
                   onChange={(e) => j.setFilterEra(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/25 outline-none transition-all"
+                  className={`w-full rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/25 outline-none transition-all border ${
+                    j.filterEra !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-white/5 border-white/10'
+                  }`}
                   style={selectStyle}
                 >
                   {j.eras.map(era => (
@@ -616,7 +635,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                   id="jukebox-year-select"
                   value={j.filterYear}
                   onChange={(e) => j.setFilterYear(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-amber-500/50 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/25 outline-none transition-all"
+                  className={`w-full rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-amber-500/50 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/25 outline-none transition-all border ${
+                    j.filterYear !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-white/5 border-white/10'
+                  }`}
                   style={selectStyle}
                 >
                   {j.years.map(year => (

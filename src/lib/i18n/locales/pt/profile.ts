@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Perfil',
+  title: 'Perfis',
   description: 'Crie e gerencie seus perfis de cantor',
   onlineLeaderboard: 'Leaderboard Online',
   createProfile: 'Criar Novo Perfil',

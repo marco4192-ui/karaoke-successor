@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profil',
+  title: 'Profile',
   description: 'Twórz i zarządzaj profilami śpiewaków',
   onlineLeaderboard: 'Tabela wyników online',
   createProfile: 'Utwórz nowy profil',

@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: '曲ベースフォルダー',
-  desc: 'すべての曲はこのフォルダーからインポートされます。各サブフォルダーに1曲ずつ含まれます。',
+  desc: 'すべての曲はこのフォルダーからインポートされます。各サブフォルダーには1曲（時間マーカー付きの.txtテキストと、音声・動画・カバーの各ファイル）が含まれます。',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: 'スキャン',
   browse: '参照',

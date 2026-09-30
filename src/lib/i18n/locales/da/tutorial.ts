@@ -161,8 +161,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Endnu ingen sange',
-          body: 'Editoren kræver sange i biblioteket. Importér først sange (bibliotek → import / mappescanning) og kom tilbage.',
-          details: 'Sådan kommer du til sange:\n• Indstillinger → Bibliotek → vælg sangmappen: hver undermappe læses som én sang (lyd/video + UltraStar-tekst).\n• Alternativt enkelte filer via importdialogen.\n• Eller opret en ny sang i editoren ("Ny sang") og sæt sangtekst + lyd sammen selv.',
+          body: 'Editoren kræver sange i biblioteket. Importér først sange via sangmappen (Indstillinger → Bibliotek) og kom tilbage.',
+          details: 'Sådan kommer du til sange:\n• Indstillinger → Bibliotek → vælg sangmappen: hver undermappe læses som én sang (lyd/video + UltraStar-tekst).\n• Eller opret en ny sang i editoren ("Ny sang") og sæt sangtekst + lyd sammen selv.',
         },
         openSong: {
           title: 'Åbn en sang',
@@ -272,8 +272,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Bibliotek',
-          body: 'Vælg sangmappen (hver undermappe = én sang) og skan den, nulstil biblioteket eller slet alle data — plus importen fra andre karaoke-systemer.',
-          details: 'Mappeformat: én undermappe pr. sang med lyd/video + TXT (UltraStar-format). Scanneren genkender almindelige kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport fra andre systemer: et SingStar-arkiv? En UltraStar-samling? Import-konverteren overtager automatisk metadata og sangtekster.\n\nPas på med "slet alle data": den dobbelte bekræftelse spørger to gange — tag stadig en backup først (fanen Synk & Backup).',
+          body: 'Vælg sangmappen (hver undermappe = én sang) og skan den, nulstil biblioteket eller slet alle data.',
+          details: 'Mappeformat: én undermappe pr. sang med lyd/video + TXT (UltraStar-format). Scanneren genkender almindelige kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformater fra andre karaoke-udbydere understøttes ikke lige nu.\n\nPas på med "slet alle data": den dobbelte bekræftelse spørger to gange — tag stadig en backup først (fanen Synk & Backup).',
         },
         taxonomy: {
           title: 'Genrer & Sprog',

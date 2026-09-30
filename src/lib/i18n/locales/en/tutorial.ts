@@ -161,8 +161,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'No songs yet',
-          body: 'The editor needs songs in the library. Import songs first (library → import / folder scan) and come back.',
-          details: 'How to get songs:\n• Settings → Library → set the songs folder: every subfolder is read as one song (audio/video + UltraStar text).\n• Alternatively single files via the import dialog.\n• Or create a new song in the editor ("New Song") and bring lyrics + audio together yourself.',
+          body: 'The editor needs songs in the library. Import songs first via the songs folder (Settings → Library) and come back.',
+          details: 'How to get songs:\n• Settings → Library → set the songs folder: every subfolder is read as one song (audio/video + UltraStar text).\n• Or create a new song in the editor ("New Song") and bring lyrics + audio together yourself.',
         },
         openSong: {
           title: 'Open a song',
@@ -272,8 +272,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Library',
-          body: 'Set the songs folder (each subfolder = one song) and scan it, reset the library or delete all data — plus the import from other karaoke systems.',
-          details: 'Folder format: one subfolder per song with audio/video + TXT (UltraStar format). The scanner recognizes common combos (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport from other systems: a SingStar archive? An UltraStar collection? The import converter takes over metadata and lyrics automatically.\n\nCareful with "delete all data": the double confirmation asks twice — still make a backup first (Sync & Backup tab).',
+          body: 'Set the songs folder (each subfolder = one song) and scan it, reset the library or delete all data.',
+          details: 'Folder format: one subfolder per song with audio/video + TXT (UltraStar format). The scanner recognizes common combos (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport formats from other karaoke providers are not supported for now.\n\nCareful with "delete all data": the double confirmation asks twice — still make a backup first (Sync & Backup tab).',
         },
         taxonomy: {
           title: 'Genres & Languages',

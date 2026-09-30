@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Sangbasemappe',
-  desc: 'Alle sanger importeres fra denne mappen. Hver undermappe inneholder én sang.',
+  desc: 'Alle sanger importeres fra denne mappen. Hver undermappe inneholder én sang: en .txt-tekstfil med tidsmerker, i tillegg til lyd-, video- og coverfiler.',
   placeholder: 'C:/Karaoke ZERO/Sanger',
   scan: 'Skann',
   browse: 'Bla gjennom',

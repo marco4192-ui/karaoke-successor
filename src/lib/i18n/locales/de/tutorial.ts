@@ -160,8 +160,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Keine Songs vorhanden',
-          body: 'Der Editor braucht Songs in der Bibliothek. Importiere zuerst Songs (Bibliothek → Import bzw. Ordner-Scan) und komm dann wieder.',
-          details: 'So kommst du an Songs:\n• Einstellungen → Bibliothek → Songs-Ordner festlegen: Jeder Unterordner wird als ein Song eingelesen (Audio/Video + UltraStar-Text).\n• Alternativ einzelne Dateien per Import-Dialog.\n• Oder im Editor einen neuen Song anlegen („Neuer Song") und Lyrics + Audio selbst zusammenbringen.',
+          body: 'Der Editor braucht Songs in der Bibliothek. Importiere zuerst Songs über den Songs-Ordner (Einstellungen → Bibliothek) und komm dann wieder.',
+          details: 'So kommst du an Songs:\n• Einstellungen → Bibliothek → Songs-Ordner festlegen: Jeder Unterordner wird als ein Song eingelesen (Audio/Video + UltraStar-Text).\n• Oder im Editor einen neuen Song anlegen („Neuer Song") und Lyrics + Audio selbst zusammenbringen.',
         },
         openSong: {
           title: 'Song öffnen',
@@ -271,8 +271,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Bibliothek',
-          body: 'Songs-Ordner festlegen (jeder Unterordner = ein Song) und einlesen, Bibliothek zurücksetzen oder alle Daten löschen — plus der Import aus anderen Karaoke-Systemen.',
-          details: 'Ordner-Format: Pro Song ein Unterordner mit Audio/Video + TXT (UltraStar-Format). Der Scanner erkennt gängige Kombis (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport aus anderen Systemen: SingStar-Archiv? UltraStar-Sammlung? Der Import-Konverter übernimmt Metadaten und Lyrics automatisch.\n\nAchtung bei „Alle Daten löschen": Der_DOUBLE-Schutz fragt zweimal nach — trotzdem vorher ein Backup machen (Sync & Backup-Tab).',
+          body: 'Songs-Ordner festlegen (jeder Unterordner = ein Song) und einlesen, Bibliothek zurücksetzen oder alle Daten löschen.',
+          details: 'Ordner-Format: Pro Song ein Unterordner mit Audio/Video + TXT (UltraStar-Format). Der Scanner erkennt gängige Kombis (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport-Formate fremder Karaoke-Anbieter werden vorerst nicht unterstützt.\n\nAchtung bei „Alle Daten löschen": Der_DOUBLE-Schutz fragt zweimal nach — trotzdem vorher ein Backup machen (Sync & Backup-Tab).',
         },
         taxonomy: {
           title: 'Genres & Sprachen',

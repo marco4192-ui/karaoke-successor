@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Kappaleiden peruskansio',
-  desc: 'Kaikki kappaleet tuodaan tästä kansiosta. Jokainen alikansio sisältää yhden kappaleen.',
+  desc: 'Kaikki kappaleet tuodaan tästä kansiosta. Jokainen alikansio sisältää yhden kappaleen: .txt-tekstitiedoston aikamerkkeineen sekä ääni-, video- ja kansikuvatiedostot.',
   placeholder: 'C:/Karaoke ZERO/Kappaleet',
   scan: 'Skannaa',
   browse: 'Selaa',

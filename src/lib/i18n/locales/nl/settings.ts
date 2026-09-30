@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Nummers basismap',
-  desc: 'Alle nummers worden uit deze map geïmporteerd. Elke submap bevat één nummer.',
+  desc: 'Alle nummers worden uit deze map geïmporteerd. Elke submap bevat één nummer: een .txt-tekstbestand met tijdcodes, plus audio-, video- en coverbestanden.',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: 'Scannen',
   browse: 'Bladeren',

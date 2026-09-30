@@ -943,6 +943,27 @@ export class MultiMicrophoneManager {
       // Enumerate available devices to check which saved mics still exist
       await this.getMicrophones();
 
+      // R41/P10: Prune saved entries whose device no longer exists — from
+      // the in-memory list AND (below) from the persisted config. Before,
+      // stale entries stayed in MULTI_MIC_CONFIG forever and leaked into
+      // every mic-selection UI (party setup, song-start modal, companion
+      // push). Guard: only prune when enumeration returned USABLE ids —
+      // with capture permission denied getMicrophones() yields [] (and
+      // pre-permission Chrome yields empty deviceIds), where wiping the
+      // config would be wrong. Special ids ('default'/'auto'/'companion' —
+      // keep in sync with mic-device-resolver's isSavedMicDeviceLive) and
+      // entries without a deviceId are kept.
+      let prunedStale = false;
+      const usableDeviceIds = new Set(this.devices.filter(d => d.deviceId).map(d => d.deviceId));
+      if (usableDeviceIds.size > 0) {
+        const before = this.savedMicConfigs.length;
+        this.savedMicConfigs = this.savedMicConfigs.filter(saved => {
+          const deviceId = saved.deviceId;
+          return !deviceId || deviceId === 'default' || deviceId === 'auto' || deviceId === 'companion' || usableDeviceIds.has(deviceId);
+        });
+        prunedStale = this.savedMicConfigs.length < before;
+      }
+
       for (const saved of this.savedMicConfigs) {
         // Skip if already assigned
         if (this.assignedMics.has(saved.id)) continue;
@@ -983,6 +1004,15 @@ export class MultiMicrophoneManager {
           // eslint-disable-next-line no-console
           console.warn(`[MicManager] Failed to restore mic ${saved.customName || saved.deviceId}:`, e);
         }
+      }
+
+      // R41/P10: Persist the pruned config — saveConfig() serializes the
+      // in-memory assignedMics (restored = still existing devices only), so
+      // the stale entries leave MULTI_MIC_CONFIG here too. Only when the
+      // in-memory restore actually dropped something; otherwise the persist-
+      // happy path stays untouched.
+      if (prunedStale) {
+        this.saveConfig();
       }
 
       // Notify listeners

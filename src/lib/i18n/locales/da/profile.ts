@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profil',
+  title: 'Profiler',
   description: 'Opret og håndtér dine sangerprofiler',
   onlineLeaderboard: 'Online rangliste',
   createProfile: 'Opret ny profil',

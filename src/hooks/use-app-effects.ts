@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
+import { ensureMicDeviceWatch } from '@/lib/audio/mic-device-resolver';
 
 /** Shared browser fullscreen helper (Escape exits — unavoidable with browser API) */
 function toggleBrowserFullscreen() {
@@ -77,6 +78,15 @@ export function useAppEffects() {
       // eslint-disable-next-line no-console
       console.warn('[App] Failed to load custom songs from IndexedDB:', err);
     });
+  }, []);
+
+  // R41/P10: Central mic-device watcher — bind the devicechange listener
+  // early and run ONE startup prune of MULTI_MIC_CONFIG so entries for
+  // devices that disappeared while the app was closed are gone before any
+  // mic picker (party/mode setup, song-start modal, companion push) reads
+  // the config. Every later hotplug re-prunes via the same listener.
+  useEffect(() => {
+    ensureMicDeviceWatch();
   }, []);
 
   // Apply stored theme on app start + listen for runtime changes

@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Pasta Base de Músicas',
-  desc: 'Todas as músicas são importadas desta pasta. Cada subpasta contém uma música.',
+  desc: 'Todas as músicas são importadas desta pasta. Cada subpasta contém uma música: um arquivo de texto .txt com marcações de tempo, além dos arquivos de áudio, vídeo e capa.',
   placeholder: 'C:/Karaoke ZERO/Músicas',
   scan: 'Escanear',
   browse: 'Navegar',

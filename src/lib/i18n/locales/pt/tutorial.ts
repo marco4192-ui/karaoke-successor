@@ -163,8 +163,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Nenhuma música ainda',
-          body: 'O editor precisa de músicas na biblioteca. Importe músicas primeiro (biblioteca → importação / escanear pastas) e volte aqui.',
-          details: 'Como conseguir músicas:\n• Configurações → Biblioteca → defina a pasta de músicas: cada subpasta é lida como uma música (áudio/vídeo + texto UltraStar).\n• Alternativamente, arquivos individuais pelo diálogo de importação.\n• Ou crie uma música nova no editor ("Nova Música") e junte você mesmo letra e áudio.',
+          body: 'O editor precisa de músicas na biblioteca. Importe músicas primeiro pela pasta de músicas (Configurações → Biblioteca) e volte aqui.',
+          details: 'Como conseguir músicas:\n• Configurações → Biblioteca → defina a pasta de músicas: cada subpasta é lida como uma música (áudio/vídeo + texto UltraStar).\n• Ou crie uma música nova no editor ("Nova Música") e junte você mesmo letra e áudio.',
         },
         openSong: {
           title: 'Abrir uma música',
@@ -274,8 +274,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Biblioteca',
-          body: 'Defina a pasta de músicas (cada subpasta = uma música) e escaneie, redefina a biblioteca ou apague todos os dados — mais a importação de outros sistemas de karaokê.',
-          details: 'Formato das pastas: uma subpasta por música com áudio/vídeo + TXT (formato UltraStar). O scanner reconhece as combinações comuns (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportação de outros sistemas: um arquivo do SingStar? Uma coleção UltraStar? O conversor de importação assume metadados e letras automaticamente.\n\nCuidado com "apagar todos os dados": a confirmação dupla pergunta duas vezes — ainda assim, faça um backup antes (aba Sync & Backup).',
+          body: 'Defina a pasta de músicas (cada subpasta = uma música) e escaneie, redefina a biblioteca ou apague todos os dados.',
+          details: 'Formato das pastas: uma subpasta por música com áudio/vídeo + TXT (formato UltraStar). O scanner reconhece as combinações comuns (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nOs formatos de importação de outros provedores de karaokê não são suportados por enquanto.\n\nCuidado com "apagar todos os dados": a confirmação dupla pergunta duas vezes — ainda assim, faça um backup antes (aba Sync & Backup).',
         },
         taxonomy: {
           title: 'Gêneros & Idiomas',

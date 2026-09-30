@@ -163,8 +163,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Ancora nessuna canzone',
-          body: 'L\'editor ha bisogno di canzoni in libreria. Importa prima qualche canzone (libreria → importazione / scansione cartelle) e poi torna qui.',
-          details: 'Come procurarti le canzoni:\n• Impostazioni → Libreria → imposta la cartella canzoni: ogni sottocartella viene letta come una canzone (audio/video + testo UltraStar).\n• In alternativa, singoli file dalla finestra di importazione.\n• Oppure crea una canzone nuova nell\'editor ("Nuova Canzone") e unisci da solo testo e audio.',
+          body: 'L\'editor ha bisogno di canzoni in libreria. Importa prima qualche canzone dalla cartella canzoni (Impostazioni → Libreria) e poi torna qui.',
+          details: 'Come procurarti le canzoni:\n• Impostazioni → Libreria → imposta la cartella canzoni: ogni sottocartella viene letta come una canzone (audio/video + testo UltraStar).\n• Oppure crea una canzone nuova nell\'editor ("Nuova Canzone") e unisci da solo testo e audio.',
         },
         openSong: {
           title: 'Aprire una canzone',
@@ -274,8 +274,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Libreria',
-          body: 'Imposta la cartella canzoni (ogni sottocartella = una canzone) e avvia la scansione, ripristina la libreria o elimina tutti i dati — più l\'importazione da altri sistemi di karaoke.',
-          details: 'Formato delle cartelle: una sottocartella per canzone con audio/video + TXT (formato UltraStar). Lo scanner riconosce le combinazioni più diffuse (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportazione da altri sistemi: un archivio SingStar? Una collezione UltraStar? Il convertitore recupera automaticamente metadati e testi.\n\nAttenzione a "elimina tutti i dati": la doppia conferma chiede due volte — ma fai comunque prima un backup (scheda Sync & Backup).',
+          body: 'Imposta la cartella canzoni (ogni sottocartella = una canzone) e avvia la scansione, ripristina la libreria o elimina tutti i dati.',
+          details: 'Formato delle cartelle: una sottocartella per canzone con audio/video + TXT (formato UltraStar). Lo scanner riconosce le combinazioni più diffuse (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nI formati di importazione di altri provider di karaoke non sono supportati per ora.\n\nAttenzione a "elimina tutti i dati": la doppia conferma chiede due volte — ma fai comunque prima un backup (scheda Sync & Backup).',
         },
         taxonomy: {
           title: 'Generi & Lingue',

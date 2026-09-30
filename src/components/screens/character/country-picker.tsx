@@ -52,6 +52,35 @@ export function CountryFlagImage({
   );
 }
 
+/** Matches exactly one flag emoji: two regional-indicator code points (e.g. "🇩🇪"). */
+const FLAG_EMOJI_PATTERN = /^[\u{1F1E6}-\u{1F1FF}]{2}$/u;
+
+/**
+ * Windows renders flag emojis as plain letter codes ("DE") because its system
+ * fonts contain no flag glyphs. This wrapper detects strings that are exactly
+ * one flag emoji (a regional-indicator pair) and renders the crisp flagcdn
+ * image instead (via CountryFlagImage, which keeps the emoji as offline
+ * fallback). Any other text (🎤, ⭐, plain strings, …) is passed through
+ * unchanged, so callers can wrap arbitrary icon fields safely.
+ */
+export function FlagAwareEmoji({
+  text,
+  flagClassName = 'h-4 w-6',
+}: {
+  text: string;
+  /** Size classes for the rendered flag image (default h-4 w-6 = 16×24px). */
+  flagClassName?: string;
+}) {
+  const value = typeof text === 'string' ? text.trim() : '';
+  if (FLAG_EMOJI_PATTERN.test(value)) {
+    const code = [...value]
+      .map(cp => String.fromCharCode((cp.codePointAt(0) ?? 0) - 0x1f1e6 + 0x41))
+      .join('');
+    return <CountryFlagImage code={code} className={`${flagClassName} inline-block align-middle`} />;
+  }
+  return <>{text}</>;
+}
+
 interface CountryPickerProps {
   /** Currently selected ISO-3166-1 alpha-2 code ('' = none). */
   value: string;

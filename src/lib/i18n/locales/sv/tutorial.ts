@@ -161,8 +161,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Inga låtar ännu',
-          body: 'Editorn behöver låtar i biblioteket. Importera låtar först (bibliotek → import / mappskanning) och kom tillbaka.',
-          details: 'Så får du låtar:\n• Inställningar → Bibliotek → ställ in låtmappen: varje undermapp läses som en låt (ljud/video + UltraStar-text).\n• Alternativt enstaka filer via importdialogen.\n• Eller skapa en ny låt i editorn ("Ny låt") och sätt ihop text + ljud själv.',
+          body: 'Editorn behöver låtar i biblioteket. Importera låtar först via låtmappen (Inställningar → Bibliotek) och kom tillbaka.',
+          details: 'Så får du låtar:\n• Inställningar → Bibliotek → ställ in låtmappen: varje undermapp läses som en låt (ljud/video + UltraStar-text).\n• Eller skapa en ny låt i editorn ("Ny låt") och sätt ihop text + ljud själv.',
         },
         openSong: {
           title: 'Öppna en låt',
@@ -272,8 +272,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Bibliotek',
-          body: 'Ställ in låtmappen (varje undermapp = en låt) och skanna den, återställ biblioteket eller radera all data — plus importen från andra karaokesystem.',
-          details: 'Mappformat: en undermapp per låt med ljud/video + TXT (UltraStar-format). Skannern känner igen vanliga kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport från andra system: ett SingStar-arkiv? En UltraStar-samling? Importkonvertorn tar över metadata och texter automatiskt.\n\nVar försiktig med "radera all data": dubbelbekräftelsen frågar två gånger — gör ändå en backup först (fliken Synk & Backup).',
+          body: 'Ställ in låtmappen (varje undermapp = en låt) och skanna den, återställ biblioteket eller radera all data.',
+          details: 'Mappformat: en undermapp per låt med ljud/video + TXT (UltraStar-format). Skannern känner igen vanliga kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformat från andra karaoke-leverantörer stöds inte för närvarande.\n\nVar försiktig med "radera all data": dubbelbekräftelsen frågar två gånger — gör ändå en backup först (fliken Synk & Backup).',
         },
         taxonomy: {
           title: 'Genrer & Språk',

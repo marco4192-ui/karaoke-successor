@@ -30,7 +30,9 @@ import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import { useTranslation } from '@/lib/i18n/translations';
+import { FILTER_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
+import { getVerifiedConnectedAudioInputs, isSavedMicDeviceLive } from '@/lib/audio/mic-device-resolver';
 import { ToggleSwitch, InputModeToggle } from './medley-setup-components';
 import type { CompanionProfile } from './medley-setup-components';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
@@ -306,6 +308,15 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       micPreferences = getJsonOptional<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES) || {};
       const micConfig = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string; config?: { stereoSplitMode?: boolean; stereoChannel?: string } }> }>(StorageKeys.MULTI_MIC_CONFIG);
       if (micConfig) savedMics = micConfig.assignedMics || [];
+      // R41/P10: Nur Einträge behalten, deren Hardware noch angeschlossen ist
+      // — sonst bekommt die Auto-Zuweisung per Index (savedMics[i]) tote
+      // deviceIds, die im Pitch-Detektor auf OverconstrainedError laufen.
+      // connected === null (unverifizierbar, z. B. vor Mikro-Freigabe) →
+      // unverändert lassen.
+      const connectedMics = getVerifiedConnectedAudioInputs();
+      if (connectedMics !== null) {
+        savedMics = savedMics.filter(m => isSavedMicDeviceLive(m, connectedMics));
+      }
     } catch { /* ignore */ }
 
     // Build players
@@ -532,7 +543,11 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               <select
                 value={filterGenre}
                 onChange={(e) => setFilterGenre(e.target.value)}
-                className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50"
+                className={`rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50 border ${
+                  filterGenre !== 'all'
+                    ? FILTER_ACTIVE_FRAME
+                    : 'bg-gray-800 border-white/20'
+                }`}
                 style={selectStyle}
               >
                 {availableGenres.map(g => (
@@ -547,7 +562,11 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               <select
                 value={filterLanguage}
                 onChange={(e) => setFilterLanguage(e.target.value)}
-                className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50"
+                className={`rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 border ${
+                  filterLanguage !== 'all'
+                    ? FILTER_ACTIVE_FRAME
+                    : 'bg-gray-800 border-white/20'
+                }`}
                 style={selectStyle}
               >
                 {availableLanguages.map(l => (
@@ -563,7 +582,11 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 <select
                   value={filterEra}
                   onChange={(e) => setFilterEra(e.target.value)}
-                  className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50"
+                  className={`rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50 border ${
+                    filterEra !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-gray-800 border-white/20'
+                  }`}
                   style={selectStyle}
                 >
                   <option value="all" className="bg-gray-800 text-white">{t('medley.allEras')}</option>

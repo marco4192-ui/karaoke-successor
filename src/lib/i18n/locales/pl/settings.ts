@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Podstawowy folder piosenek',
-  desc: 'Wszystkie piosenki są importowane z tego folderu. Każdy podfolder zawiera jedną piosenkę.',
+  desc: 'Wszystkie piosenki są importowane z tego folderu. Każdy podfolder zawiera jedną piosenkę: plik tekstowy .txt ze znacznikami czasu oraz pliki audio, wideo i okładki.',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: 'Skanuj',
   browse: 'Przeglądaj',

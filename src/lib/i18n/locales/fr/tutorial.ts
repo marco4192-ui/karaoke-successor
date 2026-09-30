@@ -160,8 +160,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Pas encore de chansons',
-          body: 'L\'éditeur a besoin de chansons dans la bibliothèque. Importez d\'abord des chansons (bibliothèque → import / scan de dossier) et revenez.',
-          details: 'Comment obtenir des chansons :\n• Paramètres → Bibliothèque → définissez le dossier des chansons : chaque sous-dossier est lu comme une chanson (audio/vidéo + texte UltraStar).\n• Sinon, des fichiers individuels via le dialogue d\'import.\n• Ou créez une nouvelle chanson dans l\'éditeur ("Nouvelle Chanson") et assemblez vous-même paroles + audio.',
+          body: 'L\'éditeur a besoin de chansons dans la bibliothèque. Importez d\'abord des chansons via le dossier des chansons (Paramètres → Bibliothèque) et revenez.',
+          details: 'Comment obtenir des chansons :\n• Paramètres → Bibliothèque → définissez le dossier des chansons : chaque sous-dossier est lu comme une chanson (audio/vidéo + texte UltraStar).\n• Ou créez une nouvelle chanson dans l\'éditeur ("Nouvelle Chanson") et assemblez vous-même paroles + audio.',
         },
         openSong: {
           title: 'Ouvrir une chanson',
@@ -271,8 +271,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Bibliothèque',
-          body: 'Définissez le dossier des chansons (chaque sous-dossier = une chanson) et scannez-le, réinitialisez la bibliothèque ou supprimez toutes les données — plus l\'import depuis d\'autres systèmes de karaoké.',
-          details: 'Format du dossier : un sous-dossier par chanson avec audio/vidéo + TXT (format UltraStar). Le scanner reconnaît les combinaisons courantes (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport depuis d\'autres systèmes : une archive SingStar ? Une collection UltraStar ? Le convertisseur d\'import reprend automatiquement métadonnées et paroles.\n\nAttention avec "supprimer toutes les données" : la double confirmation demande deux fois — faites quand même d\'abord une sauvegarde (onglet Sync & Sauvegarde).',
+          body: 'Définissez le dossier des chansons (chaque sous-dossier = une chanson) et scannez-le, réinitialisez la bibliothèque ou supprimez toutes les données.',
+          details: 'Format du dossier : un sous-dossier par chanson avec audio/vidéo + TXT (format UltraStar). Le scanner reconnaît les combinaisons courantes (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nLes formats d\'import d\'autres fournisseurs de karaoké ne sont pas pris en charge pour le moment.\n\nAttention avec "supprimer toutes les données" : la double confirmation demande deux fois — faites quand même d\'abord une sauvegarde (onglet Sync & Sauvegarde).',
         },
         taxonomy: {
           title: 'Genres & Langues',

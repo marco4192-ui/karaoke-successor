@@ -13,6 +13,7 @@ import { RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card'
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
+import { SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { useToast } from '@/hooks/use-toast';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 
@@ -52,13 +53,24 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // Item 4: visible loading state for library (re)loads — the Tauri folder
   // rescan can take seconds and previously gave NO feedback at all.
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+  // R41 (P11): the light reload now uses the ASYNC path. The old sync
+  // getAllSongs() snapshot carries NO restored media URLs for storedMedia
+  // songs (covers live only in the restored copies) — after "Speichern" or
+  // returning from the editor the grid lost its covers and never reloaded.
+  // getAllSongsAsync serves the library snapshot (instant) and re-restores
+  // only when the library actually changed (version bump in song-library).
   const refreshSongs = useCallback(() => {
     // LIGHT reload: updateSong() keeps the in-memory customSongsCache (WITH the
     // runtime blob/asset URLs) in sync — reading it back is instant and covers
     // STAY VISIBLE. clearSongCache() must NOT be called here: it revokes the
-    // browser blob URLs the grid is displaying (covers would vanish + reload —
+    // blob URLs the grid is displaying (covers would vanish + reload —
     // the old "why do covers reload?" symptom).
-    setSongs(getAllSongs());
+    getAllSongsAsync().then(restored => {
+      setSongs(restored);
+    }).catch(() => {
+      // Non-critical — keep the current (sync) snapshot as fallback
+      setSongs(getAllSongs());
+    });
   }, []);
 
   // FULL reload (the "Neu laden" button): reconcile the library with the txt
@@ -359,7 +371,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 placeholder={t('editor.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
+                className={`bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10 ${
+                  searchQuery.trim() !== '' ? SEARCH_ACTIVE_FRAME : ''
+                }`}
                 data-testid="editor-search-input"
               />
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -373,7 +387,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <Button
                 onClick={() => setFilterMode(filterMode === 'no-genre' ? 'all' : 'no-genre')}
                 variant={filterMode === 'no-genre' ? 'default' : 'outline'}
-                className={filterMode === 'no-genre' ? 'bg-orange-500' : 'border-white/20 text-white'}
+                className={filterMode === 'no-genre' ? 'bg-orange-500 ring-1 ring-orange-300/60 shadow-[0_0_10px_rgba(249,115,22,0.35)]' : 'border-white/20 text-white'}
                 size="sm"
                 data-testid="editor-filter-nogenre"
               >
@@ -382,7 +396,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <Button
                 onClick={() => setFilterMode(filterMode === 'no-language' ? 'all' : 'no-language')}
                 variant={filterMode === 'no-language' ? 'default' : 'outline'}
-                className={filterMode === 'no-language' ? 'bg-purple-500' : 'border-white/20 text-white'}
+                className={filterMode === 'no-language' ? 'bg-purple-500 ring-1 ring-purple-300/60 shadow-[0_0_10px_rgba(168,85,247,0.35)]' : 'border-white/20 text-white'}
                 size="sm"
                 data-testid="editor-filter-nolanguage"
               >
@@ -391,7 +405,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <Button
                 onClick={() => setFilterMode(filterMode === 'no-year' ? 'all' : 'no-year')}
                 variant={filterMode === 'no-year' ? 'default' : 'outline'}
-                className={filterMode === 'no-year' ? 'bg-emerald-500 hover:bg-emerald-400' : 'border-white/20 text-white'}
+                className={filterMode === 'no-year' ? 'bg-emerald-500 hover:bg-emerald-400 ring-1 ring-emerald-300/60 shadow-[0_0_10px_rgba(16,185,129,0.35)]' : 'border-white/20 text-white'}
                 size="sm"
                 data-testid="editor-filter-noyear"
               >
@@ -545,7 +559,12 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               // 1.3 (upsert flow): an unsaved new song was never added to the
               // library, so cancelling simply discards the editor draft —
               // nothing to remove. Legacy shells are purged on mount above.
-              onCancel={() => setSelectedSong(null)}
+              // R41 (P11): leaving the editor refreshes the library view —
+              // the grid picks up restored covers instantly (snapshot fast path).
+              onCancel={() => {
+                setSelectedSong(null);
+                refreshSongs();
+              }}
             />
           </div>
         </div>

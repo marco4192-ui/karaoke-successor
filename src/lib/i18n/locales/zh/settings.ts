@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: '歌曲基础文件夹',
-  desc: '所有歌曲从此文件夹导入。每个子文件夹包含一首歌曲。',
+  desc: '所有歌曲从此文件夹导入。每个子文件夹包含一首歌：带时间标记的 .txt 文本文件，以及音频、视频和封面文件。',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: '扫描',
   browse: '浏览',

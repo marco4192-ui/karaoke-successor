@@ -2,10 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile } from '@/types/game';
 import { getLevelForXP, getRankForXP } from '@/lib/game/player-progression';
-import { getCountryFlag } from './country-options';
+import { CountryFlagImage } from './country-picker';
 
 interface PlayerProgressionCardProps {
   profile: PlayerProfile;
@@ -19,6 +20,11 @@ export function PlayerProgressionCard({ profile, onToggleActive, testId }: Playe
   const profileXP = profile.xp || 0;
   const playerLevel = getLevelForXP(profileXP);
   const playerRank = getRankForXP(profileXP);
+  const isActive = profile.isActive ?? true;
+  // R41/P8: Lokalisiertes Aria-Label über bestehende Keys (keine neuen
+  // i18n-Keys möglich) — dasselbe Muster wie im Companion-Mirror
+  // (mirror-profile-lite): „{Name}: Aktiv/Inaktiv".
+  const activeLabel = isActive ? t('playerProgression.active') : t('playerProgression.inactive');
 
   return (
     <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30" data-testid={testId}>
@@ -36,8 +42,8 @@ export function PlayerProgressionCard({ profile, onToggleActive, testId }: Playe
               )}
             </div>
             {profile.country && (
-              <div className="absolute -bottom-1 -right-1 text-xl">
-                {getCountryFlag(profile.country)}
+              <div className="absolute -bottom-1 -right-1 flex items-center">
+                <CountryFlagImage code={profile.country} className="h-4 w-6" />
               </div>
             )}
           </div>
@@ -52,18 +58,29 @@ export function PlayerProgressionCard({ profile, onToggleActive, testId }: Playe
               </div>
             </div>
           </div>
+          {/* R41/P8: Status-Badge + kleiner Schalter — der Switch visualisiert,
+              dass sich der Aktiv-Status hier anklicken/umschalten lässt
+              (Nutzerwunsch: „Toggle-Symbol, damit ersichtlicher ist, dass man
+              hier etwas ändern kann"). Tutorial (profiles.progression) nennt
+              das Element passend bereits „Aktiv-Schalter". */}
           {onToggleActive && (
-            <button
-              onClick={onToggleActive}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                (profile.isActive ?? true) 
-                  ? 'bg-green-500/30 text-green-300' 
-                  : 'bg-red-500/30 text-red-300'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${(profile.isActive ?? true) ? 'bg-green-400' : 'bg-red-400'}`} />
-              {(profile.isActive ?? true) ? t('playerProgression.active') : t('playerProgression.inactive')}
-            </button>
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <span
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  isActive ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-400' : 'bg-red-400'}`} />
+                {activeLabel}
+              </span>
+              <Switch
+                checked={isActive}
+                onCheckedChange={onToggleActive}
+                className="h-5 w-9 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-white/25"
+                aria-label={`${profile.name}: ${activeLabel}`}
+                data-testid="profile-active-toggle"
+              />
+            </div>
           )}
         </CardTitle>
       </CardHeader>

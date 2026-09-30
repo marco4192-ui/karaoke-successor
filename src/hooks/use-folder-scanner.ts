@@ -408,8 +408,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
         // CRITICAL: Only invalidate songCache, NOT customSongsCache.
         // replaceCustomSongs already set customSongsCache correctly.
         // reloadLibrary() would clear it, causing getAllSongs() to return [].
-        // Note: blob URL cache was already cleared by clearCustomSongs() at scan start.
-        // New blob URLs created during scan are still valid.
+        // Note: blob URL cache was already cleared by clearCustomSongs() at scan
+        // start (R41: with a 30 s DELAYED revoke — covers currently displayed
+        // survive the rescan). New blob URLs created during scan are valid.
+        // R41: invalidateSongCache no longer revokes media URLs at all — covers
+        // stay alive across rescans; the library snapshot is recomputed lazily.
         invalidateSongCache();
         const finalSongs = getAllSongs();
 

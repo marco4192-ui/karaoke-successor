@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Perfil',
+  title: 'Perfiles',
   description: 'Crea y gestiona tus perfiles de cantante',
   onlineLeaderboard: 'Tabla de Clasificación Online',
   createProfile: 'Crear Nuevo Perfil',

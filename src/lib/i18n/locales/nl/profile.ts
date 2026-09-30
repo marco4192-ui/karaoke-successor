@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profiel',
+  title: 'Profielen',
   description: 'Maak en beheer je zangersprofielen',
   onlineLeaderboard: 'Online leaderboard',
   createProfile: 'Nieuw profiel aanmaken',

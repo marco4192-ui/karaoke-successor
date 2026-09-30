@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Профиль',
+  title: 'Профили',
   description: 'Создавайте и управляйте профилями певцов',
   onlineLeaderboard: 'Онлайн таблица лидеров',
   createProfile: 'Создать новый профиль',

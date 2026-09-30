@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: '곡 기본 폴더',
-  desc: '모든 곡이 이 폴더에서 가져옵니다. 각 하위 폴더에 하나의 곡이 있습니다.',
+  desc: '모든 곡은 이 폴더에서 가져옵니다. 각 하위 폴더에는 곡 하나(시간 표기가 있는 .txt 텍스트와 오디오·영상·커버 파일)가 들어 있어요.',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: '스캔',
   browse: '찾아보기',

@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profiili',
+  title: 'Profiilit',
   description: 'Luo ja hallitse lauluprofiilejasi',
   onlineLeaderboard: 'Online-tulostaulukko',
   createProfile: 'Luo uusi profiili',

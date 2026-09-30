@@ -34,8 +34,6 @@ interface UseGameMediaResult {
 export function useGameMedia(song: Song | null): UseGameMediaResult {
   // ── State for song with restored URLs (if needed) ──
   const [restoredSong, setRestoredSong] = useState<Song | null>(null);
-  // Track blob URLs created by getSongMediaUrls for cleanup
-  const lastIdxDbUrlsRef = useRef<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string } | null>(null);
 
   // ── On-demand URL restoration for Tauri - ensure media URLs are valid ──
   useEffect(() => {
@@ -61,11 +59,11 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         const needsIdxDbVideo = !preparedSong.videoBackground || isStaleBlob(preparedSong.videoBackground);
         if (preparedSong.storedMedia && (needsIdxDbAudio || needsIdxDbVideo)) {
           try {
-            // Revoke previous blob URLs before creating new ones
-            const { getSongMediaUrls, revokeSongMediaUrls } = await import('@/lib/db/media-db');
-            if (lastIdxDbUrlsRef.current) revokeSongMediaUrls(lastIdxDbUrlsRef.current);
+            // R41: getSongMediaUrls returns STABLE shared URLs (media-db cache).
+            // No per-call revocation anymore — revoking here would kill the
+            // very URLs the library covers and other consumers display.
+            const { getSongMediaUrls } = await import('@/lib/db/media-db');
             const mediaUrls = await getSongMediaUrls(preparedSong.id);
-            lastIdxDbUrlsRef.current = mediaUrls;
             if (mediaUrls.audioUrl && needsIdxDbAudio) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
             if (mediaUrls.videoUrl && needsIdxDbVideo) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
           } catch (e) {
@@ -87,13 +85,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     restoreUrls();
     return () => {
       cancelled = true;
-      // Revoke blob URLs from previous song to prevent memory leaks
-      if (lastIdxDbUrlsRef.current) {
-        const urls = lastIdxDbUrlsRef.current;
-        import('@/lib/db/media-db').then(({ revokeSongMediaUrls }) => {
-          revokeSongMediaUrls(urls);
-        });
-      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- song sub-properties are destructured to avoid infinite loops with full song object
   }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath, song?.storedMedia]);

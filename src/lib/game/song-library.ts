@@ -2,7 +2,7 @@
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache} from '@/lib/tauri-file-storage';
 import { StorageKeys, getItem, removeItem, setJson } from '@/lib/storage';
-import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
+import { getSongMediaUrls, revokeAllSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
@@ -33,42 +33,27 @@ let customSongsCache: Song[] | null = null;
 let songCacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Track blob URLs created by getAllSongsAsync() browser-mode path for cleanup.
-// Without this, every library refresh leaks up to 4 blob URLs per storedMedia song.
-//
-// R26 (cover-bug fix): URLs are tracked PER GENERATION. Every getAllSongsAsync()
-// call opens a new generation; revocation only drops generations that are at
-// least TWO calls old. The one-generation grace period keeps the URLs of the
-// PREVIOUS call alive — so a consumer that still displays the previous result
-// (e.g. the Library grid during a fast Settings→Library roundtrip, or an
-// interleaved concurrent restore) never has its <img src="blob:…"> yanked
-// away mid-display (symptom: „Bild konnte nicht geladen werden“ icons).
-type BrowserBlobUrls = { audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string };
-let blobUrlGenerations: BrowserBlobUrls[][] = [[]];
+// ── R41 (P1/P2/P3): library snapshot + version ──────────────────────────────
+// Previously EVERY getAllSongsAsync() call re-ran the full restore (IndexedDB
+// reads per storedMedia song + fresh object URLs) — repeated calls from the
+// library re-entry, editor, queue, jukebox and settings tabs made re-entering
+// the library slow (P3) and, worse, the old "generation" system revoked the
+// object URLs of older calls, killing covers in still-displayed grids (P1/P2:
+// empty purple tiles, no error). getSongMediaUrls now returns STABLE URLs
+// (media-db per-song cache), so the restore result can be cached here as a
+// snapshot: it is only recomputed when the library actually changes. Every
+// mutation (add/remove/update/upsert/replace/clear/scan-invalidate) bumps
+// libraryVersion; getAllSongsAsync short-circuits on a version match.
+let librarySnapshot: { songs: Song[]; version: number } | null = null;
+let libraryVersion = 0;
 
-/** Record a fresh set of browser blob URLs in the CURRENT generation. */
-function trackBrowserBlobUrls(urls: BrowserBlobUrls): void {
-  const current = blobUrlGenerations[blobUrlGenerations.length - 1];
-  if (current) current.push(urls);
+function bumpLibraryVersion(): void {
+  libraryVersion++;
 }
 
-/** Open a new blob-URL generation and retire old ones (grace: keep the
- *  previous generation alive — see comment above). */
-function openBrowserBlobUrlGeneration(): void {
-  blobUrlGenerations.push([]);
-  // Revoke everything except the two newest generations.
-  while (blobUrlGenerations.length > 2) {
-    const retired = blobUrlGenerations.shift();
-    if (retired) for (const urls of retired) revokeSongMediaUrls(urls);
-  }
-}
-
-/** Drop a stale blob: URL that can no longer be loaded. Blob URLs never
- *  survive a page reload, and a revoked one renders as the browser's broken
- *  image icon — a clean `undefined` (→ MusicIcon placeholder) is always better.
- *  Non-blob URLs (data:, http(s):, /path) are passed through untouched. */
-function dropDeadBlobUrl(url: string | undefined): string | undefined {
-  return url && url.startsWith('blob:') ? undefined : url;
+/** Drop the snapshot so the next getAllSongsAsync() re-restores. */
+export function invalidateLibrarySnapshot(): void {
+  librarySnapshot = null;
 }
 
 // Scan lock: prevents loadCustomSongsFromStorage from overwriting cache
@@ -92,22 +77,26 @@ function waitForScanLock(): Promise<void> {
   return scanLock;
 }
 
-/** Revoke ALL tracked blob URLs immediately (full library replacement /
- *  explicit cache clear — e.g. folder scan or reset). No grace here: the
- *  caller replaces the entire song store, so every previous URL is garbage. */
-function revokeBrowserBlobUrls(): void {
-  for (const generation of blobUrlGenerations) {
-    for (const urls of generation) revokeSongMediaUrls(urls);
-  }
-  blobUrlGenerations = [[]];
+/** Drop a stale blob: URL that can no longer be loaded. Blob URLs never
+ *  survive a page reload, and a revoked one renders as the browser's broken
+ *  image icon — a clean `undefined` (→ MusicIcon placeholder) is always better.
+ *  Non-blob URLs (data:, http(s):, /path) are passed through untouched. */
+function dropDeadBlobUrl(url: string | undefined): string | undefined {
+  return url && url.startsWith('blob:') ? undefined : url;
 }
 
-/** Invalidate all in-memory caches, forcing fresh reads from storage. */
+/** Invalidate all in-memory caches, forcing fresh reads from storage.
+ *  R41: NO URL revocation here anymore — the media-db URLs are stable per
+ *  song; a folder rescan does not change the blobs, so still-displayed covers
+ *  stay alive (this was the P1/P2 cover killer). Full resets use
+ *  clearSongCache() which revokes via revokeAllSongMediaUrls(). */
 export function clearSongCache(): void {
   songCache = null;
   customSongsCache = null;
   songCacheTimestamp = 0;
-  revokeBrowserBlobUrls();
+  revokeAllSongMediaUrls();
+  bumpLibraryVersion();
+  librarySnapshot = null;
 }
 
 /** Invalidate only the combined song cache, preserving customSongsCache.
@@ -115,7 +104,11 @@ export function clearSongCache(): void {
 export function invalidateSongCache(): void {
   songCache = null;
   songCacheTimestamp = 0;
-  revokeBrowserBlobUrls();
+  // R41: rescan end — the persisted songs were replaced, so the snapshot must
+  // be recomputed (covers are re-read via the STABLE media-db URLs → cheap).
+  // Object URLs are intentionally NOT revoked (see clearSongCache comment).
+  bumpLibraryVersion();
+  librarySnapshot = null;
 }
 
 // Get all songs (custom/imported)
@@ -340,6 +333,10 @@ function saveCustomSongs(songs: Song[]): void {
   // IndexedDB and clear localStorage, songs disappear until loadCustomSongsFromStorage
   // completes — causing the Library to render empty.
   saveToLocalStorage(minimalSongs);
+
+  // R41: the persisted library changed → the restore snapshot is stale.
+  bumpLibraryVersion();
+  librarySnapshot = null;
 
   // Also persist to IndexedDB (async, non-blocking) as the primary large storage.
   if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
@@ -750,6 +747,9 @@ export function clearCustomSongs(): void {
   if (isTauri()) {
     clearBlobUrlCache();
   }
+  // R41: drop the restore snapshot as well (full reset).
+  bumpLibraryVersion();
+  librarySnapshot = null;
   // Also clear IndexedDB
   if (typeof indexedDB !== 'undefined') {
     clearCustomSongsFromDB().catch(e => {
@@ -761,6 +761,13 @@ export function clearCustomSongs(): void {
 
 // Get all songs asynchronously (with URL restoration for Tauri and IndexedDB for browser)
 export async function getAllSongsAsync(): Promise<Song[]> {
+  // R41 (P3): fast path — an unchanged library returns the cached snapshot
+  // immediately. Covers stay valid (stable URLs), no IndexedDB reads, no
+  // object-URL allocation. Re-entering the library is now instant.
+  if (librarySnapshot && librarySnapshot.version === libraryVersion) {
+    return librarySnapshot.songs.slice();
+  }
+
   const songs = getAllSongs();
 
   // Resolve localStorage folder using shared utility
@@ -805,26 +812,26 @@ export async function getAllSongsAsync(): Promise<Song[]> {
         }
       }
     });
-    return songs.map(song => {
+    const restoredTauri = songs.map(song => {
       const coverUrl = coverUrlMap.get(song.id);
       if (coverUrl) return { ...song, coverImage: coverUrl };
       return song;
     });
+    librarySnapshot = { songs: restoredTauri, version: libraryVersion };
+    return restoredTauri;
   }
 
   // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag.
-  // R26: a NEW generation is opened instead of revoking the previous call's
-  // URLs outright (one-generation grace — see trackBrowserBlobUrls above),
-  // and stale blob: fallbacks are dropped so a dead URL can never reach an
+  // R41: getSongMediaUrls returns STABLE cached URLs — repeated restores reuse
+  // the exact same object URLs, so covers can no longer be invalidated by a
+  // later getAllSongsAsync() call (the old generation system did exactly that).
+  // Stale blob: fallbacks are still dropped so a dead URL can never reach an
   // <img> (the „Bild konnte nicht geladen werden“ cover bug).
-  openBrowserBlobUrlGeneration();
-  // Restore URLs in batches to avoid excessive IndexedDB reads
   const restoredSongsCopy = [...songs];
   await asyncPool(20, songs, async (song, index) => {
     if (song.storedMedia) {
       try {
         const mediaUrls = await getSongMediaUrls(song.id);
-        trackBrowserBlobUrls(mediaUrls);
         // storedMedia songs: the media-db is the single source of truth. When a
         // record is missing there, any cached blob: URL is stale (revoked or
         // from a previous session) — drop it instead of rendering a broken
@@ -843,5 +850,6 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   });
   const restoredSongs = restoredSongsCopy;
 
+  librarySnapshot = { songs: restoredSongs, version: libraryVersion };
   return restoredSongs;
 }

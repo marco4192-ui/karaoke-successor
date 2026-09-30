@@ -162,8 +162,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Jeszcze brak piosenek',
-          body: 'Edytor potrzebuje piosenek w bibliotece. Najpierw zaimportuj utwory (biblioteka → import / skan folderu) i wróć.',
-          details: 'Jak zdobyć piosenki:\n• Ustawienia → Biblioteka → ustaw folder piosenek: każdy podfolder jest czytany jako jedna piosenka (audio/wideo + tekst UltraStar).\n• Alternatywnie pojedyncze pliki przez okno importu.\n• Albo utwórz nową piosenkę w edytorze („Nowa piosenka”) i sam połącz tekst z audio.',
+          body: 'Edytor potrzebuje piosenek w bibliotece. Najpierw zaimportuj utwory z folderu piosenek (Ustawienia → Biblioteka) i wróć.',
+          details: 'Jak zdobyć piosenki:\n• Ustawienia → Biblioteka → ustaw folder piosenek: każdy podfolder jest czytany jako jedna piosenka (audio/wideo + tekst UltraStar).\n• Albo utwórz nową piosenkę w edytorze („Nowa piosenka”) i sam połącz tekst z audio.',
         },
         openSong: {
           title: 'Otwórz piosenkę',
@@ -273,8 +273,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Biblioteka',
-          body: 'Ustaw folder piosenek (każdy podfolder = jedna piosenka) i go zeskanuj, zresetuj bibliotekę albo usuń wszystkie dane — plus import z innych systemów karaoke.',
-          details: 'Format folderu: jeden podfolder na piosenkę z audio/wideo + TXT (format UltraStar). Skaner rozpoznaje typowe zestawy (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport z innych systemów: archiwum SingStar? Kolekcja UltraStar? Konwerter importu przejmuje metadane i teksty automatycznie.\n\nUwaga na „usuń wszystkie dane”: podwójne potwierdzenie pyta dwa razy — mimo to zrób najpierw kopię zapasową (zakładka Sync i kopie zapasowe).',
+          body: 'Ustaw folder piosenek (każdy podfolder = jedna piosenka) i go zeskanuj, zresetuj bibliotekę albo usuń wszystkie dane.',
+          details: 'Format folderu: jeden podfolder na piosenkę z audio/wideo + TXT (format UltraStar). Skaner rozpoznaje typowe zestawy (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nFormaty importu od innych dostawców karaoke nie są na razie obsługiwane.\n\nUwaga na „usuń wszystkie dane”: podwójne potwierdzenie pyta dwa razy — mimo to zrób najpierw kopię zapasową (zakładka Sync i kopie zapasowe).',
         },
         taxonomy: {
           title: 'Gatunki i języki',

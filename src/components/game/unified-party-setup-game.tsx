@@ -15,6 +15,7 @@ import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { decadeShortLabel } from '@/lib/game/era-filter';
+import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { ConnectionStatusBadge } from './connection-status-badge';
 import { useRovingFocus } from '@/hooks/use-roving-focus';
 import type { PlayerDeviceChoice } from './unified-party-setup.types';
@@ -220,7 +221,9 @@ export function SongFilterSection({
               placeholder={t('unifiedSetup.searchFilterPlaceholder')}
               autoComplete="off"
               data-testid="party-filter-search-input"
-              className="h-auto w-full bg-gray-800 border border-white/10 rounded-lg pl-9 pr-9 py-2 text-sm text-white placeholder:text-white/30 focus-visible:ring-cyan-400/50"
+              className={`h-auto w-full bg-gray-800 border border-white/10 rounded-lg pl-9 pr-9 py-2 text-sm text-white placeholder:text-white/30 focus-visible:ring-cyan-400/50 ${
+                filterSearch.trim() !== '' ? SEARCH_ACTIVE_FRAME : ''
+              }`}
             />
             {filterSearch !== '' && (
               <button
@@ -243,7 +246,11 @@ export function SongFilterSection({
             <select
               value={filterGenre}
               onChange={(e) => onFilterGenreChange(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
+                filterGenre !== 'all'
+                  ? FILTER_ACTIVE_FRAME
+                  : 'bg-gray-800 border-white/10'
+              }`}
             >
               <option value="all">{t('unifiedSetup.allGenres')}</option>
               {availableGenres.map(g => (
@@ -258,7 +265,11 @@ export function SongFilterSection({
             <select
               value={filterLanguage}
               onChange={(e) => onFilterLanguageChange(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
+                filterLanguage !== 'all'
+                  ? FILTER_ACTIVE_FRAME
+                  : 'bg-gray-800 border-white/10'
+              }`}
             >
               <option value="all">{t('unifiedSetup.allLanguages')}</option>
               {availableLanguages.map(l => (
@@ -273,7 +284,11 @@ export function SongFilterSection({
             <select
               value={filterReleaseYear}
               onChange={(e) => onFilterReleaseYearChange(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
+                filterReleaseYear !== 'all'
+                  ? FILTER_ACTIVE_FRAME
+                  : 'bg-gray-800 border-white/10'
+              }`}
             >
               <option value="all">{t('unifiedSetup.allYears')}</option>
               {availableYears.map(y => (
@@ -288,7 +303,11 @@ export function SongFilterSection({
             <select
               value={filterEra}
               onChange={(e) => onFilterEraChange(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
+                filterEra !== 'all'
+                  ? FILTER_ACTIVE_FRAME
+                  : 'bg-gray-800 border-white/10'
+              }`}
             >
               <option value="all">{t('unifiedSetup.allEras')}</option>
               {availableDecades.map(d => (
@@ -317,7 +336,7 @@ export function SongFilterSection({
                 onClick={() => onFilterCombinedChange(false)}
                 className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   !filterCombined
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-indigo-600 text-white ring-1 ring-indigo-300/60 shadow-[0_0_10px_rgba(99,102,241,0.35)]'
                     : 'bg-gray-700 text-white/60 hover:bg-gray-600'
                 }`}
               >

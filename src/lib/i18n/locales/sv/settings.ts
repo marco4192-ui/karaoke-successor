@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Låtbas-mapp',
-  desc: 'Alla låtar importeras från denna mapp. Varje undermapp innehåller en låt.',
+  desc: 'Alla låtar importeras från denna mapp. Varje undermapp innehåller en låt: en .txt-textfil med tidsmarkeringar samt ljud-, video- och omslagsfiler.',
   placeholder: 'C:/Karaoke ZERO/Songs',
   scan: 'Skanna',
   browse: 'Bläddra',

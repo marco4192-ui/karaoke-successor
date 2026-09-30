@@ -162,8 +162,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Nog geen nummers',
-          body: 'De editor heeft nummers in de bibliotheek nodig. Importeer eerst nummers (bibliotheek → import / mapscan) en kom terug.',
-          details: 'Zo kom je aan nummers:\n• Instellingen → Bibliotheek → stel de nummermap in: elke submap wordt als één nummer gelezen (audio/video + UltraStar-tekst).\n• Of losse bestanden via het importvenster.\n• Of maak een nieuw nummer in de editor ("Nieuw nummer") en breng songtekst + audio zelf bij elkaar.',
+          body: 'De editor heeft nummers in de bibliotheek nodig. Importeer eerst nummers via de nummersmap (Instellingen → Bibliotheek) en kom terug.',
+          details: 'Zo kom je aan nummers:\n• Instellingen → Bibliotheek → stel de nummermap in: elke submap wordt als één nummer gelezen (audio/video + UltraStar-tekst).\n• Of maak een nieuw nummer in de editor ("Nieuw nummer") en breng songtekst + audio zelf bij elkaar.',
         },
         openSong: {
           title: 'Nummer openen',
@@ -273,8 +273,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Bibliotheek',
-          body: 'Stel de nummermap in (elke submap = één nummer) en scan hem, reset de bibliotheek of verwijder alle gegevens — plus de import vanuit andere karaokesystemen.',
-          details: 'Mapformaat: één submap per nummer met audio/video + TXT (UltraStar-formaat). De scanner herkent gangbare combinaties (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport uit andere systemen: een SingStar-archief? Een UltraStar-collectie? De importconverter neemt metadata en songteksten automatisch over.\n\nVoorzichtig met "alle gegevens verwijderen": de dubbele bevestiging vraagt twee keer — maak desondanks eerst een back-up (tabblad Sync & Back-up).',
+          body: 'Stel de nummermap in (elke submap = één nummer) en scan hem, reset de bibliotheek of verwijder alle gegevens.',
+          details: 'Mapformaat: één submap per nummer met audio/video + TXT (UltraStar-formaat). De scanner herkent gangbare combinaties (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformaten van andere karaoke-aanbieders worden voorlopig niet ondersteund.\n\nVoorzichtig met "alle gegevens verwijderen": de dubbele bevestiging vraagt twee keer — maak desondanks eerst een back-up (tabblad Sync & Back-up).',
         },
         taxonomy: {
           title: 'Genres & Talen',

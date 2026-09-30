@@ -17,6 +17,65 @@ interface MediaRecord {
 let dbInstance: IDBDatabase | null = null;
 let initPromise: Promise<IDBDatabase> | null = null;
 
+// ── R41 (P1/P2/P3): stable object-URL cache ────────────────────────────────────
+// getSongMediaUrls previously created FRESH object URLs on every call. The
+// song-library then swapped them per "generation" and revoked old ones —
+// covers in still-displayed grids died from one library re-entry to the next
+// (empty purple tiles, no error, because a revoked blob: URL fails silently).
+// Now the SAME URL is returned for a song+type until the underlying media
+// changes (storeMedia) or the whole cache is dropped (revokeAllSongMediaUrls).
+const songUrlCache = new Map<string, string>(); // key: `${songId}::${type}`
+const pendingUrlRevokes = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Delayed revoke (30 s) — mirrors file-storage-media's policy: an <img>/<audio>
+ *  that already started loading may finish; images that finished are immune to
+ *  revocation anyway. Re-caching a URL cancels the pending revoke. */
+function scheduleCachedUrlRevoke(url: string): void {
+  if (!url.startsWith('blob:')) return;
+  const existing = pendingUrlRevokes.get(url);
+  if (existing) clearTimeout(existing);
+  pendingUrlRevokes.set(url, setTimeout(() => {
+    pendingUrlRevokes.delete(url);
+    try { URL.revokeObjectURL(url); } catch { /* already revoked */ }
+  }, 30_000));
+}
+
+/** Cached URL for one media type — creates it on first request. */
+async function getOrCreateSongUrl(
+  songId: string,
+  type: 'audio' | 'video' | 'cover' | 'txt',
+): Promise<string | undefined> {
+  const key = `${songId}::${type}`;
+  const cached = songUrlCache.get(key);
+  if (cached) return cached;
+  const blob = await getMedia(songId, type);
+  if (!blob || blob.size === 0) return undefined;
+  const url = URL.createObjectURL(blob);
+  songUrlCache.set(key, url);
+  return url;
+}
+
+/** Drop the cached URL of one media type (called after storeMedia replaced
+ *  the blob). The next getSongMediaUrls re-reads the new content. */
+function invalidateCachedSongUrl(songId: string, type: 'audio' | 'video' | 'cover' | 'txt'): void {
+  const key = `${songId}::${type}`;
+  const url = songUrlCache.get(key);
+  if (url) {
+    songUrlCache.delete(key);
+    scheduleCachedUrlRevoke(url);
+  }
+}
+
+/** Revoke every cached media URL (full library reset / cache clear).
+ *  Delayed (30 s) so grids that still display the old URLs don't break
+ *  mid-swap — the replacement data is served with fresh URLs anyway. */
+export function revokeAllSongMediaUrls(): void {
+  for (const url of songUrlCache.values()) {
+    scheduleCachedUrlRevoke(url);
+  }
+  songUrlCache.clear();
+}
+
 // Initialize the database (with concurrency lock to prevent double-open)
 async function initMediaDB(): Promise<IDBDatabase> {
   if (dbInstance) return dbInstance;
@@ -90,6 +149,9 @@ export async function storeMedia(
     const request = store.put(record);
 
     request.onsuccess = () => {
+      // R41: the stored media changed — drop any cached URL for this type so
+      // the next reader materializes a fresh object URL for the NEW content.
+      invalidateCachedSongUrl(songId, type);
       resolve();
     };
     request.onerror = () => {
@@ -138,26 +200,24 @@ export async function getMedia(
   });
 }
 
-// Get all media URLs for a song
+// Get all media URLs for a song.
+// R41: returns the STABLE cached URLs — repeated calls no longer allocate new
+// object URLs (see songUrlCache above). Consumers may keep the result for as
+// long as they like; the URLs stay alive until the media content changes.
 export async function getSongMediaUrls(songId: string): Promise<{
   audioUrl?: string;
   videoUrl?: string;
   coverUrl?: string;
   txtUrl?: string;
 }> {
-  const [audio, video, cover, txt] = await Promise.all([
-    getMedia(songId, 'audio'),
-    getMedia(songId, 'video'),
-    getMedia(songId, 'cover'),
-    getMedia(songId, 'txt')
+  const [audioUrl, videoUrl, coverUrl, txtUrl] = await Promise.all([
+    getOrCreateSongUrl(songId, 'audio'),
+    getOrCreateSongUrl(songId, 'video'),
+    getOrCreateSongUrl(songId, 'cover'),
+    getOrCreateSongUrl(songId, 'txt'),
   ]);
-  
-  return {
-    audioUrl: audio && audio.size > 0 ? URL.createObjectURL(audio) : undefined,
-    videoUrl: video && video.size > 0 ? URL.createObjectURL(video) : undefined,
-    coverUrl: cover && cover.size > 0 ? URL.createObjectURL(cover) : undefined,
-    txtUrl: txt && txt.size > 0 ? URL.createObjectURL(txt) : undefined
-  };
+
+  return { audioUrl, videoUrl, coverUrl, txtUrl };
 }
 
 // Revoke blob URLs created by getSongMediaUrls to prevent memory leaks.

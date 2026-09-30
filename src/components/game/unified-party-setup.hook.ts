@@ -6,6 +6,7 @@ import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { StorageKeys, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
 import { isMicIdConnected } from '@/lib/audio/mic-device-resolver';
+import { useSavedMicsLiveSync } from '@/hooks/use-saved-mics-live-sync';
 import { t } from '@/lib/i18n/locales';
 
 /** Saved mic entry shape from MULTI_MIC_CONFIG */
@@ -155,6 +156,29 @@ export function usePartySetup({
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot mount validation of the restored value (state setters + loaders are stable)
   }, []);
+
+  // ── R41/P10: Live-Sync der gespeicherten Mic-Liste ──
+  // MULTI_MIC_CONFIG behielt Einträge für abgezogene/ne gesteckte Hardware
+  // (neue deviceId) dauerhaft — die Dropdowns (Shared-Mic + Singing Device
+  // Assignment) boten tote Devices an. Beim Mount + auf jeden devicechange
+  // wird die Config gegen die Live-Hardware geprüft, veraltete Einträge
+  // entfernt (mic-device-resolver) und die Liste neu gelesen. Verschwindet
+  // dabei der gewählte Shared-Mic (PTM), wird die Auswahl zurückgesetzt
+  // (gleiche Behandlung wie die Mount-Validierung oben).
+  useSavedMicsLiveSync(useCallback(() => {
+    const mics = loadSavedMics();
+    setSavedMics(prev => {
+      if (prev.length === mics.length && prev.every((m, i) => m.id === mics[i]?.id)) return prev;
+      return mics;
+    });
+    if (selectedMicId && !mics.some(m => m.id === selectedMicId)) {
+      setSelectedMicId(null);
+      setSelectedMicName(null);
+      removeItem(StorageKeys.PTM_SHARED_MIC_ID);
+      removeItem(StorageKeys.PTM_SHARED_MIC_NAME);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- latest-ref inside useSavedMicsLiveSync: closure over selectedMicId is intentional and stays fresh
+  }, [selectedMicId]));
 
   // ── Song selection state ──
   // The chosen song-selection method ('random' | 'library' | 'vote' | 'medley').

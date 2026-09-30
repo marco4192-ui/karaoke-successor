@@ -70,7 +70,8 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profil',
+  // R41/P7: Nutzerwunsch — Überschrift des Profile-Bereichs lautet "Profiles"
+  title: 'Profiles',
   description: 'Erstelle und verwalte deine Sänger-Profile',
   onlineLeaderboard: 'Online-Leaderboard',
   createProfile: 'Neues Profil erstellen',

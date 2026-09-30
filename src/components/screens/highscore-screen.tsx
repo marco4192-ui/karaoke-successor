@@ -9,15 +9,20 @@ import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { TrophyIcon } from '@/components/icons';
 import { HighscoreEntry, RANKING_TITLES, GameMode } from '@/types/game';
+import { CountryFlagImage } from '@/components/screens/character/country-picker';
 
-function getFlagEmoji(countryCode: string): string {
-  const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
-
+/**
+ * Leaderboard flag: rendered as a crisp flagcdn image (CountryFlagImage)
+ * instead of an emoji — Windows has no flag glyphs in its fonts.
+ * Keeps the title tooltip and the show/null-code handling intact.
+ */
 function CountryFlag({ code, show }: { code: string | null | undefined; show: boolean }) {
   if (!code || !show) return null;
-  return <span className="text-base ml-1" title={code}>{getFlagEmoji(code)}</span>;
+  return (
+    <span className="inline-flex items-center ml-1" title={code}>
+      <CountryFlagImage code={code} className="h-3.5 w-5" />
+    </span>
+  );
 }
 
 function VerifiedBadge({ verified }: { verified: boolean }) {

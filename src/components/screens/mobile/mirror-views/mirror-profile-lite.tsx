@@ -142,7 +142,7 @@ export function MirrorProfileLite({
       <div className="flex items-center gap-2 py-2">
         <span className="text-2xl" aria-hidden>👤</span>
         <h2 className="text-lg font-semibold text-white">
-          {tOr(t, 'characterScreen.title', 'Profil')}
+          {tOr(t, 'characterScreen.title', 'Profiles')}
         </h2>
       </div>
     );
@@ -309,7 +309,7 @@ export function MirrorProfileLite({
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-8">
             <span className="text-4xl" aria-hidden>👤</span>
             <h2 className="text-lg font-semibold text-white">
-              {tOr(t, 'characterScreen.title', 'Profil')}
+              {tOr(t, 'characterScreen.title', 'Profiles')}
             </h2>
             <p className="text-sm text-white/40">
               {tOr(t, 'mobile.mirrorProfileNoProfiles', 'Keine Profile auf dem Desktop vorhanden')}
@@ -326,7 +326,7 @@ export function MirrorProfileLite({
         <div className="flex flex-col items-center gap-2 py-4">
           <span className="text-3xl" aria-hidden>👤</span>
           <h2 className="text-lg font-semibold text-white">
-            {tOr(t, 'characterScreen.title', 'Profil')}
+            {tOr(t, 'characterScreen.title', 'Profiles')}
           </h2>
           <p className="text-center text-xs text-white/40">
             {tOr(t, 'mobile.mirrorProfileActiveCount', '{active} von {total} aktiv')

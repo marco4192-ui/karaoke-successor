@@ -149,7 +149,7 @@ export const settingsTranslations = {
     microphone: 'Microphone setup and testing: device selection, sensitivity, noise gate and a live level check. You can also save settings as presets and connect smartphones as wireless microphones.',
     mobile: 'Companion management: connect smartphones via QR code as microphone, remote control or sing-along device. You see all connected devices, their connection codes and can disconnect them.',
     webcam: 'Use your webcam as an animated song background. Configure resolution, mirroring, saturation, blur and other video effects — plus a camera preview.',
-    library: 'Manage your song library: set the songs folder (each subfolder = one song) and scan it, reset the library or delete all data. Also home to the import from other karaoke systems (UltraStar, MIDI/KAR, Mugen, SingStar, StepMania).',
+    library: 'Manage your song library: set the songs folder and scan it (each subfolder = one song with a .txt lyrics file plus audio, video and cover files), reset the library or delete all data. Import formats from other karaoke providers are not supported for now.',
     viral: 'The Viral Charts: an automatically updating list of current hits. Control how many songs in your library get flagged as "viral" and filter by it — perfect for offering the latest songs at parties.',
     sync: 'Sync & Backup: synchronize profiles, highscores and settings between devices and create or restore backups. In the desktop build, player data is additionally mirrored permanently to the AppData folder.',
     about: 'Everything about Karaoke ZERO: version, platform, contributing projects and licenses — plus the project description and support links.',
@@ -513,7 +513,7 @@ export const settingsTranslations = {
 
   settingsLibrary: {
     title: 'Songs Base Folder',
-    desc: 'All songs are imported from this folder. Each subfolder contains one song.',
+    desc: 'All songs are imported from this folder. Each subfolder contains one song: a .txt lyrics file with timestamps plus audio, video and cover files.',
     placeholder: 'C:/Karaoke ZERO/Songs',
     scan: 'Scan',
     browse: 'Browse',

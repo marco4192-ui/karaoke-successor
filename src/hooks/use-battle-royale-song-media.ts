@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
-import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
+import { getSongMediaUrls } from '@/lib/db/media-db';
 import { getSongMediaUrl, isTauri } from '@/lib/tauri-file-storage';
 import { isYouTubeUrl, extractYouTubeId } from '@/components/game/youtube-player';
 
@@ -48,7 +48,6 @@ export function useBattleRoyaleSongMedia({
   const audioHasPlayedRef = useRef(false);
 
   const lastHandledRef = useRef<string>('');
-  const lastMediaUrlsRef = useRef<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string }>({});
 
   // Load full song data with lyrics + URLs when song changes
   useEffect(() => {
@@ -131,9 +130,10 @@ export function useBattleRoyaleSongMedia({
 
       if (currentSong.storedMedia) {
         try {
-          revokeSongMediaUrls(lastMediaUrlsRef.current);
+          // R41: getSongMediaUrls returns STABLE shared URLs (media-db cache).
+          // No per-call revocation anymore — revoking here would kill the very
+          // URLs the library covers and other consumers display.
           const mediaUrls = await getSongMediaUrls(currentSong.id);
-          lastMediaUrlsRef.current = mediaUrls;
           if (mediaUrls.audioUrl) audioUrl = mediaUrls.audioUrl;
           if (mediaUrls.videoUrl) videoUrl = mediaUrls.videoUrl;
         } catch (e) {
@@ -187,10 +187,6 @@ export function useBattleRoyaleSongMedia({
 
     return () => { cancelled = true; };
   }, [currentSong, gameCurrentRound, medleySnippetIndex]);
-
-  useEffect(() => {
-    return () => { revokeSongMediaUrls(lastMediaUrlsRef.current); };
-  }, []);
 
   // Determine if song uses YouTube (for video background rendering)
   const youtubeUrl = currentSong?.youtubeUrl;

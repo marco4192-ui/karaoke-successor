@@ -8,6 +8,7 @@ import type { CompanionClientInfo } from '@/hooks/use-companion-connections';
 import { CompanionAssignPanel } from './companion-assign-panel';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useSavedMicsLiveSync } from '@/hooks/use-saved-mics-live-sync';
 
 // ===================== SHARED HELPERS =====================
 
@@ -62,6 +63,23 @@ export function SingleMicSelector({
       });
     }
   }, []);
+
+  // R41/P10: Live-Sync — veraltete MULTI_MIC_CONFIG-Einträge (Device
+  // abgezogen/ne gesteckt) werden beim Mount + auf jeden devicechange geprüft
+  // und entfernt; danach wird die Dropdown-Liste neu gelesen, damit sie nur
+  // noch existierende Hardware anbietet.
+  useSavedMicsLiveSync(React.useCallback(() => {
+    const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
+    const mics = (parsed?.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
+      id: m.id,
+      customName: m.customName || '',
+      deviceName: m.deviceName || '',
+    }));
+    setSavedMics(prev => {
+      if (prev.length === mics.length && prev.every((m, i) => m.id === mics[i].id)) return prev;
+      return mics;
+    });
+  }, []));
 
   // Ensure the currently selected mic is in savedMics (may be missing if mic
   // was configured in a different session or mic config was modified).

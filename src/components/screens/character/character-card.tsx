@@ -3,7 +3,7 @@
 import { PlayerProfile } from '@/types/game';
 import { getLevelForXP, getRankForXP } from '@/lib/game/player-progression';
 import { useTranslation } from '@/lib/i18n/translations';
-import { getCountryFlag } from './country-options';
+import { CountryFlagImage } from './country-picker';
 
 interface CharacterCardProps {
   profile: PlayerProfile;
@@ -97,10 +97,10 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, t
           </div>
         )}
 
-        {/* Country flag */}
+        {/* Country flag — image (flagcdn) instead of emoji: Windows has no flag glyphs */}
         {profile.country && (
-          <div className="text-lg">
-            {getCountryFlag(profile.country)}
+          <div className="flex items-center justify-center">
+            <CountryFlagImage code={profile.country} className="h-3.5 w-5" />
           </div>
         )}
       </div>

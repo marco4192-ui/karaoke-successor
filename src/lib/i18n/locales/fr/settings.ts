@@ -390,7 +390,7 @@ settingsViralCharts: {
 },
 settingsLibrary: {
   title: 'Dossier de Base des Chansons',
-  desc: 'Toutes les chansons sont importées depuis ce dossier. Chaque sous-dossier contient une chanson.',
+  desc: 'Toutes les chansons sont importées depuis ce dossier. Chaque sous-dossier contient une chanson : un fichier texte .txt avec horodatages, plus les fichiers audio, vidéo et pochette.',
   placeholder: 'C:/Karaoke ZERO/Chansons',
   scan: 'Scanner',
   browse: 'Parcourir',

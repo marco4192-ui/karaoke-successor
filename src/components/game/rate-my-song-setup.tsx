@@ -9,6 +9,7 @@ import { Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import { useTranslation } from '@/lib/i18n/translations';
+import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import type { RateMySongPlayMode, RateMySongDuration } from './rate-my-song-types';
 import type { RateMySongSetupScreenProps } from './rate-my-song-types';
 
@@ -274,7 +275,11 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   placeholder={t('rateMySong.searchPlaceholder')}
                   value={songSearch}
                   onChange={(e) => setSongSearch(e.target.value)}
-                  className="w-full bg-gray-700/50 border border-white/10 rounded-xl p-3 text-white text-sm pl-9"
+                  className={`w-full rounded-xl p-3 text-white text-sm pl-9 border ${
+                    songSearch.trim() !== ''
+                      ? SEARCH_ACTIVE_FRAME
+                      : 'bg-gray-700/50 border-white/10'
+                  }`}
                 />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
               </div>
@@ -282,7 +287,11 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                 <select
                   value={filterGenre}
                   onChange={(e) => setFilterGenre(e.target.value)}
-                  className="flex-1 bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                  className={`flex-1 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
+                    filterGenre !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-gray-700/50 border-white/10'
+                  }`}
                 >
                   {genres.map(g => (
                     <option key={g} value={g}>{g === 'all' ? t('rateMySong.allGenres') : g}</option>
@@ -292,7 +301,11 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   <select
                     value={filterEra}
                     onChange={(e) => setFilterEra(e.target.value)}
-                    className="bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                    className={`rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
+                      filterEra !== 'all'
+                        ? FILTER_ACTIVE_FRAME
+                        : 'bg-gray-700/50 border-white/10'
+                    }`}
                     aria-label={t('library.eraFilter')}
                   >
                     <option value="all">{t('rateMySong.allEras')}</option>
@@ -306,7 +319,11 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                 <select
                   value={filterDifficulty}
                   onChange={(e) => setFilterDifficulty(e.target.value as typeof filterDifficulty)}
-                  className="bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                  className={`rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
+                    filterDifficulty !== 'all'
+                      ? FILTER_ACTIVE_FRAME
+                      : 'bg-gray-700/50 border-white/10'
+                  }`}
                 >
                   <option value="all">{t('rateMySong.allDifficulties')}</option>
                   <option value="easy">{t('song.easy')}</option>

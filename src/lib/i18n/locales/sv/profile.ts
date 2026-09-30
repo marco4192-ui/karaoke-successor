@@ -70,7 +70,7 @@ profileAuth: {
   loginSuccessTitle: '✅ {n}',
 },
 characterScreen: {
-  title: 'Profil',
+  title: 'Profiler',
   description: 'Skapa och hantera dina sångarprofiler',
   onlineLeaderboard: 'Online-poänglista',
   createProfile: 'Skapa Ny Profil',

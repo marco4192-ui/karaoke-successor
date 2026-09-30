@@ -161,8 +161,8 @@ export const tutorialTranslations = {
         },
         noSongs: {
           title: 'Ei vielä kappaleita',
-          body: 'Editori tarvitsee kappaleita kirjastoon. Tuo ensin kappaleita (kirjasto → tuonti / kansioskannaus) ja palaa sitten.',
-          details: 'Miten saat kappaleita:\n• Asetukset → Kirjasto → aseta kappalekansio: jokainen alikansio luetaan yhtenä kappaleena (ääni/video + UltraStar-teksti).\n• Vaihtoehtoisesti yksittäisiä tiedostoja tuontiikkunan kautta.\n• Tai luo uusi kappale editorissa ("Uusi kappale") ja kokoa sanoitukset + ääni itse.',
+          body: 'Editori tarvitsee kappaleita kirjastoon. Tuo ensin kappaleita kappalekansiosta (Asetukset → Kirjasto) ja palaa sitten.',
+          details: 'Miten saat kappaleita:\n• Asetukset → Kirjasto → aseta kappalekansio: jokainen alikansio luetaan yhtenä kappaleena (ääni/video + UltraStar-teksti).\n• Tai luo uusi kappale editorissa ("Uusi kappale") ja kokoa sanoitukset + ääni itse.',
         },
         openSong: {
           title: 'Avaa kappale',
@@ -272,8 +272,8 @@ export const tutorialTranslations = {
         },
         libraryTab: {
           title: 'Kirjasto',
-          body: 'Aseta kappalekansio (jokainen alikansio = yksi kappale) ja skannaa se, nollaa kirjasto tai poista kaikki tiedot — sekä tuonti muista karaokesovelluksista.',
-          details: 'Kansiomuoto: yksi alikansio per kappale, jossa ääni/video + TXT (UltraStar-muoto). Skanneri tunnistaa tavalliset yhdistelmät (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nTuonti muista sovelluksista: SingStar-arkisto? UltraStar-kokoelma? Tuontimuunnin ottaa metatiedot ja sanoitukset haltuunsa automaattisesti.\n\nVarovasti "poista kaikki tiedot" -toiminnon kanssa: kaksinkertainen vahvistus kysyy kahdesti — ota silti ensin varmuuskopio (Synkronointi & varmuuskopio -välilehti).',
+          body: 'Aseta kappalekansio (jokainen alikansio = yksi kappale) ja skannaa se, nollaa kirjasto tai poista kaikki tiedot.',
+          details: 'Kansiomuoto: yksi alikansio per kappale, jossa ääni/video + TXT (UltraStar-muoto). Skanneri tunnistaa tavalliset yhdistelmät (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nMuiden karaokepalvelujen tuontimuotoja ei toistaiseksi tueta.\n\nVarovasti "poista kaikki tiedot" -toiminnon kanssa: kaksinkertainen vahvistus kysyy kahdesti — ota silti ensin varmuuskopio (Synkronointi & varmuuskopio -välilehti).',
         },
         taxonomy: {
           title: 'Genret & kielet',

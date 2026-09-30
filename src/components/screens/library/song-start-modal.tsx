@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SongStartModalProps } from './types';
@@ -12,6 +12,7 @@ import { getInstrumentalExportBlocker, exportInstrumentalWav, downloadInstrument
 import { useTranslation } from '@/lib/i18n/translations';
 import { SafeImage } from './safe-image';
 import { useCompanionConnections } from '@/hooks/use-companion-connections';
+import { useSavedMicsLiveSync } from '@/hooks/use-saved-mics-live-sync';
 
 // R39/P5: Sentinel-Wert für „Spieler singt über die Companion-App“ in den
 // micId/micIdP1/micIdP2-Feldern der StartOptions (gleiches Muster wie die
@@ -22,21 +23,35 @@ const COMPANION_DEVICE = 'companion';
 function useSavedMics() {
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
 
-
-  useEffect(() => {
+  // Shared read (mount + after live prunes) — diff-guarded so unchanged
+  // configs don't cause re-renders.
+  const rereadSavedMics = useCallback(() => {
     try {
       const saved = getItem(StorageKeys.MULTI_MIC_CONFIG);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
-        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
-          id: m.id,
-          customName: m.customName,
-          deviceName: m.deviceName,
-        })));
-      }
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> };
+      const mics = (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
+        id: m.id,
+        customName: m.customName || '',
+        deviceName: m.deviceName || '',
+      }));
+      setSavedMics(prev => {
+        if (prev.length === mics.length && prev.every((m, i) => m.id === mics[i].id)) return prev;
+        return mics;
+      });
     } catch { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
+    rereadSavedMics();
+  }, [rereadSavedMics]);
+
+  // R41/P10: Live-Sync — MULTI_MIC_CONFIG-Einträge für abgezogene/ne
+  // gesteckte Hardware (neue deviceId) werden beim Mount + auf jeden
+  // devicechange geprüft und entfernt (mic-device-resolver); danach wird
+  // die Selector-Liste neu gelesen, damit sie nur existierende Mics anbietet.
+  useSavedMicsLiveSync(rereadSavedMics);
 
   return savedMics;
 }
@@ -522,7 +537,7 @@ export function SongStartModal({
                       onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duet' }))}
                       className={`py-1.5 rounded-md text-xs font-medium transition-all ${
                         startOptions.mode === 'duet' 
-                          ? 'bg-pink-500 text-white' 
+                          ? 'bg-pink-500 text-white ring-1 ring-pink-300/60 shadow-[0_0_10px_rgba(236,72,153,0.4)]' 
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
@@ -544,7 +559,7 @@ export function SongStartModal({
                         onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duel' }))}
                         className={`py-1.5 rounded-md text-xs font-medium transition-all ${
                           startOptions.mode === 'duel' 
-                            ? 'bg-purple-500 text-white' 
+                            ? 'bg-purple-500 text-white ring-1 ring-purple-300/60 shadow-[0_0_10px_rgba(168,85,247,0.4)]' 
                             : 'bg-white/10 text-white hover:bg-white/20'
                         }`}
                       >

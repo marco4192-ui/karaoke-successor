@@ -10,6 +10,7 @@ import {
   DAILY_BADGES,
 } from '@/lib/game/daily-challenge';
 import { CHALLENGE_MODES } from '@/lib/game/progression-levels';
+import { FlagAwareEmoji } from '@/components/screens/character/country-picker';
 
 // ===================== Props =====================
 
@@ -217,7 +218,7 @@ export function MirrorDailyLite({
         >
           {/* Kopf: Icon + Name + Status */}
           <div className="flex items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none" aria-hidden>{slot.icon || def.icon}</span>
+            <span className="shrink-0 text-2xl leading-none" aria-hidden><FlagAwareEmoji text={slot.icon || def.icon} flagClassName="h-5 w-7" /></span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="truncate text-sm font-semibold text-white">
@@ -374,7 +375,7 @@ export function MirrorDailyLite({
             : 'border-green-500/40 text-green-400 bg-green-500/10';
           return (
             <div key={mode.id} className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-              <span className="shrink-0 text-2xl leading-none" aria-hidden>{mode.icon}</span>
+              <span className="shrink-0 text-2xl leading-none" aria-hidden><FlagAwareEmoji text={mode.icon} flagClassName="h-5 w-7" /></span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="truncate text-sm font-semibold text-white">{name}</h3>
@@ -532,7 +533,7 @@ export function MirrorDailyLite({
                       : 'border-white/[0.08] bg-white/[0.03] opacity-50 grayscale')
                   }
                 >
-                  <div className="text-2xl leading-none" aria-hidden>{badge.icon}</div>
+                  <div className="text-2xl leading-none" aria-hidden><FlagAwareEmoji text={badge.icon} flagClassName="h-5 w-7" /></div>
                   <p className={'mt-1.5 text-xs font-semibold ' + (isUnlocked ? 'text-amber-400' : 'text-white/60')}>{name}</p>
                   {isUnlocked && dateText ? (
                     <p className="mt-1 text-[10px] text-white/40">{dateText}</p>

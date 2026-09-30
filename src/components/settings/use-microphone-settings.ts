@@ -42,6 +42,23 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     return () => { micManager.offAssignedMics(); };
   }, [micManager]);
 
+  // R41/P10: Live refresh while the panel is open — a devicechange (mic
+  // plugged/unplugged) re-enumerates the device list AND unassigns mics
+  // whose device disappeared (removeDisconnectedDevices — same logic as the
+  // manual refresh button, without the toast). Previously the lists stayed
+  // stale until the user clicked "Refresh".
+  useEffect(() => {
+    const md = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
+    if (!md || typeof md.addEventListener !== 'function') return;
+    const handleDeviceChange = () => {
+      // removeDisconnectedDevices() re-enumerates internally and notifies
+      // device + assigned-mic subscribers, so one call covers both lists.
+      micManager.removeDisconnectedDevices().catch(() => { /* non-critical */ });
+    };
+    md.addEventListener('devicechange', handleDeviceChange);
+    return () => md.removeEventListener('devicechange', handleDeviceChange);
+  }, [micManager]);
+
   const handleAddMicrophone = async () => {
     if (!micManager.canAddMicrophone()) return;
     setIsAddingMic(true);

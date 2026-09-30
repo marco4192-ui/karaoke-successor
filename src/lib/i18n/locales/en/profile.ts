@@ -73,7 +73,7 @@ export const profileTranslations = {
   },
 
   characterScreen: {
-    title: 'Profile',
+    title: 'Profiles',
     description: 'Create and manage your singer profiles',
     onlineLeaderboard: 'Online Leaderboard',
     createProfile: 'Create New Profile',

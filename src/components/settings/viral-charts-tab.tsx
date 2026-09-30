@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
-import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 const COUNTRY_OPTIONS = [
   { code: 'de', name: 'settingsViralCharts.country.de', flag: '🇩🇪' },
@@ -100,49 +99,40 @@ export function ViralChartsSettings() {
   };
 
   if (!isTauri()) {
+    /* R41/P5: Intro-Karte + Tauri-Only-Karte zu EINER Karte verschmolzen —
+       vorher erschienen unter Einstellungen → Bibliothek zwei „Virale Charts"-
+       Blöcke übereinander. Der Tour-Anker data-testid="settings-intro-viral"
+       bleibt (wie bei Motto-Party) auf der verschmolzenen Karte. */
     return (
-      <div className="space-y-6">
-        {/* R28: Einleitungstext */}
-        <SettingsIntroCard
-          icon="🔥"
-          title={t('settingsTabs.viralCharts')}
-          description={t('settingsIntros.viral')}
-          testId="settings-intro-viral"
-        />
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>&#128293;</span> {t('settingsViralCharts.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-white/60 text-sm">
-              {t('settingsViralCharts.tauriOnly')} {t('settingsViralCharts.tauriOnlyDesc')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="bg-white/5 border-white/10" data-testid="settings-intro-viral">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 theme-adaptive-text">
+            <span aria-hidden>&#128293;</span> {t('settingsViralCharts.title')}
+          </CardTitle>
+          <CardDescription>{t('settingsIntros.viral')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/60 text-sm">
+            {t('settingsViralCharts.tauriOnly')} {t('settingsViralCharts.tauriOnlyDesc')}
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   const selectedCountryData = COUNTRY_OPTIONS.find(c => c.code === country);
 
   return (
-    <div className="space-y-6">
-      {/* R28: Einleitungstext */}
-      <SettingsIntroCard
-        icon="🔥"
-        title={t('settingsTabs.viralCharts')}
-        description={t('settingsIntros.viral')}
-        testId="settings-intro-viral"
-      />
-      <Card className="bg-white/5 border-white/10">
+    /* R41/P5: EINE Karte statt zwei übereinander — Titel + Intro-Beschreibung
+       (settingsIntros.viral, informativer als der alte description-Kurztext)
+       plus die bisherige Chart-Konfiguration. */
+    <Card className="bg-white/5 border-white/10" data-testid="settings-intro-viral">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <span className="text-xl">&#128293;</span> {t('settingsViralCharts.title')}
+        <CardTitle className="flex items-center gap-2 theme-adaptive-text">
+          <span className="text-xl" aria-hidden>&#128293;</span> {t('settingsViralCharts.title')}
         </CardTitle>
         <CardDescription>
-          {t('settingsViralCharts.description')}
+          {t('settingsIntros.viral')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -224,6 +214,5 @@ export function ViralChartsSettings() {
         </p>
       </CardContent>
     </Card>
-    </div>
   );
 }

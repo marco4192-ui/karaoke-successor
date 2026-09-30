@@ -1146,7 +1146,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                   onChange={(e) => { haptic(); setFilterSearch(e.target.value); }}
                   placeholder={tOr(t, 'unifiedSetup.searchFilterPlaceholder', 'Interpret oder Titel…')}
                   autoComplete="off"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-cyan-400/40"
+                  className={'w-full rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-white/30 outline-none border focus:border-cyan-400/40 ' +
+                    (filterSearch.trim() !== ''
+                      ? 'border-cyan-400/60 bg-cyan-500/5 ring-1 ring-cyan-400/30'
+                      : 'bg-white/5 border-white/10')}
                 />
                 {filterSearch !== '' && (
                   <button
@@ -1167,7 +1170,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               <select
                 value={filterGenre}
                 onChange={(e) => { haptic(); setFilterGenre(e.target.value); }}
-                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
+                  (filterGenre !== 'all'
+                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
+                    : 'bg-white/5 border-white/10')}
               >
                 <option value="all">{tOr(t, 'unifiedSetup.allGenres', 'Alle Genres')}</option>
                 {(setup?.availableGenres ?? []).map((g) => (
@@ -1182,7 +1188,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               <select
                 value={filterLanguage}
                 onChange={(e) => { haptic(); setFilterLanguage(e.target.value); }}
-                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
+                  (filterLanguage !== 'all'
+                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
+                    : 'bg-white/5 border-white/10')}
               >
                 <option value="all">{tOr(t, 'unifiedSetup.allLanguages', 'Alle Sprachen')}</option>
                 {(setup?.availableLanguages ?? []).map((l) => (
@@ -1197,7 +1206,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               <select
                 value={filterReleaseYear}
                 onChange={(e) => { haptic(); setFilterReleaseYear(e.target.value); }}
-                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
+                  (filterReleaseYear !== 'all'
+                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
+                    : 'bg-white/5 border-white/10')}
               >
                 <option value="all">{tOr(t, 'unifiedSetup.allYears', 'Alle Jahre')}</option>
                 {(setup?.availableYears ?? []).map((y) => (
@@ -1212,7 +1224,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               <select
                 value={filterEra}
                 onChange={(e) => { haptic(); setFilterEra(e.target.value); }}
-                className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
+                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
+                  (filterEra !== 'all'
+                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
+                    : 'bg-white/5 border-white/10')}
               >
                 <option value="all">{tOr(t, 'unifiedSetup.allEras', 'Alle')}</option>
                 {(setup?.availableDecades ?? []).map((d) => (

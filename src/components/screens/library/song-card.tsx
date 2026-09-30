@@ -13,6 +13,37 @@ function hasVideo(song: SongCardProps['song']): boolean {
   return !!(song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath);
 }
 
+// ── R41 (P1/P2): module-level cover retry registry ───────────────────────────
+// The old per-card 3-strike rule (≈10 s) permanently gave up on a src — a
+// cover that was temporarily unloadable (object-URL churn during rescans,
+// lazy media restore races) stayed „empty purple" FOREVER even though the
+// src usually recovers moments later. The registry outlives card unmounts
+// (sorting changes, grid virtualization) and retries over minutes:
+// 2.5 s → 7 s → 15 s → 30 s → 60 s → 120 s (7 attempts total, then permanent).
+// A CHANGED src (fresh blob URL after a rescan) always starts a fresh budget.
+const RETRY_DELAYS_MS = [2500, 7000, 15000, 30000, 60000, 120000];
+const MAX_FAILURE_ATTEMPTS = RETRY_DELAYS_MS.length + 1;
+
+interface FailureEntry {
+  attempts: number;
+  nextRetryAt: number; // 0 = permanent failure (no further retry)
+}
+
+const failureRegistry = new Map<string, FailureEntry>();
+
+function registryDelayFor(attempts: number): number | null {
+  const idx = attempts - 1; // attempts = number of failures recorded so far
+  return idx >= 0 && idx < RETRY_DELAYS_MS.length ? RETRY_DELAYS_MS[idx] : null;
+}
+
+function isRegistryFailed(src: string | undefined): boolean {
+  if (!src) return false;
+  const entry = failureRegistry.get(src);
+  if (!entry) return false;
+  if (entry.nextRetryAt === 0) return true; // permanent
+  return Date.now() < entry.nextRetryAt;
+}
+
 export function SongCard({ 
   song, 
   previewSong,
@@ -39,9 +70,12 @@ export function SongCard({
   // only after 3 failed attempts per src does the fallback stay for good.
   // While waiting for a retry the initials/icon fallback shows (as before).
   // Successful loads clear the attempt counters for that src.
-  const [failedSrcs, setFailedSrcs] = useState<Set<string>>(new Set());
-  const attemptsRef = useRef(new Map<string, number>());
-  const retryTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  // R41: the counters live in the module-level failureRegistry (see above) —
+  // they survive card unmounts and retry over minutes instead of giving up
+  // after ~10 s. The per-card state only mirrors the registry so React
+  // re-renders when a retry becomes due.
+  const [, setRetryTick] = useState(0);
+  const retryTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Clear all pending retry timers on unmount
   useEffect(() => {
@@ -52,33 +86,37 @@ export function SongCard({
     };
   }, []);
 
-  const markFailed = (src?: string) => {
-    if (!src) return; // no retry for empty/undefined src
-    setFailedSrcs(prev => prev.has(src) ? prev : new Set(prev).add(src));
-    const attempts = (attemptsRef.current.get(src) ?? 0) + 1;
-    attemptsRef.current.set(src, attempts);
-    if (attempts >= 3) return; // permanently failed after 3 attempts
-    // Schedule background retry: attempt 2 after ~2.5 s, attempt 3 after ~7 s more
-    const delay = attempts === 1 ? 2500 : 7000;
+  const scheduleCardRetry = (src: string, delayMs: number) => {
     const existing = retryTimersRef.current.get(src);
     if (existing) clearTimeout(existing);
     retryTimersRef.current.set(src, setTimeout(() => {
       retryTimersRef.current.delete(src);
-      // Reset the failed status for this src → the conditional <img> remounts
-      // (state bump) and the browser retries the load.
-      setFailedSrcs(prev => {
-        if (!prev.has(src)) return prev;
-        const next = new Set(prev);
-        next.delete(src);
-        return next;
-      });
-    }, delay));
+      // State bump → re-render → isRegistryFailed(src) is now false →
+      // the conditional <img> remounts and the browser retries the load.
+      setRetryTick(t => t + 1);
+    }, delayMs));
+  };
+
+  const markFailed = (src?: string) => {
+    if (!src) return; // no retry for empty/undefined src
+    const prev = failureRegistry.get(src);
+    const attempts = (prev?.attempts ?? 0) + 1;
+    const delayMs = registryDelayFor(attempts);
+    if (delayMs === null || attempts >= MAX_FAILURE_ATTEMPTS) {
+      // Permanent failure for this src — a changed src still gets a fresh budget.
+      failureRegistry.set(src, { attempts, nextRetryAt: 0 });
+      return;
+    }
+    failureRegistry.set(src, { attempts, nextRetryAt: Date.now() + delayMs });
+    scheduleCardRetry(src, delayMs);
   };
   const clearAttempts = (src?: string) => {
     if (!src) return;
-    attemptsRef.current.delete(src);
+    failureRegistry.delete(src);
+    const timer = retryTimersRef.current.get(src);
+    if (timer) { clearTimeout(timer); retryTimersRef.current.delete(src); }
   };
-  const isFailed = (src?: string) => !!src && failedSrcs.has(src);
+  const isFailed = (src?: string) => isRegistryFailed(src);
 
   // Extract itemProps so we can merge onKeyDown with our fallback handler
   const { ref: itemRef, onKeyDown: itemOnKeyDown, ...restItemProps } = itemProps || {};

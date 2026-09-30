@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { CHRISTMAS_FILTER_VALUE } from '@/lib/seasonal';
 import { decadeShortLabel } from '@/lib/game/era-filter';
 import { MottoPartyBanner } from '@/components/game/unified-party-setup.components';
+import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 
 interface LibraryFiltersProps {
   searchQuery: string;
@@ -62,6 +63,8 @@ export function LibraryFilters({
   motto = null,
 }: LibraryFiltersProps) {
   const { t } = useTranslation();
+  // R41/P4: Sortierung nur dann hervorheben, wenn sie vom Standard (Titel A–Z) abweicht.
+  const sortActive = settings.sortBy !== 'title' || settings.sortOrder !== 'asc';
   const selectStyle = {
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
     backgroundRepeat: 'no-repeat' as const,
@@ -91,7 +94,11 @@ export function LibraryFilters({
               setSettings(prev => ({ ...prev, sortBy, sortOrder }));
             }}
             aria-label={t('library.sortBy')}
-            className="bg-gray-800 border border-white/20 rounded-md px-3 py-2 text-white appearance-none cursor-pointer self-start sm:self-stretch hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            className={`border rounded-md px-3 py-2 text-white appearance-none cursor-pointer self-start sm:self-stretch focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 ${
+              sortActive
+                ? FILTER_ACTIVE_FRAME
+                : 'border-white/20 bg-gray-800 hover:border-cyan-500/50'
+            }`}
             style={selectStyle}
             data-testid="library-motto-sort"
           >
@@ -112,7 +119,9 @@ export function LibraryFilters({
             placeholder={t('libraryFilters.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
+            className={`bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10 ${
+              searchQuery.trim() !== '' ? SEARCH_ACTIVE_FRAME : ''
+            }`}
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
@@ -126,7 +135,11 @@ export function LibraryFilters({
             const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
             setSettings(prev => ({ ...prev, sortBy, sortOrder }));
           }}
-          className="bg-gray-800 border border-white/20 rounded-md px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+          className={`border rounded-md px-3 py-2 text-white appearance-none cursor-pointer focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 ${
+            sortActive
+              ? FILTER_ACTIVE_FRAME
+              : 'border-white/20 bg-gray-800 hover:border-cyan-500/50'
+          }`}
           style={selectStyle}
         >
           <option value="title-asc" className="bg-gray-800 text-white">{t('libraryFilters.titleAZ')}</option>
@@ -144,7 +157,9 @@ export function LibraryFilters({
             value={settings.filterGenre || 'all'}
             onValueChange={(value) => setSettings(prev => ({ ...prev, filterGenre: value }))}
           >
-            <SelectTrigger className="w-[140px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500">
+            <SelectTrigger className={`w-[140px] h-8 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500 ${
+              (settings.filterGenre || 'all') !== 'all' ? FILTER_ACTIVE_FRAME : 'bg-gray-800 border-white/20'
+            }`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -172,7 +187,9 @@ export function LibraryFilters({
             value={settings.filterLanguage || 'all'}
             onValueChange={(value) => setSettings(prev => ({ ...prev, filterLanguage: value }))}
           >
-            <SelectTrigger className="w-[140px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500">
+            <SelectTrigger className={`w-[140px] h-8 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500 ${
+              (settings.filterLanguage || 'all') !== 'all' ? FILTER_ACTIVE_FRAME : 'bg-gray-800 border-white/20'
+            }`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +206,9 @@ export function LibraryFilters({
             value={settings.filterYear || 'all'}
             onValueChange={(value) => setSettings(prev => ({ ...prev, filterYear: value }))}
           >
-            <SelectTrigger className="w-[120px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500">
+            <SelectTrigger className={`w-[120px] h-8 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500 ${
+              (settings.filterYear || 'all') !== 'all' ? FILTER_ACTIVE_FRAME : 'bg-gray-800 border-white/20'
+            }`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -206,7 +225,9 @@ export function LibraryFilters({
             value={settings.filterEra || 'all'}
             onValueChange={(value) => setSettings(prev => ({ ...prev, filterEra: value }))}
           >
-            <SelectTrigger className="w-[120px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500">
+            <SelectTrigger className={`w-[120px] h-8 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500 ${
+              (settings.filterEra || 'all') !== 'all' ? FILTER_ACTIVE_FRAME : 'bg-gray-800 border-white/20'
+            }`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -231,7 +252,7 @@ export function LibraryFilters({
           }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             settings.filterDuet || startMode === 'duet'
-              ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50 hover:bg-pink-500/40' 
+              ? 'bg-pink-500/30 text-pink-300 border border-pink-400/70 ring-1 ring-pink-400/40 shadow-[0_0_10px_rgba(236,72,153,0.3)] hover:bg-pink-500/40'
               : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
           }`}
         >
@@ -245,7 +266,7 @@ export function LibraryFilters({
           }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             settings.filterViral
-              ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50 hover:bg-orange-500/40' 
+              ? 'bg-orange-500/30 text-orange-300 border border-orange-400/70 ring-1 ring-orange-400/40 shadow-[0_0_10px_rgba(249,115,22,0.3)] hover:bg-orange-500/40'
               : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
           }`}
         >
@@ -291,7 +312,9 @@ export function LibraryFilters({
           <button
             onClick={() => onSetViewMode('playlists')}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              viewMode === 'playlists' ? 'bg-purple-500 text-white hover:bg-purple-600' : 'text-white/60 hover:text-white'
+              viewMode === 'playlists'
+                ? 'bg-purple-500 text-white hover:bg-purple-600 ring-1 ring-purple-300/60 shadow-[0_0_10px_rgba(168,85,247,0.35)]'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5">
@@ -324,8 +347,8 @@ export function LibraryFilters({
                 onSetGroupBy(option.value as LibraryGroupBy);
               }}
               className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-                groupBy === option.value && viewMode === 'folder' 
-                  ? 'bg-purple-500 text-white hover:bg-purple-600' 
+                groupBy === option.value && viewMode === 'folder'
+                  ? 'bg-purple-500 text-white hover:bg-purple-600 ring-1 ring-purple-300/60 shadow-[0_0_10px_rgba(168,85,247,0.35)]'
                   : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
