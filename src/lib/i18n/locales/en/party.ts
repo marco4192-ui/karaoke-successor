@@ -425,6 +425,8 @@ export const partyTranslations = {
     deviceMicAuto: 'Microphone (automatic)',
     deviceCompanion: 'Companion App',
     deviceNotConnected: 'not connected yet',
+    deviceMicActive: 'active',
+    micChange: 'Change microphone…',
     deviceMicTaken: 'in use',
     deviceNoMic: 'No microphone',
     deviceSingingVia: 'Sings via',

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Song } from '@/types/game';
-import { getDesktopInstanceId } from '@/lib/desktop-instance';
+import { isGamestateWriterYielding, postGameState } from '@/lib/desktop-instance';
 
 /**
  * Hook for syncing game state to mobile companion clients.
@@ -48,26 +48,24 @@ export function useMobileGameSync(
 
     const syncGameState = async () => {
       try {
-        const res = await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'gamestate',
-            // R27: instance ID for the server-side single-writer election —
-            // posts from the same desktop instance always pass.
-            senderId: getDesktopInstanceId(),
-            payload: {
-              currentSong: { id: song.id, title: song.title, artist: song.artist },
-              isPlaying: isPlayingRef.current,
-              gameMode: gameModeRef.current,
-              songEnded: songEndedRef.current,
-              // #10 Broadcast tournament match ID for spectator voting
-              tournamentMatchId: tournamentMatchIdRef.current || null,
-              // Current screen name for remote control UI
-              currentScreen: currentScreenRef.current || null,
-            },
-          }),
+        // R43: unified helper — attaches the instance senderId and yields
+        // with exponential backoff when another window owns the writer
+        // election (no more 409 console spam every 2 s).
+        const res = await postGameState({
+          currentSong: { id: song.id, title: song.title, artist: song.artist },
+          isPlaying: isPlayingRef.current,
+          gameMode: gameModeRef.current,
+          songEnded: songEndedRef.current,
+          // #10 Broadcast tournament match ID for spectator voting
+          tournamentMatchId: tournamentMatchIdRef.current || null,
+          // Current screen name for remote control UI
+          currentScreen: currentScreenRef.current || null,
         });
+        if (res === null || isGamestateWriterYielding()) {
+          // Skipped (yielding to the winning window) or network error —
+          // not a sync failure worth a red banner.
+          return;
+        }
         if (!res.ok) {
           clearSyncError(`Game state sync failed (${res.status})`);
           return;

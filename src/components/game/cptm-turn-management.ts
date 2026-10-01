@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { CptmPlayer, CptmSegment, GamePhase } from './cptm-types';
+import { postGameState } from '@/lib/desktop-instance';
 
 // ===================== TYPES =====================
 
@@ -33,6 +34,7 @@ export interface CptmTurnContext {
 /**
  * Send a cptm turn signal to the companion app.
  * Fire-and-forget — errors are silently ignored since the companion may not be connected.
+ * R43: unified postGameState helper (senderId + 409 single-writer backoff).
  */
 export function sendCompanionTurnSignal(
   profileId: string | null,
@@ -42,17 +44,8 @@ export function sendCompanionTurnSignal(
   context?: CptmTurnContext,
 ): void {
   try {
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'gamestate',
-        payload: {
-          cptmTurn: { profileId, nextProfileId, countdown, isActive, ...context },
-        },
-      }),
-    }).catch(() => {
-      // Silently ignore — companion may not be connected
+    void postGameState({
+      cptmTurn: { profileId, nextProfileId, countdown, isActive, ...context },
     });
   } catch {
     // Ignore

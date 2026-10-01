@@ -216,12 +216,15 @@ export function TourOverlay({
       aria-label={t('tutorial.ariaLabel')}
     >
       {/* Spotlight layer — blocks interaction on non-interactive steps */}
+      {/* R43: dim raised from 0.78 → 0.92 — the app shimmering through the
+          backdrop was too distracting during tutorials (user feedback). The
+          spotlight target itself stays fully visible. */}
       {rect && (
         <div
           className="absolute rounded-xl"
           style={{
             ...spotlightStyle,
-            boxShadow: '0 0 0 9999px rgba(2, 6, 23, 0.78)',
+            boxShadow: '0 0 0 9999px rgba(2, 6, 23, 0.92)',
             pointerEvents: 'auto',
             borderRadius: 14,
             border: isInteractive ? '2px solid rgba(0, 229, 255, 0.9)' : '2px solid rgba(0, 229, 255, 0.55)',
@@ -236,9 +239,9 @@ export function TourOverlay({
         </div>
       )}
 
-      {/* Centered dark backdrop (steps without target) */}
+      {/* Centered dark backdrop (steps without target) — R43: 0.78 → 0.92, see above */}
       {!rect && (
-        <div className="absolute inset-0 bg-[rgba(2,6,23,0.78)]" style={{ pointerEvents: 'auto' }} />
+        <div className="absolute inset-0 bg-[rgba(2,6,23,0.92)]" style={{ pointerEvents: 'auto' }} />
       )}
 
       {/* Tooltip card */}

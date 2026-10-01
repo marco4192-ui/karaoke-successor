@@ -8,7 +8,7 @@ import type { Song, GameMode } from '@/types/game';
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useCompanionSync } from '@/hooks/use-companion-sync';
 import { useSongLibrarySync } from '@/hooks/use-song-library-sync';
-import { getDesktopInstanceId } from '@/lib/desktop-instance';
+import { postGameState } from '@/lib/desktop-instance';
 
 interface UseMobileClientOptions {
   song: Song | null;
@@ -132,22 +132,8 @@ export function useMobileClient({
       return;
     }
 
-    // Fallback: HTTP POST
-    try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload,
-        }),
-        signal: abortControllerRef.current?.signal,
-      });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      // eslint-disable-next-line no-console
-      console.debug('[useMobileClient]: sendGameState failed', error);
-    }
+    // Fallback: HTTP POST (R43: unified helper with senderId + 409 backoff)
+    await postGameState(payload, { signal: abortControllerRef.current?.signal });
   }, [song]);
 
   // Send game state periodically (throttled) — but only as HTTP fallback
@@ -168,22 +154,9 @@ export function useMobileClient({
 
       // Always keep server-side mutableState in sync via HTTP
       // (needed for companions that might not have Socket.IO yet)
-      try {
-        await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'gamestate',
-            // R27: instance ID for the server-side single-writer election —
-            // posts from the same desktop instance always pass.
-            senderId: getDesktopInstanceId(),
-            payload,
-          }),
-          signal: controller.signal,
-        });
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-      }
+      // R43: unified helper — senderId + 409 single-writer backoff (the old
+      // bare fetch kept firing every 2 s even after losing the election).
+      await postGameState(payload, { signal: controller.signal });
     };
 
     sendViaHttp(); // immediate first send
@@ -221,17 +194,8 @@ export function useMobileClient({
     if (socketRef.current?.connected) {
       socketRef.current.emit('host:difficulty', { difficulty });
     }
-    // Also update server-side mutableState via HTTP
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'gamestate',
-        // R27: instance ID for the server-side single-writer election
-        senderId: getDesktopInstanceId(),
-        payload: { difficulty },
-      }),
-    }).catch(() => {});
+    // Also update server-side mutableState via HTTP (R43: unified helper)
+    postGameState({ difficulty });
   }, []);
 
   /** Push pause state to all Companions */

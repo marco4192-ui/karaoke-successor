@@ -1227,6 +1227,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "또는 QR 코드를 스캔하세요: 휴대폰이 {name}(으)로 바로 로그인해서 이 플레이어 대신 노래해요.",
     assignDeviceDone: "배정됨 ✓",
     assignDeviceError: "배정에 실패했어요 — 다시 시도해 주세요",
+    deviceMicActive: "선택됨",
+    micChange: "마이크 변경…",
     deviceMicTaken: "사용 중",
     deviceMultiMicHint: "듀얼 모드: 마이크 {n}개 감지 — 대결하는 플레이어들이 공유하며, 플레이어별 고정 마이크는 없어요.",
     deviceNeedAllCompanion: "시작하려면 모든 플레이어가 컴패니언 앱으로 연결되어 있어야 합니다",

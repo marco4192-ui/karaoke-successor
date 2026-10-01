@@ -76,6 +76,28 @@ export function revokeAllSongMediaUrls(): void {
   songUrlCache.clear();
 }
 
+/** R43 (cover self-healing): drop the cached URL for one media type and
+ *  re-create a FRESH object URL from the stored blob.
+ *
+ *  Why: if some consumer revoked a SHARED stable URL (external
+ *  URL.revokeObjectURL — e.g. the pre-R43 SongVotingModal cleanup), the
+ *  cache kept serving the dead URL string forever (`if (cached) return
+ *  cached`): every <img> retry hit ERR_FILE_NOT_FOUND and the cover stayed
+ *  broken for the whole session. This function forces a fresh URL so the
+ *  SongCard error path can heal itself. Returns undefined when there is no
+ *  media of that type — the caller then keeps its fallback handling. */
+export async function refreshSongMediaUrl(
+  songId: string,
+  type: 'audio' | 'video' | 'cover' | 'txt',
+): Promise<string | undefined> {
+  const key = `${songId}::${type}`;
+  // Drop the (suspected dead) cache entry WITHOUT revoking: if it is still
+  // alive somewhere it simply keeps working (one bounded URL leak at worst);
+  // if it is dead, revoking again is a no-op anyway.
+  songUrlCache.delete(key);
+  return getOrCreateSongUrl(songId, type);
+}
+
 // Initialize the database (with concurrency lock to prevent double-open)
 async function initMediaDB(): Promise<IDBDatabase> {
   if (dbInstance) return dbInstance;

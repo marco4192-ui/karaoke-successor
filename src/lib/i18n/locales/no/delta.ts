@@ -1227,6 +1227,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "Eller skann QR-koden: telefonen logger inn direkte som {name} og synger for denne spilleren.",
     assignDeviceDone: "Tilordnet ✓",
     assignDeviceError: "Tilordningen mislyktes — prøv igjen",
+    deviceMicActive: "aktiv",
+    micChange: "Bytt mikrofon…",
     deviceMicTaken: "i bruk",
     deviceMultiMicHint: "Duellmodus: {n} mikrofoner oppdaget — duellerende spillere deler dem, ingen fast mikrofon per spiller.",
     deviceNeedAllCompanion: "Alle spillere må være tilkoblet via Companion-appen for å starte",

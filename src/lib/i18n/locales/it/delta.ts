@@ -1227,6 +1227,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "Oppure scansiona il QR code: il telefono accede direttamente come {name} e canta per questo giocatore.",
     assignDeviceDone: "Assegnato ✓",
     assignDeviceError: "Assegnazione non riuscita — riprova",
+    deviceMicActive: "attivo",
+    micChange: "Cambia microfono…",
     deviceMicTaken: "in uso",
     deviceMultiMicHint: "Modalità duello: {n} microfoni rilevati — i giocatori in duello li condividono, nessun microfono fisso per giocatore.",
     deviceNeedAllCompanion: "Per iniziare, tutti i giocatori devono essere connessi tramite app Companion",

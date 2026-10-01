@@ -1226,6 +1226,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "Tai skannaa QR-koodi: puhelin kirjautuu suoraan käyttäjänä {name} ja laulaa tämän pelaajan puolesta.",
     assignDeviceDone: "Osoitettu ✓",
     assignDeviceError: "Osoittaminen epäonnistui — yritä uudelleen",
+    deviceMicActive: "aktiivinen",
+    micChange: "Vaihda mikrofonia…",
     deviceMicTaken: "käytössä",
     deviceMultiMicHint: "Kaksinkamppailutila: tunnistettu {n} mikrofonia — kaksinkamppailijat jakavat ne, ei kiinteää mikrofonia pelaajaa kohti.",
     deviceNeedAllCompanion: "Voi aloittaa vain, kun kaikki pelaajat ovat yhteydessä Companion-sovelluksen kautta",

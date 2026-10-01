@@ -294,7 +294,7 @@ export function TourController({ children, navigate, screen }: TourControllerPro
       {/* First-launch offer dialog */}
       {showOffer && !state && (
         <div
-          className="fixed inset-0 z-[200] bg-[rgba(2,6,23,0.8)] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[200] bg-[rgba(2,6,23,0.92)] flex items-center justify-center p-4"
           data-testid="tour-first-offer"
           role="dialog"
           aria-modal="true"

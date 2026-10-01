@@ -1227,6 +1227,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "またはQRコードをスキャン：スマホが{name}として直接ログインし、このプレイヤーの代わりに歌います。",
     assignDeviceDone: "割り当て済み ✓",
     assignDeviceError: "割り当てに失敗しました — もう一度お試しください",
+    deviceMicActive: "選択中",
+    micChange: "マイクを変更…",
     deviceMicTaken: "使用中",
     deviceMultiMicHint: "デュエルモード：{n}本のマイクを検出 — デュエルするプレイヤーで共有され、プレイヤーごとの固定マイクはありません。",
     deviceNeedAllCompanion: "開始するには、全プレイヤーがコンパニオンアプリ経由で接続している必要があります",

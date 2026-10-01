@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { useGameStore } from '@/lib/game/store';
+import { postGameState } from '@/lib/desktop-instance';
 import { useGameResults } from '@/hooks/use-game-results';
 import { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
 import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
@@ -322,22 +323,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     endGame();
     generateResults();
 
-    // Notify mobile clients that song ended
+    // Notify mobile clients that song ended (R43: unified helper — senderId + 409 backoff)
     if (song) {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: {
-            currentSong: { id: song.id, title: song.title, artist: song.artist },
-            isPlaying: false,
-            currentTime: 0,
-            songEnded: true,
-            gameMode,
-          },
-        }),
-      }).catch(() => {});
+      postGameState({
+        currentSong: { id: song.id, title: song.title, artist: song.artist },
+        isPlaying: false,
+        currentTime: 0,
+        songEnded: true,
+        gameMode,
+      });
     }
 
     onEnd();

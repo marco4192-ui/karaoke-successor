@@ -398,6 +398,8 @@ unifiedSetup: {
   deviceMicAuto: 'Mikrofon (automatisch)',
   deviceCompanion: 'Companion-App',
   deviceNotConnected: 'noch nicht verbunden',
+  deviceMicActive: 'aktiv',
+  micChange: 'Mikrofon wechseln …',
   deviceMicTaken: 'belegt',
   deviceNoMic: 'Kein Mikrofon',
   deviceSingingVia: 'Singt per',

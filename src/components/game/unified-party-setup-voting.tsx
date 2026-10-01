@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
@@ -17,7 +17,13 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   gameColor: string;
 }) {
   const { t } = useTranslation();
-  const coverBlobUrlsRef = useRef<string[]>([]);
+
+  // R43 (cover bug, round 2): the ref-revoke is GONE. getSongMediaUrls()
+  // returns the SHARED STABLE URLs from the media-db cache — revoking them
+  // here killed the covers app-wide (library tiles turned permanently empty:
+  // ERR_FILE_NOT_FOUND on a revoked blob: URL, and the media-db cache kept
+  // serving the dead URL string forever). The media-db owns the URL
+  // lifecycle (R41); consumers must NEVER revoke what they didn't create.
 
   // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
   const [enrichedSongs, setEnrichedSongs] = useState<Song[]>(songs);
@@ -40,7 +46,6 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
                 const { getSongMediaUrls } = await import('@/lib/db/media-db');
                 const urls = await getSongMediaUrls(s.id);
                 if (urls.coverUrl) {
-                  coverBlobUrlsRef.current.push(urls.coverUrl);
                   return { ...s, coverImage: urls.coverUrl };
                 }
               }
@@ -66,11 +71,7 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
       } catch { /* non-critical */ }
     };
     restoreCovers();
-    return () => {
-      cancelled = true;
-      coverBlobUrlsRef.current.forEach(url => { if (url.startsWith('blob:')) try { URL.revokeObjectURL(url); } catch { /* revoke may fail for already-revoked URLs */ } });
-      coverBlobUrlsRef.current = [];
-    };
+    return () => { cancelled = true; };
   }, [songs]);
 
   return (

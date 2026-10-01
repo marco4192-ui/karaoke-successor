@@ -17,6 +17,7 @@ import { Song, LyricLine, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useTranslation } from '@/lib/i18n/translations';
+import { postGameState } from '@/lib/desktop-instance';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import type { CompanionPlayer, CompanionSingAlongSettings, GamePhase } from './companion-types';
@@ -159,21 +160,15 @@ export function CompanionGameView({
         color: p.color,
         score: p.score,
       }));
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: {
-            singalongTurn: {
-              profileId,
-              nextProfileId,
-              countdown,
-              isActive: true,
-            },
-            companionScores,
-          },
-        }),
+      // R43: unified postGameState helper (senderId + 409 backoff)
+      await postGameState({
+        singalongTurn: {
+          profileId,
+          nextProfileId,
+          countdown,
+          isActive: true,
+        },
+        companionScores,
       });
     } catch { /* ignore — companion is optional for the main screen */ }
   }, []);
@@ -181,11 +176,7 @@ export function CompanionGameView({
   // ── Clear singalong turn and scores on unmount ──
   useEffect(() => {
     return () => {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'gamestate', payload: { singalongTurn: null, companionScores: null } }),
-      }).catch(() => {});
+      void postGameState({ singalongTurn: null, companionScores: null });
       // NOTE: stop() is called in the dedicated cleanup useEffect below; not duplicated here (CP-M3).
     };
   }, [stop]);

@@ -44,6 +44,30 @@ function isRegistryFailed(src: string | undefined): boolean {
   return Date.now() < entry.nextRetryAt;
 }
 
+// ── R43 (cover self-healing): heal dead media-db URLs ──────────────────────
+// When a shared stable URL was revoked externally (see media-db
+// refreshSongMediaUrl), the failure ladder alone can never recover — every
+// retry re-requests the SAME dead string. On the first load error of a
+// storedMedia song we therefore force a FRESH object URL from the media DB
+// (once per songId+src). If the fresh URL differs, the card swaps its src
+// immediately and the cover heals within one re-render instead of staying
+// „empty purple" for the whole session.
+const healedCoverUrls = new Map<string, string>(); // songId → fresh cover URL
+const healAttempts = new Set<string>(); // `${songId}::${src}` — one try per src
+
+async function healCoverUrl(songId: string, deadSrc: string): Promise<void> {
+  const key = `${songId}::${deadSrc}`;
+  if (healAttempts.has(key)) return; // already tried for this src
+  healAttempts.add(key);
+  try {
+    const { refreshSongMediaUrl } = await import('@/lib/db/media-db');
+    const freshUrl = await refreshSongMediaUrl(songId, 'cover');
+    if (freshUrl && freshUrl !== deadSrc) {
+      healedCoverUrls.set(songId, freshUrl);
+    }
+  } catch { /* no media DB entry — keep the ladder/fallback handling */ }
+}
+
 export function SongCard({ 
   song, 
   previewSong,
@@ -118,6 +142,18 @@ export function SongCard({
   };
   const isFailed = (src?: string) => isRegistryFailed(src);
 
+  // R43: cover error → request a fresh URL from the media DB (once per src).
+  // If one arrives, the healed map wins over the song prop and the image
+  // re-mounts with the working src.
+  const handleCoverError = (src?: string) => {
+    markFailed(src);
+    if (src && song.storedMedia) {
+      healCoverUrl(song.id, src).then(() => {
+        if (healedCoverUrls.get(song.id)) setRetryTick(t => t + 1);
+      });
+    }
+  };
+
   // Extract itemProps so we can merge onKeyDown with our fallback handler
   const { ref: itemRef, onKeyDown: itemOnKeyDown, ...restItemProps } = itemProps || {};
 
@@ -132,10 +168,14 @@ export function SongCard({
   };
 
   const effectiveSong = isPreviewing && previewSong ? previewSong : song;
-  const coverBroken = isFailed(effectiveSong.coverImage);
-  const backgroundBroken = isFailed(effectiveSong.backgroundImage);
-  const showBackground = !!effectiveSong.backgroundImage && !backgroundBroken;
-  const showCover = !!effectiveSong.coverImage && !coverBroken;
+  // R43: a healed (fresh) cover URL beats the possibly-dead prop URL.
+  const healedCover = healedCoverUrls.get(song.id);
+  const effectiveCoverImage = healedCover ?? effectiveSong.coverImage;
+  const effectiveBackgroundImage = effectiveSong.backgroundImage;
+  const coverBroken = isFailed(effectiveCoverImage);
+  const backgroundBroken = isFailed(effectiveBackgroundImage);
+  const showBackground = !!effectiveBackgroundImage && !backgroundBroken;
+  const showCover = !!effectiveCoverImage && !coverBroken;
   const showBackgroundDuringPreview = isPreviewing && !songHasVideo && showBackground;
 
   return (
@@ -152,10 +192,10 @@ export function SongCard({
       <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
         {showBackground && (
           <img 
-            src={effectiveSong.backgroundImage} 
+            src={effectiveBackgroundImage} 
             alt="" 
-            onLoad={() => clearAttempts(effectiveSong.backgroundImage)}
-            onError={() => markFailed(effectiveSong.backgroundImage)}
+            onLoad={() => clearAttempts(effectiveBackgroundImage)}
+            onError={() => markFailed(effectiveBackgroundImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               showBackgroundDuringPreview ? 'opacity-100' : 'opacity-0'
             }`} 
@@ -164,10 +204,10 @@ export function SongCard({
         
         {showCover && (
           <img 
-            src={effectiveSong.coverImage} 
+            src={effectiveCoverImage} 
             alt={effectiveSong.title} 
-            onLoad={() => clearAttempts(effectiveSong.coverImage)}
-            onError={() => markFailed(effectiveSong.coverImage)}
+            onLoad={() => clearAttempts(effectiveCoverImage)}
+            onError={() => handleCoverError(effectiveCoverImage)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               isPreviewing && songHasVideo ? 'opacity-0' : 'opacity-100'
             }`} 

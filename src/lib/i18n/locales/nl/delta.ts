@@ -1226,6 +1226,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "Of scan de QR-code: de telefoon logt direct in als {name} en zingt voor deze speler.",
     assignDeviceDone: "Toegewezen ✓",
     assignDeviceError: "Toewijzen mislukt — probeer het opnieuw",
+    deviceMicActive: "actief",
+    micChange: "Microfoon wijzigen…",
     deviceMicTaken: "in gebruik",
     deviceMultiMicHint: "Duelmodus: {n} microfoons gedetecteerd — duellerende spelers delen ze, geen vaste microfoon per speler.",
     deviceNeedAllCompanion: "Alle spelers moeten via de Companion App verbonden zijn om te starten",

@@ -22,7 +22,7 @@ import { recordMatchResult, getPlayableMatches } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useViralCharts } from '@/hooks/use-viral-charts';
-import { getDesktopInstanceId } from '@/lib/desktop-instance';
+import { postGameState } from '@/lib/desktop-instance';
 import { toast } from '@/hooks/use-toast';
 import { buildSettingsSnapshot } from '@/lib/companion/settings-snapshot';
 import { buildDailySnapshots } from '@/lib/companion/daily-snapshot';
@@ -1293,10 +1293,7 @@ export default function KaraokeZERO() {
           }
         }
 
-        // R27c: Identify this instance for the server-side single-writer
-        // election (prevents two running desktops from overwriting each
-        // other's gamestate pushes every 2 s).
-        const senderId = getDesktopInstanceId();
+        // R43: senderId is attached centrally by postGameState.
         // Party screen: sync the recent-parties history so the mobile mirror
         // can render the same "Recent Parties" section (avatars stripped —
         // data-URL avatars would bloat the 2s-poll payload).
@@ -1326,15 +1323,14 @@ export default function KaraokeZERO() {
             // history is best-effort for the mirror
           }
         }
-        const syncRes = await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'gamestate',
-            // R27c: instance ID for the server-side single-writer election
-            senderId,
-            payload: {
-              ...useGameStore.getState().gameState,
+        // R43: routed through the unified postGameState helper — attaches the
+        // instance senderId AND shares the module-level 409 backoff with all
+        // other gamestate senders (setup push, CPTM turns, song-end notices):
+        // when the master loop detects a conflict, EVERY sender in this tab
+        // yields together instead of only the master pausing while the others
+        // keep spamming 409s.
+        const syncRes = await postGameState({
+          ...useGameStore.getState().gameState,
               // BR: keep the companion's currentSong in sync with the current
               // BR (snippet) song instead of the (unset) standard song.
               ...(brSongPayload ? { currentSong: brSongPayload } : {}),
@@ -1398,8 +1394,6 @@ export default function KaraokeZERO() {
               // below (POST type:'settingssnapshot'), and companions PULL
               // them on every (re)connect via GET action=settingssnapshot.
               recentParties: recentPartiesPayload,
-            },
-          }),
         });
 
         // R27d: Single-writer election response — 409 means another desktop
@@ -1407,7 +1401,9 @@ export default function KaraokeZERO() {
         // feed. Back off for 15 s (retrying afterwards allows takeover once
         // the other instance closes) and inform the user. The toast is
         // rate-limited: once immediately, then at most every 5 minutes.
-        if (syncRes.status === 409) {
+        // R43: syncRes === null → post was skipped (module-level yield or
+        // network error) — nothing to evaluate here.
+        if (syncRes && syncRes.status === 409) {
           const conflict = syncConflictRef.current;
           conflict.pausedUntil = Date.now() + 15000;
           const now = Date.now();

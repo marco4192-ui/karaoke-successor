@@ -61,7 +61,7 @@ export function HelpMenu() {
 
   return (
     <div
-      className="fixed inset-0 z-[210] bg-[rgba(2,6,23,0.8)] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[210] bg-[rgba(2,6,23,0.92)] flex items-center justify-center p-4"
       data-testid="help-menu-dialog"
       role="dialog"
       aria-modal="true"

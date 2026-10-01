@@ -27,6 +27,7 @@ import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
+import { postGameState } from '@/lib/desktop-instance';
 import { getSongLoudnessGainDb, applyLoudnessVolume, isSameOriginMedia } from '@/lib/audio/loudness';
 import { resetSharedGainNode } from '@/lib/audio/shared-media-source';
 import { StorageKeys, getBool, getNumber } from '@/lib/storage';
@@ -873,16 +874,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Item 8.1: on unmount (game over / party left) tell the companions the BR
   // game is over — stops their microphone/pitch stream immediately instead of
   // relying on the next periodic sync.
+  // R43: unified postGameState helper (senderId + 409 backoff).
   useEffect(() => {
     return () => {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: { isPlaying: false, songEnded: true, brGameData: null },
-        }),
-      }).catch(() => { /* best-effort */ });
+      void postGameState({ isPlaying: false, songEnded: true, brGameData: null });
     };
   }, []);
 

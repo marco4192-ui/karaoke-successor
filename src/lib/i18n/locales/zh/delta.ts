@@ -1227,6 +1227,8 @@ export const deltaTranslations = {
     assignDeviceQrHint: "或扫描二维码：手机会直接以 {name} 的身份登录，替这位玩家演唱。",
     assignDeviceDone: "已分配 ✓",
     assignDeviceError: "分配失败——请重试",
+    deviceMicActive: "当前使用",
+    micChange: "更换麦克风…",
     deviceMicTaken: "使用中",
     deviceMultiMicHint: "对决模式：检测到 {n} 支麦克风——对决玩家共用麦克风，不固定每人一支。",
     deviceNeedAllCompanion: "所有玩家都必须通过伴侣应用连接才能开始",

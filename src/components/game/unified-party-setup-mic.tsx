@@ -116,28 +116,57 @@ export function SingleMicSelector({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* R43: Aktives Mikro klar vom Auswahl-Dropdown getrennt — die
+            Aufmerksamkeit des Nutzers galt der Doppeldarstellung (oben als
+            Wert UND auswählbar in der Liste). Jetzt: gerahmte Aktiv-Karte
+            (grüner Punkt + Name) + reine „Wechseln“-Liste, in der das
+            aktive Mikro ausgegraut und mit „✓ aktiv“ markiert ist. */}
+        {selectedMicId && selectedMicDisplayName && (
+          <div
+            className="flex items-center gap-3 mb-3 px-3 py-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10"
+            data-testid="sda-active-mic-card"
+          >
+            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+            </span>
+            <span className="text-sm text-white/80 truncate">🎤 {selectedMicDisplayName}</span>
+            <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-emerald-300 bg-emerald-500/20 border border-emerald-400/40 rounded px-2 py-0.5">
+              ✓ {t('unifiedSetup.deviceMicActive')}
+            </span>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <select
-            value={selectedMicId || ''}
+            value=""
             onChange={(e) => {
+              if (!e.target.value) return;
               const mic = savedMics.find(m => m.id === e.target.value);
               if (mic) {
                 onMicChange(mic.id, mic.customName || mic.deviceName);
               }
             }}
             className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            aria-label={t('unifiedSetup.singingDeviceAssignment')}
             data-testid="sda-shared-mic-select"
           >
+            {/* Pure „change“ dropdown — the ACTIVE mic is NOT the select
+                value anymore (that duplication was the UX complaint); the
+                active state lives in the card above. */}
             <option value="">
-              {selectedMicDisplayName
-                ? `${selectedMicDisplayName}`
+              {selectedMicId
+                ? t('unifiedSetup.micChange')
                 : t('unifiedSetup.selectMicrophone')}
             </option>
-            {micOptions.map(mic => (
-              <option key={mic.id} value={mic.id}>
-                {mic.customName || mic.deviceName}
-              </option>
-            ))}
+            {micOptions.map(mic => {
+              const isActive = mic.id === selectedMicId;
+              return (
+                <option key={mic.id} value={mic.id} disabled={isActive}>
+                  {mic.customName || mic.deviceName}
+                  {isActive ? ` — ✓ ${t('unifiedSetup.deviceMicActive')}` : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
         <p className="text-xs text-white/40 mt-2">
@@ -320,21 +349,39 @@ export function SingingDeviceAssignment({
                         </option>
                         {mode === 'flexible' && singleMic
                           ? (
-                            <option value={singleMic.id}>
+                            <option value={singleMic.id}
+                              // R43: own active mic is disabled + „✓ aktiv“ —
+                              // re-picking what you already hold was confusing.
+                              disabled={micAssignments[singleMic.id] === playerId}
+                            >
                               🎤 {micDisplayName(singleMic)}
+                              {micAssignments[singleMic.id] === playerId
+                                ? ` — ✓ ${t('unifiedSetup.deviceMicActive')}`
+                                : usedMicIds.has(singleMic.id)
+                                  ? ` — ${t('unifiedSetup.deviceMicTaken')}`
+                                  : ''}
                             </option>
                           )
                           : savedMics.map(mic => {
                             const takenByOther = usedMicIds.has(mic.id) && micAssignments[mic.id] !== playerId;
+                            // R43: this player's CURRENT mic — visually distinct
+                            // (grayed + „✓ aktiv“) instead of looking like a
+                            // regular selectable entry.
+                            const isActiveForPlayer = micAssignments[mic.id] === playerId;
                             return (
                               <option
                                 key={mic.id}
                                 value={mic.id}
                                 // disabled options can't be selected — but we render them
-                                // grayed in the dropdown to visualize "already in use"
-                                disabled={takenByOther}
+                                // grayed in the dropdown to visualize "already in use / active"
+                                disabled={takenByOther || isActiveForPlayer}
                               >
-                                🎤 {micDisplayName(mic)}{takenByOther ? ` — ${t('unifiedSetup.deviceMicTaken')}` : ''}
+                                🎤 {micDisplayName(mic)}
+                                {isActiveForPlayer
+                                  ? ` — ✓ ${t('unifiedSetup.deviceMicActive')}`
+                                  : takenByOther
+                                    ? ` — ${t('unifiedSetup.deviceMicTaken')}`
+                                    : ''}
                               </option>
                             );
                           })}

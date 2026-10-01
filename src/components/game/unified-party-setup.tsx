@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
+import { postGameState } from '@/lib/desktop-instance';
 import { getYears, getDecades } from '@/lib/game/song-library';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, SingingDeviceAssignment, SingleMicSelector, MottoPartyBanner } from './unified-party-setup.components';
 import { CompanionAssignPanel } from './companion-assign-panel';
@@ -169,11 +170,10 @@ export function UnifiedPartySetup({
           availableDecades,
         },
       };
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'gamestate', payload }),
-      }).catch(() => { /* non-critical */ });
+      // R43: unified gamestate POST — senderId + 409 single-writer backoff
+      // (the pre-R43 bare fetch had no senderId and ignored 409s, which
+      // spammed the console every 2 s whenever another window owned the feed).
+      postGameState(payload);
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- values read fresh; a dep array listing all would be equivalent
