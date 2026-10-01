@@ -20,7 +20,6 @@ export interface CompanionPitchEntry {
   frequency: number | null;
   clarity: number;
   volume: number;
-  isSinging: boolean;
   /** Timestamp when this pitch was last updated from the companion API */
   lastUpdated: number;
 }
@@ -65,7 +64,6 @@ export function useCompanionPitchPolling(
         frequency: d.frequency ?? null,
         clarity: d.clarity ?? 0,
         volume: d.volume ?? 0,
-        isSinging: d.isSinging ?? false,
         lastUpdated: Date.now(),
       });
     });
@@ -100,7 +98,6 @@ export function useCompanionPitchPolling(
             frequency: pitchData.frequency ?? null,
             clarity: pitchData.clarity ?? 0,
             volume: pitchData.volume ?? 0,
-            isSinging: pitchData.isSinging ?? false,
             lastUpdated: now,
           });
         }

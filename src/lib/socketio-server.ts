@@ -137,8 +137,12 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       // from the same desktop page — see the R33 note on hostSockets).
       (socket as HostSocket)._isHost = true;
       hostSockets.add(socket as HostSocket);
+      // R44: log wording clarified — several host sockets are NORMAL (the
+      // desktop app intentionally opens one channel per responsibility:
+      // navigation commands, state pushes, game commands). They are NOT
+      // players and NOT multiple app instances.
       // eslint-disable-next-line no-console
-      console.log(`[Socket.IO] Desktop host registered: ${socket.id} (${hostSockets.size} total)`);
+      console.log(`[Socket.IO] Desktop host channel #${hostSockets.size} (${socket.id}) — internal app channel, not a player`);
 
       // Send current game state to host on registration
       socket.emit('host:registered', {
@@ -292,7 +296,7 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       pitchFeedSockets.add(socket);
       socket.emit('host:pitch-subscribed', { companionCount: companionSockets.size });
       // eslint-disable-next-line no-console
-      console.log(`[Socket.IO] Pitch feed subscriber: ${socket.id} (${pitchFeedSockets.size} total)`);
+      console.log(`[Socket.IO] Pitch feed channel (${socket.id}) — live pitch stream, not a player`);
     });
 
     socket.on('companion:pitch', (data: {
@@ -301,8 +305,6 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       clarity: number;
       volume: number;
       timestamp?: number;
-      isSinging?: boolean;
-      singingConfidence?: number;
     }) => {
       // Companion sends pitch data → store in shared state
       const companionSocket = socket as CompanionSocket;
@@ -324,8 +326,6 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
         clarity,
         volume,
         timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
-        isSinging: data.isSinging,
-        singingConfidence: data.singingConfidence,
       };
 
       // Same store the HTTP batch_pitch handler writes to — every

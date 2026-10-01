@@ -19,8 +19,6 @@ export interface PitchData {
   clarity: number;
   volume: number;
   timestamp: number;
-  isSinging?: boolean;
-  singingConfidence?: number;
 }
 
 export interface MobileProfile {

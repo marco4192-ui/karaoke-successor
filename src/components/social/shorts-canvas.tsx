@@ -75,8 +75,10 @@ export function useCanvasRenderer({
     }
     ctx.globalAlpha = 1;
 
-    // Draw camera feed (PiP or fullscreen)
-    if (hasCamera && cameraPosition !== 'none' && cameraVideoRef.current) {
+    // Draw camera feed (PiP or fullscreen) — only when the video element
+    // actually has frame data (R44: freshly (re-)attached streams need a
+    // moment; drawing a frameless video would paint nothing/transparent).
+    if (hasCamera && cameraPosition !== 'none' && cameraVideoRef.current && cameraVideoRef.current.readyState >= 2) {
       const camVideo = cameraVideoRef.current;
 
       if (cameraPosition === 'fullscreen') {
@@ -89,9 +91,10 @@ export function useCanvasRenderer({
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(0, height - 300, width, 300);
       } else {
-        // Picture-in-Picture
-        const pipWidth = 280;
-        const pipHeight = 500;
+        // Picture-in-Picture (R44/5.5: enlarged so the camera overlay is
+        // clearly visible on the 720×1280 canvas)
+        const pipWidth = 320;
+        const pipHeight = 560;
         const margin = 20;
 
         let pipX = margin;
@@ -210,12 +213,15 @@ export function useCanvasRenderer({
     }
   }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime, t, onProgress]);
 
-  // Animation loop — only run continuous rAF during recording; draw single static preview otherwise
+  // Animation loop — continuous rAF while recording (progress bar) AND
+  // while a camera feed is active (R44: live camera preview instead of a
+  // frozen frame; also covers the fresh <video> remount after "Neu");
+  // single static preview frame otherwise.
   useEffect(() => {
     let animationId: number;
+    const liveCamera = hasCamera && cameraPosition !== 'none';
 
-    if (!isRecording) {
-       
+    if (!isRecording && !liveCamera) {
       drawFrame(performance.now());
       return undefined;
     }
@@ -230,20 +236,68 @@ export function useCanvasRenderer({
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [drawFrame, isRecording]);
+  }, [drawFrame, isRecording, hasCamera, cameraPosition]);
 }
 
 // ---------------------------------------------------------------------------
 // ShortsCanvas – presentational canvas + hidden camera video + REC badge
+// R44: `compact` sizes the canvas by the AVAILABLE HEIGHT so the 9:16 preview
+// never gets clipped inside the ShareBox; non-compact keeps the old
+// width-driven 360px look for any other usage.
 // ---------------------------------------------------------------------------
 
 interface ShortsCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   cameraVideoRef: React.RefObject<HTMLVideoElement | null>;
   isRecording: boolean;
+  /** R44: height-driven sizing — the canvas claims the full slot height and
+   *  derives its width from the intrinsic 9:16 ratio (never clipped). */
+  compact?: boolean;
 }
 
-export function ShortsCanvas({ canvasRef, cameraVideoRef, isRecording }: ShortsCanvasProps) {
+export function ShortsCanvas({ canvasRef, cameraVideoRef, isRecording, compact }: ShortsCanvasProps) {
+  const recBadge = isRecording && (
+    <div className="absolute top-3 right-3 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full">
+      <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+      <span className="text-white text-sm font-medium">REC</span>
+    </div>
+  );
+
+  if (compact) {
+    return (
+      // h-full/w-full root with the canvas in an OUT-OF-FLOW sizing layer:
+      // the 720×1280 canvas has a 1280px intrinsic min-content height that
+      // would otherwise blow up the whole (content-driven) results height
+      // chain. Kept out of flow, the ShareBox stays viewport-bound and the
+      // absolute layer's definite height sizes the canvas instead.
+      <div className="relative h-full w-full overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
+          {/* w-fit + h-full: shrink-wraps around the canvas so the REC badge
+              tracks the canvas corner, while the canvas itself is sized by
+              the slot height (h-full) with its width from the 720×1280 ratio. */}
+          <div className="relative h-full w-fit flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              width={720}
+              height={1280}
+              className="block h-full w-auto rounded-xl border border-white/10"
+            />
+            {recBadge}
+          </div>
+        </div>
+
+        {/* Hidden camera video element */}
+        <video
+          ref={cameraVideoRef}
+          autoPlay
+          playsInline
+          muted
+          className="hidden"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="relative mx-auto" style={{ maxWidth: 360 }}>
       <canvas
@@ -264,12 +318,7 @@ export function ShortsCanvas({ canvasRef, cameraVideoRef, isRecording }: ShortsC
       />
 
       {/* Recording indicator */}
-      {isRecording && (
-        <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full">
-          <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-          <span className="text-white text-sm font-medium">REC</span>
-        </div>
-      )}
+      {recBadge}
     </div>
   );
 }

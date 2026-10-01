@@ -232,7 +232,6 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
       frequency: cachedPitch.frequency ?? null,
       clarity: cachedPitch.clarity,
       volume: cachedPitch.volume,
-      isSinging: cachedPitch.isSinging,
     };
 
     if (shouldSkipPitch(pitchResult, difficulty)) return;

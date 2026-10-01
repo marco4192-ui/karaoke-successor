@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Del dit resultat',
   scoreCard: '📸 Pointkort',
   videoShort: '🎬 Video-short',
+  accentColor: 'Accentfarve',
   textCopied: 'Resultattekst kopieret!',
   textCopyFailed: 'Kunne ikke kopiere',
   imageCopied: 'Resultatbillede kopieret!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Kopiér billede',
   downloadCard: '📥 Download kort',
   shareScore: '📤 Del resultat',
+  noAudioNote: '🔇 Video-shorts oprettes uden lyd for at beskytte mod ophavsretskrænkelser. Du kan tilføje musikken igen i din app til sociale medier.',
 },
 replayModal: {
   copyrightNotice: 'Bemærk: Af ophavsretsgrunde kan ingen original lyd eller vokaler inkluderes i eksporterede replays. Kun din mikrofonoptagelse vil blive brugt.',

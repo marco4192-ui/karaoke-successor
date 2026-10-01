@@ -52,20 +52,35 @@ function isRegistryFailed(src: string | undefined): boolean {
 // (once per songId+src). If the fresh URL differs, the card swaps its src
 // immediately and the cover heals within one re-render instead of staying
 // „empty purple" for the whole session.
+// R44: Tauri folder songs (relativeCoverPath, no media-db record) heal the
+// same way via refreshTauriMediaUrl — a fresh blob URL is loaded from disk
+// and the dead one replaced. This covers BOTH song sources.
 const healedCoverUrls = new Map<string, string>(); // songId → fresh cover URL
 const healAttempts = new Set<string>(); // `${songId}::${src}` — one try per src
 
-async function healCoverUrl(songId: string, deadSrc: string): Promise<void> {
-  const key = `${songId}::${deadSrc}`;
+async function healCoverUrl(song: SongCardProps['song'], deadSrc: string): Promise<void> {
+  const key = `${song.id}::${deadSrc}`;
   if (healAttempts.has(key)) return; // already tried for this src
   healAttempts.add(key);
   try {
-    const { refreshSongMediaUrl } = await import('@/lib/db/media-db');
-    const freshUrl = await refreshSongMediaUrl(songId, 'cover');
-    if (freshUrl && freshUrl !== deadSrc) {
-      healedCoverUrls.set(songId, freshUrl);
+    // Path 1: browser/imported songs — cover blob lives in the media DB.
+    if (song.storedMedia) {
+      const { refreshSongMediaUrl } = await import('@/lib/db/media-db');
+      const freshUrl = await refreshSongMediaUrl(song.id, 'cover');
+      if (freshUrl && freshUrl !== deadSrc) {
+        healedCoverUrls.set(song.id, freshUrl);
+      }
+      return;
     }
-  } catch { /* no media DB entry — keep the ladder/fallback handling */ }
+    // Path 2: Tauri folder songs — cover file on disk via relative path.
+    if (song.relativeCoverPath) {
+      const { refreshTauriMediaUrl } = await import('@/lib/file-storage-media');
+      const freshUrl = await refreshTauriMediaUrl(song.relativeCoverPath, song.baseFolder);
+      if (freshUrl && freshUrl !== deadSrc) {
+        healedCoverUrls.set(song.id, freshUrl);
+      }
+    }
+  } catch { /* no media source — keep the ladder/fallback handling */ }
 }
 
 export function SongCard({ 
@@ -145,10 +160,11 @@ export function SongCard({
   // R43: cover error → request a fresh URL from the media DB (once per src).
   // If one arrives, the healed map wins over the song prop and the image
   // re-mounts with the working src.
+  // R44: also heals Tauri folder songs via their relativeCoverPath.
   const handleCoverError = (src?: string) => {
     markFailed(src);
-    if (src && song.storedMedia) {
-      healCoverUrl(song.id, src).then(() => {
+    if (src && (song.storedMedia || song.relativeCoverPath)) {
+      healCoverUrl(song, src).then(() => {
         if (healedCoverUrls.get(song.id)) setRetryTick(t => t + 1);
       });
     }

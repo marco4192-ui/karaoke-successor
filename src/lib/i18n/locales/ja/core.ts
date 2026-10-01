@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 あなたのスコアをシェア',
   scoreCard: '📸 スコアカード',
   videoShort: '🎬 短い動画',
+  accentColor: 'アクセントカラー',
   textCopied: 'スコアテキストをコピーしました！',
   textCopyFailed: 'コピーに失敗しました',
   imageCopied: 'スコア画像をコピーしました！',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ 画像をコピー',
   downloadCard: '📥 カードをダウンロード',
   shareScore: '📤 スコアをシェア',
+  noAudioNote: '🔇 著作権侵害を防ぐため、ショート動画は音声なしで作成されます。音楽はSNSアプリで後から追加できます。',
 },
 replayModal: {
   copyrightNotice: '注意：著作権の理由により、エクスポートされたリプレイには元の音声やボーカルを含めることはできません。マイクの録音のみが使用されます。',

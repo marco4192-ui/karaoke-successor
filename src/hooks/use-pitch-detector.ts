@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { PitchDetector, getPitchDetector, resetPitchDetector } from '@/lib/audio/pitch-detector';
+import { PitchDetector, getPitchDetector, resetPitchDetector, setPitchDetectorInstance } from '@/lib/audio/pitch-detector';
 import { resolveMicDeviceId } from '@/lib/audio/mic-device-resolver';
 import { PitchDetectionResult, Difficulty } from '@/types/game';
 
@@ -46,12 +46,21 @@ export function usePitchDetector() {
 
   /**
    * Re-initialize the pitch detector with a different microphone device.
-   * Destroys the current instance and creates a new one with the given deviceId.
    *
    * Fast path: when the resolved target device is ALREADY the active one
    * (e.g. PTM player changes where everyone shares one mic), the destroy /
    * getUserMedia / AudioContext cycle is skipped entirely — that cycle is
    * what caused the 1-2 short stutters at every player handoff.
+   *
+   * R44 (overlap-free handoff): when the device actually CHANGES (per-player
+   * mics in PTM), the NEW detector is opened FIRST while the old one keeps
+   * running; only after the new stream is live is the old detector destroyed.
+   * The previous order (stop old → destroy → getUserMedia → new AudioContext)
+   * left an audio-device gap on Windows/WebView2 that briefly stalled the
+   * whole audio pipeline — the visible jerk at every player switch, plus a
+   * second one when the new context spun up. React state (pitchResult /
+   * isListening) is no longer nulled mid-switch either — the display stays
+   * stable and the new frames simply take over.
    */
   const switchMicrophone = useCallback(async (deviceId?: string, stereoChannel?: number) => {
     try {
@@ -78,34 +87,37 @@ export function usePitchDetector() {
         return true;
       }
 
-      // Stop current detector
-      detectorRef.current?.stop();
-      // Destroy and reset singleton so a fresh instance is created.
-      // MUST await resetPitchDetector() — it is async and sets the module-level
-      // singleton to null. Without awaiting, getPitchDetector() on the next line
-      // returns the still-non-null (destroying) instance.
-      await resetPitchDetector();
-      detectorRef.current = null;
-      setIsInitialized(false);
-      setIsListening(false);
-      setPitchResult(null);
-
-      // Re-initialize with new (or no) deviceId
-      const detector = getPitchDetector();
-      const success = await detector.initialize(resolvedId, stereoChannel);
+      // ── Overlap-free device change ──
+      // Open the NEW detector first; keep the old stream alive until the new
+      // one is ready (never a closed-device gap).
+      const fresh = new PitchDetector();
+      const success = await fresh.initialize(resolvedId, stereoChannel);
       if (success) {
-        detectorRef.current = detector;
+        const old = detectorRef.current;
+        detectorRef.current = fresh;
         activeDeviceIdRef.current = resolvedId;
-        setIsInitialized(true);
-        // Auto-start if we were listening before
-        detector.start((result) => {
+
+        // Make the fresh instance the module singleton BEFORE retiring the
+        // old one — concurrent getPitchDetector() callers must never receive
+        // the destroyed instance.
+        setPitchDetectorInstance(fresh);
+
+        // Start the fresh detection loop, THEN close the old device.
+        fresh.start((result) => {
           setPitchResult(result);
         });
+        old?.destroy();
+
+        setIsInitialized(true);
         setIsListening(true);
         // eslint-disable-next-line no-console
-        console.log(`[PitchDetector] switchMicrophone succeeded with deviceId=${deviceId ?? 'default'}`);
+        console.log(`[PitchDetector] switchMicrophone succeeded (overlap-free) with deviceId=${deviceId ?? 'default'}`);
         return true;
       }
+
+      // New device failed to open → the OLD detector keeps running (a failed
+      // handoff target must not leave the game microphone-less).
+      fresh.destroy();
       // eslint-disable-next-line no-console
       console.error(`[PitchDetector] switchMicrophone FAILED: initialize() returned false for deviceId=${deviceId ?? 'default'}`);
       return false;

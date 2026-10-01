@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 分享你的分数',
   scoreCard: '📸 分数卡片',
   videoShort: '🎬 视频短片',
+  accentColor: '强调色',
   textCopied: '分数文本已复制！',
   textCopyFailed: '复制失败',
   imageCopied: '分数图片已复制！',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ 复制图片',
   downloadCard: '📥 下载卡片',
   shareScore: '📤 分享分数',
+  noAudioNote: '🔇 为避免侵犯版权，视频短片将以无声方式生成。你可以在社交媒体应用中重新添加音乐。',
 },
 replayModal: {
   copyrightNotice: '注意：出于版权原因，导出的回放中不能包含原音频或人声。仅使用你的麦克风录音。',

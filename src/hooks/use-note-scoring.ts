@@ -318,7 +318,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const checkPlayerNoteHits = useCallback(
     (
       currentTime: number,
-      pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean },
+      pitch: { frequency: number | null; note: number | null; clarity: number; volume: number },
       _playerIndex: number,
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
@@ -328,10 +328,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       noteIdPrefix: string,
       blindState: BlindScoringState | undefined,
     ) => {
-      const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
-      if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
-      // Vocal detection (isSinging) removed from scoring gate — see P1
-      // checkNoteHits comment for rationale.
+      // R44: NO second volume gate here — the pitch detector's own noise
+      // gate + volume threshold + YIN clarity already decided "there is a
+      // tone". The old DIFFICULTY_SETTINGS.volumeThreshold check was
+      // STRICTER than the detector's gate (medium: scoring 0.04 vs detector
+      // 0.03; hard: 0.06 vs 0.04) — quiet-but-clearly-sung notes fell into
+      // that dead zone and produced massive scoring dropouts on long,
+      // softly sung notes (user report R44 P3).
+      if (!song || !pitch.frequency || pitch.note === null) return;
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
@@ -432,14 +436,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // P1-specific side effects: performance tracking, visual callbacks,
   // duet score events, accuracy calculation, and perfectNotesCount sync.
   const checkNoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
-      const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
-      if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
-      // Vocal detection (isSinging) removed from scoring gate — the
-      // VocalDetector misclassified sustained karaoke notes (low pitch
-      // variance, low onset rate) as "humming", blocking ticks and
-      // destroying combos.  Pitch tolerance + volume threshold already
-      // filter noise; humming on-pitch is valid karaoke play.
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
+      // R44: humming/singing classifier (VocalDetector) deleted entirely, and
+      // the duplicate volume gate removed (see checkPlayerNoteHits comment) —
+      // the pitch detector's noise gate + volume threshold + YIN clarity are
+      // the only gates. Humming on-pitch is valid karaoke play; weak-but-
+      // detected singing no longer falls into a scoring dead zone.
+      if (!song || !pitch.frequency || pitch.note === null) return;
 
       // Use playersRef to avoid stale closure — always get the latest player state
       const activePlayer = playersRef.current[0];
@@ -556,7 +559,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Check P2 notes (duet/party mode)
   const checkP2NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
       if (!isDuetMode) return;
 
       // Build blind state for P2

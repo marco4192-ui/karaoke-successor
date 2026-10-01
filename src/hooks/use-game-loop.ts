@@ -59,7 +59,6 @@ interface UseGameLoopOptions {
   isDuetMode: boolean;
   p2DetectedPitch: number | null;
   p2Volume: number;
-  p2IsSinging?: boolean;
   setP2Volume: (_vol: number) => void;
   // Lifecycle callbacks
   onEnd: () => void;
@@ -143,7 +142,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     isDuetMode,
     p2DetectedPitch,
     p2Volume,
-    p2IsSinging,
     setP2Volume,
     onEnd,
     audioEffects,
@@ -204,7 +202,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const pitchResultRef = useRef(pitchResult);
   const p2DetectedPitchRef = useRef(p2DetectedPitch);
   const p2VolumeRef = useRef(p2Volume);
-  const p2IsSingingRef = useRef(p2IsSinging);
   const youtubeTimeRef = useRef(youtubeTime);
   const nativeAudioTimeRef = useRef(nativeAudioTime);
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
@@ -232,14 +229,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     pitchResultRef.current = pitchResult;
     p2DetectedPitchRef.current = p2DetectedPitch;
     p2VolumeRef.current = p2Volume;
-    p2IsSingingRef.current = p2IsSinging;
     youtubeTimeRef.current = youtubeTime;
     nativeAudioTimeRef.current = nativeAudioTime;
     checkNoteHitsRef.current = checkNoteHits;
     checkP2NoteHitsRef.current = checkP2NoteHits;
     sampleVisualTicksRef.current = sampleVisualTicks;
     sampleP2VisualTicksRef.current = sampleP2VisualTicks;
-  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits, sampleVisualTicks, sampleP2VisualTicks]);
+  }, [pitchResult, p2DetectedPitch, p2Volume, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits, sampleVisualTicks, sampleP2VisualTicks]);
   // DO-NOT-CHANGE: lastPitchStoreUpdateRef was removed to eliminate a
   // separate throttle gate for setDetectedPitch. Previously, setCurrentTime
   // and setDetectedPitch fired on alternating rAF frames (two independent
@@ -746,7 +742,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         const p2PitchResult = buildP2PitchResult({
           frequency: currentP2Pitch,
           volume: currentP2Vol,
-          isSinging: p2IsSingingRef.current ?? true,
         });
         checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {

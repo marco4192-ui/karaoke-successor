@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 점수 공유하기',
   scoreCard: '📸 점수 카드',
   videoShort: '🎬 숏 영상',
+  accentColor: '강조 색상',
   textCopied: '점수 텍스트가 복사되었습니다!',
   textCopyFailed: '복사 실패',
   imageCopied: '점수 이미지가 복사되었습니다!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ 이미지 복사',
   downloadCard: '📥 카드 다운로드',
   shareScore: '📤 점수 공유',
+  noAudioNote: '🔇 저작권 침해를 방지하기 위해 숏 영상은 소리 없이 만들어집니다. 음악은 SNS 앱에서 다시 추가할 수 있습니다.',
 },
 replayModal: {
   copyrightNotice: '참고: 저작권 문제로 인해 내보낸 리플레이에 원본 오디오나 보컬을 포함할 수 없습니다. 마이크 녹음만 사용됩니다.',

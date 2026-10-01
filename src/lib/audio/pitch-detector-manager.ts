@@ -330,8 +330,6 @@ export class PitchDetectorManager {
         rawNote: event.data.note,
         clarity: event.data.clarity || 0,
         volume: event.data.volume || 0,
-        isSinging: event.data.isSinging,
-        singingConfidence: event.data.singingConfidence,
       });
     });
 
@@ -395,8 +393,6 @@ export class PitchDetectorManager {
               rawNote: pitchData.note,
               clarity: pitchData.clarity || 0,
               volume: pitchData.volume || 0,
-              isSinging: pitchData.isSinging,
-              singingConfidence: pitchData.singingConfidence,
             });
           }
         }

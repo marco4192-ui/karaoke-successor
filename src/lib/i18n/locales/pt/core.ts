@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Compartilhe Sua Pontuação',
   scoreCard: '📸 Cartão de Pontuação',
   videoShort: '🎬 Vídeo Curto',
+  accentColor: 'Cor de destaque',
   textCopied: 'Texto da pontuação copiado!',
   textCopyFailed: 'Falha ao copiar',
   imageCopied: 'Imagem da pontuação copiada!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Copiar Imagem',
   downloadCard: '📥 Baixar Cartão',
   shareScore: '📤 Compartilhar Pontuação',
+  noAudioNote: '🔇 Os vídeos curtos são criados sem som para proteção contra violações de direitos autorais. Você pode adicionar a música novamente no seu aplicativo de rede social.',
 },
 replayModal: {
   copyrightNotice: 'Nota: Por razões de direitos autorais, nenhum áudio original ou vocal pode ser incluído nas reproduções exportadas. Apenas sua gravação do microfone será usada.',

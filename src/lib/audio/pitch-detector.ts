@@ -1,5 +1,4 @@
 import { PitchDetectionResult, frequencyToMidi, Difficulty } from '@/types/game';
-import { VocalDetector, VocalDetectionResult } from './vocal-detector';
 import { registerCleanup } from '@/lib/utils/app-cleanup';
 
 // --- Extracted modules ---
@@ -41,13 +40,12 @@ export class PitchDetector {
   // When false, destroy() will NOT stop the tracks — the stream is shared.
   private ownsStream = true;
 
-  // Vocal detection (singing vs. humming/noise)
-  private vocalDetector: VocalDetector;
-  private lastVocalResult: VocalDetectionResult | null = null;
+  // R44: the humming/singing classifier (VocalDetector) was REMOVED entirely —
+  // it misjudged sustained karaoke notes and caused scoring dropouts. Pitch
+  // presence (YIN) + noise gate + volume threshold are the only gates now.
 
   constructor(config: Partial<PitchDetectorConfig> = {}) {
     this.config = { ...KARAOKE_DEFAULT_CONFIG, ...config };
-    this.vocalDetector = new VocalDetector();
     this.pitchStabilizer = new PitchStabilizer(this.config.pitchStabilityFrames);
   }
 
@@ -61,8 +59,6 @@ export class PitchDetector {
   // Set configuration based on difficulty
   setDifficulty(difficulty: Difficulty): void {
     this.setConfig(DIFFICULTY_PITCH_CONFIGS[difficulty]);
-    // Also update vocal detector for this difficulty
-    this.vocalDetector.setDifficulty(difficulty);
   }
 
   /**
@@ -337,8 +333,6 @@ export class PitchDetector {
     this.onPitchDetected = callback;
     this.isListening = true;
     this.pitchStabilizer.reset();
-    this.vocalDetector.reset();
-    this.lastVocalResult = null;
     this.detect();
   }
 
@@ -350,8 +344,6 @@ export class PitchDetector {
     }
     // Clear pitch history to prevent stale data on next start
     this.pitchStabilizer.reset();
-    this.vocalDetector.reset();
-    this.lastVocalResult = null;
   }
 
   private detect(): void {
@@ -373,7 +365,9 @@ export class PitchDetector {
     }
 
     this.analyser.getFloatTimeDomainData(this.buffer as Float32Array<ArrayBuffer>);
-    this.analyser.getFloatFrequencyData(this.frequencyBuffer as Float32Array<ArrayBuffer>);
+    // R44: the frequency-domain read (getFloatFrequencyData) was only needed
+    // by the deleted humming/singing classifier — skipping it saves a full FFT
+    // spectrum copy per frame (~60 Hz per detector).
 
     // Calculate volume (RMS)
     let sum = 0;
@@ -396,8 +390,6 @@ export class PitchDetector {
           rawNote: null,
           clarity: 0,
           volume,
-          isSinging: false,
-          singingConfidence: 0,
         });
         this.animationFrame = requestAnimationFrame(() => this.detect());
         return;
@@ -412,8 +404,6 @@ export class PitchDetector {
         rawNote: null,
         clarity: 0,
         volume,
-        isSinging: false,
-        singingConfidence: 0,
       });
       this.animationFrame = requestAnimationFrame(() => this.detect());
       return;
@@ -425,16 +415,9 @@ export class PitchDetector {
       ? yinPitchDetection(this.buffer, this.yinBuffer, sampleRate, this.config.yinThreshold)
       : null;
 
-    // Re-run vocal detection now with known pitch for better accuracy
     const detectedNote = (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency)
       ? frequencyToMidi(frequency)
       : null;
-    this.lastVocalResult = this.vocalDetector.processFrame(
-      detectedNote,
-      volume,
-      this.frequencyBuffer as Float32Array<ArrayBuffer>,
-      performance.now()
-    );
 
     if (detectedNote !== null) {
       const note = detectedNote;
@@ -442,10 +425,6 @@ export class PitchDetector {
 
       // Pitch stability check
       const stablePitch = this.pitchStabilizer.process(note);
-
-      // Attach vocal detection result
-      const vocalIsSinging = this.lastVocalResult?.isSinging ?? true;
-      const vocalConfidence = this.lastVocalResult?.singingConfidence ?? 1;
 
       // Always report the raw (un-stabilized) note for real-time visual display.
       // The stabilized `note` is used by scoring for accuracy;
@@ -459,8 +438,6 @@ export class PitchDetector {
           rawNote,
           clarity,
           volume,
-          isSinging: vocalIsSinging,
-          singingConfidence: vocalConfidence,
         });
       } else {
         // Still updating stability, use current pitch for both fields
@@ -470,8 +447,6 @@ export class PitchDetector {
           rawNote,
           clarity,
           volume,
-          isSinging: vocalIsSinging,
-          singingConfidence: vocalConfidence,
         });
       }
     } else {
@@ -481,8 +456,6 @@ export class PitchDetector {
         rawNote: null,
         clarity: 0,
         volume,
-        isSinging: false,
-        singingConfidence: 0,
       });
       // Reset stability on no pitch
       this.pitchStabilizer.reset();
@@ -554,4 +527,20 @@ export async function resetPitchDetector(): Promise<void> {
     await pitchDetectorInstance.destroy();
     pitchDetectorInstance = null;
   }
+}
+
+/**
+ * R44 (PTM-Spielerwechsel-Rucken): swap the singleton to an ALREADY-INITIALIZED
+ * detector instance. Used by usePitchDetector.switchMicrophone for an
+ * overlap-free mic change: the NEW detector opens its stream FIRST, then this
+ * swap makes it the singleton, and only THEN the old instance is destroyed —
+ * the audio device is never left in a closed/reopened gap (that gap was the
+ * audible/visible jerk at every PTM player handoff on per-player mics).
+ */
+export function setPitchDetectorInstance(instance: PitchDetector): void {
+  pitchDetectorInstance = instance;
+  registerCleanup('pitch-detector', () => {
+    pitchDetectorInstance?.destroySync();
+    pitchDetectorInstance = null;
+  });
 }

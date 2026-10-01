@@ -8,7 +8,6 @@ export interface MobilePitchData {
   note: number | null;
   volume: number;
   clarity?: number;
-  isSinging?: boolean;
 }
 
 /**

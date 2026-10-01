@@ -9,12 +9,14 @@ import type { HighscoreEntry, Song } from '@/types/game';
 
 interface ScoreCardProps {
   song: Song;
-  score: HighscoreEntry;
+  /** R44: may carry `accentColor` from the ShareBox swatch picker — it flows
+   *  straight into the unified card renderer (WYSIWYG with the shared PNG). */
+  score: HighscoreEntry & { accentColor?: string };
   playerName: string;
   playerAvatar?: string;
   /** R42: compact mode for the results ShareBox — hides the internal action
-   *  buttons (the ShareBox provides ONE unified action row) and shrinks the
-   *  preview so the whole results screen fits one 1080p view. */
+   *  buttons (the ShareBox provides ONE unified action row) and lets the
+   *  preview fill the whole ShareBox content area (R44: no more 280px cap). */
   compact?: boolean;
 }
 
@@ -87,23 +89,32 @@ export function ScoreCard({ song, score, playerName, playerAvatar, compact }: Sc
   const ratingLabel = t(`scoreVisualization.${score.rating}`);
   const ratingText = ratingLabel === `scoreVisualization.${score.rating}` ? score.rating : ratingLabel;
 
+  // R44: compact mode — the preview is allowed to claim ALL the space the
+  // ShareBox offers (fills width AND height, letterboxed via object-contain).
+  const previewWrapperClass = compact
+    ? 'flex-1 min-h-0 flex items-center justify-center'
+    : 'max-w-md mx-auto';
+  const previewImgClass = compact
+    ? 'max-h-full max-w-full object-contain rounded-xl border border-white/10 shadow-lg'
+    : 'w-full rounded-xl border border-white/10 shadow-lg';
+
   return (
-    <div className="space-y-3">
+    <div className={compact ? 'flex-1 min-h-0 flex flex-col' : 'space-y-3'}>
       {/* Hidden canvas for export */}
       <canvas ref={canvasRef} className="hidden" aria-hidden />
 
       {/* WYSIWYG preview — the exact PNG that gets shared */}
       {previewUrl ? (
-        <div className={compact ? 'max-w-[280px] mx-auto' : 'max-w-md mx-auto'}>
+        <div className={previewWrapperClass}>
           <img
             src={previewUrl}
             alt={`${t('shareSection.scoreCard')} — ${song.title}`}
-            className="w-full rounded-xl border border-white/10 shadow-lg"
+            className={previewImgClass}
           />
         </div>
       ) : (
         /* Fallback: DOM approximation (e.g. canvas blocked) */
-        <div className={`relative aspect-[1200/630] w-full ${compact ? 'max-w-[280px]' : 'max-w-md'} mx-auto rounded-xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-white/10`}>
+        <div className={`relative aspect-[1200/630] w-full ${compact ? 'max-h-full' : 'max-w-md'} mx-auto rounded-xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-white/10`}>
           <div className="relative p-4 h-full flex flex-col">
             <div className="text-white/60 text-[10px] font-medium">{t('scoreCardSocial.branding')}</div>
             <div className="mt-2 flex-1 min-w-0">

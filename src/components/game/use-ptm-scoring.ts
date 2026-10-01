@@ -101,6 +101,16 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
 
+  // R44 (stockt-fix): pitchResult changes ~30–60×/sec (every detection
+  // frame). Keeping it in the scoreCurrentPlayer/sampleVisualTicks deps
+  // recreated those callbacks — and with them the RAF loop effect — on EVERY
+  // frame: a permanent cancel/requestAnimationFrame churn that surfaced as
+  // micro-stutter during the whole song (worst at player switches). Both
+  // callbacks now read the CURRENT pitch from this ref instead; their deps
+  // only change on real game events (song/segment/difficulty/player).
+  const pitchResultRef = useRef(pitchResult);
+  pitchResultRef.current = pitchResult;
+
   // ── Scoring dead-zone fix (medley snippets) ──
   // Each medley snippet is a DIFFERENT file: when the segment switches, the
   // media seeks to the snippet position and the song clock JUMPS — often
@@ -187,8 +197,9 @@ export function usePtmScoring({
     // (same key format NoteBlock uses to look samples up).
     const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
 
-    const sungPitchRaw = pitchResult?.note ?? null;
-    const hasPitch = sungPitchRaw !== null && pitchResult !== null && pitchResult.frequency !== null;
+    const pitch = pitchResultRef.current;
+    const sungPitchRaw = pitch?.note ?? null;
+    const hasPitch = sungPitchRaw !== null && pitch !== null && pitch.frequency !== null;
 
     let accuracy = 0;
     let hit = false;
@@ -231,7 +242,7 @@ export function usePtmScoring({
     if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
       samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
     }
-  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, playersRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, playersRef]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
@@ -239,6 +250,7 @@ export function usePtmScoring({
     // No pitch result yet (mic still initializing after a handoff) or silent
     // input between notes — both are NORMAL during play, not warnings. The
     // visual sampler below keeps recording miss samples for the fill display.
+    const pitchResult = pitchResultRef.current;
     if (!pitchResult) return;
 
     if (shouldSkipPitch(pitchResult, difficulty)) return;
@@ -271,7 +283,7 @@ export function usePtmScoring({
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
 
   // ── Game loop: score during playing (visual sampling every frame) ──
   useEffect(() => {

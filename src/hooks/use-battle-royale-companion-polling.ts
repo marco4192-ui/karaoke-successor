@@ -8,7 +8,6 @@ interface CompanionPitchEntry {
   note: number | null;
   frequency: number | null;
   accuracy: number;
-  isSinging?: boolean;
   /** Timestamp when this pitch was last updated from the companion API */
   lastUpdated: number;
 }
@@ -104,7 +103,6 @@ export function useBattleRoyaleCompanionPolling({
         note: d.note ?? null,
         frequency: d.frequency ?? null,
         accuracy: 0,
-        isSinging: d.isSinging,
         lastUpdated: Date.now(),
       });
     });
@@ -156,7 +154,6 @@ export function useBattleRoyaleCompanionPolling({
             note: pitchData.note ?? null,
             frequency: pitchData.frequency ?? null,
             accuracy: pitchData.accuracy || 0,
-            isSinging: pitchData.isSinging,
             lastUpdated: now,
           });
         }

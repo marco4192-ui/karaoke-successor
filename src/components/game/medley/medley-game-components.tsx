@@ -34,7 +34,9 @@ export function PlayerIntroCard({ player, inputLabel }: { player: MedleyPlayer; 
 
 /** Per-player pitch indicator using individual pitch detection result */
 export function PitchIndicator({ player, pitch }: { player: MedleyPlayer; pitch: PitchDetectionResult | null }) {
-  const isSinging = pitch?.isSinging === true && (pitch?.volume ?? 0) > 0.05;
+  // R44: humming classifier removed — a detected tone (note != null) with
+  // audible volume counts as singing.
+  const isSinging = pitch?.note != null && (pitch?.volume ?? 0) > 0.05;
 
   // Calculate a simple accuracy visualization (0-100) based on clarity + singing state
   const accuracy = isSinging && pitch?.clarity != null

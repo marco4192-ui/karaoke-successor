@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Deel je score',
   scoreCard: '📸 Scorekaart',
   videoShort: '🎬 Korte video',
+  accentColor: 'Accentkleur',
   textCopied: 'Scoretekst gekopieerd!',
   textCopyFailed: 'Kopiëren mislukt',
   imageCopied: 'Scoreafbeelding gekopieerd!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Afbeelding kopiëren',
   downloadCard: '📥 Kaart downloaden',
   shareScore: '📤 Score delen',
+  noAudioNote: '🔇 Korte video\'s worden zonder geluid gemaakt om inbreuk op het auteursrecht te voorkomen. Je kunt de muziek opnieuw toevoegen in je socialmedia-app.',
 },
 replayModal: {
   copyrightNotice: 'Let op: Om redenen van auteursrecht kunnen geen originele audio of vocalen worden opgenomen in geëxporteerde herhalingen. Alleen je microfoonopname wordt gebruikt.',

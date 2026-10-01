@@ -364,8 +364,10 @@ export interface PitchDetectionResult {
   rawNote: number | null; // Raw, un-stabilized pitch — used for real-time visual display
   clarity: number; // 0-1 confidence
   volume: number; // 0-1
-  isSinging?: boolean; // Vocal detection: true if singing (not humming/noise)
-  singingConfidence?: number; // 0-1 confidence of singing detection
+  // R44: isSinging/singingConfidence REMOVED — the humming/singing classifier
+  // (VocalDetector) was deleted entirely. "A tone is detected" (note != null,
+  // gated by the detector's noise gate + volume threshold + YIN clarity) is
+  // the single source of truth for activity, for scoring AND for visuals.
 }
 
 export const DIFFICULTY_SETTINGS = {

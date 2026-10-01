@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Condividi il tuo Punteggio',
   scoreCard: '📸 Scheda Punteggio',
   videoShort: '🎬 Video Breve',
+  accentColor: 'Colore accento',
   textCopied: 'Testo del punteggio copiato!',
   textCopyFailed: 'Copia fallita',
   imageCopied: 'Immagine del punteggio copiata!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Copia Immagine',
   downloadCard: '📥 Scarica Scheda',
   shareScore: '📤 Condividi Punteggio',
+  noAudioNote: '🔇 I video brevi vengono creati senza audio per evitare violazioni del diritto d\'autore. Puoi aggiungere di nuovo la musica nella tua app social.',
 },
 replayModal: {
   copyrightNotice: 'Nota: Per ragioni di copyright, nessun audio o voce originale può essere incluso nei replay esportati. Verrà usata solo la tua registrazione dal microfono.',

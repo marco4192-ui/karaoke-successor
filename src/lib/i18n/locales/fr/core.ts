@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Partagez votre Score',
   scoreCard: '📸 Carte de Score',
   videoShort: '🎬 Vidéo Courte',
+  accentColor: 'Couleur d\'accentuation',
   textCopied: 'Texte du score copié !',
   textCopyFailed: 'Échec de la copie',
   imageCopied: 'Image du score copiée !',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Copier l\'Image',
   downloadCard: '📥 Télécharger la Carte',
   shareScore: '📤 Partager le Score',
+  noAudioNote: '🔇 Les vidéos courtes sont créées sans son pour éviter toute violation des droits d\'auteur. Vous pouvez remettre la musique dans votre application de réseaux sociaux.',
 },
 replayModal: {
   copyrightNotice: 'Note : Pour des raisons de droits d\'auteur, aucun audio original ne peut être inclus dans les replays exportés. Seul l\'enregistrement du microphone sera utilisé.',

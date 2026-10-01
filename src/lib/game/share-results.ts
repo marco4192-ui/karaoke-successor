@@ -18,9 +18,12 @@ interface ShareableScoreCard {
   /** R42: avatar data-URL + profile color — used by the unified card renderer */
   playerAvatar?: string;
   playerColor?: string;
+  /** R44: accent color chosen in the ShareBox — flows into the generated PNG
+   *  (decorative circle, main score text, playerColor fallback). */
+  accentColor?: string;
 }
 
-export function createShareableCard(entry: HighscoreEntry & { playerAvatar?: string; playerColor?: string }): ShareableScoreCard {
+export function createShareableCard(entry: HighscoreEntry & { playerAvatar?: string; playerColor?: string; accentColor?: string }): ShareableScoreCard {
   return {
     playerName: entry.playerName,
     songTitle: entry.songTitle,
@@ -35,6 +38,7 @@ export function createShareableCard(entry: HighscoreEntry & { playerAvatar?: str
     playedAt: entry.playedAt,
     playerAvatar: entry.playerAvatar,
     playerColor: entry.playerColor,
+    accentColor: entry.accentColor,
   };
 }
 
@@ -77,6 +81,8 @@ function generateShareText(card: ShareableScoreCard): string {
 export function renderScoreCardCanvas(card: ShareableScoreCard): HTMLCanvasElement {
   const width = 1200;
   const height = 630;
+  // R44: user-chosen accent color (ShareBox swatch picker), cyan default
+  const accent = card.accentColor || '#00d9ff';
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -93,7 +99,7 @@ export function renderScoreCardCanvas(card: ShareableScoreCard): HTMLCanvasEleme
 
   // Decorative circles
   ctx.globalAlpha = 0.1;
-  ctx.fillStyle = '#00d9ff';
+  ctx.fillStyle = accent;
   ctx.beginPath();
   ctx.arc(width - 100, 100, 200, 0, Math.PI * 2);
   ctx.fill();
@@ -134,7 +140,7 @@ export function renderScoreCardCanvas(card: ShareableScoreCard): HTMLCanvasEleme
   ctx.fill();
 
   // Main score
-  ctx.fillStyle = '#00d9ff';
+  ctx.fillStyle = accent;
   ctx.font = 'bold 72px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(card.score.toLocaleString(), width / 2, 310);
@@ -158,7 +164,7 @@ export function renderScoreCardCanvas(card: ShareableScoreCard): HTMLCanvasEleme
   ctx.fillText(tt('share.difficulty'), 680, statsY + 30);
 
   // Player info (initial circle in profile color + name)
-  const playerColor = card.playerColor || '#00d9ff';
+  const playerColor = card.playerColor || accent;
   ctx.fillStyle = playerColor;
   ctx.beginPath();
   ctx.arc(66, 505, 24, 0, Math.PI * 2);

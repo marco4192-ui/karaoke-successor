@@ -170,7 +170,9 @@ export const coreTranslations = {
     copyText: '📋 Copy Text',
     copyImage: '🖼️ Copy Image',
     downloadCard: '📥 Download Card',
-    shareScore: '📤 Share Score'
+    shareScore: '📤 Share Score',
+    accentColor: 'Accent color',
+    noAudioNote: '🔇 Video shorts are created without sound to protect against copyright violations. You can add the music back in your social media app.'
   },
 
   replayModal: {

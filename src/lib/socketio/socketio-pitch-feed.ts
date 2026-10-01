@@ -31,8 +31,6 @@ export interface SocketPitchFrame {
   clarity: number;
   volume: number;
   timestamp: number;
-  isSinging?: boolean;
-  singingConfidence?: number;
 }
 
 /** Push event delivered to subscribers — mirrors the getpitch HTTP entry

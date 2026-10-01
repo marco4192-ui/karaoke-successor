@@ -1195,11 +1195,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
           // Score all active MICROPHONE players — each with THEIR OWN pitch detector.
           // R9 (user request 2.1 — "nur jeder zweite Ton wird gewertet"): the
-          // isSinging gate is REMOVED from scoring. The VocalDetector classifies
+          // former humming/singing gate is REMOVED from scoring. It classified
           // sustained steady notes (low pitch variance, no fresh onset) as
           // "humming" — exactly what a held karaoke syllable looks like — so the
           // gate dropped ticks in a regular per-note rhythm (same fix the
           // single-player mode already made, see use-note-scoring.ts P1).
+          // R44: the classifier is deleted entirely (VocalDetector removed).
           // Pitch presence + the detector's own volume/noise gates filter noise.
           // R14 (user request 6): + pitch hold — see lastValidPitchRef above.
           for (const player of micPlayers) {
@@ -1244,8 +1245,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           for (const player of companionPlayers) {
             const cachedPitch = companionPitchCacheRef.current.get(player.id);
 
-            // R9 (2.1): isSinging gate removed for companions too (see mic
-            // loop above) — score on detected pitch presence.
+            // R9 (2.1): humming/singing gate removed for companions too (see
+            // mic loop above) — score on detected pitch presence.
             // R14 (6): same pitch hold as mic players — the phone-side
             // detector misses frames just like the local YIN does.
             if (cachedPitch) {
@@ -1351,7 +1352,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             ? companionPitchCacheRef.current.get(p.id)
             : multiPitchRef.current.getPlayerPitch(p.id);
           const sungNote = pitch && pitch.note != null ? pitch.note : null;
-          const singing = !!pitch && pitch.note != null && pitch.isSinging !== false;
+          const singing = !!pitch && pitch.note != null;
 
           // Target: the active note closest to the sung pitch (or the first).
           let targetNote: number | null = activeNotes[0].pitch;

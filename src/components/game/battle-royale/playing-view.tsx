@@ -837,7 +837,7 @@ export function PlayingView({
                       const pp = playerPitchMap.get(player.id);
                       const hasError = multiPitchErrors.has(player.id);
                       if (hasError) return <span className="text-[8px] text-red-400">{t('battleRoyale.micError')}</span>;
-                      if (pp && pp.isSinging && pp.note != null) return <span className="text-[8px] text-green-400">🎤●</span>;
+                      if (pp && pp.note != null) return <span className="text-[8px] text-green-400">🎤●</span>;
                       if (pp && pp.volume > 0.01) return <span className="text-[8px] text-yellow-400">🎤○</span>;
                       return <span className="text-[8px] text-white/20">🎤</span>;
                     })()}

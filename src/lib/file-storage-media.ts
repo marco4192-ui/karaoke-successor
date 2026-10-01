@@ -58,11 +58,26 @@ function scheduleDelayedRevoke(url: string) {
   }, 30_000));
 }
 
-/** Evict the oldest entry from cache using DELAYED revocation. */
+/** Evict the oldest entry from cache using DELAYED revocation.
+ *  R44 (cover-killer fix): COVER files are NEVER revoked on eviction — only
+ *  dropped from the cache. Covers are small (KB-range) and stay referenced
+ *  by Song objects in app state / the library snapshot for the whole
+ *  session; revoking an in-use cover URL left a dead `blob:` string in every
+ *  still-displayed grid tile (net::ERR_FILE_NOT_FOUND, ~30% broken covers
+ *  after the cache grew past BLOB_CACHE_MAX during long sessions). Audio/
+ *  video files keep the delayed revoke — they are large, and the currently
+ *  playing media is always the NEWEST cache entry (never the eviction
+ *  victim). */
 function evictBlobUrl(key: string) {
   const url = blobUrlCache.get(key);
   if (url) {
     blobUrlCache.delete(key);
+    const ext = '.' + key.split('/').pop()?.split('.').pop()?.toLowerCase();
+    if (COVER_EXTENSIONS.includes(ext as typeof COVER_EXTENSIONS[number])) {
+      // Cover: drop from cache, keep the URL alive (Song objects may still
+      // reference it; worst case is a bounded, small-blob memory hold).
+      return;
+    }
     scheduleDelayedRevoke(url);
   }
 }
@@ -365,9 +380,69 @@ async function loadSongMediaUrlUncached(relativePath: string, baseFolder?: strin
 // elements just about to load). The 30 s grace matches cacheBlobUrl's
 // replacement policy; the next getSongMediaUrl for the same path re-creates
 // a fresh URL and cancels the pending revoke (scheduleDelayedRevoke).
+// R44: covers survive this clear alive (same rationale as evictBlobUrl) —
+// a full rescan replaces the song store, but still-displayed grids may hold
+// the old URL strings a while longer.
 export function clearBlobUrlCache(): void {
-  for (const url of blobUrlCache.values()) {
+  for (const [key, url] of blobUrlCache.entries()) {
+    const ext = '.' + key.split('/').pop()?.split('.').pop()?.toLowerCase();
+    if (COVER_EXTENSIONS.includes(ext as typeof COVER_EXTENSIONS[number])) {
+      blobUrlCache.delete(key);
+      continue;
+    }
     scheduleDelayedRevoke(url);
   }
+  // Re-insert nothing — cache is empty; note cover entries were REMOVED
+  // without revoke, so their URLs stay valid for current consumers.
   blobUrlCache.clear();
+}
+
+/**
+ * R44 (cover self-healing, Tauri path): force a FRESH load of a media file
+ * from disk, bypassing (and replacing) the cached URL for that path.
+ *
+ * Why: if a cached cover URL died anyway (external revoke, edge cases the
+ * eviction policy can't cover), getSongMediaUrl keeps returning the DEAD
+ * cached string forever (`if (cachedUrl) return cachedUrl`). The SongCard
+ * error path calls this to heal: a fresh blob URL is created from disk, the
+ * cache entry is replaced, and the OLD (suspected dead) URL is NOT revoked —
+ * revoking it could kill a parallel consumer that still loads it (one
+ * bounded URL leak per heal at worst).
+ *
+ * Returns the fresh URL, or null when the file can't be read.
+ */
+export async function refreshTauriMediaUrl(
+  relativePath: string,
+  baseFolder?: string,
+): Promise<string | null> {
+  if (!isTauri()) return null;
+  try {
+    let songsFolder = baseFolder;
+    if (!songsFolder) {
+      const raw = getItem(StorageKeys.SONGS_FOLDER);
+      songsFolder = raw ? normalizeFilePath(raw) : undefined;
+    }
+    const normalizedBaseFolder = songsFolder ? normalizeFilePath(songsFolder) : undefined;
+    const normalizedRelativePath = normalizeFilePath(relativePath);
+    const fullPath = normalizedBaseFolder
+      ? `${normalizedBaseFolder}/${normalizedRelativePath}`
+      : normalizedRelativePath;
+
+    // Load fresh from disk — do NOT touch the cached entry until we have a
+    // working new URL.
+    let url = await loadFileAsBlobUrl(fullPath);
+    if (!url && fullPath.includes('/')) {
+      // Windows backslash fallback (same as the primary loader)
+      url = await loadFileAsBlobUrl(fullPath.replace(/\//g, '\\'));
+    }
+    if (!url) return null;
+
+    // Replace the cache entry WITHOUT revoking the old URL (see doc above).
+    blobUrlCache.set(fullPath, url);
+    return url;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[TauriFS] refreshTauriMediaUrl failed:', relativePath, error);
+    return null;
+  }
 }

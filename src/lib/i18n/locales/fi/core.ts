@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Jaa tuloksesi',
   scoreCard: '📸 Tuloskortti',
   videoShort: '🎬 Videoshortti',
+  accentColor: 'Korostusväri',
   textCopied: 'Tulosteksti kopioitu!',
   textCopyFailed: 'Kopiointi epäonnistui',
   imageCopied: 'Tuloskuva kopioitu!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Kopioi kuva',
   downloadCard: '📥 Lataa kortti',
   shareScore: '📤 Jaa tulos',
+  noAudioNote: '🔇 Videoshortit luodaan ilman ääntä, jotta tekijänoikeuksia ei rikotaan. Voit lisätä musiikin takaisin some-sovelluksessa.',
 },
 replayModal: {
   copyrightNotice: 'Huomautus: Tekijänoikeussyistä johtuen alkuperäistä ääntä tai laulua ei voi sisällyttää vientireplayihin. Vain mikrofonitallenteesi käytetään.',

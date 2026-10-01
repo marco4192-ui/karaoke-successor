@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Del poengsummen din',
   scoreCard: '📸 Poengkort',
   videoShort: '🎬 Kort video',
+  accentColor: 'Aksentfarge',
   textCopied: 'Poengtekst kopiert!',
   textCopyFailed: 'Kunne ikke kopiere',
   imageCopied: 'Poengbilde kopiert!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Kopier bilde',
   downloadCard: '📥 Last ned kort',
   shareScore: '📤 Del poeng',
+  noAudioNote: '🔇 Korte videoer lages uten lyd for å beskytte mot brudd på opphavsretten. Du kan legge til musikken igjen i appen din for sosiale medier.',
 },
 replayModal: {
   copyrightNotice: 'Merk: Av opphavsrettslige årsaker kan ingen original lyd eller vokaler inkluderes i eksporterte repriser. Bare opptaket fra mikrofonen din vil bli brukt.',

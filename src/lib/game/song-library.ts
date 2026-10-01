@@ -797,8 +797,15 @@ export async function getAllSongsAsync(): Promise<Song[]> {
     // PERFORMANCE: Only restore COVER URLs eagerly (small images for library grid).
     // Audio/Video URLs are restored lazily when a song is actually played (via ensureSongUrls).
     // This avoids loading potentially hundreds of MB of video data at library load time.
+    // R44 (cover-bug fix): a song whose coverImage is a blob: URL is ALSO
+    // re-derived — blob: URLs never survive a page reload, and even in-session
+    // they can die (cache eviction edge cases). The old `!song.coverImage`
+    // filter skipped them, so a dead blob: string reached the <img> tiles
+    // (net::ERR_FILE_NOT_FOUND). Re-deriving is cheap: getSongMediaUrl returns
+    // the cached (alive) URL on a hit and only loads from disk when needed.
     const songsNeedingCover = songs.filter(song =>
-      song.relativeCoverPath && !song.coverImage
+      song.relativeCoverPath &&
+      (!song.coverImage || song.coverImage.startsWith('blob:'))
     );
     const coverUrlMap = new Map<string, string>();
     // Load covers in batches to avoid filesystem I/O spikes
@@ -815,6 +822,9 @@ export async function getAllSongsAsync(): Promise<Song[]> {
     const restoredTauri = songs.map(song => {
       const coverUrl = coverUrlMap.get(song.id);
       if (coverUrl) return { ...song, coverImage: coverUrl };
+      // No cover loaded → drop a stale/dead blob: URL so the card shows the
+      // clean placeholder instead of a broken image icon.
+      if (song.coverImage?.startsWith('blob:')) return { ...song, coverImage: undefined };
       return song;
     });
     librarySnapshot = { songs: restoredTauri, version: libraryVersion };

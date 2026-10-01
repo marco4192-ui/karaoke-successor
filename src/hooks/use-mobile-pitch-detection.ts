@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PitchData } from '@/components/screens/mobile/mobile-types';
-import { VocalDetector } from '@/lib/audio/vocal-detector';
 import { yinPitchDetection } from '@/lib/audio/pitch-algorithm';
 
 interface UseMobilePitchDetectionOptions {
@@ -20,8 +19,6 @@ interface UseMobilePitchDetectionOptions {
     clarity: number;
     volume: number;
     timestamp?: number;
-    isSinging?: boolean;
-    singingConfidence?: number;
   }) => boolean;
 }
 
@@ -40,7 +37,6 @@ export function useMobilePitchDetection({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const vocalDetectorRef = useRef<VocalDetector | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
   const lastPitchUpdateRef = useRef<number>(0);
@@ -52,8 +48,6 @@ export function useMobilePitchDetection({
     clarity: number;
     volume: number;
     timestamp: number;
-    isSinging: boolean;
-    singingConfidence: number;
   }>>([]);
   const MAX_BATCH_SIZE = 10;
   const BATCH_FLUSH_INTERVAL = 200; // ms — 5 flushes/sec
@@ -116,7 +110,7 @@ export function useMobilePitchDetection({
   // Send a single pitch frame (fallback when batch approach fails)
   const sendSinglePitch = useCallback((
     activeClientId: string,
-    frame: { frequency: number | null; note: number | null; clarity: number; volume: number; timestamp: number; isSinging: boolean; singingConfidence: number },
+    frame: { frequency: number | null; note: number | null; clarity: number; volume: number; timestamp: number },
   ) => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
@@ -200,10 +194,10 @@ export function useMobilePitchDetection({
       analyserRef.current.fftSize = 4096;
       analyserRef.current.smoothingTimeConstant = 0.8;
       source.connect(analyserRef.current);
-      
-      // Initialize vocal detector for humming detection
-      vocalDetectorRef.current = new VocalDetector();
-      
+
+      // R44: humming/singing classifier (VocalDetector) removed — pitch
+      // presence (YIN) is the single activity signal.
+
       setIsListening(true);
       
       // Reset batch state for this session
@@ -223,7 +217,6 @@ export function useMobilePitchDetection({
       startBatchTimer();
 
       const buffer = new Float32Array(analyserRef.current.fftSize);
-      const freqBuffer = new Float32Array(analyserRef.current.frequencyBinCount);
       // Pre-allocate YIN scratch buffer outside the RAF loop to avoid GC pressure
       const yinBuffer = new Float32Array(Math.floor(buffer.length / 2));
       
@@ -251,8 +244,7 @@ export function useMobilePitchDetection({
         }
         
         analyserRef.current.getFloatTimeDomainData(buffer);
-        analyserRef.current.getFloatFrequencyData(freqBuffer);
-        
+
         let sum = 0;
         for (let i = 0; i < buffer.length; i++) {
           sum += buffer[i] * buffer[i];
@@ -266,17 +258,9 @@ export function useMobilePitchDetection({
         if (frequency !== null && frequency >= 65 && frequency <= 1047) {
           note = 69 + 12 * Math.log2(frequency / 440);
         }
-        
-        // Run vocal detection to distinguish singing from humming
-        const vocalResult = vocalDetectorRef.current?.processFrame(
-          note,
-          volume,
-          freqBuffer,
-          performance.now()
-        );
-        const isSinging = vocalResult?.isSinging ?? true;
-        const singingConfidence = vocalResult?.singingConfidence ?? 1;
-        
+
+        // R44: vocal detection removed — a detected tone is activity.
+
         // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders from 60fps RAF loop
         const pitchNow = performance.now();
         if (pitchNow - lastPitchUpdateRef.current >= 50) {
@@ -294,8 +278,6 @@ export function useMobilePitchDetection({
             clarity: 0,
             volume,
             timestamp: Date.now(),
-            isSinging,
-            singingConfidence,
           };
 
           // Preferred path: Socket.IO push (~30 Hz). The server writes the

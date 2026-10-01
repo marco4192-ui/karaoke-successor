@@ -570,7 +570,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     isDuetMode,
     p2DetectedPitch,
     p2Volume,
-    p2IsSinging: mobilePitch?.isSinging,
     setP2Volume,
     onEnd: handleEnd,
     audioEffects,

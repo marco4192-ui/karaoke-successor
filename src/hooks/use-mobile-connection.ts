@@ -398,8 +398,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     clarity: number;
     volume: number;
     timestamp?: number;
-    isSinging?: boolean;
-    singingConfidence?: number;
   }): boolean => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('companion:pitch', pitch);

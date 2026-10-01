@@ -140,11 +140,11 @@ export interface UseNoteScoringReturn {
   /** Functions */
   checkNoteHits: (
     _currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
   ) => void;
   checkP2NoteHits: (
     _currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
   ) => void;
 
   /** High-rate visual tick sampler — called every frame from game loop.

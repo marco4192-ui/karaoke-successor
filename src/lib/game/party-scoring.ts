@@ -38,7 +38,6 @@ interface PitchInput {
   note: number | null;
   frequency: number | null;
   volume: number;
-  isSinging?: boolean;
 }
 
 /** Result of scoring a single tick against a note. */
@@ -100,22 +99,24 @@ export function findActiveNoteFlat(
 
 /**
  * Check whether pitch input is valid for scoring.
- * Returns `true` if the pitch should be skipped (invalid / too quiet / humming).
+ * Returns `true` if the pitch should be skipped (no note / invalid data).
+ *
+ * R44: the volume check is REMOVED — the pitch detector's own noise gate +
+ * volume threshold + YIN clarity already decided "there is a tone", and the
+ * old DIFFICULTY_SETTINGS.volumeThreshold gate was stricter than the
+ * detector's own gate (medium: 0.04 vs 0.03; hard: 0.06 vs 0.04). Quiet but
+ * clearly sung notes fell into that dead zone and produced massive scoring
+ * dropouts on long, softly sung notes. (The humming/singing classifier was
+ * deleted entirely — humming on-pitch is valid karaoke play.)
  */
 export function shouldSkipPitch(
   pitch: PitchInput,
-  difficulty: Difficulty,
+  _difficulty: Difficulty,
 ): boolean {
   // No note at all → nothing to score
   if (pitch.note === null) return true;
   // Frequency is present but invalid (0 Hz or NaN) → skip
   if (pitch.frequency !== null && pitch.frequency !== undefined && !pitch.frequency) return true;
-  const diffSettings = DIFFICULTY_SETTINGS[difficulty];
-  if (!diffSettings) return true;
-  if (pitch.volume < diffSettings.volumeThreshold) return true;
-  // Vocal detection (isSinging) removed from scoring gate — the VocalDetector
-  // misclassified sustained karaoke notes as "humming", blocking scoring.
-  // Pitch tolerance + volume threshold already filter noise.
   return false;
 }
 

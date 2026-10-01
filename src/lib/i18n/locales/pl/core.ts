@@ -118,6 +118,7 @@ shareSection: {
   title: '📤 Udostępnij swój wynik',
   scoreCard: '📸 Karta wyników',
   videoShort: '🎬 Krótkie wideo',
+  accentColor: 'Kolor akcentu',
   textCopied: 'Tekst wyniku skopiowany!',
   textCopyFailed: 'Nie udało się skopiować',
   imageCopied: 'Obraz wyniku skopiowany!',
@@ -127,6 +128,7 @@ shareSection: {
   copyImage: '🖼️ Kopiuj obraz',
   downloadCard: '📥 Pobierz kartę',
   shareScore: '📤 Udostępnij wynik',
+  noAudioNote: '🔇 Krótkie wideo są tworzone bez dźwięku, aby chronić przed naruszeniami praw autorskich. Muzykę możesz dodać ponownie w aplikacji społecznościowej.',
 },
 replayModal: {
   copyrightNotice: 'Uwaga: Ze względu na prawa autorskie, oryginalne audio lub wokale nie mogą być dołączone do eksportowanych powtórek. Zostanie użyte tylko nagranie z mikrofonu.',

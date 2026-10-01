@@ -16,17 +16,22 @@ import {
 interface ShortsCreatorProps {
   song: Song;
   score: HighscoreEntry;
-  audioUrl?: string;
+  /**
+   * R44: compact layout for the results ShareBox —
+   *  · the 9:16 canvas is sized by the AVAILABLE HEIGHT (never clipped),
+   *  · controls are condensed to single rows,
+   *  · a finished recording REPLACES the live canvas in the same slot
+   *    (R44/5.6) and hides all configuration controls.
+   */
+  compact?: boolean;
 }
 
-export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
+export function ShortsCreator({ song, score, compact }: ShortsCreatorProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,15 +39,11 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
 
-  // Cleanup on unmount: revoke blob URL, close AudioContext, clear timers
+  // Cleanup on unmount: revoke blob URL, clear timers
   useEffect(() => {
     return () => {
       if (recordedUrl?.startsWith('blob:')) URL.revokeObjectURL(recordedUrl);
       if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current);
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
     };
   }, [recordedUrl]);
 
@@ -77,6 +78,18 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
   // Camera management
   // -----------------------------------------------------------------------
 
+  // R44/5.6: when the finished recording is dismissed ("Neu"), the live
+  // canvas remounts with a FRESH <video> element — re-attach the still-open
+  // camera stream so the PiP keeps working without re-requesting permission.
+  useEffect(() => {
+    if (!recordedUrl && cameraStreamRef.current && cameraVideoRef.current && !cameraVideoRef.current.srcObject) {
+      cameraVideoRef.current.srcObject = cameraStreamRef.current;
+      // Explicit play(): some environments don't honor autoplay on a
+      // re-attached srcObject — muted play() is always allowed.
+      cameraVideoRef.current.play().catch(() => {});
+    }
+  }, [recordedUrl]);
+
   // Request mobile camera from companion app
   const requestMobileCamera = useCallback(async () => {
     setIsRequestingMobileCamera(true);
@@ -100,6 +113,9 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
       cameraStreamRef.current = stream;
       if (cameraVideoRef.current) {
         cameraVideoRef.current.srcObject = stream;
+        // Explicit play(): muted autoplay is allowed everywhere and avoids
+        // headless/strict-policy environments leaving the feed paused.
+        cameraVideoRef.current.play().catch(() => {});
       }
       setHasCamera(true);
       setCameraError(null);
@@ -114,6 +130,9 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
       cameraStreamRef.current.getTracks().forEach(track => track.stop());
       cameraStreamRef.current = null;
     }
+    if (cameraVideoRef.current) {
+      cameraVideoRef.current.srcObject = null;
+    }
     setHasCamera(false);
     setMobileCameraConnected(false);
   }, []);
@@ -127,39 +146,19 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
 
   // -----------------------------------------------------------------------
   // Recording logic
+  //
+  // R44/5.8: the MediaRecorder captures the CANVAS STREAM ONLY — a silent
+  // video. ALL audio capture was removed (AudioContext, Audio element,
+  // MediaElementSource, addTrack) to avoid shipping copyrighted music in
+  // shared clips (see the 🔇 note under the ShareBox action grid).
   // -----------------------------------------------------------------------
 
   // Start recording
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const stream = canvas.captureStream(30);
-
-    // Add audio if available
-    if (audioUrl) {
-      try {
-        // Close any previous AudioContext before creating a new one
-        if (audioContextRef.current) {
-          audioContextRef.current.close().catch(() => {});
-        }
-        const audioContext = new AudioContext();
-        audioContextRef.current = audioContext;
-        const audioElement = new Audio(audioUrl);
-        audioElement.crossOrigin = 'anonymous';
-        audioElement.currentTime = song.preview?.startTime ? song.preview.startTime / 1000 : 0;
-        const source = audioContext.createMediaElementSource(audioElement);
-        const destination = audioContext.createMediaStreamDestination();
-        source.connect(destination);
-        source.connect(audioContext.destination);
-
-        stream.addTrack(destination.stream.getAudioTracks()[0]);
-        audioRef.current = audioElement;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.debug('[ShortsCreator] Audio setup for recording failed:', error);
-      }
-    }
 
     // Select best supported mimeType
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
@@ -191,16 +190,6 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
         clearTimeout(autoStopTimerRef.current);
         autoStopTimerRef.current = null;
       }
-
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      // Close AudioContext after recording to free resources
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
     };
 
     mediaRecorderRef.current = mediaRecorder;
@@ -215,11 +204,7 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
       }
       autoStopTimerRef.current = null;
     }, duration * 1000);
-
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
-  }, [audioUrl, duration, song.preview, t]);
+  }, [duration]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -240,7 +225,7 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
     link.href = recordedUrl;
     link.download = `karaoke-${song.title.replace(/[^a-z0-9]/gi, '-')}.webm`;
     link.click();
-  }, [recordedBlob, recordedUrl, song.title, t]);
+  }, [recordedBlob, recordedUrl, song.title]);
 
   // Share video
   const shareVideo = useCallback(async () => {
@@ -274,55 +259,81 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
   // -----------------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------------
+  const hasRecording = !!recordedBlob;
+
   return (
-    <div className="space-y-4">
-      {/* Canvas Preview */}
-      <ShortsCanvas
-        canvasRef={canvasRef}
-        cameraVideoRef={cameraVideoRef}
-        isRecording={isRecording}
-      />
+    <div className={compact ? 'h-full flex flex-col min-h-0 gap-2' : 'space-y-4'}>
+      {/* Canvas slot — the live preview, OR the finished recording taking
+          its place (R44/5.6: replace instead of appending below).
+          Compact: the slot is a relative anchor and the 9:16 media lives in
+          an OUT-OF-FLOW layer (absolute inset-0) — its intrinsic 1280px
+          min-content height must not blow up the results height chain. */}
+      <div className={compact ? 'relative flex-1 min-h-0' : undefined}>
+        {recordedUrl ? (
+          compact ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <video
+                ref={videoRef}
+                src={recordedUrl}
+                controls
+                className="max-h-full w-auto max-w-full rounded-xl border border-white/10"
+              />
+            </div>
+          ) : (
+            <video
+              ref={videoRef}
+              src={recordedUrl}
+              controls
+              className="w-full rounded-xl border border-white/10"
+              style={{ aspectRatio: '9/16', maxHeight: 400 }}
+            />
+          )
+        ) : (
+          <ShortsCanvas
+            canvasRef={canvasRef}
+            cameraVideoRef={cameraVideoRef}
+            isRecording={isRecording}
+            compact={compact}
+          />
+        )}
+      </div>
 
-      {/* Camera Controls */}
-      {!recordedBlob && (
-        <CameraControls
-          hasCamera={hasCamera}
-          mobileCameraConnected={mobileCameraConnected}
-          isRequestingMobileCamera={isRequestingMobileCamera}
-          cameraError={cameraError}
-          cameraPosition={cameraPosition}
-          onStartLocalCamera={startLocalCamera}
-          onRequestMobileCamera={requestMobileCamera}
-          onStopCamera={stopCamera}
-          onSetCameraPosition={setCameraPosition}
-          onSetMobileCameraConnected={setMobileCameraConnected}
-        />
+      {/* Live configuration — hidden entirely once a recording exists
+          (R44/5.6): only the action row (Neu/Download/Share) remains. */}
+      {!hasRecording && (
+        <>
+          <CameraControls
+            hasCamera={hasCamera}
+            mobileCameraConnected={mobileCameraConnected}
+            isRequestingMobileCamera={isRequestingMobileCamera}
+            cameraError={cameraError}
+            cameraPosition={cameraPosition}
+            onStartLocalCamera={startLocalCamera}
+            onRequestMobileCamera={requestMobileCamera}
+            onStopCamera={stopCamera}
+            onSetCameraPosition={setCameraPosition}
+            onSetMobileCameraConnected={setMobileCameraConnected}
+            compact={compact}
+          />
+          <DurationSlider
+            duration={duration}
+            onSetDuration={setDuration}
+            compact={compact}
+          />
+          <StyleSelector
+            style={style}
+            onSetStyle={setStyle}
+            compact={compact}
+          />
+        </>
       )}
 
-      {/* Duration Slider */}
-      {!recordedBlob && (
-        <DurationSlider
-          duration={duration}
-          onSetDuration={setDuration}
-        />
-      )}
-
-      {/* Style Selection */}
-      {!recordedBlob && (
-        <StyleSelector
-          style={style}
-          onSetStyle={setStyle}
-        />
-      )}
-
-      {/* Progress */}
-      {isRecording && (
-        <RecordingProgress progress={progress} />
-      )}
+      {/* Progress (while recording) */}
+      {isRecording && <RecordingProgress progress={progress} compact={compact} />}
 
       {/* Actions */}
       <RecordingActions
-        hasRecording={!!recordedBlob}
+        hasRecording={hasRecording}
         isRecording={isRecording}
         duration={duration}
         onStartRecording={startRecording}
@@ -330,18 +341,8 @@ export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
         onResetRecording={resetRecording}
         onDownloadVideo={downloadVideo}
         onShareVideo={shareVideo}
+        compact={compact}
       />
-
-      {/* Video Preview */}
-      {recordedUrl && (
-        <video
-          ref={videoRef}
-          src={recordedUrl}
-          controls
-          className="w-full rounded-xl border border-white/10"
-          style={{ aspectRatio: '9/16', maxHeight: 400 }}
-        />
-      )}
     </div>
   );
 }
