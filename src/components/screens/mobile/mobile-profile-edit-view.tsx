@@ -4,9 +4,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { StorageKeys, getItem } from '@/lib/storage';
+import { StorageKeys, getItem, getString } from '@/lib/storage';
 import { Badge } from '@/components/ui/badge';
-import { useTranslation } from '@/lib/i18n/translations';
+import {
+  ALL_LANGUAGES,
+  LANGUAGE_FLAGS,
+  LANGUAGE_NAMES,
+  useTranslation,
+  type Language,
+} from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile-types';
 import { loadUserStats } from '@/lib/mobile-achievements';
 import type { UserStats } from '@/lib/mobile-achievements';
@@ -47,6 +53,44 @@ export function MobileProfileEditView({
   const [confirmSwitchId, setConfirmSwitchId] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+
+  // ── R42: unabhängige Sprachwahl der Companion-App ──
+  // (auch für nicht-steuernde Companions — die persönliche Profil-Ansicht ist
+  //  für beide erreichbar). Gilt NUR für dieses Gerät; die Haupt-App bleibt
+  //  unberührt (separater Storage-Key kz-companion-language).
+  const {
+    language: activeLanguage,
+    setLanguage,
+    hasCompanionOverride,
+    resetCompanionLanguage,
+    isCompanion,
+  } = useTranslation();
+
+  // Sprache der HAUPT-APP (shared key) — der Auto-Chip zeigt, wozu man
+  // zurückkehrt, wenn man die eigene Sprachwahl zurücksetzt.
+  const [mainAppLanguage, setMainAppLanguage] = useState<Language>(() => {
+    const shared = getString(StorageKeys.LANGUAGE, 'en');
+    return (ALL_LANGUAGES as readonly string[]).includes(shared) ? (shared as Language) : 'en';
+  });
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'karaoke-language' && e.newValue && (ALL_LANGUAGES as readonly string[]).includes(e.newValue)) {
+        setMainAppLanguage(e.newValue as Language);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const handleLanguageSelect = useCallback((lang: Language) => {
+    setLanguage(lang);
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(8);
+  }, [setLanguage]);
+
+  const handleLanguageReset = useCallback(() => {
+    resetCompanionLanguage();
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(8);
+  }, [resetCompanionLanguage]);
 
   // Reset confirmation state after 3 seconds
   const requestSwitchConfirm = useCallback((profileId: string) => {
@@ -274,6 +318,71 @@ export function MobileProfileEditView({
           </div>
         </CardContent>
       </Card>
+
+      {/* ── R42: Sprachwahl (nur Companion-App) ── */}
+      {isCompanion && (
+        <Card className="bg-white/10 border-white/20 mt-4">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg" aria-hidden>🌐</span>
+              <h3 className="font-bold text-sm">{t('mobileViews.languageTitle')}</h3>
+            </div>
+            <p className="text-xs text-white/40 mb-3">{t('mobileViews.languageHint')}</p>
+
+            {/* Auto chip: follows the main app's language */}
+            <button
+              type="button"
+              onClick={handleLanguageReset}
+              className={
+                'mb-2 flex w-full items-center gap-2.5 rounded-xl border p-3 text-left transition-transform active:scale-[0.98] ' +
+                (!hasCompanionOverride
+                  ? 'border-cyan-500/60 bg-cyan-500/15'
+                  : 'border-white/10 bg-white/5')
+              }
+              aria-pressed={!hasCompanionOverride}
+            >
+              <span className="text-xl" aria-hidden>🔁</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-white">{t('mobileViews.languageAuto')}</span>
+                <span className="block text-[11px] text-white/40">
+                  {t('mobileViews.languageAutoDesc').replace('{lang}', LANGUAGE_NAMES[mainAppLanguage])}
+                </span>
+              </span>
+              {!hasCompanionOverride && (
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-400" aria-hidden />
+              )}
+            </button>
+
+            {/* Language chips — own names so everyone finds their language */}
+            <div className="grid grid-cols-2 gap-2">
+              {ALL_LANGUAGES.map((lang) => {
+                const selected = hasCompanionOverride && activeLanguage === lang;
+                return (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => handleLanguageSelect(lang)}
+                    lang={lang}
+                    className={
+                      'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-transform active:scale-[0.98] ' +
+                      (selected
+                        ? 'border-cyan-500/60 bg-cyan-500/15'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10')
+                    }
+                    aria-pressed={selected}
+                  >
+                    <span className="text-lg" aria-hidden>{LANGUAGE_FLAGS[lang]}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-white/90">{LANGUAGE_NAMES[lang]}</span>
+                    {selected && (
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-400" aria-hidden />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Achievements Section */}
       {userStats && (

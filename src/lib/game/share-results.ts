@@ -1,6 +1,7 @@
 // Share Results Feature - Export score cards to social media
 import { HighscoreEntry } from '@/types/game';
-import { t } from '@/lib/i18n/translations';
+import { t, getStoredLanguage } from '@/lib/i18n/translations';
+import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 
 interface ShareableScoreCard {
   playerName: string;
@@ -14,9 +15,12 @@ interface ShareableScoreCard {
   gameMode: string;
   rating: string;
   playedAt: number;
+  /** R42: avatar data-URL + profile color — used by the unified card renderer */
+  playerAvatar?: string;
+  playerColor?: string;
 }
 
-export function createShareableCard(entry: HighscoreEntry): ShareableScoreCard {
+export function createShareableCard(entry: HighscoreEntry & { playerAvatar?: string; playerColor?: string }): ShareableScoreCard {
   return {
     playerName: entry.playerName,
     songTitle: entry.songTitle,
@@ -29,110 +33,169 @@ export function createShareableCard(entry: HighscoreEntry): ShareableScoreCard {
     gameMode: entry.gameMode,
     rating: entry.rating,
     playedAt: entry.playedAt,
+    playerAvatar: entry.playerAvatar,
+    playerColor: entry.playerColor,
   };
+}
+
+/** Language-aware translate for share texts/cards (R42: honors the app
+ *  language incl. the companion override instead of always English). */
+function tt(key: string): string {
+  return t(key, getStoredLanguage());
+}
+
+/** Translated rating word for share texts/cards (R42: 8-level scale). */
+function ratingWord(rating: string): string {
+  const label = tt(`scoreVisualization.${rating}`);
+  return label === `scoreVisualization.${rating}` ? rating : label;
 }
 
 // Generate shareable text
 function generateShareText(card: ShareableScoreCard): string {
-  return [
-    `🎤 ${t('game.share.scoredPoints').replace('{score}', card.score.toLocaleString()).replace('{title}', card.songTitle).replace('{artist}', card.artist)}`,
+  const lines = [
+    `🎤 ${tt('share.scoredPoints').replace('{score}', card.score.toLocaleString()).replace('{title}', card.songTitle).replace('{artist}', card.artist)}`,
+  ];
+  if (card.rankTitle) lines.push(card.rankTitle);
+  lines.push(
+    `📊 ${tt('share.accuracy')}: ${card.accuracy.toFixed(1)}%`,
+    `🔥 ${tt('share.maxCombo')}: ${card.maxCombo}x`,
+    `⭐ ${tt('share.rating')}: ${ratingWord(card.rating)}`,
+    `🎮 ${tt('share.mode')}: ${card.gameMode.toUpperCase()}`,
+    `💬 ${tt('share.difficulty')}: ${card.difficulty.toUpperCase()}`,
     '',
-    card.rankTitle,
-    `📊 ${t('game.share.accuracy')}: ${card.accuracy.toFixed(1)}%`,
-    `🔥 ${t('game.share.maxCombo')}: ${card.maxCombo}x`,
-    `⭐ ${t('game.share.rating')}: ${card.rating.toUpperCase()}`,
-    `🎮 ${t('game.share.mode')}: ${card.gameMode.toUpperCase()}`,
-    `💬 ${t('game.share.difficulty')}: ${card.difficulty.toUpperCase()}`,
-    '',
-    t('game.share.callToAction').replace('{branding}', t('core.branding')),
-  ].join('\n');
+    tt('share.callToAction').replace('{branding}', tt('core.branding')),
+  );
+  return lines.join('\n');
 }
 
-// Generate shareable image (returns canvas)
-function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
+/**
+ * R42 — UNIFIED score card renderer (1200×630). Used by BOTH the ShareBox
+ * preview canvas and the download/copy/share actions, so the image you see
+ * is exactly the image you share. Design merged from the former ScoreCard
+ * canvas (social branding look) and the old 600×400 share image.
+ */
+export function renderScoreCardCanvas(card: ShareableScoreCard): HTMLCanvasElement {
+  const width = 1200;
+  const height = 630;
   const canvas = document.createElement('canvas');
-  canvas.width = 600;
-  canvas.height = 400;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get 2D canvas context');
-  
+
   // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, 600, 400);
-  gradient.addColorStop(0, '#1a0a2e');
-  gradient.addColorStop(0.5, '#2d1b4e');
-  gradient.addColorStop(1, '#0a1628');
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#1a1a2e');
+  gradient.addColorStop(0.5, '#16213e');
+  gradient.addColorStop(1, '#0f3460');
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 600, 400);
-  
-  // Add decorative elements
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-  for (let i = 0; i < 50; i++) {
-    const x = Math.random() * 600;
-    const y = Math.random() * 400;
-    const size = Math.random() * 3 + 1;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  
-  // Header
-  ctx.fillStyle = '#00ffff';
-  ctx.font = 'bold 32px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(t('core.branding'), 300, 50);
-  
-  // Song info
+  ctx.fillRect(0, 0, width, height);
+
+  // Decorative circles
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#00d9ff';
+  ctx.beginPath();
+  ctx.arc(width - 100, 100, 200, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ff006e';
+  ctx.beginPath();
+  ctx.arc(100, height - 100, 150, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // App branding (top-left)
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 28px Inter, sans-serif';
-  ctx.fillText(card.songTitle, 300, 100);
-  ctx.font = '18px Inter, sans-serif';
-  ctx.fillStyle = '#8888aa';
-  ctx.fillText(card.artist, 300, 130);
-  
-  // Rank title
-  ctx.font = 'bold 36px Inter, sans-serif';
-  ctx.fillStyle = '#ffd700';
-  ctx.fillText(card.rankTitle, 300, 180);
-  
-  // Score
-  ctx.font = 'bold 48px Inter, sans-serif';
-  ctx.fillStyle = '#00ff88';
-  ctx.fillText(card.score.toLocaleString(), 300, 240);
-  ctx.font = '16px Inter, sans-serif';
-  ctx.fillStyle = '#8888aa';
-  ctx.fillText(t('game.share.points'), 300, 265);
-  
-  // Stats row
-  const stats = [
-    { label: t('game.share.accuracy'), value: `${card.accuracy.toFixed(1)}%` },
-    { label: t('game.share.maxCombo'), value: `${card.maxCombo}x` },
-    { label: t('game.share.rating'), value: card.rating.toUpperCase() },
-  ];
-  
-  stats.forEach((stat, i) => {
-    const x = 120 + i * 180;
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(stat.value, x, 310);
-    ctx.fillStyle = '#8888aa';
-    ctx.font = '14px Inter, sans-serif';
-    ctx.fillText(stat.label, x, 335);
-  });
-  
-  // Player name
-  ctx.fillStyle = '#ff00ff';
-  ctx.font = '18px Inter, sans-serif';
+  ctx.font = 'bold 24px Arial, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(t('game.share.playerLabel').replace('{name}', card.playerName), 20, 380);
-  
-  // Date
+  ctx.fillText(tt('core.branding'), 40, 50);
+
+  // Rank title (top-right, gold) — e.g. "Karaoke King"
+  if (card.rankTitle) {
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 26px Arial, sans-serif';
+    ctx.textAlign = 'right';
+    const rank = card.rankTitle.length > 28 ? card.rankTitle.substring(0, 27) + '…' : card.rankTitle;
+    ctx.fillText(rank, width - 40, 50);
+  }
+
+  // Song info
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 48px Arial, sans-serif';
+  ctx.fillText(card.songTitle.substring(0, 25) + (card.songTitle.length > 25 ? '…' : ''), 40, 140);
+
+  ctx.fillStyle = '#a0a0a0';
+  ctx.font = '32px Arial, sans-serif';
+  ctx.fillText(card.artist.substring(0, 30) + (card.artist.length > 30 ? '…' : ''), 40, 185);
+
+  // Score box
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.roundRect(40, 225, width - 80, 150, 20);
+  ctx.fill();
+
+  // Main score
+  ctx.fillStyle = '#00d9ff';
+  ctx.font = 'bold 72px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(card.score.toLocaleString(), width / 2, 310);
+  ctx.fillStyle = '#a0a0a0';
+  ctx.font = '24px Arial, sans-serif';
+  ctx.fillText(tt('share.points'), width / 2, 348);
+  ctx.textAlign = 'left';
+
+  // Stats row
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px Arial, sans-serif';
+  const statsY = 415;
+  ctx.fillText(`${card.accuracy.toFixed(1)}%`, 80, statsY);
+  ctx.fillText(`${card.maxCombo}x`, 400, statsY);
+  ctx.fillText(card.difficulty.toUpperCase(), 680, statsY);
+
+  ctx.fillStyle = '#8888aa';
+  ctx.font = '20px Arial, sans-serif';
+  ctx.fillText(tt('share.accuracy'), 80, statsY + 30);
+  ctx.fillText(tt('share.maxCombo'), 400, statsY + 30);
+  ctx.fillText(tt('share.difficulty'), 680, statsY + 30);
+
+  // Player info (initial circle in profile color + name)
+  const playerColor = card.playerColor || '#00d9ff';
+  ctx.fillStyle = playerColor;
+  ctx.beginPath();
+  ctx.arc(66, 505, 24, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText((card.playerName[0] || '?').toUpperCase(), 66, 514);
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 32px Arial, sans-serif';
+  ctx.fillText(card.playerName.substring(0, 20), 105, 515);
+
+  // Rating badge (translated, rating-colored)
+  const badgeColor = RATING_HEX_COLORS[card.rating] || '#ffffff';
+  ctx.fillStyle = badgeColor;
+  ctx.font = 'bold 36px Arial, sans-serif';
+  ctx.fillText(`${ratingWord(card.rating).toUpperCase()}!`, 40, 580);
+
+  // Date (bottom-right)
   const date = new Date(card.playedAt).toLocaleDateString();
   ctx.fillStyle = '#666666';
+  ctx.font = '22px Arial, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(date, 580, 380);
-  
+  ctx.fillText(date, width - 40, 580);
+
+  // Hashtags
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#556677';
+  ctx.font = '22px Arial, sans-serif';
+  ctx.fillText(tt('scoreCardSocial.hashtags'), 340, 580);
+
   return canvas;
+}
+
+// Kept for API compatibility — now renders the unified branded card
+function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
+  return renderScoreCardCanvas(card);
 }
 
 // Download as image
@@ -175,18 +238,18 @@ export async function copyScoreImageToClipboard(card: ShareableScoreCard): Promi
 // Share via Web Share API
 export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean> {
   if (!navigator.share) return false;
-  
+
   const text = generateShareText(card);
   const canvas = generateShareImage(card);
-  
+
   try {
     const blob = await new Promise<Blob>((resolve) => {
       canvas.toBlob((b) => resolve(b ?? new Blob()), 'image/png');
     });
     const file = new File([blob], 'score-card.png', { type: 'image/png' });
-    
+
     await navigator.share({
-      title: t('game.share.shareTitle'),
+      title: tt('share.shareTitle'),
       text,
       files: [file],
     });
@@ -195,7 +258,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     // Fallback to text only
     try {
       await navigator.share({
-        title: t('game.share.shareTitle'),
+        title: tt('share.shareTitle'),
         text,
       });
       return true;

@@ -44,7 +44,7 @@ export interface OnlineScoreEntry {
   accuracy: number;
   max_combo: number;
   difficulty: 'easy' | 'normal' | 'hard';
-  rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+  rating: 'perfect' | 'excellent' | 'great' | 'good' | 'okay' | 'fair' | 'rough' | 'poor';
   played_at: string;
   /** Whether this score passed anti-cheat verification on the server */
   verified: boolean;
@@ -67,7 +67,7 @@ export interface SubmitScorePayload {
   accuracy: number;
   max_combo: number;
   difficulty: 'easy' | 'normal' | 'hard';
-  rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+  rating: 'perfect' | 'excellent' | 'great' | 'good' | 'okay' | 'fair' | 'rough' | 'poor';
   notes_hit: number;
   notes_missed: number;
   /** Anti-cheat proof package — optional for backwards compatibility, but strongly encouraged */

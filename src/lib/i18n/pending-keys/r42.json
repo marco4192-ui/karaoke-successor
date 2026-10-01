@@ -1,0 +1,102 @@
+[
+  {
+    "key": "scoreVisualization.rough",
+    "en": "Rough",
+    "de": "Wackelig"
+  },
+  {
+    "key": "scoreVisualization.fair",
+    "en": "Fair",
+    "de": "Solide"
+  },
+  {
+    "key": "scoreVisualization.great",
+    "en": "Great",
+    "de": "Super"
+  },
+  {
+    "key": "resultsScreen.detailsShow",
+    "en": "All details",
+    "de": "Alle Details"
+  },
+  {
+    "key": "resultsScreen.detailsHide",
+    "en": "Show less",
+    "de": "Weniger anzeigen"
+  },
+  {
+    "key": "resultsScreen.perfectNotes",
+    "en": "Perfect notes",
+    "de": "Perfekte Noten"
+  },
+  {
+    "key": "resultsScreen.goldenNotes",
+    "en": "Golden notes",
+    "de": "Gold-Noten"
+  },
+  {
+    "key": "resultsScreen.tickAccuracy",
+    "en": "Tick accuracy",
+    "de": "Tick-Genauigkeit"
+  },
+  {
+    "key": "resultsScreen.blindBonus",
+    "en": "Blind karaoke bonus",
+    "de": "Blind-Karaoke-Bonus"
+  },
+  {
+    "key": "resultsScreen.duration",
+    "en": "Duration",
+    "de": "Dauer"
+  },
+  {
+    "key": "resultsScreen.difficultyLabel",
+    "en": "Difficulty",
+    "de": "Schwierigkeit"
+  },
+  {
+    "key": "resultsScreen.blindMode",
+    "en": "Blind mode",
+    "de": "Blind-Modus"
+  },
+  {
+    "key": "resultsScreen.duelShareHint",
+    "en": "Duel results cannot be shared as a single score card.",
+    "de": "Duell-Ergebnisse lassen sich nicht als einzelne Punktekarte teilen."
+  },
+  {
+    "key": "resultsScreen.duetShareHint",
+    "en": "Duet results cannot be shared as a single score card.",
+    "de": "Duett-Ergebnisse lassen sich nicht als einzelne Punktekarte teilen."
+  },
+  {
+    "key": "mobileViews.languageTitle",
+    "en": "Language",
+    "de": "Sprache"
+  },
+  {
+    "key": "mobileViews.languageAuto",
+    "en": "Like main app",
+    "de": "Wie Haupt-App"
+  },
+  {
+    "key": "mobileViews.languageAutoDesc",
+    "en": "Automatically follows the main app language (currently: {lang})",
+    "de": "Folgt automatisch der Sprache der Haupt-App (aktuell: {lang})"
+  },
+  {
+    "key": "mobileViews.languageHint",
+    "en": "Applies to this device only — the main app language stays untouched.",
+    "de": "Gilt nur für dieses Gerät — die Sprache der Haupt-App bleibt unberührt."
+  },
+  {
+    "key": "settingsMotto.exactSearchHint",
+    "en": "Wrap a term in quotes (e.g. \"Queen\") for an exact match — no fuzzy tolerance like Green/Teen matching Queen.",
+    "de": "Begriff in Anführungszeichen (z. B. „Queen\") sucht exakt — ohne Tippfehler-Toleranz wie Green/Teen bei Queen."
+  },
+  {
+    "key": "settingsMotto.exactBadge",
+    "en": "Exact",
+    "de": "Exakt"
+  }
+]

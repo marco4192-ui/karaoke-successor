@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "请输入一个搜索词。",
     errorLimit: "已达到最多 {n} 个搜索字段。",
     errorTooLong: "最多允许 {n} 个字符。",
+    exactBadge: "精确",
+    exactSearchHint: "将词语用引号括起来（如 \"Queen\"）即可精确匹配——不会像 Green/Teen 那样模糊匹配到 Queen。",
     filtersDesc: "可额外激活的筛选器——与搜索字段累加（AND）组合。",
     filtersTitle: "筛选器",
     inactiveBadge: "未激活",

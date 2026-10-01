@@ -1099,6 +1099,8 @@ export const deltaTranslations = {
     errorEmpty: "Voer een zoekterm in.",
     errorLimit: "Maximaal {n} zoekvelden bereikt.",
     errorTooLong: "Maximaal {n} tekens toegestaan.",
+    exactBadge: "Exact",
+    exactSearchHint: "Zet een term tussen aanhalingstekens (bijv. \"Queen\") voor een exacte match — zonder typefouttolerantie zoals Green/Teen bij Queen.",
     filtersDesc: "Extra te activeren filters — cumulatief (EN) gecombineerd met de zoekvelden.",
     filtersTitle: "Filters",
     inactiveBadge: "Inactief",

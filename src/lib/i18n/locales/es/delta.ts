@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "Introduce un término de búsqueda.",
     errorLimit: "Máximo de {n} campos de búsqueda alcanzado.",
     errorTooLong: "Máximo {n} caracteres.",
+    exactBadge: "Exacto",
+    exactSearchHint: "Encierra un término entre comillas (p. ej. \"Queen\") para una coincidencia exacta — sin tolerancia a erratas como Green/Teen por Queen.",
     filtersDesc: "Filtros activables además — se combinan acumulativamente (AND) con los campos de búsqueda.",
     filtersTitle: "Filtros",
     inactiveBadge: "Inactivo",

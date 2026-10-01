@@ -204,6 +204,8 @@ export const settingsTranslations = {
     searchLogicAndHint: 'A song must match ALL search fields (cumulative).',
     searchLogicOrHint: 'A song must match at least ONE search field (independent).',
     addTermPlaceholder: 'Search term (e.g. Queen, ABBA, Rock …)',
+    exactSearchHint: 'Wrap a term in quotes (e.g. "Queen") for an exact match — no fuzzy tolerance like Green/Teen matching Queen.',
+    exactBadge: 'Exact',
     addTermButton: 'Add',
     removeTerm: 'Remove search field',
     noTerms: 'No search fields yet',

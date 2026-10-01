@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "Skriv inn et søkeord.",
     errorLimit: "Maksimalt {n} søkefelt nådd.",
     errorTooLong: "Maksimalt {n} tegn tillatt.",
+    exactBadge: "Nøyaktig",
+    exactSearchHint: "Sett en term i anførselstegn (f.eks. \"Queen\") for nøyaktig treff — uten skrivefeiltoleranse som Green/Teen mot Queen.",
     filtersDesc: "Flere filtre å aktivere — kombineres kumulativt (OG) med søkefeltene.",
     filtersTitle: "Filtre",
     inactiveBadge: "Inaktiv",

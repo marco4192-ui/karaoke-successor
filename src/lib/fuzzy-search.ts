@@ -6,7 +6,54 @@
  *   "Quen" matches "Queen" (1 edit: missing 'e')
  *   "Koldplay" matches "Coldplay" (1 edit: K→C)
  *   "Coldpay" matches "Coldplay" (1 edit: missing 'l')
+ * 
+ * R42 — EXACT SEARCH BYPASS: wrapping the ENTIRE query in quotes
+ * ("Queen", 'Queen', „Queen", »Queen«, «Queen») disables the fuzzy
+ * tolerance completely — only exact case-insensitive substring matches
+ * count.  This keeps typo tolerance for free-text input while giving
+ * motto-party & library searches a precision escape hatch (e.g. "Queen"
+ * no longer fuzzy-matches Green Day or Teen Titans).
  */
+
+/**
+ * Supported quote pairs for the exact-search bypass. The opening quote must
+ * be the first and the matching closing quote the last character of the
+ * (trimmed) query.
+ */
+const EXACT_QUOTE_PAIRS: Array<[string, string]> = [
+  ['"', '"'],
+  ["'", "'"],
+  ['\u201e', '\u201c'], // German: „…“
+  ['\u00bb', '\u00ab'], // French: »…«
+  ['\u00ab', '\u00bb'], // Guilmets reversed
+  ['\u2018', '\u2019'], // Curly single quotes
+];
+
+interface ParsedQuery {
+  /** The query with any exact-search quotes stripped */
+  term: string;
+  /** true when the user demanded exact (non-fuzzy) matching via quotes */
+  exact: boolean;
+}
+
+/**
+ * Parses a raw query: detects a wrapping quote pair (exact-search bypass)
+ * and strips it. Returns the effective term plus the exact flag.
+ */
+export function parseFuzzyQuery(rawQuery: string): ParsedQuery {
+  const trimmed = rawQuery.trim();
+  if (trimmed.length >= 2) {
+    for (const [open, close] of EXACT_QUOTE_PAIRS) {
+      if (trimmed.startsWith(open) && trimmed.endsWith(close) && trimmed.length > open.length + close.length - 1) {
+        const inner = trimmed.slice(open.length, trimmed.length - close.length).trim();
+        if (inner.length > 0) {
+          return { term: inner, exact: true };
+        }
+      }
+    }
+  }
+  return { term: trimmed, exact: false };
+}
 
 /**
  * Computes the Levenshtein distance between two strings.
@@ -66,7 +113,13 @@ function getMaxDistance(queryLength: number): number {
 export function fuzzyMatch(query: string, text: string): boolean {
   if (!query || !text) return false;
 
-  const lowerQuery = query.toLowerCase().trim();
+  // R42: quoted queries bypass ALL fuzzy tolerance (exact substring only)
+  const parsed = parseFuzzyQuery(query);
+  if (parsed.exact) {
+    return text.toLowerCase().includes(parsed.term.toLowerCase());
+  }
+
+  const lowerQuery = parsed.term.toLowerCase();
   const lowerText = text.toLowerCase().trim();
 
   if (lowerQuery.length === 0) return true;
@@ -136,9 +189,16 @@ const WORD_SEPARATORS = /[\s\-–—_(),.:/]+/;
 export function fuzzyScore(query: string, text: string): number {
   if (!query || !text) return 0;
 
-  const lowerQuery = query.toLowerCase().trim();
+  // R42: quoted queries bypass ALL fuzzy tolerance (exact substring only)
+  const parsed = parseFuzzyQuery(query);
   const lowerText = text.toLowerCase().trim();
-  if (lowerQuery.length === 0 || lowerText.length === 0) return 0;
+  if (lowerText.length === 0) return 0;
+  if (parsed.exact) {
+    return lowerText.includes(parsed.term.toLowerCase()) ? 100 : 0;
+  }
+
+  const lowerQuery = parsed.term.toLowerCase();
+  if (lowerQuery.length === 0) return 0;
 
   // ── Tier 1–3: exact substring match (case-insensitive) ──
   const idx = lowerText.indexOf(lowerQuery);

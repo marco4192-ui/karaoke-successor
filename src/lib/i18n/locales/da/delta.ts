@@ -1099,6 +1099,8 @@ export const deltaTranslations = {
     errorEmpty: "Indtast venligst et søgeord.",
     errorLimit: "Maks. {n} søgefelter nået.",
     errorTooLong: "Højst {n} tegn tilladt.",
+    exactBadge: "Præcis",
+    exactSearchHint: "Sæt et ord i anførselstegn (f.eks. \"Queen\") for et præcist match — uden tastefejlstolerance som Green/Teen mod Queen.",
     filtersDesc: "Yderligere aktiverbare filtre — kombineres kumulativt (AND) med søgefelterne.",
     filtersTitle: "Filtre",
     inactiveBadge: "Inaktiv",

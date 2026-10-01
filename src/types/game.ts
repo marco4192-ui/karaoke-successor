@@ -1,6 +1,10 @@
 // Core game types for Karaoke ZERO
 
 import { t, type Language } from '@/lib/i18n/locales';
+// R42: rating scale widened to 8 levels — single source of truth in rating-utils
+import type { Rating } from '@/lib/game/rating-utils';
+
+export type { Rating };
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -312,7 +316,7 @@ export interface GameResult {
     maxCombo: number;
     perfectNotesCount: number;
     goldenNotesCount: number;
-    rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+    rating: Rating;
     /** Blind karaoke bonus points earned */
     blindBonusPoints?: number;
   }[];
@@ -456,7 +460,7 @@ export interface HighscoreEntry {
   maxCombo: number;
   difficulty: Difficulty;
   gameMode: GameMode;
-  rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+  rating: Rating;
   rankTitle: string;
   playedAt: number;
 }

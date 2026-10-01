@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { safeAlert } from '@/lib/safe-dialog';
 import { useTranslation } from '@/lib/i18n/translations';
+import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import { MobilePhotoBooth } from './mobile-photo-booth';
 import type { GameResults, MobileView } from './mobile-types';
 import {
@@ -23,6 +24,13 @@ interface ResultsViewProps {
 export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: ResultsViewProps) {
   const { t } = useTranslation();
   const [showPhotoBooth, setShowPhotoBooth] = useState(false);
+
+  // R42: translated rating word (8-level scale) instead of raw English
+  const ratingKey = `scoreVisualization.${gameResults?.rating}`;
+  const ratingText = gameResults
+    ? (t(ratingKey) === ratingKey ? gameResults.rating : t(ratingKey))
+    : '';
+  const ratingColor = RATING_HEX_COLORS[gameResults?.rating || ''] || '#ffd700';
 
   // Update user stats and check for new achievements when results come in
   useEffect(() => {
@@ -65,7 +73,7 @@ export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: Resu
                   <p className="text-xs text-white/40">{t('mobileViews.bestCombo')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-bold">{gameResults.rating}</p>
+                  <p className="text-xl font-bold uppercase" style={{ color: ratingColor }}>{ratingText}</p>
                   <p className="text-xs text-white/40">{t('mobileViews.rating')}</p>
                 </div>
               </div>

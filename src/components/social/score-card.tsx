@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import { useTranslation } from '@/lib/i18n/translations';
+import { renderScoreCardCanvas, createShareableCard } from '@/lib/game/share-results';
 import type { HighscoreEntry, Song } from '@/types/game';
 
 interface ScoreCardProps {
@@ -11,126 +12,68 @@ interface ScoreCardProps {
   score: HighscoreEntry;
   playerName: string;
   playerAvatar?: string;
+  /** R42: compact mode for the results ShareBox — hides the internal action
+   *  buttons (the ShareBox provides ONE unified action row) and shrinks the
+   *  preview so the whole results screen fits one 1080p view. */
+  compact?: boolean;
 }
 
-export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardProps) {
+export function ScoreCard({ song, score, playerName, playerAvatar, compact }: ScoreCardProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const generateCard = useCallback(() => {
+  // R42: preview shows EXACTLY the image that download/copy/share produce
+  // (unified renderScoreCardCanvas) — WYSIWYG instead of a DOM approximation.
+  const previewUrl = useMemo<string | null>(() => {
+    try {
+      const card = createShareableCard(score);
+      const canvas = renderScoreCardCanvas(card);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }, [score]);
+
+  const generateCard = useCallback((): string | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    // Card dimensions (1080x1920 for Instagram Story / 1200x630 for Twitter)
-    const width = 1200;
-    const height = 630;
-    canvas.width = width;
-    canvas.height = height;
-
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, '#1a1a2e');
-    gradient.addColorStop(0.5, '#16213e');
-    gradient.addColorStop(1, '#0f3460');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    // Decorative circles
-    ctx.globalAlpha = 0.1;
-    ctx.fillStyle = '#00d9ff';
-    ctx.beginPath();
-    ctx.arc(width - 100, 100, 200, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ff006e';
-    ctx.beginPath();
-    ctx.arc(100, height - 100, 150, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // App name / logo area
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px Arial, sans-serif';
-    ctx.fillText(t('scoreCardSocial.branding'), 40, 50);
-
-    // Song info
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px Arial, sans-serif';
-    ctx.fillText(song.title.substring(0, 25) + (song.title.length > 25 ? '...' : ''), 40, 140);
-    
-    ctx.fillStyle = '#a0a0a0';
-    ctx.font = '32px Arial, sans-serif';
-    ctx.fillText(song.artist.substring(0, 30) + (song.artist.length > 30 ? '...' : ''), 40, 185);
-
-    // Score box
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.roundRect(40, 230, width - 80, 180, 20);
-    ctx.fill();
-
-    // Main score
-    ctx.fillStyle = '#00d9ff';
-    ctx.font = 'bold 80px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(score.score.toLocaleString(), width / 2, 320);
-    ctx.textAlign = 'left';
-
-    // Stats row
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '28px Arial, sans-serif';
-    const statsY = 380;
-    ctx.fillText(`${t('scoreCardSocial.accuracy')} ${score.accuracy.toFixed(1)}%`, 80, statsY);
-    ctx.fillText(`${t('scoreCardSocial.maxCombo')} ${score.maxCombo}x`, 350, statsY);
-    ctx.fillText(`${t('scoreCardSocial.difficulty')} ${score.difficulty}`, 680, statsY);
-
-    // Player info
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial, sans-serif';
-    ctx.fillText(t('scoreCardSocial.playerLabel').replace('{name}', playerName), 40, 480);
-
-    // Rating badge
-    const badgeColor = RATING_HEX_COLORS[score.rating] || '#ffffff';
-    ctx.fillStyle = badgeColor;
-    ctx.font = 'bold 36px Arial, sans-serif';
-    ctx.fillText(score.rating.toUpperCase() + '!', 40, 540);
-
-    // Hashtags
-    ctx.fillStyle = '#666666';
-    ctx.font = '24px Arial, sans-serif';
-    ctx.fillText(t('scoreCardSocial.hashtags'), 40, 600);
-
-    return canvas.toDataURL('image/png');
-  }, [song, score, playerName, t]);
+    try {
+      const card = createShareableCard(score);
+      const rendered = renderScoreCardCanvas(card);
+      // Copy the rendered card onto the (hidden) export canvas
+      canvas.width = rendered.width;
+      canvas.height = rendered.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(rendered, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }, [score]);
 
   const downloadCard = useCallback(() => {
     const dataUrl = generateCard();
     if (!dataUrl) return;
-
     const link = document.createElement('a');
     link.download = `karaoke-score-${song.title.replace(/[^a-z0-9]/gi, '-')}.png`;
     link.href = dataUrl;
     link.click();
-  }, [generateCard, song.title, t]);
+  }, [generateCard, song.title]);
 
   const shareCard = useCallback(async () => {
     const dataUrl = generateCard();
     if (!dataUrl) return;
-
     try {
-      // Convert data URL to blob
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       const file = new File([blob], 'score-card.png', { type: 'image/png' });
-
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: t('scoreCardSocial.shareTitle'),
-          text: `I scored ${score.score.toLocaleString()} points on "${song.title}" by ${song.artist}!`,
           files: [file],
         });
       } else {
-        // Fallback: copy to clipboard or download
         downloadCard();
       }
     } catch (err) {
@@ -138,66 +81,74 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
       console.error('Share failed:', err);
       downloadCard();
     }
-  }, [generateCard, downloadCard, score.score, song.title, song.artist, t]);
+  }, [generateCard, downloadCard, t]);
+
+  const ratingColor = RATING_HEX_COLORS[score.rating] || '#ffd700';
+  const ratingLabel = t(`scoreVisualization.${score.rating}`);
+  const ratingText = ratingLabel === `scoreVisualization.${score.rating}` ? score.rating : ratingLabel;
 
   return (
-    <div className="space-y-4">
-      {/* Hidden canvas for generation */}
-      <canvas ref={canvasRef} className="hidden" />
-      
-      {/* Preview */}
-      <div className="relative aspect-[1200/630] w-full max-w-md mx-auto rounded-xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-white/10">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl" />
-        
-        {/* Content */}
-        <div className="relative p-6 h-full flex flex-col">
-          <div className="text-white/60 text-xs font-medium">{t('scoreCardSocial.branding')}</div>
-          
-          <div className="mt-4 flex-1">
-            <div className="text-white text-2xl font-bold truncate">{song.title}</div>
-            <div className="text-white/60 text-sm">{song.artist}</div>
-            
-            <div className="mt-6 bg-white/10 rounded-xl p-4 text-center">
-              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-                {score.score.toLocaleString()}
-              </div>
-              <div className="text-white/60 text-sm mt-1">{t('scoreCardSocial.points')}</div>
-            </div>
-            
-            <div className="mt-4 flex justify-between text-sm text-white/80">
-              <span>🎯 {score.accuracy.toFixed(1)}%</span>
-              <span>⚡ {score.maxCombo}x combo</span>
-              <span>📊 {score.difficulty}</span>
-            </div>
-          </div>
-          
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {playerAvatar ? (
-                <img src={playerAvatar} alt={playerName} className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                  {playerName[0].toUpperCase()}
+    <div className="space-y-3">
+      {/* Hidden canvas for export */}
+      <canvas ref={canvasRef} className="hidden" aria-hidden />
+
+      {/* WYSIWYG preview — the exact PNG that gets shared */}
+      {previewUrl ? (
+        <div className={compact ? 'max-w-[280px] mx-auto' : 'max-w-md mx-auto'}>
+          <img
+            src={previewUrl}
+            alt={`${t('shareSection.scoreCard')} — ${song.title}`}
+            className="w-full rounded-xl border border-white/10 shadow-lg"
+          />
+        </div>
+      ) : (
+        /* Fallback: DOM approximation (e.g. canvas blocked) */
+        <div className={`relative aspect-[1200/630] w-full ${compact ? 'max-w-[280px]' : 'max-w-md'} mx-auto rounded-xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-white/10`}>
+          <div className="relative p-4 h-full flex flex-col">
+            <div className="text-white/60 text-[10px] font-medium">{t('scoreCardSocial.branding')}</div>
+            <div className="mt-2 flex-1 min-w-0">
+              <div className="text-white text-base font-bold truncate">{song.title}</div>
+              <div className="text-white/60 text-xs truncate">{song.artist}</div>
+              <div className="mt-2 bg-white/10 rounded-lg p-2 text-center">
+                <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                  {score.score.toLocaleString()}
                 </div>
-              )}
-              <span className="text-white font-medium">{playerName}</span>
+                <div className="text-white/60 text-[10px] mt-0.5">{t('scoreCardSocial.points')}</div>
+              </div>
+              <div className="mt-2 flex justify-between text-[10px] text-white/80">
+                <span>🎯 {score.accuracy.toFixed(1)}%</span>
+                <span>⚡ {score.maxCombo}x</span>
+                <span>📊 {score.difficulty}</span>
+              </div>
             </div>
-            <div className="text-lg font-bold text-yellow-400 uppercase">{score.rating}!</div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {playerAvatar ? (
+                  <img src={playerAvatar} alt={playerName} className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-[10px]">
+                    {playerName[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                <span className="text-white font-medium text-xs truncate">{playerName}</span>
+              </div>
+              <div className="text-sm font-bold uppercase" style={{ color: ratingColor }}>{ratingText}!</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button onClick={downloadCard} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500">
-          {t('scoreCardSocial.download')}
-        </Button>
-        <Button onClick={shareCard} variant="outline" className="flex-1 border-white/20 text-white">
-          {t('scoreCardSocial.share')}
-        </Button>
-      </div>
+      {/* Actions — hidden in compact mode (ShareBox provides its own row) */}
+      {!compact && (
+        <div className="flex gap-2">
+          <Button onClick={downloadCard} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500">
+            {t('scoreCardSocial.download')}
+          </Button>
+          <Button onClick={shareCard} variant="outline" className="flex-1 border-white/20 text-white">
+            {t('scoreCardSocial.share')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

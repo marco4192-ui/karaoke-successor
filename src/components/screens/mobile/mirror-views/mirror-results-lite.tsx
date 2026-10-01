@@ -3,6 +3,7 @@
 import React, { useCallback } from 'react';
 import type { GameResults, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
+import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 
 // ===================== Props =====================
 
@@ -33,6 +34,13 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand }: MirrorR
       },
       [onSendDesktopCommand],
     );
+
+    // R42: translated rating word (8-level scale) instead of raw English
+    const ratingKey = `scoreVisualization.${gameResults?.rating}`;
+    const ratingText = gameResults
+      ? (t(ratingKey) === ratingKey ? gameResults.rating : t(ratingKey))
+      : '';
+    const ratingColor = RATING_HEX_COLORS[gameResults?.rating || ''] || '#ffd700';
 
     if (!gameResults) {
       return (
@@ -90,8 +98,8 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand }: MirrorR
             </span>
           </div>
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-3">
-            <span className="text-lg font-semibold text-yellow-400">
-              {gameResults.rating}
+            <span className="text-lg font-semibold uppercase" style={{ color: ratingColor }}>
+              {ratingText}
             </span>
             <span className="text-[10px] text-white/40">
               {t('mobile.mirrorRating')}

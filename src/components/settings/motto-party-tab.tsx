@@ -40,6 +40,7 @@ import { getAllSongsAsync, filterSongsByMotto } from '@/lib/game/song-library';
 import { getLanguageFilterEntries, LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import { getAvailableDecades, decadeShortLabel } from '@/lib/game/era-filter';
 import { splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
+import { parseFuzzyQuery } from '@/lib/fuzzy-search';
 import { Song } from '@/types/game';
 import { Search, X, Plus, Trash2 } from 'lucide-react';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
@@ -303,6 +304,11 @@ export function MottoPartyTab() {
                 <p className="text-xs text-red-400" role="alert" data-testid="motto-term-error">{termError}</p>
               )}
 
+              {/* R42: exact-search hint — quotes bypass the fuzzy tolerance */}
+              <p className="text-[11px] leading-relaxed text-white/35" data-testid="motto-exact-hint">
+                💡 {t('settingsMotto.exactSearchHint')}
+              </p>
+
               {/* Field list */}
               {motto.searchFields.length === 0 ? (
                 <div className="text-center py-5 px-3 rounded-lg border border-dashed border-white/15 bg-white/[0.02]">
@@ -324,6 +330,14 @@ export function MottoPartyTab() {
                       <span className="text-sm text-white/90 truncate flex-1 min-w-0" title={field.term}>
                         {field.term}
                       </span>
+                      {parseFuzzyQuery(field.term).exact && (
+                        <span
+                          className="shrink-0 rounded bg-cyan-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-cyan-300"
+                          title={t('settingsMotto.exactSearchHint')}
+                        >
+                          {t('settingsMotto.exactBadge')}
+                        </span>
+                      )}
                       <span className="text-[10px] text-white/30 shrink-0 hidden sm:inline" aria-hidden="true">
                         {motto.logic === 'and' ? 'UND' : 'ODER'}
                       </span>

@@ -122,7 +122,7 @@ async function submitScore(params: {
   accuracy: number;
   maxCombo: number;
   difficulty: Difficulty;
-  rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+  rating: 'perfect' | 'excellent' | 'great' | 'good' | 'okay' | 'fair' | 'rough' | 'poor';
   notesHit: number;
   notesMissed: number;
   /** Pre-computed anti-cheat proof package */

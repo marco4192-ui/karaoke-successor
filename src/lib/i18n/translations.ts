@@ -6,7 +6,7 @@
 // which completely eliminates TDZ risk from webpack code-splitting.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { StorageKeys, setItem, getString } from '@/lib/storage';
+import { StorageKeys, setItem, getString, removeItem } from '@/lib/storage';
 import {
   Language,
   ALL_LANGUAGES,
@@ -60,6 +60,45 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
 // Convenience export: get the flat translations map (for tests)
 export { getTranslations as translations };
 
+// ── R42: Companion-app language scoping ──────────────────────────────────
+// The companion app (route /mobile) can run in its OWN language, decoupled
+// from the main app. The override lives under a SEPARATE storage key so a
+// language change on the phone NEVER writes through to the desktop app
+// (and vice versa). While no override is set, the companion follows the
+// shared language (default behavior, incl. cross-tab sync).
+
+/** True when this browser tab runs the companion app (route /mobile). */
+export function isCompanionApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname === '/mobile' || window.location.pathname.startsWith('/mobile/');
+}
+
+function isSupportedLanguage(value: string | null | undefined): value is Language {
+  return !!value && (ALL_LANGUAGES as readonly string[]).includes(value);
+}
+
+/** Reads the companion language override (null when not set/invalid). */
+function getCompanionOverride(): Language | null {
+  if (typeof window === 'undefined') return null;
+  const stored = getString(StorageKeys.COMPANION_LANGUAGE, '');
+  return isSupportedLanguage(stored) ? stored : null;
+}
+
+/**
+ * R42: The app's effective UI language from storage — for NON-React contexts
+ * (canvas rendering, share texts) where useTranslation() is unavailable.
+ * Mirrors the hook's precedence: companion override → shared language → 'en'.
+ */
+export function getStoredLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+  if (isCompanionApp()) {
+    const override = getCompanionOverride();
+    if (override) return override;
+  }
+  const shared = getString(StorageKeys.LANGUAGE, 'en');
+  return isSupportedLanguage(shared) ? shared : 'en';
+}
+
 // Create a nested translation object for object-style access (t.settings.title)
 function buildNestedTranslation(language: Language): Record<string, unknown> {
   const translations = getTranslations();
@@ -74,6 +113,11 @@ function buildNestedTranslation(language: Language): Record<string, unknown> {
 export function useTranslation() {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'en';
+    // R42: companion override wins over the shared main-app language
+    if (isCompanionApp()) {
+      const override = getCompanionOverride();
+      if (override) return override;
+    }
     const stored = getString(StorageKeys.LANGUAGE, 'en');
     if (stored && (ALL_LANGUAGES as readonly string[]).includes(stored)) {
       return stored as Language;
@@ -84,17 +128,56 @@ export function useTranslation() {
   const setLanguage = useCallback((newLang: Language) => {
     setLanguageState(newLang);
     if (typeof window !== 'undefined') {
-      setItem(StorageKeys.LANGUAGE, newLang);
+      // R42: the companion app writes ONLY its own override key — the main
+      // app's language (karaoke-language) stays untouched. The main app
+      // continues to write the shared key only.
+      if (isCompanionApp()) {
+        setItem(StorageKeys.COMPANION_LANGUAGE, newLang);
+      } else {
+        setItem(StorageKeys.LANGUAGE, newLang);
+      }
     }
     window.dispatchEvent(new CustomEvent('languageChange', { detail: newLang }));
   }, []);
 
+  // R42: clears the companion language override — the companion then follows
+  // the main app's language again. No-op in the main app.
+  const resetCompanionLanguage = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!isCompanionApp()) return;
+    removeItem(StorageKeys.COMPANION_LANGUAGE);
+    const shared = getString(StorageKeys.LANGUAGE, 'en');
+    const next = isSupportedLanguage(shared) ? shared : 'en';
+    setLanguageState(next);
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: next }));
+  }, []);
+
+  // R42: does the companion currently have its own language override?
+  const [hasCompanionOverride, setHasCompanionOverride] = useState<boolean>(() =>
+    typeof window !== 'undefined' && isCompanionApp() && getCompanionOverride() !== null
+  );
+
   // Cross-tab synchronization + same-tab language change broadcast
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
+      const companion = isCompanionApp();
+      // Shared main-app language changed (e.g. main app in another tab):
+      // the companion follows ONLY while it has no own override.
       if (e.key === 'karaoke-language' && e.newValue) {
+        if (companion && getCompanionOverride() !== null) return;
         const newLang = e.newValue as Language;
         setLanguageState(newLang);
+      }
+      // Companion override changed (e.g. another companion tab) → adopt it
+      if (companion && e.key === StorageKeys.COMPANION_LANGUAGE) {
+        setHasCompanionOverride(getCompanionOverride() !== null);
+        const override = getCompanionOverride();
+        if (override) {
+          setLanguageState(override);
+        } else {
+          const shared = getString(StorageKeys.LANGUAGE, 'en');
+          setLanguageState(isSupportedLanguage(shared) ? shared : 'en');
+        }
       }
     };
     // Listen for same-tab language changes dispatched by setLanguage()
@@ -128,5 +211,14 @@ export function useTranslation() {
     [language],
   );
 
-  return { t: translate, language, setLanguage, translations: nestedTranslations };
+  return {
+    t: translate,
+    language,
+    setLanguage,
+    translations: nestedTranslations,
+    // R42: companion language scoping
+    isCompanion: typeof window !== 'undefined' && isCompanionApp(),
+    hasCompanionOverride,
+    resetCompanionLanguage,
+  };
 }

@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "Skriv in ett sökord.",
     errorLimit: "Maximalt {n} sökfält uppnått.",
     errorTooLong: "Maximalt {n} tecken tillåtna.",
+    exactBadge: "Exakt",
+    exactSearchHint: "Omge en term med citattecken (t.ex. \"Queen\") för en exakt träff — utan stavfelstolerans som Green/Teen mot Queen.",
     filtersDesc: "Ytterligare filter att aktivera — kombineras ackumulerat (OCH) med sökfälten.",
     filtersTitle: "Filter",
     inactiveBadge: "Inaktiv",

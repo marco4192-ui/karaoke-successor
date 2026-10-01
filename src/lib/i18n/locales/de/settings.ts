@@ -199,6 +199,8 @@ settingsMotto: {
   searchLogicAndHint: 'Ein Song muss ALLE Suchfelder erfüllen (kumulativ).',
   searchLogicOrHint: 'Ein Song muss mindestens EIN Suchfeld erfüllen (unabhängig).',
   addTermPlaceholder: 'Suchbegriff (z. B. Queen, ABBA, Rock …)',
+  exactSearchHint: 'Begriff in Anführungszeichen (z. B. „Queen") sucht exakt — ohne Tippfehler-Toleranz wie Green/Teen bei Queen.',
+  exactBadge: 'Exakt',
   addTermButton: 'Hinzufügen',
   removeTerm: 'Suchfeld entfernen',
   noTerms: 'Noch keine Suchfelder',

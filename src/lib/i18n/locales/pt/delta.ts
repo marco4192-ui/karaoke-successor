@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "Digite um termo de busca.",
     errorLimit: "Máximo de {n} campos de busca atingido.",
     errorTooLong: "Máximo de {n} caracteres permitidos.",
+    exactBadge: "Exato",
+    exactSearchHint: "Coloca um termo entre aspas (ex. \"Queen\") para uma correspondência exata — sem tolerância a erros como Green/Teen por Queen.",
     filtersDesc: "Filtros ativáveis adicionalmente — combinados de forma cumulativa (AND) com os campos de busca.",
     filtersTitle: "Filtros",
     inactiveBadge: "Inativo",

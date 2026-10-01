@@ -62,6 +62,10 @@ export const StorageKeys = {
   LYRICS_STYLE: 'karaoke-lyrics-style',
   THEME: 'karaoke-theme',
   LANGUAGE: 'karaoke-language',
+  /** R42: Language override of the COMPANION app only (set on /mobile).
+   *  When present, the companion ignores the main app's `karaoke-language`
+   *  so each app can run in its own language. */
+  COMPANION_LANGUAGE: 'kz-companion-language',
 
   // --- Multi-mic / Party ---
   MULTI_MIC_CONFIG: 'karaoke-multi-mic-config',

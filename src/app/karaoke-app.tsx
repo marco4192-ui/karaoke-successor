@@ -1710,7 +1710,12 @@ export default function KaraokeZERO() {
       <main ref={mainRef} className={`${
         IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 w-full h-full'
-          : 'px-4 pb-8 flex-1 min-h-0'
+          // R42: results screen gets a flex column so the one-screen layout
+          // (essentials left / share box right / actions at the very bottom)
+          // fills the full viewport height without scrolling.
+          : screen === 'results'
+            ? 'px-4 pb-4 flex-1 min-h-0 lg:flex lg:flex-col'
+            : 'px-4 pb-8 flex-1 min-h-0'
       }`}>
         {screen === 'home' && (
           <>

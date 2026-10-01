@@ -330,10 +330,14 @@ export function calculateNoteConsolation(
  */
 export function estimatePerfectNotes(notesHit: number, rating: string): number {
   if (notesHit <= 0) return 0;
+  // R42: ratios extended to the 8-level rating scale
   const ratio = rating === 'perfect' ? 0.85
     : rating === 'excellent' ? 0.55
+    : rating === 'great' ? 0.38
     : rating === 'good' ? 0.25
-    : rating === 'okay' ? 0.08
-    : 0.02;
+    : rating === 'okay' ? 0.12
+    : rating === 'fair' ? 0.06
+    : rating === 'rough' ? 0.03
+    : 0.01;
   return Math.floor(notesHit * ratio);
 }

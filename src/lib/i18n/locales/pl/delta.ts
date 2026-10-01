@@ -1099,6 +1099,8 @@ export const deltaTranslations = {
     errorEmpty: "Wpisz szukaną frazę.",
     errorLimit: "Osiągnięto maksimum {n} pól wyszukiwania.",
     errorTooLong: "Dozwolone maksymalnie {n} znaków.",
+    exactBadge: "Dokładnie",
+    exactSearchHint: "Ujmij termin w cudzysłów (np. „Queen\"), aby wyszukiwać dokładnie — bez tolerancji literówek jak Green/Teen zamiast Queen.",
     filtersDesc: "Dodatkowo aktywowane filtry — łączone skumulowanie (I) z polami wyszukiwania.",
     filtersTitle: "Filtry",
     inactiveBadge: "Nieaktywny",

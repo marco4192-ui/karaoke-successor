@@ -42,9 +42,11 @@ interface SongLeaderboardPreviewProps {
   activeProfileId: string | null;
   currentPlayerRank: number | null;
   onViewAll: () => void;
+  /** R42: compact variant for the one-screen results layout */
+  compact?: boolean;
 }
 
-export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, currentPlayerRank, onViewAll }: SongLeaderboardPreviewProps) {
+export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, currentPlayerRank, onViewAll, compact }: SongLeaderboardPreviewProps) {
   const { t } = useTranslation();
   const { onlineEnabled, profiles } = useGameStore();
   const [globalTop3, setGlobalTop3] = useState<OnlineScoreEntry[]>([]);
@@ -80,25 +82,25 @@ export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, 
   if (!hasAnyScores && !isLoadingGlobal) return null;
 
   return (
-    <Card className="bg-white/5 border-white/10 mb-8">
-      <CardHeader className="pb-2">
+    <Card className={`bg-white/5 border-white/10 ${compact ? 'flex-1 min-h-0 flex flex-col' : 'mb-8'}`}>
+      <CardHeader className={compact ? 'pb-1 py-3' : 'pb-2'}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrophyIcon className="w-5 h-5 text-yellow-400" />
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrophyIcon className="w-4 h-4 text-yellow-400" />
             {t('songLeaderboardPreview.title')}
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={onViewAll}
-            className="text-purple-400 hover:text-purple-300"
+            className="text-purple-400 hover:text-purple-300 h-7"
           >
             {t('songLeaderboardPreview.viewAll')}
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+      <CardContent className={compact ? 'flex-1 min-h-0 overflow-y-auto kz-scroll flex flex-col justify-center' : ''}>
+        <div className={compact ? 'space-y-2' : 'space-y-3'}>
           {/* Worldwide Top 3 */}
           {onlineEnabled && globalTop3.length > 0 && (
             <div>

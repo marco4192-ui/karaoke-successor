@@ -1100,6 +1100,8 @@ export const deltaTranslations = {
     errorEmpty: "검색어를 입력해 주세요.",
     errorLimit: "검색 필드는 최대 {n}개입니다.",
     errorTooLong: "최대 {n}자까지 입력할 수 있습니다.",
+    exactBadge: "정확",
+    exactSearchHint: "용어를 따옴표로 묶으면(예: \"Queen\") 정확히 일치하는 것만 검색됩니다 — Green/Teen이 Queen에 매칭되는 것 같은 오타 허용은 없습니다.",
     filtersDesc: "추가로 켤 수 있는 필터 — 검색 필드와 누적(AND)으로 결합됩니다.",
     filtersTitle: "필터",
     inactiveBadge: "비활성",

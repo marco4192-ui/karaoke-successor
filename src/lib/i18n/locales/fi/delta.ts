@@ -1099,6 +1099,8 @@ export const deltaTranslations = {
     errorEmpty: "Syötä hakusana.",
     errorLimit: "Enimmäismäärä {n} hakukenttää täynnä.",
     errorTooLong: "Enintään {n} merkkiä sallittu.",
+    exactBadge: "Tarkka",
+    exactSearchHint: "Aseta termi lainausmerkkeihin (esim. \"Queen\") hakeaksesi täsmällisesti — ilman kirjoitusvirhetoleranssia kuten Green/Teen vs. Queen.",
     filtersDesc: "Valinnaisesti aktivoitavat suodattimet — yhdistyvät kumulatiivisesti (AND) hakukenttien kanssa.",
     filtersTitle: "Suodattimet",
     inactiveBadge: "Ei käytössä",
