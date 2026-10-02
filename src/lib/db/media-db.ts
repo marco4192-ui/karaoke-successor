@@ -2,6 +2,14 @@
 // This allows persistent storage of imported song media
 // IMPORTANT: TXT files are stored here to avoid bloating localStorage with lyrics data
 
+// R46: Blob-URL-Guard — jede URL, die hier entsteht und an Consumer (Song-
+// Objekte, Grids, Partys) weitergegeben wird, ist SHARED: Fremd-Revokes werden
+// blockiert; nur der Besitzer (dieses Modul) revokiert über den Internal-Pfad.
+import {
+  registerSharedBlobUrl,
+  revokeObjectURLInternal,
+} from '@/lib/blob-url-guard';
+
 const DB_NAME = 'karaoke-successor-media';
 const DB_VERSION = 2; // Bumped for txt support
 const STORE_NAME = 'media';
@@ -29,18 +37,22 @@ const pendingUrlRevokes = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Delayed revoke (30 s) — mirrors file-storage-media's policy: an <img>/<audio>
  *  that already started loading may finish; images that finished are immune to
- *  revocation anyway. Re-caching a URL cancels the pending revoke. */
+ *  revocation anyway. Re-caching a URL cancels the pending revoke.
+ *  R46: läuft über revokeObjectURLInternal (Guard-Escape-Hatch) — der Besitzer
+ *  verwaltet den Lebenszyklus dieser geteilten URLs selbst. */
 function scheduleCachedUrlRevoke(url: string): void {
   if (!url.startsWith('blob:')) return;
   const existing = pendingUrlRevokes.get(url);
   if (existing) clearTimeout(existing);
   pendingUrlRevokes.set(url, setTimeout(() => {
     pendingUrlRevokes.delete(url);
-    try { URL.revokeObjectURL(url); } catch { /* already revoked */ }
+    revokeObjectURLInternal(url);
   }, 30_000));
 }
 
-/** Cached URL for one media type — creates it on first request. */
+/** Cached URL for one media type — creates it on first request.
+ *  R46: jede hier entstehende URL wird im Blob-URL-Guard als SHARED
+ *  registriert — fremde Revokes sind ab jetzt blockiert (+ Forensik-Warnung). */
 async function getOrCreateSongUrl(
   songId: string,
   type: 'audio' | 'video' | 'cover' | 'txt',
@@ -51,26 +63,37 @@ async function getOrCreateSongUrl(
   const blob = await getMedia(songId, type);
   if (!blob || blob.size === 0) return undefined;
   const url = URL.createObjectURL(blob);
+  registerSharedBlobUrl(url, `media-db ${songId} ${type}`);
   songUrlCache.set(key, url);
   return url;
 }
 
 /** Drop the cached URL of one media type (called after storeMedia replaced
- *  the blob). The next getSongMediaUrls re-reads the new content. */
+ *  the blob). The next getSongMediaUrls re-reads the new content.
+ *  R46 (Cover-Exemption): COVERS werden bei Ersetzung NIE revokiert — gleiche
+ *  Politik wie file-storage-media (R44): Covers sind klein, und die ALTE URL
+ *  ist häufig noch in Song-Objekten (Snapshot/Party-Pool/Queue) referenziert;
+ *  das Revoken brach Grids 30 s nach jedem Editor-Save (ERR_FILE_NOT_FOUND).
+ *  Audio/Video behalten das verzögerte Revoke (große Blobs). */
 function invalidateCachedSongUrl(songId: string, type: 'audio' | 'video' | 'cover' | 'txt'): void {
   const key = `${songId}::${type}`;
   const url = songUrlCache.get(key);
   if (url) {
     songUrlCache.delete(key);
+    if (type === 'cover') return; // nur aus dem Cache nehmen — URL bleibt am Leben
     scheduleCachedUrlRevoke(url);
   }
 }
 
 /** Revoke every cached media URL (full library reset / cache clear).
  *  Delayed (30 s) so grids that still display the old URLs don't break
- *  mid-swap — the replacement data is served with fresh URLs anyway. */
+ *  mid-swap — the replacement data is served with fresh URLs anyway.
+ *  R46: COVERS überleben den Full-Reset lebendig (nur Cache-Drop, wie
+ *  file-storage-media's clearBlobUrlCache in R44) — Covers sind klein und
+ *  bleiben von Song-Objekten referenziert; Audio/Video behalten das Revoke. */
 export function revokeAllSongMediaUrls(): void {
-  for (const url of songUrlCache.values()) {
+  for (const [key, url] of songUrlCache.entries()) {
+    if (key.endsWith('::cover')) continue; // Cover: nur aus dem Cache nehmen
     scheduleCachedUrlRevoke(url);
   }
   songUrlCache.clear();

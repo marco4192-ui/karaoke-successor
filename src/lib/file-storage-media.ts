@@ -11,6 +11,18 @@ import {
   MIME_TYPES,
   COVER_PATTERNS,
 } from '@/lib/file-storage-utils';
+// R46: Blob-URL-Guard — Cover-URLs, die an Song-Objekte weitergegeben werden,
+// sind SHARED: fremde Revokes blockiert; der Besitzer revokiert über Internal.
+import {
+  registerSharedBlobUrl,
+  revokeObjectURLInternal,
+} from '@/lib/blob-url-guard';
+
+/** True, wenn ein Cache-Key/Pfad auf eine Cover-Datei zeigt (Extension-Analyse). */
+function isCoverKey(key: string): boolean {
+  const ext = '.' + key.split('/').pop()?.split('.').pop()?.toLowerCase();
+  return COVER_EXTENSIONS.includes(ext as typeof COVER_EXTENSIONS[number]);
+}
 
 /**
  * Convert a forward-slash path to the OS-native separator on Windows.
@@ -48,12 +60,13 @@ const pendingRevokes = new Map<string, ReturnType<typeof setTimeout>>();
  * the URL. If the URL is re-cached before the timeout fires, the revoke is
  * cancelled in cacheBlobUrl(). Used both for cache eviction AND for
  * replacement (R34: the old immediate revoke on replace caused intermittent
- * broken covers — a parallel load could revoke a URL an <img> was loading). */
+ * broken covers — a parallel load could revoke a URL an <img> was loading).
+ * R46: läuft über revokeObjectURLInternal (Guard-Escape-Hatch). */
 function scheduleDelayedRevoke(url: string) {
   const existing = pendingRevokes.get(url);
   if (existing) clearTimeout(existing);
   pendingRevokes.set(url, setTimeout(() => {
-    try { URL.revokeObjectURL(url); } catch { /* already revoked or GC'd */ }
+    revokeObjectURLInternal(url);
     pendingRevokes.delete(url);
   }, 30_000));
 }
@@ -72,8 +85,7 @@ function evictBlobUrl(key: string) {
   const url = blobUrlCache.get(key);
   if (url) {
     blobUrlCache.delete(key);
-    const ext = '.' + key.split('/').pop()?.split('.').pop()?.toLowerCase();
-    if (COVER_EXTENSIONS.includes(ext as typeof COVER_EXTENSIONS[number])) {
+    if (isCoverKey(key)) {
       // Cover: drop from cache, keep the URL alive (Song objects may still
       // reference it; worst case is a bounded, small-blob memory hold).
       return;
@@ -82,7 +94,10 @@ function evictBlobUrl(key: string) {
   }
 }
 
-/** Add a blob URL to the cache, evicting the oldest entry if full. */
+/** Add a blob URL to the cache, evicting the oldest entry if full.
+ *  R46: Cover-URLs werden im Blob-URL-Guard als SHARED registriert — jede
+ *  URL, die von hier in Song-Objekte gelangt, ist vor fremden Revokes
+ *  geschützt (Forensik-Warnung im Console-Log). */
 function cacheBlobUrl(key: string, url: string) {
   // Cancel any pending delayed revoke — the URL is being actively re-cached.
   const pendingRevoke = pendingRevokes.get(url);
@@ -95,9 +110,13 @@ function cacheBlobUrl(key: string, url: string) {
   // load of the same file. R34: use the same DELAYED revoke (30 s) as cache
   // eviction — revoking immediately broke covers intermittently, because a
   // consumer (<img>/<audio>) could still be mid-load on the old URL.
+  // R46 (Cover-Exemption): COVERS werden auch bei Ersetzung NIE revokiert —
+  // gleiche Politik wie evictBlobUrl/clearBlobUrlCache (R44). Der Ersetzungs-
+  // Pfad war die letzte verbleibende Stelle, an der eine angezeigte Cover-URL
+  // 30 s später sterben konnte.
   const existingUrl = blobUrlCache.get(key);
   if (existingUrl && existingUrl !== url) {
-    scheduleDelayedRevoke(existingUrl);
+    if (!isCoverKey(key)) scheduleDelayedRevoke(existingUrl);
   }
 
   if (blobUrlCache.size >= BLOB_CACHE_MAX) {
@@ -106,6 +125,9 @@ function cacheBlobUrl(key: string, url: string) {
     if (oldest !== undefined && oldest !== key) evictBlobUrl(oldest);
   }
   blobUrlCache.set(key, url);
+  if (isCoverKey(key)) {
+    registerSharedBlobUrl(url, `tauri-fs ${key.split('/').pop() ?? key}`);
+  }
 }
 
 // Load a file from the filesystem and return a blob URL
@@ -361,7 +383,11 @@ async function loadSongMediaUrlUncached(relativePath: string, baseFolder?: strin
         normalizedRelativePath,
       );
       if (folderResult) {
-
+        // R46: Cover-URLs aus dem Ordner-Scan-Fallback sind ebenfalls SHARED
+        // (sie fließen in Song-Objekte) — im Guard registriert.
+        if (isCoverKey(relativePath)) {
+          registerSharedBlobUrl(folderResult, `tauri-fs-scan ${relativePath.split('/').pop() ?? relativePath}`);
+        }
         return folderResult;
       }
     }
@@ -439,6 +465,11 @@ export async function refreshTauriMediaUrl(
 
     // Replace the cache entry WITHOUT revoking the old URL (see doc above).
     blobUrlCache.set(fullPath, url);
+    // R46: die frische Heil-URL ist SHARED (fließt zurück ins Song-Objekt) —
+    // im Guard registriert (Cover-Datei).
+    if (isCoverKey(relativePath)) {
+      registerSharedBlobUrl(url, `tauri-heal ${relativePath.split('/').pop() ?? relativePath}`);
+    }
     return url;
   } catch (error) {
     // eslint-disable-next-line no-console

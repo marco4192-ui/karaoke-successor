@@ -819,6 +819,26 @@ export async function getAllSongsAsync(): Promise<Song[]> {
         }
       }
     });
+    // R46 (Tauri-Lücke): storedMedia-Songs (Converter-Importe mit Cover in der
+    // media IndexedDB) bekamen im TAURI-Zweig NIE ihr Bibliotheks-Cover — der
+    // Zweig restaurierte ausschließlich relativeCoverPath-Songs, gespeicherte
+    // Medien wurden nur im Browser-Zweig wiederhergestellt. Ergebnis: im Tauri-
+    // Library-Grid zeigten Converter-Importe dauerhaft den Platzhalter (nur das
+    // Voting-Modal lud die Cover via getSongMediaUrls nach). Jetzt restauriert
+    // der Tauri-Zweig beide Quellen.
+    const storedMediaSongs = songs.filter(song =>
+      song.storedMedia &&
+      !coverUrlMap.has(song.id) &&
+      (!song.coverImage || song.coverImage.startsWith('blob:'))
+    );
+    await asyncPool(20, storedMediaSongs, async (song) => {
+      try {
+        const mediaUrls = await getSongMediaUrls(song.id);
+        if (mediaUrls.coverUrl) coverUrlMap.set(song.id, mediaUrls.coverUrl);
+      } catch {
+        // Non-critical — cover just won't show
+      }
+    });
     const restoredTauri = songs.map(song => {
       const coverUrl = coverUrlMap.get(song.id);
       if (coverUrl) return { ...song, coverImage: coverUrl };
