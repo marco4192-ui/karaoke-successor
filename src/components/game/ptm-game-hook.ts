@@ -557,26 +557,24 @@ export function usePtmGameLogic({
     return () => clearInterval(interval);
   }, [phase, isPlaying, showTransitionText, safeSettings.randomSwitches]);
 
-  // ── Mic handoff ──
-  useEffect(() => {
-    if (phase !== 'playing') return;
-    const player = playersRef.current[currentPlayerIndex];
-    if (!player) return;
-    if (player.micId && player.micId !== 'default') {
-      // eslint-disable-next-line no-console
-      console.log(`[PTM] Mic handoff: switching to player "${player.name}" mic (${player.micId})`);
-      switchMicrophone(player.micId).then((success) => {
-        // After switching mic, re-apply difficulty so the fresh
-        // PitchDetector instance uses the correct config.
-        if (success) {
-          setPitchDifficulty(safeSettings.difficulty);
-        }
-      }).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('[PTM] Mic handoff failed:', err);
-      });
-    }
-  }, [currentPlayerIndex, phase, switchMicrophone, safeSettings.difficulty, setPitchDifficulty]);
+  // ── Player switches are purely LOGICAL — no mic handoff ──
+  // PTM is a shared-mic game: ONE device (sharedMicId → micId fallback) is
+  // opened exactly once in startGame() and stays open for the whole
+  // song/series. A player switch only changes which player the scoring
+  // sub-hook credits (currentPlayerIndex) plus the transition overlay —
+  // the device is never touched between game start and game end.
+  //
+  // The former "mic handoff" effect called switchMicrophone(player.micId)
+  // on EVERY player change — a relic of a per-player-mic architecture that
+  // PTM never used (unified setup's 'shared-mic' deviceAssignmentMode gives
+  // every player the identical micId; per-player devices exist only in
+  // Medley). Before R44 that re-registered the whole audio pipeline per
+  // switch (the original handoff stutter); R44's same-device fast-path
+  // already skipped the re-init — and this removal finally drops the
+  // leftover async call, its console log and the redundant difficulty
+  // re-apply as well. Difficulty is synced by the settings effect below
+  // and after startGame's init — the detector instance never changes
+  // mid-game, so there is nothing to re-configure at a switch.
 
   // ── Sync pitch detector difficulty when settings change mid-game ──
   // The HUD controls allow cycling difficulty during gameplay. The scoring

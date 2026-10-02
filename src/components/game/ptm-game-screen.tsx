@@ -274,11 +274,20 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       <GameProgressBar currentTime={g.currentTime} duration={g.displayDuration} />
       <TimeDisplay currentTime={g.currentTime} duration={g.displayDuration} />
 
-      {/* Mic indicator (bottom-left) — shows which player sings on which mic */}
+      {/* Mic indicator (bottom-left) — shows which player sings on which mic.
+          currentPlayer feeds the LIVE singer: the store roster is static
+          after setup, so without it the indicator would keep naming the
+          first mic player for the whole song (stale after every handoff). */}
       {(g.phase === 'playing' || g.phase === 'transitioning') && (
         <MicIndicator
           isPlaying={g.isPlaying}
           gameMode="pass-the-mic"
+          currentPlayer={g.currentPlayer ? {
+            id: g.currentPlayer.id,
+            name: g.currentPlayer.name,
+            micName: g.safeSettings.sharedMicName
+              || (g.safeSettings.micName && g.safeSettings.micName !== 'Standard' ? g.safeSettings.micName : undefined),
+          } : null}
         />
       )}
 

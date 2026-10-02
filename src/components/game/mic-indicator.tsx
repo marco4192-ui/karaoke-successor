@@ -18,6 +18,14 @@ interface MicIndicatorProps {
   isDuetMode?: boolean;
   /** Game mode string for mode-specific behavior */
   gameMode?: string;
+  /**
+   * LIVE current singer (pass-the-mic). The store roster used for the
+   * regular lookup is STATIC after setup — its isActive flags are never
+   * updated during a game, so the indicator would keep naming the first
+   * mic player all song long. When provided, this overrides the store
+   * lookup and re-triggers visibility on every singer change.
+   */
+  currentPlayer?: { id: string; name: string; micName?: string } | null;
 }
 
 /** How long (ms) the indicator stays fully visible before fading */
@@ -31,6 +39,7 @@ export function MicIndicator({
   isPlaying = false,
   isDuetMode = false,
   gameMode = '',
+  currentPlayer = null,
 }: MicIndicatorProps) {
   const unifiedSetupResult = usePartyStore((s) => s.unifiedSetupResult);
   const passTheMicPlayers = usePartyStore((s) => s.passTheMicPlayers);
@@ -80,11 +89,15 @@ export function MicIndicator({
     return micPlayers[0] || null;
   }, [micPlayers, gameMode, passTheMicPlayers]);
 
+  // PTM: the live singer beats the (static) store roster — see prop docs.
+  const displayPlayer: { id: string; name: string; micName?: string } | null =
+    currentPlayer ?? activePlayer;
+
   // Show indicator when player changes or playback starts, auto-fade after delay.
   // Uses a ref for lastPlayerId to avoid the setState-in-effect cycle that
   // previously caused the fade timer to be destroyed on its own re-render.
   useEffect(() => {
-    const currentId = activePlayer?.id || null;
+    const currentId = displayPlayer?.id || null;
     const playerChanged = currentId !== lastPlayerIdRef.current;
 
     if (isPlaying || playerChanged) {
@@ -99,7 +112,7 @@ export function MicIndicator({
       }, VISIBLE_DURATION);
     }
     return clearFadeTimer;
-  }, [activePlayer?.id, isPlaying]);
+  }, [displayPlayer?.id, isPlaying]);
 
   // Don't render if:
   // - No setup result (e.g. quick play from library without party setup)
@@ -113,7 +126,7 @@ export function MicIndicator({
   const companionPlayers = players.filter((p) => p.playerType === 'companion');
 
   // Build label
-  const buildLabel = (player: SelectedPlayer) => {
+  const buildLabel = (player: { name: string; micName?: string }) => {
     if (player.micName) {
       return `${player.micName} — ${player.name} singt`;
     }
@@ -130,7 +143,7 @@ export function MicIndicator({
     >
       <div className="bg-black/60 backdrop-blur-md rounded-xl px-4 py-2.5 border border-white/10 shadow-lg">
         {/* Single player mic indicator */}
-        {!isDuetMode && activePlayer && (
+        {!isDuetMode && displayPlayer && (
           <div className="flex items-center gap-2.5">
             {/* Mic pulse dot */}
             <div className="relative flex-shrink-0">
@@ -143,9 +156,9 @@ export function MicIndicator({
             </div>
             <div>
               <p className="text-white text-sm font-semibold leading-tight">
-                {buildLabel(activePlayer)}
+                {buildLabel(displayPlayer)}
               </p>
-              {activePlayer.micName && (
+              {displayPlayer.micName && (
                 <p className="text-white/40 text-xs mt-0.5">
                   Mikrofon aktiv
                 </p>
