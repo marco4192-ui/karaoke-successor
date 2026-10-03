@@ -102,7 +102,7 @@ Common normalizations (sub-genres → parent genre):
 - "Alternative Rock", "Classic Rock", "Progressive Rock", "Punk Rock", "Hard Rock", "Grunge" → "Rock"
 - "Contemporary R&B", "Neo Soul", "New Jack Swing" → "R&B"
 - "Trance", "Drum and Bass", "Dubstep", "Deep House", "Techno", "House", "Ambient" → "Electronic"
-- "Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" (keep as Schlager, NOT Pop — it's a distinct German genre)
+- "Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" (keep as Schlager, NOT Pop — a distinct genre that also exists OUTSIDE German: Dutch levenslied, Belgian, Danish, Italian, Finnish iskelmä)
 - "K-Pop", "J-Pop" → keep as-is (canonical); "J-Rock" → "Rock"
 ${jazzLine}
 - "Hip-Hop", "Rap", "Trap", "Drill", "Gangsta Rap" → "Rap" (the main category; no separate Hip-Hop)
@@ -122,7 +122,8 @@ ${jazzLine}
 ${customParentLine}
 Language detection hints:
 - Artist names ending in common patterns: "-ovic", "-ova" → Slavic language; "-sson", "-sen" → Scandinavian
-- Known non-English genres hint at language: "Schlager"/"Volksmusik" → German; "Chanson" → French; "Canzone" → Italian
+- Genre→language (by definition): "Volksmusik" → German; "Chanson" → French; "Canzone" → Italian
+- IMPORTANT: "Schlager" does NOT imply German — schlager exists in many languages (Dutch levenslied, Belgian, Danish, Italian, Finnish iskelmä). Derive the language from the ARTIST and their lyrics, never from the genre alone (Helene Fischer → German, André Hazes → Dutch, Katri Helena → Finnish)
 - If lyrics are in the input and contain common words from a language, use that (e.g. "ich", "du", "der" → German)
 - "Volksmusik" is traditional German/Austrian/Swiss folk → German (language)
 - K-Pop songs → "Korean", J-Pop songs → "Japanese" (English language names)

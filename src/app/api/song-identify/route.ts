@@ -126,7 +126,7 @@ Rules:
 - BPM should be a number, not a string
 - Be conservative with confidence - only use 90+ if you're very certain
 - If the input is just a filename with no lyrics, genre and language may be guessable from the artist name and song title — use world knowledge about known artists
-- "Schlager" is a distinct German-language genre — do NOT merge it with Pop. Apply it for typical German hits (Helene Fischer, Andrea Berg, Roland Kaiser, etc.)
+- "Schlager" is a distinct genre — do NOT merge it with Pop. It originated in the German-speaking world but exists in other languages too (Dutch levenslied, Belgian, Danish, Italian, Finnish iskelmä): apply it for schlager-style acts regardless of language (Helene Fischer, Andrea Berg, Roland Kaiser, André Hazes, Katri Helena). The song's language always comes from the lyrics/artist, never from the genre
 - "Volksmusik" is traditional German/Austrian/Swiss folk music — distinct from "Folk" (which is English-language singer-songwriter style)`,
             },
             {

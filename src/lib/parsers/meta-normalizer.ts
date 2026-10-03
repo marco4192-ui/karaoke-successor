@@ -410,9 +410,10 @@ const GENRE_ALIASES: Record<string, string> = {
   // The lookup is case-insensitive and tries hyphen↔space variants, so
   // ONE spelling per pair suffices ("art pop" also catches "Art-Pop").
   // Diacritics are NOT stripped by the lookup — accented spellings get
-  // their own entries ("reggaetón" AND "reggaeton"). Borderline tags are
-  // marked "// → ASK": the open questions went to the user with R47 and
-  // can be flipped here when answered.
+  // their own entries ("reggaetón" AND "reggaeton"). The R47 borderline
+  // questions went to the user; R48 confirmed ALL proposals as-is — the
+  // "R48-bestätigt" values below are FINAL (flip them here if the user
+  // ever revisits a decision).
 
   // Pop family
   'adult alternative pop': 'Pop', 'alt-pop': 'Pop', 'ambient pop': 'Pop',
@@ -434,7 +435,7 @@ const GENRE_ALIASES: Record<string, string> = {
   'teenie-stars': 'Pop', 'twee pop': 'Pop', 'variete': 'Pop',
   'variété': 'Pop', 'vocal pop': 'Pop', 'western-pop': 'Pop',
   'variete française': 'Pop', // Misch-Schreibweise ohne é in "variete"
-  'city pop': 'J-Pop', // → ASK: japanische 80er-Pop-Ära (alternativ Pop)
+  'city pop': 'J-Pop', // R48-bestätigt: japanische 80er-Pop-Ära (alternativ Pop)
 
   // Rock family
   'adult alternative': 'Rock', 'art rock': 'Rock', 'beat': 'Rock',
@@ -465,9 +466,9 @@ const GENRE_ALIASES: Record<string, string> = {
   'deutschrock': 'Rock', 'deutsch rock pop': 'Rock',
   'mittelalter-rock': 'Rock', 'modern hard rock': 'Rock',
   'christian rock': 'Rock',
-  'grog\'n roll': 'Rock', // → ASK: Joke-Tag (Piraten-Rock)
-  'sprock': 'Rock', // → ASK: unklare Bedeutung (Space/Prog-Rock?)
-  'belgium drunk': 'Punk', // → ASK: belgische Drunk-Punk-Party-Musik
+  'grog\'n roll': 'Rock', // R48-bestätigt: Joke-Tag (Piraten-Rock)
+  'sprock': 'Rock', // R48-bestätigt: unklare Bedeutung (Space/Prog-Rock?)
+  'belgium drunk': 'Punk', // R48-bestätigt: belgische Drunk-Punk-Party-Musik
   'hard rock & metal': 'Rock',
 
   // Metal family
@@ -509,11 +510,11 @@ const GENRE_ALIASES: Record<string, string> = {
   'dance electronic': 'Electronic', 'dance/electronic': 'Electronic',
   'general club dance': 'Electronic', 'general house': 'Electronic',
   'general trance': 'Electronic',
-  'denpa': 'Electronic', // → ASK: japanisches Nerd-Electro
-  'disco fox': 'Electronic', // → ASK: alternativ Schlager
+  'denpa': 'Electronic', // R48-bestätigt: japanisches Nerd-Electro
+  'disco fox': 'Electronic', // R48-bestätigt: alternativ Schlager
   'disco hi-nrg': 'Electronic', 'hi-nrg': 'Electronic',
   'disco house': 'Electronic', 'disco music': 'Electronic',
-  'disco polo': 'Electronic', // → ASK: alternativ Schlager
+  'disco polo': 'Electronic', // R48-bestätigt: alternativ Schlager
   'euro dance': 'Electronic', 'eurodisco': 'Electronic',
   'electro house': 'Electronic', 'electro swing': 'Electronic',
   'electro-mashup': 'Electronic', 'electroclash': 'Electronic',
@@ -522,7 +523,7 @@ const GENRE_ALIASES: Record<string, string> = {
   'french electro': 'Electronic', 'future bass': 'Electronic',
   'future funk': 'Electronic', 'future groove': 'Electronic',
   'glitch hop': 'Electronic', 'hard bass': 'Electronic',
-  'hauntology': 'Electronic', // → ASK
+  'hauntology': 'Electronic', // R48-bestätigt
   'hip house': 'Electronic', 'indie dance': 'Electronic',
   'indie electronic': 'Electronic', 'indietronica': 'Electronic',
   'industrial': 'Electronic', 'italo': 'Electronic', 'italo dance': 'Electronic',
@@ -530,7 +531,7 @@ const GENRE_ALIASES: Record<string, string> = {
   'melodic house': 'Electronic', 'melodic techno': 'Electronic',
   'minimal synth': 'Electronic', 'minimal wave': 'Electronic',
   'new rave': 'Electronic', 'nu trance': 'Electronic', 'nu-disco': 'Electronic',
-  'plunderphonics': 'Electronic', // → ASK
+  'plunderphonics': 'Electronic', // R48-bestätigt
   'post-disco': 'Electronic', 'progressive house': 'Electronic',
   'proto-industrial': 'Electronic', 'psychedelic trance': 'Electronic',
   'rave': 'Electronic', 'sampledelia': 'Electronic', 'synth': 'Electronic',
@@ -538,8 +539,8 @@ const GENRE_ALIASES: Record<string, string> = {
   'synthwave': 'Electronic', 'tech house': 'Electronic',
   'tropical house': 'Electronic', 'uk garage': 'Electronic',
   "drum'n'bass": 'Electronic',
-  'elektro lore': 'Electronic', // → ASK: unklarer Tag
-  'alpen-jazz-techno': 'Electronic', // → ASK: Alpin-Party-Techno
+  'elektro lore': 'Electronic', // R48-bestätigt: unklarer Tag
+  'alpen-jazz-techno': 'Electronic', // R48-bestätigt: Alpin-Party-Techno
 
   // R&B / Soul / Funk / Blues / Jazz family (Jazz subsumed by R&B)
   'acid jazz': 'R&B', 'alt r&b': 'R&B', 'fusion': 'R&B',
@@ -549,10 +550,10 @@ const GENRE_ALIASES: Record<string, string> = {
   'urban pop': 'R&B', 'general easy listening': 'R&B', 'lounge': 'R&B',
   'blue-eyed soul': 'Soul', 'funk soul': 'Soul', 'pop soul': 'Soul',
   'r&b gospel': 'Soul', 'soul pop': 'Soul', 'urban soul': 'Soul',
-  'soul & funk': 'Soul', 'worship': 'Soul', // → ASK: Gospel-Familie
-  'christian': 'Soul', // → ASK: stil-agnostisch (alternativ manuell)
-  'contemporary christian': 'Soul', // → ASK
-  'papiez': 'Soul', // → ASK: polnische religiöse Lieder
+  'soul & funk': 'Soul', 'worship': 'Soul', // R48-bestätigt: Gospel-Familie
+  'christian': 'Soul', // R48-bestätigt: stil-agnostisch (alternativ manuell)
+  'contemporary christian': 'Soul', // R48-bestätigt
+  'papiez': 'Soul', // R48-bestätigt: polnische religiöse Lieder
   'christian & gospel': 'Soul', 'christian music': 'Soul',
   'boogie': 'Funk', 'ballad blues': 'Blues', 'punk blues': 'Blues',
 
@@ -565,8 +566,8 @@ const GENRE_ALIASES: Record<string, string> = {
 
   // Folk / Country / Volksmusik family
   'alternative/indie/folk': 'Folk', 'anti-folk': 'Folk',
-  'arbeiterlieder': 'Folk', 'cabaret': 'Folk', // → ASK: Chanson-Familie
-  'kabaret': 'Folk', // → ASK
+  'arbeiterlieder': 'Folk', 'cabaret': 'Folk', // R48-bestätigt: Chanson-Familie
+  'kabaret': 'Folk', // R48-bestätigt
   'cantautor': 'Folk', 'celtic': 'Folk', 'contemporary folk': 'Folk',
   'electro folk': 'Folk', 'electronic folk': 'Folk', 'ethno pop': 'Folk',
   'fado': 'Folk', 'folklore': 'Folk', 'gipsy': 'Folk', 'gypsy': 'Folk',
@@ -574,14 +575,14 @@ const GENRE_ALIASES: Record<string, string> = {
   'modern folk': 'Folk', 'national folk': 'Folk', 'pagan folk': 'Folk',
   'psych folk': 'Folk', 'québécois': 'Folk', 'quebecois': 'Folk',
   'québecois': 'Folk', // Misch-Schreibweise: é nur in "Qué"
-  'rai': 'Folk', 'shanty': 'Folk', 'traditional': 'Folk', // → ASK
+  'rai': 'Folk', 'shanty': 'Folk', 'traditional': 'Folk', // R48-bestätigt
   'world pop': 'Folk', 'general world': 'Folk', 'african music': 'Folk',
   'musique africaine': 'Folk', 'musique du monde': 'Folk',
-  'musiques du monde': 'Folk', 'hardmusette': 'Folk', // → ASK
+  'musiques du monde': 'Folk', 'hardmusette': 'Folk', // R48-bestätigt
   'alt country': 'Country', 'country & folk': 'Country',
   'country rock': 'Country',
-  'polka': 'Volksmusik', 'brass': 'Volksmusik', // → ASK: Blasmusik
-  'narodno zabavna': 'Volksmusik', // → ASK: Balkan-Volksmusik-Pop
+  'polka': 'Volksmusik', 'brass': 'Volksmusik', // R48-bestätigt: Blasmusik
+  'narodno zabavna': 'Volksmusik', // R48-bestätigt: Balkan-Volksmusik-Pop
 
   // Latin family
   'axe': 'Latin', 'axé': 'Latin', 'bizarre latin pop': 'Latin',
@@ -603,26 +604,36 @@ const GENRE_ALIASES: Record<string, string> = {
 
   // Reggae family
   '2 tone': 'Reggae', 'brass-ska': 'Reggae', 'dance hall': 'Reggae',
-  'melodica': 'Reggae', // → ASK: Dub-Melodica (Augustus Pablo)
+  'melodica': 'Reggae', // R48-bestätigt: Dub-Melodica (Augustus Pablo)
   'ragga': 'Reggae', 'reggee': 'Reggae', // Typo: reggae
   'reggae rock': 'Reggae', 'raggae': 'Reggae', // Typo
 
   // Classical family
-  'himno patrio': 'Classical', // → ASK: Nationalhymnen
-  'hymne': 'Classical', // → ASK
-  'madrigal': 'Classical', 'national anthem': 'Classical', // → ASK
+  'himno patrio': 'Classical', // R48-bestätigt: Nationalhymnen
+  'hymne': 'Classical', // R48-bestätigt
+  'madrigal': 'Classical', 'national anthem': 'Classical', // R48-bestätigt
   'opera-pop': 'Classical', 'orchestral': 'Classical', 'symphonic': 'Classical',
-  'lyrique': 'Classical', 'rag': 'Classical', // → ASK: Ragtime
+  'lyrique': 'Classical', 'rag': 'Classical', // R48-bestätigt: Ragtime
   'classical crossover': 'Classical', 'classique': 'Classical',
   'opéra': 'Classical',
 
   // Schlager family
   'bayern-pop': 'Schlager', 'fussballhits': 'Schlager',
-  'fußballhits': 'Schlager', // → ASK: Fußball-Party-Songs
+  'fußballhits': 'Schlager', // R48-bestätigt: Fußball-Party-Songs
   'karneval': 'Schlager', 'lagersong': 'Schlager',
-  'epa dunk': 'Schlager', // → ASK: schwedische Party-Musik
-  'pimba': 'Schlager', // → ASK: portugiesisches Schlager-Äquivalent
+  'epa dunk': 'Schlager', // R48-bestätigt: schwedische Party-Musik
+  'pimba': 'Schlager', // R48-bestätigt: portugiesisches Schlager-Äquivalent
   'rock schlager': 'Schlager', 'schlager pop': 'Schlager',
+  // R48 user note: Schlager is NOT a German-only phenomenon — it exists
+  // in other languages too. The national counterparts of neighboring
+  // countries belong in the SAME genre family. The LANGUAGE of a song
+  // always follows the artist/lyrics, never the genre (see the AI
+  // prompts in harmonize/route.ts + song-identify/route.ts).
+  'levenslied': 'Schlager', // nl: niederländisches Schlager-Pendant
+  'smartlap': 'Schlager', // nl: sentimenteller Levenslied-Zweig
+  'dansband': 'Schlager', 'dansbandsmusik': 'Schlager', // se: Dansband-Musik
+  'danseband': 'Schlager', // no/dk: skandinavische Dansband-Schreibweise
+  'iskelmä': 'Schlager', 'iskelma': 'Schlager', // fi: finn. Wort für Schlager
 
   // Musical family
   'comedie musicale': 'Musical', 'comédie musicale': 'Musical',
@@ -631,9 +642,9 @@ const GENRE_ALIASES: Record<string, string> = {
 
   // Soundtrack family (TV-/Games-/Cartoon-Entscheidung aus R2-D: im
   // weitesten Sinne Soundtracks)
-  'anime': 'Soundtrack', // → ASK: alternativ J-Pop
-  'manga': 'Soundtrack', // → ASK
-  'ghibli': 'Soundtrack', // → ASK
+  'anime': 'Soundtrack', // R48-bestätigt: alternativ J-Pop
+  'manga': 'Soundtrack', // R48-bestätigt
+  'ghibli': 'Soundtrack', // R48-bestätigt
   'bso': 'Soundtrack', 'bollywood': 'Soundtrack', 'cartoon': 'Soundtrack',
   'dessin animes': 'Soundtrack', 'dibujos animados': 'Soundtrack',
   'dibujos animados latino': 'Soundtrack', 'film score': 'Soundtrack',
