@@ -49,6 +49,7 @@ import {
 } from '@/lib/editor/rule-harmonizer';
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
@@ -271,6 +272,7 @@ export function MetadataStudio({
     }
     const audio = previewAudioRef.current;
     if (audio) {
+      clearLoudnessGain(audio); // R49: reset a possible boost gain node
       audio.pause();
       audio.removeAttribute('src');
       audio.load(); // release media resources
@@ -302,7 +304,15 @@ export function MetadataStudio({
     if (!src) return;
 
     const audio = new Audio();
-    audio.volume = 0.5;
+    // R49: preview-volume setting + 89 dB loudness normalization — this
+    // preview previously played at a hardcoded 0.5, ignoring both the setting
+    // and the normalization that game playback uses.
+    applyPreviewVolume(
+      audio,
+      target.id,
+      src,
+      () => generation === previewGenRef.current && previewAudioRef.current === audio,
+    );
     audio.src = src;
     previewAudioRef.current = audio;
 

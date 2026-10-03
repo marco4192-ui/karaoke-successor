@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
 
 export function useLibraryPreview() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
@@ -18,6 +19,7 @@ export function useLibraryPreview() {
 
   /** Safely dispose of an Audio element (remove src, release resources) */
   const disposeAudio = useCallback((audio: HTMLAudioElement) => {
+    clearLoudnessGain(audio); // R49: reset a possible boost gain node
     audio.pause();
     audio.removeAttribute('src');
     audio.load(); // Release media resources
@@ -99,7 +101,15 @@ export function useLibraryPreview() {
       // Create new audio for preview and track it
       if (songToPlay.audioUrl) {
         const audio = new Audio();
-        audio.volume = 0.3;
+        // R49: preview-volume setting + 89 dB loudness normalization (was a
+        // hardcoded 0.3 — neither the setting nor the normalization ever
+        // reached the preview; loud songs blared at raw level).
+        applyPreviewVolume(
+          audio,
+          songToPlay.id,
+          songToPlay.audioUrl,
+          () => generation === previewGenerationRef.current && audio === activeAudioRef.current,
+        );
         audio.src = songToPlay.audioUrl;
         activeAudioRef.current = audio;
 
@@ -133,6 +143,21 @@ export function useLibraryPreview() {
         if (videoEl) {
           if (!videoEl.src || videoEl.src === window.location.href) {
             videoEl.src = videoSrc;
+          }
+
+          // R49: when the VIDEO element carries the sound (embedded audio or
+          // no separate audioUrl → SongCard leaves it unmuted), it gets the
+          // same preview-volume + 89 dB treatment. Muted videos ignore
+          // element.volume — applying is harmless either way, but the loudness
+          // analysis only runs for the element that is actually audible so we
+          // don't decode media twice per preview.
+          if (songToPlay.hasEmbeddedAudio || !songToPlay.audioUrl) {
+            applyPreviewVolume(
+              videoEl,
+              songToPlay.id,
+              videoSrc,
+              () => generation === previewGenerationRef.current,
+            );
           }
 
           videoEl.addEventListener('loadedmetadata', () => {

@@ -20,7 +20,7 @@
  * - YouTube / missing media URLs are skipped (cannot fetch/decode).
  */
 
-import { StorageKeys, getJsonOptional, setJson } from '@/lib/storage';
+import { StorageKeys, getJsonOptional, setJson, getNumber, getBool } from '@/lib/storage';
 import { getSharedMediaSource, resetSharedGainNode } from './shared-media-source';
 
 /** ReplayGain 89 dB reference ≈ -18 dBFS RMS target. */
@@ -328,5 +328,77 @@ export function clearLoudnessGain(el: HTMLMediaElement): void {
     resetSharedGainNode(el);
   } catch {
     // Ignore.
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Preview volume (R49): library hover preview, Metadata Studio preview,
+// companion song preview
+// ---------------------------------------------------------------------------
+
+/**
+ * R49 user request: the 89 dB normalization ran in game/jukebox playback only
+ * — previews played RAW (hardcoded 0.3/0.5/0.6 element volume, loud songs
+ * blared). These helpers wire every preview path to the same pipeline:
+ * preview-volume setting × per-song loudness gain.
+ *
+ * The preview-volume SETTING (Settings → Graphics & Sound, default 30)
+ * previously fed only the settings slider — no player ever read it.
+ */
+
+/** Read the preview volume setting (0-100, default 30). Never throws. */
+export function getPreviewVolumePercent(): number {
+  try {
+    return clampNumber(getNumber(StorageKeys.PREVIEW_VOLUME, 30), 0, 100);
+  } catch {
+    return 30;
+  }
+}
+
+/** True when loudness normalization is enabled (default on). Never throws. */
+export function isLoudnessNormalizationEnabled(): boolean {
+  try {
+    return getBool(StorageKeys.LOUDNESS_NORMALIZATION, true);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Apply the preview-volume setting (+ 89 dB loudness normalization when
+ * enabled) to a PREVIEW media element.
+ *
+ * Contract (mirrors game playback — never breaks the preview):
+ * - The plain preview volume is applied IMMEDIATELY (fast path: the preview
+ *   must never blare at 1.0 while the analysis is still running).
+ * - The per-song gain follows asynchronously when the (cached) analysis
+ *   resolves; any failure silently keeps the base volume.
+ * - `isStillActive` (optional) lets the caller bail out when the preview was
+ *   stopped/replaced while the analysis was in flight.
+ */
+export function applyPreviewVolume(
+  el: HTMLMediaElement,
+  songId: string | null | undefined,
+  mediaUrl: string | null | undefined,
+  isStillActive?: () => boolean,
+): void {
+  try {
+    const previewPercent = getPreviewVolumePercent();
+    // Fast path: plain preview volume right away (iOS ignores element.volume —
+    // same limitation the previous hardcoded values had, no regression).
+    el.volume = clamp01(previewPercent / 100);
+    if (!isLoudnessNormalizationEnabled()) return;
+    if (!songId || !mediaUrl) return;
+    void getSongLoudnessGainDb(songId, mediaUrl)
+      .then((gainDb) => {
+        if (isStillActive && !isStillActive()) return;
+        if (gainDb === 0) return; // already at reference — base volume stands
+        applyLoudnessVolume(el, previewPercent, gainDb);
+      })
+      .catch(() => {
+        // Analysis failure → keep base volume. Never throw.
+      });
+  } catch {
+    // Never break the preview.
   }
 }

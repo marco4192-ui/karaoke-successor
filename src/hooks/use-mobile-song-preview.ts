@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
 
 const PREVIEW_DURATION_SECONDS = 15;
 
@@ -58,6 +59,7 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
     }
 
     if (audioRef.current) {
+      clearLoudnessGain(audioRef.current); // R49: reset a possible boost gain node
       audioRef.current.pause();
       if (timeUpdateHandlerRef.current) {
         audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
@@ -85,7 +87,17 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
     }
 
     const audio = new Audio();
-    audio.volume = 0.6;
+    // R49: preview-volume setting + 89 dB loudness normalization (was a
+    // hardcoded 0.6 — the normalization never ran on companion previews).
+    // The per-song gain analysis runs on-device once per song (cached in
+    // localStorage) and applies as soon as it resolves — playback itself
+    // starts immediately at the base preview volume, never blocked.
+    applyPreviewVolume(
+      audio,
+      songId,
+      audioUrl,
+      () => audioRef.current === audio,
+    );
     audio.preload = 'auto';
     audio.src = audioUrl;
 
@@ -146,6 +158,7 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
         clearTimeout(autoStopTimeoutRef.current);
       }
       if (audioRef.current) {
+        clearLoudnessGain(audioRef.current); // R49: reset a possible boost gain node
         audioRef.current.pause();
         if (timeUpdateHandlerRef.current) {
           audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
