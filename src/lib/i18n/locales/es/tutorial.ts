@@ -77,7 +77,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtros',
           body: 'Género, idioma, año, década, canciones de dúo y éxitos virales — trocea la biblioteca como quieras.',
-          details: 'Todos los filtros se combinan — p. ej. "Género: Rock + Idioma: Inglés + Época: 80s" muestra exactamente las canciones de rock en inglés de los ochenta.\n\nFiltros especiales:\n• Dúo: solo canciones con dos pistas de voz.\n• Éxitos virales: canciones que están ahora mismo en las listas virales (se configura en Ajustes → Biblioteca).\n• Géneros e idiomas propios: crea tus propias categorías en Ajustes → Géneros e Idiomas — aparecen al instante en estos filtros.\n\n"Restablecer filtros" (✕) lo limpia todo de una vez.',
+          details: 'Todos los filtros se combinan — p. ej. "Género: Rock + Idioma: Inglés + Época: 80s" muestra exactamente las canciones de rock en inglés de los ochenta.\n\nFiltros especiales:\n• Dúo: solo canciones con dos pistas de voz.\n• Éxitos virales: canciones que están ahora mismo en las listas virales (se configura en Ajustes → Biblioteca).\n• Géneros e idiomas propios: crea tus propias categorías en Ajustes → Estudio de Metadatos — aparecen al instante en estos filtros.\n\n"Restablecer filtros" (✕) lo limpia todo de una vez.',
         },
         songCard: {
           title: 'Canciones',
@@ -122,7 +122,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Ajustes',
           body: 'Micrófonos, idioma, ajuste fino del juego, apariencia y gráficos — todos los controles viven aquí.',
-          details: 'Las 12 pestañas de ajustes en un flash:\n• General: idioma, dificultad por defecto, online\n• Juego: puntuación, partículas, combo, grabación de repeticiones\n• Apariencia: temas, estilo de letra, fondo\n• Audio: dispositivo de salida, volumen, sonoridad, calidad de YouTube\n• Micrófono: dispositivos, sensibilidad, puerta de ruido, presets\n• Móvil: conectar y gestionar dispositivos compañeros\n• Cámara Web: cámara web como fondo\n• Biblioteca: carpeta de canciones, importación, charts virales, reinicio\n• Géneros e Idiomas: categorías propias\n• Fiesta Temática: activar y configurar el tema\n• Sincronización y Copia: redes de seguridad\n• Acerca de: versión, plataforma, licencias\n\nHay un tour de ajustes dedicado y en profundidad para todas las pestañas en el menú de ayuda ?.',
+          details: 'Las 12 pestañas de ajustes en un flash:\n• General: idioma, dificultad por defecto, online\n• Juego: puntuación, partículas, combo, grabación de repeticiones\n• Apariencia: temas, estilo de letra, fondo\n• Audio: dispositivo de salida, volumen, sonoridad, calidad de YouTube\n• Micrófono: dispositivos, sensibilidad, puerta de ruido, presets\n• Móvil: conectar y gestionar dispositivos compañeros\n• Cámara Web: cámara web como fondo\n• Biblioteca: carpeta de canciones, importación, charts virales, reinicio\n• Estudio de Metadatos: géneros e idiomas propios + reglas de armonización\n• Fiesta Temática: activar y configurar el tema\n• Sincronización y Copia: redes de seguridad\n• Acerca de: versión, plataforma, licencias\n\nHay un tour de ajustes dedicado y en profundidad para todas las pestañas en el menú de ayuda ?.',
         },
         settingsView: {
           title: 'Las pestañas de ajustes',
@@ -237,11 +237,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Los ajustes 👋',
           body: 'Este tour recorre exclusivamente los ajustes — pestaña por pestaña.\n\nCambio automáticamente a cada pestaña y te explico lo que encontrarás allí.',
-          details: 'Las pestañas en el orden del tour: General, Juego, Apariencia, Audio, Micrófono, Móvil (companion), Cámara Web, Biblioteca, Géneros e Idiomas, Fiesta Temática, Sincronización y Copia y Acerca de.\n\nCada pestaña tiene una breve intro arriba — este tour la profundiza paso a paso.',
+          details: 'Las pestañas en el orden del tour: General, Juego, Apariencia, Audio, Micrófono, Móvil (companion), Cámara Web, Biblioteca, Estudio de Metadatos, Fiesta Temática, Sincronización y Copia y Acerca de.\n\nCada pestaña tiene una breve intro arriba — este tour la profundiza paso a paso.',
         },
         tabBar: {
           title: 'La barra de pestañas',
-          body: 'Todos los ajustes se organizan en pestañas: General, Juego, Apariencia, Audio, Micrófono, Móvil, Cámara Web, Biblioteca, Géneros e Idiomas, Fiesta Temática, Sincronización y Copia y Acerca de.\n\nUn breve texto introductorio arriba de cada pestaña explica para qué sirve.',
+          body: 'Todos los ajustes se organizan en pestañas: General, Juego, Apariencia, Audio, Micrófono, Móvil, Cámara Web, Biblioteca, Estudio de Metadatos, Fiesta Temática, Sincronización y Copia y Acerca de.\n\nUn breve texto introductorio arriba de cada pestaña explica para qué sirve.',
           details: 'Ayuda de orientación — al buscar, pregúntate…\n• "¿Cómo se COMPORTA el juego?" → Juego\n• "¿Cómo SE VE?" → Apariencia\n• "¿Cómo SUENA?" → Audio / Micrófono\n• "¿Conectar dispositivos?" → Móvil (companion) / Micrófono\n• "¿Mis canciones?" → Biblioteca\n• "¿Hacer copia de seguridad?" → Sincronización y Copia\n\nLas pestañas se desplazan en horizontal en ventanas estrechas — solo desliza hacia la derecha.',
         },
         general: {
@@ -275,9 +275,9 @@ export const tutorialTranslations = {
           details: 'Formato de carpeta: una subcarpeta por canción con audio/vídeo + TXT (formato UltraStar). El escáner reconoce las combinaciones habituales (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nLos formatos de importación de otros proveedores de karaoke no se admiten por ahora.\n\nCuidado con "borrar todos los datos": la doble confirmación pregunta dos veces — aun así, haz antes una copia (pestaña Sincronización y Copia).',
         },
         taxonomy: {
-          title: 'Géneros e Idiomas',
-          body: 'Crea tus propias entradas de género e idioma — aparecen en todos los desplegables y alimentan la armonización por IA.',
-          details: '¿Para qué entradas propias? Las listas estándar no lo cubren todo ("Schlager", "K-Pop", "Dialecto"…). Las entradas propias:\n• aparecen al instante en los filtros de la biblioteca\n• se pueden elegir en el editor y en el Estudio de Metadatos\n• se armonizan con el resto (la IA las sugiere para canciones que encajan)\n\nBorrar también funciona — las canciones conservan la entrada hasta que se reasigne.',
+          title: 'Estudio de Metadatos',
+          body: 'Crea tus propias entradas de género e idioma — y consulta y ajusta las reglas de armonización.',
+          details: '¿Para qué entradas propias? Las listas estándar no lo cubren todo ("Schlager", "K-Pop", "Dialecto"…). Las entradas propias:\n• aparecen al instante en los filtros de la biblioteca\n• se pueden elegir en el editor y en el Estudio de Metadatos\n• se armonizan con el resto (las reglas las respetan)\n\nBorrar también funciona — las canciones conservan la entrada hasta que se reasigne.\n\nEn "Armonización por reglas" ves cada regla de la armonización del estudio (p. ej. "Bubblegum Pop → Pop") y puedes cambiar destinos, desactivar reglas o añadir las tuyas.',
         },
         motto: {
           title: 'Fiesta Temática',

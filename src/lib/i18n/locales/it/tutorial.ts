@@ -80,7 +80,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtri',
           body: 'Genere, lingua, anno, decennio, duetti e hit virali — taglia la libreria come preferisci.',
-          details: 'Tutti i filtri si combinano — es. "Genere: Rock + Lingua: Inglese + Epoca: anni 80" mostra esattamente i rock inglesi degli ottanta.\n\nFiltri speciali:\n• Duetto: solo canzoni con due tracce vocali.\n• Hit virali: le canzoni presenti nelle classifiche virali del momento (configurate in Impostazioni → Libreria).\n• Generi e lingue personalizzati: crea le tue categorie in Impostazioni → Generi & Lingue — compaiono subito in questi filtri.\n\n"Cancella filtri" (✕) azzera tutto in un colpo solo.',
+          details: 'Tutti i filtri si combinano — es. "Genere: Rock + Lingua: Inglese + Epoca: anni 80" mostra esattamente i rock inglesi degli ottanta.\n\nFiltri speciali:\n• Duetto: solo canzoni con due tracce vocali.\n• Hit virali: le canzoni presenti nelle classifiche virali del momento (configurate in Impostazioni → Libreria).\n• Generi e lingue personalizzati: crea le tue categorie in Impostazioni → Metadata Studio — compaiono subito in questi filtri.\n\n"Cancella filtri" (✕) azzera tutto in un colpo solo.',
         },
         songCard: {
           title: 'Le canzoni',
@@ -125,7 +125,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Impostazioni',
           body: 'Microfoni, lingua, messa a punto del gioco, aspetto e grafica — tutti i comandi stanno qui.',
-          details: 'Le 12 schede delle impostazioni in un lampo:\n• Generale: lingua, difficoltà predefinita, online\n• Gioco: punteggio, particelle, combo, registrazione dei replay\n• Aspetto: temi, stile del testo, sfondo\n• Audio: dispositivo di uscita, volume, loudness, qualità YouTube\n• Microfono: dispositivi, sensibilità, noise gate, preset\n• Mobile: collega e gestisci i dispositivi companion\n• Webcam: la webcam come sfondo\n• Libreria: cartella canzoni, importazione, classifiche virali, ripristino\n• Generi & Lingue: categorie personalizzate\n• Festa a Tema: attiva e configura il tema\n• Sync & Backup: le tue sicurezze\n• Informazioni: versione, piattaforma, licenze\n\nNel menu di aiuto ? c\'è un tour dedicato e approfondito che attraversa tutte le schede.',
+          details: 'Le 12 schede delle impostazioni in un lampo:\n• Generale: lingua, difficoltà predefinita, online\n• Gioco: punteggio, particelle, combo, registrazione dei replay\n• Aspetto: temi, stile del testo, sfondo\n• Audio: dispositivo di uscita, volume, loudness, qualità YouTube\n• Microfono: dispositivi, sensibilità, noise gate, preset\n• Mobile: collega e gestisci i dispositivi companion\n• Webcam: la webcam come sfondo\n• Libreria: cartella canzoni, importazione, classifiche virali, ripristino\n• Metadata Studio: generi e lingue personalizzati + regole di armonizzazione\n• Festa a Tema: attiva e configura il tema\n• Sync & Backup: le tue sicurezze\n• Informazioni: versione, piattaforma, licenze\n\nNel menu di aiuto ? c\'è un tour dedicato e approfondito che attraversa tutte le schede.',
         },
         settingsView: {
           title: 'Le schede delle impostazioni',
@@ -240,11 +240,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Le impostazioni 👋',
           body: 'Questo tour ti accompagna esclusivamente tra le impostazioni — scheda per scheda.\n\nPasso automaticamente a ogni scheda e ti spiego cosa ci trovi.',
-          details: 'Le schede nell\'ordine del tour: Generale, Gioco, Aspetto, Audio, Microfono, Mobile (companion), Webcam, Libreria, Generi & Lingue, Festa a Tema, Sync & Backup e Informazioni.\n\nOgni scheda apre con una breve introduzione — questo tour la approfondisce passo per passo.',
+          details: 'Le schede nell\'ordine del tour: Generale, Gioco, Aspetto, Audio, Microfono, Mobile (companion), Webcam, Libreria, Metadata Studio, Festa a Tema, Sync & Backup e Informazioni.\n\nOgni scheda apre con una breve introduzione — questo tour la approfondisce passo per passo.',
         },
         tabBar: {
           title: 'La barra delle schede',
-          body: 'Tutte le impostazioni sono organizzate in schede: Generale, Gioco, Aspetto, Audio, Microfono, Mobile, Webcam, Libreria, Generi & Lingue, Festa a Tema, Sync & Backup e Informazioni.\n\nIn cima a ogni scheda una breve introduzione spiega cosa fa.',
+          body: 'Tutte le impostazioni sono organizzate in schede: Generale, Gioco, Aspetto, Audio, Microfono, Mobile, Webcam, Libreria, Metadata Studio, Festa a Tema, Sync & Backup e Informazioni.\n\nIn cima a ogni scheda una breve introduzione spiega cosa fa.',
           details: 'Per orientarti — quando cerchi qualcosa, chiediti…\n• "Come si COMPORTA il gioco?" → Gioco\n• "Come APPARE?" → Aspetto\n• "Come SUONA?" → Audio / Microfono\n• "Collegare dispositivi?" → Mobile (companion) / Microfono\n• "Le mie canzoni?" → Libreria\n• "Salvare i dati?" → Sync & Backup\n\nSu finestre strette le schede scorrono in orizzontale — basta trascinare verso destra.',
         },
         general: {
@@ -278,9 +278,9 @@ export const tutorialTranslations = {
           details: 'Formato delle cartelle: una sottocartella per canzone con audio/video + TXT (formato UltraStar). Lo scanner riconosce le combinazioni più diffuse (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nI formati di importazione di altri provider di karaoke non sono supportati per ora.\n\nAttenzione a "elimina tutti i dati": la doppia conferma chiede due volte — ma fai comunque prima un backup (scheda Sync & Backup).',
         },
         taxonomy: {
-          title: 'Generi & Lingue',
-          body: 'Crea le tue voci di genere e lingua — compaiono in tutti i menu a tendina e alimentano l\'armonizzazione AI.',
-          details: 'Perché le voci personalizzate? Gli elenchi standard non coprono tutto ("Schlager", "K-Pop", "Dialetto"…). Le voci personalizzate:\n• compaiono subito nei filtri della libreria\n• si selezionano nell\'editor e nel Metadata Studio\n• partecipano all\'armonizzazione (l\'AI le suggerisce per le canzoni corrispondenti)\n\nAnche l\'eliminazione funziona — le canzoni conservano la voce finché non viene riassegnata.',
+          title: 'Metadata Studio',
+          body: 'Crea le tue voci di genere e lingua — e visualizza e modifica le regole di armonizzazione.',
+          details: 'Perché le voci personalizzate? Gli elenchi standard non coprono tutto ("Schlager", "K-Pop", "Dialetto"…). Le voci personalizzate:\n• compaiono subito nei filtri della libreria\n• si selezionano nell\'editor e nel Metadata Studio\n• partecipano all\'armonizzazione (le regole le rispettano)\n\nAnche l\'eliminazione funziona — le canzoni conservano la voce finché non viene riassegnata.\n\nIn "Armonizzazione basata su regole" vedi ogni regola dell\'armonizzazione dello studio (es. "Bubblegum Pop → Pop") e puoi cambiare destinazioni, disattivare regole o aggiungerne di tue.',
         },
         motto: {
           title: 'Festa a Tema',

@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Suodattimet',
           body: 'Genre, kieli, vuosi, vuosikymmen, duetot ja viraalihitit — rajaa kirjasto juuri niin kuin haluat.',
-          details: 'Kaikki suodattimet yhdistyvät — esim. "Genre: Rock + Kieli: englanti + Aikakausi: 80-luku" näyttää täsmälleen 80-luvun englanninkieliset rockkappaleet.\n\nErikoissuodattimet:\n• Duetto: vain kappaleet, joissa kaksi ääniraitaa.\n• Viraalihitit: kappaleet, jotka ovat paraikaa viraalilistoilla (määritellään kohdassa Asetukset → Kirjasto).\n• Omat genret ja kielet: luo omia kategorioita kohdassa Asetukset → Genret & kielet — ne ilmestyvät näihin suodattimiin heti.\n\n"Tyhjennä suodattimet" (✕) nollaa kaiken kerralla.',
+          details: 'Kaikki suodattimet yhdistyvät — esim. "Genre: Rock + Kieli: englanti + Aikakausi: 80-luku" näyttää täsmälleen 80-luvun englanninkieliset rockkappaleet.\n\nErikoissuodattimet:\n• Duetto: vain kappaleet, joissa kaksi ääniraitaa.\n• Viraalihitit: kappaleet, jotka ovat paraikaa viraalilistoilla (määritellään kohdassa Asetukset → Kirjasto).\n• Omat genret ja kielet: luo omia kategorioita kohdassa Asetukset → Metadata Studio — ne ilmestyvät näihin suodattimiin heti.\n\n"Tyhjennä suodattimet" (✕) nollaa kaiken kerralla.',
         },
         songCard: {
           title: 'Kappaleet',
@@ -123,7 +123,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Asetukset',
           body: 'Mikrofonit, kieli, peliasetusten hienosäätö, ulkonäkö ja grafiikka — kaikki säätimet ovat täällä.',
-          details: 'Asetusten 12 välilehteä pikaisesti:\n• Yleiset: kieli, oletusvaikeustaso, verkkotoiminnot\n• Pelikokemus: pisteenäyttö, partikkelit, combo, toiston tallennus\n• Ulkonäkö: teemat, sanoitustyyli, tausta\n• Ääni: ulostulolaite, äänenvoimakkuus, normalisointi, YouTube-laatu\n• Mikrofoni: laitteet, herkkyys, kohinaraja, esiasetukset\n• Mobiili: companion-laitteiden yhdistäminen & hallinta\n• Web-kamera: kamera taustaksi\n• Kirjasto: kappalekansio, tuonti, viraalilistat, nollaus\n• Genret & kielet: omat kategoriat\n• Teemajuhlat: teeman aktivointi & asetukset\n• Synkronointi & varmuuskopio: turvaverkot\n• Tietoja: versio, alusta, lisenssit\n\nKaikille välilehdille on oma syvällinen asetuskierros ?-ohjevalikossa.',
+          details: 'Asetusten 12 välilehteä pikaisesti:\n• Yleiset: kieli, oletusvaikeustaso, verkkotoiminnot\n• Pelikokemus: pisteenäyttö, partikkelit, combo, toiston tallennus\n• Ulkonäkö: teemat, sanoitustyyli, tausta\n• Ääni: ulostulolaite, äänenvoimakkuus, normalisointi, YouTube-laatu\n• Mikrofoni: laitteet, herkkyys, kohinaraja, esiasetukset\n• Mobiili: companion-laitteiden yhdistäminen & hallinta\n• Web-kamera: kamera taustaksi\n• Kirjasto: kappalekansio, tuonti, viraalilistat, nollaus\n• Metadata Studio: omat genret ja kielet + harmonisointisäännöt\n• Teemajuhlat: teeman aktivointi & asetukset\n• Synkronointi & varmuuskopio: turvaverkot\n• Tietoja: versio, alusta, lisenssit\n\nKaikille välilehdille on oma syvällinen asetuskierros ?-ohjevalikossa.',
         },
         settingsView: {
           title: 'Asetusten välilehdet',
@@ -238,11 +238,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Asetukset 👋',
           body: 'Tämä kierros kulkee vain asetusten parissa — välilehti kerrallaan.\n\nVaihdan automaattisesti jokaiseen välilehteen ja selitän, mitä sieltä löytyy.',
-          details: 'Välilehdet kierrosjärjestyksessä: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili (companion), Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Synkronointi & varmuuskopio sekä Tietoja.\n\nJokaisen välilehden yläreunassa on lyhyt johdanto — tämä kierros syventyy siihen vaihe vaiheelta.',
+          details: 'Välilehdet kierrosjärjestyksessä: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili (companion), Web-kamera, Kirjasto, Metadata Studio, Teemajuhlat, Synkronointi & varmuuskopio sekä Tietoja.\n\nJokaisen välilehden yläreunassa on lyhyt johdanto — tämä kierros syventyy siihen vaihe vaiheelta.',
         },
         tabBar: {
           title: 'Välilehtipalkki',
-          body: 'Kaikki asetukset on järjestetty välilehdille: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili, Web-kamera, Kirjasto, Genret & kielet, Teemajuhlat, Synkronointi & varmuuskopio ja Tietoja.\n\nJokaisen välilehden yläreunassa oleva lyhyt johdanto kertoo, mitä se tekee.',
+          body: 'Kaikki asetukset on järjestetty välilehdille: Yleiset, Pelikokemus, Ulkonäkö, Ääni, Mikrofoni, Mobiili, Web-kamera, Kirjasto, Metadata Studio, Teemajuhlat, Synkronointi & varmuuskopio ja Tietoja.\n\nJokaisen välilehden yläreunassa oleva lyhyt johdanto kertoo, mitä se tekee.',
           details: 'Suunnistusapu — kysy itseltäsi etsiessäsi…\n• "Miten peli TOIMII?" → Pelikokemus\n• "Miltä se NÄYTTÄÄ?" → Ulkonäkö\n• "Miltä se KUULOSTAA?" → Ääni / Mikrofoni\n• "Yhdistä laitteita?" → Mobiili (companion) / Mikrofoni\n• "Kappaleeni?" → Kirjasto\n• "Varmuuskopioi tiedot?" → Synkronointi & varmuuskopio\n\nVälilehdet vierivät vaakasuunnassa kapeissa ikkunoissa — pyyhkäise oikealle.',
         },
         general: {
@@ -276,9 +276,9 @@ export const tutorialTranslations = {
           details: 'Kansiomuoto: yksi alikansio per kappale, jossa ääni/video + TXT (UltraStar-muoto). Skanneri tunnistaa tavalliset yhdistelmät (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nMuiden karaokepalvelujen tuontimuotoja ei toistaiseksi tueta.\n\nVarovasti "poista kaikki tiedot" -toiminnon kanssa: kaksinkertainen vahvistus kysyy kahdesti — ota silti ensin varmuuskopio (Synkronointi & varmuuskopio -välilehti).',
         },
         taxonomy: {
-          title: 'Genret & kielet',
-          body: 'Luo omia genre- ja kielimerkintöjä — ne näkyvät kaikissa pudotusvalikoissa ja ruokkivat AI-harmonisointia.',
-          details: 'Miksi omia merkintöjä? Vakiolistat eivät kata kaikkea ("Schlager", "K-Pop", "Murre" …). Omat merkinnät:\n• ilmestyvät heti kirjaston suodattimiin\n• ovat valittavissa editorissa ja Metadata Studiossa\n• osallistuvat harmonisointiin (AI ehdottaa niitä sopiville kappaleille)\n\nPoistaminenkin toimii — kappaleet säilyttävät merkinnän, kunnes se vaihdetaan.',
+          title: 'Metadata Studio',
+          body: 'Luo omia genre- ja kielimerkintöjä — ja katso & muokkaa harmonisointisääntöjä.',
+          details: 'Miksi omia merkintöjä? Vakiolistat eivät kata kaikkea ("Schlager", "K-Pop", "Murre" …). Omat merkinnät:\n• ilmestyvät heti kirjaston suodattimiin\n• ovat valittavissa editorissa ja Metadata Studiossa\n• osallistuvat harmonisointiin (säännöt huomioivat ne)\n\nPoistaminenkin toimii — kappaleet säilyttävät merkinnän, kunnes se vaihdetaan.\n\nKohdassa "Sääntöpohjainen harmonisointi" näet jokaisen studioharmonisoinnin säännön (esim. "Bubblegum Pop → Pop") ja voit vaihtaa kohteita, poistaa sääntöjä käytöstä tai lisätä omia.',
         },
         motto: {
           title: 'Teemajuhlat',

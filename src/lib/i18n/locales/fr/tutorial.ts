@@ -77,7 +77,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtres',
           body: 'Genre, langue, année, décennie, chansons duo et hits viraux — découpez la bibliothèque comme vous voulez.',
-          details: 'Tous les filtres se combinent — p. ex. "Genre : Rock + Langue : Anglais + Époque : 80s" montre exactement les chansons de rock anglaises des années 80.\n\nFiltres spéciaux :\n• Duo : uniquement les chansons avec deux pistes de voix.\n• Hits viraux : les chansons actuellement dans les charts viraux (se configure dans Paramètres → Bibliothèque).\n• Genres & langues personnalisés : créez vos propres catégories dans Paramètres → Genres & Langues — elles apparaissent immédiatement dans ces filtres.\n\n"Réinitialiser les filtres" (✕) efface tout en une fois.',
+          details: 'Tous les filtres se combinent — p. ex. "Genre : Rock + Langue : Anglais + Époque : 80s" montre exactement les chansons de rock anglaises des années 80.\n\nFiltres spéciaux :\n• Duo : uniquement les chansons avec deux pistes de voix.\n• Hits viraux : les chansons actuellement dans les charts viraux (se configure dans Paramètres → Bibliothèque).\n• Genres & langues personnalisés : créez vos propres catégories dans Paramètres → Studio de Métadonnées — elles apparaissent immédiatement dans ces filtres.\n\n"Réinitialiser les filtres" (✕) efface tout en une fois.',
         },
         songCard: {
           title: 'Chansons',
@@ -122,7 +122,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Paramètres',
           body: 'Micros, langue, réglage fin du gameplay, apparence et graphismes — tous les réglages vivent ici.',
-          details: 'Les 12 onglets de paramètres en un éclair :\n• Général : langue, difficulté par défaut, en ligne\n• Gameplay : affichage du score, particules, combo, enregistrement du replay\n• Apparence : thèmes, style des paroles, fond\n• Audio : périphérique de sortie, volume, sonie, qualité YouTube\n• Microphone : appareils, sensibilité, porte de bruit, presets\n• Mobile : connecter et gérer les appareils compagnons\n• Webcam : webcam comme fond\n• Bibliothèque : dossier des chansons, import, charts viraux, réinitialisation\n• Genres & Langues : catégories personnalisées\n• Fête à Thème : activer et configurer le thème\n• Sync & Sauvegarde : les filets de sécurité\n• À Propos : version, plateforme, licences\n\nIl existe une visite dédiée et approfondie des paramètres pour tous les onglets dans le menu d\'aide ?.',
+          details: 'Les 12 onglets de paramètres en un éclair :\n• Général : langue, difficulté par défaut, en ligne\n• Gameplay : affichage du score, particules, combo, enregistrement du replay\n• Apparence : thèmes, style des paroles, fond\n• Audio : périphérique de sortie, volume, sonie, qualité YouTube\n• Microphone : appareils, sensibilité, porte de bruit, presets\n• Mobile : connecter et gérer les appareils compagnons\n• Webcam : webcam comme fond\n• Bibliothèque : dossier des chansons, import, charts viraux, réinitialisation\n• Studio de Métadonnées : genres et langues personnalisés + règles d\'harmonisation\n• Fête à Thème : activer et configurer le thème\n• Sync & Sauvegarde : les filets de sécurité\n• À Propos : version, plateforme, licences\n\nIl existe une visite dédiée et approfondie des paramètres pour tous les onglets dans le menu d\'aide ?.',
         },
         settingsView: {
           title: 'Les onglets des paramètres',
@@ -237,11 +237,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Les paramètres 👋',
           body: 'Cette visite vous fait traverser exclusivement les paramètres — onglet par onglet.\n\nJe bascule automatiquement sur chaque onglet et vous explique ce que vous y trouverez.',
-          details: 'Les onglets dans l\'ordre de la visite : Général, Gameplay, Apparence, Audio, Microphone, Mobile (companion), Webcam, Bibliothèque, Genres & Langues, Fête à Thème, Sync & Sauvegarde et À Propos.\n\nChaque onglet a une courte intro en haut — cette visite l\'approfondit pas à pas.',
+          details: 'Les onglets dans l\'ordre de la visite : Général, Gameplay, Apparence, Audio, Microphone, Mobile (companion), Webcam, Bibliothèque, Studio de Métadonnées, Fête à Thème, Sync & Sauvegarde et À Propos.\n\nChaque onglet a une courte intro en haut — cette visite l\'approfondit pas à pas.',
         },
         tabBar: {
           title: 'La barre d\'onglets',
-          body: 'Tous les réglages sont organisés en onglets : Général, Gameplay, Apparence, Audio, Microphone, Mobile, Webcam, Bibliothèque, Genres & Langues, Fête à Thème, Sync & Sauvegarde et À Propos.\n\nUn court texte d\'intro en haut de chaque onglet explique son rôle.',
+          body: 'Tous les réglages sont organisés en onglets : Général, Gameplay, Apparence, Audio, Microphone, Mobile, Webcam, Bibliothèque, Studio de Métadonnées, Fête à Thème, Sync & Sauvegarde et À Propos.\n\nUn court texte d\'intro en haut de chaque onglet explique son rôle.',
           details: 'Aide à l\'orientation — en cherchant, demandez-vous…\n• "Comment le jeu SE COMPORTE-T-IL ?" → Gameplay\n• "Comment ÇA A L\'AIR ?" → Apparence\n• "Comment ÇA SONNE ?" → Audio / Microphone\n• "Connecter des appareils ?" → Mobile (companion) / Microphone\n• "Mes chansons ?" → Bibliothèque\n• "Sauvegarder des données ?" → Sync & Sauvegarde\n\nLes onglets défilent horizontalement sur les fenêtres étroites — glissez simplement vers la droite.',
         },
         general: {
@@ -275,9 +275,9 @@ export const tutorialTranslations = {
           details: 'Format du dossier : un sous-dossier par chanson avec audio/vidéo + TXT (format UltraStar). Le scanner reconnaît les combinaisons courantes (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nLes formats d\'import d\'autres fournisseurs de karaoké ne sont pas pris en charge pour le moment.\n\nAttention avec "supprimer toutes les données" : la double confirmation demande deux fois — faites quand même d\'abord une sauvegarde (onglet Sync & Sauvegarde).',
         },
         taxonomy: {
-          title: 'Genres & Langues',
-          body: 'Créez vos propres entrées de genre et de langue — elles apparaissent dans tous les menus déroulants et alimentent l\'harmonisation IA.',
-          details: 'Pourquoi des entrées personnalisées ? Les listes standard ne couvrent pas tout ("Schlager", "K-Pop", "Dialecte"…). Les entrées personnalisées :\n• apparaissent immédiatement dans les filtres de la bibliothèque\n• sont sélectionnables dans l\'éditeur et le Studio de Métadonnées\n• suivent l\'harmonisation (l\'IA les suggère pour les chansons correspondantes)\n\nLa suppression fonctionne aussi — les chansons gardent l\'entrée jusqu\'à réattribution.',
+          title: 'Studio de Métadonnées',
+          body: 'Créez vos propres entrées de genre et de langue — et consultez & ajustez les règles d\'harmonisation.',
+          details: 'Pourquoi des entrées personnalisées ? Les listes standard ne couvrent pas tout ("Schlager", "K-Pop", "Dialecte"…). Les entrées personnalisées :\n• apparaissent immédiatement dans les filtres de la bibliothèque\n• sont sélectionnables dans l\'éditeur et le Studio de Métadonnées\n• suivent l\'harmonisation (les règles les respectent)\n\nLa suppression fonctionne aussi — les chansons gardent l\'entrée jusqu\'à réattribution.\n\nSous "Harmonisation par règles" vous voyez chaque règle de l\'harmonisation du studio (p. ex. "Bubblegum Pop → Pop") et pouvez changer les cibles, désactiver des règles ou ajouter les vôtres.',
         },
         motto: {
           title: 'Fête à Thème',

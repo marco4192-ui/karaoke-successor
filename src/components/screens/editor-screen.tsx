@@ -183,11 +183,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
    * Select the NEXT batch of up to 20 filtered songs (in list order) that are
    * not selected yet. Fewer available → all remaining get selected.
    *
-   * Batch size 20 (R7): matches the Metadata Studio's MEASURED recommendation
-   * — the factual lookup (MusicBrainz) throttles at ~1 req/s (~5 s/song worst
-   * case), so 20 songs ≈ 2 minutes per run. The button label always shows the
-   * actual number of songs it will pick, so "select all remaining" surprises
-   * (and 100-song runs with very long waits) can no longer happen.
+   * Batch size 20: a convenient working-set size for the Metadata Studio —
+   * small enough for quick review rounds, big enough to make progress on
+   * large libraries. The button label always shows the actual number of
+   * songs it will pick.
+   *
+   * R50: "Alle übrigen wählen" next to it selects EVERYTHING at once —
+   * guarded by a confirmation dialog (editing many songs takes time and
+   * can temporarily affect the gameplay experience while jobs run).
    */
   const SELECT_BATCH_SIZE = 20;
   const selectNextBatch = useCallback(() => {
@@ -203,6 +206,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       }
       return next;
     });
+  }, [filteredSongs]);
+
+  /** Confirmation pending for "select ALL remaining filtered songs" (R50). */
+  const [confirmSelectAll, setConfirmSelectAll] = useState(false);
+  const selectAllRemaining = useCallback(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      for (const s of filteredSongs) next.add(s.id);
+      return next;
+    });
+    setConfirmSelectAll(false);
   }, [filteredSongs]);
 
   const clearSelection = useCallback(() => {
@@ -578,8 +592,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           </span>
           <div className="w-px h-6 bg-white/20" />
           {/* Select the NEXT batch of ≤ 20 filtered songs (not yet selected) —
-              always shows the actual count it will pick (never "all remaining
-              at once", matching the studio's 20-song recommendation). */}
+              always shows the actual count it will pick. */}
           <Button
             size="sm"
             variant="outline"
@@ -589,6 +602,18 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             data-testid="editor-select-all-button"
           >
             {t('editor.aiBatchSelectNext').replace('{n}', String(Math.min(SELECT_BATCH_SIZE, unselectedInFilter.length)))}
+          </Button>
+          {/* R50: select ALL remaining filtered songs at once — guarded by the
+              confirmation dialog below (time + temporary gameplay impact). */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setConfirmSelectAll(true)}
+            disabled={unselectedInFilter.length === 0}
+            className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
+            data-testid="editor-select-all-remaining-button"
+          >
+            {t('editor.aiBatchSelectRemaining').replace('{n}', String(unselectedInFilter.length))}
           </Button>
           <Button
             size="sm"
@@ -633,6 +658,46 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       {/* Background rule-harmonization status pill (module singleton —
           keeps running even when the studio is closed) */}
       <RuleHarmonizeStatusBar t={t} />
+
+      {/* R50: confirmation dialog for "select ALL remaining songs" — editing
+          everything at once takes time and can temporarily affect the
+          gameplay experience (background jobs, UI load) — explicit OK. */}
+      {confirmSelectAll && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+          <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl" data-testid="editor-select-all-dialog">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">⚠️</span>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">{t('editor.selectAllTitle')}</h3>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {t('editor.selectAllDesc').replace('{n}', String(unselectedInFilter.length))}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/50 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+              💡 {t('editor.selectAllHint').replace('{n}', String(SELECT_BATCH_SIZE))}
+            </p>
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmSelectAll(false)}
+                className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
+              >
+                {t('editor.aiHarmonizeWarnCancel')}
+              </Button>
+              <Button
+                onClick={selectAllRemaining}
+                className="flex-1 bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
+                data-testid="editor-select-all-confirm"
+              >
+                {t('editor.selectAllConfirm')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Song Dialog */}
       {showNewSongDialog && (

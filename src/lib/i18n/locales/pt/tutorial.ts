@@ -80,7 +80,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtros',
           body: 'Gênero, idioma, ano, década, duetos e hits virais — fatie a biblioteca como quiser.',
-          details: 'Todos os filtros se combinam — ex.: "Gênero: Rock + Idioma: Inglês + Época: anos 80" mostra exatamente os rocks ingleses dos anos oitenta.\n\nFiltros especiais:\n• Dueto: só músicas com duas faixas de voz.\n• Hits virais: músicas que estão nas paradas virais do momento (configuradas em Configurações → Biblioteca).\n• Gêneros e idiomas personalizados: crie suas próprias categorias em Configurações → Gêneros & Idiomas — elas aparecem nesses filtros na hora.\n\n"Limpar filtros" (✕) zera tudo de uma vez.',
+          details: 'Todos os filtros se combinam — ex.: "Gênero: Rock + Idioma: Inglês + Época: anos 80" mostra exatamente os rocks ingleses dos anos oitenta.\n\nFiltros especiais:\n• Dueto: só músicas com duas faixas de voz.\n• Hits virais: músicas que estão nas paradas virais do momento (configuradas em Configurações → Biblioteca).\n• Gêneros e idiomas personalizados: crie suas próprias categorias em Configurações → Metadata Studio — elas aparecem nesses filtros na hora.\n\n"Limpar filtros" (✕) zera tudo de uma vez.',
         },
         songCard: {
           title: 'As músicas',
@@ -125,7 +125,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Configurações',
           body: 'Microfones, idioma, ajuste fino da jogabilidade, aparência e gráficos — todos os controles estão aqui.',
-          details: 'As 12 abas de configurações num relance:\n• Geral: idioma, dificuldade padrão, online\n• Jogabilidade: pontuação, partículas, combo, gravação de replay\n• Aparência: temas, estilo da letra, plano de fundo\n• Áudio: dispositivo de saída, volume, loudness, qualidade do YouTube\n• Microfone: dispositivos, sensibilidade, noise gate, presets\n• Mobile: conectar e gerenciar dispositivos Companion\n• Webcam: webcam como plano de fundo\n• Biblioteca: pasta de músicas, importação, paradas virais, redefinição\n• Gêneros & Idiomas: categorias personalizadas\n• Festa Temática: ativar e configurar o tema\n• Sync & Backup: as salvaguardas\n• Sobre: versão, plataforma, licenças\n\nNo menu de ajuda ? existe um tour dedicado e aprofundado das configurações, aba por aba.',
+          details: 'As 12 abas de configurações num relance:\n• Geral: idioma, dificuldade padrão, online\n• Jogabilidade: pontuação, partículas, combo, gravação de replay\n• Aparência: temas, estilo da letra, plano de fundo\n• Áudio: dispositivo de saída, volume, loudness, qualidade do YouTube\n• Microfone: dispositivos, sensibilidade, noise gate, presets\n• Mobile: conectar e gerenciar dispositivos Companion\n• Webcam: webcam como plano de fundo\n• Biblioteca: pasta de músicas, importação, paradas virais, redefinição\n• Metadata Studio: gêneros e idiomas personalizados + regras de harmonização\n• Festa Temática: ativar e configurar o tema\n• Sync & Backup: as salvaguardas\n• Sobre: versão, plataforma, licenças\n\nNo menu de ajuda ? existe um tour dedicado e aprofundado das configurações, aba por aba.',
         },
         settingsView: {
           title: 'As abas de configurações',
@@ -240,11 +240,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'As configurações 👋',
           body: 'Este tour percorre exclusivamente as configurações — aba por aba.\n\nEu troco de aba automaticamente e explico o que você encontra em cada uma.',
-          details: 'As abas na ordem do tour: Geral, Jogabilidade, Aparência, Áudio, Microfone, Mobile (Companion), Webcam, Biblioteca, Gêneros & Idiomas, Festa Temática, Sync & Backup e Sobre.\n\nCada aba abre com uma introdução curta — este tour a aprofunda passo a passo.',
+          details: 'As abas na ordem do tour: Geral, Jogabilidade, Aparência, Áudio, Microfone, Mobile (Companion), Webcam, Biblioteca, Metadata Studio, Festa Temática, Sync & Backup e Sobre.\n\nCada aba abre com uma introdução curta — este tour a aprofunda passo a passo.',
         },
         tabBar: {
           title: 'A barra de abas',
-          body: 'Todas as configurações estão organizadas em abas: Geral, Jogabilidade, Aparência, Áudio, Microfone, Mobile, Webcam, Biblioteca, Gêneros & Idiomas, Festa Temática, Sync & Backup e Sobre.\n\nUma introdução curta no topo de cada aba explica o que ela faz.',
+          body: 'Todas as configurações estão organizadas em abas: Geral, Jogabilidade, Aparência, Áudio, Microfone, Mobile, Webcam, Biblioteca, Metadata Studio, Festa Temática, Sync & Backup e Sobre.\n\nUma introdução curta no topo de cada aba explica o que ela faz.',
           details: 'Para se orientar — quando procurar algo, pergunte a si mesmo…\n• "Como o jogo SE COMPORTA?" → Jogabilidade\n• "Como ele APARECE?" → Aparência\n• "Como ele SOA?" → Áudio / Microfone\n• "Conectar dispositivos?" → Mobile (Companion) / Microfone\n• "Minhas músicas?" → Biblioteca\n• "Fazer backup?" → Sync & Backup\n\nEm janelas estreitas as abas rolam na horizontal — é só arrastar para a direita.',
         },
         general: {
@@ -278,9 +278,9 @@ export const tutorialTranslations = {
           details: 'Formato das pastas: uma subpasta por música com áudio/vídeo + TXT (formato UltraStar). O scanner reconhece as combinações comuns (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nOs formatos de importação de outros provedores de karaokê não são suportados por enquanto.\n\nCuidado com "apagar todos os dados": a confirmação dupla pergunta duas vezes — ainda assim, faça um backup antes (aba Sync & Backup).',
         },
         taxonomy: {
-          title: 'Gêneros & Idiomas',
-          body: 'Crie suas próprias entradas de gênero e idioma — elas aparecem em todos os menus suspensos e alimentam a harmonização por IA.',
-          details: 'Por que entradas personalizadas? As listas padrão não cobrem tudo ("Schlager", "K-Pop", "Dialeto"…). Entradas personalizadas:\n• aparecem na hora nos filtros da biblioteca\n• ficam selecionáveis no editor e no Metadata Studio\n• entram na harmonização (a IA sugere elas para as músicas correspondentes)\n\nExcluir também funciona — as músicas mantêm a entrada até ser reatribuída.',
+          title: 'Metadata Studio',
+          body: 'Crie suas próprias entradas de gênero e idioma — e veja e ajuste as regras de harmonização.',
+          details: 'Por que entradas personalizadas? As listas padrão não cobrem tudo ("Schlager", "K-Pop", "Dialeto"…). Entradas personalizadas:\n• aparecem na hora nos filtros da biblioteca\n• ficam selecionáveis no editor e no Metadata Studio\n• entram na harmonização (as regras as respeitam)\n\nExcluir também funciona — as músicas mantêm a entrada até ser reatribuída.\n\nEm "Harmonização por regras" você vê cada regra da harmonização do studio (ex.: "Bubblegum Pop → Pop") e pode mudar alvos, desativar regras ou adicionar as suas.',
         },
         motto: {
           title: 'Festa Temática',

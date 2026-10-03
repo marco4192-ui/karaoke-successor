@@ -4,6 +4,7 @@
 
 import { GENRES as CANONICAL_GENRE_LIST } from '@/lib/constants';
 import { customTaxonomy } from '@/lib/game/custom-taxonomy';
+import { metadataRules, RULE_KEEP, RULE_MANUAL } from '@/lib/game/metadata-rules';
 
 // ── Language normalization ──
 
@@ -11,8 +12,12 @@ import { customTaxonomy } from '@/lib/game/custom-taxonomy';
  * Maps various language spellings/misspellings to a canonical ISO-like form.
  * Keys are lowercased for case-insensitive matching.
  * The map covers common karaoke languages and frequent typos.
+ *
+ * Exported as DEFAULT_LANGUAGE_ALIASES (R50): the Settings rules editor
+ * (Settings → Metadaten Studio) shows these defaults next to the user's
+ * overrides (lib/game/metadata-rules.ts).
  */
-const LANGUAGE_ALIASES: Record<string, string> = {
+export const DEFAULT_LANGUAGE_ALIASES: Record<string, string> = {
   // English variants
   'english': 'English',
   'eng': 'English',
@@ -201,7 +206,13 @@ export function normalizeLanguage(raw: string, extraLanguages?: string[]): strin
   // "deutsch (neu)" → "deutsch" → "German"
   const withoutParens = trimmed.replace(/\([^)]*\)/g, ' ').trim();
   const key = withoutParens.toLowerCase();
-  const alias = LANGUAGE_ALIASES[key];
+  // R50: the user's explicit language rule (Settings → Metadaten Studio →
+  // Sprach-Regeln) wins over the built-in aliases — RULE_KEEP leaves the
+  // term exactly as written.
+  const userRule = metadataRules.getUserLanguageRule(key);
+  if (userRule === RULE_KEEP) return withoutParens || trimmed;
+  if (userRule) return userRule;
+  const alias = DEFAULT_LANGUAGE_ALIASES[key];
   if (alias) return alias;
 
   // Custom languages (user-defined vocabulary) — exact match, proper casing
@@ -273,8 +284,13 @@ export function normalizeLanguageMixed(raw: string, extraLanguages?: string[]): 
  * Deterministic sub-genre → canonical-genre aliases (user item 12).
  * Keys are lowercased; values MUST exist in GENRES (src/lib/constants.ts)
  * so harmonized values always match the filter dropdowns.
+ *
+ * Exported as DEFAULT_GENRE_ALIASES (R50): the Settings rules editor
+ * (Settings → Metadaten Studio) shows these defaults next to the user's
+ * overrides (lib/game/metadata-rules.ts). User overrides WIN over this
+ * table at resolution time (see canonicalizeGenre).
  */
-const GENRE_ALIASES: Record<string, string> = {
+export const DEFAULT_GENRE_ALIASES: Record<string, string> = {
   // Pop family
   'bubblegum pop': 'Pop', 'dance pop': 'Pop', 'synthpop': 'Pop',
   'synth-pop': 'Pop', 'electropop': 'Pop', 'indie pop': 'Pop',
@@ -727,12 +743,24 @@ const UNMAPPABLE_GENRE_KEYS = new Set([
 ]);
 
 /** True when the genre is a known pseudo-genre (vocal style / era / medium)
- *  that must be corrected MANUALLY instead of via alias rules. */
+ *  that must be corrected MANUALLY instead of via alias rules.
+ *
+ * R50: a user rule for the term always wins — RULE_MANUAL pushes ANY term
+ * into manual review, an explicit mapping (or KEEP) pulls a built-in
+ * pseudo-genre OUT of it. */
 export function isUnmappableGenre(raw: string): boolean {
   const key = normalizeGenreLookupKey(raw);
   if (!key) return false;
+  const userRule = lookupUserGenreRule(key);
+  if (userRule === RULE_MANUAL) return true;
+  if (userRule) return false;
   return UNMAPPABLE_GENRE_KEYS.has(key) || UNMAPPABLE_GENRE_KEYS.has(key.replace(/-/g, ' '));
 }
+
+/** Built-in pseudo-genre terms (lowercase), sorted — informational export
+ *  for the Settings rules editor (R50). */
+export const DEFAULT_UNMAPPABLE_GENRES: readonly string[] =
+  Array.from(UNMAPPABLE_GENRE_KEYS).sort();
 
 /** Normalize a genre string into the alias-table key form: lowercase,
  *  dashes unified to plain hyphens, whitespace collapsed. */
@@ -742,6 +770,17 @@ function normalizeGenreLookupKey(value: string): string {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Resolve the USER's genre rule for a normalized alias key — trying the
+ * hyphen↔space variants exactly like the built-in alias lookup, so a rule
+ * for "art pop" also catches "Art-Pop" (R50).
+ */
+function lookupUserGenreRule(key: string): string | undefined {
+  return metadataRules.getUserGenreRule(key)
+    ?? metadataRules.getUserGenreRule(key.replace(/-/g, ' '))
+    ?? metadataRules.getUserGenreRule(key.replace(/ /g, '-'));
 }
 
 /**
@@ -777,16 +816,26 @@ export function canonicalizeGenre(raw: string, extraCanonicalGenres?: string[]):
   // previously hyphenated tags fell through the map untouched).
   const key = normalizeGenreLookupKey(value);
 
+  // R50 rule overrides: the user's explicit per-term decision (Settings →
+  // Metadaten Studio → Regeln) is the highest authority — more specific than
+  // custom categories and the built-in aliases. KEEP/MANUAL skip the alias
+  // mapping and fall through to the exact-match/title-case path below.
+  const userRule = lookupUserGenreRule(key);
+  if (userRule && userRule !== RULE_KEEP && userRule !== RULE_MANUAL) {
+    return userRule;
+  }
+
   // Custom user-defined main categories (R20) WIN over the alias map — the
   // user created them deliberately, so they are canonical in their library.
   const extras = extraCanonicalGenres ?? customTaxonomy.getCustomGenres();
   const extraMatch = extras.find(g => g.toLowerCase() === key);
   if (extraMatch) return extraMatch;
 
-  const canonical =
-    GENRE_ALIASES[key] ??
-    GENRE_ALIASES[key.replace(/-/g, ' ')] ??
-    GENRE_ALIASES[key.replace(/ /g, '-')];
+  const canonical = userRule === undefined
+    ? DEFAULT_GENRE_ALIASES[key]
+      ?? DEFAULT_GENRE_ALIASES[key.replace(/-/g, ' ')]
+      ?? DEFAULT_GENRE_ALIASES[key.replace(/ /g, '-')]
+    : undefined;
   if (canonical) return canonical;
 
   // Exact canonical match (case-insensitive) → proper casing

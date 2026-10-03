@@ -39,7 +39,7 @@ export function GenreLanguageEditor({
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // R20: full vocabulary = built-in list + user's custom entries (reactive —
-  // adding a genre in Settings → Genres & Languages updates this dropdown
+  // adding a genre in Settings → Metadaten Studio updates this dropdown
   // immediately)
   const { allGenres, allLanguages } = useCustomTaxonomy();
 

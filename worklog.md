@@ -166,3 +166,21 @@ Stage Summary:
 - Die Preview-Volume-Einstellung steuert erstmals tatsächlich etwas (vorher wirkungsloser Slider).
 - Video-getragene Previews (eingebettetes Audio) laufen nicht mehr mit Volume 1.0.
 - Offen: Nutzer-Verifikation im Tauri-Bundle (R46 Cover-Guard läuft laut Nutzer; R47 Fill-Missing-Quote + R49 Preview-Volume noch ohne Bundle-Feedback).
+
+---
+Task ID: r50-i18n
+Agent: i18n-subagent (general-purpose)
+Task: R50 i18n updates for the 14 remaining locales (delta.ts + tutorial.ts)
+
+Work Log:
+- All 14 locales (zh, nl, ru, da, fr, it, fi, ja, no, sv, pl, es, pt, ko) updated in `src/lib/i18n/locales/<locale>/delta.ts` and `tutorial.ts` to mirror the R50 de/en changes (Metadata Studio rename, Rule-based Harmonization editor, select-all warning, Harmonize-AI removal).
+- delta.ts per locale: (a) `settingsTabs.taxonomy` → neue Tab-Übersetzung ("Metadata Studio"; zh 元数据工作室, ru Студия метаданных, fr Studio de Métadonnées, es Estudio de Metadatos, ja メタデータ スタジオ, ko 메타데이터 스튜디오, no/sv Metadata-studio, Rest Loanword "Metadata Studio"); (b) `settingsTaxonomy.title/desc/harmonizeHint` erneuert (desc + "view & adjust the harmonization rules", harmonizeHint ohne "AI-" — nur noch regelbasiert); (c) NEUES `settingsRules`-Objekt (37 Keys, alphabetisch, Placeholder {n}/{name} + Emojis ⏸/✋/🎄 erhalten, Doppelquote-Stil des jeweiligen Files); (d) `editor`: +selectAllTitle/Desc/Hint/Confirm (Warnung vor dem Editieren aller Songs, Batch-20-Tipp verweist auf die lokalisierte "Select next {n}"-Schaltfläche) + `studioDesc` neu übersetzt — delta überschreibt damit den veralteten AI-Wortlaut aus library.ts (Merge-Reihenfolge: delta zuletzt).
+- tutorial.ts per locale: Settings-Tour-`taxonomy`-Eintrag (title/body/details) neu übersetzt (inkl. neuem "Rule-based Harmonization"-Absatz); 4 weitere Textstellen mit altem Tab-Namen aktualisiert — Bibliotheks-Tour-Filter-Bullet (Verweis "Einstellungen → <Tab>"), Settings-Übersichts-Bullet (jetzt "<Tab>: eigene Genres/Sprachen + Harmonisierungs-Regeln" wie en/de), Begrüßungs-Details + TabBar-Body (Tab-Liste, je 2×). Filter-Bullet-Label ("Custom genres & languages" als FILTER-Name) bewusst NICHT umbenannt (nur der Tab-Verweis), wie in en/de.
+- Entfernte R50-Keys (studioModeHarmonize, studioBatchHint, studioBigBatch*) waren in KEINEM der 14 deltas vorhanden (sie leben in den unangetasteten library.ts-Domaindateien) → nichts zu löschen; ungenutzte Alt-Keys dort sind harmlos (en/de-Referenz hat sie ebenfalls nicht mehr, UI verlinkt sie nicht mehr).
+- Translation-QA-Fixes während der Runde: fr/tutorial.ts unescaped Apostroph in "règles d'harmonisation" (TS1005, → \'); ja+ko doppeltes Komma nach harmonizeHint-Replace behoben.
+
+Stage Summary:
+- 14/14 Locales vollständig aktualisiert (zh, nl, ru, da, fr, it, fi, ja, no, sv, pl, es, pt, ko) — nur delta.ts + tutorial.ts angerührt (28 Dateien), keine anderen Dateien verändert.
+- Verifikation: `npx tsc --noEmit` Exit 0 · ESLint auf allen 28 geänderten Dateien: 0 Errors/0 Warnings · `settingsRules` = 37 Keys in ALLEN 14 Locales = exakt en (Aufgabenstellung sagte 36 — en hat real 37; Key-Menge wurde 1:1 auf en gespiegelt, inkl. addTargetLabel) · Flat-Map-Abgleich (merged Barrel, delta merged last) für zh/nl/ru: alle en-settingsRules-Keys + editor.selectAll*/studioDesc vorhanden, effektive Werte zeigen die NEUEN Texte (delta überschreibt library.ts korrekt) · Tutorial-Taxonomy-Titles aller 14 Locales = neue Tab-Namen · Placeholder-Check {n}/{name} bestanden.
+- Tab-Namen-Konvention für Folge-Runden: zh 元数据工作室 · ru Студия метаданных · fr Studio de Métadonnées · es Estudio de Metadatos · ja メタデータ スタジオ · ko 메타데이터 스튜디오 · no/sv Metadata-studio · nl/da/it/fi/pl/pt "Metadata Studio" (Loanword).
+

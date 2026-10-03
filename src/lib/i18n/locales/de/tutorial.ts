@@ -77,7 +77,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filter',
           body: 'Genre, Sprache, Jahr, Jahrzehnt, Duett-Songs und virale Hits — filtere die Bibliothek nach Lust und Laune.',
-          details: 'Alle Filter lassen sich kombinieren — z. B. „Genre: Rock + Sprache: Deutsch + Ära: 80er" zeigt genau die deutschen Rock-Songs der 80er.\n\nBesondere Filter:\n• Duett: zeigt nur Songs mit zwei Stimmen-Spuren.\n• Viral-Hits: Songs, die aktuell in den Viral-Charts stehen (konfiguriert unter Einstellungen → Bibliothek).\n• Eigene Genres & Sprachen: Im Tab „Genres & Sprachen" der Einstellungen legst du eigene Kategorien an — sie erscheinen sofort hier in den Filtern.\n\n„Filter zurücksetzen" (✕) leert alles auf einen Schlag.',
+          details: 'Alle Filter lassen sich kombinieren — z. B. „Genre: Rock + Sprache: Deutsch + Ära: 80er" zeigt genau die deutschen Rock-Songs der 80er.\n\nBesondere Filter:\n• Duett: zeigt nur Songs mit zwei Stimmen-Spuren.\n• Viral-Hits: Songs, die aktuell in den Viral-Charts stehen (konfiguriert unter Einstellungen → Bibliothek).\n• Eigene Genres & Sprachen: Im Tab „Metadaten Studio" der Einstellungen legst du eigene Kategorien an — sie erscheinen sofort hier in den Filtern.\n\n„Filter zurücksetzen" (✕) leert alles auf einen Schlag.',
         },
         songCard: {
           title: 'Songs',
@@ -122,7 +122,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Einstellungen',
           body: 'Mikrofone, Sprache, Gameplay-Feintuning, Darstellung und Grafik — alles Feinjustieren passiert hier.',
-          details: 'Die 12 Tabs der Einstellungen im Schnelldurchlauf:\n• Allgemein: Sprache, Standard-Schwierigkeit, Online\n• Gameplay: Punkteanzeige, Partikel, Kombo, Replay-Aufnahme\n• Darstellung: Themes, Lyrics-Stil, Hintergrund\n• Audio: Ausgabegerät, Lautstärke, Loudness, YouTube-Qualität\n• Mikrofon: Geräte, Empfindlichkeit, Noise-Gate, Presets\n• Mobile: Companion-Geräte verbinden & verwalten\n• Webcam: Webcam als Hintergrund\n• Bibliothek: Songs-Ordner, Import, Viral Charts, Reset\n• Genres & Sprachen: eigene Kategorien\n• Motto-Party: Motto aktivieren & konfigurieren\n• Sync & Backup: Sicherungen\n• Über: Version, Plattform, Lizenzen\n\nFür alle Tabs gibt es eine eigene, ausführliche Settings-Tour im ?-Hilfemenü.',
+          details: 'Die 12 Tabs der Einstellungen im Schnelldurchlauf:\n• Allgemein: Sprache, Standard-Schwierigkeit, Online\n• Gameplay: Punkteanzeige, Partikel, Kombo, Replay-Aufnahme\n• Darstellung: Themes, Lyrics-Stil, Hintergrund\n• Audio: Ausgabegerät, Lautstärke, Loudness, YouTube-Qualität\n• Mikrofon: Geräte, Empfindlichkeit, Noise-Gate, Presets\n• Mobile: Companion-Geräte verbinden & verwalten\n• Webcam: Webcam als Hintergrund\n• Bibliothek: Songs-Ordner, Import, Viral Charts, Reset\n• Metadaten Studio: eigene Genres & Sprachen + Harmonisierungs-Regeln\n• Motto-Party: Motto aktivieren & konfigurieren\n• Sync & Backup: Sicherungen\n• Über: Version, Plattform, Lizenzen\n\nFür alle Tabs gibt es eine eigene, ausführliche Settings-Tour im ?-Hilfemenü.',
         },
         settingsView: {
           title: 'Die Einstellungs-Reiter',
@@ -237,11 +237,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Die Einstellungen 👋',
           body: 'Diese Tour führt dich ausschließlich durch die Einstellungen — Tab für Tab.\n\nIch wechsle automatisch in den jeweiligen Tab und erkläre, was du dort findest.',
-          details: 'Die Tabs in der Reihenfolge der Tour: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile (Companion), Webcam, Bibliothek, Genres & Sprachen, Motto-Party, Sync & Backup und Über.\n\nJeder Tab hat oben eine kurze Einleitung — die Tour vertieft sie Schritt für Schritt.',
+          details: 'Die Tabs in der Reihenfolge der Tour: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile (Companion), Webcam, Bibliothek, Metadaten Studio, Motto-Party, Sync & Backup und Über.\n\nJeder Tab hat oben eine kurze Einleitung — die Tour vertieft sie Schritt für Schritt.',
         },
         tabBar: {
           title: 'Die Tab-Leiste',
-          body: 'Alle Einstellungen sind in Tabs gegliedert: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile, Webcam, Bibliothek, Genres & Sprachen, Motto-Party, Sync & Backup und Über.\n\nEin kurzer Einleitungstext oben in jedem Tab erklärt, wozu er dient.',
+          body: 'Alle Einstellungen sind in Tabs gegliedert: Allgemein, Gameplay, Darstellung, Audio, Mikrofon, Mobile, Webcam, Bibliothek, Metadaten Studio, Motto-Party, Sync & Backup und Über.\n\nEin kurzer Einleitungstext oben in jedem Tab erklärt, wozu er dient.',
           details: 'Orientierungshilfe: Wenn du etwas suchst, frag dich…\n• „Wie VERHÄLT sich das Spiel?" → Gameplay\n• „Wie SIEHT es aus?" → Darstellung\n• „Wie KLINGT es?" → Audio / Mikrofon\n• „Geräte anschließen?" → Mobile (Companion) / Mikrofon\n• „Meine Songs?" → Bibliothek\n• „Daten sichern?" → Sync & Backup\n\nDie Tabs scrollen bei schmalen Fenstern horizontal — einfach nach rechts wischen.',
         },
         general: {
@@ -275,9 +275,9 @@ export const tutorialTranslations = {
           details: 'Ordner-Format: Pro Song ein Unterordner mit Audio/Video + TXT (UltraStar-Format). Der Scanner erkennt gängige Kombis (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport-Formate fremder Karaoke-Anbieter werden vorerst nicht unterstützt.\n\nAchtung bei „Alle Daten löschen": Der_DOUBLE-Schutz fragt zweimal nach — trotzdem vorher ein Backup machen (Sync & Backup-Tab).',
         },
         taxonomy: {
-          title: 'Genres & Sprachen',
-          body: 'Eigene Genre- und Sprach-Einträge anlegen — sie erscheinen in allen Auswahllisten und fließen in die KI-Harmonisierung ein.',
-          details: 'Warum eigene Einträge? Standard-Listen decken nicht alles ab („Schlager", „K-Pop", „Mundart" …). Eigene Einträge:\n• erscheinen sofort in den Bibliotheks-Filtern\n• stehen im Editor und Metadata Studio zur Auswahl\n• harmonisieren mit (die KI schlägt sie bei passenden Songs vor)\n\nLöschen geht auch — Songs behalten den Eintrag, bis er neu zugewiesen wird.',
+          title: 'Metadaten Studio',
+          body: 'Eigene Genre- und Sprach-Einträge anlegen — und die Regeln der Harmonisierung einsehen und anpassen.',
+          details: 'Warum eigene Einträge? Standard-Listen decken nicht alles ab („Schlager", „K-Pop", „Mundart" …). Eigene Einträge:\n• erscheinen sofort in den Bibliotheks-Filtern\n• stehen im Editor und Metadata Studio zur Auswahl\n• harmonisieren mit (Regeln respektieren sie)\n\nLöschen geht auch — Songs behalten den Eintrag, bis er neu zugewiesen wird.\n\nUnter „Regel-basierte Harmonisierung“ siehst du jede Regel der Studio-Harmonisierung (z. B. „Bubblegum Pop → Pop“) und kannst Ziele ändern, Regeln deaktivieren oder eigene anlegen.',
         },
         motto: {
           title: 'Motto-Party',

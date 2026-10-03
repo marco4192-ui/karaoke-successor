@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { startAppDataSync } from '@/lib/game/appdata-sync';
+import { startTaxonomyAppDataSync } from '@/lib/game/taxonomy-appdata-sync';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
 import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import {
@@ -101,6 +102,16 @@ export default function KaraokeZERO() {
   // and highscores). Browser builds are a no-op (localStorage only).
   useEffect(() => {
     const stop = startAppDataSync(useGameStore);
+    return stop;
+  }, []);
+
+  // ── R50 (point 5): AppData persistence for the Metadaten Studio config ──
+  // Custom genre/language entries AND the harmonization rule overrides are
+  // mirrored into the OS AppData database in the Tauri build — they survive
+  // app updates and reinstalls (same protection as the player data above).
+  // Browser builds are a no-op (localStorage only).
+  useEffect(() => {
+    const stop = startTaxonomyAppDataSync();
     return stop;
   }, []);
 

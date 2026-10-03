@@ -173,6 +173,38 @@ class CustomTaxonomyStore {
     this.emit();
     return true;
   }
+
+  /**
+   * AppData restore (R50 point 5): merge persisted lists into the store.
+   * Union by case-insensitive name — existing (in-session) entries win,
+   * AppData entries fill what local is missing (reinstall recovery).
+   */
+  hydrateFromAppData(genres: unknown, languages: unknown): void {
+    const mergeList = (current: string[], incoming: unknown): string[] => {
+      if (!Array.isArray(incoming)) return current;
+      const seen = new Set(current.map(e => e.toLowerCase()));
+      const result = [...current];
+      for (const entry of incoming) {
+        if (typeof entry !== 'string') continue;
+        const trimmed = entry.trim().replace(/\s+/g, ' ');
+        if (!trimmed || trimmed.length > MAX_ENTRY_LENGTH) continue;
+        const lower = trimmed.toLowerCase();
+        if (seen.has(lower)) continue;
+        // Must not collide with the built-ins either
+        if (GENRES.some(g => g.toLowerCase() === lower)) continue;
+        if (LANGUAGES.some(l => l.toLowerCase() === lower)) continue;
+        seen.add(lower);
+        result.push(trimmed);
+      }
+      return result.slice(0, MAX_CUSTOM_ENTRIES);
+    };
+
+    this.genres = mergeList(this.genres, genres);
+    this.languages = mergeList(this.languages, languages);
+    setJson(StorageKeys.CUSTOM_GENRES, this.genres);
+    setJson(StorageKeys.CUSTOM_LANGUAGES, this.languages);
+    this.emit();
+  }
 }
 
 /** Module singleton — survives component unmounts, shared across the app. */

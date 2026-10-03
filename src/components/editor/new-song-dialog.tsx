@@ -38,7 +38,7 @@ interface NewSongDialogProps {
 export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const { t } = useTranslation();
   // R20: built-in + user-defined genres/languages (reactive via the
-  // custom-taxonomy store — Settings → Genres & Languages)
+  // custom-taxonomy store — Settings → Metadaten Studio)
   const { allGenres, allLanguages } = useCustomTaxonomy();
 
   // Metadata state

@@ -79,7 +79,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filters',
           body: 'Genre, taal, jaar, decennium, duetnummers en virale hits — snijd de bibliotheek naar eigen hand.',
-          details: 'Alle filters combineer je — bijv. "Genre: Rock + Taal: Engels + Tijdperk: jaren 80" toont precies de Engelse rocksongs uit de jaren tachtig.\n\nSpeciale filters:\n• Duet: alleen nummers met twee stemsporen.\n• Virale hits: nummers die momenteel in de virale charts staan (geconfigureerd in Instellingen → Bibliotheek).\n• Eigen genres & talen: maak je eigen categorieën aan bij Instellingen → Genres & Talen — ze verschijnen direct in deze filters.\n\n"Filters resetten" (✕) ruimt alles in één keer op.',
+          details: 'Alle filters combineer je — bijv. "Genre: Rock + Taal: Engels + Tijdperk: jaren 80" toont precies de Engelse rocksongs uit de jaren tachtig.\n\nSpeciale filters:\n• Duet: alleen nummers met twee stemsporen.\n• Virale hits: nummers die momenteel in de virale charts staan (geconfigureerd in Instellingen → Bibliotheek).\n• Eigen genres & talen: maak je eigen categorieën aan bij Instellingen → Metadata Studio — ze verschijnen direct in deze filters.\n\n"Filters resetten" (✕) ruimt alles in één keer op.',
         },
         songCard: {
           title: 'Nummers',
@@ -124,7 +124,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Instellingen',
           body: 'Microfoons, taal, gameplay-fijnafstelling, weergave en graphics — alle regelaars vind je hier.',
-          details: 'De 12 instellingstabbladen in een flits:\n• Algemeen: taal, standaardmoeilijkheid, online\n• Gameplay: scoreweergave, deeltjes, combo, opname van herhalingen\n• Weergave: thema\'s, songtekststijl, achtergrond\n• Audio: uitgangsapparaat, volume, loudness, YouTube-kwaliteit\n• Microfoon: apparaten, gevoeligheid, noise gate, presets\n• Mobiel: companion-apparaten verbinden & beheren\n• Webcam: webcam als achtergrond\n• Bibliotheek: nummermap, import, virale charts, reset\n• Genres & Talen: eigen categorieën\n• Themaparty: thema activeren & instellen\n• Sync & Back-up: zekerheden\n• Over: versie, platform, licenties\n\nEr is een eigen, diepgaande instellingenrondleiding voor alle tabbladen in het ?-hulpmenu.',
+          details: 'De 12 instellingstabbladen in een flits:\n• Algemeen: taal, standaardmoeilijkheid, online\n• Gameplay: scoreweergave, deeltjes, combo, opname van herhalingen\n• Weergave: thema\'s, songtekststijl, achtergrond\n• Audio: uitgangsapparaat, volume, loudness, YouTube-kwaliteit\n• Microfoon: apparaten, gevoeligheid, noise gate, presets\n• Mobiel: companion-apparaten verbinden & beheren\n• Webcam: webcam als achtergrond\n• Bibliotheek: nummermap, import, virale charts, reset\n• Metadata Studio: eigen genres & talen + harmonisatieregels\n• Themaparty: thema activeren & instellen\n• Sync & Back-up: zekerheden\n• Over: versie, platform, licenties\n\nEr is een eigen, diepgaande instellingenrondleiding voor alle tabbladen in het ?-hulpmenu.',
         },
         settingsView: {
           title: 'De instellingstabbladen',
@@ -239,11 +239,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'De instellingen 👋',
           body: 'Deze rondleiding loopt uitsluitend langs de instellingen — tabblad voor tabblad.\n\nIk schakel automatisch naar elk tabblad en leg uit wat je er vindt.',
-          details: 'De tabbladen in de volgorde van de rondleiding: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel (companion), Webcam, Bibliotheek, Genres & Talen, Themaparty, Sync & Back-up en Over.\n\nElk tabblad heeft bovenaan een korte intro — deze rondleiding verdiept hem stap voor stap.',
+          details: 'De tabbladen in de volgorde van de rondleiding: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel (companion), Webcam, Bibliotheek, Metadata Studio, Themaparty, Sync & Back-up en Over.\n\nElk tabblad heeft bovenaan een korte intro — deze rondleiding verdiept hem stap voor stap.',
         },
         tabBar: {
           title: 'De tabbalk',
-          body: 'Alle instellingen zijn georganiseerd in tabbladen: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel, Webcam, Bibliotheek, Genres & Talen, Themaparty, Sync & Back-up en Over.\n\nEen korte introductietekst bovenaan elk tabblad legt uit wat het doet.',
+          body: 'Alle instellingen zijn georganiseerd in tabbladen: Algemeen, Gameplay, Weergave, Audio, Microfoon, Mobiel, Webcam, Bibliotheek, Metadata Studio, Themaparty, Sync & Back-up en Over.\n\nEen korte introductietekst bovenaan elk tabblad legt uit wat het doet.',
           details: 'Hulp bij het zoeken — stel jezelf de vraag…\n• "Hoe gedraagt het spel ZICH?" → Gameplay\n• "Hoe ZIET het eruit?" → Weergave\n• "Hoe KLINKT het?" → Audio / Microfoon\n• "Apparaten verbinden?" → Mobiel (companion) / Microfoon\n• "Mijn nummers?" → Bibliotheek\n• "Gegevens back-uppen?" → Sync & Back-up\n\nDe tabbladen scrollen horizontaal in smalle vensters — veeg gewoon naar rechts.',
         },
         general: {
@@ -277,9 +277,9 @@ export const tutorialTranslations = {
           details: 'Mapformaat: één submap per nummer met audio/video + TXT (UltraStar-formaat). De scanner herkent gangbare combinaties (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformaten van andere karaoke-aanbieders worden voorlopig niet ondersteund.\n\nVoorzichtig met "alle gegevens verwijderen": de dubbele bevestiging vraagt twee keer — maak desondanks eerst een back-up (tabblad Sync & Back-up).',
         },
         taxonomy: {
-          title: 'Genres & Talen',
-          body: 'Maak je eigen genre- en taal-items — ze verschijnen in alle dropdowns en voeden de AI-harmonisatie.',
-          details: 'Waarom eigen items? Standaardlijsten dekken niet alles ("Levenslied", "K-Pop", "Dialect" …). Eigen items:\n• verschijnen direct in de bibliotheekfilters\n• zijn kiesbaar in de editor en Metadata Studio\n• harmoniseren mee (de AI stelt ze voor bij passende nummers)\n\nVerwijderen kan ook — nummers houden het item tot hertoewijzing.',
+          title: 'Metadata Studio',
+          body: 'Maak je eigen genre- en taal-items — en bekijk & pas de harmonisatieregels aan.',
+          details: 'Waarom eigen items? Standaardlijsten dekken niet alles ("Levenslied", "K-Pop", "Dialect" …). Eigen items:\n• verschijnen direct in de bibliotheekfilters\n• zijn kiesbaar in de editor en Metadata Studio\n• harmoniseren mee (de regels respecteren ze)\n\nVerwijderen kan ook — nummers houden het item tot hertoewijzing.\n\nOnder "Regelgebaseerde harmonisatie" zie je elke regel van de studio-harmonisatie (bijv. "Bubblegum Pop → Pop") en kun je doelen wijzigen, regels uitschakelen of eigen regels toevoegen.',
         },
         motto: {
           title: 'Themaparty',

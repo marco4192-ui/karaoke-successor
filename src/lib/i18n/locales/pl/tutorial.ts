@@ -79,7 +79,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtry',
           body: 'Gatunek, język, rok, dekada, duety i viralowe hity — potnij bibliotekę, jak chcesz.',
-          details: 'Filtry można łączyć — np. „Gatunek: Rock + Język: angielski + Epoka: lata 80.” pokaże dokładnie angielskie rockowe piosenki z osiemdziesiątych.\n\nFiltry specjalne:\n• Duet: tylko piosenki z dwiema ścieżkami wokalnymi.\n• Viralowe hity: piosenki aktualnie na listach viralowych (konfiguracja w Ustawienia → Biblioteka).\n• Własne gatunki i języki: twórz własne kategorie w Ustawienia → Gatunki i języki — natychmiast pojawiają się w tych filtrach.\n\n„Resetuj filtry” (✕) czyści wszystko za jednym zamachem.',
+          details: 'Filtry można łączyć — np. „Gatunek: Rock + Język: angielski + Epoka: lata 80.” pokaże dokładnie angielskie rockowe piosenki z osiemdziesiątych.\n\nFiltry specjalne:\n• Duet: tylko piosenki z dwiema ścieżkami wokalnymi.\n• Viralowe hity: piosenki aktualnie na listach viralowych (konfiguracja w Ustawienia → Biblioteka).\n• Własne gatunki i języki: twórz własne kategorie w Ustawienia → Metadata Studio — natychmiast pojawiają się w tych filtrach.\n\n„Resetuj filtry” (✕) czyści wszystko za jednym zamachem.',
         },
         songCard: {
           title: 'Piosenki',
@@ -124,7 +124,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Ustawienia',
           body: 'Mikrofony, język, dostrajanie rozgrywki, wygląd i grafika — wszystkie pokrętła mieszkają tutaj.',
-          details: '12 zakładek ustawień w skrócie:\n• Ogólne: język, domyślna trudność, online\n• Rozgrywka: wyświetlanie wyniku, cząsteczki, combo, nagrywanie powtórek\n• Wygląd: motywy, styl tekstu, tło\n• Audio: urządzenie wyjściowe, głośność, normalizacja głośności, jakość YouTube\n• Mikrofon: urządzenia, czułość, bramka szumu, presety\n• Mobilne: łącz i zarządzaj urządzeniami kompanów\n• Kamera internetowa: kamera jako tło\n• Biblioteka: folder piosenek, import, listy viralowe, reset\n• Gatunki i języki: własne kategorie\n• Impreza tematyczna: aktywuj i skonfiguruj motyw\n• Sync i kopie zapasowe: bezpieczniki\n• O programie: wersja, platforma, licencje\n\nDla wszystkich zakładek jest osobny, obszerny samouczek ustawień w menu pomocy ?.',
+          details: '12 zakładek ustawień w skrócie:\n• Ogólne: język, domyślna trudność, online\n• Rozgrywka: wyświetlanie wyniku, cząsteczki, combo, nagrywanie powtórek\n• Wygląd: motywy, styl tekstu, tło\n• Audio: urządzenie wyjściowe, głośność, normalizacja głośności, jakość YouTube\n• Mikrofon: urządzenia, czułość, bramka szumu, presety\n• Mobilne: łącz i zarządzaj urządzeniami kompanów\n• Kamera internetowa: kamera jako tło\n• Biblioteka: folder piosenek, import, listy viralowe, reset\n• Metadata Studio: własne gatunki i języki + reguły harmonizacji\n• Impreza tematyczna: aktywuj i skonfiguruj motyw\n• Sync i kopie zapasowe: bezpieczniki\n• O programie: wersja, platforma, licencje\n\nDla wszystkich zakładek jest osobny, obszerny samouczek ustawień w menu pomocy ?.',
         },
         settingsView: {
           title: 'Zakładki ustawień',
@@ -239,11 +239,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Ustawienia 👋',
           body: 'Ten samouczek oprowadza Cię wyłącznie po ustawieniach — zakładka po zakładce.\n\nAutomatycznie przełączam się na każdą zakładkę i wyjaśniam, co w niej znajdziesz.',
-          details: 'Zakładki w kolejności samouczka: Ogólne, Rozgrywka, Wygląd, Audio, Mikrofon, Mobilne (companion), Kamera internetowa, Biblioteka, Gatunki i języki, Impreza tematyczna, Sync i kopie zapasowe oraz O programie.\n\nKażda zakładka ma u góry krótkie wprowadzenie — ten samouczek pogłębia je krok po kroku.',
+          details: 'Zakładki w kolejności samouczka: Ogólne, Rozgrywka, Wygląd, Audio, Mikrofon, Mobilne (companion), Kamera internetowa, Biblioteka, Metadata Studio, Impreza tematyczna, Sync i kopie zapasowe oraz O programie.\n\nKażda zakładka ma u góry krótkie wprowadzenie — ten samouczek pogłębia je krok po kroku.',
         },
         tabBar: {
           title: 'Pasek zakładek',
-          body: 'Wszystkie ustawienia są zorganizowane w zakładki: Ogólne, Rozgrywka, Wygląd, Audio, Mikrofon, Mobilne, Kamera internetowa, Biblioteka, Gatunki i języki, Impreza tematyczna, Sync i kopie zapasowe oraz O programie.\n\nKrótki tekst wprowadzenia na górze każdej zakładki wyjaśnia, co robi.',
+          body: 'Wszystkie ustawienia są zorganizowane w zakładki: Ogólne, Rozgrywka, Wygląd, Audio, Mikrofon, Mobilne, Kamera internetowa, Biblioteka, Metadata Studio, Impreza tematyczna, Sync i kopie zapasowe oraz O programie.\n\nKrótki tekst wprowadzenia na górze każdej zakładki wyjaśnia, co robi.',
           details: 'Pomoc w orientacji — szukając, zapytaj siebie…\n• „Jak gra SIĘ ZACHOWUJE?” → Rozgrywka\n• „Jak WYGLĄDA?” → Wygląd\n• „Jak BRZMI?” → Audio / Mikrofon\n• „Podłączyć urządzenia?” → Mobilne (companion) / Mikrofon\n• „Moje piosenki?” → Biblioteka\n• „Zabezpieczyć dane?” → Sync i kopie zapasowe\n\nZakładki przewijają się poziomo w wąskich oknach — po prostu przesuń w prawo.',
         },
         general: {
@@ -277,9 +277,9 @@ export const tutorialTranslations = {
           details: 'Format folderu: jeden podfolder na piosenkę z audio/wideo + TXT (format UltraStar). Skaner rozpoznaje typowe zestawy (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nFormaty importu od innych dostawców karaoke nie są na razie obsługiwane.\n\nUwaga na „usuń wszystkie dane”: podwójne potwierdzenie pyta dwa razy — mimo to zrób najpierw kopię zapasową (zakładka Sync i kopie zapasowe).',
         },
         taxonomy: {
-          title: 'Gatunki i języki',
-          body: 'Twórz własne gatunki i języki — pojawiają się we wszystkich listach rozwijanych i zasilają harmonizację AI.',
-          details: 'Po co własne wpisy? Standardowe listy nie obejmują wszystkiego („Schlager”, „K-Pop”, „gwara”…). Własne wpisy:\n• pojawiają się natychmiast w filtrach biblioteki\n• są do wyboru w edytorze i Metadata Studio\n• harmonizują się razem (AI podpowiada je do pasujących piosenek)\n\nUsuwanie też działa — piosenki zachowują wpis do ponownego przypisania.',
+          title: 'Metadata Studio',
+          body: 'Twórz własne gatunki i języki — oraz przeglądaj i dostosowuj reguły harmonizacji.',
+          details: 'Po co własne wpisy? Standardowe listy nie obejmują wszystkiego („Schlager”, „K-Pop”, „gwara”…). Własne wpisy:\n• pojawiają się natychmiast w filtrach biblioteki\n• są do wyboru w edytorze i Metadata Studio\n• harmonizują się razem (reguły je respektują)\n\nUsuwanie też działa — piosenki zachowują wpis do ponownego przypisania.\n\nW sekcji „Harmonizacja regułowa” zobaczysz każdą regułę harmonizacji studia (np. „Bubblegum Pop → Pop”) i możesz zmieniać cele, wyłączać reguły lub dodawać własne.',
         },
         motto: {
           title: 'Impreza tematyczna',

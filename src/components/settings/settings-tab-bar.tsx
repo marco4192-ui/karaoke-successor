@@ -26,7 +26,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
     { id: 'mobile', label: t('settingsTabs.mobileCompanion'), icon: PhoneIcon, color: 'cyan' },
     { id: 'webcam', label: t('settingsTabs.webcam'), icon: WebcamIcon, color: 'cyan' },
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
-    { id: 'taxonomy', label: t('settingsTabs.taxonomy'), icon: () => <span>🏷️</span>, color: 'purple' },
+    { id: 'taxonomy', label: t('settingsTabs.taxonomy'), icon: () => <span>🎛️</span>, color: 'purple' },
     { id: 'motto', label: t('settingsTabs.mottoParty'), icon: () => <span>🎉</span>, color: 'purple' },
     { id: 'sync', label: t('settingsTabs.syncBackup'), icon: () => <span>💾</span>, color: 'green' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },

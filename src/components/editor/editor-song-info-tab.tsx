@@ -170,7 +170,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
         <Separator className="bg-slate-700" />
 
         {/* Genre — canonical vocabulary (built-in list + user customs from
-            Settings → Genres & Languages, R20). The old Genre/Language
+            Settings → Metadaten Studio, R20). The old Genre/Language
             sidebar tab was removed (R4 point 8) — this is the regular
             metadata editing spot. */}
         <div className="space-y-2">

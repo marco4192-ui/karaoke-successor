@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filters',
           body: 'Genre, language, year, decade, duet songs and viral hits — slice the library however you like.',
-          details: 'All filters combine — e.g. "Genre: Rock + Language: English + Era: 80s" shows exactly the English rock songs of the eighties.\n\nSpecial filters:\n• Duet: only songs with two voice tracks.\n• Viral hits: songs currently in the viral charts (configured in Settings → Library).\n• Custom genres & languages: create your own categories in Settings → Genres & Languages — they appear in these filters immediately.\n\n"Reset filters" (✕) clears everything in one go.',
+          details: 'All filters combine — e.g. "Genre: Rock + Language: English + Era: 80s" shows exactly the English rock songs of the eighties.\n\nSpecial filters:\n• Duet: only songs with two voice tracks.\n• Viral hits: songs currently in the viral charts (configured in Settings → Library).\n• Custom genres & languages: create your own categories in Settings → Metadata Studio — they appear in these filters immediately.\n\n"Reset filters" (✕) clears everything in one go.',
         },
         songCard: {
           title: 'Songs',
@@ -123,7 +123,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Settings',
           body: 'Microphones, language, gameplay fine-tuning, appearance and graphics — all the knobs live here.',
-          details: 'The 12 settings tabs in a flash:\n• General: language, default difficulty, online\n• Gameplay: score display, particles, combo, replay recording\n• Appearance: themes, lyrics style, background\n• Audio: output device, volume, loudness, YouTube quality\n• Microphone: devices, sensitivity, noise gate, presets\n• Mobile: connect & manage companion devices\n• Webcam: webcam as background\n• Library: songs folder, import, viral charts, reset\n• Genres & Languages: custom categories\n• Theme Party: activate & configure the theme\n• Sync & Backup: safeties\n• About: version, platform, licenses\n\nThere is a dedicated, in-depth settings tour for all tabs in the ? help menu.',
+          details: 'The 12 settings tabs in a flash:\n• General: language, default difficulty, online\n• Gameplay: score display, particles, combo, replay recording\n• Appearance: themes, lyrics style, background\n• Audio: output device, volume, loudness, YouTube quality\n• Microphone: devices, sensitivity, noise gate, presets\n• Mobile: connect & manage companion devices\n• Webcam: webcam as background\n• Library: songs folder, import, viral charts, reset\n• Metadata Studio: custom genres & languages + harmonization rules\n• Theme Party: activate & configure the theme\n• Sync & Backup: safeties\n• About: version, platform, licenses\n\nThere is a dedicated, in-depth settings tour for all tabs in the ? help menu.',
         },
         settingsView: {
           title: 'The settings tabs',
@@ -238,11 +238,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'The settings 👋',
           body: 'This tour walks you through the settings exclusively — tab by tab.\n\nI automatically switch to each tab and explain what you find there.',
-          details: 'The tabs in tour order: General, Gameplay, Appearance, Audio, Microphone, Mobile (companion), Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nEvery tab has a short intro on top — this tour deepens it step by step.',
+          details: 'The tabs in tour order: General, Gameplay, Appearance, Audio, Microphone, Mobile (companion), Webcam, Library, Metadata Studio, Theme Party, Sync & Backup and About.\n\nEvery tab has a short intro on top — this tour deepens it step by step.',
         },
         tabBar: {
           title: 'The tab bar',
-          body: 'All settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Genres & Languages, Theme Party, Sync & Backup and About.\n\nA short intro text at the top of each tab explains what it does.',
+          body: 'All settings are organized into tabs: General, Gameplay, Appearance, Audio, Microphone, Mobile, Webcam, Library, Metadata Studio, Theme Party, Sync & Backup and About.\n\nA short intro text at the top of each tab explains what it does.',
           details: 'Orientation help — when searching, ask yourself…\n• "How does the game BEHAVE?" → Gameplay\n• "How does it LOOK?" → Appearance\n• "How does it SOUND?" → Audio / Microphone\n• "Connect devices?" → Mobile (companion) / Microphone\n• "My songs?" → Library\n• "Back up data?" → Sync & Backup\n\nThe tabs scroll horizontally on narrow windows — just swipe right.',
         },
         general: {
@@ -276,9 +276,9 @@ export const tutorialTranslations = {
           details: 'Folder format: one subfolder per song with audio/video + TXT (UltraStar format). The scanner recognizes common combos (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImport formats from other karaoke providers are not supported for now.\n\nCareful with "delete all data": the double confirmation asks twice — still make a backup first (Sync & Backup tab).',
         },
         taxonomy: {
-          title: 'Genres & Languages',
-          body: 'Create your own genre and language entries — they appear in all dropdowns and feed into the AI harmonization.',
-          details: 'Why custom entries? Standard lists do not cover everything ("Schlager", "K-Pop", "Dialect" …). Custom entries:\n• appear immediately in the library filters\n• are selectable in the editor and Metadata Studio\n• harmonize along (the AI suggests them for matching songs)\n\nDeleting works too — songs keep the entry until reassigned.',
+          title: 'Metadata Studio',
+          body: 'Create your own genre and language entries — and view & adjust the harmonization rules.',
+          details: 'Why custom entries? Standard lists do not cover everything ("Schlager", "K-Pop", "Dialect" …). Custom entries:\n• appear immediately in the library filters\n• are selectable in the editor and Metadata Studio\n• harmonize along (the rules respect them)\n\nDeleting works too — songs keep the entry until reassigned.\n\nUnder "Rule-based Harmonization" you see every rule of the studio harmonization (e.g. "Bubblegum Pop → Pop") and can change targets, disable rules or add your own.',
         },
         motto: {
           title: 'Theme Party',

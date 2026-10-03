@@ -10,11 +10,16 @@
  *
  *  - Scope:   all songs OR the current multi-selection (old "AI Suggest")
  *  - Fields:  Genre / Language / Year — independently selectable
- *  - Mode:    "fill missing" (only empty fields get values), "harmonize"
- *             (AI suggests corrections incl. existing values), "rule-based"
- *             (deterministic GENRE_ALIASES mapping — no AI, no quota) or
- *             "manual" (R5-1: direct per-song editing of all scope songs —
- *             current value + editor side by side, no AI involved)
+ *  - Mode:    "fill missing" (only empty fields get values — factual lookup
+ *             via iTunes/Deezer/MusicBrainz, LLM only as a fallback when
+ *             configured), "rule-based" (deterministic GENRE_ALIASES mapping
+ *             — no AI, no quota; the rules are user-editable in Settings →
+ *             Metadaten Studio, R50) or "manual" (R5-1: direct per-song
+ *             editing of all scope songs — current value + editor side by
+ *             side, no AI involved).
+ *             (R50: the former "harmonize" mode — AI corrections of existing
+ *             values — was REMOVED; the rule-based mode covers that use case
+ *             deterministically.)
  *  - Target:  write into the UltraStar txt (survives a library reset) or keep
  *             changes game-local only (wiped by the library reset — hint shown)
  *
@@ -48,12 +53,13 @@ import {
   RuleHarmonizeJobState,
 } from '@/lib/editor/rule-harmonizer';
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
+import { useMetadataRules } from '@/hooks/use-metadata-rules';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
-export type StudioMode = 'fill' | 'harmonize' | 'rule' | 'manual';
+export type StudioMode = 'fill' | 'rule' | 'manual';
 export type StudioWriteTarget = 'txt' | 'local';
 
 interface MetadataStudioProps {
@@ -75,25 +81,6 @@ interface MetadataStudioProps {
   onApplied: () => void;
   t: (key: string) => string;
 }
-
-/**
- * Recommended batch size for the AI pipeline (user request: real measured
- * value, not a good-will number).
- *
- * Measured in THIS sandbox (full 12-song chunks):
- *  - factual lookup (R47: iTunes primary, MB only for the rest):
- *    ~25 s per 12 songs ≈ 2 s/song (before R47's iTunes source it was
- *    ~65 s per 12 songs via Deezer/MusicBrainz alone)
- *  - LLM analysis:                                  ~8.5 s per 12 songs ≈ 0.7 s/song
- *  - txt apply:                                     ~0.1 s/song
- * ⇒ worst case ≈ 3 s per song (fill-missing with empty genre/year/language);
- *   6 s/song kept as the conservative display ceiling (MusicBrainz-only
- *   worst case when iTunes misses everything).
- * 20 songs ≈ 2 min worst case — the accepted waiting-time ceiling.
- */
-export const STUDIO_RECOMMENDED_BATCH = 20;
-/** Worst-case seconds per song for the estimated-time display. */
-const SECONDS_PER_SONG_WORST_CASE = 6;
 
 /** Subscribe to the singleton rule-harmonizer background job state. */
 function useRuleHarmonizerState(): RuleHarmonizeJobState {
@@ -125,9 +112,14 @@ export function MetadataStudio({
   const [writeTarget, setWriteTarget] = useState<StudioWriteTarget>('txt');
 
   // R20: genre vocabulary = built-in list + user-defined entries from
-  // Settings → Genres & Languages (reactive — the dropdowns here update the
+  // Settings → Metadaten Studio (reactive — the dropdowns here update the
   // moment a custom genre is added or removed there)
   const { allGenres } = useCustomTaxonomy();
+
+  // R50: user rule overrides (Settings → Metadaten Studio → Regeln) — the
+  // version acts as a dependency so the rule plan below recomputes the
+  // moment a rule changes (also live while the studio is open).
+  const { version: rulesVersion } = useMetadataRules();
 
   // Opening from the select bar switches to the selection scope (token-based
   // so it also fires when the scope was already "selection")
@@ -154,8 +146,6 @@ export function MetadataStudio({
   const abortRef = useRef<AbortController | null>(null);
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
-  /** Big-batch confirmation pending (AI modes above the recommended size). */
-  const [confirmBigBatch, setConfirmBigBatch] = useState(false);
 
   // 1 Hz elapsed-time ticker while the analysis job runs
   useEffect(() => {
@@ -188,18 +178,16 @@ export function MetadataStudio({
   /**
    * Songs the current run would analyze:
    *  - fill mode: only songs with at least one SELECTED field missing
-   *  - harmonize mode: every song in scope
+   *    (rule mode computes its plan from the genres below; manual mode has
+   *    no Run button — the list is edited directly)
    */
   const runSubset = useMemo(() => {
-    if (mode === 'rule') return scopeSongs; // plan computed from genres below
-    if (mode === 'fill') {
-      return scopeSongs.filter(s =>
-        (fields.genre && !s.genre) ||
-        (fields.language && !s.language) ||
-        (fields.year && !s.year),
-      );
-    }
-    return scopeSongs;
+    if (mode !== 'fill') return scopeSongs;
+    return scopeSongs.filter(s =>
+      (fields.genre && !s.genre) ||
+      (fields.language && !s.language) ||
+      (fields.year && !s.year),
+    );
   }, [scopeSongs, mode, fields]);
 
   /** Rule plan (pure + synchronous): GENRE harmonization (alias mapping,
@@ -210,12 +198,14 @@ export function MetadataStudio({
     () => (mode === 'rule'
       ? [...planRuleHarmonization(scopeSongs), ...planRuleLanguageHarmonization(scopeSongs)]
       : []),
-    [mode, scopeSongs],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rulesVersion is NOT read inside the memo body, but the plan functions resolve the metadata-rules store internally; the version forces recomputation when a rule changes (R50)
+    [mode, scopeSongs, rulesVersion],
   );
   /** Plan breakdown for the info line (🎸 genres / 🌐 languages). */
   const ruleGenrePlanCount = useMemo(
     () => (mode === 'rule' ? planRuleHarmonization(scopeSongs).length : 0),
-    [mode, scopeSongs],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see rulePlan above (R50 rule-change reactivity)
+    [mode, scopeSongs, rulesVersion],
   );
   const ruleLanguagePlanCount = rulePlan.length - ruleGenrePlanCount;
 
@@ -229,7 +219,8 @@ export function MetadataStudio({
   const manualReview = useMemo(() => {
     if (mode !== 'rule') return [];
     return planManualGenreReview(scopeSongs).filter(m => !skippedManualIds.has(m.songId));
-  }, [mode, scopeSongs, skippedManualIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see rulePlan above (R50 rule-change reactivity)
+  }, [mode, scopeSongs, skippedManualIds, rulesVersion]);
   /** Songs the user skipped this session (info line + restore link). */
   const skippedManualCount = useMemo(
     () => skippedManualIds.size,
@@ -527,11 +518,11 @@ export function MetadataStudio({
   ): HarmonizeSuggestion[] => (
     list.map(s => ({
       ...s,
-      suggestedGenre: fields.genre && (mode === 'harmonize' || !s.currentGenre) ? s.suggestedGenre : null,
-      suggestedLanguage: fields.language && (mode === 'harmonize' || !s.currentLanguage) ? s.suggestedLanguage : null,
-      suggestedYear: fields.year && (mode === 'harmonize' || s.currentYear == null) ? s.suggestedYear : null,
+      suggestedGenre: fields.genre && !s.currentGenre ? s.suggestedGenre : null,
+      suggestedLanguage: fields.language && !s.currentLanguage ? s.suggestedLanguage : null,
+      suggestedYear: fields.year && s.currentYear == null ? s.suggestedYear : null,
     })).filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear)
-  ), [fields, mode]);
+  ), [fields]);
 
   // ── Lyrics warm-up (only needed when writing txt files) ──
   const startLyricsWarmup = useCallback((list: Song[]) => {
@@ -611,19 +602,12 @@ export function MetadataStudio({
     }
   }, [runSubset, writeTarget, startLyricsWarmup, filterSuggestions, t]);
 
-  /** User-facing Run click: guards empty selection + big batches first. */
+  /** User-facing Run click: guards an empty selection / nothing to fill. */
   const handleRunClick = useCallback(() => {
     if (runSubset.length === 0) {
       setError(scope === 'selection'
         ? t('editor.aiBatchSelectFirstDesc')
         : t('editor.studioNothingToFill'));
-      return;
-    }
-    // Large batches need an explicit confirmation with the measured
-    // worst-case estimate — prevents accidental multi-minute runs (user
-    // request: no killer runs).
-    if (runSubset.length > STUDIO_RECOMMENDED_BATCH) {
-      setConfirmBigBatch(true);
       return;
     }
     void handleRun();
@@ -859,7 +843,6 @@ export function MetadataStudio({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioMode')}</span>
             {segButton(mode === 'fill', () => setMode('fill'), t('editor.studioModeFill'), 'studio-mode-fill')}
-            {segButton(mode === 'harmonize', () => setMode('harmonize'), t('editor.studioModeHarmonize'), 'studio-mode-harmonize')}
             {segButton(mode === 'rule', () => setMode('rule'), t('editor.studioModeRule'), 'studio-mode-rule', 'cyan')}
             {segButton(mode === 'manual', () => setMode('manual'), `✏️ ${t('editor.studioModeManual')}`, 'studio-mode-manual', 'amber')}
           </div>
@@ -1339,14 +1322,6 @@ export function MetadataStudio({
             )}
           </div>
 
-          {/* ── Measured batch-size recommendation (real timings, see
-              STUDIO_RECOMMENDED_BATCH above) ── */}
-          {mode !== 'rule' && mode !== 'manual' && (
-            <p className="text-[10px] text-white/40 leading-relaxed" data-testid="studio-batch-hint">
-              💡 {t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}
-            </p>
-          )}
-
           {/* ── Loading banner (obvious loading screen while the pipeline
               runs — phase, progress bar, elapsed time, cancel) ── */}
           {(isLoading || ruleRunning) && (
@@ -1601,49 +1576,11 @@ export function MetadataStudio({
             </div>
           )}
 
-          {/* ── Big-batch confirmation (run with more songs than the measured
-              recommendation → explicit time estimate before the job starts) ── */}
-          {confirmBigBatch && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-              <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl" data-testid="studio-big-batch-dialog">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">⏳</span>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm">{t('editor.studioBigBatchTitle')}</h3>
-                    <p className="text-white/60 text-xs mt-0.5">
-                      {t('editor.studioBigBatchDesc')
-                        .replace('{n}', String(runSubset.length))
-                        .replace('{min}', String(Math.max(1, Math.ceil(runSubset.length * SECONDS_PER_SONG_WORST_CASE / 60))))}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-[11px] text-white/60 space-y-1.5">
-                  <p>{t('editor.studioBatchHint').replace('{n}', String(STUDIO_RECOMMENDED_BATCH))}</p>
-                  <p className="text-white/40">{t('editor.studioBigBatchTip')}</p>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfirmBigBatch(false)}
-                    className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                  >
-                    {t('editor.aiHarmonizeWarnCancel')}
-                  </Button>
-                  <Button
-                    onClick={() => { setConfirmBigBatch(false); void handleRun(); }}
-                    className="flex-1 bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
-                    data-testid="studio-big-batch-confirm"
-                  >
-                    {t('editor.studioBigBatchConfirm')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* R50: the big-batch confirmation was removed together with the
+              Harmonize-AI mode — the remaining fill/rule/manual modes have
+              no batch-size limit (rule mode runs as a background job with
+              abort; the "select all" flow in the library carries its own
+              time/gameplay warning now). */}
         </div>
       )}
     </div>

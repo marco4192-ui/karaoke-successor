@@ -23,6 +23,9 @@ export const StorageKeys = {
   CUSTOM_GENRES: 'karaoke-custom-genres',
   /** User-defined language entries beyond the built-in LANGUAGES list (JSON string[]) */
   CUSTOM_LANGUAGES: 'karaoke-custom-languages',
+  /** R50: user overrides for the rule-based harmonization — genre & language
+   *  alias rules (delta against the built-in defaults, JSON object) */
+  METADATA_RULES: 'karaoke-metadata-rules',
 
   // --- Game Settings ---
   DEFAULT_DIFFICULTY: 'karaoke-default-difficulty',

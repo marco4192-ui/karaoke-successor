@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filtre',
           body: 'Genre, sprog, år, årti, duet-sange og virale hits — skær biblioteket til, lige som du vil.',
-          details: 'Alle filtre kan kombineres — "Genre: Rock + Sprog: Engelsk + Æra: 80\'erne" viser præcis de engelske rocksange fra firserne.\n\nSærlige filtre:\n• Duet: kun sange med to stemmespor.\n• Virale hits: sange, der aktuelt er på de virale hitlister (konfigureres under Indstillinger → Bibliotek).\n• Egne genrer & sprog: opret dine egne kategorier under Indstillinger → Genrer & Sprog — de dukker straks op i disse filtre.\n\n"Ryd filtre" (✕) rydder det hele på én gang.',
+          details: 'Alle filtre kan kombineres — "Genre: Rock + Sprog: Engelsk + Æra: 80\'erne" viser præcis de engelske rocksange fra firserne.\n\nSærlige filtre:\n• Duet: kun sange med to stemmespor.\n• Virale hits: sange, der aktuelt er på de virale hitlister (konfigureres under Indstillinger → Bibliotek).\n• Egne genrer & sprog: opret dine egne kategorier under Indstillinger → Metadata Studio — de dukker straks op i disse filtre.\n\n"Ryd filtre" (✕) rydder det hele på én gang.',
         },
         songCard: {
           title: 'Sange',
@@ -123,7 +123,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Indstillinger',
           body: 'Mikrofoner, sprog, finjustering af gameplay, udseende og grafik — alle knapperne bor her.',
-          details: 'De 12 indstillingsfaner hurtigt:\n• Generelt: sprog, standard sværhedsgrad, online\n• Gameplay: pointvisning, partikler, combo, replay-optagelse\n• Udseende: temaer, sangtekststil, baggrund\n• Lyd: outputenhed, lydstyrke, loudness, YouTube-kvalitet\n• Mikrofon: enheder, følsomhed, støjgrænse, presets\n• Mobil: forbind & administrér companion-enheder\n• Webcam: webcam som baggrund\n• Bibliotek: sangmappe, import, virale hitlister, nulstilling\n• Genrer & Sprog: egne kategorier\n• Temafest: aktivér & konfigurér temaet\n• Synk & Backup: sikkerhedskopier\n• Om: version, platform, licenser\n\nDer findes en selvstændig, grundig indstillings-rundtur til alle fanerne i ?-hjælpemenuen.',
+          details: 'De 12 indstillingsfaner hurtigt:\n• Generelt: sprog, standard sværhedsgrad, online\n• Gameplay: pointvisning, partikler, combo, replay-optagelse\n• Udseende: temaer, sangtekststil, baggrund\n• Lyd: outputenhed, lydstyrke, loudness, YouTube-kvalitet\n• Mikrofon: enheder, følsomhed, støjgrænse, presets\n• Mobil: forbind & administrér companion-enheder\n• Webcam: webcam som baggrund\n• Bibliotek: sangmappe, import, virale hitlister, nulstilling\n• Metadata Studio: egne genrer & sprog + harmoniseringsregler\n• Temafest: aktivér & konfigurér temaet\n• Synk & Backup: sikkerhedskopier\n• Om: version, platform, licenser\n\nDer findes en selvstændig, grundig indstillings-rundtur til alle fanerne i ?-hjælpemenuen.',
         },
         settingsView: {
           title: 'Indstillingsfanerne',
@@ -238,11 +238,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Indstillingerne 👋',
           body: 'Denne rundtur går udelukkende gennem indstillingerne — fane for fane.\n\nJeg skifter automatisk til hver fane og forklarer, hvad du finder der.',
-          details: 'Fanerne i rundtur-rækkefølge: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil (companion), Webcam, Bibliotek, Genrer & Sprog, Temafest, Synk & Backup samt Om.\n\nHver fane har en kort intro øverst — denne rundtur uddyber den trin for trin.',
+          details: 'Fanerne i rundtur-rækkefølge: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil (companion), Webcam, Bibliotek, Metadata Studio, Temafest, Synk & Backup samt Om.\n\nHver fane har en kort intro øverst — denne rundtur uddyber den trin for trin.',
         },
         tabBar: {
           title: 'Fanebjælken',
-          body: 'Alle indstillinger er organiseret i faner: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil, Webcam, Bibliotek, Genrer & Sprog, Temafest, Synk & Backup og Om.\n\nEn kort intro-tekst øverst i hver fane forklarer, hvad den gør.',
+          body: 'Alle indstillinger er organiseret i faner: Generelt, Gameplay, Udseende, Lyd, Mikrofon, Mobil, Webcam, Bibliotek, Metadata Studio, Temafest, Synk & Backup og Om.\n\nEn kort intro-tekst øverst i hver fane forklarer, hvad den gør.',
           details: 'Hjælp til orientering — spørg dig selv, når du leder…\n• "Hvordan OPFØRER spillet sig?" → Gameplay\n• "Hvordan SER det ud?" → Udseende\n• "Hvordan LYDER det?" → Lyd / Mikrofon\n• "Forbinde enheder?" → Mobil (companion) / Mikrofon\n• "Mine sange?" → Bibliotek\n• "Sikkerhedskopiere data?" → Synk & Backup\n\nFanerne ruller vandret i smalle vinduer — bare swipe til højre.',
         },
         general: {
@@ -276,9 +276,9 @@ export const tutorialTranslations = {
           details: 'Mappeformat: én undermappe pr. sang med lyd/video + TXT (UltraStar-format). Scanneren genkender almindelige kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformater fra andre karaoke-udbydere understøttes ikke lige nu.\n\nPas på med "slet alle data": den dobbelte bekræftelse spørger to gange — tag stadig en backup først (fanen Synk & Backup).',
         },
         taxonomy: {
-          title: 'Genrer & Sprog',
-          body: 'Opret dine egne genre- og sprogposter — de vises i alle rullemenuer og indgår i AI-harmoniseringen.',
-          details: 'Hvorfor egne poster? Standardlisterne dækker ikke alt ("Schlager", "K-Pop", "Dialekt" …). Egne poster:\n• dukker straks op i biblioteksfiltrene\n• kan vælges i editoren og Metadata Studio\n• harmoniseres med (AI\'en foreslår dem til matchende sange)\n\nSletning virker også — sange beholder posten, indtil den tildeles på ny.',
+          title: 'Metadata Studio',
+          body: 'Opret dine egne genre- og sprogposter — og se & justér harmoniseringsreglerne.',
+          details: 'Hvorfor egne poster? Standardlisterne dækker ikke alt ("Schlager", "K-Pop", "Dialekt" …). Egne poster:\n• dukker straks op i biblioteksfiltrene\n• kan vælges i editoren og Metadata Studio\n• harmoniseres med (reglerne respekterer dem)\n\nSletning virker også — sange beholder posten, indtil den tildeles på ny.\n\nUnder "Regelbaseret harmonisering" ser du hver regel i studio-harmoniseringen (f.eks. "Bubblegum Pop → Pop") og kan ændre mål, deaktivere regler eller tilføje dine egne.',
         },
         motto: {
           title: 'Temafest',

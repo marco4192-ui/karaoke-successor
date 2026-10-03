@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Taxonomy tab (Settings → "Genres & Sprachen") — user request R20.
+ * Taxonomy tab (Settings → "Metadaten Studio", formerly "Genres & Sprachen") — user request R20,
  *
  * Management UI for the app's genre & language vocabulary:
  *  - VIEW:   all built-in entries (badged "Standard") and all user-defined
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RulesSection } from '@/components/settings/rules-section';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
@@ -407,6 +408,13 @@ export function TaxonomyTab() {
         <TaxonomyListCard kind="genre" usageCounts={usageCounts} />
         <TaxonomyListCard kind="language" usageCounts={usageCounts} />
       </div>
+
+      {/* R50 (point 4): rule-based harmonization — view & edit every rule of
+          the Metadata Studio harmonization (genre aliases, language aliases,
+          pseudo-genre manual-review list). Starts collapsed; changes are
+          reactive (studio plans update instantly) and persist via the
+          AppData mirror (point 5). */}
+      <RulesSection />
     </div>
   );
 }

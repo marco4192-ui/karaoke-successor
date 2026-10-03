@@ -78,7 +78,7 @@ export const tutorialTranslations = {
         filters: {
           title: 'Filter',
           body: 'Genre, språk, år, decennium, duettlåtar och viral-hits — skär biblioteket precis hur du vill.',
-          details: 'Alla filter kan kombineras — t.ex. visar "Genre: Rock + Språk: Engelska + Era: 80-tal" exakt de engelska rocklåtarna från åttiotalet.\n\nSpecialfilter:\n• Duett: bara låtar med två röstspår.\n• Viral-hits: låtar som just nu finns i de virala listorna (konfigureras under Inställningar → Bibliotek).\n• Egna genrer & språk: skapa egna kategorier under Inställningar → Genrer & Språk — de dyker upp direkt i filtren.\n\n"Rensa filter" (✕) nollställer allt på en gång.',
+          details: 'Alla filter kan kombineras — t.ex. visar "Genre: Rock + Språk: Engelska + Era: 80-tal" exakt de engelska rocklåtarna från åttiotalet.\n\nSpecialfilter:\n• Duett: bara låtar med två röstspår.\n• Viral-hits: låtar som just nu finns i de virala listorna (konfigureras under Inställningar → Bibliotek).\n• Egna genrer & språk: skapa egna kategorier under Inställningar → Metadata-studio — de dyker upp direkt i filtren.\n\n"Rensa filter" (✕) nollställer allt på en gång.',
         },
         songCard: {
           title: 'Låtar',
@@ -123,7 +123,7 @@ export const tutorialTranslations = {
         settingsCard: {
           title: 'Inställningar',
           body: 'Mikrofoner, språk, finjustering av gameplay, utseende och grafik — alla reglage bor här.',
-          details: 'De 12 inställningsflikarna i korthet:\n• Allmänt: språk, standardsvårighetsgrad, online\n• Gameplay: poängvisning, partiklar, kombo, replay-inspelning\n• Utseende: teman, textstil, bakgrund\n• Ljud: utgångsenhet, volym, ljudnivånormalisering, YouTube-kvalitet\n• Mikrofon: enheter, känslighet, brusport, förinställningar\n• Mobil: anslut & hantera companion-enheter\n• Webbkamera: webbkamera som bakgrund\n• Bibliotek: låtmapp, import, virala listor, återställning\n• Genrer & Språk: egna kategorier\n• Temafest: aktivera & konfigurera tema\n• Synk & Backup: säkerhetskopior\n• Om: version, plattform, licenser\n\nDet finns en egen, fördjupad inställningsrundtur för alla flikar i ?-hjälpmenyn.',
+          details: 'De 12 inställningsflikarna i korthet:\n• Allmänt: språk, standardsvårighetsgrad, online\n• Gameplay: poängvisning, partiklar, kombo, replay-inspelning\n• Utseende: teman, textstil, bakgrund\n• Ljud: utgångsenhet, volym, ljudnivånormalisering, YouTube-kvalitet\n• Mikrofon: enheter, känslighet, brusport, förinställningar\n• Mobil: anslut & hantera companion-enheter\n• Webbkamera: webbkamera som bakgrund\n• Bibliotek: låtmapp, import, virala listor, återställning\n• Metadata-studio: egna genrer & språk + harmoniseringsregler\n• Temafest: aktivera & konfigurera tema\n• Synk & Backup: säkerhetskopior\n• Om: version, plattform, licenser\n\nDet finns en egen, fördjupad inställningsrundtur för alla flikar i ?-hjälpmenyn.',
         },
         settingsView: {
           title: 'Inställningsflixarna',
@@ -238,11 +238,11 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Inställningarna 👋',
           body: 'Den här rundturen går uteslutande igenom inställningarna — flik för flik.\n\nJag växlar automatiskt till varje flik och förklarar vad du hittar där.',
-          details: 'Flikarna i rundtursordning: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil (companion), Webbkamera, Bibliotek, Genrer & Språk, Temafest, Synk & Backup och Om.\n\nVarje flik har en kort intro överst — rundturen fördjupar den steg för steg.',
+          details: 'Flikarna i rundtursordning: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil (companion), Webbkamera, Bibliotek, Metadata-studio, Temafest, Synk & Backup och Om.\n\nVarje flik har en kort intro överst — rundturen fördjupar den steg för steg.',
         },
         tabBar: {
           title: 'Flikraden',
-          body: 'Alla inställningar är ordnade i flikar: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil, Webbkamera, Bibliotek, Genrer & Språk, Temafest, Synk & Backup och Om.\n\nEn kort introtext överst i varje flik förklarar vad den gör.',
+          body: 'Alla inställningar är ordnade i flikar: Allmänt, Gameplay, Utseende, Ljud, Mikrofon, Mobil, Webbkamera, Bibliotek, Metadata-studio, Temafest, Synk & Backup och Om.\n\nEn kort introtext överst i varje flik förklarar vad den gör.',
           details: 'Orienteringshjälp — när du söker, fråga dig…\n• "Hur BETEER sig spelet?" → Gameplay\n• "Hur SER det ut?" → Utseende\n• "Hur LÅTER det?" → Ljud / Mikrofon\n• "Koppla enheter?" → Mobil (companion) / Mikrofon\n• "Mina låtar?" → Bibliotek\n• "Säkerhetskopiera data?" → Synk & Backup\n\nFlikarna scrollar horisontellt i smala fönster — svep bara åt höger.',
         },
         general: {
@@ -276,9 +276,9 @@ export const tutorialTranslations = {
           details: 'Mappformat: en undermapp per låt med ljud/video + TXT (UltraStar-format). Skannern känner igen vanliga kombinationer (.mp3/.ogg + .txt, .mp4/.mkv + .txt).\n\nImportformat från andra karaoke-leverantörer stöds inte för närvarande.\n\nVar försiktig med "radera all data": dubbelbekräftelsen frågar två gånger — gör ändå en backup först (fliken Synk & Backup).',
         },
         taxonomy: {
-          title: 'Genrer & Språk',
-          body: 'Skapa egna genre- och språkposter — de dyker upp i alla rullgardinsmenyer och matar AI-harmoniseringen.',
-          details: 'Varför egna poster? Standardlistorna täcker inte allt ("Schlager", "K-Pop", "Dialekt" …). Egna poster:\n• syns direkt i biblioteksfiltren\n• går att välja i editorn och Metadata-studion\n• harmoniseras med (AI:n föreslår dem för matchande låtar)\n\nBorttagning fungerar också — låtarna behåller posten tills de omtilldelas.',
+          title: 'Metadata-studio',
+          body: 'Skapa egna genre- och språkposter — och visa och justera harmoniseringsreglerna.',
+          details: 'Varför egna poster? Standardlistorna täcker inte allt ("Schlager", "K-Pop", "Dialekt" …). Egna poster:\n• syns direkt i biblioteksfiltren\n• går att välja i editorn och Metadata-studion\n• harmoniseras med (reglerna respekterar dem)\n\nBorttagning fungerar också — låtarna behåller posten tills den omtilldelas.\n\nUnder "Regelbaserad harmonisering" ser du varje regel i studioharmoniseringen (t.ex. "Bubblegum Pop → Pop") och kan ändra mål, inaktivera regler eller lägga till egna.',
         },
         motto: {
           title: 'Temafest',
