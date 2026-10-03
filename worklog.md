@@ -2,7 +2,7 @@
 
 > **Datei-Landkarte & Architektur:** `ARCHITECTURE.md` · **Detail-Historie (jede Runde ausführlich beschrieben):** `git log` (Runden-Commits findbar per `git log --grep='R44:'` usw.) · **Frühere Worklog-Fassungen:** `git log -- worklog.md`.
 >
-> **Neue Einträge:** unten im Format `--- / Task ID: r<N> / Agent / Task / Work Log / Stage Summary` anhängen — bestehende Abschnitte nie überschreiben. Nächste freie Runde: **R46**.
+> **Neue Einträge:** unten im Format `--- / Task ID: r<N> / Agent / Task / Work Log / Stage Summary` anhängen — bestehende Abschnitte nie überschreiben. Nächste freie Runde: **R49**.
 
 ## Projekt-Status (nach R45)
 
@@ -128,3 +128,22 @@ Stage Summary:
 - OFFENE FRAGEN an den Nutzer (Grenzfälle, im Code mit `// → ASK` markiert): (1) Anime/Manga/Ghibli/Cartoons → Soundtrack (alternativ J-Pop)? (2) City Pop → J-Pop (alternativ Pop)? (3) Christian/Worship/Papiez-Cluster → Soul wie Gospel (stil-spezifische bleiben: Christian Rock→Rock, Christian Metal→Metal)? (4) Nationalhymnen (national anthem/himno patrio/hymne) → Classical? (5) Disco Fox/Disco Polo → Electronic (alternativ Schlager)? (6) Pimba (PT) → Schlager, Narodno zabavna (Balkan) → Volksmusik? (7) Cabaret/Kabaret → Folk (Chanson-Familie)? (8) Traditional → Folk, Brass → Volksmusik? (9) Epa Dunk (SE) → Schlager, Fußballhits/Karneval/Lagersong → Schlager? (10) Obskure Tags mit Defaults: elektro lore→Electronic, suara→manuell, sprock/grog'n roll/belgium drunk→Rock/Punk, melodica→Reggae, rag→Classical, hauntology/plunderphonics→Electronic, hardmusette→Folk, denpa→Electronic, pony/drag/epic/avantgarde/dreamsmp→manuell. Antworten einfach als Korrekturliste — Einträge werden in meta-normalizer.ts geflippt.
 - Risiko: iTunes-Genre ist bewusst grob (primärGenreName); Jahr kann bei Best-of-Tracks vom Original abweichen (MB-RG greift als Korrektur, wenn es läuft). Deezer bleibt in geoblockten Netzen tot — unkritisch, iTunes deckt ab.
 - Nutzer-Hinweis: Bundle neu bauen (`node scripts/prepare-bundle.mjs`) und Fill Missing erneut laufen lassen — die Quote sollte nun drastisch höher sein; alte Cache-Einträge (30 Tage TTL) können zuerst noch alte Ergebnisse liefern.
+
+---
+Task ID: r48
+Agent: main (Z.ai Code)
+Task: Nutzer-Antwort auf die R47-Grenzfallfragen: „Ich stimme deinen Vorschlägen zu" + wichtiger Zusatzhinweis — Schlager ist nicht immer DEUTSCHER Schlager, es gibt Schlager auch in anderen Sprachen.
+
+Work Log:
+- Alle 10 R47-Grenzfallfragen waren vom Nutzer bestätigt → Werte in meta-normalizer.ts unverändert; alle `// → ASK`-Marker zu `R48-bestätigt` umbenannt + Header-Kommentar dokumentiert, dass die Werte final sind (Anime/Ghibli/Manga→Soundtrack, City Pop→J-Pop, Christian/Worship/Papiez→Soul, Nationalhymnen→Classical, Disco Fox/Disco Polo→Electronic, Pimba/Epa Dunk/Fußballhits/Karneval→Schlager, Cabaret/Kabaret/Traditional/Hardmusette→Folk, Brass/Narodno zabavna→Volksmusik, Melodica→Reggae, obskure Tags→Electronic/Rock/Punk bzw. manuell).
+- Analyse aller Schlager→Sprache-Kopplungen im Code: genau 3 Stellen — harmonize/route.ts (Genre-Zeile „distinct German genre" + Language-Hint „Schlager→German") und song-identify/route.ts („German-language genre"). Fill Missing (music-lookup) leitet NIE Sprache ab (nur Genre/Jahr) — dort war nichts zu ändern. Volksmusik/Chanson/Canzone bleiben bewusst sprachgebunden (per Definition).
+- harmonize/route.ts: Language-Hints umgebaut — „Genre→language (by definition)" nur noch Volksmusik/Chanson/Canzone; NEU explizite Regel „Schlager does NOT imply German — derive language from the ARTIST, never the genre" mit Beispielen (Helene Fischer→German, André Hazes→Dutch, Katri Helena→Finnish). Genre-Zeile: „distinct genre that also exists OUTSIDE German (Dutch levenslied, Belgian, Danish, Italian, Finnish iskelmä)".
+- song-identify/route.ts: „distinct German-language genre" ersetzt durch sprach-agnostische Formulierung + Beispiele inkl. André Hazes/Katri Helena; Sprache immer aus Text/Künstler, nie aus dem Genre.
+- meta-normalizer.ts Schlager-Familie erweitert um die nationalen Pendants (waren NICHT im Ultrastar-Inventar, machen die Map aber robust): levenslied/smartlap (nl), dansband/dansbandsmusik (se), danseband (no/dk), iskelmä/iskelma (fi) — alle → Schlager.
+- Verifikation: 38 Alias-Checks + 7 UNMAPPABLE-Checks per bun-Skript bestanden · AI-E2E live am Dev-Server: harmonize-API schlägt für André Hazes „De Vlieger" (Genre Schlager, Sprache null) jetzt **Dutch** vor (Begründung nennt den Künstler, nicht das Genre), Helene Fischer→German (Regression), Katri Helena→Finnish; song-identify „André Hazes - De Vlieger.txt" → Schlager + Dutch. tsc 0 Fehler, ESLint 0 Errors/0 Warnungen in allen 3 geänderten Dateien. Commit 848c9783, Remote verifiziert.
+
+Stage Summary:
+- Genre-Harmonization: alle 699 Ultrastar-Tags haben jetzt FINAL entschiedenes Verhalten (keine offenen ASK-Fragen mehr); Schlager-Familie ist sprach-agnostisch und deckt die internationalen Pendants ab.
+- AI-Harmonisierung schließt aus Genre „Schlager" nicht mehr auf deutsche Sprache — die Sprache folgt Künstler/Text (E2E mit 3 Sprachen bewiesen). Nur die echten Sprach-Genres (Volksmusik/Chanson/Canzone) bleiben Kopplungen per Definition.
+- Nutzer-Verifikation R46 (Cover-Guard) und R47 (Fill-Missing-Quote ~90 % im Bundle) weiterhin ausstehend — Bundle-Neubau via `node scripts/prepare-bundle.mjs` durch den Nutzer.
+- Keine neuen offenen Fragen; nächster sinnvoller Schritt wäre Nutzer-Feedback zu R46/R47/R48 im realen Tauri-Bundle.
