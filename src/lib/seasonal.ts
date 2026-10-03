@@ -37,8 +37,11 @@ const CHRISTMAS_TITLE_PATTERNS: RegExp[] = [
   /\badvent\b/,
 ];
 
-/** Genre-field fallback: libraries that kept a literal Christmas-ish genre. */
-const CHRISTMAS_GENRE_PATTERN = /(christmas|x-?mas|weihnacht|no[eë]l|navidad|natale)/i;
+/** Genre-field fallback: libraries that kept a literal Christmas-ish genre.
+ *  R47: extended by the international Christmas-song genre tags from the
+ *  Ultrastar-DB inventory (carol, villancico ES, kolędy PL) — mirrors
+ *  SEASONAL_GENRE_PATTERN in meta-normalizer.ts, keep both in sync. */
+const CHRISTMAS_GENRE_PATTERN = /(christmas|x-?mas|weihnacht|no[eë]l|navidad|natale|carol|villancico|kol[eę]dy)/i;
 
 /** True when the song is recognizable as a Christmas/Advent song. */
 export function isChristmasSong(song: { title?: string | null; genre?: string | null }): boolean {

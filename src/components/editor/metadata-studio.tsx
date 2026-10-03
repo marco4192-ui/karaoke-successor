@@ -80,10 +80,14 @@ interface MetadataStudioProps {
  * value, not a good-will number).
  *
  * Measured in THIS sandbox (full 12-song chunks):
- *  - factual lookup (MusicBrainz ~1 req/s + Deezer): ~65 s per 12 songs ≈ 5.4 s/song
+ *  - factual lookup (R47: iTunes primary, MB only for the rest):
+ *    ~25 s per 12 songs ≈ 2 s/song (before R47's iTunes source it was
+ *    ~65 s per 12 songs via Deezer/MusicBrainz alone)
  *  - LLM analysis:                                  ~8.5 s per 12 songs ≈ 0.7 s/song
  *  - txt apply:                                     ~0.1 s/song
- * ⇒ worst case ≈ 6 s per song (fill-missing with empty genre/year/language).
+ * ⇒ worst case ≈ 3 s per song (fill-missing with empty genre/year/language);
+ *   6 s/song kept as the conservative display ceiling (MusicBrainz-only
+ *   worst case when iTunes misses everything).
  * 20 songs ≈ 2 min worst case — the accepted waiting-time ceiling.
  */
 export const STUDIO_RECOMMENDED_BATCH = 20;

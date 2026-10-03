@@ -399,6 +399,266 @@ const GENRE_ALIASES: Record<string, string> = {
   'memestep': 'Electronic', 'trip hop': 'Electronic',
   'folk-pop': 'Folk', 'free jazz': 'R&B', 'psychedelic soul': 'Soul',
   'urban': 'R&B',
+
+  // ── R47: complete Ultrastar-DB genre inventory (upload/Genres.txt) ──────
+  // The user catalogued EVERY genre tag used across the known Ultrastar
+  // databases (~640 distinct values incl. casing/spacing variants and
+  // typos like "Ghotic Metal", "Soundrack", "Reggee"). Everything below
+  // maps into the 23 canonical main genres with logical-parent rules
+  // (suffix wins: X-Rock→Rock, X-Metal→Metal, X-Punk→Punk, X-Pop→Pop —
+  // EXCEPT where an earlier round decided otherwise, e.g. pop rock→Pop).
+  // The lookup is case-insensitive and tries hyphen↔space variants, so
+  // ONE spelling per pair suffices ("art pop" also catches "Art-Pop").
+  // Diacritics are NOT stripped by the lookup — accented spellings get
+  // their own entries ("reggaetón" AND "reggaeton"). Borderline tags are
+  // marked "// → ASK": the open questions went to the user with R47 and
+  // can be flipped here when answered.
+
+  // Pop family
+  'adult alternative pop': 'Pop', 'alt-pop': 'Pop', 'ambient pop': 'Pop',
+  'baroque pop': 'Pop', 'chamber pop': 'Pop', 'chanson française': 'Pop',
+  'cinematic pop': 'Pop', 'classic male vocal pop': 'Pop',
+  'classic pop-rock': 'Pop', 'c-pop': 'Pop', 'disco-pop': 'Pop',
+  'dream pop': 'Pop', 'electro pop': 'Pop', 'electronic pop': 'Pop',
+  'acoustic pop': 'Pop', 'pop folk': 'Folk',
+  'euro pop': 'Pop', 'experimental pop': 'Pop', 'french pop': 'Pop',
+  'general pop vocal': 'Pop', 'instrumental pop': 'Pop',
+  'israeli pop': 'Pop', 'italian pop': 'Pop', 'jangle pop': 'Pop',
+  'jazz pop': 'Pop', 'new pop': 'Pop', 'new romantic': 'Pop',
+  'new wave': 'Pop', 'new wave pop': 'Pop', 'new wave quirk': 'Pop',
+  'pop ballad': 'Pop', 'pop dance': 'Pop', 'pop-rock oldies': 'Pop',
+  'pop standards': 'Pop', 'pop eléctrico': 'Pop', 'pop electrico': 'Pop',
+  'power ballad': 'Pop', 'progressive pop': 'Pop', 'psychedelic pop': 'Pop',
+  'rock-pop': 'Pop', 'sophisti pop': 'Pop', 'suomi-pop': 'Pop',
+  'synthie pop': 'Pop', 'techno pop': 'Pop', 'tecnopop': 'Pop',
+  'teenie-stars': 'Pop', 'twee pop': 'Pop', 'variete': 'Pop',
+  'variété': 'Pop', 'vocal pop': 'Pop', 'western-pop': 'Pop',
+  'variete française': 'Pop', // Misch-Schreibweise ohne é in "variete"
+  'city pop': 'J-Pop', // → ASK: japanische 80er-Pop-Ära (alternativ Pop)
+
+  // Rock family
+  'adult alternative': 'Rock', 'art rock': 'Rock', 'beat': 'Rock',
+  'acoustic rock': 'Rock', 'acoustic folk': 'Folk', 'psychedelic folk': 'Folk',
+  'boogie rock': 'Rock', 'comedy rock': 'Rock', 'dark rock': 'Rock',
+  'dark wave': 'Rock', 'darkwave': 'Rock', 'coldwave': 'Rock',
+  'dance rock': 'Rock', 'disco rock': 'Rock', 'doo-wop': 'Rock',
+  'doo wop rock & roll': 'Rock', 'electro rock': 'Rock',
+  'electronic rock': 'Rock', 'experimental rock': 'Rock',
+  'funk rock': 'Rock', 'garage rock': 'Rock', 'garage rock revival': 'Rock',
+  'general alternative rock': 'Rock', 'general mainstream rock': 'Rock',
+  'glam': 'Rock', 'glamrock': 'Rock', 'goth': 'Rock', 'goth rock': 'Rock',
+  'gothic': 'Rock', 'grebo': 'Rock', 'industrial rock': 'Rock',
+  'madchester': 'Rock', 'merseybeat': 'Rock', 'mod revival': 'Rock',
+  'mundart rock': 'Rock', 'new artrock': 'Rock', 'neo-psychedelia': 'Rock',
+  'neo-psychedelic': 'Rock', 'noise pop': 'Rock', 'noise rock': 'Rock',
+  'ost-rock': 'Rock', 'piano rock': 'Rock', 'post-britpop': 'Rock',
+  'post-rock': 'Rock', 'psychedelic': 'Rock', 'psychadelic': 'Rock',
+  'pub rock': 'Rock', 'rock & metal': 'Rock', 'rock alternative': 'Rock',
+  'rock ballad': 'Rock', 'rock catalan': 'Rock', 'rock celtic': 'Rock',
+  'rock indie': 'Rock', 'rock industrial': 'Rock', "rock 'n roll": 'Rock',
+  'rock psicodelico': 'Rock', 'rockabilly': 'Rock', 'shagadelic rock': 'Rock',
+  'shoegazing': 'Rock', 'ska rock': 'Rock', 'slowcore': 'Rock',
+  'southern': 'Rock', 'southern rock': 'Rock', 'stoner rock': 'Rock',
+  'surf rock': 'Rock', 'symphonic rock': 'Rock',
+  'symphonic-rock-cover': 'Rock', 'visual kei': 'Rock', 'wave': 'Rock',
+  'west coast rock': 'Rock', 'yacht rock': 'Rock', 'deutsch-rock': 'Rock',
+  'deutschrock': 'Rock', 'deutsch rock pop': 'Rock',
+  'mittelalter-rock': 'Rock', 'modern hard rock': 'Rock',
+  'christian rock': 'Rock',
+  'grog\'n roll': 'Rock', // → ASK: Joke-Tag (Piraten-Rock)
+  'sprock': 'Rock', // → ASK: unklare Bedeutung (Space/Prog-Rock?)
+  'belgium drunk': 'Punk', // → ASK: belgische Drunk-Punk-Party-Musik
+  'hard rock & metal': 'Rock',
+
+  // Metal family
+  'christian metal': 'Metal', 'classic british metal': 'Metal',
+  'country metal': 'Metal', 'death': 'Metal', 'doom': 'Metal',
+  'doom metal': 'Metal', 'epic metal': 'Metal', 'folk metal': 'Metal',
+  'fun metal': 'Metal', 'general heavy metal': 'Metal',
+  'general metal': 'Metal', 'ghotic metal': 'Metal', // Typo: gothic
+  'grindcore': 'Metal', 'groove metal': 'Metal',
+  'melodic death metal': 'Metal', 'melodic metalcore': 'Metal',
+  'melodic modern metal': 'Metal', 'metal ballad': 'Metal',
+  'metal ballads': 'Metal', 'mittelalter-metal': 'Metal',
+  'modern metal': 'Metal', 'new metal': 'Metal', 'nwobhm': 'Metal',
+  'pirate metal': 'Metal', 'rap metal': 'Metal', 'rapcore': 'Metal',
+  'sinfonic metal': 'Metal', // Typo: symphonic
+  'sludge metal': 'Metal', 'space metal': 'Metal', 'speed metal': 'Metal',
+  'stoner metal': 'Metal', 'symphonic black metal': 'Metal',
+  'symphonic gothic metal': 'Metal', 'symphonic power metal': 'Metal',
+  'tanzmetal': 'Metal', 'trash metal': 'Metal', // Typo: thrash
+  'true metal': 'Metal', 'us metal': 'Metal', 'viking': 'Metal',
+  'funk metal': 'Metal', 'glam metal': 'Metal', 'gothic metal': 'Metal',
+  'wiking metal': 'Metal', // Typo: viking
+  'neue deutsche harte': 'Metal', 'neue deutsche härte': 'Metal',
+  'christian hard rock': 'Rock',
+
+  // Punk family
+  'antifa': 'Punk', 'art punk': 'Punk', 'celtic punk': 'Punk',
+  'emo rock': 'Punk', 'folk punk': 'Punk', 'melodic hardcore': 'Punk',
+  'oi': 'Punk', 'oi !- punk': 'Punk', 'oi punk': 'Punk',
+  'proto-punk': 'Punk', 'punk pop': 'Punk', 'punkrock': 'Punk',
+  'ska punk': 'Punk', 'skate punk': 'Punk',
+
+  // Electronic family
+  'acid house': 'Electronic', 'alternative dance': 'Electronic',
+  'alternative trance': 'Electronic', 'ambiance': 'Electronic',
+  'breakbeat': 'Electronic', 'breaks': 'Electronic', 'chillout': 'Electronic',
+  'chillwave': 'Electronic', 'club': 'Electronic', 'dark beat': 'Electronic',
+  'dance & dj': 'Electronic', 'dance & house': 'Electronic',
+  'dance electronic': 'Electronic', 'dance/electronic': 'Electronic',
+  'general club dance': 'Electronic', 'general house': 'Electronic',
+  'general trance': 'Electronic',
+  'denpa': 'Electronic', // → ASK: japanisches Nerd-Electro
+  'disco fox': 'Electronic', // → ASK: alternativ Schlager
+  'disco hi-nrg': 'Electronic', 'hi-nrg': 'Electronic',
+  'disco house': 'Electronic', 'disco music': 'Electronic',
+  'disco polo': 'Electronic', // → ASK: alternativ Schlager
+  'euro dance': 'Electronic', 'eurodisco': 'Electronic',
+  'electro house': 'Electronic', 'electro swing': 'Electronic',
+  'electro-mashup': 'Electronic', 'electroclash': 'Electronic',
+  'electrodance': 'Electronic', 'electronic dance': 'Electronic',
+  'folktronica': 'Electronic', 'frenchcore': 'Electronic',
+  'french electro': 'Electronic', 'future bass': 'Electronic',
+  'future funk': 'Electronic', 'future groove': 'Electronic',
+  'glitch hop': 'Electronic', 'hard bass': 'Electronic',
+  'hauntology': 'Electronic', // → ASK
+  'hip house': 'Electronic', 'indie dance': 'Electronic',
+  'indie electronic': 'Electronic', 'indietronica': 'Electronic',
+  'industrial': 'Electronic', 'italo': 'Electronic', 'italo dance': 'Electronic',
+  'j-core': 'Electronic', 'leftfield': 'Electronic', 'lo-fi': 'Electronic',
+  'melodic house': 'Electronic', 'melodic techno': 'Electronic',
+  'minimal synth': 'Electronic', 'minimal wave': 'Electronic',
+  'new rave': 'Electronic', 'nu trance': 'Electronic', 'nu-disco': 'Electronic',
+  'plunderphonics': 'Electronic', // → ASK
+  'post-disco': 'Electronic', 'progressive house': 'Electronic',
+  'proto-industrial': 'Electronic', 'psychedelic trance': 'Electronic',
+  'rave': 'Electronic', 'sampledelia': 'Electronic', 'synth': 'Electronic',
+  'funky breaks': 'Electronic', 'swing house': 'Electronic',
+  'synthwave': 'Electronic', 'tech house': 'Electronic',
+  'tropical house': 'Electronic', 'uk garage': 'Electronic',
+  "drum'n'bass": 'Electronic',
+  'elektro lore': 'Electronic', // → ASK: unklarer Tag
+  'alpen-jazz-techno': 'Electronic', // → ASK: Alpin-Party-Techno
+
+  // R&B / Soul / Funk / Blues / Jazz family (Jazz subsumed by R&B)
+  'acid jazz': 'R&B', 'alt r&b': 'R&B', 'fusion': 'R&B',
+  'rhythm & blues': 'R&B',
+  'hip hop soul': 'R&B', 'jazz-rock': 'R&B', 'new jazz swing': 'R&B',
+  'r&b pop': 'R&B', 'r&b rock': 'R&B', 'urban crossover': 'R&B',
+  'urban pop': 'R&B', 'general easy listening': 'R&B', 'lounge': 'R&B',
+  'blue-eyed soul': 'Soul', 'funk soul': 'Soul', 'pop soul': 'Soul',
+  'r&b gospel': 'Soul', 'soul pop': 'Soul', 'urban soul': 'Soul',
+  'soul & funk': 'Soul', 'worship': 'Soul', // → ASK: Gospel-Familie
+  'christian': 'Soul', // → ASK: stil-agnostisch (alternativ manuell)
+  'contemporary christian': 'Soul', // → ASK
+  'papiez': 'Soul', // → ASK: polnische religiöse Lieder
+  'christian & gospel': 'Soul', 'christian music': 'Soul',
+  'boogie': 'Funk', 'ballad blues': 'Blues', 'punk blues': 'Blues',
+
+  // Rap family
+  'boom bap': 'Rap', 'cyberrap': 'Rap', 'deutsch hip-hop': 'Rap',
+  'deutschrap': 'Rap', 'electro hop': 'Rap', 'electrohop': 'Rap',
+  'experimental hip hop': 'Rap', 'german hip-hop': 'Rap', 'pop rap': 'Rap',
+  'porno-rap': 'Rap', 'southern rap': 'Rap', 'turntablism': 'Rap',
+  'west coast': 'Rap', 'hip-hop/rap': 'Rap', 'rap/hip hop': 'Rap',
+
+  // Folk / Country / Volksmusik family
+  'alternative/indie/folk': 'Folk', 'anti-folk': 'Folk',
+  'arbeiterlieder': 'Folk', 'cabaret': 'Folk', // → ASK: Chanson-Familie
+  'kabaret': 'Folk', // → ASK
+  'cantautor': 'Folk', 'celtic': 'Folk', 'contemporary folk': 'Folk',
+  'electro folk': 'Folk', 'electronic folk': 'Folk', 'ethno pop': 'Folk',
+  'fado': 'Folk', 'folklore': 'Folk', 'gipsy': 'Folk', 'gypsy': 'Folk',
+  'irish-folk': 'Folk', 'medieval folk': 'Folk', 'mittelalter-folk': 'Folk',
+  'modern folk': 'Folk', 'national folk': 'Folk', 'pagan folk': 'Folk',
+  'psych folk': 'Folk', 'québécois': 'Folk', 'quebecois': 'Folk',
+  'québecois': 'Folk', // Misch-Schreibweise: é nur in "Qué"
+  'rai': 'Folk', 'shanty': 'Folk', 'traditional': 'Folk', // → ASK
+  'world pop': 'Folk', 'general world': 'Folk', 'african music': 'Folk',
+  'musique africaine': 'Folk', 'musique du monde': 'Folk',
+  'musiques du monde': 'Folk', 'hardmusette': 'Folk', // → ASK
+  'alt country': 'Country', 'country & folk': 'Country',
+  'country rock': 'Country',
+  'polka': 'Volksmusik', 'brass': 'Volksmusik', // → ASK: Blasmusik
+  'narodno zabavna': 'Volksmusik', // → ASK: Balkan-Volksmusik-Pop
+
+  // Latin family
+  'axe': 'Latin', 'axé': 'Latin', 'bizarre latin pop': 'Latin',
+  'bolero': 'Latin', 'calypso': 'Latin', 'cancion del verano': 'Latin',
+  'corridos tumbados': 'Latin', 'criolla': 'Latin', 'flamenco': 'Latin',
+  'forro': 'Latin', 'forró': 'Latin', 'funk carioca': 'Latin',
+  'latin folk & traditional': 'Latin', 'latin music': 'Latin',
+  'latina': 'Latin', 'latino': 'Latin', 'mambo': 'Latin',
+  'melodico': 'Latin', 'melódico': 'Latin', 'mpb': 'Latin',
+  'musica latina': 'Latin', 'música latina': 'Latin', 'norteno': 'Latin',
+  'rock latino': 'Latin', 'samba': 'Latin',
+  'norteño': 'Latin', 'nuevo flamenco': 'Latin', 'payada': 'Latin',
+  'pop aflamencado': 'Latin', 'pop latino': 'Latin',
+  'regueton lento': 'Latin', 'reggaetón': 'Latin', 'romanticas': 'Latin',
+  'salsa romantica': 'Latin', 'sertanejo': 'Latin', 'tropical': 'Latin',
+  'tropical pop': 'Latin', 'urbano': 'Latin', 'urban latin': 'Latin',
+  'urban latino': 'Latin', 'vallenato': 'Latin', 'zouk': 'Latin',
+  'panamanian reggaeton': 'Latin',
+
+  // Reggae family
+  '2 tone': 'Reggae', 'brass-ska': 'Reggae', 'dance hall': 'Reggae',
+  'melodica': 'Reggae', // → ASK: Dub-Melodica (Augustus Pablo)
+  'ragga': 'Reggae', 'reggee': 'Reggae', // Typo: reggae
+  'reggae rock': 'Reggae', 'raggae': 'Reggae', // Typo
+
+  // Classical family
+  'himno patrio': 'Classical', // → ASK: Nationalhymnen
+  'hymne': 'Classical', // → ASK
+  'madrigal': 'Classical', 'national anthem': 'Classical', // → ASK
+  'opera-pop': 'Classical', 'orchestral': 'Classical', 'symphonic': 'Classical',
+  'lyrique': 'Classical', 'rag': 'Classical', // → ASK: Ragtime
+  'classical crossover': 'Classical', 'classique': 'Classical',
+  'opéra': 'Classical',
+
+  // Schlager family
+  'bayern-pop': 'Schlager', 'fussballhits': 'Schlager',
+  'fußballhits': 'Schlager', // → ASK: Fußball-Party-Songs
+  'karneval': 'Schlager', 'lagersong': 'Schlager',
+  'epa dunk': 'Schlager', // → ASK: schwedische Party-Musik
+  'pimba': 'Schlager', // → ASK: portugiesisches Schlager-Äquivalent
+  'rock schlager': 'Schlager', 'schlager pop': 'Schlager',
+
+  // Musical family
+  'comedie musicale': 'Musical', 'comédie musicale': 'Musical',
+  'dubstep-musical': 'Musical', 'musical comedy': 'Musical',
+  'rock opera': 'Musical', 'show tune': 'Musical',
+
+  // Soundtrack family (TV-/Games-/Cartoon-Entscheidung aus R2-D: im
+  // weitesten Sinne Soundtracks)
+  'anime': 'Soundtrack', // → ASK: alternativ J-Pop
+  'manga': 'Soundtrack', // → ASK
+  'ghibli': 'Soundtrack', // → ASK
+  'bso': 'Soundtrack', 'bollywood': 'Soundtrack', 'cartoon': 'Soundtrack',
+  'dessin animes': 'Soundtrack', 'dibujos animados': 'Soundtrack',
+  'dibujos animados latino': 'Soundtrack', 'film score': 'Soundtrack',
+  'game': 'Soundtrack', 'game anthems': 'Soundtrack', 'gaming': 'Soundtrack',
+  'general film music': 'Soundtrack', 'generique': 'Soundtrack',
+  'générique': 'Soundtrack', 'jeux video': 'Soundtrack',
+  'juegos': 'Soundtrack', 'peliculas': 'Soundtrack', 'películas': 'Soundtrack',
+  'scores de peliculas': 'Soundtrack', 'scores de películas': 'Soundtrack',
+  'soundrack': 'Soundtrack', // Typo: soundtrack
+  'themes': 'Soundtrack', 'themes and soundtracks': 'Soundtrack',
+  'tv commercial': 'Soundtrack', 'tv songs': 'Soundtrack',
+  'video game': 'Soundtrack', 'bande originale': 'Soundtrack',
+  'films/games': 'Soundtrack', 'original soundtrack': 'Soundtrack',
+
+  // Children's family
+  'dino rock': "Children's", 'dla dzieci': "Children's",
+  'educational': "Children's", 'infantil': "Children's",
+  'jeunesse': "Children's", 'kinder': "Children's",
+  'mathe-song': "Children's", 'nursery rhyme': "Children's",
+  'children music': "Children's", "children's music": "Children's",
+  'musik für kinder': "Children's", 'kids/family': "Children's",
+  'enfants': "Children's",
+
+  // J-Pop / K-Pop family (japanische Kultur-Tags)
+  'utaite': 'J-Pop', 'vocaloid': 'J-Pop', 'vtuber': 'J-Pop',
 };
 
 /**
@@ -411,7 +671,7 @@ const GENRE_ALIASES: Record<string, string> = {
  * thereby break the easter egg (user decision, harmonize feedback round).
  * The pattern mirrors seasonal.ts so both stay in sync.
  */
-const SEASONAL_GENRE_PATTERN = /(christmas|x-?mas|weihnacht|no[eë]l|navidad|natale)/i;
+const SEASONAL_GENRE_PATTERN = /(christmas|x-?mas|weihnacht|no[eë]l|navidad|natale|carol|villancico|kol[eę]dy)/i;
 
 /** True when the genre is a seasonal easter-egg genre that must NEVER be
  *  changed by harmonization (auto alias rules AND manual review list). */
@@ -437,9 +697,22 @@ export function isSeasonalProtectedGenre(raw: string): boolean {
  * December easter egg.
  */
 const UNMAPPABLE_GENRE_KEYS = new Set([
-  'a cappella', 'acapella', 'ai', 'a.i.', 'oldies', 'female vocals',
-  'male vocals', 'comedy', 'holiday', 'indie', 'unknown', 'other',
-  'misc', 'various', 'sonstiges', 'unbekannt', 'n/a', 'none',
+  'a cappella', 'acapella', 'a capella', 'ai', 'a.i.', 'oldies',
+  'female vocals', 'male vocals', 'comedy', 'holiday', 'indie',
+  'unknown', 'other', 'misc', 'various', 'sonstiges', 'unbekannt',
+  'n/a', 'none',
+  // R47: complete Ultrastar-DB inventory — pseudo-genres that carry no
+  // usable style information (era, mood, occasion, medium, vocal setup,
+  // language descriptor, joke tags…). They surface in the MANUAL
+  // correction list of the Metadata Studio instead of being auto-mapped.
+  '80s', 'acoustic', 'avantgarde', 'chorus', 'crossover', 'drag',
+  'dreamsmp', 'entertainment', 'epic', 'eurovision', 'experimental',
+  'female vocal', 'female vocalists', 'festival', 'football', 'generic',
+  'german', 'halloween', 'humor', 'humour', 'humoristes', 'kitsch',
+  'love', 'love songs', 'mainstream', 'mashup', 'meme', 'nonsense',
+  'nederlandstalig', 'original artist', 'party', 'parodia', 'parodie',
+  'parody', 'pony', 'religious', 'retro', 'romantic', 'satire',
+  'schmalz', 'slow', 'suara', 'viral', 'vocal', 'male vocal',
 ]);
 
 /** True when the genre is a known pseudo-genre (vocal style / era / medium)

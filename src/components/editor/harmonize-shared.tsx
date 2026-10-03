@@ -5,7 +5,8 @@
  *
  * Used by both the multi-select batch dialog (editor screen) and the
  * per-library harmonize card so they stay visually identical:
- *  - SourceBadge:   where a suggestion comes from (KI / Deezer / MusicBrainz)
+ *  - SourceBadge:   where a suggestion comes from (KI / iTunes / Deezer /
+ *                   MusicBrainz)
  *  - ConfidenceFilter (R4): minimum-confidence threshold for apply-all
  *  - SuggestionRow (R5): one song row with change lines + AI reasons
  */
@@ -62,6 +63,7 @@ export function countApplicableSongs(
 
 export function SourceBadge({ source, fromCache }: { source: HarmonizeSuggestion['source']; fromCache?: boolean }) {
   const config = {
+    itunes: { icon: '🍎', label: 'iTunes', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
     deezer: { icon: '🎵', label: 'Deezer', className: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
     musicbrainz: { icon: '🧠', label: 'MusicBrainz', className: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
     ai: { icon: '🤖', label: 'AI', className: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },

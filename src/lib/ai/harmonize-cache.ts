@@ -29,7 +29,7 @@ export interface HarmonizeCacheEntry {
   languageReason: string;
   yearReason: string;
   /** Where the genre suggestion originated — shown as a badge in the UI. */
-  source: 'ai' | 'deezer' | 'musicbrainz';
+  source: 'ai' | 'deezer' | 'musicbrainz' | 'itunes';
 }
 
 interface HarmonizeCacheShape {

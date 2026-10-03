@@ -5,7 +5,8 @@
  * screen + the per-song sidebar card):
  *
  *   1. Cache check (R2)     — persistent per-song result cache, no quota.
- *   2. Factual lookup (R6)  — MusicBrainz/Deezer genre/year facts (free).
+ *   2. Factual lookup (R6)  — iTunes (R47 primary)/MusicBrainz/Deezer
+ *                             genre/year facts (free, keyless).
  *   3. LLM fallback         — /api/harmonize for language detection and
  *                             genre normalization, WITH the factual hints
  *                             attached so the AI doesn't guess blindly.
@@ -32,7 +33,14 @@ export interface HarmonizeSong {
   year: number | null;
 }
 
-export type HarmonizeSource = 'ai' | 'deezer' | 'musicbrainz';
+export type HarmonizeSource = 'ai' | 'deezer' | 'musicbrainz' | 'itunes';
+
+/** Display label per factual source (R47: iTunes joined the chain). */
+const SOURCE_LABELS: Record<Exclude<HarmonizeSource, 'ai'>, string> = {
+  itunes: 'iTunes',
+  deezer: 'Deezer',
+  musicbrainz: 'MusicBrainz',
+};
 
 export interface HarmonizeSuggestion {
   songId: string;
@@ -165,7 +173,7 @@ interface FactualHit {
   genreConfidence?: number;
   year?: number;
   yearConfidence?: number;
-  source: 'deezer' | 'musicbrainz';
+  source: 'deezer' | 'musicbrainz' | 'itunes';
   matchedTitle?: string;
   matchedArtist?: string;
 }
@@ -452,7 +460,7 @@ export async function harmonizeSongs(
       if (!song.genre && fact?.genre) {
         suggestedGenre = canonicalizeGenre(fact.genre);
         genreConfidence = fact.genreConfidence ?? 92;
-        genreReason = fact.source === 'deezer' ? 'Deezer' : 'MusicBrainz';
+        genreReason = SOURCE_LABELS[fact.source] ?? 'factual';
         if (fact.matchedArtist || fact.matchedTitle) {
           genreReason += `: "${fact.matchedTitle ?? song.title}" (${fact.matchedArtist ?? song.artist})`;
         } else {
@@ -485,7 +493,7 @@ export async function harmonizeSongs(
       if (!song.year && fact?.year) {
         suggestedYear = fact.year;
         yearConfidence = fact.yearConfidence ?? 90;
-        yearReason = `${fact.source === 'deezer' ? 'Deezer' : 'MusicBrainz'}: first release`;
+        yearReason = `${SOURCE_LABELS[fact.source] ?? 'factual'}: first release`;
       }
 
       // Only suggest changes that actually differ from current values
