@@ -2,7 +2,7 @@
 
 > **Datei-Landkarte & Architektur:** `ARCHITECTURE.md` · **Detail-Historie (jede Runde ausführlich beschrieben):** `git log` (Runden-Commits findbar per `git log --grep='R44:'` usw.) · **Frühere Worklog-Fassungen:** `git log -- worklog.md`.
 >
-> **Neue Einträge:** unten im Format `--- / Task ID: r<N> / Agent / Task / Work Log / Stage Summary` anhängen — bestehende Abschnitte nie überschreiben. Nächste freie Runde: **R49**.
+> **Neue Einträge:** unten im Format `--- / Task ID: r<N> / Agent / Task / Work Log / Stage Summary` anhängen — bestehende Abschnitte nie überschreiben. Nächste freie Runde: **R50**.
 
 ## Projekt-Status (nach R45)
 
@@ -147,3 +147,22 @@ Stage Summary:
 - AI-Harmonisierung schließt aus Genre „Schlager" nicht mehr auf deutsche Sprache — die Sprache folgt Künstler/Text (E2E mit 3 Sprachen bewiesen). Nur die echten Sprach-Genres (Volksmusik/Chanson/Canzone) bleiben Kopplungen per Definition.
 - Nutzer-Verifikation R46 (Cover-Guard) und R47 (Fill-Missing-Quote ~90 % im Bundle) weiterhin ausstehend — Bundle-Neubau via `node scripts/prepare-bundle.mjs` durch den Nutzer.
 - Keine neuen offenen Fragen; nächster sinnvoller Schritt wäre Nutzer-Feedback zu R46/R47/R48 im realen Tauri-Bundle.
+
+---
+Task ID: r49
+Agent: main (Z.ai Code)
+Task: Nutzer-Report: „Cover-guard scheint zu funktionieren. Gut!" + neuer Wunsch — die 89-dB-Reduktion greift in den Previews nicht; bitte auch dort einführen.
+
+Work Log:
+- Analyse aller Preview-Audiopfade: genau 3 Stellen mit `new Audio()` und hardcoded Volume, keine las die Preview-Volume-Einstellung oder die Loudness-Normalisierung an: use-library-preview.ts (Bibliotheks-Hover, 0.3), metadata-studio.tsx (Manual-Review-Vorschau, 0.5), use-mobile-song-preview.ts (Companion-Vorschau, 0.6). Neben-Fund: die PREVIEW_VOLUME-Einstellung (Grafik & Sound, Default 30) hatte NULL Consumer — sie fütterte nur den Settings-Slider. Zusätzlich: das SongCard-Video-Element läuft mit Volume 1.0, wenn es die Audiospur trägt (hasEmbeddedAudio/kein audioUrl).
+- loudness.ts: NEU applyPreviewVolume(el, songId, mediaUrl, isStillActive?) — wendet sofort die Preview-Volume-Einstellung an (schneller Pfad) und danach asynchron den gecachten 89-dB-Gain (applyLoudnessVolume: Attenuation über element.volume, Boost über Gain-Node — identisch zum Game-Screen); nie werfend, nie blockierend, isStillActive-Guard gegen veraltete Previews. Dazu getPreviewVolumePercent()/isLoudnessNormalizationEnabled().
+- Alle 3 Hooks umgestellt + clearLoudnessGain beim Dispose/Stop/Unmount (Gain-Node-Reset). Video-Element in der Bibliothek bekommt dieselbe Behandlung, wenn es hörbar ist (hasEmbeddedAudio || kein audioUrl) — Loudness-Analyse läuft nur für das tatsächlich hörbare Element, kein Doppel-Decodieren.
+- Companion-Vorschau (Handy): Analyse läuft einmal pro Song auf dem Gerät (localStorage-Cache), Wiedergabe startet sofort auf Basis-Volume — gleicher Vertrag wie Desktop. iOS-Volume-Limitierung unverändert (element.volume dort read-only, gleiche Limit wie bei den alten Hardcodes).
+- E2E im QA-Chrome (CDP 9222, Instrumentierung: Audio-Subclass + createGain-Patch, Test-Song mit echter Audio-URL /qa-test.mp3): (1) Analyse-Pipeline läuft durch den Preview-Pfad (Cache-Eintrag +3.49 dB nach Hover), (2) Boost: Setting 60 → Element-Volume 0.6 + Gain-Node 1.494, (3) Attenuation: Cache −6 dB → Volume 0.3007 = exakt 0.6·10^(−6/20), (4) Normalisierung aus → Volume 0.6 pur, keine Gain-Nodes. Cleanup: Test-Song + gesetzte localStorage-Keys entfernt, 9 Seeds unversehrt, Reload.
+- tsc 0 Fehler · ESLint 0 Errors / 7 Warnungen (alle prä-existent, vorher=nachher) · Commit 0130def1, Remote verifiziert.
+
+Stage Summary:
+- Alle Preview-Wege (Bibliothek-Hover inkl. Companion-Fernsteuerung, Metadata-Studio-Review, Companion-Songbrowser) nutzen jetzt dieselbe Lautstärke-Pipeline wie das Spiel: Preview-Volume-Einstellung × 89-dB-Normalisierung, asynchron, nie blockierend.
+- Die Preview-Volume-Einstellung steuert erstmals tatsächlich etwas (vorher wirkungsloser Slider).
+- Video-getragene Previews (eingebettetes Audio) laufen nicht mehr mit Volume 1.0.
+- Offen: Nutzer-Verifikation im Tauri-Bundle (R46 Cover-Guard läuft laut Nutzer; R47 Fill-Missing-Quote + R49 Preview-Volume noch ohne Bundle-Feedback).
