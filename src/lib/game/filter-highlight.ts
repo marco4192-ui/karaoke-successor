@@ -28,6 +28,17 @@
 export const FILTER_ACTIVE_FRAME =
   'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]';
 
+/**
+ * R51/Bug1 — Aktiv-Rahmen für native <select>-Elemente: gleiche Cyan-Optik
+ * (Rand + Ring + Glow) wie FILTER_ACTIVE_FRAME, aber mit OPHEQUEM
+ * Hintergrund. Native Select-Popups (v.a. WebView2/Tauri, aber auch Chrome)
+ * brauchen eine deckende background-color auf dem <select>, sonst rendert
+ * das aufklappende Optionsmenü hell — die weiße Schrift wird unlesbar.
+ * bg-cyan-500/10 (transluzent) reicht dafür nicht.
+ */
+export const FILTER_ACTIVE_FRAME_SELECT =
+  'border-cyan-400/70 bg-gray-800 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]';
+
 /** Subtilere Variante für Suchfelder mit Inhalt (kein Glow). */
 export const SEARCH_ACTIVE_FRAME = 'border-cyan-400/60 ring-1 ring-cyan-400/30';
 

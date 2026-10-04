@@ -356,6 +356,9 @@ export interface QueueItem {
   // Display names of the chosen desktop mics (queue badges / mirror UI)
   playerMicName?: string;
   partnerMicName?: string;
+  // R51/Bug11 — Difficulty chosen in the companion queue wizard (server
+  // queue items carry it; used when the desktop starts the item).
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface PitchDetectionResult {

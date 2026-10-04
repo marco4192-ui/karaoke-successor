@@ -52,6 +52,32 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const cptmSettings = usePartyStore((s) => s.cptmSettings);
   const cptmDifficulty = cptmSettings?.difficulty ?? 'medium';
 
+  // ── R51/Bug13 — CPTM Starting-Screen: Bestätigungs-Übersicht ──
+  // Jeder Companion-Teilnehmer bestätigt den Start per Start-Button
+  // (cptm_confirm_start:<playerId>). Der Desktop zeigt, wer bereit ist und
+  // wer noch fehlt, und startet AUTOMATISCH, sobald alle bestätigt haben
+  // (und die Medien geladen sind). Der Desktop-Button bleibt als manueller
+  // Force-Start für den Host erhalten (z. B. wenn ein Handy leer ist).
+  const cptmStartConfirmed = usePartyStore((s) => s.cptmStartConfirmed);
+  const setCptmStartConfirmed = usePartyStore((s) => s.setCptmStartConfirmed);
+
+  // Bestätigungen bei jedem (Neu-)Mount der Intro-Phase zurücksetzen — jede
+  // neue Runde (Vote/Bibliothek/Weiter) mountet den Screen neu.
+  useEffect(() => {
+    setCptmStartConfirmed([]);
+  }, [setCptmStartConfirmed]);
+
+  const allConfirmed = g.players.length > 0 && g.players.every(p => cptmStartConfirmed.includes(p.id));
+
+  // Auto-Start, sobald ALLE Spieler bestätigt haben + Medien bereit sind.
+  // Ref-Guard verhindert Doppel-Starts bei Re-Renders.
+  const autoStartRef = useRef(false);
+  useEffect(() => {
+    if (g.phase !== 'intro' || !allConfirmed || !g.mediaLoaded || autoStartRef.current) return;
+    autoStartRef.current = true;
+    void g.startGame();
+  }, [g.phase, allConfirmed, g.mediaLoaded, g.startGame]);
+
   // ── Companion "Song beenden" (R37) ──
   // Any connected companion phone can end the current song early — same
   // handler as the desktop HUD's EndSongButton: record the round with
@@ -126,38 +152,72 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             )}
           </div>
 
-          {/* Participants (small boxes) with start-player highlight */}
+          {/* Participants (small boxes) with start-player highlight +
+              R51/Bug13: confirmation state (✓ ready / ⏳ waiting) */}
           <div className="flex flex-wrap justify-center gap-2 mb-4 max-w-md">
-            {g.players.map((p, idx) => (
+            {g.players.map((p, idx) => {
+              const confirmed = cptmStartConfirmed.includes(p.id);
+              return (
               <div
                 key={p.id}
-                className={`relative flex flex-col items-center w-20 rounded-xl p-2 ${
-                  idx === 0
-                    ? 'bg-gradient-to-br from-cyan-500 to-emerald-500 border-2 border-white/50 shadow-lg scale-105'
-                    : 'bg-white/5 border border-white/10'
+                className={`relative flex flex-col items-center w-20 rounded-xl p-2 border-2 transition-all duration-300 ${
+                  confirmed
+                    ? 'bg-emerald-500/20 border-emerald-400/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                    : idx === 0
+                      ? 'bg-gradient-to-br from-cyan-500 to-emerald-500 border-white/50 shadow-lg scale-105'
+                      : 'bg-white/5 border-white/10'
                 }`}
                 data-testid={`cptm-starting-player-${p.name}`}
               >
-                {idx === 0 && (
+                {idx === 0 && !confirmed && (
                   <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shadow">
                     ▶ {t('partyStarting.startPlayer')}
                   </span>
                 )}
+                {confirmed && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shadow">
+                    {t('partyStarting.confirmedBadge')}
+                  </span>
+                )}
                 {p.avatar ? (
-                  <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover border-2 border-white/30 mb-1" />
+                  <img src={p.avatar} alt={p.name} className={`w-10 h-10 rounded-full object-cover border-2 mb-1 ${confirmed ? 'border-emerald-400/70' : 'border-white/30'}`} />
                 ) : (
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-white/30 mb-1" style={{ backgroundColor: p.color }}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 mb-1 ${confirmed ? 'border-emerald-400/70' : 'border-white/30'}`} style={{ backgroundColor: p.color }}>
                     {p.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <span className="text-xs font-semibold text-white truncate w-full text-center">{p.name}</span>
-                <span className="text-[9px] text-white/50">📱 {t('partyStarting.companion')}</span>
+                <span className={`text-[9px] ${confirmed ? 'text-emerald-300' : 'text-white/50'}`}>
+                  📱 {confirmed ? t('partyStarting.confirmedBadge') : t('partyStarting.waitingBadge')}
+                </span>
               </div>
-            ))}
+              );
+            })}
           </div>
-          <div className="text-white/40 text-xs mb-6 flex items-center gap-1.5">
+          <div className="text-white/40 text-xs mb-4 flex items-center gap-1.5">
             <span className="text-base">🎤</span>
             {g.players.length} {t('passTheMic.players')}
+          </div>
+
+          {/* R51/Bug13 — Confirmation progress + auto-start hint */}
+          <div
+            className={`w-full max-w-md rounded-xl px-4 py-3 mb-4 text-center border ${
+              allConfirmed
+                ? 'bg-emerald-500/15 border-emerald-400/40'
+                : 'bg-cyan-500/10 border-cyan-400/25'
+            }`}
+            data-testid="cptm-confirmation-progress"
+          >
+            <p className={`text-sm font-semibold ${allConfirmed ? 'text-emerald-300' : 'text-cyan-300'}`}>
+              {t('partyStarting.confirmationProgress')
+                .replace('{n}', String(cptmStartConfirmed.length))
+                .replace('{m}', String(g.players.length))}
+            </p>
+            <p className="text-white/40 text-xs mt-1">
+              {g.mediaLoaded
+                ? t('partyStarting.autoStartHint')
+                : (t('gameScreen.loadingMedia') || t('gameScreen.loading'))}
+            </p>
           </div>
 
           {/* Media loaded indicator */}
@@ -168,10 +228,12 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
             </div>
           )}
 
-          {/* Start Button */}
+          {/* Start Button — data-testid ermöglicht das remote Anklicken durch
+              den kontrollierenden Companion (handleRemotePartyStart). */}
           <Button
             onClick={g.startGame}
             disabled={!g.mediaLoaded}
+            data-testid="ptm-start-button"
             className="w-full py-4 text-lg bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {g.mediaLoaded

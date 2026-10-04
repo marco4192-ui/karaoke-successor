@@ -96,6 +96,14 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
   // Ref for queue-error dismissal timer
   const queueErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // R51/Bug14 — Zeitstempel der letzten lokalen Queue-Aktion (Hinzufügen/
+  // Entfernen/Sortieren). Der 5s-Poll liefert kurz danach oft noch den ALTEN
+  // Server-Stand; loadQueue hält deshalb eigene optimistische Items während
+  // der Grace fest, statt sie zu entfernen. Kürzlich entfernte IDs werden
+  // während der Grace zusätzlich aus dem (veralteten) Server-Stand gefiltert.
+  const lastQueueActionAtRef = useRef(0);
+  const recentlyRemovedIdsRef = useRef<Set<string>>(new Set());
+
   // Clear queue-error timer on unmount
   useEffect(() => {
     return () => { if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current); };
@@ -256,10 +264,12 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
         // Calculate position in the full queue
         const position = data.queue ? data.queue.findIndex((q: QueueItem) => q.id === data.queueItem.id) + 1 : queue.length + 1;
         setAddedQueuePosition(position);
+        lastQueueActionAtRef.current = Date.now(); // R51/Bug14 — optimistic Grace
         setQueue(prev => [...prev, {
           id: data.queueItem.id, songId: song.id, songTitle: song.title, songArtist: song.artist,
           addedBy: profile.name, status: 'pending', partnerId, partnerName, gameMode,
-        }]);
+          optimistic: true, // R51/Bug14 — client-side Flag für die Poll-Grace
+        } as QueueItem]);
         setSlotsRemaining(data.slotsRemaining ?? Math.max(0, slotsRemaining - 1));
         setShowSongOptions(null);
         setSelectedPartner(null);
@@ -287,6 +297,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
 
   const reorderQueue = useCallback(async (orderedIds: string[]) => {
     if (!clientId) return;
+    lastQueueActionAtRef.current = Date.now(); // R51/Bug14 — optimistic Grace
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -333,6 +344,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
 
   const removeFromQueue = useCallback(async (itemId: string) => {
     if (!clientId) return;
+    lastQueueActionAtRef.current = Date.now(); // R51/Bug14 — optimistic Grace
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -342,6 +354,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
       if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
+        recentlyRemovedIdsRef.current.add(itemId); // R51/Bug14 — Poll-Grace
         setQueue(prev => prev.filter(q => q.id !== itemId));
         setSlotsRemaining(prev => Math.min(3, prev + 1));
       } else {
@@ -365,7 +378,34 @@ export function useMobileData({ clientId, profile, onNavigateToProfile, defaultD
       const data = await response.json();
       if (data.success) {
         const serverQueue = data.queue || [];
-        setQueue(serverQueue);
+        // R51/Bug14 — Grace nach lokaler Queue-Aktion (Hinzufügen/Entfernen):
+        // Der 5s-Poll liefert oft noch den ALTEN Server-Stand, während die
+        // eigene Aktion unterwegs ist — das hat frisch hinzugefügte Songs
+        // kurz entfernt („springt zurück"). Während der Grace werden eigene
+        // optimistische Items (client-side Flag) mit dem Server-Stand
+        // zusammengeführt, statt ihn blind zu übernehmen.
+        const sinceLocalQueueAction = Date.now() - lastQueueActionAtRef.current;
+        if (sinceLocalQueueAction < 6000) {
+          // Kürzlich entfernte IDs: aus dem Server-Stand filtern (noch nicht
+          // bestätigt) und aufräumen, sobald der Server sie nicht mehr liefert.
+          const effectiveServerQueue = serverQueue.filter((q: QueueItem) => {
+            if (recentlyRemovedIdsRef.current.has(q.id)) return false;
+            return true;
+          });
+          for (const id of Array.from(recentlyRemovedIdsRef.current)) {
+            if (!serverQueue.some((q: QueueItem) => q.id === id)) {
+              recentlyRemovedIdsRef.current.delete(id);
+            }
+          }
+          setQueue(prev => {
+            const serverIds = new Set(effectiveServerQueue.map((q: QueueItem) => q.id));
+            const optimistic = prev.filter(q => (q as QueueItem & { optimistic?: boolean }).optimistic && !serverIds.has(q.id));
+            return [...effectiveServerQueue, ...optimistic];
+          });
+        } else {
+          recentlyRemovedIdsRef.current.clear();
+          setQueue(serverQueue);
+        }
         // R39/P7: Slots zählen nur Handy-Wünsche — die gespiegelten Desktop-
         // Items (isDesktop) belegen keine Companion-Slots.
         const pendingCount = serverQueue.filter((q: { status: string; isDesktop?: boolean }) => q.status === 'pending' && !q.isDesktop).length;

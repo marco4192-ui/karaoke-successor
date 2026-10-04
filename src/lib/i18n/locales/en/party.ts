@@ -649,6 +649,12 @@ export const partyTranslations = {
     hint: 'Singers can get into position — start when everyone is ready.',
     enterHint: 'or press Enter',
     minutes: 'min',
+    // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+    confirmedBadge: '✓ Ready',
+    waitingBadge: '⏳ Waiting',
+    waitingForPlayers: 'Waiting for other players…',
+    confirmationProgress: '{n} of {m} players ready',
+    autoStartHint: 'The game starts automatically once all players have confirmed.',
   },
 
   // Game mode titles and descriptions

@@ -1005,13 +1005,43 @@ export function useJukebox(refs?: {
 
   // ==================== FULLSCREEN ====================
 
+  // R51/Bug7 — CSS-Fullscreen-Ref: toggleFullscreen muss den AKTUELLEN Zustand
+  // lesen können, ohne bei jedem Wechsel neu erstellt zu werden (der Callback
+  // hängt in vielen Memo-Abhängigkeiten).
+  const isFullscreenRef = useRef(false);
+  useEffect(() => { isFullscreenRef.current = isFullscreen; }, [isFullscreen]);
+
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement === containerRef.current) {
-      document.exitFullscreen();
-    } else if (document.fullscreenElement) {
-      document.exitFullscreen();
+    // ── EXIT ── DOM-Fullscreen aktiv → verlassen (fullscreenchange-Handler
+    // setzt isFullscreen danach automatisch zurück).
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    // CSS-/Tauri-Fullscreen aktiv (Fallback-Pfad unten) → zurücksetzen und
+    // ggf. auch das native Tauri-Fenster aus dem Vollbild holen.
+    if (isFullscreenRef.current) {
+      setIsFullscreen(false);
+      void import('@/hooks/use-app-effects').then(({ exitFullscreen }) => exitFullscreen()).catch(() => {});
+      return;
+    }
+
+    // ── ENTER ── Bevorzugt: DOM-Vollbild des Video-Containers (klappt bei
+    // echten Klicks mit User-Geste). Ohne Geste — z. B. beim Fullscreen-
+    // Button der COMPANION-App, dessen Kommando asynchron per Socket/HTTP
+    // ankommt — lehnt Chromium requestFullscreen() mit NotAllowedError ab.
+    // Dann: CSS-Fullscreen (fixed inset-0) + natives Tauri-Fenster-Vollbild.
+    const el = containerRef.current;
+    if (el?.requestFullscreen) {
+      el.requestFullscreen()
+        .then(() => { setIsFullscreen(true); })
+        .catch(() => {
+          setIsFullscreen(true);
+          void import('@/hooks/use-app-effects').then(({ enterFullscreen }) => enterFullscreen()).catch(() => {});
+        });
     } else {
-      containerRef.current?.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+      void import('@/hooks/use-app-effects').then(({ enterFullscreen }) => enterFullscreen()).catch(() => {});
     }
   }, [containerRef]);
 

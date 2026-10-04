@@ -20,6 +20,8 @@ export interface CompanionQueueItem {
   partnerMicSource?: 'companion' | 'microphone';
   playerMicName?: string;
   partnerMicName?: string;
+  /** R51/Bug11 — Im Companion-Queue-Wizard gewählte Schwierigkeit. */
+  difficulty?: 'easy' | 'medium' | 'hard';
   /** R39/P7: Entry mirrors the desktop's LOCAL queue (syncdesktopqueue) —
    *  filtered out by desktop consumers (already in zustand), rendered by
    *  the companion queue view. */
@@ -37,6 +39,14 @@ export interface QueueScreenProps {
     _song: Song,
     gameMode: 'single' | 'duel' | 'duet',
     players: { id: string; name: string }[],
+    /** R51/Bug11 — Gesangs-Geräte + Schwierigkeit des Queue-Items, damit die
+     *  Haupt-App (onPlayFromQueue-Zweig) deviceAssignment + Difficulty
+     *  übernehmen kann (Companion-Eingabequelle + Item-Schwierigkeit). */
+    deviceInfo?: {
+      playerMicSource?: 'companion' | 'microphone';
+      partnerMicSource?: 'companion' | 'microphone';
+      difficulty?: 'easy' | 'medium' | 'hard';
+    },
   ) => void;
   /** When true, automatically starts playing the first queue item (Ctrl-Q) */
   autoPlayNext?: boolean;

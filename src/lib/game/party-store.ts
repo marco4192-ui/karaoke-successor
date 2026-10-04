@@ -89,6 +89,13 @@ export interface PartyStore {
   setCptmSeriesHistory: (_history: CptmRoundResult[]) => void;
   cptmSongSelection: string | null;
   setCptmSongSelection: (_mode: string | null) => void;
+  // R51/Bug13 — CPTM Starting-Screen: welche Spieler (Profil-IDs) ihren
+  // Start bereits bestätigt haben. Jeder Companion-Teilnehmer bestätigt per
+  // Start-Button (Participation-Command 'cptm_confirm_start:<playerId>');
+  // der Desktop zeigt die Übersicht und startet automatisch, sobald ALLE
+  // bestätigt haben (und die Medien geladen sind).
+  cptmStartConfirmed: string[];
+  setCptmStartConfirmed: (_ids: string[]) => void;
 
   // Medley Contest
   medleyPlayers: MedleyPlayer[];
@@ -225,6 +232,8 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
   setCptmSeriesHistory: (cptmSeriesHistory) => set({ cptmSeriesHistory }),
   cptmSongSelection: null,
   setCptmSongSelection: (cptmSongSelection) => set({ cptmSongSelection }),
+  cptmStartConfirmed: [],
+  setCptmStartConfirmed: (cptmStartConfirmed) => set({ cptmStartConfirmed }),
 
   // Medley Contest
   medleyPlayers: [] as MedleyPlayer[],
@@ -345,6 +354,7 @@ export const usePartyStore = create<PartyStore>((set, get) => ({
     cptmSettings: null,
     cptmSeriesHistory: [] as CptmRoundResult[],
     cptmSongSelection: null,
+    cptmStartConfirmed: [],
     medleyPlayers: [] as MedleyPlayer[],
     medleySongs: [] as MedleySong[],
     medleySettings: null as MedleySettings | null,

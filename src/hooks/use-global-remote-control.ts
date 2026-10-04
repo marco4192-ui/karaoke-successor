@@ -572,8 +572,15 @@ export function useGlobalRemoteControl({
           break;
         }
         // Jukebox video fullscreen (only the video container, not the whole app)
+        // R51/Bug7: Der Jukebox:fullscreen-Listener existiert nur auf dem
+        // Jukebox-Screen (JukeboxScreen mount/unmount). Ist der Desktop woanders,
+        // ging das Kommando ins Leere — deshalb erst navigieren, dann (nach
+        // kurzem Mount-Delay) das Event feuern wie bei jukebox_video_add.
         if (cmd.type === 'jukebox_fullscreen') {
-          window.dispatchEvent(new CustomEvent('jukebox:fullscreen'));
+          navigateToScreen('jukebox');
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('jukebox:fullscreen'));
+          }, 350);
           break;
         }
         // Companion App: Video-Link in die Jukebox-Warteschlange einreihen.
@@ -638,6 +645,20 @@ export function useGlobalRemoteControl({
         if (cmd.type.startsWith('party_vote:')) {
           const songId = cmd.type.slice('party_vote:'.length);
           window.dispatchEvent(new CustomEvent('remote-party-vote', { detail: { songId } }));
+          break;
+        }
+        // R51/Bug13 — CPTM Starting-Screen: Teilnehmer-Bestätigung
+        // (cptm_confirm_start:<playerId>). JEDER Companion-Spieler bestätigt
+        // den Start mit seinem eigenen Button (Participation-Command, kein
+        // Lock nötig); der Desktop sammelt die Bestätigungen und startet
+        // automatisch, sobald alle bereit sind.
+        if (cmd.type.startsWith('cptm_confirm_start:')) {
+          const playerId = cmd.type.slice('cptm_confirm_start:'.length);
+          if (playerId) {
+            window.dispatchEvent(new CustomEvent('remote-cptm-confirm-start', {
+              detail: { playerId, fromClientName: cmd.fromClientName },
+            }));
+          }
           break;
         }
         // BR in-game song vote (6.2): br_vote:<songIndex>:<profileId> —

@@ -87,6 +87,46 @@ function isLikelyDuet(song: MobileSong): boolean {
   return false;
 }
 
+// ===================== R51/Bug5+6: Kompakter Filter-Chip =====================
+// Smartphones öffnen native <select>s ohnehin als Fullscreen-Overlay — breite
+// Dropdown-Felder sind reine Platzverschwendung. Der Chip zeigt nur das kurze
+// Label (inaktiv) bzw. den gewählten Wert (aktiv, cyan markiert); das
+// unsichtbare native Select darüber liefert das gewohnte Overlay-Verhalten.
+function FilterChip({
+  label, value, onChange, active, displayValue, children, testId,
+}: {
+  label: string;
+  value: string;
+  onChange: (_v: string) => void;
+  active: boolean;
+  /** Sichtbarer Text bei aktivem Filter (z. B. gewähltes Jahr/Dekade) */
+  displayValue?: string;
+  children: React.ReactNode;
+  testId?: string;
+}) {
+  return (
+    <div className="relative flex-1 min-w-[64px] basis-0" data-testid={testId}>
+      <div
+        aria-hidden="true"
+        className={'w-full flex items-center justify-center rounded-lg px-1 py-2 text-[11px] font-medium text-center border pointer-events-none transition-colors ' +
+          (active
+            ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-200'
+            : 'bg-white/5 border-white/10 text-white/60')}
+      >
+        <span className="truncate max-w-full">{active && displayValue ? displayValue : label}</span>
+      </div>
+      <select
+        value={value}
+        onChange={(e) => { haptic(); onChange(e.target.value); }}
+        aria-label={label}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
 // ===================== Mini-Cover-Kachel =====================
 // R34: SongCoverTile ist jetzt EINE geteilte Komponente (mirror-cover-tile.tsx,
 // vorher hier dupliziert) mit 3-Stufen-Fallback + verzögertem API-Retry
@@ -215,6 +255,8 @@ export function MirrorLibraryLite({
     const [languageFilter, setLanguageFilter] = useState('all');
     // Era/decade filter (decade start year, e.g. '1980') — for themed parties
     const [eraFilter, setEraFilter] = useState('all');
+    // R51/Bug6 — Year filter (exact release year from the synced #YEAR: tag)
+    const [yearFilter, setYearFilter] = useState('all');
     const [filterViral, setFilterViral] = useState(false);
 
     // Lokaler Game-Mode (Single/Duell/Duett)
@@ -231,8 +273,12 @@ export function MirrorLibraryLite({
     // ---- Overlay-State ----
     const [overlaySong, setOverlaySong] = useState<MobileSong | null>(null);
     const [ovDifficulty, setOvDifficulty] = useState<'easy' | 'medium' | 'hard'>(difficulty || 'medium');
-    // Sync ovDifficulty when the difficulty prop changes (e.g. from desktop global settings)
-    useEffect(() => { setOvDifficulty(difficulty || 'medium'); }, [difficulty]);
+    // Sync ovDifficulty when the difficulty prop changes (e.g. from desktop
+    // global settings) — R51/Bug8+14: NUR solange kein Overlay offen ist. Ein
+    // 2s-Gamestate-Push, der eintrifft, während der Nutzer das offene Overlay
+    // betrachtet, darf dessen Auswahl nicht überschreiben (Eingabe-Reset-Bug);
+    // beim nächsten Overlay-Öffnen greift der neue Default (openOverlay).
+    useEffect(() => { if (!overlaySong) setOvDifficulty(difficulty || 'medium'); }, [difficulty, overlaySong]);
     const [ovPartnerId, setOvPartnerId] = useState<string | null>(null);
     const [ovAdding, setOvAdding] = useState(false);
     const [ovChallengeSent, setOvChallengeSent] = useState(false);
@@ -299,6 +345,10 @@ export function MirrorLibraryLite({
       if (languageFilter !== 'all') {
         result = result.filter((s) => s.language === languageFilter);
       }
+      // R51/Bug6 — exact release-year filter (#YEAR: tag)
+      if (yearFilter !== 'all') {
+        result = result.filter((s) => String(s.year ?? '') === yearFilter);
+      }
       // Era filter (decade bucket from the synced #YEAR: tag)
       if (eraFilter !== 'all') {
         result = result.filter((s) => songMatchesEra(s, eraFilter));
@@ -318,19 +368,22 @@ export function MirrorLibraryLite({
       }
       // Nach Songtitel alphabetisch sortieren
       return [...result].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
-    }, [filteredSongs, genreFilter, languageFilter, eraFilter, isDuetMode, filterViral, gameState.viralSongIds, gameState.mottoParty, songs]);
+    }, [filteredSongs, genreFilter, languageFilter, yearFilter, eraFilter, isDuetMode, filterViral, gameState.viralSongIds, gameState.mottoParty, songs]);
 
-    // Extrahiere verfuegbare Genres, Sprachen und Aeras (Jahrzehnte)
-    const { genres, languages, decades } = useMemo(() => {
+    // Extrahiere verfuegbare Genres, Sprachen, Jahre und Aeras (Jahrzehnte)
+    const { genres, languages, years, decades } = useMemo(() => {
       const gSet = new Set<string>();
       const lSet = new Set<string>();
+      const ySet = new Set<string>();
       songs.forEach((s) => {
         if (s.genre) gSet.add(s.genre);
         if (s.language) lSet.add(s.language);
+        if (s.year) ySet.add(String(s.year));
       });
       return {
         genres: Array.from(gSet).sort(),
         languages: Array.from(lSet).sort(),
+        years: Array.from(ySet).sort(),
         decades: getAvailableDecades(songs),
       };
     }, [songs]);
@@ -684,70 +737,106 @@ export function MirrorLibraryLite({
           )}
         </div>
 
-        {/* Genre-Filter als Dropdown */}
-        {genres.length > 0 && (
-          <select
-            value={genreFilter}
-            onChange={(e) => { haptic(); setGenreFilter(e.target.value); }}
-            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
-            style={dropdownStyle}
-          >
-            <option value="all" className="bg-[#1a1a2e] text-white">Alle Genres</option>
-            {genres.map((g) => (
-              <option key={g} value={g} className="bg-[#1a1a2e] text-white">{g}</option>
-            ))}
-          </select>
-        )}
+        {/* R51/Bug5+6 — Kompakte Filter-Reihe statt breiter Dropdown-Felder:
+            Genre / Lang. / Jahr / Ära als schmale Chips nebeneinander (+ Viral
+            + Reset). Smartphones öffnen native Selects ohnehin als
+            Fullscreen-Overlay über den ganzen Screen — die geschlossenen
+            Felder brauchen nur das Kurzlabel bzw. den gewählten Wert zeigen. */}
+        <div className="flex flex-wrap gap-1.5" data-testid="mirror-library-filter-row">
+          {genres.length > 0 && (
+            <FilterChip
+              label={tOr(t, 'mobile.filterGenreShort', 'Genre')}
+              value={genreFilter}
+              onChange={setGenreFilter}
+              active={genreFilter !== 'all'}
+              displayValue={genreFilter}
+              testId="mirror-filter-genre"
+            >
+              <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allGenres') || 'Alle Genres'}</option>
+              {genres.map((g) => (
+                <option key={g} value={g} className="bg-[#1a1a2e] text-white">{g}</option>
+              ))}
+            </FilterChip>
+          )}
 
-        {/* Sprach-Filter als Dropdown */}
-        {languages.length > 1 && (
-          <select
-            value={languageFilter}
-            onChange={(e) => { haptic(); setLanguageFilter(e.target.value); }}
-            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
-            style={dropdownStyle}
-          >
-            <option value="all" className="bg-[#1a1a2e] text-white">Alle Sprachen</option>
-            {languages.map((l) => (
-              <option key={l} value={l} className="bg-[#1a1a2e] text-white">{l}</option>
-            ))}
-          </select>
-        )}
+          {languages.length > 1 && (
+            <FilterChip
+              label={tOr(t, 'mobile.filterLanguageShort', 'Lang.')}
+              value={languageFilter}
+              onChange={setLanguageFilter}
+              active={languageFilter !== 'all'}
+              displayValue={languageFilter}
+              testId="mirror-filter-language"
+            >
+              <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allLanguages') || 'Alle Sprachen'}</option>
+              {languages.map((l) => (
+                <option key={l} value={l} className="bg-[#1a1a2e] text-white">{l}</option>
+              ))}
+            </FilterChip>
+          )}
 
-        {/* Aera-Filter (Jahrzehnt) als Dropdown — fuer Motto-Partys */}
-        {decades.length > 0 && (
-          <select
-            value={eraFilter}
-            onChange={(e) => { haptic(); setEraFilter(e.target.value); }}
-            className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white active:scale-[0.99] transition-transform cursor-pointer"
-            style={dropdownStyle}
-            aria-label={t('library.eraFilter')}
-          >
-            <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allEras')}</option>
-            {decades.map((d) => (
-              <option key={d} value={d} className="bg-[#1a1a2e] text-white">
-                {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
-              </option>
-            ))}
-          </select>
-        )}
+          {years.length > 0 && (
+            <FilterChip
+              label={tOr(t, 'mobile.filterYearShort', 'Jahr')}
+              value={yearFilter}
+              onChange={setYearFilter}
+              active={yearFilter !== 'all'}
+              displayValue={yearFilter}
+              testId="mirror-filter-year"
+            >
+              <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allYears') || 'Alle Jahre'}</option>
+              {years.map((y) => (
+                <option key={y} value={y} className="bg-[#1a1a2e] text-white">{y}</option>
+              ))}
+            </FilterChip>
+          )}
 
-        {/* Viral-Hits Filter-Button (1:1 wie Desktop Library) */}
-        {(gameState.viralSongIds?.length ?? 0) > 0 && (
-          <button
-            onClick={() => { haptic(); setFilterViral(!filterViral); }}
-            className={
-              'w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ' +
-              (filterViral
-                ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50'
-                : 'bg-white/5 text-white/60 border border-white/10')
-            }
-          >
-            <span>{'\uD83D\uDD25'}</span>
-            <span>{t('libraryFilters.viralHits') || 'Viral Hits'}</span>
-            {filterViral && <span className="text-xs text-orange-400/60">({gameState.viralSongIds?.length})</span>}
-          </button>
-        )}
+          {decades.length > 0 && (
+            <FilterChip
+              label={tOr(t, 'mobile.filterEraShort', 'Ära')}
+              value={eraFilter}
+              onChange={setEraFilter}
+              active={eraFilter !== 'all'}
+              displayValue={eraFilter !== 'all' ? t('library.eraOption').replace('{decade}', decadeShortLabel(Number(eraFilter))) : undefined}
+              testId="mirror-filter-era"
+            >
+              <option value="all" className="bg-[#1a1a2e] text-white">{t('library.allEras') || 'Alle'}</option>
+              {decades.map((d) => (
+                <option key={d} value={d} className="bg-[#1a1a2e] text-white">
+                  {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
+                </option>
+              ))}
+            </FilterChip>
+          )}
+
+          {/* Viral-Hits Filter-Chip (kompakt, wie die anderen Filter) */}
+          {(gameState.viralSongIds?.length ?? 0) > 0 && (
+            <button
+              onClick={() => { haptic(); setFilterViral(!filterViral); }}
+              className={'flex-1 min-w-[64px] basis-0 flex items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium border active:scale-[0.98] transition-all ' +
+                (filterViral
+                  ? 'border-orange-500/50 bg-orange-500/25 text-orange-300'
+                  : 'bg-white/5 border-white/10 text-white/60')}
+              data-testid="mirror-filter-viral"
+            >
+              <span>{'\uD83D\uDD25'}</span>
+              <span className="truncate">{t('libraryFilters.viralHits') || 'Viral'}</span>
+            </button>
+          )}
+
+          {/* Reset — erscheint nur, wenn ein Filter aktiv ist */}
+          {(genreFilter !== 'all' || languageFilter !== 'all' || yearFilter !== 'all' || eraFilter !== 'all' || filterViral) && (
+            <button
+              onClick={() => { haptic(); setGenreFilter('all'); setLanguageFilter('all'); setYearFilter('all'); setEraFilter('all'); setFilterViral(false); }}
+              className="flex-1 min-w-[56px] basis-0 flex items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium bg-white/5 border border-white/10 text-white/50 active:scale-[0.98] transition-all"
+              aria-label={tOr(t, 'mobile.filterResetShort', 'Zurücksetzen')}
+              data-testid="mirror-filter-reset"
+            >
+              <span>{'\u2715'}</span>
+              <span className="truncate">{tOr(t, 'mobile.filterResetShort', 'Reset')}</span>
+            </button>
+          )}
+        </div>
         </>
         )}
 

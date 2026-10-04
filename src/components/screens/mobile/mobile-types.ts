@@ -277,6 +277,12 @@ export interface GameState {
   gameMode: string | null;
   singalongTurn: SingalongTurn | null;
   cptmTurn: SingalongTurn | null;
+  // R51/Bug11 — Standard-Spiele mit Companion-Eingabequelle: Geräte-Zuweisung
+  // (P1/P2 singen via Handy) + Spielerliste (Profil-IDs), damit die
+  // betroffenen Handys ihr Mikrofon automatisch starten. Beide Felder kommen
+  // aus dem Store-GameState-Spread des 2s-Pushes.
+  deviceAssignment?: { p1Companion?: boolean; p2Companion?: boolean } | null;
+  players?: Array<{ id: string; name: string }> | null;
   // #10 Tournament match ID for spectator voting
   tournamentMatchId: string | null;
   // Live leaderboard: companion player scores during singalong
@@ -396,6 +402,9 @@ export interface GameState {
   mottoParty?: MottoPartySync | null;
   // Global difficulty setting from desktop (for companion library)
   difficulty?: 'easy' | 'medium' | 'hard';
+  // R51/Bug13 — CPTM Starting-Screen: Profil-IDs der Spieler, die ihren
+  // Start bereits bestätigt haben (für die Warte-Anzeige auf den Handys).
+  cptmStartConfirmed?: string[];
   // Recent party sessions synced from the desktop party screen (mirror view).
   // Compact form: avatars stripped to keep the 2s-poll payload small.
   recentParties?: Array<{

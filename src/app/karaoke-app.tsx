@@ -329,6 +329,26 @@ export default function KaraokeZERO() {
     }
   }, [closeDialog, resumeGame, screen]);
 
+  // ── R51/Bug10: Aktiven Queue-Song abschließen (lokal + Server) ──
+  // Wird beim ABBRUCH eines Songs aufgerufen: das 'playing'-Item der lokalen
+  // zustand-Queue wird auf 'completed' gesetzt und parallel werden alle
+  // 'playing'-Items der Server-Queue (Companion-Wünsche) vervollständigt —
+  // vorher blieb ein abgebrochener Song in der Companion-Queue ewig als
+  // „Läuft" stehen. Idempotent; fehlschlagende POSTs sind unkritisch.
+  const completeActiveQueueItems = useCallback(() => {
+    try {
+      const st = useGameStore.getState();
+      st.queue
+        .filter(q => q.status === 'playing')
+        .forEach(q => st.markQueueItemCompleted(q.id));
+    } catch { /* non-critical */ }
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'completeplaying', payload: {} }),
+    }).catch(() => { /* ignore */ });
+  }, []);
+
   const handleSongAbort = useCallback(() => {
     // DO-NOT-CHANGE: Diagnostic logging for PartyTerminator debugging.
     // This helps identify which code path triggers the nuclear reset.
@@ -337,6 +357,11 @@ export default function KaraokeZERO() {
       screen, isPartyActiveDirect, gameState.gameMode, party.selectedGameMode, isTournamentMatch);
 
     closeDialog();
+
+    // R51/Bug10 — Jeder Abbruch-Pfad verlässt den laufenden Song: das
+    // aktive Queue-Item (lokal + Companion-Server-Queue) abschließen,
+    // damit es nicht als „Läuft" hängen bleibt.
+    completeActiveQueueItems();
 
     // ── Tournament match abort: needs bracket + aborted flag for the match-abort dialog ──
     if (screen === 'game' && isTournamentMatch) {
@@ -471,7 +496,7 @@ export default function KaraokeZERO() {
     resetGame();
     setGameMode('standard');
     setScreen('party');
-  }, [closeDialog, screen, isTournamentMatch, isPartyActiveDirect, party, party.selectedGameMode, gameState.gameMode, resetGame, setScreen, setGameMode]);
+  }, [closeDialog, screen, isTournamentMatch, isPartyActiveDirect, party, party.selectedGameMode, gameState.gameMode, resetGame, setScreen, setGameMode, completeActiveQueueItems]);
 
   const handleTournamentRepeat = useCallback(() => {
     closeDialog();
@@ -608,8 +633,20 @@ export default function KaraokeZERO() {
       'dailyChallenge': 'dailyChallenge', 'online': 'online',
       'party-setup': 'party-setup',
     };
-    navigateWithGuard(screenMap[targetScreen] || 'home');
-  }, [navigateWithGuard]);
+    const target = screenMap[targetScreen] || 'home';
+    // R51/Bug12 — Companion „Zurück zum Setup" (Vote-Screen-Button/Footer-Tab):
+    // Das ist ein Schritt INNERHALB des Party-Flows, kein Verlassen. Der
+    // Leave-Guard soll nur beim Desktop-Navbar-Klick greifen (NavBar bekommt
+    // navigateWithGuard); die Companion-App behandelt party-setup bereits als
+    // Flow-Schritt (Footer-Exemption „going back to setup doesn't leave the
+    // party"). Deshalb hier direkt — ohne Guard — navigieren, exakt wie die
+    // internen Party-Screens (PartySetupSection/PartyGameScreens) es tun.
+    if (target === 'party-setup') {
+      setScreen('party-setup');
+      return;
+    }
+    navigateWithGuard(target);
+  }, [navigateWithGuard, setScreen]);
 
   useGlobalRemoteControl({
     navigateToScreen: handleRemoteNavigation,
@@ -913,8 +950,16 @@ export default function KaraokeZERO() {
       setSong(songWithUrls);
       if (party.selectedGameMode === 'companion-singalong') {
         const cptmPlayers = party.cptmPlayers || [];
-        const cptmSegments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+        // R51/Bug13 — BUGFIX „leerer Main-App-Screen": hier fehlte bisher
+        // party.setCptmSong! Die Segmente wurden gesetzt, der Screen gewechselt,
+        // aber die Render-Bedingung (cptmSong && segments.length > 0) blieb
+        // false → schwarzer leerer Screen, während die Handys den Starting-
+        // Screen zeigten. Außerdem: cptmSettings statt passTheMicSettings und
+        // die Start-Bestätigungen für die neue Runde zurücksetzen.
+        const cptmSegments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, party.cptmSettings?.segmentDuration ?? party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
         party.setCptmSegments(cptmSegments);
+        party.setCptmSong(songWithUrls);
+        party.setCptmStartConfirmed([]);
         setScreen('companion-singalong-game');
       } else if (party.selectedGameMode === 'pass-the-mic') {
         // Use PTM game screen so intro phase is shown
@@ -930,6 +975,27 @@ export default function KaraokeZERO() {
     window.addEventListener('remote-party-vote', handleRemotePartyVote);
     return () => window.removeEventListener('remote-party-vote', handleRemotePartyVote);
   }, [resetGame, setGameMode, setSong, setScreen, party]);
+
+  // ── R51/Bug13: CPTM Starting-Screen — Teilnehmer-Bestätigungen sammeln ──
+  // Jeder Companion-Spieler bestätigt per Start-Button
+  // (cptm_confirm_start:<playerId>, Participation-Command). Der Desktop
+  // sammelt die Bestätigungen im Party-Store; die CPTM-Intro-Ansicht zeigt
+  // die Übersicht (wer bereit ist / wer fehlt) und startet automatisch,
+  // sobald ALLE Spieler bestätigt haben und die Medien geladen sind.
+  useEffect(() => {
+    const handleCptmConfirmStart = (e: Event) => {
+      const { playerId } = (e as CustomEvent).detail || {};
+      if (!playerId) return;
+      const st = usePartyStore.getState();
+      // Nur bestätigen, was auch wirklich ein CPTM-Spieler ist (Schutz vor
+      // gefälschten/fremden IDs) — und nur während der Intro-Phase sinnvoll.
+      if (!st.cptmPlayers.some(p => p.id === playerId)) return;
+      if (st.cptmStartConfirmed.includes(playerId)) return; // dedup
+      st.setCptmStartConfirmed([...st.cptmStartConfirmed, playerId]);
+    };
+    window.addEventListener('remote-cptm-confirm-start', handleCptmConfirmStart);
+    return () => window.removeEventListener('remote-cptm-confirm-start', handleCptmConfirmStart);
+  }, []);
 
   // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
   useEffect(() => {
@@ -1394,6 +1460,9 @@ export default function KaraokeZERO() {
                 };
               })(),
               difficulty: useGameStore.getState().gameState.difficulty || 'medium',
+              // R51/Bug13 — CPTM Starting-Screen: Bestätigungs-Stand aller
+              // Companion-Teilnehmer (Profil-IDs) für die Intro-Übersicht.
+              cptmStartConfirmed: partyNow.cptmStartConfirmed ?? [],
               // R39/P4: Verfügbare Desktop-Mikrofone (MULTI_MIC_CONFIG) —
               // die Companion-Library braucht sie für die Gesangs-Gerät-
               // Auswahl im Song-Overlay (Mic vs. Companion-App). Kleine
@@ -1859,7 +1928,7 @@ export default function KaraokeZERO() {
 
         {screen === 'profile' && <CharacterScreen />}
         {screen === 'queue' && (
-          <QueueScreen autoPlayNext={autoPlayNext} onPlayFromQueue={(song, gameMode, players) => {
+          <QueueScreen autoPlayNext={autoPlayNext} onPlayFromQueue={(song, gameMode, players, deviceInfo) => {
             setAutoPlayNext(false);
             resetGame();
             const activeMode = gameState.gameMode;
@@ -1910,6 +1979,27 @@ export default function KaraokeZERO() {
 
             setSong(song);
             setGameMode(gameMode === 'duel' || gameMode === 'duet' ? 'duel' : 'standard');
+            // R51/Bug11 — Gesangs-Geräte + Difficulty des Queue-Items übernehmen
+            // (bisher machte das NUR der Zweig ohne onPlayFromQueue): singt P1
+            // laut Item über die Companion-App, bleibt das Desktop-Mikro
+            // geschlossen und die Handy-Pitch speist P1-Scoring + Anzeige
+            // (game-screen-hook liest deviceAssignment.p1Companion). Die
+            // Item-Schwierigkeit (Companion-Wizard) wird ebenfalls angewandt.
+            // P2-Default: Companion (wie use-duet-p2-pitch „!== false" und das
+            // alte Queue-Verhalten ohne deviceAssignment) — nur im Dual-Modus,
+            // eine explizite Item-Wahl gewinnt immer.
+            useGameStore.setState(s => ({
+              gameState: {
+                ...s.gameState,
+                ...(deviceInfo?.difficulty ? { difficulty: deviceInfo.difficulty } : {}),
+                deviceAssignment: {
+                  p1Companion: deviceInfo?.playerMicSource === 'companion',
+                  p2Companion: deviceInfo?.partnerMicSource
+                    ? deviceInfo.partnerMicSource === 'companion'
+                    : gameMode === 'duel' || gameMode === 'duet',
+                },
+              },
+            }));
             // Clear old players — zustand stores expose setState directly
             (useGameStore as any).setState?.((state: any) => ({ gameState: { ...state.gameState, players: [] } }));
             players.forEach(player => {
@@ -2070,21 +2160,39 @@ function readAvailableMicsForCompanions(): Array<{ id: string; name: string }> {
     const parsed = JSON.parse(raw) as {
       assignedMics?: Array<{ id?: string; deviceId?: string; customName?: string; deviceName?: string }>;
     };
-    const entries = parsed.assignedMics ?? [];
+    const entries = (parsed.assignedMics ?? [])
+      .filter(m => typeof m.id === 'string' && m.id.length > 0);
+    const mapMics = (list: typeof entries) =>
+      list.map(m => ({ id: m.id as string, name: m.customName || m.deviceName || 'Mikrofon' }));
+
     // R41/P10: Veraltete Devices rausfiltern — der Push darf nur Mics
     // enthalten, deren Hardware noch angeschlossen ist. Der liveness-Check
     // ist die SYNCHRONE Sicht auf den Resolver-Cache (null = unverifizierbar,
     // z. B. vor Mikrofon-Freigabe im Browser → dann unverändert lassen).
     const connected = getVerifiedConnectedAudioInputs();
-    const live = entries.filter(m =>
-      typeof m.id === 'string' && m.id.length > 0 && isSavedMicDeviceLive(m, connected));
-    if (connected !== null && live.length < entries.length) {
-      // Self-Heal: veraltete Einträge erkannt → persistente Config
-      // (gedrosselt, fire-and-forget) aufräumen; der nächste 2s-Tick liest
-      // dann saubere Daten.
-      scheduleStaleMicPrune();
+    if (!connected) return mapMics(entries);
+
+    const live = entries.filter(m => isSavedMicDeviceLive(m, connected));
+    if (live.length > 0) {
+      if (live.length < entries.length) {
+        // Self-Heal: veraltete Einträge erkannt → persistente Config
+        // (gedrosselt, fire-and-forget) aufräumen; der nächste 2s-Tick liest
+        // dann saubere Daten.
+        scheduleStaleMicPrune();
+      }
+      return mapMics(live);
     }
-    return live.map(m => ({ id: m.id as string, name: m.customName || m.deviceName || 'Mikrofon' }));
+
+    // R51/Bug9 — Der Liveness-Filter würde ALLE konfigurierten Mics streichen
+    // (z. B. rotierte deviceIds nach Replug / WebView2-Id-Churn, oder die
+    // Enumeration sieht das Gerät kurzzeitig nicht). Die Companion-App darf
+    // dann NICHT „kein Mic definiert" melden, während der Desktop konfigurierte
+    // Mics hat → Fallback auf die vollständige konfigurierte Liste. Bewusst
+    // KEIN destructiver Prune in diesem Fall: Die Einträge können völlig in
+    // Ordnung sein, nur die IDs wirken stale. Tote Devices fallen im Spiel
+    // ohnehin still auf das Standard-Mikrofon zurück (resolveMicDeviceId).
+    if (entries.length > 0) return mapMics(entries);
+    return [];
   } catch {
     return [];
   }

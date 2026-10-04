@@ -477,6 +477,12 @@ partyStarting: {
   hint: 'Die Sänger können sich in Position bringen — starte, wenn alle bereit sind.',
   enterHint: 'oder Enter drücken',
   minutes: 'Min.',
+  // R51/Bug13 — CPTM Starting-Screen (Bestätigungs-Übersicht Desktop)
+  confirmedBadge: '✓ Bereit',
+  waitingBadge: '⏳ Warten',
+  waitingForPlayers: 'Warten auf weitere Spieler…',
+  confirmationProgress: '{n} von {m} Spielern bereit',
+  autoStartHint: 'Das Spiel startet automatisch, sobald alle Spieler bestätigt haben.',
 },
 partyHistory: {
   title: 'Letzte Partys',

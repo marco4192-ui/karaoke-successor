@@ -9,7 +9,7 @@ import { Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/game/era-filter';
 import { useTranslation } from '@/lib/i18n/translations';
-import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
+import { FILTER_ACTIVE_FRAME_SELECT, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import type { RateMySongPlayMode, RateMySongDuration } from './rate-my-song-types';
 import type { RateMySongSetupScreenProps } from './rate-my-song-types';
 
@@ -289,12 +289,12 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   onChange={(e) => setFilterGenre(e.target.value)}
                   className={`flex-1 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
                     filterGenre !== 'all'
-                      ? FILTER_ACTIVE_FRAME
+                      ? FILTER_ACTIVE_FRAME_SELECT
                       : 'bg-gray-700/50 border-white/10'
                   }`}
                 >
                   {genres.map(g => (
-                    <option key={g} value={g}>{g === 'all' ? t('rateMySong.allGenres') : g}</option>
+                    <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? t('rateMySong.allGenres') : g}</option>
                   ))}
                 </select>
                 {decades.length > 0 && (
@@ -303,14 +303,14 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                     onChange={(e) => setFilterEra(e.target.value)}
                     className={`rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
                       filterEra !== 'all'
-                        ? FILTER_ACTIVE_FRAME
+                        ? FILTER_ACTIVE_FRAME_SELECT
                         : 'bg-gray-700/50 border-white/10'
                     }`}
                     aria-label={t('library.eraFilter')}
                   >
-                    <option value="all">{t('rateMySong.allEras')}</option>
+                    <option value="all" className="bg-gray-800 text-white">{t('rateMySong.allEras')}</option>
                     {decades.map(d => (
-                      <option key={d} value={d}>
+                      <option key={d} value={d} className="bg-gray-800 text-white">
                         {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
                       </option>
                     ))}
@@ -321,14 +321,14 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   onChange={(e) => setFilterDifficulty(e.target.value as typeof filterDifficulty)}
                   className={`rounded-lg p-2 text-white text-xs appearance-none cursor-pointer border ${
                     filterDifficulty !== 'all'
-                      ? FILTER_ACTIVE_FRAME
+                      ? FILTER_ACTIVE_FRAME_SELECT
                       : 'bg-gray-700/50 border-white/10'
                   }`}
                 >
-                  <option value="all">{t('rateMySong.allDifficulties')}</option>
-                  <option value="easy">{t('song.easy')}</option>
-                  <option value="medium">{t('song.medium')}</option>
-                  <option value="hard">{t('song.hard')}</option>
+                  <option value="all" className="bg-gray-800 text-white">{t('rateMySong.allDifficulties')}</option>
+                  <option value="easy" className="bg-gray-800 text-white">{t('song.easy')}</option>
+                  <option value="medium" className="bg-gray-800 text-white">{t('song.medium')}</option>
+                  <option value="hard" className="bg-gray-800 text-white">{t('song.hard')}</option>
                 </select>
               </div>
               <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-gray-800/50">

@@ -536,7 +536,15 @@ export const useGameStore = create<GameStore>()(
       markQueueItemPlaying: (itemId) =>
         set((state) => ({
           queue: state.queue.map((item) =>
-            item.id === itemId ? { ...item, status: 'playing' as const } : item
+            item.id === itemId
+              ? { ...item, status: 'playing' as const }
+              : item.status === 'playing'
+                // R51/Bug10 — der vorherige "playing"-Song wurde gespielt:
+                // auf 'completed' setzen (NICHT 'pending') — sonst bleibt er
+                // in der Desktop-Queue und der Companion-Queue-Spiegel ewig
+                // als "aktiv" stehen, obwohl längst der nächste Song läuft.
+                ? { ...item, status: 'completed' as const }
+                : item
           ),
         })),
 

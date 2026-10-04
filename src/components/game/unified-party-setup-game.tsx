@@ -15,7 +15,7 @@ import { LANGUAGE_FILTER_OTHERS } from '@/lib/game/language-filter';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { decadeShortLabel } from '@/lib/game/era-filter';
-import { FILTER_ACTIVE_FRAME, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
+import { FILTER_ACTIVE_FRAME, FILTER_ACTIVE_FRAME_SELECT, SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { ConnectionStatusBadge } from './connection-status-badge';
 import { useRovingFocus } from '@/hooks/use-roving-focus';
 import type { PlayerDeviceChoice } from './unified-party-setup.types';
@@ -248,13 +248,13 @@ export function SongFilterSection({
               onChange={(e) => onFilterGenreChange(e.target.value)}
               className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
                 filterGenre !== 'all'
-                  ? FILTER_ACTIVE_FRAME
+                  ? FILTER_ACTIVE_FRAME_SELECT
                   : 'bg-gray-800 border-white/10'
               }`}
             >
-              <option value="all">{t('unifiedSetup.allGenres')}</option>
+              <option value="all" className="bg-gray-800 text-white">{t('unifiedSetup.allGenres')}</option>
               {availableGenres.map(g => (
-                <option key={g} value={g}>{g}</option>
+                <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
               ))}
             </select>
           </div>
@@ -267,13 +267,13 @@ export function SongFilterSection({
               onChange={(e) => onFilterLanguageChange(e.target.value)}
               className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
                 filterLanguage !== 'all'
-                  ? FILTER_ACTIVE_FRAME
+                  ? FILTER_ACTIVE_FRAME_SELECT
                   : 'bg-gray-800 border-white/10'
               }`}
             >
-              <option value="all">{t('unifiedSetup.allLanguages')}</option>
+              <option value="all" className="bg-gray-800 text-white">{t('unifiedSetup.allLanguages')}</option>
               {availableLanguages.map(l => (
-                <option key={l} value={l}>{l === LANGUAGE_FILTER_OTHERS ? t('libraryFilters.othersLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</option>
+                <option key={l} value={l} className="bg-gray-800 text-white">{l === LANGUAGE_FILTER_OTHERS ? t('libraryFilters.othersLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</option>
               ))}
             </select>
           </div>
@@ -286,13 +286,13 @@ export function SongFilterSection({
               onChange={(e) => onFilterReleaseYearChange(e.target.value)}
               className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
                 filterReleaseYear !== 'all'
-                  ? FILTER_ACTIVE_FRAME
+                  ? FILTER_ACTIVE_FRAME_SELECT
                   : 'bg-gray-800 border-white/10'
               }`}
             >
-              <option value="all">{t('unifiedSetup.allYears')}</option>
+              <option value="all" className="bg-gray-800 text-white">{t('unifiedSetup.allYears')}</option>
               {availableYears.map(y => (
-                <option key={y} value={String(y)}>{y}</option>
+                <option key={y} value={String(y)} className="bg-gray-800 text-white">{y}</option>
               ))}
             </select>
           </div>
@@ -305,13 +305,13 @@ export function SongFilterSection({
               onChange={(e) => onFilterEraChange(e.target.value)}
               className={`w-full rounded-lg px-3 py-2 text-sm text-white border ${
                 filterEra !== 'all'
-                  ? FILTER_ACTIVE_FRAME
+                  ? FILTER_ACTIVE_FRAME_SELECT
                   : 'bg-gray-800 border-white/10'
               }`}
             >
-              <option value="all">{t('unifiedSetup.allEras')}</option>
+              <option value="all" className="bg-gray-800 text-white">{t('unifiedSetup.allEras')}</option>
               {availableDecades.map(d => (
-                <option key={d} value={d}>
+                <option key={d} value={d} className="bg-gray-800 text-white">
                   {t('library.eraOption').replace('{decade}', decadeShortLabel(Number(d)))}
                 </option>
               ))}

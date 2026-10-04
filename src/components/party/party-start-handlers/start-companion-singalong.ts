@@ -6,7 +6,7 @@ import { generateBalancedPartySegments } from '@/components/game/party-segments'
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export async function startCompanionSingalong(ctx: StartHandlerContext): Promise<void> {
-  const { result, party, setScreen, resetGame, addPlayer, setPlayers, setSong, filteredSongs } = ctx;
+  const { result, party, setScreen, resetGame, addPlayer, setPlayers, setSong, filteredSongs, toast, t } = ctx;
 
   // Store the user's preferred song selection mode for series "next song" navigation
   party.setCptmSongSelection(result.songSelection || 'random');
@@ -39,7 +39,18 @@ export async function startCompanionSingalong(ctx: StartHandlerContext): Promise
     // instrumental intro/bridge/outro segments previously left players with
     // almost no chance to score.
     const cptmSegments = generateBalancedPartySegments(songWithUrls, cptmPlayers.length || 2);
+    // R51/Bug13 — Guard wie bei PTM: generateBalancedPartySegments liefert []
+    // für Songs < 60 s (MIN_SONG_MS). Ohne Guard wurde trotzdem zum Screen
+    // navigiert → Render-Bedingung (segments.length > 0) false → leerer
+    // schwarzer Screen. Der i18n-Key songTooShortCptm existierte bereits
+    // ungenutzt in allen 16 Sprachen.
+    if (cptmSegments.length === 0) {
+      toast({ title: t('partySetup.songTooShortCptm'), description: t('partySetup.songTooShortRetry'), variant: 'destructive' });
+      return;
+    }
     party.setCptmSegments(cptmSegments);
+    // R51/Bug13 — Start-Bestätigungen für die neue Runde zurücksetzen.
+    party.setCptmStartConfirmed([]);
     resetGame();
     setPlayers([]);
     if (cptmPlayers.length > 0) {

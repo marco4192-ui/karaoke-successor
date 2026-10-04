@@ -582,6 +582,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
           <MirrorPtmIntroLite
             gameState={gameState}
             profileName={profileName}
+            profileId={profileId}
             onNavigate={onNavigate}
             onSendDesktopCommand={onSendDesktopCommand}
           />

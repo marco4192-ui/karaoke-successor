@@ -381,16 +381,38 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     }, [modeInfo?.command]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Lokaler State fuer das gesamte Setup
+    // ── R51/Bug14 — Binding Companion-Eingaben (kein Zurückspringen mehr) ──
+    // Jede NUTZER-Interaktion auf dem Companion stempelt lastLocalEditAt.
+    // Während der Grace danach ignorieren die Sync-Ins eingehende Desktop-
+    // Pushes: In-Flight-Pushes tragen noch ALTEN Zustand (Round-Trip lokal
+    // → 300 ms Debounce → Desktop-Apply → 400 ms Debounce → Rückweg dauert
+    // ~1–2 s) und hätten die frische Eingabe überschrieben („Eingabe springt
+    // zurück, manchmal verzögert wieder vor"). Erst nach Ablauf der Grace
+    // gelten Desktop-Pushes wieder — Desktop-seitige Änderungen sind maximal
+    // SYNC_GRACE_MS verzögert, Companion-Eingaben sind BINDEND.
+    const SYNC_GRACE_MS = 2500;
+    const lastLocalEditAtRef = React.useRef(0);
+    const markLocalEdit = React.useCallback(() => {
+      lastLocalEditAtRef.current = Date.now();
+    }, []);
+    // Retry-Tick: wenn ein Push während der Grace eintraf, wird er nach deren
+    // Ablauf genau einmal nachgezogen (der setup-Verweis ändert sich sonst
+    // nicht mehr → Effekt liefe nie wieder).
+    const [syncInRetryTick, setSyncInRetryTick] = useState(0);
     // Initialize difficulty from the desktop's global setting (synced via gamestate)
     const [difficulty, setDifficulty] = React.useState<Difficulty>(
       (gameState.difficulty as Difficulty) || 'medium'
     );
-    // Sync difficulty when the desktop global setting changes
+    // Sync difficulty when the desktop global setting changes.
+    // R51/Bug14 — Grace nach lokaler Bearbeitung: Der 2s-Gamestate-Push trägt
+    // oft noch den ALTEN Difficulty-Wert, während die eigene Wahl zum Desktop
+    // unterwegs ist — ohne Grace würde die Auswahl sichtbar zurückspringen.
     React.useEffect(() => {
       if (gameState.difficulty && gameState.difficulty !== difficulty) {
+        if (Date.now() - lastLocalEditAtRef.current < SYNC_GRACE_MS) return;
         setDifficulty(gameState.difficulty as Difficulty);
       }
-    }, [gameState.difficulty]);
+    }, [gameState.difficulty, difficulty]);
     const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
     const [settings, setSettings] = useState<Record<string, any>>({}); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [songSelection, setSongSelection] = useState<string>('random');
@@ -462,9 +484,25 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     // applying desktop state does not immediately echo back.
     const lastSyncInAt = React.useRef(0);
 
-    // Apply desktop pushes (diff-guarded)
+    // Apply desktop pushes (diff-guarded).
+    // R51/Bug14 — Grace nach lokaler Bearbeitung: Während SYNC_GRACE_MS nach
+    // einer Nutzereingabe werden eingehende Pushes IGNORIERT (sie tragen noch
+    // den alten Desktop-Stand — der Round-Trip der eigenen Eingabe dauert
+    // ~1–2 s). Nach Ablauf der Grace wird der letzte Stand einmalig
+    // nachgezogen (Retry-Tick), damit echte Desktop-Änderungen nicht verloren
+    // gehen. Die frühere 600ms-Echo-Sperre im Push-Out ist ENTFERNT — sie hat
+    // echte Eingaben verschluckt (Sync-In traf ins 300ms-Debounce → Push wurde
+    // nie gesendet → Eingabe dauerhaft reverted). Echoes sind jetzt harmlos:
+    // Während der Grace wird gar nichts angewandt, außerhalb entspricht der
+    // zurückgesendete Zustand dem Desktop-Stand (Apply = No-op).
     React.useEffect(() => {
       if (!setup) return;
+      const sinceEdit = Date.now() - lastLocalEditAtRef.current;
+      if (sinceEdit < SYNC_GRACE_MS) {
+        // Grace aktiv — nach Ablauf einmalig den letzten Stand nachziehen
+        const retry = setTimeout(() => setSyncInRetryTick((x) => x + 1), SYNC_GRACE_MS - sinceEdit + 50);
+        return () => clearTimeout(retry);
+      }
       lastSyncInAt.current = Date.now();
       // Extract values first — TS narrowing of `setup` does not survive
       // into the setState callbacks below.
@@ -509,15 +547,19 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
       if (suSelectedMicId !== undefined) {
         setSelectedMicId(prev => (prev === (suSelectedMicId ?? null) ? prev : (suSelectedMicId ?? null)));
       }
-    }, [setup]);
+    }, [setup, syncInRetryTick]);
 
     // ── LIVE PUSH OUT: every companion edit reaches the desktop instantly ──
     React.useEffect(() => {
       // Nothing selected yet → nothing meaningful to push (avoid overwriting
       // the desktop with the mirror's initial defaults)
       if (selectedPlayers.length === 0) return;
-      // Skip when this change came from a desktop sync-in (echo guard)
-      if (Date.now() - lastSyncInAt.current < 600) return;
+      // R51/Bug14 — KEINE Echo-Unterdrückung mehr: Die alte 600ms-Sperre nach
+      // Sync-In hat ECHTE Nutzereingaben verschluckt (Sync-In traf während
+      // des 300ms-Debounce → der Push wurde nie gesendet → die Eingabe blieb
+      // dauerhaft reverted). Der Sync-In wendet während der lokalen Grace
+      // ohnehin nichts an; außerhalb der Grace ist ein Echo ein No-op für den
+      // Desktop (identischer Zustand).
       const timer = setTimeout(() => {
         const config = JSON.stringify({
           mode: modeKey,
@@ -578,6 +620,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     // Player-Toggle (setzt auch eine Default-Device-Wahl wie auf dem Desktop)
     const handleTogglePlayer = useCallback((profileId: string) => {
       haptic();
+      markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
       setSelectedPlayers((prev) => {
         if (prev.includes(profileId)) {
           setDeviceAssignments((devPrev) => {
@@ -607,18 +650,20 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
         setDeviceAssignments((devPrev) => ({ ...devPrev, [profileId]: defaultDevice }));
         return [...prev, profileId];
       });
-    }, [modeInfo?.maxPlayers, deviceMode, micCount]);
+    }, [modeInfo?.maxPlayers, deviceMode, micCount, markLocalEdit]);
 
     // Setting aendern
     const handleSettingChange = useCallback((key: string, value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       haptic();
+      markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
       setSettings((prev) => ({ ...prev, [key]: value }));
-    }, []);
+    }, [markLocalEdit]);
 
     const handleDifficulty = useCallback((d: Difficulty) => {
       haptic();
+      markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
       setDifficulty(d);
-    }, []);
+    }, [markLocalEdit]);
 
     // DO-NOT-CHANGE: Zurueck mit Leave-Bestaetigungs-Popup (wie Desktop-App)
     const handleBack = useCallback(() => {
@@ -675,9 +720,10 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
     // Das Senden passiert erst beim Klick auf die Start-Leiste.
     const handleSongSelectClick = useCallback((opt: string) => {
       haptic();
+      markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
       setSongSelection(opt);
       setConfigSent(false);
-    }, []);
+    }, [markLocalEdit]);
 
     // Start-Leiste Klick: sendet Config mit der aktuell gewaehlten Songauswahl
     const handleStartBarClick = useCallback(() => {
@@ -881,6 +927,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                       disabled={deviceMode === 'flexible' && micCount === 0}
                       onChange={(e) => {
                         haptic();
+                        markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
                         if (noFixedMic) {
                           setDeviceAssignments((prev) => ({ ...prev, [playerId]: e.target.value === 'auto' ? 'mic' : 'companion' }));
                           return;
@@ -930,6 +977,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                       type="button"
                       onClick={() => {
                         haptic();
+                        markLocalEdit(); // R51/Bug14 — Eingabe ist bindend
                         if (isCompanion) {
                           setDeviceAssignments((prev) => ({ ...prev, [playerId]: 'mic' }));
                         } else {
@@ -973,7 +1021,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
             </SectionHeader>
             <select
               value={selectedMicId || ''}
-              onChange={(e) => { haptic(); setSelectedMicId(e.target.value || null); }}
+              onChange={(e) => { haptic(); markLocalEdit(); setSelectedMicId(e.target.value || null); }}
               className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white"
               aria-label={tOr(t, 'unifiedSetup.microphoneSelection', 'Mikrofon')}
             >
@@ -1143,7 +1191,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                   id="mirror-party-filter-search"
                   type="text"
                   value={filterSearch}
-                  onChange={(e) => { haptic(); setFilterSearch(e.target.value); }}
+                  onChange={(e) => { haptic(); markLocalEdit(); setFilterSearch(e.target.value); }}
                   placeholder={tOr(t, 'unifiedSetup.searchFilterPlaceholder', 'Interpret oder Titel…')}
                   autoComplete="off"
                   className={'w-full rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-white/30 outline-none border focus:border-cyan-400/40 ' +
@@ -1154,7 +1202,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                 {filterSearch !== '' && (
                   <button
                     type="button"
-                    onClick={() => { haptic(); setFilterSearch(''); }}
+                    onClick={() => { haptic(); markLocalEdit(); setFilterSearch(''); }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 active:scale-95 text-white/50 transition-all"
                     aria-label={tOr(t, 'unifiedSetup.resetFilter', 'Filter zurücksetzen')}
                   >
@@ -1169,7 +1217,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </label>
               <select
                 value={filterGenre}
-                onChange={(e) => { haptic(); setFilterGenre(e.target.value); }}
+                onChange={(e) => { haptic(); markLocalEdit(); setFilterGenre(e.target.value); }}
                 className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
                   (filterGenre !== 'all'
                     ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
@@ -1187,7 +1235,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </label>
               <select
                 value={filterLanguage}
-                onChange={(e) => { haptic(); setFilterLanguage(e.target.value); }}
+                onChange={(e) => { haptic(); markLocalEdit(); setFilterLanguage(e.target.value); }}
                 className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
                   (filterLanguage !== 'all'
                     ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
@@ -1205,7 +1253,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </label>
               <select
                 value={filterReleaseYear}
-                onChange={(e) => { haptic(); setFilterReleaseYear(e.target.value); }}
+                onChange={(e) => { haptic(); markLocalEdit(); setFilterReleaseYear(e.target.value); }}
                 className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
                   (filterReleaseYear !== 'all'
                     ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
@@ -1223,7 +1271,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               </label>
               <select
                 value={filterEra}
-                onChange={(e) => { haptic(); setFilterEra(e.target.value); }}
+                onChange={(e) => { haptic(); markLocalEdit(); setFilterEra(e.target.value); }}
                 className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
                   (filterEra !== 'all'
                     ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
@@ -1242,7 +1290,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
               <div className="flex gap-1.5">
                 <button
                   type="button"
-                  onClick={() => { haptic(); setFilterCombined(true); }}
+                  onClick={() => { haptic(); markLocalEdit(); setFilterCombined(true); }}
                   className={'rounded-lg px-2.5 py-1.5 text-[11px] font-semibold border active:scale-95 transition-all ' +
                     (filterCombined ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/50')}
                 >
@@ -1250,7 +1298,7 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                 </button>
                 <button
                   type="button"
-                  onClick={() => { haptic(); setFilterCombined(false); }}
+                  onClick={() => { haptic(); markLocalEdit(); setFilterCombined(false); }}
                   className={'rounded-lg px-2.5 py-1.5 text-[11px] font-semibold border active:scale-95 transition-all ' +
                     (!filterCombined ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/50')}
                 >

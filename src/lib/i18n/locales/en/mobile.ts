@@ -459,6 +459,17 @@ export const mobileTranslations = {
 
     mirrorDuetFilterHint: 'Only duet songs are shown',
     mirrorSearchSongs: 'Search songs...',
+    // R51/Bug5+6 — compact library filter chips (short labels only)
+    filterGenreShort: 'Genre',
+    filterLanguageShort: 'Lang.',
+    filterYearShort: 'Year',
+    filterEraShort: 'Era',
+    filterResetShort: 'Reset',
+    // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+    cptmStartConfirm: 'Start',
+    cptmStartConfirmedWaiting: 'Waiting for other players…',
+    cptmStartConfirmedYou: '✓ Ready — your start has been confirmed',
+    cptmStartConfirmedCount: '{n} of {m} players ready',
     mirrorBackToParty: '← Back to Party Modes',
     mirrorLibrary: 'Library',
     mirrorNoSongs: 'No songs loaded yet',

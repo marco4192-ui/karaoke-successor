@@ -12,6 +12,7 @@ import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import { dispatchStartGame } from './party-start-handlers';
+import { pickRandomVotingSongs } from './party-game-helpers';
 
 interface PartySetupSectionProps {
   screen: Screen;
@@ -219,36 +220,28 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
           }}
           onClose={() => {
             if (party.nextRoundPick === 'ptm' || party.nextRoundPick === 'cptm') {
-              // User dismissed the next-round vote overlay: fall back to a
-              // random song so the series continues with the same players
-              // (instead of dumping them into the setup screen with an
-              // empty player grid).
-              const isCptm = party.nextRoundPick === 'cptm';
-              party.setNextRoundPick(null);
-              const playerCount = (isCptm ? party.cptmPlayers : party.passTheMicPlayers).length || 2;
-              const segDur = (isCptm ? party.cptmSettings : party.passTheMicSettings)?.segmentDuration;
-              void (async () => {
-                try {
-                  const { preparePtmNextSong } = await import('@/lib/game/ptm-next-song');
-                  const action = await preparePtmNextSong('random', playerCount, segDur);
-                  if (action.mode === 'random' || action.mode === 'medley') {
-                    if (isCptm) {
-                      party.setCptmSegments(action.result.segments);
-                      party.setCptmSong(action.result.song);
-                      party.setIsSongPlaying(false);
-                      setScreen('companion-singalong-game');
-                    } else {
-                      if (action.mode === 'medley') party.setPtmMedleySnippets(action.result.medleySnippets);
-                      party.setPassTheMicSegments(action.result.segments);
-                      party.setPassTheMicSong(action.result.song);
-                      party.setIsSongPlaying(false);
-                      setScreen('pass-the-mic-game');
-                    }
-                    return;
-                  }
-                } catch { /* fall through to setup */ }
-                setScreen('party-setup');
-              })();
+              // R51/Bug3 — Nutzerwunsch: X in einer nächsten-Runde-Wote darf
+              // KEINEN zufälligen Song starten. Stattdessen wird eine NEUE
+              // Vote-Runde mit frischen Vorschlägen aufgebaut (nextRoundPick
+              // bleibt gesetzt). Fallback bei leerer gefilterter Menge:
+              // Bibliotheks-Auswahl (nimmt ebenfalls direkt ins Spiel zurück).
+              const filters = party.unifiedSetupResult?.settings;
+              const suggested = pickRandomVotingSongs(
+                filters?.filterGenre,
+                filters?.filterLanguage,
+                filters?.filterCombined,
+                'all',
+                3,
+                filters?.filterSearch,
+              );
+              if (suggested.length > 0) {
+                party.setVotingSongs(suggested);
+                // keep nextRoundPick as-is → new vote round with fresh songs
+                setScreen('song-voting');
+              } else {
+                // No songs match the filters → let the user pick manually
+                setScreen('library');
+              }
               return;
             }
             setScreen('party-setup');

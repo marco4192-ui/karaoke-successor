@@ -456,6 +456,19 @@ export const mobileTranslations = {
 
   mirrorDuetFilterHint: 'Es werden nur Duett-Songs angezeigt',
   mirrorSearchSongs: 'Suche...',
+  // R51/Bug5+6 — kompakte Filter-Chips der Companion-Bibliothek: nur kurze
+  // Labels (Smartphones öffnen native Selects als Fullscreen-Overlay, breite
+  // Dropdown-Felder sind unnötig). Jahr-Filter ist neu dabei.
+  filterGenreShort: 'Genre',
+  filterLanguageShort: 'Lang.',
+  filterYearShort: 'Jahr',
+  filterEraShort: 'Ära',
+  filterResetShort: 'Zurücksetzen',
+  // R51/Bug13 — CPTM Starting-Screen (Companion): Bestätigen + Warten
+  cptmStartConfirm: 'Starten',
+  cptmStartConfirmedWaiting: 'Warten auf weitere Spieler…',
+  cptmStartConfirmedYou: '✓ Bereit — dein Start wurde bestätigt',
+  cptmStartConfirmedCount: '{n} von {m} Spielern bereit',
   mirrorBackToParty: '← Zurück zu Party-Modi',
   mirrorLibrary: 'Bibliothek',
   mirrorNoSongs: 'Noch keine Songs geladen',

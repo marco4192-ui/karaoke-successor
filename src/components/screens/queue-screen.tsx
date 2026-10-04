@@ -230,6 +230,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
       partnerMicSource: item.partnerMicSource,
       playerMicName: item.playerMicName,
       partnerMicName: item.partnerMicName,
+      difficulty: item.difficulty,
       isFromCompanion: true,
       companionCode: item.companionCode,
       status: item.status,
@@ -372,7 +373,14 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
     }
 
     if (onPlayFromQueue) {
-      onPlayFromQueue(song, gameMode, players);
+      // R51/Bug11 — Gesangs-Geräte + Difficulty des Items mitgeben: die
+      // Haupt-App übernimmt sie im onPlayFromQueue-Zweig (deviceAssignment
+      // steuert, ob P1/P2 über die Companion-App singen).
+      onPlayFromQueue(song, gameMode, players, {
+        playerMicSource: item.playerMicSource,
+        partnerMicSource: item.partnerMicSource,
+        difficulty: item.difficulty,
+      });
     } else {
       setSong(song);
       if (gameMode === 'duel') {

@@ -107,7 +107,17 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const escalating = usePartyStore(s =>
     s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.escalating
   );
-  const { pitchResult, initialize: initializePitch, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { pitchResult, initialize: initializePitch, start: startPitchDetector, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+
+  // ── R51/Bug11 — P1 singt über die Companion-App ──
+  // Wurde im Queue-Item / Start-Modal „Companion-App" als Gesangs-Gerät für
+  // P1 gewählt (deviceAssignment.p1Companion), bleibt das Desktop-Mikro
+  // GESCHLOSSEN (kein doppeltes Scoring, kein Mithör-Echo) und der
+  // Companion-Pitch-Stream (Handy-Mikro) speist P1-Scoring + Anzeige —
+  // dasselbe Muster wie P2 (use-duet-p2-pitch).
+  const p1Companion = gameState.deviceAssignment?.p1Companion === true;
+  const p1CompanionRef = useRef(p1Companion);
+  p1CompanionRef.current = p1Companion;
 
   // ── Resolve P1 microphone deviceId + stereoChannel from party setup ──
   // When the game is launched via the unified party setup, the first player's
@@ -135,11 +145,24 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     }
   }, []);
 
-  // Wrap initialize to inject P1's deviceId and stereoChannel
+  // Wrap initialize to inject P1's deviceId and stereoChannel.
+  // R51/Bug11: Singt P1 über die Companion-App, wird KEIN Desktop-Mikro
+  // geöffnet — initialize() meldet Erfolg (das Spiel startet normal), der
+  // Pitch kommt aus dem Companion-Stream (siehe p1CompanionRef/mobilePitchRef
+  // im Game-Loop).
   const initialize = useCallback(async () => {
+    if (p1CompanionRef.current) return true;
     const mic = p1MicRef.current;
     return initializePitch(mic?.deviceId, mic?.stereoChannel);
   }, [initializePitch]);
+
+  // R51/Bug11: start() nur aufrufen, wenn ein Desktop-Detektor existiert
+  // (verhindert die „Pitch detector not initialized"-Konsolenmeldung im
+  // Companion-Modus).
+  const start = useCallback(() => {
+    if (p1CompanionRef.current) return;
+    startPitchDetector();
+  }, [startPitchDetector]);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;
@@ -213,6 +236,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
 
   // Mobile client state - pitch polling extracted to dedicated hook
   const { mobilePitch } = useMobilePitchPolling(song);
+  // R51/Bug11 — Companion-Pitch-Ref für den Game-Loop (P1-Companion-Modus).
+  const mobilePitchRef = useRef(mobilePitch);
+  mobilePitchRef.current = mobilePitch;
 
   // YouTube + Ad handling - URL extraction, ad callbacks, countdown
   const {
@@ -555,6 +581,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     start,
     stop,
     setPitchDifficulty,
+    p1CompanionRef,
+    mobilePitchRef,
     setCurrentTime,
     setDetectedPitch,
     endGame,

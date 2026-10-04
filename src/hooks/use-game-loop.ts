@@ -16,6 +16,7 @@ import type { Note, LyricLine } from '@/types/game';
 export { useGameResults } from '@/hooks/use-game-results';
 export { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
 export { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
+import type { MobilePitchData } from '@/hooks/use-mobile-pitch-polling';
 
 interface UseGameLoopOptions {
   // Song / media
@@ -39,6 +40,11 @@ interface UseGameLoopOptions {
   start: () => void;
   stop: () => void;
   setPitchDifficulty: (_diff: Difficulty) => void;
+  // R51/Bug11 — P1 sings via Companion-App: der Desktop-Pitch-Detektor bleibt
+  // geschlossen; stattdessen speist der Companion-Pitch-Stream (Handy-Mikro)
+  // P1-Scoring und -Anzeige. Beide Refs werden vom game-screen-hook gepflegt.
+  p1CompanionRef?: React.MutableRefObject<boolean>;
+  mobilePitchRef?: React.MutableRefObject<MobilePitchData | null>;
   // Game store
   setCurrentTime: (_time: number) => void;
   setDetectedPitch: (_pitch: number | null) => void;
@@ -127,6 +133,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     start,
     stop,
     setPitchDifficulty,
+    p1CompanionRef,
+    mobilePitchRef,
     setCurrentTime,
     setDetectedPitch,
     endGame,
@@ -687,8 +695,14 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // cascading re-renders across 13+ subscribers in game-screen-hook.ts.
       // Scoring (checkNoteHits) runs at full rAF rate outside this throttle.
       const now = performance.now();
-      // Read pitch from ref (not closure) to avoid stale values
-      const currentPitch = pitchResultRef.current;
+      // Read pitch from ref (not closure) to avoid stale values.
+      // R51/Bug11 — Singt P1 über die Companion-App (Queue-Item/Gerät-Auswahl),
+      // liefert der Companion-Pitch-Stream die P1-Daten (Handy-Mikro); der
+      // Desktop-Detektor ist geschlossen. MobilePitchData ist strukturell
+      // kompatibel zu PitchDetectionResult (rawNote ist optional).
+      const currentPitch: PitchDetectionResult | null = (p1CompanionRef?.current && mobilePitchRef?.current)
+        ? (mobilePitchRef.current as unknown as PitchDetectionResult)
+        : pitchResultRef.current;
 
       // Visual tick sampling: ALWAYS called (even when no pitch),
       // so missed ticks are recorded for Singstar-style display.

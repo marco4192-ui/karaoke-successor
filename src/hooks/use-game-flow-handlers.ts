@@ -154,6 +154,21 @@ export function useGameFlowHandlers(
   const handleGameEnd = useCallback(() => {
     // Battle Royale manages its own round lifecycle — not handled through standard game flow
     if (gameState.gameMode === 'battle-royale') return;
+    // R51/Bug10 — Song regulär beendet: das aktive Queue-Item abschließen
+    // (lokal + Companion-Server-Queue via 'completeplaying'). Bisher blieb
+    // der gespielte Song in der Companion-Queue als „Läuft" stehen, bis der
+    // NÄCHSTE Song startete (markplaying) — oder bei Abbruch ewig.
+    try {
+      const st = useGameStore.getState();
+      st.queue
+        .filter(q => q.status === 'playing')
+        .forEach(q => st.markQueueItemCompleted(q.id));
+    } catch { /* non-critical */ }
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'completeplaying', payload: {} }),
+    }).catch(() => { /* ignore */ });
     // Tournament match end — check FIRST to prevent medley/competitive hijacking
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();

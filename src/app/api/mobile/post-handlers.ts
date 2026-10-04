@@ -33,10 +33,15 @@ const PARTICIPATION_COMMANDS = new Set([
   'companion_pause', 'companion_resume',
   'companion_end_early',
   'party_show_leave', 'party_leave_confirm', 'party_leave_cancel',
+  // R51/Bug13 — CPTM Starting-Screen: JEDER Teilnehmer bestätigt den Start
+  // mit seinem eigenen Start-Button (ohne Fernsteuerungs-Lock — die Buttons
+  // liegen bei allen Companion-Spielern vor, nicht nur beim Controller).
+  'cptm_confirm_start',
 ]);
 
 const PARTICIPATION_PREFIXES = [
   'party_select_song:', 'party_vote:', 'br_vote:',
+  'cptm_confirm_start:',
 ];
 
 export function isControlCommand(commandType: string): boolean {
@@ -699,24 +704,62 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         const playingPayload = payload as { itemId: string };
         const playingItem = mutableState.songQueue.find(q => q.id === playingPayload.itemId);
-        
+
         if (playingItem) {
-          // Mark all other items as not playing (only one can be playing at a time)
+          // R51/Bug10 — Mark all other 'playing' items as COMPLETED (they
+          // were played!) instead of flipping them back to 'pending', which
+          // kept finished songs alive in the companion queue forever. Also
+          // decrement the adding companion's queueCount (frees a slot), the
+          // same way 'queuecompleted' does.
           mutableState.songQueue.forEach(q => {
-            if (q.status === 'playing') {
-              q.status = 'pending';
+            if (q.status === 'playing' && q.id !== playingItem.id) {
+              q.status = 'completed';
+              const client = Array.from(mobileClients.values()).find(
+                c => c.connectionCode === q.companionCode
+              );
+              if (client && client.queueCount > 0) {
+                client.queueCount--;
+                mobileClients.set(client.id, client);
+              }
             }
           });
-          
+
           playingItem.status = 'playing';
-          
-          return Response.json({ 
-            success: true, 
+
+          return Response.json({
+            success: true,
             message: 'Song marked as playing',
             item: playingItem,
           });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
+
+      case 'completeplaying': {
+        // R51/Bug10 — Song abgebrochen oder beendet: ALLE aktuell 'playing'-
+        // Items der Server-Queue abschließen. Der Desktop kennt die itemId
+        // beim Abbruch (Pause-Dialog) nicht unbedingt — diese Aktion ist
+        // idempotent und braucht keine itemId. Bisher blieb ein abgebrochener
+        // Song in der Companion-Queue ewig als "Läuft" stehen.
+        // Auth: require admin PIN (host requests are always trusted)
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        let completed = 0;
+        mutableState.songQueue.forEach(q => {
+          if (q.status === 'playing') {
+            q.status = 'completed';
+            completed++;
+            const client = Array.from(mobileClients.values()).find(
+              c => c.connectionCode === q.companionCode
+            );
+            if (client && client.queueCount > 0) {
+              client.queueCount--;
+              mobileClients.set(client.id, client);
+            }
+          }
+        });
+        return Response.json({ success: true, completed });
       }
 
       case 'queuecompleted': {

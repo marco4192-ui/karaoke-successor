@@ -74,7 +74,8 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   // only materialized in getAllSongsAsync() COPIES for the library grid.
   // Without this map, Converter-imported songs (cover in media DB) were
   // never uploaded to the companion. Loaded once per song, revoked on
-  // unmount.
+  // unmount. R51/Bug4: also caches the Tauri folder-song cover URLs
+  // (relativeCoverPath) — same reason: getAllSongs() doesn't materialize them.
   const coverBlobUrlsRef = useRef<Map<string, string>>(new Map());
 
   // Sync song library to server for companion clients
@@ -84,6 +85,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
 
       // Skip sync if song count hasn't changed since last sync.
       // Companion clients get the full library on initial connect anyway.
+      // (Server-restart self-healing resets lastSyncedCountRef below.)
       if (allSongs.length === lastSyncedCountRef.current) {
         return;
       }
@@ -165,6 +167,39 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
               } catch { /* no cover in media DB — song stays without thumbnail */ }
             }
             if (url) candidates.push({ id: s.id, src: url });
+          } else if (s.relativeCoverPath && typeof s.baseFolder !== 'undefined') {
+            // R51/Bug4 — Tauri folder-scanned songs: cover file on disk,
+            // resolved to a blob URL ONCE via the same loader the desktop
+            // library grid uses (getAllSongs() doesn't materialize these
+            // URLs). Previously these songs were skipped entirely → the
+            // companion never got thumbnails for folder imports.
+            let url = coverBlobUrlsRef.current.get(s.id);
+            if (!url) {
+              try {
+                const { getSongMediaUrl } = await import('@/lib/file-storage-media');
+                const fresh = await getSongMediaUrl(s.relativeCoverPath, s.baseFolder);
+                if (fresh) {
+                  url = fresh;
+                  coverBlobUrlsRef.current.set(s.id, url);
+                }
+              } catch { /* cover not loadable — song stays without thumbnail */ }
+            }
+            if (url) candidates.push({ id: s.id, src: url });
+          } else if (s.relativeCoverPath) {
+            // No baseFolder on the song record — resolve via the stored
+            // songs folder (getSongMediaUrl falls back to it internally).
+            let url = coverBlobUrlsRef.current.get(s.id);
+            if (!url) {
+              try {
+                const { getSongMediaUrl } = await import('@/lib/file-storage-media');
+                const fresh = await getSongMediaUrl(s.relativeCoverPath, undefined);
+                if (fresh) {
+                  url = fresh;
+                  coverBlobUrlsRef.current.set(s.id, url);
+                }
+              } catch { /* cover not loadable — song stays without thumbnail */ }
+            }
+            if (url) candidates.push({ id: s.id, src: url });
           }
         }
         const withCovers = candidates.slice(0, 400);
@@ -240,6 +275,33 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
     };
     healAfterServerRestart();
     const interval = setInterval(healAfterServerRestart, 60000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  // ── R51/Bug4: Song-List-Self-Healing nach Server-Restart ──
+  // Die Songliste lebt im Server-Speicher (mutableState.songLibrary). Nach
+  // einem Server-Restart ist sie leer, aber der Count-Guard oben würde den
+  // Re-Push überspringen (lokale Anzahl unverändert). Alle 60 s wird der
+  // Server-Stand per GET songcount abgeglichen; bei Abweichung wird der
+  // Guard zurückgesetzt und die Liste neu gepusht.
+  useEffect(() => {
+    let cancelled = false;
+    const healSongListAfterRestart = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=songcount', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json() as { ok?: boolean; count?: number };
+        if (cancelled || !data.ok || typeof data.count !== 'number') return;
+        const localCount = getAllSongs().length;
+        if (data.count !== localCount) {
+          lastSyncedCountRef.current = -1; // force re-push on next sync tick
+        }
+      } catch {
+        // Server unreachable — try again on the next tick
+      }
+    };
+    healSongListAfterRestart();
+    const interval = setInterval(healSongListAfterRestart, 60000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 

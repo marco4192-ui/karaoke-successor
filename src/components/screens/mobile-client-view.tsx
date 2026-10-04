@@ -214,13 +214,19 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   });
 
   // Data (songs, queue, jukebox, results, partners)
-  // R33/P16: Difficulty-Vorauswahl folgt dem Desktop-Default aus dem
-  // Settings-Snapshot, bis der Nutzer selbst eine wählt.
+  // R51/Bug8: Difficulty-Vorauswahl folgt jetzt dem LIVE-Gamestate des
+  // Desktops (gameState.difficulty, 2s-Push — immer der aktuelle Store-Wert,
+  // inkl. Änderungen über Settings ODER Party-Setup), mit dem Settings-
+  // Snapshot als Fallback. Der 2s-Strom zerschießt die Nutzerwahl NICHT:
+  // use-mobile-data hört nach der ersten eigenen Wahl auf zu folgen
+  // (difficultyTouchedRef). Bisher folgte die App nur dem Snapshot (localStorage),
+  // der vom aktiven Store-Wert divergieren konnte → Companion „übernahm"
+  // den globalen Schwierigkeitsgrad nicht.
   const data = useMobileData({
     clientId,
     profile,
     onNavigateToProfile: () => setShowProfile(true),
-    defaultDifficulty: settingsSnapshot?.defaultDifficulty,
+    defaultDifficulty: gameState.difficulty || settingsSnapshot?.defaultDifficulty,
   });
 
   // ===================== TOASTS (P7/P18) =====================
@@ -511,14 +517,25 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       const medleyMe = (medley.players ?? []).find(p => p.id === profile.id);
       if (medleyMe?.eliminated) stopMicrophone();
     }
-    const shouldSing = isMyTurn || isBrActivePlayer || isMedleyActivePlayer;
+    // R51/Bug11 — Standard-Spiel (Single/Duell/Duett) mit Companion-Eingabe-
+    // quelle: Das Queue-Item hat „Companion-App" als Gesangs-Gerät gewählt —
+    // der Desktop öffnet KEIN Mikrofon, P1/P2-Pitch kommt von den Handys.
+    // Wenn mein Profil P1/P2 mit Companion-Zuweisung ist, startet mein
+    // Mikrofon automatisch (wie bei CPTM/BR/Medley).
+    const da = gameState.deviceAssignment;
+    const gamePlayers = gameState.players;
+    const isStandardCompanionSinger =
+      !!gamePlayers?.length &&
+      ((!!da?.p1Companion && gamePlayers[0]?.id === profile.id) ||
+       (!!da?.p2Companion && gamePlayers[1]?.id === profile.id));
+    const shouldSing = isMyTurn || isBrActivePlayer || isMedleyActivePlayer || isStandardCompanionSinger;
     if (shouldSing && !isListening && !autoSingDoneRef.current) {
       autoSingDoneRef.current = true;
 
       setTimeout(() => startMicrophone(), 500);
     }
     if (!shouldSing) autoSingDoneRef.current = false;
-  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, gameState.medleyGameData, isListening, isConnected, startMicrophone, stopMicrophone]);
+  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, gameState.medleyGameData, gameState.deviceAssignment, gameState.players, isListening, isConnected, startMicrophone, stopMicrophone]);
 
   // ===================== DESKTOP COMMANDS =====================
   // Wird von steuernden Companions für CONTROL-Commands genutzt (Nav) UND

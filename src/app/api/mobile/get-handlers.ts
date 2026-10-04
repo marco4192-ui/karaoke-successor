@@ -519,6 +519,17 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         ids: Object.keys(mutableState.songCovers),
       });
 
+    // R51/Bug4: Lightweight song-library count for the desktop self-healing.
+    // After a server restart the in-memory songLibrary is empty, but the
+    // desktop's count-guard would skip the re-push (local count unchanged).
+    // The sync hook polls this (60 s) and re-pushes whenever the server
+    // count diverges from the local library.
+    case 'songcount':
+      return Response.json({
+        ok: true,
+        count: mutableState.songLibrary.length,
+      });
+
     // R33/P10: Top-100 local highscores for the companion Highscores mirror
     case 'gethighscores':
       return Response.json({
