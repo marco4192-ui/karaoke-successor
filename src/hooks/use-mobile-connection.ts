@@ -55,6 +55,12 @@ interface RawGameState {
   mottoParty?: GameState['mottoParty'];
   difficulty?: 'easy' | 'medium' | 'hard';
   recentParties?: GameState['recentParties'];
+  // R52 — Standard-Spiele mit Companion-Eingabequelle: Die 2-Pusher des
+  // Desktops liefern players (Profil-IDs) + deviceAssignment mit. Ohne diese
+  // Felder weiß das Handy nie, dass es selbst singen soll (Auto-Sing-Bedingung
+  // isStandardCompanionSinger blieb für immer false → Mikro startete nie).
+  players?: GameState['players'];
+  deviceAssignment?: GameState['deviceAssignment'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -86,6 +92,11 @@ function parseGameState(raw: RawGameState): GameState {
     mottoParty: raw.mottoParty ?? null,
     difficulty: raw.difficulty ?? 'medium',
     recentParties: raw.recentParties ?? undefined,
+    // R52 — Auto-Sing für Standard-Spiele (P1/P2 via Companion): beide Felder
+    // kommen im Merge des 2s-Pushes an; undefined = Standard-Spiel ohne
+    // Companion-Eingabe (die Auto-Sing-Bedingung bleibt false).
+    players: raw.players ?? null,
+    deviceAssignment: raw.deviceAssignment ?? null,
   };
 }
 

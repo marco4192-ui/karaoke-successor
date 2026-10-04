@@ -1291,6 +1291,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 Connetti l'app Companion",
     qrScanToConnect: "Scansiona per connetterti",
     qrWlanHint: "⚠️ Prima collega il telefono alla stessa rete Wi-Fi di questo computer, poi scansiona il QR code.",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "Alla prima apertura del link, il browser mostra un avviso di sicurezza (certificato autofirmato): tocca \"Avanzate\" → \"Procedi\" — una volta per dispositivo. Dopo, l'accesso al microfono (cantare dal telefono) è consentito.",
     singingDeviceAssignment: "Assegnazione dei dispositivi di canto",
     singingDeviceAssignmentDesc: "Scegli per ogni giocatore: cantare via microfono o app Companion.",
   },

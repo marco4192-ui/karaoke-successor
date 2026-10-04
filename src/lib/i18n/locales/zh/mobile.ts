@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: '仅显示对唱歌曲',
   mirrorSearchSongs: '搜索歌曲...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: '风格',
+  filterLanguageShort: '语言',
+  filterYearShort: '年份',
+  filterEraShort: '年代',
+  filterResetShort: '重置',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: '开始',
+  cptmStartConfirmedWaiting: '等待其他玩家…',
+  cptmStartConfirmedYou: '✓ 准备就绪——开始请求已确认',
+  cptmStartConfirmedCount: '{n}/{m} 名玩家已就绪',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: '你正在用这部手机演唱',
+  micStatusActive: '麦克风已启用',
+  micStatusStarting: '正在启动麦克风…',
+  micStatusNoSignal: '无麦克风信号',
+  micStatusTapToActivate: '点击启用',
+  micStatusDenied: '麦克风权限被拒绝',
   mirrorBackToParty: '← 返回派对模式',
   mirrorLibrary: '曲库',
   mirrorNoSongs: '尚未加载歌曲',

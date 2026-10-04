@@ -99,16 +99,84 @@ export async function detectLocalIP(): Promise<string | null> {
 }
 
 /**
+ * R52 — HTTPS-Port-Cache für die Companion-URL.
+ *
+ * Hintergrund: Die Handy-Mikrofon-Eingabe („Companion als Mic") braucht einen
+ * SICHEREN Kontext — getUserMedia ist auf http://<LAN-IP> in jedem Browser
+ * blockiert (nur localhost gilt ohne HTTPS als sicher). Der Produktions-
+ * Standalone-Server (Tauri-Bundle) öffnet deshalb parallel zum HTTP-Port 3000
+ * einen HTTPS-Listener mit Self-Signed-Zertifikat (Default-Port 3443); der
+ * Status-Endpunkt meldet ihn als httpsPort. Der Dev-Server hat keinen HTTPS-
+ * Listener (httpsPort null) → URLs bleiben http://…:3000 (Desktop/localhost
+ * ist ohnehin sicher).
+ *
+ * Der Port wird einmal beim App-Boot gezogen (initCompanionHttpsPort, siehe
+ * use-app-effects) und in der Session gecacht — buildCompanionUrl bleibt
+ * synchron benutzbar.
+ */
+const HTTPS_PORT_KEY = 'karaoke-https-port';
+
+let httpsPortCache: number | null = null;
+
+function readCachedHttpsPort(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(HTTPS_PORT_KEY);
+    if (!raw) return null;
+    const p = parseInt(raw, 10);
+    return Number.isInteger(p) && p > 0 ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+/** HTTPS-Port einmalig vom Server abfragen (Aufruf beim App-Boot). */
+export async function initCompanionHttpsPort(): Promise<number | null> {
+  if (typeof window === 'undefined') return null;
+  if (httpsPortCache === null) httpsPortCache = readCachedHttpsPort();
+  try {
+    const res = await fetch('/api/mobile?action=status', { cache: 'no-store' });
+    if (!res.ok) return httpsPortCache;
+    const data = await res.json() as { httpsPort?: number | null };
+    const p = typeof data.httpsPort === 'number' && data.httpsPort > 0 ? data.httpsPort : null;
+    httpsPortCache = p;
+    try {
+      if (p) window.sessionStorage.setItem(HTTPS_PORT_KEY, String(p));
+      else window.sessionStorage.removeItem(HTTPS_PORT_KEY);
+    } catch { /* storage blocked — cache in memory only */ }
+    return p;
+  } catch {
+    return httpsPortCache;
+  }
+}
+
+/**
  * Build the companion app connection URL for the given IP and optional profile ID.
  * Always uses the /mobile route so the companion gets the latest implementation.
  *
- * In Tauri, the Next.js server always runs on port 3000 (started by the Rust side).
- * window.location.port is empty in Tauri (custom protocol), so we always
- * fall back to 3000 — which is correct for both Tauri production and dev mode.
+ * R52: Läuft der Server mit HTTPS-Listener (Tauri-Produktion), baut die URL
+ * automatisch https://<ip>:<httpsPort>/mobile — Voraussetzung für die
+ * Mikrofon-Freigabe auf dem Handy (getUserMedia ist auf http://<LAN-IP>
+ * blockiert). Ein explizit übergebener HTTP-Port (Legacy-Aufrufer) wird im
+ * HTTPS-Betrieb bewusst ignoriert — die Mic-Fähigkeit wiegt schwerer als
+ * die Port-Angabe. Ohne HTTPS-Listener (Dev) bleibt alles beim alten
+ * http://…:3000-Verhalten.
  */
 export function buildCompanionUrl(ip: string, port?: number, profileId?: string): string {
-  const actualPort = port ?? 3000;
-  const base = `http://${ip}:${actualPort}/mobile`;
+  if (httpsPortCache === null) {
+    // Selbst-Erkennung: Läuft diese Seite selbst unter HTTPS (Companion, der
+    // z. B. in den gespiegelten Einstellungen einen QR für WEITERE Handys
+    // baut), ist der eigene Port der HTTPS-Port des Servers.
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      const p = parseInt(window.location.port, 10);
+      if (Number.isInteger(p) && p > 0) httpsPortCache = p;
+    }
+    if (httpsPortCache === null) httpsPortCache = readCachedHttpsPort();
+  }
+  const httpsPort = httpsPortCache;
+  const scheme = httpsPort ? 'https' : 'http';
+  const actualPort = httpsPort ?? port ?? 3000;
+  const base = `${scheme}://${ip}:${actualPort}/mobile`;
   if (profileId) {
     return `${base}?profile=${encodeURIComponent(profileId)}`;
   }

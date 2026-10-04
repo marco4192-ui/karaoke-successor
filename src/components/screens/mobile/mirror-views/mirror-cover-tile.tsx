@@ -46,8 +46,12 @@ function usableInlineCover(coverImage?: string): boolean {
   return !!coverImage && /^(data:|https?:)/i.test(coverImage);
 }
 
-/** Retry-Delays für Stufe 1 (API) nach einem onError/404. */
-const API_RETRY_DELAYS_MS = [5000, 15000, 60000];
+/** Retry-Delays für Stufe 1 (API) nach einem onError/404.
+ *  R52: Leiter verlängert (2 → 5 Versuche, bis 5 Minuten) — der Desktop
+ *  lädt große Cover-Mengen in 15s-Ticks (48/Tick); bei einer vollen
+ *  Bibliothek kann ein Cover länger als die alten 80s auf seinen Upload
+ *  warten. Der 5-Minuten-Retry holt Nachzügler sicher ab. */
+const API_RETRY_DELAYS_MS = [5000, 15000, 60000, 120000, 300000];
 
 export const SongCoverTile = React.memo(function SongCoverTile({
   songId,
@@ -62,7 +66,15 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   className?: string;
 }) {
   const inlineUsable = usableInlineCover(coverImage);
-  const [stage, setStage] = useState<'api' | 'inline' | 'initials'>('api');
+  // R52 — INLINE-FIRST: Liegt eine direkt ladbare URL vor (data:/http:),
+  // rendert die Kachel sie SOFORT — keine 80s-API-Retry-Leiter mit
+  // Initialen-Fallback mehr, während das Cover längst auf dem Handy ist
+  // (die Song-Liste trägt data:-Cover ohnehin mit; http:-Cover kann das
+  // Handy selbst laden, auch wenn der Desktop-Canvas am CORS scheitert).
+  // Die API-Stufe bleibt Fallback für Songs OHNE Inline-URL (blob:,
+  // storedMedia, relativeCoverPath) und übernimmt, wenn das Inline-Bild
+  // fehlschlägt (z. B. offline gewordene http-Quelle).
+  const [stage, setStage] = useState<'api' | 'inline' | 'initials'>(inlineUsable ? 'inline' : 'api');
   const [attempt, setAttempt] = useState(0);
   const retriesRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,7 +91,7 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   // Song-Wechsel (React.memo-Reuse derselben Instanz): Fallback-Stufen
   // und Retry-Budget zurücksetzen.
   useEffect(() => {
-    setStage('api');
+    setStage(inlineUsable ? 'inline' : 'api');
     setAttempt(0);
     retriesRef.current = 0;
     if (timerRef.current) {
@@ -140,7 +152,17 @@ export const SongCoverTile = React.memo(function SongCoverTile({
           alt=""
           loading="lazy"
           decoding="async"
-          onError={() => setStage('initials')}
+          onError={() => {
+            // R52: Inline-Bild failed (z. B. http-Quelle offline) → API-
+            // Thumbnail versuchen (sofern noch nicht gescheitert), sonst Initialen
+            if (retriesRef.current >= API_RETRY_DELAYS_MS.length) {
+              setStage('initials');
+            } else {
+              retriesRef.current = API_RETRY_DELAYS_MS.length; // API nur EINEN Versuch lassen
+              setAttempt((a) => a + 1);
+              setStage('api');
+            }
+          }}
           className="absolute inset-0 h-full w-full object-cover"
         />
       )}

@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Показаны только дуэтные песни',
   mirrorSearchSongs: 'Поиск песен...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Жанр',
+  filterLanguageShort: 'Язык',
+  filterYearShort: 'Год',
+  filterEraShort: 'Эпоха',
+  filterResetShort: 'Сброс',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Старт',
+  cptmStartConfirmedWaiting: 'Ожидание других игроков…',
+  cptmStartConfirmedYou: '✓ Готово — ваш старт подтверждён',
+  cptmStartConfirmedCount: '{n} из {m} игроков готовы',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Вы поёте с этого телефона',
+  micStatusActive: 'Микрофон активен',
+  micStatusStarting: 'Запуск микрофона…',
+  micStatusNoSignal: 'Нет сигнала микрофона',
+  micStatusTapToActivate: 'Нажмите, чтобы включить',
+  micStatusDenied: 'Доступ к микрофону запрещён',
   mirrorBackToParty: '← Назад к Режимам Вечеринки',
   mirrorLibrary: 'Библиотека',
   mirrorNoSongs: 'Песни ещё не загружены',

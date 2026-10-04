@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Endast duettlåtar visas',
   mirrorSearchSongs: 'Sök låtar...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Genre',
+  filterLanguageShort: 'Språk',
+  filterYearShort: 'År',
+  filterEraShort: 'Era',
+  filterResetShort: 'Återställ',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Starta',
+  cptmStartConfirmedWaiting: 'Väntar på de andra spelarna…',
+  cptmStartConfirmedYou: '✓ Redo — din start har bekräftats',
+  cptmStartConfirmedCount: '{n} av {m} spelare redo',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Du sjunger på den här telefonen',
+  micStatusActive: 'Mikrofon aktiv',
+  micStatusStarting: 'Startar mikrofonen…',
+  micStatusNoSignal: 'Ingen mikrofonsignal',
+  micStatusTapToActivate: 'Tryck för att aktivera',
+  micStatusDenied: 'Mikrofonåtkomst nekad',
   mirrorBackToParty: '← Tillbaka till Festlägen',
   mirrorLibrary: 'Bibliotek',
   mirrorNoSongs: 'Inga låtar laddade ännu',

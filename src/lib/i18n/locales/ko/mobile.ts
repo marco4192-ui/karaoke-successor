@@ -419,6 +419,25 @@ mobile: {
 
   mirrorDuetFilterHint: '듀엣 곡만 표시됩니다',
   mirrorSearchSongs: '노래 검색...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: '장르',
+  filterLanguageShort: '언어',
+  filterYearShort: '연도',
+  filterEraShort: '시대',
+  filterResetShort: '초기화',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: '시작',
+  cptmStartConfirmedWaiting: '다른 플레이어를 기다리는 중…',
+  cptmStartConfirmedYou: '✓ 준비 완료 — 시작이 확인되었어요',
+  cptmStartConfirmedCount: '{n}/{m}명 준비 완료',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: '이 휴대폰으로 노래하고 있어요',
+  micStatusActive: '마이크 사용 중',
+  micStatusStarting: '마이크 켜는 중…',
+  micStatusNoSignal: '마이크 신호 없음',
+  micStatusTapToActivate: '눌러서 활성화',
+  micStatusDenied: '마이크 접근이 거부되었어요',
   mirrorBackToParty: '← 파티 모드로 돌아가기',
   mirrorLibrary: '라이브러리',
   mirrorNoSongs: '아직 로드된 노래가 없습니다',

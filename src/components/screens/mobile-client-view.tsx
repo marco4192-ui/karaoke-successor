@@ -208,7 +208,14 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // Pitch detection — prefers the Socket.IO push path (sendPitch) for
   // instant delivery to the desktop; HTTP batch_pitch stays as fallback.
-  const { isListening, currentPitch, startMicrophone, stopMicrophone } = useMobilePitchDetection({
+  // R52 — audioSuspended/hasSignal/resumeAudioContext speisen die Mic-Status-
+  // Karte: Sie zeigt dem Nutzer erstmals sichtbar, OB das Handy-Mikro läuft
+  // (iOS: ohne Geste gestarteter AudioContext bleibt suspended → kein Ton),
+  // und ein Tap auf die Karte startet/resumed das Mikro GESTE-sicher.
+  const {
+    isListening, currentPitch, startMicrophone, stopMicrophone,
+    audioSuspended, hasSignal, resumeAudioContext, micPermissionDenied,
+  } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
     sendSocketPitch: sendPitch,
   });
@@ -477,65 +484,67 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [isConnected, data.loadQueue, data.loadSongs]);
 
   // Auto-Sing: Wenn man aktiver Spieler im aktuellen Spiel ist, Mikrofon automatisch starten
-  const autoSingDoneRef = useRef(false);
-  useEffect(() => {
-    if (!profile || !gameState.isPlaying || !isConnected) {
-      autoSingDoneRef.current = false;
-      return;
-    }
+  // R52 — Die Soll-ich-singen?-Bedingung ist jetzt ein useMemo (shouldSingNow):
+  // Der Auto-Sing-Effekt UND die Mic-Status-Karte nutzen dieselbe Logik.
+  const singalongTurn = gameState.singalongTurn;
+  const cptmTurn = gameState.cptmTurn;
+  const brGameData = gameState.brGameData;
+  const medleyGameData = gameState.medleyGameData;
+  const deviceAssignment = gameState.deviceAssignment;
+  const gamePlayers = gameState.players;
+  const shouldSingNow = useMemo(() => {
+    if (!profile || !gameState.isPlaying || !isConnected) return false;
     // Prüfe ob dieser Companion-Player der aktive Spieler ist
     const isMyTurn =
-      gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && gameState.singalongTurn.countdown === null ||
-      gameState.cptmTurn?.isActive && gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null;
-    // Item 8.1: Battle Royale — alle (Companion-)Spieler singen GLEICHZEITIG.
-    // Wenn das eigene Profil einer der aktiven BR-Spieler ist (nicht eliminiert),
-    // startet das Mikrofon automatisch und die Pitch-Daten gehen (wie bei CPTM/PTM)
-    // per batch_pitch/pitch an den Desktop, wo sie ins BR-Scoring einfließen.
+      singalongTurn?.isActive && singalongTurn.profileId === profile.id && singalongTurn.countdown === null ||
+      cptmTurn?.isActive && cptmTurn.profileId === profile.id && cptmTurn.countdown === null;
+    // Item 8.1: Battle Royale — alle (Companion-)Spieler singen GLEICHZEITIG
+    // (nicht eliminierte Profile).
     const isBrActivePlayer =
-      !!gameState.brGameData &&
-      gameState.brGameData.status === 'playing' &&
-      (gameState.brGameData.players ?? []).some(p => p.id === profile.id && !p.eliminated);
-    // Eliminated BR players no longer need the mic — stop it so the phone
-    // doesn't keep capturing/sending pitch for a player that is out.
-    if (gameState.brGameData?.status === 'playing' && isListening) {
-      const brMe = (gameState.brGameData.players ?? []).find(p => p.id === profile.id);
-      if (brMe?.eliminated) stopMicrophone();
-    }
-    // R36: Medley Contest — das eigene Profil singt den AKTUELLEN Snippet
-    // (activeProfileIds: FFA = alle, Team = aktuelles Duell-Paar,
-    // Eliminierung = alle Nicht-Ausgeschiedenen). Genau wie bei BR startet
-    // das Mikrofon automatisch und die Pitch-Daten fließen über
-    // PitchDetectorManager (gematcht auf mobileClientId) ins Medley-Scoring.
-    const medley = gameState.medleyGameData;
+      !!brGameData &&
+      brGameData.status === 'playing' &&
+      (brGameData.players ?? []).some(p => p.id === profile.id && !p.eliminated);
+    // R36: Medley Contest — aktives Snippet (FFA alle, Team Duell-Paar,
+    // Eliminierung alle Nicht-Ausgeschiedenen).
     const isMedleyActivePlayer =
-      !!medley &&
-      medley.phase === 'playing' &&
-      (medley.activeProfileIds ?? []).includes(profile.id);
-    // Auch im Medley: eliminierte Spieler (Eliminierungs-Modus) brauchen das
-    // Mikro nicht mehr — aktiv stoppen wie bei BR.
-    if (medley?.phase === 'playing' && isListening) {
-      const medleyMe = (medley.players ?? []).find(p => p.id === profile.id);
-      if (medleyMe?.eliminated) stopMicrophone();
-    }
+      !!medleyGameData &&
+      medleyGameData.phase === 'playing' &&
+      (medleyGameData.activeProfileIds ?? []).includes(profile.id);
     // R51/Bug11 — Standard-Spiel (Single/Duell/Duett) mit Companion-Eingabe-
-    // quelle: Das Queue-Item hat „Companion-App" als Gesangs-Gerät gewählt —
-    // der Desktop öffnet KEIN Mikrofon, P1/P2-Pitch kommt von den Handys.
-    // Wenn mein Profil P1/P2 mit Companion-Zuweisung ist, startet mein
-    // Mikrofon automatisch (wie bei CPTM/BR/Medley).
-    const da = gameState.deviceAssignment;
-    const gamePlayers = gameState.players;
+    // quelle: Mein Profil ist P1/P2 UND für meinen Platz wurde „Companion-App"
+    // als Gesangs-Gerät gewählt (deviceAssignment, 2s-Push). R52: greift jetzt
+    // tatsächlich — parseGameState überträgt players+deviceAssignment erstmals.
     const isStandardCompanionSinger =
       !!gamePlayers?.length &&
-      ((!!da?.p1Companion && gamePlayers[0]?.id === profile.id) ||
-       (!!da?.p2Companion && gamePlayers[1]?.id === profile.id));
-    const shouldSing = isMyTurn || isBrActivePlayer || isMedleyActivePlayer || isStandardCompanionSinger;
-    if (shouldSing && !isListening && !autoSingDoneRef.current) {
-      autoSingDoneRef.current = true;
+      ((!!deviceAssignment?.p1Companion && gamePlayers[0]?.id === profile.id) ||
+       (!!deviceAssignment?.p2Companion && gamePlayers[1]?.id === profile.id));
+    return isMyTurn || isBrActivePlayer || isMedleyActivePlayer || isStandardCompanionSinger;
+  }, [profile, gameState.isPlaying, isConnected, singalongTurn, cptmTurn, brGameData, medleyGameData, deviceAssignment, gamePlayers]);
 
+  const autoSingDoneRef = useRef(false);
+  useEffect(() => {
+    // Eliminated BR players no longer need the mic — stop it so the phone
+    // doesn't keep capturing/sending pitch for a player that is out.
+    if (brGameData?.status === 'playing' && isListening) {
+      const brMe = (brGameData.players ?? []).find(p => p.id === profile?.id);
+      if (brMe?.eliminated) stopMicrophone();
+    }
+    // Auch im Medley: eliminierte Spieler (Eliminierungs-Modus) brauchen das
+    // Mikro nicht mehr — aktiv stoppen wie bei BR.
+    if (medleyGameData?.phase === 'playing' && isListening) {
+      const medleyMe = (medleyGameData.players ?? []).find(p => p.id === profile?.id);
+      if (medleyMe?.eliminated) stopMicrophone();
+    }
+    if (shouldSingNow && !isListening && !autoSingDoneRef.current) {
+      autoSingDoneRef.current = true;
+      // 500ms Delay: gibt dem Countdown-Overlay der Turn-Modi einen Moment
+      // und fängt gameState-Flattern beim Songwechsel ab. iOS-Hinweis: Dieser
+      // programmatische Start kann am suspended AudioContext scheitern —
+      // die Mic-Status-Karte bietet den Geste-freien Tap-Fallback.
       setTimeout(() => startMicrophone(), 500);
     }
-    if (!shouldSing) autoSingDoneRef.current = false;
-  }, [profile, gameState.isPlaying, gameState.singalongTurn, gameState.cptmTurn, gameState.brGameData, gameState.medleyGameData, gameState.deviceAssignment, gameState.players, isListening, isConnected, startMicrophone, stopMicrophone]);
+    if (!shouldSingNow) autoSingDoneRef.current = false;
+  }, [shouldSingNow, profile, brGameData, medleyGameData, isListening, startMicrophone, stopMicrophone]);
 
   // ===================== DESKTOP COMMANDS =====================
   // Wird von steuernden Companions für CONTROL-Commands genutzt (Nav) UND
@@ -1076,6 +1085,29 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         ) : null
       ) : null}
 
+      {/* ====== R52: MIC-STATUS-KARTE (alle Companion-Sing-Modi) ====== */}
+      {/* Zeigt erstmals SICHTBAR, ob das Handy-Mikro wirklich läuft (grün =
+          Signal da), startet (gelb pulsierend) oder kein Signal liefert
+          (rot/amber — iOS: ohne Geste bleibt der AudioContext suspended).
+          Die GESAMTE Karte ist tappbar: Der Tap läuft in einer echten
+          Nutzer-Geste und resumed/started das Mikro zuverlässig. z-[55]
+          liegt ÜBER den Turn-Overlays (z-50, pointer-events-none), damit
+          der Tap immer erreichbar ist. */}
+      {(isConnected && profile && shouldSingNow) ? (
+        <MicStatusCard
+          isListening={isListening}
+          audioSuspended={audioSuspended}
+          hasSignal={hasSignal}
+          micPermissionDenied={micPermissionDenied}
+          volume={currentPitch.volume}
+          note={currentPitch.note}
+          onActivate={() => {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
+            void resumeAudioContext();
+          }}
+        />
+      ) : null}
+
       {/* ====== TOURNAMENT VOTE OVERLAY ====== */}
       {isConnected && profile && gameState.isPlaying && gameState.gameMode === 'duel' && gameState.tournamentMatchId && !votedMatchIds.has(gameState.tournamentMatchId) && (
         <div className="fixed bottom-16 left-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 shadow-2xl">
@@ -1161,6 +1193,109 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       </MobileErrorBoundary>
     </div>
+  );
+}
+
+// ===================== R52: MIC-STATUS-KARTE =====================
+interface MicStatusCardProps {
+  isListening: boolean;
+  audioSuspended: boolean;
+  hasSignal: boolean;
+  micPermissionDenied: boolean;
+  volume: number;
+  note: number | null;
+  onActivate: () => void;
+}
+
+/** Notenname aus MIDI-Nummer (69 = A4) für die Live-Anzeige. */
+function midiNoteName(note: number | null): string | null {
+  if (note === null || !Number.isFinite(note)) return null;
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const rounded = Math.round(note);
+  return names[((rounded % 12) + 12) % 12] + (Math.floor(rounded / 12) - 1);
+}
+
+/**
+ * Kompakte, immer tappbare Mikrofon-Status-Karte für ALLE Modi, in denen
+ * das Handy selbst die Gesangs-Eingabe ist (Standard P1/P2-Companion, CPTM,
+ * Sing-Along, Battle Royale, Medley). Drei Zustände:
+ *   grün  — Mikro läuft UND liefert Signal (Volume-Bar + Note live)
+ *   amber — Start läuft gerade ODER kein Signal (iOS-suspended): „Tippen
+ *           zum Aktivieren" — der Tap resumed/started in echter Geste
+ *   rot   — Mikrofon-Zugriff verweigert (Einstellungs-Hinweis)
+ */
+function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDenied, volume, note, onActivate }: MicStatusCardProps) {
+  const { t } = useTranslation();
+
+  const running = isListening && hasSignal && !audioSuspended;
+  const needsTap = !isListening || audioSuspended || (!hasSignal && isListening);
+  const state: 'ok' | 'wait' | 'denied' = micPermissionDenied ? 'denied' : (running ? 'ok' : 'wait');
+
+  const statusText = state === 'denied'
+    ? tOr(t, 'mobile.micStatusDenied', 'Mikrofon-Zugriff verweigert')
+    : state === 'ok'
+      ? tOr(t, 'mobile.micStatusActive', 'Mikrofon aktiv')
+      : isListening
+        ? tOr(t, 'mobile.micStatusNoSignal', 'Kein Mikrofon-Signal')
+        : tOr(t, 'mobile.micStatusStarting', 'Mikrofon wird gestartet…');
+
+  return (
+    <button
+      type="button"
+      onClick={onActivate}
+      data-testid="mobile-mic-status-card"
+      aria-live="polite"
+      className={
+        'fixed left-3 right-3 z-[55] flex items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-2xl backdrop-blur-md transition-all active:scale-[0.98] ' +
+        (state === 'ok'
+          ? 'border-emerald-500/40 bg-emerald-950/85'
+          : state === 'denied'
+            ? 'border-red-500/40 bg-red-950/85'
+            : 'border-amber-500/40 bg-amber-950/85 animate-pulse')
+      }
+      style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
+    >
+      {/* Status-Icon */}
+      <span className="shrink-0 text-xl leading-none" aria-hidden="true">
+        {state === 'ok' ? '🎤' : state === 'denied' ? '🚫' : '🎙️'}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-white">
+          {tOr(t, 'mobile.micStatusTitle', 'Du singst über dieses Handy')}
+        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <span
+            className={
+              'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' +
+              (state === 'ok'
+                ? 'bg-emerald-500/25 text-emerald-300'
+                : state === 'denied'
+                  ? 'bg-red-500/25 text-red-300'
+                  : 'bg-amber-500/25 text-amber-300')
+            }
+          >
+            {statusText}
+          </span>
+          {needsTap && state !== 'denied' && (
+            <span className="shrink-0 text-[10px] font-semibold text-amber-200/80">
+              👆 {tOr(t, 'mobile.micStatusTapToActivate', 'Tippen zum Aktivieren')}
+            </span>
+          )}
+          {state === 'ok' && note !== null && (
+            <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white/85">
+              {midiNoteName(note)}
+            </span>
+          )}
+        </div>
+        {/* Volume-Bar (nur im OK-Zustand live) */}
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+          <div
+            className={'h-full rounded-full transition-[width] duration-100 ' + (state === 'ok' ? 'bg-emerald-400' : 'bg-amber-400/60')}
+            style={{ width: `${Math.min(100, Math.round((state === 'ok' ? volume : 0.12) * 100))}%` }}
+          />
+        </div>
+      </div>
+    </button>
   );
 }
 

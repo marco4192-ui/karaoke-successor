@@ -1290,6 +1290,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 Companion App verbinden",
     qrScanToConnect: "Scan om te verbinden",
     qrWlanHint: "⚠️ Verbind je telefoon eerst met hetzelfde Wi-Fi-netwerk als deze computer en scan daarna de QR-code.",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "De eerste keer dat je de link opent, toont je browser een beveiligingswaarschuwing (zelfondertekend certificaat): tik op \"Geavanceerd\" → \"Doorgaan\" — één keer per apparaat. Daarna is microfoontoegang (zingen via je telefoon) toegestaan.",
     singingDeviceAssignment: "Toewijzing van zangapparaten",
     singingDeviceAssignmentDesc: "Kies per speler: zingen via microfoon of Companion App.",
   },

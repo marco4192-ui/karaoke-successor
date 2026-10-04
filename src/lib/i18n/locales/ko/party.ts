@@ -585,6 +585,12 @@ partyStarting: {
   hint: '가수들은 자리를 잡으세요 — 모두 준비되면 시작합니다.',
   enterHint: '또는 Enter 키',
   minutes: '분',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ 준비 완료',
+  waitingBadge: '⏳ 대기 중',
+  waitingForPlayers: '다른 플레이어를 기다리는 중…',
+  confirmationProgress: '{n}/{m}명 준비 완료',
+  autoStartHint: '모든 플레이어가 확인하면 게임이 자동으로 시작됩니다.',
 },
 
 };

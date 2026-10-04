@@ -15,12 +15,20 @@
  *      by scripts/prepare-bundle.mjs via esbuild) to the SAME HTTP server
  *   4. degrades gracefully: without socketio-server.cjs the app still
  *      boots — companions just fall back to HTTP polling
+ *   5. R52: opens an ADDITIONAL HTTPS listener (default port 3443) when a
+ *      self-signed certificate is present (certs/https-*.pem, generated at
+ *      bundle time by prepare-bundle.mjs). Phones connect via https:// so
+ *      getUserMedia („Companion als Mikrofon") works — browsers block mic
+ *      access on insecure origins like http://<LAN-IP>:3000. The HTTPS port
+ *      is published to the app via globalThis.__karaokeHttpsPort (read by
+ *      the /api/mobile status action → httpsPort → QR/Companion-URLs).
  *
  * Mirrors the request/upgrade error handling of Next's own startServer()
  * (500 responses for failed requests, socket.destroy for failed upgrades).
  */
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 
 const dir = path.join(__dirname);
@@ -58,8 +66,10 @@ const { getRequestHandlers } = require('next/dist/server/lib/start-server');
 
 // ─── 2. Socket.IO (best-effort, bundled by scripts/prepare-bundle.mjs) ───
 let initSocketIO = null;
+let attachSocketIO = null;
 try {
   initSocketIO = require('./socketio-server.cjs').initSocketIO;
+  attachSocketIO = require('./socketio-server.cjs').attachSocketIO;
 } catch (err) {
   console.warn('[standalone] socketio-server.cjs not available — companions will use HTTP polling.');
   console.warn('[standalone] reason:', err && err.message);
@@ -124,8 +134,68 @@ async function main() {
     console.log('║  🎤 Karaoke ZERO Server (standalone + Socket.IO) ║');
     console.log(`║  Next.js:   http://${hostname}:${currentPort}`);
     console.log(`║  Socket.IO: ws://${hostname}:${currentPort}/socket.io`);
+    if (httpsServer) {
+      console.log(`║  HTTPS:     https://${hostname}:${httpsPort} (Companion-Mikrofon 🎤)`);
+    }
     console.log('╚══════════════════════════════════════════════════╝');
   });
+
+  // ─── 5. R52: HTTPS-Listener für die Companion-App (Mikrofon-Freigabe) ───
+  // getUserMedia ist auf http://<LAN-IP> blockiert (kein sicherer Kontext) —
+  // nur localhost gilt ohne TLS als sicher. Mit dem Self-Signed-Cert aus dem
+  // Bundle (certs/https-*.pem) öffnen wir deshalb einen parallelen HTTPS-
+  // Listener. Handys verbinden sich über die https-URL aus dem QR-Code und
+  // bestätigen die Zertifikats-Warnung einmalig im Browser.
+  let httpsServer = null;
+  let httpsPort = null;
+  try {
+    const certPath = path.join(dir, 'certs', 'https-cert.pem');
+    const keyPath = path.join(dir, 'certs', 'https-key.pem');
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      httpsPort = parseInt(process.env.HTTPS_PORT, 10) || 3443;
+      httpsServer = https.createServer(
+        {
+          cert: fs.readFileSync(certPath),
+          key: fs.readFileSync(keyPath),
+        },
+        requestListener,
+      );
+      if (keepAliveTimeout) {
+        httpsServer.keepAliveTimeout = keepAliveTimeout;
+      }
+      httpsServer.on('upgrade', async (req, socket, head) => {
+        try {
+          await upgradeHandler(req, socket, head);
+        } catch (err) {
+          socket.destroy();
+          console.error(`[standalone] Failed to handle HTTPS upgrade for ${req.url}`);
+          console.error(err);
+        }
+      });
+      // Socket.IO auch an den HTTPS-Server hängen (gleiche io-Instanz,
+      // gleiche connection handlers — engine.io wrapped nur die Listener).
+      if (initSocketIO && attachSocketIO) {
+        try {
+          attachSocketIO(httpsServer);
+        } catch (err) {
+          console.warn('[standalone] Socket.IO attach to HTTPS server failed:', err && err.message);
+        }
+      }
+      httpsServer.listen(httpsPort, hostname, () => {
+        // Port für die App veröffentlichen (status-API → QR-URLs). Muss VOR
+        // dem ersten status-Request passieren — globalThis ist prozessweit
+        // mit den Next-API-Routes geteilt (gleiches Muster wie mobile-state).
+        globalThis.__karaokeHttpsPort = httpsPort;
+        console.log(`[standalone] HTTPS listener active on https://${hostname}:${httpsPort} (self-signed)`);
+      });
+    } else {
+      console.warn('[standalone] No HTTPS certificate found (certs/https-*.pem) — companion microphone disabled (plain HTTP only).');
+    }
+  } catch (err) {
+    console.warn('[standalone] HTTPS listener failed to start:', err && err.message);
+    httpsServer = null;
+    httpsPort = null;
+  }
 
   // Graceful shutdown (Tauri sends SIGTERM when the window closes)
   let shuttingDown = false;
@@ -133,6 +203,7 @@ async function main() {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(`[standalone] ${signal} received, shutting down...`);
+    if (httpsServer) httpsServer.close();
     server.close(() => process.exit(0));
     // Force exit after 5s if graceful shutdown hangs
     setTimeout(() => process.exit(1), 5000).unref();

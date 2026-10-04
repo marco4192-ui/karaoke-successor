@@ -585,6 +585,12 @@ partyStarting: {
   hint: 'Sångarna kan inta sina positioner — starta när alla är redo.',
   enterHint: 'eller tryck Enter',
   minutes: 'min',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ Redo',
+  waitingBadge: '⏳ Väntar',
+  waitingForPlayers: 'Väntar på de andra spelarna…',
+  confirmationProgress: '{n} av {m} spelare redo',
+  autoStartHint: 'Spelet startar automatiskt när alla spelare har bekräftat.',
 },
 
 };

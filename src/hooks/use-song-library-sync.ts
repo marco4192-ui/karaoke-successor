@@ -202,26 +202,44 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
             if (url) candidates.push({ id: s.id, src: url });
           }
         }
-        const withCovers = candidates.slice(0, 400);
+        // R52: Cap massiv erhöht (400 → 2000) — der bisherige Cut sorgte
+        // dafür, dass große Bibliotheken (> 400 Songs mit Cover) NIE vollständig
+        // versorgt wurden. Der eigentliche Schutz ist das Per-Tick-Budget unten.
+        const withCovers = candidates.slice(0, 2000);
+
+        // R52 — Upload-Durchsatz: vorher wurden pro 15s-Tick nur 10 NEUE
+        // Thumbnails erzeugt (sequenziell!) — eine 300-Song-Bibliothek brauchte
+        // ~75 Minuten, bis das Handy alle Covers hatte. Nutzer-Symptom: „einige
+        // laden, sehr viele fehlen". Jetzt: 48 pro Tick mit 5 parallel laufenden
+        // Bild-Decodierungen (~4× schneller, ≈ 190 Covers/Min) — die erste
+        // Bildschirmseite ist nach dem ersten Tick komplett versorgt.
+        const BATCH_PER_TICK = 48;
+        const PARALLEL_DECODES = 5;
+
+        const pendingUpload = withCovers.filter(({ id, src }) =>
+          uploadedCoversRef.current[id] !== src &&
+          (coverFailCountsRef.current.get(src) ?? 0) < 3,
+        ).slice(0, BATCH_PER_TICK);
 
         const changed: Record<string, string> = {};
-        let checked = 0;
-        for (const { id: songId, src } of withCovers) {
-          if (cancelled) return;
-          if (checked >= 10) break; // batch cap per tick
-          if (uploadedCoversRef.current[songId] === src) continue; // unchanged
-          // R34: skip sources whose thumbnail generation permanently failed
-          if ((coverFailCountsRef.current.get(src) ?? 0) >= 3) continue;
-          checked += 1;
-          const thumb = await generateCoverThumbnail(src);
-          if (thumb && !cancelled) {
-            changed[songId] = thumb;
-            uploadedCoversRef.current[songId] = src;
-            coverFailCountsRef.current.delete(src);
-          } else if (!cancelled) {
-            coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
+        let queueIdx = 0;
+        const uploadWorker = async () => {
+          while (!cancelled && queueIdx < pendingUpload.length) {
+            const { id: songId, src } = pendingUpload[queueIdx++];
+            const thumb = await generateCoverThumbnail(src);
+            if (cancelled) return;
+            if (thumb) {
+              changed[songId] = thumb;
+              uploadedCoversRef.current[songId] = src;
+              coverFailCountsRef.current.delete(src);
+            } else {
+              coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
+            }
           }
-        }
+        };
+        await Promise.all(
+          Array.from({ length: Math.min(PARALLEL_DECODES, pendingUpload.length) }, uploadWorker),
+        );
         if (Object.keys(changed).length > 0 && !cancelled) {
           await fetch('/api/mobile', {
             method: 'POST',

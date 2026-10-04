@@ -585,6 +585,12 @@ partyStarting: {
   hint: 'Певцы могут занять позиции — начинайте, когда все будут готовы.',
   enterHint: 'или нажмите Enter',
   minutes: 'мин',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ Готов',
+  waitingBadge: '⏳ Ожидание',
+  waitingForPlayers: 'Ожидание других игроков…',
+  confirmationProgress: '{n} из {m} игроков готовы',
+  autoStartHint: 'Игра начнётся автоматически, когда все игроки подтвердят.',
 },
 
 };

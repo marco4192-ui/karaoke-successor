@@ -32,10 +32,27 @@ export function useMobilePitchDetection({
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState<PitchData>({ frequency: null, note: null, volume: 0 });
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  // R52 — iOS/WebView-Autoplay: Wird das Mikro OUTHALB einer Nutzer-Geste
+  // gestartet (Auto-Sing nach Gamestate-Push), bleibt der AudioContext auf
+  // iOS Safari im 'suspended'-Zustand — getUserMedia läuft, aber
+  // getFloatTimeDomainData liefert nur Nullen → es wird NIEMALS ein Frame
+  // gesendet. Die Companion-UI zeigt daraufhin den „Tippen zum Aktivieren"-
+  // Hinweis; der Tap läuft DANN in einer echten Geste und resume() klappt.
+  const [audioSuspended, setAudioSuspended] = useState(false);
+  // R52 — „lebt das Mikro überhaupt?": true, sobald EINMAL ein Nicht-Null-
+  // Sample ankam (Analyser liefert echte Daten). Bleibt es false, obwohl
+  // isListening true ist, liefert das Mikro keinen Ton (suspended Context
+  // oder stummes/defektes Gerät) — ebenfalls ein Fall für den Tap-Hinweis.
+  const [hasSignal, setHasSignal] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  // R52 — Ref-Mirror von hasSignal (rAF-Loop liest/setzt ohne Re-Render-Loop)
+  const hasSignalRef = useRef(false);
+  // R52 — Ref-Zugriff auf startMicrophone für resumeAudioContext (definiert
+  // unten; Ref wird per Effect nach jedem Render synchronisiert).
+  const startMicrophoneRef = useRef<(() => Promise<void>) | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
@@ -150,7 +167,33 @@ export function useMobilePitchDetection({
     setCurrentPitch({ frequency: null, note: null, volume: 0 });
     pitchBatchRef.current = [];
     useFallbackRef.current = false;
+    setAudioSuspended(false);
+    setHasSignal(false);
   }, [flushPitchBatch]);
+
+  // R52 — Geste-sicherer (Re-)Start: Aus einem Tap-Handler gerufen, kann
+  // resume() auf iOS nicht abgewiesen werden. Deckt alle drei Problemfälle
+  // ab: (a) Context suspended → resume; (b) Mikro nie gestartet (Auto-Sing
+  // fehlgeschlagen, z. B. insecure context oder Race) → voller Start;
+  // (c) alles läuft → no-op. Idempotent, nie werfend.
+  const resumeAudioContext = useCallback(async () => {
+    const ctx = audioContextRef.current;
+    if (!ctx || ctx.state === 'closed') {
+      // Nichts (mehr) da → kompletter Neustart über den normalen Pfad
+      try { await startMicrophoneRef.current?.(); } catch { /* Fehler geht an onError */ }
+      return;
+    }
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn('[MobilePitch] Manual resume failed — retrying once');
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
+        try { await ctx.resume(); } catch { /* UI zeigt weiterhin den Hinweis */ }
+      }
+    }
+  }, []);
 
   const startMicrophone = useCallback(async () => {
     if (!clientIdRef.current) return;
@@ -203,6 +246,9 @@ export function useMobilePitchDetection({
       // Reset batch state for this session
       pitchBatchRef.current = [];
       useFallbackRef.current = false;
+      // R52 — Signal-Lebenszeichen für die neue Session zurücksetzen
+      hasSignalRef.current = false;
+      setHasSignal(false);
 
       // Start batch flush timer: every 200ms, send accumulated pitch frames
       if (batchTimerRef.current) clearInterval(batchTimerRef.current);
@@ -243,6 +289,12 @@ export function useMobilePitchDetection({
           return;
         }
         
+        // R52 — Suspended-State für die UI tracken (iOS: Context ohne Geste
+        // bleibt suspended → Analyser liefert Nullen). Der rAF-Loop läuft
+        // weiter, damit der Tap-Resume sofort wirkt.
+        const ctxState = audioContextRef.current.state;
+        setAudioSuspended(prev => (prev !== (ctxState === 'suspended')) ? ctxState === 'suspended' : prev);
+
         analyserRef.current.getFloatTimeDomainData(buffer);
 
         let sum = 0;
@@ -251,6 +303,14 @@ export function useMobilePitchDetection({
         }
         const rms = Math.sqrt(sum / buffer.length);
         const volume = Math.min(1, rms * 5);
+
+        // R52 — Signal-Lebenszeichen: irgendein Nicht-Null-Sample reicht als
+        // Beweis, dass der Analyser echte Daten liefert (setzt hasSignal
+        // genau einmal, kein permanenter State-Tick bei jedem Frame).
+        if (!hasSignalRef.current && sum > 0) {
+          hasSignalRef.current = true;
+          setHasSignal(true);
+        }
         
         const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate);
         
@@ -340,6 +400,12 @@ export function useMobilePitchDetection({
     }
   }, [onError, stopMicrophone]);
 
+  // R52 — startMicrophone-Ref nach jedem Render synchronisieren (Deklaration
+  // oben bei den anderen Refs, damit resumeAudioContext sie lesen kann).
+  useEffect(() => {
+    startMicrophoneRef.current = startMicrophone;
+  }, [startMicrophone]);
+
   // Clean up microphone resources on unmount to prevent leaking
   // the media stream, audio context, animation frame loop, and batch timer.
   useEffect(() => {
@@ -381,7 +447,10 @@ export function useMobilePitchDetection({
     isListening,
     currentPitch,
     micPermissionDenied,
+    audioSuspended,
+    hasSignal,
     startMicrophone,
     stopMicrophone,
+    resumeAudioContext,
   };
 }

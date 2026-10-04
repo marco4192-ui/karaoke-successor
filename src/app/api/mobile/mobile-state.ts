@@ -308,7 +308,15 @@ interface MobileSharedState {
   mutableState: MutableState;
 }
 
-const globalWithShared = globalThis as typeof globalThis & { __karaokeMobileShared?: MobileSharedState };
+const globalWithShared = globalThis as typeof globalThis & {
+  __karaokeMobileShared?: MobileSharedState;
+  /** R52: HTTPS-Port des Standalone-Servers (Tauri-Produktion). Der
+   *  standalone-server.js setzt den Wert beim Boot, sobald das Self-Signed-
+   *  Zertifikat geladen und der HTTPS-Listener aktiv ist. Gleiche Prozess-
+   *  Garantie wie __karaokeMobileShared: API-Routes und Socket.IO-Server
+   *  teilen sich das globalThis des Serverprozesses. */
+  __karaokeHttpsPort?: number;
+};
 const shared: MobileSharedState = globalWithShared.__karaokeMobileShared ?? {
   mobileClients: new Map<string, MobileClient>(),
   connectionCodes: new Map<string, string>(),
@@ -318,6 +326,22 @@ const shared: MobileSharedState = globalWithShared.__karaokeMobileShared ?? {
   mutableState: createMutableState(),
 };
 globalWithShared.__karaokeMobileShared = shared;
+
+/**
+ * R52: HTTPS-Port für die Companion-Verbindung (Produktions-Build mit
+ * Self-Signed-Zertifikat) oder null im Dev-/Plain-HTTP-Betrieb.
+ *
+ * Hintergrund: getUserMedia (Handy-Mikrofon für „Companion als Mic") ist in
+ * Browsern auf unsicheren Ursprüngen BLOCKIERT — http://<LAN-IP>:3000 vom
+ * Handy aus ist immer insecure (nur localhost gilt als sicher). Der
+ * Standalone-Server öffnet daher zusätzlich einen HTTPS-Listener (Default
+ * 3443); die QR-/Verbindungs-URLs bauen darauf auf, damit das Mikrofon auf
+ * dem Handy überhaupt freigegeben werden kann.
+ */
+export function getHttpsPort(): number | null {
+  const p = globalWithShared.__karaokeHttpsPort;
+  return typeof p === 'number' && Number.isInteger(p) && p > 0 && p < 65536 ? p : null;
+}
 
 export const mobileClients: Map<string, MobileClient> = shared.mobileClients;
 export const connectionCodes: Map<string, string> = shared.connectionCodes; // code -> clientId

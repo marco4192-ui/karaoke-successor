@@ -469,6 +469,14 @@ export const mobileTranslations = {
   cptmStartConfirmedWaiting: 'Warten auf weitere Spieler…',
   cptmStartConfirmedYou: '✓ Bereit — dein Start wurde bestätigt',
   cptmStartConfirmedCount: '{n} von {m} Spielern bereit',
+  // R52 — Mic-Status-Karte (Companion singt über das Handy-Mikro):
+  // sichtbares Feedback OB das Mikro läuft + Geste-sicherer Tap-Fallback
+  micStatusTitle: 'Du singst über dieses Handy',
+  micStatusActive: 'Mikrofon aktiv',
+  micStatusStarting: 'Mikrofon wird gestartet…',
+  micStatusNoSignal: 'Kein Mikrofon-Signal',
+  micStatusTapToActivate: 'Tippen zum Aktivieren',
+  micStatusDenied: 'Mikrofon-Zugriff verweigert',
   mirrorBackToParty: '← Zurück zu Party-Modi',
   mirrorLibrary: 'Bibliothek',
   mirrorNoSongs: 'Noch keine Songs geladen',

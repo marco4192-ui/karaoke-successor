@@ -1290,6 +1290,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 Połącz aplikację kompana",
     qrScanToConnect: "Zeskanuj, aby połączyć",
     qrWlanHint: "⚠️ Najpierw połącz telefon z tą samą siecią Wi-Fi co ten komputer, a potem zeskanuj kod QR.",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "Przy pierwszym otwarciu linku przeglądarka pokaże ostrzeżenie o bezpieczeństwie (certyfikat z podpisem własnym): dotknij „Zaawansowane” → „Przejdź” — raz na urządzenie. Później dostęp do mikrofonu (śpiewanie przez telefon) będzie dozwolony.",
     singingDeviceAssignment: "Przypisanie urządzeń do śpiewu",
     singingDeviceAssignmentDesc: "Wybierz dla każdego gracza: śpiew przez mikrofon albo aplikację kompana.",
   },

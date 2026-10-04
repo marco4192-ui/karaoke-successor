@@ -585,6 +585,12 @@ partyStarting: {
   hint: 'Zangers kunnen op hun plek gaan staan — start als iedereen klaar is.',
   enterHint: 'of druk op Enter',
   minutes: 'min',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ Klaar',
+  waitingBadge: '⏳ Wachten',
+  waitingForPlayers: 'Wachten op andere spelers…',
+  confirmationProgress: '{n} van {m} spelers klaar',
+  autoStartHint: 'Het spel start automatisch zodra alle spelers hebben bevestigd.',
 },
 
 };

@@ -419,6 +419,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Näytetään vain duetot',
   mirrorSearchSongs: 'Hae kappaleita...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Genre',
+  filterLanguageShort: 'Kieli',
+  filterYearShort: 'Vuosi',
+  filterEraShort: 'Aikakausi',
+  filterResetShort: 'Nollaa',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Aloita',
+  cptmStartConfirmedWaiting: 'Odotetaan muita pelaajia…',
+  cptmStartConfirmedYou: '✓ Valmis — aloituksesi on vahvistettu',
+  cptmStartConfirmedCount: '{n}/{m} pelaajaa valmiina',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Laulat tällä puhelimella',
+  micStatusActive: 'Mikrofoni käytössä',
+  micStatusStarting: 'Käynnistetään mikrofonia…',
+  micStatusNoSignal: 'Ei mikrofonisignaalia',
+  micStatusTapToActivate: 'Aktivoi napauttamalla',
+  micStatusDenied: 'Mikrofonin käyttö estetty',
   mirrorBackToParty: '← Takaisin Juhlatiloihin',
   mirrorLibrary: 'Kirjasto',
   mirrorNoSongs: 'Kappaleita ei vielä ladattu',

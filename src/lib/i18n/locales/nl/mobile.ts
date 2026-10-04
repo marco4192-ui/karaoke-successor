@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Alleen duet-nummers worden getoond',
   mirrorSearchSongs: 'Nummers zoeken...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Genre',
+  filterLanguageShort: 'Taal',
+  filterYearShort: 'Jaar',
+  filterEraShort: 'Era',
+  filterResetShort: 'Reset',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Starten',
+  cptmStartConfirmedWaiting: 'Wachten op andere spelers…',
+  cptmStartConfirmedYou: '✓ Klaar — je start is bevestigd',
+  cptmStartConfirmedCount: '{n} van {m} spelers klaar',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Je zingt op deze telefoon',
+  micStatusActive: 'Microfoon actief',
+  micStatusStarting: 'Microfoon wordt gestart…',
+  micStatusNoSignal: 'Geen microfoonsignaal',
+  micStatusTapToActivate: 'Tik om te activeren',
+  micStatusDenied: 'Microfoontoegang geweigerd',
   mirrorBackToParty: '← Terug naar Party-modi',
   mirrorLibrary: 'Bibliotheek',
   mirrorNoSongs: 'Nog geen nummers geladen',

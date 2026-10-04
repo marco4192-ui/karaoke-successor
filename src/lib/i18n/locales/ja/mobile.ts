@@ -419,6 +419,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'デュエット曲のみ表示されています',
   mirrorSearchSongs: '曲を検索...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'ジャンル',
+  filterLanguageShort: '言語',
+  filterYearShort: '年',
+  filterEraShort: '時代',
+  filterResetShort: 'リセット',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: '開始',
+  cptmStartConfirmedWaiting: '他のプレイヤーを待っています…',
+  cptmStartConfirmedYou: '✓ 準備完了 — 開始が確認されました',
+  cptmStartConfirmedCount: '{n}/{m}人が準備完了',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'このスマホで歌っています',
+  micStatusActive: 'マイク使用中',
+  micStatusStarting: 'マイクを起動しています…',
+  micStatusNoSignal: 'マイクの信号がありません',
+  micStatusTapToActivate: 'タップして有効化',
+  micStatusDenied: 'マイクへのアクセスが拒否されました',
   mirrorBackToParty: '← パーティーモードに戻る',
   mirrorLibrary: 'ライブラリ',
   mirrorNoSongs: '曲がまだ読み込まれていません',

@@ -950,17 +950,27 @@ export function MirrorLibraryLite({
             onClick={closeOverlay}
           >
             <div
-              className="w-full rounded-t-2xl bg-[#16162a] border-t border-white/10 p-5 pb-8 max-h-[85vh] overflow-y-auto"
+              className="w-full rounded-t-2xl bg-[#16162a] border-t border-white/10 p-5 pb-8 max-h-[92vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Overlay Header */}
-              <div className="flex items-start justify-between mb-5">
-                <div className="min-w-0 flex-1 mr-3">
-                  <h3 className="text-base font-bold text-white truncate">{overlaySong.title}</h3>
-                  <p className="text-sm text-white/50 truncate">{overlaySong.artist}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-white/30 font-mono">{formatDurationSec(overlaySong.duration)}</span>
-                    {overlaySong.genre && <span className="text-xs text-white/25">{overlaySong.genre}</span>}
+              {/* Overlay Header — R52: mit Cover-Kachel + Jahr; das Bottom-Sheet
+                  nutzt damit die Previously brachliegenden ⅓ des Screens. */}
+              <div className="flex items-start justify-between mb-5 gap-3">
+                <div className="min-w-0 flex-1 flex items-center gap-3.5">
+                  <SongCoverTile
+                    songId={overlaySong.id}
+                    title={overlaySong.title}
+                    coverImage={overlaySong.coverImage}
+                    className="w-[76px] h-[76px] rounded-xl border border-white/10 shadow-lg"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold text-white leading-tight line-clamp-2">{overlaySong.title}</h3>
+                    <p className="text-sm text-white/50 truncate mt-0.5">{overlaySong.artist}</p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="text-xs text-white/35 font-mono">{formatDurationSec(overlaySong.duration)}</span>
+                      {overlaySong.genre && <span className="text-xs text-white/30">· {overlaySong.genre}</span>}
+                      {overlaySong.year ? <span className="text-xs text-white/30">· {overlaySong.year}</span> : null}
+                    </div>
                   </div>
                 </div>
                 <button

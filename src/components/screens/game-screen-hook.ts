@@ -235,7 +235,14 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   });
 
   // Mobile client state - pitch polling extracted to dedicated hook
-  const { mobilePitch } = useMobilePitchPolling(song);
+  // R52 — Profil-Matching: Singt P1 über die Companion-App, werden NUR die
+  // Pitch-Frames desjenigen Handys akzeptiert, dessen Profil P1 ist (bei
+  // mehreren verbundenen Companions griff „first wins" sonst das falsche
+  // Mikro). Ohne P1-Companion bleibt der Parameter null (Legacy-Verhalten).
+  const { mobilePitch } = useMobilePitchPolling(
+    song,
+    p1Companion ? (gameState.players?.[0]?.id ?? null) : null,
+  );
   // R51/Bug11 — Companion-Pitch-Ref für den Game-Loop (P1-Companion-Modus).
   const mobilePitchRef = useRef(mobilePitch);
   mobilePitchRef.current = mobilePitch;
@@ -428,10 +435,24 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   });
 
   // ── P2 pitch detection (duet/duel mode) ──
+  // R52 — P2-Companion bekommt einen EIGENEN, auf P2s Profil gematchten
+  // Pitch-Stream. Vorher teilten sich P1 und P2 denselben mobilePitch — bei
+  // zwei singenden Handys (Duell/Duett mit 2× Companion-Gerät) hätten beide
+  // Spieler das Mikro von P1s Handy bezogen. Der zweite Hook teilt sich den
+  // Socket-Feed-Singleton (unabhängige Listener); der HTTP-Watchdog läuft
+  // nur, solange P2 nicht selbst streamt.
+  const p2CompanionActive = isDuetMode && gameState.deviceAssignment?.p2Companion !== false;
+  const { mobilePitch: p2MobilePitch } = useMobilePitchPolling(
+    song,
+    p2CompanionActive ? (gameState.players?.[1]?.id ?? null) : null,
+  );
   const { p2Volume, setP2Volume } = useDuetP2Pitch({
     isDuetMode,
     song,
-    mobilePitch,
+    // R52 — P2s EIGENER Companion-Stream (auf P2s Profil gematcht), nicht
+    // mehr der P1-Stream. Fällt auf null zurück, wenn P2 nicht (oder nicht
+    // über die Companion-App) singt → P2 bleibt beim Desktop-Mikro.
+    mobilePitch: p2CompanionActive ? p2MobilePitch : null,
     setP2DetectedPitch,
     difficulty: gameState.difficulty,
     // R39/P5: explizite Gerät-Auswahl — singt P2 laut Queue-Item/Start-Modal

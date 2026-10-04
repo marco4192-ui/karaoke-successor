@@ -477,6 +477,33 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 }
 
 /**
+ * R52: Attach the EXISTING Socket.IO server to an additional HTTP(S) server.
+ *
+ * The Tauri production build runs a second listener with TLS (self-signed
+ * cert, default port 3443) so phones get a SECURE context — getUserMedia
+ * (companion microphone) is blocked on plain http://<LAN-IP>. engine.io
+ * wraps the new server's request/upgrade listeners exactly like initSocketIO
+ * does for the primary server; all connection handling stays identical.
+ *
+ * No-op when Socket.IO is not initialized yet (caller must init first).
+ */
+export function attachSocketIO(httpServer: HTTPServer): void {
+  if (!io) return;
+  io.attach(httpServer, {
+    path: '/socket.io',
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    transports: ['websocket', 'polling'],
+  });
+  // eslint-disable-next-line no-console
+  console.log('[Socket.IO] Attached to additional server (HTTPS listener)');
+}
+
+/**
  * Get the Socket.IO server instance (null if not initialized).
  */
 export function getIO(): SocketIOServer | null {

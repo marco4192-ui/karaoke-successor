@@ -1291,6 +1291,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 컴패니언 앱 연결",
     qrScanToConnect: "스캔해서 연결",
     qrWlanHint: "⚠️ 먼저 휴대폰을 이 컴퓨터와 같은 Wi-Fi 네트워크에 연결한 뒤 QR 코드를 스캔해 주세요.",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "링크를 처음 열면 브라우저에 보안 경고(자체 서명 인증서)가 표시돼요: \"고급\" → \"이동\"을 눌러주세요 — 기기당 한 번만 하면 돼요. 그 후에는 마이크 사용(휴대폰으로 노래)이 허용돼요.",
     singingDeviceAssignment: "노래 기기 배정",
     singingDeviceAssignmentDesc: "플레이어별로 선택하세요: 마이크 또는 컴패니언 앱으로 부르기.",
   },

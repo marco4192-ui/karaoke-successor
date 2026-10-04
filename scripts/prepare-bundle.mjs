@@ -205,6 +205,74 @@ if (!existsSync(join(bundledServer, 'socketio-server.cjs'))) {
 ok('Verified socketio-server.cjs is bundled');
 
 // ═══════════════════════════════════════════════════════════
+//  Step 3.7 (R52): Generate the self-signed HTTPS certificate
+// ═══════════════════════════════════════════════════════════
+// getUserMedia (Handy-Mikrofon, „Companion als Mic") ist in Browsern auf
+// unsicheren Ursprüngen BLOCKIERT — http://<LAN-IP>:3000 vom Handy ist immer
+// insecure (nur localhost gilt ohne TLS als sicher). Der standalone-server
+// öffnet deshalb parallel zum HTTP-Port 3000 einen HTTPS-Listener (Default
+// 3443) mit diesem Zertifikat. Die Companion-URLs (QR-Codes) zeigen im
+// Produktions-Build automatisch auf den HTTPS-Port (status-API → httpsPort).
+//
+// Das Zertifikat wird zur BUILD-ZEIT erzeugt (node-forge, keine nativen
+// Tools nötig) und landet in bundled/server/certs/. SAN enthält localhost +
+// 127.0.0.1; die LAN-IP ist zur Build-Zeit unbekannt — Browser zeigen für
+// Self-Signed-Certs ohnehin eine Warnung, die der Nutzer EINMALIG pro
+// Gerät bestätigt („Erweitert → Weiter"). Das feste Zertifikat bleibt über
+// App-Updates stabil, solange das Bundle nicht neu gebaut wird.
+log('\n=== Step 3.7/5: Generating HTTPS certificate (companion mic) ===\n');
+
+{
+  const certsDir = join(bundledServer, 'certs');
+  const certPath = join(certsDir, 'https-cert.pem');
+  const keyPath = join(certsDir, 'https-key.pem');
+  try {
+    // Ein vorhandenes Zertifikat bleibt erhalten (stabil über Rebuilds, wenn
+    // der Entwickler es bewusst behalten will) — sonst neu generieren.
+    if (existsSync(certPath) && existsSync(keyPath)) {
+      ok('Reusing existing certs/https-*.pem (delete to regenerate)');
+    } else {
+      const forge = await import('node-forge');
+      const keys = forge.pki.rsa.generateKeyPair(2048);
+      const cert = forge.pki.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = String(Date.now());
+      cert.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 Tag Toleranz gegen Uhrabweichung
+      cert.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 Jahre
+      const attrs = [
+        { name: 'commonName', value: 'Karaoke ZERO Companion' },
+        { name: 'organizationName', value: 'Karaoke ZERO' },
+        { shortName: 'OU', value: 'Companion HTTPS' },
+      ];
+      cert.setSubject(attrs);
+      cert.setIssuer(attrs); // self-signed
+      cert.setExtensions([
+        { name: 'basicConstraints', cA: false },
+        { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+        { name: 'extKeyUsage', serverAuth: true },
+        { name: 'subjectAltName', altNames: [
+          { type: 2, value: 'localhost' }, // DNS
+          { type: 7, ip: '127.0.0.1' }, // IP
+        ] },
+      ]);
+      cert.sign(keys.privateKey, forge.md.sha256.create());
+
+      mkdirSync(certsDir, { recursive: true });
+      writeFileSync(certPath, forge.pki.certificateToPem(cert));
+      writeFileSync(keyPath, forge.pki.privateKeyToPem(keys.privateKey));
+      ok('Generated certs/https-cert.pem + https-key.pem (self-signed, 10 years)');
+    }
+  } catch (err) {
+    fail('HTTPS certificate generation failed!');
+    console.error(err);
+    warn('The standalone server will run WITHOUT the HTTPS listener —');
+    warn('the companion microphone (phone as mic) will NOT work!');
+    // Nicht abbrechen: Das Bundle bleibt funktionsfähig (HTTP + Companion-
+    // Steuerung), nur das Handy-Mikro ist dann deaktiviert.
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  Step 4: Copy portable Node.js if available
 // ═══════════════════════════════════════════════════════════
 log('\n=== Step 4/5: Checking portable Node.js ===\n');

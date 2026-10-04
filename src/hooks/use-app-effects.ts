@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
 import { ensureMicDeviceWatch } from '@/lib/audio/mic-device-resolver';
+import { initCompanionHttpsPort } from '@/lib/qr-code';
 
 /** Shared browser fullscreen helper (Escape exits — unavoidable with browser API) */
 function toggleBrowserFullscreen() {
@@ -70,6 +71,14 @@ export function useAppEffects() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setIsMounted(true);
+  }, []);
+
+  // R52 — HTTPS-Port des Servers einmalig abfragen (Companion-QR-URLs bauen
+  // darauf auf). Im Produktions-Bundle läuft ein HTTPS-Listener mit Self-
+  // Signed-Cert (nötig für die Handy-Mikrofon-Freigabe — getUserMedia ist auf
+  // http://<LAN-IP> blockiert); im Dev-Betrieb bleibt er null.
+  useEffect(() => {
+    initCompanionHttpsPort().catch(() => { /* non-critical */ });
   }, []);
 
   // Load custom songs from IndexedDB on mount

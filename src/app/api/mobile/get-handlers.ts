@@ -13,6 +13,7 @@ import {
   resetAllState,
   removeClient,
   requireAuth,
+  getHttpsPort,
 } from './mobile-state';
 import { getClientIp } from '@/lib/rate-limiter';
 
@@ -163,6 +164,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         connectedCount: mobileClients.size,
         gameState: mutableState.gameState,
         queue: mutableState.songQueue.filter(q => q.status !== 'completed'),
+        // R52: HTTPS-Port des Standalone-Servers (Companion-Mikrofon braucht
+        // einen sicheren Kontext — getUserMedia ist auf http://<LAN-IP>
+        // blockiert). null = Dev-/Plain-HTTP-Betrieb.
+        httpsPort: getHttpsPort(),
       });
 
     case 'disconnect':

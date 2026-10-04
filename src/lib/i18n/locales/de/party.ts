@@ -425,6 +425,9 @@ unifiedSetup: {
   // ── Companion QR (Seitenleiste) ──
   qrCompanionTitle: '📱 Companion-App verbinden',
   qrWlanHint: '⚠️ Verbinde dein Handy zuerst mit demselben WLAN wie dieser Computer und scanne dann den QR-Code.',
+  // R52 — HTTPS-Companion (Mikrofon-Freigabe): Hinweis auf die einmalige
+  // Zertifikats-Bestätigung im Browser (Self-Signed, Produktions-Bundle)
+  qrHttpsHint: 'Beim ersten Öffnen zeigt dein Browser eine Sicherheits-Warnung (selbstsigniertes Zertifikat): tippe auf „Erweitert“ → „Weiter“ — einmalig pro Gerät. Danach ist die Mikrofon-Nutzung (über das Handy singen) freigegeben.',
   qrScanToConnect: 'Zum Verbinden scannen',
   inputMode: 'Eingabe-Modus',
   readyToPlay: 'Bereit zum Spielen!',

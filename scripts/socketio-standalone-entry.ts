@@ -27,9 +27,10 @@
  */
 import {
   initSocketIO,
+  attachSocketIO,
   getIO,
   getHostSocket,
   getCompanionSocketCount,
 } from '@/lib/socketio-server';
 
-export { initSocketIO, getIO, getHostSocket, getCompanionSocketCount };
+export { initSocketIO, attachSocketIO, getIO, getHostSocket, getCompanionSocketCount };

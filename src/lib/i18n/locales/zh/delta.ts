@@ -1291,6 +1291,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 连接伴侣应用",
     qrScanToConnect: "扫码连接",
     qrWlanHint: "⚠️ 请先将手机连接到与这台电脑相同的 WiFi 网络，然后扫描二维码。",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "首次打开链接时，浏览器会显示安全警告（自签名证书）：点按“高级”→“继续前往”——每台设备只需一次。之后即可使用麦克风（用手机演唱）。",
     singingDeviceAssignment: "演唱设备分配",
     singingDeviceAssignmentDesc: "为每位玩家选择：通过麦克风还是伴侣应用演唱。",
   },

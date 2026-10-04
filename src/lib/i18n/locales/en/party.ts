@@ -452,6 +452,8 @@ export const partyTranslations = {
     // ── Companion QR (sidebar) ──
     qrCompanionTitle: '📱 Connect Companion App',
     qrWlanHint: '⚠️ First connect your phone to the same Wi-Fi network as this computer, then scan the QR code.',
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: 'When opening the link the first time, your browser shows a security warning (self-signed certificate): tap "Advanced" → "Proceed" — once per device. After that, microphone access (singing via your phone) is allowed.',
     qrScanToConnect: 'Scan to connect',
     inputMode: 'Input Mode',
     readyToPlay: 'Ready to Play!',

@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Pokazywane są tylko piosenki duetowe',
   mirrorSearchSongs: 'Szukaj piosenek...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Gatunek',
+  filterLanguageShort: 'Język',
+  filterYearShort: 'Rok',
+  filterEraShort: 'Epoka',
+  filterResetShort: 'Resetuj',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Start',
+  cptmStartConfirmedWaiting: 'Czekanie na pozostałych graczy…',
+  cptmStartConfirmedYou: '✓ Gotowy — twój start został potwierdzony',
+  cptmStartConfirmedCount: '{n} z {m} graczy gotowych',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Śpiewasz przez ten telefon',
+  micStatusActive: 'Mikrofon aktywny',
+  micStatusStarting: 'Uruchamianie mikrofonu…',
+  micStatusNoSignal: 'Brak sygnału z mikrofonu',
+  micStatusTapToActivate: 'Dotknij, aby aktywować',
+  micStatusDenied: 'Odmowa dostępu do mikrofonu',
   mirrorBackToParty: '← Powrót do Trybów Imprezy',
   mirrorLibrary: 'Biblioteka',
   mirrorNoSongs: 'Brak załadowanych piosenek',

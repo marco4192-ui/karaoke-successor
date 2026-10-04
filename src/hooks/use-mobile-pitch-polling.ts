@@ -19,8 +19,18 @@ export interface MobilePitchData {
  * - 100ms interval (10 polls/sec) — sufficient for smooth pitch visualization
  * - Dedup: only triggers React re-render when pitch data actually changed
  * - AbortController: cancels in-flight requests when a new poll starts
+ *
+ * R52 — Profil-Matching: Bei mehreren verbundenen Companions (z. B. Sänger +
+ * Zuschauer mit Companion-Steuerung) darf P1 nicht einfach den ERSTEN
+ * Pitch-Stream bekommen („first wins" griff sich previously das falsche
+ * Handy). Mit matchProfileId werden nur Frames des Companions akzeptiert,
+ * dessen Profil dem Spieler entspricht; ohne matchProfileId (Legacy-Modus,
+ * z. B. CPTM-Zuseher) bleibt das alte first-wins-Verhalten.
  */
-export function useMobilePitchPolling(song: { id: string } | null): {
+export function useMobilePitchPolling(
+  song: { id: string } | null,
+  matchProfileId?: string | null,
+): {
   mobilePitch: MobilePitchData | null;
   hasMobileClient: boolean;
 } {
@@ -28,6 +38,13 @@ export function useMobilePitchPolling(song: { id: string } | null): {
   const [hasMobileClient, setHasMobileClient] = useState(false);
   // Track last received pitch to skip identical updates (dedup re-renders)
   const lastPitchRef = useRef<string>('');
+  // Stable ref of the profile to match (song changes restart the effect; the
+  // profile id may arrive with the first gamestate AFTER the game screen
+  // mounted — the ref always reflects the latest value via effect sync).
+  const matchProfileIdRef = useRef<string | null>(matchProfileId ?? null);
+  useEffect(() => {
+    matchProfileIdRef.current = matchProfileId ?? null;
+  }, [matchProfileId]);
 
   useEffect(() => {
     if (!song) {
@@ -45,16 +62,24 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     let pollDelay = 100;
 
     // ── Socket.IO pitch feed (preferred): instant pushes, no polling chain ──
-    // Mirrors the HTTP path's pitches[0] semantics: the FIRST companion that
-    // streams pitch during this song wins (same order the server's getpitch
-    // Map iteration would produce). The HTTP poll below stays as a fallback
-    // watchdog — skipped while socket frames arrive fresh (< 400 ms).
+    // Matching semantics: with matchProfileId ONLY frames from that profile
+    // are accepted (the singing phone); without it the FIRST companion that
+    // streams pitch during this song wins (legacy behavior — same order the
+    // server's getpitch Map iteration would produce). The HTTP poll below
+    // stays as a fallback watchdog — skipped while socket frames arrive
+    // fresh (< 400 ms).
     let lastSocketPitchAt = 0;
     let firstSocketClientId: string | null = null;
     const unsubPitchFeed = subscribePitchFeed((event) => {
       if (aborted) return;
-      if (firstSocketClientId === null) firstSocketClientId = event.clientId;
-      if (event.clientId !== firstSocketClientId) return;
+      const wanted = matchProfileIdRef.current;
+      if (wanted) {
+        // Profile-matched: ignore every other phone's frames entirely
+        if (event.profile?.id !== wanted) return;
+      } else {
+        if (firstSocketClientId === null) firstSocketClientId = event.clientId;
+        if (event.clientId !== firstSocketClientId) return;
+      }
       lastSocketPitchAt = Date.now();
       const pitchData = event.data;
       // Dedup on the meaningful fields only (excluding the ever-changing
@@ -94,14 +119,25 @@ export function useMobilePitchPolling(song: { id: string } | null): {
         if (aborted) return;
 
         if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
-          const pitchData = data.pitches[0].data;
-          // Dedup: only update state if pitch actually changed
-          const serialized = JSON.stringify(pitchData);
-          if (serialized !== lastPitchRef.current) {
-            lastPitchRef.current = serialized;
-            setMobilePitch(pitchData);
+          // R52 — Profil-Matching auch im HTTP-Watchdog: bevorzugt der Eintrag
+          // des SPIELENDEN Profils (mehrere Handys → richtiges Mikro), sonst
+          // wie bisher der erste (Legacy).
+          const wanted = matchProfileIdRef.current;
+          const entries = data.pitches as Array<{ clientId?: string; data?: MobilePitchData; profile?: { id?: string } | null }>;
+          const matched = wanted
+            ? entries.find(e => e.profile?.id === wanted && e.data)
+            : undefined;
+          const chosen = matched ?? entries[0];
+          const pitchData = chosen?.data;
+          if (pitchData) {
+            // Dedup: only update state if pitch actually changed
+            const serialized = JSON.stringify(pitchData);
+            if (serialized !== lastPitchRef.current) {
+              lastPitchRef.current = serialized;
+              setMobilePitch(pitchData);
+            }
+            setHasMobileClient(true);
           }
-          setHasMobileClient(true);
           // Companion connected: reset to fast polling
           if (pollDelay > 100) {
             pollDelay = 100;

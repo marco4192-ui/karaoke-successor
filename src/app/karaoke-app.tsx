@@ -1408,6 +1408,14 @@ export default function KaraokeZERO() {
         // keep spamming 409s.
         const syncRes = await postGameState({
           ...useGameStore.getState().gameState,
+              // R52 — Spielerliste COMPAKT übertragen (nur id + name): Der
+              // Store trägt volle Profile inkl. Avatar-Data-URLs — die würden
+              // den 2s-Payload um ein Vielfaches aufblähen. Die Companion-App
+              // braucht nur die Profil-IDs (Auto-Sing: „bin ich P1/P2 mit
+              // Companion-Gerät?") plus den Anzeigenamen.
+              ...(useGameStore.getState().gameState.players?.length ? {
+                players: useGameStore.getState().gameState.players.map(p => ({ id: p.id, name: p.name })),
+              } : {}),
               // BR: keep the companion's currentSong in sync with the current
               // BR (snippet) song instead of the (unset) standard song.
               ...(brSongPayload ? { currentSong: brSongPayload } : {}),

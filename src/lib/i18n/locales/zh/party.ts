@@ -585,6 +585,12 @@ partyStarting: {
   hint: '歌手可以就位——全员准备好后开始。',
   enterHint: '或按回车键',
   minutes: '分钟',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ 准备就绪',
+  waitingBadge: '⏳ 等待中',
+  waitingForPlayers: '等待其他玩家…',
+  confirmationProgress: '{n}/{m} 名玩家已就绪',
+  autoStartHint: '所有玩家确认后，游戏将自动开始。',
 },
 
 };

@@ -585,6 +585,12 @@ partyStarting: {
   hint: 'Los cantantes pueden ocupar su posición — empieza cuando todos estén listos.',
   enterHint: 'o pulsa Enter',
   minutes: 'min',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ Listo',
+  waitingBadge: '⏳ Esperando',
+  waitingForPlayers: 'Esperando a los demás jugadores…',
+  confirmationProgress: '{n} de {m} jugadores listos',
+  autoStartHint: 'El juego empieza automáticamente cuando todos los jugadores han confirmado.',
 },
 
 };

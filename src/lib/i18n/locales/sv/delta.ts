@@ -1291,6 +1291,8 @@ export const deltaTranslations = {
     qrCompanionTitle: "📱 Koppla in Companion-appen",
     qrScanToConnect: "Skanna för att ansluta",
     qrWlanHint: "⚠️ Anslut först telefonen till samma WiFi-nätverk som den här datorn, skanna sedan QR-koden.",
+    // R52 — HTTPS companion (mic permission): one-time certificate warning hint
+    qrHttpsHint: "Första gången du öppnar länken visar webbläsaren en säkerhetsvarning (självsignerat certifikat): tryck på \"Avancerat\" → \"Fortsätt\" — en gång per enhet. Därefter tillåts mikrofonåtkomst (sjunga via telefonen).",
     singingDeviceAssignment: "Tilldelning av sångenheter",
     singingDeviceAssignmentDesc: "Välj per spelare: sjung via mikrofon eller Companion-app.",
   },

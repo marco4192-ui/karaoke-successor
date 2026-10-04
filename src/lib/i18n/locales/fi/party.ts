@@ -585,6 +585,12 @@ partyStarting: {
   hint: 'Laulajat voivat asettua paikoilleen — aloita, kun kaikki ovat valmiita.',
   enterHint: 'tai paina Enter',
   minutes: 'min',
+  // R51/Bug13 — CPTM starting screen (desktop confirmation overview)
+  confirmedBadge: '✓ Valmis',
+  waitingBadge: '⏳ Odottaa',
+  waitingForPlayers: 'Odotetaan muita pelaajia…',
+  confirmationProgress: '{n}/{m} pelaajaa valmiina',
+  autoStartHint: 'Peli alkaa automaattisesti, kun kaikki pelaajat ovat vahvistaneet.',
 },
 
 };

@@ -420,6 +420,25 @@ mobile: {
 
   mirrorDuetFilterHint: 'Kun duetter vises',
   mirrorSearchSongs: 'Søk sanger...',
+  // R51/Bug5+6 — compact library filter chips (short labels only)
+  filterGenreShort: 'Sjanger',
+  filterLanguageShort: 'Språk',
+  filterYearShort: 'År',
+  filterEraShort: 'Æra',
+  filterResetShort: 'Nullstill',
+  // R51/Bug13 — CPTM starting screen (companion): confirm + wait
+  cptmStartConfirm: 'Start',
+  cptmStartConfirmedWaiting: 'Venter på de andre spillerne…',
+  cptmStartConfirmedYou: '✓ Klar — starten din er bekreftet',
+  cptmStartConfirmedCount: '{n} av {m} spillere klare',
+  // R52 — mic status card (companion sings via the phone microphone):
+  // visible feedback whether the mic is live + gesture-safe tap fallback
+  micStatusTitle: 'Du synger på denne telefonen',
+  micStatusActive: 'Mikrofon aktiv',
+  micStatusStarting: 'Starter mikrofonen…',
+  micStatusNoSignal: 'Ingen mikrofonsignal',
+  micStatusTapToActivate: 'Trykk for å aktivere',
+  micStatusDenied: 'Mikrofontilgang nektet',
   mirrorBackToParty: '← Tilbake til Festmodus',
   mirrorLibrary: 'Bibliotek',
   mirrorNoSongs: 'Ingen sanger lastet ennå',

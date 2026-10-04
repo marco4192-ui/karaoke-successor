@@ -329,6 +329,17 @@ export const useGameStore = create<GameStore>()(
             // followed by setScreen).  Callers that need to reset the mode
             // must explicitly call setGameMode('standard').
             gameMode: state.gameState.gameMode,
+            // R52 — Gesangs-Geräte-Zuweisung überlebt den Spiel-Reset:
+            // Der Library-Start-Pfad ruft resetGame() NACH dem Setzen von
+            // deviceAssignment (handleStartGame → onSelectSong → resetGame).
+            // Ohne Preserve wurde die „Companion-App als Mikro"-Wahl hier
+            // WEGGEWISCHT — das Desktop-Mikro öffnete sich trotzdem und die
+            // Handy-Pitch floss nie ins Scoring (Nutzer-Report: „Companion
+            // als Mic hat nie funktioniert, normales Mic war aktiv").
+            // Wie gameMode/difficulty beschreibt deviceAssignment die
+            // Eingabe-Routing des aktuellen/nächsten Spiels — jeder Starter
+            // (Library, Queue, Party) setzt es frisch.
+            deviceAssignment: state.gameState.deviceAssignment,
             players: state.gameState.players.map((p) => ({
               ...p,
               score: 0,
