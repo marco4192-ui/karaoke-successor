@@ -438,6 +438,11 @@ mobile: {
   micStatusNoSignal: 'マイクの信号がありません',
   micStatusTapToActivate: 'タップして有効化',
   micStatusDenied: 'マイクへのアクセスが拒否されました',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'マイクがブロックされています（HTTP）',
+  micStatusInsecureHint: 'タップ → HTTPSに切り替え、マイクを許可',
+  micStatusInsecureNoHttps: 'サーバーにHTTPSなし — デスクトップアプリを再起動',
   mirrorBackToParty: '← パーティーモードに戻る',
   mirrorLibrary: 'ライブラリ',
   mirrorNoSongs: '曲がまだ読み込まれていません',

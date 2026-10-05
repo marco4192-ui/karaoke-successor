@@ -439,6 +439,11 @@ mobile: {
   micStatusNoSignal: 'Ingen mikrofonsignal',
   micStatusTapToActivate: 'Tryck för att aktivera',
   micStatusDenied: 'Mikrofonåtkomst nekad',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'Mikrofon blockerad (HTTP)',
+  micStatusInsecureHint: 'Tryck → byt till HTTPS, tillåt sedan mikrofonen',
+  micStatusInsecureNoHttps: 'Servern saknar HTTPS — starta om skrivbordsappen',
   mirrorBackToParty: '← Tillbaka till Festlägen',
   mirrorLibrary: 'Bibliotek',
   mirrorNoSongs: 'Inga låtar laddade ännu',

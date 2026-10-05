@@ -438,6 +438,11 @@ mobile: {
   micStatusNoSignal: '마이크 신호 없음',
   micStatusTapToActivate: '눌러서 활성화',
   micStatusDenied: '마이크 접근이 거부되었어요',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: '마이크 차단됨(HTTP)',
+  micStatusInsecureHint: '탭 → HTTPS로 전환 후 마이크 허용',
+  micStatusInsecureNoHttps: '서버에 HTTPS 없음 — 데스크톱 앱을 재시작하세요',
   mirrorBackToParty: '← 파티 모드로 돌아가기',
   mirrorLibrary: '라이브러리',
   mirrorNoSongs: '아직 로드된 노래가 없습니다',

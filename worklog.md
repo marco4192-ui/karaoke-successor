@@ -278,3 +278,51 @@ Stage Summary:
 - Thumbnails: sofortige Anzeige (inline-first) + ~4-facher Upload-Durchsatz (48/Tick parallel) + 2000er-Cover-Budget; Song-Overlay zeigt Cover + Jahr und nutzt mehr Screen.
 - NÄCHSTER SCHRITT FÜR DEN NUTZER: Bundle neu bauen (node scripts/prepare-bundle.mjs — erzeugt jetzt certs/) und Companion-as-Mic auf ECHTEN Handys testen: QR → Zertifikat einmalig bestätigen → Song mit „Companion-App"-Mikro starten → grüne MicStatusCard + Noten/Werte am Desktop.
 - Offen: (a) echte 2-Handy-Verifikation von P1/P2-Companion-Gesang (Sandbox: ein Browser, ein Profil-Match), (b) iOS-Safari-Freigabe-Flow mit Self-Signed-Cert im Feld, (c) Lint-Warnungen abbauen, (d) BR/Medley-Spiegel könnten die MicStatusCard ebenfalls einblenden (folgt automatisch — sie hängt an shouldSingNow, nicht am Mirror).
+---
+Task ID: R53-i18n
+Agent: i18n-subagent
+Task: R53 micStatusInsecure* keys for 14 locales
+
+Work Log:
+- Struktur-Analyse der en/de-Referenz: die 3 R53-Keys (micStatusInsecure, micStatusInsecureHint, micStatusInsecureNoHttps) stehen direkt nach micStatusDenied im `mobile`-Objekt (vor mirrorBackToParty); alle 14 Locale-mobile.ts-Dateien haben denselben Aufbau (mobile-Objekt mit 2-Space-Indent, single quotes, R52-micStatus*-Block als direkter Anker).
+- 14 Locales (zh, nl, ru, da, fr, it, fi, ja, no, sv, pl, es, pt, ko) × mobile.ts: je 3 neue Keys direkt nach micStatusDenied eingefügt, mit 2 Kommentarzeilen im R52-Stil (en-Kommentar übernommen: „// R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia / is hard-blocked by the browser; only the HTTPS listener can fix it"). Edit je Datei über die einzigartige micStatusDenied-Anker-Zeile — Bestandszeilen, Indentation und Formatierung unangetastet (je +5 Zeilen).
+- fr/it: Apostroph in „l'app" als \' escaped (single-quote-Konvention der Dateien, wie bestehende fr/profile.ts- und it/profile.ts-Stellen).
+- Verifikation: `npx tsc --noEmit` Exit 0 · `bunx eslint src/lib/i18n/locales/*/mobile.ts` (alle 16 Sprachen) Exit 0 — 0 Errors, 0 Warnings · Präzises grep je Key (micStatusInsecure:, micStatusInsecureHint:, micStatusInsecureNoHttps:) = exakt 1 Hit pro Key in jeder der 14 Dateien · Bun-Verify-Skript über die echte Merge-Pipeline (getTranslations aus locales/index.ts): alle 3 Flat-Keys mobile.micStatusInsecure* in allen 14 Locales mit eigener Übersetzung aufgelöst (kein en-Fallback) · en/de nicht angerührt (deren R53-Blöcke sind die Vorarbeit des Haupt-Agenten, per git diff bestätigt unverändert).
+
+Stage Summary:
+- 14/14 Locales vollständig: micStatusInsecure (Mikrofon über HTTP blockiert), micStatusInsecureHint (Tap → HTTPS-Wechsel, dann Freigabe) und micStatusInsecureNoHttps (Server ohne HTTPS → Desktop-App-Neustart) — der en-Fallback für diese Keys ist damit für alle 16 Sprachen abgeschaltet.
+- Nur die 14 mobile.ts-Dateien der Nicht-en/de-Locales angerührt (je +5 Zeilen: 2 Kommentar- + 3 Key-Zeilen); en/de und alle anderen Dateien unangetastet.
+- tsc 0 Fehler · ESLint 0 Errors/0 Warnings · Flat-Key-Verifikation über die echte Pipeline: 14×3 = 42 Übersetzungen alle korrekt gemergt, keine Duplikate, keine Fallbacks.
+
+---
+Task ID: r53
+Agent: main (Z.ai Code)
+Task: Nutzer meldete 2 Probleme: (1) Companion-Mikrofon-Freigabe scheitert — Browser meldet, dass auf Grund unsicherer HTTP-Verbindung kein Mikro aktiviert werden kann; (2) es werden zwar mehr, aber immer noch sehr wenige Thumbnails in der Companion-App geladen.
+
+Work Log:
+- Ursachen-Analyse (1): getUserMedia ist auf http://<LAN-IP> browserseitig KOMPLETT blockiert (nur localhost/HTTPS gelten als sicher). Der Produktions-Standalone-Server (scripts/standalone-server.js) hat zwar einen HTTPS-Listener (R52), aber der Dev-Server (server.ts, `bun run dev`) hatte KEINEN — QR-Codes blieben http://…:3000 → Handy unsicher → Mic-Freigabe unmöglich. Das war die exakte Nutzer-Meldung.
+- Zweitfund A: Der HTTPS-Listener der Produktion hätte auch nie funktioniert — prepare-bundle.mjs erzeugte die Zertifikate mit `await import('node-forge')` und griff dann `forge.pki` zu greifen — node-forge ist CJS; der dynamische Import liefert die Exports unter .default (cjs-module-lexer erkennt keine named exports) → TypeError → Zertifikats-Generierung schlug IMMER still fehl (kein certs/-Ordner im Bundle vorhanden).
+- Zweitfund B: next.config.ts allowedDevOrigins enthielt nur localhost/127.0.0.1 — Next 16 Dev blockt /_next/-Chunk-Anfragen mit Origin-Header fremder Hosts (403). Companion-Handys über LAN-IP bekamen dynamische Chunks 403 → App blieb teilweise an „Loading companion app…" hängen.
+- Fix 1a: server.ts um HTTPS-Listener erweitert (Default-Port 3443, HTTPS_PORT übersteuerbar, EADDRINUSE-Fallback +1..+4): Self-Signed-Cert via node-forge (10 Jahre, SAN: localhost + 127.0.0.1 + ALLE aktuellen LAN-IPv4s), persistiert in certs/https-*.pem + https-meta.json (IP-Wechsel → Regenerierung), Socket.IO via attachSocketIO() auch an HTTPS-Server, Port via globalThis.__karaokeHttpsPort veröffentlicht (status-API → httpsPort → QR-URLs bauen automatisch https://<ip>:<port>/mobile). CJS/ESM-Interop-Fix für node-forge eingebaut. Graceful Shutdown schließt beide Server.
+- Fix 1b: prepare-bundle.mjs — derselbe Interop-Fix (Produktions-Bundle erzeugt jetzt erstmals wirklich Zertifikate).
+- Fix 1c: next.config.ts — allowedDevOrigins um alle aktuellen LAN-IPv4s erweitert (dynamisch via os.networkInterfaces() bei Config-Ladezeit).
+- Fix 1d: MicStatusCard (mobile-client-view.tsx) um Zustand „insecure" erweitert: erkennt !window.isSecureContext, zeigt rote Karte „🔒 Mikrofon über HTTP blockiert" + „👆 Tippen → HTTPS-Verbindung, dann Mikrofon freigeben"; Tap navigiert auf https://<hostname>:<httpsPort><pfad>?<query> (Selbstheilung); ohne HTTPS-Listener: „Server ohne HTTPS — Desktop-App neu starten".
+- Fix 1e (Nebenwirkung): mirror-cover-tile.tsx — http://-Covers auf einer HTTPS-Page würden als Mixed Content blockiert; usableInlineCover() lehnt http: auf https-Seiten jetzt ab (→ API/Proxy-Stufe). Zusätzlich Retry-Logik repariert: Nach Inline-Fehler bekommt die API-Stufe die VOLLE Retry-Leiter (vorher nur 1 Versuch — ein transienter Proxy-Fehler begrub das Cover für immer); kein Ping-Pong mehr zwischen zwei toten Quellen (inlineFailedRef).
+- Ursachen-Analyse (2): Thumbnail-Pipeline hatte 4 separate Drosseln: (a) Desktop-Upload nur 48 Covers pro 15s-Tick mit Per-Tick-Cut (600 Songs > 3 Min. — Handy-Retries liefen ab, bevor Bilder ankamen); (b) Kandidaten-Auflösung (media-DB/Blob-URLs) sequenziell — erster Tick blockierte minutenlang; (c) Server warf Covers > 600 aus dem Speicher und schnitt POSTs > 400 Einträge still ab; (d) JEEDER Server-Restart (Dev: häufig) löschte ALLE Covers aus dem RAM — Self-Healing brauchte 60s+, Handy zeigte zwischenzeitlich Initialen.
+- Fix 2a: use-song-library-sync.ts — Kandidaten-Auflösung parallel (Pool 24), kein Per-Tick-Cut mehr: komplettes Backlog in Chunks von 72 (6 parallele Decodes, 350ms Pause zwischen Chunks), Überlappungs-Schutz via uploadRunning-Guard. 600 Covers: vorher >3 Min → jetzt ~10-15s.
+- Fix 2b: Neue Datei src/lib/server/companion-cover-store.ts — Cover-Disk-Persistenz (db/companion-covers/, sha1-Dateinamen, .img+.meta Paare, Best-Effort, Pruning ab 6000 Dateien). POST songcovers schreibt auf Platte; GET songcover fragt nach RAM/Remote-Proxy als letzte Stufe die Platte ab; Remote-Proxy-Ergebnisse werden ebenfalls persistiert. Covers überleben Server-Restarts jetzt instantan.
+- Fix 2c: post-handlers songcovers — Slice 400 → 2000, Memory-Cap 600 → 3000.
+- Fix 2d: route.ts GET-Rate-Limit songcover 300 → 900/Min (schnelles Scrollen großer Bibliotheken feuerte >300 Anfragen/Min → 429 begrub Cover-Retries).
+- i18n: 3 neue Keys (mobile.micStatusInsecure, micStatusInsecureHint, micStatusInsecureNoHttps) in en+de selbst, 14 weitere Locales via Subagent (Task R53-i18n) — alle verifiziert (tsc 0, eslint 0, Merge-Pipeline-Check bestanden).
+- .gitignore: /certs/ und /db/companion-covers/ ergänzt (Private Keys + Maschinen-Cache niemals committen).
+- @types/node-forge als devDependency installiert.
+
+Stage Summary:
+- GETESTET & VERIFIZIERT (agent-browser + curl):
+  * HTTPS-Listener aktiv: https://localhost:3443/ und /mobile → 200; Socket.IO-Handshake über HTTPS (engine.io sid) ✓; status-API liefert httpsPort: 3443 ✓; QR-URL-Bau → https://192.168.1.50:3443/mobile (Unit-Test) ✓; Zertifikat mit SAN localhost+127.0.0.1+21.0.4.13 generiert ✓
+  * LAN-IP-Szenario (exakt das Nutzer-Problem): http://21.0.4.13:3000/mobile → isSecureContext=false, navigator.mediaDevices=undefined (Mic-Blockade reproduziert) — Seite lädt nach allowedDevOrigins-Fix vollständig (vorher: „Loading companion app…" eingefroren, Chunks 403) ✓
+  * Cover-Pipeline komplett: 6 Seed-Songs (4 storedMedia + 2 data-URL) → Desktop-Drain lud ALLE 6 in einem Tick → songcoverids 6/6 → alle 6 auf Disk persistiert → Handy zeigte 4/4 sichtbare Tiles geladen, 0 Fehler → Song-Overlay-Cover 1/1 geladen ✓
+  * Disk-Restart-Test: Server-Neustart → GET songcover weiterhin 200 image/jpeg (nur von Platte) ✓
+  * Desktop + /mobile rendern fehlerfrei (keine Console-/Page-Errors, dev.log sauber), tsc Exit 0, eslint 0 Errors (nur project-weite Pre-existing-Warnings)
+- NÄCHSTER SCHRITT FÜR DEN NUTZER: `bun run dev` neu starten (server.ts + next.config.ts geändert!) → Desktop zeigt QR mit https://<LAN-IP>:3443/mobile → Handy: QR scannen → Zertifikats-Warnung 1× „Erweitert → Weiter" → Mikrofon-Freigabe erteilen → Companion-Mic funktioniert. Alte http-Lesezeichen: MicStatusCard bietet Tap-zu-HTTPS-Wechsel.
+- Offen/Beobachten: (a) iOS-Safari-spezifisches Verhalten des Self-Signed-Certs („Details anzeigen → Website besuchen") wurde nicht auf echtem Gerät getestet — Android-Chrome + Desktop-Chrome Muster verifiziert; (b) Windows-Firewall kann beim ersten Start nach Freigabe für Port 3443 fragen — zulassen; (c) produce-bundle-Zertifikats-Erzeugung wurde gefixt, aber kein vollständiger Tauri-Bundle-Build getestet (nicht Teil dieser Runde).

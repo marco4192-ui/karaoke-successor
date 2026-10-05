@@ -439,6 +439,11 @@ mobile: {
   micStatusNoSignal: 'Geen microfoonsignaal',
   micStatusTapToActivate: 'Tik om te activeren',
   micStatusDenied: 'Microfoontoegang geweigerd',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'Microfoon geblokkeerd (HTTP)',
+  micStatusInsecureHint: 'Tik → overschakelen naar HTTPS, daarna microfoon toestaan',
+  micStatusInsecureNoHttps: 'Server zonder HTTPS — start de desktop-app opnieuw',
   mirrorBackToParty: '← Terug naar Party-modi',
   mirrorLibrary: 'Bibliotheek',
   mirrorNoSongs: 'Nog geen nummers geladen',

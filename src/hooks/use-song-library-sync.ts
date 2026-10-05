@@ -143,112 +143,149 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   // URLs as coverImage — companions cannot access main-app blobs.)
   useEffect(() => {
     let cancelled = false;
+    // R53 — Überlappungs-Schutz: Der Drain-Loop kann länger laufen als das
+    // 15s-Intervall (Backlog-Abarbeitung). Ein laufender Upload überspringt
+    // einfach den nächsten Tick, statt parallel einen zweiten zu starten.
+    let uploadRunning = false;
 
     const uploadCovers = async () => {
+      if (uploadRunning) return;
+      uploadRunning = true;
       try {
         const allSongs = getAllSongs() as Song[];
         // R34: resolve cover srcs — inline covers (data:/http:/blob:) directly,
         // storedMedia songs load their cover blob ONCE from the media DB
         // (getAllSongs() doesn't carry the restored URLs — see note above).
+        // R53: Die Auflösung läuft PARALLEL (Pool von 24, vorher sequenziell
+        // pro Song) — der erste Tick einer großen Bibliothek blockierte
+        // vorher minutenlang auf media-DB-Lesungen, bevor ÜBERHAUPT ein
+        // Thumbnail erzeugt wurde.
         const candidates: Array<{ id: string; src: string }> = [];
-        for (const s of allSongs) {
-          if (!s.id) continue;
-          if (s.coverImage) {
-            candidates.push({ id: s.id, src: s.coverImage });
-          } else if (s.storedMedia) {
-            let url = coverBlobUrlsRef.current.get(s.id);
-            if (!url) {
-              try {
-                const blob = await getMedia(s.id, 'cover');
-                if (blob && blob.size > 0) {
-                  url = URL.createObjectURL(blob);
-                  coverBlobUrlsRef.current.set(s.id, url);
-                }
-              } catch { /* no cover in media DB — song stays without thumbnail */ }
-            }
-            if (url) candidates.push({ id: s.id, src: url });
-          } else if (s.relativeCoverPath && typeof s.baseFolder !== 'undefined') {
-            // R51/Bug4 — Tauri folder-scanned songs: cover file on disk,
-            // resolved to a blob URL ONCE via the same loader the desktop
-            // library grid uses (getAllSongs() doesn't materialize these
-            // URLs). Previously these songs were skipped entirely → the
-            // companion never got thumbnails for folder imports.
-            let url = coverBlobUrlsRef.current.get(s.id);
-            if (!url) {
-              try {
-                const { getSongMediaUrl } = await import('@/lib/file-storage-media');
-                const fresh = await getSongMediaUrl(s.relativeCoverPath, s.baseFolder);
-                if (fresh) {
-                  url = fresh;
-                  coverBlobUrlsRef.current.set(s.id, url);
-                }
-              } catch { /* cover not loadable — song stays without thumbnail */ }
-            }
-            if (url) candidates.push({ id: s.id, src: url });
-          } else if (s.relativeCoverPath) {
-            // No baseFolder on the song record — resolve via the stored
-            // songs folder (getSongMediaUrl falls back to it internally).
-            let url = coverBlobUrlsRef.current.get(s.id);
-            if (!url) {
-              try {
-                const { getSongMediaUrl } = await import('@/lib/file-storage-media');
-                const fresh = await getSongMediaUrl(s.relativeCoverPath, undefined);
-                if (fresh) {
-                  url = fresh;
-                  coverBlobUrlsRef.current.set(s.id, url);
-                }
-              } catch { /* cover not loadable — song stays without thumbnail */ }
-            }
-            if (url) candidates.push({ id: s.id, src: url });
-          }
-        }
-        // R52: Cap massiv erhöht (400 → 2000) — der bisherige Cut sorgte
-        // dafür, dass große Bibliotheken (> 400 Songs mit Cover) NIE vollständig
-        // versorgt wurden. Der eigentliche Schutz ist das Per-Tick-Budget unten.
-        const withCovers = candidates.slice(0, 2000);
-
-        // R52 — Upload-Durchsatz: vorher wurden pro 15s-Tick nur 10 NEUE
-        // Thumbnails erzeugt (sequenziell!) — eine 300-Song-Bibliothek brauchte
-        // ~75 Minuten, bis das Handy alle Covers hatte. Nutzer-Symptom: „einige
-        // laden, sehr viele fehlen". Jetzt: 48 pro Tick mit 5 parallel laufenden
-        // Bild-Decodierungen (~4× schneller, ≈ 190 Covers/Min) — die erste
-        // Bildschirmseite ist nach dem ersten Tick komplett versorgt.
-        const BATCH_PER_TICK = 48;
-        const PARALLEL_DECODES = 5;
-
-        const pendingUpload = withCovers.filter(({ id, src }) =>
-          uploadedCoversRef.current[id] !== src &&
-          (coverFailCountsRef.current.get(src) ?? 0) < 3,
-        ).slice(0, BATCH_PER_TICK);
-
-        const changed: Record<string, string> = {};
-        let queueIdx = 0;
-        const uploadWorker = async () => {
-          while (!cancelled && queueIdx < pendingUpload.length) {
-            const { id: songId, src } = pendingUpload[queueIdx++];
-            const thumb = await generateCoverThumbnail(src);
-            if (cancelled) return;
-            if (thumb) {
-              changed[songId] = thumb;
-              uploadedCoversRef.current[songId] = src;
-              coverFailCountsRef.current.delete(src);
-            } else {
-              coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
+        const RESOLVE_POOL = 24;
+        let resolveIdx = 0;
+        const resolveWorker = async () => {
+          while (!cancelled && resolveIdx < allSongs.length) {
+            const s = allSongs[resolveIdx++];
+            if (!s.id) continue;
+            if (s.coverImage) {
+              candidates.push({ id: s.id, src: s.coverImage });
+            } else if (s.storedMedia) {
+              let url = coverBlobUrlsRef.current.get(s.id);
+              if (!url) {
+                try {
+                  const blob = await getMedia(s.id, 'cover');
+                  if (blob && blob.size > 0) {
+                    url = URL.createObjectURL(blob);
+                    coverBlobUrlsRef.current.set(s.id, url);
+                  }
+                } catch { /* no cover in media DB — song stays without thumbnail */ }
+              }
+              if (url) candidates.push({ id: s.id, src: url });
+            } else if (s.relativeCoverPath && typeof s.baseFolder !== 'undefined') {
+              // R51/Bug4 — Tauri folder-scanned songs: cover file on disk,
+              // resolved to a blob URL ONCE via the same loader the desktop
+              // library grid uses (getAllSongs() doesn't materialize these
+              // URLs). Previously these songs were skipped entirely → the
+              // companion never got thumbnails for folder imports.
+              let url = coverBlobUrlsRef.current.get(s.id);
+              if (!url) {
+                try {
+                  const { getSongMediaUrl } = await import('@/lib/file-storage-media');
+                  const fresh = await getSongMediaUrl(s.relativeCoverPath, s.baseFolder);
+                  if (fresh) {
+                    url = fresh;
+                    coverBlobUrlsRef.current.set(s.id, url);
+                  }
+                } catch { /* cover not loadable — song stays without thumbnail */ }
+              }
+              if (url) candidates.push({ id: s.id, src: url });
+            } else if (s.relativeCoverPath) {
+              // No baseFolder on the song record — resolve via the stored
+              // songs folder (getSongMediaUrl falls back to it internally).
+              let url = coverBlobUrlsRef.current.get(s.id);
+              if (!url) {
+                try {
+                  const { getSongMediaUrl } = await import('@/lib/file-storage-media');
+                  const fresh = await getSongMediaUrl(s.relativeCoverPath, undefined);
+                  if (fresh) {
+                    url = fresh;
+                    coverBlobUrlsRef.current.set(s.id, url);
+                  }
+                } catch { /* cover not loadable — song stays without thumbnail */ }
+              }
+              if (url) candidates.push({ id: s.id, src: url });
             }
           }
         };
         await Promise.all(
-          Array.from({ length: Math.min(PARALLEL_DECODES, pendingUpload.length) }, uploadWorker),
+          Array.from({ length: Math.min(RESOLVE_POOL, Math.max(allSongs.length, 1)) }, resolveWorker),
         );
-        if (Object.keys(changed).length > 0 && !cancelled) {
-          await fetch('/api/mobile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'songcovers', payload: { covers: changed } }),
-          }).catch(() => { /* ignore */ });
+        // R52: Cap massiv erhöht (400 → 2000) — der bisherige Cut sorgte
+        // dafür, dass große Bibliotheken (> 400 Songs mit Cover) NIE vollständig
+        // versorgt wurden. Der eigentliche Schutz ist das Fail-Budget unten.
+        const withCovers = candidates.slice(0, 2000);
+
+        // R53 — Kein Per-Tick-Cut mehr: Das GESAMTE Backlog wird in diesem
+        // Tick abgearbeitet (Chunks + Pausen unten). Vorher wurden pro 15s-
+        // Tick nur 48 Covers erzeugt — eine 600-Song-Bibliothek brauchte
+        // > 3 Minuten NUR fürs Hochladen, und das Handy gab seine Cover-
+        // Retries auf, bevor die Bilder überhaupt ankamen („es fehlen sehr
+        // viele Thumbnails").
+        const pendingUpload = withCovers.filter(({ id, src }) =>
+          uploadedCoversRef.current[id] !== src &&
+          (coverFailCountsRef.current.get(src) ?? 0) < 3,
+        );
+
+        // R53 — Back-to-Back-Drain: Chunks von 72 Covers direkt hinterein-
+        // ander, ~350ms Pause zwischen den Chunks hält den Main-Thread
+        // responsiv (6 parallele Bild-Decodierungen). 600 Covers sind statt
+        // in > 3 Minuten jetzt in ~10–15s vollständig hochgeladen.
+        const CHUNK_SIZE = 72;
+        const PARALLEL_DECODES = 6;
+        const CHUNK_PAUSE_MS = 350;
+
+        let processed = 0;
+        while (!cancelled && processed < pendingUpload.length) {
+          const chunk = pendingUpload.slice(processed, processed + CHUNK_SIZE);
+          processed += CHUNK_SIZE;
+
+          const changed: Record<string, string> = {};
+          let queueIdx = 0;
+          const uploadWorker = async () => {
+            while (!cancelled && queueIdx < chunk.length) {
+              const { id: songId, src } = chunk[queueIdx++];
+              const thumb = await generateCoverThumbnail(src);
+              if (cancelled) return;
+              if (thumb) {
+                changed[songId] = thumb;
+                uploadedCoversRef.current[songId] = src;
+                coverFailCountsRef.current.delete(src);
+              } else {
+                coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
+              }
+            }
+          };
+          await Promise.all(
+            Array.from({ length: Math.min(PARALLEL_DECODES, Math.max(chunk.length, 1)) }, uploadWorker),
+          );
+          if (cancelled) return;
+          if (Object.keys(changed).length > 0) {
+            await fetch('/api/mobile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'songcovers', payload: { covers: changed } }),
+            }).catch(() => { /* ignore */ });
+          }
+          if (processed < pendingUpload.length) {
+            // Kurze Pause zwischen den Chunks — Canvas-Arbeit bleibt spürbar,
+            // aber der UI-Thread bekommt regelmäßig Luft.
+            await new Promise<void>(resolve => setTimeout(resolve, CHUNK_PAUSE_MS));
+          }
         }
       } catch {
         // Non-critical — covers are a progressive enhancement
+      } finally {
+        uploadRunning = false;
       }
     };
 

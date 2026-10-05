@@ -43,7 +43,15 @@ function songInitials(title: string): string {
 /** Stufe 2 nur für URLs, die das Handy auch laden kann (data:/http[s]:) —
  *  blob:-URLs des Desktop-Prozesses sind hier unbrauchbar. */
 function usableInlineCover(coverImage?: string): boolean {
-  return !!coverImage && /^(data:|https?:)/i.test(coverImage);
+  if (!coverImage) return false;
+  // R53 — Mixed-Content-Schutz: Läuft die Companion-Page selbst unter HTTPS
+  // (Server-HTTPS-Listener für die Mikrofon-Freigabe), blockiert der Browser
+  // http:-Bilder. Solche Covers gehen direkt an Stufe 1 (API) — der Server
+  // proxyt sie same-origin, ohne Mixed-Content-Problem.
+  if (/^http:\/\//i.test(coverImage)) {
+    return typeof window !== 'undefined' && window.location.protocol !== 'https:';
+  }
+  return /^(data:|https:)/i.test(coverImage);
 }
 
 /** Retry-Delays für Stufe 1 (API) nach einem onError/404.
@@ -77,6 +85,11 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   const [stage, setStage] = useState<'api' | 'inline' | 'initials'>(inlineUsable ? 'inline' : 'api');
   const [attempt, setAttempt] = useState(0);
   const retriesRef = useRef(0);
+  // R53 — Merkt sich, dass das Inline-Bild bereits gescheitert ist. Die
+  // API-Stufe bekommt danach die VOLLE Retry-Leiter (vorher nur 1 Versuch —
+  // ein einziger transienter Proxy-Fehler begrub das Cover für immer), und
+  // nach deren Ende geht es zu den Initialen (nie zurück zum toten Inline).
+  const inlineFailedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Timers bei Unmount clearen — Retries nur solange gemountet
@@ -91,6 +104,7 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   // Song-Wechsel (React.memo-Reuse derselben Instanz): Fallback-Stufen
   // und Retry-Budget zurücksetzen.
   useEffect(() => {
+    inlineFailedRef.current = false;
     setStage(inlineUsable ? 'inline' : 'api');
     setAttempt(0);
     retriesRef.current = 0;
@@ -113,8 +127,10 @@ export const SongCoverTile = React.memo(function SongCoverTile({
         setAttempt((a) => a + 1);
       }, delay);
     } else {
-      // Stufe 1 endgültig gescheitert → Stufe 2 (falls nutzbar) oder Initialen
-      setStage(inlineUsable ? 'inline' : 'initials');
+      // Stufe 1 endgültig gescheitert → Initialen. R53: Kein Zurück zu
+      // Stufe 2, wenn das Inline-Bild dort schon gescheitert ist (vorher
+      // Ping-Pong zwischen zwei toten Quellen).
+      setStage('initials');
     }
   };
 
@@ -153,14 +169,13 @@ export const SongCoverTile = React.memo(function SongCoverTile({
           loading="lazy"
           decoding="async"
           onError={() => {
-            // R52: Inline-Bild failed (z. B. http-Quelle offline) → API-
-            // Thumbnail versuchen (sofern noch nicht gescheitert), sonst Initialen
-            if (retriesRef.current >= API_RETRY_DELAYS_MS.length) {
-              setStage('initials');
-            } else {
-              retriesRef.current = API_RETRY_DELAYS_MS.length; // API nur EINEN Versuch lassen
-              setAttempt((a) => a + 1);
+            // R53: Inline-Bild failed (offline, Mixed-Content, CORS) → API-
+            // Thumbnail mit VOLLER Retry-Leiter, danach Initialen.
+            inlineFailedRef.current = true;
+            if (retriesRef.current < API_RETRY_DELAYS_MS.length) {
               setStage('api');
+            } else {
+              setStage('initials');
             }
           }}
           className="absolute inset-0 h-full w-full object-cover"

@@ -439,6 +439,11 @@ mobile: {
   micStatusNoSignal: 'Нет сигнала микрофона',
   micStatusTapToActivate: 'Нажмите, чтобы включить',
   micStatusDenied: 'Доступ к микрофону запрещён',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'Микрофон заблокирован (HTTP)',
+  micStatusInsecureHint: 'Нажмите → перейти на HTTPS, затем разрешите микрофон',
+  micStatusInsecureNoHttps: 'Сервер без HTTPS — перезапустите настольное приложение',
   mirrorBackToParty: '← Назад к Режимам Вечеринки',
   mirrorLibrary: 'Библиотека',
   mirrorNoSongs: 'Песни ещё не загружены',

@@ -477,6 +477,11 @@ export const mobileTranslations = {
   micStatusNoSignal: 'Kein Mikrofon-Signal',
   micStatusTapToActivate: 'Tippen zum Aktivieren',
   micStatusDenied: 'Mikrofon-Zugriff verweigert',
+  // R53 — unsicherer Kontext (Handy über http://LAN-IP geladen): getUserMedia
+  // ist browserseitig hart blockiert; nur der HTTPS-Listener schafft Abhilfe
+  micStatusInsecure: 'Mikrofon über HTTP blockiert',
+  micStatusInsecureHint: 'Tippen → HTTPS-Verbindung, dann Mikrofon freigeben',
+  micStatusInsecureNoHttps: 'Server ohne HTTPS — Desktop-App neu starten',
   mirrorBackToParty: '← Zurück zu Party-Modi',
   mirrorLibrary: 'Bibliothek',
   mirrorNoSongs: 'Noch keine Songs geladen',

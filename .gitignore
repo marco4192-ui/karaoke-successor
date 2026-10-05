@@ -96,3 +96,9 @@ public/qa-tones.wav
 
 # Local AI provider config (Settings → KI-Dienst)
 ai-provider.json
+
+# R53: HTTPS self-signed cert metadata (private keys via *.pem above)
+/certs/
+
+# R53: Companion cover disk cache (server-side, per machine)
+/db/companion-covers/

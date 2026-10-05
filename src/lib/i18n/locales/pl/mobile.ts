@@ -439,6 +439,11 @@ mobile: {
   micStatusNoSignal: 'Brak sygnału z mikrofonu',
   micStatusTapToActivate: 'Dotknij, aby aktywować',
   micStatusDenied: 'Odmowa dostępu do mikrofonu',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'Mikrofon zablokowany (HTTP)',
+  micStatusInsecureHint: 'Stuknij → przejdź na HTTPS, następnie zezwól na mikrofon',
+  micStatusInsecureNoHttps: 'Serwer bez HTTPS — uruchom ponownie aplikację desktopową',
   mirrorBackToParty: '← Powrót do Trybów Imprezy',
   mirrorLibrary: 'Biblioteka',
   mirrorNoSongs: 'Brak załadowanych piosenek',

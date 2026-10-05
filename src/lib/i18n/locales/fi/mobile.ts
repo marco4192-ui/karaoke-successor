@@ -438,6 +438,11 @@ mobile: {
   micStatusNoSignal: 'Ei mikrofonisignaalia',
   micStatusTapToActivate: 'Aktivoi napauttamalla',
   micStatusDenied: 'Mikrofonin käyttö estetty',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: 'Mikrofoni estetty (HTTP)',
+  micStatusInsecureHint: 'Napauta → vaihto HTTPS:ään, sitten salli mikrofoni',
+  micStatusInsecureNoHttps: 'Palvelimella ei HTTPS:ää — käynnistä työpöytäsovellus uudelleen',
   mirrorBackToParty: '← Takaisin Juhlatiloihin',
   mirrorLibrary: 'Kirjasto',
   mirrorNoSongs: 'Kappaleita ei vielä ladattu',

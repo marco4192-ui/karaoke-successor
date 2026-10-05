@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteCommand } from './mobile-types';
 import { mobileEvents, EVENTS } from '@/lib/socketio-events';
+import { saveCoverToDisk } from '@/lib/server/companion-cover-store';
 import {
   mobileClients,
   connectionCodes,
@@ -1183,17 +1184,27 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         const coversPayload = payload as { covers?: Record<string, string> };
         if (coversPayload?.covers && typeof coversPayload.covers === 'object') {
-          const entries = Object.entries(coversPayload.covers).slice(0, 400);
+          // R53: 400 → 2000 — der Desktop-Drain lädt jetzt das GESAMTE Backlog
+          // in Chunks von 72; der alte Cut sorgte dafür, dass große POSTs
+          // stillschweigend abgeschnitten wurden (fehlende Thumbnails).
+          const entries = Object.entries(coversPayload.covers).slice(0, 2000);
           for (const [songId, dataUrl] of entries) {
             if (typeof songId === 'string' && typeof dataUrl === 'string'
               && dataUrl.startsWith('data:image/') && dataUrl.length < 60000) {
               mutableState.songCovers[songId] = dataUrl;
+              // R53: Disk-Persistenz — überlebt Server-Restarts (Best-Effort).
+              const m = /^data:(image\/[a-zA-Z+]+);base64,([\s\S]*)$/.exec(dataUrl);
+              if (m) {
+                saveCoverToDisk(songId, Buffer.from(m[2], 'base64'), m[1]);
+              }
             }
           }
-          // Cap the cache at 600 covers (LRU-ish: keep the newest)
+          // R53: Cap 600 → 3000 — bei Bibliotheken > 600 Songs warf der Server
+          // neu hochgeladene Covers direkt wieder weg (mit Disk-Store ist der
+          // Speicher-Fußabdruck ~4KB/Cover unkritisch).
           const coverIds = Object.keys(mutableState.songCovers);
-          if (coverIds.length > 600) {
-            for (const id of coverIds.slice(0, coverIds.length - 600)) {
+          if (coverIds.length > 3000) {
+            for (const id of coverIds.slice(0, coverIds.length - 3000)) {
               delete mutableState.songCovers[id];
             }
           }

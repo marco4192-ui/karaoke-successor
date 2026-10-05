@@ -33,6 +33,7 @@ import { MobileErrorBoundary } from './mobile/mobile-error-boundary';
 import { useMobileConnection } from '@/hooks/use-mobile-connection';
 import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
+import { initCompanionHttpsPort } from '@/lib/qr-code';
 
 // ===================== i18n-Hilfsfunktion (R33-Konvention) =====================
 // t(key) === key bedeutet "nicht übersetzt" → deutschen Fallback nutzen.
@@ -219,6 +220,28 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
     sendSocketPitch: sendPitch,
   });
+
+  // ── R53: Unsicherer Kontext (http://<LAN-IP>) ──
+  // getUserMedia ist auf unsicheren Ursprüngen KOMPLETT blockiert — der
+  // Nutzer sah bisher nur „Mikrofon wird gestartet…" und einen englischen
+  // Fehler. Jetzt erkennt die Karte den Zustand, zeigt eine klare deutsche
+  // Meldung und ein Tap navigiert auf den HTTPS-Port des Servers (dort
+  // Zertifikats-Warnung 1× bestätigen → Mikrofon funktioniert).
+  const [micInsecure, setMicInsecure] = useState(false);
+  const [micHttpsPort, setMicHttpsPort] = useState<number | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.isSecureContext) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time state sync (insecure context never changes without navigation)
+    setMicInsecure(true);
+    // HTTPS-Port vom Server ziehen (idempotent — initCompanionHttpsPort
+    // cached und use-app-effects fragt ihn ohnehin beim Boot ab).
+    initCompanionHttpsPort().then(p => { setMicHttpsPort(p); }).catch(() => { /* Hint bleibt */ });
+  }, []);
+  const openHttpsCompanionUrl = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const port = micHttpsPort ? ':' + micHttpsPort : '';
+    window.location.href = 'https://' + window.location.hostname + port + window.location.pathname + window.location.search;
+  }, [micHttpsPort]);
 
   // Data (songs, queue, jukebox, results, partners)
   // R51/Bug8: Difficulty-Vorauswahl folgt jetzt dem LIVE-Gamestate des
@@ -1099,10 +1122,15 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           audioSuspended={audioSuspended}
           hasSignal={hasSignal}
           micPermissionDenied={micPermissionDenied}
+          insecureContext={micInsecure}
+          httpsAvailable={micHttpsPort !== null}
           volume={currentPitch.volume}
           note={currentPitch.note}
           onActivate={() => {
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
+            // R53: Im unsicheren Kontext ist KEIN Mikrostart möglich — der
+            // Tap wechselt stattdessen auf die HTTPS-Verbindung.
+            if (micInsecure) { openHttpsCompanionUrl(); return; }
             void resumeAudioContext();
           }}
         />
@@ -1202,6 +1230,11 @@ interface MicStatusCardProps {
   audioSuspended: boolean;
   hasSignal: boolean;
   micPermissionDenied: boolean;
+  /** R53: true, wenn die Seite über http://<LAN-IP> geladen wurde — dann ist
+   *   getUserMedia browserseitig blockiert und nur der HTTPS-Wechsel hilft. */
+  insecureContext: boolean;
+  /** R53: Server hat einen HTTPS-Listener aktiv (Tap navigiert dorthin). */
+  httpsAvailable: boolean;
   volume: number;
   note: number | null;
   onActivate: () => void;
@@ -1224,20 +1257,27 @@ function midiNoteName(note: number | null): string | null {
  *           zum Aktivieren" — der Tap resumed/started in echter Geste
  *   rot   — Mikrofon-Zugriff verweigert (Einstellungs-Hinweis)
  */
-function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDenied, volume, note, onActivate }: MicStatusCardProps) {
+function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDenied, insecureContext, httpsAvailable, volume, note, onActivate }: MicStatusCardProps) {
   const { t } = useTranslation();
 
   const running = isListening && hasSignal && !audioSuspended;
   const needsTap = !isListening || audioSuspended || (!hasSignal && isListening);
-  const state: 'ok' | 'wait' | 'denied' = micPermissionDenied ? 'denied' : (running ? 'ok' : 'wait');
+  // R53: insecure schlägt ALLES — ohne HTTPS kann das Mikro nie starten.
+  const state: 'ok' | 'wait' | 'denied' | 'insecure' = insecureContext
+    ? 'insecure'
+    : micPermissionDenied
+      ? 'denied'
+      : (running ? 'ok' : 'wait');
 
-  const statusText = state === 'denied'
-    ? tOr(t, 'mobile.micStatusDenied', 'Mikrofon-Zugriff verweigert')
-    : state === 'ok'
-      ? tOr(t, 'mobile.micStatusActive', 'Mikrofon aktiv')
-      : isListening
-        ? tOr(t, 'mobile.micStatusNoSignal', 'Kein Mikrofon-Signal')
-        : tOr(t, 'mobile.micStatusStarting', 'Mikrofon wird gestartet…');
+  const statusText = state === 'insecure'
+    ? tOr(t, 'mobile.micStatusInsecure', 'Mikrofon über HTTP blockiert')
+    : state === 'denied'
+      ? tOr(t, 'mobile.micStatusDenied', 'Mikrofon-Zugriff verweigert')
+      : state === 'ok'
+        ? tOr(t, 'mobile.micStatusActive', 'Mikrofon aktiv')
+        : isListening
+          ? tOr(t, 'mobile.micStatusNoSignal', 'Kein Mikrofon-Signal')
+          : tOr(t, 'mobile.micStatusStarting', 'Mikrofon wird gestartet…');
 
   return (
     <button
@@ -1249,7 +1289,7 @@ function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDe
         'fixed left-3 right-3 z-[55] flex items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-2xl backdrop-blur-md transition-all active:scale-[0.98] ' +
         (state === 'ok'
           ? 'border-emerald-500/40 bg-emerald-950/85'
-          : state === 'denied'
+          : state === 'denied' || state === 'insecure'
             ? 'border-red-500/40 bg-red-950/85'
             : 'border-amber-500/40 bg-amber-950/85 animate-pulse')
       }
@@ -1257,7 +1297,7 @@ function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDe
     >
       {/* Status-Icon */}
       <span className="shrink-0 text-xl leading-none" aria-hidden="true">
-        {state === 'ok' ? '🎤' : state === 'denied' ? '🚫' : '🎙️'}
+        {state === 'ok' ? '🎤' : state === 'denied' ? '🚫' : state === 'insecure' ? '🔒' : '🎙️'}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-white">
@@ -1269,18 +1309,24 @@ function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDe
               'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' +
               (state === 'ok'
                 ? 'bg-emerald-500/25 text-emerald-300'
-                : state === 'denied'
+                : state === 'denied' || state === 'insecure'
                   ? 'bg-red-500/25 text-red-300'
                   : 'bg-amber-500/25 text-amber-300')
             }
           >
             {statusText}
           </span>
-          {needsTap && state !== 'denied' && (
+          {state === 'insecure' ? (
+            <span className="shrink-0 text-[10px] font-semibold text-red-200/90">
+              {httpsAvailable
+                ? '👆 ' + (tOr(t, 'mobile.micStatusInsecureHint', 'Tippen → HTTPS-Verbindung, dann Mikrofon freigeben'))
+                : '⚠️ ' + (tOr(t, 'mobile.micStatusInsecureNoHttps', 'Server ohne HTTPS — Desktop-Neustart erforderlich'))}
+            </span>
+          ) : needsTap && state !== 'denied' ? (
             <span className="shrink-0 text-[10px] font-semibold text-amber-200/80">
               👆 {tOr(t, 'mobile.micStatusTapToActivate', 'Tippen zum Aktivieren')}
             </span>
-          )}
+          ) : null}
           {state === 'ok' && note !== null && (
             <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white/85">
               {midiNoteName(note)}

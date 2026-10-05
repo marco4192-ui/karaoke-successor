@@ -16,6 +16,7 @@ import {
   getHttpsPort,
 } from './mobile-state';
 import { getClientIp } from '@/lib/rate-limiter';
+import { readCoverFromDisk, saveCoverToDisk } from '@/lib/server/companion-cover-store';
 
 // ===================== GET HANDLER =====================
 
@@ -467,6 +468,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       // die eigene Herkunft — CORS-problemlos. Das ist die Ursache dafür,
       // dass die Companion-Library bisher NIE Thumbnails für Online-Covers
       // zeigte, obwohl der Desktop sie anzeigt.
+      // ── R53: Nach einem Server-Restart wird ZUERST der Disk-Store befragt
+      // (db/companion-covers/) — hochgeladene Thumbnails und remote-geproxyte
+      // Covers überleben damit Neustarts, statt 60s+ auf das Self-Healing zu
+      // warten. ──
       const song = mutableState.songLibrary.find(s => s.id === songId);
       const remoteSrc = song?.coverImage;
       // data:-URLs (im Song-Library-Sync enthalten) lassen sich direkt dekodieren
@@ -500,6 +505,9 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
               if (buf.length <= 5 * 1024 * 1024) {
                 if ((mutableState.remoteCoverCache ??= new Map()).size > 300) mutableState.remoteCoverCache.clear();
                 mutableState.remoteCoverCache.set(songId, { buf, type, at: Date.now() });
+                // R53: Remote-Cover auch auf die Platte — überlebt Restarts,
+                // ohne die Quelle erneut anzufordern.
+                saveCoverToDisk(songId, buf, type);
                 return new Response(new Uint8Array(buf), {
                   status: 200,
                   headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=86400' },
@@ -508,8 +516,16 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
             }
           }
         } catch {
-          // Remote fetch failed — fall through to 404 (the tile shows initials)
+          // Remote fetch failed — unten weiter mit Disk-Store / 404
         }
+      }
+      // ── R53: Disk-Store (letzter same-origin Fallback vor dem 404) ──
+      const fromDisk = readCoverFromDisk(songId);
+      if (fromDisk) {
+        return new Response(new Uint8Array(fromDisk.buf), {
+          status: 200,
+          headers: { 'Content-Type': fromDisk.type, 'Cache-Control': 'public, max-age=86400' },
+        });
       }
       return Response.json({ success: false, message: 'No cover' }, { status: 404 });
     }

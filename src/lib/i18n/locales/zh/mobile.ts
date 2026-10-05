@@ -439,6 +439,11 @@ mobile: {
   micStatusNoSignal: '无麦克风信号',
   micStatusTapToActivate: '点击启用',
   micStatusDenied: '麦克风权限被拒绝',
+  // R53 — insecure context (phone loaded via http://LAN-IP): getUserMedia
+  // is hard-blocked by the browser; only the HTTPS listener can fix it
+  micStatusInsecure: '麦克风被阻止（HTTP）',
+  micStatusInsecureHint: '点按 → 切换到 HTTPS，然后允许麦克风',
+  micStatusInsecureNoHttps: '服务器无 HTTPS — 请重启桌面应用',
   mirrorBackToParty: '← 返回派对模式',
   mirrorLibrary: '曲库',
   mirrorNoSongs: '尚未加载歌曲',

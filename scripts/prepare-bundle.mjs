@@ -232,7 +232,12 @@ log('\n=== Step 3.7/5: Generating HTTPS certificate (companion mic) ===\n');
     if (existsSync(certPath) && existsSync(keyPath)) {
       ok('Reusing existing certs/https-*.pem (delete to regenerate)');
     } else {
-      const forge = await import('node-forge');
+      // R53-Fix — CJS/ESM-Interop: node-forge liefert seine Exports unter
+      // .default (cjs-module-lexer erkennt die named exports nicht). Ohne
+      // den Fallback war forge.pki undefined → die Zertifikats-Generierung
+      // schlug IMMER fehl und der Produktions-HTTPS-Listener startete nie.
+      const forgeModule = await import('node-forge');
+      const forge = forgeModule.pki ? forgeModule : (forgeModule.default ?? forgeModule);
       const keys = forge.pki.rsa.generateKeyPair(2048);
       const cert = forge.pki.createCertificate();
       cert.publicKey = keys.publicKey;
