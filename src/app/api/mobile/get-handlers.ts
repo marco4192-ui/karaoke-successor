@@ -15,7 +15,9 @@ import {
   requireAuth,
   getHttpsPort,
   getCaCertPem,
+  getHttpsDomainInfo,
 } from './mobile-state';
+import { getHttpsDomainStatus } from '@/lib/server/https-domain';
 import { getClientIp } from '@/lib/rate-limiter';
 import { readCoverFromDisk, saveCoverToDisk } from '@/lib/server/companion-cover-store';
 
@@ -170,7 +172,16 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         // einen sicheren Kontext — getUserMedia ist auf http://<LAN-IP>
         // blockiert). null = Dev-/Plain-HTTP-Betrieb.
         httpsPort: getHttpsPort(),
+        // R55: DuckDNS/Let's-Encrypt-Info — QR-URLs bauen damit die echte
+        // Domain statt der IP, die Companion-App blendet den Zertifikats-
+        // Banner aus (echtes Zertifikat = keine Warnung, nichts zu installieren).
+        ...getHttpsDomainInfo(),
       });
+
+    case 'https-domain':
+      // R55: Detail-Status für die Desktop-Settings (DuckDNS-Einrichtung).
+      // Enthält KEINEN Token (der bleibt serverseitig in certs/https-domain.json).
+      return Response.json({ success: true, ...getHttpsDomainStatus() });
 
     case 'disconnect':
       if (clientId) {

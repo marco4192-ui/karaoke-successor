@@ -3,6 +3,7 @@ import { generateCode, COMPANION_CODE_CHARS } from '@/lib/utils';
 import { getClientIp } from '@/lib/rate-limiter';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { readDomainState, getLeBundle } from '@/lib/server/https-domain';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
 // ===================== ADMIN PIN AUTH =====================
@@ -323,6 +324,12 @@ const globalWithShared = globalThis as typeof globalThis & {
    *  Endpunkt (/api/mobile?action=ca-cert) reicht sie an Handys weiter,
    * damit die HTTPS-Verbindung ohne Browser-Warnung nutzbar wird. */
   __karaokeCaCertPem?: string;
+  /** R55: DuckDNS-Domain (echtes Let's-Encrypt-Zertifikat) oder null. */
+  __karaokeHttpsDomain?: string | null;
+  /** R55: Aktive Zertifikats-Quelle des HTTPS-Listeners. */
+  __karaokeHttpsCertSource?: 'letsencrypt' | 'local-ca' | null;
+  /** R55: Ablaufdatum des LE-Zertifikats (ISO 8601) oder null. */
+  __karaokeHttpsCertExpiresAt?: string | null;
 };
 const shared: MobileSharedState = globalWithShared.__karaokeMobileShared ?? {
   mobileClients: new Map<string, MobileClient>(),
@@ -374,6 +381,51 @@ export function getCaCertPem(): string | null {
     // Platten-Fallback nicht möglich (untypisch) → null
   }
   return null;
+}
+
+// ===================== R55: DUCKDNS / LET'S-ENCRYPT-STATUS =====================
+
+export interface HttpsDomainInfo {
+  /** Konfigurierte DuckDNS-Domain (z. B. mein-karaoke.duckdns.org) oder null. */
+  httpsDomain: string | null;
+  /** Aktive Zertifikats-Quelle des HTTPS-Listeners ('letsencrypt' = echt,
+   *  'local-ca' = R54-Rückfallebene, null = kein HTTPS-Listener). */
+  httpsCertSource: 'letsencrypt' | 'local-ca' | null;
+  /** Ablaufdatum des LE-Zertifikats (ISO 8601) oder null. */
+  httpsCertExpiresAt: string | null;
+}
+
+/**
+ * R55: HTTPS-Domain/Zertifikats-Info für die status-API.
+ * Primär die globalThis-Globals (server.ts/standalone-server setzen sie beim
+ * Boot und bei jedem Zertifikats-Wechsel); Fallback: direkt vom Modul lesen
+ * (Dev ohne Custom-Server — dann liefert der Disk-State trotzdem die Wahrheit,
+ * der Listener läuft in dem Fall ohnehin nicht in diesem Prozess).
+ */
+export function getHttpsDomainInfo(): HttpsDomainInfo {
+  const source = globalWithShared.__karaokeHttpsCertSource ?? null;
+  const domainGlobal = globalWithShared.__karaokeHttpsDomain;
+  if (source !== null || typeof domainGlobal === 'string') {
+    return {
+      httpsDomain: typeof domainGlobal === 'string' && domainGlobal ? domainGlobal : null,
+      httpsCertSource: source,
+      httpsCertExpiresAt: globalWithShared.__karaokeHttpsCertExpiresAt ?? null,
+    };
+  }
+  // Fallback: Disk-State (setzt keine 'local-ca'-Aussage über den Listener —
+  // nur die Domain-Infos, wenn LE aktiv ist).
+  try {
+    const state = readDomainState();
+    const bundle = getLeBundle();
+    if (state && bundle) {
+      return {
+        httpsDomain: state.domain,
+        httpsCertSource: 'letsencrypt',
+        httpsCertExpiresAt: bundle.expiresAt,
+      };
+    }
+  } catch { /* Disk-Status unlesbar — null-Infos sind harmlos */ }
+  return { httpsDomain: null, httpsCertSource: null, httpsCertExpiresAt: null };
 }
 
 export const mobileClients: Map<string, MobileClient> = shared.mobileClients;

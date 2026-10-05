@@ -33,6 +33,17 @@ import { join } from 'path';
 import { parse } from 'url';
 import next from 'next';
 import { initSocketIO, attachSocketIO } from './src/lib/socketio-server';
+// R55 — Echtes Let's-Encrypt-Zertifikat via DuckDNS (siehe Modul-Kopf).
+// Bevorzugt, sobald konfiguriert (Settings → Mobilgerät); lokale Root-CA
+// bleibt Rückfallebene (R54). Import aus src/lib — tsx löst das direkt auf.
+import {
+  readDomainState,
+  getLeBundle,
+  issueCertificate,
+  startMaintenance,
+  registerCertSwapHandler,
+  type LeCertBundle,
+} from './src/lib/server/https-domain';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -242,23 +253,60 @@ async function startHttpsListener(
   // Expliziter Opt-out (HTTPS_PORT=0)
   if (process.env.HTTPS_PORT === '0') return;
 
-  const certData = await ensureCertificates();
-  if (!certData) return;
+  // R55: Zertifikats-Quelle — echtes Let's-Encrypt-Zertifikat (DuckDNS
+  // eingerichtet) BEVORZUGT; lokale Root-CA (R54) als Rückfallebene. Die CA
+  // wird in jedem Fall geladen/erzeugt: Der Download-Endpunkt (ca-cert)
+  // funktioniert weiter, und ohne Domain bleibt alles beim R54-Verhalten.
+  const caData = await ensureCertificates();
+  const domainState = readDomainState();
+  const leBundle = getLeBundle();
+  const activeCert = leBundle
+    ? { cert: leBundle.cert, key: leBundle.key }
+    : (caData ? { cert: caData.cert + '\n' + caData.caCert, key: caData.key } : null);
+  if (!activeCert) return;
 
   // R54: Root-CA für die App veröffentlichen (Download-Endpunkt
   // /api/mobile?action=ca-cert liest genau dieses globalThis).
-  (globalThis as typeof globalThis & { __karaokeCaCertPem?: string }).__karaokeCaCertPem = certData.caCert;
+  if (caData) {
+    (globalThis as typeof globalThis & { __karaokeCaCertPem?: string }).__karaokeCaCertPem = caData.caCert;
+  }
 
-  const basePort = parseInt(process.env.HTTPS_PORT || '3443', 10);
+  // R55: HTTPS-Status-Globals (status-API → QR-URLs + Companion-Banner).
+  // Wichtig: Domain IMMER frisch lesen — der Swap-Handler läuft auch dann,
+  // wenn DuckDNS erst NACH dem Boot über die Settings-API eingerichtet wurde
+  // (Boot-Closure wäre da noch null).
+  const g = globalThis as typeof globalThis & {
+    __karaokeHttpsDomain?: string | null;
+    __karaokeHttpsCertSource?: 'letsencrypt' | 'local-ca' | null;
+    __karaokeHttpsCertExpiresAt?: string | null;
+  };
+  const publishCertGlobals = (source: 'letsencrypt' | 'local-ca', bundle?: LeCertBundle | null) => {
+    g.__karaokeHttpsDomain = readDomainState()?.domain ?? null;
+    g.__karaokeHttpsCertSource = source;
+    g.__karaokeHttpsCertExpiresAt = source === 'letsencrypt' ? (bundle?.expiresAt ?? null) : null;
+  };
+  publishCertGlobals(leBundle ? 'letsencrypt' : 'local-ca', leBundle);
+
+  // R55: Port-Wahl — mit DuckDNS-Domain bevorzugt 443 (saubere URL ohne
+  // Port-Angabe https://mein-karaoke.duckdns.org/mobile; Windows erlaubt
+  // 443 ohne Admin-Rechte). Fällt 443 aus (Linux-Dev ohne root / belegt),
+  // folgt 3443 wie bisher. Ohne Domain: unverändert 3443+.
+  const portCandidates = process.env.HTTPS_PORT
+    ? [parseInt(process.env.HTTPS_PORT, 10)]
+    : domainState
+      ? [443, 3443]
+      : [3443];
 
   const listenOnce = (p: number): Promise<HttpsServer> =>
     new Promise((resolve, reject) => {
       const httpsServer = createHttpsServer(
         {
-          // Leaf + CA-Kette präsentieren, damit Browser/Clients die Chain
-          // vollständig prüfen können (Root-CA installiert → kein Warnhinweis).
-          cert: certData.cert + '\n' + certData.caCert,
-          key: certData.key,
+          // LE: Chain direkt aus der Ausstellung (Leaf + Intermediate).
+          // CA-Fallback: Leaf + CA-Kette präsentieren, damit Browser/Clients
+          // die Chain vollständig prüfen können (Root-CA installiert → kein
+          // Warnhinweis).
+          cert: activeCert.cert,
+          key: activeCert.key,
         },
         requestListener,
       );
@@ -283,21 +331,21 @@ async function startHttpsListener(
       });
     });
 
-  for (let offset = 0; offset <= 4; offset++) {
-    const candidate = basePort + offset;
+  let listeningServer: HttpsServer | null = null;
+  for (const candidate of portCandidates) {
     try {
-      await listenOnce(candidate);
+      listeningServer = await listenOnce(candidate);
       // Port für die App veröffentlichen (status-API → QR-URLs). Gleiche
       // Prozess-Garantie wie __karaokeMobileShared: server.ts und die
       // Next-API-Routes teilen sich das globalThis des Serverprozesses.
       (globalThis as typeof globalThis & { __karaokeHttpsPort?: number }).__karaokeHttpsPort = candidate;
       // eslint-disable-next-line no-console
-      console.log(`[Server] HTTPS listener active on https://${hostname}:${candidate} (self-signed) — companion microphone enabled`);
-      return;
+      console.log(`[Server] HTTPS listener active on https://${hostname}:${candidate} (${leBundle ? `Let's Encrypt: ${domainState?.domain}` : 'local CA'}) — companion microphone enabled`);
+      break;
     } catch (err) {
-      if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'EADDRINUSE' && offset < 4) {
+      if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
         // eslint-disable-next-line no-console
-        console.warn(`[Server] HTTPS port ${candidate} busy — trying ${candidate + 1}`);
+        console.warn(`[Server] HTTPS port ${candidate} busy — trying next`);
         continue;
       }
       // eslint-disable-next-line no-console
@@ -305,8 +353,42 @@ async function startHttpsListener(
       return;
     }
   }
-  // eslint-disable-next-line no-console
-  console.warn(`[Server] No free HTTPS port in ${basePort}..${basePort + 4} — companion microphone disabled.`);
+  if (!listeningServer) {
+    // eslint-disable-next-line no-console
+    console.warn(`[Server] No free HTTPS port (${portCandidates.join(', ')}) — companion microphone disabled.`);
+    return;
+  }
+
+  // ── R55: Live-Zertifikats-Wechsel + Automatik ──
+  // a) DuckDNS eingerichtet, aber noch KEIN gültiges LE-Zertifikat (z. B.
+  //    gerade in den Settings gespeichert) → im Hintergrund ausstellen;
+  //    läuft der Server weiter, übernimmt setSecureContext ohne Restart.
+  if (domainState && !leBundle) {
+    void issueCertificate({ force: true })
+      .then(() => { /* Globals macht der Swap-Handler unten */ })
+      .catch((err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn('[Server] Let\'s Encrypt issuance failed:', err instanceof Error ? err.message : err, '— retry in 24 h (see Settings → Mobilgerät)');
+      });
+  }
+  // b) Swap-Handler: Ausstellung (auch getriggert von der Settings-API!)
+  //    tauscht das Zertifikt am LAUFENDEN Listener — bestehende
+  //    Verbindungen bleiben, neue erhalten das echte Zertifikat.
+  const httpsServerRef = listeningServer;
+  registerCertSwapHandler((bundle: LeCertBundle) => {
+    try {
+      httpsServerRef.setSecureContext({ cert: bundle.cert, key: bundle.key });
+      publishCertGlobals('letsencrypt', bundle);
+      // eslint-disable-next-line no-console
+      console.log(`[Server] HTTPS now serving Let's Encrypt certificate for ${bundle.domain} (valid until ${bundle.expiresAt.slice(0, 10)})`);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[Server] setSecureContext failed:', err instanceof Error ? err.message : err);
+    }
+  });
+  // c) Maintenance: stündlicher DNS-Sync (IP-Wechsel) + täglicher
+  //    Renewal-Check — no-op ohne konfigurierte Domain.
+  startMaintenance();
 }
 
 app.prepare().then(async () => {

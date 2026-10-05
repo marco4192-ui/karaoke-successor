@@ -28,6 +28,9 @@ const GET_RATE_LIMITS: Record<string, number> = {
   // R54: Einmaliger Root-CA-Download (Handys) — 30/min reichen locker
   // (pro Handy exakt 1 Download nötig), schützt vor Missbrauch des Endpunkts.
   'ca-cert': 30,
+  // R55: DuckDNS-Status für die Settings-UI (Polling alle paar Sekunden
+  // während der Einrichtung) — 60/min reichen.
+  'https-domain': 60,
 };
 const DEFAULT_GET_LIMIT = 60; // catch-all for unlisted GET actions
 

@@ -1631,6 +1631,50 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, message: 'Playlist wird erstellt' });
       }
 
+      // ===================== R55: DUCKDNS / LET'S ENCRYPT =====================
+      case 'https-domain': {
+        // DuckDNS-Konfiguration speichern + Zertifikat SOFORT ausstellen.
+        // Host-only (requireAuth): Die Settings-UI läuft auf dem Desktop;
+        // Handys dürfen die HTTPS-Konfiguration nicht ändern.
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const httpsPayload = payload as { domain?: unknown; token?: unknown };
+        const { saveDomainConfig, issueCertificate, getHttpsDomainStatus } = await import('@/lib/server/https-domain');
+        try {
+          const domain = saveDomainConfig(
+            typeof httpsPayload.domain === 'string' ? httpsPayload.domain : '',
+            typeof httpsPayload.token === 'string' ? httpsPayload.token : '',
+          );
+          // Ausstellung läuft synchron (10–60 s: TXT-Record setzen, ACME-
+          // Validierung, Finalize). Der Swap-Handler in server.ts tauscht
+          // das Zertifikat am laufenden HTTPS-Listener (setSecureContext).
+          await issueCertificate({ force: true });
+          return Response.json({
+            success: true,
+            message: `Zertifikat aktiv: ${domain}`,
+            ...getHttpsDomainStatus(),
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return Response.json({ success: false, message, ...getHttpsDomainStatus() }, { status: 400 });
+        }
+      }
+
+      case 'https-domain-clear': {
+        // DuckDNS-Konfiguration entfernen — zurück zur lokalen CA (R54).
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        const { clearDomainConfig, getHttpsDomainStatus } = await import('@/lib/server/https-domain');
+        try {
+          clearDomainConfig();
+          return Response.json({ success: true, ...getHttpsDomainStatus() });
+        } catch (err) {
+          return Response.json({ success: false, message: err instanceof Error ? err.message : String(err) }, { status: 500 });
+        }
+      }
+
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }
