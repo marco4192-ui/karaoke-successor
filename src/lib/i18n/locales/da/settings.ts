@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Din telefon bliver en trådløs mikrofon',
   step4: 'Syng trådløst fra hvor som helst i rummet!',
   copyFailed: 'Kunne ikke kopiere URL til udklipsholder',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS uden browseradvarsel (engangsopsætning)',
+  certDesc: 'Telefonforbindelsen bruger et selvsigneret HTTPS-certifikat. Installér karaoke-certifikatet ÉN GANG pr. telefon — browseradvarslen forsvinder permanent (også efter WiFi/IP-skift).',
+  certStep1: 'Scan certifikatets QR-kode med telefonen (eller åbn downloadlinket)',
+  certStep2: 'Installér det downloadede certifikat (Android: »CA-certifikat«; iOS: profil + tillidsindstilling)',
+  certStep3: 'Åbn Companion-appen igen — ingen advarsel mere, mikrofonen låses op',
+  certNote: 'Alternativt: Companion-appen viser den samme opsætning som banner efter første forbindelse (kan lukkes).',
+  certQrAlt: 'QR-kode til certifikat-download',
+  certQrCaption: 'Scan → download certifikat → installér',
 },
 settingsWebcam: {
   about: 'Om webcam-baggrund',

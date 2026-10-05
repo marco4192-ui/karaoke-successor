@@ -15,13 +15,19 @@
  *      by scripts/prepare-bundle.mjs via esbuild) to the SAME HTTP server
  *   4. degrades gracefully: without socketio-server.cjs the app still
  *      boots — companions just fall back to HTTP polling
- *   5. R52: opens an ADDITIONAL HTTPS listener (default port 3443) when a
- *      self-signed certificate is present (certs/https-*.pem, generated at
- *      bundle time by prepare-bundle.mjs). Phones connect via https:// so
- *      getUserMedia („Companion als Mikrofon") works — browsers block mic
- *      access on insecure origins like http://<LAN-IP>:3000. The HTTPS port
- *      is published to the app via globalThis.__karaokeHttpsPort (read by
+ *   5. R52: opens an ADDITIONAL HTTPS listener (default port 3443) with a
+ *      certificate from certs/ (generated at bundle time by
+ *      prepare-bundle.mjs). Phones connect via https:// so getUserMedia
+ *      („Companion als Mikrofon") works — browsers block mic access on
+ *      insecure origins like http://<LAN-IP>:3000. The HTTPS port is
+ *      published to the app via globalThis.__karaokeHttpsPort (read by
  *      the /api/mobile status action → httpsPort → QR/Companion-URLs).
+ *      R54: Die Zertifikate sind jetzt eine lokale Root-CA (ca-*.pem, stabil)
+ *      + Leaf. Handys installieren die CA EINMAL (Download über
+ *      /api/mobile?action=ca-cert) → nie wieder Zertifikats-Warnung. Ist
+ *      node-forge im Bundle verfügbar, wird der Leaf bei Bedarf zur
+ *      Laufzeit neu ausgestellt (SAN mit den aktuellen LAN-IPs) — ohne
+ *      Neu-Installation auf den Handys, weil die CA gleich bleibt.
  *
  * Mirrors the request/upgrade error handling of Next's own startServer()
  * (500 responses for failed requests, socket.destroy for failed upgrades).
@@ -142,21 +148,149 @@ async function main() {
 
   // ─── 5. R52: HTTPS-Listener für die Companion-App (Mikrofon-Freigabe) ───
   // getUserMedia ist auf http://<LAN-IP> blockiert (kein sicherer Kontext) —
-  // nur localhost gilt ohne TLS als sicher. Mit dem Self-Signed-Cert aus dem
-  // Bundle (certs/https-*.pem) öffnen wir deshalb einen parallelen HTTPS-
-  // Listener. Handys verbinden sich über die https-URL aus dem QR-Code und
-  // bestätigen die Zertifikats-Warnung einmalig im Browser.
+  // nur localhost gilt ohne TLS als sicher. Mit dem Zertifikat aus dem
+  // Bundle (certs/, R54: lokale Root-CA + Leaf) öffnen wir deshalb einen
+  // parallelen HTTPS-Listener. Handys installieren die Root-CA EINMAL
+  // (/api/mobile?action=ca-cert) und sehen danach KEINE Zertifikats-Warnung
+  // mehr — auch nach IP-Wechseln nicht (Leaf wird nur neu signiert).
   let httpsServer = null;
   let httpsPort = null;
   try {
-    const certPath = path.join(dir, 'certs', 'https-cert.pem');
-    const keyPath = path.join(dir, 'certs', 'https-key.pem');
-    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    const certsDir = process.env.KARAOKE_CERTS_DIR || path.join(dir, 'certs');
+    const certPath = path.join(certsDir, 'https-cert.pem');
+    const keyPath = path.join(certsDir, 'https-key.pem');
+    const caCertPath = path.join(certsDir, 'ca-cert.pem');
+    const caKeyPath = path.join(certsDir, 'ca-key.pem');
+    const metaPath = path.join(certsDir, 'https-meta.json');
+
+    // R54: node-forge laden (wird von prepare-bundle.mjs ins Bundle kopiert).
+    // Fehlt es, funktioniert der HTTPS-Listener trotzdem mit den build-time
+    // Zertifikaten — nur die Runtime-Neuausstellung des Leafs entfällt.
+    let forge = null;
+    try {
+      const m = require('node-forge');
+      forge = m.pki ? m : (m.default ?? m);
+    } catch { /* best effort — siehe oben */ }
+
+    // LAN-IPv4s dieser Maschine (für das SAN des Leafs)
+    const lanIps = [];
+    try {
+      const nets = require('os').networkInterfaces();
+      for (const list of Object.values(nets)) {
+        for (const net of list || []) {
+          if (net.family === 'IPv4' && !net.internal) lanIps.push(net.address);
+        }
+      }
+    } catch { /* ohne LAN-IPs fortfahren */ }
+
+    // Root-CA laden oder (falls fehlend und node-forge da) neu erzeugen.
+    let caCertPem = fs.existsSync(caCertPath) ? fs.readFileSync(caCertPath, 'utf8') : null;
+    let caKeyPem = fs.existsSync(caKeyPath) ? fs.readFileSync(caKeyPath, 'utf8') : null;
+    if ((!caCertPem || !caKeyPem) && forge) {
+      try {
+        const caKeys = forge.pki.rsa.generateKeyPair(2048);
+        const ca = forge.pki.createCertificate();
+        ca.publicKey = caKeys.publicKey;
+        ca.serialNumber = String(Date.now());
+        ca.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        ca.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+        const caAttrs = [
+          { name: 'commonName', value: 'Karaoke ZERO Local CA' },
+          { name: 'organizationName', value: 'Karaoke ZERO' },
+        ];
+        ca.setSubject(caAttrs);
+        ca.setIssuer(caAttrs);
+        ca.setExtensions([
+          { name: 'basicConstraints', cA: true },
+          { name: 'keyUsage', keyCertSign: true, cRLSign: true },
+          { name: 'subjectKeyIdentifier' },
+        ]);
+        ca.sign(caKeys.privateKey, forge.md.sha256.create());
+        caCertPem = forge.pki.certificateToPem(ca);
+        caKeyPem = forge.pki.privateKeyToPem(caKeys.privateKey);
+        try {
+          fs.mkdirSync(certsDir, { recursive: true });
+          fs.writeFileSync(caCertPath, caCertPem);
+          fs.writeFileSync(caKeyPath, caKeyPem);
+          console.log('[standalone] Generated local root CA (certs/ca-cert.pem) — install once per phone via /api/mobile?action=ca-cert');
+        } catch (persistErr) {
+          console.warn('[standalone] Could not persist root CA (read-only install dir?) — CA changes on every start:', persistErr && persistErr.message);
+        }
+      } catch (genErr) {
+        console.warn('[standalone] Root-CA generation failed:', genErr && genErr.message);
+      }
+    }
+
+    // Leaf: wiederverwenden, solange CA + LAN-IP-Set passen; sonst neu
+    // ausstellen (gleiche CA!) — keine Neu-Installation auf den Handys.
+    const caHash = caCertPem
+      ? require('crypto').createHash('sha256').update(caCertPem).digest('hex')
+      : null;
+    let certPem = fs.existsSync(certPath) ? fs.readFileSync(certPath, 'utf8') : null;
+    let keyPem = fs.existsSync(keyPath) ? fs.readFileSync(keyPath, 'utf8') : null;
+    let metaOk = false;
+    try {
+      if (certPem && keyPem && caHash) {
+        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+        metaOk = meta && meta.caHash === caHash && Array.isArray(meta.ips)
+          && meta.ips.length === lanIps.length
+          && lanIps.every((ip) => meta.ips.includes(ip));
+      }
+    } catch { metaOk = false; }
+
+    if ((!certPem || !keyPem || !metaOk) && forge && caCertPem && caKeyPem) {
+      try {
+        const caCert = forge.pki.certificateFromPem(caCertPem);
+        const caKey = forge.pki.privateKeyFromPem(caKeyPem);
+        const leafKeys = forge.pki.rsa.generateKeyPair(2048);
+        const leaf = forge.pki.createCertificate();
+        leaf.publicKey = leafKeys.publicKey;
+        leaf.serialNumber = String(Date.now());
+        leaf.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        leaf.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+        leaf.setSubject([
+          { name: 'commonName', value: 'Karaoke ZERO Companion' },
+          { name: 'organizationName', value: 'Karaoke ZERO' },
+        ]);
+        leaf.setIssuer(caCert.subject.attributes);
+        leaf.setExtensions([
+          { name: 'basicConstraints', cA: false },
+          { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+          { name: 'extKeyUsage', serverAuth: true },
+          {
+            name: 'subjectAltName',
+            altNames: [
+              { type: 2, value: 'localhost' },
+              { type: 7, ip: '127.0.0.1' },
+              ...lanIps.map((ip) => ({ type: 7, ip })),
+            ],
+          },
+        ]);
+        leaf.sign(caKey, forge.md.sha256.create());
+        certPem = forge.pki.certificateToPem(leaf);
+        keyPem = forge.pki.privateKeyToPem(leafKeys.privateKey);
+        try {
+          fs.mkdirSync(certsDir, { recursive: true });
+          fs.writeFileSync(certPath, certPem);
+          fs.writeFileSync(keyPath, keyPem);
+          fs.writeFileSync(metaPath, JSON.stringify({ ips: lanIps, caHash, generatedAt: new Date().toISOString() }));
+        } catch { /* best effort — ephemeral Leaf ist bei installierter CA folgenlos */ }
+        console.log(`[standalone] Issued HTTPS leaf signed by local CA (SAN: localhost, 127.0.0.1${lanIps.length ? ', ' + lanIps.join(', ') : ''})`);
+      } catch (issueErr) {
+        console.warn('[standalone] Leaf re-issue failed:', issueErr && issueErr.message);
+      }
+    }
+
+    if (certPem && keyPem) {
+      // Root-CA für den Download-Endpunkt veröffentlichen (BEFORE listen,
+      // damit der erste Request sie schon sieht).
+      if (caCertPem) globalThis.__karaokeCaCertPem = caCertPem;
       httpsPort = parseInt(process.env.HTTPS_PORT, 10) || 3443;
       httpsServer = https.createServer(
         {
-          cert: fs.readFileSync(certPath),
-          key: fs.readFileSync(keyPath),
+          // Leaf + CA-Kette (Root-CA installiert → keine Browser-Warnung)
+          cert: caCertPem ? certPem + '\n' + caCertPem : certPem,
+          key: keyPem,
         },
         requestListener,
       );
@@ -186,7 +320,7 @@ async function main() {
         // dem ersten status-Request passieren — globalThis ist prozessweit
         // mit den Next-API-Routes geteilt (gleiches Muster wie mobile-state).
         globalThis.__karaokeHttpsPort = httpsPort;
-        console.log(`[standalone] HTTPS listener active on https://${hostname}:${httpsPort} (self-signed)`);
+        console.log(`[standalone] HTTPS listener active on https://${hostname}:${httpsPort}${caCertPem ? ' (local CA)' : ' (self-signed)'} — install the CA once per phone via /api/mobile?action=ca-cert`);
       });
     } else {
       console.warn('[standalone] No HTTPS certificate found (certs/https-*.pem) — companion microphone disabled (plain HTTP only).');

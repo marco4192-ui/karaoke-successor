@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Il tuo telefono diventa un microfono wireless',
   step4: 'Canta wireless da qualsiasi punto della stanza!',
   copyFailed: 'Impossibile copiare l\'URL negli appunti',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS senza avviso del browser (configurazione una tantum)',
+  certDesc: 'La connessione del telefono usa un certificato HTTPS autofirmato. Installa il certificato karaoke UNA SOLA VOLTA per telefono — l\'avviso del browser sparisce per sempre (anche dopo cambi di WiFi/IP).',
+  certStep1: 'Scansiona il codice QR del certificato con il telefono (oppure apri il link di download)',
+  certStep2: 'Installa il certificato scaricato (Android: «Certificato CA»; iOS: profilo + impostazione di attendibilità)',
+  certStep3: 'Riapri l\'app Companion — nessun avviso, il microfono si sblocca',
+  certNote: 'In alternativa: l\'app Companion mostra la stessa configurazione come banner dopo la prima connessione (chiudibile).',
+  certQrAlt: 'Codice QR per il download del certificato',
+  certQrCaption: 'Scansiona → scarica certificato → installa',
 },
 settingsWebcam: {
   about: 'Informazioni sullo Sfondo Webcam',

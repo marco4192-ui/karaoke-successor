@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Puhelimestasi tulee langaton mikrofoni',
   step4: 'Laula langattomasti mistä tahansa huoneessa!',
   copyFailed: 'URL:n kopioiminen leikepöydälle epäonnistui',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS ilman selaimen varoitusta (kertaluontoinen asennus)',
+  certDesc: 'Puhelinyhteys käyttää itse allekirjoitettua HTTPS-varmennetta. Asenna karaokevarmenne KERRAN jokaiseen puhelimeen — selaimen varoitus katoaa pysyvästi (myös WiFi/IP-osoitteen vaihtumisen jälkeen).',
+  certStep1: 'Skannaa varmenteen QR-koodi puhelimella (tai avaa latauslinkki)',
+  certStep2: 'Asenna ladattu varmenne (Android: ”CA-varmenne”; iOS: profiili + luotettavuusasetus)',
+  certStep3: 'Avaa Companion-sovellus uudelleen — ei enää varoitusta, mikrofoni vapautuu käyttöön',
+  certNote: 'Vaihtoehtoisesti: Companion-sovellus näyttää saman asennuksen bannerina ensimmäisen yhteyden jälkeen (suljettavissa).',
+  certQrAlt: 'QR-koodi varmenteen lataamiseen',
+  certQrCaption: 'Skannaa → lataa varmenne → asenna',
 },
 settingsWebcam: {
   about: 'Webcam-tausta',

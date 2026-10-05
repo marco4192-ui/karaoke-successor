@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Seu telefone se torna um microfone sem fio',
   step4: 'Cante sem fio de qualquer lugar da sala!',
   copyFailed: 'Falha ao copiar URL para a área de transferência',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS sem aviso do navegador (configuração única)',
+  certDesc: 'A conexão do celular usa um certificado HTTPS autoassinado. Instale o certificado de karaokê UMA VEZ por celular — o aviso do navegador desaparece permanentemente (mesmo após trocas de WiFi/IP).',
+  certStep1: 'Escaneie com o celular o QR code do certificado (ou abra o link de download)',
+  certStep2: 'Instale o certificado baixado (Android: «Certificado CA»; iOS: perfil + ajuste de confiança)',
+  certStep3: 'Reabra o app Companion — sem mais avisos, o microfone é desbloqueado',
+  certNote: 'Alternativa: o app Companion mostra a mesma configuração como banner após a primeira conexão (dá para fechar).',
+  certQrAlt: 'QR code para baixar o certificado',
+  certQrCaption: 'Escanear → baixar certificado → instalar',
 },
 settingsWebcam: {
   about: 'Sobre o Plano de Fundo da Webcam',

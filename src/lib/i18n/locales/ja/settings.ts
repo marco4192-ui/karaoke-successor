@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: '電話がワイヤレスマイクになります',
   step4: '部屋のどこからでもワイヤレスで歌いましょう!',
   copyFailed: 'URLをクリップボードにコピーできませんでした',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'ブラウザ警告なしのHTTPS（初回のみの設定）',
+  certDesc: 'スマホとの接続は自己署名のHTTPS証明書を使用します。カラオケ証明書はスマホごとに1回だけインストールすれば、ブラウザ警告は永久になくなります（WiFi/IPが変わっても有効）。',
+  certStep1: 'スマホで証明書のQRコードをスキャン（またはダウンロードリンクを開く）',
+  certStep2: 'ダウンロードした証明書をインストール（Android：「CA証明書」、iOS：プロファイル＋信頼設定）',
+  certStep3: 'Companionアプリを開き直す — 警告が消え、マイクが使えるようになります',
+  certNote: '別の方法：Companionアプリが初回接続後に同じ設定をバナーとして表示します（閉じることもできます）。',
+  certQrAlt: '証明書ダウンロード用QRコード',
+  certQrCaption: 'スキャン → 証明書をダウンロード → インストール',
 },
 settingsWebcam: {
   about: 'Webカム背景について',

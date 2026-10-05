@@ -19,6 +19,58 @@ interface ConnectedClient {
   queueCount: number;
 }
 
+/** R54: Zertifikats-Installations-Hinweis (lokal ausklappbar, kein State
+ *  im Parent nötig). Einmal pro Handy installiert → keine HTTPS-Warnung
+ *  mehr, auch nicht nach IP-Wechseln (lokale Root-CA, siehe R54). */
+function CertSetupHint({ localIP }: { localIP: string }) {
+  const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  // Der CA-Download läuft bewusst über HTTP (Port 3000): Das Handy kann ja
+  // genau VOR der Zertifikats-Installation noch keine vertrauenswürdige
+  // HTTPS-Verbindung aufbauen.
+  const certUrl = `http://${localIP}:3000/api/mobile?action=ca-cert`;
+  const certQrSrc = useQRCode(open ? certUrl : '');
+
+  return (
+    <div className="p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex w-full items-center justify-between gap-2 text-left"
+        data-testid="cert-setup-hint"
+      >
+        <span className="font-medium text-sm">
+          🔒 {t('settingsMobileDevice.certTitle')}
+        </span>
+        <span className="text-white/50 text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="mt-3 grid md:grid-cols-2 gap-4">
+          <div className="text-sm text-white/60 space-y-2">
+            <p>{t('settingsMobileDevice.certDesc')}</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs">
+              <li>{t('settingsMobileDevice.certStep1')}</li>
+              <li>{t('settingsMobileDevice.certStep2')}</li>
+              <li>{t('settingsMobileDevice.certStep3')}</li>
+            </ol>
+            <p className="text-xs text-white/40">{t('settingsMobileDevice.certNote')}</p>
+          </div>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="w-36 h-36 bg-white rounded-lg p-2">
+              {certQrSrc ? (
+                <img src={certQrSrc} alt={t('settingsMobileDevice.certQrAlt')} className="w-full h-full" />
+              ) : (
+                <div className="w-full h-full animate-pulse bg-gray-200 rounded" />
+              )}
+            </div>
+            <p className="text-xs text-white/40 text-center">{t('settingsMobileDevice.certQrCaption')}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MobileDeviceMicrophoneSection() {
   const [localIP, setLocalIP] = useState<string>('');
   const [connectedClients, setConnectedClients] = useState<ConnectedClient[]>([]);
@@ -101,6 +153,11 @@ export function MobileDeviceMicrophoneSection() {
           
           {/* Connection Info */}
           <div className="space-y-4">
+            {/* R54: Zertifikats-Hinweis — nur relevant, wenn ein HTTPS-Listener
+                aktiv ist (mobileUrl startet dann mit https://). */}
+            {localIP && mobileUrl.startsWith('https://') && (
+              <CertSetupHint localIP={localIP} />
+            )}
             <div className="p-4 bg-white/5 rounded-lg" data-testid="mobile-connection-info">
               <h4 className="font-medium mb-2">{t('settingsMobileDevice.connectionUrl')}</h4>
               <div className="flex items-center gap-2">

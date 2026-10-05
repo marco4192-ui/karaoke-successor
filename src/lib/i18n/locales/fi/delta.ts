@@ -1291,7 +1291,7 @@ export const deltaTranslations = {
     qrScanToConnect: "Skannaa yhdistääksesi",
     qrWlanHint: "⚠️ Yhdistä puhelin ensin samaan WiFi-verkkoon kuin tämä tietokone, ja skannaa sitten QR-koodi.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
-    qrHttpsHint: "Kun avaat linkin ensimmäistä kertaa, selain näyttää tietoturvavaroituksen (itse allekirjoitettu varmenne): napauta \"Lisäasetukset\" → \"Siirry\" — kerran per laite. Sen jälkeen mikrofonin käyttö (laulaminen puhelimella) sallitaan.",
+    qrHttpsHint: "Ensimmäinen yhteys: selain saattaa näyttää varoituksen HTTPS-varmenteesta. Suositus: asenna karaokevarmenne KERRAN (Asetukset → Mobiili → ”HTTPS ilman selaimen varoitusta (kertaluontoinen asennus)” tai Companion-sovelluksen banneri) — varoitus katoaa pysyvästi. Ilman asennusta: napauta ”Lisäasetukset” → ”Siirry” — kerran per laite.",
     singingDeviceAssignment: "Laululaitteen osoittaminen",
     singingDeviceAssignmentDesc: "Valitse pelaajittain: laula mikrofonilla vai Companion-sovelluksella.",
   },

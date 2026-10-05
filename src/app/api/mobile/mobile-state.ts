@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { generateCode, COMPANION_CODE_CHARS } from '@/lib/utils';
 import { getClientIp } from '@/lib/rate-limiter';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
 // ===================== ADMIN PIN AUTH =====================
@@ -316,6 +318,11 @@ const globalWithShared = globalThis as typeof globalThis & {
    *  Garantie wie __karaokeMobileShared: API-Routes und Socket.IO-Server
    *  teilen sich das globalThis des Serverprozesses. */
   __karaokeHttpsPort?: number;
+  /** R54: Root-CA-Zertifikat (PEM) des HTTPS-Listeners. server.ts /
+   *  standalone-server.js veröffentlichen die CA beim Boot — der Download-
+   *  Endpunkt (/api/mobile?action=ca-cert) reicht sie an Handys weiter,
+   * damit die HTTPS-Verbindung ohne Browser-Warnung nutzbar wird. */
+  __karaokeCaCertPem?: string;
 };
 const shared: MobileSharedState = globalWithShared.__karaokeMobileShared ?? {
   mobileClients: new Map<string, MobileClient>(),
@@ -341,6 +348,32 @@ globalWithShared.__karaokeMobileShared = shared;
 export function getHttpsPort(): number | null {
   const p = globalWithShared.__karaokeHttpsPort;
   return typeof p === 'number' && Number.isInteger(p) && p > 0 && p < 65536 ? p : null;
+}
+
+/**
+ * R54: Root-CA-Zertifikat (PEM) für den einmaligen Download auf Handys.
+ *
+ * Nach der Installation der CA (Android: Zertifikat installieren; iOS:
+ * Profil + Vertrauens-Einstellung) vertraut der Browser der HTTPS-Verbindung
+ * des Karaoke-Servers dauerhaft — die Zertifikats-Warnung beim ersten
+ * Aufruf bleibt komplett aus, auch nach IP-Wechseln (der Leaf wird dann nur
+ * von derselben CA neu signiert). Fallback: direkter Platten-Zugriff, falls
+ * der Server-Bootstrap das globalThis noch nicht gesetzt hat.
+ */
+export function getCaCertPem(): string | null {
+  const pem = globalWithShared.__karaokeCaCertPem;
+  if (typeof pem === 'string' && pem.includes('BEGIN CERTIFICATE')) return pem;
+  try {
+    const dir = process.env.KARAOKE_CERTS_DIR || join(process.cwd(), 'certs');
+    const p = join(dir, 'ca-cert.pem');
+    if (existsSync(p)) {
+      const fromDisk = readFileSync(p, 'utf8');
+      if (fromDisk.includes('BEGIN CERTIFICATE')) return fromDisk;
+    }
+  } catch {
+    // Platten-Fallback nicht möglich (untypisch) → null
+  }
+  return null;
 }
 
 export const mobileClients: Map<string, MobileClient> = shared.mobileClients;

@@ -14,6 +14,7 @@ import {
   removeClient,
   requireAuth,
   getHttpsPort,
+  getCaCertPem,
 } from './mobile-state';
 import { getClientIp } from '@/lib/rate-limiter';
 import { readCoverFromDisk, saveCoverToDisk } from '@/lib/server/companion-cover-store';
@@ -179,6 +180,35 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         }
       }
       return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+
+    case 'ca-cert':
+      // R54: Einmaliger Download der lokalen Root-CA auf Handys. Nach der
+      // Installation vertraut der Browser der HTTPS-Verbindung dauerhaft —
+      // KEINE Zertifikats-Warnung mehr (auch nicht nach IP-Wechseln, weil der
+      // Leaf dann nur von derselben CA neu signiert wird). Absichtlich OHNE
+      // Auth/PIN: Das CA-Zertifikat ist per Definition öffentlich (nur der
+      // Private Key bleibt auf dem Server). Muss über plain HTTP (Port 3000)
+      // abrufbar sein — das Handy kann ja genau DAVOR keine HTTPS-Verbindung
+      // ohne Warnung aufbauen.
+      {
+        const caPem = getCaCertPem();
+        if (!caPem) {
+          return Response.json(
+            { success: false, message: 'No CA certificate available (HTTPS listener not active).' },
+            { status: 404 },
+          );
+        }
+        return new Response(caPem, {
+          status: 200,
+          headers: {
+            // application/x-x509-ca-cert: Android öffnet direkt den
+            // Zertifikats-Installer, iOS zeigt „Profil geladen".
+            'Content-Type': 'application/x-x509-ca-cert',
+            'Content-Disposition': 'attachment; filename="karaoke-zero-ca.crt"',
+            'Cache-Control': 'public, max-age=3600',
+          },
+        });
+      }
 
     case 'kick':
       // Admin kick: forcefully disconnect a client (called from settings)

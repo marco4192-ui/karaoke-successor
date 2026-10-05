@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button';
 import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
+import { tOr } from '@/lib/i18n/t-or';
 
 // Types & constants
 import type { MobileProfile } from './mobile/mobile-types';
@@ -11,6 +12,16 @@ import { screenToMirrorId, type MirrorScreenId } from './mobile/mobile-types';
 import type { BrSingingEvent } from '@/lib/socketio-events';
 import { MobileChat } from './mobile/mobile-chat';
 import { PROFILE_COLORS } from './mobile/mobile-types';
+
+// R54-Auslagerungen (Refactoring: „mobile-client-view.tsx extrem groß")
+import { isDesktopPartyScreen, isGameFlowScreen, NON_CONTROLLING_LOCKED_NAV, isLockedForNonControlling } from './mobile/mobile-nav-rules';
+import { ToastBar, type MobileToastItem } from './mobile/mobile-toast-bar';
+import { MicStatusCard } from './mobile/mobile-mic-status-card';
+import { SingalongOverlay, CptmBlinkOverlay, CptmYourTurnOverlay } from './mobile/mobile-turn-overlays';
+import { MobileHeader } from './mobile/mobile-header';
+import { MobileTournamentVote, MobileSongRunningOverlay } from './mobile/mobile-participation-overlays';
+import { MobileCertSetup } from './mobile/mobile-cert-setup';
+import { useScreenWakeLock } from '@/hooks/use-screen-wake-lock';
 
 // Mirror view
 import { MirrorView } from './mobile/mirror-views/mirror-view';
@@ -35,104 +46,9 @@ import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
 import { initCompanionHttpsPort } from '@/lib/qr-code';
 
-// ===================== i18n-Hilfsfunktion (R33-Konvention) =====================
-// t(key) === key bedeutet "nicht übersetzt" → deutschen Fallback nutzen.
-// Neue Keys zusätzlich in src/lib/i18n/pending-keys/r33-c.json pflegen.
-function tOr(t: (key: string) => string, key: string, fallback: string): string {
-  return t(key) === key ? fallback : t(key);
-}
-
 // ===================== MOBILE CLIENT VIEW =====================
 interface MobileClientViewProps {
   profileId?: string;
-}
-
-// Desktop screens where the DESKTOP always wins over the localNav grace
-// window (party/game flow — the big screen must never be overridable by a
-// stale local tab highlight while a game runs).
-function isDesktopPartyScreen(desktop: string): boolean {
-  return desktop === 'party' || desktop === 'party-setup'
-    || desktop === 'song-voting'
-    || desktop === 'game' || desktop.endsWith('-game')
-    || desktop === 'results';
-}
-
-// R33/P1: Active GAME-FLOW screens. Nicht-steuernde Companion folgen dem
-// Desktop-Screen NIE für Menü-Screens — ABER während eines laufenden Spiels
-// zeigt jeder Companion den Game-Mirror, denn dort leben die
-// Partizipations-Overlays (Pause-Dialog, Party-Leave, Song-Voting,
-// BR-Singing-Monitor, Turn-Signale). Menu/config screens (party,
-// party-setup, settings, …) werden NICHT erzwungen.
-function isGameFlowScreen(desktop: string): boolean {
-  return desktop === 'game' || desktop.endsWith('-game')
-    || desktop === 'song-voting'
-    || desktop === 'results';
-}
-
-// R33/P2+P14: Für nicht-steuernde Companion gesperrte Nav-Ziele.
-// (R40: Der Profile-Tab ist zurück — Spieler aktivieren/deaktivieren ist
-// eine Steuerungs-Aktion, daher für nicht-steuernde gesperrt. Das EDIT des
-// eigenen Profils bleibt trotzdem erlaubt — läuft über den Header-Avatar,
-// nicht über die Tab-Leiste.)
-const NON_CONTROLLING_LOCKED_NAV = ['party', 'dailyChallenge', 'jukebox', 'profile', 'settings'];
-
-function isLockedForNonControlling(screen: string): boolean {
-  return NON_CONTROLLING_LOCKED_NAV.includes(screen) || screen === 'party-setup';
-}
-
-// ===================== Toast-Leiste (P7/P18) =====================
-interface MobileToastItem {
-  id: number;
-  text: string;
-  kind: 'info' | 'error' | 'success' | 'chat';
-  detail?: string;
-}
-
-/** Schlanke Toast-Leiste DIREKT ÜBER der unteren Menüleiste.
- *  Auto-Dismiss nach 3 s, Slide-up-Animation, Tap schließt vorzeitig. */
-function ToastBar({ toasts, onDismiss }: { toasts: MobileToastItem[]; onDismiss: (id: number) => void }) {
-  if (toasts.length === 0) return null;
-  return (
-    <div
-      aria-live="polite"
-      className="pointer-events-none fixed left-3 right-3 z-40 flex flex-col gap-1.5"
-      style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
-    >
-      {toasts.map((toast) => (
-        <button
-          key={toast.id}
-          onClick={() => onDismiss(toast.id)}
-          className={
-            'pointer-events-auto flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left shadow-2xl backdrop-blur-md ' +
-            'transition-all duration-300 ease-out animate-[toast-slide-up_0.28s_ease-out] ' +
-            (toast.kind === 'error'
-              ? 'bg-red-950/90 border-red-500/40'
-              : toast.kind === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/40'
-                : 'bg-black/90 border-white/15')
-          }
-        >
-          <span className="shrink-0 text-sm leading-none" aria-hidden="true">
-            {toast.kind === 'error' ? '⚠️' : toast.kind === 'success' ? '✅' : toast.kind === 'chat' ? '💬' : 'ℹ️'}
-          </span>
-          <span className="min-w-0 flex-1">
-            {toast.detail && (
-              <span className={`block text-[11px] font-semibold leading-tight ${toast.kind === 'chat' ? 'text-cyan-400' : 'text-white/60'}`}>
-                {toast.detail}
-              </span>
-            )}
-            <span className="block truncate text-xs leading-snug text-white/85">{toast.text}</span>
-          </span>
-        </button>
-      ))}
-      <style>{`
-        @keyframes toast-slide-up {
-          0% { opacity: 0; transform: translateY(10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </div>
-  );
 }
 
 export function MobileClientView({ profileId }: MobileClientViewProps) {
@@ -230,11 +146,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [micInsecure, setMicInsecure] = useState(false);
   const [micHttpsPort, setMicHttpsPort] = useState<number | null>(null);
   useEffect(() => {
-    if (typeof window === 'undefined' || window.isSecureContext) return;
+    if (typeof window === 'undefined') return;
+    // R53: Unsicherer Kontext (http://<LAN-IP>) → Mic blockiert, Karte zeigt
+    // den HTTPS-Wechsel. R54: Der HTTPS-Port wird jetzt IMMER gezogen — auch
+    // im secure-Kontext braucht ihn das Zertifikats-Banner (MobileCertSetup).
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time state sync (insecure context never changes without navigation)
-    setMicInsecure(true);
-    // HTTPS-Port vom Server ziehen (idempotent — initCompanionHttpsPort
-    // cached und use-app-effects fragt ihn ohnehin beim Boot ab).
+    if (!window.isSecureContext) setMicInsecure(true);
     initCompanionHttpsPort().then(p => { setMicHttpsPort(p); }).catch(() => { /* Hint bleibt */ });
   }, []);
   const openHttpsCompanionUrl = useCallback(() => {
@@ -569,6 +486,25 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (!shouldSingNow) autoSingDoneRef.current = false;
   }, [shouldSingNow, profile, brGameData, medleyGameData, isListening, startMicrophone, stopMicrophone]);
 
+  // ── R54: Screen Wake Lock — Standby-Schutz für die Pitch-Erkennung ──
+  // Der Pitch-Loop läuft über requestAnimationFrame, das bei ausgeblendetem
+  // Display EINFRIERT (Nutzer-Feedback: nach Standby kamen hohe/tiefe Töne
+  // nicht mehr an, die Linie blieb flach). Solange dieses Handy singt
+  // (shouldSingNow), halten wir den Bildschirm aktiv. Die MicStatusCard
+  // zeigt den Zustand (☀️) bzw. einen Hinweis bei fehlender Unterstützung.
+  // Zusätzlich (R54b): Der Lock wird SCHON während des Countdowns meines
+  // Turns geholt UND solange das Mikro aktiv mithört — geht das Display
+  // erst im Countdown aus, kann der Lock beim Sing-Start nicht mehr
+  // angefordert werden (Seite unsichtbar → SecurityError) und die Auto-
+  // Sing-Geste ist ebenfalls weg. isListening ist sicher begrenzt: das Mic
+  // stoppt automatisch, sobald nicht mehr gespielt wird (siehe Effect oben).
+  const isMyUpcomingTurn =
+    (singalongTurn?.isActive && singalongTurn.profileId === profile?.id && singalongTurn.countdown !== null) ||
+    (cptmTurn?.isActive && cptmTurn.profileId === profile?.id && cptmTurn.countdown !== null);
+  const wakeLock = useScreenWakeLock(
+    !gameState.songEnded && (shouldSingNow || isMyUpcomingTurn || isListening),
+  );
+
   // ===================== DESKTOP COMMANDS =====================
   // Wird von steuernden Companions für CONTROL-Commands genutzt (Nav) UND
   // von ALLEN Companions für PARTICIPATION-Commands (companion_pause,
@@ -857,104 +793,21 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       {/* ====== HEADER ====== */}
       {isConnected && profile && !isSinging && (
-        <div className="sticky top-0 z-20 bg-black/50 backdrop-blur-xl border-b border-white/10">
-          <div className="flex items-center justify-between px-3 py-2.5">
-            {/* Links: Profil-Button (eigenes Profil — auch ohne Steuerung erlaubt, P2) */}
-            <button
-              onClick={() => setShowProfile(true)}
-              className="flex items-center gap-2 active:opacity-70 transition-opacity"
-            >
-              <div
-                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white"
-                style={{ backgroundColor: profile.color }}
-              >
-                {profile.avatar
-                  ? <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
-                  : profile.name[0]?.toUpperCase() || '?'}
-              </div>
-              <span className="text-sm font-medium text-white/80 max-w-[100px] truncate">{profile.name}</span>
-            </button>
-
-            {/* Rechts: Hilfe, Chat, Verbindung-Info + Abmelden */}
-            <div className="flex items-center gap-2">
-              {/* R33/P19: Hilfe-Button — für JEDEN jederzeit (steuernd oder nicht) */}
-              <button
-                onClick={() => setShowHelp(true)}
-                className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/10 active:scale-90 transition-transform font-bold text-sm"
-                title={tOr(t, 'mobileHelp.title', 'Hilfe')}
-                aria-label={tOr(t, 'mobileHelp.title', 'Hilfe')}
-              >
-                ?
-              </button>
-              {/* Chat-Button im Header */}
-              <button
-                onClick={() => setShowChat(true)}
-                className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/10 active:scale-90 transition-transform"
-                title={t('mobile.mirrorChat')}
-                aria-label={t('mobile.mirrorChat')}
-              >
-                <span className="text-sm leading-none">💬</span>
-              </button>
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              {connectionCode && (
-                <span className="text-[10px] font-mono text-white/30">{connectionCode}</span>
-              )}
-              <button
-                onClick={handleDisconnect}
-                className="text-white/30 hover:text-red-400 text-lg leading-none transition-colors p-1"
-                title={t('mobileClient.disconnect')}
-                aria-label={t('mobileClient.disconnect')}
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Mic-Status-Leiste wenn aktiv */}
-          {isListening && (
-            <div className="px-3 pb-2 flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-75"
-                  style={{ width: `${Math.min(100, Math.max(0, currentPitch.volume * 100))}%` }}
-                />
-              </div>
-              {currentPitch.note !== null && (
-                <span className="text-xs font-mono text-cyan-400">
-                  {(() => { const n = Math.round(currentPitch.note); const n2 = n % 12; const o = Math.floor(n / 12) - 1; const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; return `${names[n2 < 0 ? n2 + 12 : n2]}${o}`; })()}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Now-Playing Ticker direkt unter dem Header */}
-          {gameState.currentSong && !showChat && (
-            <div className="relative overflow-hidden border-t border-white/5 bg-black/30">
-              <div className="flex items-center h-7 px-3 min-w-0">
-                {gameState.isPlaying ? (
-                  <span className="shrink-0 mr-2 flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-1.5 w-1.5 animate-ping rounded-full bg-cyan-400 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                  </span>
-                ) : (
-                  <span className="shrink-0 mr-2 text-white/30 text-[10px]">⏸</span>
-                )}
-                <div className="overflow-hidden flex-1">
-                  <div
-                    className="whitespace-nowrap animate-[marquee_12s_linear_infinite]"
-                  >
-                    <span className="text-xs text-white/60">
-                      {gameState.currentSong.title} — {gameState.currentSong.artist}
-                    </span>
-                    {gameState.gameMode && (
-                      <span className="ml-2 text-[10px] text-purple-300/60 uppercase tracking-wider">{gameState.gameMode}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <MobileHeader
+          profile={profile}
+          connectionCode={connectionCode}
+          isConnected={isConnected}
+          isListening={isListening}
+          currentPitch={currentPitch}
+          currentSong={gameState.currentSong}
+          isPlaying={gameState.isPlaying}
+          gameMode={gameState.gameMode ?? null}
+          showChat={showChat}
+          onOpenProfile={() => setShowProfile(true)}
+          onOpenHelp={() => setShowHelp(true)}
+          onOpenChat={() => setShowChat(true)}
+          onDisconnect={handleDisconnect}
+        />
       )}
 
       {/* ====== MAIN CONTENT (scrollt; Menüleiste fixiert unten) ====== */}
@@ -993,6 +846,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         </div>
       ) : (
         <div className="pb-16">
+          {/* R54: Einmalige Zertifikats-Einrichtung — sichtbar, solange der
+              Server HTTPS anbietet und der Nutzer das Banner nicht weggeklickt
+              hat (Details: mobile-cert-setup.tsx). */}
+          <MobileCertSetup httpsPort={micHttpsPort} insecureContext={micInsecure} />
+
           {/* MirrorView — steuernd UND nicht-steuernd (P1): Der Dispatcher
               erhält isControlling + den vollen R33-Datenvertrag. */}
           <MirrorView
@@ -1112,10 +970,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       {/* Zeigt erstmals SICHTBAR, ob das Handy-Mikro wirklich läuft (grün =
           Signal da), startet (gelb pulsierend) oder kein Signal liefert
           (rot/amber — iOS: ohne Geste bleibt der AudioContext suspended).
-          Die GESAMTE Karte ist tappbar: Der Tap läuft in einer echten
-          Nutzer-Geste und resumed/started das Mikro zuverlässig. z-[55]
-          liegt ÜBER den Turn-Overlays (z-50, pointer-events-none), damit
-          der Tap immer erreichbar ist. */}
+          R54: zusätzlich ☀️ Wake-Lock-Status (Bildschirm bleibt an) bzw.
+          Warnhinweis bei fehlender Unterstützung. Die GESAMTE Karte ist
+          tappbar: Der Tap läuft in einer echten Nutzer-Geste und resumed/
+          started das Mikro zuverlässig. z-[55] liegt ÜBER den Turn-Overlays
+          (z-50, pointer-events-none), damit der Tap immer erreichbar ist. */}
       {(isConnected && profile && shouldSingNow) ? (
         <MicStatusCard
           isListening={isListening}
@@ -1126,6 +985,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           httpsAvailable={micHttpsPort !== null}
           volume={currentPitch.volume}
           note={currentPitch.note}
+          wakeLockHeld={wakeLock.held}
+          wakeLockSupported={wakeLock.supported}
           onActivate={() => {
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
             // R53: Im unsicheren Kontext ist KEIN Mikrostart möglich — der
@@ -1138,299 +999,38 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       {/* ====== TOURNAMENT VOTE OVERLAY ====== */}
       {isConnected && profile && gameState.isPlaying && gameState.gameMode === 'duel' && gameState.tournamentMatchId && !votedMatchIds.has(gameState.tournamentMatchId) && (
-        <div className="fixed bottom-16 left-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 shadow-2xl">
-          <div className="text-center mb-3">
-            <span className="text-2xl">❤️</span>
-            <p className="text-sm font-bold text-white mt-1">{t('mobile.tournamentVoteTitle')}</p>
-            <p className="text-xs text-white/50">{t('mobile.tournamentVoteDesc')}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              className="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-sm py-3"
-              onClick={() => {
-                if (!clientId || !gameState.tournamentMatchId) return;
-                setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
-                fetch('/api/mobile', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 1 }, clientId }),
-                // eslint-disable-next-line no-console
-                }).catch(() => { console.warn('Failed to cast tournament vote for P1'); });
-              }}
-            >
-              {t('companion.player1')}
-            </Button>
-            <Button
-              className="flex-1 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 text-pink-300 text-sm py-3"
-              onClick={() => {
-                if (!clientId || !gameState.tournamentMatchId) return;
-                setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
-                fetch('/api/mobile', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 2 }, clientId }),
-                // eslint-disable-next-line no-console
-                }).catch(() => { console.warn('Failed to cast tournament vote for P2'); });
-              }}
-            >
-              {t('companion.player2')}
-            </Button>
-          </div>
-        </div>
+        <MobileTournamentVote
+          onVote={(side) => {
+            if (!clientId || !gameState.tournamentMatchId) return;
+            setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
+            fetch('/api/mobile', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: side }, clientId }),
+            // eslint-disable-next-line no-console
+            }).catch(() => { console.warn(`Failed to cast tournament vote for P${side}`); });
+          }}
+        />
       )}
       {/* ====== SONG-RUNNING WARNING OVERLAY (Issue 11) ====== */}
       {showSongRunningOverlay ? (
-        <div
-          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setShowSongRunningOverlay(false)}
-        >
-          <div
-            className="bg-[#1a1a2e] border border-amber-400/30 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center mb-6">
-              <div className="text-4xl mb-2">{'\u26A0\uFE0F'}</div>
-              <h2 className="text-lg font-bold text-white">{t('mobile.mirrorSongRunningWarning')}</h2>
-              <p className="text-sm text-white/50 mt-2">
-                {gameState.currentSong ? `${gameState.currentSong.title} {'\u2014'} ${gameState.currentSong.artist}` : ''}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowSongRunningOverlay(false);
-                  handleSendDesktopCommand('quit');
-                }}
-                className="flex-1 py-3 rounded-xl font-medium bg-red-500/20 border border-red-500/40 text-red-300 active:bg-red-500/30 transition-all text-sm"
-              >
-                {'\u2716'} {t('mobile.mirrorEndSong')}
-              </button>
-              <button
-                onClick={() => {
-                  setShowSongRunningOverlay(false);
-                  handleReleaseRemote();
-                  // Navigate to home locally so the user can use free functions
-                  setMenuScreen('home');
-                }}
-                className="flex-1 py-3 rounded-xl font-medium bg-green-500/20 border border-green-500/40 text-green-300 active:bg-green-500/30 transition-all text-sm"
-              >
-                {'\u{1F513}'} {t('mobile.mirrorReleaseControlShort')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <MobileSongRunningOverlay
+          currentSong={gameState.currentSong}
+          onEndSong={() => {
+            setShowSongRunningOverlay(false);
+            handleSendDesktopCommand('quit');
+          }}
+          onReleaseControl={() => {
+            setShowSongRunningOverlay(false);
+            handleReleaseRemote();
+            // Navigate to home locally so the user can use free functions
+            setMenuScreen('home');
+          }}
+          onClose={() => setShowSongRunningOverlay(false)}
+        />
       ) : null}
 
       </MobileErrorBoundary>
     </div>
   );
 }
-
-// ===================== R52: MIC-STATUS-KARTE =====================
-interface MicStatusCardProps {
-  isListening: boolean;
-  audioSuspended: boolean;
-  hasSignal: boolean;
-  micPermissionDenied: boolean;
-  /** R53: true, wenn die Seite über http://<LAN-IP> geladen wurde — dann ist
-   *   getUserMedia browserseitig blockiert und nur der HTTPS-Wechsel hilft. */
-  insecureContext: boolean;
-  /** R53: Server hat einen HTTPS-Listener aktiv (Tap navigiert dorthin). */
-  httpsAvailable: boolean;
-  volume: number;
-  note: number | null;
-  onActivate: () => void;
-}
-
-/** Notenname aus MIDI-Nummer (69 = A4) für die Live-Anzeige. */
-function midiNoteName(note: number | null): string | null {
-  if (note === null || !Number.isFinite(note)) return null;
-  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const rounded = Math.round(note);
-  return names[((rounded % 12) + 12) % 12] + (Math.floor(rounded / 12) - 1);
-}
-
-/**
- * Kompakte, immer tappbare Mikrofon-Status-Karte für ALLE Modi, in denen
- * das Handy selbst die Gesangs-Eingabe ist (Standard P1/P2-Companion, CPTM,
- * Sing-Along, Battle Royale, Medley). Drei Zustände:
- *   grün  — Mikro läuft UND liefert Signal (Volume-Bar + Note live)
- *   amber — Start läuft gerade ODER kein Signal (iOS-suspended): „Tippen
- *           zum Aktivieren" — der Tap resumed/started in echter Geste
- *   rot   — Mikrofon-Zugriff verweigert (Einstellungs-Hinweis)
- */
-function MicStatusCard({ isListening, audioSuspended, hasSignal, micPermissionDenied, insecureContext, httpsAvailable, volume, note, onActivate }: MicStatusCardProps) {
-  const { t } = useTranslation();
-
-  const running = isListening && hasSignal && !audioSuspended;
-  const needsTap = !isListening || audioSuspended || (!hasSignal && isListening);
-  // R53: insecure schlägt ALLES — ohne HTTPS kann das Mikro nie starten.
-  const state: 'ok' | 'wait' | 'denied' | 'insecure' = insecureContext
-    ? 'insecure'
-    : micPermissionDenied
-      ? 'denied'
-      : (running ? 'ok' : 'wait');
-
-  const statusText = state === 'insecure'
-    ? tOr(t, 'mobile.micStatusInsecure', 'Mikrofon über HTTP blockiert')
-    : state === 'denied'
-      ? tOr(t, 'mobile.micStatusDenied', 'Mikrofon-Zugriff verweigert')
-      : state === 'ok'
-        ? tOr(t, 'mobile.micStatusActive', 'Mikrofon aktiv')
-        : isListening
-          ? tOr(t, 'mobile.micStatusNoSignal', 'Kein Mikrofon-Signal')
-          : tOr(t, 'mobile.micStatusStarting', 'Mikrofon wird gestartet…');
-
-  return (
-    <button
-      type="button"
-      onClick={onActivate}
-      data-testid="mobile-mic-status-card"
-      aria-live="polite"
-      className={
-        'fixed left-3 right-3 z-[55] flex items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-2xl backdrop-blur-md transition-all active:scale-[0.98] ' +
-        (state === 'ok'
-          ? 'border-emerald-500/40 bg-emerald-950/85'
-          : state === 'denied' || state === 'insecure'
-            ? 'border-red-500/40 bg-red-950/85'
-            : 'border-amber-500/40 bg-amber-950/85 animate-pulse')
-      }
-      style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
-    >
-      {/* Status-Icon */}
-      <span className="shrink-0 text-xl leading-none" aria-hidden="true">
-        {state === 'ok' ? '🎤' : state === 'denied' ? '🚫' : state === 'insecure' ? '🔒' : '🎙️'}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-white">
-          {tOr(t, 'mobile.micStatusTitle', 'Du singst über dieses Handy')}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span
-            className={
-              'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' +
-              (state === 'ok'
-                ? 'bg-emerald-500/25 text-emerald-300'
-                : state === 'denied' || state === 'insecure'
-                  ? 'bg-red-500/25 text-red-300'
-                  : 'bg-amber-500/25 text-amber-300')
-            }
-          >
-            {statusText}
-          </span>
-          {state === 'insecure' ? (
-            <span className="shrink-0 text-[10px] font-semibold text-red-200/90">
-              {httpsAvailable
-                ? '👆 ' + (tOr(t, 'mobile.micStatusInsecureHint', 'Tippen → HTTPS-Verbindung, dann Mikrofon freigeben'))
-                : '⚠️ ' + (tOr(t, 'mobile.micStatusInsecureNoHttps', 'Server ohne HTTPS — Desktop-Neustart erforderlich'))}
-            </span>
-          ) : needsTap && state !== 'denied' ? (
-            <span className="shrink-0 text-[10px] font-semibold text-amber-200/80">
-              👆 {tOr(t, 'mobile.micStatusTapToActivate', 'Tippen zum Aktivieren')}
-            </span>
-          ) : null}
-          {state === 'ok' && note !== null && (
-            <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white/85">
-              {midiNoteName(note)}
-            </span>
-          )}
-        </div>
-        {/* Volume-Bar (nur im OK-Zustand live) */}
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-          <div
-            className={'h-full rounded-full transition-[width] duration-100 ' + (state === 'ok' ? 'bg-emerald-400' : 'bg-amber-400/60')}
-            style={{ width: `${Math.min(100, Math.round((state === 'ok' ? volume : 0.12) * 100))}%` }}
-          />
-        </div>
-      </div>
-    </button>
-  );
-}
-
-// ===================== SINGALONG OVERLAY =====================
-interface SingalongOverlayProps { isMyTurn: boolean; countdown: number | null; }
-
-function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
-  const { t } = useTranslation();
-  const [flashVisible, setFlashVisible] = useState(false);
-
-  useEffect(() => {
-    if (countdown !== null && countdown > 0) {
-      queueMicrotask(() => setFlashVisible(true));
-      const flashTimer = setTimeout(() => setFlashVisible(false), 300);
-      return () => clearTimeout(flashTimer);
-    } else if (countdown === null && isMyTurn) {
-      queueMicrotask(() => setFlashVisible(true));
-      const flashTimer = setTimeout(() => setFlashVisible(false), 500);
-      return () => clearTimeout(flashTimer);
-    }
-  }, [countdown, isMyTurn]);
-
-  if (countdown !== null && countdown > 0) {
-    return (
-      <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-100 ${flashVisible ? 'bg-emerald-500' : 'bg-emerald-900/95'}`}>
-        <div className="text-center">
-          <div className="text-[12rem] font-bold text-white leading-none animate-pulse">{countdown}</div>
-          <div className="text-2xl font-bold text-emerald-200 mt-4 animate-pulse">{t('mobileClient.getReady')}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isMyTurn) {
-    return (
-      <div className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-all duration-300 ${flashVisible ? 'bg-emerald-500/40' : 'bg-transparent'}`}>
-        <div className="absolute top-4 left-0 right-0 text-center">
-          <div className="inline-block bg-emerald-500/90 text-white px-6 py-2 rounded-full text-lg font-bold animate-pulse">
-            🎤 {t('mobileClient.youreSinging')}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-// ===================== CPTM BLINK OVERLAY =====================
-interface CptmBlinkOverlayProps { countdown: number | null; playerColor: string; }
-
-function CptmBlinkOverlay({ countdown, playerColor }: CptmBlinkOverlayProps) {
-  const { t } = useTranslation();
-  const intensity = countdown === 3 ? 0.15 : countdown === 2 ? 0.3 : 0.5;
-  if (countdown === null || countdown <= 0) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ backgroundColor: playerColor, opacity: intensity }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: playerColor, animation: `cptm-blink ${countdown === 3 ? 2 : countdown === 2 ? 1 : 0.5}s ease-in-out infinite alternate` }} />
-      <div className="relative z-10 text-center">
-        <div className="text-8xl font-bold text-white/90 animate-pulse">{countdown}</div>
-        <div className="text-lg font-medium text-white/70 mt-2">{t('mobileCompanion.getReady')}</div>
-      </div>
-      <style>{`@keyframes cptm-blink { 0% { opacity: 0; } 100% { opacity: ${Math.min(intensity * 2.5, 0.8)}; } }`}</style>
-    </div>
-  );
-}
-
-// ===================== CPTM YOUR TURN OVERLAY =====================
-interface CptmYourTurnOverlayProps { playerName: string; playerColor: string; }
-
-function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayProps) {
-  const { t } = useTranslation();
-  const [show, setShow] = useState(false);
-  useEffect(() => { queueMicrotask(() => setShow(true)); }, []);
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${playerColor}40, transparent 70%)` }} />
-      <div className="relative z-10 text-center animate-[scale-in_0.3s_ease-out]">
-        <div className="text-sm font-bold text-white/60 uppercase tracking-[0.3em] mb-2">{t('mobileCompanion.yourTurn')}</div>
-        <div className="text-5xl font-bold text-white" style={{ textShadow: `0 0 30px ${playerColor}` }}>{playerName}</div>
-        <div className="mt-4 mx-auto h-1.5 rounded-full" style={{ width: '120px', backgroundColor: playerColor }} />
-      </div>
-    </div>
-  );
-}
 MobileClientView.displayName = 'MobileClientView';
-SingalongOverlay.displayName = 'SingalongOverlay';
-CptmBlinkOverlay.displayName = 'CptmBlinkOverlay';
-CptmYourTurnOverlay.displayName = 'CptmYourTurnOverlay';

@@ -483,6 +483,24 @@ export const mobileTranslations = {
     micStatusInsecure: 'Microphone blocked (HTTP)',
     micStatusInsecureHint: 'Tap → switch to HTTPS, then allow the microphone',
     micStatusInsecureNoHttps: 'Server has no HTTPS — restart the desktop app',
+    // R54 — screen wake lock during singing: rAF pitch detection freezes
+    // when the display goes to standby; the lock prevents exactly that
+    wakeLockBadge: 'Screen stays on',
+    wakeLockUnsupported: 'Keep the display on while singing',
+    // R54 — one-time certificate setup (local root CA): after installing
+    // the CA the browser trusts the HTTPS connection without any warning
+    certSetupTitle: 'One-time setup: install certificate',
+    certSetupWhy: 'Install the Karaoke certificate once on this phone — the app then connects without browser warnings (even after Wi-Fi/IP changes).',
+    certSetupShowSteps: 'Step-by-step instructions',
+    certSetupIos1: 'Tap “Download certificate” below — Safari reports “Profile Downloaded”.',
+    certSetupIos2: 'Settings → General → VPN & Device Management → “Karaoke ZERO Local CA” → Install (enter your PIN).',
+    certSetupIos3: 'Settings → General → About → Certificate Trust Settings → enable “Karaoke ZERO Local CA”.',
+    certSetupAndroid1: 'Tap “Download certificate” below — the file lands in Downloads.',
+    certSetupAndroid2: 'Open the file (Downloads / notification) → “CA certificate” → Install (PIN if asked). The “network may be monitored” warning is fine for your home network.',
+    certSetupDownload: 'Download certificate',
+    certSetupContinueHttps: 'Continue to HTTPS',
+    certSetupLater: 'Later',
+    certSetupDoneHint: 'Certificate installed? Then “Continue to HTTPS” — the warning is gone and the microphone can be enabled.',
     mirrorBackToParty: '← Back to Party Modes',
     mirrorLibrary: 'Library',
     mirrorNoSongs: 'No songs loaded yet',

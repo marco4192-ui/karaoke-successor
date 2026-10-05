@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Twój telefon staje się bezprzewodowym mikrofonem',
   step4: 'Śpiewaj bezprzewodowo z dowolnego miejsca w pokoju!',
   copyFailed: 'Nie udało się skopiować URL do schowka',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS bez ostrzeżenia przeglądarki (jednorazowa konfiguracja)',
+  certDesc: 'Połączenie z telefonem korzysta z certyfikatu HTTPS z podpisem własnym. Zainstaluj certyfikat karaoke JEDEN RAZ na każdym telefonie — ostrzeżenie przeglądarki zniknie na stałe (także po zmianie WiFi/IP).',
+  certStep1: 'Zeskanuj telefonem kod QR certyfikatu (lub otwórz link pobierania)',
+  certStep2: 'Zainstaluj pobrany certyfikat (Android: „Certyfikat CA”; iOS: profil + ustawienie zaufania)',
+  certStep3: 'Otwórz ponownie aplikację Companion — koniec ostrzeżeń, mikrofon zostaje odblokowany',
+  certNote: 'Alternatywa: aplikacja Companion pokazuje tę samą konfigurację jako baner po pierwszym połączeniu (można zamknąć).',
+  certQrAlt: 'Kod QR do pobrania certyfikatu',
+  certQrCaption: 'Skanuj → pobierz certyfikat → zainstaluj',
 },
 settingsWebcam: {
   about: 'O tle kamery internetowej',

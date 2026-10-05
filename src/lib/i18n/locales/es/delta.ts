@@ -1292,7 +1292,7 @@ export const deltaTranslations = {
     qrScanToConnect: "Escanea para conectar",
     qrWlanHint: "⚠️ Conecta primero tu teléfono a la misma red WiFi que este ordenador y luego escanea el código QR.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
-    qrHttpsHint: "La primera vez que abras el enlace, tu navegador mostrará un aviso de seguridad (certificado autofirmado): toca \"Configuración avanzada\" → \"Acceder\" — una vez por dispositivo. Después se permitirá el acceso al micrófono (cantar con tu teléfono).",
+    qrHttpsHint: "Primera conexión: el navegador puede mostrar un aviso sobre el certificado HTTPS. Recomendación: instala el certificado de karaoke UNA VEZ (Ajustes → Móvil → «HTTPS sin aviso del navegador (configuración única)» o el banner en la app Companion) — el aviso desaparece para siempre. Sin instalarlo: toca «Configuración avanzada» → «Acceder» — una vez por dispositivo.",
     singingDeviceAssignment: "Asignación de Dispositivo de Canto",
     singingDeviceAssignmentDesc: "Elige por jugador: cantar por micrófono o por App Compañera.",
   },

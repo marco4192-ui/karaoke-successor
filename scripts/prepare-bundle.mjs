@@ -205,68 +205,107 @@ if (!existsSync(join(bundledServer, 'socketio-server.cjs'))) {
 ok('Verified socketio-server.cjs is bundled');
 
 // ═══════════════════════════════════════════════════════════
-//  Step 3.7 (R52): Generate the self-signed HTTPS certificate
+//  Step 3.7 (R52/R54): HTTPS-Zertifikate — lokale Root-CA + Leaf
 // ═══════════════════════════════════════════════════════════
 // getUserMedia (Handy-Mikrofon, „Companion als Mic") ist in Browsern auf
 // unsicheren Ursprüngen BLOCKIERT — http://<LAN-IP>:3000 vom Handy ist immer
 // insecure (nur localhost gilt ohne TLS als sicher). Der standalone-server
 // öffnet deshalb parallel zum HTTP-Port 3000 einen HTTPS-Listener (Default
-// 3443) mit diesem Zertifikat. Die Companion-URLs (QR-Codes) zeigen im
-// Produktions-Build automatisch auf den HTTPS-Port (status-API → httpsPort).
+// 3443) mit diesen Zertifikaten.
 //
-// Das Zertifikat wird zur BUILD-ZEIT erzeugt (node-forge, keine nativen
-// Tools nötig) und landet in bundled/server/certs/. SAN enthält localhost +
-// 127.0.0.1; die LAN-IP ist zur Build-Zeit unbekannt — Browser zeigen für
-// Self-Signed-Certs ohnehin eine Warnung, die der Nutzer EINMALIG pro
-// Gerät bestätigt („Erweitert → Weiter"). Das feste Zertifikat bleibt über
-// App-Updates stabil, solange das Bundle nicht neu gebaut wird.
-log('\n=== Step 3.7/5: Generating HTTPS certificate (companion mic) ===\n');
+// R54: LOKALE ROOT-CA + Leaf statt purem Self-Signed-Cert. Handys laden die
+// CA EINMAL herunter (/api/mobile?action=ca-cert) und installieren sie —
+// danach zeigt der Browser KEINE Zertifikats-Warnung mehr, und zwar dauerhaft
+// (der Leaf wird bei IP-Wechseln nur von derselben CA neu signiert, siehe
+// standalone-server.js). Die LAN-IP ist zur Build-Zeit unbekannt — der
+// standalone-server stellt den Leaf zur Laufzeit neu aus, sobald node-forge
+// im Bundle liegt (Step 3.75 kopiert es hinein).
+log('\n=== Step 3.7/5: Generating HTTPS certificates (CA + leaf, companion mic) ===\n');
 
 {
   const certsDir = join(bundledServer, 'certs');
+  const caCertPath = join(certsDir, 'ca-cert.pem');
+  const caKeyPath = join(certsDir, 'ca-key.pem');
   const certPath = join(certsDir, 'https-cert.pem');
   const keyPath = join(certsDir, 'https-key.pem');
+  const metaPath = join(certsDir, 'https-meta.json');
   try {
-    // Ein vorhandenes Zertifikat bleibt erhalten (stabil über Rebuilds, wenn
-    // der Entwickler es bewusst behalten will) — sonst neu generieren.
-    if (existsSync(certPath) && existsSync(keyPath)) {
-      ok('Reusing existing certs/https-*.pem (delete to regenerate)');
-    } else {
-      // R53-Fix — CJS/ESM-Interop: node-forge liefert seine Exports unter
-      // .default (cjs-module-lexer erkennt die named exports nicht). Ohne
-      // den Fallback war forge.pki undefined → die Zertifikats-Generierung
-      // schlug IMMER fehl und der Produktions-HTTPS-Listener startete nie.
-      const forgeModule = await import('node-forge');
-      const forge = forgeModule.pki ? forgeModule : (forgeModule.default ?? forgeModule);
-      const keys = forge.pki.rsa.generateKeyPair(2048);
-      const cert = forge.pki.createCertificate();
-      cert.publicKey = keys.publicKey;
-      cert.serialNumber = String(Date.now());
-      cert.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 Tag Toleranz gegen Uhrabweichung
-      cert.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 Jahre
-      const attrs = [
-        { name: 'commonName', value: 'Karaoke ZERO Companion' },
-        { name: 'organizationName', value: 'Karaoke ZERO' },
-        { shortName: 'OU', value: 'Companion HTTPS' },
-      ];
-      cert.setSubject(attrs);
-      cert.setIssuer(attrs); // self-signed
-      cert.setExtensions([
-        { name: 'basicConstraints', cA: false },
-        { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
-        { name: 'extKeyUsage', serverAuth: true },
-        { name: 'subjectAltName', altNames: [
-          { type: 2, value: 'localhost' }, // DNS
-          { type: 7, ip: '127.0.0.1' }, // IP
-        ] },
-      ]);
-      cert.sign(keys.privateKey, forge.md.sha256.create());
+    // R53-Fix — CJS/ESM-Interop: node-forge liefert seine Exports unter
+    // .default (cjs-module-lexer erkennt die named exports nicht). Ohne
+    // den Fallback war forge.pki undefined → die Zertifikats-Generierung
+    // schlug IMMER fehl und der Produktions-HTTPS-Listener startete nie.
+    const forgeModule = await import('node-forge');
+    const forge = forgeModule.pki ? forgeModule : (forgeModule.default ?? forgeModule);
 
+    // ── Root-CA: bestehende wiederverwenden (stabil über Rebuilds!), sonst neu ──
+    let caCertPem = null;
+    let caKeyPem = null;
+    if (existsSync(caCertPath) && existsSync(caKeyPath)) {
+      caCertPem = readFileSync(caCertPath, 'utf8');
+      caKeyPem = readFileSync(caKeyPath, 'utf8');
+      ok('Reusing existing certs/ca-*.pem (stable root CA — phones keep their installation)');
+    } else {
+      const caKeys = forge.pki.rsa.generateKeyPair(2048);
+      const ca = forge.pki.createCertificate();
+      ca.publicKey = caKeys.publicKey;
+      ca.serialNumber = String(Date.now());
+      ca.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 Tag Toleranz gegen Uhrabweichung
+      ca.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 Jahre
+      const caAttrs = [
+        { name: 'commonName', value: 'Karaoke ZERO Local CA' },
+        { name: 'organizationName', value: 'Karaoke ZERO' },
+      ];
+      ca.setSubject(caAttrs);
+      ca.setIssuer(caAttrs); // self-signed Root-CA
+      ca.setExtensions([
+        { name: 'basicConstraints', cA: true },
+        { name: 'keyUsage', keyCertSign: true, cRLSign: true },
+        { name: 'subjectKeyIdentifier' },
+      ]);
+      ca.sign(caKeys.privateKey, forge.md.sha256.create());
+      caCertPem = forge.pki.certificateToPem(ca);
+      caKeyPem = forge.pki.privateKeyToPem(caKeys.privateKey);
       mkdirSync(certsDir, { recursive: true });
-      writeFileSync(certPath, forge.pki.certificateToPem(cert));
-      writeFileSync(keyPath, forge.pki.privateKeyToPem(keys.privateKey));
-      ok('Generated certs/https-cert.pem + https-key.pem (self-signed, 10 years)');
+      writeFileSync(caCertPath, caCertPem);
+      writeFileSync(caKeyPath, caKeyPem);
+      ok('Generated certs/ca-cert.pem + ca-key.pem (local root CA, 10 years)');
     }
+
+    // ── Leaf: von der CA signiert, SAN localhost + 127.0.0.1 (LAN-IPs
+    //    ergänzt der standalone-server zur Laufzeit neu, wenn nötig) ──
+    const caCert = forge.pki.certificateFromPem(caCertPem);
+    const caKey = forge.pki.privateKeyFromPem(caKeyPem);
+    const { createHash } = await import('crypto');
+    const caHash = createHash('sha256').update(caCertPem).digest('hex');
+
+    const leafKeys = forge.pki.rsa.generateKeyPair(2048);
+    const leaf = forge.pki.createCertificate();
+    leaf.publicKey = leafKeys.publicKey;
+    leaf.serialNumber = String(Date.now());
+    leaf.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    leaf.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+    leaf.setSubject([
+      { name: 'commonName', value: 'Karaoke ZERO Companion' },
+      { name: 'organizationName', value: 'Karaoke ZERO' },
+      { shortName: 'OU', value: 'Companion HTTPS' },
+    ]);
+    leaf.setIssuer(caCert.subject.attributes); // Von der Root-CA signiert
+    leaf.setExtensions([
+      { name: 'basicConstraints', cA: false },
+      { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+      { name: 'extKeyUsage', serverAuth: true },
+      { name: 'subjectAltName', altNames: [
+        { type: 2, value: 'localhost' }, // DNS
+        { type: 7, ip: '127.0.0.1' }, // IP
+      ] },
+    ]);
+    leaf.sign(caKey, forge.md.sha256.create());
+
+    mkdirSync(certsDir, { recursive: true });
+    writeFileSync(certPath, forge.pki.certificateToPem(leaf));
+    writeFileSync(keyPath, forge.pki.privateKeyToPem(leafKeys.privateKey));
+    writeFileSync(metaPath, JSON.stringify({ ips: [], caHash, generatedAt: new Date().toISOString() }));
+    ok('Generated certs/https-cert.pem + https-key.pem (leaf signed by local CA)');
   } catch (err) {
     fail('HTTPS certificate generation failed!');
     console.error(err);
@@ -274,6 +313,34 @@ log('\n=== Step 3.7/5: Generating HTTPS certificate (companion mic) ===\n');
     warn('the companion microphone (phone as mic) will NOT work!');
     // Nicht abbrechen: Das Bundle bleibt funktionsfähig (HTTP + Companion-
     // Steuerung), nur das Handy-Mikro ist dann deaktiviert.
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Step 3.75 (R54): node-forge in die Bundle-node_modules kopieren
+// ═══════════════════════════════════════════════════════════
+// Der standalone-server re-issued den HTTPS-Leaf zur LAUFZEIT neu, sobald
+// die LAN-IPs des Rechners nicht mehr zum SAN passen (WLAN-Wechsel etc.) —
+// ohne Neu-Installation auf den Handys, weil die Root-CA gleich bleibt.
+// Dafür braucht er node-forge; das Next-standalone-Output tracet es NICHT
+// (kein App-Code importiert es — nur server.ts / prepare-bundle dynamisch).
+// Also: explizit ins Bundle kopieren (pure JS, keine nativen Teile).
+{
+  const forgeSrc = join(ROOT, 'node_modules', 'node-forge');
+  const forgeDst = join(bundledServer, 'node_modules', 'node-forge');
+  try {
+    if (existsSync(forgeSrc)) {
+      if (existsSync(forgeDst)) {
+        rmSync(forgeDst, { recursive: true, force: true });
+      }
+      cpSync(forgeSrc, forgeDst, { recursive: true });
+      ok('Copied node-forge → bundled node_modules (runtime leaf re-issue)');
+    } else {
+      warn('node_modules/node-forge not found — runtime leaf re-issue disabled (build-time certs only).');
+    }
+  } catch (err) {
+    warn('Could not copy node-forge into the bundle — runtime leaf re-issue disabled.');
+    console.error(err);
   }
 }
 

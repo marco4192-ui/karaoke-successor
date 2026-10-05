@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: '你的手机成为无线麦克风',
   step4: '在房间任何地方无线演唱！',
   copyFailed: '无法复制URL到剪贴板',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS无浏览器警告（一次性设置）',
+  certDesc: '手机连接使用自签名的HTTPS证书。每台手机只需安装一次卡拉OK证书 — 浏览器警告将永久消失（更换WiFi/IP后同样有效）。',
+  certStep1: '用手机扫描证书二维码（或打开下载链接）',
+  certStep2: '安装下载的证书（Android：“CA证书”；iOS：描述文件＋信任设置）',
+  certStep3: '重新打开Companion应用 — 不再出现警告，麦克风解锁',
+  certNote: '另一种方式：Companion应用在首次连接后会以横幅显示同样的设置（可关闭）。',
+  certQrAlt: '证书下载二维码',
+  certQrCaption: '扫描 → 下载证书 → 安装',
 },
 settingsWebcam: {
   about: '关于摄像头背景',

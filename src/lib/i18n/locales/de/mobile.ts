@@ -482,6 +482,25 @@ export const mobileTranslations = {
   micStatusInsecure: 'Mikrofon über HTTP blockiert',
   micStatusInsecureHint: 'Tippen → HTTPS-Verbindung, dann Mikrofon freigeben',
   micStatusInsecureNoHttps: 'Server ohne HTTPS — Desktop-App neu starten',
+  // R54 — Screen Wake Lock während des Gesangs: Die rAF-Pitch-Erkennung
+  // friert ein, wenn das Display in den Standby geht; der Lock verhindert
+  // genau das (☀️-Badge in der Mic-Status-Karte)
+  wakeLockBadge: 'Bildschirm bleibt an',
+  wakeLockUnsupported: 'Display während des Gesangs anlassen',
+  // R54 — Einmalige Zertifikats-Einrichtung (lokale Root-CA): Nach der
+  // Installation vertraut der Browser der HTTPS-Verbindung ohne Warnung
+  certSetupTitle: 'Einmalige Einrichtung: Zertifikat installieren',
+  certSetupWhy: 'Installiere das Karaoke-Zertifikat einmalig auf diesem Handy — die App verbindet sich danach ohne Browser-Warnung (auch nach WLAN-/IP-Wechseln).',
+  certSetupShowSteps: 'Schritt-für-Schritt-Anleitung',
+  certSetupIos1: 'Tippe unten auf „Zertifikat herunterladen“ — Safari meldet „Profil geladen“.',
+  certSetupIos2: 'Einstellungen → Allgemein → VPN & Geräteverwaltung → „Karaoke ZERO Local CA“ → Installieren (PIN eingeben).',
+  certSetupIos3: 'Einstellungen → Allgemein → Info → Zertifikats-Vertrauenseinstellungen → „Karaoke ZERO Local CA“ aktivieren.',
+  certSetupAndroid1: 'Tippe unten auf „Zertifikat herunterladen“ — die Datei landet in Downloads.',
+  certSetupAndroid2: 'Öffne die Datei (Downloads / Benachrichtigung) → „CA-Zertifikat“ → Installieren (ggf. PIN). Die Warnung „Netzwerk kann überwacht werden“ ist für dein Heimnetzwerk unbedenklich.',
+  certSetupDownload: 'Zertifikat herunterladen',
+  certSetupContinueHttps: 'Weiter zu HTTPS',
+  certSetupLater: 'Später',
+  certSetupDoneHint: 'Zertifikat installiert? Dann „Weiter zu HTTPS“ — die Warnung bleibt aus und das Mikrofon lässt sich freigeben.',
   mirrorBackToParty: '← Zurück zu Party-Modi',
   mirrorLibrary: 'Bibliothek',
   mirrorNoSongs: 'Noch keine Songs geladen',

@@ -57,6 +57,17 @@ export function useMobilePitchDetection({
   const abortControllerRef = useRef<AbortController | null>(null);
   // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
   const lastPitchUpdateRef = useRef<number>(0);
+  // R54 — Standby-Watchdog: requestAnimationFrame läuft NUR bei sichtbarem
+  // Dokument. Geht das Display aus (bzw. Tab in den Hintergrund), friert der
+  // rAF-Loop ein — die Pitch-Erkennung stand still (Nutzer-Feedback: gesungene
+  // Höhen/Tiefen kamen nicht mehr an, die Linie blieb „flach"). Der Watchdog
+  // prüft zyklisch, ob der letzte Tick zu alt ist, und treibt detectPitch
+  // dann selbst an. Primäre Lösung ist der Screen Wake Lock (use-screen-wake-
+  // lock.ts) — der Watchdog ist die Best-Effort-Rückfallebene, falls der Lock
+  // nicht verfügbar ist (alter Browser) oder der Nutzer das Display trotzdem
+  // ausschaltet.
+  const lastTickRef = useRef<number>(0);
+  const watchdogTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // === Batch pitch upload (5 requests/sec instead of 20) ===
   const pitchBatchRef = useRef<Array<{
@@ -153,6 +164,10 @@ export function useMobilePitchDetection({
     if (batchTimerRef.current) {
       clearInterval(batchTimerRef.current);
       batchTimerRef.current = null;
+    }
+    if (watchdogTimerRef.current) {
+      clearInterval(watchdogTimerRef.current);
+      watchdogTimerRef.current = null;
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -265,9 +280,11 @@ export function useMobilePitchDetection({
       const buffer = new Float32Array(analyserRef.current.fftSize);
       // Pre-allocate YIN scratch buffer outside the RAF loop to avoid GC pressure
       const yinBuffer = new Float32Array(Math.floor(buffer.length / 2));
-      
+
       const detectPitch = () => {
         if (!analyserRef.current || !audioContextRef.current) return;
+        // R54 — Herzschlag für den Standby-Watchdog (siehe unten).
+        lastTickRef.current = performance.now();
 
         // Guard: if AudioContext was suspended (e.g. phone locked/unlocked),
         // try to resume — otherwise getFloatTimeDomainData returns all zeros.
@@ -373,7 +390,19 @@ export function useMobilePitchDetection({
         
         animationFrameRef.current = requestAnimationFrame(detectPitch);
       };
-      
+
+      // R54 — Standby-Watchdog: Läuft rAF nicht (Display aus / Tab hidden),
+      // übernimmt dieses Intervall die Detektion. Achtung: Browser throttlen
+      // Intervalle in versteckten Tabs teils auf 1×/Minute — das ist
+      // Best-Effort (Wake Lock ist die primäre Lösung), aber deutlich besser
+      // als der komplette Stillstand von vorher.
+      if (watchdogTimerRef.current) clearInterval(watchdogTimerRef.current);
+      watchdogTimerRef.current = setInterval(() => {
+        if (document.hidden && performance.now() - lastTickRef.current > 150) {
+          detectPitch();
+        }
+      }, 120);
+
       detectPitch();
     } catch (err) {
       const isPermissionDenied = err instanceof DOMException && (
@@ -427,6 +456,10 @@ export function useMobilePitchDetection({
       if (batchTimerRef.current) {
         clearInterval(batchTimerRef.current);
         batchTimerRef.current = null;
+      }
+      if (watchdogTimerRef.current) {
+        clearInterval(watchdogTimerRef.current);
+        watchdogTimerRef.current = null;
       }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);

@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: '휴대폰이 무선 마이크가 됩니다',
   step4: '방 안 어디서나 무선으로 노래하세요!',
   copyFailed: 'URL을 클립보드에 복사하지 못했습니다',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: '브라우저 경고 없는 HTTPS(최초 1회 설정)',
+  certDesc: '휴대폰 연결은 자체 서명된 HTTPS 인증서를 사용합니다. 휴대폰마다 카라오케 인증서를 한 번만 설치하면 브라우저 경고가 영구히 사라집니다(WiFi/IP가 바뀌어도 유지).',
+  certStep1: '휴대폰으로 인증서 QR 코드 스캔(또는 다운로드 링크 열기)',
+  certStep2: '다운로드한 인증서 설치(Android: “CA 인증서”, iOS: 프로파일 + 신뢰 설정)',
+  certStep3: 'Companion 앱을 다시 열기 — 경고가 사라지고 마이크가 잠금 해제됩니다',
+  certNote: '대안: Companion 앱이 첫 연결 후 같은 설정을 배너로 표시해요(닫을 수 있음).',
+  certQrAlt: '인증서 다운로드용 QR 코드',
+  certQrCaption: '스캔 → 인증서 다운로드 → 설치',
 },
 settingsWebcam: {
   about: '웹캠 배경 정보',

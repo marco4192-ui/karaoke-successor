@@ -1292,7 +1292,7 @@ export const deltaTranslations = {
     qrScanToConnect: "スキャンして接続",
     qrWlanHint: "⚠️ まずスマホをこのコンピューターと同じWi-Fiネットワークに接続してから、QRコードをスキャンしてください。",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
-    qrHttpsHint: "リンクを初めて開くと、ブラウザーにセキュリティ警告（自己署名証明書）が表示されます：「詳細設定」→「移動」をタップ — 端末ごとに1回だけです。その後はマイクの使用（スマホで歌う）が許可されます。",
+    qrHttpsHint: "初回接続時：ブラウザーがHTTPS証明書の警告を表示することがあります。推奨：カラオケ証明書を1回だけインストールしてください（設定 → モバイル → 「ブラウザ警告なしのHTTPS（初回のみの設定）」、またはCompanionアプリのバナー） — これで警告は永久に表示されなくなります。インストールしない場合：「詳細設定」→「移動」をタップ — 端末ごとに1回だけです。",
     singingDeviceAssignment: "歌唱デバイスの割り当て",
     singingDeviceAssignmentDesc: "プレイヤーごとに選択：マイクまたはコンパニオンアプリで歌う。",
   },

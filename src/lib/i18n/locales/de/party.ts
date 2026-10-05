@@ -427,7 +427,7 @@ unifiedSetup: {
   qrWlanHint: '⚠️ Verbinde dein Handy zuerst mit demselben WLAN wie dieser Computer und scanne dann den QR-Code.',
   // R52 — HTTPS-Companion (Mikrofon-Freigabe): Hinweis auf die einmalige
   // Zertifikats-Bestätigung im Browser (Self-Signed, Produktions-Bundle)
-  qrHttpsHint: 'Beim ersten Öffnen zeigt dein Browser eine Sicherheits-Warnung (selbstsigniertes Zertifikat): tippe auf „Erweitert“ → „Weiter“ — einmalig pro Gerät. Danach ist die Mikrofon-Nutzung (über das Handy singen) freigegeben.',
+  qrHttpsHint: 'Erste Verbindung: Der Browser zeigt ggf. eine Zertifikats-Warnung. Empfehlung: Installiere das Karaoke-Zertifikat EINMALIG (Einstellungen → Mobilgerät → „HTTPS ohne Browser-Warnung“ oder das Banner in der Companion-App) — die Warnung verschwindet dauerhaft. Ohne Installation: „Erweitert“ → „Weiter“ — einmalig pro Gerät.',
   qrScanToConnect: 'Zum Verbinden scannen',
   inputMode: 'Eingabe-Modus',
   readyToPlay: 'Bereit zum Spielen!',

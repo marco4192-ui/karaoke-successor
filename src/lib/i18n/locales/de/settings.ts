@@ -472,6 +472,15 @@ settingsMobileDevice: {
   step3: 'Dein Handy wird zum kabellosen Mikrofon',
   step4: 'Singe kabellos von überall im Raum!',
   copyFailed: 'URL konnte nicht kopiert werden',
+  // R54 — Einmalige Zertifikats-Einrichtung (lokale Root-CA → keine Warnung)
+  certTitle: 'HTTPS ohne Browser-Warnung (einmalige Einrichtung)',
+  certDesc: 'Die Handy-Verbindung nutzt ein selbstsigniertes HTTPS-Zertifikat. Installiere das Karaoke-Zertifikat EINMAL pro Handy — die Browser-Warnung verschwindet dauerhaft (auch nach WLAN-/IP-Wechseln).',
+  certStep1: 'Zertifikats-QR-Code mit dem Handy scannen (oder Download-Link öffnen)',
+  certStep2: 'Heruntergeladenes Zertifikat installieren (Android: „CA-Zertifikat“; iOS: Profil + Vertrauens-Einstellung)',
+  certStep3: 'Companion-App neu öffnen — keine Warnung mehr, Mikrofon lässt sich freigeben',
+  certNote: 'Alternative: Die Companion-App zeigt dieselbe Einrichtung nach der ersten Verbindung als Banner an (wegklickbar).',
+  certQrAlt: 'QR-Code für Zertifikat-Download',
+  certQrCaption: 'Scannen → Zertifikat herunterladen → installieren',
 },
 settingsWebcam: {
   about: 'Über Webcam-Hintergrund',

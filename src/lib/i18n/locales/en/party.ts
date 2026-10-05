@@ -453,7 +453,7 @@ export const partyTranslations = {
     qrCompanionTitle: '📱 Connect Companion App',
     qrWlanHint: '⚠️ First connect your phone to the same Wi-Fi network as this computer, then scan the QR code.',
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
-    qrHttpsHint: 'When opening the link the first time, your browser shows a security warning (self-signed certificate): tap "Advanced" → "Proceed" — once per device. After that, microphone access (singing via your phone) is allowed.',
+    qrHttpsHint: 'First connection: the browser may warn about the HTTPS certificate. Recommended: install the Karaoke certificate ONCE (Settings → Mobile → “HTTPS without browser warning”, or the banner in the companion app) — the warning disappears permanently. Without it: tap "Advanced" → "Proceed" — once per device.',
     qrScanToConnect: 'Scan to connect',
     inputMode: 'Input Mode',
     readyToPlay: 'Ready to Play!',

@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Votre téléphone devient un microphone sans fil',
   step4: 'Chantez sans fil depuis n\'importe où dans la pièce !',
   copyFailed: 'Impossible de copier l\'URL dans le presse-papiers',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS sans avertissement du navigateur (configuration unique)',
+  certDesc: 'La connexion du téléphone utilise un certificat HTTPS auto-signé. Installez le certificat karaoké UNE SEULE FOIS par téléphone — l\'avertissement du navigateur disparaît définitivement (même après un changement de WiFi/IP).',
+  certStep1: 'Scannez le code QR du certificat avec le téléphone (ou ouvrez le lien de téléchargement)',
+  certStep2: 'Installez le certificat téléchargé (Android : « Certificat CA » ; iOS : profil + réglage de confiance)',
+  certStep3: 'Rouvrez l\'App Compagnon — plus d\'avertissement, le micro se débloque',
+  certNote: 'Alternative : l\'App Compagnon affiche la même configuration sous forme de bannière après la première connexion (fermable).',
+  certQrAlt: 'Code QR pour le téléchargement du certificat',
+  certQrCaption: 'Scanner → télécharger le certificat → installer',
 },
 settingsWebcam: {
   about: 'À propos du Fond de Webcam',

@@ -25,6 +25,9 @@ const GET_RATE_LIMITS: Record<string, number> = {
   // 300 Anfragen/Minute ab; die 429-Antworten begruben die Cover-Retries.
   songcover: 900,
   songcoverids: 300, // desktop self-healing poll (1/min) — headroom for retries
+  // R54: Einmaliger Root-CA-Download (Handys) — 30/min reichen locker
+  // (pro Handy exakt 1 Download nötig), schützt vor Missbrauch des Endpunkts.
+  'ca-cert': 30,
 };
 const DEFAULT_GET_LIMIT = 60; // catch-all for unlisted GET actions
 

@@ -322,6 +322,15 @@ settingsMobileDevice: {
   step3: 'Je telefoon wordt een draadloze microfoon',
   step4: 'Zing draadloos vanaf elke plek in de kamer!',
   copyFailed: 'URL kon niet naar klembord worden gekopieerd',
+  // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
+  certTitle: 'HTTPS zonder browserwaarschuwing (eenmalige installatie)',
+  certDesc: 'De telefoonverbinding gebruikt een zelfondertekend HTTPS-certificaat. Installeer het karaokecertificaat ÉÉN KEER per telefoon — de browserwaarschuwing verdwijnt permanent (ook na WiFi/IP-wijzigingen).',
+  certStep1: 'Scan de QR-code van het certificaat met de telefoon (of open de downloadlink)',
+  certStep2: 'Installeer het gedownloade certificaat (Android: “CA-certificaat”; iOS: profiel + vertrouwensinstelling)',
+  certStep3: 'Open de Companion-app opnieuw — geen waarschuwing meer, microfoon wordt ontgrendeld',
+  certNote: 'Alternatief: de Companion-app toont dezelfde installatie als banner na de eerste verbinding (wegklikbaar).',
+  certQrAlt: 'QR-code voor certificaatdownload',
+  certQrCaption: 'Scannen → certificaat downloaden → installeren',
 },
 settingsWebcam: {
   about: 'Over Webcamachtergrond',

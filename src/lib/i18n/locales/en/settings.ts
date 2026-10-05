@@ -482,7 +482,16 @@ export const settingsTranslations = {
     step2: 'Create a profile on the mobile app',
     step3: 'Your phone becomes a wireless microphone',
     step4: 'Sing wirelessly from anywhere in the room!',
-    copyFailed: 'Failed to copy URL to clipboard'
+    copyFailed: 'Failed to copy URL to clipboard',
+    // R54 — one-time certificate setup (local root CA → no HTTPS warning)
+    certTitle: 'HTTPS without browser warning (one-time setup)',
+    certDesc: 'The phone connection uses a self-signed HTTPS certificate. Install the Karaoke certificate ONCE on each phone — the browser warning disappears permanently (even after Wi-Fi/IP changes).',
+    certStep1: 'Scan the certificate QR code with the phone (or open the download link)',
+    certStep2: 'Install the downloaded certificate (Android: “CA certificate”; iOS: profile + trust setting)',
+    certStep3: 'Reopen the companion app — no more warning, microphone unlocks',
+    certNote: 'Alternatively: the companion app shows the same setup as a banner after the first connection (dismissable).',
+    certQrAlt: 'QR code for certificate download',
+    certQrCaption: 'Scan → certificate download → install'
   },
 
   settingsWebcam: {
