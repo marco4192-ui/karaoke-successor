@@ -1669,6 +1669,18 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const { clearDomainConfig, getHttpsDomainStatus } = await import('@/lib/server/https-domain');
         try {
           clearDomainConfig();
+          // Status-Globals sofort zurücksetzen (QR-URLs + Companion-Banner
+          // reagieren ohne Neustart: Quelle wieder 'local-ca', Domain weg).
+          // Der Listener bedient das LE-Zertifikat bis zum Neustart weiter
+          // (in-memory) — bewusst: bestehende Verbindungen bleiben vertrauenswürdig.
+          const g = globalThis as typeof globalThis & {
+            __karaokeHttpsDomain?: string | null;
+            __karaokeHttpsCertSource?: 'letsencrypt' | 'local-ca' | null;
+            __karaokeHttpsCertExpiresAt?: string | null;
+          };
+          g.__karaokeHttpsDomain = null;
+          g.__karaokeHttpsCertSource = 'local-ca';
+          g.__karaokeHttpsCertExpiresAt = null;
           return Response.json({ success: true, ...getHttpsDomainStatus() });
         } catch (err) {
           return Response.json({ success: false, message: err instanceof Error ? err.message : String(err) }, { status: 500 });

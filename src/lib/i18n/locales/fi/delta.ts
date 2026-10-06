@@ -1292,6 +1292,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ Yhdistä puhelin ensin samaan WiFi-verkkoon kuin tämä tietokone, ja skannaa sitten QR-koodi.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "Ensimmäinen yhteys: selain saattaa näyttää varoituksen HTTPS-varmenteesta. Suositus: asenna karaokevarmenne KERRAN (Asetukset → Mobiili → ”HTTPS ilman selaimen varoitusta (kertaluontoinen asennus)” tai Companion-sovelluksen banneri) — varoitus katoaa pysyvästi. Ilman asennusta: napauta ”Lisäasetukset” → ”Siirry” — kerran per laite.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "Tämä yhteys käyttää aitoa varmennetta (Let's Encrypt) — puhelimet luottavat siihen automaattisesti, asennusta ei tarvita.",
     singingDeviceAssignment: "Laululaitteen osoittaminen",
     singingDeviceAssignmentDesc: "Valitse pelaajittain: laula mikrofonilla vai Companion-sovelluksella.",
   },

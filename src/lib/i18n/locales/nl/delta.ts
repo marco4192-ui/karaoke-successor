@@ -1292,6 +1292,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ Verbind je telefoon eerst met hetzelfde Wi-Fi-netwerk als deze computer en scan daarna de QR-code.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "Eerste verbinding: je browser kan een waarschuwing over het HTTPS-certificaat tonen. Aanbevolen: installeer het karaokecertificaat ÉÉN KEER (Instellingen → Mobiel → “HTTPS zonder browserwaarschuwing (eenmalige installatie)”, of de banner in de Companion-app) — de waarschuwing verdwijnt permanent. Zonder installatie: tik op “Geavanceerd” → “Doorgaan” — één keer per apparaat.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "Deze verbinding gebruikt een echt certificaat (Let's Encrypt) — telefoons vertrouwen hem automatisch, geen installatie nodig.",
     singingDeviceAssignment: "Toewijzing van zangapparaten",
     singingDeviceAssignmentDesc: "Kies per speler: zingen via microfoon of Companion App.",
   },

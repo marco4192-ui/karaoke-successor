@@ -343,9 +343,12 @@ async function startHttpsListener(
       console.log(`[Server] HTTPS listener active on https://${hostname}:${candidate} (${leBundle ? `Let's Encrypt: ${domainState?.domain}` : 'local CA'}) — companion microphone enabled`);
       break;
     } catch (err) {
-      if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+      const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+      // EADDRINUSE (belegt) + EACCES/EPERM (Linux/macOS: Ports < 1024 ohne
+      // root) → nächsten Kandidaten versuchen; Windows erlaubt 443 ohne Admin.
+      if (code === 'EADDRINUSE' || code === 'EACCES' || code === 'EPERM') {
         // eslint-disable-next-line no-console
-        console.warn(`[Server] HTTPS port ${candidate} busy — trying next`);
+        console.warn(`[Server] HTTPS port ${candidate} unavailable (${code}) — trying next`);
         continue;
       }
       // eslint-disable-next-line no-console
@@ -363,8 +366,11 @@ async function startHttpsListener(
   // a) DuckDNS eingerichtet, aber noch KEIN gültiges LE-Zertifikat (z. B.
   //    gerade in den Settings gespeichert) → im Hintergrund ausstellen;
   //    läuft der Server weiter, übernimmt setSecureContext ohne Restart.
+  //    KEIN force: der persistierte Cooldown (10 min nach Fehlschlag, z. B.
+  //    falscher Token) verhindert Boot-Loops gegen Let's Encrypts
+  //    Fehler-Validierungs-Limit (5/h pro Account/Domain).
   if (domainState && !leBundle) {
-    void issueCertificate({ force: true })
+    void issueCertificate()
       .then(() => { /* Globals macht der Swap-Handler unten */ })
       .catch((err: unknown) => {
         // eslint-disable-next-line no-console

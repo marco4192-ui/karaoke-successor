@@ -1293,6 +1293,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ Anslut först telefonen till samma WiFi-nätverk som den här datorn, skanna sedan QR-koden.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "Första anslutningen: webbläsaren kan visa en varning om HTTPS-certifikatet. Rekommendation: installera karaokecertifikatet EN GÅNG (Inställningar → Mobil → ”HTTPS utan webbläsarvarning (engångsinställning)” eller bannern i Companion-appen) — varningen försvinner permanent. Utan installation: tryck på ”Avancerat” → ”Fortsätt” — en gång per enhet.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "Denna anslutning använder ett riktigt certifikat (Let's Encrypt) — telefonerna litar på den automatiskt, ingen installation behövs.",
     singingDeviceAssignment: "Tilldelning av sångenheter",
     singingDeviceAssignmentDesc: "Välj per spelare: sjung via mikrofon eller Companion-app.",
   },

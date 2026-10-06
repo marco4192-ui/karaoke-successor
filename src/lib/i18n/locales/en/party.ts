@@ -454,6 +454,8 @@ export const partyTranslations = {
     qrWlanHint: '⚠️ First connect your phone to the same Wi-Fi network as this computer, then scan the QR code.',
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: 'First connection: the browser may warn about the HTTPS certificate. Recommended: install the Karaoke certificate ONCE (Settings → Mobile → “HTTPS without browser warning”, or the banner in the companion app) — the warning disappears permanently. Without it: tap "Advanced" → "Proceed" — once per device.',
+    // R55 — shown when a real Let's Encrypt certificate is active (DuckDNS)
+    qrTrustedHint: 'This connection uses a real certificate (Let\'s Encrypt) — phones trust it automatically, no installation needed.',
     qrScanToConnect: 'Scan to connect',
     inputMode: 'Input Mode',
     readyToPlay: 'Ready to Play!',

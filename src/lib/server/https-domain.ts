@@ -75,6 +75,10 @@ interface DomainStateFile {
   lastError?: string;
   dnsIp?: string;
   lastSyncAt?: string;
+  /** Letzter Ausstellungs-Versuch (ISO 8601) — persistierter Retry-Schutz
+   * über Server-Neustarts hinweg (LE-Limit: 5 fehlgeschlagene Validierungen
+   * pro Account/Domain/Stunde). */
+  lastAttemptIso?: string;
 }
 
 // ===================== globalThis-Anker (zwei Modul-Graphen!) =====================
@@ -129,6 +133,7 @@ export function readDomainState(): DomainStateFile | null {
       lastError: raw.lastError,
       dnsIp: raw.dnsIp,
       lastSyncAt: raw.lastSyncAt,
+      lastAttemptIso: raw.lastAttemptIso,
     };
   } catch {
     return null;
@@ -189,10 +194,20 @@ export function pickLanIp(): string | null {
 
 // ===================== DuckDNS-API =====================
 
-/** DuckDNS-Update-API aufrufen — wirft bei „KO" (falscher Token/Subdomain). */
-async function duckDnsUpdate(params: Record<string, string>): Promise<void> {
+/** DuckDNS-Update-API aufrufen — wirft bei „KO" (falscher Token/Subdomain).
+ *
+ * WICHTIG: JEDER Update-Aufruf sollte den ip-Parameter enthalten! DuckDNS
+ * setzt bei Aufrufen OHNE ip den A-Record auf die automatisch erkannte
+ * ÖFFENTTLICHE IP des Aufrufers — ein TXT-only-Aufruf (DNS-01-Challenge)
+ * würde den A-Record von der LAN-IP auf die Public-IP umschreiben und die
+ * Handys aus dem Heimnetz werfen. Mit ip werden A-Record + TXT in EINEM
+ * Aufruf atomar korrekt gesetzt.
+ */
+async function duckDnsUpdate(params: Record<string, string | undefined>): Promise<void> {
   const url = new URL('https://www.duckdns.org/update');
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') url.searchParams.set(k, v);
+  }
   const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
   const text = (await res.text()).trim().toUpperCase();
   if (!text.startsWith('OK')) {
@@ -215,6 +230,19 @@ export async function syncDnsRecord(): Promise<string> {
   await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip });
   writeDomainState({ ...state, dnsIp: ip, lastSyncAt: new Date().toISOString() });
   return ip;
+}
+
+/** true, wenn der letzte Ausstellungs-Versuch vor kurzem FEHLGESCHLAGEN ist
+ * (persistiert in https-domain.json — schützt vor Boot-/Maintenance-Loops,
+ * die Let's Encrypts Limit von 5 fehlgeschlagenen Validierungen pro Stunde
+ * erschöpfen würden). */
+function recentlyFailed(withinMs: number): boolean {
+  const state = readDomainState();
+  if (!state || !state.lastError) return false;
+  if (!state.lastAttemptIso) return false;
+  const ts = Date.parse(state.lastAttemptIso);
+  if (!Number.isFinite(ts)) return false;
+  return Date.now() - ts < withinMs;
 }
 
 // ===================== Let's-Encrypt-Zertifikat laden/speichern =====================
@@ -272,7 +300,10 @@ async function loadOrCreateAccountKey(): Promise<string> {
   } catch { /* neu erzeugen */ }
   const acme = await importAcme();
   if (!acme) throw new Error('ACME_CLIENT_UNAVAILABLE');
-  const pem = acme.crypto.createPrivateKey(2048);
+  // acme-client liefert einen Buffer (PrivateKeyBuffer) — PEM-String für
+  // Persistenz + acme.Client-AccountKey (akzeptiert String wie Buffer).
+  const keyBuffer = await acme.crypto.createPrivateKey(2048);
+  const pem = Buffer.isBuffer(keyBuffer) ? keyBuffer.toString('utf8') : String(keyBuffer);
   try {
     mkdirSync(dir, { recursive: true });
     writeFileSync(p, pem);
@@ -298,12 +329,24 @@ export async function issueCertificate(options?: { force?: boolean }): Promise<L
   const state = readDomainState();
   if (!state) throw new Error('NOT_CONFIGURED');
   // Rate-Limit-Schutz: Let's Encrypt sperrt nach 5 fehlgeschlagenen
-  // Validierungen pro Account/Domain/Stunde — mindestens 60 s Abstand.
-  if (!options?.force && Date.now() - s.lastAttemptAt < 60_000) {
-    throw new Error('RATE_LIMITED_RETRY_LATER');
+  // Validierungen pro Account/Domain/Stunde — mindestens 60 s Abstand
+  // (in-memory) und 10 min nach dem letzten FEHLGESCHLAGENEN Versuch
+  // (persistiert — schützt auch über Server-Neustarts hinweg, z. B. gegen
+  // Dev-Boot-Loops). force = manuelle Aktivierung über die Settings-UI.
+  if (!options?.force) {
+    if (Date.now() - s.lastAttemptAt < 60_000) {
+      throw new Error('RATE_LIMITED_RETRY_LATER');
+    }
+    if (recentlyFailed(10 * 60 * 1000)) {
+      throw new Error('RATE_LIMITED_RETRY_LATER');
+    }
   }
   s.issuing = true;
   s.lastAttemptAt = Date.now();
+  // Versuch persistieren (Cooldown-Grundlage für Boot/Maintenance).
+  try {
+    writeDomainState({ ...state, lastAttemptIso: new Date().toISOString() });
+  } catch { /* State-Datei nicht schreibbar — in-memory-Guard greift weiterhin */ }
   try {
     // 1) DNS-A-Record auf die aktuelle LAN-IP synchronisieren (best effort —
     //    für die Ausstellung selbst nicht nötig, aber der Nutzer erwartet,
@@ -321,19 +364,27 @@ export async function issueCertificate(options?: { force?: boolean }): Promise<L
       || acme.directory.letsencrypt.production;
     const accountKey = await loadOrCreateAccountKey();
     const client = new acme.Client({ directoryUrl, accountKey });
-    const [csrKey, csr] = await acme.crypto.createCsr({ commonName: state.domain });
+    // createCsr liefert [PrivateKeyBuffer (Buffer), CsrBuffer] — Key als
+    // PEM-String für Persistenz/LeCertBundle/setSecureContext.
+    const [csrKeyBuf, csr] = await acme.crypto.createCsr({ commonName: state.domain });
+    const csrKey = Buffer.isBuffer(csrKeyBuf) ? csrKeyBuf.toString('utf8') : String(csrKeyBuf);
     const cert = await client.auto({
       csr,
       termsOfServiceAgreed: true,
       challengePriority: ['dns-01'],
       challengeCreateFn: async (_authz, _challenge, keyAuthorization) => {
-        // TXT _acme-challenge.<sub>.duckdns.org = keyAuthorization
-        await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, txt: keyAuthorization });
+        // TXT _acme-challenge.<sub>.duckdns.org = keyAuthorization.
+        // ip MITGEBEN: DuckDNS überschreibt sonst den A-Record mit der
+        // öffentliche IP des Aufrufers (siehe duckDnsUpdate-Doku oben).
+        const lanIp = pickLanIp() ?? undefined;
+        await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip: lanIp, txt: keyAuthorization });
       },
       challengeRemoveFn: async () => {
-        // TXT wieder entfernen (best effort — DuckDNS clear-Parameter)
+        // TXT wieder entfernen (best effort — clear-Parameter; ip bleibt
+        // gesetzt, damit der A-Record auch hier unangetastet korrekt ist).
         try {
-          await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, txt: '', clear: 'true' });
+          const lanIp = pickLanIp() ?? undefined;
+          await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip: lanIp, txt: '', clear: 'true' });
         } catch { /* Aufräumen ist optional */ }
       },
     });
@@ -350,11 +401,13 @@ export async function issueCertificate(options?: { force?: boolean }): Promise<L
       issuedAt: new Date().toISOString(),
       expiresAt,
     }, null, 2));
+    // Frisch lesen — enthält das gerade persistierte lastAttemptIso.
+    const fresh = readDomainState() ?? state;
     writeDomainState({
-      ...state,
+      ...fresh,
       lastIssuedAt: new Date().toISOString(),
       lastError: undefined,
-      dnsIp: dnsIp ?? state.dnsIp,
+      dnsIp: dnsIp ?? fresh.dnsIp,
     });
 
     const bundle: LeCertBundle = { cert, key: csrKey, expiresAt, domain: state.domain };
@@ -447,13 +500,17 @@ export function startMaintenance(): void {
 async function checkRenewal(): Promise<void> {
   const state = readDomainState();
   if (!state || shared().issuing) return;
+  // Persistierter Cooldown (10 min nach Fehlschlag) — verhindert, dass
+  // Boot-/Stunden-Loops Let's Encrypts Fehler-Validierungs-Limit (5/h)
+  // erschöpfen. Ohne force greift zusätzlich der 60-s-In-Memory-Guard.
+  if (recentlyFailed(10 * 60 * 1000)) return;
   const bundle = getLeBundle();
   if (!bundle) {
-    await issueCertificate({ force: true });
+    await issueCertificate();
     return;
   }
   const daysLeft = (Date.parse(bundle.expiresAt) - Date.now()) / (24 * 60 * 60 * 1000);
   if (daysLeft < 30) {
-    await issueCertificate({ force: true });
+    await issueCertificate();
   }
 }

@@ -140,6 +140,40 @@ try {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  Step 2.6: Bundle DuckDNS/Let's-Encrypt module (R55)
+// ═══════════════════════════════════════════════════════════
+// src/lib/server/https-domain.ts verwaltet die kostenlose DuckDNS-Subdomain
+// + das echte Let's-Encrypt-Zertifikat (DNS-01-Challenge, Renewal, DNS-Sync).
+// Der Dev-Server lädt sie direkt via tsx; der Standalone-Server (plain Node)
+// braucht sie als CJS-Bundle — inklusive acme-client + axios, die hier
+// vollständig inline gehen (reine JS-Pakete, keine native deps). Beide
+// Modul-Graphen (Next-API-Routes + standalone-server) teilen sich den
+// Zustand über globalThis-Anker im Modul selbst.
+log('\n=== Step 2.6/5: Bundling https-domain.cjs (DuckDNS / Let\'s Encrypt) ===\n');
+
+const httpsDomainCjs = join(standaloneDir, 'https-domain.cjs');
+try {
+  await esbuild({
+    entryPoints: [join(ROOT, 'src', 'lib', 'server', 'https-domain.ts')],
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    target: ['node18'],
+    outfile: httpsDomainCjs,
+    tsconfig: join(ROOT, 'tsconfig.json'),
+    sourcemap: false,
+    minify: false,
+    logLevel: 'warning',
+  });
+  ok('Bundled https-domain.cjs into standalone output');
+} catch (err) {
+  fail('esbuild failed to bundle the https-domain module!');
+  console.error(err);
+  fail('The desktop app would start WITHOUT real certificates (local CA fallback) — aborting so the regression is caught at build time.');
+  process.exit(1);
+}
+
+// ═══════════════════════════════════════════════════════════
 //  Step 3: Copy standalone → src-tauri/bundled/server (+ custom server.js)
 // ═══════════════════════════════════════════════════════════
 log('\n=== Step 3/5: Copying to src-tauri/bundled/server ===\n');
@@ -203,6 +237,14 @@ if (!existsSync(join(bundledServer, 'socketio-server.cjs'))) {
   process.exit(1);
 }
 ok('Verified socketio-server.cjs is bundled');
+
+// R55: DuckDNS/Let's-Encrypt-Modul muss im Bundle sein (sonst laufen nur
+// lokale CA-Zertifikate — der Standalone-Server lädt es best-effort).
+if (!existsSync(join(bundledServer, 'https-domain.cjs'))) {
+  fail('https-domain.cjs missing from bundled server!');
+  process.exit(1);
+}
+ok('Verified https-domain.cjs is bundled');
 
 // ═══════════════════════════════════════════════════════════
 //  Step 3.7 (R52/R54): HTTPS-Zertifikate — lokale Root-CA + Leaf

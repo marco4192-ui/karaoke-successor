@@ -1293,6 +1293,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ Primeiro conecte o celular à mesma rede Wi-Fi deste computador, depois escaneie o QR code.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "Primeira conexão: o navegador pode mostrar um aviso sobre o certificado HTTPS. Recomendação: instale o certificado de karaokê UMA VEZ (Configurações → Móvel → «HTTPS sem aviso do navegador (configuração única)» ou o banner no app Companion) — o aviso desaparece permanentemente. Sem instalar: toque em «Avançado» → «Prosseguir» — uma vez por dispositivo.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "Esta conexão usa um certificado de verdade (Let's Encrypt) — os celulares confiam nele automaticamente, não precisa instalar nada.",
     singingDeviceAssignment: "Atribuição de Dispositivos de Canto",
     singingDeviceAssignmentDesc: "Escolha por jogador: cantar pelo microfone ou pelo App Companion.",
   },

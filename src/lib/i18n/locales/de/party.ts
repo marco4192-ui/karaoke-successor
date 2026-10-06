@@ -428,6 +428,8 @@ unifiedSetup: {
   // R52 — HTTPS-Companion (Mikrofon-Freigabe): Hinweis auf die einmalige
   // Zertifikats-Bestätigung im Browser (Self-Signed, Produktions-Bundle)
   qrHttpsHint: 'Erste Verbindung: Der Browser zeigt ggf. eine Zertifikats-Warnung. Empfehlung: Installiere das Karaoke-Zertifikat EINMALIG (Einstellungen → Mobilgerät → „HTTPS ohne Browser-Warnung“ oder das Banner in der Companion-App) — die Warnung verschwindet dauerhaft. Ohne Installation: „Erweitert“ → „Weiter“ — einmalig pro Gerät.',
+  // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+  qrTrustedHint: 'Diese Verbindung nutzt ein echtes Zertifikat (Let\'s Encrypt) — Handys vertrauen ihr automatisch, keine Installation nötig.',
   qrScanToConnect: 'Zum Verbinden scannen',
   inputMode: 'Eingabe-Modus',
   readyToPlay: 'Bereit zum Spielen!',

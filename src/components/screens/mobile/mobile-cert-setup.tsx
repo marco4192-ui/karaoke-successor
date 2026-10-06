@@ -26,9 +26,13 @@ export interface MobileCertSetupProps {
   httpsPort: number | null;
   /** true, wenn die Seite über http://<LAN-IP> geladen wurde. */
   insecureContext: boolean;
+  /** R55: DuckDNS-Domain mit aktivem ECHTEM Zertifikat (Lets Encrypt)
+   * oder null. Ist sie gesetzt, gibt es nichts zu installieren — das
+   * Banner bleibt komplett weg (jedes Handy vertraut automatisch). */
+  trustedDomain?: string | null;
 }
 
-export function MobileCertSetup({ httpsPort, insecureContext }: MobileCertSetupProps) {
+export function MobileCertSetup({ httpsPort, insecureContext, trustedDomain }: MobileCertSetupProps) {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState<boolean | null>(null);
   const [isIos, setIsIos] = useState(false);
@@ -51,7 +55,10 @@ export function MobileCertSetup({ httpsPort, insecureContext }: MobileCertSetupP
 
   // Ohne HTTPS-Listener gibt es nichts einzurichten; nach dem Wegklicken
   // bleibt das Banner weg (HTTPS: dauerhaft; HTTP: bis zur nächsten Session).
-  if (httpsPort === null || dismissed === true) return null;
+  // R55: Mit aktivem Let's-Encrypt-Zertifikat gibt es ÜBERHAUPT nichts zu
+  // tun — kein Banner (die Installations-Schritte wären verwirrend, da
+  // nichts installiert werden muss und keine Warnung erscheint).
+  if (httpsPort === null || dismissed === true || trustedDomain) return null;
 
   const dismiss = () => {
     try {
@@ -63,6 +70,14 @@ export function MobileCertSetup({ httpsPort, insecureContext }: MobileCertSetupP
 
   const openHttps = () => {
     if (typeof window === 'undefined') return;
+    // R55: Bevorzugt auf die vertrauenswürdige DuckDNS-Domain wechseln —
+    // dort gilt das echte Zertifikat OHNE Warnung. Fallback (lokale CA):
+    // gleicher Hostname + HTTPS-Port.
+    if (trustedDomain) {
+      const portPart = httpsPort && httpsPort !== 443 ? ':' + httpsPort : '';
+      window.location.href = `https://${trustedDomain}${portPart}${window.location.pathname}${window.location.search}`;
+      return;
+    }
     const port = httpsPort ? ':' + httpsPort : '';
     window.location.href = 'https://' + window.location.hostname + port + window.location.pathname + window.location.search;
   };

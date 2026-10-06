@@ -1293,6 +1293,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ 먼저 휴대폰을 이 컴퓨터와 같은 Wi-Fi 네트워크에 연결한 뒤 QR 코드를 스캔해 주세요.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "처음 연결할 때 브라우저가 HTTPS 인증서 경고를 표시할 수 있어요. 권장: 카라오케 인증서를 한 번만 설치하세요(설정 → 모바일 → “브라우저 경고 없는 HTTPS(최초 1회 설정)” 또는 Companion 앱의 배너) — 경고가 영구히 사라집니다. 설치하지 않을 경우: “고급” → “이동”을 눌러주세요 — 기기당 한 번만 하면 돼요.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "이 연결은 진짜 인증서(Let's Encrypt)를 사용해요 — 휴대폰이 자동으로 신뢰하므로 설치가 필요 없어요.",
     singingDeviceAssignment: "노래 기기 배정",
     singingDeviceAssignmentDesc: "플레이어별로 선택하세요: 마이크 또는 컴패니언 앱으로 부르기.",
   },

@@ -44,7 +44,7 @@ import { MobileErrorBoundary } from './mobile/mobile-error-boundary';
 import { useMobileConnection } from '@/hooks/use-mobile-connection';
 import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
-import { initCompanionHttpsPort } from '@/lib/qr-code';
+import { initCompanionHttpsInfo } from '@/lib/qr-code';
 
 // ===================== MOBILE CLIENT VIEW =====================
 interface MobileClientViewProps {
@@ -145,20 +145,37 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // Zertifikats-Warnung 1× bestätigen → Mikrofon funktioniert).
   const [micInsecure, setMicInsecure] = useState(false);
   const [micHttpsPort, setMicHttpsPort] = useState<number | null>(null);
+  // R55: DuckDNS-Domain mit aktivem ECHTEM Zertifikat (Let's Encrypt) —
+  // dann unterbleibt das Zertifikats-Banner komplett und der HTTPS-Wechsel
+  // führt direkt auf die vertrauenswürdige Domain statt auf die IP.
+  const [micTrustedDomain, setMicTrustedDomain] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     // R53: Unsicherer Kontext (http://<LAN-IP>) → Mic blockiert, Karte zeigt
     // den HTTPS-Wechsel. R54: Der HTTPS-Port wird jetzt IMMER gezogen — auch
     // im secure-Kontext braucht ihn das Zertifikats-Banner (MobileCertSetup).
+    // R55: initCompanionHttpsInfo liefert Port + Domain + Quelle in einem
+    // Abfrage (bei aktivem LE-Zertifikat trustedDomain ≠ null → kein Banner).
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time state sync (insecure context never changes without navigation)
     if (!window.isSecureContext) setMicInsecure(true);
-    initCompanionHttpsPort().then(p => { setMicHttpsPort(p); }).catch(() => { /* Hint bleibt */ });
+    initCompanionHttpsInfo().then(info => {
+      if (!info) return;
+      setMicHttpsPort(info.port);
+      setMicTrustedDomain(info.source === 'letsencrypt' ? info.domain : null);
+    }).catch(() => { /* Hint bleibt */ });
   }, []);
   const openHttpsCompanionUrl = useCallback(() => {
     if (typeof window === 'undefined') return;
+    // R55: Vertrauenswürdige Domain hat Vorrang — echtes Zertifikat, keine
+    // Warnung, stabil über IP-Wechsel. Fallback: IP + HTTPS-Port (lokale CA).
+    if (micTrustedDomain) {
+      const portPart = micHttpsPort && micHttpsPort !== 443 ? ':' + micHttpsPort : '';
+      window.location.href = `https://${micTrustedDomain}${portPart}${window.location.pathname}${window.location.search}`;
+      return;
+    }
     const port = micHttpsPort ? ':' + micHttpsPort : '';
     window.location.href = 'https://' + window.location.hostname + port + window.location.pathname + window.location.search;
-  }, [micHttpsPort]);
+  }, [micHttpsPort, micTrustedDomain]);
 
   // Data (songs, queue, jukebox, results, partners)
   // R51/Bug8: Difficulty-Vorauswahl folgt jetzt dem LIVE-Gamestate des
@@ -849,7 +866,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           {/* R54: Einmalige Zertifikats-Einrichtung — sichtbar, solange der
               Server HTTPS anbietet und der Nutzer das Banner nicht weggeklickt
               hat (Details: mobile-cert-setup.tsx). */}
-          <MobileCertSetup httpsPort={micHttpsPort} insecureContext={micInsecure} />
+          <MobileCertSetup httpsPort={micHttpsPort} insecureContext={micInsecure} trustedDomain={micTrustedDomain} />
 
           {/* MirrorView — steuernd UND nicht-steuernd (P1): Der Dispatcher
               erhält isControlling + den vollen R33-Datenvertrag. */}

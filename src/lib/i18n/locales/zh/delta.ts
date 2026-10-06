@@ -1293,6 +1293,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ 请先将手机连接到与这台电脑相同的 WiFi 网络，然后扫描二维码。",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "首次连接：浏览器可能会显示HTTPS证书警告。建议：安装一次卡拉OK证书（设置 → 移动伴侣 → “HTTPS无浏览器警告（一次性设置）”，或Companion应用中的横幅）——警告将永久消失。若不安装：点按“高级”→“继续前往”——每台设备一次。",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "此连接使用真正的证书（Let's Encrypt）——手机会自动信任，无需安装。",
     singingDeviceAssignment: "演唱设备分配",
     singingDeviceAssignmentDesc: "为每位玩家选择：通过麦克风还是伴侣应用演唱。",
   },

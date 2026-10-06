@@ -1293,6 +1293,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ まずスマホをこのコンピューターと同じWi-Fiネットワークに接続してから、QRコードをスキャンしてください。",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "初回接続時：ブラウザーがHTTPS証明書の警告を表示することがあります。推奨：カラオケ証明書を1回だけインストールしてください（設定 → モバイル → 「ブラウザ警告なしのHTTPS（初回のみの設定）」、またはCompanionアプリのバナー） — これで警告は永久に表示されなくなります。インストールしない場合：「詳細設定」→「移動」をタップ — 端末ごとに1回だけです。",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "この接続は本物の証明書（Let's Encrypt）を使用しています — スマホは自動的に信頼するため、インストールは不要です。",
     singingDeviceAssignment: "歌唱デバイスの割り当て",
     singingDeviceAssignmentDesc: "プレイヤーごとに選択：マイクまたはコンパニオンアプリで歌う。",
   },

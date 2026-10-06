@@ -81,6 +81,18 @@ try {
   console.warn('[standalone] reason:', err && err.message);
 }
 
+// ─── R55: DuckDNS / Let's-Encrypt-Modul (best effort, gebundelt von
+// prepare-bundle.mjs). Fehlt es, bleibt alles bei der lokalen Root-CA
+// (R54) — die App funktioniert, nur ohne „automatisch vertrauenswürdiges"
+// Zertifikat. getestet wird die Verfügbarkeit beim HTTPS-Start unten. */
+let httpsDomain = null;
+try {
+  httpsDomain = require('./https-domain.cjs');
+} catch (err) {
+  console.warn('[standalone] https-domain.cjs not available — staying on local CA certificates.');
+  console.warn('[standalone] reason:', err && err.message);
+}
+
 async function main() {
   // ─── 3. Boot the standalone Next.js runtime ───
   const { requestHandler, upgradeHandler } = await getRequestHandlers({
@@ -281,47 +293,135 @@ async function main() {
       }
     }
 
-    if (certPem && keyPem) {
+    // ─── R55: Echtes Let's-Encrypt-Zertifikat (DuckDNS) bevorzugen, falls
+    // konfiguriert und gültig; lokale CA bleibt Rückfallebene. ───
+    let leBundle = null;
+    let domainState = null;
+    if (httpsDomain) {
+      try {
+        domainState = httpsDomain.readDomainState();
+        leBundle = httpsDomain.getLeBundle();
+      } catch { /* Disk-State defekt — CA-Only weiter */ }
+    }
+
+    if ((certPem && keyPem) || leBundle) {
       // Root-CA für den Download-Endpunkt veröffentlichen (BEFORE listen,
       // damit der erste Request sie schon sieht).
       if (caCertPem) globalThis.__karaokeCaCertPem = caCertPem;
-      httpsPort = parseInt(process.env.HTTPS_PORT, 10) || 3443;
-      httpsServer = https.createServer(
-        {
-          // Leaf + CA-Kette (Root-CA installiert → keine Browser-Warnung)
-          cert: caCertPem ? certPem + '\n' + caCertPem : certPem,
-          key: keyPem,
-        },
-        requestListener,
-      );
-      if (keepAliveTimeout) {
-        httpsServer.keepAliveTimeout = keepAliveTimeout;
-      }
-      httpsServer.on('upgrade', async (req, socket, head) => {
+
+      // R55: Port-Wahl — mit DuckDNS-Domain bevorzugt 443 (saubere URL
+      // ohne Port-Angabe; Windows erlaubt 443 ohne Admin-Rechte). Fällt 443
+      // aus (Linux ohne root / belegt), folgt 3443 wie bisher.
+      const portCandidates = process.env.HTTPS_PORT
+        ? [parseInt(process.env.HTTPS_PORT, 10)]
+        : domainState
+          ? [443, 3443]
+          : [3443];
+
+      const listenHttps = (candidate) =>
+        new Promise((resolve, reject) => {
+          httpsServer = https.createServer(
+            leBundle
+              ? { cert: leBundle.cert, key: leBundle.key }
+              : {
+                  // Leaf + CA-Kette (Root-CA installiert → keine Browser-Warnung)
+                  cert: caCertPem ? certPem + '\n' + caCertPem : certPem,
+                  key: keyPem,
+                },
+            requestListener,
+          );
+          if (keepAliveTimeout) {
+            httpsServer.keepAliveTimeout = keepAliveTimeout;
+          }
+          httpsServer.once('error', reject);
+          httpsServer.on('upgrade', async (req, socket, head) => {
+            try {
+              await upgradeHandler(req, socket, head);
+            } catch (err) {
+              socket.destroy();
+              console.error(`[standalone] Failed to handle HTTPS upgrade for ${req.url}`);
+              console.error(err);
+            }
+          });
+          // Socket.IO auch an den HTTPS-Server hängen (gleiche io-Instanz,
+          // gleiche connection handlers — engine.io wrapped nur die Listener).
+          if (initSocketIO && attachSocketIO) {
+            try {
+              attachSocketIO(httpsServer);
+            } catch (err) {
+              console.warn('[standalone] Socket.IO attach to HTTPS server failed:', err && err.message);
+            }
+          }
+          httpsServer.listen(candidate, hostname, () => {
+            httpsServer.removeListener('error', reject);
+            // Spätere Fehler dürfen den Prozess nicht killen
+            httpsServer.on('error', (err) => {
+              console.warn('[standalone] HTTPS server error:', err && err.message);
+            });
+            resolve(httpsServer);
+          });
+        });
+
+      for (const candidate of portCandidates) {
         try {
-          await upgradeHandler(req, socket, head);
+          await listenHttps(candidate);
+          httpsPort = candidate;
+          // Port für die App veröffentlichen (status-API → QR-URLs). Muss VOR
+          // dem ersten status-Request passieren — globalThis ist prozessweit
+          // mit den Next-API-Routes geteilt (gleiches Muster wie mobile-state).
+          globalThis.__karaokeHttpsPort = httpsPort;
+          // R55: Domain-/Zertifikats-Globals (status-API → QR-URLs + Banner).
+          globalThis.__karaokeHttpsDomain = domainState ? domainState.domain : null;
+          globalThis.__karaokeHttpsCertSource = leBundle ? 'letsencrypt' : 'local-ca';
+          globalThis.__karaokeHttpsCertExpiresAt = leBundle ? leBundle.expiresAt : null;
+          console.log(`[standalone] HTTPS listener active on https://${hostname}:${candidate}${leBundle ? ` (Let's Encrypt: ${domainState && domainState.domain})` : ' (local CA)'}${leBundle ? ' — phones trust automatically' : ' — install the CA once per phone via /api/mobile?action=ca-cert'}`);
+          break;
         } catch (err) {
-          socket.destroy();
-          console.error(`[standalone] Failed to handle HTTPS upgrade for ${req.url}`);
-          console.error(err);
-        }
-      });
-      // Socket.IO auch an den HTTPS-Server hängen (gleiche io-Instanz,
-      // gleiche connection handlers — engine.io wrapped nur die Listener).
-      if (initSocketIO && attachSocketIO) {
-        try {
-          attachSocketIO(httpsServer);
-        } catch (err) {
-          console.warn('[standalone] Socket.IO attach to HTTPS server failed:', err && err.message);
+          const code = err && err.code;
+          if (code === 'EADDRINUSE' || code === 'EACCES' || code === 'EPERM') {
+            console.warn(`[standalone] HTTPS port ${candidate} unavailable (${code}) — trying next`);
+            httpsServer = null;
+            continue;
+          }
+          console.warn('[standalone] HTTPS listener failed to start:', err && err.message);
+          httpsServer = null;
+          httpsPort = null;
+          break;
         }
       }
-      httpsServer.listen(httpsPort, hostname, () => {
-        // Port für die App veröffentlichen (status-API → QR-URLs). Muss VOR
-        // dem ersten status-Request passieren — globalThis ist prozessweit
-        // mit den Next-API-Routes geteilt (gleiches Muster wie mobile-state).
-        globalThis.__karaokeHttpsPort = httpsPort;
-        console.log(`[standalone] HTTPS listener active on https://${hostname}:${httpsPort}${caCertPem ? ' (local CA)' : ' (self-signed)'} — install the CA once per phone via /api/mobile?action=ca-cert`);
-      });
+
+      // ─── R55: Live-Zertifikats-Wechsel + Automatik ───
+      if (httpsDomain && httpsServer) {
+        try {
+          // Swap-Handler: Ausstellung (getriggert von der Settings-API oder
+          // Renewal) tauscht das Zertifikat am LAUFENDEN Listener —
+          // setSecureContext hält bestehende Verbindungen, neue bekommen das
+          // echte Zertifikat.
+          httpsDomain.registerCertSwapHandler((bundle) => {
+            try {
+              httpsServer.setSecureContext({ cert: bundle.cert, key: bundle.key });
+              globalThis.__karaokeHttpsDomain = bundle.domain;
+              globalThis.__karaokeHttpsCertSource = 'letsencrypt';
+              globalThis.__karaokeHttpsCertExpiresAt = bundle.expiresAt;
+              console.log(`[standalone] HTTPS now serving Let's Encrypt certificate for ${bundle.domain} (valid until ${String(bundle.expiresAt).slice(0, 10)})`);
+            } catch (err) {
+              console.warn('[standalone] setSecureContext failed:', err && err.message);
+            }
+          });
+          // Stündlicher DNS-Sync + täglicher Renewal-Check (no-op ohne Domain).
+          httpsDomain.startMaintenance();
+          // DuckDNS eingerichtet, aber noch kein gültiges Zertifikat → im
+          // Hintergrund ausstellen (KEIN force: persistierter Cooldown nach
+          // Fehlschlägen schützt Let's Encrypts Rate-Limits).
+          if (domainState && !leBundle) {
+            httpsDomain.issueCertificate().catch((err) => {
+              console.warn("[standalone] Let's Encrypt issuance failed:", err && err.message, '— retry in 24 h (see Settings → Mobilgerät)');
+            });
+          }
+        } catch (err) {
+          console.warn('[standalone] https-domain integration failed:', err && err.message);
+        }
+      }
     } else {
       console.warn('[standalone] No HTTPS certificate found (certs/https-*.pem) — companion microphone disabled (plain HTTP only).');
     }

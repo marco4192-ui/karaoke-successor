@@ -105,18 +105,36 @@ export async function detectLocalIP(): Promise<string | null> {
  * SICHEREN Kontext — getUserMedia ist auf http://<LAN-IP> in jedem Browser
  * blockiert (nur localhost gilt ohne HTTPS als sicher). Der Produktions-
  * Standalone-Server (Tauri-Bundle) öffnet deshalb parallel zum HTTP-Port 3000
- * einen HTTPS-Listener mit Self-Signed-Zertifikat (Default-Port 3443); der
- * Status-Endpunkt meldet ihn als httpsPort. Der Dev-Server hat keinen HTTPS-
- * Listener (httpsPort null) → URLs bleiben http://…:3000 (Desktop/localhost
- * ist ohnehin sicher).
+ * einen HTTPS-Listener (Default-Port 3443); der Status-Endpunkt meldet ihn
+ * als httpsPort. Der Dev-Server hat keinen HTTPS-Listener (httpsPort null)
+ * → URLs bleiben http://…:3000 (Desktop/localhost ist ohnehin sicher).
+ *
+ * R55 — Echtes Let's-Encrypt-Zertifikat (DuckDNS): Der Status-Endpunkt
+ * meldet zusätzlich httpsDomain + httpsCertSource. Ist ein LE-Zertifikat
+ * aktiv, bauen ALLE Companion-URLs automatisch die DOMAIN ein
+ * (https://name.duckdns.org/mobile) — jedes Handy vertraut ihr nativ, und
+ * nach WLAN-/IP-Wechseln bleibt sie stabil (DNS-Sync läuft serverseitig).
  *
  * Der Port wird einmal beim App-Boot gezogen (initCompanionHttpsPort, siehe
  * use-app-effects) und in der Session gecacht — buildCompanionUrl bleibt
  * synchron benutzbar.
  */
 const HTTPS_PORT_KEY = 'karaoke-https-port';
+const HTTPS_DOMAIN_KEY = 'karaoke-https-domain';
+const HTTPS_SOURCE_KEY = 'karaoke-https-cert-source';
+
+export interface CompanionHttpsInfo {
+  /** HTTPS-Port des Servers (null = kein HTTPS-Listener). */
+  port: number | null;
+  /** DuckDNS-Domain mit aktivem Let's-Encrypt-Zertifikat oder null. */
+  domain: string | null;
+  /** Aktive Zertifikats-Quelle ('letsencrypt' = automatisch vertrauenswürdig). */
+  source: 'letsencrypt' | 'local-ca' | null;
+}
 
 let httpsPortCache: number | null = null;
+let httpsDomainCache: string | null = null;
+let httpsSourceCache: CompanionHttpsInfo['source'] = null;
 
 function readCachedHttpsPort(): number | null {
   if (typeof window === 'undefined') return null;
@@ -127,6 +145,67 @@ function readCachedHttpsPort(): number | null {
     return Number.isInteger(p) && p > 0 ? p : null;
   } catch {
     return null;
+  }
+}
+
+function readCachedHttpsDomain(): { domain: string | null; source: CompanionHttpsInfo['source'] } {
+  if (typeof window === 'undefined') return { domain: null, source: null };
+  try {
+    const domain = window.sessionStorage.getItem(HTTPS_DOMAIN_KEY);
+    const source = window.sessionStorage.getItem(HTTPS_SOURCE_KEY);
+    return {
+      domain: domain && domain.includes('.') ? domain : null,
+      source: source === 'letsencrypt' || source === 'local-ca' ? source : null,
+    };
+  } catch {
+    return { domain: null, source: null };
+  }
+}
+
+/** Gecachte HTTPS-Infos synchron lesen (für buildCompanionUrl & Self-Heal). */
+export function getCompanionHttpsInfo(): CompanionHttpsInfo {
+  return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
+}
+
+/** HTTPS-Infos OHNE Server-Request setzen (z. B. nach erfolgreicher
+ * Aktivierung in den Settings — damit QR-URLs sofort die Domain nutzen,
+ * ohne auf den nächsten initCompanionHttpsInfo-Poll zu warten). */
+export function updateCompanionHttpsInfo(info: Partial<CompanionHttpsInfo>): void {
+  if (typeof info.port === 'number' && info.port > 0) httpsPortCache = info.port;
+  else if (info.port === null) httpsPortCache = null;
+  if ('domain' in info) httpsDomainCache = info.domain ?? null;
+  if ('source' in info) httpsSourceCache = info.source ?? null;
+  try {
+    if (typeof window !== 'undefined') {
+      if (httpsPortCache) window.sessionStorage.setItem(HTTPS_PORT_KEY, String(httpsPortCache));
+      else window.sessionStorage.removeItem(HTTPS_PORT_KEY);
+      if (httpsDomainCache) window.sessionStorage.setItem(HTTPS_DOMAIN_KEY, httpsDomainCache);
+      else window.sessionStorage.removeItem(HTTPS_DOMAIN_KEY);
+      if (httpsSourceCache) window.sessionStorage.setItem(HTTPS_SOURCE_KEY, httpsSourceCache);
+      else window.sessionStorage.removeItem(HTTPS_SOURCE_KEY);
+    }
+  } catch { /* storage blocked — memory cache genügt */ }
+}
+
+/** Vollständige HTTPS-Infos vom Server abfragen (Port + Domain + Quelle). */
+export async function initCompanionHttpsInfo(): Promise<CompanionHttpsInfo | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/mobile?action=status', { cache: 'no-store' });
+    if (!res.ok) return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
+    const data = await res.json() as {
+      httpsPort?: number | null;
+      httpsDomain?: string | null;
+      httpsCertSource?: 'letsencrypt' | 'local-ca' | null;
+    };
+    updateCompanionHttpsInfo({
+      port: typeof data.httpsPort === 'number' && data.httpsPort > 0 ? data.httpsPort : null,
+      domain: typeof data.httpsDomain === 'string' && data.httpsDomain.includes('.') ? data.httpsDomain : null,
+      source: data.httpsCertSource === 'letsencrypt' || data.httpsCertSource === 'local-ca' ? data.httpsCertSource : null,
+    });
+    return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
+  } catch {
+    return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
   }
 }
 
@@ -161,19 +240,50 @@ export async function initCompanionHttpsPort(): Promise<number | null> {
  * HTTPS-Betrieb bewusst ignoriert — die Mic-Fähigkeit wiegt schwerer als
  * die Port-Angabe. Ohne HTTPS-Listener (Dev) bleibt alles beim alten
  * http://…:3000-Verhalten.
+ *
+ * R55: Ist ein echtes Let's-Encrypt-Zertifikat aktiv (DuckDNS eingerichtet),
+ * wird die DOMAIN statt der IP verbaut: https://name.duckdns.org/mobile.
+ * Vorteile: Jedes Handy vertraut ihr automatisch (keine Installation), sie
+ * bleibt nach IP-Wechseln stabil (serverseitiger DNS-Sync) und ist kürzer
+ * (besser scanbar). Der übergebene ip-Parameter ist dann nur noch Fallback.
  */
 export function buildCompanionUrl(ip: string, port?: number, profileId?: string): string {
+  // Cache-Hydration: Erstmaliger synchroner Aufruf (vor jedem init-Poll).
   if (httpsPortCache === null) {
-    // Selbst-Erkennung: Läuft diese Seite selbst unter HTTPS (Companion, der
-    // z. B. in den gespiegelten Einstellungen einen QR für WEITERE Handys
-    // baut), ist der eigene Port der HTTPS-Port des Servers.
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-      const p = parseInt(window.location.port, 10);
-      if (Number.isInteger(p) && p > 0) httpsPortCache = p;
+    httpsPortCache = readCachedHttpsPort();
+  }
+  if (httpsDomainCache === null && httpsSourceCache === null) {
+    const cached = readCachedHttpsDomain();
+    httpsDomainCache = cached.domain;
+    httpsSourceCache = cached.source;
+  }
+  // Selbst-Erkennung: Läuft diese Seite selbst unter HTTPS (Companion, der
+  // z. B. in den gespiegelten Einstellungen einen QR für WEITERE Handys
+  // baut), sind eigener Host + Port die des Servers — bei einer DuckDNS-
+  // Domain zusätzlich die vertrauenswürdige Quelle.
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    const p = parseInt(window.location.port, 10);
+    if (Number.isInteger(p) && p > 0 && httpsPortCache === null) httpsPortCache = p;
+    const host = window.location.hostname;
+    if (host.includes('.') && !/^\d+\.\d+\.\d+\.\d+$/.test(host) && host !== 'localhost' && host !== 'tauri.localhost' && !host.endsWith('.local')) {
+      // Host ist ein DNS-Name (z. B. die DuckDNS-Domain) → vertrauenswürdige
+      // Quelle, der Server muss ein gültiges Zertifikat dafür haben.
+      if (httpsDomainCache !== host) {
+        httpsDomainCache = host;
+        httpsSourceCache = 'letsencrypt';
+      }
     }
-    if (httpsPortCache === null) httpsPortCache = readCachedHttpsPort();
   }
   const httpsPort = httpsPortCache;
+
+  // R55: Echte Domain mit LE-Zertifikat hat Vorrang vor der IP.
+  if (httpsSourceCache === 'letsencrypt' && httpsDomainCache) {
+    // Port 443 ist der HTTPS-Default → weglassen (saubere, kurze URL).
+    const portPart = httpsPort && httpsPort !== 443 ? `:${httpsPort}` : '';
+    const base = `https://${httpsDomainCache}${portPart}/mobile`;
+    return profileId ? `${base}?profile=${encodeURIComponent(profileId)}` : base;
+  }
+
   const scheme = httpsPort ? 'https' : 'http';
   const actualPort = httpsPort ?? port ?? 3000;
   const base = `${scheme}://${ip}:${actualPort}/mobile`;

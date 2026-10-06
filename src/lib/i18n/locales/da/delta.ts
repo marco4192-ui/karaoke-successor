@@ -1292,6 +1292,8 @@ export const deltaTranslations = {
     qrWlanHint: "⚠️ Forbind først din telefon til det samme WiFi-netværk som denne computer, og scan derefter QR-koden.",
     // R52 — HTTPS companion (mic permission): one-time certificate warning hint
     qrHttpsHint: "Første forbindelse: Browseren viser evt. en advarsel om HTTPS-certifikatet. Anbefaling: Installér karaoke-certifikatet ÉN GANG (Indstillinger → Mobil → »HTTPS uden browseradvarsel (engangsopsætning)« eller banneret i Companion-appen) — advarslen forsvinder permanent. Uden installation: tryk på »Avanceret« → »Fortsæt« — én gang pr. enhed.",
+    // R55 — sichtbar, wenn ein echtes Let's-Encrypt-Zertifikat aktiv ist (DuckDNS)
+    qrTrustedHint: "Denne forbindelse bruger et ægte certifikat (Let's Encrypt) — telefonerne stoler automatisk på den, ingen installation nødvendig.",
     singingDeviceAssignment: "Tildeling af syngeenhed",
     singingDeviceAssignmentDesc: "Vælg pr. spiller: syng via mikrofon eller Companion-app.",
   },
