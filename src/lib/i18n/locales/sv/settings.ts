@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS-underdomän',
   leTokenLabel: 'DuckDNS-token',
   leActivate: 'Begär certifikat',
-  leActivating: 'Begär certifikat … (10–60 sekunder)',
+  leActivating: 'Begär certifikat …',
   leActiveTitle: 'Riktigt certifikat aktivt',
   leActiveDesc: 'Alla telefoner litar automatiskt på anslutningen — ingen installation behövs. Förnyelse och DNS-synkronisering körs automatiskt i bakgrunden.',
   leExpiresLabel: 'Giltigt till',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: 'Ingen internetanslutning — certifikatbegäran behöver internet en gång.',
   leErrGeneric: 'Certifikatbegäran misslyckades — försök igen senare.',
   leErrRaw: 'Detaljer',
+  // R57 — ärlig återkoppling om utfärdandet + kopiera-länk-fallback
+  leErrTxtNotVisible: 'DNS-TXT-posten blev inte synlig i tid. DuckDNS kan vara långsamt just nu — försök igen om några minuter.',
+  leErrTimeout: 'Kör fortfarande i bakgrunden — det kan ta några minuter. Statusen uppdateras automatiskt, inget nytt försök behövs.',
+  leLinkCopy: 'Kopiera länk',
+  leLinkCopied: 'Kopierat!',
   certAltTitle: 'Alternativ utan internet: installera det lokala certifikatet en gång',
 },
 settingsWebcam: {

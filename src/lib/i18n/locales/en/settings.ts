@@ -501,7 +501,7 @@ export const settingsTranslations = {
     leDomainLabel: 'DuckDNS subdomain',
     leTokenLabel: 'DuckDNS token',
     leActivate: 'Request certificate',
-    leActivating: 'Requesting certificate… (10–60 seconds)',
+    leActivating: 'Requesting certificate…',
     leActiveTitle: 'Real certificate active',
     leActiveDesc: 'All phones trust the connection automatically — no installation needed. Renewal and DNS sync run automatically in the background.',
     leExpiresLabel: 'Valid until',
@@ -518,6 +518,11 @@ export const settingsTranslations = {
     leErrNetwork: 'No internet connection — the certificate request needs internet once.',
     leErrGeneric: 'Certificate request failed — please try again later.',
     leErrRaw: 'Details',
+    // R57 — honest issuance feedback + link-copy fallback
+    leErrTxtNotVisible: 'The DNS TXT record did not become visible in time. DuckDNS may be slow right now — try again in a few minutes.',
+    leErrTimeout: 'Still running in the background — this can take a few minutes. The status updates automatically, no new attempt needed.',
+    leLinkCopy: 'Copy link',
+    leLinkCopied: 'Copied!',
     certAltTitle: 'Alternative without internet: install local certificate once',
   },
 

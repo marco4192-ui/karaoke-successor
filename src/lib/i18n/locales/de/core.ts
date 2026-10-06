@@ -80,11 +80,6 @@ homeScreen: {
   navAchievementsDesc: 'Badges und Meilensteine',
   navSettingsTitle: 'Einstellungen',
   navSettingsDesc: 'Audio, Mikrofone, Darstellung',
-  // R56 — Titelmusik (Startscreen-Jingle)
-  musicToggleTitle: 'Titelmusik',
-  musicOnAria: 'Titelmusik ausschalten',
-  musicOffAria: 'Titelmusik einschalten',
-  musicWaitingHint: 'Startet beim ersten Klick',
 },
 common: {
   loading: 'Laden...',

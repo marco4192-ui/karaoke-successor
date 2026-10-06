@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS-subdomein',
   leTokenLabel: 'DuckDNS-token',
   leActivate: 'Certificaat aanvragen',
-  leActivating: 'Certificaat wordt aangevraagd… (10–60 seconden)',
+  leActivating: 'Certificaat wordt aangevraagd…',
   leActiveTitle: 'Echt certificaat actief',
   leActiveDesc: 'Alle telefoons vertrouwen de verbinding automatisch — geen installatie nodig. Vernieuwing en DNS-synchronisatie verlopen automatisch op de achtergrond.',
   leExpiresLabel: 'Geldig tot',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: 'Geen internetverbinding — de certificaataanvraag heeft één keer internet nodig.',
   leErrGeneric: 'Certificaataanvraag mislukt — probeer het later opnieuw.',
   leErrRaw: 'Details',
+  // R57 — eerlijke feedback over de uitgifte + link-kopiëren-fallback
+  leErrTxtNotVisible: 'Het DNS-TXT-record is niet op tijd zichtbaar geworden. DuckDNS is misschien traag op dit moment — probeer het over een paar minuten opnieuw.',
+  leErrTimeout: 'Draait nog op de achtergrond — dit kan een paar minuten duren. De status wordt automatisch bijgewerkt, een nieuwe poging is niet nodig.',
+  leLinkCopy: 'Link kopiëren',
+  leLinkCopied: 'Gekopieerd!',
   certAltTitle: 'Alternatief zonder internet: het lokale certificaat één keer installeren',
 },
 settingsWebcam: {

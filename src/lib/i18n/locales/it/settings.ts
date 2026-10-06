@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'Sottodominio DuckDNS',
   leTokenLabel: 'Token DuckDNS',
   leActivate: 'Richiedi certificato',
-  leActivating: 'Richiesta del certificato… (10–60 secondi)',
+  leActivating: 'Richiesta del certificato…',
   leActiveTitle: 'Certificato reale attivo',
   leActiveDesc: 'Tutti i telefoni si fidano automaticamente della connessione — nessuna installazione necessaria. Rinnovo e sincronizzazione DNS avvengono automaticamente in background.',
   leExpiresLabel: 'Valido fino al',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: 'Nessuna connessione a internet — la richiesta del certificato richiede internet una volta.',
   leErrGeneric: 'Richiesta del certificato fallita — riprova più tardi.',
   leErrRaw: 'Dettagli',
+  // R57 — feedback onesto sull'emissione + fallback «copia link»
+  leErrTxtNotVisible: 'Il record DNS TXT non è apparso in tempo. DuckDNS potrebbe essere lento in questo momento — riprova tra qualche minuto.',
+  leErrTimeout: 'Continua in background — può richiedere qualche minuto. Lo stato si aggiorna automaticamente, non serve un nuovo tentativo.',
+  leLinkCopy: 'Copia link',
+  leLinkCopied: 'Copiato!',
   certAltTitle: 'Alternativa senza internet: installa il certificato locale una volta',
 },
 settingsWebcam: {

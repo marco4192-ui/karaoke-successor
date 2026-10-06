@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: '네트워크 주소 감지 중...',
   selectCharacter: '캐릭터 선택',
   inactiveProfiles: '비활성 프로필이 숨겨졌습니다. 프로필 설정에서 활성화하세요.',
-  // R56 — 타이틀 음악 (시작 화면 징글)
-  musicToggleTitle: '타이틀 음악',
-  musicOnAria: '타이틀 음악 끄기',
-  musicOffAria: '타이틀 음악 켜기',
-  musicWaitingHint: '첫 클릭 시 시작',
 },
 common: {
   loading: '로딩 중...',

@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS子域名',
   leTokenLabel: 'DuckDNS令牌',
   leActivate: '申请证书',
-  leActivating: '正在申请证书…（10–60秒）',
+  leActivating: '正在申请证书…',
   leActiveTitle: '真正的证书已启用',
   leActiveDesc: '所有手机都会自动信任连接 — 无需安装。证书续期和DNS同步会在后台自动运行。',
   leExpiresLabel: '有效期至',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: '无互联网连接 — 证书申请需要联网一次。',
   leErrGeneric: '证书申请失败 — 请稍后重试。',
   leErrRaw: '详情',
+  // R57 — 如实的颁发进度反馈 + 复制链接后备方案
+  leErrTxtNotVisible: 'DNS TXT记录未能及时生效。DuckDNS当前可能响应缓慢 — 请几分钟后再试。',
+  leErrTimeout: '仍在后台运行 — 可能需要几分钟。状态会自动更新，无需重新申请。',
+  leLinkCopy: '复制链接',
+  leLinkCopied: '已复制！',
   certAltTitle: '无互联网的替代方案：一次性安装本地证书',
 },
 settingsWebcam: {

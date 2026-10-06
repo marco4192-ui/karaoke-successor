@@ -84,11 +84,6 @@ export const coreTranslations = {
     navAchievementsDesc: 'Badges and milestones',
     navSettingsTitle: 'Settings',
     navSettingsDesc: 'Audio, microphones, display',
-    // R56 — Title music (start screen jingle)
-    musicToggleTitle: 'Title music',
-    musicOnAria: 'Turn title music off',
-    musicOffAria: 'Turn title music on',
-    musicWaitingHint: 'Starts with your first click',
   },
 
   common: {

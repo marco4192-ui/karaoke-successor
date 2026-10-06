@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: 'Wykrywanie adresu sieci...',
   selectCharacter: 'Wybierz swój profil',
   inactiveProfiles: 'nieaktywne profile ukryte. Włącz je w ustawieniach profilu.',
-  // R56 — Muzyka tytułowa (dżingiel ekranu startowego)
-  musicToggleTitle: 'Muzyka tytułowa',
-  musicOnAria: 'Wyłącz muzykę tytułową',
-  musicOffAria: 'Włącz muzykę tytułową',
-  musicWaitingHint: 'Rozpocznie się po pierwszym kliknięciu',
 },
 common: {
   loading: 'Ładowanie...',

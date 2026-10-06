@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: 'Detectando dirección de red...',
   selectCharacter: 'Selecciona tu Personaje',
   inactiveProfiles: 'perfil(s) inactivo(s) oculto(s. Actívalos en Ajustes de Perfil.',
-  // R56 — Música del título (jingle de la pantalla de inicio)
-  musicToggleTitle: 'Música del título',
-  musicOnAria: 'Desactivar música del título',
-  musicOffAria: 'Activar música del título',
-  musicWaitingHint: 'Empieza con tu primer clic',
 },
 common: {
   loading: 'Cargando...',

@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: 'Tunnistetaan verkko-osoitetta...',
   selectCharacter: 'Valitse profiilisi',
   inactiveProfiles: 'inaktiivinen profiili/profiilit piilotettu. Ota ne käyttöön profiiliasetuksissa.',
-  // R56 — Alkumusiikki (aloitusruudun jingle)
-  musicToggleTitle: 'Alkumusiikki',
-  musicOnAria: 'Sammuta alkumusiikki',
-  musicOffAria: 'Laita alkumusiikki päälle',
-  musicWaitingHint: 'Alkaa ensimmäisestä napsautuksesta',
 },
 common: {
   loading: 'Ladataan...',

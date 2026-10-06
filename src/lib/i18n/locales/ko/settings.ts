@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS 서브도메인',
   leTokenLabel: 'DuckDNS 토큰',
   leActivate: '인증서 요청',
-  leActivating: '인증서 요청 중… (10–60초)',
+  leActivating: '인증서 요청 중…',
   leActiveTitle: '진짜 인증서 활성화됨',
   leActiveDesc: '모든 휴대폰이 자동으로 연결을 신뢰해요 — 설치가 필요 없어요. 갱신과 DNS 동기화는 백그라운드에서 자동으로 실행돼요.',
   leExpiresLabel: '유효 기한',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: '인터넷 연결이 없어요 — 인증서 요청에는 한 번만 인터넷이 필요해요.',
   leErrGeneric: '인증서 요청에 실패했어요 — 나중에 다시 시도해 주세요.',
   leErrRaw: '상세 정보',
+  // R57 — 정직한 발급 피드백 + 링크 복사 폴백
+  leErrTxtNotVisible: 'DNS TXT 레코드가 제시간에 표시되지 않았어요. DuckDNS가 지금 느릴 수 있어요 — 몇 분 후에 다시 시도해 주세요.',
+  leErrTimeout: '백그라운드에서 계속 진행 중이에요 — 몇 분 걸릴 수 있어요. 상태는 자동으로 업데이트돼요, 다시 시도할 필요 없어요.',
+  leLinkCopy: '링크 복사',
+  leLinkCopied: '복사했어요!',
   certAltTitle: '인터넷 없이 쓰는 대안: 로컬 인증서 한 번만 설치',
 },
 settingsWebcam: {

@@ -118,6 +118,11 @@ function TrustedCertSection({
   const [rawError, setRawError] = useState<string | null>(null);
   const [removeArmed, setRemoveArmed] = useState(false);
   const removeArmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // R57: ehrliches Zeit-Feedback während der Ausstellung (statt „10–60 Sekunden“-
+  // Versprechen) + Link-Kopieren-Fallback für Umgebungen ohne externe Links.
+  const [elapsed, setElapsed] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const linkCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadStatus = useCallback(async (): Promise<HttpsDomainStatusDto | null> => {
     try {
@@ -134,7 +139,10 @@ function TrustedCertSection({
 
   useEffect(() => { loadStatus(); }, [loadStatus]);
 
-  useEffect(() => () => { if (removeArmTimer.current) clearTimeout(removeArmTimer.current); }, []);
+  useEffect(() => () => {
+    if (removeArmTimer.current) clearTimeout(removeArmTimer.current);
+    if (linkCopyTimer.current) clearTimeout(linkCopyTimer.current);
+  }, []);
 
   /** Technische Fehler-Codes des Servers auf verständliche Meldungen mappen. */
   const mapError = (message: string): string => {
@@ -146,8 +154,22 @@ function TrustedCertSection({
       case 'RATE_LIMITED_RETRY_LATER': return t('settingsMobileDevice.leErrRateLimit');
       case 'ALREADY_ISSUING': return t('settingsMobileDevice.leErrBusy');
       case 'NO_LAN_IP': return t('settingsMobileDevice.leErrNoLanIp');
+      case 'DUCKDNS_TXT_NOT_VISIBLE': return t('settingsMobileDevice.leErrTxtNotVisible');
+      case 'ISSUE_TIMEOUT': return t('settingsMobileDevice.leErrTimeout');
       default: return t('settingsMobileDevice.leErrGeneric');
     }
+  };
+
+  /** R57: duckdns.org in die Zwischenablage kopieren — Fallback für
+   *  Umgebungen, in denen externe Links nicht öffnen (Tauri-WebView ohne
+   *  NewWindowRequested-Handler, gesandboxte Preview-iframes). */
+  const copyDuckDnsLink = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText('https://www.duckdns.org');
+      setLinkCopied(true);
+      if (linkCopyTimer.current) clearTimeout(linkCopyTimer.current);
+      linkCopyTimer.current = setTimeout(() => setLinkCopied(false), 2000);
+    } catch { /* Clipboard nicht verfügbar — Link bleibt klick-/markierbar */ }
   };
 
   const activate = async () => {
@@ -158,6 +180,9 @@ function TrustedCertSection({
       const res = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // R57: Client-seitiges Cap — der Server antwortet spätestens nach 4 min
+        // (ISSUE_TIMEOUT), das hier ist reine Netzwerk-Absicherung.
+        signal: AbortSignal.timeout(300_000),
         body: JSON.stringify({
           type: 'https-domain',
           payload: { domain: domainInput.trim(), token: tokenInput.trim() },
@@ -180,10 +205,10 @@ function TrustedCertSection({
         const message = typeof data.message === 'string' ? data.message : '';
         setErrorKey(mapError(message));
         setRawError(message || null);
-        if (data.configured !== undefined) {
-          setStatus(data);
-          onCertStateChange?.(!!data.certActive);
-        }
+        // R57: Status frisch nachladen — zeigt issuing:true, wenn der Flow im
+        // Hintergrund weiterläuft (ISSUE_TIMEOUT ist KEIN Endpunkt-Fehler, der
+        // Späterfolg flippt die Karte über den 5-s-Poll von selbst).
+        await loadStatus();
       }
     } catch {
       setErrorKey(t('settingsMobileDevice.leErrNetwork'));
@@ -222,6 +247,31 @@ function TrustedCertSection({
       setBusy(false);
     }
   };
+
+  // R57: Während einer laufenden Ausstellung (issuing:true — auch im Hintergrund
+  // nach ISSUE_TIMEOUT) den Status alle 5 s pollen. Ein Späterfolg flippt die
+  // Karte automatisch auf „aktiv“ und aktualisiert QR/URL sofort mit.
+  const issuingLive = !!status?.issuing;
+  useEffect(() => {
+    if (!issuingLive) return;
+    const id = setInterval(async () => {
+      const data = await loadStatus();
+      if (data?.certActive) {
+        updateCompanionHttpsInfo({ domain: data.domain, source: 'letsencrypt' });
+        onCertStateChange?.(true);
+        onChanged?.();
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [issuingLive, loadStatus, onCertStateChange, onChanged]);
+
+  // R57: Sekunden-Zähler neben dem Spinner — ehrliches Live-Feedback.
+  const showingSpinner = busy || issuingLive;
+  useEffect(() => {
+    if (!showingSpinner) { setElapsed(0); return; }
+    const id = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => clearInterval(id);
+  }, [showingSpinner]);
 
   const canActivate = !busy && domainInput.trim().length > 0 && tokenInput.trim().length > 0;
   const issuing = busy || !!status?.issuing;
@@ -316,7 +366,15 @@ function TrustedCertSection({
                 className="text-cyan-400 underline underline-offset-2 hover:text-cyan-300"
               >
                 duckdns.org
-              </a>
+              </a>{' '}
+              <button
+                type="button"
+                onClick={copyDuckDnsLink}
+                data-testid="le-link-copy"
+                className="inline-flex items-center rounded border border-white/20 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
+              >
+                {linkCopied ? t('settingsMobileDevice.leLinkCopied') : t('settingsMobileDevice.leLinkCopy')}
+              </button>
             </li>
             <li>{t('settingsMobileDevice.leStep2')}</li>
             <li>{t('settingsMobileDevice.leStep3')}</li>
@@ -374,7 +432,7 @@ function TrustedCertSection({
               {issuing ? (
                 <>
                   <span className="inline-block animate-spin mr-1.5 h-3 w-3 border-2 border-black/30 border-t-black rounded-full" aria-hidden="true" />
-                  {t('settingsMobileDevice.leActivating')}
+                  {t('settingsMobileDevice.leActivating')}{elapsed > 0 ? ` · ${elapsed}s` : ''}
                 </>
               ) : (
                 <>🔐 {t('settingsMobileDevice.leActivate')}</>
@@ -392,7 +450,7 @@ function TrustedCertSection({
               data-testid="le-error"
             >
               {errorKey}
-              {rawError && !['EMPTY_DOMAIN', 'INVALID_DOMAIN', 'INVALID_TOKEN', 'DUCKDNS_REJECTED', 'RATE_LIMITED_RETRY_LATER', 'ALREADY_ISSUING', 'NO_LAN_IP'].includes(rawError) && (
+              {rawError && !['EMPTY_DOMAIN', 'INVALID_DOMAIN', 'INVALID_TOKEN', 'DUCKDNS_REJECTED', 'RATE_LIMITED_RETRY_LATER', 'ALREADY_ISSUING', 'NO_LAN_IP', 'DUCKDNS_TXT_NOT_VISIBLE', 'ISSUE_TIMEOUT'].includes(rawError) && (
                 <details className="mt-1 text-red-300/70">
                   <summary className="cursor-pointer select-none">{t('settingsMobileDevice.leErrRaw')}</summary>
                   <code className="block mt-1 break-all">{rawError}</code>

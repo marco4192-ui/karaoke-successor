@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNSのサブドメイン',
   leTokenLabel: 'DuckDNSトークン',
   leActivate: '証明書をリクエスト',
-  leActivating: '証明書をリクエスト中…（10–60秒）',
+  leActivating: '証明書をリクエスト中…',
   leActiveTitle: '本物の証明書が有効です',
   leActiveDesc: 'すべてのスマホが自動的に接続を信頼します — インストールは不要です。更新とDNS同期はバックグラウンドで自動的に行われます。',
   leExpiresLabel: '有効期限',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: 'インターネット接続がありません — 証明書のリクエストには一度だけインターネットが必要です。',
   leErrGeneric: '証明書のリクエストに失敗しました — 後でもう一度お試しください。',
   leErrRaw: '詳細',
+  // R57 — 発行状況の正直なフィードバック + リンクコピーのフォールバック
+  leErrTxtNotVisible: 'DNS TXTレコードが時間内に表示されませんでした。DuckDNSの応答が遅れている可能性があります — 数分後にもう一度お試しください。',
+  leErrTimeout: 'バックグラウンドで引き続き実行中です — 数分かかる場合があります。ステータスは自動的に更新されるため、あらためてリクエストする必要はありません。',
+  leLinkCopy: 'リンクをコピー',
+  leLinkCopied: 'コピーしました！',
   certAltTitle: 'インターネットなしの代替方法：ローカル証明書を一度だけインストール',
 },
 settingsWebcam: {

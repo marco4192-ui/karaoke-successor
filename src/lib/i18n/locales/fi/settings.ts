@@ -340,7 +340,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS-alidomain',
   leTokenLabel: 'DuckDNS-token',
   leActivate: 'Pyydä varmenne',
-  leActivating: 'Pyydetään varmennetta … (10–60 sekuntia)',
+  leActivating: 'Pyydetään varmennetta …',
   leActiveTitle: 'Aito varmenne käytössä',
   leActiveDesc: 'Kaikki puhelimet luottavat yhteyteen automaattisesti — asennusta ei tarvita. Uusiminen ja DNS-synkronointi hoidetaan automaattisesti taustalla.',
   leExpiresLabel: 'Voimassa asti',
@@ -357,6 +357,11 @@ settingsMobileDevice: {
   leErrNetwork: 'Ei internet-yhteyttä — varmenteen pyyntö tarvitsee internetin kerran.',
   leErrGeneric: 'Varmenteen pyyntö epäonnistui — yritä myöhemmin uudelleen.',
   leErrRaw: 'Yksityiskohdat',
+  // R57 — rehellinen palaute myöntämisen etenemisestä + vararatkaisu linkin kopiointiin
+  leErrTxtNotVisible: 'DNS TXT -tietue ei tullut näkyviin ajoissa. DuckDNS voi olla hidas juuri nyt — yritä uudelleen muutaman minuutin kuluttua.',
+  leErrTimeout: 'Suoritus jatkuu yhä taustalla — tämä voi kestää muutaman minuutin. Tila päivittyy automaattisesti, uutta yritystä ei tarvita.',
+  leLinkCopy: 'Kopioi linkki',
+  leLinkCopied: 'Kopioitu!',
   certAltTitle: 'Vaihtoehto ilman internetiä: asenna paikallinen varmenne kerran',
 },
 settingsWebcam: {

@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: 'Netwerkadres detecteren...',
   selectCharacter: 'Selecteer je profiel',
   inactiveProfiles: 'inactief profiel(en) verborgen. Schakel ze in bij Profielinstellingen.',
-  // R56 — Titelmuziek (jingle op het startscherm)
-  musicToggleTitle: 'Titelmuziek',
-  musicOnAria: 'Titelmuziek uitschakelen',
-  musicOffAria: 'Titelmuziek inschakelen',
-  musicWaitingHint: 'Start bij je eerste klik',
 },
 common: {
   loading: 'Laden...',

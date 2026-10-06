@@ -490,7 +490,7 @@ settingsMobileDevice: {
   leDomainLabel: 'DuckDNS-Subdomain',
   leTokenLabel: 'DuckDNS-Token',
   leActivate: 'Zertifikat anfordern',
-  leActivating: 'Zertifikat wird ausgestellt … (10–60 Sekunden)',
+  leActivating: 'Zertifikat wird angefordert …',
   leActiveTitle: 'Echtes Zertifikat aktiv',
   leActiveDesc: 'Alle Handys vertrauen der Verbindung automatisch — keine Installation nötig. Erneuerung und DNS-Abgleich laufen automatisch im Hintergrund.',
   leExpiresLabel: 'Gültig bis',
@@ -507,6 +507,11 @@ settingsMobileDevice: {
   leErrNetwork: 'Keine Internetverbindung — die Zertifikats-Ausstellung braucht einmalig Internet.',
   leErrGeneric: 'Zertifikats-Ausstellung fehlgeschlagen — bitte später erneut versuchen.',
   leErrRaw: 'Details',
+  // R57 — ehrliches Ausstellungs-Feedback + Link-Kopieren-Fallback
+  leErrTxtNotVisible: 'Der DNS-TXT-Eintrag wurde nicht rechtzeitig sichtbar. DuckDNS ist gerade evtl. langsam — in ein paar Minuten erneut versuchen.',
+  leErrTimeout: 'Läuft noch im Hintergrund — das kann einige Minuten dauern. Der Status aktualisiert sich automatisch, kein neuer Versuch nötig.',
+  leLinkCopy: 'Link kopieren',
+  leLinkCopied: 'Kopiert!',
   certAltTitle: 'Alternative ohne Internet: lokales Zertifikat einmalig installieren',
 },
 settingsWebcam: {

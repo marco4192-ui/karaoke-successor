@@ -46,11 +46,6 @@ homeScreen: {
   detectingNetwork: 'Détection de l\'adresse réseau...',
   selectCharacter: 'Sélectionnez votre Personnage',
   inactiveProfiles: 'profil(s) inactif(s) masqué(s). Activez-les dans les paramètres de Profil.',
-  // R56 — Musique du titre (jingle de l'écran d'accueil)
-  musicToggleTitle: 'Musique du titre',
-  musicOnAria: 'Désactiver la musique du titre',
-  musicOffAria: 'Activer la musique du titre',
-  musicWaitingHint: 'Démarre dès votre premier clic',
 },
 common: {
   loading: 'Chargement...',

@@ -33,6 +33,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { promises as dnsPromises } from 'dns';
 import { networkInterfaces } from 'os';
 import { join } from 'path';
 
@@ -196,23 +197,56 @@ export function pickLanIp(): string | null {
 
 /** DuckDNS-Update-API aufrufen — wirft bei „KO" (falscher Token/Subdomain).
  *
- * WICHTIG: JEDER Update-Aufruf sollte den ip-Parameter enthalten! DuckDNS
- * setzt bei Aufrufen OHNE ip den A-Record auf die automatisch erkannte
- * ÖFFENTTLICHE IP des Aufrufers — ein TXT-only-Aufruf (DNS-01-Challenge)
- * würde den A-Record von der LAN-IP auf die Public-IP umschreiben und die
- * Handys aus dem Heimnetz werfen. Mit ip werden A-Record + TXT in EINEM
- * Aufruf atomar korrekt gesetzt.
+ * TXT-Aufrufe (DNS-01) erfolgen OHNE ip-Parameter — genau das Muster, das das
+ * gesamte Let's-Encrypt-Ökosystem für DuckDNS verwendet (acme.sh-Plugin
+ * dns_duckdns, lego-Provider):
+ *   TXT setzen:    ?domains=<sub>&token=<t>&txt=<wert>
+ *   TXT entfernen: ?domains=<sub>&token=<t>&txt=&clear=true
+ *
+ * R57-FIX: R55 ÜBERGAB ip und txt in EINEM Aufruf — DuckDNS antwortete zwar
+ * „OK", legte den TXT-Record aber nie an. Folge war der Nutzer-Fehler
+ * „No TXT records found for name: _acme-challenge.<sub>.duckdns.org"
+ * (acme-client/src/verify.js). A-Record-Aufrufe (ip) laufen separat über
+ * syncDnsRecord(). Leere Werte (txt=) werden explizit gesendet — nur
+ * undefined wird ausgelassen.
  */
 async function duckDnsUpdate(params: Record<string, string | undefined>): Promise<void> {
   const url = new URL('https://www.duckdns.org/update');
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') url.searchParams.set(k, v);
+    if (v !== undefined) url.searchParams.set(k, v);
   }
   const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
   const text = (await res.text()).trim().toUpperCase();
   if (!text.startsWith('OK')) {
     throw new Error('DUCKDNS_REJECTED');
   }
+}
+
+/**
+ * Warten, bis der TXT-Record im öffentlichen DNS sichtbar ist (R57).
+ *
+ * acme-client auto() prüft die Challenge selbst (src/verify.js) mit dem
+ * System-Resolver — dessen NEGATIV-Cache (NXDOMAIN) kann nach vorherigen
+ * Fehlversuchen mehrere Minuten lang eine frisch gesetzte TXT „unsichtbar"
+ * halten. Wir pollen deshalb VOR der Rückkehr aus challengeCreateFn über
+ * explizit abgefragte öffentliche Resolver (8.8.8.8, 1.1.1.1) und geben
+ * erst weiter, wenn der Record dort live ist. acme-clients eigener Verify
+ * hat dann zusätzlich einen Authoritative-NS-Fallback (verify.js:107).
+ */
+async function waitForTxtRecord(name: string, expected: string, timeoutMs: number): Promise<void> {
+  const resolver = new dnsPromises.Resolver();
+  resolver.setServers(['8.8.8.8', '1.1.1.1']);
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      const records = await resolver.resolveTxt(name);
+      const flat = records.map(chunks => chunks.join(''));
+      if (flat.includes(expected)) return;
+    } catch { /* noch nicht sichtbar — weiterpollen */ }
+    if (Date.now() >= deadline) break;
+    await new Promise(resolve => setTimeout(resolve, 4000));
+  }
+  throw new Error('DUCKDNS_TXT_NOT_VISIBLE');
 }
 
 /**
@@ -347,85 +381,139 @@ export async function issueCertificate(options?: { force?: boolean }): Promise<L
   try {
     writeDomainState({ ...state, lastAttemptIso: new Date().toISOString() });
   } catch { /* State-Datei nicht schreibbar — in-memory-Guard greift weiterhin */ }
-  try {
-    // 1) DNS-A-Record auf die aktuelle LAN-IP synchronisieren (best effort —
-    //    für die Ausstellung selbst nicht nötig, aber der Nutzer erwartet,
-    //    dass nach dem Setup sofort alles greift).
-    let dnsIp: string | null = null;
+
+  // Der eigentliche Flow läuft als eigenständiges Promise — auch dann weiter,
+  // wenn der aufrufende HTTP-Request bereits mit ISSUE_TIMEOUT geantwortet
+  // hat (R57: „Todesliste“-Feedback — kein Endlos-Spinner ohne Feedback mehr,
+  // aber ein Späterfolg wird trotzdem persistiert + live geswappt).
+  const flow: Promise<LeCertBundle> = (async () => {
     try {
-      dnsIp = await syncDnsRecord();
-    } catch { /* A-Record-Fehler soll die Zertifikats-Ausstellung nicht blockieren */ }
+      // 1) DNS-A-Record auf die aktuelle LAN-IP synchronisieren (best effort —
+      //    für die Ausstellung selbst nicht nötig, aber der Nutzer erwartet,
+      //    dass nach dem Setup sofort alles greift).
+      let dnsIp: string | null = null;
+      try {
+        dnsIp = await syncDnsRecord();
+      } catch { /* A-Record-Fehler soll die Zertifikats-Ausstellung nicht blockieren */ }
 
-    // 2) ACME-Flow (acme-client.auto: Account, Order, DNS-01-Challenge,
-    //    Validierung, Finalize, Chain-Download — battle-tested).
-    const acme = await importAcme();
-    if (!acme) throw new Error('ACME_CLIENT_UNAVAILABLE');
-    const directoryUrl = process.env.KARAOKE_ACME_DIRECTORY
-      || acme.directory.letsencrypt.production;
-    const accountKey = await loadOrCreateAccountKey();
-    const client = new acme.Client({ directoryUrl, accountKey });
-    // createCsr liefert [PrivateKeyBuffer (Buffer), CsrBuffer] — Key als
-    // PEM-String für Persistenz/LeCertBundle/setSecureContext.
-    const [csrKeyBuf, csr] = await acme.crypto.createCsr({ commonName: state.domain });
-    const csrKey = Buffer.isBuffer(csrKeyBuf) ? csrKeyBuf.toString('utf8') : String(csrKeyBuf);
-    const cert = await client.auto({
-      csr,
-      termsOfServiceAgreed: true,
-      challengePriority: ['dns-01'],
-      challengeCreateFn: async (_authz, _challenge, keyAuthorization) => {
-        // TXT _acme-challenge.<sub>.duckdns.org = keyAuthorization.
-        // ip MITGEBEN: DuckDNS überschreibt sonst den A-Record mit der
-        // öffentliche IP des Aufrufers (siehe duckDnsUpdate-Doku oben).
-        const lanIp = pickLanIp() ?? undefined;
-        await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip: lanIp, txt: keyAuthorization });
-      },
-      challengeRemoveFn: async () => {
-        // TXT wieder entfernen (best effort — clear-Parameter; ip bleibt
-        // gesetzt, damit der A-Record auch hier unangetastet korrekt ist).
-        try {
-          const lanIp = pickLanIp() ?? undefined;
-          await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip: lanIp, txt: '', clear: 'true' });
-        } catch { /* Aufräumen ist optional */ }
-      },
-    });
+      // 2) ACME-Flow (acme-client.auto: Account, Order, DNS-01-Challenge,
+      //    Validierung, Finalize, Chain-Download — battle-tested).
+      const acme = await importAcme();
+      if (!acme) throw new Error('ACME_CLIENT_UNAVAILABLE');
+      const directoryUrl = process.env.KARAOKE_ACME_DIRECTORY
+        || acme.directory.letsencrypt.production;
+      const accountKey = await loadOrCreateAccountKey();
+      const client = new acme.Client({
+        directoryUrl,
+        accountKey,
+        // R57: Retry-Backoff begrenzen. acme-clients Standard (10 Versuche,
+        // bis 30 s Abstand) führte beim Nutzer zu einem ~5-Minuten-Marathon
+        // ohne Feedback. Mit TXT-Poll in challengeCreateFn wird der Verify
+        // ohnehin im ersten Versuch bestehen — das Cap ist reine Sicherheit.
+        backoffAttempts: 4,
+        backoffMin: 5000,
+        backoffMax: 20000,
+      });
+      // createCsr liefert [PrivateKeyBuffer (Buffer), CsrBuffer] — Key als
+      // PEM-String für Persistenz/LeCertBundle/setSecureContext.
+      const [csrKeyBuf, csr] = await acme.crypto.createCsr({ commonName: state.domain });
+      const csrKey = Buffer.isBuffer(csrKeyBuf) ? csrKeyBuf.toString('utf8') : String(csrKeyBuf);
+      const cert = await client.auto({
+        csr,
+        termsOfServiceAgreed: true,
+        challengePriority: ['dns-01'],
+        challengeCreateFn: async (_authz, _challenge, keyAuthorization) => {
+          // TXT-ONLY-Aufruf OHNE ip (acme.sh/lego-Muster — siehe
+          // duckDnsUpdate). keyAuthorization ist für dns-01 bereits
+          // base64url(sha256(...)) — acme-client hasht in
+          // getChallengeKeyAuthorization selbst (client.js:455).
+          await duckDnsUpdate({
+            domains: duckSub(state.domain),
+            token: state.token,
+            txt: keyAuthorization,
+          });
+          // Sichtbarkeit abwarten, BEVOR acme-client seinen eigenen Verify
+          // startet — verhindert den Endlos-Retry und sorgt für klare Fehler.
+          await waitForTxtRecord(`_acme-challenge.${state.domain}`, keyAuthorization, 60_000);
+        },
+        challengeRemoveFn: async () => {
+          // TXT wieder entfernen — txt= (leer) + clear=true, exakt wie das
+          // acme.sh-Plugin (dns_duckdns) es macht. Best effort.
+          try {
+            await duckDnsUpdate({
+              domains: duckSub(state.domain),
+              token: state.token,
+              txt: '',
+              clear: 'true',
+            });
+          } catch { /* Aufräumen ist optional */ }
+          // A-Record sofort wieder auf die LAN-IP setzen: Falls DuckDNS bei
+          // Aufrufen ohne ip den A-Record auf die öffentliche IP des Aufrufers
+          // umgestellt haben sollte (undokumentiertes Verhalten), ist er damit
+          // wieder im Heimnetz — die Handys erreichen den Server sofort.
+          try {
+            const ip = pickLanIp();
+            if (ip) await duckDnsUpdate({ domains: duckSub(state.domain), token: state.token, ip });
+          } catch { /* best effort — der stündliche Sync repariert den Rest */ }
+        },
+      });
 
-    // 3) Persistieren + Meta (Ablaufdatum für Renewal-Entscheidung & UI).
-    const info = acme.crypto.readCertificateInfo(cert);
-    const expiresAt = (info.notAfter instanceof Date ? info.notAfter : new Date(info.notAfter)).toISOString();
-    const dir = certsDir();
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, LE_CERT_FILE), cert);
-    writeFileSync(join(dir, LE_KEY_FILE), csrKey);
-    writeFileSync(join(dir, LE_META_FILE), JSON.stringify({
-      domain: state.domain,
-      issuedAt: new Date().toISOString(),
-      expiresAt,
-    }, null, 2));
-    // Frisch lesen — enthält das gerade persistierte lastAttemptIso.
-    const fresh = readDomainState() ?? state;
-    writeDomainState({
-      ...fresh,
-      lastIssuedAt: new Date().toISOString(),
-      lastError: undefined,
-      dnsIp: dnsIp ?? fresh.dnsIp,
-    });
+      // 3) Persistieren + Meta (Ablaufdatum für Renewal-Entscheidung & UI).
+      const info = acme.crypto.readCertificateInfo(cert);
+      const expiresAt = (info.notAfter instanceof Date ? info.notAfter : new Date(info.notAfter)).toISOString();
+      const dir = certsDir();
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, LE_CERT_FILE), cert);
+      writeFileSync(join(dir, LE_KEY_FILE), csrKey);
+      writeFileSync(join(dir, LE_META_FILE), JSON.stringify({
+        domain: state.domain,
+        issuedAt: new Date().toISOString(),
+        expiresAt,
+      }, null, 2));
+      // Frisch lesen — enthält das gerade persistierte lastAttemptIso.
+      const fresh = readDomainState() ?? state;
+      writeDomainState({
+        ...fresh,
+        lastIssuedAt: new Date().toISOString(),
+        lastError: undefined,
+        dnsIp: dnsIp ?? fresh.dnsIp,
+      });
 
-    const bundle: LeCertBundle = { cert, key: csrKey, expiresAt, domain: state.domain };
+      const bundle: LeCertBundle = { cert, key: csrKey, expiresAt, domain: state.domain };
 
-    // 4) Live-Swap benachrichtigen (setSecureContext + globals aktualisieren).
-    for (const handler of [...s.swapHandlers]) {
-      try { handler(bundle); } catch { /* Handler-Fehler nicht ausbreiten lassen */ }
+      // 4) Live-Swap benachrichtigen (setSecureContext + globals aktualisieren).
+      for (const handler of [...s.swapHandlers]) {
+        try { handler(bundle); } catch { /* Handler-Fehler nicht ausbreiten lassen */ }
+      }
+      return bundle;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      try {
+        const current = readDomainState();
+        if (current) writeDomainState({ ...current, lastError: message.slice(0, 500) });
+      } catch { /* Status-Datei defekt — Fehler nur werfen */ }
+      throw err;
     }
-    return bundle;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    try {
-      const current = readDomainState();
-      if (current) writeDomainState({ ...current, lastError: message.slice(0, 500) });
-    } catch { /* Status-Datei defekt — Fehler nur werfen */ }
-    throw err;
+  })();
+
+  // issuing-Flag erst freigeben, wenn der Flow WIRKLICH endet — auch wenn der
+  // HTTP-Request schon mit ISSUE_TIMEOUT geantwortet hat (Status-Endpunkt
+  // meldet derweil issuing:true — die UI zeigt „läuft noch“ statt falscher
+  // Fehler und wechselt bei Späterfolg automatisch auf die grüne Karte).
+  const release = (): void => { s.issuing = false; };
+  flow.then(release, release);
+
+  // Gesamt-Cap (4 min): Der realistische Ablauf ist 20–90 s; pathological
+  // Fälle (träger Recursive-Resolver) werden abgeschlossen gemeldet, der
+  // Flow läuft im Hintergrund weiter.
+  let capTimer: ReturnType<typeof setTimeout> | undefined;
+  const cap: Promise<never> = new Promise((_resolve, reject) => {
+    capTimer = setTimeout(() => reject(new Error('ISSUE_TIMEOUT')), 4 * 60 * 1000);
+  });
+  try {
+    return await Promise.race([flow, cap]);
   } finally {
-    s.issuing = false;
+    if (capTimer) clearTimeout(capTimer);
   }
 }
 
