@@ -1297,3 +1297,24 @@
     display: none;
   }
 }
+
+/* ═══ R56 — Titelmusik: EQ-Balken im Startscreen-Toggle ═══ */
+@keyframes kz-eq-bounce {
+  0%, 100% { height: 22%; }
+  35%      { height: 96%; }
+  70%      { height: 48%; }
+}
+
+.kz-eq-bar {
+  width: 3px;
+  height: 40%;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: kz-eq-bounce 900ms ease-in-out infinite;
+  will-change: height;
+}
+
+/* Reduced motion: EQ-Balken stehen stattdessen still */
+@media (prefers-reduced-motion: reduce) {
+  .kz-eq-bar { animation: none !important; height: 60% !important; }
+}

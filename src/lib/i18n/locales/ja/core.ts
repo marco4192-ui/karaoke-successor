@@ -46,6 +46,11 @@ homeScreen: {
   detectingNetwork: 'ネットワークアドレスを検出中...',
   selectCharacter: 'キャラクターを選択',
   inactiveProfiles: '非アクティブなプロファイル({n}件)が非表示です。プロファイル設定で有効にしてください。',
+  // R56 — タイトル音楽（スタート画面のジングル）
+  musicToggleTitle: 'タイトル音楽',
+  musicOnAria: 'タイトル音楽をオフにする',
+  musicOffAria: 'タイトル音楽をオンにする',
+  musicWaitingHint: '最初のクリックで再生開始',
 },
 common: {
   loading: '読み込み中...',

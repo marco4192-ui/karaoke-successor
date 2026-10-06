@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +17,11 @@ import {
   SettingsIcon,
   UserIcon,
 } from '@/components/icons';
-import { Radio, Award } from 'lucide-react';
+import { Radio, Award, Volume2, VolumeX } from 'lucide-react';
 import type { Screen } from '@/types/screens';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { getStartscreenJingle, type StartscreenJingle } from '@/lib/audio/startscreen-jingle';
 import {
   getActiveDailySlot,
   getActiveWeeklySlot,
@@ -303,6 +304,84 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
   // Track if component is mounted (to avoid hydration mismatch)
   const [isMounted, setIsMounted] = useState(false);
 
+  // ═══ R56: Titelmusik (Startscreen-Jingle) ═══
+  // musicOn: Nutzer-Präferenz (localStorage 'kz-home-music', Default: an).
+  // waiting: Browser-Autoplay-Policy blockt — der erste Klick aktiviert.
+  const [musicOn, setMusicOn] = useState<boolean | null>(null);
+  const [waiting, setWaiting] = useState(false);
+  const jingleRef = useRef<StartscreenJingle | null>(null);
+  const getJingle = (): StartscreenJingle => {
+    jingleRef.current ??= getStartscreenJingle();
+    return jingleRef.current;
+  };
+
+  // Start/Stop folgen der Präferenz; Autoplay-Arming auf die erste User-Gesture
+  // (Browser-Policy: AudioContext braucht eine Interaktion). Beim Verlassen des
+  // Startscreens stoppt die Musik automatisch (Cleanup) mit 0,5 s Fade-Out.
+  useEffect(() => {
+    const pref = window.localStorage.getItem('kz-home-music') !== 'off';
+    setMusicOn(pref);
+    const jingle = getJingle();
+
+    let gestureArmed = false;
+    const onGesture = (): void => {
+      if (getJingle().play()) {
+        setWaiting(false);
+        window.removeEventListener('pointerdown', onGesture, true);
+        window.removeEventListener('keydown', onGesture, true);
+      }
+    };
+
+    if (pref && !getJingle().play()) {
+      // Kein Gesture-Kontext (Context suspended) → auf ersten Klick lauschen
+      setWaiting(true);
+      gestureArmed = true;
+      window.addEventListener('pointerdown', onGesture, true);
+      window.addEventListener('keydown', onGesture, true);
+    }
+
+    return () => {
+      if (gestureArmed) {
+        window.removeEventListener('pointerdown', onGesture, true);
+        window.removeEventListener('keydown', onGesture, true);
+      }
+      jingle.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- jingle-Singleton ist stabil
+  }, []);
+
+  // Tab in den Hintergrund → Musik leiser ducken; zurück → voll
+  useEffect(() => {
+    const onVisibility = (): void => {
+      getJingle().duck(document.hidden ? 0.25 : 1);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  // Engine-Start auch ohne onGesture melden können (Auto-Retry via
+  // resume().then) → Waiting-Badge sofort zurücknehmen, EQ-Balken zeigen.
+  useEffect(() => {
+    const jingle = getJingle();
+    const unsubscribe = jingle.onStateChange(() => {
+      if (jingle.isPlaying()) setWaiting(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  const toggleMusic = (): void => {
+    const next = musicOn !== true;
+    setMusicOn(next);
+    setWaiting(false);
+    window.localStorage.setItem('kz-home-music', next ? 'on' : 'off');
+    const jingle = getJingle();
+    if (next) {
+      if (!jingle.play()) setWaiting(true); // sollte nie passieren (Klick = Gesture)
+    } else {
+      jingle.stop();
+    }
+  };
+
   // Detect local IP for QR code
   const [localIP, setLocalIP] = useState('');
   useEffect(() => {
@@ -408,6 +487,48 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
       {/* ═══ HERO SECTION — Retro Karaoke Vibe ═══ */}
       <div className="relative text-center py-16 retro-scanlines">
+        {/* ═══ R56: Titelmusik-Toggle (oben rechts) ═══ */}
+        <div className="absolute top-3 right-0 sm:right-4 z-10 flex flex-col items-end gap-1.5">
+          <button
+            type="button"
+            data-testid="home-music-toggle"
+            aria-pressed={musicOn === true}
+            aria-label={musicOn === true ? t('homeScreen.musicOnAria') : t('homeScreen.musicOffAria')}
+            title={t('homeScreen.musicToggleTitle')}
+            onClick={toggleMusic}
+            className={
+              `flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 `
+              + (musicOn === true
+                ? 'border-[#00e5ff]/60 bg-[#00e5ff]/10 text-[#00e5ff] shadow-[0_0_16px_rgba(0,229,255,0.35)] hover:shadow-[0_0_28px_rgba(0,229,255,0.55)]'
+                : 'border-white/15 bg-white/5 text-white/40 hover:border-white/40 hover:text-white/80')
+              + (musicOn === true && waiting ? ' animate-pulse' : '')
+            }
+          >
+            {musicOn === true ? (
+              waiting ? (
+                <Volume2 className="h-5 w-5" aria-hidden />
+              ) : (
+                <span className="flex items-end gap-[3px] h-4" aria-hidden>
+                  <span className="kz-eq-bar" style={{ animationDelay: '0ms' }} />
+                  <span className="kz-eq-bar" style={{ animationDelay: '160ms' }} />
+                  <span className="kz-eq-bar" style={{ animationDelay: '320ms' }} />
+                  <span className="kz-eq-bar" style={{ animationDelay: '480ms' }} />
+                </span>
+              )
+            ) : (
+              <VolumeX className="h-5 w-5" aria-hidden />
+            )}
+          </button>
+          {musicOn === true && waiting && (
+            <span
+              data-testid="home-music-waiting"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#ffd60a]/40 bg-[#ffd60a]/10 px-2.5 py-1 text-[10px] font-semibold text-[#ffd60a] animate-pulse"
+            >
+              {t('homeScreen.musicWaitingHint')}
+            </span>
+          )}
+        </div>
+
         {/* Animated rainbow bar behind title */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-1 retro-gradient-rainbow rounded-full" />
 

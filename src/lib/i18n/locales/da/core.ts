@@ -46,6 +46,11 @@ homeScreen: {
   detectingNetwork: 'Registrerer netværksadresse...',
   selectCharacter: 'Vælg din profil',
   inactiveProfiles: 'inaktiv(e) profil(er) skjult. Aktivér dem i profil-indstillinger.',
+  // R56 — Titelmusik (jingle på startskærmen)
+  musicToggleTitle: 'Titelmusik',
+  musicOnAria: 'Slå titelmusik fra',
+  musicOffAria: 'Slå titelmusik til',
+  musicWaitingHint: 'Starter ved dit første klik',
 },
 common: {
   loading: 'Indlæser...',

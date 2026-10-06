@@ -46,6 +46,11 @@ homeScreen: {
   detectingNetwork: 'Rilevamento indirizzo di rete...',
   selectCharacter: 'Seleziona il tuo Personaggio',
   inactiveProfiles: 'profilo/i inattivo/i nascosto/i. Attivali nelle impostazioni Profilo.',
+  // R56 — Musica del titolo (jingle della schermata iniziale)
+  musicToggleTitle: 'Musica del titolo',
+  musicOnAria: 'Disattiva la musica del titolo',
+  musicOffAria: 'Attiva la musica del titolo',
+  musicWaitingHint: 'Parte al primo clic',
 },
 common: {
   loading: 'Caricamento...',

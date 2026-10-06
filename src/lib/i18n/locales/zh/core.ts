@@ -46,6 +46,11 @@ homeScreen: {
   detectingNetwork: '正在检测网络地址...',
   selectCharacter: '选择角色',
   inactiveProfiles: '未激活的档案已隐藏。请在档案设置中激活。',
+  // R56 — 标题音乐（开始画面的开场旋律）
+  musicToggleTitle: '标题音乐',
+  musicOnAria: '关闭标题音乐',
+  musicOffAria: '开启标题音乐',
+  musicWaitingHint: '首次点击后开始播放',
 },
 common: {
   loading: '加载中...',

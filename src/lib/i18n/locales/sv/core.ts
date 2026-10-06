@@ -46,6 +46,11 @@ homeScreen: {
   detectingNetwork: 'Detekterar nätverksadress...',
   selectCharacter: 'Välj Din Karaktär',
   inactiveProfiles: 'inaktiva profiler dolda. Aktivera dem i Profilinställningar.',
+  // R56 — Titelmusik (jingle på startskärmen)
+  musicToggleTitle: 'Titelmusik',
+  musicOnAria: 'Stäng av titelmusiken',
+  musicOffAria: 'Slå på titelmusiken',
+  musicWaitingHint: 'Startar vid ditt första klick',
 },
 common: {
   loading: 'Laddar...',
