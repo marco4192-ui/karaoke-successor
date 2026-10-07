@@ -16,6 +16,17 @@
  *
  * Factual results only fill EMPTY fields; conflicting existing values are
  * left to the LLM normalization pass (with the fact as a hint).
+ *
+ * R59 "Verify" mode (options.verify): the pipeline runs the SAME source
+ * chain, but for the OPPOSITE question — are the EXISTING values correct?
+ *  - lookupFacts queries every song (the API's skip gate opens via
+ *    verify:true) and returns the source values for present fields too
+ *  - the client COMPARES: source genre (canonical, incl. the user's custom
+ *    taxonomy) vs. current genre, source year vs. current year — every
+ *    mismatch becomes a regular suggestion row with the source as evidence
+ *  - the LLM verifies languages (no database carries them) and cross-checks
+ *    genres the databases had no verdict for (mode:'verify' prompt)
+ *  - verified-OK songs are cached like no-change results → instant re-runs
  */
 
 import { getCachedHarmonize, setCachedHarmonize, HarmonizeCacheEntry } from '@/lib/ai/harmonize-cache';
@@ -94,6 +105,13 @@ export interface HarmonizeResult {
 interface HarmonizeOptions {
   onProgress?: (progress: HarmonizeProgress) => void;
   signal?: AbortSignal;
+  /** R59 "Verify": check EXISTING genre/language/year values against the
+   *  factual sources (and the LLM for language) instead of filling missing
+   *  ones. Mismatches become regular suggestions (same UI + apply path). */
+  verify?: boolean;
+  /** Field toggles for verify runs (studio Fields row) — only existing
+   *  values of ACTIVE fields are compared. Default: all three. */
+  verifyFields?: { genre: boolean; language: boolean; year: boolean };
 }
 
 // ── AI availability probe (prevents doomed LLM calls) ──────────────────
@@ -166,6 +184,23 @@ function needsLlm(song: HarmonizeSong, factualGenre: string | null): boolean {
   return false;
 }
 
+/** R59: verify-mode LLM gate — different logic than fill mode:
+ *  - language: the LLM is the ONLY language source, so every existing
+ *    language gets checked (canonicality is NOT a skip reason — a canonical
+ *    but wrong value like "Pop" on a metal song is exactly the target)
+ *  - genre: only when the databases returned NO verdict (nothing to
+ *    contradict or confirm) — keeps the quota impact bounded
+ *  - year: never the LLM's business (factual only) */
+function verifyNeedsLlm(
+  song: HarmonizeSong,
+  fact: FactualHit | undefined,
+  vf: { genre: boolean; language: boolean; year: boolean },
+): boolean {
+  if (vf.language && song.language) return true;
+  if (vf.genre && song.genre && !fact?.genre) return true;
+  return false;
+}
+
 // ── Factual lookup (R6) ──────────────────────────────────────────────────
 
 interface FactualHit {
@@ -184,8 +219,11 @@ async function lookupFacts(
 ): Promise<Map<string, FactualHit>> {
   const hits = new Map<string, FactualHit>();
 
-  // Only songs with missing genre or year are worth a lookup
-  const candidates = songs.filter(s => !s.genre || !s.year);
+  // Only songs with missing genre or year are worth a lookup — EXCEPT in
+  // verify mode (R59): there the existing values are the subject, so every
+  // song is queried and the API returns the source values for present
+  // fields too (the client compares them).
+  const candidates = songs.filter(s => options.verify || !s.genre || !s.year);
   if (candidates.length === 0) return hits;
 
   const chunks: HarmonizeSong[][] = [];
@@ -197,6 +235,9 @@ async function lookupFacts(
   for (const chunk of chunks) {
     if (options.signal?.aborted) break;
     try {
+      // R59: custom genres travel WITH the request so the server-side genre
+      // mapping honors the user's vocabulary (custom "Jazz" stays "Jazz").
+      const customGenres = customTaxonomy.getCustomGenres();
       const res = await fetch('/api/music-lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -205,6 +246,14 @@ async function lookupFacts(
             id: s.id, title: s.title, artist: s.artist,
             genre: s.genre, year: s.year,
           })),
+          ...(options.verify ? {
+            verify: true,
+            fields: {
+              genre: options.verifyFields?.genre !== false,
+              year: options.verifyFields?.year !== false,
+            },
+          } : {}),
+          ...(customGenres.length > 0 ? { customGenres } : {}),
         }),
         signal: options.signal,
       });
@@ -253,10 +302,13 @@ interface LlmSuggestion {
 /** One LLM call for a small chunk. Returns ONLY the songs the model actually
  *  answered for (analyzed=true entries); dropped entries are absent.
  *  Custom genres/languages (R20) travel WITH the request so the server-side
- *  prompt and post-normalization honor the user's vocabulary. */
+ *  prompt and post-normalization honor the user's vocabulary. R59: in verify
+ *  mode the request carries mode:'verify' so the prompt asks for a
+ *  correctness check instead of gap filling. */
 async function callLlmChunk(
   songs: Array<HarmonizeSong & { hintGenre?: string; hintSource?: string; hintYear?: number }>,
   signal?: AbortSignal,
+  verify = false,
 ): Promise<Map<string, LlmSuggestion>> {
   const map = new Map<string, LlmSuggestion>();
   const customGenres = customTaxonomy.getCustomGenres();
@@ -275,6 +327,7 @@ async function callLlmChunk(
         })),
         ...(customGenres.length > 0 ? { customGenres } : {}),
         ...(customLanguages.length > 0 ? { customLanguages } : {}),
+        ...(verify ? { mode: 'verify' as const } : {}),
       }),
       signal,
     });
@@ -308,13 +361,13 @@ async function callLlm(
 
   for (const chunk of chunks) {
     if (options.signal?.aborted) break;
-    const first = await callLlmChunk(chunk, options.signal);
+    const first = await callLlmChunk(chunk, options.signal, options.verify === true);
 
     // Retry once for entries the model dropped (incomplete JSON array)
     const missing = chunk.filter(s => !first.has(s.id));
     let combined = first;
     if (missing.length > 0 && !options.signal?.aborted) {
-      const retry = await callLlmChunk(missing, options.signal);
+      const retry = await callLlmChunk(missing, options.signal, options.verify === true);
       combined = new Map([...first, ...retry]);
     }
 
@@ -399,13 +452,17 @@ export async function harmonizeSongs(
   options.onProgress?.({ phase: 'cache', done: inputSongs.length, total: inputSongs.length });
 
   if (uncached.length > 0) {
-    // 2. Factual lookup (R6) — MusicBrainz/Deezer for missing genre/year
+    // 2. Factual lookup (R6) — MusicBrainz/Deezer for missing genre/year;
+    //    in verify mode (R59) for EVERY song (existing values included)
     const facts = await lookupFacts(uncached, options);
     stats.factualHits = facts.size;
 
     // 3. LLM for the songs it's actually needed for
+    const verifyFields = options.verifyFields ?? { genre: true, language: true, year: true };
     const llmSongs = uncached
-      .filter(s => needsLlm(s, facts.get(s.id)?.genre ?? null))
+      .filter(s => options.verify
+        ? verifyNeedsLlm(s, facts.get(s.id), verifyFields)
+        : needsLlm(s, facts.get(s.id)?.genre ?? null))
       .map(s => {
         const hit = facts.get(s.id);
         return {
@@ -443,57 +500,118 @@ export async function harmonizeSongs(
       // "no change" — that would freeze it as "done" even though nothing was
       // ever analyzed (user complaint: songs treated as genre-set although
       // the AI search never ran). Skip the cache, count it, retry next run.
-      const songNeededLlm = needsLlm(song, fact?.genre ?? null);
-      if (songNeededLlm && !llm && !fact) {
+      // R59 verify: the LLM is the ONLY language source — a missing verdict
+      // leaves the language unchecked. Fact-based genre/year suggestions
+      // still flow through (why throw away solid database findings?), but
+      // the song counts as not fully analyzed and is NOT cached, so the
+      // language check retries on the next run instead of being silently
+      // frozen out by one transient LLM failure.
+      const songNeededLlm = options.verify
+        ? verifyNeedsLlm(song, fact, verifyFields)
+        : needsLlm(song, fact?.genre ?? null);
+      const llmVerdictMissing = songNeededLlm && !llm;
+      if (llmVerdictMissing && !fact && !options.verify) {
         stats.notAnalyzed++;
         continue;
       }
+      if (llmVerdictMissing && options.verify) {
+        stats.notAnalyzed++;
+      }
 
-      // Genre: factual fills EMPTY fields; LLM normalizes/fills the rest.
-      // Both go through canonicalizeGenre (user item 12) so Deezer's "Dance
-      // Pop" or an LLM slip becomes the canonical "Pop".
       let suggestedGenre: string | null = null;
       let genreConfidence = 0;
       let genreReason = '';
       let source: HarmonizeSource = 'ai';
-
-      if (!song.genre && fact?.genre) {
-        suggestedGenre = canonicalizeGenre(fact.genre);
-        genreConfidence = fact.genreConfidence ?? 92;
-        genreReason = SOURCE_LABELS[fact.source] ?? 'factual';
-        if (fact.matchedArtist || fact.matchedTitle) {
-          genreReason += `: "${fact.matchedTitle ?? song.title}" (${fact.matchedArtist ?? song.artist})`;
-        } else {
-          genreReason += ': album genre';
-        }
-        source = fact.source;
-      } else if (llm?.suggestedGenre) {
-        suggestedGenre = canonicalizeGenre(llm.suggestedGenre);
-        genreConfidence = llm.genreConfidence ?? 0;
-        genreReason = llm.genreReason ?? '';
-        source = 'ai';
-      }
-
-      // Language: LLM domain (detection + normalization). Mixed-language
-      // values keep BOTH languages ("German/English"); parenthetical
-      // additions are always stripped (user item 12).
       let suggestedLanguage: string | null = null;
       let languageConfidence = 0;
       let languageReason = '';
-      if (llm?.suggestedLanguage) {
-        suggestedLanguage = normalizeLanguageMixed(llm.suggestedLanguage);
-        languageConfidence = llm.languageConfidence ?? 0;
-        languageReason = llm.languageReason ?? '';
-      }
-
-      // Year: factual only — the LLM never guesses years
       let suggestedYear: number | null = null;
       let yearConfidence = 0;
       let yearReason = '';
-      if (!song.year && fact?.year) {
-        suggestedYear = fact.year;
-        yearConfidence = fact.yearConfidence ?? 90;
-        yearReason = `${SOURCE_LABELS[fact.source] ?? 'factual'}: first release`;
+
+      if (options.verify) {
+        // ── R59 VERIFY MODE: compare the EXISTING values against the
+        // sources. Both sides are canonicalized with the user's custom
+        // taxonomy — a custom "Jazz" matching the source's "Vocal Jazz"
+        // is a MATCH, not a mismatch. Only deviations become suggestions.
+        const customGenres = customTaxonomy.getCustomGenres();
+        const customLanguages = customTaxonomy.getCustomLanguages();
+
+        // Genre — database verdict (factual, wins over the LLM)
+        if (verifyFields.genre && song.genre && fact?.genre) {
+          const currentCanonical = canonicalizeGenre(song.genre, customGenres);
+          const factGenre = canonicalizeGenre(fact.genre, customGenres);
+          if (factGenre && factGenre !== currentCanonical) {
+            suggestedGenre = factGenre;
+            genreConfidence = fact.genreConfidence ?? 92;
+            genreReason = fact.matchedTitle || fact.matchedArtist
+              ? `${SOURCE_LABELS[fact.source] ?? 'factual'}: "${fact.matchedTitle ?? song.title}" (${fact.matchedArtist ?? song.artist}) → ${fact.genre}`
+              : `${SOURCE_LABELS[fact.source] ?? 'factual'}: ${fact.genre}`;
+            source = fact.source;
+          }
+        }
+        // Language — LLM domain (no database carries languages)
+        if (verifyFields.language && song.language && llm?.suggestedLanguage) {
+          const suggested = normalizeLanguageMixed(llm.suggestedLanguage, customLanguages);
+          if (suggested && suggested !== song.language) {
+            suggestedLanguage = suggested;
+            languageConfidence = llm.languageConfidence ?? 0;
+            languageReason = llm.languageReason ?? '';
+          }
+        }
+        // Genre — LLM cross-check, only when the databases had NO verdict
+        // (a factual match/mismatch always wins over the model's opinion)
+        if (verifyFields.genre && song.genre && !fact?.genre && llm?.suggestedGenre) {
+          const suggested = canonicalizeGenre(llm.suggestedGenre, customGenres);
+          if (suggested && suggested !== song.genre) {
+            suggestedGenre = suggested;
+            genreConfidence = llm.genreConfidence ?? 0;
+            genreReason = llm.genreReason ?? '';
+            source = 'ai';
+          }
+        }
+        // Year — database verdict only (the LLM never handles years)
+        if (verifyFields.year && song.year != null && fact?.year && fact.year !== song.year) {
+          suggestedYear = fact.year;
+          yearConfidence = fact.yearConfidence ?? 90;
+          yearReason = `${SOURCE_LABELS[fact.source] ?? 'factual'}: first release ${fact.year}`;
+        }
+      } else {
+        // Genre: factual fills EMPTY fields; LLM normalizes/fills the rest.
+        // Both go through canonicalizeGenre (user item 12) so Deezer's "Dance
+        // Pop" or an LLM slip becomes the canonical "Pop".
+        if (!song.genre && fact?.genre) {
+          suggestedGenre = canonicalizeGenre(fact.genre);
+          genreConfidence = fact.genreConfidence ?? 92;
+          genreReason = SOURCE_LABELS[fact.source] ?? 'factual';
+          if (fact.matchedArtist || fact.matchedTitle) {
+            genreReason += `: "${fact.matchedTitle ?? song.title}" (${fact.matchedArtist ?? song.artist})`;
+          } else {
+            genreReason += ': album genre';
+          }
+          source = fact.source;
+        } else if (llm?.suggestedGenre) {
+          suggestedGenre = canonicalizeGenre(llm.suggestedGenre);
+          genreConfidence = llm.genreConfidence ?? 0;
+          genreReason = llm.genreReason ?? '';
+          source = 'ai';
+        }
+
+        // Language: LLM domain (detection + normalization). Mixed-language
+        // values keep BOTH languages ("German/English"); parenthetical
+        // additions are always stripped (user item 12).
+        if (llm?.suggestedLanguage) {
+          suggestedLanguage = normalizeLanguageMixed(llm.suggestedLanguage);
+          languageConfidence = llm.languageConfidence ?? 0;
+          languageReason = llm.languageReason ?? '';
+        }
+
+        // Year: factual only — the LLM never guesses years
+        if (!song.year && fact?.year) {
+          suggestedYear = fact.year;
+          yearConfidence = fact.yearConfidence ?? 90;
+          yearReason = `${SOURCE_LABELS[fact.source] ?? 'factual'}: first release`;
+        }
       }
 
       // Only suggest changes that actually differ from current values
@@ -505,19 +623,24 @@ export async function harmonizeSongs(
       if (!yearChanged) { suggestedYear = null; yearConfidence = 0; }
 
       // 5. Persist to the cache (R2) — including the "no change" outcome
-      //    so re-runs skip this song entirely.
-      setCachedHarmonize(song, {
-        suggestedGenre,
-        suggestedLanguage,
-        suggestedYear,
-        genreConfidence,
-        languageConfidence,
-        yearConfidence,
-        genreReason,
-        languageReason,
-        yearReason,
-        source,
-      });
+      //    so re-runs skip this song entirely. EXCEPT when an LLM verdict
+      //    was needed but never arrived (R59 verify): a cache entry would
+      //    freeze the unaudited language as "done" — leave it uncached so
+      //    the next run retries the check.
+      if (!llmVerdictMissing) {
+        setCachedHarmonize(song, {
+          suggestedGenre,
+          suggestedLanguage,
+          suggestedYear,
+          genreConfidence,
+          languageConfidence,
+          yearConfidence,
+          genreReason,
+          languageReason,
+          yearReason,
+          source,
+        });
+      }
 
       if (suggestedGenre || suggestedLanguage || suggestedYear) {
         suggestions.push({

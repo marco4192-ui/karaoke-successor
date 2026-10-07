@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
-import { canonicalizeGenre } from '@/lib/parsers/meta-normalizer';
+import { canonicalizeGenre, DEFAULT_GENRE_ALIASES } from '@/lib/parsers/meta-normalizer';
+import { sanitizeCustomEntries } from '@/lib/game/custom-taxonomy';
 import { GENRES } from '@/lib/constants';
 
 /**
@@ -27,6 +28,13 @@ import { GENRES } from '@/lib/constants';
  * "(Radio Edit)" suffixes etc. tolerated). Genres map through the
  * 700-entry GENRE_ALIASES knowledge of the rule harmonizer
  * (meta-normalizer.ts) — single source of truth for both pipelines.
+ *
+ * R59 "Verify" mode: with verify=true the route also looks up songs whose
+ * genre/year are ALREADY set (the skip gate opens) and returns the source
+ * values regardless — the client then compares them against the existing
+ * tags (correctness check) instead of only filling gaps. customGenres (R20)
+ * extend the canonical vocabulary server-side so user-defined categories
+ * ("Jazz") are recognized as-is instead of being remapped to a built-in.
  */
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -42,6 +50,16 @@ interface LookupSong {
 
 interface LookupRequest {
   songs: LookupSong[];
+  /** R59 verify mode: look up songs EVEN when genre/year are already set —
+   *  the returned source values let the client compare them against the
+   *  existing tags (correctness check instead of gap filling). */
+  verify?: boolean;
+  /** R59: which fields a verify run compares (studio field toggles) —
+   *  deselected fields skip their source queries (saves MusicBrainz calls). */
+  fields?: { genre?: boolean; year?: boolean };
+  /** R20: user-defined canonical genres — extend the server-side genre
+   *  mapping so custom categories are kept, never remapped to built-ins. */
+  customGenres?: string[];
 }
 
 export type LookupSource = 'itunes' | 'deezer' | 'musicbrainz';
@@ -147,19 +165,51 @@ const TAG_MAP: Record<string, string> = {
   'musik': 'Schlager',
 };
 
-const CANONICAL_GENRE_SET = new Set<string>(GENRES);
+/** User-defined canonical genres for THIS request (R59) — threaded through
+ *  mapGenre so a custom "Jazz" catches "Vocal Jazz"/"Swing" instead of the
+ *  built-in R&B fallback, and exact custom matches are never overridden by
+ *  the built-in GENRE_MAP/TAG_MAP spellings. */
+type CustomGenres = string[];
 
-/** Normalize a raw genre/tag string to our canonical form: explicit
- *  source-specific maps first, then the full GENRE_ALIASES knowledge of the
- *  rule harmonizer (R47: single source of truth — new aliases added there
- *  automatically improve the factual lookup too). */
-function mapGenre(raw: string): string | undefined {
+/** Normalize a raw genre/tag string to our canonical form: custom exact
+ *  matches first, then explicit source-specific maps, then the full
+ *  GENRE_ALIASES knowledge of the rule harmonizer (R47: single source of
+ *  truth — new aliases added there automatically improve the factual lookup
+ *  too). R59: the canonical set includes the user's custom genres. */
+function mapGenre(raw: string, customs: CustomGenres): string | undefined {
   const key = raw.trim().toLowerCase();
   if (!key) return undefined;
+  const customExact = customs.find(c => c.toLowerCase() === key);
+  if (customExact) return customExact;
+  // Sub-genre of a custom category → the custom ("Vocal Jazz"/"Smooth Jazz"
+  // with a user-defined "Jazz" → "Jazz") — mirrors the /api/harmonize prompt
+  // rule that user-defined categories catch their sub-genres. Without this,
+  // the built-in alias would route "Vocal Jazz" to "R&B" and a verify run
+  // would flag a CORRECT custom tag as a mismatch (false positive).
+  const customSub = customs.find(c => {
+    const lc = c.toLowerCase();
+    return key.endsWith(' ' + lc) || key.endsWith('-' + lc);
+  });
+  if (customSub) return customSub;
+  // Family routing: a custom category that the built-in aliases themselves
+  // would subsume under a parent (custom "Jazz" — alias jazz → "R&B") also
+  // catches its SIBLING sub-genres ("Swing", "Bebop", "Big Band" — all
+  // alias to "R&B" too): they belong to the family the user split out.
+  // Purely lexical matching can't see that "Swing" is jazz — this can.
+  const aliasTarget = (k: string): string | undefined =>
+    DEFAULT_GENRE_ALIASES[k]
+      ?? DEFAULT_GENRE_ALIASES[k.replace(/-/g, ' ')]
+      ?? DEFAULT_GENRE_ALIASES[k.replace(/ /g, '-')];
+  const target = aliasTarget(key);
+  if (target) {
+    const customFamily = customs.find(c => aliasTarget(c.trim().toLowerCase()) === target);
+    if (customFamily) return customFamily;
+  }
   const direct = GENRE_MAP[key] ?? TAG_MAP[key];
   if (direct) return direct;
-  const canonical = canonicalizeGenre(raw, []);
-  if (CANONICAL_GENRE_SET.has(canonical)) return canonical;
+  const canonical = canonicalizeGenre(raw, customs);
+  const canonicalSet = new Set<string>([...GENRES, ...customs]);
+  if (canonicalSet.has(canonical)) return canonical;
   return undefined;
 }
 
@@ -329,7 +379,7 @@ let itunesDownUntil = 0;
 function isItunesDown(): boolean { return Date.now() < itunesDownUntil; }
 function markItunesDown(): void { itunesDownUntil = Date.now() + 10 * 60 * 1000; }
 
-async function lookupItunes(song: LookupSong): Promise<SourceHit | null> {
+async function lookupItunes(song: LookupSong, customs: CustomGenres): Promise<SourceHit | null> {
   if (isItunesDown()) return null;
 
   const artist = cleanArtist(song.artist);
@@ -359,7 +409,7 @@ async function lookupItunes(song: LookupSong): Promise<SourceHit | null> {
     matchedTitle: best.title,
     matchedArtist: best.artist,
   };
-  const genre = mapGenre(best.raw.primaryGenreName ?? '');
+  const genre = mapGenre(best.raw.primaryGenreName ?? '', customs);
   if (genre) hit.genre = genre;
   const year = parseYear(best.raw.releaseDate);
   if (year) hit.year = year;
@@ -393,7 +443,7 @@ async function deezerSearch(query: string, limit: number): Promise<DeezerSearchT
   return search.data ?? [];
 }
 
-async function lookupDeezer(song: LookupSong): Promise<SourceHit | null> {
+async function lookupDeezer(song: LookupSong, customs: CustomGenres): Promise<SourceHit | null> {
   if (isDeezerDown()) return null;
 
   const artist = cleanArtist(song.artist);
@@ -438,7 +488,7 @@ async function lookupDeezer(song: LookupSong): Promise<SourceHit | null> {
     // R47: try ALL album genres — compilations list "Pop" first but some
     // albums only tag a specific second genre.
     for (const g of album.genres?.data ?? []) {
-      const genre = g.name ? mapGenre(g.name) : undefined;
+      const genre = g.name ? mapGenre(g.name, customs) : undefined;
       if (genre) { hit.genre = genre; break; }
     }
     const year = parseYear(album.release_date);
@@ -498,7 +548,7 @@ async function mbFetch<T>(url: string, retries = 1): Promise<T | null> {
   }
 }
 
-async function lookupMusicBrainz(song: LookupSong, needYear: boolean, needGenre: boolean): Promise<SourceHit | null> {
+async function lookupMusicBrainz(song: LookupSong, needYear: boolean, needGenre: boolean, customs: CustomGenres): Promise<SourceHit | null> {
   const artist = cleanArtist(song.artist);
   const title = cleanTitle(song.title);
   if (!artist || !title) return null;
@@ -523,12 +573,12 @@ async function lookupMusicBrainz(song: LookupSong, needYear: boolean, needGenre:
 
         // Genres (voted) take precedence over tags (raw)
         const rawGenre = best.raw.genres?.[0]?.name;
-        let genre = rawGenre ? mapGenre(rawGenre) : undefined;
+        let genre = rawGenre ? mapGenre(rawGenre, customs) : undefined;
         if (!genre) {
           // Fall back to the most-voted tag that maps to a canonical genre
           const sortedTags = [...(best.raw.tags ?? [])].sort((a, b) => b.count - a.count);
           for (const tag of sortedTags) {
-            const mapped = mapGenre(tag.name);
+            const mapped = mapGenre(tag.name, customs);
             if (mapped) { genre = mapped; break; }
           }
         }
@@ -581,7 +631,7 @@ async function lookupMusicBrainz(song: LookupSong, needYear: boolean, needGenre:
         );
         const rgGenreName = rgDetail?.genres?.[0]?.name;
         if (rgGenreName) {
-          const genre = mapGenre(rgGenreName);
+          const genre = mapGenre(rgGenreName, customs);
           if (genre) hit.genre = genre;
         }
       }
@@ -606,6 +656,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<LookupRes
     }
 
     const songs = body.songs.slice(0, MAX_SONGS_PER_REQUEST);
+
+    // R59: verify mode + user-defined canonical genres (R20)
+    const verify = body.verify === true;
+    const customGenres = sanitizeCustomEntries(body.customGenres);
+    const verifyGenre = body.fields?.genre !== false;
+    const verifyYear = body.fields?.year !== false;
+
     const results: LookupResult[] = [];
     let itunesHits = 0;
     let deezerHits = 0;
@@ -617,9 +674,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<LookupRes
       if (!song?.id || !song.title || !song.artist) { skipped++; continue; }
 
       // Only look up what's actually missing — factual data fills gaps,
-      // the LLM handles normalization of existing values.
-      const needsGenre = !song.genre;
-      const needsYear = !song.year;
+      // the LLM handles normalization of existing values. EXCEPT in verify
+      // mode (R59): there the EXISTING values are the subject — sources run
+      // for every active field so the client can compare them.
+      const needsGenre = verify ? verifyGenre : !song.genre;
+      const needsYear = verify ? verifyYear : !song.year;
       if (!needsGenre && !needsYear) { skipped++; continue; }
 
       // Per-field merge state across the source chain
@@ -641,22 +700,28 @@ export async function POST(request: NextRequest): Promise<NextResponse<LookupRes
       };
 
       // 1. iTunes — best coverage incl. popular titles, 1 fast request
-      const itunesHit = await lookupItunes(song);
+      const itunesHit = await lookupItunes(song, customGenres);
       if (itunesHit) applyHit(itunesHit, 'itunes', false);
 
       // 2. Deezer — album genres when iTunes found none
       if (needsGenre && !genre) {
-        const deezerHit = await lookupDeezer(song);
+        const deezerHit = await lookupDeezer(song, customGenres);
         if (deezerHit) applyHit(deezerHit, 'deezer', false);
       }
 
       // 3. MusicBrainz — genre tags + authoritative original-release year.
       //    Runs when genre OR year is still missing; its release-group year
       //    OVERRIDES iTunes/Deezer years (original release vs. remaster).
+      //    R59 verify: also runs when a year was ALREADY found — iTunes/Deezer
+      //    years are often re-release dates (Sinatra's 1964 "Fly Me to the
+      //    Moon" shows as 2000 on the DE storefront); the release-group
+      //    first-release-date is the authoritative signal a verify run
+      //    should compare against.
       const stillNeedsGenre = needsGenre && !genre;
       const stillNeedsYear = needsYear && !year;
-      if (stillNeedsGenre || stillNeedsYear) {
-        const mbHit = await lookupMusicBrainz(song, stillNeedsYear, stillNeedsGenre);
+      const mbNeedYear = verify ? needsYear : stillNeedsYear;
+      if (stillNeedsGenre || mbNeedYear) {
+        const mbHit = await lookupMusicBrainz(song, mbNeedYear, stillNeedsGenre, customGenres);
         if (mbHit) applyHit(mbHit, 'musicbrainz', true);
       }
 

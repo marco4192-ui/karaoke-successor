@@ -14,9 +14,14 @@
  *             via iTunes/Deezer/MusicBrainz, LLM only as a fallback when
  *             configured), "rule-based" (deterministic GENRE_ALIASES mapping
  *             — no AI, no quota; the rules are user-editable in Settings →
- *             Metadaten Studio, R50) or "manual" (R5-1: direct per-song
+ *             Metadaten Studio, R50), "manual" (R5-1: direct per-song
  *             editing of all scope songs — current value + editor side by
- *             side, no AI involved).
+ *             side, no AI involved) or "verify" (R59: check EXISTING
+ *             genre/language/year values for correctness — same source
+ *             chain as fill (iTunes/Deezer/MusicBrainz facts, LLM for
+ *             language), but the databases' values are COMPARED against
+ *             the current tags; every mismatch becomes a correction
+ *             suggestion with the source as evidence).
  *             (R50: the former "harmonize" mode — AI corrections of existing
  *             values — was REMOVED; the rule-based mode covers that use case
  *             deterministically.)
@@ -59,7 +64,7 @@ import { applyPreviewVolume, clearLoudnessGain, createSongMediaFallback } from '
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
-export type StudioMode = 'fill' | 'rule' | 'manual';
+export type StudioMode = 'fill' | 'rule' | 'manual' | 'verify';
 export type StudioWriteTarget = 'txt' | 'local';
 
 interface MetadataStudioProps {
@@ -177,17 +182,28 @@ export function MetadataStudio({
 
   /**
    * Songs the current run would analyze:
-   *  - fill mode: only songs with at least one SELECTED field missing
-   *    (rule mode computes its plan from the genres below; manual mode has
-   *    no Run button — the list is edited directly)
+   *  - fill mode:   only songs with at least one SELECTED field missing
+   *  - verify mode: only songs with at least one SELECTED field PRESENT —
+   *                 those are the ones that can be checked (R59)
+   *  - rule mode computes its plan from the genres below; manual mode has
+   *    no Run button — the list is edited directly
    */
   const runSubset = useMemo(() => {
-    if (mode !== 'fill') return scopeSongs;
-    return scopeSongs.filter(s =>
-      (fields.genre && !s.genre) ||
-      (fields.language && !s.language) ||
-      (fields.year && !s.year),
-    );
+    if (mode === 'fill') {
+      return scopeSongs.filter(s =>
+        (fields.genre && !s.genre) ||
+        (fields.language && !s.language) ||
+        (fields.year && !s.year),
+      );
+    }
+    if (mode === 'verify') {
+      return scopeSongs.filter(s =>
+        (fields.genre && !!s.genre) ||
+        (fields.language && !!s.language) ||
+        (fields.year && s.year != null),
+      );
+    }
+    return scopeSongs;
   }, [scopeSongs, mode, fields]);
 
   /** Rule plan (pure + synchronous): GENRE harmonization (alias mapping,
@@ -514,17 +530,19 @@ export function MetadataStudio({
     (ruleJob.status === 'done' || ruleJob.status === 'aborted') &&
     ruleJob.total > 0 && !ruleDoneDismissed;
 
-  /** Null out fields the user deselected; in fill mode keep only empty fields. */
+  /** Null out fields the user deselected; fill mode keeps only EMPTY fields,
+   *  verify mode (R59) only PRESENT ones — cached entries from the other
+   *  mode can never leak a suggestion into the wrong mode. */
   const filterSuggestions = useCallback((
     list: HarmonizeSuggestion[],
   ): HarmonizeSuggestion[] => (
     list.map(s => ({
       ...s,
-      suggestedGenre: fields.genre && !s.currentGenre ? s.suggestedGenre : null,
-      suggestedLanguage: fields.language && !s.currentLanguage ? s.suggestedLanguage : null,
-      suggestedYear: fields.year && s.currentYear == null ? s.suggestedYear : null,
+      suggestedGenre: fields.genre && (mode === 'verify' ? !!s.currentGenre : !s.currentGenre) ? s.suggestedGenre : null,
+      suggestedLanguage: fields.language && (mode === 'verify' ? !!s.currentLanguage : !s.currentLanguage) ? s.suggestedLanguage : null,
+      suggestedYear: fields.year && (mode === 'verify' ? s.currentYear != null : s.currentYear == null) ? s.suggestedYear : null,
     })).filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear)
-  ), [fields]);
+  ), [fields, mode]);
 
   // ── Lyrics warm-up (only needed when writing txt files) ──
   const startLyricsWarmup = useCallback((list: Song[]) => {
@@ -571,7 +589,13 @@ export function MetadataStudio({
           id: s.id, title: s.title, artist: s.artist,
           genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
         })),
-        { onProgress: setProgress, signal: controller.signal },
+        {
+          onProgress: setProgress,
+          signal: controller.signal,
+          // R59: verify mode checks the EXISTING values (field toggles ride
+          // along so only active fields burn lookups/quota)
+          ...(mode === 'verify' ? { verify: true, verifyFields: fields } : {}),
+        },
       );
       if (!isMountedRef.current) return;
       setProgress(null);
@@ -602,18 +626,21 @@ export function MetadataStudio({
         setRunStartedAt(null);
       }
     }
-  }, [runSubset, writeTarget, startLyricsWarmup, filterSuggestions, t]);
+  }, [runSubset, mode, writeTarget, startLyricsWarmup, filterSuggestions, t]);
 
-  /** User-facing Run click: guards an empty selection / nothing to fill. */
+  /** User-facing Run click: guards an empty selection / nothing to fill or
+   *  verify (mode-specific message, R59). */
   const handleRunClick = useCallback(() => {
     if (runSubset.length === 0) {
       setError(scope === 'selection'
         ? t('editor.aiBatchSelectFirstDesc')
-        : t('editor.studioNothingToFill'));
+        : mode === 'verify'
+          ? t('editor.studioVerifyNothing')
+          : t('editor.studioNothingToFill'));
       return;
     }
     void handleRun();
-  }, [runSubset, scope, t, handleRun]);
+  }, [runSubset, mode, scope, t, handleRun]);
 
   /** Cancel the running analysis job (orderly abort after the current chunk). */
   const handleAbortRun = useCallback(() => {
@@ -654,6 +681,15 @@ export function MetadataStudio({
         ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
         : s)
       .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
+    // Last open row applied → drop the run summary too (the fill stats line
+    // and the verify all-OK banner would otherwise show stale numbers, R59).
+    queueMicrotask(() => {
+      if (!isMountedRef.current) return;
+      setSuggestions(current => {
+        if (current.length === 0) setStats(null);
+        return current;
+      });
+    });
     onApplied();
   }, [writeTarget, onApplied]);
 
@@ -755,7 +791,9 @@ export function MetadataStudio({
             ? 'bg-violet-500/20 border-violet-500/60 text-violet-200'
             : color === 'cyan'
               ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-200'
-              : 'bg-amber-500/20 border-amber-500/60 text-amber-200'
+              : color === 'amber'
+                ? 'bg-amber-500/20 border-amber-500/60 text-amber-200'
+                : 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
           : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80'
       }`}
     >
@@ -846,6 +884,7 @@ export function MetadataStudio({
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioMode')}</span>
             {segButton(mode === 'fill', () => setMode('fill'), t('editor.studioModeFill'), 'studio-mode-fill')}
             {segButton(mode === 'rule', () => setMode('rule'), t('editor.studioModeRule'), 'studio-mode-rule', 'cyan')}
+            {segButton(mode === 'verify', () => setMode('verify'), `🔍 ${t('editor.studioModeVerify')}`, 'studio-mode-verify', 'emerald')}
             {segButton(mode === 'manual', () => setMode('manual'), `✏️ ${t('editor.studioModeManual')}`, 'studio-mode-manual', 'amber')}
           </div>
 
@@ -859,6 +898,26 @@ export function MetadataStudio({
             <p className="text-[10px] text-amber-300/70 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5 leading-relaxed" data-testid="studio-local-hint">
               ⚠️ {t('editor.studioWriteLocalHint')}
             </p>
+          )}
+
+          {/* ── Verify mode info (R59) ──
+              What a verify run does + how many songs in scope carry values
+              that can be checked. Mirrors the rule-mode info block. */}
+          {mode === 'verify' && !isLoading && !ruleRunning && (
+            <div className="space-y-1">
+              {runSubset.length > 0 ? (
+                <p className="text-[11px] text-emerald-300/80 font-medium" data-testid="studio-verify-count">
+                  🔍 {t('editor.studioVerifyCount').replace('{count}', String(runSubset.length))}
+                </p>
+              ) : (
+                <p className="text-[11px] text-white/40" data-testid="studio-verify-empty">
+                  🔍 {t('editor.studioVerifyNothing')}
+                </p>
+              )}
+              <p className="text-[10px] text-white/40 leading-relaxed">
+                {t('editor.studioVerifyHint')}
+              </p>
+            </div>
           )}
 
           {/* ── Mode-specific info ── */}
@@ -1299,14 +1358,16 @@ export function MetadataStudio({
                 onClick={handleRunClick}
                 disabled={isLoading || noFieldsSelected || selectedIds.size === 0}
                 title={selectedIds.size === 0 ? t('editor.studioRunNeedsSelection') : undefined}
-                className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs"
+                className={mode === 'verify'
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs'
+                  : 'bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs'}
                 data-testid="studio-run"
               >
                 {isLoading ? (
                   <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
                 ) : null}
-                {t('editor.studioStart')}
-                {!isLoading && mode === 'fill' && runSubset.length > 0 && selectedIds.size > 0 && (
+                {mode === 'verify' ? `🔍 ${t('editor.studioVerifyStart')}` : t('editor.studioStart')}
+                {!isLoading && (mode === 'fill' || mode === 'verify') && runSubset.length > 0 && selectedIds.size > 0 && (
                   <span className="opacity-70">({runSubset.length})</span>
                 )}
               </Button>
@@ -1416,6 +1477,28 @@ export function MetadataStudio({
           {/* ── Error / stats / local-applied feedback ── */}
           {error && (
             <p className="text-xs text-red-400" data-testid="studio-error">{error}</p>
+          )}
+
+          {/* ── Verify run summary (R59) ──
+              Quick feedback what the check found: checked vs. flagged count
+              above the suggestion list — and a clear all-OK banner when every
+              value survived the comparison (a silent empty list would look
+              like "nothing happened"). */}
+          {mode === 'verify' && stats && !isLoading && suggestions.length > 0 && (
+            <p className="text-[10px] text-white/40" data-testid="studio-verify-summary">
+              {t('editor.studioVerifySummary')
+                .replace('{checked}', String(stats.noChange + suggestions.length))
+                .replace('{flagged}', String(suggestions.length))}
+            </p>
+          )}
+          {mode === 'verify' && stats && !isLoading && suggestions.length === 0
+            && stats.notAnalyzed === 0 && stats.total > 0 && (
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2" data-testid="studio-verify-all-ok">
+              <span className="text-sm leading-none">✅</span>
+              <p className="text-[10px] text-emerald-200/90 flex-1">
+                {t('editor.studioVerifyAllOk').replace('{n}', String(stats.noChange))}
+              </p>
+            </div>
           )}
           {stats && stats.notAnalyzed > 0 && (
             <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-not-analyzed">

@@ -43,6 +43,10 @@ interface HarmonizeRequest {
   customGenres?: string[];
   /** User-defined languages (R20) — same treatment as customGenres. */
   customLanguages?: string[];
+  /** R59 "Verify": the songs carry EXISTING tags that must be CHECKED for
+   *  correctness — null suggestions mean "verified OK", corrections only
+   *  when the current value is confidently wrong. Default: 'fill'. */
+  mode?: 'fill' | 'verify';
 }
 
 // ── Genre normalization map (common sub-genres → parent genres) ──
@@ -147,6 +151,9 @@ export async function POST(request: NextRequest) {
     // (never trust the request body blindly, even from localhost).
     const customGenres = sanitizeCustomEntries(body.customGenres);
     const customLanguages = sanitizeCustomEntries(body.customLanguages);
+    // R59: verification mode — the prompt switches from "fill/normalize gaps"
+    // to "check the existing values, null = verified OK".
+    const mode = body.mode === 'verify' ? 'verify' : 'fill';
 
     // Limit batch size to prevent token overflow. 15 instead of the old 50:
     // with 50 songs per call the LLM regularly returned an incomplete JSON
@@ -182,7 +189,14 @@ RULES:
 5. Provide a brief reason for each suggestion.
 6. If the current value is already good, set the suggestion to null with confidence 100.
 7. If a [Facts: ...] hint is present, it comes from MusicBrainz/Deezer and is RELIABLE. Trust it: suggest the fact's genre (normalized to the standard spelling) instead of guessing. Never contradict a factual year.
-
+${mode === 'verify' ? `
+VERIFICATION MODE — every song below ALREADY HAS genre/language tags. Your job is to CHECK them for correctness, not to fill gaps:
+- Suggest a corrected value ONLY when you are confident the current one is WRONG (e.g. a known metal artist tagged "Pop", a German-language song tagged "Spanish").
+- When the current value is plausible — or you are unsure — return null for that field. null means "verified OK, keep the current value".
+- A [Facts: ...] hint is RELIABLE database data: when its genre differs from the current genre, suggest the fact's genre.
+- Sub-genre/ISO-code/native-form current values may still be normalized per rules 2 and 3.
+- Honest confidences: 90-100 for well-known artists/songs, 70-89 for solid deductions, 50-69 when uncertain (values below the user's threshold are not applied).
+` : ''}
 ${buildCanonicalRules(customGenres, customLanguages)}
 
 ${buildNormalizationHints(customGenres)}
@@ -203,7 +217,9 @@ Do NOT include any text outside the JSON array.`,
           },
           {
             role: 'user',
-            content: `Please analyze and harmonize these ${batch.length} songs:\n\n${songList}`,
+            content: mode === 'verify'
+              ? `Please verify the existing metadata of these ${batch.length} songs:\n\n${songList}`
+              : `Please analyze and harmonize these ${batch.length} songs:\n\n${songList}`,
           },
         ],
         { temperature: 0.1 },
@@ -218,7 +234,11 @@ Do NOT include any text outside the JSON array.`,
       return NextResponse.json({ success: false, error: 'Empty response from AI' });
     }
 
-    // Parse the JSON array from the response (handle markdown code blocks)
+    // Parse the JSON array from the response — with repair fallbacks for the
+    // two most common LLM malformations (R59): trailing commas and truncated
+    // arrays (the model occasionally stops mid-string; salvaging the complete
+    // objects beats failing the whole chunk — the client then retries only
+    // the entries that are still missing).
     let jsonStr = content.trim();
     const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
@@ -228,7 +248,7 @@ Do NOT include any text outside the JSON array.`,
       if (bracketMatch) jsonStr = bracketMatch[1];
     }
 
-    const parsed = JSON.parse(jsonStr) as Array<{
+    type RawSuggestion = {
       index: number;
       suggestedGenre: string | null;
       suggestedLanguage: string | null;
@@ -236,7 +256,23 @@ Do NOT include any text outside the JSON array.`,
       languageConfidence: number;
       genreReason: string;
       languageReason: string;
-    }>;
+    };
+    let parsed: RawSuggestion[] | null = null;
+    for (const candidate of [
+      jsonStr,
+      jsonStr.replace(/,\s*([\]}])/g, '$1'), // trailing commas before ]/}
+      jsonStr.slice(0, jsonStr.lastIndexOf('}') + 1) + ']', // truncated tail
+    ] as const) {
+      try {
+        const attempt = JSON.parse(candidate) as RawSuggestion[];
+        if (Array.isArray(attempt)) { parsed = attempt; break; }
+      } catch { /* try the next repair */ }
+    }
+    if (!parsed) {
+      // eslint-disable-next-line no-console
+      console.error('[Harmonize] Unparseable LLM response:', content.slice(0, 300));
+      return NextResponse.json({ success: false, error: 'Invalid JSON from AI' }, { status: 500 });
+    }
 
     // Merge AI suggestions with song data — canonicalized deterministically
     // (user item 12): even if the LLM outputs "Pop (80s)" or "Englisch (mit
