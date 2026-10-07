@@ -50,10 +50,15 @@ export const StorageKeys = {
   SHOW_COMBO: 'karaoke-show-combo',
   LYRICS_SIZE: 'karaoke-lyrics-size',
   MASTER_VOLUME: 'karaoke-master-volume',
-  /** Loudness normalization toward the 89 dB ReplayGain reference (default on) */
+  /** R58: DEPRECATED — the loudness-normalization toggle was removed (89 dB
+   *  normalization is permanently active on every playback path). The key
+   *  stays defined so old localStorage entries harmlessly linger; no code
+   *  reads or writes it anymore. */
   LOUDNESS_NORMALIZATION: 'karaoke-loudness-normalization',
-  /** Per-song loudness normalization gains (songId → gainDb) */
-  LOUDNESS_GAINS: 'karaoke-loudness-gains',
+  /** Per-song loudness normalization gains (songId → gainDb).
+   *  R58: bumped to -v2 — the gain formula changed (±12 dB clamp removed),
+   *  so pre-R58 cached gains must NOT be reused. */
+  LOUDNESS_GAINS: 'karaoke-loudness-gains-v2',
   /** Vocal filter amount (0..1) — karaoke-style center-channel cancellation */
   VOCAL_FILTER_AMOUNT: 'karaoke-vocal-filter-amount',
   /** Voice FX Studio settings (mode, mixes, harmony, correction — JSON) */

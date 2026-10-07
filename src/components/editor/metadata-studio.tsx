@@ -55,7 +55,7 @@ import {
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { useMetadataRules } from '@/hooks/use-metadata-rules';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
+import { applyPreviewVolume, clearLoudnessGain, createSongMediaFallback } from '@/lib/audio/loudness';
 import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
@@ -298,11 +298,13 @@ export function MetadataStudio({
     // R49: preview-volume setting + 89 dB loudness normalization — this
     // preview previously played at a hardcoded 0.5, ignoring both the setting
     // and the normalization that game playback uses.
+    // R58: unconditional (no toggle) + fallback resolver for analysis fetches.
     applyPreviewVolume(
       audio,
       target.id,
       src,
       () => generation === previewGenRef.current && previewAudioRef.current === audio,
+      createSongMediaFallback(target, target.audioUrl === src ? 'audio' : 'video'),
     );
     audio.src = src;
     previewAudioRef.current = audio;

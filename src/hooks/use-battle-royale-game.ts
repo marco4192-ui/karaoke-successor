@@ -28,9 +28,9 @@ import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
 import { postGameState } from '@/lib/desktop-instance';
-import { getSongLoudnessGainDb, applyLoudnessVolume, isSameOriginMedia } from '@/lib/audio/loudness';
+import { getSongLoudnessGainDb, applyLoudnessVolume, isSameOriginMedia, createSongMediaFallback } from '@/lib/audio/loudness';
 import { resetSharedGainNode } from '@/lib/audio/shared-media-source';
-import { StorageKeys, getBool, getNumber } from '@/lib/storage';
+import { StorageKeys, getNumber } from '@/lib/storage';
 
 function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
   if (notes.length === 0) return [];
@@ -195,8 +195,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     const audioUrl = resolvedAudioUrlRef.current;
     const masterVolume = getNumber(StorageKeys.MASTER_VOLUME, 100) / 100;
     baseVolumeRef.current = Math.min(1, Math.max(0, masterVolume));
-    if (!songId || !audioUrl || !getBool(StorageKeys.LOUDNESS_NORMALIZATION, true)) return;
-    getSongLoudnessGainDb(songId, audioUrl)
+    if (!songId || !audioUrl) return;
+    getSongLoudnessGainDb(songId, audioUrl, createSongMediaFallback(currentSong, 'audio'))
       .then((gainDb) => {
         if (cancelled) return;
         // R9 (user request 3 — volume normalization "greift nicht"):

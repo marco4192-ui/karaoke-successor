@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { applyPreviewVolume, clearLoudnessGain } from '@/lib/audio/loudness';
+import { applyPreviewVolume, clearLoudnessGain, createSongMediaFallback } from '@/lib/audio/loudness';
 
 export function useLibraryPreview() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
@@ -104,11 +104,15 @@ export function useLibraryPreview() {
         // R49: preview-volume setting + 89 dB loudness normalization (was a
         // hardcoded 0.3 — neither the setting nor the normalization ever
         // reached the preview; loud songs blared at raw level).
+        // R58: normalization is unconditional and carries a fallback resolver
+        // (media-db refresh / Tauri file re-read) in case the primary URL
+        // cannot be fetched for analysis.
         applyPreviewVolume(
           audio,
           songToPlay.id,
           songToPlay.audioUrl,
           () => generation === previewGenerationRef.current && audio === activeAudioRef.current,
+          createSongMediaFallback(songToPlay, 'audio'),
         );
         audio.src = songToPlay.audioUrl;
         activeAudioRef.current = audio;
@@ -157,6 +161,7 @@ export function useLibraryPreview() {
               songToPlay.id,
               videoSrc,
               () => generation === previewGenerationRef.current,
+              createSongMediaFallback(songToPlay, 'video'),
             );
           }
 

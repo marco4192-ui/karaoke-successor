@@ -72,7 +72,6 @@ const SK = {
   LANGUAGE: StorageKeys.LANGUAGE,
   NOTE_DISPLAY_MODE: StorageKeys.NOTE_DISPLAY_MODE,
   NOTE_SEALED_HIT_COLOR: StorageKeys.NOTE_SEALED_HIT_COLOR,
-  LOUDNESS_NORMALIZATION: StorageKeys.LOUDNESS_NORMALIZATION,
   WEBCAM_CONFIG: StorageKeys.WEBCAM_CONFIG,
 } as const;
 
@@ -83,7 +82,6 @@ const SNAPSHOT_SETTING_KEYS: readonly string[] = [
   SK.AUTO_FULLSCREEN, SK.WARNING_CUES, SK.BG_VIDEO, SK.ANIMATED_BG, SK.PERFORMANCE_MODE,
   SK.LYRICS_STYLE, SK.LYRICS_SIZE, SK.THEME, SK.NOTE_DISPLAY_MODE, SK.NOTE_SEALED_HIT_COLOR,
   SK.MASTER_VOLUME, SK.PREVIEW_VOLUME, SK.MIC_SENSITIVITY, SK.YOUTUBE_QUALITY, SK.LANGUAGE,
-  SK.LOUDNESS_NORMALIZATION,
 ];
 
 // ===================== Defaults =====================
@@ -111,7 +109,6 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.MIC_SENSITIVITY]: 50,
   [SK.YOUTUBE_QUALITY]: 'default',
   [SK.LANGUAGE]: 'de',
-  [SK.LOUDNESS_NORMALIZATION]: true,
 };
 
 // ===================== Webcam-Config (Desktop-Format, webcam-types.ts) =====================
@@ -635,8 +632,9 @@ function AppearanceSettings({ settings, sendSetting, t }: {
 
 // ===================== Sub-View: Graphics & Sound (Audio) =====================
 // Reihenfolge wie Desktop-Audio-Tab (graphic-sound-tab.tsx):
-// Master → Lautstärke-Normalisierung → Preview → Mikrofon → YouTube.
-// (ASIO/Ausgabegerät bleibt Desktop-only.)
+// Master → Preview → Mikrofon → YouTube.
+// (ASIO/Ausgabegerät bleibt Desktop-only. R58: Lautstärke-Normalisierung ist
+//  permanent aktiv — kein Toggle mehr, wie am Desktop.)
 
 function GraphicSoundSettings({ settings, sendSetting, t }: {
   settings: Record<string, string | boolean | number>;
@@ -662,14 +660,8 @@ function GraphicSoundSettings({ settings, sendSetting, t }: {
         <p className="text-[11px] text-white/30 mt-1">{tOr(t, 'settingsGraphicSound.masterVolumeDesc', 'Gesamtlautst\u00E4rke der Wiedergabe w\u00E4hrend des Singens.')}</p>
       </div>
 
-      {/* P5: Lautstärke-Normalisierung (89 dB Ziel) — echter Desktop-Wert */}
-      <SettingToggle
-        label={tOr(t, 'settings.loudnessNormalization', 'Lautst\u00E4rke-Normalisierung (89 dB Ziel)')}
-        description={tOr(t, 'settings.loudnessNormalizationDesc', 'Gleicht laut/leise Songs an — laute Songs werden leiser, leise lauter geregelt (Ziel: 89 dB).')}
-        value={asBool(settings[SK.LOUDNESS_NORMALIZATION], true)}
-        onToggle={(v) => sendSetting(SK.LOUDNESS_NORMALIZATION, String(v))}
-        testId="mirror-loudness-normalization"
-      />
+      {/* R58: Lautstärke-Normalisierung (89 dB) ist permanent aktiv — der
+          Toggle wurde entfernt (Nutzer-Vorgabe: keine Ausnahmen). */}
 
       {/* Preview-Lautstaerke */}
       <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">

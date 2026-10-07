@@ -8,27 +8,37 @@
  * This module measures each song's loudness once (ReplayGain-style: per-window
  * RMS, 95th percentile) and derives a per-song gain toward the 89 dB
  * ReplayGain reference (≈ -18 dBFS RMS target). Loud songs are attenuated,
- * quiet songs boosted — both clamped to ±12 dB.
+ * quiet songs boosted.
+ *
+ * R58 user directive ("Keine Limitierung, keine Ausnahmen"): the former ±12 dB
+ * clamp is GONE — every song is driven EXACTLY to the 89 dB reference, no
+ * matter how hot or quiet it was mastered. The only technical guard left is
+ * digital silence (below -50 dBFS there is no signal to normalize). The
+ * former settings toggle is gone too: normalization is ALWAYS active on
+ * every playback path (game, jukebox, battle royale, all previews).
  *
  * Robustness rules (DO NOT break):
  * - NEVER throws: every entry point swallows errors and returns a safe value.
  * - NEVER blocks playback: analysis is async and purely additive; a failure
  *   simply yields gain 0 (unchanged volume).
  * - Analysis runs at most once per songId (localStorage cache + in-flight
- *   promise dedup).
+ *   promise dedup). Cache is versioned (v2) — formula changes re-analyze.
+ * - If the primary media URL cannot be fetched (dead blob: URL, exotic
+ *   protocol), an optional fallback resolver provides a fresh fetchable URL
+ *   (media-db refresh / Tauri file re-read) before giving up.
  * - The decoded AudioBuffer is dropped right after analysis (no retention).
  * - YouTube / missing media URLs are skipped (cannot fetch/decode).
  */
 
-import { StorageKeys, getJsonOptional, setJson, getNumber, getBool } from '@/lib/storage';
+import { StorageKeys, getJsonOptional, setJson, getNumber } from '@/lib/storage';
 import { getSharedMediaSource, resetSharedGainNode } from './shared-media-source';
 
 /** ReplayGain 89 dB reference ≈ -18 dBFS RMS target. */
 export const LOUDNESS_TARGET_DB = -18;
-/** Maximum boost applied to quiet songs (dB). */
-export const LOUDNESS_MAX_GAIN_DB = 12;
-/** Maximum attenuation applied to loud songs (dB). */
-export const LOUDNESS_MIN_GAIN_DB = -12;
+/** R58: measured loudness below this floor is digital silence — there is no
+ *  signal to normalize, so the gain stays 0 (NOT a "Limitierung" of real
+ *  songs: even very quiet recordings sit far above -50 dBFS RMS). */
+const LOUDNESS_SILENCE_FLOOR_DB = -50;
 
 /** Length of one RMS analysis window (ms) — ReplayGain uses ~50ms. */
 const WINDOW_MS = 50;
@@ -180,12 +190,28 @@ function isStreamingPlatformUrl(url: string): boolean {
     || /(?:^|\.)player\.vimeo\.com\//i.test(url);
 }
 
+/** Fetch + decode an audio URL into an AudioBuffer (null on ANY failure). */
+async function fetchAudioBuffer(url: string): Promise<AudioBuffer | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.arrayBuffer();
+    return await decodeAudioDataSafe(data);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Return the per-song loudness normalization gain in dB for the given song.
  *
- * - Cached results come from localStorage (`StorageKeys.LOUDNESS_GAINS`).
+ * - Cached results come from localStorage (`StorageKeys.LOUDNESS_GAINS`, v2 —
+ *   the pre-R58 cache with the ±12 dB clamp is not reused).
  * - On a cache miss the media file is fetched + decoded + analyzed; the
- *   derived gain (target − loudness, clamped to ±12 dB) is persisted.
+ *   derived gain (target − loudness, R58: UNCLAMPED) is persisted.
+ * - If the primary fetch fails (dead blob: URL, CORS-blocked or exotic
+ *   protocol), `fallbackUrl` may resolve a fresh fetchable URL (media-db
+ *   refresh / Tauri file re-read) which is tried before giving up.
  * - ANY failure (no URL, streaming-platform URL [YouTube/Dailymotion/Vimeo],
  *   fetch/decode error, …) returns 0 — this function never throws and never
  *   blocks playback.
@@ -193,6 +219,7 @@ function isStreamingPlatformUrl(url: string): boolean {
 export async function getSongLoudnessGainDb(
   songId: string | null | undefined,
   mediaUrl: string | null | undefined,
+  fallbackUrl?: () => Promise<string | null | undefined>,
 ): Promise<number> {
   try {
     if (!songId || !mediaUrl) return 0;
@@ -207,18 +234,29 @@ export async function getSongLoudnessGainDb(
 
     const analysis = (async (): Promise<number> => {
       try {
-        const response = await fetch(mediaUrl);
-        if (!response.ok) return 0;
-        const data = await response.arrayBuffer();
-        const audioBuffer = await decodeAudioDataSafe(data);
+        let audioBuffer = await fetchAudioBuffer(mediaUrl);
+        // R58: primary URL unusable (dead blob:, CORS, exotic protocol) →
+        // let the caller's resolver produce a fresh fetchable URL before
+        // giving up. This is what previously made previews play RAW.
+        if (!audioBuffer && fallbackUrl) {
+          try {
+            const alt = await fallbackUrl();
+            if (alt && alt !== mediaUrl) {
+              audioBuffer = await fetchAudioBuffer(alt);
+            }
+          } catch {
+            // Fallback itself failed — keep null.
+          }
+        }
         if (!audioBuffer) return 0;
         const loudnessDb = analyzeTrackLoudnessDb(audioBuffer);
         // No reference to `audioBuffer` is kept after this point (no retention).
-        const gainDb = clampNumber(
-          LOUDNESS_TARGET_DB - loudnessDb,
-          LOUDNESS_MIN_GAIN_DB,
-          LOUDNESS_MAX_GAIN_DB,
-        );
+        // Digital silence (or a degenerate buffer) — nothing to normalize.
+        if (loudnessDb <= LOUDNESS_SILENCE_FLOOR_DB) return 0;
+        // R58 ("Keine Limitierung"): UNCLAMPED gain — loud songs are attenuated
+        // as far as needed, quiet songs boosted as far as needed, so every
+        // song lands exactly on the 89 dB reference.
+        const gainDb = LOUDNESS_TARGET_DB - loudnessDb;
         // Merge into the latest cache state (a concurrent analysis may have
         // written another song's entry in the meantime).
         const latest = readGainCache();
@@ -332,8 +370,8 @@ export function clearLoudnessGain(el: HTMLMediaElement): void {
 }
 
 // ---------------------------------------------------------------------------
-// Preview volume (R49): library hover preview, Metadata Studio preview,
-// companion song preview
+// Preview volume (R49, reworked R58): library hover preview, Metadata Studio
+// preview, companion song preview
 // ---------------------------------------------------------------------------
 
 /**
@@ -342,8 +380,9 @@ export function clearLoudnessGain(el: HTMLMediaElement): void {
  * blared). These helpers wire every preview path to the same pipeline:
  * preview-volume setting × per-song loudness gain.
  *
- * The preview-volume SETTING (Settings → Graphics & Sound, default 30)
- * previously fed only the settings slider — no player ever read it.
+ * R58 ("keine Ausnahmen"): the normalization is UNCONDITIONAL — the old
+ * settings toggle no longer gates it. `fallbackUrl` lets preview callers
+ * supply a fresh fetchable URL when the primary one cannot be analyzed.
  */
 
 /** Read the preview volume setting (0-100, default 30). Never throws. */
@@ -355,18 +394,9 @@ export function getPreviewVolumePercent(): number {
   }
 }
 
-/** True when loudness normalization is enabled (default on). Never throws. */
-export function isLoudnessNormalizationEnabled(): boolean {
-  try {
-    return getBool(StorageKeys.LOUDNESS_NORMALIZATION, true);
-  } catch {
-    return true;
-  }
-}
-
 /**
- * Apply the preview-volume setting (+ 89 dB loudness normalization when
- * enabled) to a PREVIEW media element.
+ * Apply the preview-volume setting + the 89 dB loudness normalization
+ * (R58: ALWAYS, unconditionally) to a PREVIEW media element.
  *
  * Contract (mirrors game playback — never breaks the preview):
  * - The plain preview volume is applied IMMEDIATELY (fast path: the preview
@@ -375,21 +405,23 @@ export function isLoudnessNormalizationEnabled(): boolean {
  *   resolves; any failure silently keeps the base volume.
  * - `isStillActive` (optional) lets the caller bail out when the preview was
  *   stopped/replaced while the analysis was in flight.
+ * - `fallbackUrl` (optional, R58) resolves a fresh fetchable URL when the
+ *   primary media URL cannot be fetched for analysis.
  */
 export function applyPreviewVolume(
   el: HTMLMediaElement,
   songId: string | null | undefined,
   mediaUrl: string | null | undefined,
   isStillActive?: () => boolean,
+  fallbackUrl?: () => Promise<string | null | undefined>,
 ): void {
   try {
     const previewPercent = getPreviewVolumePercent();
     // Fast path: plain preview volume right away (iOS ignores element.volume —
     // same limitation the previous hardcoded values had, no regression).
     el.volume = clamp01(previewPercent / 100);
-    if (!isLoudnessNormalizationEnabled()) return;
     if (!songId || !mediaUrl) return;
-    void getSongLoudnessGainDb(songId, mediaUrl)
+    void getSongLoudnessGainDb(songId, mediaUrl, fallbackUrl)
       .then((gainDb) => {
         if (isStillActive && !isStillActive()) return;
         if (gainDb === 0) return; // already at reference — base volume stands
@@ -401,4 +433,52 @@ export function applyPreviewVolume(
   } catch {
     // Never break the preview.
   }
+}
+
+// ---------------------------------------------------------------------------
+// R58: shared analysis fallback resolver
+// ---------------------------------------------------------------------------
+
+/** Minimal song shape needed to re-resolve a fetchable media URL. Works for
+ *  the full `Song` type as well as slimmer song variants. */
+interface FallbackSongShape {
+  id: string;
+  storedMedia?: unknown;
+  relativeAudioPath?: string | null;
+  relativeVideoPath?: string | null;
+  baseFolder?: string | null;
+}
+
+/**
+ * Build a fallback URL resolver for `getSongLoudnessGainDb` (R58):
+ * - storedMedia songs → fresh blob: URL from the IndexedDB media store
+ * - Tauri folder songs → fresh blob: URL read from disk
+ *
+ * Returned resolver NEVER throws; returns undefined when the song has neither
+ * a media-db record nor a relative path (nothing to fall back to). Used when
+ * the primary media URL cannot be fetched for analysis (dead blob: URL,
+ * exotic protocol) — previously those songs silently played RAW.
+ */
+export function createSongMediaFallback(
+  song: FallbackSongShape | null | undefined,
+  kind: 'audio' | 'video',
+): (() => Promise<string | null | undefined>) | undefined {
+  if (!song) return undefined;
+  const relativePath = kind === 'audio' ? song.relativeAudioPath : song.relativeVideoPath;
+  if (!song.storedMedia && !relativePath) return undefined;
+  return async () => {
+    try {
+      if (song.storedMedia) {
+        const { refreshSongMediaUrl } = await import('@/lib/db/media-db');
+        return await refreshSongMediaUrl(song.id, kind);
+      }
+      if (relativePath) {
+        const { getSongMediaUrl } = await import('@/lib/file-storage-media');
+        return await getSongMediaUrl(relativePath, song.baseFolder ?? undefined);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
 }

@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } f
 import { Song } from '@/types/game';
 import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { getSongLoudnessGainDb } from '@/lib/audio/loudness';
+import { getSongLoudnessGainDb, applyLoudnessVolume, createSongMediaFallback } from '@/lib/audio/loudness';
 import { getPlaylistById } from '@/lib/playlist-manager';
 import { getAvailableDecades, songMatchesEra } from '@/lib/game/era-filter';
 import { getActiveJukeboxPoolId, setJukeboxPool } from './jukebox-pool';
 import { fuzzyScore } from '@/lib/fuzzy-search';
-import { getBool, getJsonOptional, setJson } from '@/lib/storage';
+import { getJsonOptional, setJson } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
 import type { JukeboxSongSuggestion, UseJukeboxReturn } from './jukebox-types';
@@ -1127,39 +1127,53 @@ export function useJukebox(refs?: {
 
   // ==================== VOLUME ====================
 
-  // Loudness normalization: per-song attenuation factor toward the 89 dB
-  // reference, folded multiplicatively into the volume write below.
-  // Element-level attenuation only (element.volume cannot boost) — analysis
-  // failures yield factor 1 (unchanged volume) and never block playback.
+  // Loudness normalization: per-song gain toward the 89 dB reference,
+  // applied via the SAME pipeline the game screen uses (applyLoudnessVolume):
+  // attenuation folds into element.volume, quiet-song BOOSTS run through the
+  // shared Web Audio gain node (R58 — previously boosts were capped away
+  // here with factor 1). Analysis failures yield gain 0 and never block
+  // playback. R58 ("keine Ausnahmen"): unconditional — no toggle gate.
   // State is tagged with the analyzed songId so a stale (previous song's)
-  // factor is ignored while the new song's analysis is still running.
-  const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; factor: number }>({ songId: null, factor: 1 });
+  // gain is ignored while the new song's analysis is still running.
+  const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; gainDb: number }>({ songId: null, gainDb: 0 });
   const jukeboxSongId = currentSong?.id;
-  const loudnessFactor = loudnessGain.songId === jukeboxSongId ? loudnessGain.factor : 1;
+  const loudnessGainDb = loudnessGain.songId === jukeboxSongId ? loudnessGain.gainDb : 0;
   useEffect(() => {
     let cancelled = false;
     const audioUrl = currentSong?.audioUrl;
-    if (!jukeboxSongId || !audioUrl || !getBool(StorageKeys.LOUDNESS_NORMALIZATION, true)) return;
-    getSongLoudnessGainDb(jukeboxSongId, audioUrl)
+    if (!jukeboxSongId || !audioUrl) return;
+    getSongLoudnessGainDb(
+      jukeboxSongId,
+      audioUrl,
+      createSongMediaFallback(currentSong, 'audio'),
+    )
       .then((gainDb) => {
         if (cancelled) return;
-        setLoudnessGain({ songId: jukeboxSongId, factor: gainDb <= 0 ? Math.pow(10, gainDb / 20) : 1 });
+        setLoudnessGain({ songId: jukeboxSongId, gainDb });
       })
       .catch(() => {
-        // Never throw — analysis failure means factor 1.
+        // Never throw — analysis failure means gain 0.
       });
     return () => { cancelled = true; };
   }, [jukeboxSongId, currentSong?.audioUrl]);
 
   useEffect(() => {
-    const v = Math.min(1, Math.max(0, volume * loudnessFactor));
-    if (videoRef.current) videoRef.current.volume = v;
-    if (audioRef.current) audioRef.current.volume = v;
+    // Audio element: full pipeline (attenuation + Web Audio boost).
+    if (audioRef.current) {
+      applyLoudnessVolume(audioRef.current, volume * 100, loudnessGainDb);
+    }
+    // Video element: element-level attenuation only (mirrors the game screen
+    // — no Web Audio graph for the background video; it is muted anyway when
+    // a separate audio file exists).
+    if (videoRef.current) {
+      const factor = loudnessGainDb <= 0 ? Math.pow(10, loudnessGainDb / 20) : 1;
+      videoRef.current.volume = Math.min(1, Math.max(0, volume * factor));
+    }
     // If user moves slider while muted, unmute
     if (volume > 0 && isMuted) {
       setIsMuted(false);
     }
-  }, [volume, loudnessFactor, videoRef, audioRef, isMuted]);
+  }, [volume, loudnessGainDb, videoRef, audioRef, isMuted]);
 
   // ==================== #4 FIX: ROBUST AUTO-PLAY ====================
 

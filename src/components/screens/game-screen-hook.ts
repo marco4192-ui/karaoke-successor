@@ -38,6 +38,7 @@ import {
   applyLoudnessVolume,
   clearLoudnessGain,
   getSongLoudnessGainDb,
+  createSongMediaFallback,
 } from '@/lib/audio/loudness';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
@@ -185,7 +186,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     showCombo,
     autoFullscreen,
     masterVolume,
-    loudnessNormalization,
     lyricsSize,
     youtubeQuality,
     replayEnabled,
@@ -686,7 +686,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const [loudnessGain, setLoudnessGain] = useState<{ songId: string | null; gainDb: number }>({ songId: null, gainDb: 0 });
   const songLoudnessUrl = effectiveSong?.audioUrl;
   const songLoudnessId = effectiveSong?.id;
-  const loudnessGainDb = loudnessNormalization && loudnessGain.songId === songLoudnessId
+  // R58 ("keine Ausnahmen"): normalization is unconditional — no toggle gate.
+  const loudnessGainDb = loudnessGain.songId === songLoudnessId
     ? loudnessGain.gainDb
     : 0;
   useEffect(() => {
@@ -700,8 +701,12 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
       // the song change, but leaving pristine routing is defensive and free).
       clearVocalRemoval(el);
     }
-    if (!songLoudnessId || !songLoudnessUrl || !loudnessNormalization) return;
-    getSongLoudnessGainDb(songLoudnessId, songLoudnessUrl)
+    if (!songLoudnessId || !songLoudnessUrl) return;
+    getSongLoudnessGainDb(
+      songLoudnessId,
+      songLoudnessUrl,
+      createSongMediaFallback(effectiveSong, 'audio'),
+    )
       .then((gainDb) => {
         if (cancelled) return;
         setLoudnessGain({ songId: songLoudnessId, gainDb });
@@ -716,7 +721,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
         clearVocalRemoval(el);
       }
     };
-  }, [songLoudnessId, songLoudnessUrl, loudnessNormalization, audioRef]);
+  }, [songLoudnessId, songLoudnessUrl, audioRef]);
 
   // Apply master volume (+ loudness normalization) to audio/video elements.
   // songLoudnessId is a dependency so a freshly created <audio> element (new

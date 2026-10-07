@@ -71,9 +71,9 @@ function SettingsScreen() {
   });
   const [masterVolume, setMasterVolume] = useState(100);
   const [youtubeQuality, setYoutubeQuality] = useState('default');
-  // Loudness normalization toward the 89 dB ReplayGain reference (default on).
-  // Persisted immediately on toggle (same pattern as the YouTube quality buttons).
-  const [loudnessNormalization, setLoudnessNormalization] = useState(true);
+  // R58: the loudnessNormalization state is GONE — the 89 dB normalization is
+  // permanently active on every playback path (user directive: "alle Songs
+  // immer und zu jeder Zeit 89 Dezibel — keine Limitierung, keine Ausnahmen").
 
   // Webcam settings state
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>(() => loadWebcamConfig());
@@ -165,7 +165,6 @@ function SettingsScreen() {
     setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
     setMasterVolume(getNumber(StorageKeys.MASTER_VOLUME, 100));
     setYoutubeQuality(getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
-    setLoudnessNormalization(getBool(StorageKeys.LOUDNESS_NORMALIZATION, true));
 
     try {
       const storedTheme = getStoredTheme();
@@ -294,8 +293,6 @@ function SettingsScreen() {
           setMicSensitivity={setMicSensitivity}
           masterVolume={masterVolume}
           setMasterVolume={setMasterVolume}
-          loudnessNormalization={loudnessNormalization}
-          setLoudnessNormalization={setLoudnessNormalization}
           youtubeQuality={youtubeQuality}
           setYoutubeQuality={setYoutubeQuality}
           tx={tx}

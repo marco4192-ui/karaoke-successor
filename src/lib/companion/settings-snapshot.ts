@@ -31,7 +31,8 @@ const SNAPSHOT_KEYS: readonly string[] = [
   StorageKeys.PREVIEW_VOLUME,
   StorageKeys.MIC_SENSITIVITY,
   StorageKeys.YOUTUBE_QUALITY,
-  StorageKeys.LOUDNESS_NORMALIZATION,
+  // R58: LOUDNESS_NORMALIZATION removed from the snapshot — the 89 dB
+  // normalization is permanently active (no toggle anymore, nothing to sync).
 ];
 
 export interface DesktopSettingsSnapshot {

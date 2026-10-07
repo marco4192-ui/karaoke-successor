@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { AudioOutputSection } from '@/components/settings/audio-output-section';
 import { StorageKeys, setItem } from '@/lib/storage';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
@@ -13,9 +12,6 @@ interface GraphicSoundTabProps {
   setMicSensitivity: (_value: number) => void;
   masterVolume: number;
   setMasterVolume: (_value: number) => void;
-  /** Loudness normalization toward the 89 dB ReplayGain reference (default on) */
-  loudnessNormalization: boolean;
-  setLoudnessNormalization: (_value: boolean) => void;
   youtubeQuality: string;
   setYoutubeQuality: (_value: string) => void;
   tx: (_key: string) => string;
@@ -29,8 +25,6 @@ export function GraphicSoundTab({
   setMicSensitivity,
   masterVolume,
   setMasterVolume,
-  loudnessNormalization,
-  setLoudnessNormalization,
   youtubeQuality,
   setYoutubeQuality,
   tx,
@@ -76,21 +70,11 @@ export function GraphicSoundTab({
             <p className="text-xs text-white/40">{tx('settingsGraphicSound.masterVolumeDesc')}</p>
           </div>
 
-          {/* Loudness Normalization (89 dB ReplayGain reference) */}
-          <div className="flex items-center justify-between gap-4 p-2 bg-white/5 rounded-lg">
-            <div className="min-w-0">
-              <label className="text-sm font-medium">{tx('settings.loudnessNormalizationTitle')}</label>
-              <p className="text-xs text-white/40 mt-0.5">{tx('settings.loudnessNormalizationDesc')}</p>
-            </div>
-            <Switch
-              checked={loudnessNormalization}
-              onCheckedChange={(v) => {
-                setLoudnessNormalization(v);
-                setItem(StorageKeys.LOUDNESS_NORMALIZATION, String(v));
-                setHasChanges(true);
-              }}
-            />
-          </div>
+          {/* R58: The loudness-normalization toggle is GONE — per user directive
+              ("alle Songs immer und zu jeder Zeit 89 Dezibel — keine Limitierung,
+              keine Ausnahmen") the 89 dB normalization is permanently active on
+              every playback path. The i18n keys stay in the locale files for
+              potential future use. */}
 
           {/* Preview Volume */}
           <div className="space-y-3">
