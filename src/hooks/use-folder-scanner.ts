@@ -106,6 +106,27 @@ export function useFolderScanner(): UseFolderScannerReturn {
     // favorites references alive across a rescan instead of orphaning them.
     const preScanSongs = getAllSongs();
     const preScanIds = new Set(preScanSongs.map(s => s.id));
+    // R60: old library entries by id — lets a rescan carry the verified
+    // badge (metadataVerifiedAt) over into the freshly scanned song objects.
+    const preScanById = new Map(preScanSongs.map(s => [s.id, s] as const));
+    /**
+     * R60: carry the ✓-verified flag across a rescan. A rescan rebuilds the
+     * song objects from the txt headers, so runtime-only fields would be
+     * lost. The flag stays valid when the txt still carries the SAME
+     * genre/language/year the verify run confirmed — any change drops it.
+     */
+    const carryVerifiedAt = (
+      songId: string,
+      scanned: { genre?: string; language?: string; year?: number },
+    ): number | undefined => {
+      const prev = preScanById.get(songId);
+      if (!prev?.metadataVerifiedAt) return undefined;
+      return prev.genre === scanned.genre
+        && prev.language === scanned.language
+        && prev.year === scanned.year
+        ? prev.metadataVerifiedAt
+        : undefined;
+    };
     // `${baseFolder}/${relativeTxtPath}` → old song ID (songs WITH file info)
     const oldIdByPathKey = new Map<string, string>();
     // `title|artist|Math.round(duration)` → old song ID (fallback: songs WITHOUT file info)
@@ -313,6 +334,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
               backgroundFile: scanned.backgroundFile,
               videoFile: scanned.videoFile,
               dateAdded: Date.now(),
+              // R60: keep the verified badge across the rescan when the txt
+              // values are unchanged (see carryVerifiedAt above)
+              metadataVerifiedAt: carryVerifiedAt(songId, scanned),
             };
 
             songsToImport.push(song);
@@ -388,6 +412,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
                     mp3File: scanned.mp3File, coverFile: scanned.coverFile,
                     backgroundFile: scanned.backgroundFile, videoFile: scanned.videoFile,
                     dateAdded: Date.now(),
+                    // R60: verified-badge carry-over (same rule as the main scan)
+                    metadataVerifiedAt: carryVerifiedAt(songId, scanned),
                   });
                   additionalImported++;
                 } catch {

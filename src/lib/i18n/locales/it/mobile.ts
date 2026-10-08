@@ -446,6 +446,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'Lo schermo resta acceso',
   wakeLockUnsupported: 'Mantieni lo schermo acceso mentre canti',
+  wakeLockLowPower: 'Impossibile mantenere lo schermo acceso — disattiva la modalità a basso consumo',
   certSetupTitle: 'Configurazione una tantum: installa il certificato',
   certSetupWhy: 'Installa il certificato karaoke una volta su questo telefono — l\'app si connette poi senza avvisi del browser (anche dopo cambi di WiFi/IP).',
   certSetupShowSteps: 'Istruzioni passo per passo',

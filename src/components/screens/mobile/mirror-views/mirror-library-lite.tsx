@@ -6,6 +6,8 @@ import { getAvailableDecades, songMatchesEra, decadeShortLabel } from '@/lib/gam
 import { filterSongsByMotto } from '@/lib/game/motto-party';
 import type { MobileSong, GameMode, GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
 import { SongCoverTile } from './mirror-cover-tile';
+// R60/12: FilterChip jetzt geteilt (Bibliothek + Party-Setup) — vorher privat hier.
+import { FilterChip } from '../filter-chip';
 
 /** i18n with a hard fallback (mirror views load a lite dictionary — keys
  *  can be missing; then the German fallback keeps the UI usable). */
@@ -85,46 +87,6 @@ function isLikelyDuet(song: MobileSong): boolean {
   if (song.title && /\[\s*duet\s*\]/i.test(song.title)) return true;
   if (song.title && /\(\s*duet\s*\)/i.test(song.title)) return true;
   return false;
-}
-
-// ===================== R51/Bug5+6: Kompakter Filter-Chip =====================
-// Smartphones öffnen native <select>s ohnehin als Fullscreen-Overlay — breite
-// Dropdown-Felder sind reine Platzverschwendung. Der Chip zeigt nur das kurze
-// Label (inaktiv) bzw. den gewählten Wert (aktiv, cyan markiert); das
-// unsichtbare native Select darüber liefert das gewohnte Overlay-Verhalten.
-function FilterChip({
-  label, value, onChange, active, displayValue, children, testId,
-}: {
-  label: string;
-  value: string;
-  onChange: (_v: string) => void;
-  active: boolean;
-  /** Sichtbarer Text bei aktivem Filter (z. B. gewähltes Jahr/Dekade) */
-  displayValue?: string;
-  children: React.ReactNode;
-  testId?: string;
-}) {
-  return (
-    <div className="relative flex-1 min-w-[64px] basis-0" data-testid={testId}>
-      <div
-        aria-hidden="true"
-        className={'w-full flex items-center justify-center rounded-lg px-1 py-2 text-[11px] font-medium text-center border pointer-events-none transition-colors ' +
-          (active
-            ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-200'
-            : 'bg-white/5 border-white/10 text-white/60')}
-      >
-        <span className="truncate max-w-full">{active && displayValue ? displayValue : label}</span>
-      </div>
-      <select
-        value={value}
-        onChange={(e) => { haptic(); onChange(e.target.value); }}
-        aria-label={label}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-      >
-        {children}
-      </select>
-    </div>
-  );
 }
 
 // ===================== Mini-Cover-Kachel =====================

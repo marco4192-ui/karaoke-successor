@@ -35,7 +35,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
-import { updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { updateSong, updateSongs, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import {
@@ -61,7 +61,7 @@ import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { useMetadataRules } from '@/hooks/use-metadata-rules';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { applyPreviewVolume, clearLoudnessGain, createSongMediaFallback } from '@/lib/audio/loudness';
-import { ChevronDown, ChevronRight, Play, SkipForward, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, SkipForward, Square, BadgeCheck } from 'lucide-react';
 
 export type StudioScope = 'all' | 'selection';
 export type StudioMode = 'fill' | 'rule' | 'manual' | 'verify';
@@ -143,6 +143,9 @@ export function MetadataStudio({
   const [applyProgress, setApplyProgress] = useState<{ done: number; total: number } | null>(null);
   const [fileErrors, setFileErrors] = useState<number | null>(null);
   const [localAppliedInfo, setLocalAppliedInfo] = useState<number | null>(null);
+  // R60: how many songs the last verify run NEWLY marked as verified (✓ badge
+  // info line under the run summary; null = nothing marked / no run).
+  const [markedVerifiedInfo, setMarkedVerifiedInfo] = useState<number | null>(null);
   const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
   const warmupPromiseRef = useRef<Promise<void> | null>(null);
   const isMountedRef = useRef(true);
@@ -392,7 +395,9 @@ export function MetadataStudio({
     let done = 0;
     let applied = 0;
     for (const item of picks) {
-      const updates: Partial<Song> = { genre: manualPicks[item.songId] };
+      // R60: a manual genre correction is a HUMAN override — it invalidates
+      // the verified badge (the check verdict no longer matches the value).
+      const updates: Partial<Song> = { genre: manualPicks[item.songId], metadataVerifiedAt: undefined };
       try {
         if (writeTarget === 'txt') {
           const result = await persistSongMetadataToTxt(item.songId, updates);
@@ -479,17 +484,19 @@ export function MetadataStudio({
 
     for (const item of pending) {
       try {
+        // R60: manual metadata edits invalidate the verified badge.
+        const updates: Partial<Song> = { ...item.updates, metadataVerifiedAt: undefined };
         if (writeTarget === 'txt') {
-          const result = await persistSongMetadataToTxt(item.songId, item.updates);
+          const result = await persistSongMetadataToTxt(item.songId, updates);
           if (result.success) {
-            updateSong(item.songId, item.updates);
+            updateSong(item.songId, updates);
             applied++;
             appliedIds.push(item.songId);
           } else {
             failedFiles++;
           }
         } else {
-          updateSong(item.songId, item.updates);
+          updateSong(item.songId, updates);
           applied++;
           appliedIds.push(item.songId);
         }
@@ -574,6 +581,7 @@ export function MetadataStudio({
     setSuggestions([]);
     setFileErrors(null);
     setLocalAppliedInfo(null);
+    setMarkedVerifiedInfo(null);
     setStats(null);
     setProgress(null);
     setRunStartedAt(Date.now());
@@ -614,6 +622,22 @@ export function MetadataStudio({
       } else {
         setError(result.error || t('editor.aiBatchError'));
       }
+
+      // ── R60: mark verified songs (✓ badge in the editor library) ──
+      // Songs the verify run fully checked WITHOUT finding a discrepancy
+      // get metadataVerifiedAt — same persistence primitive as applied
+      // suggestions (updateSong → localStorage + IndexedDB; the flag is app
+      // state, not txt metadata, so no txt write happens here). Aborted runs
+      // mark nothing; per-song the client only reports fully checked songs
+      // (missing LLM/source verdicts keep their song out of verifiedOkIds).
+      if (mode === 'verify' && result.verifiedOkIds.length > 0) {
+        const now = Date.now();
+        updateSongs(result.verifiedOkIds.map(id => ({ songId: id, updates: { metadataVerifiedAt: now } })));
+        const previouslyVerified = new Set(runSubset.filter(s => s.metadataVerifiedAt).map(s => s.id));
+        const newlyVerified = result.verifiedOkIds.filter(id => !previouslyVerified.has(id)).length;
+        if (newlyVerified > 0) setMarkedVerifiedInfo(newlyVerified);
+        onApplied(); // refresh the editor grid so the badges appear immediately
+      }
     } catch (e) {
       if (!isMountedRef.current) return;
       if (controller.signal.aborted) return; // aborted fetch — not an error
@@ -626,7 +650,7 @@ export function MetadataStudio({
         setRunStartedAt(null);
       }
     }
-  }, [runSubset, mode, writeTarget, startLyricsWarmup, filterSuggestions, t]);
+  }, [runSubset, mode, writeTarget, startLyricsWarmup, filterSuggestions, t, onApplied]);
 
   /** User-facing Run click: guards an empty selection / nothing to fill or
    *  verify (mode-specific message, R59). */
@@ -660,6 +684,22 @@ export function MetadataStudio({
         : Number(value);
     const updates: Partial<Song> = { [field]: normalized };
 
+    // R60: applying a verify correction brings the song in line with the
+    // source — when this was the LAST open field of the song, it counts as
+    // verified now (badge). Only in verify mode; a fill apply never sets
+    // the flag (the other existing values were not checked). Riding in the
+    // same updates object keeps the flag exactly in sync with the write
+    // (txt failure ⇒ no value ⇒ no badge).
+    if (mode === 'verify') {
+      const row = suggestions.find(s => s.songId === songId);
+      const otherFieldOpen = field === 'genre'
+        ? !!(row && (row.suggestedLanguage || row.suggestedYear))
+        : field === 'language'
+          ? !!(row && (row.suggestedGenre || row.suggestedYear))
+          : !!(row && (row.suggestedGenre || row.suggestedLanguage));
+      if (!otherFieldOpen) updates.metadataVerifiedAt = Date.now();
+    }
+
     if (writeTarget === 'txt') {
       // TXT FIRST (1.a): the library is ONLY updated when the txt write
       // succeeded — no more "genre set but not in the txt".
@@ -691,7 +731,7 @@ export function MetadataStudio({
       });
     });
     onApplied();
-  }, [writeTarget, onApplied]);
+  }, [writeTarget, mode, suggestions, onApplied]);
 
   // ── Apply all (threshold-aware, respects fields + write target) ──
   const handleApplyAll = useCallback(async () => {
@@ -721,6 +761,18 @@ export function MetadataStudio({
         updates.year = s.suggestedYear;
       }
 
+      // R60 (verify mode): every open field of this song is being applied
+      // → the song now matches the sources and counts as verified (badge).
+      // Songs with below-threshold leftovers keep open rows and stay
+      // unverified until those are resolved.
+      if (mode === 'verify' && Object.keys(updates).length > 0) {
+        const allFieldsCovered =
+          (!s.suggestedGenre || updates.genre !== undefined) &&
+          (!s.suggestedLanguage || updates.language !== undefined) &&
+          (!s.suggestedYear || updates.year !== undefined);
+        if (allFieldsCovered) updates.metadataVerifiedAt = Date.now();
+      }
+
       if (Object.keys(updates).length > 0) {
         if (writeTarget === 'txt') {
           const fileOk = await persistSongMetadataToTxt(s.songId, updates);
@@ -748,7 +800,7 @@ export function MetadataStudio({
     setShowWarning(false);
     setStats(null);
     onApplied();
-  }, [suggestions, minConfidence, writeTarget, onApplied]);
+  }, [suggestions, minConfidence, mode, writeTarget, onApplied]);
 
   // ── Rule mode ──
   const handleRuleStart = useCallback(async () => {
@@ -764,9 +816,10 @@ export function MetadataStudio({
       let done = 0;
       for (const item of rulePlan) {
         // Field-aware: genre items write genre, language items language.
+        // R60: rule-based rewrites invalidate the verified badge.
         updateSong(item.songId, item.field === 'language'
-          ? { language: item.newLanguage }
-          : { genre: item.newGenre });
+          ? { language: item.newLanguage, metadataVerifiedAt: undefined }
+          : { genre: item.newGenre, metadataVerifiedAt: undefined });
         done++;
         if (!isMountedRef.current) return;
         setApplyProgress({ done, total: rulePlan.length });
@@ -1499,6 +1552,14 @@ export function MetadataStudio({
                 {t('editor.studioVerifyAllOk').replace('{n}', String(stats.noChange))}
               </p>
             </div>
+          )}
+          {/* R60: how many songs the run NEWLY marked as verified (badge in
+              the editor library) — explains where the ✓ badges came from. */}
+          {mode === 'verify' && markedVerifiedInfo !== null && !isLoading && (
+            <p className="text-[10px] text-emerald-300/80 flex items-center gap-1.5" data-testid="studio-verify-marked">
+              <BadgeCheck className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+              {t('editor.studioVerifyMarked').replace('{n}', String(markedVerifiedInfo))}
+            </p>
           )}
           {stats && stats.notAnalyzed > 0 && (
             <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-not-analyzed">

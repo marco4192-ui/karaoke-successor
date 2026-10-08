@@ -16,6 +16,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { useToast } from '@/hooks/use-toast';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { BadgeCheck } from 'lucide-react';
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
@@ -105,7 +106,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
   }, [t, toast]);
 
-  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete' | 'unverified' | 'verified'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
   const [showNewSongDialog, setShowNewSongDialog] = useState(false);
@@ -144,6 +145,15 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       case 'incomplete':
         filtered = filtered.filter(s => !s.genre || !s.language);
         break;
+      // R60: verified filter (user request) — "unverified" hides all checked
+      // songs so what still needs a verify run stays visible; "verified" is
+      // the inverse view.
+      case 'unverified':
+        filtered = filtered.filter(s => !s.metadataVerifiedAt);
+        break;
+      case 'verified':
+        filtered = filtered.filter(s => !!s.metadataVerifiedAt);
+        break;
     }
 
     // Apply search (fuzzy matching — tolerant of typos like "Quen" for "Queen")
@@ -161,6 +171,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const songsWithoutGenre = useMemo(() => songs.filter(s => !s.genre).length, [songs]);
   const songsWithoutLanguage = useMemo(() => songs.filter(s => !s.language).length, [songs]);
   const songsWithoutYear = useMemo(() => songs.filter(s => !s.year).length, [songs]);
+  // R60: verified counts for the badge filter (checked by the Metadata
+  // Studio's verify mode — see Song.metadataVerifiedAt)
+  const verifiedCount = useMemo(() => songs.filter(s => !!s.metadataVerifiedAt).length, [songs]);
+  const unverifiedCount = songs.length - verifiedCount;
 
   // ── Multi-select helpers ──
   const toggleSongSelection = useCallback((songId: string, e?: React.MouseEvent) => {
@@ -425,6 +439,52 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               >
                 📅 {t('editor.noYear')} ({songsWithoutYear})
               </Button>
+              {/* R60: verified filter (user request) — compact 3-state choice:
+                  All / Unverified (hides the checked songs — shows what still
+                  needs a verify run) / Verified. Component-local state, not
+                  persisted. */}
+              <div
+                className="flex items-center h-8 rounded-md border border-white/20 overflow-hidden"
+                role="group"
+                aria-label={t('editor.filterVerifiedVerified')}
+                data-testid="editor-filter-verified-group"
+              >
+                <button
+                  onClick={() => setFilterMode('all')}
+                  className={`h-full px-2 text-[11px] font-medium transition-colors ${
+                    filterMode === 'all'
+                      ? 'bg-white/15 text-white'
+                      : 'text-white/50 hover:bg-white/10 hover:text-white/80'
+                  }`}
+                  data-testid="editor-filter-verified-all"
+                >
+                  {t('editor.filterVerifiedAll')}
+                </button>
+                <button
+                  onClick={() => setFilterMode(filterMode === 'unverified' ? 'all' : 'unverified')}
+                  className={`h-full px-2 text-[11px] font-medium border-l border-white/10 transition-colors ${
+                    filterMode === 'unverified'
+                      ? 'bg-amber-500/25 text-amber-200'
+                      : 'text-white/50 hover:bg-white/10 hover:text-white/80'
+                  }`}
+                  title={t('editor.filterVerifiedUnverified')}
+                  data-testid="editor-filter-unverified"
+                >
+                  {t('editor.filterVerifiedUnverified')} ({unverifiedCount})
+                </button>
+                <button
+                  onClick={() => setFilterMode(filterMode === 'verified' ? 'all' : 'verified')}
+                  className={`h-full px-2 text-[11px] font-medium border-l border-white/10 transition-colors ${
+                    filterMode === 'verified'
+                      ? 'bg-emerald-500/25 text-emerald-200'
+                      : 'text-white/50 hover:bg-white/10 hover:text-white/80'
+                  }`}
+                  title={t('editor.filterVerifiedVerified')}
+                  data-testid="editor-filter-verified"
+                >
+                  {t('editor.filterVerifiedVerified')} ({verifiedCount})
+                </button>
+              </div>
             </div>
           </div>
 
@@ -527,6 +587,20 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <span className="text-lg opacity-50">🎵</span>
                   </div>
+                  {/* R60: verified badge — the Metadata Studio's Prüfen run (or
+                      an applied verify correction) confirmed this song's
+                      metadata. Subtle emerald chip on the cover's bottom-right
+                      corner (mirrors the duet badge style); title = date. */}
+                  {!!song.metadataVerifiedAt && (
+                    <span
+                      className="absolute bottom-1 right-1 z-10 flex items-center gap-0.5 rounded-full bg-emerald-500/85 px-1.5 py-[1px] text-[8px] font-bold text-white shadow-sm backdrop-blur-sm"
+                      title={`${t('editor.verifiedBadge')} — ${t('editor.verifiedBadgeTitle').replace('{date}', new Date(song.metadataVerifiedAt).toLocaleDateString())}`}
+                      data-testid={`editor-verified-badge-${song.id}`}
+                    >
+                      <BadgeCheck className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">{t('editor.verifiedBadge')}</span>
+                    </span>
+                  )}
                 </div>
                 {/* Song Info */}
                 <div className="p-1.5">

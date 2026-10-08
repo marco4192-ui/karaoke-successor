@@ -26,10 +26,19 @@ export interface MobilePitchData {
  * Handy). Mit matchProfileId werden nur Frames des Companions akzeptiert,
  * dessen Profil dem Spieler entspricht; ohne matchProfileId (Legacy-Modus,
  * z. B. CPTM-Zuseher) bleibt das alte first-wins-Verhalten.
+ *
+ * R60 — PERF-FIX (Ref-Modus): Mit dem dritten Parameter `pitchRef` fließen
+ * Frames DIREKT in den Ref — ohne setState, ohne Re-Render. Zuvor re-renderete
+ * jeder Pitch-Frame (30 Hz pro Handy) die komplette GameScreen-Baumgruppe;
+ * im Duell mit 2 Companion-Sängern (60 SetState/s) stockte das Spiel.
+ * Der Game-Loop liest den Ref ohnehin mit rAF-Takt — der Umweg über React
+ * State war reiner Overhead. `hasMobileClient` bleibt State (ändert sich
+ * selten). Ohne pitchRef gilt das Legacy-Verhalten (mobilePitch-State).
  */
 export function useMobilePitchPolling(
   song: { id: string } | null,
   matchProfileId?: string | null,
+  pitchRef?: React.MutableRefObject<MobilePitchData | null>,
 ): {
   mobilePitch: MobilePitchData | null;
   hasMobileClient: boolean;
@@ -45,6 +54,11 @@ export function useMobilePitchPolling(
   useEffect(() => {
     matchProfileIdRef.current = matchProfileId ?? null;
   }, [matchProfileId]);
+  // R60: neuester pitchRef-Stand (Effekt läuft nur auf Song-Wechsel — der
+  // Ref selbst kann sich zwischen Renders ändern, ohne den Effekt neu zu
+  // starten; useRef-Objekte des Callers sind idR. stabil).
+  const pitchRefStable = useRef(pitchRef);
+  pitchRefStable.current = pitchRef;
 
   useEffect(() => {
     if (!song) {
@@ -52,6 +66,7 @@ export function useMobilePitchPolling(
       setMobilePitch(null);
       setHasMobileClient(false);
       lastPitchRef.current = '';
+      if (pitchRefStable.current) pitchRefStable.current.current = null;
       return;
     }
 
@@ -60,6 +75,17 @@ export function useMobilePitchPolling(
     let pollInterval: ReturnType<typeof setInterval> | null = null;
     // Exponential backoff: when no companion is connected, poll less frequently
     let pollDelay = 100;
+
+    // R60: Frame-Zustellung — Ref-Modus schreibt direkt (kein Re-Render),
+    // Legacy-Modus updated State.
+    const applyFrame = (pitchData: MobilePitchData) => {
+      const target = pitchRefStable.current;
+      if (target) {
+        target.current = pitchData;
+        return;
+      }
+      setMobilePitch(pitchData);
+    };
 
     // ── Socket.IO pitch feed (preferred): instant pushes, no polling chain ──
     // Matching semantics: with matchProfileId ONLY frames from that profile
@@ -89,7 +115,7 @@ export function useMobilePitchPolling(
       });
       if (serialized !== lastPitchRef.current) {
         lastPitchRef.current = serialized;
-        setMobilePitch(pitchData);
+        applyFrame(pitchData);
       }
       setHasMobileClient(true);
     });
@@ -134,7 +160,7 @@ export function useMobilePitchPolling(
             const serialized = JSON.stringify(pitchData);
             if (serialized !== lastPitchRef.current) {
               lastPitchRef.current = serialized;
-              setMobilePitch(pitchData);
+              applyFrame(pitchData);
             }
             setHasMobileClient(true);
           }
@@ -170,5 +196,8 @@ export function useMobilePitchPolling(
     };
   }, [song]);
 
-  return { mobilePitch, hasMobileClient };
+  // R60: Im Ref-Modus ist mobilePitch-State immer null (kein Consumer sollte
+  // ihn dort noch lesen) — der Rückwert ist der aktuelle Ref-Stand für
+  // Debug/Compatibilität.
+  return { mobilePitch: pitchRef ? (pitchRef.current) : mobilePitch, hasMobileClient };
 }

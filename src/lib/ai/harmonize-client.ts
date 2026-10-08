@@ -99,6 +99,13 @@ export interface HarmonizeResult {
   success: boolean;
   suggestions: HarmonizeSuggestion[];
   stats: HarmonizeStats;
+  /** R60 (verify mode): songs whose EXISTING values were fully checked
+   *  (a verdict was available for every present field of the run's field
+   *  config) and had NO discrepancy. The studio marks these with
+   *  Song.metadataVerifiedAt (✓ badge + unverified filter). Songs with
+   *  suggestions, unanalyzed songs (missing LLM verdict) and post-abort
+   *  songs are never in here. Always empty in fill mode. */
+  verifiedOkIds: string[];
   error?: string;
 }
 
@@ -199,6 +206,28 @@ function verifyNeedsLlm(
   if (vf.language && song.language) return true;
   if (vf.genre && song.genre && !fact?.genre) return true;
   return false;
+}
+
+// ── R60: verify-cache validity ────────────────────────────────────────────
+
+/**
+ * Whether a cache entry may serve a VERIFY run for this song. Only entries
+ * written by a verify run count (they carry verifiedFields), and they must
+ * cover every field that is REQUESTED in this run and PRESENT on the song —
+ * a narrower earlier run (or a fill run, which checks nothing) must not
+ * answer this run's question. Fixes the latent R59 gap where a fill-cached
+ * song was served as "no change" in verify mode without ever being checked.
+ */
+function verifyCacheCovers(
+  entry: HarmonizeCacheEntry,
+  song: HarmonizeSong,
+  verifyFields: { genre: boolean; language: boolean; year: boolean },
+): boolean {
+  if (!entry.verifiedFields) return false; // fill-mode entry — never checked anything
+  if (verifyFields.genre && song.genre && !entry.verifiedFields.genre) return false;
+  if (verifyFields.language && song.language && !entry.verifiedFields.language) return false;
+  if (verifyFields.year && song.year != null && !entry.verifiedFields.year) return false;
+  return true;
 }
 
 // ── Factual lookup (R6) ──────────────────────────────────────────────────
@@ -427,15 +456,22 @@ export async function harmonizeSongs(
     notAnalyzed: 0,
   };
   const suggestions: HarmonizeSuggestion[] = [];
+  // R60: per-song verified classification (verify mode only)
+  const verifiedOkIds: string[] = [];
 
   if (inputSongs.length === 0) {
-    return { success: true, suggestions, stats };
+    return { success: true, suggestions, stats, verifiedOkIds };
   }
 
   // 1. Cache check (R2)
   const uncached: HarmonizeSong[] = [];
   for (const song of inputSongs) {
-    const cached = getCachedHarmonize(song);
+    let cached = getCachedHarmonize(song);
+    // R60: verify runs only accept cache entries that actually VERIFIED this
+    // song state — fill-mode entries (and narrower verify runs) are re-checked.
+    if (cached && options.verify && !verifyCacheCovers(cached, song, options.verifyFields ?? { genre: true, language: true, year: true })) {
+      cached = undefined;
+    }
     if (cached) {
       stats.fromCache++;
       const row = cacheEntryToRow(song, cached);
@@ -443,6 +479,8 @@ export async function harmonizeSongs(
         suggestions.push(row);
       } else {
         stats.noChange++;
+        // R60: cached verify-OK verdict → eligible for the ✓ badge
+        if (options.verify && cached.verifiedOk) verifiedOkIds.push(song.id);
       }
     } else {
       uncached.push(song);
@@ -622,6 +660,32 @@ export async function harmonizeSongs(
       if (!languageChanged) { suggestedLanguage = null; languageConfidence = 0; }
       if (!yearChanged) { suggestedYear = null; yearConfidence = 0; }
 
+      // ── R60: per-song verified classification (verify mode) ──
+      // Which fields had a CHECKABLE verdict in this run (regardless of the
+      // outcome): genre via database or analyzed LLM, language via LLM only,
+      // year via database only. Inactive fields and absent values are never
+      // "checked" — nothing was there to compare.
+      const genreChecked = options.verify
+        ? verifyFields.genre && !!song.genre && (!!fact?.genre || !!llm)
+        : false;
+      const languageChecked = options.verify
+        ? verifyFields.language && !!song.language && !!llm
+        : false;
+      const yearChecked = options.verify
+        ? verifyFields.year && song.year != null && fact?.year != null
+        : false;
+      // The song is "verified" when EVERY field it has a value for was
+      // checked and none of them deviated — the badge asserts the complete
+      // existing metadata, so a partially checked song never gets it (a
+      // missing source verdict means the check could not run).
+      const verifiedOk = options.verify && !llmVerdictMissing
+        ? (!song.genre || genreChecked)
+          && (!song.language || languageChecked)
+          && (song.year == null || yearChecked)
+          && !suggestedGenre && !suggestedLanguage && !suggestedYear
+        : false;
+      if (verifiedOk) verifiedOkIds.push(song.id);
+
       // 5. Persist to the cache (R2) — including the "no change" outcome
       //    so re-runs skip this song entirely. EXCEPT when an LLM verdict
       //    was needed but never arrived (R59 verify): a cache entry would
@@ -639,6 +703,16 @@ export async function harmonizeSongs(
           languageReason,
           yearReason,
           source,
+          // R60: verify runs record the verdict — later verify runs may
+          // serve this entry from the cache (incl. the ✓-badge eligibility).
+          ...(options.verify ? {
+            verifiedOk,
+            verifiedFields: {
+              genre: genreChecked,
+              language: languageChecked,
+              year: yearChecked,
+            },
+          } : {}),
         });
       }
 
@@ -675,6 +749,7 @@ export async function harmonizeSongs(
     success,
     suggestions,
     stats,
+    verifiedOkIds,
     error: stats.aiErrors > 0 || stats.notAnalyzed > 0
       ? (suggestions.length === 0
         ? 'AI analysis failed'

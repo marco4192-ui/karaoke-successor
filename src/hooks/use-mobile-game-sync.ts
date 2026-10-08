@@ -51,16 +51,26 @@ export function useMobileGameSync(
         // R43: unified helper — attaches the instance senderId and yields
         // with exponential backoff when another window owns the writer
         // election (no more 409 console spam every 2 s).
-        const res = await postGameState({
+        const gsPayload: Record<string, unknown> = {
           currentSong: { id: song.id, title: song.title, artist: song.artist },
           isPlaying: isPlayingRef.current,
           gameMode: gameModeRef.current,
           songEnded: songEndedRef.current,
           // #10 Broadcast tournament match ID for spectator voting
           tournamentMatchId: tournamentMatchIdRef.current || null,
-          // Current screen name for remote control UI
-          currentScreen: currentScreenRef.current || null,
-        });
+        };
+        // R60 — FLASH-FIX: currentScreen nur mitschicken, wenn der Aufrufer
+        // ihn EXPLIZIT übergibt. Zuvor postete dieser 2s-Sync hier immer
+        // `currentScreen: null`, während der Master-Sync (karaoke-app) den
+        // echten Screen (z. B. 'companion-singalong-game') postete — der
+        // Server-Merge ließ das null ÜBERSCHREIBEN, und nicht-steuernde
+        // Companions flippten alle 2s zwischen Spiel-Mirror und Menü
+        // („flackern"-Report). Ohne den Key bleibt der letzte echte Screen
+        // im Server-State erhalten.
+        if (currentScreenRef.current) {
+          gsPayload.currentScreen = currentScreenRef.current;
+        }
+        const res = await postGameState(gsPayload as Parameters<typeof postGameState>[0]);
         if (res === null || isGamestateWriterYielding()) {
           // Skipped (yielding to the winning window) or network error —
           // not a sync failure worth a red banner.

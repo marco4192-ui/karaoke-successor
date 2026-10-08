@@ -18,7 +18,7 @@ import {
   useSongEnergy,
 } from '@/components/game/visual-effects';
 import { useRemoteControl } from '@/hooks/use-remote-control';
-import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
+import { useMobilePitchPolling, type MobilePitchData } from '@/hooks/use-mobile-pitch-polling';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useNativeAudio } from '@/hooks/use-native-audio';
@@ -239,13 +239,16 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // Pitch-Frames desjenigen Handys akzeptiert, dessen Profil P1 ist (bei
   // mehreren verbundenen Companions griff „first wins" sonst das falsche
   // Mikro). Ohne P1-Companion bleibt der Parameter null (Legacy-Verhalten).
-  const { mobilePitch } = useMobilePitchPolling(
+  // R60 — PERF-FIX: Pitch läuft im REF-Modus direkt in den Ref — ohne
+  // setState/Re-Render pro Frame (30 Hz × 2 Companion-Sänger im Duell
+  // renderten die GameScreen-Baumgruppe vorher bis zu 60×/s neu → Stocken).
+  // Der Game-Loop liest mobilePitchRef.current ohnehin mit rAF-Takt.
+  const mobilePitchRef = useRef<MobilePitchData | null>(null);
+  useMobilePitchPolling(
     song,
     p1Companion ? (gameState.players?.[0]?.id ?? null) : null,
+    mobilePitchRef,
   );
-  // R51/Bug11 — Companion-Pitch-Ref für den Game-Loop (P1-Companion-Modus).
-  const mobilePitchRef = useRef(mobilePitch);
-  mobilePitchRef.current = mobilePitch;
 
   // YouTube + Ad handling - URL extraction, ad callbacks, countdown
   const {
@@ -442,17 +445,20 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // Socket-Feed-Singleton (unabhängige Listener); der HTTP-Watchdog läuft
   // nur, solange P2 nicht selbst streamt.
   const p2CompanionActive = isDuetMode && gameState.deviceAssignment?.p2Companion !== false;
-  const { mobilePitch: p2MobilePitch } = useMobilePitchPolling(
+  // R60 — PERF-FIX: Auch P2s Stream im Ref-Modus (siehe P1 oben).
+  const p2MobilePitchRef = useRef<MobilePitchData | null>(null);
+  useMobilePitchPolling(
     song,
     p2CompanionActive ? (gameState.players?.[1]?.id ?? null) : null,
+    p2MobilePitchRef,
   );
   const { p2Volume, setP2Volume } = useDuetP2Pitch({
     isDuetMode,
     song,
     // R52 — P2s EIGENER Companion-Stream (auf P2s Profil gematcht), nicht
-    // mehr der P1-Stream. Fällt auf null zurück, wenn P2 nicht (oder nicht
-    // über die Companion-App) singt → P2 bleibt beim Desktop-Mikro.
-    mobilePitch: p2CompanionActive ? p2MobilePitch : null,
+    // mehr der P1-Stream. Null, wenn P2 nicht über die Companion-App singt
+    // → P2 bleibt beim Desktop-Mikro. R60: als Ref statt Value.
+    mobilePitchRef: p2CompanionActive ? p2MobilePitchRef : null,
     setP2DetectedPitch,
     difficulty: gameState.difficulty,
     // R39/P5: explizite Gerät-Auswahl — singt P2 laut Queue-Item/Start-Modal

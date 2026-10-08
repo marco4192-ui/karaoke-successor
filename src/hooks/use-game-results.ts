@@ -3,6 +3,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import type { Song, GameMode, GameResult } from '@/types/game';
 import { generateGameResults } from '@/lib/game/game-results-generator';
+import { useGameStore } from '@/lib/game/store';
 
 // ── Types ──
 
@@ -87,8 +88,17 @@ export function useGameResults(options: UseGameResultsOptions) {
     setResults(results);
 
     // Send results to mobile clients for social features
+    // R60/4 — erweiterte Felder (playerName/Color/Avatar, difficulty,
+    // gameMode) für die Companion-Share-Features (📸 ScoreCard + 🎬
+    // Video-Short direkt auf dem Handy). Alle Felder sind optional im
+    // GameResults-Typ → ältere Clients/Server bleiben kompatibel.
     const activePlayer = playersRef.current[0];
     const p1Accuracy = results.players[0]?.accuracy ?? 0;
+    // Spielerprofil (Name/Farbe/Avatar) + Schwierigkeit aus dem Store — die
+    // Scoring-Snapshots hier tragen keine Profil-Daten. getState() reicht:
+    // generateResults läuft exakt einmal am Song-Ende (vor resetGame).
+    const storePlayers = useGameStore.getState().gameState.players;
+    const p1Profile = storePlayers.find((p) => p.id === activePlayer?.id) ?? storePlayers[0];
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,6 +113,12 @@ export function useGameResults(options: UseGameResultsOptions) {
           maxCombo: activePlayer?.maxCombo,
           rating: results.players[0]?.rating,
           playedAt: results.playedAt,
+          // R60/4: Companion-Share-Felder (alle optional, abwärtskompatibel)
+          playerName: p1Profile?.name,
+          playerColor: p1Profile?.color,
+          playerAvatar: p1Profile?.avatar,
+          difficulty: useGameStore.getState().gameState.difficulty,
+          gameMode,
         },
       }),
     }).catch(() => {});

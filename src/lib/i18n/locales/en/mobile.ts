@@ -487,6 +487,7 @@ export const mobileTranslations = {
     // when the display goes to standby; the lock prevents exactly that
     wakeLockBadge: 'Screen stays on',
     wakeLockUnsupported: 'Keep the display on while singing',
+    wakeLockLowPower: 'Screen keep-awake blocked — disable Low Power Mode',
     // R54 — one-time certificate setup (local root CA): after installing
     // the CA the browser trusts the HTTPS connection without any warning
     certSetupTitle: 'One-time setup: install certificate',

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { PhoneIcon } from '@/components/settings/settings-icons';
 import { buildCompanionUrl, detectLocalIP, updateCompanionHttpsInfo } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -517,6 +518,12 @@ export function MobileDeviceMicrophoneSection() {
   }, []);
 
   // R55: URL + QR neu berechnen, wenn der HTTPS-Cache sich ändert (Nonce).
+  // R60-D: Zusätzlich (und allgemeiner) den REAKTIVEN Cache abonnieren —
+  // der httpsNonce springt nur bei Aktivierung/Entfernung innerhalb dieser
+  // Settings-Ansicht an, NICHT aber bei der Boot-Hydration (App-Start mit
+  // gefülltem Server-Cache). useCompanionHttpsInfo deckt BEIDES ab.
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit (zusammen mit httpsNonce)
   const mobileUrl = localIP ? buildCompanionUrl(localIP) : '/mobile';
   const qrCodeSrc = useQRCode(
     localIP ? buildCompanionUrl(localIP) : '',

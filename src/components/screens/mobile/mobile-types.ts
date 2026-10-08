@@ -154,6 +154,11 @@ interface SingalongTurn {
   // ── CPTM companion mirror context (optional — sent by the desktop) ──
   currentPlayerName?: string;
   currentPlayerColor?: string;
+  // R60: Profil-ID des AKTUELL singenden Spielers. Während der Blink-Warnung
+  // (3-2-1 vor dem Segmentwechsel) ist profileId null — ohne currentPlayerId
+  // wusste das Handy des aktuellen Sängers nicht, dass es weiter singt
+  // (Mikro/Display-Logik flackerte in jedem Blink-Fenster).
+  currentPlayerId?: string | null;
   nextPlayerName?: string;
   players?: CptmMirrorPlayerInfo[];
 }

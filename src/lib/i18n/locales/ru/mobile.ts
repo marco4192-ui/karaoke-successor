@@ -447,6 +447,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'Экран не гаснет',
   wakeLockUnsupported: 'Не выключать экран во время пения',
+  wakeLockLowPower: 'Не удаётся удерживать экран включённым — отключите режим энергосбережения',
   certSetupTitle: 'Первоначальная настройка: установите сертификат',
   certSetupWhy: 'Установите сертификат караоке один раз на этот телефон — приложение будет подключаться без предупреждений браузера (даже после смены WiFi/IP).',
   certSetupShowSteps: 'Пошаговая инструкция',

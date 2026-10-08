@@ -5,6 +5,9 @@ import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { decadeShortLabel } from '@/lib/game/era-filter';
 import { Search, X } from 'lucide-react';
+// R60/12: Geteilter Filter-Chip (wie die Companion-Bibliothek) statt
+// gestapelter Vollbreite-Dropdowns.
+import { FilterChip } from '../filter-chip';
 
 // ===================== Props =====================
 
@@ -1211,79 +1214,89 @@ export function MirrorPartySetupLite({ gameState, onSendDesktopCommand, availabl
                 )}
               </div>
             </div>
-            <div>
-              <label className="text-[11px] text-white/40 mb-1 block px-1">
-                {tOr(t, 'unifiedSetup.genre', 'Genre')}
-              </label>
-              <select
+            {/* R60/12 — Kompakte Filter-Chip-Reihe statt vier gestapelter
+                Vollbreite-<select>s: GLEICHE Darstellung wie die Companion-
+                Bibliothek (mobile.filter*Short-Labels, aktiver Wert cyan,
+                natives Select-Overlay unsichtbar darüber). Filter-Logik-Zeile
+                und Suche bleiben unverändert; alle State-Variablen +
+                markLocalEdit() + Sync-Guards greifen weiter (FilterChip ruft
+                nur onChange → hier markLocalEdit + setState). */}
+            <div className="flex flex-wrap gap-1.5" data-testid="mirror-party-filter-row">
+              <FilterChip
+                label={tOr(t, 'mobile.filterGenreShort', 'Genre')}
                 value={filterGenre}
-                onChange={(e) => { haptic(); markLocalEdit(); setFilterGenre(e.target.value); }}
-                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
-                  (filterGenre !== 'all'
-                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
-                    : 'bg-white/5 border-white/10')}
+                onChange={(v) => { markLocalEdit(); setFilterGenre(v); }}
+                active={filterGenre !== 'all'}
+                displayValue={filterGenre}
+                testId="mirror-party-filter-genre"
               >
-                <option value="all">{tOr(t, 'unifiedSetup.allGenres', 'Alle Genres')}</option>
+                <option value="all" className="bg-[#1a1a2e] text-white">{tOr(t, 'unifiedSetup.allGenres', 'Alle Genres')}</option>
                 {(setup?.availableGenres ?? []).map((g) => (
-                  <option key={g} value={g}>{g}</option>
+                  <option key={g} value={g} className="bg-[#1a1a2e] text-white">{g}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[11px] text-white/40 mb-1 block px-1">
-                {tOr(t, 'unifiedSetup.language', 'Sprache')}
-              </label>
-              <select
+              </FilterChip>
+              <FilterChip
+                label={tOr(t, 'mobile.filterLanguageShort', 'Lang.')}
                 value={filterLanguage}
-                onChange={(e) => { haptic(); markLocalEdit(); setFilterLanguage(e.target.value); }}
-                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
-                  (filterLanguage !== 'all'
-                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
-                    : 'bg-white/5 border-white/10')}
+                onChange={(v) => { markLocalEdit(); setFilterLanguage(v); }}
+                active={filterLanguage !== 'all'}
+                displayValue={filterLanguage}
+                testId="mirror-party-filter-language"
               >
-                <option value="all">{tOr(t, 'unifiedSetup.allLanguages', 'Alle Sprachen')}</option>
+                <option value="all" className="bg-[#1a1a2e] text-white">{tOr(t, 'unifiedSetup.allLanguages', 'Alle Sprachen')}</option>
                 {(setup?.availableLanguages ?? []).map((l) => (
-                  <option key={l} value={l}>{l}</option>
+                  <option key={l} value={l} className="bg-[#1a1a2e] text-white">{l}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[11px] text-white/40 mb-1 block px-1">
-                {tOr(t, 'unifiedSetup.releaseYear', 'Erscheinungsjahr')}
-              </label>
-              <select
+              </FilterChip>
+              <FilterChip
+                label={tOr(t, 'mobile.filterYearShort', 'Jahr')}
                 value={filterReleaseYear}
-                onChange={(e) => { haptic(); markLocalEdit(); setFilterReleaseYear(e.target.value); }}
-                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
-                  (filterReleaseYear !== 'all'
-                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
-                    : 'bg-white/5 border-white/10')}
+                onChange={(v) => { markLocalEdit(); setFilterReleaseYear(v); }}
+                active={filterReleaseYear !== 'all'}
+                displayValue={filterReleaseYear}
+                testId="mirror-party-filter-year"
               >
-                <option value="all">{tOr(t, 'unifiedSetup.allYears', 'Alle Jahre')}</option>
+                <option value="all" className="bg-[#1a1a2e] text-white">{tOr(t, 'unifiedSetup.allYears', 'Alle Jahre')}</option>
                 {(setup?.availableYears ?? []).map((y) => (
-                  <option key={y} value={String(y)}>{y}</option>
+                  <option key={y} value={String(y)} className="bg-[#1a1a2e] text-white">{y}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[11px] text-white/40 mb-1 block px-1">
-                {tOr(t, 'unifiedSetup.releaseEra', 'Ära')}
-              </label>
-              <select
+              </FilterChip>
+              <FilterChip
+                label={tOr(t, 'mobile.filterEraShort', 'Ära')}
                 value={filterEra}
-                onChange={(e) => { haptic(); markLocalEdit(); setFilterEra(e.target.value); }}
-                className={'w-full appearance-none rounded-xl px-3 py-2.5 text-sm text-white border ' +
-                  (filterEra !== 'all'
-                    ? 'border-cyan-400/70 bg-cyan-500/10 ring-1 ring-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]'
-                    : 'bg-white/5 border-white/10')}
+                onChange={(v) => { markLocalEdit(); setFilterEra(v); }}
+                active={filterEra !== 'all'}
+                displayValue={filterEra !== 'all'
+                  ? tOr(t, 'library.eraOption', '{decade}s').replace('{decade}', decadeShortLabel(Number(filterEra)))
+                  : undefined}
+                testId="mirror-party-filter-era"
               >
-                <option value="all">{tOr(t, 'unifiedSetup.allEras', 'Alle')}</option>
+                <option value="all" className="bg-[#1a1a2e] text-white">{tOr(t, 'unifiedSetup.allEras', 'Alle')}</option>
                 {(setup?.availableDecades ?? []).map((d) => (
-                  <option key={d} value={d}>
+                  <option key={d} value={d} className="bg-[#1a1a2e] text-white">
                     {tOr(t, 'library.eraOption', '{decade}s').replace('{decade}', decadeShortLabel(Number(d)))}
                   </option>
                 ))}
-              </select>
+              </FilterChip>
+              {/* Reset — erscheint nur, wenn ein Filter aktiv ist (wie Bibliothek) */}
+              {(filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all' || filterEra !== 'all') && (
+                <button
+                  onClick={() => {
+                    haptic();
+                    markLocalEdit();
+                    setFilterGenre('all');
+                    setFilterLanguage('all');
+                    setFilterReleaseYear('all');
+                    setFilterEra('all');
+                  }}
+                  className="flex-1 min-w-[56px] basis-0 flex items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium bg-white/5 border border-white/10 text-white/50 active:scale-[0.98] transition-all"
+                  aria-label={tOr(t, 'mobile.filterResetShort', 'Zurücksetzen')}
+                  data-testid="mirror-party-filter-reset"
+                >
+                  <span>{'\u2715'}</span>
+                  <span className="truncate">{tOr(t, 'mobile.filterResetShort', 'Reset')}</span>
+                </button>
+              )}
             </div>
             <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
               <span className="text-xs text-white/60">{tOr(t, 'unifiedSetup.filterLogic', 'Filter-Logik')}</span>

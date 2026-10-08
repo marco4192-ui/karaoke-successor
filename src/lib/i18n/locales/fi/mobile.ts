@@ -446,6 +446,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'Näyttö pysyy päällä',
   wakeLockUnsupported: 'Pidä näyttö päällä laulaessa',
+  wakeLockLowPower: 'Näytön pitäminen päällä estetty — poista virransäästötila käytöstä',
   certSetupTitle: 'Kertaluontoinen asennus: asenna varmenne',
   certSetupWhy: 'Asenna karaokevarmenne kerran tähän puhelimeen — sovellus yhdistää sen jälkeen ilman selaimen varoitusta (myös WiFi/IP-osoitteen vaihtumisen jälkeen).',
   certSetupShowSteps: 'Vaiheittaiset ohjeet',

@@ -5,6 +5,7 @@ import type { GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-t
 import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { StorageKeys } from '@/lib/storage';
 import { SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
@@ -892,6 +893,13 @@ function MobileSettings({ t }: { t: (_key: string) => string }) {
     });
     return () => { isMounted = false; };
   }, []);
+
+  // R60-D: Reaktiver HTTPS-Info-Cache — im Companion füllt er sich über die
+  // Selbst-Erkennung in buildCompanionUrl (eigenes https:// + DNS-Host =
+  // DuckDNS-Domain), auf dem Desktop über den Boot-Fetch. Der Re-Render
+  // aktualisiert QR + URL-Anzeige + Copy-Button-Inhalt synchron.
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit
 
   const companionUrl = localIP ? buildCompanionUrl(localIP) : '';
   const qrCodeSrc = useQRCode(companionUrl, 220);

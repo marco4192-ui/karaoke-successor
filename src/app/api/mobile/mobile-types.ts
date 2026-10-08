@@ -153,6 +153,16 @@ export interface GameResults {
   maxCombo: number;
   rating: string;
   playedAt: number;
+  // ── R60/4: Companion-Share-Felder (optional, abwärtskompatibel) — werden
+  // vom Desktop (use-game-results.ts) mitgeschickt, damit das Handy die
+  // 📸 ScoreCard / 🎬 Video-Short direkt nach dem Song teilen kann, ohne
+  // eigene Profil-Informationen zu raten. Fallbacks siehe mirror-results-lite.
+  playerName?: string;
+  playerColor?: string;
+  /** Avatar als data-URL (oder undefined) */
+  playerAvatar?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  gameMode?: string;
 }
 
 export interface SongSummary {

@@ -71,10 +71,27 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
 
-  // General POST rate limit (300/min across all POST actions).
-  // Per-action limits (pitch: 600/min, others: 120/min) are enforced inside
-  // post-handlers.ts — we cannot inspect the JSON body here without consuming it.
-  if (!checkRateLimit(`${ip}:post`, 300)) {
+  // R60 — PERF-FIX: Pitch-Familie bekommt einen EIGENEN, großzügigen Bucket.
+  // Zuvor galt die generelle 300/min-Kappe über ALLE POST-Aktionen: Der
+  // batch_pitch-HTTP-Fallback eines Handys lief mit ~6 req/s = 360/min schon
+  // allein darüber hinaus → 429 → der Client flog in den Single-Pitch-Fallback
+  // (20 req/s = 1200/min) → fast alles 429 → Pitch-Linie flach, Spiel stockte.
+  // Der Body wird per request.clone() gepeekt (nicht konsumiert — der echte
+  // Parse bleibt in handlePostRequest). 1800/min = 30 req/s deckt den
+  // Single-Fallback plus Reserve ab; alle anderen Aktionen bleiben bei 300/min.
+  let postType = '';
+  try {
+    const cloned = request.clone();
+    const peeked = await cloned.json();
+    postType = typeof peeked?.type === 'string' ? peeked.type : '';
+  } catch {
+    // Malformed body — der Handler meldet den Fehler ordentlich zurück.
+  }
+  const isPitchFamily = postType === 'pitch' || postType === 'batch_pitch';
+  const bucket = isPitchFamily ? `${ip}:post:pitch` : `${ip}:post`;
+  const limit = isPitchFamily ? 1800 : 300;
+
+  if (!checkRateLimit(bucket, limit)) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded.' },
       { status: 429 },

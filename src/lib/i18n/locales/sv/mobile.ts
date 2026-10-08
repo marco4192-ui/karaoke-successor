@@ -447,6 +447,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'Skärmen förblir tänd',
   wakeLockUnsupported: 'Håll skärmen tänd medan du sjunger',
+  wakeLockLowPower: 'Kan inte hålla skärmen tänd — stäng av lågenergiläget',
   certSetupTitle: 'Engångsinställning: installera certifikatet',
   certSetupWhy: 'Installera karaokecertifikatet en gång på den här telefonen — appen ansluter sedan utan webbläsarvarning (även efter WiFi/IP-byten).',
   certSetupShowSteps: 'Steg-för-steg-guide',

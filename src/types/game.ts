@@ -124,6 +124,12 @@ export interface Song {
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
   lastPlayed?: number;
   dateAdded?: number;
+  /** R60: epoch ms when the Metadata Studio's verify run (R59 "Prüfen") last
+   *  confirmed the song's genre/language/year — or when a verify correction
+   *  was applied. Drives the ✓ badge + the unverified filter in the editor
+   *  library. Manual genre/language/year edits clear it (see upsertSong and
+   *  the studio apply paths). */
+  metadataVerifiedAt?: number;
   storageFolder?: string; // Tauri: folder name in app data for persistent storage
   folderPath?: string; // Relative folder path from base songs folder (e.g., "Lieblingslieder/Pop")
   baseFolder?: string; // Tauri: absolute path to base songs folder (e.g., "/home/user/karaoke-songs")

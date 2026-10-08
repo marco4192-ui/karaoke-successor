@@ -21,6 +21,8 @@ import { Radio, Award } from 'lucide-react';
 import type { Screen } from '@/types/screens';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 import {
   getActiveDailySlot,
   getActiveWeeklySlot,
@@ -318,7 +320,16 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
     return () => clearInterval(id);
   }, []);
 
-  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '', 160);
+  // R60-D: Reaktiver HTTPS-Info-Cache — die Version ändert sich, sobald die
+  // Boot-Hydration (initCompanionHttpsInfo) oder eine DuckDNS-Aktivierung/
+  // Entfernung den Cache füllt. Der Re-Render lässt buildCompanionUrl unten
+  // (und die URL-Anzeige unten im Companion-Text) synchron den frischen
+  // Cache lesen → der QR springt innerhalb eines Render-Zyklus um.
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit (Muster wie httpsNonce in mobile-device-section)
+
+  const companionUrl = localIP ? buildCompanionUrl(localIP) : '';
+  const qrCodeSrc = useQRCode(companionUrl, 160);
 
   // Get song count from library — recomputed every render so it stays
   // in sync when songs are added/removed.  getAllSongs() is O(1) when
@@ -600,7 +611,12 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
                 <p>{t('homeScreen.wifiStep1')}</p>
                 <p>{t('homeScreen.wifiStep2')}</p>
                 <p>{t('homeScreen.wifiStep3')}</p>
-                <p className="font-mono mt-2 break-all text-orange-400/70">{buildCompanionUrl(localIP)}</p>
+                <p className="font-mono mt-2 break-all text-orange-400/70">{companionUrl}</p>
+                {/* R60-D: WLAN- + Zertifikats-Hinweis unter jedem Companion-QR
+                    (Muster wie in Settings/Party-Setup) — inkl. Live-Umschalten
+                    auf die grüne „echtes Zertifikat"-Bestätigung bei aktivem
+                    DuckDNS/LE-Zertifikat. */}
+                <QrWlanHint />
               </div>
             </div>
           ) : (

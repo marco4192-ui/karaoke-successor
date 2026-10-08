@@ -25,6 +25,10 @@ export interface CptmCompanionPlayerInfo {
 export interface CptmTurnContext {
   currentPlayerName?: string;
   currentPlayerColor?: string;
+  /** R60: Profil-ID des aktuell singenden Spielers. Während der Blink-Warnung
+   * (profileId null) weiß das Handy des Sängers sonst nicht, dass es weiter
+   * singt — Mikro-/Wake-Lock-Logik flackerte in jedem Blink-Fenster. */
+  currentPlayerId?: string;
   nextPlayerName?: string;
   players?: CptmCompanionPlayerInfo[];
 }
@@ -136,6 +140,17 @@ export function useCptmTurnManagement(
     const players = playersRef.current;
     const segCount = initialSegments.length;
 
+    // R60 — CRASH-FIX: Leeres Spieler-Roster (z. B. Start über die Companion-
+    // Song-Vote vor dem Setup-Abschluss) erzeugte bisher baseRepeats=Infinity /
+    // NaN-Pools und Schedule-Einträge auf playerIndex 0 — der erste Segment-
+    // Wechsel crashte mit „Cannot read properties of undefined (reading
+    // 'segmentsSung')". Ohne Spieler: leerer Schedule, Game-Loop idled sicher.
+    if (players.length === 0) {
+      scheduleRef.current = [];
+      onUpdateGame(players, initialSegments);
+      return;
+    }
+
     if (segCount <= 1) {
       const randomIdx = Math.floor(Math.random() * players.length);
       scheduleRef.current = [{ segmentIndex: 0, playerIndex: randomIdx }];
@@ -243,11 +258,15 @@ export function useCptmTurnManagement(
       if (nextEntry) {
         const nextPlayer = playersRef.current[nextEntry.playerIndex];
         if (nextPlayer) {
+          const currentCtx = {
+            currentPlayerId: playersRef.current[currentPlayerIndexRef.current]?.id,
+            currentPlayerName: playersRef.current[currentPlayerIndexRef.current]?.name,
+            currentPlayerColor: playersRef.current[currentPlayerIndexRef.current]?.color,
+          };
           // Send blink warning with countdown starting at blinkLeadTime
           blinkCountdownValueRef.current = blinkLeadTime;
           sendCompanionTurnSignal(null, nextPlayer.id, blinkLeadTime, true, {
-            currentPlayerName: playersRef.current[currentPlayerIndexRef.current]?.name,
-            currentPlayerColor: playersRef.current[currentPlayerIndexRef.current]?.color,
+            ...currentCtx,
             nextPlayerName: nextPlayer.name,
             players: buildCptmPlayerInfo(playersRef.current),
           });
@@ -259,8 +278,7 @@ export function useCptmTurnManagement(
             const remaining = blinkCountdownValueRef.current;
             if (remaining > 0) {
               sendCompanionTurnSignal(null, nextPlayer.id, remaining, true, {
-                currentPlayerName: playersRef.current[currentPlayerIndexRef.current]?.name,
-                currentPlayerColor: playersRef.current[currentPlayerIndexRef.current]?.color,
+                ...currentCtx,
                 nextPlayerName: nextPlayer.name,
                 players: buildCptmPlayerInfo(playersRef.current),
               });
@@ -292,7 +310,9 @@ export function useCptmTurnManagement(
         const nextEntry = schedule[nextSegIdx];
 
         // Count segment as sung for the current player
-        if (currentEntry) {
+        // R60 — CRASH-FIX: Roster-Eintrag absichern (leeres/partielles Roster
+        // darf niemals den Segment-Wechsel-Effekt zum Reißen bringen).
+        if (currentEntry && playersRef.current[currentEntry.playerIndex]) {
           playersRef.current[currentEntry.playerIndex].segmentsSung++;
         }
 
@@ -314,7 +334,7 @@ export function useCptmTurnManagement(
       } else {
         // Song finished — count the last segment for the current player
         const lastEntry = schedule[currentSegmentIndex];
-        if (lastEntry) {
+        if (lastEntry && playersRef.current[lastEntry.playerIndex]) {
           playersRef.current[lastEntry.playerIndex].segmentsSung++;
         }
         setIsPlaying(false);

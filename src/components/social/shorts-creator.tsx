@@ -24,9 +24,14 @@ interface ShortsCreatorProps {
    *    (R44/5.6) and hides all configuration controls.
    */
   compact?: boolean;
+  /** R60/4: Companion-Share-Overlay — hides the „📲 Mobile Camera” option
+   *  (that button asks the DESKTOP to request a companion camera, which is
+   *  meaningless ON the companion itself; its local camera is the „Use
+   *  Device Camera” button). Desktop default: shown. */
+  hideMobileCameraOption?: boolean;
 }
 
-export function ShortsCreator({ song, score, compact }: ShortsCreatorProps) {
+export function ShortsCreator({ song, score, compact, hideMobileCameraOption }: ShortsCreatorProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -313,6 +318,7 @@ export function ShortsCreator({ song, score, compact }: ShortsCreatorProps) {
             onStopCamera={stopCamera}
             onSetCameraPosition={setCameraPosition}
             onSetMobileCameraConnected={setMobileCameraConnected}
+            hideMobileCameraOption={hideMobileCameraOption}
             compact={compact}
           />
           <DurationSlider

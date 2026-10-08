@@ -487,6 +487,7 @@ export const mobileTranslations = {
   // genau das (☀️-Badge in der Mic-Status-Karte)
   wakeLockBadge: 'Bildschirm bleibt an',
   wakeLockUnsupported: 'Display während des Gesangs anlassen',
+  wakeLockLowPower: 'Display-Schutz blockiert — Energiesparmodus deaktivieren',
   // R54 — Einmalige Zertifikats-Einrichtung (lokale Root-CA): Nach der
   // Installation vertraut der Browser der HTTPS-Verbindung ohne Warnung
   certSetupTitle: 'Einmalige Einrichtung: Zertifikat installieren',

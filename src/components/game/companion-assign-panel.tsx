@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { PlayerProfile } from '@/types/game';
 import type { CompanionClientInfo } from '@/hooks/use-companion-connections';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useTranslation } from '@/lib/i18n/translations';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 
 /**
  * R34 — Companion-Gerät zuweisen (User-Report: "Desktop erkennt nicht, ob ein
@@ -40,6 +42,12 @@ export function CompanionAssignPanel({
     }).catch(() => { /* offline — QR stays hidden */ });
     return () => { cancelled = true; };
   }, []);
+
+  // R60-D: Reaktiver HTTPS-Info-Cache — Boot-Hydration/DuckDNS-Änderungen
+  // triggern den Re-Render, der Profil-QR unten baut sich damit automatisch
+  // auf die DuckDNS-Domain um (statt auf der IP-URL stehen zu bleiben).
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit
 
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, 3000, playerProfile.id) : '', 140);
 
@@ -147,19 +155,23 @@ export function CompanionAssignPanel({
 
       {/* ── Per-player profile QR ── */}
       {localIP && (
-        <div className="pt-2.5 border-t border-white/10 flex items-center gap-3">
-          {qrCodeSrc ? (
-            <img
-              src={qrCodeSrc}
-              alt={t('unifiedSetup.qrCompanionTitle')}
-              className="w-[84px] h-[84px] rounded-lg bg-white p-1 shadow-lg shrink-0"
-            />
-          ) : (
-            <div className="w-[84px] h-[84px] rounded-lg bg-white/10 animate-pulse shrink-0" />
-          )}
-          <p className="text-xs text-white/50 flex-1 min-w-0">
-            {t('unifiedSetup.assignDeviceQrHint').replace('{name}', playerProfile.name)}
-          </p>
+        <div className="pt-2.5 border-t border-white/10 space-y-2">
+          <div className="flex items-center gap-3">
+            {qrCodeSrc ? (
+              <img
+                src={qrCodeSrc}
+                alt={t('unifiedSetup.qrCompanionTitle')}
+                className="w-[84px] h-[84px] rounded-lg bg-white p-1 shadow-lg shrink-0"
+              />
+            ) : (
+              <div className="w-[84px] h-[84px] rounded-lg bg-white/10 animate-pulse shrink-0" />
+            )}
+            <p className="text-xs text-white/50 flex-1 min-w-0">
+              {t('unifiedSetup.assignDeviceQrHint').replace('{name}', playerProfile.name)}
+            </p>
+          </div>
+          {/* R60-D: WLAN- + Zertifikats-Hinweis unter jedem Companion-QR */}
+          <QrWlanHint />
         </div>
       )}
     </div>

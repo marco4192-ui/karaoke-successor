@@ -38,11 +38,19 @@ const PARTICIPATION_COMMANDS = new Set([
   // mit seinem eigenen Start-Button (ohne Fernsteuerungs-Lock — die Buttons
   // liegen bei allen Companion-Spielern vor, nicht nur beim Controller).
   'cptm_confirm_start',
+  // R60 — Starting-Screens für ALLE Companion-Spieler klickbar: 'n' und
+  // 'party_start' klicken den auf dem Desktop SICHTBAREN Start-Button (der
+  // Desktop bleibt Herr des Flows) — vorher 403 für nicht-steuernde
+  // Companion, deren Start-Buttons damit still tot waren. 'party_start_match:'
+  // startet ein Turnier-Duell aus der (ohnehin companion-getriebenen)
+  // Bracket-Liste.
+  'n', 'party_start',
 ]);
 
 const PARTICIPATION_PREFIXES = [
   'party_select_song:', 'party_vote:', 'br_vote:',
   'cptm_confirm_start:',
+  'party_start_match:',
 ];
 
 export function isControlCommand(commandType: string): boolean {
@@ -218,9 +226,22 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         writer.lastAt = Date.now();
 
         const gsPayload = payload as typeof mutableState.gameState;
+        const rawPayload = payload as Record<string, unknown>;
         // Clear tournament vote dedup when matchId changes
         if (gsPayload.tournamentMatchId !== mutableState.gameState.tournamentMatchId) {
           tournamentVoteRegistry.clear();
+        }
+
+        // R60 — FLASH-FIX (Server-Seite): `currentScreen: null` darf den
+        // zuletzt bekannten Screen NIEMALS löschen. Per-Hook-Syncs posten
+        // historisch null (statt den Key wegzulassen), während der Master-
+        // Sync den echten Screen postet — der Merge ließ das null über-
+        // schreiben und nicht-steuernde Companions flackerten alle 2s
+        // zwischen Spiel-Mirror und Menü. Ein null/undefined wird hier
+        // entfernt (= Schlüssel bleibt unangetastet); nur ein echter
+        // String-Wert überschreibt.
+        if (rawPayload.currentScreen === null || rawPayload.currentScreen === undefined) {
+          delete rawPayload.currentScreen;
         }
 
         // R33/P5/P6 (BACKWARD COMPAT): Older desktop builds embedded a settings
@@ -230,7 +251,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         // real desktop values via GET action=settingssnapshot. Current
         // desktops use the dedicated POST type:'settingssnapshot' push-on-
         // change instead — this path only serves stale tabs.
-        const rawPayload = payload as Record<string, unknown>;
         if (rawPayload.settingsSnapshot && typeof rawPayload.settingsSnapshot === 'object') {
           const snap = rawPayload.settingsSnapshot as {
             values?: Record<string, string>;

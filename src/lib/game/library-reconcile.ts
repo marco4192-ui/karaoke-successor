@@ -108,6 +108,12 @@ export async function reconcileLibraryFromFiles(): Promise<ReconcileResult> {
         || merged.year !== song.year
         || merged.title !== song.title
         || merged.artist !== song.artist;
+      // R60: genre/language/year were reset to the txt truth — when they
+      // changed, the verified badge is stale (its verdict referred to the
+      // old values). Unchanged values keep the flag.
+      if (merged.genre !== song.genre || merged.language !== song.language || merged.year !== song.year) {
+        merged.metadataVerifiedAt = undefined;
+      }
       if (changed) updated++;
       next.push(merged);
     }

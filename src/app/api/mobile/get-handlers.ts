@@ -265,7 +265,13 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'getpitch': {
       // PC polls this to get the latest pitch from all mobile devices
-      const pitches: Array<{ clientId: string; code: string; data: PitchData; profile: MobileProfile | null }> = [];
+      // R60 — PERF-FIX: pitches[].profile ist SLIM ({id, name, color}) — die
+      // 5-10-Hz-Watchdogs (game-screen/CPTM/BR/medley-Manager) matchen
+      // ausschließlich über profile.id/clientId; das volle Profil inkl.
+      // Avatar-Data-URL blähte jede Antwort um ein Vielfaches auf (2-4
+      // Handys = ~100 KB+ pro Poll). Die clients[]-Liste unten behält volle
+      // Profile (BR-Setup-Screen zeigt Avatare, pollt aber nur alle 10 s).
+      const pitches: Array<{ clientId: string; code: string; data: PitchData; profile: Pick<MobileProfile, 'id' | 'name' | 'color'> | null }> = [];
       latestPitchData.forEach((data, cId) => {
         const client = mobileClients.get(cId);
         if (client) {
@@ -273,7 +279,9 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
             clientId: cId,
             code: client.connectionCode,
             data,
-            profile: client.profile,
+            profile: client.profile
+              ? { id: client.profile.id, name: client.profile.name, color: client.profile.color }
+              : null,
           });
         }
       });

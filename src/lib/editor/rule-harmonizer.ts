@@ -200,9 +200,11 @@ class RuleHarmonizer {
 
       try {
         // TXT FIRST — only touch the library when the txt write succeeded
+        // R60: rule-based rewrites are value changes → invalidate the
+        // verified badge (the check verdict no longer matches the value).
         const updates: Partial<Song> = item.field === 'language'
-          ? { language: item.newLanguage }
-          : { genre: item.newGenre };
+          ? { language: item.newLanguage, metadataVerifiedAt: undefined }
+          : { genre: item.newGenre, metadataVerifiedAt: undefined };
         const result = await persistSongMetadataToTxt(item.songId, updates);
         if (result.success) {
           updateSong(item.songId, updates);

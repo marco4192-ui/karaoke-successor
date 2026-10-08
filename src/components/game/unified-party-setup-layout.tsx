@@ -8,6 +8,7 @@ import { Difficulty } from '@/types/game';
 import { useTranslation } from '@/lib/i18n/translations';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import type { PartyGameConfig, GameSettingConfig } from './unified-party-setup.types';
 
@@ -100,6 +101,12 @@ function CompanionQrCard() {
     }).catch(() => { /* offline — QR stays hidden */ });
     return () => { cancelled = true; };
   }, []);
+
+  // R60-D: Reaktiver HTTPS-Info-Cache — Boot-Hydration/DuckDNS-Änderungen
+  // triggern den Re-Render, der Companion-QR baut sich damit automatisch auf
+  // die DuckDNS-Domain um (statt auf der IP-URL stehen zu bleiben).
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit
 
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '', 160);
 

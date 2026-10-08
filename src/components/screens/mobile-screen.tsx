@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 
-import { buildCompanionUrl, detectLocalIP } from '@/lib/qr-code';
+import { buildCompanionUrl, detectLocalIP, updateCompanionHttpsInfo } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
+import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { PhoneIcon, MicIcon, LibraryIcon, QueueIcon } from '@/components/icons';
 import { MobileOnboarding } from './mobile/mobile-onboarding';
 
@@ -68,6 +70,17 @@ export function MobileScreen() {
         if (data.success) {
           setConnectedClients(data.clients || []);
           setMobileQueue(data.queue || []);
+          // R60-D Belt-and-braces: Derselbe Poll liefert httpsPort/httpsDomain/
+          // httpsCertSource (siehe initCompanionHttpsInfo) — in den reaktiven
+          // Cache füttern, damit auch ein serverseitig geänderter Zertifikats-
+          // Status (z. B. LE-Erneuerung fehlgeschlagen) die QRs umspringen
+          // lässt. updateCompanionHttpsInfo benachrichtigt nur bei echten
+          // Änderungen → der 2-s-Poll verursacht KEINE Re-Render-Flut.
+          updateCompanionHttpsInfo({
+            port: typeof data.httpsPort === 'number' && data.httpsPort > 0 ? data.httpsPort : null,
+            domain: typeof data.httpsDomain === 'string' && data.httpsDomain.includes('.') ? data.httpsDomain : null,
+            source: data.httpsCertSource === 'letsencrypt' || data.httpsCertSource === 'local-ca' ? data.httpsCertSource : null,
+          });
         }
       } catch {
         // Ignore polling errors
@@ -93,6 +106,12 @@ export function MobileScreen() {
     });
   }, []);
   
+  // R60-D: Reaktiver HTTPS-Info-Cache — Boot-Hydration/DuckDNS-Änderungen
+  // triggern den Re-Render, connectionUrl (QR + Text) baut sich damit auf die
+  // DuckDNS-Domain um, sobald der Cache gefüllt ist.
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit
+
   const connectionUrl = localIP ? buildCompanionUrl(localIP) : '';
   const qrCodeSrc = useQRCode(connectionUrl);
   
@@ -160,6 +179,8 @@ export function MobileScreen() {
                 </div>
                 <p className="text-sm text-white/60 mb-2">{t('mobile.scanQrCode')}</p>
                 <p className="text-xs text-white/40 break-all font-mono">{connectionUrl}</p>
+                {/* R60-D: WLAN- + Zertifikats-Hinweis unter jedem Companion-QR */}
+                <QrWlanHint />
               </>
             ) : (
               <div className="py-16">

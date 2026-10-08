@@ -30,6 +30,15 @@ export interface HarmonizeCacheEntry {
   yearReason: string;
   /** Where the genre suggestion originated — shown as a badge in the UI. */
   source: 'ai' | 'deezer' | 'musicbrainz' | 'itunes';
+  /** R60: true when a VERIFY run checked this song state and found NO
+   *  discrepancy — drives the ✓ badge in the editor library. Only verify
+   *  runs write this flag. */
+  verifiedOk?: boolean;
+  /** R60: which fields the writing run actually CHECKED (a verdict was
+   *  available). Verify-mode cache reads only accept entries that cover the
+   *  requested present fields; fill-mode entries (no verifiedFields) never
+   *  satisfy a verify run — they checked nothing. */
+  verifiedFields?: { genre: boolean; language: boolean; year: boolean };
 }
 
 interface HarmonizeCacheShape {

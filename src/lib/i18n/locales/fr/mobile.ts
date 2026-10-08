@@ -446,6 +446,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'L\'écran reste allumé',
   wakeLockUnsupported: 'Garder l\'écran allumé pendant le chant',
+  wakeLockLowPower: 'Impossible de garder l\'écran allumé — désactivez le mode d\'économie d\'énergie',
   certSetupTitle: 'Configuration unique : installer le certificat',
   certSetupWhy: 'Installez le certificat karaoké une seule fois sur ce téléphone — l\'application se connecte ensuite sans avertissement du navigateur (même après un changement de WiFi/IP).',
   certSetupShowSteps: 'Instructions pas à pas',

@@ -447,6 +447,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: 'A tela fica ligada',
   wakeLockUnsupported: 'Manter a tela ligada enquanto você canta',
+  wakeLockLowPower: 'Não foi possível manter a tela ligada — desative o modo de economia de energia',
   certSetupTitle: 'Configuração única: instalar certificado',
   certSetupWhy: 'Instale o certificado de karaokê uma vez neste celular — o app conecta depois sem aviso do navegador (mesmo após trocas de WiFi/IP).',
   certSetupShowSteps: 'Instruções passo a passo',

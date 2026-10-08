@@ -370,6 +370,7 @@ function saveToLocalStorage(songs: Song[]): void {
         genre: s.genre,
         language: s.language,
         year: s.year,
+        metadataVerifiedAt: s.metadataVerifiedAt, // R60 verified badge (survives the ultra-minimal fallback)
         folderPath: s.folderPath,
         baseFolder: s.baseFolder,
         relativeAudioPath: s.relativeAudioPath,
@@ -487,6 +488,29 @@ export function updateSong(songId: string, updates: Partial<Song>): void {
 }
 
 /**
+ * Batch variant of updateSong — ONE save for many songs (R60: a verify run
+ * marks every clean song as verified; doing that per-song via updateSong
+ * would write the whole library N times). Unknown ids are skipped, exactly
+ * like updateSong.
+ */
+export function updateSongs(entries: ReadonlyArray<{ songId: string; updates: Partial<Song> }>): void {
+  if (entries.length === 0) return;
+  const customSongs = getCustomSongs();
+  const updatesById = new Map(entries.map(e => [e.songId, e.updates] as const));
+  let changed = false;
+  for (let i = 0; i < customSongs.length; i++) {
+    const updates = updatesById.get(customSongs[i].id);
+    if (!updates) continue;
+    customSongs[i] = { ...customSongs[i], ...updates };
+    changed = true;
+  }
+  if (changed) {
+    saveCustomSongs(customSongs);
+    songCache = null;
+  }
+}
+
+/**
  * Remove a song from the custom library (persisted: IndexedDB + localStorage).
  * R9 (user request 1.3): used to drop aborted "New Song" creations that were
  * never actively saved by the user — they must not linger in the library.
@@ -553,7 +577,19 @@ export async function upsertSong(song: Song): Promise<void> {
   const index = customSongs.findIndex(s => s.id === song.id);
 
   if (index !== -1) {
-    customSongs[index] = { ...customSongs[index], ...song };
+    const prev = customSongs[index];
+    // R60: a saved song whose genre/language/year CHANGED loses its verified
+    // badge — the check verdict no longer refers to the current values.
+    // Unchanged values keep the library's CURRENT flag (the editor draft may
+    // carry an older copy of it).
+    const metaChanged = prev.genre !== song.genre
+      || prev.language !== song.language
+      || prev.year !== song.year;
+    const merged: Song = { ...prev, ...song };
+    merged.metadataVerifiedAt = metaChanged
+      ? undefined
+      : (prev.metadataVerifiedAt ?? song.metadataVerifiedAt);
+    customSongs[index] = merged;
   } else {
     customSongs.push({ ...song, id: song.id || crypto.randomUUID() });
   }

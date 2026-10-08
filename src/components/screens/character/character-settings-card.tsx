@@ -12,6 +12,7 @@ import { CountryPicker } from './country-picker';
 import { ProfileSyncSection } from './profile-sync-section';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 
 interface CharacterSettingsCardProps {
@@ -36,6 +37,12 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId
   useEffect(() => {
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);
+
+  // R60-D: Reaktiver HTTPS-Info-Cache — Boot-Hydration/DuckDNS-Änderungen
+  // triggern den Re-Render, Profil-QR (unten) + URL-Text bauen sich damit
+  // automatisch auf die DuckDNS-Domain um.
+  const httpsInfo = useCompanionHttpsInfo();
+  void httpsInfo; // bewusste Re-Render-Abhängigkeit
 
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, undefined, profile.id) : '', 160);
 

@@ -343,11 +343,24 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
 
       // Push to every subscribed desktop socket instantly (no polling!)
       if (pitchFeedSockets.size > 0) {
+        // R60 — PERF-FIX: NUR noch ein SLIM-Profil ({id, name, color}) pro
+        // Frame. Zuvor wurde das VOLLE client.profile inkl. Avatar-Data-URL
+        // (bis zu ~100 KB) mitgeschickt — bei 30 Hz × N Handys serialisierte
+        // der Server Megabytes pro Sekunde (Duell mit 2 Companions stockte
+        // hörbar, bis zu 4 Handys wären ~12 MB/s). Consumer matchen ausschließlich
+        // über profile.id / clientId — Name/Farbe nur für Anzeigen.
+        const slimProfile = client?.profile
+          ? {
+              id: client.profile.id,
+              name: client.profile.name,
+              color: client.profile.color,
+            }
+          : null;
         const push = {
           clientId,
           code: client?.connectionCode || '',
           data: frame,
-          profile: client?.profile || null,
+          profile: slimProfile,
         };
         for (const feedSocket of pitchFeedSockets) {
           feedSocket.emit('pitch', push);

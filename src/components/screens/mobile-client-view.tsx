@@ -454,7 +454,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     // Prüfe ob dieser Companion-Player der aktive Spieler ist
     const isMyTurn =
       singalongTurn?.isActive && singalongTurn.profileId === profile.id && singalongTurn.countdown === null ||
-      cptmTurn?.isActive && cptmTurn.profileId === profile.id && cptmTurn.countdown === null;
+      cptmTurn?.isActive && cptmTurn.profileId === profile.id && cptmTurn.countdown === null ||
+      // R60: Während der CPTM-Blink-Warnung (3-2-1 vor dem Segmentwechsel) ist
+      // profileId null — der AKTUELLE Sänger singt aber bis zum Segmentende
+      // weiter. Ohne diesen Zweig flackerten Mikro-/Wake-Lock-Status in jedem
+      // Blink-Fenster (currentPlayerId wird seit R60 vom Desktop mitgeschickt).
+      (cptmTurn?.isActive && cptmTurn.profileId === null &&
+        cptmTurn.currentPlayerId === profile.id);
     // Item 8.1: Battle Royale — alle (Companion-)Spieler singen GLEICHZEITIG
     // (nicht eliminierte Profile).
     const isBrActivePlayer =
@@ -503,6 +509,23 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (!shouldSingNow) autoSingDoneRef.current = false;
   }, [shouldSingNow, profile, brGameData, medleyGameData, isListening, startMicrophone, stopMicrophone]);
 
+  // R60 — MIC-STOP BEI TURN-WECHSEL (CPTM/Singalong): Der VORHERIGE Sänger
+  // streamte nach dem Wechsel munter weiter (30 Hz Pitch-Frames über Socket,
+  // Mikro offen, Akku-Verbrauch) — das Spiel ignorierte die Daten nur. Ein
+  // eindeutiges Stop-Signal: cptmTurn/singalongTurn zeigt auf einen ANDEREN
+  // Spieler (der Wechsel-Post setzt profileId explizit). Blink-Warnungen
+  // (profileId null) und Lücken stopen NICHT.
+  useEffect(() => {
+    if (!isListening || !profile || !gameState.isPlaying || gameState.songEnded) return;
+    const foreignCptmSinger =
+      cptmTurn?.isActive && !!cptmTurn.profileId && cptmTurn.profileId !== profile.id;
+    const foreignSingalongSinger =
+      singalongTurn?.isActive && !!singalongTurn.profileId && singalongTurn.profileId !== profile.id;
+    if (foreignCptmSinger || foreignSingalongSinger) {
+      stopMicrophone();
+    }
+  }, [cptmTurn, singalongTurn, isListening, profile, gameState.isPlaying, gameState.songEnded, stopMicrophone]);
+
   // ── R54: Screen Wake Lock — Standby-Schutz für die Pitch-Erkennung ──
   // Der Pitch-Loop läuft über requestAnimationFrame, das bei ausgeblendetem
   // Display EINFRIERT (Nutzer-Feedback: nach Standby kamen hohe/tiefe Töne
@@ -517,7 +540,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // stoppt automatisch, sobald nicht mehr gespielt wird (siehe Effect oben).
   const isMyUpcomingTurn =
     (singalongTurn?.isActive && singalongTurn.profileId === profile?.id && singalongTurn.countdown !== null) ||
-    (cptmTurn?.isActive && cptmTurn.profileId === profile?.id && cptmTurn.countdown !== null);
+    (cptmTurn?.isActive && cptmTurn.profileId === profile?.id && cptmTurn.countdown !== null) ||
+    // R60: Die CPTM-Blink-Warnung IST der Countdown des NÄCHSTEN Sängers
+    // (nextProfileId + countdown 3-2-1) — das Display muss auch dann wach
+    // bleiben, damit der Blink-Overlay sichtbar ist und der Auto-Sing-Start
+    // beim Wechsel nicht am ausgeblendeten Display hängt.
+    (cptmTurn?.isActive && cptmTurn.nextProfileId === profile?.id && cptmTurn.countdown !== null);
   const wakeLock = useScreenWakeLock(
     !gameState.songEnded && (shouldSingNow || isMyUpcomingTurn || isListening),
   );
@@ -1004,6 +1032,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           note={currentPitch.note}
           wakeLockHeld={wakeLock.held}
           wakeLockSupported={wakeLock.supported}
+          wakeLockActive={!gameState.songEnded && (shouldSingNow || isMyUpcomingTurn || isListening)}
           onActivate={() => {
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
             // R53: Im unsicheren Kontext ist KEIN Mikrostart möglich — der

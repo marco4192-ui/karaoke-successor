@@ -136,6 +136,104 @@ let httpsPortCache: number | null = null;
 let httpsDomainCache: string | null = null;
 let httpsSourceCache: CompanionHttpsInfo['source'] = null;
 
+/**
+ * R60-D — Reaktivitäts-Layer für den HTTPS-Info-Cache.
+ *
+ * Problem: Der Cache füllt sich asynchron (Boot-Fetch, DuckDNS-Aktivierung,
+ * Selbst-Erkennung). QR-Komponenten berechnen ihre URL aber synchron per
+ * buildCompanionUrl während des Renders — ohne Re-Render blieb der QR auf
+ * dem IP-Format stehen, bis ein zufälliger anderer State-Change neu zeichnete.
+ *
+ * Lösung: Mini-Observer-Store. Jede Cache-Mutation bumpt die Version und
+ * publisht einen neuen (referenz-stabilen) Snapshot an alle Subscriber —
+ * der Hook useCompanionHttpsInfo() (useSyncExternalStore) triggert damit
+ * zuverlässig genau EINEN Re-Render in jeder gemounteten QR-Komponente.
+ */
+export interface CompanionHttpsInfoSnapshot extends CompanionHttpsInfo {
+  /** Monoton steigend — ändert sich bei jeder effektiven Cache-Mutation. */
+  version: number;
+}
+
+let httpsInfoVersion = 0;
+let httpsInfoSnapshot: CompanionHttpsInfoSnapshot = {
+  port: null,
+  domain: null,
+  source: null,
+  version: 0,
+};
+const httpsInfoListeners = new Set<() => void>();
+
+/** Snapshot neu bauen + Listener benachrichtigen (no-op ohne Änderung). */
+function notifyCompanionHttpsInfoChange(): void {
+  if (
+    httpsInfoSnapshot.port === httpsPortCache &&
+    httpsInfoSnapshot.domain === httpsDomainCache &&
+    httpsInfoSnapshot.source === httpsSourceCache
+  ) {
+    return; // kein effektiver Unterschied zum zuletzt publizierten Stand
+  }
+  httpsInfoVersion += 1;
+  httpsInfoSnapshot = {
+    port: httpsPortCache,
+    domain: httpsDomainCache,
+    source: httpsSourceCache,
+    version: httpsInfoVersion,
+  };
+  for (const listener of httpsInfoListeners) {
+    listener();
+  }
+}
+
+/**
+ * Benachrichtigung als Microtask — buildCompanionUrl läuft auch während
+ * des React-Renders (Hydration + Selbst-Erkennung mutieren dort den Cache);
+ * ein synchroner Notify wäre in der Render-Phase illegal. Der Microtask
+ * feuert noch vor dem Paint → die QR-Komponenten zeichnen sofort um.
+ */
+let httpsInfoNotifyScheduled = false;
+function scheduleCompanionHttpsInfoNotify(): void {
+  if (httpsInfoNotifyScheduled || typeof window === 'undefined') return;
+  httpsInfoNotifyScheduled = true;
+  queueMicrotask(() => {
+    httpsInfoNotifyScheduled = false;
+    notifyCompanionHttpsInfoChange();
+  });
+}
+
+/** R60-D: Observer-Registrierung für useSyncExternalStore (use-companion-https-info). */
+export function subscribeCompanionHttpsInfo(listener: () => void): () => void {
+  httpsInfoListeners.add(listener);
+  return () => {
+    httpsInfoListeners.delete(listener);
+  };
+}
+
+/** R60-D: Referenz-stabiler Snapshot — wird NUR bei Cache-Änderung neu gebaut. */
+export function getCompanionHttpsInfoSnapshot(): CompanionHttpsInfoSnapshot {
+  return httpsInfoSnapshot;
+}
+
+/** SessionStorage → Memory-Cache hydratisieren (einmalig). true = Änderung. */
+function hydrateHttpsCacheFromStorage(): boolean {
+  let mutated = false;
+  if (httpsPortCache === null) {
+    const p = readCachedHttpsPort();
+    if (p !== null) {
+      httpsPortCache = p;
+      mutated = true;
+    }
+  }
+  if (httpsDomainCache === null && httpsSourceCache === null) {
+    const cached = readCachedHttpsDomain();
+    if (cached.domain !== null || cached.source !== null) {
+      httpsDomainCache = cached.domain;
+      httpsSourceCache = cached.source;
+      mutated = true;
+    }
+  }
+  return mutated;
+}
+
 function readCachedHttpsPort(): number | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -162,7 +260,9 @@ function readCachedHttpsDomain(): { domain: string | null; source: CompanionHttp
   }
 }
 
-/** Gecachte HTTPS-Infos synchron lesen (für buildCompanionUrl & Self-Heal). */
+/** Gecachte HTTPS-Infos synchron lesen (für buildCompanionUrl & Self-Heal).
+ * R60-D: Für reaktive Consumer stattdessen useCompanionHttpsInfo() nutzen —
+ * dieser Getter hier bleibt bewusst unreaktiv (statischer Einmal-Lookup). */
 export function getCompanionHttpsInfo(): CompanionHttpsInfo {
   return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
 }
@@ -171,10 +271,29 @@ export function getCompanionHttpsInfo(): CompanionHttpsInfo {
  * Aktivierung in den Settings — damit QR-URLs sofort die Domain nutzen,
  * ohne auf den nächsten initCompanionHttpsInfo-Poll zu warten). */
 export function updateCompanionHttpsInfo(info: Partial<CompanionHttpsInfo>): void {
-  if (typeof info.port === 'number' && info.port > 0) httpsPortCache = info.port;
-  else if (info.port === null) httpsPortCache = null;
-  if ('domain' in info) httpsDomainCache = info.domain ?? null;
-  if ('source' in info) httpsSourceCache = info.source ?? null;
+  let mutated = false;
+  if (typeof info.port === 'number' && info.port > 0) {
+    if (httpsPortCache !== info.port) {
+      httpsPortCache = info.port;
+      mutated = true;
+    }
+  } else if (info.port === null && httpsPortCache !== null) {
+    httpsPortCache = null;
+    mutated = true;
+  }
+  if ('domain' in info && httpsDomainCache !== (info.domain ?? null)) {
+    httpsDomainCache = info.domain ?? null;
+    mutated = true;
+  }
+  if ('source' in info && httpsSourceCache !== (info.source ?? null)) {
+    httpsSourceCache = info.source ?? null;
+    mutated = true;
+  }
+  if (mutated) {
+    // R60-D: Cache-Änderung reaktiv publizieren — wird NIE aus der Render-
+    // Phase heraus aufgerufen (nur async Handlers/Effects), daher synchron OK.
+    notifyCompanionHttpsInfoChange();
+  }
   try {
     if (typeof window !== 'undefined') {
       if (httpsPortCache) window.sessionStorage.setItem(HTTPS_PORT_KEY, String(httpsPortCache));
@@ -190,6 +309,9 @@ export function updateCompanionHttpsInfo(info: Partial<CompanionHttpsInfo>): voi
 /** Vollständige HTTPS-Infos vom Server abfragen (Port + Domain + Quelle). */
 export async function initCompanionHttpsInfo(): Promise<CompanionHttpsInfo | null> {
   if (typeof window === 'undefined') return null;
+  // R60-D: SessionStorage-Hydration synchron vorab, damit auch der reaktive
+  // Snapshot (useCompanionHttpsInfo) schon vor der Netz-Antwort stimmt.
+  if (hydrateHttpsCacheFromStorage()) scheduleCompanionHttpsInfoNotify();
   try {
     const res = await fetch('/api/mobile?action=status', { cache: 'no-store' });
     if (!res.ok) return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
@@ -209,24 +331,17 @@ export async function initCompanionHttpsInfo(): Promise<CompanionHttpsInfo | nul
   }
 }
 
-/** HTTPS-Port einmalig vom Server abfragen (Aufruf beim App-Boot). */
+/**
+ * HTTPS-Port einmalig vom Server abfragen (Aufruf beim App-Boot).
+ * R60-D: Dünner Wrapper auf initCompanionHttpsInfo — holt Port + Domain +
+ * Zertifikats-Quelle in EINER Abfrage (statt nur den Port) und publisht
+ * Cache-Änderungen reaktiv. Der App-Boot ruft inzwischen direkt
+ * initCompanionHttpsInfo (use-app-effects); dieser Export bleibt als
+ * Kompatibilitäts-Wrapper erhalten.
+ */
 export async function initCompanionHttpsPort(): Promise<number | null> {
-  if (typeof window === 'undefined') return null;
-  if (httpsPortCache === null) httpsPortCache = readCachedHttpsPort();
-  try {
-    const res = await fetch('/api/mobile?action=status', { cache: 'no-store' });
-    if (!res.ok) return httpsPortCache;
-    const data = await res.json() as { httpsPort?: number | null };
-    const p = typeof data.httpsPort === 'number' && data.httpsPort > 0 ? data.httpsPort : null;
-    httpsPortCache = p;
-    try {
-      if (p) window.sessionStorage.setItem(HTTPS_PORT_KEY, String(p));
-      else window.sessionStorage.removeItem(HTTPS_PORT_KEY);
-    } catch { /* storage blocked — cache in memory only */ }
-    return p;
-  } catch {
-    return httpsPortCache;
-  }
+  const info = await initCompanionHttpsInfo();
+  return info ? info.port : null;
 }
 
 /**
@@ -249,21 +364,17 @@ export async function initCompanionHttpsPort(): Promise<number | null> {
  */
 export function buildCompanionUrl(ip: string, port?: number, profileId?: string): string {
   // Cache-Hydration: Erstmaliger synchroner Aufruf (vor jedem init-Poll).
-  if (httpsPortCache === null) {
-    httpsPortCache = readCachedHttpsPort();
-  }
-  if (httpsDomainCache === null && httpsSourceCache === null) {
-    const cached = readCachedHttpsDomain();
-    httpsDomainCache = cached.domain;
-    httpsSourceCache = cached.source;
-  }
+  let mutated = hydrateHttpsCacheFromStorage();
   // Selbst-Erkennung: Läuft diese Seite selbst unter HTTPS (Companion, der
   // z. B. in den gespiegelten Einstellungen einen QR für WEITERE Handys
   // baut), sind eigener Host + Port die des Servers — bei einer DuckDNS-
   // Domain zusätzlich die vertrauenswürdige Quelle.
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     const p = parseInt(window.location.port, 10);
-    if (Number.isInteger(p) && p > 0 && httpsPortCache === null) httpsPortCache = p;
+    if (Number.isInteger(p) && p > 0 && httpsPortCache === null) {
+      httpsPortCache = p;
+      mutated = true;
+    }
     const host = window.location.hostname;
     if (host.includes('.') && !/^\d+\.\d+\.\d+\.\d+$/.test(host) && host !== 'localhost' && host !== 'tauri.localhost' && !host.endsWith('.local')) {
       // Host ist ein DNS-Name (z. B. die DuckDNS-Domain) → vertrauenswürdige
@@ -271,9 +382,16 @@ export function buildCompanionUrl(ip: string, port?: number, profileId?: string)
       if (httpsDomainCache !== host) {
         httpsDomainCache = host;
         httpsSourceCache = 'letsencrypt';
+        mutated = true;
       }
     }
   }
+  // R60-D: Cache-Änderung (Hydration/Selbst-Erkennung) asynchron publizieren
+  // — dieser Code läuft auch während des Renders, ein synchroner Notify an
+  // die useSyncExternalStore-Subscriber wäre dort illegal. Die eigene URL
+  // ist in DIESEM Render bereits korrekt; der Microtask aktualisiert alle
+  // anderen gemounteten QR-Komponenten noch vor dem Paint.
+  if (mutated) scheduleCompanionHttpsInfoNotify();
   const httpsPort = httpsPortCache;
 
   // R55: Echte Domain mit LE-Zertifikat hat Vorrang vor der IP.

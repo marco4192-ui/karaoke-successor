@@ -446,6 +446,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: '画面をオンのまま保持',
   wakeLockUnsupported: '歌唱中は画面をオンのままに',
+  wakeLockLowPower: '画面をオンのまま保持できません — 低電力モードをオフにしてください',
   certSetupTitle: '初回のみの設定：証明書をインストール',
   certSetupWhy: 'このスマホに一度だけカラオケ証明書をインストールしてください — 以後、アプリはブラウザ警告なしで接続します（WiFi/IPが変わっても有効）。',
   certSetupShowSteps: '手順を詳しく見る',

@@ -446,6 +446,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: '화면이 꺼지지 않아요',
   wakeLockUnsupported: '노래하는 동안 화면 켜짐 유지',
+  wakeLockLowPower: '화면 켜짐 유지가 차단되었어요 — 저전력 모드를 꺼주세요',
   certSetupTitle: '최초 1회 설정: 인증서 설치',
   certSetupWhy: '이 휴대폰에 카라오케 인증서를 한 번만 설치하세요 — 이후 앱이 브라우저 경고 없이 연결됩니다(WiFi/IP가 바뀌어도 유지).',
   certSetupShowSteps: '단계별 안내',

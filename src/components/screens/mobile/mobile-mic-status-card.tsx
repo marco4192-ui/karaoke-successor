@@ -24,6 +24,10 @@ export interface MicStatusCardProps {
   wakeLockHeld: boolean;
   /** R54: Wake Lock API wird vom Browser unterstützt. */
   wakeLockSupported: boolean;
+  /** R60: Der Schutz ist aktuell GEWOLLT (Gesang/Countdown/Mic aktiv) — nur
+   *   dann macht der „gewollt aber nicht gehalten"-Hinweis Sinn (z. B.
+   *   iOS-Energiesparmodus blockiert request()). */
+  wakeLockActive?: boolean;
   onActivate: () => void;
 }
 
@@ -48,7 +52,7 @@ export function midiNoteName(note: number | null): string | null {
 export function MicStatusCard({
   isListening, audioSuspended, hasSignal, micPermissionDenied,
   insecureContext, httpsAvailable, volume, note,
-  wakeLockHeld, wakeLockSupported, onActivate,
+  wakeLockHeld, wakeLockSupported, wakeLockActive, onActivate,
 }: MicStatusCardProps) {
   const { t } = useTranslation();
 
@@ -140,6 +144,18 @@ export function MicStatusCard({
               title={tOr(t, 'mobile.wakeLockUnsupported', 'Display während des Gesangs anlassen')}
             >
               ⚠️ {tOr(t, 'mobile.wakeLockUnsupported', 'Display während des Gesangs anlassen')}
+            </span>
+          )}
+          {/* R60 — API vorhanden, Schutz gewollt, aber Lock nicht gehalten:
+              typisch iOS-Energiesparmodus (NotAllowedError). Vorher BLIEB
+              diese Situation unsichtbar (weder ☀️ noch ⚠️) — der Nutzer
+              glaubte, der Schutz sei aktiv, während das Display doch ausging. */}
+          {wakeLockSupported && wakeLockActive && !wakeLockHeld && (
+            <span
+              className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-200"
+              title={tOr(t, 'mobile.wakeLockLowPower', 'Display-Schutz blockiert — Energiesparmodus deaktivieren')}
+            >
+              ⚠️ {tOr(t, 'mobile.wakeLockLowPower', 'Display-Schutz blockiert — Energiesparmodus deaktivieren')}
             </span>
           )}
         </div>

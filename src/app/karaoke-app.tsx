@@ -941,40 +941,77 @@ export default function KaraokeZERO() {
           } catch { /* */ }
         }
       } catch { /* */ }
-      // Start the game with the voted song (same as SongVotingModal.onVote)
+
+      // R60 — CRASH-FIX (Spiegel des Desktop-onVote aus party-setup-section):
+      // NUR nächste-Runde-Votes (nextRoundPick 'ptm'/'cptm', laufende Serie mit
+      // existierendem Roster) kehren direkt ins Spiel zurück. Eine INITIALE
+      // Vote aus dem Party-Setup startete previously das Spiel mit leerem
+      // cptmPlayers-Roster („faking 2 players") — der erste Segment-Wechsel
+      // crashte dann mit „Cannot read properties of undefined (reading
+      // 'segmentsSung')". Initiale Votes wählen den Song jetzt nur VOR auf
+      // dem Setup-Screen aus (genau wie der Desktop-Klick-Pfad).
+      const pick = party.nextRoundPick;
+      const isCptm = pick === 'cptm';
+      const isPtm = pick === 'ptm';
+      const roster = isCptm ? party.cptmPlayers : (isPtm ? party.passTheMicPlayers : []);
+
+      const preselectOnSetup = () => {
+        party.setLibrarySelectedSong(songWithUrls);
+        party.setSongSelectionMethod('vote');
+        setScreen('party-setup');
+      };
+
+      if (!isCptm && !isPtm) {
+        // Initial vote from the party setup — pre-select, don't start the game
+        preselectOnSetup();
+        return;
+      }
+      if (roster.length === 0) {
+        // Degenerate roster (setup not completed) — never launch the game engine
+        preselectOnSetup();
+        return;
+      }
+
+      const segments = generatePtmSegments(
+        songWithUrls.duration,
+        roster.length,
+        isCptm
+          ? (party.cptmSettings?.segmentDuration ?? party.passTheMicSettings?.segmentDuration)
+          : party.passTheMicSettings?.segmentDuration,
+        songWithUrls.lyrics,
+      );
+      if (segments.length === 0) {
+        // R51 <60s-Guard: Segment-Engine lehnt zu kurze Songs ab — ohne
+        // Guard würde der Screen-Wechsel auf einen leeren Game-Screen laufen.
+        toast({ title: t('party.songTooShortVote') });
+        preselectOnSetup();
+        return;
+      }
+
+      party.setNextRoundPick(null);
       resetGame();
       if (party.selectedGameMode) {
         setGameMode(party.selectedGameMode);
         setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
       }
       setSong(songWithUrls);
-      if (party.selectedGameMode === 'companion-singalong') {
-        const cptmPlayers = party.cptmPlayers || [];
-        // R51/Bug13 — BUGFIX „leerer Main-App-Screen": hier fehlte bisher
-        // party.setCptmSong! Die Segmente wurden gesetzt, der Screen gewechselt,
-        // aber die Render-Bedingung (cptmSong && segments.length > 0) blieb
-        // false → schwarzer leerer Screen, während die Handys den Starting-
-        // Screen zeigten. Außerdem: cptmSettings statt passTheMicSettings und
-        // die Start-Bestätigungen für die neue Runde zurücksetzen.
-        const cptmSegments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, party.cptmSettings?.segmentDuration ?? party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
-        party.setCptmSegments(cptmSegments);
+      party.setIsSongPlaying(false);
+      if (isCptm) {
+        // R51/Bug13: cptmSong + Segmente + zurückgesetzte Start-Bestätigungen
+        // gehören zusammen — sonst schwarzer Screen / hängende Intro-Badges.
+        party.setCptmSegments(segments);
         party.setCptmSong(songWithUrls);
         party.setCptmStartConfirmed([]);
         setScreen('companion-singalong-game');
-      } else if (party.selectedGameMode === 'pass-the-mic') {
-        // Use PTM game screen so intro phase is shown
-        const ptmPlayers = party.passTheMicPlayers || [];
-        const segments = generatePtmSegments(songWithUrls.duration, ptmPlayers.length || 2, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+      } else {
         party.setPassTheMicSegments(segments);
         party.setPassTheMicSong(songWithUrls);
         setScreen('pass-the-mic-game');
-      } else {
-        setScreen('game');
       }
     };
     window.addEventListener('remote-party-vote', handleRemotePartyVote);
     return () => window.removeEventListener('remote-party-vote', handleRemotePartyVote);
-  }, [resetGame, setGameMode, setSong, setScreen, party]);
+  }, [resetGame, setGameMode, setSong, setScreen, party, t]);
 
   // ── R51/Bug13: CPTM Starting-Screen — Teilnehmer-Bestätigungen sammeln ──
   // Jeder Companion-Spieler bestätigt per Start-Button

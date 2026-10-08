@@ -32,6 +32,11 @@ interface CameraControlsProps {
   onSetMobileCameraConnected: (connected: boolean) => void;
   /** R44: slim single-row layout for the ShareBox (no nested Card bloat). */
   compact?: boolean;
+  /** R60/4: Companion-Share-Overlay — blendet die „📲 Mobile Camera”-
+   *  Option aus (der Desktop-Flow, der eine COMPANION-Kamera anfragt, ist
+   *  auf dem Handy selbst sinnlos — dort ist „Use Device Camera” die
+   *  lokale Kamera). */
+  hideMobileCameraOption?: boolean;
 }
 
 export function CameraControls({
@@ -46,6 +51,7 @@ export function CameraControls({
   onSetCameraPosition,
   onSetMobileCameraConnected,
   compact,
+  hideMobileCameraOption,
 }: CameraControlsProps) {
   const { t } = useTranslation();
 
@@ -78,23 +84,25 @@ export function CameraControls({
           <span className="truncate">{t('shortsCreator.useDeviceCamera')}</span>
           {hasCamera && <span className="ml-1.5 shrink-0" aria-hidden>✓</span>}
         </Button>
-        <Button
-          onClick={mobileCameraConnected ? () => onSetMobileCameraConnected(false) : onRequestMobileCamera}
-          size="sm"
-          variant="outline"
-          disabled={isRequestingMobileCamera}
-          aria-pressed={mobileCameraConnected}
-          title={mobileCameraConnected ? t('shortsCreator.disconnectMobile') : undefined}
-          className={`flex-1 min-w-0 text-xs ${PRESSED} ${mobileBtnClass}`}
-        >
-          {mobileCameraConnected && (
-            <span className="mr-1.5 inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" aria-hidden />
-          )}
-          <span className="truncate">
-            {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
-          </span>
-          {mobileCameraConnected && <span className="ml-1.5 shrink-0" aria-hidden>✓</span>}
-        </Button>
+        {!hideMobileCameraOption && (
+          <Button
+            onClick={mobileCameraConnected ? () => onSetMobileCameraConnected(false) : onRequestMobileCamera}
+            size="sm"
+            variant="outline"
+            disabled={isRequestingMobileCamera}
+            aria-pressed={mobileCameraConnected}
+            title={mobileCameraConnected ? t('shortsCreator.disconnectMobile') : undefined}
+            className={`flex-1 min-w-0 text-xs ${PRESSED} ${mobileBtnClass}`}
+          >
+            {mobileCameraConnected && (
+              <span className="mr-1.5 inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" aria-hidden />
+            )}
+            <span className="truncate">
+              {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
+            </span>
+            {mobileCameraConnected && <span className="ml-1.5 shrink-0" aria-hidden>✓</span>}
+          </Button>
+        )}
       </div>
 
       {cameraError && (

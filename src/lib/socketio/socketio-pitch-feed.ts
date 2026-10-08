@@ -34,12 +34,15 @@ export interface SocketPitchFrame {
 }
 
 /** Push event delivered to subscribers — mirrors the getpitch HTTP entry
- *  shape { clientId, code, data, profile } for easy consumer adaptation. */
+ *  shape { clientId, code, data, profile } for easy consumer adaptation.
+ *  R60: profile is the SLIM server push ({id, name, color}) — the full
+ *  profile (incl. avatar data URL) is never attached to the 30 Hz frames
+ *  (perf fix); consumers match by profile.id / clientId only. */
 export interface SocketPitchEvent {
   clientId: string;
   code: string;
   data: SocketPitchFrame;
-  profile: { id: string; name: string; color: string; avatar?: string; createdAt?: number } | null;
+  profile: { id: string; name?: string; color?: string } | null;
 }
 
 type PitchFeedListener = (event: SocketPitchEvent) => void;

@@ -488,6 +488,7 @@ export const MirrorView: React.FC<MirrorViewProps> = function MirrorView({
           <MirrorResultsLite
             gameResults={gameResults}
             onNavigate={onNavigate}
+            profile={profile}
             {...desktopMirrorBase}
           />
           </SafeView>

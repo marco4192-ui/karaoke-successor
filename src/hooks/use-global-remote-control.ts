@@ -622,6 +622,16 @@ export function useGlobalRemoteControl({
           window.dispatchEvent(new CustomEvent('remote-party-difficulty', { detail: { difficulty: level } }));
           break;
         }
+        // R60 — 'n' ist das Start-Kürzel der Intro-Mirrors (Battle/Tournament/
+        // Medley/Rate-my-Song/PTM-Intro/Party-Setup „Ready to Play"). Es hatte
+        // nie einen Handler (fiel durch den Switch) und war für nicht-steuernde
+        // Companions zusätzlich 403-blockiert → die Start-Buttons der Starting
+        // Screens waren stumm. Gleiches Ziel wie party_start: den auf dem
+        // Desktop SICHTBAREN Start-Button klicken (seit R60 Participation).
+        if (cmd.type === 'n') {
+          window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));
+          break;
+        }
         // Check for party_start
         if (cmd.type === 'party_start') {
           window.dispatchEvent(new CustomEvent('remote-party-start', { detail: {} }));

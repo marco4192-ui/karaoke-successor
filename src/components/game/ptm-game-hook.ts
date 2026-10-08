@@ -494,7 +494,7 @@ export function usePtmGameLogic({
         const nextSegIdx = currentSegmentIndex + 1;
         const nextEntry = schedule[nextSegIdx];
 
-        if (currentEntry) {
+        if (currentEntry && playersRef.current[currentEntry.playerIndex]) {
           playersRef.current[currentEntry.playerIndex].segmentsSung++;
         }
 
@@ -544,7 +544,9 @@ export function usePtmGameLogic({
         }
         if (candidates.length === 0) return;
         const next = candidates[Math.floor(Math.random() * candidates.length)];
-        playersRef.current[currentIndex].segmentsSung++;
+        if (playersRef.current[currentIndex]) {
+          playersRef.current[currentIndex].segmentsSung++;
+        }
         setCurrentPlayerIndex(next);
         showTransitionText(next);
         if (transitionHideTimerRef.current) clearTimeout(transitionHideTimerRef.current);

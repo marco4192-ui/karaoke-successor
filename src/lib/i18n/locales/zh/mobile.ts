@@ -447,6 +447,7 @@ mobile: {
   // R54 — Wake Lock + Zertifikats-Einrichtung (lokale Root-CA)
   wakeLockBadge: '屏幕保持常亮',
   wakeLockUnsupported: '唱歌时保持屏幕常亮',
+  wakeLockLowPower: '无法保持屏幕常亮 — 请关闭低电量模式',
   certSetupTitle: '一次性设置：安装证书',
   certSetupWhy: '在这台手机上安装一次卡拉OK证书 — 之后应用连接时就不会再出现浏览器警告（更换WiFi/IP后同样有效）。',
   certSetupShowSteps: '查看分步说明',

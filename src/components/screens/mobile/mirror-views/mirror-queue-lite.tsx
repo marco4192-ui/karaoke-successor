@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import type { QueueItem, GameState, MobileView, DesktopSettingsSnapshot } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SongCoverTile } from './mirror-cover-tile';
 
 /** i18n with a hard fallback (mirror views load a lite dictionary — keys
- * can be missing; then the German fallback keeps the UI usable). */
+ *  can be missing; then the German fallback keeps the UI usable). */
 function tOr(t: (_key: string) => string, key: string, fallback: string): string {
   return t(key) === key ? fallback : t(key);
 }
@@ -162,6 +162,22 @@ export function MirrorQueueLite({
       return mode || '';
     }, [t]);
 
+    // R60/9: Der laufende Song wird als HERO-Karte OBEN in der Liste gezeigt
+    // (unabhängig von seiner Position im Array). WICHTIG für Drag&Drop: Die
+    // Anzeige-Reihenfolge ist reine Optik — data-queue-index trägt weiterhin
+    // den ORIGINAL-Array-Index, handleDragEnd/Projektions-Logik bleiben
+    // unangetastet.
+    const playingIndex = activeItems.findIndex((q) => q.status === 'playing');
+    const displayItems = playingIndex > 0
+      ? [
+          { item: activeItems[playingIndex], index: playingIndex },
+          ...activeItems.filter((_, i) => i !== playingIndex).map((item, i) => ({
+            item,
+            index: i < playingIndex ? i : i + 1,
+          })),
+        ]
+      : activeItems.map((item, index) => ({ item, index }));
+
     return (
       <div className="flex flex-col gap-4 px-4 pb-8">
         {/* Header */}
@@ -256,15 +272,19 @@ export function MirrorQueueLite({
           </div>
         )}
 
-        {/* Queue items: Drag-Reorder + Entfernen + Mini-Cover (P13) + Play
-            (steuernd, P7). Eigener Scroll-Bereich (max-h + overflow-y-auto +
-            schlanke Custom-Scrollbar); Cover laden lazy nur fuer sichtbare Zeilen. */}
+        {/* Queue items (R60/9): Der LAUFENDE Song ist eine große HERO-Karte
+            (Cover 68px, Titel/Artist vollständig ohne Abschneiden, alle
+            Badges sichtbar, pulsierender Cyan-Rahmen), die Folge-Songs sind
+            großzügigere Zeilen (Cover 48px, Titel 2-zeilig statt hart
+            getruncatet). Drag-Reorder + Entfernen + Play bleiben erhalten —
+            Eigener Scroll-Bereich (max-h + overflow-y-auto + schlanke
+            Custom-Scrollbar); Cover laden lazy nur fuer sichtbare Zeilen. */}
         <div
           className={
-            'flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1 -mr-1 kz-scroll'
+            'flex flex-col gap-2.5 max-h-[62vh] overflow-y-auto pr-1 -mr-1 kz-scroll'
           }
         >
-          {activeItems.map((item, index) => {
+          {displayItems.map(({ item, index }) => {
             const isDragging = dragItemRef.current === item.id;
             const isDragOver = dragOverIndex === index;
             const isPlaying = item.status === 'playing';
@@ -272,26 +292,140 @@ export function MirrorQueueLite({
             // Desktop-Items kann nur der steuernde Companion entfernen
             // (Remote-Command); eigene Server-Items jeder, fremde mit Lock.
             const showRemove = !item.isDesktop || controlling;
+            const dragProps = {
+              draggable: true,
+              onDragStart: () => handleDragStart(item.id),
+              onDragOver: () => handleDragOver(index),
+              onDragEnd: handleDragEnd,
+              onTouchStart: () => handleDragStart(item.id),
+              onTouchMove: (e: ReactTouchEvent<HTMLElement>) => {
+                const touch = e.touches[0];
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (el) {
+                  const queueEl = el.closest('[data-queue-index]');
+                  if (queueEl) {
+                    handleDragOver(Number(queueEl.getAttribute('data-queue-index')));
+                  }
+                }
+              },
+              onTouchEnd: handleDragEnd,
+              'data-queue-index': index,
+            };
+
+            // ── HERO-Karte: läuft gerade (R60/9) ──
+            if (isPlaying) {
+              return (
+                <div
+                  key={item.id}
+                  {...dragProps}
+                  data-testid="mirror-queue-playing-hero"
+                  className={
+                    'relative flex items-stretch gap-3 rounded-2xl p-3 transition-all ' +
+                    (isDragging ? 'opacity-50 scale-95 ' : '') +
+                    (isDragOver && !isDragging ? 'border-purple-500/50 bg-purple-500/10' : 'bg-cyan-500/10 border border-cyan-400/30')
+                  }
+                >
+                  {/* Pulsierender Cyan-Glow-Rahmen — klar "läuft jetzt" */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-cyan-400/60 animate-pulse"
+                  />
+
+                  {/* Drag handle */}
+                  <span className="self-center text-white/25 text-sm cursor-grab active:text-white/50 select-none">{'\u2805'}</span>
+
+                  {/* Cover — groß (68px), lazy, 3-Stufen-Fallback */}
+                  <SongCoverTile songId={item.songId} title={item.songTitle} className="w-[68px] h-[68px] rounded-xl shrink-0" />
+
+                  {/* Song info — alles sichtbar, NICHTS weggekürzt */}
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-base font-bold leading-snug text-cyan-300">
+                      {item.songTitle}
+                    </p>
+                    <p className="text-sm leading-snug text-white/60">
+                      {item.songArtist}
+                    </p>
+                    {item.addedBy && (
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {(() => {
+                          const profile = availableProfiles?.find(p => p.name === item.addedBy);
+                          if (profile?.avatar) {
+                            return <img src={profile.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />;
+                          }
+                          const clr = profile?.color || (item.isDesktop ? '#A78BFA' : '#06B6D4');
+                          return (
+                            <div
+                              className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                              style={{ backgroundColor: clr + '60' }}
+                            >
+                              {(item.addedBy?.[0] || '?').toUpperCase()}
+                            </div>
+                          );
+                        })()}
+                        <span className="text-[11px] text-white/50">{item.addedBy}</span>
+                        {item.isDesktop && (
+                          <span className="shrink-0 rounded bg-violet-500/20 px-1 py-0.5 text-[9px] font-semibold text-violet-300/90" title="Desktop">
+                            {'\u{1F5A5}\uFE0F'}
+                          </span>
+                        )}
+                        {item.playerMicSource === 'companion' && (
+                          <span className="shrink-0 rounded bg-cyan-500/20 px-1 py-0.5 text-[9px] font-semibold text-cyan-300/90" title="Companion App">
+                            {'\u{1F4F1}'}
+                          </span>
+                        )}
+                        {item.partnerName ? (
+                          <span className="text-[11px] text-white/40">{'\u00B7 vs ' + item.partnerName}</span>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rechte Spalte: Läuft-Badge + Modus + Remove */}
+                  <div className="flex flex-col items-end justify-between gap-2 shrink-0">
+                    <span
+                      className={
+                        'rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase animate-pulse ' +
+                        'text-cyan-300/90 bg-cyan-500/20'
+                      }
+                    >
+                      {t('mobileViews.playing') === 'mobileViews.playing' ? 'Läuft' : t('mobileViews.playing')}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {item.gameMode && (
+                        <span
+                          className={
+                            'rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ' +
+                            'text-purple-300/80 bg-purple-500/20'
+                          }
+                        >
+                          {modeLabel(item.gameMode)}
+                        </span>
+                      )}
+                      {showRemove && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemove(item); }}
+                          aria-label={t('mobileViews.removeFromQueue') === 'mobileViews.removeFromQueue' ? 'Entfernen' : t('mobileViews.removeFromQueue')}
+                          data-testid="mirror-queue-item-remove"
+                          className={
+                            'w-11 h-11 flex items-center justify-center rounded-xl ' +
+                            'bg-red-500/15 text-red-400/80 ' +
+                            'active:scale-95 active:bg-red-500/30 transition-all'
+                          }
+                        >
+                          {'\u2715'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── Up-next-Zeile (R60/9): größer — Cover 48px, Titel 2-zeilig ──
             return (
               <div
                 key={item.id}
-                draggable
-                onDragStart={() => handleDragStart(item.id)}
-                onDragOver={() => handleDragOver(index)}
-                onDragEnd={handleDragEnd}
-                onTouchStart={() => handleDragStart(item.id)}
-                onTouchMove={(e) => {
-                  const touch = e.touches[0];
-                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
-                  if (el) {
-                    const queueEl = el.closest('[data-queue-index]');
-                    if (queueEl) {
-                      handleDragOver(Number(queueEl.getAttribute('data-queue-index')));
-                    }
-                  }
-                }}
-                onTouchEnd={handleDragEnd}
-                data-queue-index={index}
+                {...dragProps}
                 className={
                   'flex items-center gap-2.5 rounded-xl p-2.5 transition-all ' +
                   (isDragging ? 'opacity-50 scale-95 ' : '') +
@@ -302,17 +436,18 @@ export function MirrorQueueLite({
                 {/* Drag handle */}
                 <span className="text-white/20 text-sm cursor-grab active:text-white/50 select-none">{'\u2805'}</span>
 
-                {/* R33/P13 + R34: Mini-Cover (40px, lazy) — geteilte Tile mit
+                {/* R33/P13 + R34: Mini-Cover (48px, lazy) — geteilte Tile mit
                     3-Stufen-Fallback + API-Retry; Fallback: farbige
                     Initialen-Kachel, solange kein JPEG vom Desktop kommt */}
-                <SongCoverTile songId={item.songId} title={item.songTitle} className="w-10 h-10 rounded-lg" />
+                <SongCoverTile songId={item.songId} title={item.songTitle} className="w-12 h-12 rounded-lg shrink-0" />
 
-                {/* Song info */}
+                {/* Song info — Titel 2-zeilig (kein hartes Truncate),
+                    Artist sichtbar */}
                 <div className="min-w-0 flex-1">
-                  <p className={'truncate text-sm font-medium ' + (isPlaying ? 'text-cyan-300' : 'text-white')}>
+                  <p className="line-clamp-2 text-sm font-medium leading-snug text-white">
                     {item.songTitle}
                   </p>
-                  <p className="truncate text-xs text-white/40">
+                  <p className="line-clamp-2 text-xs leading-snug text-white/40">
                     {item.songArtist}
                   </p>
                   {item.addedBy && (
@@ -349,18 +484,6 @@ export function MirrorQueueLite({
                     </div>
                   )}
                 </div>
-
-                {/* Laeuft gerade (Desktop hat gestartet) */}
-                {isPlaying && (
-                  <span
-                    className={
-                      'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase animate-pulse ' +
-                      'text-cyan-300/90 bg-cyan-500/20'
-                    }
-                  >
-                    {t('mobileViews.playing') === 'mobileViews.playing' ? 'Läuft' : t('mobileViews.playing')}
-                  </span>
-                )}
 
                 {/* Game mode badge (uebersetzt: Solo/Duell/Duett) */}
                 {item.gameMode && (

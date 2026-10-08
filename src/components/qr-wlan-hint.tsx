@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
-import { initCompanionHttpsInfo, type CompanionHttpsInfo } from '@/lib/qr-code';
+import { initCompanionHttpsInfo } from '@/lib/qr-code';
+import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 
 /**
  * "Connect to the same Wi-Fi first" hint shown under EVERY Companion-App
@@ -17,23 +18,26 @@ import { initCompanionHttpsInfo, type CompanionHttpsInfo } from '@/lib/qr-code';
  * R55: Mit aktivem Let's-Encrypt-Zertifikat (DuckDNS eingerichtet) erscheint
  * stattdessen eine GRÜNE Bestätigung — die Verbindung ist per echtem
  * Zertifikat gesichert, Handys vertrauen ihr automatisch, nichts zu tun.
+ *
+ * R60-D: Der Status wird REAKTIV aus dem geteilten HTTPS-Info-Cache gelesen
+ * (useCompanionHttpsInfo statt lokalem State): Wechselt das Zertifikat den
+ * Status (DuckDNS aktiviert/entfernt, Boot-Hydration), springt der Hinweis
+ * live mit — auch wenn er schon gemountet war. Der zusätzliche init-Pull
+ * bleibt als Belt-and-braces (Screens, die evtl. vor dem App-Boot-Fetch
+ * gemountet werden); die Antwort fließt in denselben Cache.
  */
 export function QrWlanHint({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
-  const [httpsInfo, setHttpsInfo] = useState<CompanionHttpsInfo | null>(null);
+  const httpsInfo = useCompanionHttpsInfo();
 
-  // R52/R55: HTTPS-Status einmalig ziehen (initCompanionHttpsInfo cached) —
-  // Port + Domain + Zertifikats-Quelle in einer Abfrage.
+  // Belt-and-braces: Status einmalig vom Server ziehen — die Antwort läuft
+  // über updateCompanionHttpsInfo in denselben Cache und publisht reaktiv.
   useEffect(() => {
-    let cancelled = false;
-    initCompanionHttpsInfo().then((info) => {
-      if (!cancelled) setHttpsInfo(info);
-    }).catch(() => { /* hint stays hidden */ });
-    return () => { cancelled = true; };
+    initCompanionHttpsInfo().catch(() => { /* hint stays hidden */ });
   }, []);
 
-  const trusted = httpsInfo?.source === 'letsencrypt' && !!httpsInfo.domain;
-  const isHttps = !!httpsInfo?.port;
+  const trusted = httpsInfo.source === 'letsencrypt' && !!httpsInfo.domain;
+  const isHttps = !!httpsInfo.port;
 
   return (
     <div className={className}>

@@ -9,14 +9,19 @@ import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
 interface DuetP2PitchParams {
   isDuetMode: boolean;
   song: Song | null;
-  mobilePitch: MobilePitchData | null;
+  /** R60 — PERF-FIX: P2-Companion-Pitch als REF (30-Hz-Frames lösten zuvor
+   *  pro Frame Effekt + SetState aus; mit 2 Companion-Sängern stockte das
+   *  Duell). Der 100-ms-Sampler unten liest den Ref und settet State nur bei
+   *  Änderung — max. 10 Updates/s statt 60+. null = P2 singt nicht über die
+   *  Companion-App (Desktop-Mikro-Pfad). */
+  mobilePitchRef: React.MutableRefObject<MobilePitchData | null> | null;
   setP2DetectedPitch: (pitch: number | null) => void;
   difficulty: Difficulty;
   /** R39/P5: true (Default), wenn P2 über die Companion-App singt — nur dann
-   *  wird die Companion-Pitch-Quelle auf P2 gelegt. Hat der Nutzer für P2
-   *  explizit ein Desktop-Mikrofon gewählt (deviceAssignment.p2Companion ===
-   *  false), bleibt P2 beim lokalen Zweit-Mikrofon und die Handy-Pitch-
-   *  Daten werden ignoriert. */
+   *   wird die Companion-Pitch-Quelle auf P2 gelegt. Hat der Nutzer für P2
+   *   explizit ein Desktop-Mikrofon gewählt (deviceAssignment.p2Companion ===
+   *   false), bleibt P2 beim lokalen Zweit-Mikrofon und die Handy-Pitch-
+   *   Daten werden ignoriert. */
   p2Companion?: boolean;
 }
 
@@ -34,41 +39,43 @@ interface DuetP2PitchResult {
 export function useDuetP2Pitch({
   isDuetMode,
   song,
-  mobilePitch,
+  mobilePitchRef,
   setP2DetectedPitch,
   difficulty,
   p2Companion = true,
 }: DuetP2PitchParams): DuetP2PitchResult {
   const [p2Volume, setP2Volume] = useState(0);
 
-  // Use mobile pitch for P2 in duet/duel mode
+  // ── R60: Companion-Pitch → P2 (Ref-Sampler, 10 Hz, änderungsbasiert) ──
   // R39/P5: only when P2 actually sings via companion (explicit device
   // choice from the song-start modal / queue item overrides the default).
+  // MIDI note (not frequency) for visual display consistency.
+  // MobilePitchData.note is already a MIDI note number.
   useEffect(() => {
-    if (isDuetMode && p2Companion && mobilePitch) {
-      queueMicrotask(() => {
-        // Use MIDI note (not frequency) for visual display consistency.
-        // MobilePitchData.note is already a MIDI note number.
-        setP2DetectedPitch(mobilePitch.note);
-        setP2Volume(mobilePitch.volume || 0);
-      });
-    } else if (isDuetMode && p2Companion && !mobilePitch?.frequency) {
-      queueMicrotask(() => {
-        setP2DetectedPitch(null);
-        setP2Volume(0);
-      });
-    }
-  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume, p2Companion]);
+    if (!isDuetMode || !p2Companion) return;
+    let lastNote: number | null = null;
+    let lastVolume = -1;
+    const iv = setInterval(() => {
+      const mp = mobilePitchRef?.current ?? null;
+      const note = mp?.note ?? null;
+      const volume = mp?.volume || 0;
+      if (note !== lastNote) {
+        lastNote = note;
+        setP2DetectedPitch(note);
+      }
+      if (volume !== lastVolume) {
+        lastVolume = volume;
+        setP2Volume(volume);
+      }
+    }, 100);
+    return () => clearInterval(iv);
+  }, [isDuetMode, p2Companion, mobilePitchRef, setP2DetectedPitch, setP2Volume]);
 
   // ── P2 Local Microphone: Initialize a second pitch detector for P2 in duet/duel mode ──
   // When two microphones are assigned (playerIndex 0 and 1), use the second one for P2
   // instead of relying solely on the mobile companion app for P2 pitch data.
   const p2DetectorRef = useRef<PitchDetector | null>(null);
   const p2DetectorInitRef = useRef(false);
-  // Use ref to read mobilePitch inside effect without adding it to deps
-  // (mobilePitch?.frequency changes ~20x/sec, which would re-init the detector constantly)
-  const mobilePitchRef = useRef(mobilePitch);
-  mobilePitchRef.current = mobilePitch;
 
   useEffect(() => {
     if (!isDuetMode || !song) return;
@@ -85,7 +92,7 @@ export function useDuetP2Pitch({
     // companion feed is NOT wired to P2 and this detector is the source.
     // (When p2Companion is true, the old behavior stays: companion takes
     // priority and the local mic is only a fallback.)
-    if (p2Companion && mobilePitchRef.current?.frequency) return;
+    if (p2Companion && mobilePitchRef?.current?.frequency) return;
 
     let destroyed = false;
     const detector = new PitchDetector();
@@ -125,7 +132,7 @@ export function useDuetP2Pitch({
       p2DetectorRef.current = null;
       p2DetectorInitRef.current = false;
     };
-  }, [isDuetMode, song, setP2DetectedPitch, setP2Volume, difficulty]);
+  }, [isDuetMode, song, setP2DetectedPitch, setP2Volume, difficulty, p2Companion, mobilePitchRef]);
 
   // Stop P2 detector when game ends or component unmounts
   useEffect(() => {
