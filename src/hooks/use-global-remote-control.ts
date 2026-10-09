@@ -125,8 +125,12 @@ export function useGlobalRemoteControl({
 
   // Process a single command
   const processCommand = useCallback((cmd: RemoteCommand) => {
-    // Skip if command is too old (more than 5 seconds)
-    if (Date.now() - cmd.timestamp > 5000) {
+    // Skip if command is too old. R61/3: 5 s → 15 s — kritische Befehle
+    // (party_leave_confirm/-cancel) müssen eine Socket-Reconnect-Lücke
+    // überdauern können (Reconnect-Delays 1–5 s + Server-Replay). 15 s ist
+    // weiterhin „frische Nutzerabsicht" — uralte Befehle eines fremden
+    // Desktop-Neustarts laufen weiter ins Leere.
+    if (Date.now() - cmd.timestamp > 15000) {
       return;
     }
 
@@ -762,6 +766,23 @@ export function useGlobalRemoteControl({
     socket.on('connect', () => {
       socketConnectedRef.current = true;
       socket.emit('host:register');
+      // R61/3 — FORCE-PUSH-NACHHOLUNG: Befehle, die eingegangen sind, während
+      // dieser Socket DOWN war, sitzen in der Server-Pending-Queue (der Server
+      // replays sie zwar beim host:register — aber nur an Kanäle, die sich
+      // registrieren; und ein anderer Kanal könnte die Queue per getcommands
+      // schon geleert haben, bevor dieser hier connected). Ein Einmal-Pull
+      // direkt nach dem Connect holt alles Nachgeholte UND leert die Queue
+      // sauber — die Timestamp-Dedup oben verhindert Doppel-Ausführung.
+      fetch('/api/mobile?action=getcommands')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          if (data?.success && Array.isArray(data.commands)) {
+            for (const cmd of data.commands as RemoteCommand[]) {
+              if (cmd && typeof cmd.type === 'string') processCommand(cmd);
+            }
+          }
+        })
+        .catch(() => { /* Silent — der Socket-Pfad und der 15s-Watchdog-Poll bleiben */ });
     });
 
     socket.on('disconnect', () => {

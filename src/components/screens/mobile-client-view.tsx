@@ -477,12 +477,22 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     // quelle: Mein Profil ist P1/P2 UND für meinen Platz wurde „Companion-App"
     // als Gesangs-Gerät gewählt (deviceAssignment, 2s-Push). R52: greift jetzt
     // tatsächlich — parseGameState überträgt players+deviceAssignment erstmals.
+    // R61/2 — PTM-SCHUTZ: `players` + `deviceAssignment` sind STALE Reste des
+    // letzten Standard-Spiels, solange ein Party-Modus läuft (der Master-Sync
+    // spreadet den Game-Store weiter; der Server-Merge bewahrt alte Keys).
+    // Folge: Im PTM (reines Mikrofon-Spiel, KEIN Companion-Gesang) starteten
+    // die Handys ALTER Standard-Spieler mit Mikro + Sing-Karte — selbst von
+    // Leuten, die am PTM gar nicht teilnahmen. isPartyModeActive kommt im
+    // selben 2s-Push mit und ist der saubere Trenner: Party-Modus aktiv ⇒
+    // kein Standard-Companion-Gesang (Turn-Modi tragen ihre Roster selbst:
+    // cptmTurn/singalongTurn/brGameData/medleyGameData).
     const isStandardCompanionSinger =
+      !gameState.isPartyModeActive &&
       !!gamePlayers?.length &&
       ((!!deviceAssignment?.p1Companion && gamePlayers[0]?.id === profile.id) ||
        (!!deviceAssignment?.p2Companion && gamePlayers[1]?.id === profile.id));
     return isMyTurn || isBrActivePlayer || isMedleyActivePlayer || isStandardCompanionSinger;
-  }, [profile, gameState.isPlaying, isConnected, singalongTurn, cptmTurn, brGameData, medleyGameData, deviceAssignment, gamePlayers]);
+  }, [profile, gameState.isPlaying, gameState.isPartyModeActive, isConnected, singalongTurn, cptmTurn, brGameData, medleyGameData, deviceAssignment, gamePlayers]);
 
   const autoSingDoneRef = useRef(false);
   useEffect(() => {
@@ -557,10 +567,31 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // Control-Commands ohne Lock mit 403 ab (R33/P1-Serverseite).
   const handleSendDesktopCommand = useCallback((screen: string, data?: unknown) => {
     if (!clientId || !profile) return;
-    fetch('/api/mobile', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'remote_command', clientId, payload: { command: screen, data } }),
-    }).catch(() => { /* ignore */ });
+    // R61/3 — FORCE-PUSH: Befehle waren fire-and-forget — ein transienter
+    // Fehler (429-Rate-Limit-Burst, Server-Neustart, Netz-Hickser) ließ den
+    // POST STILL verschwinden (`.catch(() => {})` + kein res.ok-Check).
+    // Gemeldeter Fall: Leave-Dialog auf dem Companion bestätigt → Befehl
+    // kam nie an → die Main-App blieb im Dialog hängen. Jetzt: res.ok prüfen
+    // und bis zu 3 Versuche mit Backoff — Befehle MÜSSEN ankommen.
+    const send = async (attempt: number): Promise<void> => {
+      try {
+        const res = await fetch('/api/mobile', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'remote_command', clientId, payload: { command: screen, data } }),
+        });
+        if (res.ok) return;
+        // 4xx außer 429 = semantischer Fehler (z. B. 403 ohne Lock) —
+        // Retry bringt nichts. 429/5xx/Netzwerk: retry.
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) return;
+      } catch {
+        // Netzwerkfehler → Retry
+      }
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 350 * (attempt + 1)));
+        return send(attempt + 1);
+      }
+    };
+    void send(0);
   }, [clientId, profile]);
 
   // ===================== REMOTE LOCK STATE =====================
@@ -1033,6 +1064,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           wakeLockHeld={wakeLock.held}
           wakeLockSupported={wakeLock.supported}
           wakeLockActive={!gameState.songEnded && (shouldSingNow || isMyUpcomingTurn || isListening)}
+          wakeLockBlocked={wakeLock.blocked}
           onActivate={() => {
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
             // R53: Im unsicheren Kontext ist KEIN Mikrostart möglich — der

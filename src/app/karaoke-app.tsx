@@ -1470,6 +1470,19 @@ export default function KaraokeZERO() {
                     gameMode: 'medley',
                   }
                 : {}),
+              // R61/2 — PARTY-STERILISATION: `players` + `deviceAssignment`
+              // sind Reste des LETZTEN Standard-Spiels im Game-Store. Der
+              // Spread oben überträgt sie weiter, und der Server-Merge
+              // bewahrt Keys, die keiner mehr neu schreibt. Folge (Nutzer-
+              // Report): Im PTM (reines Mikrofon-Spiel, KEIN Companion-
+              // Gesang) aktivierte die Companion-App den Gesang — selbst bei
+              // Spielern, die am PTM gar nicht teilnahmen, weil deren Profil
+              // noch als P1/P2 mit Companion-Gerät im State stand. Während
+              // eines aktiven Party-Modus werden beide Keys EXPLIZIT neutral
+              // gesetzt (leere Liste / null überschreiben den Server-Merge) —
+              // Turn-Modi tragen ihre Roster selbst (cptmTurn, singalongTurn,
+              // brGameData, medleyGameData, Tournament-Bracket).
+              ...(isPartyActiveDirect ? { players: [], deviceAssignment: null } : {}),
               currentScreen: screen,
               partyGameMode: partyNow.selectedGameMode || null,
               votingSongs: screen === 'song-voting' ? partyNow.votingSongs : [],

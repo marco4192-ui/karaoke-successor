@@ -61,6 +61,12 @@ export function useMobileClient({
   // ── Socket.IO host connection ──
   const socketRef = useRef<Socket | null>(null);
   const socketConnectedRef = useRef(false);
+  // R61/3 — letzter bekannter Dialog-Zustand (desktop-dialog-change). Wird
+  // nach einem Socket-Reconnect erneut gepusht, damit ein Dialog-Open/Close,
+  // das während der Trennung passiert ist, nicht auf dem Socket-Weg verloren
+  // geht (der 2s-Gamestate-Poll heilt es zwar, aber der Force-Push soll
+  // „sofort" sein — genau das Nutzer-Anliegen R61/3).
+  const lastDialogRef = useRef<{ dialog: string | null; dialogData?: Record<string, unknown> }>({ dialog: null });
 
   useEffect(() => {
     const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -80,6 +86,9 @@ export function useMobileClient({
       console.log('[Socket.IO Host] Connected:', socket.id);
       socketConnectedRef.current = true;
       socket.emit('host:register');
+      // R61/3 — Force-Push-Nachholung: den letzten Dialog-Zustand erneut
+      // senden (auch null — heilt zugleich den serverseitigen GameState).
+      socket.emit('host:dialog', lastDialogRef.current);
     });
 
     socket.on('disconnect', () => {
@@ -254,6 +263,8 @@ export function useMobileClient({
   useEffect(() => {
     const handleDialogChange = (e: Event) => {
       const detail = (e as CustomEvent).detail;
+      // R61/3: Zustand für den Reconnect-Flush merken (siehe socket.on('connect')).
+      lastDialogRef.current = { dialog: detail?.dialog ?? null, dialogData: detail?.dialogData };
       pushDialog(detail?.dialog ?? null, detail?.dialogData);
     };
     window.addEventListener('desktop-dialog-change', handleDialogChange);

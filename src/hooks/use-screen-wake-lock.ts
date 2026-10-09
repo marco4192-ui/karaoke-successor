@@ -26,6 +26,19 @@ import { useEffect, useRef, useState } from 'react';
 //      gilt, prüfen wir alle 15 s und holen einen verlorenen Lock neu.
 //   2. `held` meldet jetzt auch den Audio-Fallback als aktiv, damit die
 //      Status-Karte ☀️ zeigt, wenn der Schutz über den Fallback läuft.
+//
+// R61 — DER eigentliche Always-ON-Bug: R54 extrahierte die request-Methode
+// UNGBUNDEN (`const req = nav.wakeLock.request; req('screen')`). WebIDL-
+// Schnittstellen prüfen den Empfänger — der Aufruf ohne `this` wirft in
+// Chrome/Android UND Safari/iOS `TypeError: Illegal invocation`, landete
+// im catch und ließ `held` FALSCH bleiben. Der Lock hat seit R54 also
+// NIE funktioniert; erst R60s ⚠️-Hinweis machte das sichtbar („Wake Lock
+// funktioniert nicht, Energiesparmodus aktiv" — obwohl keiner aktiv war).
+// Fix: Wir behalten das wakeLock-OBJEKT und rufen `wakeLock.request(...)`
+// mit korrektem Empfänger. Zusätzlich unterscheidet `blocked` jetzt die
+// ECHTE Blockade (NotAllowedError, z. B. iOS Low Power Mode / Android
+// Energiesparmodus) von anderen Fehlern — nur dann zeigt die Status-Karte
+// den Energiespar-Hinweis.
 
 // Minimale Sentinel-Typen (bewusst eigenständig — ältere TS-DOM-Libs
 // kennen WakeLockSentinel teils noch nicht, neuere liefern es bereits;
@@ -36,16 +49,19 @@ interface WakeLockSentinelLike {
   addEventListener: (type: string, listener: () => void) => void;
 }
 
-type WakeLockRequester = (type: 'screen') => Promise<WakeLockSentinelLike>;
+interface WakeLockApiLike {
+  request: (type: 'screen') => Promise<WakeLockSentinelLike>;
+}
 
-/** Liefert die wakeLock.request-Funktion oder null (API fehlt / gesperrt). */
-function getWakeLockRequester(): WakeLockRequester | null {
+/** R61: Liefert das navigator.wakeLock-OBJEKT (nicht die entbündelte
+ *  Methode!) oder null, wenn die API fehlt (alter Browser / unsicherer
+ *  HTTP-Kontext). Der Aufruf muss als `wakeLock.request('screen')`
+ *  erfolgen — ohne Empfänger wirft WebIDL „Illegal invocation". */
+function getWakeLockApi(): WakeLockApiLike | null {
   if (typeof navigator === 'undefined') return null;
   const nav = navigator as Navigator & { wakeLock?: { request?: unknown } };
-  const req = nav.wakeLock && typeof nav.wakeLock.request === 'function'
-    ? nav.wakeLock.request
-    : null;
-  return req ? (req as WakeLockRequester) : null;
+  const wl = nav.wakeLock;
+  return wl && typeof wl.request === 'function' ? (wl as WakeLockApiLike) : null;
 }
 
 /** R60: Erzeugt eine Data-URL mit 1 s echter Stille (16-bit mono @ 8 kHz).
@@ -88,14 +104,23 @@ function createSilentAudioUrl(): string | null {
  * @param active true = Lock halten (z. B. „dieses Handy singt gerade"),
  *              false = Lock freigeben. Wechsel sind jederzeit möglich.
  * @returns supported — Wake Lock API verfügbar?; held — Schutz aktiv?
- *          (R60: auch true, wenn der stille Audio-Fallback läuft)
+ *          (R60: auch true, wenn der stille Audio-Fallback läuft);
+ *          blocked — R61: die letzte Anfrage wurde vom Browser mit
+ *          NotAllowedError abgelehnt (iOS Low Power Mode / Android
+ *          Energiesparmodus). Nur DANN ist der „Energiesparmodus"-Hinweis
+ *          berechtigt — andere Fehler (z. B. SecurityError bei unsichtbarem
+ *          Dokument) sind transient und werden per Watchdog/visibilitychange
+ *          erneut versucht.
  */
-export function useScreenWakeLock(active: boolean): { supported: boolean; held: boolean } {
+export function useScreenWakeLock(active: boolean): { supported: boolean; held: boolean; blocked: boolean } {
   // supported ändert sich im Leben einer Seite nie → einmalig beim ersten
   // Render bestimmen (useState-Initializer, kein Effect nötig).
-  const [supported] = useState<boolean>(() => getWakeLockRequester() !== null);
+  const [supported] = useState<boolean>(() => getWakeLockApi() !== null);
   const [apiHeld, setApiHeld] = useState(false);
   const [fallbackHeld, setFallbackHeld] = useState(false);
+  // R61: Echte Blockade (NotAllowedError) — steuert den ⚠️-Hinweis der
+  // Mic-Status-Karte statt des pauschalen „nicht gehalten".
+  const [blocked, setBlocked] = useState(false);
   const sentinelRef = useRef<WakeLockSentinelLike | null>(null);
   const activeRef = useRef(active);
   // Re-Entry-Schutz: request() darf nicht doppelt laufen, sonst leaked der
@@ -124,11 +149,14 @@ export function useScreenWakeLock(active: boolean): { supported: boolean; held: 
     const acquireLock = async () => {
       if (acquiringRef.current || sentinelRef.current) return;
       if (!activeRef.current) return;
-      const request = getWakeLockRequester();
-      if (!request) return;
+      // R61: Objekt holen und MIT Empfänger aufrufen — die entbündelte
+      // Methode (R54) warf „Illegal invocation" und der Lock scheiterte
+      // in JEDEM Browser still (siehe Kopf-Kommentar).
+      const api = getWakeLockApi();
+      if (!api) return;
       acquiringRef.current = true;
       try {
-        const sentinel = await request('screen');
+        const sentinel = await api.request('screen');
         if (cancelled || !activeRef.current) {
           // Inzwischen inaktiv geworden → sofort wieder freigeben
           try { if (!sentinel.released) await sentinel.release(); } catch { /* ignore */ }
@@ -136,6 +164,7 @@ export function useScreenWakeLock(active: boolean): { supported: boolean; held: 
         }
         sentinelRef.current = sentinel;
         setApiHeld(true);
+        setBlocked(false);
         // Browser gibt den Lock selbst frei (Tab gewechselt/App in Hintergrund)
         // → Status nachführen; visibilitychange holt ihn zurück.
         sentinel.addEventListener('release', () => {
@@ -144,11 +173,17 @@ export function useScreenWakeLock(active: boolean): { supported: boolean; held: 
             setApiHeld(false);
           }
         });
-      } catch {
-        // z. B. SecurityError (Seite nicht sichtbar beim request) oder
-        // NotAllowedError (Energiesparmodus) → ohne Lock weiterlaufen,
-        // die UI zeigt ggf. einen Hinweis.
+      } catch (err) {
+        // R61: Fehlerdiagnose statt Pauschal-„nicht gehalten".
+        // NotAllowedError = der Browser hat die Anfrage aktiv abgelehnt
+        // (iOS Low Power Mode, Android Energiesparmodus, Browser-Politik) —
+        // DAS ist der einzige Fall, in dem der Energiespar-Hinweis der
+        // Status-Karte berechtigt ist. SecurityError (Dokument unsichtbar)
+        // und alles andere sind transient → Watchdog/visibilitychange
+        // versuchen es erneut, ohne Warnung.
+        const isNotAllowed = err instanceof DOMException && err.name === 'NotAllowedError';
         setApiHeld(false);
+        setBlocked(isNotAllowed);
       } finally {
         acquiringRef.current = false;
       }
@@ -238,5 +273,5 @@ export function useScreenWakeLock(active: boolean): { supported: boolean; held: 
     };
   }, [active, supported]);
 
-  return { supported, held: apiHeld || fallbackHeld };
+  return { supported, held: apiHeld || fallbackHeld, blocked: supported && blocked && !apiHeld };
 }

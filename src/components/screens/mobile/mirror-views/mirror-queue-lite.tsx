@@ -272,13 +272,16 @@ export function MirrorQueueLite({
           </div>
         )}
 
-        {/* Queue items (R60/9): Der LAUFENDE Song ist eine große HERO-Karte
-            (Cover 68px, Titel/Artist vollständig ohne Abschneiden, alle
-            Badges sichtbar, pulsierender Cyan-Rahmen), die Folge-Songs sind
-            großzügigere Zeilen (Cover 48px, Titel 2-zeilig statt hart
-            getruncatet). Drag-Reorder + Entfernen + Play bleiben erhalten —
-            Eigener Scroll-Bereich (max-h + overflow-y-auto + schlanke
-            Custom-Scrollbar); Cover laden lazy nur fuer sichtbare Zeilen. */}
+        {/* Queue items (R60/9 + R61/4): Der LAUFENDE Song ist eine große
+            HERO-Karte (Cover 68px, alle Badges, pulsierender Cyan-Rahmen),
+            die Folge-Songs sind großzügige Zeilen (Cover 48px). R61/4: KEINE
+            Wegkürzungen mehr in den Folge-Zeilen — Titel, Artist, Spieler-
+            name(n) und Partner werden VOLLSTÄNDIG angezeigt (natürlicher
+            Umbruch statt truncate/line-clamp; die Zeile wächst bei Bedarf,
+            ist aber kein Hero-Banner). Drag-Reorder + Entfernen + Play
+            bleiben erhalten — eigener Scroll-Bereich (max-h +
+            overflow-y-auto + schlanke Custom-Scrollbar); Cover laden lazy
+            nur für sichtbare Zeilen. */}
         <div
           className={
             'flex flex-col gap-2.5 max-h-[62vh] overflow-y-auto pr-1 -mr-1 kz-scroll'
@@ -441,21 +444,22 @@ export function MirrorQueueLite({
                     Initialen-Kachel, solange kein JPEG vom Desktop kommt */}
                 <SongCoverTile songId={item.songId} title={item.songTitle} className="w-12 h-12 rounded-lg shrink-0" />
 
-                {/* Song info — Titel 2-zeilig (kein hartes Truncate),
-                    Artist sichtbar */}
+                {/* Song info — R61/4: Titel + Artist VOLLSTÄNDIG (kein
+                    Truncate/Clamp mehr — die Zeile wächst mit dem Inhalt,
+                    lange Titel werden komplett lesbar) */}
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-medium leading-snug text-white">
+                  <p className="text-sm font-semibold leading-snug text-white break-words">
                     {item.songTitle}
                   </p>
-                  <p className="line-clamp-2 text-xs leading-snug text-white/40">
+                  <p className="text-xs leading-snug text-white/45 break-words">
                     {item.songArtist}
                   </p>
                   {item.addedBy && (
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {(() => {
                         const profile = availableProfiles?.find(p => p.name === item.addedBy);
                         if (profile?.avatar) {
-                          return <img src={profile.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />;
+                          return <img src={profile.avatar} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />;
                         }
                         const clr = profile?.color || (item.isDesktop ? '#A78BFA' : '#06B6D4');
                         return (
@@ -467,7 +471,9 @@ export function MirrorQueueLite({
                           </div>
                         );
                       })()}
-                      <span className="text-[10px] text-white/40 truncate">{item.addedBy}</span>
+                      {/* R61/4: KOMPLETTER Spielername — kein truncate, Umbruch
+                          erlaubt (flex-wrap) */}
+                      <span className="text-[11px] text-white/50 break-words">{item.addedBy}</span>
                       {item.isDesktop && (
                         <span className="shrink-0 rounded bg-violet-500/20 px-1 py-0.5 text-[9px] font-semibold text-violet-300/90" title="Desktop">
                           {'\u{1F5A5}\uFE0F'}
@@ -478,8 +484,9 @@ export function MirrorQueueLite({
                           {'\u{1F4F1}'}
                         </span>
                       )}
+                      {/* R61/4: Partner-Name vollständig (kein truncate) */}
                       {item.partnerName ? (
-                        <span className="text-[10px] text-white/30 truncate">{'\u00B7 vs ' + item.partnerName}</span>
+                        <span className="text-[11px] text-white/40 break-words">{'\u00B7 vs ' + item.partnerName}</span>
                       ) : null}
                     </div>
                   )}

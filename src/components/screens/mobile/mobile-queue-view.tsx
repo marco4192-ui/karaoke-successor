@@ -100,30 +100,27 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
             </p>
           )}
 
-          {/* Playing items (non-draggable) */}
+          {/* Playing items (non-draggable) — R61/4: Vollständige Infos,
+              kein truncate (Titel, Artist, Spielername, Partner komplett) */}
           {playingItems.map((item, i) => (
             <div 
               key={item.id || `playing-${i}`}
               className="flex items-center gap-3 p-3 rounded-xl bg-cyan-500/20 border border-cyan-500/30"
             >
-              <span className="text-white/40 font-bold w-6">{i + 1}</span>
+              <span className="text-white/40 font-bold w-6 shrink-0">{i + 1}</span>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item.songTitle}</p>
-                <div className="flex items-center gap-2 text-sm text-white/40">
-                  <span>{item.songArtist}</span>
-                  <span>•</span>
-                  <span>{t('mobileViews.addedBy').replace('{n}', item.addedBy)}</span>
+                <p className="font-semibold leading-snug text-cyan-200 break-words">{item.songTitle}</p>
+                <p className="text-sm text-white/50 break-words">{item.songArtist}</p>
+                <div className="flex items-center gap-2 text-sm text-white/40 flex-wrap mt-0.5">
+                  <span className="break-words">{t('mobileViews.addedBy').replace('{n}', item.addedBy)}</span>
                   {item.partnerName && (
-                    <>
-                      <span>•</span>
-                      <span className="text-purple-400">{t('mobileViews.withPartner').replace('{n}', item.partnerName)}</span>
-                    </>
+                    <span className="text-purple-400 break-words">{t('mobileViews.withPartner').replace('{n}', item.partnerName)}</span>
                   )}
                 </div>
               </div>
               
               {/* Game Mode Badge */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {item.gameMode === 'duel' && (
                   <Badge className="bg-red-500/80 text-xs">⚔️ {t('mobileViews.gameModeDuel')}</Badge>
                 )}
@@ -135,7 +132,7 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
                 )}
               </div>
               
-              <Badge className="bg-cyan-500 text-xs">{t('mobileViews.playing')}</Badge>
+              <Badge className="bg-cyan-500 text-xs shrink-0">{t('mobileViews.playing')}</Badge>
             </div>
           ))}
 
@@ -166,18 +163,16 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
                 )}
 
                 {/* Position number — offset by 1 if drag handle is shown */}
-                <span className="text-white/40 font-bold w-6">{globalIndex}</span>
+                <span className="text-white/40 font-bold w-6 shrink-0">{globalIndex}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{item.songTitle}</p>
-                  <div className="flex items-center gap-2 text-sm text-white/40">
-                    <span>{item.songArtist}</span>
-                    <span>•</span>
-                    <span>{t('mobileViews.addedBy').replace('{n}', item.addedBy)}</span>
+                  {/* R61/4: Vollständige Songs + Spielernamen — kein truncate,
+                      natürlicher Umbruch; Zeile wächst mit dem Inhalt */}
+                  <p className="font-medium leading-snug break-words">{item.songTitle}</p>
+                  <p className="text-sm text-white/50 break-words">{item.songArtist}</p>
+                  <div className="flex items-center gap-2 text-sm text-white/40 flex-wrap mt-0.5">
+                    <span className="break-words">{t('mobileViews.addedBy').replace('{n}', item.addedBy)}</span>
                     {item.partnerName && (
-                      <>
-                        <span>•</span>
-                        <span className="text-purple-400">{t('mobileViews.withPartner').replace('{n}', item.partnerName)}</span>
-                      </>
+                      <span className="text-purple-400 break-words">{t('mobileViews.withPartner').replace('{n}', item.partnerName)}</span>
                     )}
                   </div>
                 </div>

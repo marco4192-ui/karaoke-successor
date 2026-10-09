@@ -144,6 +144,34 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       // eslint-disable-next-line no-console
       console.log(`[Socket.IO] Desktop host channel #${hostSockets.size} (${socket.id}) — internal app channel, not a player`);
 
+      // R61/3 — FORCE-PUSH-NACHHOLUNG: Befehle, die eintrudelten, während
+      // KEIN Host-Socket verbunden war (Desktop-Socket-Reconnect, Server-
+      // Neustart, Standby), blieben für immer in der pending queue liegen —
+      // der Desktop pollt getcommands nur bei DOWN-Socket, und nach dem
+      // Reconnect liefert nur der Live-Forward neue Befehle. Gemeldeter
+      // Fall: party_leave_confirm ging verloren → die Main-App blieb im
+      // Leave-Dialog hängen, während die Companion-App den Dialog längst
+      // geschlossen hatte. Jede (Re-)Registrierung bekommt jetzt die
+      // wartenden Befehle REPLAYED (≤ 60 s alt; Client-seitige Timestamp-
+      // Dedup verhindert Doppel-Ausführung, der Desktop-Expiry-Filter
+      // verwirft zu Altes). Die Queue wird dabei NICHT geleert — ein
+      // anderer Host-Kanal derselben Seite könnte die Befehle ebenfalls
+      // brauchen; getcommands/der Live-Forward räumen final auf. Zusätzlich
+      // werden Verfallene (> 60 s) herausgefiltert, damit die Queue nicht
+      // unbegrenzt wächst.
+      const now = Date.now();
+      const replayable = mutableState.remoteControlState.pendingCommands.filter(
+        (c) => now - c.timestamp <= 60_000,
+      );
+      mutableState.remoteControlState.pendingCommands = replayable;
+      if (replayable.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`[Socket.IO] Replaying ${replayable.length} queued command(s) to host ${socket.id}`);
+        for (const cmd of replayable) {
+          socket.emit('command', cmd);
+        }
+      }
+
       // Send current game state to host on registration
       socket.emit('host:registered', {
         companionCount: companionSockets.size,
@@ -482,6 +510,13 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
           (c) => !(c.type === data.command.type && c.timestamp === data.command.timestamp && c.fromClientId === data.command.fromClientId),
         );
     }
+    // R61/3 — wenn KEIN Host-Socket verbunden war, bleibt der Befehl in der
+    // pending queue LIEGEN. Bisher für immer: Der Desktop pollt getcommands
+    // nur, solange sein eigener Socket DOWN ist — verbindet der Socket sich
+    // wieder, wird die Queue NIE mehr abgerufen und der Befehl ist verloren
+    // (Nutzer-Report: Leave-Dialog-Confirm kam nie an, Main-App blieb im
+    // Dialog hängen). Die Heilung passiert jetzt im 'host:register'-Handler:
+    // jede (Neu-)Registrierung replays die wartende Queue an diesen Socket.
   });
 
   // eslint-disable-next-line no-console

@@ -28,6 +28,12 @@ export interface MicStatusCardProps {
    *   dann macht der „gewollt aber nicht gehalten"-Hinweis Sinn (z. B.
    *   iOS-Energiesparmodus blockiert request()). */
   wakeLockActive?: boolean;
+  /** R61: Die Anfrage wurde WIRKLICH vom Browser abgelehnt (NotAllowedError,
+   *   z. B. iOS Low Power Mode / Android Energiesparmodus). Nur dann ist der
+   *   „Energiesparmodus"-Hinweis berechtigt — R60 zeigte ihn pauschal bei
+   *   jedem „nicht gehalten" (inkl. transienter Fehler), was Nutzer meldeten,
+   *   obwohl KEIN Energiesparmodus aktiv war. */
+  wakeLockBlocked?: boolean;
   onActivate: () => void;
 }
 
@@ -52,7 +58,7 @@ export function midiNoteName(note: number | null): string | null {
 export function MicStatusCard({
   isListening, audioSuspended, hasSignal, micPermissionDenied,
   insecureContext, httpsAvailable, volume, note,
-  wakeLockHeld, wakeLockSupported, wakeLockActive, onActivate,
+  wakeLockHeld, wakeLockSupported, wakeLockActive, wakeLockBlocked, onActivate,
 }: MicStatusCardProps) {
   const { t } = useTranslation();
 
@@ -146,11 +152,16 @@ export function MicStatusCard({
               ⚠️ {tOr(t, 'mobile.wakeLockUnsupported', 'Display während des Gesangs anlassen')}
             </span>
           )}
-          {/* R60 — API vorhanden, Schutz gewollt, aber Lock nicht gehalten:
-              typisch iOS-Energiesparmodus (NotAllowedError). Vorher BLIEB
-              diese Situation unsichtbar (weder ☀️ noch ⚠️) — der Nutzer
-              glaubte, der Schutz sei aktiv, während das Display doch ausging. */}
-          {wakeLockSupported && wakeLockActive && !wakeLockHeld && (
+          {/* R60/R61 — API vorhanden, Schutz gewollt, Lock nicht gehalten UND
+              vom Browser WIRKLICH abgelehnt (NotAllowedError = iOS Low Power
+              Mode / Android Energiesparmodus): erst dann ist der Hinweis
+              berechtigt. R60 zeigte ihn pauschal bei jedem nicht-gehalten —
+              darunter dem R61-Bug (Illegal invocation), bei dem der Hinweis
+              auf jedem Android ohne aktiven Energiesparmodus dauerhaft
+              erschien. Transiente Fehler (z. B. unsichtbares Dokument beim
+              request) bleiben bewusst unsichtbar — der 15s-Watchdog holt
+              den Lock automatisch nach. */}
+          {wakeLockSupported && wakeLockActive && !wakeLockHeld && wakeLockBlocked && (
             <span
               className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-200"
               title={tOr(t, 'mobile.wakeLockLowPower', 'Display-Schutz blockiert — Energiesparmodus deaktivieren')}
