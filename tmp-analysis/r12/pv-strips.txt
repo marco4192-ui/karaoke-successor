@@ -1,0 +1,25 @@
+  // ── Ghost notes: per-player strips for the note highway ─────────────
+  // ≥2 active players → Medley-style per-player strips (hits fill the
+  // strip in the player colour, wrong-pitch misses become ghost bars at
+  // the sung pitch in the player colour + live miss dots).
+  // Exactly 1 active player (late-game survivor) → single-player modern
+  // pipeline (ghosts like Single/Duell). No data yet → flat fill fallback.
+  const playerStrips = useMemo<NotePlayerStrip[]>(() => {
+    if (!brNotePerformance) return [];
+    return activePlayers.map(p => ({
+      id: p.id,
+      color: p.color,
+      performance: brNotePerformance.get(p.id) ?? EMPTY_PLAYER_PERF,
+    }));
+    // activePlayers is memoised upstream; brNotePerformance identity only
+    // changes on the throttled (200 ms) snapshot sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlayers, brNotePerformance]);
+
+  const stripsActive = playerStrips.length >= 2;
+  const soloStrip = playerStrips.length === 1 ? playerStrips[0] : null;
+  // (B3.2) The central "x/x mics active" pill was removed — per-player
+  // singing indicators on the cards already show real-time mic status.
+
+  // V1: Note highway visibility
+  const showNoteHighway = game.settings.showNoteHighway && pitchStats !== null && visibleNotes.length > 0;

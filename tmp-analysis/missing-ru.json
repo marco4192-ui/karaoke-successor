@@ -1,0 +1,1569 @@
+{
+  "language": "ru",
+  "missingCount": 1136,
+  "missingByFile": {
+    "core": {
+      "homeScreen": {
+        "dailyTitle": "Daily Challenge",
+        "weeklyTitle": "Weekly Challenge",
+        "challengeLoading": "Loading challenges...",
+        "dailyProgress": "{done} of {total} slots",
+        "slotLabel": "Slot {n}",
+        "resetIn": "Resets in {time}",
+        "dailyCta": "Start Daily",
+        "weeklyCta": "View Weekly",
+        "allDailyDone": "All daily slots completed! 🎉",
+        "allWeeklyDone": "All weekly slots completed! 🎉",
+        "xpReward": "+{xp} XP",
+        "needProfileTitle": "Profile required",
+        "needProfileDesc": "Create a player profile to track daily and weekly challenges, earn XP and unlock badges.",
+        "needProfileCta": "Create Profile",
+        "navSectionTitle": "Explore the app",
+        "navSoloTitle": "Sing",
+        "navSoloDesc": "Pick a song from the library and start singing",
+        "launchSingle": "Single",
+        "launchSingleSub": "1 player",
+        "launchDuell": "Duel",
+        "launchDuellSub": "2 mics · point duel",
+        "launchDuett": "Duet",
+        "launchDuettSub": "2 voices · duet songs",
+        "navPartyDesc": "{n} game modes for 2–24 players",
+        "navJukeboxTitle": "Jukebox",
+        "navJukeboxDesc": "Build playlists and queue up songs",
+        "navHighscoresTitle": "Highscores",
+        "navHighscoresDesc": "Highscores and records",
+        "navAchievementsTitle": "Achievements",
+        "navAchievementsDesc": "Badges and milestones",
+        "navSettingsTitle": "Settings",
+        "navSettingsDesc": "Audio, microphones, display"
+      },
+      "jukeboxPlayer": {
+        "genresAvailable": "Genres",
+        "artistsAvailable": "Artists",
+        "vinylLabel": "Spinning vinyl record",
+        "equalizerLabel": "Audio visualization",
+        "heroTagline": "Music only – no scores, no pressure. Just enjoy.",
+        "youtubeShort": "YouTube link",
+        "playbackOptions": "Playback options",
+        "addYoutubeHint": "Copy a link from YouTube and paste it here",
+        "startReady": "Ready to play",
+        "videoLinkTitle": "Video Link",
+        "videoLinkDesc": "Queue a link — plays with music and video, no lyrics needed",
+        "videoLinkPlaceholder": "Paste a video link or embed code (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico, MP4…)",
+        "videoLinkAdd": "Queue",
+        "videoLinkInvalid": "Unrecognized video link — not supported yet",
+        "videoLinkQueued": "Video queued!",
+        "videoLinkHint": "Plays after the current song or behind the last requested songs — with music and video. Starts immediately when nothing is playing. Full iframe embed codes (e.g. VK Video “Einbetten”) are accepted as-is.",
+        "videoQueuedCount": "{n} videos in the queue",
+        "queueEmpty": "Queue is empty — queue a video link above or request songs",
+        "videoChip": "Video",
+        "queueVideoRemove": "Remove video from the queue",
+        "gateStart": "▶️ Music/video is playing — Go!",
+        "startVideo": "Start video",
+        "startVideoHint": "If the video does not start by itself — restart it with one click",
+        "volumeInPlayerHint": "Bilibili provides no player API — regulate the volume directly in the video player",
+        "linkListTitle": "Link List",
+        "linkListDesc": "Multiple links — one per line — play back to back",
+        "linkListPlaceholder": "https://… (one link per line)\nOptional title: https://… | My title",
+        "linkListAdd": "Queue list",
+        "linkListFile": "File",
+        "linkListParsed": "{n} links detected",
+        "linkListQueued": "{n} videos queued!",
+        "enqueuePlaylist": "Play playlist",
+        "enqueuePlaylistDesc": "Plays exactly this playlist in the jukebox — or appends it when something is already playing",
+        "enqueuePlaylistRunning": "Queue it",
+        "playlistQueued": "Playlist queued!",
+        "browsePlaylists": "Browse playlists",
+        "browsePlaylistsTitle": "📋 Playlists",
+        "browsePlaylistsEmpty": "No playlists yet — create one in the library.",
+        "browsePlaylistsSongs": "{count} songs",
+        "browsePlaylistsSetPool": "Set as pool",
+        "browsePlaylistsQueue": "Add to jukebox",
+        "browsePlaylistsQueuedToast": "Playlist added to the jukebox!"
+      },
+      "dailyChallenge": {
+        "badges": {
+          "dailyBronze": {
+            "name": "Daily Bronze",
+            "description": "Complete 1 daily challenge in one day"
+          },
+          "dailySilver": {
+            "name": "Daily Silver",
+            "description": "Complete 3 daily challenges in one day"
+          },
+          "dailyGold": {
+            "name": "Daily Gold",
+            "description": "Complete all 5 daily challenges in one day"
+          },
+          "weeklyBronze": {
+            "name": "Weekly Bronze",
+            "description": "Complete 1 weekly challenge in one week"
+          },
+          "weeklySilver": {
+            "name": "Weekly Silver",
+            "description": "Complete 3 weekly challenges in one week"
+          },
+          "weeklyGold": {
+            "name": "Weekly Gold",
+            "description": "Complete all 5 weekly challenges in one week"
+          }
+        }
+      },
+      "dailyBadges": {
+        "first-challenge": {
+          "name": "First Steps",
+          "description": "Complete your first daily challenge"
+        },
+        "week-warrior": {
+          "name": "Week Warrior",
+          "description": "Maintain a 7-day streak"
+        },
+        "fortnight-fighter": {
+          "name": "Fortnight Fighter",
+          "description": "Maintain a 14-day streak"
+        },
+        "monthly-master": {
+          "name": "Monthly Master",
+          "description": "Maintain a 30-day streak"
+        },
+        "top-3": {
+          "name": "Podium Finish",
+          "description": "Finish in top 3 of a daily challenge"
+        },
+        "champion": {
+          "name": "Daily Champion",
+          "description": "Win a daily challenge"
+        },
+        "dedicated": {
+          "name": "Dedicated Singer",
+          "description": "Complete 30 daily challenges"
+        },
+        "legendary": {
+          "name": "Legendary Status",
+          "description": "Reach 10,000 total XP"
+        },
+        "century-champion": {
+          "name": "Century Champion",
+          "description": "Maintain a 100-day streak"
+        },
+        "yearly-legend": {
+          "name": "Yearly Legend",
+          "description": "Maintain a 365-day streak"
+        },
+        "daily-bronze": {
+          "name": "Daily Bronze",
+          "description": "Complete 1 daily challenge in one day"
+        },
+        "daily-silver": {
+          "name": "Daily Silver",
+          "description": "Complete 3 daily challenges in one day"
+        },
+        "daily-gold": {
+          "name": "Daily Gold",
+          "description": "Complete all 5 daily challenges in one day"
+        },
+        "weekly-bronze": {
+          "name": "Weekly Bronze",
+          "description": "Complete 1 weekly challenge in one week"
+        },
+        "weekly-silver": {
+          "name": "Weekly Silver",
+          "description": "Complete 3 weekly challenges in one week"
+        },
+        "weekly-gold": {
+          "name": "Weekly Gold",
+          "description": "Complete all 5 weekly challenges in one week"
+        },
+        "explorer": {
+          "name": "Challenge Explorer",
+          "description": "Play 5 different challenge modes"
+        },
+        "songbird": {
+          "name": "Songbird",
+          "description": "Complete 10 songs total"
+        },
+        "weekly-warrior": {
+          "name": "Weekly Warrior",
+          "description": "Complete 3 weekly challenges"
+        }
+      }
+    },
+    "library": {
+      "library": {
+        "mottoNoSongs": "No song matches the motto — adjust it under Settings → Theme Party"
+      },
+      "libraryFilters": {
+        "othersLanguages": "Other Languages"
+      },
+      "playlistQueueConfig": {
+        "noLimitToggle": "No per-player limit (lift the 3-per-player cap)",
+        "noLimitOff": "Default: at most 3 songs per player are added to the queue (as singer or partner).",
+        "noLimitAutoOn": "All pairings were set manually — the limit is lifted automatically. The entire playlist will be queued.",
+        "noLimitManualOn": "Limit lifted manually — the entire playlist will be queued without a per-player limit."
+      },
+      "songStart": {
+        "instrumentalButton": "Instrumental",
+        "instrumentalTitle": "Export Instrumental (remove vocals)",
+        "instrumentalClose": "Close instrumental panel",
+        "instrumentalAmount": "Vocal removal: {n}%",
+        "instrumentalHint": "Removes the center-panned lead vocals (center-channel cancellation) and renders the song as a WAV file — for pure karaoke, DJ sets or further editing. Works best on stereo mixes with centered vocals; the original bass is preserved.",
+        "instrumentalExport": "💾 Export as WAV",
+        "instrumentalExporting": "Rendering…",
+        "instrumentalDone": "Instrumental downloaded!",
+        "instrumentalFailed": "Export failed — the file could not be decoded.",
+        "instrumentalNoAudio": "This song has no audio file (MIDI synthesis or platform video) — nothing to export.",
+        "instrumentalCrossOrigin": "Cross-origin audio file (CORS) — export not possible."
+      },
+      "importAlternateFormat": {
+        "formatDescriptions": {
+          "ultrastar": "Classic UltraStar .txt format (notes, lyrics, metadata)"
+        },
+        "noNotes": "No notes found in the MIDI file.",
+        "midiTrackSelect": "Select melody track",
+        "midiTrackInfo": "{notes} notes · {syllables} syllables · {coverage}% lyric match",
+        "midiMelodyBadge": "Melody",
+        "midiDrumsBadge": "Drums",
+        "midiNoNotesTrack": "no notes",
+        "midiTracksFound": "{n} tracks detected — \"{melody}\" preselected as melody track.",
+        "midiTracksFoundFallback": "{n} tracks detected — no lyrics found, \"{melody}\" preselected.",
+        "midiNoLyricsWarning": "No lyrics found in this MIDI file — notes will be imported without syllables.",
+        "midiCreatePreview": "Create preview",
+        "midiSongInfo": "Detected: \"{title}\" by {artist}",
+        "midiMetaInfo": "{bpm} BPM · {tracks} tracks",
+        "conversionNote": "The import converts the song into the UltraStar format: text file, audio, video and cover are stored permanently — the song is fully playable and editable in the editor afterwards.",
+        "selectFile2": "Choose file…",
+        "videoFile": "Video file",
+        "videoOptional": "Optional — e.g. the Karaoke Mugen video.",
+        "coverFile": "Cover image",
+        "coverOptional": "Optional — cover for the library.",
+        "assFile": "ASS subtitles (.ass)",
+        "assHint": "Optional for JSON imports — the .ass provides precise syllable timing (overrides the JSON lyrics). Not needed when a .ass is the song file.",
+        "persistSuccess": "Song saved — the UltraStar text file and media are permanently stored in the library.",
+        "persisting": "Saving…",
+        "lyricsPreview": "Lyrics preview",
+        "lyricsPreviewStats": "{lines} lines · {notes} notes"
+      },
+      "editor": {
+        "reconcileTitle": "Library reconciled with TXT files",
+        "reconcileDone": "{updated} updated · {removed} removed · {scanned} scanned. Metadata now follows the TXT files again.",
+        "aiBatchNotAnalyzed": "{count} song(s) could not be analyzed (AI unavailable). They stay without genre/language and will be retried on the next run — not stored as \"done\".",
+        "aiBatchSelectNext": "Select next {n}",
+        "aiBatchSelectRemaining": "Select all remaining ({n})",
+        "ruleHarmonizeTitle": "Rule-based harmonization (no AI)",
+        "ruleHarmonizeDesc": "Normalizes genres using fixed rules — \"Bubblegum Pop\" becomes \"Pop\", \"Classic Rock\" becomes \"Rock\", etc. Runs as a background process.",
+        "ruleHarmonizeCount": "{count} songs would be updated:",
+        "ruleHarmonizeStart": "Harmonize",
+        "ruleHarmonizeAbort": "Abort",
+        "ruleHarmonizeReset": "Dismiss",
+        "ruleHarmonizeRunning": "Harmonizing genres…",
+        "ruleHarmonizeDone": "Done: {done} songs updated, {errors} failed.",
+        "ruleHarmonizeAborted": "Aborted at {done}/{total}.",
+        "ruleHarmonizeErrors": "{count} TXT file(s) could not be written — those songs were not changed.",
+        "ruleHarmonizeNothing": "All genres are already harmonized.",
+        "ruleHarmonizeNotFixable": "{count} songs cannot be harmonized automatically (unclear genres) — see the manual assignment below.",
+        "ruleHarmonizeBgRunning": "Rule harmonization {done}/{total}",
+        "manualReviewCount": "{count} songs with ambiguous genres — please assign manually:",
+        "manualReviewDesc": "These genres (e.g. \"AI\", \"Oldies\", \"A Cappella\", \"TV\", \"Female Vocals\") cannot be mapped to a main genre by logical rules. Pick the correct one of the 23 main genres per song and click \"Apply\" — or skip songs (⏭️) and leave them as-is for now. The rule harmonization runs independently of this list.",
+        "manualReviewChoose": "Choose genre…",
+        "manualReviewApply": "Apply",
+        "manualReviewPlay": "Listen to song",
+        "manualReviewStopPreview": "Stop preview",
+        "manualReviewNoAudio": "No audio file available",
+        "manualReviewSkip": "Skip — keep genre as-is",
+        "manualReviewSkipAll": "Skip all",
+        "manualReviewSkipAllHint": "Leaves all remaining songs unchanged — the rule harmonization runs independently.",
+        "manualReviewSkippedInfo": "{count} songs skipped — genres stay unchanged for now.",
+        "manualReviewRestore": "Restore",
+        "manualEditHint": "Edit song metadata directly: see the current value, enter the new one next to it and apply. Applies to all songs in the selected scope.",
+        "manualEditChangedCount": "{changed} of {total} songs changed",
+        "manualEditNoChanges": "No changes",
+        "manualEditCurrent": "Current",
+        "manualEditEmptyScope": "No songs in the selected scope — select songs (☑️) or switch the scope to \"All songs\".",
+        "aiBatchSelectFirstTitle": "Select songs first",
+        "aiBatchSelectFirstDesc": "Click songs to mark them before running AI suggestions.",
+        "selectModeHintTitle": "Select songs",
+        "selectModeHintAll": "All songs are selectable.",
+        "selectModeHintFiltered": "{n} songs match the current filter.",
+        "loadingLibraryTitle": "Loading library…",
+        "loadingLibraryDesc": "Loading songs from storage.",
+        "studioDeselect": "✕ Deselect",
+        "studioModeManual": "Manual",
+        "bootTitle": "Loading editor…",
+        "loadMore": "Load More",
+        "duetBadge": "Duet song (2 voices)",
+        "leftPanel": {
+          "notes": "Notes & Tools",
+          "lyrics": "Lyrics"
+        },
+        "header": {
+          "panelMetadata": "Metadata",
+          "panelAnalysis": "Audio Analysis",
+          "panelAI": "AI Assistant",
+          "panelTags": "Genre/Language",
+          "closePanel": "Close panel",
+          "cancelConfirmTitle": "Unsaved changes",
+          "cancelConfirmDesc": "Your changes have not been saved yet. What do you want to do?",
+          "cancelConfirmKeep": "Keep editing",
+          "cancelConfirmDiscard": "Discard",
+          "cancelConfirmSave": "Save & close"
+        },
+        "newSongDialog": {
+          "selectBackground": "Select background image",
+          "noBackgroundSelected": "No background image selected",
+          "videoUrlPlaceholder": "Video URL: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico or direct (.mp4)",
+          "backgroundUrlPlaceholder": "Image URL or video/platform link (fallback without video)",
+          "videoKeyNote": "Both #VIDEO: and #SOURCE: are read — on save, real video files get #VIDEO: and video URLs get #SOURCE:.",
+          "formats": {
+            "audio": "MP3, WAV, OGG, FLAC, M4A, MID, KAR",
+            "audioMidi": "MID/KAR: as a note base, soon playable too",
+            "video": "MP4, WebM, MOV + YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico",
+            "cover": "PNG, JPG, WEBP, BMP, GIF",
+            "background": "PNG, JPG, WEBP, GIF + video/platform links (fallback without video)"
+          }
+        },
+        "midiImport": {
+          "title": "MIDI/KAR Note Import",
+          "description": "Import notes (pitch + timing) from a .mid/.kar file as the note basis — the song’s music file stays untouched. Syllables can optionally be assigned; notes without a syllable get \"~\".",
+          "chooseFile": "Choose file…",
+          "track": "Track",
+          "trackNotes": "Notes",
+          "melodyTrack": "Melody",
+          "lyricsOptional": "Lyrics (optional — assign syllables)",
+          "lyricsPlaceholder": "Paste lyrics here…\n\nSyllables are assigned to the imported notes one by one (order = time order).",
+          "syllableAssignment": "{syllables} syllables for {notes} notes",
+          "transpose": "Transposition (semitones)",
+          "import": "Import",
+          "importButton": "MIDI Import",
+          "importReplaceTitle": "Replace notes?",
+          "importReplaceBody": "This song already contains notes. Importing replaces all existing notes — BPM and GAP are set from the MIDI file. The music file stays untouched.",
+          "confirm": "Replace",
+          "cancel": "Cancel",
+          "comparisonButton": "MIDI Compare",
+          "comparisonHint": "Load a MIDI/KAR file as a non-interactive comparison overlay on the note lanes",
+          "comparisonLegend": "MIDI/KAR reference",
+          "comparisonClear": "Remove reference",
+          "parseError": "Could not read the MIDI file.",
+          "noTracks": "No note tracks found in this file.",
+          "sheetMusic": {
+            "button": "Sheet Music Import",
+            "title": "Sheet Music Recognition (AI)",
+            "description": "Recognize notes (pitch + timing) from a sheet music image or PDF via AI and import them as the note basis — the song’s music file stays untouched. PDFs are rendered page by page and can be analyzed individually or as a whole. Recognition is AI-assisted and should be reviewed; syllables can optionally be assigned, notes without a syllable get \"~\".",
+            "chooseFile": "Choose image/PDF…",
+            "uploadHint": "Choose a PNG/JPG image or PDF of the sheet music",
+            "analyze": "Analyze",
+            "analyzing": "Analyzing sheet music…",
+            "analyzeAll": "Analyze all pages",
+            "analyzingPage": "Analyzing page {page}/{total}…",
+            "voices": "Detected voices (staves)",
+            "voiceLabel": "Staff",
+            "mergedVoices": "All pages",
+            "mergedHint": "The voices of all pages were merged by staff position (staff index) in reading order — tempo and warnings come from the first analyzed page.",
+            "tempo": "Tempo (BPM)",
+            "transpose": "Transposition (semitones)",
+            "lyricsOptional": "Lyrics (optional — assign syllables)",
+            "import": "Import",
+            "importReplaceHint": "This song already contains notes. Importing replaces all existing notes — BPM is set from the detected tempo. The music file stays untouched.",
+            "error": "Sheet music analysis failed.",
+            "pdfRenderError": "The PDF could not be read or rendered — please check that it is a valid PDF file.",
+            "pdfRendering": "Processing PDF (rendering pages)…",
+            "pdfPage": "Page {page} / {total}",
+            "pdfPrevPage": "Previous page",
+            "pdfNextPage": "Next page",
+            "pdfPageCap": "max. {max} pages",
+            "pdfPageCapHint": "For analysis quality and request limits, at most 12 pages per PDF are analyzed.",
+            "lowQualityWarning": "Low recognition confidence — please review the notes after import.",
+            "confidence": "Confidence",
+            "warnings": "Recognition notes",
+            "noVoices": "No notes detected — please check the image quality.",
+            "syllableAssignment": "{syllables} syllables for {notes} notes"
+          }
+        },
+        "metadataTab": {
+          "videoHint": "File name, video URL or the full embed code (e.g. VK “Embed”) — all accepted."
+        },
+        "lyricsTab": {
+          "jumpHint": "Double-click: jump to the note on the pitch ladder"
+        },
+        "toolsPanel": {
+          "merge": "Merge",
+          "mergeNote": "Merge note with the next note in the line (M)",
+          "mergeShortcut": "Merge",
+          "notesSelected": "notes selected",
+          "transpose": "Transpose",
+          "transposeSelection": "Selection",
+          "transposeAll": "All notes",
+          "transposeHint": "Semitones; clamped to MIDI 0–127. Single undo step.",
+          "semitones": "Semitone",
+          "nudge": "Nudge",
+          "multiSelect": "Multi-select"
+        },
+        "noteDetails": {
+          "title": "Note Details",
+          "pitch": "Pitch",
+          "text": "Text/Syllable",
+          "position": "Position",
+          "beat": "Beat",
+          "line": "Line",
+          "type": "Type",
+          "duration": "Duration",
+          "frequency": "Frequency",
+          "hint": "Select a note to see details",
+          "selectedCount": "{count} selected",
+          "transposeLabel": "Transpose (semitone)",
+          "rap": "Rap",
+          "freestyleHint": "Freestyle: pitch doesn’t matter — any sound counts",
+          "rapHint": "Rap: timing counts, pitch ignored"
+        },
+        "noteType": {
+          "normal": "Normal",
+          "golden": "Golden",
+          "freestyle": "Freestyle",
+          "rap": "Rap",
+          "rapGolden": "Golden Rap"
+        },
+        "subHeader": {
+          "addNote": "+ Note",
+          "addNoteHint": "New note at the playhead — using the active note type",
+          "duplicate": "Duplicate",
+          "delete": "Delete",
+          "split": "Split",
+          "merge": "Merge",
+          "noteType": "Note type",
+          "typeUsedForAdd": "Type used for new notes",
+          "typeAppliesSelection": "Click changes the type of the selected notes",
+          "voice": "Voice",
+          "allVoices": "All voices",
+          "player1": "Player 1 (P1)",
+          "player2": "Player 2 (P2)",
+          "player3": "Player 3 (P4)",
+          "player4": "Player 4 (P8)",
+          "transposeAll": "Transpose all notes",
+          "tapModeOn": "Tap Mode ON",
+          "tapModeOff": "Tap Mode",
+          "tapModeHint": "Press & hold Space = create note, release = set duration",
+          "tapHold": "⏺ Hold Space…",
+          "tapPress": "Space = place note",
+          "tapNext": "Next"
+        },
+        "shortcuts": {
+          "title": "Shortcuts",
+          "addNote": "Place note",
+          "pitch": "Pitch ±1",
+          "pitchOctave": "Pitch ±1 octave",
+          "timing": "Timing ±25 ms",
+          "timingCoarse": "Timing ±250 ms",
+          "delete": "Delete",
+          "merge": "Merge with next",
+          "playPause": "Play / Pause",
+          "multiSelect": "Multi-select",
+          "copy": "Copy note",
+          "paste": "Paste note",
+          "undo": "Undo",
+          "redo": "Redo",
+          "save": "Quick save",
+          "deselect": "Deselect",
+          "footnote": "Notes can also be dragged directly with the mouse: horizontal = time, vertical = pitch."
+        },
+        "timeline": {
+          "snap": "Snap to beat (magnet)",
+          "duetSplit": "Duet split view: both vocal tracks on separate pitch ladders",
+          "lyricJumpHint": "Click: select · Double-click: jump to the note on the pitch ladder"
+        }
+      }
+    },
+    "game": {
+      "gameScreen": {
+        "midiSynth": "🎛 MIDI Synthesis"
+      },
+      "gameHud": {
+        "vocalFilterLabel": "Vocal filter",
+        "vocalFilter": "Vocal filter: {n}%",
+        "vocalFilterOff": "Vocal filter: off",
+        "vocalFilterUnavailable": "Vocal filter: unavailable",
+        "vocalFilterUnavailableShort": "Not available for this medium",
+        "vocalFilterReasonMidi": "MIDI synthesis contains no vocal track in the music signal — nothing to filter.",
+        "vocalFilterReasonPlatform": "Platform audio (YouTube, Dailymotion, Vimeo, …) never passes through a filterable audio element. Mono files cannot be filtered either.",
+        "vocalFilterReasonCrossOrigin": "Cross-origin audio file (CORS) — Web Audio filtering would output silence. Works best on stereo recordings with center-panned vocals.",
+        "vocalFilterReasonNative": "Native audio output (ASIO/WASAPI) bypasses the browser audio element.",
+        "voiceFxTitle": "Voice FX Studio",
+        "voiceFxMode": "Voice effect",
+        "voiceFxOff": "Off",
+        "voiceFxRobot": "Robot",
+        "voiceFxPhone": "Phone",
+        "voiceFxChorus": "Chorus",
+        "voiceFxMegaphone": "Megaphone",
+        "voiceFxMix": "Effect intensity: {n}%",
+        "voiceFxHarmony": "Harmonizer: {n} semitones",
+        "voiceFxHarmonyOff": "Harmonizer: off (move the slider)",
+        "voiceFxHarmonyLevel": "Harmony level: {n}%",
+        "voiceFxCorrection": "Pitch correction: {n}%",
+        "voiceFxHint": "Correction only shapes the monitored sound — scoring always judges your real voice. Use headphones with speakers (feedback!)."
+      },
+      "challenges": {
+        "requirements": {
+          "challengeCompleted": "Complete \"{name}\" first"
+        },
+        "noteNovice": {
+          "name": "Note Novice",
+          "description": "Hit 50+ correct notes in a single song"
+        },
+        "noteApprentice": {
+          "name": "Note Apprentice",
+          "description": "Hit 100+ correct notes in a single song"
+        },
+        "noteAdept": {
+          "name": "Note Adept",
+          "description": "Hit 200+ correct notes in a single song"
+        },
+        "noteVirtuoso": {
+          "name": "Note Virtuoso",
+          "description": "Hit 350+ correct notes in a single song"
+        },
+        "noteLegend": {
+          "name": "Note Legend",
+          "description": "Hit 500+ correct notes in a single song"
+        },
+        "comboCadet": {
+          "name": "Combo Cadet",
+          "description": "Reach a 30+ note combo in a single song"
+        },
+        "comboCaptain": {
+          "name": "Combo Captain",
+          "description": "Reach a 60+ note combo in a single song"
+        },
+        "comboCommander": {
+          "name": "Combo Commander",
+          "description": "Reach a 100+ note combo in a single song"
+        },
+        "comboColossus": {
+          "name": "Combo Colossus",
+          "description": "Reach a 175+ note combo in a single song"
+        },
+        "perfectPath": {
+          "name": "Perfect Path",
+          "description": "Hit 25+ perfect notes in a single song"
+        },
+        "perfectPilgrim": {
+          "name": "Perfect Pilgrim",
+          "description": "Hit 50+ perfect notes in a single song"
+        },
+        "perfectProphet": {
+          "name": "Perfect Prophet",
+          "description": "Hit 100+ perfect notes in a single song"
+        },
+        "goldPanner": {
+          "name": "Gold Panner",
+          "description": "Hit 3+ golden notes in a single song"
+        },
+        "goldMiner": {
+          "name": "Gold Miner",
+          "description": "Hit 6+ golden notes in a single song"
+        },
+        "goldBaron": {
+          "name": "Gold Baron",
+          "description": "Hit 12+ golden notes in a single song"
+        },
+        "cleanCut": {
+          "name": "Clean Cut",
+          "description": "Miss at most 20 notes in a single song"
+        },
+        "spotless": {
+          "name": "Spotless",
+          "description": "Miss at most 8 notes in a single song"
+        },
+        "surgical": {
+          "name": "Surgical Precision",
+          "description": "Miss at most 3 notes in a single song"
+        },
+        "flawlessMirror": {
+          "name": "Flawless Mirror",
+          "description": "Miss ZERO notes in a single song"
+        },
+        "scoreScout": {
+          "name": "Score Scout",
+          "description": "Score 5,000+ points in a single song"
+        },
+        "scoreScholar": {
+          "name": "Score Scholar",
+          "description": "Score 7,500+ points in a single song"
+        },
+        "scoreSensei": {
+          "name": "Score Sensei",
+          "description": "Score 9,500+ points in a single song"
+        },
+        "scoreTitan": {
+          "name": "Score Titan",
+          "description": "Score 11,500+ points in a single song"
+        },
+        "speedDemonPlus": {
+          "name": "Speed Demon+",
+          "description": "1.75x speed — for lightning lungs!"
+        },
+        "lightningLungs": {
+          "name": "Lightning Lungs",
+          "description": "2x speed — absolutely breathless!"
+        },
+        "turboMemory": {
+          "name": "Turbo Memory",
+          "description": "1.25x speed AND 35% missing words!"
+        },
+        "mindPalace": {
+          "name": "Mind Palace",
+          "description": "50% of the words are hidden — pure memory!"
+        },
+        "blindfoldBard": {
+          "name": "Blindfold Bard",
+          "description": "No lyrics AND 20% missing words"
+        },
+        "phantomKaraoke": {
+          "name": "Phantom of Karaoke",
+          "description": "Fully blind AND 1.25x speed — the phantom salutes you!"
+        },
+        "pitchClimber": {
+          "name": "Pitch Climber",
+          "description": "Song transposed +5 semitones — climb that melody!"
+        },
+        "pitchDiver": {
+          "name": "Pitch Diver",
+          "description": "Song transposed -4 semitones — dive deep!"
+        },
+        "octaveOdyssey": {
+          "name": "Octave Odyssey",
+          "description": "Song transposed +7 semitones — a whole octave of pain!"
+        },
+        "turtleTempo": {
+          "name": "Turtle Tempo",
+          "description": "0.5x speed — savor every single note"
+        },
+        "slothSerenade": {
+          "name": "Sloth Serenade",
+          "description": "0.6x speed AND no pitch guide — relaxed but blind"
+        },
+        "goldenGauntlet": {
+          "name": "Golden Gauntlet",
+          "description": "Only golden notes count — and you need 80%+ accuracy"
+        },
+        "perfectionistPrime": {
+          "name": "Perfectionist Prime",
+          "description": "Only perfect notes count — hit 100+ of them!"
+        },
+        "balladBarometer": {
+          "name": "Ballad Barometer",
+          "description": "Finish a song with 80%+ accuracy"
+        },
+        "toneTuner": {
+          "name": "Tone Tuner",
+          "description": "Finish a song with 88%+ accuracy"
+        },
+        "harmonyHunter": {
+          "name": "Harmony Hunter",
+          "description": "Finish a song with 93%+ accuracy"
+        },
+        "pitchPerfectParagon": {
+          "name": "Pitch-Perfect Paragon",
+          "description": "Finish a song with 97%+ accuracy"
+        },
+        "countryCrooner": {
+          "name": "Country Crooner",
+          "description": "Sing a Country song with 70%+ accuracy"
+        },
+        "rockRenaissance": {
+          "name": "Rock Renaissance",
+          "description": "Sing a Rock song with 72%+ accuracy"
+        },
+        "metalMarauder": {
+          "name": "Metal Marauder",
+          "description": "Sing a Metal song with 75%+ accuracy"
+        },
+        "discoDazzler": {
+          "name": "Disco Dazzler",
+          "description": "Sing a song from the 1970s with 70%+ accuracy"
+        },
+        "synthwaveSailor": {
+          "name": "Synthwave Sailor",
+          "description": "Sing a song from the 1980s with 78%+ accuracy"
+        },
+        "latinFlare": {
+          "name": "Latin Flare",
+          "description": "Sing a Latin song with 70%+ accuracy"
+        },
+        "kpopConnoisseur": {
+          "name": "K-Pop Connoisseur",
+          "description": "Sing a K-Pop song with 78%+ accuracy"
+        },
+        "deutschlandDreams": {
+          "name": "Deutschland Dreams",
+          "description": "Sing a German-language song with 72%+ accuracy"
+        },
+        "polyglotPractice": {
+          "name": "Polyglot Practice",
+          "description": "Sing a song that is NOT in English with 70%+ accuracy"
+        },
+        "musicalMaestro": {
+          "name": "Musical Maestro",
+          "description": "Sing a Musical song with 75%+ accuracy"
+        },
+        "disneyDream": {
+          "name": "Disney Dream",
+          "description": "Sing a Disney song with 75%+ accuracy"
+        },
+        "marathoner": {
+          "name": "Marathoner",
+          "description": "Sing a 5+ minute song with 75%+ accuracy"
+        },
+        "sprintSinger": {
+          "name": "Sprint Singer",
+          "description": "Sing a song under 3 minutes with 80%+ accuracy"
+        },
+        "freshFinders": {
+          "name": "Fresh Finders",
+          "description": "Sing a song you have NEVER sung before — 68%+ accuracy"
+        },
+        "loveGuru": {
+          "name": "Love Guru",
+          "description": "Sing a song with \"love\" in the title — 72%+ accuracy"
+        },
+        "oneWordWonder": {
+          "name": "One-Word Wonder",
+          "description": "Sing a one-word-title song with 72%+ accuracy"
+        },
+        "duoDynamo": {
+          "name": "Duo Dynamo",
+          "description": "Sing a song with a featured artist — 70%+ accuracy"
+        },
+        "bandBattle": {
+          "name": "Band Battle",
+          "description": "Sing a song by a band or duo — 72%+ accuracy"
+        },
+        "questionQuest": {
+          "name": "Question Quest",
+          "description": "Sing a song with a \"?\" in the title — 70%+ accuracy"
+        },
+        "pulseRacer": {
+          "name": "Pulse Racer",
+          "description": "Sing a 140+ BPM song with 70%+ accuracy"
+        },
+        "slowGroove": {
+          "name": "Slow Groove",
+          "description": "Sing a ≤90 BPM song with 75%+ accuracy"
+        }
+      },
+      "battleRoyale": {
+        "title": "Battle Royale",
+        "eliminationInterval": "Elimination interval: {n}s",
+        "eliminationIntervalHint": "Random and Vote play FULL songs — the weakest player is eliminated every {n}s mid-song while the song keeps playing.",
+        "midRoundEliminated": "{name} has been eliminated!",
+        "nextEliminationIn": "Next elimination in {n} seconds",
+        "eliminationCountdownLabel": "Next elimination",
+        "playersLabel": "players",
+        "timeLeft": "{n} seconds left in this round",
+        "showdownLabel": "Showdown!",
+        "showdownAria": "Showdown — decision in {n} seconds",
+        "coinFlipEliminated": "Coin flip! {name} is eliminated!",
+        "coinFlipBadge": "Coin flip",
+        "bestRound": "Best Round"
+      }
+    },
+    "settings": {
+      "settings": {
+        "aiProvider": {
+          "title": "AI Service",
+          "desc": "AI backend for harmonization, metadata, song identification and cover generation",
+          "custom": "Custom endpoint (OpenAI-compatible)",
+          "zaiHint": "The built-in Z.ai service requires a .z-ai-config file on this machine. Alternatively you can configure any OpenAI-compatible endpoint (OpenAI, OpenRouter, LM Studio, Ollama, …).",
+          "baseUrl": "Base URL",
+          "apiKey": "API key",
+          "model": "Model",
+          "modelHint": "e.g. gpt-4o-mini — used for chat and images",
+          "statusAvailable": "AI service available ({provider})",
+          "statusUnavailable": "AI service currently unreachable",
+          "saveAndTest": "Save & test",
+          "saveOnly": "Save only",
+          "saved": "✓ Configuration saved",
+          "saveFailed": "Saving failed",
+          "testOk": "✓ Connection successful — AI service responding",
+          "testFailed": "Connection test failed",
+          "privacyHint": "The configuration is stored locally in ai-provider.json next to the server. Requests go directly to the selected endpoint."
+        }
+      },
+      "settingsTabs": {
+        "syncBackup": "Sync & Backup",
+        "taxonomy": "Genres & Languages",
+        "mottoParty": "Theme Party"
+      },
+      "settingsTaxonomy": {
+        "title": "Genres & Languages",
+        "desc": "Create, view and delete your own genre and language entries. Custom entries appear in every dropdown (editor, new song dialog, Metadata Studio) and are treated as canonical main categories by the harmonization pipeline.",
+        "genresTitle": "Genres",
+        "languagesTitle": "Languages",
+        "builtinBadge": "Built-in",
+        "customBadge": "Custom",
+        "usageCount": "{n} songs",
+        "addPlaceholderGenre": "New genre (e.g. Jazz) …",
+        "addPlaceholderLanguage": "New language (e.g. Bavarian) …",
+        "addButton": "Add",
+        "searchPlaceholder": "Search the list …",
+        "remove": "Remove",
+        "removeConfirm": "Really delete?",
+        "removeConfirmHint": "\"{name}\" will be removed from the dropdowns and the harmonization. Songs carrying this entry keep their value — only the entry itself is deleted.",
+        "cancel": "Cancel",
+        "confirmDelete": "Delete",
+        "errorEmpty": "Please enter a name.",
+        "errorDuplicate": "This entry already exists.",
+        "errorTooLong": "Maximum {n} characters allowed.",
+        "errorLimit": "Maximum {n} custom entries per list reached.",
+        "addedToast": "\"{name}\" added",
+        "removedToast": "\"{name}\" deleted",
+        "customSection": "Custom entries",
+        "builtinSection": "Built-in entries",
+        "noCustom": "No custom entries yet",
+        "noCustomDesc": "Create entries your library needs — in your own words.",
+        "countLabel": "{n} custom",
+        "harmonizeHint": "Custom entries count as equal categories in AI and rule-based harmonization (e.g. a custom \"Jazz\" stays Jazz instead of being remapped to \"R&B\")."
+      },
+      "settingsMotto": {
+        "title": "Theme Party",
+        "desc": "Set the entire game to one motto (e.g. an 80s party). While the theme party is active, every search field and filter in the party setup is hidden and replaced by the motto — every song selection (random, voting, medley, Battle Royale, tournament, Pass the Mic) only draws from the matching songs.",
+        "activationTitle": "Theme Party",
+        "activationDesc": "Activate to replace all search fields and filters in the game with the motto.",
+        "activeBadge": "Active",
+        "inactiveBadge": "Inactive",
+        "nameTitle": "Motto name",
+        "nameDesc": "The name shown instead of the filters in the party setup.",
+        "namePlaceholder": "e.g. 80s Party",
+        "searchTitle": "Search fields",
+        "searchDesc": "Multiple search terms (artist/title, typo-tolerant) define the motto.",
+        "searchLogic": "Search option",
+        "searchLogicAnd": "Cumulative (AND)",
+        "searchLogicOr": "Independent (OR)",
+        "searchLogicAndHint": "A song must match ALL search fields (cumulative).",
+        "searchLogicOrHint": "A song must match at least ONE search field (independent).",
+        "addTermPlaceholder": "Search term (e.g. Queen, ABBA, Rock …)",
+        "addTermButton": "Add",
+        "removeTerm": "Remove search field",
+        "noTerms": "No search fields yet",
+        "noTermsDesc": "Add search terms to define the motto — in your own words.",
+        "errorEmpty": "Please enter a search term.",
+        "errorDuplicate": "This search term already exists.",
+        "errorTooLong": "Maximum {n} characters allowed.",
+        "errorLimit": "Maximum {n} search fields reached.",
+        "addedToast": "\"{term}\" added",
+        "removedToast": "Search field removed",
+        "filtersTitle": "Filters",
+        "filtersDesc": "Additionally activatable filters — combined cumulatively (AND) with the search fields.",
+        "resetFilters": "Reset filters",
+        "previewTitle": "Live preview",
+        "previewCount": "{n} of {m} songs match the motto",
+        "previewEmpty": "⚠️ No song matches the motto. Adjust search fields or filters before starting a theme party.",
+        "previewNoCriteria": "No search fields and no filters active — all songs match the motto.",
+        "previewMore": "+{n} more",
+        "bannerPreviewTitle": "This is how it looks in the party setup",
+        "resetButton": "Reset",
+        "resetToast": "Theme party reset",
+        "enabledToast": "Theme party activated — all filters replaced by \"{name}\"",
+        "disabledToast": "Theme party deactivated — filters are visible again",
+        "nameMissing": "⚠️ No motto name yet — add a name above."
+      },
+      "settingsAbout": {
+        "testingConnection": "Testing…",
+        "platformInfo": "System & Runtime",
+        "platformOs": "Operating system",
+        "platformArch": "Architecture",
+        "platformNode": "Bundled Node.js",
+        "platformOnnx": "ONNX Runtime (CREPE)",
+        "platformServer": "Local server",
+        "platformReady": "Ready",
+        "platformMissing": "Not found",
+        "platformMissingHint": "Some native features may be unavailable."
+      },
+      "syncBackup": {
+        "appdataActive": "Player data & highscores are automatically stored in the Windows AppData folder and survive updates & reinstalls. The manual backup export below is only needed for switching devices.",
+        "appdataBrowser": "Browser mode: player data & highscores live in browser storage (localStorage). In the Windows app they are automatically stored in the AppData folder and survive updates & reinstalls.",
+        "exportTitle": "Create Backup",
+        "exportDesc": "Bundles your profiles, highscores, achievements, playlists, custom songs and settings into one portable JSON file — for archiving or moving to another device.",
+        "includeMedia": "Include song media (audio, video, covers)",
+        "includeMediaDesc": "Fully self-contained backup file — but considerably larger.",
+        "exportButton": "💾 Create & download backup",
+        "exporting": "Creating backup…",
+        "exportSuccess": "Backup downloaded!",
+        "exportError": "The backup could not be created.",
+        "restoreTitle": "Restore Backup",
+        "restoreDesc": "Pick a backup file from the other device, review its contents and merge it into this device. Existing progress is never lost — profiles, songs and the best highscores are merged.",
+        "chooseFile": "Choose backup file…",
+        "invalidFile": "This file is not a valid Karaoke ZERO backup.",
+        "previewTitle": "Backup contents:",
+        "restoreMediaToggle": "Restore song media (IndexedDB)",
+        "restoreSettingsToggle": "Also apply settings (theme, language, gameplay options)",
+        "restoreButton": "📥 Restore",
+        "restoring": "Restoring…",
+        "restoreSuccess": "Restore complete!",
+        "restoreError": "Restore failed.",
+        "reloadHint": "Reload the page so the restored songs and media appear.",
+        "summaryProfiles": "{n} profiles",
+        "summarySongs": "{n} songs",
+        "summaryPlaylists": "{n} playlists",
+        "summaryHighscores": "{n} highscore entries",
+        "summaryMedia": "{n} media files ({size})",
+        "howTitle": "How the device transfer works",
+        "howPoint1": "On the source device: create a backup (with or without song media) and move the file to the target device (USB, cloud folder, messenger — the file only leaves your hands if you send it yourself).",
+        "howPoint2": "On the target device: choose the backup file here and restore it.",
+        "howPoint3": "Device-bound settings (microphone devices, companion registration, songs-folder paths) are deliberately NOT transferred — they apply per device.",
+        "howPoint4": "Highscores merge wisely: per song and player the better run always wins — on both devices."
+      }
+    },
+    "party": {
+      "unifiedSetup": {
+        "mottoPartyLabel": "Theme Party",
+        "mottoPartySongs": "{n} of {m} songs match the motto",
+        "mottoPartyHint": "All search fields and filters are replaced by the motto — changeable under Settings → Theme Party.",
+        "singingDeviceAssignment": "Singing Device Assignment",
+        "singingDeviceAssignmentDesc": "Choose per player: sing via microphone or Companion App.",
+        "deviceChooseMic": "— Choose microphone —",
+        "deviceMicAuto": "Microphone (automatic)",
+        "deviceCompanion": "Companion App",
+        "deviceNotConnected": "not connected yet",
+        "deviceMicTaken": "in use",
+        "deviceNoMic": "No microphone",
+        "deviceSingingVia": "Sings via",
+        "deviceMultiMicHint": "Duel mode: {n} microphones detected — dueling players share them, no fixed mic per player.",
+        "deviceSingleMicHint": "Only one microphone connected — assign it to one player; all others need the Companion App.",
+        "deviceNoMicsHint": "No microphone connected — all players must sing via Companion App.",
+        "deviceNeedSharedMic": "Select the shared microphone to start",
+        "deviceNeedAllCompanion": "All players must be connected via Companion App to start",
+        "deviceNeedExclusive": "{n} player(s) still need a device — assign a free microphone or connect the Companion App",
+        "deviceNeedFlexible": "{n} player(s) still need a device — choose microphone or connect the Companion App",
+        "deviceNeedGeneric": "Assign a singing device to every player first",
+        "deviceMicCount": "{n} mic(s) · {m} via App",
+        "qrCompanionTitle": "📱 Connect Companion App",
+        "qrWlanHint": "⚠️ First connect your phone to the same Wi-Fi network as this computer, then scan the QR code.",
+        "qrScanToConnect": "Scan to connect"
+      },
+      "extendedDesc": {
+        "battleRoyale": {
+          "6": "👑 The last singer wins!"
+        }
+      },
+      "modeSettings": {
+        "brEliminationInterval": "Elimination Interval",
+        "brEliminationIntervalDesc": "The weakest player is eliminated every {n} seconds (Random/Vote). Medley: round budget of 30-second snippets.",
+        "brMedleyRoundDuration": "Medley Round Duration",
+        "brMedleyRoundDurationDesc": "Only applies to medley rounds — Random and Vote play full songs.",
+        "finalRoundDurationDesc": "Length of the final round (last duel / grand finale rounds)."
+      }
+    },
+    "mobile": {
+      "mobile": {
+        "brVoteWaiting": "Waiting for the options…",
+        "brVoteDone": "Your vote is in!",
+        "brVoteEliminated": "Eliminated — no vote this round.",
+        "brVotes": "votes",
+        "brSingingMonitor": "Live singing",
+        "brSingingPitch": "Pitch",
+        "brSingingHits": "Hits",
+        "brSingingTooLow": "too low",
+        "brSingingTooHigh": "too high",
+        "brSingingOnPitch": "on pitch",
+        "brSingingStreak": "streak"
+      },
+      "dailyChallengeScreen": {
+        "tierBronze": "Bronze",
+        "tierSilver": "Silver",
+        "tierGold": "Gold",
+        "tierProgressToday": "Badge tiers today",
+        "tierProgressWeek": "Badge tiers this week",
+        "slotDone": "Done",
+        "slotLocked": "Locked",
+        "slotActive": "Playing",
+        "slotOpen": "Open",
+        "noMatchingSongs": "No song in your library matches this challenge yet — import or edit a matching song, or try another slot.",
+        "shuffleSongs": "Shuffle",
+        "weeklyDifficultyLabel": "Weekly difficulty",
+        "weeklyCountsAutomatically": "Every song you sing counts toward the weekly challenges automatically",
+        "weeklySumType": "Σ total",
+        "weeklyBestType": "★ best",
+        "weeklyHintTitle": "Weekly progress",
+        "weeklyPlayHint": "Play songs to progress",
+        "weeklyUnlockHint": "Each completed weekly challenge unlocks the next one — up to 5 per week. Bronze at 1, silver at 3, gold at 5 completions.",
+        "slotsCompletedLabel": "{n}/5 slots today",
+        "filterAll": "All",
+        "modeCompleted": "Completed",
+        "modeTarget": "Complete",
+        "weeklySlotDoneHint": "This weekly slot is already done this week — try a higher difficulty or another slot.",
+        "stepPlayers": "Select players",
+        "stepPlayersDesc": "The first selected player sings — their statistics are shown below. Optional: a second player for duel/team.",
+        "stepChallenge": "Choose a challenge",
+        "stepChallengeMode": "Choose a challenge mode",
+        "stepSong": "Choose a song",
+        "selectPlayerFirst": "Select a player first — then the challenge selection unfolds.",
+        "noActiveProfiles": "No active players found. Create a profile first (navigation → profiles).",
+        "dualPlayerHint": "Two players selected: daily and weekly challenges can be sung as duel or team.",
+        "weeklyPickSlot": "Tap a weekly challenge to see matching songs.",
+        "modesSoloHint": "Challenge modes are sung with the first selected player."
+      },
+      "dailyTypes": {
+        "names": {
+          "score": "High Score",
+          "accuracy": "Sharp Aim",
+          "combo": "Combo Chain",
+          "perfect_notes": "Perfect Touch",
+          "golden_notes": "Gold Rush",
+          "notes_hit": "Note Storm",
+          "tick_accuracy": "Tick Tock",
+          "clean_song": "Clean Sweep",
+          "comeback": "Comeback King",
+          "sharpshooter": "Sharpshooter",
+          "combo_master": "Combo Master",
+          "perfect_storm": "Perfect Storm",
+          "endurance": "Endurance Run",
+          "golden_groove": "Golden Groove",
+          "precision": "Precision Tick",
+          "flawless_finale": "Flawless Finale",
+          "score_sniper": "Score Sniper",
+          "combo_race": "Combo Race",
+          "perfect_pitch": "Perfect Pitch",
+          "golden_fingers": "Golden Fingers",
+          "steady_hand": "Steady Hand",
+          "titan": "Titan",
+          "score_sprout": "Score Sprout",
+          "score_sprinter": "Score Sprinter",
+          "score_slayer": "Score Slayer",
+          "score_phantom": "Score Phantom",
+          "score_boulder": "Score Boulder",
+          "score_eclipse": "Score Eclipse",
+          "score_comet": "Score Comet",
+          "score_volcano": "Score Volcano",
+          "accuracy_adept": "Accuracy Adept",
+          "accuracy_artisan": "Accuracy Artisan",
+          "accuracy_archer": "Archer's Aim",
+          "accuracy_navigator": "Accuracy Navigator",
+          "accuracy_horizon": "Accuracy Horizon",
+          "accuracy_zenith": "Accuracy Zenith",
+          "accuracy_mirage": "Accuracy Mirage",
+          "combo_spark": "Combo Spark",
+          "combo_forge": "Combo Forge",
+          "combo_tornado": "Combo Tornado",
+          "combo_glacier": "Combo Glacier",
+          "combo_phoenix": "Combo Phoenix",
+          "combo_avalanche": "Combo Avalanche",
+          "combo_tsunami": "Combo Tsunami",
+          "perfect_dawn": "Perfect Dawn",
+          "perfect_bloom": "Perfect Bloom",
+          "perfect_cascade": "Perfect Cascade",
+          "perfect_summit": "Perfect Summit",
+          "perfect_galaxy": "Perfect Galaxy",
+          "perfect_aurora": "Perfect Aurora",
+          "golden_spark": "Golden Spark",
+          "golden_rush": "Golden Rush",
+          "golden_treasure": "Golden Treasure",
+          "golden_eclipse": "Golden Eclipse",
+          "golden_legend": "Golden Legend",
+          "notes_river": "Notes River",
+          "notes_storm": "Notes Storm",
+          "notes_mountain": "Notes Mountain",
+          "notes_odyssey": "Notes Odyssey",
+          "notes_horizon": "Notes Horizon",
+          "miss_guard": "Miss Guard",
+          "miss_anchor": "Miss Anchor",
+          "miss_diamond": "Miss Diamond",
+          "miss_bubble": "Miss Bubble",
+          "miss_zero": "Zero Miss",
+          "tick_harmony": "Tick Harmony",
+          "tick_metro": "Tick Metro",
+          "tick_quartz": "Tick Quartz",
+          "tick_symphony": "Tick Symphony",
+          "maestro_score": "Score Maestro",
+          "maestro_accuracy": "Maestro's Aim",
+          "maestro_combo": "Combo Maestro",
+          "maestro_perfect": "Perfect Maestro",
+          "maestro_golden": "Golden Maestro",
+          "virtuoso_score": "Virtuoso Score",
+          "virtuoso_accuracy": "Virtuoso Aim",
+          "virtuoso_combo": "Virtuoso Combo",
+          "virtuoso_perfect": "Virtuoso Perfect",
+          "virtuoso_golden": "Virtuoso Gold",
+          "titan_notes": "Titan Notes",
+          "titan_tick": "Titan Tick",
+          "ghost_miss": "Ghost Guard",
+          "ghost_score": "Ghost Score",
+          "ghost_combo": "Ghost Combo",
+          "phoenix_accuracy": "Phoenix Aim",
+          "phoenix_score": "Phoenix Score",
+          "phoenix_perfect": "Phoenix Perfect",
+          "storm_notes": "Storm Notes",
+          "storm_tick": "Storm Tick",
+          "storm_score": "Storm Score",
+          "prism_accuracy": "Prism Aim",
+          "prism_combo": "Prism Combo",
+          "prism_score": "Prism Score",
+          "apex_score": "Apex Score",
+          "apex_accuracy": "Apex Accuracy",
+          "apex_combo": "Apex Combo",
+          "apex_perfect": "Apex Perfect",
+          "apex_golden": "Apex Gold",
+          "apex_notes": "Apex Notes",
+          "apex_tick": "Apex Tick",
+          "apex_clean": "Apex Clean",
+          "nova_score": "Nova Score",
+          "nova_combo": "Nova Combo",
+          "nova_perfect": "Nova Perfect",
+          "nova_golden": "Nova Gold",
+          "echo_score": "Echo Score",
+          "echo_combo": "Echo Combo",
+          "echo_perfect": "Echo Perfect",
+          "echo_golden": "Echo Gold",
+          "drift_accuracy": "Drift Aim",
+          "drift_combo": "Drift Combo",
+          "drift_score": "Drift Score",
+          "drift_notes": "Drift Notes",
+          "pulse_tick": "Pulse Tick",
+          "pulse_score": "Pulse Score",
+          "pulse_perfect": "Pulse Perfect",
+          "pulse_combo": "Pulse Combo",
+          "lunar_accuracy": "Lunar Aim",
+          "lunar_score": "Lunar Score",
+          "lunar_perfect": "Lunar Perfect",
+          "lunar_golden": "Lunar Gold",
+          "solar_notes": "Solar Notes",
+          "solar_tick": "Solar Tick",
+          "solar_score": "Solar Score",
+          "solar_combo": "Solar Combo",
+          "globetrotter": "Globetrotter",
+          "vintage": "Vintage Vinyl",
+          "genreSong": "{genre} Serenade",
+          "languageVerse": "{language} Verse",
+          "decadeDive": "{decade}s Time Machine",
+          "shape_longballad": "Marathon Melody",
+          "shape_epic": "Epic Endeavor",
+          "shape_quickie": "Quick Fire",
+          "shape_sprint": "Speedy Serenade",
+          "shape_title_am": "Alphabet Ace",
+          "shape_title_nz": "Second Half",
+          "shape_oneword": "One Word Wonder",
+          "shape_love_title": "Love Letter",
+          "shape_number_title": "Number Nine",
+          "shape_question": "Question Quest",
+          "shape_feat": "Dynamic Duo",
+          "shape_band": "Band Battle",
+          "shape_bpm_fast": "Pulse Racer",
+          "shape_bpm_slow": "Slow Groove",
+          "shape_fresh": "First Flight",
+          "shape_recent": "Fresh Arrival",
+          "shape_rating5": "Five-Star Find",
+          "shape_diff_easy": "Gentle Breeze",
+          "shape_diff_hard": "Spice Sprint",
+          "duo_day": "Duet Day"
+        },
+        "patterns": {
+          "score": "Score {n}+ points in a single song",
+          "accuracy": "Reach {n}+ accuracy in a single song",
+          "combo": "Hit a {n}+ note combo in a single song",
+          "perfect": "Hit {n}+ perfect notes in a single song",
+          "golden": "Hit {n}+ golden notes in a single song",
+          "notes": "Hit {n}+ notes in a single song",
+          "missMax": "Miss at most {n} notes in a single song",
+          "tick": "Reach {n}+ tick accuracy in a single song",
+          "scoreAcc": "Score {n}+ points in a single song with {m}+ accuracy",
+          "scoreCombo": "Score {n}+ points in a single song with a {m}+ combo",
+          "scoreMiss": "Score {n}+ points in a single song with at most {m} misses",
+          "accNotes": "Reach {n}+ accuracy with {m}+ notes hit",
+          "accCombo": "Reach {n}+ accuracy with a {m}+ combo",
+          "accGolden": "Reach {n}+ accuracy with {m}+ golden notes",
+          "accMiss": "Reach {n}+ accuracy with at most {m} misses",
+          "accPerfect": "Reach {n}+ accuracy with {m}+ perfect notes",
+          "comboAcc": "Hit a {n}+ combo with {m}+ accuracy",
+          "comboNotes": "Hit a {n}+ combo with {m}+ notes hit",
+          "comboMiss": "Hit a {n}+ combo with at most {m} misses",
+          "comboGolden": "Hit a {n}+ combo with {m}+ golden notes",
+          "comboPerfect": "Hit a {n}+ combo with {m}+ perfect notes",
+          "perfectAcc": "Hit {n}+ perfect notes with {m}+ accuracy",
+          "perfectGolden": "Hit {n}+ perfect notes and {m}+ golden notes",
+          "perfectNotes": "Hit {n}+ perfect notes with {m}+ notes hit",
+          "perfectMiss": "Hit {n}+ perfect notes with at most {m} misses",
+          "perfectCombo": "Hit {n}+ perfect notes with a {m}+ combo",
+          "goldenAcc": "Hit {n}+ golden notes with {m}+ accuracy",
+          "goldenPerfect": "Hit {n}+ golden notes and {m}+ perfect notes",
+          "goldenMiss": "Hit {n}+ golden notes with at most {m} misses",
+          "goldenCombo": "Hit {n}+ golden notes with a {m}+ combo",
+          "notesAcc": "Hit {n}+ notes with {m}+ accuracy",
+          "notesCombo": "Hit {n}+ notes with a {m}+ combo",
+          "notesPerfect": "Hit {n}+ notes with {m}+ perfect notes",
+          "notesGolden": "Hit {n}+ notes with {m}+ golden notes",
+          "missNotes": "Miss at most {n} notes with {m}+ notes hit",
+          "missAcc": "Miss at most {n} notes with {m}+ accuracy",
+          "missCombo": "Miss at most {n} notes with a {m}+ combo",
+          "tickNotes": "Reach {n}+ tick accuracy with {m}+ notes hit",
+          "tickCombo": "Reach {n}+ tick accuracy with a {m}+ combo",
+          "tickGolden": "Reach {n}+ tick accuracy with {m}+ golden notes",
+          "tickPerfect": "Reach {n}+ tick accuracy with {m}+ perfect notes",
+          "comeback": "Reach a {n}+ combo after missing {m}+ notes",
+          "genre": "Sing a {genre} song and reach {n}+ accuracy",
+          "language": "Sing a song in {language} and reach {n}+ accuracy",
+          "atypical": "Sing a song in an atypical language (not your app language, not English) and reach {n}+ accuracy",
+          "decade": "Sing a song from the {decade}s and reach {n}+ accuracy",
+          "yearBefore": "Sing a song from before {year} and reach {n}+ accuracy",
+          "durationMin": "Sing a song at least {duration} minutes long and reach {n}+ accuracy",
+          "durationMax": "Sing a song at most {duration} minutes long and reach {n}+ accuracy",
+          "titleStartsRange": "Sing a song whose title starts with {range} and reach {n}+ accuracy",
+          "titleContains": "Sing a song with \"{word}\" in the title and reach {n}+ accuracy",
+          "oneWordTitle": "Sing a song with a one-word title and reach {n}+ accuracy",
+          "titleHasDigit": "Sing a song with a number in the title and reach {n}+ accuracy",
+          "questionTitle": "Sing a song with a question mark in the title and reach {n}+ accuracy",
+          "featuredArtist": "Sing a song with a featured artist and reach {n}+ accuracy",
+          "bandArtist": "Sing a song by a band or duo (multi-word artist) and reach {n}+ accuracy",
+          "bpmMin": "Sing a song with {bpm}+ BPM and reach {n}+ accuracy",
+          "bpmMax": "Sing a song with at most {bpm} BPM and reach {n}+ accuracy",
+          "freshSong": "Sing a song you have never sung before and reach {n}+ accuracy",
+          "recentlyAdded": "Sing a song added within the last 60 days and reach {n}+ accuracy",
+          "songRating": "Sing a {rating}-star song and reach {n}+ accuracy",
+          "songDifficulty": "Sing a {difficulty} song and reach {n}+ accuracy",
+          "duo_day": "Sing a duet together with at least 2 singers and reach {n}+ accuracy"
+        }
+      },
+      "weeklyTypes": {
+        "names": {
+          "w_score_peak": "Weekly High Score",
+          "w_accuracy_peak": "Weekly Sharp Aim",
+          "w_combo_peak": "Weekly Combo Chain",
+          "w_perfect_peak": "Weekly Perfect Touch",
+          "w_golden_peak": "Weekly Gold Rush",
+          "w_notes_peak": "Weekly Note Storm",
+          "w_tick_peak": "Weekly Tick Tock",
+          "w_clean_peak": "Weekly Clean Sweep",
+          "w_score_elite": "Elite Score",
+          "w_accuracy_elite": "Elite Aim",
+          "w_combo_colossus": "Combo Colossus",
+          "w_perfect_storm": "Weekly Perfect Storm",
+          "w_golden_baron": "Golden Baron",
+          "w_notes_monsoon": "Note Monsoon",
+          "w_score_phantom": "Weekly Phantom",
+          "w_apex_accuracy": "Apex Aim",
+          "w_apex_score": "Apex Score",
+          "w_double_trouble": "Double Trouble",
+          "w_symphony": "Weekly Symphony",
+          "w_marathon_notes": "Marathon Notes",
+          "w_surgical": "Surgical Week",
+          "w_comeback_king": "Comeback King",
+          "w_score_maestro": "Weekly Maestro",
+          "w_perfect_maestro": "Perfect Maestro",
+          "w_golden_galore": "Golden Galore",
+          "w_songs_5": "Movie Marathon",
+          "w_songs_10": "Double Feature",
+          "w_songs_15": "Song Marathon",
+          "w_perfect_sum": "Perfect Collector",
+          "w_golden_sum": "Gold Collector",
+          "w_notes_sum": "Note Hoarder",
+          "w_score_sum": "Point Hoarder",
+          "w_globetrotter": "Weekly Globetrotter",
+          "w_polyglot": "Polyglot Week",
+          "w_mixed": "Mixed Languages",
+          "w_vintage": "Vintage Week",
+          "w_long_songs": "Longplayer",
+          "w_short_songs": "Short & Sweet",
+          "w_fresh_songs": "New Horizons",
+          "w_love_songs": "Love Week",
+          "w_one_word": "One-Word Week",
+          "w_feat_songs": "Featured Crew",
+          "w_band_songs": "Band Week",
+          "w_question_songs": "Question Week",
+          "w_five_star": "Five-Star Week",
+          "w_bpm_fast": "Upbeat Week",
+          "w_duo_week": "Duo Dynamics",
+          "w_diff_hard": "Hard Mode Week",
+          "w_diff_easy": "Easy Mode Week",
+          "w_title_letter_a": "First Half",
+          "w_title_letter_n": "Second Half",
+          "w_artist_am": "Artists A–M",
+          "w_artist_nz": "Artists N–Z",
+          "w_zephyr_score": "Zephyr Score",
+          "w_zephyr_combo": "Zephyr Combo",
+          "w_zephyr_perfect": "Zephyr Perfect",
+          "w_ember_accuracy": "Ember Aim",
+          "w_ember_score": "Ember Score",
+          "w_ember_combo": "Ember Combo",
+          "w_tide_notes": "Tide Notes",
+          "w_tide_tick": "Tide Tick",
+          "w_tide_score": "Tide Score",
+          "w_dawn_accuracy": "Dawn Aim",
+          "w_dawn_perfect": "Dawn Perfect",
+          "w_dawn_golden": "Dawn Gold",
+          "w_dusk_score": "Dusk Score",
+          "w_dusk_accuracy": "Dusk Aim",
+          "w_dusk_combo": "Dusk Combo",
+          "w_comet_notes": "Comet Notes",
+          "w_comet_tick": "Comet Tick",
+          "w_comet_perfect": "Comet Perfect",
+          "w_nebula_score": "Nebula Score",
+          "w_nebula_accuracy": "Nebula Aim",
+          "w_nebula_combo": "Nebula Combo",
+          "genreWeek": "{genre} Week",
+          "languageWeek": "{language} Week",
+          "decadeWeek": "{decade}s Week"
+        },
+        "patterns": {
+          "songs": "Complete {n} songs this week",
+          "sumPerfect": "Hit {n}+ perfect notes this week in total",
+          "sumGolden": "Hit {n}+ golden notes this week in total",
+          "sumNotes": "Hit {n}+ notes this week in total",
+          "sumScore": "Score {n}+ points this week in total",
+          "genreSum": "Sing {n} {genre} songs this week",
+          "languageSum": "Sing {n} songs in {language} this week",
+          "atypicalSum": "Sing {n} songs in atypical languages this week",
+          "languageNotSum": "Sing {n} songs not in {language} this week",
+          "decadeSum": "Sing {n} songs from the {decade}s this week",
+          "durationMinSum": "Sing {n} songs at least {duration} minutes long this week",
+          "durationMaxSum": "Sing {n} songs at most {duration} minutes long this week",
+          "freshSum": "Sing {n} songs you have never sung before this week",
+          "titleContainsSum": "Sing {n} songs with \"{word}\" in the title this week",
+          "oneWordSum": "Sing {n} one-word-title songs this week",
+          "featSum": "Sing {n} songs with a featured artist this week",
+          "bandSum": "Sing {n} songs by a band or duo this week",
+          "questionSum": "Sing {n} songs with a question mark in the title this week",
+          "ratingSum": "Sing {n} five-star songs this week",
+          "bpmMinSum": "Sing {n} songs with 140+ BPM this week",
+          "titleStartsSum": "Sing {n} songs whose title starts with {range} this week",
+          "artistStartsSum": "Sing {n} songs by artists starting with {range} this week",
+          "coopSum": "Sing {n} songs together with a partner this week",
+          "difficultySum": "Sing {n} {difficulty} songs this week"
+        }
+      }
+    },
+    "tutorial": {
+      "tutorial": {
+        "helpButtonTitle": "Help & tutorials",
+        "helpDialogTitle": "Help & tutorials",
+        "helpDialogDesc": "Re-watch the complete tours — or jump straight into a topic and get just that part explained.",
+        "helpFooter": "Tour keyboard: → next · ← back · Esc quit",
+        "startFullTour": "Full tour",
+        "stepsCount": "{n} steps",
+        "completedBadge": "Completed",
+        "ariaLabel": "Guided tour",
+        "skipTour": "End tour",
+        "back": "Back",
+        "next": "Next",
+        "finish": "Done",
+        "clickHint": "Click it now",
+        "offerTitle": "Welcome to Karaoke ZERO!",
+        "offerBody": "Want a quick walk-through of the basics? In 2 minutes you'll know daily challenges, sing modes, the library and party games.",
+        "offerStart": "Start tour",
+        "offerLater": "Maybe later",
+        "offerHint": "Available anytime via the ? icon at the bottom right.",
+        "basic": {
+          "title": "Basics",
+          "desc": "The round trip: challenges, sing modes, library, party & more.",
+          "chapters": {
+            "welcome": "Welcome",
+            "challenges": "Daily & Weekly",
+            "singing": "Start singing",
+            "party": "Party modes",
+            "more": "More areas"
+          },
+          "steps": {
+            "welcome": {
+              "title": "Welcome! 👋",
+              "body": "This is a live tour: I highlight the important spots and explain them.\n\nControls: \"Next\" (or key →), \"Back\" (←) and \"End tour\" (Esc). Let's go!"
+            },
+            "heroButtons": {
+              "title": "Quick start",
+              "body": "\"Start Singing\" takes you straight to the library. \"Party Mode\" opens the 9 party games for groups."
+            },
+            "dailyCard": {
+              "title": "Daily challenge",
+              "body": "5 slots per day with rotating tasks — the more slots you clear, the bigger your XP bonus. Fresh tasks drop at midnight."
+            },
+            "weeklyCard": {
+              "title": "Weekly challenge",
+              "body": "The weekly counterpart: 5 slots across the week with bigger XP rewards. Perfect for long-term goals."
+            },
+            "modeLauncher": {
+              "title": "Sing: Single, Duel & Duet",
+              "body": "🎤 Single: one player, one mic.\n⚔️ Duel: two players on the SAME song — most points wins.\n🎭 Duet: two voices on two tracks — the library automatically shows only matching duet songs."
+            },
+            "libraryNav": {
+              "title": "The library",
+              "body": "All your songs live here. Search by title or artist — the fuzzy search even forgives typos."
+            },
+            "filters": {
+              "title": "Filters",
+              "body": "Genre, language, year, decade, duet songs and viral hits — slice the library however you like."
+            },
+            "songCard": {
+              "title": "Songs",
+              "body": "Clicking a song card opens the start dialog: mode, players, microphones and difficulty."
+            },
+            "startModal": {
+              "title": "The start dialog",
+              "body": "Set everything here: mode (single/duel/duet), who sings, which mic everyone gets, and the difficulty.\n\nThen hit \"Start\" — and off you go!"
+            },
+            "partyCard": {
+              "title": "Party modes",
+              "body": "9 games for 2–24 players: Battle Royale, Pass-the-Mic, Medley contest, tournament, missing words, blind karaoke and more — phones can join as mics."
+            },
+            "partyModes": {
+              "title": "The mode picker",
+              "body": "This is where you pick the party mode: Battle Royale (last man standing), Pass-the-Mic, tournament (bracket), medley and more.\n\nEach card shows what to expect — one click opens player selection."
+            },
+            "jukeboxCard": {
+              "title": "Jukebox",
+              "body": "Karaoke without competition: build playlists, queue songs, share favourites. The perfect background entertainer."
+            },
+            "jukeboxView": {
+              "title": "Inside the jukebox menu",
+              "body": "\"Browse playlists\" gives you direct access to every saved playlist — including the ones you created in the library. One click enqueues the whole playlist."
+            },
+            "highscoreCard": {
+              "title": "Highscores",
+              "body": "Highscores per song and difficulty — beat your friends (or yourself)."
+            },
+            "highscoreView": {
+              "title": "The highscore boards",
+              "body": "Filtered by song and difficulty — with the filter bar on top. The phone icons show companion app usage."
+            },
+            "settingsCard": {
+              "title": "Settings",
+              "body": "Microphones, language, gameplay fine-tuning, appearance and graphics — all the knobs live here."
+            },
+            "settingsView": {
+              "title": "The settings tabs",
+              "body": "Pick a section at the top: General (language), Gameplay, Appearance, Graphics & Sound, Microphone, Mobile (phone connection) and more."
+            },
+            "finish": {
+              "title": "Done! 🎉",
+              "body": "You know the basics now.\n\nTip: the ? icon at the bottom right brings you back anytime — including individual topic chapters and the editor tour."
+            }
+          }
+        },
+        "editor": {
+          "title": "Editor tour",
+          "desc": "Notes, lyrics, voices & harmonize — the song toolbox.",
+          "chapters": {
+            "entry": "Getting in",
+            "layout": "Layout",
+            "notes": "Editing notes",
+            "extras": "Extras & harmonize"
+          },
+          "steps": {
+            "welcome": {
+              "title": "The editor ✏️",
+              "body": "This is where songs become playable karaoke tracks: place notes, time lyrics, assign voices.\n\nSandbox tip: practise on a test song — changes can be undone with Ctrl+Z."
+            },
+            "songList": {
+              "title": "Song selection",
+              "body": "Search a song to open it. Filters reveal songs with missing metadata — the editor harmonizes those later."
+            },
+            "noSongs": {
+              "title": "No songs yet",
+              "body": "The editor needs songs in the library. Import songs first (library → import / folder scan) and come back."
+            },
+            "openSong": {
+              "title": "Open a song",
+              "body": "Click a song in the list now to open it in the editor."
+            },
+            "leftPanel": {
+              "title": "Toolbar",
+              "body": "Everything for notes: add, duplicate, delete, split, merge — plus note types, voices and tap mode (coming up)."
+            },
+            "lyricsPanel": {
+              "title": "Lyrics panel",
+              "body": "The lyric lines sit on the left. Double-click a line to jump playback right there — text and timing are editable here."
+            },
+            "subHeaderTools": {
+              "title": "Editing notes",
+              "body": "Notes are the blocks on the pitch lanes: add, duplicate, delete, split (one note → two) and merge (two → one).\n\nEdit selected notes in tempo: ⌫ deletes, ↑/↓ transposes."
+            },
+            "noteTypes": {
+              "title": "Note types",
+              "body": "5 types for new notes:\n: Normal (pitch counts)\n* Golden (extra points)\nF Freestyle (any note counts)\nR Rap (timing only)\nG Rap-gold"
+            },
+            "voices": {
+              "title": "Voices",
+              "body": "P1 = player 1, P2 = player 2 (duet!), P4/P8 = third/fourth voice. Every note belongs to a voice — that's how duet songs with separate parts are made."
+            },
+            "tapMode": {
+              "title": "Tap mode — the turbo 🥁",
+              "body": "Hold the key and tap along: every click drops a note at the current playback position, lyric line by lyric line. Create notes in real time."
+            },
+            "panels": {
+              "title": "Header panels",
+              "body": "Three panels top right: metadata (genre/language/year), audio analysis and the AI assistant."
+            },
+            "metadataStudio": {
+              "title": "Metadata Studio",
+              "body": "The harmonize turbo: AI and rule suggestions for genre, language and year — with listen-before-assign, manual fine-editing and a review queue for uncertain matches."
+            },
+            "shortcuts": {
+              "title": "Shortcuts",
+              "body": "All keyboard shortcuts at a glance — the editor is a keyboard instrument. Click through!"
+            },
+            "finish": {
+              "title": "Ready to build! 🛠️",
+              "body": "You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon at the bottom right brings you back to these chapters anytime."
+            }
+          }
+        }
+      }
+    }
+  },
+  "suspiciousIdenticalByFile": {
+    "core": {
+      "uploadStatus": {
+        "unverified": "Unverified (no proof)",
+        "verifiedDesc": "This score was verified by the anti-cheat system",
+        "unverifiedDesc": "Anti-cheat proof was not included for this score"
+      }
+    },
+    "library": {
+      "songLeaderboardPreview": {
+        "noScores": "No scores yet",
+        "loading": "Loading..."
+      },
+      "songStart": {
+        "bpm": "BPM:"
+      },
+      "editor": {
+        "aiAssistant": {
+          "detectedBpm": "BPM:"
+        }
+      }
+    },
+    "game": {
+      "resultsScreen": {
+        "uploadedRankVerified": "Uploaded! Rank #{n} (Verified)"
+      },
+      "highscoreScreen": {
+        "searchPlaceholder": "Search players or songs...",
+        "searchNoResults": "No results for \"{q}\"",
+        "noSearchResults": "No players found matching your search"
+      }
+    },
+    "settings": {
+      "settings": {
+        "onlineActivitiesDesc": "Disable all online features including leaderboard, daily challenges, and profile sync",
+        "disableOnline": "Disable online activities",
+        "disableOnlineDesc": "When disabled, no data will be sent to external servers. All features will work offline."
+      },
+      "settingsMicPanel": {
+        "usbMicsDesc": "Blue Yeti, AT2020"
+      }
+    },
+    "party": {
+      "unifiedSetup": {
+        "searchFilterPlaceholder": "ABBA, Mamma Mia, …"
+      }
+    },
+    "medleyTournament": {
+      "medley": {
+        "mysteryReveal": "🎵 {title} — {artist}",
+        "shareHeader": "🎵 Medley Contest!"
+      }
+    },
+    "profile": {
+      "profile": {
+        "privacyHint": "Your scores will be uploaded to the global leaderboard.",
+        "privacyHintDesc": "You can opt out at any time in Profile Settings."
+      },
+      "characterScreen": {
+        "leaderboardParticipationDesc": "Participate in the online leaderboard and share your scores with other players"
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+linked Alice → client mobile-1 (ok)
+linked Bob → client mobile-1 (ok)
+heartbeat loop started (30s interval) — PID 20091
+pitch stream active: note 62 (293.66 Hz) @4Hz

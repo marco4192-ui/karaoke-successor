@@ -1,0 +1,19 @@
+17|const NOTE_HEIGHT = 52;
+18|const PITCH_RANGE = 24;
+19|const BASE_PITCH = 48; // C3 - lowest pitch to display
+43|type NoteRenderMode = 'modern' | 'legacy' | 'flat';
+46|const FLAT_NOTE_FILL_COLOR = '#22d3ee';
+74|function getNoteDisplayStyleClasses(
+663|interface NoteStripPlayer {
+709|function getMultiPlayerNoteOverlay(
+1011|function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean, isRap: boolean = false): string {
+1029|function getNoteBoxShadow(isActive: boolean, isGolden: boolean): string {
+1041|function calculatePitchY(pitch: number, windowHeight: number): number {
+1049|interface NotePositionData {
+1065|interface PitchStats {
+1083|function calculatePitchStats(
+1110|const SING_LINE_POSITION = 20;
+1111|const NOTE_WINDOW = 4000;
+1112|const VISIBLE_TOP = 8;
+1114|const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
+1119|function getVisibleNotes(

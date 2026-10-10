@@ -1,0 +1,2 @@
+/** Stable empty performance map for players without samples yet. */
+const EMPTY_PLAYER_PERF: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null }>> = new Map();

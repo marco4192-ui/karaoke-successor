@@ -1,0 +1,2 @@
+  // V5: Multi-pitch mic status — count players whose pitch detector is initialized
+  const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');

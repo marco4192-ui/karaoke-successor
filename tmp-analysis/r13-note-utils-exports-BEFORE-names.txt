@@ -1,0 +1,19 @@
+BASE_PITCH
+FLAT_NOTE_FILL_COLOR
+NOTE_HEIGHT
+NOTE_WINDOW
+NotePositionData {
+NoteRenderMode
+NoteStripPlayer {
+PITCH_RANGE
+PitchStats {
+SING_LINE_POSITION
+VISIBLE_RANGE
+VISIBLE_TOP
+calculatePitchStats
+calculatePitchY
+getMultiPlayerNoteOverlay
+getNoteBackgroundClasses
+getNoteBoxShadow
+getNoteDisplayStyleClasses
+getVisibleNotes

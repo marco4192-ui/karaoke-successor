@@ -1,0 +1,77 @@
+'use client';
+
+/**
+ * Inline elimination overlay — extracted 1:1 from
+ * battle-royale/playing-view.tsx (task R12): phase 1 shows the eliminated
+ * player badge (red X), phase 2 the survivor flash (green borders on the
+ * surviving players).
+ */
+import type { BattleRoyaleGame, BattleRoyalePlayer } from '@/lib/game/battle-royale';
+
+export interface EliminationOverlayProps {
+  eliminationPhase?: null | 'eliminating' | 'survivor-flash';
+  game: BattleRoyaleGame;
+  sortedPlayers: BattleRoyalePlayer[];
+}
+
+export function EliminationOverlay({ eliminationPhase, game, sortedPlayers }: EliminationOverlayProps) {
+  return (
+    <>
+      {/* ─────────── Inline Elimination Overlay ─────────── */}
+      {eliminationPhase && (
+        <div className="absolute inset-0 z-40 pointer-events-none">
+          {/* Dim background */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-500" />
+
+          {/* Phase 1: Eliminated player badge with red X */}
+          {eliminationPhase === 'eliminating' && (() => {
+            const lastRound = game.rounds[game.rounds.length - 1];
+            const eliminatedPlayerId = lastRound?.eliminatedPlayerId;
+            if (!eliminatedPlayerId) return null;
+            return (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center animate-in fade-in zoom-in duration-300">
+                  <div className="w-24 h-24 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center mx-auto mb-3">
+                    <span className="text-5xl">✕</span>
+                  </div>
+                  <p className="text-red-400 font-bold text-lg">
+                    {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || 'Player'}
+                  </p>
+                  <p className="text-white/50 text-sm mt-1">Eliminated</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Phase 2: Survivor flash - green borders on surviving players */}
+          {eliminationPhase === 'survivor-flash' && (() => {
+            const lastRound = game.rounds[game.rounds.length - 1];
+            const eliminatedPlayerId = lastRound?.eliminatedPlayerId;
+            return (
+              <div className="absolute bottom-0 left-0 right-0 pb-2 px-3">
+                <div className="flex gap-2 overflow-x-auto justify-center">
+                  {sortedPlayers
+                    .filter(p => !p.eliminated && p.id !== eliminatedPlayerId)
+                    .map(player => (
+                      <div
+                        key={player.id}
+                        className="flex-shrink-0 px-3 py-2 rounded-lg bg-green-500/20 border-2 border-green-400 animate-in fade-in slide-in-from-bottom duration-300"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center text-green-400 text-xs font-bold">
+                            {player.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-green-300 text-sm font-medium whitespace-nowrap">{player.name}</span>
+                          <span className="text-green-400 text-xs">✓</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </>
+  );
+}
