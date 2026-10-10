@@ -30,15 +30,22 @@ export interface HarmonizeCacheEntry {
   yearReason: string;
   /** Where the genre suggestion originated — shown as a badge in the UI. */
   source: 'ai' | 'deezer' | 'musicbrainz' | 'itunes';
-  /** R60: true when a VERIFY run checked this song state and found NO
-   *  discrepancy — drives the ✓ badge in the editor library. Only verify
-   *  runs write this flag. */
+  /** R60/R62: true when a VERIFY run analyzed this song state and found
+   *  NOTHING to correct — drives the ✓ badge in the editor library. Only
+   *  verify runs write this flag. */
   verifiedOk?: boolean;
   /** R60: which fields the writing run actually CHECKED (a verdict was
    *  available). Verify-mode cache reads only accept entries that cover the
    *  requested present fields; fill-mode entries (no verifiedFields) never
    *  satisfy a verify run — they checked nothing. */
   verifiedFields?: { genre: boolean; language: boolean; year: boolean };
+  /** R62: semantics version of the verify verdict. 2 = "the run analyzed the
+   *  song and found NOTHING to correct ⇒ verified" (fields without a source
+   *  verdict count as unobjectionable). Entries WITHOUT this marker were
+   *  written by the pre-R62 strict logic ("every present field positively
+   *  confirmed by a source") whose verifiedOk=false verdicts made 100%
+   *  verification unreachable — they are re-checked instead of served. */
+  verifySemantics?: 2;
 }
 
 interface HarmonizeCacheShape {

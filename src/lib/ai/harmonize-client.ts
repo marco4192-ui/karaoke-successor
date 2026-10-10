@@ -27,6 +27,14 @@
  *  - the LLM verifies languages (no database carries them) and cross-checks
  *    genres the databases had no verdict for (mode:'verify' prompt)
  *  - verified-OK songs are cached like no-change results → instant re-runs
+ *
+ * R62 verified semantics: a verify run marks a song VERIFIED (✓ badge in
+ * the editor library) when it analyzed the song and found NOTHING to
+ * correct — fields without a source verdict count as unobjectionable
+ * instead of blocking the badge. The R60 "every field positively
+ * confirmed" rule made 100% verification unreachable: any song whose
+ * year no database could confirm never got the badge, no matter how often
+ * the user re-ran the check.
  */
 
 import { getCachedHarmonize, setCachedHarmonize, HarmonizeCacheEntry } from '@/lib/ai/harmonize-cache';
@@ -217,6 +225,13 @@ function verifyNeedsLlm(
  * a narrower earlier run (or a fill run, which checks nothing) must not
  * answer this run's question. Fixes the latent R59 gap where a fill-cached
  * song was served as "no change" in verify mode without ever being checked.
+ *
+ * R62: entries must also carry the CURRENT verify semantics
+ * (verifySemantics===2). Pre-R62 entries were written by the strict
+ * "every present field positively confirmed by a source" logic — their
+ * verifiedOk=false verdicts (e.g. a year no database could confirm) made
+ * 100% verification unreachable, and serving them would keep blocking the
+ * ✓ badge after the semantics change. Re-check them instead.
  */
 function verifyCacheCovers(
   entry: HarmonizeCacheEntry,
@@ -224,6 +239,7 @@ function verifyCacheCovers(
   verifyFields: { genre: boolean; language: boolean; year: boolean },
 ): boolean {
   if (!entry.verifiedFields) return false; // fill-mode entry — never checked anything
+  if (entry.verifySemantics !== 2) return false; // pre-R62 strict verdict — re-check
   if (verifyFields.genre && song.genre && !entry.verifiedFields.genre) return false;
   if (verifyFields.language && song.language && !entry.verifiedFields.language) return false;
   if (verifyFields.year && song.year != null && !entry.verifiedFields.year) return false;
@@ -467,8 +483,11 @@ export async function harmonizeSongs(
   const uncached: HarmonizeSong[] = [];
   for (const song of inputSongs) {
     let cached = getCachedHarmonize(song);
-    // R60: verify runs only accept cache entries that actually VERIFIED this
-    // song state — fill-mode entries (and narrower verify runs) are re-checked.
+    // R60/R62: verify runs only accept cache entries that actually VERIFIED
+    // this song state under the CURRENT semantics — fill-mode entries,
+    // narrower verify runs and pre-R62 strict verdicts are re-checked
+    // (verifyCacheCovers), so a logic change heals existing libraries on
+    // the next run.
     if (cached && options.verify && !verifyCacheCovers(cached, song, options.verifyFields ?? { genre: true, language: true, year: true })) {
       cached = undefined;
     }
@@ -660,11 +679,13 @@ export async function harmonizeSongs(
       if (!languageChanged) { suggestedLanguage = null; languageConfidence = 0; }
       if (!yearChanged) { suggestedYear = null; yearConfidence = 0; }
 
-      // ── R60: per-song verified classification (verify mode) ──
+      // ── R60/R62: per-song verified classification (verify mode) ──
       // Which fields had a CHECKABLE verdict in this run (regardless of the
       // outcome): genre via database or analyzed LLM, language via LLM only,
       // year via database only. Inactive fields and absent values are never
-      // "checked" — nothing was there to compare.
+      // "checked" — nothing was there to compare. This ONLY feeds the cache
+      // coverage (verifyCacheCovers): a narrower earlier run must not answer
+      // a broader later one.
       const genreChecked = options.verify
         ? verifyFields.genre && !!song.genre && (!!fact?.genre || !!llm)
         : false;
@@ -674,15 +695,19 @@ export async function harmonizeSongs(
       const yearChecked = options.verify
         ? verifyFields.year && song.year != null && fact?.year != null
         : false;
-      // The song is "verified" when EVERY field it has a value for was
-      // checked and none of them deviated — the badge asserts the complete
-      // existing metadata, so a partially checked song never gets it (a
-      // missing source verdict means the check could not run).
+      // R62 SEMANTICS: a song counts as VERIFIED when the run analyzed it and
+      // found NOTHING TO CORRECT. The R60 logic additionally required every
+      // present field to be positively CONFIRMED by a source — which made
+      // 100% verification unreachable: any song whose year no database could
+      // confirm (karaoke/covers/obscure releases) never got the ✓ badge, no
+      // matter how often the user re-ran the check. Fields WITHOUT a source
+      // verdict are now "unobjectionable" — the check had no complaint, the
+      // data counts as correct. The only hard exclusion (besides an open
+      // correction suggestion) is a MISSING LLM verdict: that song was not
+      // analyzed at all (AI unavailable / dropped entry) and stays
+      // unverified until a successful run actually checks it.
       const verifiedOk = options.verify && !llmVerdictMissing
-        ? (!song.genre || genreChecked)
-          && (!song.language || languageChecked)
-          && (song.year == null || yearChecked)
-          && !suggestedGenre && !suggestedLanguage && !suggestedYear
+        ? !suggestedGenre && !suggestedLanguage && !suggestedYear
         : false;
       if (verifiedOk) verifiedOkIds.push(song.id);
 
@@ -705,6 +730,8 @@ export async function harmonizeSongs(
           source,
           // R60: verify runs record the verdict — later verify runs may
           // serve this entry from the cache (incl. the ✓-badge eligibility).
+          // R62: verifySemantics=2 marks the CURRENT (relaxed) verdict
+          // semantics — see verifyCacheCovers.
           ...(options.verify ? {
             verifiedOk,
             verifiedFields: {
@@ -712,6 +739,7 @@ export async function harmonizeSongs(
               language: languageChecked,
               year: yearChecked,
             },
+            verifySemantics: 2 as const,
           } : {}),
         });
       }

@@ -623,13 +623,16 @@ export function MetadataStudio({
         setError(result.error || t('editor.aiBatchError'));
       }
 
-      // ── R60: mark verified songs (✓ badge in the editor library) ──
-      // Songs the verify run fully checked WITHOUT finding a discrepancy
-      // get metadataVerifiedAt — same persistence primitive as applied
+      // ── R60/R62: mark verified songs (✓ badge in the editor library) ──
+      // Songs the verify run ANALYZED and found NOTHING to correct get
+      // metadataVerifiedAt — same persistence primitive as applied
       // suggestions (updateSong → localStorage + IndexedDB; the flag is app
       // state, not txt metadata, so no txt write happens here). Aborted runs
-      // mark nothing; per-song the client only reports fully checked songs
-      // (missing LLM/source verdicts keep their song out of verifiedOkIds).
+      // mark nothing; songs whose LLM verdict never arrived (AI unavailable /
+      // dropped entry) are reported as notAnalyzed and stay out of
+      // verifiedOkIds. R62: fields without a source verdict no longer block
+      // the badge — corrected AND already-correct songs both reach ✓, so a
+      // complete verify run can verify the whole library (100% reachable).
       if (mode === 'verify' && result.verifiedOkIds.length > 0) {
         const now = Date.now();
         updateSongs(result.verifiedOkIds.map(id => ({ songId: id, updates: { metadataVerifiedAt: now } })));
