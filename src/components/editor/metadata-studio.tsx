@@ -44,6 +44,7 @@ import {
   HarmonizeProgress,
   HarmonizeStats,
 } from '@/lib/ai/harmonize-client';
+import { setCachedHarmonize } from '@/lib/ai/harmonize-cache';
 import {
   SuggestionRow,
   ConfidenceFilter,
@@ -673,6 +674,60 @@ export function MetadataStudio({
   const handleAbortRun = useCallback(() => {
     abortRef.current?.abort();
   }, []);
+
+  // ── R63: "Daten sind korrekt" — verify mode's 100% path ──
+  // A verify run badges every song it found NOTHING to correct, but songs
+  // with OPEN suggestions could never reach the ✓ badge: the only way out
+  // was applying a correction the user might consider WRONG (classic case:
+  // iTunes says "Pop"/"Volksmusik" where the German karaoke library
+  // correctly says "Schlager"). This handler overrules the open
+  // suggestions — the user declares "my data is already correct":
+  //  - the song gets metadataVerifiedAt (✓ badge) WITHOUT changing values
+  //  - a user-override cache entry (all-null suggestions, verifiedOk,
+  //    verifySemantics 2, full field coverage) replaces the suggesting
+  //    entry under the CURRENT values' key → future verify runs serve the
+  //    verdict from the cache instead of re-listing the rejected suggestion
+  //  - the row(s) leave the suggestion list
+  // Editing a value later still drops the badge (R60-E invalidation) and
+  // the changed key means a fresh check on the next run — nothing freezes.
+  const handleMarkCorrect = useCallback((songIds: string[]) => {
+    if (songIds.length === 0) return;
+    const now = Date.now();
+    updateSongs(songIds.map(id => ({ songId: id, updates: { metadataVerifiedAt: now } })));
+    const songsById = new Map(songs.map(s => [s.id, s] as const));
+    for (const id of songIds) {
+      const song = songsById.get(id);
+      if (!song) continue;
+      setCachedHarmonize(
+        {
+          title: song.title,
+          artist: song.artist,
+          genre: song.genre ?? null,
+          language: song.language ?? null,
+          year: song.year ?? null,
+        },
+        {
+          suggestedGenre: null,
+          suggestedLanguage: null,
+          suggestedYear: null,
+          genreConfidence: 0,
+          languageConfidence: 0,
+          yearConfidence: 0,
+          genreReason: '',
+          languageReason: '',
+          yearReason: '',
+          source: 'ai',
+          verifiedOk: true,
+          verifiedFields: { genre: true, language: true, year: true },
+          verifySemantics: 2,
+        },
+      );
+    }
+    const idSet = new Set(songIds);
+    setSuggestions(prev => prev.filter(s => !idSet.has(s.songId)));
+    setMarkedVerifiedInfo(prev => (prev ?? 0) + songIds.length);
+    onApplied(); // refresh the editor grid so the badges appear immediately
+  }, [songs, onApplied]);
 
   // ── Apply (single field row ✓) ──
   const handleApplySingle = useCallback(async (
@@ -1636,10 +1691,15 @@ export function MetadataStudio({
                     suggestion={s}
                     minConfidence={minConfidence}
                     onApply={handleApplySingle}
+                    {...(mode === 'verify' ? {
+                      onMarkCorrect: (songId: string) => handleMarkCorrect([songId]),
+                      markCorrectLabel: t('editor.studioMarkSongCorrect'),
+                      markCorrectHint: t('editor.studioMarkSongCorrectHint'),
+                    } : {})}
                   />
                 ))}
               </div>
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-1 flex-wrap">
                 <Button
                   size="sm"
                   variant="outline"
@@ -1649,6 +1709,23 @@ export function MetadataStudio({
                 >
                   {t('editor.aiBatchClose')}
                 </Button>
+                {/* R63: verify mode's 100% path — mark every remaining
+                    suggestion song as correct in one click (the user
+                    overrules the sources; same effect as clicking the
+                    per-row button on each song). */}
+                {mode === 'verify' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleMarkCorrect(suggestions.map(s => s.songId))}
+                    disabled={suggestions.length === 0 || !!applyProgress}
+                    className="flex-1 border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/15 hover:border-emerald-300 text-xs"
+                    data-testid="studio-mark-rest-correct"
+                  >
+                    <BadgeCheck className="w-3 h-3 mr-1" aria-hidden="true" />
+                    {t('editor.studioMarkRestCorrect').replace('{n}', String(suggestions.length))}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   onClick={() => setShowWarning(true)}

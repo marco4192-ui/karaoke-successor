@@ -11,6 +11,7 @@
  *  - SuggestionRow (R5): one song row with change lines + AI reasons
  */
 
+import { BadgeCheck } from 'lucide-react';
 import { HarmonizeSuggestion } from '@/lib/ai/harmonize-client';
 
 // ── Threshold logic (R4) ─────────────────────────────────────────────────
@@ -125,10 +126,21 @@ export function SuggestionRow({
   suggestion: s,
   minConfidence,
   onApply,
+  onMarkCorrect,
+  markCorrectLabel,
+  markCorrectHint,
 }: {
   suggestion: HarmonizeSuggestion;
   minConfidence: number;
   onApply: (songId: string, field: 'genre' | 'language' | 'year', value: string | number) => void;
+  /** R63 (verify mode only): "my data is already correct" — keeps the
+   *  current values, marks the song as verified and drops the suggestion.
+   *  Absent in fill mode (there the values are empty, nothing to confirm). */
+  onMarkCorrect?: (songId: string) => void;
+  /** Label for the mark-correct button (i18n, passed by the studio). */
+  markCorrectLabel?: string;
+  /** Tooltip for the mark-correct button. */
+  markCorrectHint?: string;
 }) {
   const genrePasses = !s.suggestedGenre || fieldPassesThreshold('genre', s, minConfidence);
   const languagePasses = !s.suggestedLanguage || fieldPassesThreshold('language', s, minConfidence);
@@ -157,10 +169,23 @@ export function SuggestionRow({
     <div className="bg-white/5 rounded-lg p-2.5 text-xs space-y-1.5">
       {/* Title line + source badge (badge only when a genre suggestion
           exists — the badge describes the genre's origin, year-only rows
-          carry their source in the reason line) */}
+          carry their source in the reason line) + R63 "data is correct"
+          button (verify mode: overrule the suggestion without applying it) */}
       <div className="flex items-center gap-2">
         <p className="font-medium text-white/80 truncate flex-1">{s.artist} — {s.title}</p>
         {s.suggestedGenre && <SourceBadge source={s.source} fromCache={s.fromCache} />}
+        {onMarkCorrect && (
+          <button
+            onClick={() => onMarkCorrect(s.songId)}
+            title={markCorrectHint}
+            aria-label={markCorrectHint}
+            className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-emerald-400/40 text-emerald-300 text-[10px] leading-none font-medium hover:bg-emerald-500/20 hover:border-emerald-300 transition-colors whitespace-nowrap"
+            data-testid={`studio-mark-correct-${s.songId}`}
+          >
+            <BadgeCheck className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">{markCorrectLabel}</span>
+          </button>
+        )}
       </div>
 
       {/* Genre change */}
