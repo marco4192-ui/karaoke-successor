@@ -1,0 +1,533 @@
+══ Canaries (must ALL be reachable — otherwise the analysis is broken) ══
+  ✓ LIVE  src/components/game/battle-royale/playing-view.tsx
+  ✓ LIVE  src/hooks/use-battle-royale-game.ts
+  ✓ LIVE  src/lib/socketio-server.ts
+  ✓ LIVE  src/lib/server/https-domain.ts
+  ✗ DEAD  src/lib/db.ts
+  ✓ LIVE  src/lib/i18n/locales/index.ts
+  ✓ LIVE  src/lib/i18n/translations.ts
+  ✓ LIVE  src/lib/game/battle-royale.ts
+  ✓ LIVE  src/lib/game/party-store.ts
+  ✓ live jukebox files: 10  | live daily-challenge files: 1
+
+══ Summary ══
+  src files total: 992
+  reachable:      739
+  orphans:        253
+  roots seeded:   30, external importers: 82, literal seeds: 4
+  CANARY FAILURES: 1
+
+══ Bucket R62-BULK (delete candidates, 182) ══
+  src/hooks/use-mobile-screen-sync.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/hooks/use-companion-remote-events.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/folder-scan-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/ultrastar-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/alternate-format-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/import-preview.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/use-import-screen.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/drop-zone.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/import-screen.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/import/import-types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-queue.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/jukebox-hook-types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-state.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-sync.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-filters.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-playback.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-lyrics.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-media.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-library.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-fullscreen.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/hooks/use-jukebox-cleanup.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/progress-bar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/song-display.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/lyrics-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/jukebox-platform-video.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/format-utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/volume-control.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/video-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/playlist-sidebar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/pool-selector.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/controls-bar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/jukebox/player/fullscreen-header.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/helpers.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/use-daily-challenge-data.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/player-progress-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/weekly-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/badges-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/daily-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/player-selection-card.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/modes-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/daily-challenge/leaderboard-tab.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/song-filter-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/leave-dialog.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/use-host-profiles.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/device-assignment.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/song-selection.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/ui-controls.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/player-selection.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/constants.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/mode-settings.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/party-setup/start-flow.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/helpers.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/song-list.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/use-song-overlay.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/use-song-filters.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/song-options-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/playlist-picker-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/filter-bar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/motto-banner.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/use-display-songs.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/use-desktop-preview.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mirror-views/library-lite/use-playlist-picker.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/screens/mobile/mobile-chat-notification.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/results/queue-next-song.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/results/score-visualization.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/settings/settings-tab-intro.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/analysis-utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/upload-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/import-actions.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/analysis-result-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/use-sheet-music-dialog.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/sheet-music/pdf-page-navigation.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/manual-edit-panel.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/run-controls.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/rule-mode-panel.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/status-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/constants.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/hooks.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/suggestions-panel.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/metadata-studio/studio-config-bar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/use-editor-imports.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/analysis-audio-path.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/use-editor-save.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/audio-source-bridge.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/left-panel.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/header-panel-sidebar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/use-note-history.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/cancel-confirm-dialog.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/karaoke-editor/note-operations.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/timeline-utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/use-timeline-auto-scroll.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/note-details-band.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/timeline-grid.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/comparison-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/use-timeline-interaction.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/pitch-lane.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/pitch-minimap.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/timeline-types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/timeline-constants.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/timeline/timeline-toolbar.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/editor/ai-harmonize-card.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/tournament/setup-screen.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/tournament/double-elimination-bracket.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/tournament/bracket-view.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/tournament/results-screen.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/battle-royale/elimination-view.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-phase.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-scoring.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-round-actions.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-game-loop.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-pitch-detection.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/use-medley-transition.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/game/medley/hooks/medley-hook-types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/ptm-game-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/use-tournament-screens.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/medley-game-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/competitive-game-sections.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/rms-starting-screen.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/rate-my-song-screens.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/tournament-screens.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/prepare-next-medley-round.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/cptm-game-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/components/party/game-screens/battle-royale-section.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/stepmania.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/singstar.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/midi.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/convert.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/karaoke-mugen.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/parsers/multi-format/detect.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/vocal-detector.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/microphone/microphone-instance.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/microphone/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/microphone/mic-config-storage.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/microphone/singleton.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/microphone/multi-microphone-manager.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/audio/startscreen-jingle.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/fr/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/ja/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/fi/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/it/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/ko/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/no/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/pl/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/pt/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/ru/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/sv/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/zh/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/nl/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/da/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/i18n/locales/es/completion.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/achievement-definitions-expansion-progression.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/display-style.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/note-styling.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/visible-notes.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/multi-player-overlay.tsx
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/pitch-stats.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/note-utils/color-utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/date-utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/badges.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/best-results.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/utils.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/slots.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/submission.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/stats.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/types.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/registry.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/localization.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/quests.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/gates.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/storage-keys.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/index.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/weekly.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/daily-challenge/evaluation.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/achievement-definitions.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/achievement-definitions-expansion-performance.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+  src/lib/game/achievement-definitions-core.ts
+      added by: R62: Verify-Badge für bereits korrekte Songs — Semantikwechsel von 'jedes Feld positiv quellenbestätigt' zu 'P
+
+══ Bucket AUTO-COMMIT (delete candidates, 19) ══
+  src/components/screens/mobile/mobile-mic-view.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | refactor(I5): Split large files 
+  src/components/screens/mobile/mobile-pitch-visualizer.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | feat(companion): implement 17 ne
+  src/components/editor/genre-language-editor.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | refactor: split 18 large files i
+  src/components/editor/editor-note-tab.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | refactor: karaoke-editor.tsx 133
+  src/components/editor/tools-panel.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | refactor: karaoke-editor.tsx 133
+  src/components/editor/timeline/waveform.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | Initial commit
+  src/components/game/tournament-bracket-view.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | feat(i18n): exhaustive hardcoded
+  src/components/game/tournament-results-screen.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | feat(i18n): exhaustive hardcoded
+  src/components/game/companion-setup.tsx
+      added by: feat: add companion sing-along game + submodule updates (issues 4, 8, bonus) | c5792ad9-94fa-4eb1-86ba-c865f2f
+  src/components/game/companion-singalong-screen.tsx
+      added by: feat: add companion sing-along game + submodule updates (issues 4, 8, bonus) | c5792ad9-94fa-4eb1-86ba-c865f2f
+  src/components/game/companion-types.ts
+      added by: feat: add companion sing-along game + submodule updates (issues 4, 8, bonus) | c5792ad9-94fa-4eb1-86ba-c865f2f
+  src/components/game/companion-series-results.tsx
+      added by: feat: add companion sing-along game + submodule updates (issues 4, 8, bonus) | c5792ad9-94fa-4eb1-86ba-c865f2f
+  src/components/game/spectrogram-display.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | Initial commit
+  src/components/game/pitch-graph-display.tsx
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | Initial commit
+  src/components/game/companion-game.tsx
+      added by: feat: add companion sing-along game + submodule updates (issues 4, 8, bonus) | c5792ad9-94fa-4eb1-86ba-c865f2f
+  src/lib/audio/spectrogram.ts
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | Initial commit
+  src/lib/ai/metadata-enricher.ts
+      added by: 1a0a763b-11e2-43bb-a409-597fe488b3c6
+  src/lib/editor/demo-song.ts
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | feat(metadata-studio): measured 
+  src/lib/game/pitch-graph.ts
+      added by: 70f679de-893a-4e53-8f1d-677a7d0e425e | 54dfa071-7631-45a1-a75f-6b757f00f6a5 | Initial commit
+
+══ Bucket OLDER COMMITS (review manually — 35) ══
+  src/hooks/use-mobile-swipe.ts
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/hooks/use-mobile-song-preview.ts
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/hooks/use-mobile-drag-reorder.ts
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/hooks/use-socketio-companion.ts
+      added by: feat: Replace HTTP polling with Socket.IO push architecture
+  src/hooks/use-mobile-pull-to-refresh.ts
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/hooks/use-socketio-host.ts
+      added by: feat: Replace HTTP polling with Socket.IO push architecture
+  src/components/screens/mobile/mirror-views/index.ts
+      added by: restore: all 158 files from Aug 1-16 work (reflog commits 101d97bc..36b5a44a)
+  src/components/screens/mobile/mobile-results-view.tsx
+      added by: refactor(I5): Split large files — mobile-views.tsx (1173→9 files) + ptm-game-screen.tsx (1124→869)
+  src/components/screens/mobile/mobile-leaderboard.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/screens/mobile/mobile-jukebox-view.tsx
+      added by: refactor(I5): Split large files — mobile-views.tsx (1173→9 files) + ptm-game-screen.tsx (1124→869)
+  src/components/screens/mobile/mobile-queue-view.tsx
+      added by: refactor(I5): Split large files — mobile-views.tsx (1173→9 files) + ptm-game-screen.tsx (1124→869)
+  src/components/screens/mobile/mobile-songs-view.tsx
+      added by: refactor(I5): Split large files — mobile-views.tsx (1173→9 files) + ptm-game-screen.tsx (1124→869)
+  src/components/screens/mobile/mobile-swipeable-item.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/screens/mobile/mobile-pull-refresh.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/screens/mobile/remote-control-view.tsx
+      added by: refactor: mobile-client-view.tsx 1911→189 lines (-90%) - extract 7 modules
+  src/components/screens/mobile/mobile-preview-button.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/screens/mobile/mobile-home-view.tsx
+      added by: refactor(I5): Split large files — mobile-views.tsx (1173→9 files) + ptm-game-screen.tsx (1124→869)
+  src/components/screens/mobile/mobile-challenge-button.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/screens/mobile/mobile-photo-booth.tsx
+      added by: feat(companion): implement 17 new features — F1-F19
+  src/components/settings/editor-settings-tab.tsx
+      added by: Initial commit
+  src/components/game/battle-royale/lyrics-display.tsx
+      added by: feat(i18n): exhaustive hardcoded string sweep + complete i18n coverage | refactor: battle-royale-screen.tsx 11
+  src/components/game/tournament-setup-screen.tsx
+      added by: feat(i18n): exhaustive hardcoded string sweep + complete i18n coverage | refactor: split large party mode file
+  src/components/game/pass-the-mic-screen.tsx
+      added by: Initial commit
+  src/components/game/game-enhancements.tsx
+      added by: Initial commit
+  src/components/game/medley/medley-setup-components.tsx
+      added by: refactor: split large party mode files into focused modules
+  src/components/game/medley/medley-setup.tsx
+      added by: feat(medley): FFA multi-pitch detection
+  src/components/game/medley/index.ts
+      added by: feat(medley): New setup screen, game view, and utilities
+  src/lib/parsers/scan-types.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/parsers/folder-discovery.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/parsers/song-converter.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/parsers/blob-url-tracker.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/parsers/folder-scanner.ts
+      added by: Initial commit
+  src/lib/parsers/ultrastar-metadata.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/parsers/media-duration.ts
+      added by: refactor: split 18 large files into 71 focused modules
+  src/lib/mood-mapper.ts
+      added by: feat(companion): implement 17 new features — F1-F19
+
+══ Protected (non-code / pending-keys — keep, 17) ══
+  src/app/api/mobile/handlers/queue-handlers.ts
+  src/app/api/mobile/handlers/pitch-handlers.ts
+  src/app/api/mobile/handlers/connection-handlers.ts
+  src/app/api/mobile/handlers/remote-control-handlers.ts
+  src/app/api/mobile/handlers/host-sync-handlers.ts
+  src/app/api/mobile/handlers/game-state-handlers.ts
+  src/app/api/mobile/handlers/chat-handlers.ts
+  src/lib/i18n/pending-keys/r42.json
+  src/lib/i18n/pending-keys/r33-d4.json
+  src/lib/i18n/pending-keys/r33-e.json
+  src/lib/i18n/pending-keys/r36.json
+  src/lib/i18n/pending-keys/r33-d3.json
+  src/lib/i18n/pending-keys/r33-d1.json
+  src/lib/i18n/pending-keys/r33-d2.json
+  src/lib/i18n/pending-keys/r54.json
+  src/lib/i18n/pending-keys/r33-c.json
+  src/lib/i18n/pending-keys/r34.json
+
+══ Quoted-segment hits in LIVE code (expect none / false alarms only) ══
+  ⚠ src/components/screens/mobile/mirror-views/party-setup/utils.ts  ← live code quotes segment "utils": ["@/lib/utils","@/components/screens/library/utils","./library/utils"]
+  ⚠ src/components/screens/mobile/mirror-views/party-setup/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/components/screens/mobile/mirror-views/party-setup/constants.ts  ← live code quotes segment "constants": ["@/lib/constants","@/components/results/constants","./constants"]
+  ⚠ src/components/editor/sheet-music/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/components/editor/metadata-studio/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/components/editor/metadata-studio/constants.ts  ← live code quotes segment "constants": ["@/lib/constants","@/components/results/constants","./constants"]
+  ⚠ src/components/editor/karaoke-editor/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/components/game/tournament/setup-screen.tsx  ← live code quotes segment "setup-screen": ["./battle-royale/setup-screen"]
+  ⚠ src/components/game/tournament/results-screen.tsx  ← live code quotes segment "results-screen": ["./results-screen"]
+  ⚠ src/components/party/game-screens/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/lib/audio/microphone/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  ⚠ src/lib/game/daily-challenge/utils.ts  ← live code quotes segment "utils": ["@/lib/utils","@/components/screens/library/utils","./library/utils"]
+  ⚠ src/lib/game/daily-challenge/types.ts  ← live code quotes segment "types": ["@/lib/tutorial/types","@/lib/leaderboard/types","./types"]
+  flagged: 13
+
+══ Deletable: 243 files → tmp-analysis/orphans-delete.txt ══
