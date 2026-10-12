@@ -41,6 +41,8 @@
     "skills",
     "scripts",
     "portable-node",
-    "src-tauri/bundled"
+    "src-tauri/bundled",
+    "qa-test-song",
+    "tmp-analysis"
   ]
 }
