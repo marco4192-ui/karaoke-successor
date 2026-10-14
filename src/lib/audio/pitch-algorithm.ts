@@ -16,12 +16,17 @@
  * @param yinBuffer - Pre-allocated scratch buffer (length ≥ ⌊buffer.length / 2⌋)
  * @param sampleRate - Audio sample rate in Hz
  * @param threshold  - YIN threshold (0.1–0.3, lower = more sensitive)
+ * @param confidenceOut - Optional pre-allocated receiver for the YIN
+ *   confidence (0–1, 1 − normalized difference at the chosen tau). Lets the
+ *   mobile companion send honest clarity values (R65) without any extra
+ *   allocation or a second pass.
  */
 export function yinPitchDetection(
   buffer: Float32Array<ArrayBufferLike>,
   yinBuffer: Float32Array,
   sampleRate: number,
   threshold: number = 0.15,
+  confidenceOut?: { value: number },
 ): number | null {
   const yinBufferLength = yinBuffer.length;
 
@@ -55,8 +60,14 @@ export function yinPitchDetection(
   }
 
   if (tauEstimate === -1) {
+    if (confidenceOut) confidenceOut.value = 0;
     return null;
   }
+
+  // R65 — YIN confidence at the chosen tau (1 − d′): high = very periodic
+  // tone. Written into the optional receiver BEFORE interpolation so early
+  // returns keep the caller's last value consistent (0 on no-tone).
+  if (confidenceOut) confidenceOut.value = Math.max(0, Math.min(1, 1 - yinBuffer[tauEstimate]));
 
   // Parabolic interpolation for better accuracy
   let betterTau: number;

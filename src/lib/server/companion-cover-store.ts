@@ -26,6 +26,28 @@ import { join } from 'path';
 
 const STORE_DIR = join(process.cwd(), 'db', 'companion-covers');
 
+// R65 — Reverse-Map hash → songId (db/companion-covers/index.json).
+// songcoverids braucht die songIds (nicht die SHA-1-Hashes), damit der
+// Phone-seitige Cover-Index (use-companion-cover-index) weiss, welche
+// Covers der Server von der PLATTE liefern kann — gerade nach einem Server-
+// Restart, bevor die 15s-Upload-Ticks die Speicher-Map neu füllen.
+const INDEX_FILE = join(STORE_DIR, 'index.json');
+
+function readIndexMap(): Record<string, string> {
+  try {
+    const raw = JSON.parse(readFileSync(INDEX_FILE, 'utf8')) as unknown;
+    return raw && typeof raw === 'object' ? raw as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeIndexMap(map: Record<string, string>): void {
+  try {
+    writeFileSync(INDEX_FILE, JSON.stringify(map));
+  } catch { /* Best-Effort — ohne Map bleibt nur der Speicher-Index */ }
+}
+
 /** Obergrenze der Cache-Dateien (img+meta zählen je als 1). Bei Überschreitung
  *  werden die ältesten Paare gelöscht (Best-Effort, kein Fehler). */
 const MAX_FILES = 6000;
@@ -53,6 +75,10 @@ export function saveCoverToDisk(songId: string, buf: Buffer, type: string): void
     const key = hashKey(songId);
     writeFileSync(join(STORE_DIR, key + '.img'), buf);
     writeFileSync(join(STORE_DIR, key + '.meta'), type);
+    // R65 — Reverse-Map pflegen (hash → songId), see index.json note above.
+    const map = readIndexMap();
+    map[key] = songId;
+    writeIndexMap(map);
     maybePrune();
   } catch {
     // Platte voll / Berechtigungen — Cover-Cache ist rein optional.
@@ -75,6 +101,26 @@ export function readCoverFromDisk(songId: string): { buf: Buffer; type: string }
     return { buf, type };
   } catch {
     return null;
+  }
+}
+
+/** R65 — Alle songIds, für die der Disk-Store ein Cover LIEFERN kann
+ *  (index.json-Map, existenzgeprüft gegen die .img-Dateien — verwaiste
+ *  Map-Einträge nach maybePrune() fallen dadurch raus). Basis für die
+ *  songcoverids-Response; ohne diese Liste würde der Phone-Cover-Index
+ *  nach Server-Restarts die Disk-Covers fälschlich weg-gaten. */
+export function listDiskCoverSongIds(): string[] {
+  try {
+    const map = readIndexMap();
+    const ids: string[] = [];
+    for (const [hash, songId] of Object.entries(map)) {
+      if (typeof songId === 'string' && songId && existsSync(join(STORE_DIR, hash + '.img'))) {
+        ids.push(songId);
+      }
+    }
+    return ids;
+  } catch {
+    return [];
   }
 }
 

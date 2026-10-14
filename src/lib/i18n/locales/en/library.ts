@@ -522,6 +522,7 @@ export const libraryTranslations = {
     studioMarkSongCorrectHint: 'Keep the current values and mark the song as verified — the suggestion is discarded.',
     studioMarkRestCorrect: 'Mark rest correct ({n})',
     studioVerifyMarked: '{n} song(s) newly marked as verified — they now carry the ✓ badge in the editor library.',
+    studioVerifyDegraded: 'AI unavailable — genre & year were verified via the music databases; languages were not checked this run. Once the AI is available, another verify run will also check the languages.',
     studioNoFields: 'Select at least one field (Genre/Language/Year).',
     studioLocalApplied: '{n} song(s) updated locally only.',
     bootTitle: 'Loading editor…',

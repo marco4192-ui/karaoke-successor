@@ -25,6 +25,37 @@ interface UseCanvasRendererParams {
   onProgress?: (percent: number) => void;
 }
 
+/**
+ * R65 — aspect-correct camera drawing (cover-fit, center-crop).
+ *
+ * The camera delivers its NATIVE aspect ratio (mostly 4:3 or 16:9 LANDSCAPE —
+ * the 720×1280 request is only an ideal hint, browsers return the nearest
+ * supported mode). Blind `drawImage(video, dx, dy, w, h)` STRETCHED that
+ * landscape feed into the portrait 9:16 canvas / the ~4:7 PiP box — the
+ * recording looked "in der Höhe langgezogen" (user report). cover-fit
+ * scales the source up until it covers the box, then crops the excess —
+ * like CSS object-fit: cover. Falls back to the old stretch when the video
+ * has no intrinsic dimensions yet (some strict environments report 0).
+ */
+function drawCameraCoverFit(
+  ctx: CanvasRenderingContext2D,
+  camVideo: HTMLVideoElement,
+  dx: number, dy: number, dw: number, dh: number,
+): void {
+  const srcW = camVideo.videoWidth;
+  const srcH = camVideo.videoHeight;
+  if (!srcW || !srcH) {
+    ctx.drawImage(camVideo, dx, dy, dw, dh);
+    return;
+  }
+  const scale = Math.max(dw / srcW, dh / srcH);
+  const sw = dw / scale;
+  const sh = dh / scale;
+  const sx = (srcW - sw) / 2;
+  const sy = (srcH - sh) / 2;
+  ctx.drawImage(camVideo, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
 export function useCanvasRenderer({
   canvasRef,
   cameraVideoRef,
@@ -82,9 +113,9 @@ export function useCanvasRenderer({
       const camVideo = cameraVideoRef.current;
 
       if (cameraPosition === 'fullscreen') {
-        // Full screen camera with overlay
+        // Full screen camera with overlay — R65: cover-fit statt Streckung
         ctx.globalAlpha = 0.9;
-        ctx.drawImage(camVideo, 0, 0, width, height);
+        drawCameraCoverFit(ctx, camVideo, 0, 0, width, height);
         ctx.globalAlpha = 1;
 
         // Dark overlay for text readability
@@ -119,12 +150,13 @@ export function useCanvasRenderer({
         ctx.roundRect(pipX - 4, pipY - 4, pipWidth + 8, pipHeight + 8, 20);
         ctx.fill();
 
-        // PiP video
+        // PiP video — R65: cover-fit statt Streckung (4:3/16:9-Kamera in die
+        // ~4:7-PiP-Box gezogen = Höhen-Verzerrung, Nutzer-Feedback 2)
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(pipX, pipY, pipWidth, pipHeight, 16);
         ctx.clip();
-        ctx.drawImage(camVideo, pipX, pipY, pipWidth, pipHeight);
+        drawCameraCoverFit(ctx, camVideo, pipX, pipY, pipWidth, pipHeight);
         ctx.restore();
       }
     }

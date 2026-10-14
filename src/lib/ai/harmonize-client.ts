@@ -115,6 +115,12 @@ export interface HarmonizeResult {
    *  songs are never in here. Always empty in fill mode. */
   verifiedOkIds: string[];
   error?: string;
+  /** R65 (verify mode): the AI service was UNAVAILABLE — the run degraded
+   *  gracefully instead of failing: databases verified genre/year, languages
+   *  counted as "no complaint" for THIS run (NOT cached as language-checked
+   *  → a later run with AI re-checks them via verifyCacheCovers). No error
+   *  banner — the UI shows an informational notice instead. */
+  degraded?: boolean;
 }
 
 interface HarmonizeOptions {
@@ -474,6 +480,11 @@ export async function harmonizeSongs(
   const suggestions: HarmonizeSuggestion[] = [];
   // R60: per-song verified classification (verify mode only)
   const verifiedOkIds: string[] = [];
+  // R65 — verify-mode degradation flag (function scope, needed by the final
+  // result): set when the AI was UNAVAILABLE during the LLM phase; consumed
+  // by the per-song loop AND the result (degraded: true → UI-Info statt
+  // Fehler-Banner).
+  let aiSkippedVerify = false;
 
   if (inputSongs.length === 0) {
     return { success: true, suggestions, stats, verifiedOkIds };
@@ -531,6 +542,15 @@ export async function harmonizeSongs(
       });
 
     let llmMap = new Map<string, LlmSuggestion>();
+    // R65 — verify mode degrades GRACEFULLY when the AI is unavailable:
+    // databases verify genre/year; the LLM-only language check counts as
+    // "no complaint" for THIS run. The old hard failure ("KI-Analyse
+    // fehlgeschlagen", nothing verified — user report 3) blocked 100%
+    // verification whenever the AI service was down/unconfigured. The
+    // cache entry records languageChecked=false — a later verify run WITH
+    // AI re-checks the languages (verifyCacheCovers refuses this entry).
+    // aiSkippedVerify is declared at FUNCTION scope (the final result reads
+    // it after this block ends).
     if (llmSongs.length > 0 && !options.signal?.aborted) {
       // Skip the whole LLM phase when the AI service is unavailable — no
       // doomed 503 requests, no console spam. Affected songs count as
@@ -540,6 +560,8 @@ export async function harmonizeSongs(
         llmMap = result.map;
         stats.aiCalls = Math.ceil(llmSongs.length / LLM_CHUNK_SIZE);
         stats.aiErrors = result.errors;
+      } else if (options.verify) {
+        aiSkippedVerify = true;
       } else {
         stats.aiErrors = 1; // signals "AI unavailable" in the result error
       }
@@ -571,7 +593,11 @@ export async function harmonizeSongs(
         stats.notAnalyzed++;
         continue;
       }
-      if (llmVerdictMissing && options.verify) {
+      if (llmVerdictMissing && options.verify && !aiSkippedVerify) {
+        // R65: only count notAnalyzed when the AI was AVAILABLE but dropped
+        // this entry (transient, retried next run). When the whole phase was
+        // SKIPPED (aiSkippedVerify), the song WAS checked — by the databases —
+        // and counts as verified when they had no complaint (degraded).
         stats.notAnalyzed++;
       }
 
@@ -702,11 +728,12 @@ export async function harmonizeSongs(
       // confirm (karaoke/covers/obscure releases) never got the ✓ badge, no
       // matter how often the user re-ran the check. Fields WITHOUT a source
       // verdict are now "unobjectionable" — the check had no complaint, the
-      // data counts as correct. The only hard exclusion (besides an open
-      // correction suggestion) is a MISSING LLM verdict: that song was not
-      // analyzed at all (AI unavailable / dropped entry) and stays
-      // unverified until a successful run actually checks it.
-      const verifiedOk = options.verify && !llmVerdictMissing
+      // data counts as correct. R65: the remaining hard exclusion (a missing
+      // LLM verdict) is now limited to TRANSIENT drops — when the whole AI
+      // phase was skipped (aiSkippedVerify), the databases' verdict stands
+      // alone and the song CAN be verified; its cache entry carries
+      // languageChecked=false, so a later run with AI re-checks languages.
+      const verifiedOk = options.verify && (!llmVerdictMissing || aiSkippedVerify)
         ? !suggestedGenre && !suggestedLanguage && !suggestedYear
         : false;
       if (verifiedOk) verifiedOkIds.push(song.id);
@@ -715,8 +742,10 @@ export async function harmonizeSongs(
       //    so re-runs skip this song entirely. EXCEPT when an LLM verdict
       //    was needed but never arrived (R59 verify): a cache entry would
       //    freeze the unaudited language as "done" — leave it uncached so
-      //    the next run retries the check.
-      if (!llmVerdictMissing) {
+      //    the next run retries the check. R65: an AI-SKIPPED run DOES cache
+      //    (with languageChecked=false) — the fact verdicts are worth
+      //    keeping and the coverage gate forces the language re-check.
+      if (!llmVerdictMissing || aiSkippedVerify) {
         setCachedHarmonize(song, {
           suggestedGenre,
           suggestedLanguage,
@@ -772,17 +801,21 @@ export async function harmonizeSongs(
 
   options.onProgress?.({ phase: 'done', done: inputSongs.length, total: inputSongs.length });
 
-  const success = (stats.aiErrors === 0 && stats.notAnalyzed === 0) || suggestions.length > 0;
+  const success = (stats.aiErrors === 0 && stats.notAnalyzed === 0) || suggestions.length > 0 || (options.verify === true && aiSkippedVerify);
   return {
     success,
     suggestions,
     stats,
     verifiedOkIds,
+    // R65: verify + AI unavailable is NO error anymore — degraded runs are
+    // successful (the databases verified genre/year). The message stays
+    // attached for a UI notice, but the error banner must not appear.
     error: stats.aiErrors > 0 || stats.notAnalyzed > 0
       ? (suggestions.length === 0
         ? 'AI analysis failed'
         : `AI partially unavailable — ${stats.notAnalyzed} song(s) not analyzed`)
       : undefined,
+    degraded: (options.verify && aiSkippedVerify) || undefined,
   };
 }
 

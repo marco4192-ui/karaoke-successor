@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { ensureCoverIndex, hasServerCover, subscribeCoverIndex } from '@/hooks/use-companion-cover-index';
 
 // ===================== Mini-Cover-Kachel (R33/P13+P15, R34 geteilt) =====================
 
@@ -91,6 +92,29 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   // nach deren Ende geht es zu den Initialen (nie zurück zum toten Inline).
   const inlineFailedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // R65 — Cover-Index-Gate: Songs, von denen der Server KEIN Cover hat
+  // (kein Thumbnail hochgeladen), feuern gar nicht erst songcover-Requests
+  // (vorher: bis zu 5 versuchte Requests pro Kachel → 404-Konsole-Flut +
+  // 429-Druck, Nutzer-Feedback 4). skippedRef unterscheidet „übersprungen,
+  // nichts vorhanden“ von „nach 5 Versuchen endgültig gescheitert“ — nur
+  // Ersteres re-armt sich, wenn ein Index-Refresh das Cover doch findet.
+  const skippedRef = useRef(false);
+
+  // R65 — Index pflegen: beim Mount frisch laden (TTL 30s, geteilt über alle
+  // Kacheln) + auf Updates hören (Desktop lädt Thumbnails in 15s-Batches —
+  // neue ids re-armen die übersprungenen Kacheln).
+  useEffect(() => {
+    void ensureCoverIndex();
+    const unsub = subscribeCoverIndex(() => {
+      if (skippedRef.current && hasServerCover(songId)) {
+        skippedRef.current = false;
+        retriesRef.current = 0;
+        setAttempt(0);
+        setStage('api');
+      }
+    });
+    return () => { unsub(); };
+  }, [songId]);
 
   // Timers bei Unmount clearen — Retries nur solange gemountet
   useEffect(() => {
@@ -105,6 +129,7 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   // und Retry-Budget zurücksetzen.
   useEffect(() => {
     inlineFailedRef.current = false;
+    skippedRef.current = false;
     setStage(inlineUsable ? 'inline' : 'api');
     setAttempt(0);
     retriesRef.current = 0;
@@ -140,6 +165,19 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   const apiSrc = '/api/mobile?action=songcover&songId=' + encodeURIComponent(songId)
     + (attempt > 0 ? '&_r=' + attempt : '');
 
+  // R65 — Cover-Index-Gate, angewandt auf die API-Stufe: Inline-Quellen
+  // (data:/http:) darf das Handy direkt laden — die brauchen den Server
+  // nicht. Die API-Stufe fragt NUR an, wenn der Server laut Index ein Cover
+  // haben KANN (Index noch nicht geladen → wie bisher anfragen, nur der
+  // erste Moment vor dem ersten Refresh bleibt unverändert).
+  const apiAllowed = hasServerCover(songId);
+  const effectiveStage: 'api' | 'inline' | 'initials' =
+    stage === 'api' && !apiAllowed ? 'initials' : stage;
+  // Einmaliges Markieren (Ref, kein State-Tick): übersprungene Kacheln
+  // re-armen über den subscribeCoverIndex-Effekt, wenn der Index das Cover
+  // später kennt — effectiveStage bleibt bis dahin 'initials'.
+  if (stage === 'api' && !apiAllowed) skippedRef.current = true;
+
   return (
     <div
       aria-hidden="true"
@@ -151,7 +189,7 @@ export const SongCoverTile = React.memo(function SongCoverTile({
       <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tracking-wider text-white/85 select-none">
         {songInitials(title)}
       </span>
-      {stage === 'api' && (
+      {effectiveStage === 'api' && (
         <img
           key={attempt}
           src={apiSrc}

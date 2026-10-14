@@ -502,6 +502,7 @@ editor: {
   studioMarkSongCorrectHint: 'Aktuelle Werte behalten und den Song als geprüft markieren — der Vorschlag wird verworfen.',
   studioMarkRestCorrect: 'Rest als korrekt ({n})',
   studioVerifyMarked: '{n} Song(s) neu als geprüft markiert — sie tragen jetzt das ✓-Badge in der Editor-Bibliothek.',
+  studioVerifyDegraded: 'KI nicht verfügbar — Genre & Jahr wurden über die Musik-Datenbanken geprüft; Sprachen blieben diesmal ungeprüft. Sobald die KI verfügbar ist, prüft ein erneuter Verify-Lauf auch die Sprachen nach.',
   studioNoFields: 'Wähle mindestens ein Feld (Genre/Sprache/Jahr).',
   studioLocalApplied: '{n} Song(s) nur lokal aktualisiert.',
   bootTitle: 'Editor wird geladen…',

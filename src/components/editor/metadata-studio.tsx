@@ -147,6 +147,10 @@ export function MetadataStudio({
   // R60: how many songs the last verify run NEWLY marked as verified (✓ badge
   // info line under the run summary; null = nothing marked / no run).
   const [markedVerifiedInfo, setMarkedVerifiedInfo] = useState<number | null>(null);
+  // R65: Verify-Lauf mit degraderter KI (AI unavailable) — kein Fehler-Banner
+  // mehr, sondern diese Info-Notiz: Genre/Jahr wurden über die Datenbanken
+  // geprüft, Sprachen diesmal nicht. Ein späterer Lauf mit KI prüft sie nach.
+  const [degradedInfo, setDegradedInfo] = useState(false);
   const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
   const warmupPromiseRef = useRef<Promise<void> | null>(null);
   const isMountedRef = useRef(true);
@@ -583,6 +587,7 @@ export function MetadataStudio({
     setFileErrors(null);
     setLocalAppliedInfo(null);
     setMarkedVerifiedInfo(null);
+    setDegradedInfo(false);
     setStats(null);
     setProgress(null);
     setRunStartedAt(Date.now());
@@ -620,6 +625,10 @@ export function MetadataStudio({
       if (result.success || filtered.length > 0) {
         setSuggestions(filtered);
         setStats(result.stats);
+        // R65: degradierte Verify-Läufe (KI unavailable) sind ERFOLGREICH —
+        // Info-Notiz statt Fehler-Banner („KI-Analyse fehlgeschlagen“ + nichts
+        // verifiziert, Nutzer-Feedback 3).
+        setDegradedInfo(result.degraded === true);
       } else {
         setError(result.error || t('editor.aiBatchError'));
       }
@@ -1609,6 +1618,24 @@ export function MetadataStudio({
               <p className="text-[10px] text-emerald-200/90 flex-1">
                 {t('editor.studioVerifyAllOk').replace('{n}', String(stats.noChange))}
               </p>
+            </div>
+          )}
+          {/* R65: Verify-Lauf mit degraderter KI — Info-Notiz (kein Fehler-
+              Banner): Datenbanken haben geprüft, Sprachen stehen aus. Fällt
+              weg, sobald ein Lauf mit KI die Sprachen nachprüft. */}
+          {mode === 'verify' && degradedInfo && !isLoading && (
+            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-verify-degraded">
+              <span className="text-sm leading-none">⚠️</span>
+              <p className="text-[10px] text-amber-200/90 flex-1">
+                {(() => {
+                  const key = 'editor.studioVerifyDegraded';
+                  const tr = t(key);
+                  return tr === key
+                    ? 'KI nicht verfügbar — Genre & Jahr wurden über die Musik-Datenbanken geprüft; Sprachen blieben diesmal ungeprüft. Sobald die KI verfügbar ist, prüft ein erneuter Verify-Lauf auch die Sprachen nach.'
+                    : tr;
+                })()}
+              </p>
+              <button onClick={() => setDegradedInfo(false)} className="text-white/40 hover:text-white/80 text-xs" aria-label="Dismiss">✕</button>
             </div>
           )}
           {/* R60: how many songs the run NEWLY marked as verified (badge in

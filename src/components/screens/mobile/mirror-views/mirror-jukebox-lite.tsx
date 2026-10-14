@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JukeboxWishlistItem, GameState, MobileView, MobileSong, JukeboxMirrorState } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { extractEmbedSrc, isSupportedVideoLink } from '@/components/screens/jukebox/video-break';
+import { ensureCoverIndex, hasServerCover, subscribeCoverIndex } from '@/hooks/use-companion-cover-index';
 
 // ===================== Props =====================
 
@@ -89,11 +90,37 @@ const selectStyle: React.CSSProperties = {
  * Cover einer Wunschliste-Zeile: bevorzugt das Mini-Thumbnail vom Desktop
  * (GET songcover, 96px JPEG), sonst die mitgeschickte coverImage-Data-URL,
  * sonst Fallback auf eine Initialen-Kachel.
+ * R65: Die API-Stufe ist durch den Cover-Index gegated (hasServerCover) —
+ * Songs ohne serverseitiges Cover feuern keinen Request (keine 404-Flut,
+ * kein 429-Druck, Nutzer-Feedback 4). Ein Index-Update re-armt gesprungene
+ * Kacheln (der Desktop lädt Thumbnails in 15s-Batches nach).
  */
 function WishlistCover({ item }: { item: JukeboxWishlistItem }) {
-  const [stage, setStage] = useState<'api' | 'inline' | 'initials'>('api');
+  const [stage, setStage] = useState<'api' | 'inline' | 'initials'>(hasServerCover(item.songId) ? 'api' : (item.coverImage ? 'inline' : 'initials'));
+  const skippedRef = useRef(stage !== 'api');
   const initials = (item.songTitle || '?').trim().split(/\s+/).slice(0, 2)
     .map(w => (w[0] ?? '').toUpperCase()).join('') || '♪';
+
+  useEffect(() => {
+    void ensureCoverIndex();
+    const unsub = subscribeCoverIndex(() => {
+      if (skippedRef.current && hasServerCover(item.songId)) {
+        skippedRef.current = false;
+        setStage('api');
+      }
+    });
+    return () => { unsub(); };
+  }, [item.songId]);
+
+  // Index-Gate auf die API-Stufe: nicht geliefert werden kann, was der
+  // Server laut Index nicht hat — Inline/Initialen übernehmen sofort.
+  if (stage === 'api' && !hasServerCover(item.songId)) {
+    skippedRef.current = true;
+    if (item.coverImage && !item.coverImage.startsWith('blob:')) {
+      return <WishlistInline src={item.coverImage} onFail={() => setStage('initials')} />;
+    }
+    return <WishlistInitials initials={initials} />;
+  }
 
   if (stage === 'api') {
     return (
@@ -107,16 +134,28 @@ function WishlistCover({ item }: { item: JukeboxWishlistItem }) {
     );
   }
   if (stage === 'inline' && item.coverImage) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={item.coverImage}
-        alt=""
-        onError={() => setStage('initials')}
-        className="h-11 w-11 shrink-0 rounded-lg border border-white/10 object-cover"
-      />
-    );
+    return <WishlistInline src={item.coverImage} onFail={() => setStage('initials')} />;
   }
+  return <WishlistInitials initials={initials} />;
+}
+
+/** Inline-Stufe (mitgeschickte Data-/http-URL) — blob:-URLs des Desktop-
+ *  Prozesses sind vom Handy aus unbrauchbar (R65): direkt Initialen. */
+function WishlistInline({ src, onFail }: { src: string; onFail: () => void }) {
+  if (src.startsWith('blob:')) return <WishlistInitials initials="?" />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      onError={onFail}
+      className="h-11 w-11 shrink-0 rounded-lg border border-white/10 object-cover"
+    />
+  );
+}
+
+/** Initialen-Fallback-Kachel. */
+function WishlistInitials({ initials }: { initials: string }) {
   return (
     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-gradient-to-br from-cyan-500/25 to-purple-500/25 text-xs font-bold text-white/70">
       {initials}

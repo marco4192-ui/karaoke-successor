@@ -12,9 +12,16 @@ import { isHostRequest } from './mobile-state';
 // Do NOT lower this below 300 — that would cause constant 429 errors during BR gameplay.
 const GET_RATE_LIMITS: Record<string, number> = {
   connect: 10,    // new companion connections — keep existing limit
-  getpitch: 300,   // BR companion polls at 5 Hz = 300/min
+  // R65: getpitch 300 → 600. Die dokumentierte Companion-Pollrate liegt bei
+  // 5 Hz = 300/min — EXAKT am Limit: jedes Reconnect/Burst-Doppel-Poll über
+  // die Kante schiebt 429s in die Wertungs-Pipeline (Nutzer-Feedback 4).
+  // 600 = 2× Steady-State — sauberer Puffer ohne Missbrauchs-Risiko (lokal).
+  getpitch: 600,
   getcommands: 300, // polled by main app at ~2-5 Hz for remote control commands
-  gamestate: 180,  // companion polls at 2 Hz = 120/min; 180 gives headroom for reconnects
+  // R65: gamestate 180 → 300 — die 2-Hz-Polling-Nutzung (120/min) bekam bei
+  // Reconnect-Stürmen (mehrere Views fragen gleichzeitig nach) zu wenig
+  // Kopfzimmer; 300 deckt Burst + Reserve wie bei getcommands.
+  gamestate: 300,
   status: 30,
   clients: 30,
   // R34: lazy-loaded cover thumbnails — a large library easily requests
@@ -23,8 +30,13 @@ const GET_RATE_LIMITS: Record<string, number> = {
   // R53: 300 → 900 — beim schnellen Scrollen durch große Bibliotheken
   // (> 300 Songs, nicht virtualisierte Liste) feuerten die Tiles mehr als
   // 300 Anfragen/Minute ab; die 429-Antworten begruben die Cover-Retries.
-  songcover: 900,
-  songcoverids: 300, // desktop self-healing poll (1/min) — headroom for retries
+  // R65: 900 → 1800 — mit dem Cover-Index-Gate (use-companion-cover-index)
+  // kommen nur noch Cover-relevante Requests; die Restlast sind Neulad-
+  // bursts nach Bibliotheks-Imports + die Retry-Leiter. 1800/min = 30/s ist
+  // für einen lokalen Server, der 96px-JPEGs aus dem Speicher schickt,
+  // selbstlos (Nutzer-Feedback 4: 429-Flut begrub die Cover-Anzeige).
+  songcover: 1800,
+  songcoverids: 300, // desktop self-healing poll (1/min) — headroom for retries; R65: also the phone's cover-index refresh (≤ 2/min)
   // R54: Einmaliger Root-CA-Download (Handys) — 30/min reichen locker
   // (pro Handy exakt 1 Download nötig), schützt vor Missbrauch des Endpunkts.
   'ca-cert': 30,

@@ -55,6 +55,33 @@ export function useMobilePitchDetection({
   const startMicrophoneRef = useRef<(() => Promise<void>) | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // ═══ R65 — Close-Range-Gate (Original-Gesangs-Filter, Nutzer-Feedback 1) ═══
+  // Das Handy als Mikro (CPTM/Companion-Singen) hört neben der eigenen Stimme
+  // auch den ORIGINAL-GESANG aus den Desktop-Lautsprechern (Fernfeld, 2–4 m).
+  // YIN detektiert den dominierenden Ton bei JEDEM Pegel — in Gesangspausen
+  // ist das der Original-Sänger, und dessen Punkte landen auf dem Companion-
+  // Konto: ein Vorteil, den es am Desktop so nicht gibt (Nutzer-Feedback).
+  // Physik: Nahfeld-Gesang (10–30 cm Handyabstand) erreicht das Mikro mit
+  // 15–30 dB mehr Pegel als das Lautsprecher-Fernfeld; AGC staucht das auf
+  // ~8–15 dB — bleibt klar trennbar. Lösung: ein Frame zählt nur als
+  // GESANG, wenn sein Pegel deutlich über dem Ambien-Teppich liegt —
+  // ADAPTIV, damit AGC-Anhebung stummer Fernfeld-Phasen (Original-Gesang
+  // zwischen den eigenen Phrasen) das Gate nicht unterlaufen kann:
+  //   gate = max(MIN_GATE, ambientFloor · GAIN_FACTOR)
+  //   ambientFloor = EMA der Unter-Gate-Pegel (nur auf Ambient-Frames
+  //   aktualisiert — singt man selbst, wandert der Boden NICHT mit)
+  // Hysterese (release bei 0.6·gate) verhindert Flackern an der Grenze; auf
+  // gegatete Frames wird note=null gesendet/gemappt — das Desktop-Scoring
+  // sieht „singt nicht“, der Original-Gesang wird nicht mehr gewertet.
+  const CLOSE_RANGE_MIN_GATE = 0.07;    // min(1, rms·5)-Skala: absolutes Minimum
+  const CLOSE_RANGE_GAIN_FACTOR = 1.8;  // Faktor über dem adaptiven Boden
+  const ambientFloorRef = useRef(0.02);
+  const wasLocalRef = useRef(false);
+  // R65 — YIN-Confidence-Receiver (vorab allokiert, rAF-Loop ohne GC-Druck):
+  // gegatete Frames erhalten clarity 0, echte Frames die ehrliche YIN-
+  // Periodizität — vormals wurde immer clarity: 0 gesendet.
+  const yinConfidenceRef = useRef({ value: 0 });
   // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
   const lastPitchUpdateRef = useRef<number>(0);
   // R54 — Standby-Watchdog: requestAnimationFrame läuft NUR bei sichtbarem
@@ -258,6 +285,12 @@ export function useMobilePitchDetection({
 
       setIsListening(true);
       
+      // R65 — Gate-Zustand pro Session zurücksetzen (neuer Song/neues Mikro):
+      // der Ambient-Boden startet konservativ tief und kalibriert sich in
+      // den ersten Sekunden auf das Raum-Ambiente ein.
+      ambientFloorRef.current = 0.02;
+      wasLocalRef.current = false;
+
       // Reset batch state for this session
       pitchBatchRef.current = [];
       useFallbackRef.current = false;
@@ -329,30 +362,57 @@ export function useMobilePitchDetection({
           setHasSignal(true);
         }
         
-        const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate);
+        const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate, 0.15, yinConfidenceRef.current);
         
         let note: number | null = null;
         if (frequency !== null && frequency >= 65 && frequency <= 1047) {
           note = 69 + 12 * Math.log2(frequency / 440);
         }
 
-        // R44: vocal detection removed — a detected tone is activity.
+        // ═══ R65 — Close-Range-Gate anwenden ═══
+        const gate = Math.max(CLOSE_RANGE_MIN_GATE, ambientFloorRef.current * CLOSE_RANGE_GAIN_FACTOR);
+        // Hysterese: einmal als Nahfeld erkannt, bleibt ein Frame bis
+        // 0.6·gate gültig (kein Flackern bei Phrasen-Enden/Atem).
+        const isLocal = volume >= gate || (wasLocalRef.current && volume >= gate * 0.6);
+        if (isLocal) {
+          wasLocalRef.current = true;
+        } else {
+          // Ambient-Frame (Fernfeld: Original-Gesang/Instrumental): Boden
+          // nachziehen — langsames EMA, ~10 Frames Konvergenz; der Boden
+          // sinkt bei wahrer Stille von selbst (konvergiert gegen ~0).
+          ambientFloorRef.current = Math.max(0.015, ambientFloorRef.current * 0.9 + volume * 0.1);
+          wasLocalRef.current = false;
+        }
+        // Gegatete Frames: kein Ton (note/frequency/clarity = null/0) —
+        // Anzeige UND gesendete Frames sehen „singt nicht“; volume bleibt
+        // ehrlich (Mikro-Status-UI zeigt weiterhin Ambien-Pegel an).
+        const outFrequency = isLocal ? frequency : null;
+        const outNote = isLocal ? note : null;
+        const outClarity = isLocal ? yinConfidenceRef.current.value : 0;
 
         // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders from 60fps RAF loop
+        // R65: gegatete Frames zeigen KEINEN Ton (note null) — die Pitch-Linie
+        // auf dem Handy bleibt in Gesangspausen flach, statt die Melodie des
+        // Original-Sängers aus den Desktop-Lautsprechern nachzuzeichnen.
         const pitchNow = performance.now();
         if (pitchNow - lastPitchUpdateRef.current >= 50) {
-          setCurrentPitch({ frequency, note, volume });
+          setCurrentPitch({ frequency: outFrequency, note: outNote, volume });
           lastPitchUpdateRef.current = pitchNow;
         }
         
-        // Only send pitch if song is playing and not ended (via refs)
+        // Only send pitch if song is playing and not ended (via refs).
+        // R65: gegatete Frames werden ALS NULL-FRAME gesendet (note null,
+        // volume ehrlich) — überschreibt am Desktop das zuletzt gespeicherte
+        // (möglicherweise vom Original-Gesang stammende) Pitch und stoppt so
+        // die Wertung, statt auf Stille einfach nichts zu senden (der Server
+        // würde den STALEN Frame weiterverwenden).
         const now = performance.now();
         const activeClientId = clientIdRef.current;
-        if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || frequency !== null)) {
+        if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || outFrequency !== null)) {
           const frame = {
-            frequency,
-            note,
-            clarity: 0,
+            frequency: outFrequency,
+            note: outNote,
+            clarity: outClarity,
             volume,
             timestamp: Date.now(),
           };

@@ -19,7 +19,7 @@ import {
 } from './mobile-state';
 import { getHttpsDomainStatus } from '@/lib/server/https-domain';
 import { getClientIp } from '@/lib/rate-limiter';
-import { readCoverFromDisk, saveCoverToDisk } from '@/lib/server/companion-cover-store';
+import { readCoverFromDisk, saveCoverToDisk, listDiskCoverSongIds } from '@/lib/server/companion-cover-store';
 
 // ===================== GET HANDLER =====================
 
@@ -583,11 +583,25 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
     // on the server. The desktop polls this (60 s) for self-healing after a
     // server restart — any locally tracked cover-songId missing from this
     // list is re-uploaded on the next sync tick. Kept minimal on purpose.
-    case 'songcoverids':
+    //
+    // R65: the list is now the UNION of ALL serveable cover sources —
+    // uploaded thumbnails, data:/http: covers from the song library (the
+    // server decodes/proxies them in the songcover handler) and the
+    // persistent disk store (restart bridge). The phone's cover index
+    // (use-companion-cover-index) gates its songcover requests on this
+    // list — an incomplete list would blank existing covers instead of
+    // quieting the 404/429 flood it is meant to remove (user report 4).
+    case 'songcoverids': {
+      const ids = new Set<string>(Object.keys(mutableState.songCovers));
+      for (const s of mutableState.songLibrary) {
+        if (s.coverImage && /^(data:image\/|https?:)/i.test(s.coverImage)) ids.add(s.id);
+      }
+      for (const id of listDiskCoverSongIds()) ids.add(id);
       return Response.json({
         ok: true,
-        ids: Object.keys(mutableState.songCovers),
+        ids: [...ids],
       });
+    }
 
     // R51/Bug4: Lightweight song-library count for the desktop self-healing.
     // After a server restart the in-memory songLibrary is empty, but the
