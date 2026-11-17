@@ -82,7 +82,7 @@ export const tutorialTranslations = {
         songCard: {
           title: 'Songs',
           body: 'Ein Klick auf eine Song-Karte öffnet den Start-Dialog: Modus, Spieler, Mikrofone und Schwierigkeit.',
-          details: 'Auf jeder Song-Karte siehst du:\n• Cover und Titel/Künstler\n• Schwierigkeit (easy/medium/hard/expert) und Sterne-Bewertung\n• Die wichtigsten Metadaten wie Genre und Sprache — direkt aus dem Song oder per KI harmonisiert (Editor → Metadata Studio).\n\nDas Vorspiel-Symbol startet eine Kurzvorschau, ohne den Start-Dialog zu öffnen.',
+          details: 'Auf jeder Song-Karte siehst du:\n• Cover und Titel/Künstler\n• Schwierigkeit (easy/medium/hard/expert) und Sterne-Bewertung\n• Die wichtigsten Metadaten wie Genre und Sprache — direkt aus dem Song oder per Musikdatenbank und Regeln harmonisiert (Editor → Metadaten-Studio).\n\nDas Vorspiel-Symbol startet eine Kurzvorschau, ohne den Start-Dialog zu öffnen.',
         },
         startModal: {
           title: 'Der Start-Dialog',
@@ -151,7 +151,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'Der Editor ✏️',
           body: 'Hier machst du aus Songs spielbare Karaoke-Tracks: Noten setzen, Lyrics timen, Stimmen zuweisen.\n\nSandbox-Tipp: Übe an einem Test-Song — Änderungen lassen sich per Undo (Strg+Z) zurücknehmen.',
-          details: 'Der Editor arbeitet mit dem UltraStar-Format: Jede Note hat eine Startzeit, eine Dauer, eine Tonhöhe und einen Text (Silbe). Aus vielen Noten entsteht die Note-Highway genannte Singbahn, die du im Spiel siehst.\n\nQuellen für neue Songs:\n• Text-Import (UltraStar/TXT) im Editor\n• MIDI-Import (Noten automatisch aus MIDI)\n• KI-Harmonize: Lyrics + Audio → Notenvorschlag\n\nAlles ist nicht-destruktiv: Solange du nicht speicherst, bleibt der Original-Song unangetastet.',
+          details: 'Der Editor arbeitet mit dem UltraStar-Format: Jede Note hat eine Startzeit, eine Dauer, eine Tonhöhe und einen Text (Silbe). Aus vielen Noten entsteht die Note-Highway genannte Singbahn, die du im Spiel siehst.\n\nQuellen für neue Songs:\n• Text-Import (UltraStar/TXT) im Editor\n• MIDI-Import (Noten automatisch aus MIDI)\n• Notenblatt-Import: Notenerkennung aus Bild oder PDF\n\nAlles ist nicht-destruktiv: Solange du nicht speicherst, bleibt der Original-Song unangetastet.',
         },
         songList: {
           title: 'Song-Auswahl',
@@ -200,13 +200,13 @@ export const tutorialTranslations = {
         },
         panels: {
           title: 'Kopfzeilen-Panels',
-          body: 'Drei Panels oben rechts: Metadaten (Genre/Sprache/Jahr), Audio-Analyse und der KI-Assistent.',
-          details: 'Was die drei Panels können:\n• Metadaten: Genre, Sprache und Jahr des geöffneten Songs direkt bearbeiten — fließen in Filter und Motto-Party ein.\n• Audio-Analyse: analysiert die Tondatei (Loudness, Tonart, BPM) und schlägt Werte vor.\n• KI-Assistent: Lyrics-Vervollständigung, Song-Erkennung und Noten-Harmonisierung per KI — benötigt einen konfigurierten KI-Provider (Einstellungen → KI).',
+          body: 'Zwei Panels oben rechts: Metadaten (Genre/Sprache/Jahr) und Audio-Analyse.',
+          details: 'Was die beiden Panels können:\n• Metadaten: Genre, Sprache und Jahr des geöffneten Songs direkt bearbeiten — fließen in Filter und Motto-Party ein.\n• Audio-Analyse: analysiert die Tondatei (Loudness, Tonart, BPM) und schlägt Werte vor.',
         },
         metadataStudio: {
           title: 'Metadata Studio',
-          body: 'Der Harmonize-Turbo: KI- und Regel-Vorschläge für Genre, Sprache und Jahr — mit Vorhören vor dem Zuweisen, manueller Feinbearbeitung und Review-Queue für unsichere Treffer.',
-          details: 'Der Arbeitsablauf im Studio:\n1. „Alle Songs analysieren" — Regel-Engine (Dateipfade, Tags) und optional KI schlagen Genre/Sprache/Jahr vor.\n2. Vorschläge mit Konfidenz: grün = sicher, gelb = prüfen.\n3. Vorhören: Klick auf den Song spielt einen Ausschnitt — so verifizierst du Vorschläge am schnellen Weg.\n4. Zuweisen einzeln oder „Alle grünen übernehmen".\n\nDie Review-Queue sammelt unsichere Treffer für später — du verlierst nichts.',
+          body: 'Der Harmonize-Turbo: Datenbank- und Regel-Vorschläge für Genre, Sprache und Jahr — mit Vorhören vor dem Zuweisen, manueller Feinbearbeitung und Review-Queue für unklare Begriffe.',
+          details: 'Der Arbeitsablauf im Studio:\n1. „Starten“ — die Musikdatenbanken (iTunes/Deezer/MusicBrainz) und die Regel-Engine schlagen Genre/Sprache/Jahr vor.\n2. Jeder Vorschlag nennt seine Quelle (iTunes/Deezer/MusicBrainz).\n3. Vorhören: Klick auf den Song spielt einen Ausschnitt — so verifizierst du Vorschläge am schnellen Weg.\n4. Zuweisen einzeln oder „Alle übernehmen“.\n\nDie Review-Queue sammelt unklare Begriffe für später — du verlierst nichts.',
         },
         shortcuts: {
           title: 'Shortcuts',
@@ -216,7 +216,7 @@ export const tutorialTranslations = {
         finish: {
           title: 'Bereit zum Bauen! 🛠️',
           body: 'Du kennst jetzt den Editor-Baukasten.\n\nDenk dran: Strg+Z rettet alles, und das ?-Symbol in der Menüleiste bringt dich jederzeit zu diesen Kapiteln zurück.',
-          details: 'Empfohlene Reihenfolge für einen neuen Song:\n1. Audio/Video einbinden (Song-Info-Tab)\n2. Lyrics importieren oder tippen (Lyrics-Tab)\n3. Noten tappen (Tap-Modus) oder KI-Harmonize\n4. Metadaten pflegen (Genre/Sprache/Jahr — wichtig für Filter!)\n5. Speichern — ab sofort erscheint der Song in der Bibliothek.',
+          details: 'Empfohlene Reihenfolge für einen neuen Song:\n1. Audio/Video einbinden (Song-Info-Tab)\n2. Lyrics importieren oder tippen (Lyrics-Tab)\n3. Noten tappen (Tap-Modus) oder MIDI-/Notenblatt-Import\n4. Metadaten pflegen (Genre/Sprache/Jahr — wichtig für Filter!)\n5. Speichern — ab sofort erscheint der Song in der Bibliothek.',
         },
       },
     },

@@ -6,8 +6,8 @@
  *  - an individual NAME shown everywhere instead of the filter UI
  *  - MULTIPLE free-text search fields (artist/title, fuzzy-matched) combined
  *    with cumulative (AND) or independent (OR) logic
- *  - optional genre / language / release-year / era filters (AND-combined
- *    on top of the search-field matches)
+ *  - optional genre / language / release-year / era / tag filters
+ *    (AND-combined on top of the search-field matches)
  *
  * When ENABLED:
  *  - every Song-Filter UI in the game is hidden and replaced by a single
@@ -44,6 +44,8 @@ export interface MottoPartyFilters {
   language: string;
   releaseYear: string;
   era: string;
+  /** R66: #TAGS: entry from the song txt (comma-separated tag list). */
+  tag: string;
 }
 
 /** How multiple search fields combine. */
@@ -96,7 +98,7 @@ export const DEFAULT_MOTTO_CONFIG: MottoPartyConfig = {
   name: '',
   logic: 'or',
   searchFields: [],
-  filters: { genre: 'all', language: 'all', releaseYear: 'all', era: 'all' },
+  filters: { genre: 'all', language: 'all', releaseYear: 'all', era: 'all', tag: 'all' },
 };
 
 function sanitizeFilterValue(raw: unknown): string {
@@ -143,6 +145,7 @@ export function sanitizeMottoConfig(raw: unknown): MottoPartyConfig {
     language: sanitizeFilterValue(rawFilters.language),
     releaseYear: sanitizeFilterValue(rawFilters.releaseYear),
     era: sanitizeFilterValue(rawFilters.era),
+    tag: sanitizeFilterValue(rawFilters.tag),
   };
 
   return {
@@ -313,6 +316,8 @@ export interface MottoSongSubset {
   genre?: string;
   language?: string;
   year?: number;
+  /** Comma-separated #TAGS: list from the song txt (optional). */
+  tags?: string;
 }
 
 /**
@@ -326,10 +331,10 @@ export interface MottoSongSubset {
  *     tolerance as the regular search) combine with
  *       logic='and' → cumulative: a song must match EVERY term
  *       logic='or'  → independent: a song must match ANY term
- *  2. Activated filters (genre/language/releaseYear/era) AND-combine on top
- *     of the search-field matches — same normalization rules as the regular
- *     filter logic (comma-separated genres, multilingual songs, era buckets,
- *     "Others" languages below the 5-song own-entry threshold).
+ *  2. Activated filters (genre/language/releaseYear/era/tag) AND-combine
+ *     on top of the search-field matches — same normalization rules as the
+ *     regular filter logic (comma-separated genres, multilingual songs,
+ *     era buckets, "Others" languages below the 5-song own-entry threshold).
  */
 export function filterSongsByMotto<T extends MottoSongSubset>(songs: T[], motto: MottoPartyConfig): T[] {
   const terms = motto.searchFields
@@ -340,7 +345,8 @@ export function filterSongsByMotto<T extends MottoSongSubset>(songs: T[], motto:
   const hasLanguage = f.language !== 'all';
   const hasYear = f.releaseYear !== 'all';
   const hasEra = f.era !== 'all';
-  if (terms.length === 0 && !hasGenre && !hasLanguage && !hasYear && !hasEra) return songs;
+  const hasTag = f.tag !== 'all';
+  if (terms.length === 0 && !hasGenre && !hasLanguage && !hasYear && !hasEra && !hasTag) return songs;
 
   // 1. Search fields (cumulative AND / independent OR)
   let pool = songs;
@@ -400,6 +406,16 @@ export function filterSongsByMotto<T extends MottoSongSubset>(songs: T[], motto:
   // 5. Era filter (decade bucket, e.g. '1980' matches 1980-1989)
   if (hasEra) {
     pool = pool.filter(s => songMatchesEra(s, f.era));
+  }
+
+  // 6. Tag filter (R66) — a song matches when ANY of its #TAGS: entries
+  //    equals the selected tag (comma-separated list, case-insensitive).
+  //    Songs without tags never match an active tag filter.
+  if (hasTag) {
+    const wanted = f.tag.trim().toLowerCase();
+    pool = pool.filter(s =>
+      !!s.tags && s.tags.split(',').some(t => t.trim().toLowerCase() === wanted),
+    );
   }
 
   return pool;

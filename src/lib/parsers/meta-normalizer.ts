@@ -643,8 +643,7 @@ export const DEFAULT_GENRE_ALIASES: Record<string, string> = {
   // R48 user note: Schlager is NOT a German-only phenomenon — it exists
   // in other languages too. The national counterparts of neighboring
   // countries belong in the SAME genre family. The LANGUAGE of a song
-  // always follows the artist/lyrics, never the genre (see the AI
-  // prompts in harmonize/route.ts + song-identify/route.ts).
+  // always follows the artist/lyrics, never the genre.
   'levenslied': 'Schlager', // nl: niederländisches Schlager-Pendant
   'smartlap': 'Schlager', // nl: sentimenteller Levenslied-Zweig
   'dansband': 'Schlager', 'dansbandsmusik': 'Schlager', // se: Dansband-Musik

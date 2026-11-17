@@ -102,6 +102,8 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
           language: song.language,
           // Release year (#YEAR: tag) — used for the era/decade filter
           year: song.year,
+          // #TAGS: list — used by the motto tag filter (R66)
+          tags: song.tags || undefined,
           // Don't send coverImage if it's a blob: URL — companions can't access main app blobs
           coverImage: song.coverImage && !song.coverImage.startsWith('blob:')
             ? song.coverImage

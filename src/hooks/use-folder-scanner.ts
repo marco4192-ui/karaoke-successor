@@ -617,10 +617,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
       }
 
       // Also drop the harmonize suggestion cache (localStorage) — otherwise
-      // stale AI suggestions from BEFORE the reset survive and get re-applied
+      // stale suggestions from BEFORE the reset survive and get re-applied
       // to the freshly scanned library (was dead code before, never called).
       try {
-        const { clearHarmonizeCache } = await import('@/lib/ai/harmonize-cache');
+        const { clearHarmonizeCache } = await import('@/lib/editor/harmonize-cache');
         clearHarmonizeCache();
       } catch (e) {
         // eslint-disable-next-line no-console

@@ -96,6 +96,8 @@ export interface MobileSong {
   language?: string;
   /** Release year (#YEAR: tag) — used for the era/decade filter */
   year?: number;
+  /** Comma-separated #TAGS: list — used by the motto tag filter (R66) */
+  tags?: string;
   coverImage?: string;
   isDuet?: boolean;
 }
@@ -270,7 +272,7 @@ export interface MottoPartySync {
   name: string;
   logic: 'and' | 'or';
   searchFields: Array<{ id: string; term: string }>;
-  filters: { genre: string; language: string; releaseYear: string; era: string };
+  filters: { genre: string; language: string; releaseYear: string; era: string; tag: string };
 }
 
 export interface GameState {

@@ -507,6 +507,88 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             />
           )}
 
+          {/* ── Sticky selection bar (R66) ──
+              Lives IN the layout flow above the song grid — the old
+              fixed-bottom bar covered the Load More button and the last
+              song row (user request). Pins to the top of the scroll area
+              while the grid scrolls; pushes content instead of overlaying
+              it. Shows the selection actions once ≥ 1 song is picked,
+              otherwise the select-mode hint. */}
+          {selectMode && !isInitialLoading && (
+            <div
+              className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-900/95 backdrop-blur-md border-b border-violet-500/40 shadow-lg flex items-center gap-2 flex-wrap animate-fade-in"
+              data-testid={selectedCount > 0 ? 'editor-select-bar' : 'editor-select-mode-hint'}
+            >
+              {selectedCount > 0 ? (
+                <>
+                  <span className="text-sm text-white/80 font-medium whitespace-nowrap">
+                    {selectedCount} {t('editor.aiBatchSelected')}
+                  </span>
+                  <div className="w-px h-6 bg-white/20" />
+                  {/* Select the NEXT batch of ≤ 20 filtered songs (not yet
+                      selected) — always shows the actual count it will pick. */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={selectNextBatch}
+                    disabled={unselectedInFilter.length === 0}
+                    className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
+                    data-testid="editor-select-all-button"
+                  >
+                    {t('editor.aiBatchSelectNext').replace('{n}', String(Math.min(SELECT_BATCH_SIZE, unselectedInFilter.length)))}
+                  </Button>
+                  {/* R50: select ALL remaining filtered songs at once — guarded
+                      by the confirmation dialog below (time + temporary
+                      gameplay impact). */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setConfirmSelectAll(true)}
+                    disabled={unselectedInFilter.length === 0}
+                    className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
+                    data-testid="editor-select-all-remaining-button"
+                  >
+                    {t('editor.aiBatchSelectRemaining').replace('{n}', String(unselectedInFilter.length))}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearSelection}
+                    className="border-white/20 text-white/80 hover:bg-white/10 text-xs h-8"
+                    data-testid="editor-clear-selection-button"
+                  >
+                    {t('editor.aiBatchClear')}
+                  </Button>
+                  {/* R4 point 7: the old separate "🤖 KI-Vorschlag" button
+                      merged into the Metadata Studio — this opens it focused
+                      on the selection. */}
+                  <Button
+                    size="sm"
+                    onClick={openStudioWithSelection}
+                    className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs h-8 gap-1.5"
+                    data-testid="editor-batch-suggest-button"
+                  >
+                    <span>🎛️</span>
+                    {t('editor.studioTitle')}
+                  </Button>
+                </>
+              ) : !isLibraryLoading ? (
+                <div className="flex items-center gap-3 py-0.5">
+                  <span className="text-xl" aria-hidden="true">☑️</span>
+                  <div>
+                    <p className="text-sm text-white/90 font-medium">{t('editor.selectModeHintTitle')}</p>
+                    <p className="text-xs text-white/50">
+                      {filterMode === 'all'
+                        ? t('editor.selectModeHintAll')
+                        : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length))}
+                      {' '}{t('editor.aiBatchHint')}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Songs Grid */}
           {isLibraryLoading && filteredSongs.length === 0 && (
             <div className="flex items-center justify-center py-16" data-testid="editor-library-loading">
@@ -658,79 +740,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      {/* Floating Multi-Select Action Bar */}
-      {selectMode && selectedCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5 shadow-2xl animate-fade-in">
-          <span className="text-sm text-white/80 font-medium whitespace-nowrap">
-            {selectedCount} {t('editor.aiBatchSelected')}
-          </span>
-          <div className="w-px h-6 bg-white/20" />
-          {/* Select the NEXT batch of ≤ 20 filtered songs (not yet selected) —
-              always shows the actual count it will pick. */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={selectNextBatch}
-            disabled={unselectedInFilter.length === 0}
-            className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
-            data-testid="editor-select-all-button"
-          >
-            {t('editor.aiBatchSelectNext').replace('{n}', String(Math.min(SELECT_BATCH_SIZE, unselectedInFilter.length)))}
-          </Button>
-          {/* R50: select ALL remaining filtered songs at once — guarded by the
-              confirmation dialog below (time + temporary gameplay impact). */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmSelectAll(true)}
-            disabled={unselectedInFilter.length === 0}
-            className="border-violet-400/40 text-violet-300 hover:bg-violet-500/15 hover:border-violet-300 disabled:opacity-40 text-xs h-8 whitespace-nowrap"
-            data-testid="editor-select-all-remaining-button"
-          >
-            {t('editor.aiBatchSelectRemaining').replace('{n}', String(unselectedInFilter.length))}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={clearSelection}
-            className="border-white/20 text-white/80 hover:bg-white/10 text-xs h-8"
-            data-testid="editor-clear-selection-button"
-          >
-            {t('editor.aiBatchClear')}
-          </Button>
-          {/* R4 point 7: the old separate "🤖 KI-Vorschlag" button merged into
-              the Metadata Studio — this opens it focused on the selection. */}
-          <Button
-            size="sm"
-            onClick={openStudioWithSelection}
-            className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs h-8 gap-1.5"
-            data-testid="editor-batch-suggest-button"
-          >
-            <span>🎛️</span>
-            {t('editor.studioTitle')}
-          </Button>
-        </div>
-      )}
-
-      {/* Select mode hint when no songs selected — prominent prompt with
-          the current filter context ("Wähle Songs aus") */}
-      {selectMode && selectedCount === 0 && !isLibraryLoading && !isInitialLoading && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-sm border border-violet-500/40 rounded-xl px-5 py-3 shadow-2xl animate-fade-in flex items-center gap-3" data-testid="editor-select-mode-hint">
-          <span className="text-xl">☑️</span>
-          <div>
-            <p className="text-sm text-white/90 font-medium">{t('editor.selectModeHintTitle')}</p>
-            <p className="text-xs text-white/50">
-              {filterMode === 'all'
-                ? t('editor.selectModeHintAll')
-                : t('editor.selectModeHintFiltered').replace('{n}', String(filteredSongs.length))}
-              {' '}{t('editor.aiBatchHint')}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Background rule-harmonization status pill (module singleton —
-          keeps running even when the studio is closed) */}
+          keeps running when the studio is closed) */}
       <RuleHarmonizeStatusBar t={t} />
 
       {/* R50: confirmation dialog for "select ALL remaining songs" — editing

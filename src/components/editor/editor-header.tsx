@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
   Save, Undo, Redo, CheckCircle, AlertCircle, MonitorPlay,
-  Settings, Waves, Sparkles,
+  Settings, Waves,
 } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -12,7 +12,7 @@ import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { cn } from '@/lib/utils';
 
 /** Header dropdown panels — one at a time, toggled from the header bar. */
-export type EditorHeaderPanel = 'none' | 'metadata' | 'analysis' | 'ai';
+export type EditorHeaderPanel = 'none' | 'metadata' | 'analysis';
 
 interface EditorHeaderProps {
   title: string;
@@ -31,7 +31,7 @@ interface EditorHeaderProps {
   hasVideo?: boolean;
   showVideoOverlay?: boolean;
   onToggleVideoOverlay?: () => void;
-  /** Active header dropdown panel (metadata / audio analysis / AI assistant) */
+  /** Active header dropdown panel (metadata / audio analysis) */
   activePanel?: EditorHeaderPanel;
   onTogglePanel?: (_panel: EditorHeaderPanel) => void;
 }
@@ -128,14 +128,6 @@ export function EditorHeader({
           <Waves className="w-4 h-4" />,
           t('editor.header.panelAnalysis'),
           'editor-panel-analysis-toggle',
-        )}
-
-        {/* KI-Assistent */}
-        {onTogglePanel && panelButton(
-          'ai',
-          <Sparkles className="w-4 h-4" />,
-          t('editor.header.panelAI'),
-          'editor-panel-ai-toggle',
         )}
 
         {/* Video sync overlay toggle — sync notes with the song's video */}

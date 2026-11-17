@@ -83,7 +83,7 @@ export const tutorialTranslations = {
         songCard: {
           title: 'Songs',
           body: 'Clicking a song card opens the start dialog: mode, players, microphones and difficulty.',
-          details: 'Every song card shows:\n• Cover plus title/artist\n• Difficulty (easy/medium/hard/expert) and star rating\n• Key metadata like genre and language — straight from the song or harmonized via AI (Editor → Metadata Studio).\n\nThe preview icon starts a short teaser without opening the start dialog.',
+          details: 'Every song card shows:\n• Cover plus title/artist\n• Difficulty (easy/medium/hard/expert) and star rating\n• Key metadata like genre and language — straight from the song or harmonized via music databases and rules (Editor → Metadata Studio).\n\nThe preview icon starts a short teaser without opening the start dialog.',
         },
         startModal: {
           title: 'The start dialog',
@@ -152,7 +152,7 @@ export const tutorialTranslations = {
         welcome: {
           title: 'The editor ✏️',
           body: 'This is where songs become playable karaoke tracks: place notes, time lyrics, assign voices.\n\nSandbox tip: practise on a test song — changes can be undone with Ctrl+Z.',
-          details: 'The editor works with the UltraStar format: every note has a start time, a duration, a pitch and a text (syllable). Many notes form the note highway you see in the game.\n\nSources for new songs:\n• Text import (UltraStar/TXT) in the editor\n• MIDI import (notes generated from MIDI)\n• AI harmonize: lyrics + audio → note suggestions\n\nEverything is non-destructive: until you save, the original song stays untouched.',
+          details: 'The editor works with the UltraStar format: every note has a start time, a duration, a pitch and a text (syllable). Many notes form the note highway you see in the game.\n\nSources for new songs:\n• Text import (UltraStar/TXT) in the editor\n• MIDI import (notes generated from MIDI)\n• Sheet music import: notes recognized from an image or PDF\n\nEverything is non-destructive: until you save, the original song stays untouched.',
         },
         songList: {
           title: 'Song selection',
@@ -201,13 +201,13 @@ export const tutorialTranslations = {
         },
         panels: {
           title: 'Header panels',
-          body: 'Three panels top right: metadata (genre/language/year), audio analysis and the AI assistant.',
-          details: 'What the three panels do:\n• Metadata: edit genre, language and year of the open song directly — feeds filters and theme party.\n• Audio analysis: analyzes the audio file (loudness, key, BPM) and suggests values.\n• AI assistant: lyrics completion, song identification and note harmonization via AI — requires a configured AI provider (Settings → AI).',
+          body: 'Two panels top right: metadata (genre/language/year) and audio analysis.',
+          details: 'What the two panels do:\n• Metadata: edit genre, language and year of the open song directly — feeds filters and theme party.\n• Audio analysis: analyzes the audio file (loudness, key, BPM) and suggests values.',
         },
         metadataStudio: {
           title: 'Metadata Studio',
-          body: 'The harmonize turbo: AI and rule suggestions for genre, language and year — with listen-before-assign, manual fine-editing and a review queue for uncertain matches.',
-          details: 'The studio workflow:\n1. "Analyze all songs" — the rule engine (file paths, tags) and optionally AI suggest genre/language/year.\n2. Suggestions carry confidence: green = certain, yellow = review.\n3. Listen: clicking a song plays a snippet — verify suggestions the quick way.\n4. Assign individually or "apply all greens".\n\nThe review queue collects uncertain matches for later — nothing gets lost.',
+          body: 'The harmonize turbo: music database and rule suggestions for genre, language and year — with listen-before-assign, manual fine-editing and a review queue for unclear terms.',
+          details: 'The studio workflow:\n1. "Run" — the music databases (iTunes/Deezer/MusicBrainz) and the rule engine suggest genre/language/year.\n2. Every suggestion names its source (iTunes/Deezer/MusicBrainz).\n3. Listen: clicking a song plays a snippet — verify suggestions the quick way.\n4. Assign individually or "apply all".\n\nThe review queue collects unclear terms for later — nothing gets lost.',
         },
         shortcuts: {
           title: 'Shortcuts',
@@ -217,7 +217,7 @@ export const tutorialTranslations = {
         finish: {
           title: 'Ready to build! 🛠️',
           body: 'You now know the editor toolbox.\n\nRemember: Ctrl+Z saves everything, and the ? icon in the menu bar brings you back to these chapters anytime.',
-          details: 'Recommended order for a new song:\n1. Attach audio/video (song info tab)\n2. Import or type lyrics (lyrics tab)\n3. Tap notes (tap mode) or AI harmonize\n4. Maintain metadata (genre/language/year — important for filters!)\n5. Save — from now on the song appears in the library.',
+          details: 'Recommended order for a new song:\n1. Attach audio/video (song info tab)\n2. Import or type lyrics (lyrics tab)\n3. Tap notes (tap mode) or import MIDI/sheet music\n4. Maintain metadata (genre/language/year — important for filters!)\n5. Save — from now on the song appears in the library.',
         },
       },
     },

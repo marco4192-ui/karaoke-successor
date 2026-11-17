@@ -5,7 +5,6 @@ import { Difficulty } from '@/types/game';
 import { Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
 import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons';
 import { getShortcutReference } from '@/hooks/use-keyboard-shortcuts';
-import { AiProviderSection } from '@/components/settings/ai-provider-section';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 
 interface GeneralTabProps {
@@ -125,9 +124,6 @@ export function GeneralTab({
           </div>
         </CardContent>
       </Card>
-
-      {/* AI Provider (KI-Dienst) — built-in ZAI or custom OpenAI-compatible endpoint */}
-      <AiProviderSection />
 
       {/* Keyboard Shortcuts */}
       <Card className="bg-white/5 border-white/10">

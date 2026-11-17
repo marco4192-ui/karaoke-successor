@@ -214,8 +214,8 @@ export const customTaxonomy = new CustomTaxonomyStore();
 
 /**
  * Sanitize a custom-entry array received in a request body: keep only
- * non-empty strings, trim, cap length/count. Used by /api/harmonize and
- * /api/song-identify so a malicious/oversized body can't blow up the prompt.
+ * non-empty strings, trim, cap length/count. Used by /api/music-lookup
+ * so a malicious/oversized body can't blow up the request.
  */
 export function sanitizeCustomEntries(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];

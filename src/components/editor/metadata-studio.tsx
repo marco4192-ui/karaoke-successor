@@ -11,25 +11,23 @@
  *  - Scope:   all songs OR the current multi-selection (old "AI Suggest")
  *  - Fields:  Genre / Language / Year — independently selectable
  *  - Mode:    "fill missing" (only empty fields get values — factual lookup
- *             via iTunes/Deezer/MusicBrainz, LLM only as a fallback when
- *             configured), "rule-based" (deterministic GENRE_ALIASES mapping
- *             — no AI, no quota; the rules are user-editable in Settings →
- *             Metadaten Studio, R50), "manual" (R5-1: direct per-song
+ *             via iTunes/Deezer/MusicBrainz), "rule-based" (deterministic
+ *             GENRE_ALIASES mapping; the rules are user-editable in Settings
+ *             → Metadaten Studio, R50), "manual" (R5-1: direct per-song
  *             editing of all scope songs — current value + editor side by
- *             side, no AI involved) or "verify" (R59: check EXISTING
- *             genre/language/year values for correctness — same source
- *             chain as fill (iTunes/Deezer/MusicBrainz facts, LLM for
- *             language), but the databases' values are COMPARED against
- *             the current tags; every mismatch becomes a correction
+ *             side) or "verify" (R59: check EXISTING genre/year values for
+ *             correctness — same source chain as fill (iTunes/Deezer/
+ *             MusicBrainz facts), but the databases' values are COMPARED
+ *             against the current tags; every mismatch becomes a correction
  *             suggestion with the source as evidence).
  *             (R50: the former "harmonize" mode — AI corrections of existing
  *             values — was REMOVED; the rule-based mode covers that use case
- *             deterministically.)
+ *             deterministically. R66: the LLM fallback was removed together
+ *             with the AI service — the pipeline is 100% factual.)
  *  - Target:  write into the UltraStar txt (survives a library reset) or keep
  *             changes game-local only (wiped by the library reset — hint shown)
  *
- * Engine is the shared pipeline (R2 cache → R6 factual lookup → LLM chunks R3)
- * — identical results to the former cards, one UI.
+ * Engine is the shared factual pipeline (R2 cache → R6 database lookup).
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
@@ -43,12 +41,10 @@ import {
   HarmonizeSuggestion,
   HarmonizeProgress,
   HarmonizeStats,
-} from '@/lib/ai/harmonize-client';
-import { setCachedHarmonize } from '@/lib/ai/harmonize-cache';
+} from '@/lib/editor/harmonize-client';
+import { setCachedHarmonize } from '@/lib/editor/harmonize-cache';
 import {
   SuggestionRow,
-  ConfidenceFilter,
-  fieldPassesThreshold,
   countApplicableSongs,
 } from '@/components/editor/harmonize-shared';
 import {
@@ -140,17 +136,12 @@ export function MetadataStudio({
   const [showWarning, setShowWarning] = useState(false);
   const [progress, setProgress] = useState<HarmonizeProgress | null>(null);
   const [stats, setStats] = useState<HarmonizeStats | null>(null);
-  const [minConfidence, setMinConfidence] = useState(70);
   const [applyProgress, setApplyProgress] = useState<{ done: number; total: number } | null>(null);
   const [fileErrors, setFileErrors] = useState<number | null>(null);
   const [localAppliedInfo, setLocalAppliedInfo] = useState<number | null>(null);
   // R60: how many songs the last verify run NEWLY marked as verified (✓ badge
   // info line under the run summary; null = nothing marked / no run).
   const [markedVerifiedInfo, setMarkedVerifiedInfo] = useState<number | null>(null);
-  // R65: Verify-Lauf mit degraderter KI (AI unavailable) — kein Fehler-Banner
-  // mehr, sondern diese Info-Notiz: Genre/Jahr wurden über die Datenbanken
-  // geprüft, Sprachen diesmal nicht. Ein späterer Lauf mit KI prüft sie nach.
-  const [degradedInfo, setDegradedInfo] = useState(false);
   const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
   const warmupPromiseRef = useRef<Promise<void> | null>(null);
   const isMountedRef = useRef(true);
@@ -578,7 +569,7 @@ export function MetadataStudio({
     ).then(() => { if (isMountedRef.current) setWarmupProgress(null); });
   }, []);
 
-  // ── Run (AI modes) ──
+  // ── Run (fill / verify modes — factual pipeline) ──
 
   const handleRun = useCallback(async () => {
     setIsLoading(true);
@@ -587,7 +578,6 @@ export function MetadataStudio({
     setFileErrors(null);
     setLocalAppliedInfo(null);
     setMarkedVerifiedInfo(null);
-    setDegradedInfo(false);
     setStats(null);
     setProgress(null);
     setRunStartedAt(Date.now());
@@ -625,10 +615,6 @@ export function MetadataStudio({
       if (result.success || filtered.length > 0) {
         setSuggestions(filtered);
         setStats(result.stats);
-        // R65: degradierte Verify-Läufe (KI unavailable) sind ERFOLGREICH —
-        // Info-Notiz statt Fehler-Banner („KI-Analyse fehlgeschlagen“ + nichts
-        // verifiziert, Nutzer-Feedback 3).
-        setDegradedInfo(result.degraded === true);
       } else {
         setError(result.error || t('editor.aiBatchError'));
       }
@@ -638,9 +624,7 @@ export function MetadataStudio({
       // metadataVerifiedAt — same persistence primitive as applied
       // suggestions (updateSong → localStorage + IndexedDB; the flag is app
       // state, not txt metadata, so no txt write happens here). Aborted runs
-      // mark nothing; songs whose LLM verdict never arrived (AI unavailable /
-      // dropped entry) are reported as notAnalyzed and stay out of
-      // verifiedOkIds. R62: fields without a source verdict no longer block
+      // mark nothing. R62: fields without a source verdict no longer block
       // the badge — corrected AND already-correct songs both reach ✓, so a
       // complete verify run can verify the whole library (100% reachable).
       if (mode === 'verify' && result.verifiedOkIds.length > 0) {
@@ -654,7 +638,7 @@ export function MetadataStudio({
     } catch (e) {
       if (!isMountedRef.current) return;
       if (controller.signal.aborted) return; // aborted fetch — not an error
-      setError(e instanceof Error ? e.message : t('editor.aiAssistant.networkError'));
+      setError(e instanceof Error ? e.message : t('editor.aiBatchError'));
     } finally {
       abortRef.current = null;
       if (isMountedRef.current) {
@@ -818,10 +802,10 @@ export function MetadataStudio({
 
     for (const s of list) {
       const updates: Partial<Song> = {};
-      if (s.suggestedGenre && fieldPassesThreshold('genre', s, minConfidence)) {
+      if (s.suggestedGenre) {
         updates.genre = normalizeGenreName(s.suggestedGenre);
       }
-      if (s.suggestedLanguage && fieldPassesThreshold('language', s, minConfidence)) {
+      if (s.suggestedLanguage) {
         updates.language = normalizeLanguage(s.suggestedLanguage);
       }
       if (s.suggestedYear && s.suggestedYear !== s.currentYear) {
@@ -830,8 +814,6 @@ export function MetadataStudio({
 
       // R60 (verify mode): every open field of this song is being applied
       // → the song now matches the sources and counts as verified (badge).
-      // Songs with below-threshold leftovers keep open rows and stay
-      // unverified until those are resolved.
       if (mode === 'verify' && Object.keys(updates).length > 0) {
         const allFieldsCovered =
           (!s.suggestedGenre || updates.genre !== undefined) &&
@@ -867,7 +849,7 @@ export function MetadataStudio({
     setShowWarning(false);
     setStats(null);
     onApplied();
-  }, [suggestions, minConfidence, mode, writeTarget, onApplied]);
+  }, [suggestions, mode, writeTarget, onApplied]);
 
   // ── Rule mode ──
   const handleRuleStart = useCallback(async () => {
@@ -940,7 +922,7 @@ export function MetadataStudio({
     </button>
   );
 
-  const applicableCount = countApplicableSongs(suggestions, minConfidence);
+  const applicableCount = countApplicableSongs(suggestions);
   const noFieldsSelected = !fields.genre && !fields.language && !fields.year;
   const rulePreview = rulePlan.slice(0, 8);
 
@@ -1515,7 +1497,7 @@ export function MetadataStudio({
                   {ruleRunning
                     ? t('editor.ruleHarmonizeStart')
                     : progress
-                      ? t(progress.phase === 'lookup' ? 'editor.studioPhaseLookup' : 'editor.studioPhaseAi')
+                      ? t('editor.studioPhaseLookup')
                       : t('editor.studioPhaseCache')}
                 </span>
                 <span className="ml-auto font-mono text-[11px] text-white/50 tabular-nums">
@@ -1612,7 +1594,7 @@ export function MetadataStudio({
             </p>
           )}
           {mode === 'verify' && stats && !isLoading && suggestions.length === 0
-            && stats.notAnalyzed === 0 && stats.total > 0 && (
+            && stats.total > 0 && (
             <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2" data-testid="studio-verify-all-ok">
               <span className="text-sm leading-none">✅</span>
               <p className="text-[10px] text-emerald-200/90 flex-1">
@@ -1620,24 +1602,9 @@ export function MetadataStudio({
               </p>
             </div>
           )}
-          {/* R65: Verify-Lauf mit degraderter KI — Info-Notiz (kein Fehler-
-              Banner): Datenbanken haben geprüft, Sprachen stehen aus. Fällt
-              weg, sobald ein Lauf mit KI die Sprachen nachprüft. */}
-          {mode === 'verify' && degradedInfo && !isLoading && (
-            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-verify-degraded">
-              <span className="text-sm leading-none">⚠️</span>
-              <p className="text-[10px] text-amber-200/90 flex-1">
-                {(() => {
-                  const key = 'editor.studioVerifyDegraded';
-                  const tr = t(key);
-                  return tr === key
-                    ? 'KI nicht verfügbar — Genre & Jahr wurden über die Musik-Datenbanken geprüft; Sprachen blieben diesmal ungeprüft. Sobald die KI verfügbar ist, prüft ein erneuter Verify-Lauf auch die Sprachen nach.'
-                    : tr;
-                })()}
-              </p>
-              <button onClick={() => setDegradedInfo(false)} className="text-white/40 hover:text-white/80 text-xs" aria-label="Dismiss">✕</button>
-            </div>
-          )}
+          {/* R65 note removed (R66): the degraded-KI notice is obsolete —
+              the pipeline is factual-only, languages are simply not
+              auto-checked anymore (nothing will "re-check them later"). */}
           {/* R60: how many songs the run NEWLY marked as verified (badge in
               the editor library) — explains where the ✓ badges came from. */}
           {mode === 'verify' && markedVerifiedInfo !== null && !isLoading && (
@@ -1645,14 +1612,6 @@ export function MetadataStudio({
               <BadgeCheck className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
               {t('editor.studioVerifyMarked').replace('{n}', String(markedVerifiedInfo))}
             </p>
-          )}
-          {stats && stats.notAnalyzed > 0 && (
-            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2" data-testid="studio-not-analyzed">
-              <span className="text-sm leading-none">⚠️</span>
-              <p className="text-[10px] text-amber-200/90 flex-1">
-                {t('editor.aiBatchNotAnalyzed').replace('{count}', String(stats.notAnalyzed))}
-              </p>
-            </div>
           )}
           {localAppliedInfo !== null && (
             <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2" data-testid="studio-local-applied">
@@ -1701,13 +1660,11 @@ export function MetadataStudio({
           {suggestions.length > 0 && (
             <>
               <div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-white/10">
-                <ConfidenceFilter value={minConfidence} onChange={setMinConfidence} t={t} />
                 {stats && (
                   <p className="text-[10px] text-white/40 truncate">
                     {t('editor.aiBatchStatsLine')
                       .replace('{cache}', String(stats.fromCache))
-                      .replace('{facts}', String(stats.factualHits))
-                      .replace('{ai}', String(stats.total - stats.fromCache))}
+                      .replace('{facts}', String(stats.factualHits))}
                   </p>
                 )}
               </div>
@@ -1716,7 +1673,6 @@ export function MetadataStudio({
                   <SuggestionRow
                     key={s.songId}
                     suggestion={s}
-                    minConfidence={minConfidence}
                     onApply={handleApplySingle}
                     {...(mode === 'verify' ? {
                       onMarkCorrect: (songId: string) => handleMarkCorrect([songId]),
@@ -1799,11 +1755,6 @@ export function MetadataStudio({
                 <div className="flex items-center gap-2 text-xs text-white/50">
                   <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{applicableCount}</span>
                   <span>{t('editor.aiHarmonizeWarnCount')}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-[11px] text-white/50 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
-                  <span>🛡️</span>
-                  <span>{t('editor.aiBatchThresholdNote').replace('{value}', String(minConfidence))}</span>
                 </div>
 
                 <div className="flex gap-2 pt-1">

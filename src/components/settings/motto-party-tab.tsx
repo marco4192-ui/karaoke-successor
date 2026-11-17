@@ -42,7 +42,7 @@ import { getAvailableDecades, decadeShortLabel } from '@/lib/game/era-filter';
 import { splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 import { parseFuzzyQuery } from '@/lib/fuzzy-search';
 import { Song } from '@/types/game';
-import { Search, X, Plus, Trash2 } from 'lucide-react';
+import { Search, X, Plus, Trash2, Tag } from 'lucide-react';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 
@@ -68,11 +68,20 @@ export function MottoPartyTab() {
   }, []);
 
   // ── Filter dropdown options (same derivation as the party setup) ──
-  const { availableGenres, availableLanguages, availableYears, availableDecades } = useMemo(() => {
+  const { availableGenres, availableLanguages, availableYears, availableDecades, availableTags } = useMemo(() => {
     const list = songs ?? [];
     const genres = new Set<string>();
     for (const s of list) {
       if (s.genre) for (const g of splitGenres(s.genre)) genres.add(normalizeGenreName(g));
+    }
+    // R66: every #TAGS: entry of the library (comma-separated, deduped)
+    const tags = new Set<string>();
+    for (const s of list) {
+      if (!s.tags) continue;
+      for (const tag of s.tags.split(',')) {
+        const trimmed = tag.trim();
+        if (trimmed) tags.add(trimmed);
+      }
     }
     const years = Array.from(new Set(list.map(s => s.year).filter((y): y is number => typeof y === 'number' && y > 0))).sort((a, b) => b - a);
     return {
@@ -80,6 +89,7 @@ export function MottoPartyTab() {
       availableLanguages: getLanguageFilterEntries(list, false),
       availableYears: years,
       availableDecades: getAvailableDecades(list),
+      availableTags: Array.from(tags).sort((a, b) => a.localeCompare(b, 'de')),
     };
   }, [songs]);
 
@@ -87,11 +97,29 @@ export function MottoPartyTab() {
   const matchingSongs = useMemo(() => filterSongsByMotto(songs ?? [], motto), [songs, motto]);
   const hasCriteria = motto.searchFields.some(f => f.term.trim()) ||
     motto.filters.genre !== 'all' || motto.filters.language !== 'all' ||
-    motto.filters.releaseYear !== 'all' || motto.filters.era !== 'all';
+    motto.filters.releaseYear !== 'all' || motto.filters.era !== 'all' ||
+    motto.filters.tag !== 'all';
 
   // ── Local editing state ──
   const [newTerm, setNewTerm] = useState('');
   const [termError, setTermError] = useState<string | null>(null);
+
+  // ── Tag search (R66): type → matching tags from the library → click
+  //     activates the tag as a filter (chip with ✕ to deactivate). ──
+  const [tagQuery, setTagQuery] = useState('');
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const tagSuggestions = useMemo(() => {
+    const q = tagQuery.trim().toLowerCase();
+    const base = q
+      ? availableTags.filter(t => t.toLowerCase().includes(q))
+      : availableTags;
+    return base.slice(0, 8);
+  }, [availableTags, tagQuery]);
+  const activateTag = useCallback((tag: string) => {
+    mottoParty.setFilter('tag', tag);
+    setTagQuery('');
+    setTagMenuOpen(false);
+  }, []);
 
   const handleToggleEnabled = useCallback(() => {
     const next = !motto.enabled;
@@ -122,7 +150,7 @@ export function MottoPartyTab() {
   }, []);
 
   const anyFilterActive = motto.filters.genre !== 'all' || motto.filters.language !== 'all' ||
-    motto.filters.releaseYear !== 'all' || motto.filters.era !== 'all';
+    motto.filters.releaseYear !== 'all' || motto.filters.era !== 'all' || motto.filters.tag !== 'all';
 
   return (
     <div className="space-y-6">
@@ -372,6 +400,86 @@ export function MottoPartyTab() {
               <CardDescription>{t('settingsMotto.filtersDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Tag search (R66) — dedicated search field for #TAGS: entries;
+                  picking a suggestion activates it as a filter (chip + ✕). */}
+              <div className="relative">
+                <label htmlFor="motto-tag-search" className="text-sm text-white/60 mb-1 block">
+                  🏷️ {t('settingsMotto.tagFilterLabel')}
+                </label>
+                {motto.filters.tag !== 'all' ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-purple-500/20 border border-purple-400/40 text-sm text-purple-200"
+                      data-testid="motto-tag-active"
+                    >
+                      <Tag className="w-3.5 h-3.5" aria-hidden="true" />
+                      {motto.filters.tag}
+                      <button
+                        type="button"
+                        onClick={() => mottoParty.setFilter('tag', 'all')}
+                        className="ml-1 text-purple-300/70 hover:text-white transition-colors"
+                        aria-label={`${t('settingsMotto.resetFilters')}: ${motto.filters.tag}`}
+                        data-testid="motto-tag-clear"
+                      >
+                        <X className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="motto-tag-search"
+                      value={tagQuery}
+                      onChange={(e) => { setTagQuery(e.target.value); setTagMenuOpen(true); }}
+                      onFocus={() => setTagMenuOpen(true)}
+                      onBlur={() => { window.setTimeout(() => setTagMenuOpen(false), 150); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (tagSuggestions.length > 0) activateTag(tagSuggestions[0]);
+                        } else if (e.key === 'Escape') {
+                          setTagMenuOpen(false);
+                        }
+                      }}
+                      placeholder={t('settingsMotto.tagSearchPlaceholder')}
+                      className="bg-gray-800 border-white/10 text-white placeholder:text-white/30 pl-9"
+                      data-testid="motto-tag-search"
+                      autoComplete="off"
+                      aria-autocomplete="list"
+                    />
+                    {tagMenuOpen && (
+                      <ul
+                        className="absolute z-20 left-0 right-0 mt-1 max-h-48 overflow-y-auto taxonomy-scroll rounded-lg border border-white/15 bg-gray-800 shadow-xl"
+                        role="listbox"
+                        data-testid="motto-tag-suggestions"
+                      >
+                        {tagSuggestions.length > 0 ? tagSuggestions.map(tag => (
+                          <li key={tag} role="option" aria-selected={false}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => activateTag(tag)}
+                              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-purple-500/20 hover:text-white transition-colors flex items-center justify-between gap-2"
+                              data-testid="motto-tag-option"
+                            >
+                              <span className="truncate">🏷️ {tag}</span>
+                              <Plus className="w-3.5 h-3.5 text-white/30 shrink-0" aria-hidden="true" />
+                            </button>
+                          </li>
+                        )) : (
+                          <li className="px-3 py-2 text-xs text-white/40" data-testid="motto-tag-no-results">
+                            {availableTags.length === 0
+                              ? t('settingsMotto.tagNoTags')
+                              : t('settingsMotto.tagNoResults')}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Genre */}
                 <div>

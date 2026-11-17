@@ -37,7 +37,6 @@ import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
 import { EditorLyricsTab } from './editor-lyrics-tab';
 import { AudioAnalysisPanel } from './audio-analysis-panel';
-import { AIAssistantPanel } from './panels/ai-assistant-panel';
 import type { DetectedNote } from '@/hooks/use-audio-analysis';
 import { noteTypeFlags, type NoteType, type DuetPlayer } from '@/types/game';
 
@@ -1203,9 +1202,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 truncate">
                 {activePanel === 'metadata'
                   ? t('editor.header.panelMetadata')
-                  : activePanel === 'analysis'
-                    ? t('editor.header.panelAnalysis')
-                    : t('editor.header.panelAI')}
+                  : t('editor.header.panelAnalysis')}
               </h2>
               <button
                 onClick={() => setActivePanel('none')}
@@ -1238,19 +1235,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                 audioFilePath={analysisAudioPath}
                 onApplyNotes={handleApplyDetectedNotes}
                 onApplyBpm={handleApplyBpm}
-              />
-            )}
-
-            {activePanel === 'ai' && (
-              <AIAssistantPanel
-                song={currentSong}
-                onSongUpdate={(updates) => {
-                  setSongInternal({ ...currentSongRef.current, ...updates });
-                  markDirty();
-                }}
-                onLyricsUpdate={(lyrics) => {
-                  applyLyrics(lyrics, 'push');
-                }}
               />
             )}
           </aside>

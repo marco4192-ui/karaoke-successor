@@ -1,10 +1,10 @@
 /**
  * Persistent harmonize-suggestion cache (R2).
  *
- * Caches per-song AI/factual harmonization results keyed by a hash over the
- * LLM-relevant inputs (title, artist, current genre, current language, year).
- * Re-running the batch with unchanged songs is then a pure cache hit — no
- * AI quota, no external lookups, instant results.
+ * Caches per-song factual harmonization results keyed by a hash over the
+ * lookup-relevant inputs (title, artist, current genre, current language,
+ * year). Re-running the batch with unchanged songs is then a pure cache
+ * hit — no external lookups, instant results.
  *
  * Storage: localStorage via the central storage wrapper. Entries older than
  * CACHE_TTL_MS are evicted lazily on read; the store is pruned to
