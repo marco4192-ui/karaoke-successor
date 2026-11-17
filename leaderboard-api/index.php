@@ -49,7 +49,7 @@ $T_ACCOUNTS = tbl('accounts');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.3.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.4.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),

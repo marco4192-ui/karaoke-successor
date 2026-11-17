@@ -74,6 +74,7 @@ settings: {
   onlineActivitiesDesc: 'Alle Online-Features deaktivieren inkl. Leaderboard, Daily Challenges und Profil-Sync',
   disableOnline: 'Online-Aktivitäten deaktivieren',
   disableOnlineDesc: 'Wenn deaktiviert, werden keine Daten an externe Server gesendet. Alle Funktionen arbeiten offline.',
+  onlineDataHint: 'Datenspeicherung: Werden Online-Funktionen genutzt, speichert der Leaderboard-Server Name, Farbe, optionales Land und deine Ergebnisse. Vor dem ersten Hochladen wirst du um Einwilligung gefragt; löschen kannst du alles jederzeit im Profil („Online-Daten löschen“).',
   testConnection: 'Verbindung testen',
   installApp: 'App installieren',
   installAppDesc: 'Für Offline-Zugriff installieren',

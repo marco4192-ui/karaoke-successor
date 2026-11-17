@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Standard: som mest 3 låtar per spelare läggs i kön (som sångare eller partner).",
     noLimitToggle: "Ingen gräns per spelare (ta bort taket på 3 per spelare)",
   },
+  profileSync: {
+    deleteOnline: "Radera online-data",
+    deleteOnlineHint: "Tar bort din online-profil, alla poäng, dagliga resultat och backuper från servern. Din lokala profil finns kvar.",
+    deleteOnlineConfirmTitle: "Radera online-data permanent?",
+    deleteOnlineConfirmText: "Detta raderar din online-profil på poänglistans server, inklusive alla poäng, dagliga resultat, profilbackuper och ett länkat online-konto. Din lokala profil finns kvar. Detta kan inte ångras.",
+    deleteOnlineConfirm: "Radera permanent",
+    deleteOnlineSuccess: "Online-data raderad. Din profil är nu endast lokal.",
+    deleteOnlineFailed: "Det gick inte att radera online-data",
+  },
   queueScreen: {
     viaCompanion: "Tillagd via companion-appen",
   },
   settings: {
+    onlineDataHint: "Datalagring: när onlinefunktioner används lagrar poänglistans server ditt namn, din färg, valfritt land och dina resultat. Du tillfrågas om samtycke innan den första uppladdningen; du kan radera allt när som helst från din profil (\"Radera online-data\").",
   },
   settingsAbout: {
     platformArch: "Arkitektur",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Denna anslutning använder ett riktigt certifikat (Let's Encrypt) — telefonerna litar på den automatiskt, ingen installation behövs.",
     singingDeviceAssignment: "Tilldelning av sångenheter",
     singingDeviceAssignmentDesc: "Välj per spelare: sjung via mikrofon eller Companion-app.",
+  },
+  uploadStatus: {
+    consentTitle: "Online-poänglista — notis",
+    consentText: "Vid uppladdning sparas ditt namn, din färg, valfritt land och dina poäng (noggrannhet inkluderat) på poänglistans server och visas i rankingen. Du kan ta bort dem när som helst via \"Radera online-data\" i din profil.",
+    consentAccept: "Godkänn och ladda upp",
+    consentDecline: "Ladda inte upp",
   },
   weeklyTypes: {
     names: {

@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Por defecto: se añaden a la cola como máximo 3 canciones por jugador (como cantante o pareja).",
     noLimitToggle: "Sin límite por jugador (quita el tope de 3 por jugador)",
   },
+  profileSync: {
+    deleteOnline: "Borrar datos online",
+    deleteOnlineHint: "Elimina tu perfil online, todas las puntuaciones, los resultados diarios y las copias de seguridad del servidor. Tu perfil local se conserva.",
+    deleteOnlineConfirmTitle: "¿Borrar los datos online para siempre?",
+    deleteOnlineConfirmText: "Esto elimina tu perfil online del servidor de la tabla de clasificación, incluidas todas las puntuaciones, los resultados diarios, las copias de seguridad del perfil y una cuenta online vinculada. Tu perfil local se conserva. Este paso no se puede deshacer.",
+    deleteOnlineConfirm: "Borrar definitivamente",
+    deleteOnlineSuccess: "Datos online borrados. Tu perfil ahora es solo local.",
+    deleteOnlineFailed: "Error al borrar los datos online",
+  },
   queueScreen: {
     viaCompanion: "Añadida vía app compañera",
   },
   settings: {
+    onlineDataHint: "Almacenamiento de datos: cuando se usan las funciones online, el servidor de la tabla de clasificación guarda tu nombre, tu color, el país opcional y tus resultados. Antes de la primera subida se te pedirá tu consentimiento; puedes borrarlo todo cuando quieras desde tu perfil (\"Borrar datos online\").",
   },
   settingsAbout: {
     platformArch: "Arquitectura",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Esta conexión usa un certificado real (Let's Encrypt) — los móviles confían en ella automáticamente, no hay que instalar nada.",
     singingDeviceAssignment: "Asignación de Dispositivo de Canto",
     singingDeviceAssignmentDesc: "Elige por jugador: cantar por micrófono o por App Compañera.",
+  },
+  uploadStatus: {
+    consentTitle: "Tabla de clasificación online — aviso",
+    consentText: "Al subir, se guardan tu nombre, tu color, el país opcional y tus puntuaciones (incluida la precisión) en el servidor de la tabla de clasificación y se muestran en el ranking. Puedes eliminarlas cuando quieras desde tu perfil con \"Borrar datos online\".",
+    consentAccept: "Aceptar y subir",
+    consentDecline: "No subir",
   },
   weeklyTypes: {
     names: {

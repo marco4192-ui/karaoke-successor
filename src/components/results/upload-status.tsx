@@ -4,21 +4,66 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 interface UploadStatusProps {
   onlineEnabled: boolean;
-  uploadStatus: 'idle' | 'uploading' | 'success' | 'error';
+  uploadStatus: 'idle' | 'consent' | 'uploading' | 'success' | 'error';
   uploadMessage: string;
   isVerified?: boolean;
   /** R42: slim inline banner for the one-screen results layout */
   compact?: boolean;
+  /** R67: consent callbacks for the first-upload data notice */
+  onAcceptConsent?: () => void;
+  onDeclineConsent?: () => void;
 }
 
 /**
  * R42 — upload status as a slim inline banner (was a full-width card that
  * pushed the whole results screen down). compact=true renders a single
  * centered line with icon + text.
+ *
+ * R67 — uploadStatus 'consent' renders the first-upload data notice instead
+ * of a status line: what is stored (name, color, optional country, scores),
+ * with "agree & upload" / "don't upload" actions.
  */
-export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage, isVerified, compact }: UploadStatusProps) {
+export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage, isVerified, compact, onAcceptConsent, onDeclineConsent }: UploadStatusProps) {
   const { t } = useTranslation();
   if (!onlineEnabled || uploadStatus === 'idle') return null;
+
+  // ── R67: first-upload consent notice ──────────────────────
+  if (uploadStatus === 'consent') {
+    return (
+      <div
+        className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 px-4 py-3"
+        role="dialog"
+        aria-label={t('uploadStatus.consentTitle')}
+        data-testid="leaderboard-consent-card"
+      >
+        <div className="flex items-start gap-2.5">
+          <span className="text-base leading-5" aria-hidden>ℹ️</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-cyan-200">{t('uploadStatus.consentTitle')}</p>
+            <p className="mt-1 text-xs leading-relaxed text-white/70">{t('uploadStatus.consentText')}</p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onAcceptConsent}
+                data-testid="leaderboard-consent-accept"
+                className="h-8 rounded-lg bg-cyan-500 px-3 text-xs font-medium text-black transition-colors hover:bg-cyan-400"
+              >
+                {t('uploadStatus.consentAccept')}
+              </button>
+              <button
+                type="button"
+                onClick={onDeclineConsent}
+                data-testid="leaderboard-consent-decline"
+                className="h-8 rounded-lg border border-white/15 px-3 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {t('uploadStatus.consentDecline')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const tint =
     uploadStatus === 'uploading' ? 'text-blue-300 bg-blue-500/10 border-blue-500/25'

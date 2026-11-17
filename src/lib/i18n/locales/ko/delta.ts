@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "기본값: 플레이어당 최대 3곡(가수 또는 파트너로)이 대기열에 추가됩니다.",
     noLimitToggle: "플레이어별 제한 없음(1인당 3곡 상한 해제)",
   },
+  profileSync: {
+    deleteOnline: "온라인 데이터 삭제",
+    deleteOnlineHint: "온라인 프로필, 모든 점수, 일일 챌린지 결과, 백업을 서버에서 삭제해요. 로컬 프로필은 그대로 남아요.",
+    deleteOnlineConfirmTitle: "온라인 데이터를 영구 삭제할까요?",
+    deleteOnlineConfirmText: "리더보드 서버에 있는 온라인 프로필을 모든 점수, 일일 챌린지 결과, 프로필 백업, 연결된 온라인 계정과 함께 삭제해요. 로컬 프로필은 남아요. 이 작업은 되돌릴 수 없어요.",
+    deleteOnlineConfirm: "영구 삭제",
+    deleteOnlineSuccess: "온라인 데이터가 삭제됐어요. 프로필이 이제 로컬 전용이에요.",
+    deleteOnlineFailed: "온라인 데이터 삭제에 실패했어요",
+  },
   queueScreen: {
     viaCompanion: "컴패니언 앱에서 추가됨",
   },
   settings: {
+    onlineDataHint: "데이터 저장: 온라인 기능을 사용하면 리더보드 서버에 이름, 색상, 선택한 국가, 결과가 저장돼요. 첫 업로드 전에 동의를 요청받아요. 모든 데이터는 프로필의 \"온라인 데이터 삭제\"에서 언제든 삭제할 수 있어요.",
   },
   settingsAbout: {
     platformArch: "아키텍처",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "이 연결은 진짜 인증서(Let's Encrypt)를 사용해요 — 휴대폰이 자동으로 신뢰하므로 설치가 필요 없어요.",
     singingDeviceAssignment: "노래 기기 배정",
     singingDeviceAssignmentDesc: "플레이어별로 선택하세요: 마이크 또는 컴패니언 앱으로 부르기.",
+  },
+  uploadStatus: {
+    consentTitle: "온라인 리더보드 — 안내",
+    consentText: "업로드하면 이름, 색상, 선택한 국가, 점수(정확도 포함)가 리더보드 서버에 저장되고 랭킹에 표시돼요. 프로필의 \"온라인 데이터 삭제\"에서 언제든 삭제할 수 있어요.",
+    consentAccept: "동의하고 업로드",
+    consentDecline: "업로드하지 않기",
   },
   weeklyTypes: {
     names: {

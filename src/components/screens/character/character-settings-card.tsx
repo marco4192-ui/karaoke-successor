@@ -23,6 +23,20 @@ interface CharacterSettingsCardProps {
   testId?: string;
 }
 
+/**
+ * R67: push profile changes (name, color, country, privacy) to the
+ * leaderboard server via PUT /profiles/{uid}. Fire-and-forget: the call
+ * needs the sync_code (ownership token); profiles that were never
+ * registered server-side simply skip (the next registration carries the
+ * current values). Errors are swallowed — local state always wins.
+ */
+function syncOnlineProfileSettings(onlineProfile: PlayerProfile): void {
+  if (!onlineProfile.syncCode) return;
+  import('@/lib/api/leaderboard-service')
+    .then(({ leaderboardService }) => leaderboardService.updateProfileSettings(onlineProfile))
+    .catch(() => { /* non-critical: not registered yet or offline */ });
+}
+
 export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId }: CharacterSettingsCardProps) {
   const { t } = useTranslation();
   const { updateProfile } = useGameStore();
@@ -47,16 +61,22 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, undefined, profile.id) : '', 160);
 
   const handleUpdatePrivacy = (field: string, value: boolean) => {
-    updateProfile(profile.id, {
-      privacy: {
-        ...(profile.privacy || { showOnLeaderboard: true, showPhoto: true, showCountry: true }),
-        [field]: value,
-      },
-    });
+    const privacy = {
+      ...(profile.privacy || { showOnLeaderboard: true, showPhoto: true, showCountry: true }),
+      [field]: value,
+    };
+    updateProfile(profile.id, { privacy });
+    // R67: privacy flags live on the server profile — sync the change
+    if (onlineEnabled && (profile.storageMode ?? 'online') !== 'local') {
+      syncOnlineProfileSettings({ ...profile, privacy });
+    }
   };
 
   const handleUpdateCountry = (country: string) => {
     updateProfile(profile.id, { country: country || undefined });
+    if (onlineEnabled && (profile.storageMode ?? 'online') !== 'local') {
+      syncOnlineProfileSettings({ ...profile, country: country || undefined });
+    }
   };
 
   const startEditingCharacter = () => {
@@ -75,11 +95,16 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId
 
   const saveEditedCharacter = () => {
     if (editName.trim()) {
-      updateProfile(profile.id, {
+      const updates = {
         name: editName.trim(),
         avatar: editAvatarUrl || undefined,
         country: editCountry || undefined,
-      });
+      };
+      updateProfile(profile.id, updates);
+      // R67: name/country changes are leaderboard-visible data — sync them
+      if (onlineEnabled && (profile.storageMode ?? 'online') !== 'local') {
+        syncOnlineProfileSettings({ ...profile, ...updates });
+      }
       setIsEditingCharacter(false);
     }
   };

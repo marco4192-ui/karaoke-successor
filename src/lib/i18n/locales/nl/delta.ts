@@ -1038,10 +1038,20 @@ export const deltaTranslations = {
     noLimitOff: "Standaard: maximaal 3 nummers per speler worden aan de wachtrij toegevoegd (als zanger of partner).",
     noLimitToggle: "Geen limiet per speler (til de limiet van 3 per speler op)",
   },
+  profileSync: {
+    deleteOnline: "Online gegevens verwijderen",
+    deleteOnlineHint: "Verwijdert je onlineprofiel, alle scores, dagelijkse resultaten en back-ups van de server. Je lokale profiel blijft staan.",
+    deleteOnlineConfirmTitle: "Online gegevens definitief verwijderen?",
+    deleteOnlineConfirmText: "Dit verwijdert je onlineprofiel op de leaderboardserver, inclusief alle scores, dagelijkse resultaten, profielback-ups en een gekoppeld onlineaccount. Je lokale profiel blijft staan. Dit kan niet ongedaan worden gemaakt.",
+    deleteOnlineConfirm: "Definitief verwijderen",
+    deleteOnlineSuccess: "Online gegevens verwijderd. Je profiel is nu alleen lokaal.",
+    deleteOnlineFailed: "Online gegevens verwijderen mislukt",
+  },
   queueScreen: {
     viaCompanion: "Toegevoegd via de companion-app",
   },
   settings: {
+    onlineDataHint: "Gegevensopslag: wanneer onlinefuncties worden gebruikt, slaat de leaderboardserver je naam, je kleur, je optionele land en je resultaten op. Vóór de eerste upload word je om toestemming gevraagd; je kunt alles altijd verwijderen via je profiel (\"Online gegevens verwijderen\").",
   },
   settingsAbout: {
     platformArch: "Architectuur",
@@ -1279,6 +1289,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Deze verbinding gebruikt een echt certificaat (Let's Encrypt) — telefoons vertrouwen hem automatisch, geen installatie nodig.",
     singingDeviceAssignment: "Toewijzing van zangapparaten",
     singingDeviceAssignmentDesc: "Kies per speler: zingen via microfoon of Companion App.",
+  },
+  uploadStatus: {
+    consentTitle: "Online leaderboard — melding",
+    consentText: "Bij het uploaden worden je naam, je kleur, je optionele land en je scores (inclusief nauwkeurigheid) opgeslagen op de leaderboardserver en getoond in de rankings. Je kunt ze altijd verwijderen via \"Online gegevens verwijderen\" in je profiel.",
+    consentAccept: "Akkoord en uploaden",
+    consentDecline: "Niet uploaden",
   },
   weeklyTypes: {
     names: {

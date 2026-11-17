@@ -1038,10 +1038,20 @@ export const deltaTranslations = {
     noLimitOff: "Standard: højst 3 sange pr. spiller sættes i køen (som sanger eller partner).",
     noLimitToggle: "Ingen grænse pr. spiller (ophæv loftet på 3 pr. spiller)",
   },
+  profileSync: {
+    deleteOnline: "Slet online-data",
+    deleteOnlineHint: "Fjerner din online-profil, alle point, daglige resultater og backups fra serveren. Din lokale profil bliver.",
+    deleteOnlineConfirmTitle: "Slet online-data permanent?",
+    deleteOnlineConfirmText: "Dette sletter din online-profil på ranglistens server, inklusive alle point, daglige resultater, profilbackups og en tilknyttet online-konto. Din lokale profil bliver. Dette kan ikke fortrydes.",
+    deleteOnlineConfirm: "Slet permanent",
+    deleteOnlineSuccess: "Online-data slettet. Din profil er nu kun lokal.",
+    deleteOnlineFailed: "Det lykkedes ikke at slette online-data",
+  },
   queueScreen: {
     viaCompanion: "Tilføjet via companion-appen",
   },
   settings: {
+    onlineDataHint: "Datalagring: når onlinefunktioner bruges, gemmer ranglistens server dit navn, din farve, valgfrit land og dine resultater. Du bliver bedt om samtykke før den første upload; du kan slette alt når som helst fra din profil (\"Slet online-data\").",
   },
   settingsAbout: {
     platformArch: "Arkitektur",
@@ -1279,6 +1289,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Denne forbindelse bruger et ægte certifikat (Let's Encrypt) — telefonerne stoler automatisk på den, ingen installation nødvendig.",
     singingDeviceAssignment: "Tildeling af syngeenhed",
     singingDeviceAssignmentDesc: "Vælg pr. spiller: syng via mikrofon eller Companion-app.",
+  },
+  uploadStatus: {
+    consentTitle: "Online rangliste — besked",
+    consentText: "Ved upload lagres dit navn, din farve, valgfrit land og dine point (præcision inkluderet) på ranglistens server og vises i rangeringen. Du kan fjerne dem når som helst via \"Slet online-data\" i din profil.",
+    consentAccept: "Acceptér og upload",
+    consentDecline: "Upload ikke",
   },
   weeklyTypes: {
     names: {

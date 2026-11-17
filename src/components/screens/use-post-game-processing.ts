@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { StorageKeys, getItem, removeItem, setItem } from '@/lib/storage';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
@@ -18,6 +18,7 @@ import type { DailySongContext } from '@/lib/game/challenge-pools';
 import { processChallengeModeResult } from '@/lib/game/challenge-mode-progress';
 import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
+import { hasLeaderboardConsent, setLeaderboardConsent } from '@/lib/leaderboard/consent';
 import { recordSongPlay } from '@/lib/playlist-manager';
 import { useGameStore } from '@/lib/game/store';
 import type { PlayerProfile, GameResult, Song, GameState, HighscoreEntry, Achievement } from '@/types/game';
@@ -256,9 +257,12 @@ export function usePostGameProcessing({
   t,
 }: UsePostGameProcessingParams) {
   const savedToHighscoreRef = useRef(false);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'consent' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [isVerified, setIsVerified] = useState<boolean | undefined>(undefined);
+  /** R67: online actions (score upload + daily board submission) queued while
+   *  the first-upload consent notice is awaiting the user's decision. */
+  const pendingOnlineActionsRef = useRef<Array<() => void>>([]);
 
   const isDuel = gameState.gameMode === 'duel';
 
@@ -534,8 +538,18 @@ export function usePostGameProcessing({
           }
         } catch { /* non-critical */ }
 
-        // Fire the online daily board submission (after local persistence)
-        onlineDailySubmission?.();
+        // Fire the online daily board submission (after local persistence).
+        // R67: gated on the leaderboard consent — while the first-upload
+        // notice is pending, queue the submission behind the user's decision
+        // (it runs together with the score upload on accept, is dropped on
+        // decline).
+        if (onlineDailySubmission) {
+          if (hasLeaderboardConsent()) {
+            onlineDailySubmission();
+          } else {
+            pendingOnlineActionsRef.current.push(onlineDailySubmission);
+          }
+        }
 
         // Apply daily/weekly XP rewards to the profile that played.
         // Note: the song XP below reads the fresh store value too, so the
@@ -722,8 +736,21 @@ export function usePostGameProcessing({
         // Upload to global leaderboard — only for ONLINE profiles that opted in
         const isOnlineProfile = profile.storageMode !== 'local';
         if (onlineEnabled && isOnlineProfile && (profile.privacy?.showOnLeaderboard ?? true)) {
-          setUploadStatus('uploading');
           setIsVerified(undefined);
+
+          // R67 anti-cheat serialization contract (see anti-cheat-proof.ts):
+          // the integrity hash must be computed over EXACTLY the values the
+          // JSON payload carries. Two former mismatches made every score
+          // "unverified":
+          //  (a) difficulty: the proof hashed the raw 'medium' while the
+          //      payload carries the API form 'normal' — always map first;
+          //  (b) accuracy: a raw float (notesHit/totalNotes*100) has up to 17
+          //      significant digits in JS but only 14 in PHP — round to 2
+          //      decimal places BEFORE hashing AND submitting.
+          const apiDifficulty = gameState.difficulty === 'easy'
+            ? 'easy' as const
+            : gameState.difficulty === 'hard' ? 'hard' as const : 'normal' as const;
+          const accuracyForUpload = Math.round(playerResult.accuracy * 100) / 100;
 
           // Real scoring metadata — MUST match what the game scored with
           // (see use-game-timing-data: beat duration 15000/bpm, full
@@ -778,50 +805,52 @@ export function usePostGameProcessing({
                 },
                 noteResults,
                 score: playerResult.score,
-                accuracy: playerResult.accuracy,
+                accuracy: accuracyForUpload,
                 maxCombo: playerResult.maxCombo,
                 notesHit: playerResult.notesHit,
                 notesMissed: playerResult.notesMissed,
-                difficulty: gameState.difficulty,
+                difficulty: apiDifficulty,
                 fingerprintVersion: 'v1',
               });
             })
             .catch(() => undefined); // non-critical, degrade gracefully
 
-          Promise.all([
-            import('@/lib/api/leaderboard-service'),
-            buildProof(),
-          ]).then(([{ leaderboardService }, proof]) => {
-            // The server requires the profile's sync_code on every score
-            // submission. Register once while we don't have a code and
-            // persist the code the server generated — later games then
-            // submit without the extra roundtrip.
-            const ensureRegistered = async () => {
-              if (profile.syncCode) return profile;
-              const p = await leaderboardService.registerProfile(profile).catch(() => null);
-              const code = p?.sync_code;
-              if (!code) return profile;
-              updateProfile(profile.id, { syncCode: code });
-              return { ...profile, syncCode: code };
-            };
-            return ensureRegistered().then((prof) =>
-              leaderboardService.submitScore({
-                profile: prof,
-                song,
-                gameMode: gameState.gameMode,
-                scoringMetadata: scoringMeta,
-                score: playerResult.score,
-                maxScore: MAX_POINTS_PER_SONG,
-                accuracy: playerResult.accuracy,
-                maxCombo: playerResult.maxCombo,
-                difficulty: gameState.difficulty,
-                rating: playerResult.rating,
-                notesHit: playerResult.notesHit,
-                notesMissed: playerResult.notesMissed,
-                proof,
-              })
-            );
-          })
+          const performUpload = () => {
+            setUploadStatus('uploading');
+            return Promise.all([
+              import('@/lib/api/leaderboard-service'),
+              buildProof(),
+            ]).then(([{ leaderboardService }, proof]) => {
+              // The server requires the profile's sync_code on every score
+              // submission. Register once while we don't have a code and
+              // persist the code the server generated — later games then
+              // submit without the extra roundtrip.
+              const ensureRegistered = async () => {
+                if (profile.syncCode) return profile;
+                const p = await leaderboardService.registerProfile(profile).catch(() => null);
+                const code = p?.sync_code;
+                if (!code) return profile;
+                updateProfile(profile.id, { syncCode: code });
+                return { ...profile, syncCode: code };
+              };
+              return ensureRegistered().then((prof) =>
+                leaderboardService.submitScore({
+                  profile: prof,
+                  song,
+                  gameMode: gameState.gameMode,
+                  scoringMetadata: scoringMeta,
+                  score: playerResult.score,
+                  maxScore: MAX_POINTS_PER_SONG,
+                  accuracy: accuracyForUpload,
+                  maxCombo: playerResult.maxCombo,
+                  difficulty: gameState.difficulty,
+                  rating: playerResult.rating,
+                  notesHit: playerResult.notesHit,
+                  notesMissed: playerResult.notesMissed,
+                  proof,
+                })
+              );
+            })
               .then((result) => {
                 setUploadStatus('success');
                 const verified = !!result.verified;
@@ -836,11 +865,46 @@ export function usePostGameProcessing({
                 setUploadStatus('error');
                 setUploadMessage(err.message || t('resultsScreen.uploadFailed'));
               });
+          };
+
+          // R67: first upload requires the explicit data-storage notice
+          // (name, color, optional country, scores). Queue the upload until
+          // the user accepts; the consent card is rendered by UploadStatus.
+          if (hasLeaderboardConsent()) {
+            void performUpload();
+          } else {
+            pendingOnlineActionsRef.current.push(() => { void performUpload(); });
+            setUploadStatus('consent');
+          }
         }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- isDuel excluded; derived from gameMode which IS in deps via gameState.gameMode
   }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile, t]);
 
-  return { uploadStatus, uploadMessage, isVerified };
+  /** R67: user accepted the leaderboard data notice — persist the consent
+   *  and run every online action queued for this game (score upload + daily
+   *  board submission). Future games upload without asking again. */
+  const acceptOnlineConsent = useCallback(() => {
+    setLeaderboardConsent();
+    const queued = pendingOnlineActionsRef.current;
+    pendingOnlineActionsRef.current = [];
+    for (const action of queued) {
+      try { action(); } catch { /* non-critical */ }
+    }
+    if (queued.length === 0) {
+      // Nothing was queued (e.g. only the daily submission wanted to go out)
+      // — leave the idle state so no empty "uploading" banner sticks.
+      setUploadStatus((prev) => (prev === 'consent' ? 'idle' : prev));
+    }
+  }, []);
+
+  /** R67: user declined — drop every queued online action for this game.
+   *  The notice appears again on the next game (nothing is persisted). */
+  const declineOnlineConsent = useCallback(() => {
+    pendingOnlineActionsRef.current = [];
+    setUploadStatus('idle');
+  }, []);
+
+  return { uploadStatus, uploadMessage, isVerified, acceptOnlineConsent, declineOnlineConsent };
 }

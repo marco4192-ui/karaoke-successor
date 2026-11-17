@@ -115,9 +115,18 @@ function isValidUUID(string $uid): bool {
     return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $uid);
 }
 
-/** Validate song hash format (v1:hex, 8-64 hex chars) */
+/**
+ * Validate song hash format (v1:hex, 8-64 hex chars).
+ *
+ * R67: the client's sync SHA-256 implementation stringifies negative result
+ * words as "-30f7239b" (signed int32) — ~75 % of all song hash prefixes
+ * therefore contain one or two '-' characters. The format is deterministic,
+ * collision-free and already stored in the DB by deployed app versions, so
+ * it is accepted as-is; changing the client format would split the per-song
+ * boards between old and new app builds.
+ */
 function isValidSongHash(string $h): bool {
-    return (bool) preg_match('/^v[0-9]+:[a-f0-9]{8,64}$/i', $h);
+    return (bool) preg_match('/^v[0-9]+:[-a-f0-9]{8,64}$/i', $h);
 }
 
 /** Validate country code (ISO 3166-1 alpha-2) */

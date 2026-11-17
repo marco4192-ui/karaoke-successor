@@ -63,7 +63,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   // ---- Extracted hooks ----
   const { replayRecord } = useReplayLoading();
   const { nextQueueItem, handlePlayFromQueue } = useQueueNextSong(onPlayAgain);
-  const { uploadStatus, uploadMessage, isVerified } = usePostGameProcessing({
+  const { uploadStatus, uploadMessage, isVerified, acceptOnlineConsent, declineOnlineConsent } = usePostGameProcessing({
     results,
     song,
     activeProfileId,
@@ -118,13 +118,15 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           <h2 className="text-xl xl:text-2xl font-bold text-white truncate">{song.title}</h2>
           <p className="text-white/60 text-sm truncate">{song.artist}</p>
         </div>
-        <div className="shrink-0 pt-1">
+        <div className="shrink-0 pt-1 max-w-xs sm:max-w-sm">
           <UploadStatus
             onlineEnabled={onlineEnabled}
             uploadStatus={uploadStatus}
             uploadMessage={uploadMessage}
             isVerified={isVerified}
             compact
+            onAcceptConsent={acceptOnlineConsent}
+            onDeclineConsent={declineOnlineConsent}
           />
         </div>
       </div>

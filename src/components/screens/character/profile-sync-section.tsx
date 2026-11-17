@@ -8,20 +8,13 @@ import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile, HighscoreEntry } from '@/types/game';
 
-function generateSyncCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   const { t } = useTranslation();
   const [inputCode, setInputCode] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { updateProfile, highscores, addHighscore } = useGameStore();
 
@@ -30,11 +23,22 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     setMessage(null);
 
     try {
-      const code = profile.syncCode || generateSyncCode();
-      // Upload immediately with the fresh code — the profile object from
-      // this render is stale and would upload without it.
+      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+
+      // R67: the sync_code (ownership token) is GENERATED SERVER-SIDE at
+      // registration — the client never invents its own code anymore.
+      // registerProfile upserts the profile (name/color/country) and returns
+      // the authoritative code, which also proves ownership for the sync
+      // upload that follows.
+      const registered = await leaderboardService.registerProfile(profile);
+      const code = registered.sync_code || profile.syncCode;
+      if (!code) throw new Error(t('profileSync.uploadFailed'));
+      if (code !== profile.syncCode) {
+        updateProfile(profile.id, { syncCode: code });
+      }
+      // Upload with the authoritative code — the profile object from this
+      // render is stale and would upload without it.
       const uploadableProfile: PlayerProfile = { ...profile, syncCode: code };
-      updateProfile(profile.id, { syncCode: code });
 
       const profileHighscores: Record<string, HighscoreEntry[]> = {};
       highscores
@@ -46,7 +50,6 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           profileHighscores[h.songId].push(h);
         });
 
-      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
       const result = await leaderboardService.uploadProfile(uploadableProfile, profileHighscores);
 
       if (result.success) {
@@ -119,6 +122,38 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     }
   };
 
+  /**
+   * R67 (GDPR): delete everything the leaderboard server stores about this
+   * profile — the online profile row, all scores, daily results, sync
+   * backups and a linked e-mail account (server-side ON DELETE CASCADE).
+   * Requires the sync_code; the LOCAL profile stays intact.
+   */
+  const handleDeleteOnlineData = async () => {
+    setIsDeleting(true);
+    setMessage(null);
+    try {
+      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+      await leaderboardService.deleteProfile(profile);
+      // Clear the local online linkage — the profile becomes local-only.
+      updateProfile(profile.id, {
+        syncCode: undefined,
+        syncUid: undefined,
+        authEmail: undefined,
+      });
+      setShowDeleteConfirm(false);
+      setMessage({ type: 'success', text: t('profileSync.deleteOnlineSuccess') });
+    } catch (error: unknown) {
+      // eslint-disable-next-line no-console
+      console.error('Online data deletion error:', error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : t('profileSync.deleteOnlineFailed');
+      setMessage({ type: 'error', text: `${t('profileSync.deleteOnlineFailed')}${errorMessage ? `: ${errorMessage}` : ''}` });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-2">
       {profile.syncCode && (
@@ -186,6 +221,61 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           message.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* ── R67 (GDPR): delete all online data of this profile ── */}
+      {profile.syncCode && (
+        <div className="pt-2 border-t border-white/5">
+          {!showDeleteConfirm ? (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                data-testid="delete-online-data-btn"
+                className="text-[11px] text-red-300/80 hover:text-red-200 transition-colors underline underline-offset-2"
+              >
+                🗑️ {t('profileSync.deleteOnline')}
+              </button>
+              <p className="mt-1 text-[10px] leading-relaxed text-white/35">
+                {t('profileSync.deleteOnlineHint')}
+              </p>
+            </div>
+          ) : (
+            <div
+              className="rounded-lg border border-red-500/25 bg-red-500/5 p-2.5"
+              role="alertdialog"
+              aria-label={t('profileSync.deleteOnlineConfirmTitle')}
+              data-testid="delete-online-confirm"
+            >
+              <p className="text-xs font-medium text-red-300">{t('profileSync.deleteOnlineConfirmTitle')}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-white/60">
+                {t('profileSync.deleteOnlineConfirmText')}
+              </p>
+              <div className="mt-2.5 flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="h-7 text-xs border-white/20 text-white/70 hover:bg-white/10"
+                  data-testid="delete-online-cancel"
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void handleDeleteOnlineData()}
+                  disabled={isDeleting}
+                  className="h-7 text-xs bg-red-600 hover:bg-red-500"
+                  data-testid="delete-online-confirm-btn"
+                >
+                  {isDeleting && <div className="w-3 h-3 border border-white/70 border-t-transparent rounded-full animate-spin mr-1" />}
+                  {t('profileSync.deleteOnlineConfirm')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

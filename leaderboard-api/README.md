@@ -51,7 +51,7 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`, optional `sync_code`). Upserting an existing profile requires its sync_code; new profiles get one generated when omitted. |
 | GET | `/profiles/{uid}` | Public profile data (no sync_code) |
 | PUT | `/profiles/{uid}` | Update settings — requires `sync_code`; all fields expected |
-| DELETE | `/profiles/{uid}` | Delete profile + scores + sync snapshot — requires `sync_code` (GDPR) |
+| DELETE | `/profiles/{uid}` | Delete profile + scores + daily results + sync snapshot + linked account (DB cascade, GDPR) — requires `sync_code` |
 | PUT | `/profiles/{uid}/sync` | Store private profile sync snapshot — requires `sync_code` |
 | GET | `/profiles/sync/{code}` | Retrieve profile sync snapshot by code |
 | POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code` |
@@ -110,6 +110,34 @@ points-per-tick re-computation. Points-per-tick is re-computed from the
 claimed tick counts under the client scoring model
 (`tickPool = 70% (or 80% without golden notes) of max_score`). Scores
 without proof are accepted but stored as unverified.
+
+**Serialization contract (v3.4.0 / R67):** the integrity hash is built by
+joining values with `|` and hashing with `hash('sha256', …)`. Three former
+client-side violations made it mismatch for virtually every score: (a) the
+client hashed the internal difficulty `medium` while the payload carried the
+API form `normal`; (b) the raw accuracy float serialized differently in JS
+(shortest round-trip, up to 17 significant digits) and PHP (`precision=14`);
+(d) the client's internal SHA-256 stringified negative result words as
+signed int32 (`"-30f7239b"` — ~99.6% of hashes contained a `-` that
+`hash()` can never emit). The client now guarantees before hashing AND
+submitting: `accuracy` rounded to 2 decimal places, `points_per_tick`
+rounded to 8 decimal places, `difficulty` in API form
+(`easy|normal|hard`, never the internal `medium`), every other numeric hash
+input an integer, and standard unsigned-hex SHA-256 output. Also in v3.4.0:
+the plausibility reason `combo_exceeds_hits` was replaced by
+`combo_exceeds_notes` — combo is note-based and may legitimately exceed
+`notes_hit` on easy/medium (short notes with 0 hit ticks build the combo
+without counting as hits), so the ceiling is now the song's total note
+count (5% tolerance).
+
+**Song hash format (legacy, accepted):** the client's song fingerprints
+(`v1:-30f7239b17ad154`) use the same signed-word SHA-256 representation and
+therefore contain `-` characters in ~75% of cases. The format is
+deterministic and collision-free, already stored in the DB by deployed
+builds, and kept as-is (changing it would split the per-song boards between
+old and new app versions) — `isValidSongHash` in `config.php` accepts the
+`-`. Before v3.4.0 those ~75% of uploads were rejected as
+"Invalid song_hash".
 
 ## Daily challenge
 

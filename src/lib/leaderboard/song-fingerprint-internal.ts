@@ -6,8 +6,31 @@
 /**
  * Synchronous SHA-256 — minimal JS implementation.
  * Used because Web Crypto is async and we need sync hash generation.
+ *
+ * OUTPUT FORMAT WARNING (R67): this variant stringifies the 8 result words
+ * as SIGNED int32 (`v.toString(16)` → "-30f7239b" for negative words). The
+ * output therefore contains '-' characters and is NOT standard hex — it can
+ * never match `hash('sha256', …)` on the PHP server. It is kept ONLY for
+ * the song fingerprints (their format is already stored in the leaderboard
+ * DB and produced by deployed app versions — changing it would split the
+ * per-song boards between old and new clients). Everything the server
+ * RE-COMPUTES (integrity hash) must use `sha256Hex` instead.
  */
 export function sha256(message: string): string {
+  return sha256Words(message).map(v => v.toString(16).padStart(8, '0')).join('');
+}
+
+/**
+ * Synchronous SHA-256 with STANDARD unsigned-hex output (64 chars [0-9a-f]).
+ * This is what the PHP server's `hash('sha256', …)` produces — use it for
+ * every hash the server re-computes and compares (integrity hash).
+ */
+export function sha256Hex(message: string): string {
+  return sha256Words(message).map(v => (v >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
+/** Core SHA-256 returning the 8 state words as signed int32. */
+function sha256Words(message: string): number[] {
   const K = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -83,6 +106,5 @@ export function sha256(message: string): string {
     h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
   }
 
-  return [h0, h1, h2, h3, h4, h5, h6, h7]
-    .map(v => v.toString(16).padStart(8, '0')).join('');
+  return [h0, h1, h2, h3, h4, h5, h6, h7];
 }

@@ -17,6 +17,18 @@
 /**
  * Re-compute the integrity hash from the proof package and score data.
  * Returns the expected hash (lowercase hex, 64 chars).
+ *
+ * === SERIALIZATION CONTRACT (R67) ===
+ * Floats are stringified by PHP with precision=14 here, while the JS client
+ * uses the shortest round-trip representation (up to 17 significant digits).
+ * A float whose JS string exceeds 14 significant digits can NEVER match —
+ * this was the root cause of every score being stored as "unverified".
+ * The client therefore guarantees BEFORE hashing AND submitting:
+ *   - accuracy:        rounded to 2 decimal places
+ *   - points_per_tick: rounded to 8 decimal places (≤ 12 significant digits)
+ *   - difficulty:      the API form ('easy'|'normal'|'hard'), not the raw
+ *                      internal 'medium'
+ *   - every other numeric hash input is an integer
  */
 function recomputeIntegrityHash(array $proof, array $scoreData): string {
     $fields = [
@@ -118,8 +130,14 @@ function verifyScorePlausibility(
     if ($maxCombo > $totalTicks && $totalTicks > 0) {
         return ['valid' => false, 'reason' => 'combo_exceeds_ticks'];
     }
-    if ($maxCombo > $notesHit) {
-        return ['valid' => false, 'reason' => 'combo_exceeds_hits'];
+    // R67: combo is NOTE-based (consecutive completed notes), and a note can
+    // be combo-complete without counting as "hit" (the client's
+    // isNoteCompleteForCombo allows 1-2 missed ticks on easy/medium — a short
+    // 1-2-tick note with 0 ticks hit builds the combo but is NOT a notesHit).
+    // So maxCombo may legitimately exceed notesHit; the sound ceiling is the
+    // total note count of the song. Mirrors anti-cheat-proof.ts — keep in sync.
+    if ($proofTotalNotes > 0 && $maxCombo > (int)($proofTotalNotes * 1.05)) {
+        return ['valid' => false, 'reason' => 'combo_exceeds_notes'];
     }
 
     // 5. Chain length consistency

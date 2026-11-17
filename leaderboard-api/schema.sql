@@ -70,8 +70,8 @@ CREATE TABLE `ks_profile_sync` (
 CREATE TABLE `ks_scores` (
   `id`                 BIGINT       NOT NULL AUTO_INCREMENT,
   `profile_uid`        VARCHAR(36)  NOT NULL                 COMMENT 'References ks_profiles',
-  `song_hash`          VARCHAR(80)  NOT NULL                 COMMENT 'v1:hex — copyright-safe song fingerprint',
-  `song_hash_v2`       VARCHAR(80)  NULL     DEFAULT NULL     COMMENT 'v2:hex — enhanced fingerprint (nullable, for migration)',
+  `song_hash`          VARCHAR(80)  NOT NULL                 COMMENT 'v1:hex (legacy signed-word form may contain -) — copyright-safe song fingerprint',
+  `song_hash_v2`       VARCHAR(80)  NULL     DEFAULT NULL     COMMENT 'v2:hex (same legacy form) — enhanced fingerprint (nullable, for migration)',
   `game_type`          ENUM('s','d') NOT NULL                COMMENT 's = single/duel, d = duet (vs-mode)',
   `score`              INT          NOT NULL                 COMMENT 'Points scored',
   `max_score`          INT          NOT NULL DEFAULT 10000   COMMENT 'Max possible score for that song',

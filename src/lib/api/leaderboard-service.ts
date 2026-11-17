@@ -52,8 +52,11 @@ function toGameType(mode: GameMode): LeaderboardGameType {
   return 's'; // single, duel, competitive, etc.
 }
 
-/** Map difficulty for API */
-function toApiDifficulty(d: Difficulty): 'easy' | 'normal' | 'hard' {
+/** Map difficulty for API ('easy' | 'normal' | 'hard' — the internal
+ *  'medium' becomes 'normal'). Exported: the anti-cheat proof MUST hash the
+ *  same API form the payload carries, or the server-side integrity check
+ *  can never match (R67 root-cause fix). */
+export function toApiDifficulty(d: Difficulty): 'easy' | 'normal' | 'hard' {
   return d === 'easy' ? 'easy' : d === 'hard' ? 'hard' : 'normal';
 }
 
@@ -96,12 +99,16 @@ async function testConnection(): Promise<boolean> {
 }
 
 /** Register or update a profile on the server. The response carries the
- *  authoritative sync_code (generated server-side on first registration). */
+ *  authoritative sync_code (generated server-side on first registration).
+ *  The server-side profile_uid is the LOCAL id on the first device and
+ *  syncUid on every device that imported the profile via sync/login —
+ *  without this, downloaded profiles would register a duplicate row and
+ *  collide on the sync_code (R67 fix). */
 async function registerProfile(profile: PlayerProfile): Promise<OnlineProfile> {
   return request<OnlineProfile>('/profiles', {
     method: 'POST',
     body: JSON.stringify({
-      profile_uid: profile.id,
+      profile_uid: profile.syncUid || profile.id,
       display_name: profile.name,
       color: profile.color,
       country_code: profile.country || null,
@@ -169,7 +176,7 @@ async function submitScore(params: {
   }
 
   const payload: SubmitScorePayload = {
-    profile_uid: profile.id,
+    profile_uid: profile.syncUid || profile.id,
     sync_code: profile.syncCode,
     song_hash: v1Hash,
     game_type: gameType,
@@ -282,6 +289,50 @@ async function fetchDailyLeaderboard(date?: string): Promise<OnlineDailyEntry[]>
 }
 
 // ── Export singleton ────────────────────────────────────
+
+/**
+ * R67: Push profile changes (name, color, country, privacy flags) to the
+ * server via PUT /profiles/{uid}. Requires the profile's sync_code — the
+ * ownership token — so foreign profiles cannot be overwritten. Fire-and-
+ * forget by design: if the profile is not registered server-side yet, the
+ * 404 is swallowed and the next registration carries the current values.
+ */
+async function updateProfileSettings(profile: PlayerProfile): Promise<OnlineProfile> {
+  if (!profile.syncCode) {
+    throw new Error('Missing sync code');
+  }
+  return request<OnlineProfile>(`/profiles/${encodeURIComponent(profile.syncUid || profile.id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      display_name: profile.name,
+      color: profile.color,
+      country_code: profile.country || null,
+      show_on_board: profile.privacy?.showOnLeaderboard ? 1 : 0,
+      show_country: profile.privacy?.showCountry ? 1 : 0,
+      sync_code: profile.syncCode,
+    }),
+  });
+}
+
+/**
+ * R67 (GDPR): Delete the online profile and everything the server stores
+ * about it — scores, daily results, sync snapshot and a linked e-mail
+ * account (database-level ON DELETE CASCADE). Requires the sync_code.
+ * The LOCAL profile stays intact; only the online presence is removed.
+ */
+async function deleteProfile(profile: PlayerProfile): Promise<{ ok: boolean; deleted: string }> {
+  if (!profile.syncCode) {
+    throw new Error('Missing sync code');
+  }
+  return request<{ ok: boolean; deleted: string }>(
+    `/profiles/${encodeURIComponent(profile.syncUid || profile.id)}`,
+    {
+      method: 'DELETE',
+      body: JSON.stringify({ sync_code: profile.syncCode }),
+    },
+  );
+}
+
 
 /**
  * Store a private cross-device backup of the profile (and optionally its
@@ -433,4 +484,7 @@ export const leaderboardService = {
   registerAccount,
   loginWithAccount,
   changeAccountPassword,
+  // R67: profile token operations (PUT settings / GDPR delete)
+  updateProfileSettings,
+  deleteProfile,
 };

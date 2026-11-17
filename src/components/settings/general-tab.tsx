@@ -122,6 +122,17 @@ export function GeneralTab({
               }`} />
             </button>
           </div>
+          {/* R67: visible data-storage notice — which personal data the online
+              leaderboard keeps, that the first upload asks for consent, and
+              that everything is deletable from the profile at any time. */}
+          {onlineEnabled && (
+            <p
+              className="mt-2 text-xs leading-relaxed text-white/45"
+              data-testid="online-data-hint"
+            >
+              ℹ️ {tx('settings.onlineDataHint')}
+            </p>
+          )}
         </CardContent>
       </Card>
 

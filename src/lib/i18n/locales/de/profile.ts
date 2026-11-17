@@ -114,6 +114,13 @@ profileSync: {
   syncCode: 'Sync-Code:',
   upload: 'Hochladen',
   syncCodePlaceholder: 'Sync-Code',
+  deleteOnline: 'Online-Daten löschen',
+  deleteOnlineHint: 'Entfernt dein Online-Profil, alle Punkte, Daily-Ergebnisse und Backups vom Server. Dein Profil bleibt lokal erhalten.',
+  deleteOnlineConfirmTitle: 'Online-Daten endgültig löschen?',
+  deleteOnlineConfirmText: 'Dies löscht dein Online-Profil auf dem Leaderboard-Server inklusive aller Punkte, Daily-Ergebnisse, Profil-Backups und eines verknüpften Online-Kontos. Dein lokales Profil bleibt erhalten. Dieser Schritt kann nicht rückgängig gemacht werden.',
+  deleteOnlineConfirm: 'Endgültig löschen',
+  deleteOnlineSuccess: 'Online-Daten gelöscht. Dein Profil ist jetzt rein lokal.',
+  deleteOnlineFailed: 'Löschen der Online-Daten fehlgeschlagen',
 },
 playerProgression: {
   active: 'Aktiv',

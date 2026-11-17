@@ -84,6 +84,12 @@ export const StorageKeys = {
   /** Motto-Party configuration (JSON MottoPartyConfig) — themed game mode */
   MOTTO_PARTY: 'karaoke-motto-party',
 
+  // --- Online Leaderboard ---
+  /** R67: one-time consent that the user was informed about which data the
+   *  online leaderboard stores (name, color, optional country, scores).
+   *  Value '1' = informed + agreed. Asked again after reset/deletion. */
+  LEADERBOARD_CONSENT: 'karaoke-leaderboard-consent',
+
   // --- Daily Challenge ---
   CHALLENGE_MODE: 'karaoke-challenge-mode',
   DAILY_CHALLENGE_ACTIVE: 'karaoke_daily_challenge_active',

@@ -1038,10 +1038,20 @@ export const deltaTranslations = {
     noLimitOff: "Domyślnie: do kolejki trafia maksymalnie 3 piosenki na gracza (jako śpiewak lub partner).",
     noLimitToggle: "Bez limitu na gracza (zniesienie limitu 3 piosenek na gracza)",
   },
+  profileSync: {
+    deleteOnline: "Usuń dane online",
+    deleteOnlineHint: "Usuwa Twój profil online, wszystkie wyniki, codzienne rezultaty i kopie zapasowe z serwera. Twój lokalny profil zostaje.",
+    deleteOnlineConfirmTitle: "Trwale usunąć dane online?",
+    deleteOnlineConfirmText: "To usunie Twój profil online z serwera tabeli wyników, łącznie ze wszystkimi wynikami, codziennymi rezultatami, kopiami zapasowymi profilu i podłączonym kontem online. Twój lokalny profil zostaje. Tego kroku nie można cofnąć.",
+    deleteOnlineConfirm: "Usuń trwale",
+    deleteOnlineSuccess: "Dane online usunięte. Twój profil jest teraz wyłącznie lokalny.",
+    deleteOnlineFailed: "Nie udało się usunąć danych online",
+  },
   queueScreen: {
     viaCompanion: "Dodane przez aplikację kompana",
   },
   settings: {
+    onlineDataHint: "Przechowywanie danych: gdy używane są funkcje online, serwer tabeli wyników zapisuje Twoją nazwę, kolor, opcjonalny kraj i Twoje wyniki. Przed pierwszym przesłaniem zostaniesz poproszony o zgodę; wszystko możesz usunąć w dowolnym momencie w profilu („Usuń dane online”).",
   },
   settingsAbout: {
     platformArch: "Architektura",
@@ -1279,6 +1289,12 @@ export const deltaTranslations = {
     qrTrustedHint: "To połączenie używa prawdziwego certyfikatu (Let's Encrypt) — telefony automatycznie mu ufają, instalacja nie jest potrzebna.",
     singingDeviceAssignment: "Przypisanie urządzeń do śpiewu",
     singingDeviceAssignmentDesc: "Wybierz dla każdego gracza: śpiew przez mikrofon albo aplikację kompana.",
+  },
+  uploadStatus: {
+    consentTitle: "Tabela wyników online — informacja",
+    consentText: "Przy przesyłaniu Twoja nazwa, kolor, opcjonalny kraj i Twoje wyniki (w tym celność) są zapisywane na serwerze tabeli wyników i pokazywane w rankingu. Możesz je usunąć w dowolnym momencie w profilu przez „Usuń dane online”.",
+    consentAccept: "Zgadzam się i przesyłam",
+    consentDecline: "Nie przesyłaj",
   },
   weeklyTypes: {
     names: {

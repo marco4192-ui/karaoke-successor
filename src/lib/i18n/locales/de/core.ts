@@ -147,6 +147,10 @@ uploadStatus: {
   unverified: 'Unverifiziert (ohne Nachweis)',
   verifiedDesc: 'Dieser Score wurde vom Anti-Cheat-System verifiziert',
   unverifiedDesc: 'Für diesen Score wurde kein Anti-Cheat-Nachweis eingeschlossen',
+  consentTitle: 'Online-Leaderboard — Hinweis',
+  consentText: 'Beim Hochladen werden Name, Farbe, optionales Land und deine Punkte (inkl. Genauigkeit) auf dem Leaderboard-Server gespeichert und im Ranking angezeigt. Du kannst sie jederzeit im Profil unter „Online-Daten löschen“ entfernen.',
+  consentAccept: 'Einverstanden & hochladen',
+  consentDecline: 'Nicht hochladen',
 },
 shareSection: {
   title: '📤 Ergebnis teilen',

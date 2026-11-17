@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Predefinito: al massimo 3 canzoni per giocatore entrano in coda (come cantante o partner).",
     noLimitToggle: "Nessun limite per giocatore (togli il tetto di 3 canzoni per giocatore)",
   },
+  profileSync: {
+    deleteOnline: "Elimina dati online",
+    deleteOnlineHint: "Rimuove il tuo profilo online, tutti i punteggi, i risultati giornalieri e i backup dal server. Il tuo profilo locale resta.",
+    deleteOnlineConfirmTitle: "Eliminare definitivamente i dati online?",
+    deleteOnlineConfirmText: "Questo elimina il tuo profilo online dal server della classifica, inclusi tutti i punteggi, i risultati giornalieri, i backup del profilo e un eventuale account online collegato. Il tuo profilo locale resta. Questa azione non può essere annullata.",
+    deleteOnlineConfirm: "Elimina definitivamente",
+    deleteOnlineSuccess: "Dati online eliminati. Il tuo profilo ora è solo locale.",
+    deleteOnlineFailed: "Eliminazione dei dati online non riuscita",
+  },
   queueScreen: {
     viaCompanion: "Aggiunta tramite app companion",
   },
   settings: {
+    onlineDataHint: "Archiviazione dei dati: quando si usano le funzioni online, il server della classifica salva nome, colore, paese facoltativo e i tuoi risultati. Prima del primo caricamento ti verrà chiesto il consenso; puoi eliminare tutto in qualsiasi momento dal tuo profilo (\"Elimina dati online\").",
   },
   settingsAbout: {
     platformArch: "Architettura",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Questa connessione usa un certificato reale (Let's Encrypt) — i telefoni si fidano automaticamente, nessuna installazione necessaria.",
     singingDeviceAssignment: "Assegnazione dei dispositivi di canto",
     singingDeviceAssignmentDesc: "Scegli per ogni giocatore: cantare via microfono o app Companion.",
+  },
+  uploadStatus: {
+    consentTitle: "Classifica online — avviso",
+    consentText: "Con il caricamento, nome, colore, paese facoltativo e i tuoi punteggi (precisione inclusa) vengono salvati sul server della classifica e mostrati in classifica. Puoi rimuoverli in qualsiasi momento dal tuo profilo tramite \"Elimina dati online\".",
+    consentAccept: "Accetta e carica",
+    consentDecline: "Non caricare",
   },
   weeklyTypes: {
     names: {

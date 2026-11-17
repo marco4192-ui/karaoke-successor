@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "默认：每名玩家最多有 3 首歌加入队列（作为主唱或搭档）。",
     noLimitToggle: "不设每人上限（解除每人 3 首的配额）",
   },
+  profileSync: {
+    deleteOnline: "删除在线数据",
+    deleteOnlineHint: "从服务器删除你的在线个人资料、所有得分、每日挑战结果和备份。你的本地资料会保留。",
+    deleteOnlineConfirmTitle: "永久删除在线数据？",
+    deleteOnlineConfirmText: "这将从排行榜服务器删除你的在线个人资料，包括所有得分、每日挑战结果、资料备份以及关联的在线账户。你的本地资料会保留。此操作无法撤销。",
+    deleteOnlineConfirm: "永久删除",
+    deleteOnlineSuccess: "在线数据已删除。你的个人资料现在仅保存在本地。",
+    deleteOnlineFailed: "删除在线数据失败",
+  },
   queueScreen: {
     viaCompanion: "通过伴侣应用添加",
   },
   settings: {
+    onlineDataHint: "数据存储：使用在线功能时，排行榜服务器会保存你的名字、颜色、可选国家和结果。首次上传前会征求你的同意；你可以随时在个人资料中删除全部数据（“删除在线数据”）。",
   },
   settingsAbout: {
     platformArch: "架构",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "此连接使用真正的证书（Let's Encrypt）——手机会自动信任，无需安装。",
     singingDeviceAssignment: "演唱设备分配",
     singingDeviceAssignmentDesc: "为每位玩家选择：通过麦克风还是伴侣应用演唱。",
+  },
+  uploadStatus: {
+    consentTitle: "在线排行榜 — 提示",
+    consentText: "上传后，你的名字、颜色、可选国家以及得分（含准确度）会保存到排行榜服务器并显示在排名中。你可以随时在个人资料中通过“删除在线数据”移除它们。",
+    consentAccept: "同意并上传",
+    consentDecline: "不上传",
   },
   weeklyTypes: {
     names: {

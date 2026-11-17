@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Standard: maks 3 sanger per spiller legges i køen (som sanger eller partner).",
     noLimitToggle: "Ingen grense per spiller (fjern taket på 3 per spiller)",
   },
+  profileSync: {
+    deleteOnline: "Slett online-data",
+    deleteOnlineHint: "Fjerner online-profilen din, alle poeng, daglige resultater og sikkerhetskopier fra serveren. Den lokale profilen din blir værende.",
+    deleteOnlineConfirmTitle: "Slette online-data permanent?",
+    deleteOnlineConfirmText: "Dette sletter online-profilen din på ledertavlens server, inkludert alle poeng, daglige resultater, sikkerhetskopier av profilen og en tilkoblet online-konto. Den lokale profilen din blir værende. Dette kan ikke angres.",
+    deleteOnlineConfirm: "Slett permanent",
+    deleteOnlineSuccess: "Online-data slettet. Profilen din er nå kun lokal.",
+    deleteOnlineFailed: "Kunne ikke slette online-data",
+  },
   queueScreen: {
     viaCompanion: "Lagt til via companion-appen",
   },
   settings: {
+    onlineDataHint: "Datalagring: når onlinefunksjoner brukes, lagrer ledertavlens server navnet ditt, fargen din, valgfritt land og resultatene dine. Du blir bedt om samtykke før den første opplastingen; du kan slette alt når som helst fra profilen din (\"Slett online-data\").",
   },
   settingsAbout: {
     platformArch: "Arkitektur",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Denne tilkoblingen bruker et ekte sertifikat (Let's Encrypt) — telefonene stoler på den automatisk, ingen installasjon nødvendig.",
     singingDeviceAssignment: "Tildeling av syngingsenheter",
     singingDeviceAssignmentDesc: "Velg per spiller: syng via mikrofon eller Companion-app.",
+  },
+  uploadStatus: {
+    consentTitle: "Online ledertavle — varsel",
+    consentText: "Ved opplasting lagres navnet ditt, fargen din, valgfritt land og poengene dine (presisjon inkludert) på ledertavlens server og vises i rangeringen. Du kan fjerne dem når som helst via \"Slett online-data\" i profilen din.",
+    consentAccept: "Godta og last opp",
+    consentDecline: "Ikke last opp",
   },
   weeklyTypes: {
     names: {

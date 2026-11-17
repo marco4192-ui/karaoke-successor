@@ -38,7 +38,7 @@
  *   would be needed (future enhancement).
  */
 
-import { sha256 as internalSha256 } from './song-fingerprint-internal';
+import { sha256Hex as internalSha256Hex } from './song-fingerprint-internal';
 import type { ScoringMetaForProof } from './song-fingerprint';
 
 // ── Types ──────────────────────────────────────────────────
@@ -191,9 +191,17 @@ export class ScoreProofBuilder {
 
 // ── Internal: SHA-256 wrapper ───────────────────────────────
 
-/** SHA-256 hash using the internal sync implementation from song-fingerprint */
+/** SHA-256 hash with STANDARD unsigned-hex output (64 chars [0-9a-f]).
+ *
+ * R67 root-cause fix: the proof used the SIGNED-word variant of the internal
+ * SHA-256 ("-30f7239b…" for negative words) — a format PHP's
+ * `hash('sha256', …)` can never produce, so the server-side integrity check
+ * failed for ~99.6 % of all proofs (any negative word ⇒ '-'). The song
+ * fingerprints keep their legacy format (already stored server-side); the
+ * integrity hash and chain use the standard-hex variant, which matches PHP
+ * byte-for-byte. */
 function sha256(message: string): string {
-  return internalSha256(message);
+  return internalSha256Hex(message);
 }
 
 // ── Internal: Integrity Hash ────────────────────────────────
@@ -201,6 +209,21 @@ function sha256(message: string): string {
 /**
  * Compute the integrity hash that binds all proof fields together.
  * Any tampering with a single field will produce a different hash.
+ *
+ * === SERIALIZATION CONTRACT (R67) ===
+ * The server recomputes this hash in PHP with `implode('|', …)` — PHP converts
+ * floats to strings with precision=14, while JS uses the shortest round-trip
+ * representation (up to 17 significant digits). Any float whose JS string is
+ * longer than 14 significant digits therefore NEVER matches server-side
+ * (this was the root cause of "all scores are unverified"). Rules for every
+ * float that enters this hash — BOTH sides must be able to reproduce the
+ * exact same string:
+ *   - accuracy:   round to 2 decimal places BEFORE hashing AND submitting
+ *   - points_per_tick: round to 8 decimal places (≤ 12 significant digits,
+ *                     verified safe for all realistic tick counts)
+ *   - difficulty: use the API form ('easy'|'normal'|'hard') — the raw client
+ *                 value 'medium' would mismatch the payload's 'normal'
+ *   - all other numeric fields must be integers
  */
 function computeIntegrityHash(pkg: ScoreProofPackage, params: {
   score: number;
@@ -304,9 +327,14 @@ export function verifyScorePlausibility(
   if (maxCombo > proof.total_note_ticks && proof.total_note_ticks > 0) {
     return { valid: false, reason: 'combo_exceeds_ticks' };
   }
-  // Max combo cannot exceed notes hit
-  if (maxCombo > notesHit) {
-    return { valid: false, reason: 'combo_exceeds_hits' };
+  // R67: combo is NOTE-based (consecutive completed notes), and a note can be
+  // combo-complete without counting as "hit" (isNoteCompleteForCombo allows
+  // 1-2 missed ticks on easy/medium — a short 1-2-tick note with 0 ticks hit
+  // builds the combo but is NOT a notesHit). So maxCombo may legitimately
+  // exceed notesHit; the sound ceiling is the total note count of the song.
+  // MIRRORED in anti-cheat.php (verifyScorePlausibility) — keep in sync.
+  if (proof.total_notes > 0 && maxCombo > proof.total_notes * 1.05) {
+    return { valid: false, reason: 'combo_exceeds_notes' };
   }
 
   // 5. Accuracy plausibility — intentionally NOT enforced:

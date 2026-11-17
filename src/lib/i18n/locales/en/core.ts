@@ -155,7 +155,11 @@ export const coreTranslations = {
     verified: 'Verified score',
     unverified: 'Unverified (no proof)',
     verifiedDesc: 'This score was verified by the anti-cheat system',
-    unverifiedDesc: 'Anti-cheat proof was not included for this score'
+    unverifiedDesc: 'Anti-cheat proof was not included for this score',
+    consentTitle: 'Online leaderboard — notice',
+    consentText: 'Uploading stores your name, color, optional country and your scores (including accuracy) on the leaderboard server and shows them in the rankings. You can remove them anytime via "Delete online data" in your profile.',
+    consentAccept: 'Agree & upload',
+    consentDecline: 'Don\u2019t upload'
   },
 
   shareSection: {

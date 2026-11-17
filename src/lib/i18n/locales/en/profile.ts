@@ -117,7 +117,14 @@ export const profileTranslations = {
     downloadFailedMsg: 'Failed to download profile. Check the sync code.',
     syncCode: 'Sync Code:',
     upload: 'Upload',
-    syncCodePlaceholder: 'Sync code'
+    syncCodePlaceholder: 'Sync code',
+    deleteOnline: 'Delete online data',
+    deleteOnlineHint: 'Removes your online profile, all scores, daily results and backups from the server. Your local profile stays.',
+    deleteOnlineConfirmTitle: 'Permanently delete online data?',
+    deleteOnlineConfirmText: 'This deletes your online profile on the leaderboard server including all scores, daily results, profile backups and a linked online account. Your local profile stays. This cannot be undone.',
+    deleteOnlineConfirm: 'Delete permanently',
+    deleteOnlineSuccess: 'Online data deleted. Your profile is now local-only.',
+    deleteOnlineFailed: 'Failed to delete online data'
   },
 
   playerProgression: {

@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Par défaut : au maximum 3 chansons par joueur sont ajoutées à la file (comme chanteur ou partenaire).",
     noLimitToggle: "Pas de limite par joueur (retirer le plafond de 3 par joueur)",
   },
+  profileSync: {
+    deleteOnline: "Supprimer les données en ligne",
+    deleteOnlineHint: "Supprime votre profil en ligne, tous les scores, les résultats quotidiens et les sauvegardes du serveur. Votre profil local est conservé.",
+    deleteOnlineConfirmTitle: "Supprimer définitivement les données en ligne ?",
+    deleteOnlineConfirmText: "Cela supprime votre profil en ligne sur le serveur du classement, y compris tous les scores, les résultats quotidiens, les sauvegardes de profil et un éventuel compte en ligne associé. Votre profil local est conservé. Cette action est irréversible.",
+    deleteOnlineConfirm: "Supprimer définitivement",
+    deleteOnlineSuccess: "Données en ligne supprimées. Votre profil est désormais uniquement local.",
+    deleteOnlineFailed: "Échec de la suppression des données en ligne",
+  },
   queueScreen: {
     viaCompanion: "Ajoutée via l'app compagnon",
   },
   settings: {
+    onlineDataHint: "Stockage des données : lorsque les fonctions en ligne sont utilisées, le serveur du classement enregistre votre nom, votre couleur, votre pays (facultatif) et vos résultats. Votre consentement sera demandé avant le premier envoi ; vous pouvez tout supprimer à tout moment depuis votre profil (« Supprimer les données en ligne »).",
   },
   settingsAbout: {
     platformArch: "Architecture",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Cette connexion utilise un certificat réel (Let's Encrypt) — les téléphones lui font confiance automatiquement, aucune installation nécessaire.",
     singingDeviceAssignment: "Assignation des Appareils de Chant",
     singingDeviceAssignmentDesc: "Choisissez par joueur : chanter au microphone ou via l'App Compagnon.",
+  },
+  uploadStatus: {
+    consentTitle: "Classement en ligne — avis",
+    consentText: "L'envoi enregistre votre nom, votre couleur, votre pays (facultatif) et vos scores (précision incluse) sur le serveur du classement et les affiche dans le classement. Vous pouvez les supprimer à tout moment depuis votre profil via « Supprimer les données en ligne ».",
+    consentAccept: "Accepter et envoyer",
+    consentDecline: "Ne pas envoyer",
   },
   weeklyTypes: {
     names: {

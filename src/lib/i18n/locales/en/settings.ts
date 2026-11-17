@@ -75,6 +75,7 @@ export const settingsTranslations = {
     onlineActivitiesDesc: 'Disable all online features including leaderboard, daily challenges, and profile sync',
     disableOnline: 'Disable online activities',
     disableOnlineDesc: 'When disabled, no data will be sent to external servers. All features will work offline.',
+    onlineDataHint: 'Data storage: when online features are used, the leaderboard server stores your name, color, optional country and your results. You will be asked for consent before the first upload; you can delete everything anytime from your profile ("Delete online data").',
     testConnection: 'Test Connection',
     installApp: 'Install App',
     installAppDesc: 'Install for offline access',

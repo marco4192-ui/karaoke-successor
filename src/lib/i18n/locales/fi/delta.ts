@@ -1038,10 +1038,20 @@ export const deltaTranslations = {
     noLimitOff: "Oletus: enintään 3 kappaletta per pelaaja lisätään jonoon (laulajana tai kumppanina).",
     noLimitToggle: "Ei pelaajakohtaista rajaa (poista 3 kappaleen katto per pelaaja)",
   },
+  profileSync: {
+    deleteOnline: "Poista online-tiedot",
+    deleteOnlineHint: "Poistaa online-profiilisi, kaikki pisteet, päivittäishaasteiden tulokset ja varmuuskopiot palvelimelta. Paikallinen profiilisi säilyy.",
+    deleteOnlineConfirmTitle: "Poistetaanko online-tiedot pysyvästi?",
+    deleteOnlineConfirmText: "Tämä poistaa online-profiilisi tulostaulukon palvelimelta, mukaan lukien kaikki pisteet, päivittäishaasteiden tulokset, profiilin varmuuskopiot ja linkitetyn online-tilin. Paikallinen profiilisi säilyy. Tätä toimintoa ei voi kumota.",
+    deleteOnlineConfirm: "Poista pysyvästi",
+    deleteOnlineSuccess: "Online-tiedot poistettu. Profiilisi on nyt vain paikallinen.",
+    deleteOnlineFailed: "Online-tietojen poistaminen epäonnistui",
+  },
   queueScreen: {
     viaCompanion: "Lisätty companion-sovelluksen kautta",
   },
   settings: {
+    onlineDataHint: "Tietojen tallennus: kun online-ominaisuuksia käytetään, tulostaulukon palvelin tallentaa nimesi, värisi, valinnaisen maan ja tuloksesi. Ensimmäistä latausta ennen sinulta pyydetään suostumus; voit poistaa kaiken milloin tahansa profiilistasi (\"Poista online-tiedot\").",
   },
   settingsAbout: {
     platformArch: "Arkkitehtuuri",
@@ -1279,6 +1289,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Tämä yhteys käyttää aitoa varmennetta (Let's Encrypt) — puhelimet luottavat siihen automaattisesti, asennusta ei tarvita.",
     singingDeviceAssignment: "Laululaitteen osoittaminen",
     singingDeviceAssignmentDesc: "Valitse pelaajittain: laula mikrofonilla vai Companion-sovelluksella.",
+  },
+  uploadStatus: {
+    consentTitle: "Online-tulostaulukko — huomautus",
+    consentText: "Lataaminen tallentaa nimesi, värisi, valinnaisen maan ja pisteesi (tarkkuus mukaan lukien) tulostaulukon palvelimelle ja näyttää ne rankingissa. Voit poistaa ne milloin tahansa profiilisi kautta kohdasta \"Poista online-tiedot\".",
+    consentAccept: "Hyväksy ja lataa",
+    consentDecline: "Älä lataa",
   },
   weeklyTypes: {
     names: {

@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "デフォルト：プレイヤーごとに最大3曲（歌手またはパートナーとして）がキューに追加されます。",
     noLimitToggle: "プレイヤーごとの上限なし（1人3曲の上限を解除）",
   },
+  profileSync: {
+    deleteOnline: "オンラインデータを削除",
+    deleteOnlineHint: "オンラインプロフィール、すべてのスコア、デイリーの結果、バックアップをサーバーから削除します。ローカルのプロフィールは残ります。",
+    deleteOnlineConfirmTitle: "オンラインデータを完全に削除しますか？",
+    deleteOnlineConfirmText: "リーダーボードのサーバー上のオンラインプロフィール（すべてのスコア、デイリーの結果、プロフィールのバックアップ、連携済みのオンラインアカウントを含む）を削除します。ローカルのプロフィールは残ります。この操作は取り消せません。",
+    deleteOnlineConfirm: "完全に削除",
+    deleteOnlineSuccess: "オンラインデータを削除しました。プロフィールは今後ローカルのみです。",
+    deleteOnlineFailed: "オンラインデータの削除に失敗しました",
+  },
   queueScreen: {
     viaCompanion: "コンパニオンアプリから追加されました",
   },
   settings: {
+    onlineDataHint: "データ保存：オンライン機能を利用すると、リーダーボードのサーバーに名前・色・任意の国・結果が保存されます。初回アップロードの前に同意を求められます。データはすべて、プロフィールの「オンラインデータを削除」からいつでも削除できます。",
   },
   settingsAbout: {
     platformArch: "アーキテクチャ",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "この接続は本物の証明書（Let's Encrypt）を使用しています — スマホは自動的に信頼するため、インストールは不要です。",
     singingDeviceAssignment: "歌唱デバイスの割り当て",
     singingDeviceAssignmentDesc: "プレイヤーごとに選択：マイクまたはコンパニオンアプリで歌う。",
+  },
+  uploadStatus: {
+    consentTitle: "オンラインリーダーボード — 注意",
+    consentText: "アップロードすると、名前・色・任意の国・スコア（精度を含む）がリーダーボードのサーバーに保存され、ランキングに表示されます。プロフィールの「オンラインデータを削除」からいつでも削除できます。",
+    consentAccept: "同意してアップロード",
+    consentDecline: "アップロードしない",
   },
   weeklyTypes: {
     names: {

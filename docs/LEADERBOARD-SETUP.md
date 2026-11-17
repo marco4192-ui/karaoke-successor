@@ -106,7 +106,7 @@ diese haben Vorrang vor `config.local.php`).
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.0.0",...}
+→ {"name":"Karaoke Leaderboard","version":"3.4.0",...}
 ```
 
 Ein direkter Aufruf von `https://…/leaderboard-api/config.php` muss
@@ -139,13 +139,26 @@ IPs nur in temporären Dateien, nie die DB), Songtitel/Interpreten/Texte
 - In der App steuert das Profil-Privacy-Panel diese Flags; der Upload
   geschieht nur, wenn „Online-Leaderboard" aktiviert ist.
 
+### Einwilligung vor dem ersten Upload (R67)
+
+Vor dem **ersten** Upload personenbezogener Daten (Score oder Daily-Ergebnis)
+zeigt die App einen kurzen Hinweis: „Beim Hochladen werden Name, Farbe,
+optionales Land und deine Punkte gespeichert" — mit den Aktionen
+„Einverstanden & hochladen" / „Nicht hochladen". Ersteres speichert die
+Einwilligung gerätelokal (`karaoke-leaderboard-consent` in localStorage) und
+lässt die diesmal zurückgehaltenen Uploads (Score + Daily) sofort mitlaufen;
+Letzteres verwirft sie für dieses Spiel und fragt beim nächsten erneut.
+Zusätzlich steht der Datenschutzhinweis dauerhaft sichtbar in den
+Einstellungen (Online-Aktivitäten-Karte, nur wenn online aktiviert).
+
 ### Profil-Sync und Ownership (sync_code)
 
 Jedes Profil hat einen **8-stelligen Sync-Code** — er ist gleichzeitig
 Besitz-Nachweis und Sync-Schlüssel:
 
-- **Erzeugt bei der Registrierung** auf dem Server (oder vom Client
-  übernommen, wenn bereits einer existiert) und in der App gespeichert.
+- **Erzeugt bei der Registrierung** auf dem Server und in der App gespeichert
+  (seit R67 erzeugt der Client **nie mehr** eigene Codes — die serverseitige
+  Generierung bei `POST /profiles` ist die einzige Quelle).
 - **Jeder Schreibzugriff** aufs Profil (Score einreichen, Einstellungen
   ändern, Sync-Backup, Profil löschen) verlangt diesen Code. Wer nur den
   API-Key hat (der im Client-Bundle steckt), kann fremde Profile nicht
@@ -157,7 +170,17 @@ Besitz-Nachweis und Sync-Schlüssel:
   Leaderboard und enthält als einziges serverseitiges Datum lokale
   Songtitel (nur für den Code-Inhaber abrufbar, max. 1 MB).
 - **Löschen (DSGVO):** `DELETE /profiles/{uid}` mit Sync-Code entfernt
-  Profil, Scores und Backup vollständig (Cascade in der DB).
+  Profil, Scores, Daily-Ergebnisse, Sync-Backup und ein verknüpftes
+  Online-Konto vollständig (Cascade in der DB). In der App erreichbar über
+  Profil → Profil-Sync → **„Online-Daten löschen“** (mit Bestätigungsdialog;
+  das lokale Profil bleibt erhalten, nur die Online-Verknüpfung wird
+  entfernt).
+- **Einstellungen nachziehen:** Änderungen an Name, Land oder Privacy-Flags
+  werden für Online-Profile jetzt automatisch per `PUT /profiles/{uid}`
+  (mit Sync-Code) an den Server synchronisiert — vorher erreichten Privacy-
+  Änderungen nach der Registrierung den Server nie. Neue Geräte, die ein
+  Profil per Sync-Code importiert haben, verwenden durchgehend die
+  serverseitige `profile_uid` (`syncUid`) für alle Schreibzugriffe.
 
 ### Anti-Cheat-Status
 
@@ -169,6 +192,43 @@ mit eigenem Punkte-Maßstab werden ohne Proof eingereicht und als
 „unverifiziert" gespeichert. Ein Konsistenz-Test
 (`src/__tests__/leaderboard-anticheat.test.ts`) bricht den Build, falls
 Client- und Server-Formel auseinanderlaufen.
+
+**R67 — Serialisierungs-Vertrag (Root-Cause „alle Scores unverified"):**
+Der Integritäts-Hash wird clientseitig über JS-Strings (`String(number)`, bis
+17 signifikante Stellen) und serverseitig über PHP-Strings (`precision=14`)
+gebildet. **Drei** ehemalige Verstöße ließen den Hash **nie** matchen:
+(a) der Client hashte die interne Schwierigkeit `medium`, während im Payload
+die API-Form `normal` stand; (b) die Genauigkeit war ein ungerundeter Float
+(`69.11764705882354` in JS vs. `69.117647058824` in PHP); **(d)** die interne
+SHA-256-Implementation stringifizierte negative Ergebnis-Wörter als
+signed int32 (`"-30f7239b…"` — 99,6 % aller Hashes enthielten ein „-“),
+während PHPs `hash('sha256', …)` nie „-“ erzeugen kann — der Integritäts-
+Hash konnte dadurch praktisch NIE matchen. Der Client verwendet seit R67
+für Integritäts-Hash und Chain die Standard-Hex-Variante (`sha256Hex`),
+rundet die Genauigkeit auf 2 Nachkommastellen und hasht die API-Form der
+Schwierigkeit — alles als Vertrag in `anti-cheat-proof.ts` UND
+`anti-cheat.php` dokumentiert (immer synchron halten).
+
+**Song-Hashes bleiben im Legacy-Format:** Die Song-Fingerprints
+(`v1:-30f7239b17ad154`) behalten bewusst die alte signed-Schreibweise —
+das Format ist deterministisch, kollisionsfrei und bereits in der DB
+gespeichert; eine Änderung würde die Per-Song-Boards zwischen alten und
+neuen App-Builds spalten. Der Server akzeptiert das „-“ deshalb per
+Regex (`isValidSongHash` in `config.php`). Vor R67 wurden ~75 % der
+Uploads allein dadurch als „Invalid song_hash“ abgelehnt.
+
+Zusätzlich korrigiert: die Plausibilitäts-Regel `combo_exceeds_hits` wurde
+zu `combo_exceeds_notes` — Combo ist notenbasiert und darf auf easy/medium
+legitim über `notes_hit` liegen (kurze Noten mit 0 getroffenen Ticks zählen
+zur Combo, aber nicht als Hit); Obergrenze ist jetzt die Gesamtnotenzahl
+des Songs (5 % Toleranz).
+
+**Server-Deployment (R67):** API-Version **3.4.0** — `index.php`,
+`anti-cheat.php` UND `config.php` neu hochladen (config.php wegen des
+Song-Hash-Regex). Alte App-Builds behalten ihr altes (kaputtes)
+Hash-Verhalten, ihre Scores bleiben unverified wie vorher bzw. scheitern
+an der Hash-Validierung; keine Migration nötig, erst neue Builds erzeugen
+verifizierbare Proofs.
 
 ### Daily-Challenge-Online-Leaderboard (neu)
 

@@ -1039,10 +1039,20 @@ export const deltaTranslations = {
     noLimitOff: "Padrão: no máximo 3 músicas por jogador entram na fila (como cantor ou parceiro).",
     noLimitToggle: "Sem limite por jogador (retira o teto de 3 músicas por jogador)",
   },
+  profileSync: {
+    deleteOnline: "Excluir dados online",
+    deleteOnlineHint: "Remove o seu perfil online, todas as pontuações, os resultados diários e os backups do servidor. O seu perfil local permanece.",
+    deleteOnlineConfirmTitle: "Excluir os dados online permanentemente?",
+    deleteOnlineConfirmText: "Isto exclui o seu perfil online no servidor do ranking, incluindo todas as pontuações, os resultados diários, os backups de perfil e uma conta online vinculada. O seu perfil local permanece. Esta ação não pode ser desfeita.",
+    deleteOnlineConfirm: "Excluir permanentemente",
+    deleteOnlineSuccess: "Dados online excluídos. O seu perfil agora é apenas local.",
+    deleteOnlineFailed: "Falha ao excluir os dados online",
+  },
   queueScreen: {
     viaCompanion: "Adicionado pelo app Companion",
   },
   settings: {
+    onlineDataHint: "Armazenamento de dados: quando os recursos online são usados, o servidor do ranking armazena seu nome, sua cor, seu país opcional e seus resultados. O seu consentimento será solicitado antes do primeiro envio; você pode excluir tudo a qualquer momento pelo seu perfil (\"Excluir dados online\").",
   },
   settingsAbout: {
     platformArch: "Arquitetura",
@@ -1280,6 +1290,12 @@ export const deltaTranslations = {
     qrTrustedHint: "Esta conexão usa um certificado de verdade (Let's Encrypt) — os celulares confiam nele automaticamente, não precisa instalar nada.",
     singingDeviceAssignment: "Atribuição de Dispositivos de Canto",
     singingDeviceAssignmentDesc: "Escolha por jogador: cantar pelo microfone ou pelo App Companion.",
+  },
+  uploadStatus: {
+    consentTitle: "Ranking online — aviso",
+    consentText: "Ao enviar, seu nome, sua cor, seu país opcional e suas pontuações (incluindo a precisão) são armazenados no servidor do ranking e exibidos na classificação. Você pode removê-los a qualquer momento pelo seu perfil em \"Excluir dados online\".",
+    consentAccept: "Concordar e enviar",
+    consentDecline: "Não enviar",
   },
   weeklyTypes: {
     names: {
