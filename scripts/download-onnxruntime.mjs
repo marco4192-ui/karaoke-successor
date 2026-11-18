@@ -14,6 +14,14 @@
  *   or:  node scripts/download-onnxruntime.mjs --platform linux --arch arm64
  *   or:  node scripts/download-onnxruntime.mjs --arch universal2   (macOS fat binary)
  *
+ * IMPORTANT — `--arch universal2` (macOS only):
+ *   Microsoft publishes NO "osx-universal2" release asset (real 404 in CI
+ *   against v1.20.0). macOS ships as TWO separate archives (osx-x86_64 and
+ *   osx-arm64). This script downloads BOTH and merges them with `lipo` into
+ *   one fat dylib — the same pattern the workflow already uses for the
+ *   Node.js universal binary. Requires macOS (lipo ships with the Xcode
+ *   Command Line Tools), which is guaranteed on the macOS runner.
+ *
  * Cross-platform: run this ON the target OS right before
  * `node scripts/download-node.mjs` + `bun run tauri:build`.
  *
@@ -47,7 +55,8 @@ for (let i = 0; i < args.length; i++) {
 
 // ONNX Runtime release asset naming
 // (Linux arm64 assets are called "aarch64", macOS assets "osx-<arch>" with
-//  x86_64 spelled with underscore! "universal2" = fat binary x86_64+arm64)
+//  x86_64 spelled with underscore! There is NO "osx-universal2" asset —
+//  `--arch universal2` downloads BOTH macOS archs and lipo-merges them.)
 const assetArch = targetPlatform === 'linux' && targetArch === 'arm64' ? 'aarch64' : targetArch;
 const assetPlatform = targetPlatform === 'win' ? 'win' : targetPlatform === 'osx' ? 'osx' : 'linux';
 
@@ -59,12 +68,10 @@ const URLS = {
   osx: {
     // WICHTIG: macOS-Assets heißen "osx-x86_64" (mit Unterstrich), NICHT
     // "osx-x64" — falscher Name = HTTP 404 (reale CI-Falle, v1.20.0).
+    // Universal2 liefert Microsoft NICHT als Asset: "--arch universal2"
+    // lädt beide nachfolgenden Archs und mergt sie per lipo (siehe main()).
     x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-x86_64-${ortVersion}.tgz`,
     arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-arm64-${ortVersion}.tgz`,
-    // Microsoft liefert ein Universal2-Fat-Binary (x86_64 + arm64 in einer
-    // Datei) — ideal für `tauri build --target universal-apple-darwin`,
-    // kein lipo-Merge nötig.
-    universal2: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-universal2-${ortVersion}.tgz`,
   },
   linux: {
     x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-linux-x64-${ortVersion}.tgz`,
@@ -82,7 +89,7 @@ const LIB_NAME = {
 function log(msg) { console.log(msg); }
 function ok(msg) { console.log(`  [OK] ${msg}`); }
 function warn(msg) { console.log(`  [WARN] ${msg}`); }
-function fail(msg) { console.log(`  [FAIL] ${msg}`); }
+function fail(msg) { console.error(`  [FAIL] ${msg}`); }
 
 function download(url, dest, redirects = 0) {
   return new Promise((resolve, reject) => {
@@ -126,11 +133,77 @@ function extract(archivePath, destDir) {
   }
 }
 
-async function main() {
-  log(`\n=== Downloading ONNX Runtime v${ortVersion} for ${assetPlatform}-${assetArch} ===\n`);
+/** Download one release archive into the OS temp dir. */
+async function fetchArchive(url) {
+  const archiveName = url.split('/').pop();
+  const archivePath = join(tmpdir(), archiveName);
+  await download(url, archivePath);
+  ok(`Downloaded ${archiveName} (${(statSync(archivePath).size / 1024 / 1024).toFixed(1)} MB)`);
+  return archivePath;
+}
 
-  const url = URLS[targetPlatform]?.[targetArch];
-  if (!url) {
+/**
+ * Extract an archive and locate the platform library inside it.
+ * Returns { extractDir, topDir, realSrc } — realSrc is the symlink-resolved
+ * real file (archives store .so/.dylib as a symlink chain .so → .so.1 →
+ * .so.1.20.0; Node's copiers mis-handle chained symlinks, so we resolve
+ * manually and copy/lipo the real file).
+ */
+function extractLib(archivePath, tag, libName) {
+  const extractDir = join(tmpdir(), `onnxruntime-extract-${tag}-${Date.now()}`);
+  log('  Extracting...');
+  extract(archivePath, extractDir);
+
+  // Archive contains a single top-level dir like onnxruntime-linux-x64-1.20.0/
+  const entries = readdirSync(extractDir).filter(e => e !== '.' && e !== '..');
+  const topDir = entries.length === 1 ? join(extractDir, entries[0]) : extractDir;
+
+  const libSrc = join(topDir, 'lib', libName);
+  if (!existsSync(libSrc)) {
+    throw new Error(`Could not find lib/${libName} in extracted archive ${archivePath}`);
+  }
+  const realSrc = realpathSync(libSrc);
+  if (!statSync(realSrc).isFile()) {
+    throw new Error(`Resolved ${libName} is not a regular file (got ${realSrc})`);
+  }
+  return { extractDir, topDir, realSrc };
+}
+
+async function main() {
+  const isUniversal = targetArch === 'universal2';
+
+  // universal2 = macOS fat binary: needs the two osx archives + lipo.
+  if (isUniversal) {
+    if (targetPlatform !== 'osx') {
+      fail(`--arch universal2 is macOS-only (got --platform ${targetPlatform}) —`);
+      fail('it downloads the osx-x86_64 and osx-arm64 archives and merges them with lipo.');
+      process.exit(1);
+    }
+    if (platform() !== 'darwin') {
+      fail(`--arch universal2 merges both macOS archs with lipo and must run ON macOS (current: ${platform()}).`);
+      fail('The CI macOS runner satisfies this automatically — see .github/workflows/build-executables.yml');
+      process.exit(1);
+    }
+    try {
+      execSync('command -v lipo', { stdio: 'pipe' });
+    } catch {
+      fail('lipo not found — install the Xcode Command Line Tools (xcode-select --install).');
+      process.exit(1);
+    }
+  }
+
+  log(`\n=== Downloading ONNX Runtime v${ortVersion} for ${assetPlatform}-${targetArch}` +
+      `${isUniversal ? ' (osx-x86_64 + osx-arm64 → lipo fat binary)' : ''} ===\n`);
+
+  // Which archive(s) do we need?
+  const jobs = isUniversal
+    ? [
+        { label: 'x86_64', url: URLS.osx.x64 },
+        { label: 'arm64',  url: URLS.osx.arm64 },
+      ]
+    : [ { label: targetArch, url: URLS[targetPlatform]?.[targetArch] } ];
+
+  if (!jobs[0].url) {
     fail(`Unsupported platform/arch: ${targetPlatform}-${targetArch}`);
     process.exit(1);
   }
@@ -146,61 +219,56 @@ async function main() {
     return;
   }
 
-  const archiveName = url.split('/').pop();
-  const archivePath = join(tmpdir(), archiveName);
+  const archives = [];
+  const extracts = [];
+  try {
+    for (const j of jobs) {
+      const archivePath = await fetchArchive(j.url);
+      archives.push(archivePath);
+      extracts.push(extractLib(archivePath, j.label, libName));
+    }
 
-  await download(url, archivePath);
-  ok(`Downloaded to ${archivePath} (${(statSync(archivePath).size / 1024 / 1024).toFixed(1)} MB)`);
+    if (isUniversal) {
+      // Merge both archs into ONE fat dylib (same pattern as the Node.js
+      // universal step in the workflow). Sources are symlink-resolved.
+      log('  lipo -create (x86_64 + arm64) …');
+      execSync(`lipo -create "${extracts[0].realSrc}" "${extracts[1].realSrc}" -output "${destLib}"`, { stdio: 'inherit' });
+      const info = execSync(`lipo -info "${destLib}"`).toString().trim();
+      ok(`lipo: ${info}`);
+      if (!/x86_64/.test(info) || !/arm64/.test(info)) {
+        throw new Error(`lipo result does not contain both architectures: ${info}`);
+      }
+    } else {
+      copyFileSync(extracts[0].realSrc, destLib);
+    }
+    ok(`Saved ${libName} (${(statSync(destLib).size / 1024 / 1024).toFixed(1)} MB) → ${destLib}`);
 
-  const extractDir = join(tmpdir(), `onnxruntime-extract-${Date.now()}`);
-  log('  Extracting...');
-  extract(archivePath, extractDir);
-
-  // Archive contains a single top-level dir like onnxruntime-linux-x64-1.20.0/
-  const entries = readdirSync(extractDir).filter(e => e !== '.' && e !== '..');
-  const topDir = entries.length === 1 ? join(extractDir, entries[0]) : extractDir;
-
-  const libSrc = join(topDir, 'lib', libName);
-  if (!existsSync(libSrc)) {
-    fail(`Could not find lib/${libName} in extracted archive`);
-    rmSync(extractDir, { recursive: true, force: true });
-    process.exit(1);
-  }
-
-  // NOTE: lib/libonnxruntime.so is a SYMLINK CHAIN (.so → .so.1 → .so.1.20.0)
-  // inside the archive. Node's cpSync mis-handles chained symlinks, so we
-  // resolve the chain ourselves and copy the real file with copyFileSync.
-  const realSrc = realpathSync(libSrc);
-  const realStat = statSync(realSrc);
-  if (!realStat.isFile()) {
-    fail(`Resolved ${libName} is not a regular file (got ${realSrc})`);
-    rmSync(extractDir, { recursive: true, force: true });
-    process.exit(1);
-  }
-  copyFileSync(realSrc, destLib);
-  ok(`Copied ${libName} (${(statSync(destLib).size / 1024 / 1024).toFixed(1)} MB) → ${destLib}`);
-
-  // Also copy provider helper libraries when present (harmless if absent)
-  const libDir = join(topDir, 'lib');
-  for (const extra of readdirSync(libDir)) {
-    if (extra.includes('providers_shared')) {
-      const extraSrc = join(libDir, extra);
-      const extraReal = existsSync(extraSrc) ? realpathSync(extraSrc) : null;
-      if (extraReal && statSync(extraReal).isFile()) {
-        copyFileSync(extraReal, join(NATIVE_DIR, extra));
-        ok(`Copied ${extra} → ${NATIVE_DIR}`);
+    // Also copy provider helper libraries when present (harmless if absent).
+    // macOS archives ship only the dylib symlink chain — providers_shared is
+    // a Windows/Linux thing — so this is skipped for universal2 builds.
+    if (!isUniversal) {
+      const libDir = join(extracts[0].topDir, 'lib');
+      for (const extra of readdirSync(libDir)) {
+        if (extra.includes('providers_shared')) {
+          const extraSrc = join(libDir, extra);
+          const extraReal = existsSync(extraSrc) ? realpathSync(extraSrc) : null;
+          if (extraReal && statSync(extraReal).isFile()) {
+            copyFileSync(extraReal, join(NATIVE_DIR, extra));
+            ok(`Copied ${extra} → ${NATIVE_DIR}`);
+          }
+        }
       }
     }
-  }
 
-  // Ensure executable bit on Unix (loadable library)
-  if (targetPlatform !== 'win') {
-    try { chmodSync(destLib, 0o755); } catch { /* best effort */ }
+    // Ensure executable bit on Unix (loadable library)
+    if (targetPlatform !== 'win') {
+      try { chmodSync(destLib, 0o755); } catch { /* best effort */ }
+    }
+  } finally {
+    // Cleanup — best effort, never mask the original error
+    for (const e of extracts) { try { rmSync(e.extractDir, { recursive: true, force: true }); } catch { /* best effort */ } }
+    for (const a of archives) { try { rmSync(a, { force: true }); } catch { /* best effort */ } }
   }
-
-  // Cleanup
-  try { rmSync(extractDir, { recursive: true, force: true }); } catch { /* best effort */ }
-  try { rmSync(archivePath, { force: true }); } catch { /* best effort */ }
 
   log('\n=== Done! ===');
   log(`  ONNX Runtime saved to: ${NATIVE_DIR}`);

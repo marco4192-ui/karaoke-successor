@@ -1,9 +1,16 @@
 name: Release
 
+# ════════════════════════════════════════════════════════════════════════
+#  LEGACY / NUR NOCH MANUELL — dieser Workflow wurde durch „Build Standalone
+#  Executables“ (build-executables.yml) ersetzt: Windows+macOS+Linux in
+#  einem Lauf mit ONNX-Runtime, WebView2-Offline-Installer, Socket.IO-Server
+#  und eigenem Release-Job. Der frühere Tag-Trigger („v*“) wurde ENTFERNT,
+#  damit ein Tag-Push nicht mehr DOPPELT baut und zwei konkurrierende
+#  Releases erzeugt. Nur noch per „Run workflow“ als Notfall-Fallback für
+#  den Windows-Build startbar.
+# ════════════════════════════════════════════════════════════════════════
+
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:

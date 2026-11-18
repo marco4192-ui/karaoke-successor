@@ -10,9 +10,10 @@
 #               = {type: "offlineInstaller"}) + portables node.exe +
 #              ONNX-Runtime + VC++-Runtime-DLLs im Bundle
 #    macOS   : Universal-Binary (Intel + Apple Silicon). Node.js wird per
-#              lipo zu einem Universal-Binary gemergt; ONNX-Runtime kommt
-#              als fertiges Universal2-Asset von Microsoft. DMG läuft ab
-#              macOS 10.15. Optional Signing+Notarization via Secrets
+#              lipo zu einem Universal-Binary gemergt; ONNX-Runtime ebenso
+#              (osx-x86_64 + osx-arm64 per lipo — Microsoft bietet KEIN
+#              Universal2-Release-Asset). DMG läuft ab macOS 10.15.
+#              Optional Signing+Notarization via Secrets
 #              (ohne Secrets: unsignierter Build, Gatekeeper-Hinweis)
 #    Linux   : AppImage mit gebündeltem WebKitGTK (linuxdeploy folgt den
 #              ldd-Abhängigkeiten automatisch) UND GStreamer-Medien-
@@ -289,10 +290,13 @@ jobs:
           lipo -info portable-node/bin/node | grep -q arm64
           echo "OK: Node.js ist ein Universal-Binary."
 
-      # ONNX-Runtime: Microsoft liefert ein Universal2-Asset (x86_64 + arm64
-      # bereits in EINER Datei) — kein lipo-Merge mehr nötig. Die frühere
-      # „osx-x64“-Assetname-Falle (→ HTTP 404) ist im Script ebenfalls gefixt.
-      - name: ONNX Runtime herunterladen (Universal2 x64+arm64)
+      # ONNX-Runtime: Microsoft bietet KEIN Universal2-Release-Asset (der
+      # URL onnxruntime-osx-universal2-<v>.tgz antwortet real mit 404) —
+      # macOS gibt es nur als getrennte osx-x86_64-/osx-arm64-Archive. Das
+      # Script lädt beide und mergt sie per lipo zu einem Fat-Dylib — dasselbe
+      # Muster wie beim Node-Binary oben. Die Verifikation unten prüft beide
+      # Architekturen im gemergten Dylib.
+      - name: ONNX Runtime herunterladen (Universal x64+arm64 per lipo)
         run: |
           set -euo pipefail
           node scripts/download-onnxruntime.mjs --version ${{ env.ONNX_VERSION }} --arch universal2
@@ -301,7 +305,7 @@ jobs:
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q x86_64
           lipo -info src-tauri/bundled/native/libonnxruntime.dylib | grep -q arm64
-          echo "OK: ONNX Runtime ist ein Universal-Binary (Universal2-Asset)."
+          echo "OK: ONNX Runtime ist ein Universal-Binary (lipo-Merge)."
 
       - name: Frontend + Server-Bundle vorbereiten (prepare-bundle.mjs)
         env:
@@ -437,6 +441,55 @@ jobs:
             src-tauri/target/release/bundle/deb/*.deb
           retention-days: 30
           if-no-files-found: error
+
+  # ────────────────────────────────────────────────────────────────────
+  #  Leaderboard-API-Check (informationell, blockiert nichts) — prüft mit
+  #  den Build-Secrets, ob die Online-API erreichbar ist, die erwartete
+  #  Version meldet und die v3.6-Zeitfenster-Boards (ks_play_log-Migration)
+  #  funktionieren. Ohne gesetzte Secrets wird der Check übersprungen
+  #  (Builds laufen dann ohne Upload-Fähigkeit — Anzeigen funktioniert).
+  # ────────────────────────────────────────────────────────────────────
+  leaderboard-check:
+    name: Leaderboard-API Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - name: API-Version + v3.6-Migration prüfen
+        env:
+          LB_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+          LB_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LB_URL:-}" ] || [ -z "${LB_KEY:-}" ]; then
+            echo "::warning::Secrets NEXT_PUBLIC_LEADERBOARD_URL / NEXT_PUBLIC_LEADERBOARD_API_KEY fehlen — Konnektivitätscheck übersprungen; Builds ohne Upload-Fähigkeit (Anzeigen funktioniert)."
+            exit 0
+          fi
+          base="${LB_URL%/}"
+          echo "Prüfe ${base} …"
+          echo "--- GET /info ---"
+          info_resp=$(curl -sS --max-time 20 -w '\n%{http_code}' -H "X-API-Key: ${LB_KEY}" "${base}/info" || true)
+          info_code=$(printf '%s' "${info_resp}" | tail -n 1)
+          info_body=$(printf '%s' "${info_resp}" | head -n -1)
+          echo "HTTP ${info_code}: ${info_body}"
+          if [ "${info_code}" != "200" ]; then
+            echo "::error::/info antwortet HTTP ${info_code} — Server-Deploy oder API-Key prüfen"
+            exit 1
+          fi
+          version=$(printf '%s' "${info_body}" | grep -o '"version":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Server-Version: ${version:-unbekannt}"
+          echo "--- GET /leaderboard/global?window=month (v3.6: ks_play_log) ---"
+          code=$(curl -sS -o /dev/null --max-time 20 -w '%{http_code}' -H "X-API-Key: ${LB_KEY}" "${base}/leaderboard/global?window=month&limit=1" || true)
+          echo "HTTP ${code}"
+          if [ "${code}" != "200" ]; then
+            echo "::error::Zeitfenster-Board schlägt fehl — Server < 3.6.0 oder Migrationsblock (CREATE ks_play_log/ks_nonces + ALTER ks_profiles) nicht ausgeführt (docs/LEADERBOARD-SETUP.md)"
+            exit 1
+          fi
+          if [ "${version:-}" != "3.6.0" ]; then
+            echo "::warning::Server-Version ${version:-?} ≠ 3.6.0 — Redeploy der leaderboard-api-Dateien erforderlich (Zeitfenster/Kronen/BR-Siege inaktiv)"
+          else
+            echo "OK: Leaderboard v3.6.0 erreichbar und migriert"
+          fi
 
   # ────────────────────────────────────────────────────────────────────
   #  Release — DRAFT mit allen Artefakten + Prüfsummen (ein einziger Job,
