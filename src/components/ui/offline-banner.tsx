@@ -14,6 +14,11 @@ import { useTranslation } from '@/lib/i18n/translations';
  * When offline, core karaoke features (library, playback, scoring) remain
  * fully functional because all data is stored in a local SQLite database
  * via Tauri native commands.
+ *
+ * R80: rendered IN FLOW (w-full) instead of `fixed top-0 z-[100]` — the old
+ * overlay covered the NavBar and the page heading whenever it appeared.
+ * As the first child of the app's flex column it now pushes the header and
+ * content down instead of floating over them.
  */
 export function OfflineBanner() {
   const { isOnline, isServerReachable } = useNetworkStatus();
@@ -43,7 +48,7 @@ export function OfflineBanner() {
       : t('offlineBanner.localData');
 
     return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-orange-600/95 text-white text-center text-xs py-1.5 px-4">
+      <div role="alert" aria-live="polite" className="w-full bg-orange-600/95 text-white text-center text-xs py-1.5 px-4">
         <div className="flex items-center justify-center gap-2">
           <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{t('offlineBanner.offline')}</span>
@@ -57,7 +62,7 @@ export function OfflineBanner() {
   // Online but server unreachable
   if (isServerReachable === false) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-600/90 text-white text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
+      <div role="alert" aria-live="polite" className="w-full bg-yellow-600/90 text-white text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
         <Wifi className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{t('offlineBanner.serverUnreachable')}</span>
       </div>

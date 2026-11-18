@@ -1059,3 +1059,23 @@ Stage Summary:
 - Umgesetzt: Seed-Run 4 erfolgreich, komplette Schreib-+Lese-Pipeline (profiles/scores/daily/br/crowns/3 Fenster) erstmals live verifiziert, Live-Bestand fuer den App-Gegencheck dokumentiert.
 - AKTIONEN NUTZER: Gegencheck in der App (Global-Tab Fenster+Sorts, Eigen-Rang-Banner, BR-Chips, Daily-Board + Archiv ◀, Online-Statistik-Karte mit Kronen/BR/letzten Runden). Bei Bedarf: Workflow „Seed Test Data" mode=cleanup entfernt die 5 Test-Profile samt aller Scores/Daily-Rows/BR/Kronen wieder (Idempotenz: erneutes seed = Upsert, kein Duplikat).
 - Offen/Risiken: keine neuen — Server v3.6.2, DB gefuellt, CI gruen.
+
+---
+
+Task ID: R80
+Agent: main (Z.ai Code)
+Task: Nutzer-Meldung (Screenshot 2026-11-18 230609.png, Highscores/Global, 5 TEST-Eintraege sichtbar): „Testeintrage werden geladen, aber es bleibt die Einblendung, dass das Leaderboard nicht erreichbar ist". VLM-Auswertung des Screenshots: Orangefarbener Full-Width-Banner „📶 Server unreachable — Leaderboard and online features unavailable", laut VLM ueberlappt er die Navigation. Daten laden daneben korrekt (5 players, Medaillen, BR-Chips bei Luca+Mia, Emma ohne Fahne — Sort-Segment „Songs" aktiv, hence Luca #1 vor Mia).
+
+Work Log:
+- ROOT CAUSE 1 (Probe): use-network-status.ts checkServerReachable() pINGT GET ${API_BASE}/ OHNE X-API-Key und wertet res.ok aus. Der Server (App-Only-Auth, per Design) antwortet auf schluessellose Requests mit 401 — seit Einfuehrung der Key-Pflicht ist res.ok damit per Definition false → isServerReachable=false → gelber „Server unreachable"-Banner (auf dunklem Theme wirkt bg-yellow-600/90 orange). Alle echten Service-Calls schicken den Key (request()-Helper) → Boards laden. Genau die beobachtete Asymmetrie: Daten da, Banner oben. Der Probe-Code stammte aus der Zeit vor der Key-Pflicht und war nie angepasst.
+- ROOT CAUSE 2 (Persistenz): Der Probe lief GENAU EINMAL (Mount + browser-online-Event). Ein einmaliges Scheitern — transient oder wie hier systematisch — klebte fuer immer; „bleibt die Einblendung".
+- FIX 1: Probe wertet jetzt res.ok || 401 || 403 als erreichbar (401 beweist: Routing, PHP und Key-Check arbeiten — Server lebt; 403 = .htaccess-Schutz, ebenfalls lebendig). 404/5xx/Netzwerkfehler/Timeout bleiben unerreichbar. Kommentar am Fundort dokumentiert die Absicht (Liveness-Probe, kein authentifizierter Call).
+- FIX 2: 60-s-Re-Probe-Interval (self-healing) — ein transienter Ausfall beim Start heilt nach, sobald der Server wieder antwortet (vorher: Banner klebte bis zum naechsten browser-online-Event, das nie kommt, solange der Browser online war).
+- FIX 3 (Layout, aus dem Screenshot abgeleitet): OfflineBanner war `fixed top-0 z-[100]` und SCHWEBTE UEBER NavBar + Seitenueberschrift (VLM: „partially obscuring them"). Jetzt in-flow `w-full` als erstes Kind der App-Flex-Column — schiebt Header/Content nach unten statt sie zu verdecken. Beide Varianten (orange=offline, gelb=server-unreachable) umgestellt; role=alert + aria-live=polite ergaenzt (Mobile-Indikator hat das vorbildlich, das Desktop-Pendant fehlte).
+- ABGRENZUNG: mobile-offline-indicator.tsx hat einen EIGENEN lokalen useNetworkStatus (nur navigator.onLine) — unberuehrt. Alle 16 i18n-Locales hatten serverUnreachable bereits (keine i18n-Arbeit noetig).
+- VERIFIKATION (agent-browser auf Dev-Server, qa-shots/r80-banner-gone.png): (1) Realer Zustand in der Sandbox (netcup tatsaechlich nicht erreichbar): Banner „Server unreachable" erscheint KORREKT — bannerBox top 0 / bottom 28, NavBar top 28, overlap=false, bannerInFlow=true (Layout-Fix bewiesen: nichts mehr verdeckt). (2) Nutz-Szenario simuliert (fetch-Patch: keyless GET / → 401; dann window-Event 'online' getriggert → Re-Probe): bannerPresent=false, NavBar top 0 — Banner verschwindet genau wie beim Nutzer kuenftig. 0 Page-Errors, 0 Console-Errors. tsc --noEmit Exit 0; Lint 0 Errors (1068 Warnings, historisches Niveau).
+
+Stage Summary:
+- Umgesetzt: Beide Roots behoben (401/403 = erreichbar; 60-s-Selbstheilung) + Banner vom Overlay zum In-Flow-Element; E2E in beiden Richtungen verifiziert (Banner weg bei 401, Banner da + unverdeckt bei echtem Ausfall).
+- AKTIONEN NUTZER: Desktop-App neu bauen/installieren (laeuft die Fix-Code erst im naechsten Build; im laufenden Tauri-App steckt der alte Code) — Web-Dev-Version hot-reloaded automatisch. Kein Server-Redeploy noetig (reine Client-Aenderung).
+- Offen/Risiken: keine — Probe ist absichtlich keylos und damit von der Gueltigkeit des API-Keys unabhaengig; bei falschem Key wuerden die Boards selbst fehlen (dann ist der Banner ehrlich).
