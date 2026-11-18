@@ -23,6 +23,10 @@ Copyright-safe: songs are identified only by a SHA-256 fingerprint hash
    and `API_SECRET` (and DB host/name/user if they differ from the defaults
    in `config.php` — which are empty by default and set via env vars
    `KS_DB_HOST`, `KS_DB_NAME`, `KS_DB_USER`, `KS_DB_PASS`, `KS_API_SECRET`).
+   On netcup shared hosting use the database hostname shown in Plesk
+   (e.g. `mysqle88c.netcup.net`) as `DB_HOST` — NOT `localhost`, which
+   connects via Unix socket to a different MySQL instance and fails with
+   error 1045 (Access denied) even though user/password are correct.
 4. Upload the folder contents to `https://your-domain.com/leaderboard-api/`.
 5. Delete `schema.sql` from the server after the import (it is blocked by
    `.htaccess`, but it has no business being deployed).

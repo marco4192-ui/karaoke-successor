@@ -77,10 +77,18 @@ nicht zwingend nötig — die History enthält dann nur noch tote Werte.
    `sync_code` auf `VARCHAR(16)` (neue Codes: 12 Zeichen). Wer noch auf
    ≤ v3.4 steht, führt ZUERST die dortige `recovery_hash`-Migration aus und
    dann denselben v3.6-Block.
-4. **Nützlich:** Wenn die PHP-Anwendung auf demselben Webspace liegt wie die
-   Datenbank, setze `DB_HOST` auf `localhost` statt auf den externen
-   MySQL-Hostnamen (`mysqle88c.netcup.net`). Das ist schneller und umgeht
-   Probleme mit externem DB-Zugriff.
+4. **Achtung (Vorfall 18.11.2026):** Auf diesem netcup-Hosting NICHT
+   `localhost` als `DB_HOST` eintragen — auch wenn App und Datenbank
+   „auf demselben Webspace" liegen. PHP verbindet sich dann über den
+   Unix-Socket mit einer ANDEREN MySQL-Instanz als der Plesk-verwalteten;
+   alle DB-Endpoints scheitern mit
+   `SQLSTATE[HY000] [1045] Access denied for user '…'@'localhost'`,
+   obwohl Tabellen, Benutzer und Passwort korrekt sind. Symptom:
+   `GET /info` bleibt grün (berührt die DB nie), Boards/Uploads 500en.
+   Richtig: den Hostnamen aus Plesk → Datenbanken → Host eintragen
+   (z. B. `mysqle88c.netcup.net`). Das war die Ursache des
+   Leaderboard-500-Vorfalls — nicht schema.sql, nicht Benutzer, nicht
+   Passwort.
 
 ---
 
@@ -447,7 +455,7 @@ Typische Befunde nach einem Datenbank-Neuaufbau:
 
 | `problems[]` sagt … | Bedeutung / Fix |
 |---|---|
-| `DB-Verbindung fehlgeschlagen` | `config.local.php`: `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS` prüfen (neues DB-Passwort? falscher Host?). `/info` funktioniert trotzdem, weil es die DB nie berührt. |
+| `DB-Verbindung fehlgeschlagen` / `SQLSTATE[HY000] [1045] Access denied` | `config.local.php` prüfen. Vorfall 18.11.: `DB_HOST=localhost` verbindet auf netcup über den Unix-Socket mit einer anderen MySQL-Instanz als der Plesk-DB — Host durch den Plesk-Hostnamen ersetzen (z. B. `mysqle88c.netcup.net`); Tabellen/User/Passwort können dabei völlig korrekt sein. `/info` funktioniert trotzdem, weil es die DB nie berührt. |
 | `Tabelle ks_play_log fehlt in Datenbank …` | Tabellen wurden in einer **anderen** Datenbank angelegt, als `DB_NAME` sagt — oder der Migrationsblock fehlt. `database_name` oben in der Antwort zeigt, wo die API tatsächlich landet. |
 | `Tabelle ks_profiles existiert, aber es fehlen Spalten: br_wins …` | Alter Tabellenstand (v3.5) — `fixes[]` enthält das fertige `ALTER TABLE`. |
 | `Query board_window_month schlaegt fehl: …` | Die exakte MySQL-Meldung der sonst 500-enden Board-Abfrage. |

@@ -1094,7 +1094,9 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
             'database'    => ['connected' => false, 'pdo_error' => $e->getMessage()],
             'problems'    => [
                 'DB-Verbindung fehlgeschlagen: DB_HOST/DB_NAME/DB_USER/DB_PASS in config.local.php '
-                . 'pruefen (neues DB-Passwort nach dem Wiederaufbau? richtiger Host localhost?). '
+                . 'pruefen. WICHTIG (Vorfall 18.11.): DB_HOST=localhost verbindet auf netcup '
+                . 'ueber den Unix-Socket mit einer ANDEREN MySQL-Instanz als der Plesk-DB — '
+                . 'stattdessen den Plesk-Hostnamen eintragen (z.B. mysqle88c.netcup.net). '
                 . 'PDO meldet: ' . $e->getMessage(),
             ],
             'fixes' => [],

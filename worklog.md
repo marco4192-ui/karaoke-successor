@@ -966,3 +966,25 @@ Stage Summary:
 - Umgesetzt: ONNX-Bezugsquelle auf offizielles NuGet-Paket umgestellt (Microsoft hat GitHub-Release-Assets entfernt — nachweisbar am 15.10.-Run), Version 1.23.2 (letzte mit macOS-Intel), universelles Script mit purem Node-Zip-Extractor + lipo-Universal2-Merge; leaderboard-check-Job; release.yml Entschärfung (Tag-Trigger raus + toter ONNX-Step ersetzt); GitHub-Secrets gesetzt; Server-Verifikation: v3.6.0 deployt, MIGRATION FEHLT NOCH.
 - AKTIONEN NUTZER: (1) Migrationsblock v3.5→v3.6 in phpMyAdmin (CREATE ks_play_log/ks_nonces + ALTER ks_profiles) — sonst 500er bei Uploads mit Nonce und Zeitfenster-Boards; (2) Workflow neu triggern (macOS-Build verifiziert den lipo-Pfad erstmals live).
 - Offen/Risiken: (a) ENTGEGENGENOMMEN: Verifikations-Run 44385253351 (alle 3 Plattformen, kein Release) — ONNX-Schritte Windows/macOS/Linux ALLE success, inkl. macOS-universal2-lipo-Merge mit beiden Arch-Grep-Verifikationen; Builds laufen zum Zeitpunkt des Eintrags noch (Tauri-Compile). (b) API-Key wurde im Chat + als GitHub-Secret übergeben — Rotation würde Neubuilds erfordern, für Friends&Family vertretbar; (c) 2 vorbestehende Test-Fehler (R64-Liste) unverändert.
+
+---
+
+Task ID: R75
+Agent: main (Z.ai Code)
+Task: Nutzer-Meldung „es lag nicht an Username/Passwort — localhost ersetzt, Lauf erfolgreich" + Verifikation, Ursachen-Dokumentation des Leaderboard-500-Vorfalls.
+
+Work Log:
+- VERIFIKATION (GitHub-API, Sandbox blockt netcup-Direktzugriff): Run 44393017902 (head f9dfd00d/R74): Job „Leaderboard-API Check" = SUCCESS. GET /info → 200 v3.6.1; GET /leaderboard/global?window=month → 200; GET /health → ok:true, MariaDB 8.4.13, DB k347227_karaoke_leaderboard, ALLE 7 Tabellen exists + fehlende Spalten [], Stored Procedure ok, alle 3 Board-Proben (all-time/month/week) ok, rows 0 (erwartet — DB neu aufgebaut, play_log füllt sich erst wieder).
+- ROOT CAUSE des Vorfalls (nach Nutzer-Bestätigung geklärt): config.local.php hatte DB_HOST=localhost. PDO/MYSQLI verbindet bei localhost-Namen über den UNIX-SOCKET (pdo_dblib: host=localhost → Socket-Pfad), auf netcup shared hosting landet das auf einer ANDEREN MySQL-Instanz als der Plesk-verwalteten k347227_karaoke_leaderboard → SQLSTATE[HY000] [1045] Access denied for 'k347227_leaderboard'@'localhost' (using password: YES). User + Passwort + schema.sql waren die ganze Zeit korrekt; nur der Host war falsch. Fix durch Nutzer: DB_HOST auf die echte Adresse (Plesk → Datenbanken → Host) gesetzt — sofort alles grün.
+- SCHEMA.SQL ENTLASTET: Die ursprüngliche Vermutung („schema fehlerhaft") war falsch — Diagnose via /health (genau dafür in R74 gebaut) + CI-Log zeigte 1045 als einzigen Befund. Alle 7 Tabellen + Spalten + Prozedur lieferten ok:true direkt nach Host-Fix.
+- DOKU KORRIGIERT (die Falle stand seit R72 in unseren eigenen Unterlagen):
+  * docs/LEADERBOARD-SETUP.md Schritt 2.4 empfahl bisher ausdrücklich localhost „schneller, umgeht externe DB-Zugriffe" — DIESE EMPFEHLUNG WAR DIE URSACHE. Umgeschrieben zu einer Warnung (Vorfall 18.11.2026, Symptom /info grün + Boards 500, richtig: Plesk-Hostnamen wie mysqle88c.netcup.net eintragen).
+  * Troubleshooting-Tabelle (Abschnitt /health): Zeile „DB-Verbindung fehlgeschlagen" um 1045/Vorfall ergänzt.
+  * leaderboard-api/README.md Installation Schritt 3: gleiche Warnung (EN) ergänzt.
+  * index.php /health-Fehlertext: „richtiger Host localhost?" — falscher Rat gestrichen, durch Plesk-Hostnamen-Hinweis ersetzt (Server-Redeploy von index.php nötig; sonst steht nur der alte Text im Diagnostic-Output — funktionieren tut /health trotzdem).
+- KEINE Code-Änderung an Queries/Schema nötig; R74-Server-Deploy (v3.6.1) war korrekt und blieb unverändert — nur config.local.php (Nutzer) + index.php-Fehlertext ( kosmetisch).
+
+Stage Summary:
+- Umgesetzt: Ursache bestätigt (DB_HOST=localhost → Socket → fremde MySQL-Instanz → 1045), Nutzer-Fix validiert (Run grün, /health ok:true), Falle aus SETUP.md/README/index.php-Diagnose entfernt, Vorfall im Worklog dokumentiert.
+- AKTIONEN NUTZER: index.php erneut hochladen (nur kosmetischer Diagnose-Text; optional). Sonst nichts offen.
+- Offen/Risiken: keine neuen. CI läuft wieder vollständig grün (ONNX wie R73b, Leaderboard-Check success).
