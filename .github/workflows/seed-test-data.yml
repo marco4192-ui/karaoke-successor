@@ -1,0 +1,47 @@
+# Seed TEST entries into the live leaderboard (or remove them again).
+# The sandbox cannot reach the netcup hosting directly, so the writes go
+# through a GitHub runner — the same proven channel the leaderboard-check
+# job uses. The API key never appears in the logs (secrets are masked).
+name: Seed Test Data (Leaderboard)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'seed = create test profiles + entries, cleanup = delete them'
+        type: choice
+        required: true
+        default: 'seed'
+        options:
+          - seed
+          - cleanup
+
+concurrency:
+  group: seed-test-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: Seed / Cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LB_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
+      LB_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run seeder
+        run: |
+          if [ "${{ inputs.mode }}" = "cleanup" ]; then
+            node scripts/seed-test-data.mjs --cleanup
+          else
+            node scripts/seed-test-data.mjs
+          fi
