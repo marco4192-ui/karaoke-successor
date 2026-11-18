@@ -1043,3 +1043,19 @@ Stage Summary:
 - Umgesetzt: Root Cause beseitigt (// im SQL-String, R69), Bugklasse komplett gescannt (1 Treffer, 1 harmlos), alle Write-Pfade statisch gegen Schema verifiziert, Version-Bump als Redeploy-Beweis, Seeder-Preflight verstaerkt, Doku + Worklog (R76/R77 nachgetragen, R78).
 - AKTIONEN NUTZER: index.php (v3.6.2) noch EINMAL hochladen (einzige geaenderte PHP-Datei) — danach Seed-Run 4 (wird automatisch /health proc_call mitliefern).
 - Offen/Risiken: (a) proc_call bliebe als Restrisiko (1449/1370) — /health-Preflight im selben Lauf zeigt es dann mit Fix-Hinweis; (b) 2 vorbestehende Test-Fehler (R64-Liste) unverändert.
+
+---
+
+Task ID: R79
+Agent: main (Z.ai Code)
+Task: Nutzer-Bestaetigung „Okay, go!" (index.php v3.6.2 redeployt) → Seed-Run 4 feuern und die Live-Daten fuer den App-Gegencheck bereitstellen.
+
+Work Log:
+- SEED-RUN 4 (44407346758, sha b351e4cf, ~25 s): ERFOLGREICH — der erste vollstaendige Durchlauf der Schreib-Pipeline seit Bestehen des Servers. /health-Preflight: ok=true, proc_call=ok (Stored Procedure ausfuehrbar). Alle 5 Profile registriert (TEST Mia/Ben/Luca/Emma/Noah), 11 Scores alle verified=true ohne Flags und ohne verification_note (haarte Assertion haette sonst abgebrochen), 4 Daily-Rows, 2 BR-Siege (Mia+Luca, je counted=true br_wins=1), Verifikations-Reads: all/month/week je 5/5, crowns(Mia)=3.
+- LIVE-DATENBESTAND (Stand 2026-11-18 22:01 UTC): Global-Boards identisch in allen 3 Fenstern (alle Plays liegen in Monat+ISO-Woche) — #1 Mia 26100/9250/91.75, #2 Luca 25300/8900/90.50, #3 Emma 16650/8600/90.25, #4 Ben 16150/8350/89.63, #5 Noah 8050/8050/89.25; songs_played: Mia 2, Luca 3, Emma 2, Ben 2, Noah 1; Laender DE/AT/CH/IT sichtbar, Emma ohne (country_code NULL); BR-Chips nur Mia+Luca. Daily 2026-11-18: 4 Rows — accuracy: #1 Mia 93.5 / #2 Noah 88.75; combo: #1 Luca 385; score: #1 Mia 8650. Kronen Mia: 3 (eigene synthetische Song-Boards).
+- SYNTHETISCHE HASHES = erwartete App-Darstellung: Song-Titel-Mapping (hash→lokale Bibliothek) kann die v1:-Test-Hashes NICHT aufloesen → Online-Statistik-Karte zeigt die Runden als „Unbekannter Song" (Fallback ist korrekt, kein Bug); echte Song-Boards bleiben frei von Test-Eintraegen (Design-Entscheidung R76).
+
+Stage Summary:
+- Umgesetzt: Seed-Run 4 erfolgreich, komplette Schreib-+Lese-Pipeline (profiles/scores/daily/br/crowns/3 Fenster) erstmals live verifiziert, Live-Bestand fuer den App-Gegencheck dokumentiert.
+- AKTIONEN NUTZER: Gegencheck in der App (Global-Tab Fenster+Sorts, Eigen-Rang-Banner, BR-Chips, Daily-Board + Archiv ◀, Online-Statistik-Karte mit Kronen/BR/letzten Runden). Bei Bedarf: Workflow „Seed Test Data" mode=cleanup entfernt die 5 Test-Profile samt aller Scores/Daily-Rows/BR/Kronen wieder (Idempotenz: erneutes seed = Upsert, kein Duplikat).
+- Offen/Risiken: keine neuen — Server v3.6.2, DB gefuellt, CI gruen.
