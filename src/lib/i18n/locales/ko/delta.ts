@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "연결된 계정을 교체합니다(기존 이메일과 비밀번호는 더 이상 유효하지 않음). 동기화 코드만 있으면 됩니다 — 이후에 새 복구 코드를 받게 됩니다.",
     relinkSuccess: "온라인 계정이 다시 연결되었습니다 — 이메일과 비밀번호를 기억해 주세요",
     relinkTitle: "온라인 계정 다시 연결",
+    saveCodeFile: "텍스트 파일로 저장",
   },
   profileSync: {
     deleteOnline: "온라인 데이터 삭제",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "온라인 데이터가 삭제됐어요. 프로필이 이제 로컬 전용이에요.",
     deleteOnlineFailed: "온라인 데이터 삭제에 실패했어요",
     syncCodeWarning: "이 코드를 꼭 적어 두세요! 없으면(또는 비밀번호가 있는 온라인 계정이 없으면) 온라인 프로필을 복구할 수 없어요.",
+    saveCodeFile: "코드를 텍스트 파일로 저장",
   },
   queueScreen: {
     viaCompanion: "컴패니언 앱에서 추가됨",

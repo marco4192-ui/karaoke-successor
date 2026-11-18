@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CloudUploadIcon, CloudDownloadIcon } from '@/components/icons';
+import { FileDownIcon } from 'lucide-react';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile, HighscoreEntry } from '@/types/game';
+import { downloadTextFile, todayStamp } from '@/lib/download-text';
 import { RecoveryCodeDialog } from './recovery-code-dialog';
 
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
@@ -18,6 +20,25 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { updateProfile, highscores, addHighscore } = useGameStore();
+
+  // R71: save the sync code (the master key to this online identity) as a
+  // text file — same offer as the recovery-code dialog. The file content
+  // reuses the localized on-screen warning so file and UI never diverge.
+  const handleSaveCodeFile = () => {
+    if (!profile.syncCode) return;
+    const content = [
+      'KARAOKE ZERO — SYNC-CODE',
+      '=========================',
+      '',
+      `Code:    ${profile.syncCode}`,
+      `Profile: ${profile.name}`,
+      `Date:    ${todayStamp()}`,
+      '',
+      `⚠ ${t('profileSync.syncCodeWarning')}`,
+      '',
+    ].join('\n');
+    downloadTextFile(`karaoke-zero-sync-code-${profile.syncCode}.txt`, content);
+  };
 
   const handleUploadProfile = async () => {
     setIsUploading(true);
@@ -168,6 +189,16 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
             <code className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono">
               {profile.syncCode}
             </code>
+            <button
+              type="button"
+              onClick={handleSaveCodeFile}
+              aria-label={t('profileSync.saveCodeFile')}
+              title={t('profileSync.saveCodeFile')}
+              data-testid="sync-code-download"
+              className="inline-flex items-center gap-1 rounded border border-cyan-500/30 px-1.5 py-0.5 text-[10px] text-cyan-400 transition-colors hover:bg-cyan-500/10"
+            >
+              <FileDownIcon className="w-3 h-3" />
+            </button>
           </div>
           {/* R69: the sync code is the ONLY key to this online identity when
               no account is linked — losing it means losing the online

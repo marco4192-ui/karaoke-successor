@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "将替换已关联的账号（原电子邮箱和密码将失效）。你只需要同步码——之后会收到新的恢复码。",
     relinkSuccess: "在线账号已重新关联——请记住你的电子邮箱和密码",
     relinkTitle: "重新关联在线账号",
+    saveCodeFile: "保存为文本文件",
   },
   profileSync: {
     deleteOnline: "删除在线数据",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "在线数据已删除。你的个人资料现在仅保存在本地。",
     deleteOnlineFailed: "删除在线数据失败",
     syncCodeWarning: "请记下此码！没有它（或没有带密码的在线账号），你的在线个人资料将无法恢复。",
+    saveCodeFile: "将此码保存为文本文件",
   },
   queueScreen: {
     viaCompanion: "通过伴侣应用添加",

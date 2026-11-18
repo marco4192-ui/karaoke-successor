@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "Remplace le compte lié (l'ancien e-mail et l'ancien mot de passe deviennent invalides). Il te suffit d'avoir ton code de sync — tu recevras ensuite un nouveau code de récupération.",
     relinkSuccess: "Compte en ligne relié de nouveau — retiens bien ton e-mail et ton mot de passe",
     relinkTitle: "Relier de nouveau le compte en ligne",
+    saveCodeFile: "Enregistrer en fichier texte",
   },
   profileSync: {
     deleteOnline: "Supprimer les données en ligne",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Données en ligne supprimées. Votre profil est désormais uniquement local.",
     deleteOnlineFailed: "Échec de la suppression des données en ligne",
     syncCodeWarning: "Notez ce code ! Sans lui (ou sans un compte en ligne avec mot de passe), votre profil en ligne ne peut pas être récupéré.",
+    saveCodeFile: "Enregistrer le code en fichier texte",
   },
   queueScreen: {
     viaCompanion: "Ajoutée via l'app compagnon",

@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "連携済みのアカウントを入れ替えます（旧メールアドレスとパスワードは無効になります）。必要なのは同期コードだけです。後ほど新しいリカバリーコードが発行されます。",
     relinkSuccess: "オンラインアカウントを再連携しました。メールアドレスとパスワードをお忘れなく",
     relinkTitle: "オンラインアカウントを再連携",
+    saveCodeFile: "テキストファイルとして保存",
   },
   profileSync: {
     deleteOnline: "オンラインデータを削除",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "オンラインデータを削除しました。プロフィールは今後ローカルのみです。",
     deleteOnlineFailed: "オンラインデータの削除に失敗しました",
     syncCodeWarning: "このコードを書き留めてください！ないと（またはパスワード付きのオンラインアカウントがないと）、オンラインプロフィールは復元できません。",
+    saveCodeFile: "コードをテキストファイルとして保存",
   },
   queueScreen: {
     viaCompanion: "コンパニオンアプリから追加されました",

@@ -1057,6 +1057,7 @@ export const deltaTranslations = {
     relinkHint: "Korvaa liitetyn tilin (vanha sähköpostiosoite ja salasana menettävät voimansa). Tarvitset vain synkkoodisi — sen jälkeen saat uuden palautuskoodin.",
     relinkSuccess: "Verkkotili liitetty uudelleen — muista sähköpostisi ja salasanasi",
     relinkTitle: "Liitä verkkotili uudelleen",
+    saveCodeFile: "Tallenna tekstitiedostona",
   },
   profileSync: {
     deleteOnline: "Poista online-tiedot",
@@ -1067,6 +1068,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Online-tiedot poistettu. Profiilisi on nyt vain paikallinen.",
     deleteOnlineFailed: "Online-tietojen poistaminen epäonnistui",
     syncCodeWarning: "Kirjoita tämä koodi ylös! Ilman sitä (tai online-tiliä ja salasanaa) online-profiiliasi ei voi palauttaa.",
+    saveCodeFile: "Tallenna koodi tekstitiedostona",
   },
   queueScreen: {
     viaCompanion: "Lisätty companion-sovelluksen kautta",

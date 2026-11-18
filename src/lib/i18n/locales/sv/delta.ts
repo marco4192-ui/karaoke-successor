@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "Ersätter det kopplade kontot (gamla e-postadressen och det gamla lösenordet blir ogiltiga). Allt du behöver är din synkkod — efteråt får du en ny återställningskod.",
     relinkSuccess: "Online-kontot har kopplats igen — kom ihåg din e-post och ditt lösenord",
     relinkTitle: "Koppla online-kontot igen",
+    saveCodeFile: "Spara som textfil",
   },
   profileSync: {
     deleteOnline: "Radera online-data",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Online-data raderad. Din profil är nu endast lokal.",
     deleteOnlineFailed: "Det gick inte att radera online-data",
     syncCodeWarning: "Skriv ner den här koden! Utan den (eller ett online-konto med lösenord) kan din online-profil inte återställas.",
+    saveCodeFile: "Spara koden som textfil",
   },
   queueScreen: {
     viaCompanion: "Tillagd via companion-appen",

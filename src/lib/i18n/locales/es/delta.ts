@@ -1058,6 +1058,7 @@ export const deltaTranslations = {
     relinkHint: "Sustituye a la cuenta vinculada (el correo electrónico y la contraseña antiguos dejan de valer). Solo necesitas tu código de sincronización — después recibirás un nuevo código de recuperación.",
     relinkSuccess: "Cuenta online vinculada de nuevo — recuerda tu correo electrónico y tu contraseña",
     relinkTitle: "Vincular de nuevo la cuenta online",
+    saveCodeFile: "Guardar como archivo de texto",
   },
   profileSync: {
     deleteOnline: "Borrar datos online",
@@ -1068,6 +1069,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Datos online borrados. Tu perfil ahora es solo local.",
     deleteOnlineFailed: "Error al borrar los datos online",
     syncCodeWarning: "¡Apunta este código! Sin él (o sin una cuenta online con contraseña) tu perfil online no se puede recuperar.",
+    saveCodeFile: "Guardar el código como archivo de texto",
   },
   queueScreen: {
     viaCompanion: "Añadida vía app compañera",

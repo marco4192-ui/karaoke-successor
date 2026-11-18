@@ -271,7 +271,14 @@ POST /auth/password  { "email": "singer@example.com",
 | Password, recovery code saved | `POST /auth/recover` (in-app "Forgot password?" form) |
 | Password, no recovery code, but sync code | re-register via `/auth/register` (replaces the account) — in-app "Re-link account" form |
 | Sync code, but account (e-mail + password) | login returns the sync code |
-| Sync code AND no account | **not recoverable** — register a new profile (new identity); old online scores stay under the old name until manual operator deletion (GDPR: `DELETE FROM ks_profiles WHERE profile_uid = '…'` cascades everything) |
+| Sync code AND no account | **not recoverable via API** — register a new profile (new identity); old online scores stay under the old name until manual operator deletion (GDPR: `DELETE FROM ks_profiles WHERE profile_uid = '…'` cascades everything) |
+
+The last row is a deliberate design decision: a recovery path that works
+without any surviving secret would be a theft path for other people's
+profiles. For a friends-and-family instance the operator can still help in
+person — the break-glass runbook lives in `docs/LEADERBOARD-SETUP.md`
+(section 7): verify the player face-to-face, then set a fresh `sync_code`
+via SQL. No API endpoint exists for this on purpose.
 
 After a successful login the client receives the profile's `sync_code` and
 can pull the full profile + highscores snapshot via the existing

@@ -395,3 +395,97 @@ Die URL und der API-Key werden zur **Build-Zeit** eingebrannt:
   (Desktop-App sendet) unkritisch.
 - **Verbindungstest:** App-Einstellungen → „Verbindung testen" ruft denselben
   Health-Check (`GET /`) auf wie der Browser-Test oben.
+
+## 7. Break-Glass: Profil-Wiederherstellung durch den Betreiber
+
+Wenn ein Spieler **alle vier Rettungsleinen** verloren hat — Gerät (App-Daten
+weg), Sync-Code, Passwort und Recovery-Code —, gibt es bewusst keinen
+Self-Service-Weg. Der Betreiber kann mit direktem Datenbankzugriff helfen.
+Dieses Runbook ist absichtlich **kein API-Endpoint**: Ein fernausführbarer
+Wiederherstellungsweg ohne überlebendes Geheimnis wäre ein Diebstahlweg für
+fremde Profile.
+
+### Vorher prüfen: Hat der Spieler wirklich alles verloren?
+
+Jede einzelne dieser Leinen genügt und macht Break-Glass unnötig:
+
+| Vorhanden | Selbsthilfe in der App |
+|---|---|
+| Gerät mit dem Profil | Profileinstellungen → Sync-Code wird angezeigt |
+| Sync-Code | Profil-Sync → „Profil laden" + Konto-Neuverknüpfung per Sync-Code |
+| Passwort (Online-Konto) | Login liefert den Sync-Code zurück |
+| Recovery-Code | „Passwort vergessen?" → neues Passwort + neuer Code |
+
+### Wann Break-Glass gerechtfertigt ist
+
+- Der Spieler steht **persönlich** vor dir (Party-Gast, Freund, Familie) und
+  kann sich erkennen lassen — Profilname, Farbe, Avatar, gespielte Songs,
+  typische Scores.
+- **Niemals** auf Anfrage per E-Mail/Chat ohne persönliche Verifikation:
+  Name und Farbe stehen für jeden sichtbar im Board — das ist kein
+  Inhaber-Nachweis, sonst könnte jeder beliebige Fremde fremde Top-Scores
+  „wiederherstellen" (sprich: stehlen).
+
+### Runbook (phpMyAdmin / MySQL-Konsole)
+
+1. **Profil identifizieren** (z. B. über den Anzeigenamen):
+
+   ```sql
+   SELECT profile_uid, display_name, sync_code, created_at
+   FROM ks_profiles WHERE display_name = 'Spielername';
+   ```
+
+2. **Backup:** Vor jedem Eingriff die Zeile sichern (mindestens das
+   `SELECT *`-Ergebnis kopieren, besser Tabellen-Export).
+
+3. **Neuen Sync-Code setzen** — 8 Zeichen aus `A–Z`/`0–9` (Validierung:
+   `isValidSyncCode`), empfohlen ohne verwechselbare Zeichen `0/O/1/I`,
+   z. B. aus einem Passwort-Generator:
+
+   ```sql
+   UPDATE ks_profiles SET sync_code = 'AB12CD34'
+   WHERE profile_uid = '…';
+   ```
+
+   - Der **alte Code ist damit ungültig** (Unique-Key `uq_sync_code`) — wer
+     ihn später findet, hat nichts mehr.
+   - Kollidiert der neue Code mit einem anderen Profil, meldet MySQL einen
+     Duplicate-Key-Fehler → anderen Code wählen.
+   - Dieser eine `UPDATE` überträgt das komplette Profil an den Empfänger
+     des neuen Codes — deshalb nur **persönlich** übergeben, niemals per
+     Nachricht.
+
+4. **Online-Konto (falls vorhanden):** Das alte Konto bleibt zunächst
+   verknüpft. Der Spieler setzt sich mit dem NEUEN Sync-Code einfach selbst
+   ein neues Konto (App → Profileinstellungen → Konto neu verknüpfen) — das
+   ersetzt das alte serverseitig. Alternativ direkt aufräumen:
+
+   ```sql
+   DELETE FROM ks_accounts WHERE profile_uid = '…';
+   ```
+
+   (Die alte E-Mail-Adresse wird dadurch wieder frei.)
+
+5. **Wiederherstellung beim Spieler:** App → Profileinstellungen →
+   Profil-Sync → neuen Code eingeben → „Profil laden". Das stellt
+   Profil-Identität, Einstellungen und — sofern mindestens einmal ein
+   Sync-Upload gemacht wurde — XP, Erfolge und lokale Highscores wieder her.
+   Online-Scores und Daily-Ergebnisse bleiben ohnehin serverseitig erhalten
+   und rechnen automatisch weiter, sobald das Profil wieder Scores einreicht.
+
+6. **Eingriff protokollieren** (wer, wann, welches Profil, warum) — als
+   Verarbeitungsnachweis für die DSGVO-Dokumentation.
+
+### Was NICHT wiederherstellbar ist
+
+- Lokale Daten, die nie hochgeladen wurden (XP, Erfolge, lokal gespielte
+  Songs ohne Sync-Upload) — dafür existiert keine Serverkopie.
+- Ein Profil, das nie online gegangen ist (kein `ks_profiles`-Eintrag),
+  existiert serverseitig gar nicht.
+
+### Prävention (dem Spieler mitgeben)
+
+- Sync-Code und Recovery-Code lassen sich in der App jeweils „als Textdatei
+  speichern" (Button neben der Code-Anzeige) — Datei in den Passwort-Manager
+  oder aufs selbe Medium wie der Konfigurations-Backup.
+- Der Sync-Code ist der Hauptschlüssel: Wer ihn rettet, rettet alles.

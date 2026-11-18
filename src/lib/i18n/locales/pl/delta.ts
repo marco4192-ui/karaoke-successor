@@ -1057,6 +1057,7 @@ export const deltaTranslations = {
     relinkHint: "Zastępuje podłączone konto (stary adres e-mail i hasło tracą ważność). Potrzebujesz tylko kodu synchronizacji — później otrzymasz nowy kod odzyskiwania.",
     relinkSuccess: "Konto online podłączone ponownie — zapamiętaj swój adres e-mail i hasło",
     relinkTitle: "Ponownie podłącz konto online",
+    saveCodeFile: "Zapisz jako plik tekstowy",
   },
   profileSync: {
     deleteOnline: "Usuń dane online",
@@ -1067,6 +1068,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Dane online usunięte. Twój profil jest teraz wyłącznie lokalny.",
     deleteOnlineFailed: "Nie udało się usunąć danych online",
     syncCodeWarning: "Zapisz ten kod! Bez niego (albo bez konta online z hasłem) Twojego profilu online nie da się odzyskać.",
+    saveCodeFile: "Zapisz kod jako plik tekstowy",
   },
   queueScreen: {
     viaCompanion: "Dodane przez aplikację kompana",

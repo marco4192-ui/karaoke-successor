@@ -1057,6 +1057,7 @@ export const deltaTranslations = {
     relinkHint: "Erstatter den tilknyttede konto (gammel e-mail og adgangskode bliver ugyldige). Du behøver kun din synkkode — bagefter modtager du en ny gendannelseskode.",
     relinkSuccess: "Onlinekonto tilknyttet igen — husk din e-mail og adgangskode",
     relinkTitle: "Tilknyt onlinekonto igen",
+    saveCodeFile: "Gem som tekstfil",
   },
   profileSync: {
     deleteOnline: "Slet online-data",
@@ -1067,6 +1068,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Online-data slettet. Din profil er nu kun lokal.",
     deleteOnlineFailed: "Det lykkedes ikke at slette online-data",
     syncCodeWarning: "Skriv denne kode ned! Uden den (eller en onlinekonto med adgangskode) kan din online-profil ikke gendannes.",
+    saveCodeFile: "Gem koden som tekstfil",
   },
   queueScreen: {
     viaCompanion: "Tilføjet via companion-appen",

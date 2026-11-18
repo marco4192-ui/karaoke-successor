@@ -8,8 +8,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { KeyRoundIcon } from 'lucide-react';
+import { FileDownIcon, KeyRoundIcon } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/translations';
+import { downloadTextFile, todayStamp } from '@/lib/download-text';
 
 interface RecoveryCodeDialogProps {
   /** The one-time recovery code (formatted XXXX-XXXX-XXXX-XXXX). */
@@ -37,6 +38,25 @@ export function RecoveryCodeDialog({ code, open, onOpenChange }: RecoveryCodeDia
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard unavailable — user can select manually */ }
+  };
+
+  // R71: the code is shown exactly ONCE — offer a text-file download next to
+  // copy so it survives a lost clipboard/zettel. Content reuses the dialog's
+  // own localized hint texts so the file matches what the user just read.
+  const saveFile = () => {
+    const content = [
+      'KARAOKE ZERO — RECOVERY-CODE',
+      '=============================',
+      '',
+      `Code: ${code}`,
+      `Date: ${todayStamp()}`,
+      '',
+      t('profileAuth.recoveryDesc'),
+      '',
+      t('profileAuth.recoverySaveHint'),
+      '',
+    ].join('\n');
+    downloadTextFile('karaoke-zero-recovery-code.txt', content);
   };
 
   return (
@@ -68,15 +88,29 @@ export function RecoveryCodeDialog({ code, open, onOpenChange }: RecoveryCodeDia
             <p className="text-[11px] text-white/35 leading-snug">
               {t('profileAuth.recoverySaveHint')}
             </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void copy()}
-              className="h-7 shrink-0 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
-              data-testid="recovery-code-copy"
-            >
-              {copied ? `✓ ${t('profileAuth.recoveryCopied')}` : t('profileAuth.recoveryCopy')}
-            </Button>
+            <div className="flex shrink-0 gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void copy()}
+                className="h-7 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                data-testid="recovery-code-copy"
+              >
+                {copied ? `✓ ${t('profileAuth.recoveryCopied')}` : t('profileAuth.recoveryCopy')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={saveFile}
+                className="h-7 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                data-testid="recovery-code-download"
+                aria-label={t('profileAuth.saveCodeFile')}
+                title={t('profileAuth.saveCodeFile')}
+              >
+                <FileDownIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t('profileAuth.saveCodeFile')}</span>
+              </Button>
+            </div>
           </div>
 
           <Button

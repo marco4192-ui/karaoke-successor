@@ -1057,6 +1057,7 @@ export const deltaTranslations = {
     relinkHint: "Vervangt het gekoppelde account (oude e-mail en wachtwoord vervallen). Je hebt alleen je sync-code nodig — daarna ontvang je een nieuwe herstelcode.",
     relinkSuccess: "Online account opnieuw gekoppeld — onthoud je e-mailadres en wachtwoord",
     relinkTitle: "Online account opnieuw koppelen",
+    saveCodeFile: "Opslaan als tekstbestand",
   },
   profileSync: {
     deleteOnline: "Online gegevens verwijderen",
@@ -1067,6 +1068,7 @@ export const deltaTranslations = {
     deleteOnlineSuccess: "Online gegevens verwijderd. Je profiel is nu alleen lokaal.",
     deleteOnlineFailed: "Online gegevens verwijderen mislukt",
     syncCodeWarning: "Schrijf deze code op! Zonder deze code (of een online account met wachtwoord) kan je onlineprofiel niet worden hersteld.",
+    saveCodeFile: "Code opslaan als tekstbestand",
   },
   queueScreen: {
     viaCompanion: "Toegevoegd via de companion-app",
