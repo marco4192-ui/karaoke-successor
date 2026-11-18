@@ -88,9 +88,12 @@ try {
         default       => err('Not found', 404),
     };
 } catch (PDOException $e) {
-    err('Database error', 500);
+    // R77: the exact driver message is exposed here — every endpoint sits
+    // behind the X-API-Key, and "Database error" alone made fresh-install
+    // write-path failures (e.g. the stored procedure) undiagnosable.
+    err('Database error: ' . $e->getMessage(), 500);
 } catch (Throwable $e) {
-    err('Internal error', 500);
+    err('Internal error: ' . $e->getMessage(), 500);
 }
 
 // ============================================================
@@ -1326,6 +1329,25 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
             $queries[$name] = ['ok' => false, 'error' => $e->getMessage()];
             $problems[] = "Query `$name` schlaegt fehl: " . $e->getMessage();
         }
+    }
+
+    // ── 5. Write-path probe (R77): actually CALL the stored procedure with
+    //       a UID that matches no profile (all-zero UUID). The UPDATE inside
+    //       affects 0 rows — this is harmless, and it is the ONLY way to
+    //       verify executability: information_schema says "exists", but the
+    //       CALL can still fail with definer/privilege errors (1449/1370),
+    //       which would 500 every POST /scores on a fresh install.
+    try {
+        $procStmt = $pdo->prepare('CALL sp_refresh_profile_stats(?)');
+        $procStmt->execute(['00000000-0000-4000-8000-000000000000']);
+        $queries['proc_call'] = ['ok' => true];
+    } catch (PDOException $e) {
+        $queries['proc_call'] = ['ok' => false, 'error' => $e->getMessage()];
+        $problems[] = 'CALL sp_refresh_profile_stats schlaegt fehl (POST /scores wuerde 500en): '
+            . $e->getMessage()
+            . ' — haeufige Ursachen: DEFINER existiert nicht mehr (Drop+CREATE der Procedure in phpMyAdmin fixt es) '
+            . 'oder dem DB-User fehlt EXECUTE (Plesk → Datenbankbenutzer → Rechte).';
+        $fixes[] = 'DROP PROCEDURE IF EXISTS `sp_refresh_profile_stats`; CREATE PROCEDURE `sp_refresh_profile_stats`(IN p_uid VARCHAR(36)) BEGIN ... END -- voller Body aus schema.sql';
     }
 
     json([
