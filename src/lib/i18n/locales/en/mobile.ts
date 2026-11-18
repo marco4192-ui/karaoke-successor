@@ -879,6 +879,10 @@ export const mobileTranslations = {
     evaluationTeam: '🤝 Team (average)',
     localBoard: 'Local',
     onlineBoard: 'Online',
+    // R72: daily archive (online board of any past day)
+    archiveToday: 'Today',
+    archivePrevDay: 'Previous day',
+    archiveNextDay: 'Next day',
     onlineBoardLoading: 'Loading online leaderboard…',
     onlineBoardUnavailable: 'Online leaderboard unreachable. Check the leaderboard server configuration (see docs).',
     onlineBoardEmpty: 'No online entries for today yet.',

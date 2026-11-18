@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Día siguiente",
+    archivePrevDay: "Día anterior",
+    archiveToday: "Hoy",
     dualPlayerHint: "Dos jugadores seleccionados: los desafíos diarios y semanales se pueden cantar en duelo o por equipos.",
     filterAll: "Todos",
     modeCompleted: "Completado",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 Síntesis MIDI",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Histórico",
+    windowMonth: "Mes",
+    windowWeek: "Semana",
+    windowLabel: "Periodo",
+    sortScore: "Puntos",
+    sortBest: "Mejor puntuación",
+    sortAccuracy: "Precisión",
+    sortPlays: "Canciones",
+    sortLabel: "Ordenar por",
+    totalPlayers: "{n} jugadores",
+    yourRank: "Tu posición: #{rank} de {total}",
+    percentileTop: "Top {p}%",
+    noRoundsInWindow: "Todavía no has jugado ninguna ronda online en este periodo.",
+    roundsPlayed: "{n} rondas",
+    brWins: "Victorias en Battle Royale",
+  },
   homeScreen: {
     allDailyDone: "¡Todos los huecos diarios completados! 🎉",
     allWeeklyDone: "¡Todos los huecos semanales completados! 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Solo aplica a las rondas medley — Aleatorio y Votación reproducen canciones completas.",
     finalRoundDurationDesc: "Duración de la ronda final (último duelo / rondas de gran final).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Estadísticas online",
+    loading: "Cargando datos online…",
+    unavailable: "Los datos online no están disponibles ahora mismo",
+    crowns: "Coronas por canción (#1)",
+    brWins: "Victorias BR",
+    topPercent: "Top {p}%",
+    rankOf: "Puesto #{rank} de {total}",
+    notRanked: "Sin clasificar",
+    points: "Puntos online",
+    crownExample: "p. ej.",
+    recentPlays: "Últimas rondas online",
+    noPlays: "Aún no hay rondas online.",
+    unknownSong: "Canción desconocida",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Todos los emparejamientos se fijaron manualmente — el límite se levanta automáticamente. La lista completa se encolará.",
     noLimitManualOn: "Límite levantado manualmente — la lista completa se encolará sin límite por jugador.",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Borrar definitivamente",
     deleteOnlineSuccess: "Datos online borrados. Tu perfil ahora es solo local.",
     deleteOnlineFailed: "Error al borrar los datos online",
+    invalidCode: "Introduce un código de sincronización válido (8 o 12 caracteres)",
     syncCodeWarning: "¡Apunta este código! Sin él (o sin una cuenta online con contraseña) tu perfil online no se puede recuperar.",
     saveCodeFile: "Guardar el código como archivo de texto",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Sin conexión — se reintentará automáticamente",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Rivales",
+    add: "Añadir como rival",
+    remove: "Quitar de rivales",
+    compare: "Comparar con {name}",
+    compareButton: "Comparar",
+    compareTitle: "Duelo: {name}",
+    compareBasis: "Se comparan las canciones que tú has jugado online (máx. 200).",
+    compareLoading: "Comparando puntuaciones…",
+    compareFailed: "No se pudo cargar la comparación",
+    compareNoShared: "Todavía no hay canciones en común con puntuaciones online.",
+    compareSummary: "{shared} canciones en común · diferencia de puntos {diff}",
+    compareMineOnly: "{n} jugadas solo por ti",
+    youLead: "Vas ganando",
+    tied: "Empate",
+    rivalLeads: "{name} va ganando",
+    you: "Tú",
+    unknownSong: "Canción desconocida",
   },
   settings: {
     onlineDataHint: "Almacenamiento de datos: cuando se usan las funciones online, el servidor de la tabla de clasificación guarda tu nombre, tu color, el país opcional y tus resultados. Antes de la primera subida se te pedirá tu consentimiento; puedes borrarlo todo cuando quieras desde tu perfil (\"Borrar datos online\").",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Buscar en la lista …",
     title: "Estudio de Metadatos",
     usageCount: "{n} canciones",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Filtro por dificultad",
+    difficulty_all: "Todas",
+    difficulty_easy: "Fácil",
+    difficulty_normal: "Medio",
+    difficulty_hard: "Difícil",
   },
   songStart: {
     instrumentalAmount: "Supresión de voz: {n}%",

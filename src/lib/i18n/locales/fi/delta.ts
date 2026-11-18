@@ -375,6 +375,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Seuraava päivä",
+    archivePrevDay: "Edellinen päivä",
+    archiveToday: "Tänään",
     dualPlayerHint: "Kaksi pelaajaa valittuna: päivittäisiä ja viikoittaisia haasteita voi laulaa kaksinkamppailuna tai tiiminä.",
     filterAll: "Kaikki",
     modeCompleted: "Suoritettu",
@@ -899,6 +903,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-synteesi",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Kaikki ajat",
+    windowMonth: "Kuukausi",
+    windowWeek: "Viikko",
+    windowLabel: "Aikaväli",
+    sortScore: "Pisteet",
+    sortBest: "Paras tulos",
+    sortAccuracy: "Tarkkuus",
+    sortPlays: "Kappaleet",
+    sortLabel: "Järjestä",
+    totalPlayers: "{n} pelaajaa",
+    yourRank: "Sijasi: #{rank} / {total}",
+    percentileTop: "Top {p}%",
+    noRoundsInWindow: "Et ole vielä pelannut yhtään online-kierrosta tällä aikavälillä.",
+    roundsPlayed: "{n} kierrosta",
+    brWins: "Battle Royale -voitot",
+  },
   homeScreen: {
     allDailyDone: "Kaikki päivittäiset paikat suoritettu! 🎉",
     allWeeklyDone: "Kaikki viikkopaikat suoritettu! 🎉",
@@ -1032,6 +1054,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Koskee vain medley-kierroksia — Satunnainen ja Äänestys soittavat kokonaisia kappaleita.",
     finalRoundDurationDesc: "Finaalikierroksen pituus (viimeinen kaksinkamppailu / suurfinaalin kierrokset).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Online-tilastot",
+    loading: "Ladataan online-tietoja…",
+    unavailable: "Online-tiedot eivät ole juuri nyt saatavilla",
+    crowns: "Kappalekruunut (#1)",
+    brWins: "BR-voitot",
+    topPercent: "Top {p}%",
+    rankOf: "Sija #{rank} / {total}",
+    notRanked: "Ei listalla",
+    points: "Online-pisteet",
+    crownExample: "esim.",
+    recentPlays: "Viimeisimmät online-kierrokset",
+    noPlays: "Ei vielä online-kierroksia.",
+    unknownSong: "Tuntematon kappale",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Kaikki parit asetettiin manuaalisesti — raja poistetaan automaattisesti. Koko soittolista lisätään jonoon.",
     noLimitManualOn: "Raja poistettu manuaalisesti — koko soittolista lisätään jonoon ilman pelaajakohtaista rajaa.",
@@ -1067,6 +1105,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Poista pysyvästi",
     deleteOnlineSuccess: "Online-tiedot poistettu. Profiilisi on nyt vain paikallinen.",
     deleteOnlineFailed: "Online-tietojen poistaminen epäonnistui",
+    invalidCode: "Syötä kelvollinen synkkoodi (8 tai 12 merkkiä)",
     syncCodeWarning: "Kirjoita tämä koodi ylös! Ilman sitä (tai online-tiliä ja salasanaa) online-profiiliasi ei voi palauttaa.",
     saveCodeFile: "Tallenna koodi tekstitiedostona",
   },
@@ -1075,6 +1114,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Offline — yritetään automaattisesti uudelleen",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Kilpailijat",
+    add: "Lisää kilpailijaksi",
+    remove: "Poista kilpailija",
+    compare: "Vertaa: {name}",
+    compareButton: "Vertaa",
+    compareTitle: "Kaksinkamppailu: {name}",
+    compareBasis: "Vertailussa ovat kappaleet, jotka olet itse pelannut online (enintään 200).",
+    compareLoading: "Verrataan tuloksia…",
+    compareFailed: "Vertailun lataaminen epäonnistui",
+    compareNoShared: "Teillä ei ole vielä yhteisiä kappaleita online-tulosten kanssa.",
+    compareSummary: "{shared} yhteistä kappaletta · piste-ero {diff}",
+    compareMineOnly: "{n} pelattu vain sinulla",
+    youLead: "Sinä johtat",
+    tied: "Tasapeli",
+    rivalLeads: "{name} johtaa",
+    you: "Sinä",
+    unknownSong: "Tuntematon kappale",
   },
   settings: {
     onlineDataHint: "Tietojen tallennus: kun online-ominaisuuksia käytetään, tulostaulukon palvelin tallentaa nimesi, värisi, valinnaisen maan ja tuloksesi. Ensimmäistä latausta ennen sinulta pyydetään suostumus; voit poistaa kaiken milloin tahansa profiilistasi (\"Poista online-tiedot\").",
@@ -1226,6 +1285,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Hae luettelosta …",
     title: "Metadata Studio",
     usageCount: "{n} kappaletta",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Vaikeustason suodatin",
+    difficulty_all: "Kaikki",
+    difficulty_easy: "Helppo",
+    difficulty_normal: "Keskiverto",
+    difficulty_hard: "Vaikea",
   },
   songStart: {
     instrumentalAmount: "Vokaalien poisto: {n}%",

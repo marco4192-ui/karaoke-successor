@@ -8,6 +8,7 @@ import { useGameStore } from '@/lib/game/store';
 import { Song } from '@/types/game';
 import { TrophyIcon } from './constants';
 import { useTranslation } from '@/lib/i18n/translations';
+import { OutlierFlagBadge } from '@/components/results/outlier-badge';
 import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
 
 // ── Country Flag Helper ──
@@ -65,6 +66,10 @@ export function SongHighscoreModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [internalTab, setInternalTab] = useState<'local' | 'global'>(leaderboardType);
+  // R72/B: real difficulty filter for the online board ('all' = every entry,
+  // pre-R72 behaviour; easy/normal/hard = only entries whose best score was
+  // achieved on that difficulty).
+  const [difficulty, setDifficulty] = useState<'all' | 'easy' | 'normal' | 'hard'>('all');
 
   // R69: match by id AND syncUid (sync/login-imported profiles)
   const localProfileIds = useMemo(
@@ -94,21 +99,21 @@ export function SongHighscoreModal({
     setError(null);
 
     import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-      leaderboardService.getSongLeaderboard(songHash, gameType, 10)
+      leaderboardService.getSongLeaderboard(songHash, gameType, 10, difficulty)
         .then((scores) => {
           setGlobalScores(scores);
         })
         .catch((err: Error) => setError(err.message || t('songHighscoreModal.failedToLoad')))
         .finally(() => setIsLoading(false));
     });
-  }, [songHash, gameType, t]);
+  }, [songHash, gameType, difficulty, t]);
 
-  // Load global scores when opening or switching to global tab
+  // Load global scores when opening or switching to global tab / difficulty
   useEffect(() => {
     if (isOpen && onlineEnabled && internalTab === 'global') {
       loadGlobalScores();
     }
-  }, [isOpen, onlineEnabled, internalTab, loadGlobalScores]);
+  }, [isOpen, onlineEnabled, internalTab, difficulty, loadGlobalScores]);
 
   // When clicking the global tab button, also update the global store
   const handleTabSwitch = (tab: 'local' | 'global') => {
@@ -127,7 +132,7 @@ export function SongHighscoreModal({
           <DialogDescription className="text-white/60 text-sm">{t('songHighscoreModal.highscores').replace('{artist}', song.artist)}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap items-center">
           <Button
             onClick={() => handleTabSwitch('local')}
             size="sm"
@@ -143,6 +148,29 @@ export function SongHighscoreModal({
             >
               {t('songHighscoreModal.global')}
             </Button>
+          )}
+
+          {/* R72/B: difficulty filter (online board only) */}
+          {onlineEnabled && internalTab === 'global' && (
+            <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10 ml-auto" role="group" aria-label={t('songHighscoreModal.difficultyFilter')} data-testid="song-difficulty-filter">
+              {(['all', 'easy', 'normal', 'hard'] as const).map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  data-testid={`song-difficulty-${d}`}
+                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                    d === 'easy' && difficulty === d ? 'bg-green-500 text-white' :
+                    d === 'normal' && difficulty === d ? 'bg-yellow-500 text-black' :
+                    d === 'hard' && difficulty === d ? 'bg-red-500 text-white' :
+                    d === 'all' && difficulty === d ? 'bg-cyan-500 text-white' :
+                    'text-white/50 hover:text-white'
+                  }`}
+                >
+                  {t(`songHighscoreModal.difficulty_${d}`)}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -201,8 +229,9 @@ export function SongHighscoreModal({
                       <span className={`font-medium truncate ${isLocal ? 'text-cyan-300' : 'text-white'}`}>{entry.display_name || 'Unknown'}</span>
                       <CountryFlag code={entry.country_code} show={!!entry.country_code} />
                       <VerifiedBadge verified={!!entry.verified} />
+                      <OutlierFlagBadge flags={entry.ac_flags} />
                     </div>
-                    <div className="text-xs text-white/40">{entry.accuracy?.toFixed(1)}% • {entry.max_combo}x {t('songHighscoreModal.combo')}</div>
+                    <div className="text-xs text-white/40">{entry.accuracy?.toFixed(1)}% • {entry.max_combo}x {t('songHighscoreModal.combo')} • {entry.difficulty}</div>
                   </div>
 
                   <div className="text-right flex-shrink-0">

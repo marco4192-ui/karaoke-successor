@@ -13,6 +13,7 @@ import { PlayerProgressionCard } from './character/player-progression-card';
 import { CharacterSettingsCard } from './character/character-settings-card';
 import { OnlineLoginDialog } from './character/online-login-dialog';
 import { RecoveryCodeDialog } from './character/recovery-code-dialog';
+import { OnlineStatsCard } from './character/online-stats-card';
 
 export function CharacterScreen() {
   const { t } = useTranslation();
@@ -260,6 +261,9 @@ export function CharacterScreen() {
               isActive: !(displayedProfile.isActive ?? true),
             })}
           />
+          {/* R72: online statistics (crowns, BR wins, percentile, recent
+              rounds) — only for profiles with an online presence. */}
+          <OnlineStatsCard profile={displayedProfile} onlineEnabled={onlineEnabled} />
           <CharacterSettingsCard
             profile={displayedProfile}
             testId="profile-settings-card"

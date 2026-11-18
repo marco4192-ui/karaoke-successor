@@ -9,6 +9,7 @@ import { TrophyIcon } from './constants';
 import { useTranslation } from '@/lib/i18n/translations';
 import { useGameStore } from '@/lib/game/store';
 import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
+import { OutlierFlagBadge } from '@/components/results/outlier-badge';
 
 // ── Compute song hash for a song ──
 function computeSongHash(song: Song, gameType: 's' | 'd' = 's'): Promise<string | null> {
@@ -143,6 +144,7 @@ export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, 
                       <span className={`flex-1 text-sm truncate ${isLocal ? 'text-cyan-300' : ''}`}>{entry.display_name || 'Unknown'}</span>
                       <CountryFlag code={entry.country_code} show={!!entry.country_code} />
                       <VerifiedBadge verified={!!entry.verified} />
+                      <OutlierFlagBadge flags={entry.ac_flags} />
                       <span className="text-sm font-bold text-cyan-400">{entry.score.toLocaleString()}</span>
                     </div>
                   );

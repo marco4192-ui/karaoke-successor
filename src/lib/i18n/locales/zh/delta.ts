@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "下一天",
+    archivePrevDay: "前一天",
+    archiveToday: "今天",
     dualPlayerHint: "已选择两名玩家：每日和每周挑战可以以对决或团队方式演唱。",
     filterAll: "全部",
     modeCompleted: "已完成",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI 合成",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "总榜",
+    windowMonth: "月榜",
+    windowWeek: "周榜",
+    windowLabel: "时间范围",
+    sortScore: "积分",
+    sortBest: "最高分",
+    sortAccuracy: "准确度",
+    sortPlays: "歌曲数",
+    sortLabel: "排序方式",
+    totalPlayers: "{n}名玩家",
+    yourRank: "你的排名：#{rank}/{total}",
+    percentileTop: "前 {p}%",
+    noRoundsInWindow: "你在这个时间段内还没有玩过任何在线对局。",
+    roundsPlayed: "{n} 局",
+    brWins: "大逃杀胜利数",
+  },
   homeScreen: {
     allDailyDone: "今日槽位全部完成！🎉",
     allWeeklyDone: "本周槽位全部完成！🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "仅适用于串烧回合——随机和投票模式播放完整歌曲。",
     finalRoundDurationDesc: "最终回合（最后的对决/终局表演）的时长。",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "在线统计",
+    loading: "正在加载在线数据…",
+    unavailable: "在线数据目前无法访问",
+    crowns: "冠军歌曲数（#1）",
+    brWins: "BR 胜场",
+    topPercent: "前 {p}%",
+    rankOf: "排名 #{rank}/{total}",
+    notRanked: "未上榜",
+    points: "在线积分",
+    crownExample: "例如：",
+    recentPlays: "最近的在线对局",
+    noPlays: "还没有在线对局。",
+    unknownSong: "未知歌曲",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "所有配对均已手动设置——限制已自动解除。整个播放列表都将排入队列。",
     noLimitManualOn: "已手动解除限制——整个播放列表将排入队列，不设每人上限。",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "永久删除",
     deleteOnlineSuccess: "在线数据已删除。你的个人资料现在仅保存在本地。",
     deleteOnlineFailed: "删除在线数据失败",
+    invalidCode: "请输入有效的同步码（8 位或 12 位）",
     syncCodeWarning: "请记下此码！没有它（或没有带密码的在线账号），你的在线个人资料将无法恢复。",
     saveCodeFile: "将此码保存为文本文件",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "离线——将自动重试",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "对手",
+    add: "添加为对手",
+    remove: "移除对手",
+    compare: "与 {name} 比较",
+    compareButton: "比较",
+    compareTitle: "对决：{name}",
+    compareBasis: "比较的是你自己在线玩过的歌曲（最多 200 首）。",
+    compareLoading: "正在比较分数…",
+    compareFailed: "无法加载比较结果",
+    compareNoShared: "你们还没有带在线成绩的共同歌曲。",
+    compareSummary: "共同歌曲 {shared} 首 · 积分差 {diff}",
+    compareMineOnly: "{n} 首只有你玩过",
+    youLead: "你领先",
+    tied: "平手",
+    rivalLeads: "{name} 领先",
+    you: "你",
+    unknownSong: "未知歌曲",
   },
   settings: {
     onlineDataHint: "数据存储：使用在线功能时，排行榜服务器会保存你的名字、颜色、可选国家和结果。首次上传前会征求你的同意；你可以随时在个人资料中删除全部数据（“删除在线数据”）。",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "搜索列表…",
     title: "元数据工作室",
     usageCount: "{n} 首歌曲",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "难度筛选",
+    difficulty_all: "全部",
+    difficulty_easy: "简单",
+    difficulty_normal: "中等",
+    difficulty_hard: "困难",
   },
   songStart: {
     instrumentalAmount: "人声消除：{n}%",

@@ -223,6 +223,10 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   const [onlineEntries, setOnlineEntries] = useState<OnlineDailyEntry[] | null>(null);
   const [onlineLoading, setOnlineLoading] = useState(false);
   const [onlineError, setOnlineError] = useState<string | null>(null);
+  // R72/D: archive — which day the ONLINE board shows (default: today).
+  // The server accepts any past date (max 7 days back for submissions, but
+  // the board view itself is unlimited → full archive).
+  const [boardDate, setBoardDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
@@ -315,12 +319,14 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   }, [selectedWeeklySlot, weeklySongRefreshKey, language, weeklyDifficulty, viewProfileLevel]);
 
   // Load online daily leaderboard when the online tab is opened
-  const loadOnlineBoard = useCallback(async () => {
+  const loadOnlineBoard = useCallback(async (date?: string) => {
     setOnlineLoading(true);
     setOnlineError(null);
     try {
       const { leaderboardService } = await import('@/lib/api/leaderboard-service');
-      const entries = await leaderboardService.fetchDailyLeaderboard();
+      // R72/D: archive — fetch the board of the selected day
+      // (undefined = today, pre-R72 behaviour).
+      const entries = await leaderboardService.fetchDailyLeaderboard(date || boardDate);
       setOnlineEntries(entries);
     } catch (err) {
       setOnlineEntries(null);
@@ -328,14 +334,14 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     } finally {
       setOnlineLoading(false);
     }
-  }, []);
+  }, [boardDate]);
 
   useEffect(() => {
     if (activeTab === 'leaderboard' && boardSource === 'online') {
       loadOnlineBoard();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOnlineBoard is stable (useCallback with no deps)
-  }, [activeTab, boardSource]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOnlineBoard changes with boardDate (archive navigation refetches)
+  }, [activeTab, boardSource, boardDate]);
 
   // Live-updating challenge description for the played slot
   const challengeDescription = interpolateChallengeText(
@@ -1387,24 +1393,65 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center justify-between gap-3">
               <span>{t('dailyChallengeScreen.todayLeaderboard')}</span>
-              {/* Local / Online switch */}
-              <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10">
-                <button
-                  onClick={() => setBoardSource('local')}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                    boardSource === 'local' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  {t('dailyChallengeScreen.localBoard')}
-                </button>
-                <button
-                  onClick={() => { setBoardSource('online'); loadOnlineBoard(); }}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                    boardSource === 'online' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                  }`}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* R72/D: archive navigation for the ONLINE board */}
+                {boardSource === 'online' && (
+                  <div className="flex items-center gap-1" data-testid="daily-archive-nav">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const prev = new Date(boardDate + 'T12:00:00');
+                        prev.setDate(prev.getDate() - 1);
+                        setBoardDate(prev.toISOString().slice(0, 10));
+                      }}
+                      className="min-h-[28px] px-2 rounded-md border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-xs"
+                      aria-label={t('dailyChallengeScreen.archivePrevDay')}
+                      title={t('dailyChallengeScreen.archivePrevDay')}
+                      data-testid="daily-archive-prev"
+                    >
+                      ◀
+                    </button>
+                    <span className="text-xs text-white/50 min-w-24 text-center" data-testid="daily-archive-date">
+                      {boardDate === new Date().toISOString().slice(0, 10)
+                        ? t('dailyChallengeScreen.archiveToday')
+                        : new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(boardDate + 'T12:00:00'))}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = new Date(boardDate + 'T12:00:00');
+                        next.setDate(next.getDate() + 1);
+                        setBoardDate(next.toISOString().slice(0, 10));
+                      }}
+                      disabled={boardDate >= new Date().toISOString().slice(0, 10)}
+                      className="min-h-[28px] px-2 rounded-md border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                      aria-label={t('dailyChallengeScreen.archiveNextDay')}
+                      title={t('dailyChallengeScreen.archiveNextDay')}
+                      data-testid="daily-archive-next"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                )}
+                {/* Local / Online switch */}
+                <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10">
+                  <button
+                    onClick={() => setBoardSource('local')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                      boardSource === 'local' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    {t('dailyChallengeScreen.localBoard')}
+                  </button>
+                  <button
+                    onClick={() => { setBoardSource('online'); void loadOnlineBoard(); }}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                      boardSource === 'online' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                    }`}
                 >
                   🌐 {t('dailyChallengeScreen.onlineBoard')}
                 </button>
+                </div>
               </div>
             </CardTitle>
           </CardHeader>
@@ -1491,7 +1538,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     <div className="text-4xl mb-2">📡</div>
                     <p className="text-sm text-amber-400/90 mb-3">{t('dailyChallengeScreen.onlineBoardUnavailable')}</p>
                     <p className="text-xs text-white/40 mb-4">{onlineError}</p>
-                    <Button size="sm" variant="outline" className="border-white/20" onClick={loadOnlineBoard}>
+                    <Button size="sm" variant="outline" className="border-white/20" onClick={() => void loadOnlineBoard()}>
                       {t('dailyChallengeScreen.onlineBoardRefresh')}
                     </Button>
                   </div>

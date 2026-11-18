@@ -5,6 +5,39 @@ import type { BattleRoyaleGame, HallOfFameEntry } from './battle-royale-types';
 const HALL_OF_FAME_KEY = 'karaoke-battle-royale-hall-of-fame';
 const MAX_HALL_OF_FAME_ENTRIES = 50;
 
+/**
+ * R72/D: forward a BR win to the online counter — fire-and-forget.
+ * Called exactly once per completed game (from recordHallOfFame). Gating
+ * mirrors the daily board submission: online features on, leaderboard
+ * consent given, profile-backed winner, opt-in to boards. Guest winners
+ * (no profile) simply stay local. Failures are swallowed — the local hall
+ * of fame already recorded the win.
+ */
+function submitWinOnline(winnerId: string): void {
+  if (typeof window === 'undefined') return;
+  void (async () => {
+    try {
+      const [{ useGameStore }, { hasLeaderboardConsent }, { leaderboardService }] = await Promise.all([
+        import('@/lib/game/store'),
+        import('@/lib/leaderboard/consent'),
+        import('@/lib/api/leaderboard-service'),
+      ]);
+      const { onlineEnabled, profiles, updateProfile } = useGameStore.getState();
+      if (!onlineEnabled) return;
+      if (!hasLeaderboardConsent()) return; // no online data without consent
+      const profile = profiles.find(p => p.id === winnerId);
+      if (!profile || profile.storageMode === 'local') return;
+      if (!(profile.privacy?.showOnLeaderboard ?? true)) return; // opt-out: never on the wire
+      const res = await leaderboardService.submitBrResult({ profile, won: true });
+      // A sync code generated on the fly must be persisted — otherwise the
+      // next win registers a second profile.
+      if (res?.sync_code) updateProfile(profile.id, { syncCode: res.sync_code });
+    } catch {
+      /* non-critical — local HOF already has the win */
+    }
+  })();
+}
+
 // ==================== PUBLIC ====================
 
 export function getHallOfFame(): HallOfFameEntry[] {
@@ -105,4 +138,7 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
 
   // Keep only top entries
   saveHallOfFame(existing.slice(0, MAX_HALL_OF_FAME_ENTRIES));
+
+  // R72/D: online BR win counter (profile-backed winners only)
+  submitWinOnline(winner.id);
 }

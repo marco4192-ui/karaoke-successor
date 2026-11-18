@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Nästa dag",
+    archivePrevDay: "Föregående dag",
+    archiveToday: "Idag",
     dualPlayerHint: "Två spelare valda: dagliga och veckovisa utmaningar kan sjungas som duell eller lag.",
     filterAll: "Alla",
     modeCompleted: "Slutförd",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-syntes",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Alltid",
+    windowMonth: "Månad",
+    windowWeek: "Vecka",
+    windowLabel: "Tidsperiod",
+    sortScore: "Poäng",
+    sortBest: "Bästa poäng",
+    sortAccuracy: "Noggrannhet",
+    sortPlays: "Låtar",
+    sortLabel: "Sortera efter",
+    totalPlayers: "{n} spelare",
+    yourRank: "Din placering: #{rank} av {total}",
+    percentileTop: "Topp {p}%",
+    noRoundsInWindow: "Du har inte spelat några online-omgångar i den här perioden ännu.",
+    roundsPlayed: "{n} omgångar",
+    brWins: "Battle Royale-segrar",
+  },
   homeScreen: {
     allDailyDone: "Alla dagliga luckor rensade! 🎉",
     allWeeklyDone: "Alla veckoluckor rensade! 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Gäller bara medleyomgångar — Slumpmässig och Röstning spelar hela låtar.",
     finalRoundDurationDesc: "Längden på finalomgången (sista duellen / finalrundorna).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Online-statistik",
+    loading: "Laddar online-data…",
+    unavailable: "Online-data är just nu oåtkomlig",
+    crowns: "Låtkronor (#1)",
+    brWins: "BR-segrar",
+    topPercent: "Topp {p}%",
+    rankOf: "Placering #{rank} av {total}",
+    notRanked: "Inte placerad",
+    points: "Poäng online",
+    crownExample: "t.ex.",
+    recentPlays: "Senaste online-omgångar",
+    noPlays: "Inga online-omgångar ännu.",
+    unknownSong: "Okänd låt",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Alla parningar ställdes in manuellt — gränsen hävs automatiskt. Hela spellistan köas.",
     noLimitManualOn: "Gränsen hävd manuellt — hela spellistan köas utan gräns per spelare.",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Radera permanent",
     deleteOnlineSuccess: "Online-data raderad. Din profil är nu endast lokal.",
     deleteOnlineFailed: "Det gick inte att radera online-data",
+    invalidCode: "Ange en giltig synkkod (8 eller 12 tecken)",
     syncCodeWarning: "Skriv ner den här koden! Utan den (eller ett online-konto med lösenord) kan din online-profil inte återställas.",
     saveCodeFile: "Spara koden som textfil",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Offline — försöker igen automatiskt",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Rivaler",
+    add: "Lägg till som rival",
+    remove: "Ta bort rival",
+    compare: "Jämför med {name}",
+    compareButton: "Jämför",
+    compareTitle: "Duell: {name}",
+    compareBasis: "Jämförs är låtar du själv har spelat online (max. 200).",
+    compareLoading: "Jämför poäng…",
+    compareFailed: "Kunde inte ladda jämförelsen",
+    compareNoShared: "Ni har inga gemensamma låtar med online-poäng ännu.",
+    compareSummary: "{shared} gemensamma låtar · poängskillnad {diff}",
+    compareMineOnly: "{n} spelade bara av dig",
+    youLead: "Du leder",
+    tied: "Oavgjort",
+    rivalLeads: "{name} leder",
+    you: "Du",
+    unknownSong: "Okänd låt",
   },
   settings: {
     onlineDataHint: "Datalagring: när onlinefunktioner används lagrar poänglistans server ditt namn, din färg, valfritt land och dina resultat. Du tillfrågas om samtycke innan den första uppladdningen; du kan radera allt när som helst från din profil (\"Radera online-data\").",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Sök i listan …",
     title: "Metadata-studio",
     usageCount: "{n} låtar",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Filter på svårighetsgrad",
+    difficulty_all: "Alla",
+    difficulty_easy: "Lätt",
+    difficulty_normal: "Medel",
+    difficulty_hard: "Svårt",
   },
   songStart: {
     instrumentalAmount: "Sångborttagning: {n}%",

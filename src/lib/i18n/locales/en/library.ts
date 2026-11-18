@@ -189,7 +189,13 @@ export const libraryTranslations = {
     combo: 'combo',
     pts: 'pts',
     verified: 'Verified',
-    unverified: 'Unverified'
+    unverified: 'Unverified',
+    // R72: real difficulty filter for the online song board
+    difficultyFilter: 'Difficulty filter',
+    difficulty_all: 'All',
+    difficulty_easy: 'Easy',
+    difficulty_normal: 'Normal',
+    difficulty_hard: 'Hard'
   },
 
   songLeaderboardPreview: {

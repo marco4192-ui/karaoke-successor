@@ -314,7 +314,43 @@ export const gameTranslations = {
     globalRank: 'Global Rank',
     localHighlight: 'Your profile',
     top100: 'Top 100',
-    noSearchResults: 'No players found matching your search'
+    noSearchResults: 'No players found matching your search',
+    // R72: time windows + alternative sorts + percentile + rivals
+    windowAll: 'All-time',
+    windowMonth: 'Month',
+    windowWeek: 'Week',
+    windowLabel: 'Time window',
+    sortScore: 'Points',
+    sortBest: 'Best score',
+    sortAccuracy: 'Accuracy',
+    sortPlays: 'Songs',
+    sortLabel: 'Sort by',
+    totalPlayers: '{n} players',
+    yourRank: 'Your rank: #{rank} of {total}',
+    percentileTop: 'Top {p}%',
+    noRoundsInWindow: 'You have not played any online rounds in this period yet.',
+    roundsPlayed: '{n} rounds',
+    brWins: 'Battle Royale wins'
+  },
+
+  rivals: {
+    title: 'Rivals',
+    add: 'Add as rival',
+    remove: 'Remove rival',
+    compare: 'Compare with {name}',
+    compareButton: 'Compare',
+    compareTitle: 'Duel: {name}',
+    compareBasis: 'Compared are songs you have played online yourself (max. 200).',
+    compareLoading: 'Comparing scores…',
+    compareFailed: 'Could not load the comparison',
+    compareNoShared: 'You have no shared songs with online scores yet.',
+    compareSummary: '{shared} shared songs · point difference {diff}',
+    compareMineOnly: '{n} played only by you',
+    youLead: 'You lead',
+    tied: 'Tied',
+    rivalLeads: '{name} leads',
+    you: 'You',
+    unknownSong: 'Unknown song'
   },
 
   keyboardShortcuts: {

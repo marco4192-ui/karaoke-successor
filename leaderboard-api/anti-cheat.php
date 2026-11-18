@@ -8,6 +8,12 @@
  *   2. Score plausibility checks (bounds, consistency, physics)
  *   3. Proof timestamp validation
  *   4. Flagging suspicious scores (not rejected, but marked)
+ *
+ * R72: the soft flags stored in ks_scores.ac_flags are surfaced by the
+ * song board / batch endpoints — the UI badges flagged entries with a
+ * warning marker. DB-dependent outlier heuristics (e.g. the
+ * new_profile_top10 flag) live in index.php submitScore() because they
+ * need queries, not just the payload.
  */
 
 // ============================================================
@@ -244,6 +250,16 @@ function flagSuspiciousScore(
     $chainLength = (int)($proof['chain_length'] ?? 0);
     if ($chainLength > 0 && $chainLength < ($notesHit + $notesMissed)) {
         $flags[] = 'chain_note_mismatch';
+    }
+
+    // Flag 7 (R72): near-max score with implausibly low accuracy. A 9500+
+    // score needs near-perfect singing — even with the full 2x combo
+    // multiplier a 70% accuracy cannot mathematically reach it under the
+    // client's tick-pool model (70-80% of 10000 points live in ticks, the
+    // rest in golden bonuses that require hitting golden notes). Soft flag
+    // (not a rejection): the board shows a warning marker on the entry.
+    if ($score >= 9500 && $accuracy < 70) {
+        $flags[] = 'near_max_low_accuracy';
     }
 
     return $flags;

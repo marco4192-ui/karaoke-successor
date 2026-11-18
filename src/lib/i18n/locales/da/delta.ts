@@ -375,6 +375,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Næste dag",
+    archivePrevDay: "Forrige dag",
+    archiveToday: "I dag",
     dualPlayerHint: "To spillere valgt: daglige og ugentlige udfordringer kan synges som duel eller hold.",
     filterAll: "Alle",
     modeCompleted: "Gennemført",
@@ -899,6 +903,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-syntese",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Samlet",
+    windowMonth: "Måned",
+    windowWeek: "Uge",
+    windowLabel: "Tidsrum",
+    sortScore: "Point",
+    sortBest: "Bedste score",
+    sortAccuracy: "Nøjagtighed",
+    sortPlays: "Sange",
+    sortLabel: "Sortér efter",
+    totalPlayers: "{n} spillere",
+    yourRank: "Din placering: #{rank} af {total}",
+    percentileTop: "Top {p}%",
+    noRoundsInWindow: "Du har ikke spillet nogen online-runder i denne periode endnu.",
+    roundsPlayed: "{n} runder",
+    brWins: "Battle Royale-sejre",
+  },
   homeScreen: {
     allDailyDone: "Alle daglige brikker gennemført! 🎉",
     allWeeklyDone: "Alle ugentlige brikker gennemført! 🎉",
@@ -1032,6 +1054,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Gælder kun medley-runder — Tilfældig og Afstemning afspiller hele sange.",
     finalRoundDurationDesc: "Længden af finalerunden (sidste duel / finale-runder).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Online-statistik",
+    loading: "Indlæser online-data…",
+    unavailable: "Online-data er i øjeblikket utilgængelige",
+    crowns: "Sangkroner (#1)",
+    brWins: "BR-sejre",
+    topPercent: "Top {p}%",
+    rankOf: "Placering #{rank} af {total}",
+    notRanked: "Ikke placeret",
+    points: "Point online",
+    crownExample: "f.eks.",
+    recentPlays: "Seneste online-runder",
+    noPlays: "Ingen online-runder endnu.",
+    unknownSong: "Ukendt sang",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Alle parninger er sat manuelt — grænsen ophæves automatisk. Hele spillelisten sættes i kø.",
     noLimitManualOn: "Grænsen er ophævet manuelt — hele spillelisten sættes i kø uden grænse pr. spiller.",
@@ -1067,6 +1105,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Slet permanent",
     deleteOnlineSuccess: "Online-data slettet. Din profil er nu kun lokal.",
     deleteOnlineFailed: "Det lykkedes ikke at slette online-data",
+    invalidCode: "Indtast venligst en gyldig synkkode (8 eller 12 tegn)",
     syncCodeWarning: "Skriv denne kode ned! Uden den (eller en onlinekonto med adgangskode) kan din online-profil ikke gendannes.",
     saveCodeFile: "Gem koden som tekstfil",
   },
@@ -1075,6 +1114,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Offline — prøves automatisk igen",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Rivaler",
+    add: "Tilføj som rival",
+    remove: "Fjern rival",
+    compare: "Sammenlign med {name}",
+    compareButton: "Sammenlign",
+    compareTitle: "Duel: {name}",
+    compareBasis: "Sammenlignet er sange, du selv har spillet online (maks. 200).",
+    compareLoading: "Sammenligner scores…",
+    compareFailed: "Sammenligningen kunne ikke indlæses",
+    compareNoShared: "I har ingen fælles sange med online-scores endnu.",
+    compareSummary: "{shared} fælles sange · pointforskel {diff}",
+    compareMineOnly: "{n} spillet kun af dig",
+    youLead: "Du fører",
+    tied: "Uafgjort",
+    rivalLeads: "{name} fører",
+    you: "Dig",
+    unknownSong: "Ukendt sang",
   },
   settings: {
     onlineDataHint: "Datalagring: når onlinefunktioner bruges, gemmer ranglistens server dit navn, din farve, valgfrit land og dine resultater. Du bliver bedt om samtykke før den første upload; du kan slette alt når som helst fra din profil (\"Slet online-data\").",
@@ -1226,6 +1285,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Søg i listen …",
     title: "Metadata Studio",
     usageCount: "{n} sange",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Sværhedsgradsfilter",
+    difficulty_all: "Alle",
+    difficulty_easy: "Nem",
+    difficulty_normal: "Medium",
+    difficulty_hard: "Svær",
   },
   songStart: {
     instrumentalAmount: "Vokalfjernelse: {n}%",

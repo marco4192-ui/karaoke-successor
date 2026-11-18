@@ -129,7 +129,7 @@ export const profileTranslations = {
     uploadSuccess: 'Profile uploaded! Sync code: {n}',
     uploadFailed: 'Upload failed',
     downloadFailed: 'Failed to upload profile',
-    invalidCode: 'Please enter a valid 8-character sync code',
+    invalidCode: 'Please enter a valid sync code (8 or 12 characters)',
     syncSuccess: 'Profile synced successfully!',
     notFound: 'Profile not found',
     profileNotFound: 'Profile not found',
@@ -343,6 +343,22 @@ export const profileTranslations = {
     high_score: { title: 'Score Master', description: 'Reach 10,000 total points' },
     queue_5: { title: 'Playlist Builder', description: 'Queue 5 songs' },
     genre_3: { title: 'Genre Explorer', description: 'Sing songs from 3 genres' },
+  },
+
+  onlineStats: {
+    title: 'Online stats',
+    loading: 'Loading online data…',
+    unavailable: 'Online data currently unreachable',
+    crowns: 'Song crowns (#1)',
+    brWins: 'BR wins',
+    topPercent: 'Top {p}%',
+    rankOf: 'Rank #{rank} of {total}',
+    notRanked: 'Not ranked',
+    points: 'Points online',
+    crownExample: 'e.g.',
+    recentPlays: 'Recent online rounds',
+    noPlays: 'No online rounds yet.',
+    unknownSong: 'Unknown song'
   },
 
   challenges: {

@@ -12,6 +12,12 @@
 --       the first login on a legacy account). POST /auth/recover resets the
 --       password with it and rotates to a fresh code. POST /auth/register
 --       replaces a profile's account when the sync_code is presented.
+-- v3.6: R72 expansion — ks_play_log (one row per accepted submission; powers
+--       month/week time-window boards + recent plays), ks_nonces (anti-replay
+--       for POST /scores and POST /br), ks_profiles.br_wins/br_wins_at
+--       (Battle-Royale-Siege counter, 120 s min interval), sync_code widened
+--       to VARCHAR(16) so NEW codes can be 12 chars (60 bits entropy; legacy
+--       8-char codes stay valid).
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -25,6 +31,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `ks_scores`;
 DROP TABLE IF EXISTS `ks_daily_results`;
 DROP TABLE IF EXISTS `ks_accounts`;
+DROP TABLE IF EXISTS `ks_play_log`;
+DROP TABLE IF EXISTS `ks_nonces`;
 DROP TABLE IF EXISTS `ks_profile_sync`;
 DROP TABLE IF EXISTS `ks_profiles`;
 
@@ -35,7 +43,16 @@ CREATE TABLE `ks_profiles` (
   `country_code`   CHAR(2)      NULL     DEFAULT NULL     COMMENT 'ISO 3166-1 alpha-2, nullable',
   `show_on_board`  TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Opt-in to leaderboard visibility',
   `show_country`   TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Show country flag on leaderboard',
-  `sync_code`      CHAR(8)      NULL     DEFAULT NULL     COMMENT 'Profile ownership token (8 chars A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.',
+  -- v3.6: widened CHAR(8) → VARCHAR(16). NEW codes are 12 chars from the
+  -- unambiguous alphabet (60 bits); legacy 8-char codes stay valid until
+  -- Break-Glass or a fresh registration rotates them.
+  `sync_code`      VARCHAR(16)  NULL     DEFAULT NULL     COMMENT 'Profile ownership token (12 chars for new profiles, legacy 8 chars; A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.',
+  -- v3.6 (R72/D): Battle-Royale win counter. Only wins are counted (a BR
+  -- game has no comparable score scale); br_wins_at enforces a minimum
+  -- interval of 120 s between two counted wins (a full BR round takes
+  -- minutes — faster increments are spam or a double submit).
+  `br_wins`        INT          NOT NULL DEFAULT 0       COMMENT 'Battle-Royale-Siege (online counter, party mode)',
+  `br_wins_at`     DATETIME     NULL     DEFAULT NULL   COMMENT 'Timestamp of the last counted BR win (120 s min interval)',
   `total_score`    BIGINT       NOT NULL DEFAULT 0       COMMENT 'Cached sum of best scores',
   `best_score`     INT          NOT NULL DEFAULT 0       COMMENT 'Cached single best score',
   `songs_played`   INT          NOT NULL DEFAULT 0       COMMENT 'Cached count of distinct songs with scores',
@@ -45,6 +62,48 @@ CREATE TABLE `ks_profiles` (
   `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`profile_uid`),
   UNIQUE KEY `uq_sync_code` (`sync_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Table: ks_play_log (v3.6, R72)
+-- One row per ACCEPTED score submission (a log, not a best-value table:
+-- every finished game appends, regardless of personal best). Powers the
+-- time-window boards (month = calendar month, week = ISO week starting
+-- Monday, server timezone) and GET /profiles/{uid}/plays (recent plays).
+-- Retention: rows older than 400 days are pruned probabilistically (~1 %
+-- of submissions trigger a cleanup) — long enough for a yearly look-back,
+-- bounded storage for a friends-&-family instance.
+-- NOTE: no song titles here either — the song_hash fingerprint is the
+-- only song reference (copyright-safe by design).
+-- -----------------------------------------------------------
+CREATE TABLE `ks_play_log` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+  `profile_uid` VARCHAR(36)  NOT NULL                COMMENT 'References ks_profiles',
+  `song_hash`   VARCHAR(80)  NOT NULL                COMMENT 'v1 fingerprint (same key as ks_scores.song_hash)',
+  `game_type`   ENUM('s','d') NOT NULL                COMMENT 's = single/duel, d = duet',
+  `score`       INT          NOT NULL                COMMENT 'Points scored in this round',
+  `accuracy`    DECIMAL(5,2) NOT NULL DEFAULT 0.00   COMMENT 'Accuracy of this round',
+  `difficulty`  ENUM('easy','normal','hard') NOT NULL DEFAULT 'normal',
+  `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_pl_profile_created` (`profile_uid`, `created_at`),
+  KEY `idx_pl_created` (`created_at`),
+  KEY `idx_pl_song` (`song_hash`),
+  CONSTRAINT `fk_pl_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Table: ks_nonces (v3.6, R72)
+-- Replay protection: the client generates a fresh 32-hex-char nonce per
+-- write request; the server INSERTs it — a duplicate primary key means
+-- the request was replayed (or a retry raced) and is rejected with 409.
+-- Required for POST /br (counter!), optional for POST /scores (legacy
+-- clients). Rows older than 1 day are pruned probabilistically.
+-- -----------------------------------------------------------
+CREATE TABLE `ks_nonces` (
+  `nonce`      CHAR(32)  NOT NULL COMMENT 'Random hex nonce from the client (one per write attempt)',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`nonce`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
@@ -242,5 +301,38 @@ DELIMITER ;
 -- ONE of the two, never both):
 -- -----------------------------------------------------------
 -- ALTER TABLE `ks_accounts` ADD COLUMN `recovery_hash` VARCHAR(255) NULL DEFAULT NULL COMMENT 'bcrypt hash of the one-time recovery code (R69; rotated on every use)' AFTER `password_hash`;
+
+-- -----------------------------------------------------------
+-- Migration v3.5 → v3.6 (R72): run ALL of these on an existing v3.5
+-- installation (fresh installs already got everything above — then run
+-- NONE of them). Coming from ≤ v3.4? Run the recovery_hash migration
+-- above FIRST, then this block.
+-- -----------------------------------------------------------
+-- CREATE TABLE IF NOT EXISTS `ks_play_log` (
+--   `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+--   `profile_uid` VARCHAR(36)  NOT NULL,
+--   `song_hash`   VARCHAR(80)  NOT NULL,
+--   `game_type`   ENUM('s','d') NOT NULL,
+--   `score`       INT          NOT NULL,
+--   `accuracy`    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+--   `difficulty`  ENUM('easy','normal','hard') NOT NULL DEFAULT 'normal',
+--   `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`id`),
+--   KEY `idx_pl_profile_created` (`profile_uid`, `created_at`),
+--   KEY `idx_pl_created` (`created_at`),
+--   KEY `idx_pl_song` (`song_hash`),
+--   CONSTRAINT `fk_pl_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+--
+-- CREATE TABLE IF NOT EXISTS `ks_nonces` (
+--   `nonce`      CHAR(32)  NOT NULL,
+--   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`nonce`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+--
+-- ALTER TABLE `ks_profiles`
+--   ADD COLUMN `br_wins`    INT      NOT NULL DEFAULT 0 COMMENT 'Battle-Royale-Siege (online counter, party mode)' AFTER `avg_accuracy`,
+--   ADD COLUMN `br_wins_at` DATETIME NULL DEFAULT NULL COMMENT 'Timestamp of the last counted BR win (120 s min interval)' AFTER `br_wins`,
+--   MODIFY `sync_code` VARCHAR(16) NULL DEFAULT NULL COMMENT 'Profile ownership token (12 chars for new profiles, legacy 8 chars; A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.';
 
 SET FOREIGN_KEY_CHECKS = 1;

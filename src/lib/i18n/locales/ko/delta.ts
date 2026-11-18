@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "다음 날",
+    archivePrevDay: "전날",
+    archiveToday: "오늘",
     dualPlayerHint: "플레이어 2명 선택됨: 일일/주간 챌린지를 듀얼 또는 팀으로 부를 수 있어요.",
     filterAll: "전체",
     modeCompleted: "완료됨",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI 합성",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "역대",
+    windowMonth: "월간",
+    windowWeek: "주간",
+    windowLabel: "기간",
+    sortScore: "포인트",
+    sortBest: "최고 점수",
+    sortAccuracy: "정확도",
+    sortPlays: "곡 수",
+    sortLabel: "정렬 기준",
+    totalPlayers: "{n}명의 플레이어",
+    yourRank: "내 순위: {total}명 중 #{rank}위",
+    percentileTop: "상위 {p}%",
+    noRoundsInWindow: "이 기간에는 아직 온라인 라운드를 플레이하지 않았어요.",
+    roundsPlayed: "{n}라운드",
+    brWins: "배틀로얄 승리",
+  },
   homeScreen: {
     allDailyDone: "일일 슬롯을 모두 완료했습니다! 🎉",
     allWeeklyDone: "주간 슬롯을 모두 완료했습니다! 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "메들리 라운드에만 적용 — 랜덤과 투표는 곡 전체를 재생합니다.",
     finalRoundDurationDesc: "최종 라운드(마지막 듀얼/그랜드 피날레 라운드)의 길이입니다.",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "온라인 통계",
+    loading: "온라인 데이터 불러오는 중…",
+    unavailable: "온라인 데이터에 현재 접속할 수 없어요",
+    crowns: "1위 곡 수(#1)",
+    brWins: "BR 승리",
+    topPercent: "상위 {p}%",
+    rankOf: "{total}명 중 #{rank}위",
+    notRanked: "순위 없음",
+    points: "온라인 포인트",
+    crownExample: "예:",
+    recentPlays: "최근 온라인 라운드",
+    noPlays: "아직 온라인 라운드가 없어요.",
+    unknownSong: "알 수 없는 곡",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "모든 편성이 수동으로 설정되었습니다 — 제한이 자동으로 해제돼요. 플레이리스트 전체가 대기열에 들어갑니다.",
     noLimitManualOn: "제한을 수동으로 해제함 — 플레이어별 제한 없이 플레이리스트 전체가 대기열에 들어갑니다.",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "영구 삭제",
     deleteOnlineSuccess: "온라인 데이터가 삭제됐어요. 프로필이 이제 로컬 전용이에요.",
     deleteOnlineFailed: "온라인 데이터 삭제에 실패했어요",
+    invalidCode: "유효한 동기화 코드를 입력해 주세요(8자리 또는 12자리)",
     syncCodeWarning: "이 코드를 꼭 적어 두세요! 없으면(또는 비밀번호가 있는 온라인 계정이 없으면) 온라인 프로필을 복구할 수 없어요.",
     saveCodeFile: "코드를 텍스트 파일로 저장",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "오프라인 — 자동으로 다시 시도됩니다",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "라이벌",
+    add: "라이벌로 추가",
+    remove: "라이벌에서 제거",
+    compare: "{name}과(와) 비교",
+    compareButton: "비교",
+    compareTitle: "대결: {name}",
+    compareBasis: "본인이 온라인에서 직접 플레이한 곡끼리 비교해요(최대 200곡).",
+    compareLoading: "점수 비교 중…",
+    compareFailed: "비교 정보를 불러오지 못했어요",
+    compareNoShared: "아직 온라인 점수가 있는 공통 곡이 없어요.",
+    compareSummary: "공통 곡 {shared}개 · 포인트 차이 {diff}",
+    compareMineOnly: "{n}곡은 나만 플레이",
+    youLead: "내가 앞서요",
+    tied: "동점",
+    rivalLeads: "{name}이(가) 앞서요",
+    you: "나",
+    unknownSong: "알 수 없는 곡",
   },
   settings: {
     onlineDataHint: "데이터 저장: 온라인 기능을 사용하면 리더보드 서버에 이름, 색상, 선택한 국가, 결과가 저장돼요. 첫 업로드 전에 동의를 요청받아요. 모든 데이터는 프로필의 \"온라인 데이터 삭제\"에서 언제든 삭제할 수 있어요.",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "목록 검색 …",
     title: "메타데이터 스튜디오",
     usageCount: "{n}곡",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "난이도 필터",
+    difficulty_all: "전체",
+    difficulty_easy: "쉬움",
+    difficulty_normal: "보통",
+    difficulty_hard: "어려움",
   },
   songStart: {
     instrumentalAmount: "보컬 제거: {n}%",

@@ -2,25 +2,34 @@
 /**
  * Karaoke Successor — Online Leaderboard API v3
  * Copyright-safe: songs identified by SHA-256 fingerprint hash only.
- * Anti-cheat: score plausibility + integrity hash verification.
- * Ownership: every write to a profile requires its sync_code (8 chars,
- * generated at registration). The sync_code also unlocks the profile
- * sync backup and profile deletion.
+ * Anti-cheat: score plausibility + integrity hash verification + replay
+ *   nonces (R72) + statistical outlier soft-flags.
+ * Ownership: every write to a profile requires its sync_code (8 chars
+ * legacy / 12 chars for new profiles since v3.6, generated at
+ * registration). The sync_code also unlocks the profile sync backup and
+ * profile deletion.
  *
  * Endpoints:
  *   GET    /                          API info
  *   POST   /profiles                  Register / upsert profile (upsert requires sync_code)
  *   GET    /profiles/{uid}            Public profile data (no sync_code in response)
+ *   GET    /profiles/{uid}/plays      Recent online rounds (play log, newest first) — R72
  *   PUT    /profiles/{uid}            Update settings (requires sync_code)
  *   DELETE /profiles/{uid}            Delete profile + scores (requires sync_code)
  *   PUT    /profiles/{uid}/sync       Store profile sync snapshot (requires sync_code)
  *   GET    /profiles/sync/{code}      Retrieve sync snapshot by code
- *   POST   /scores                    Submit score (requires profile sync_code)
+ *   POST   /scores                    Submit score (requires profile sync_code; optional nonce)
  *   GET    /scores/batch?hashes=..    Batch-fetch leaderboards for multiple song hashes
- *   GET    /leaderboard/song/{hash}   Per-song leaderboard (Top N)
- *   GET    /leaderboard/global        Global player ranking
+ *   GET    /leaderboard/song/{hash}   Per-song leaderboard (Top N, optional difficulty filter — R72)
+ *   GET    /leaderboard/global        Global player ranking — R72: time windows (all|month|week),
+ *                                     alternative sorts (score|best|accuracy|plays), own rank +
+ *                                     percentile via &uid=, BR win counter per row
+ *   GET    /leaderboard/crowns?uid=   Song-#1 ("crown") count + list for a profile — R72
+ *   POST   /br                        Battle-Royale result (won=true increments br_wins;
+ *                                     nonce REQUIRED — counter replay protection) — R72
  *   POST   /daily                     Submit daily-challenge result (requires profile sync_code)
- *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type)
+ *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type;
+ *                                     any past date works → archive views)
  *   POST   /auth/register             Link an e-mail + password account to a profile (requires profile sync_code).
  *                                      Returns a one-time recovery code. If the profile already has an account,
  *                                      a caller holding the sync_code may REPLACE it (forgot-password rescue).
@@ -51,15 +60,18 @@ $T_PROFILES = tbl('profiles');
 $T_SCORES   = tbl('scores');
 $T_DAILY    = tbl('daily_results');
 $T_ACCOUNTS = tbl('accounts');
+$T_PLAYLOG  = tbl('play_log');
+$T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.5.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
-        'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
-        'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
+        'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
+        'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG),
         'daily'       => routeDaily($parts, $method, $T_PROFILES, $T_DAILY),
         'auth'        => routeAuth($parts, $method, $T_PROFILES, $T_ACCOUNTS),
+        'br'          => routeBr($method, $T_PROFILES),
         default       => err('Not found', 404),
     };
 } catch (PDOException $e) {
@@ -83,6 +95,7 @@ function routeProfiles(array $parts, string $method, string $TP, string $TS): vo
         $name = clean($d['display_name']);
         if (!isValidUUID($uid)) err('Invalid profile_uid');
         if (mb_strlen($name) < 1 || mb_strlen($name) > 64) err('display_name: 1-64 chars');
+        assertAcceptableDisplayName($name); // R72/E
         $color = preg_match('/^#[0-9a-f]{6}$/i', $d['color'] ?? '') ? $d['color'] : '#8B5CF6';
         $cc    = ($d['country_code'] ?? '') === '' ? null : $d['country_code'];
         if ($cc !== null && !isValidCountry($cc)) err('Invalid country_code');
@@ -106,6 +119,12 @@ function routeProfiles(array $parts, string $method, string $TP, string $TS): vo
     // GET /profiles/sync/{code} — retrieve a sync snapshot by code
     if ($method === 'GET' && $uid === 'sync' && $sub) { syncDownload($sub, $TP); return; }
 
+    // GET /profiles/{uid}/plays — recent online rounds (R72/C: play log)
+    if ($method === 'GET' && $uid && $uid !== 'sync' && $sub === 'plays') {
+        recentPlays($uid, $TP, tbl('play_log'));
+        return;
+    }
+
     // PUT /profiles/{uid} — update settings (requires sync_code)
     // All fields are sent; the statement is fully static, request data is
     // bound through placeholders only.
@@ -115,6 +134,7 @@ function routeProfiles(array $parts, string $method, string $TP, string $TS): vo
         requireFields($d, ['display_name', 'color', 'show_on_board', 'show_country']);
         $name = clean((string)$d['display_name']);
         if (mb_strlen($name) < 1 || mb_strlen($name) > 64) err('display_name: 1-64 chars');
+        assertAcceptableDisplayName($name); // R72/E
         $color = preg_match('/^#[0-9a-f]{6}$/i', $d['color'] ?? '') ? $d['color'] : '#8B5CF6';
         $cc    = ($d['country_code'] ?? '') === '' ? null : $d['country_code'];
         if ($cc !== null && !isValidCountry($cc)) err('Invalid country_code');
@@ -143,9 +163,10 @@ function routeProfiles(array $parts, string $method, string $TP, string $TS): vo
 
 // ── Sync-code helpers ──────────────────────────────────────
 
-/** Validate the sync_code format (8 chars A-Z0-9). */
+/** Validate the sync_code format (legacy 8 chars or — since v3.6 — 12
+ *  chars, both A-Z0-9). */
 function isValidSyncCode(string $c): bool {
-    return (bool) preg_match('/^[A-Z0-9]{8}$/', $c);
+    return (bool) preg_match('/^[A-Z0-9]{8}$|^[A-Z0-9]{12}$/', $c);
 }
 
 /**
@@ -182,12 +203,15 @@ function resolveSyncCode(string $uid, $provided, string $TP): string {
     return generateSyncCode($TP);
 }
 
-/** Generate a random, unused 8-char sync code. */
+/** Generate a random, unused sync code.
+ *  R72/A: 12 chars from the 32-char unambiguous alphabet (no 0/O/1/I) —
+ *  60 bits of entropy instead of the legacy 41.5. Existing 8-char codes
+ *  remain valid (isValidSyncCode accepts both lengths). */
 function generateSyncCode(string $TP): string {
-    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     for ($try = 0; $try < 20; $try++) {
         $code = '';
-        for ($i = 0; $i < 8; $i++) {
+        for ($i = 0; $i < 12; $i++) {
             $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
         }
         $chk = db()->prepare("SELECT 1 FROM `$TP` WHERE `sync_code` = ?");
@@ -221,7 +245,7 @@ function fetchProfile(string $uid, string $TP, bool $withCode): void {
     if ($withCode) {
         $s = db()->prepare("SELECT * FROM `$TP` WHERE `profile_uid` = ?");
     } else {
-        $s = db()->prepare("SELECT `profile_uid`,`display_name`,`color`,`country_code`,`show_on_board`,`show_country`,`total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`created_at`,`updated_at` FROM `$TP` WHERE `profile_uid` = ?");
+        $s = db()->prepare("SELECT `profile_uid`,`display_name`,`color`,`country_code`,`show_on_board`,`show_country`,`total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`,`created_at`,`updated_at` FROM `$TP` WHERE `profile_uid` = ?");
     }
     $s->execute([$uid]);
     $p = $s->fetch() ?: null;
@@ -282,13 +306,13 @@ function syncDownload(string $code, string $TP): void {
 // ============================================================
 // SCORES (with anti-cheat)
 // ============================================================
-function routeScores(array $parts, string $method, string $TP, string $TS): void {
-    if ($method === 'POST' && !isset($parts[1])) { submitScore($TP, $TS); return; }
+function routeScores(array $parts, string $method, string $TP, string $TS, string $TL, string $TN): void {
+    if ($method === 'POST' && !isset($parts[1])) { submitScore($TP, $TS, $TL, $TN); return; }
     if ($method === 'GET'  && ($parts[1] ?? '') === 'batch') { batchScores($TP, $TS); return; }
     err('Not found', 404);
 }
 
-function submitScore(string $TP, string $TS): void {
+function submitScore(string $TP, string $TS, string $TL, string $TN): void {
     $d = body();
     requireFields($d, ['profile_uid','song_hash','game_type','score','max_score']);
     $uid   = clean($d['profile_uid']);
@@ -315,6 +339,11 @@ function submitScore(string $TP, string $TS): void {
         err('Invalid or missing sync_code for this profile', 403);
     }
     if (!(int)$prof['show_on_board']) err('Profile opted out');
+
+    // R72/A: anti-replay nonce — optional for scores (older deployed app
+    // versions submit without one), but the server consumes it whenever
+    // present: a duplicate nonce = replayed request → 409.
+    consumeNonce(clean((string)($d['nonce'] ?? '')), false);
 
     $acc  = min(100, max(0, (float)($d['accuracy'] ?? 0)));
     $combo= (int)($d['max_combo'] ?? 0);
@@ -368,6 +397,26 @@ function submitScore(string $TP, string $TS): void {
 
     // If proof is completely missing, we still accept the score but mark unverified
     // This allows backwards compatibility during the v1→v2 transition
+
+    // ── R72/A: statistical outlier soft-flag ────────────────────────
+    // A profile younger than 24 h that instantly lands a Top-10 spot on a
+    // song board with real competition. Not a rejection (a new player can
+    // legitimately be a karaoke god) — the board shows a warning marker.
+    $createdStmt = db()->prepare("SELECT `created_at` FROM `$TP` WHERE `profile_uid` = ?");
+    $createdStmt->execute([$uid]);
+    $createdAt = strtotime((string)$createdStmt->fetchColumn());
+    if ($createdAt !== false && (time() - $createdAt) < 86400) {
+        $probe = db()->prepare("SELECT COUNT(*) FROM `$TS` s
+            JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
+            WHERE (s.`song_hash` = ? OR s.`song_hash_v2` = ?) AND s.`game_type` = ?
+              AND p.`show_on_board` = 1");
+        $probe->execute([$hash, $hash, $gt]);
+        $boardSize = (int)$probe->fetchColumn();
+        if ($boardSize >= 5 && songRank($TS, $TP, $hash, $gt, $score) <= 10) {
+            $acFlags[] = 'new_profile_top10';
+        }
+    }
+
     $flagsJson = !empty($acFlags) ? json_encode($acFlags, JSON_UNESCAPED_UNICODE) : null;
 
     // Determine fingerprint version
@@ -409,6 +458,22 @@ function submitScore(string $TP, string $TS): void {
 
     db()->prepare("CALL sp_refresh_profile_stats(?)")->execute([$uid]);
 
+    // R72/B+C: play log — one row per ACCEPTED submission (not just new
+    // bests). Powers the month/week time-window boards and the
+    // recent-plays list; pruned probabilistically below.
+    db()->prepare("INSERT INTO `$TL` (`profile_uid`,`song_hash`,`game_type`,`score`,`accuracy`,`difficulty`)
+            VALUES (?,?,?,?,?,?)")
+        ->execute([$uid, $hash, $gt, $score, $acc, $diff]);
+
+    // R72: probabilistic retention cleanup (~1 % of submissions) — play
+    // log rows older than 400 days, nonces older than 1 day.
+    if (random_int(1, 100) === 1) {
+        try {
+            db()->prepare("DELETE FROM `$TL` WHERE `created_at` < (NOW() - INTERVAL 400 DAY)")->execute();
+            db()->prepare("DELETE FROM `$TN` WHERE `created_at` < (NOW() - INTERVAL 1 DAY)")->execute();
+        } catch (Throwable) { /* non-critical */ }
+    }
+
     // Calculate rank
     $rank = songRank($TS, $TP, $hash, $gt, $score);
 
@@ -429,18 +494,20 @@ function batchScores(string $TP, string $TS): void {
     $limit = min((int)($_GET['limit'] ?? 5000), 10000);
 
     $ph = implode(',', array_fill(0, count($hashes), '?'));
+    // R72/E: dual-read — match v1 (song_hash) OR v2 (song_hash_v2)
+    // fingerprints so future v2-only clients see the same boards.
     $sql = "SELECT
         s.`song_hash`, s.`profile_uid`, s.`score`, s.`max_score`, s.`accuracy`,
         s.`max_combo`, s.`difficulty`, s.`rating`, s.`played_at`,
-        s.`verified`, s.`fingerprint_version`,
+        s.`verified`, s.`fingerprint_version`, s.`ac_flags`,
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TS` s JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
-        WHERE s.`song_hash` IN ($ph) AND s.`game_type` = ? AND p.`show_on_board` = 1
+        WHERE (s.`song_hash` IN ($ph) OR s.`song_hash_v2` IN ($ph)) AND s.`game_type` = ? AND p.`show_on_board` = 1
         ORDER BY s.`score` DESC
         LIMIT $limit";
     $stmt = db()->prepare($sql);
-    $stmt->execute(array_merge($hashes, [$gt]));
+    $stmt->execute(array_merge($hashes, $hashes, [$gt]));
     $rows = $stmt->fetchAll();
 
     $result = []; $ranks = [];
@@ -448,6 +515,9 @@ function batchScores(string $TP, string $TS): void {
         $h = $row['song_hash'];
         if (!isset($ranks[$h])) $ranks[$h] = 1;
         $row['rank'] = $ranks[$h]++;
+        if (is_string($row['ac_flags'])) {
+            $row['ac_flags'] = json_decode($row['ac_flags'], true);
+        }
         $result[$h][] = $row;
     }
     json(['scores' => $result]);
@@ -456,33 +526,189 @@ function batchScores(string $TP, string $TS): void {
 // ============================================================
 // LEADERBOARD
 // ============================================================
-function routeLeaderboard(array $parts, string $method, string $TP, string $TS): void {
+function routeLeaderboard(array $parts, string $method, string $TP, string $TS, string $TL): void {
     if ($method !== 'GET') err('Method not allowed', 405);
     $type = $parts[1] ?? '';
-    if ($type === 'global') { globalBoard($TP); return; }
+    if ($type === 'global') { globalBoard($TP, $TL); return; }
     if ($type === 'song' && isset($parts[2])) { songBoard($parts[2], $TP, $TS); return; }
+    if ($type === 'crowns') { crownsBoard($TP, $TS); return; }
     err('Unknown leaderboard type', 404);
 }
 
-function globalBoard(string $TP): void {
+/**
+ * R72/B: start of a time window as a DATETIME string — calendar month /
+ * ISO week (Monday) in the SERVER's timezone. 'all' → null (no cutoff).
+ */
+function windowCutoff(string $window): ?string {
+    if ($window === 'month') return date('Y-m-01 00:00:00');
+    if ($window === 'week') {
+        $dow = (int)date('N'); // 1 = Monday … 7 = Sunday
+        return date('Y-m-d 00:00:00', strtotime('-' . ($dow - 1) . ' days'));
+    }
+    return null;
+}
+
+/** R72/A: consume a client nonce (32 hex chars). Duplicate PK = replay → 409. */
+function consumeNonce(string $nonce, bool $required): void {
+    $TN = tbl('nonces');
+    if ($nonce === '') {
+        if ($required) err('Missing nonce (32 hex chars)');
+        return;
+    }
+    if (!preg_match('/^[0-9a-f]{32}$/', $nonce)) err('Invalid nonce (32 hex chars)');
+    try {
+        db()->prepare("INSERT INTO `$TN` (`nonce`) VALUES (?)")->execute([$nonce]);
+    } catch (PDOException) {
+        err('Replay detected — nonce already used', 409);
+    }
+}
+
+function globalBoard(string $TP, string $TL): void {
     // R69: boards tolerate a short browser cache — cuts repeated MySQL
     // queries when several components fetch the same board.
     header('Cache-Control: public, max-age=30');
     $limit  = min((int)($_GET['limit'] ?? 100), MAX_LEADERBOARD_ENTRIES);
     $offset = (int)($_GET['offset'] ?? 0);
-    $sql = "SELECT
-        `profile_uid`,`display_name`,`color`,
-        IF(`show_country`=1,`country_code`,NULL) AS `country_code`,
-        `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`
-        FROM `$TP`
-        WHERE `show_on_board` = 1
-        ORDER BY `total_score` DESC
-        LIMIT ? OFFSET ?";
-    $stmt = db()->prepare($sql); $stmt->execute([$limit, $offset]);
-    $rows = $stmt->fetchAll();
+
+    // R72/B: time windows + alternative sorts.
+    $window = in_array($_GET['window'] ?? 'all', ['all','month','week'], true) ? $_GET['window'] : 'all';
+    $sort   = in_array($_GET['sort'] ?? 'score', ['score','best','accuracy','plays'], true) ? $_GET['sort'] : 'score';
+    $uid    = isset($_GET['uid']) ? clean((string)$_GET['uid']) : null;
+    if ($uid !== null && !isValidUUID($uid)) $uid = null;
+
+    $cutoff = windowCutoff($window);
+
+    if ($cutoff === null) {
+        // ── All-time board: cached profile columns (pre-v3.6 behaviour) ──
+        $sortCol = match ($sort) {
+            'best'     => 'best_score',
+            'accuracy' => 'avg_accuracy',
+            'plays'    => 'songs_played',
+            default    => 'total_score',
+        };
+        $sql = "SELECT
+            `profile_uid`,`display_name`,`color`,
+            IF(`show_country`=1,`country_code`,NULL) AS `country_code`,
+            `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`
+            FROM `$TP`
+            WHERE `show_on_board` = 1
+            ORDER BY `$sortCol` DESC, `total_score` DESC
+            LIMIT ? OFFSET ?";
+        $stmt = db()->prepare($sql); $stmt->execute([$limit, $offset]);
+        $rows = $stmt->fetchAll();
+
+        $totalStmt = db()->prepare("SELECT COUNT(*) FROM `$TP` WHERE `show_on_board` = 1");
+        $totalStmt->execute();
+        $total = (int)$totalStmt->fetchColumn();
+
+        // R72/C: the caller's own rank + percentile in the CURRENT sort
+        $you = null;
+        if ($uid !== null) {
+            $mine = db()->prepare("SELECT `$sortCol` FROM `$TP` WHERE `profile_uid` = ? AND `show_on_board` = 1");
+            $mine->execute([$uid]);
+            $myVal = $mine->fetchColumn();
+            if ($myVal !== false && $myVal !== null) {
+                $better = db()->prepare("SELECT COUNT(*) FROM `$TP`
+                    WHERE `show_on_board` = 1 AND `$sortCol` > ?");
+                $better->execute([$myVal]);
+                $rank = (int)$better->fetchColumn() + 1;
+                $you = [
+                    'rank'           => $rank,
+                    'total'          => $total,
+                    'percentile_top' => $total > 0 ? round($rank / $total * 100, 1) : null,
+                ];
+            }
+        }
+    } else {
+        // ── Window board (month/week): aggregate the play log ──
+        $sortAlias = match ($sort) {
+            'best'     => 'window_best',
+            'accuracy' => 'window_avg',
+            'plays'    => 'window_plays',
+            default    => 'window_score',
+        };
+        $sql = "SELECT
+            l.`profile_uid`,
+            SUM(l.`score`)               AS `total_score`,
+            MAX(l.`score`)               AS `best_score`,
+            COUNT(DISTINCT l.`song_hash`) AS `songs_played`,
+            COUNT(*)                     AS `games_played`,
+            ROUND(AVG(l.`accuracy`), 2)  AS `avg_accuracy`,
+            SUM(l.`score`)               AS `window_score`,
+            MAX(l.`score`)               AS `window_best`,
+            ROUND(AVG(l.`accuracy`), 2)  AS `window_avg`,
+            COUNT(*)                     AS `window_plays`,
+            p.`display_name`, p.`color`, p.`br_wins`,
+            IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
+            FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
+            WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
+            GROUP BY l.`profile_uid`
+            ORDER BY `$sortAlias` DESC, `window_score` DESC
+            LIMIT ? OFFSET ?";
+        $stmt = db()->prepare($sql); $stmt->execute([$cutoff, $limit, $offset]);
+        $rows = $stmt->fetchAll();
+
+        $totalStmt = db()->prepare("SELECT COUNT(DISTINCT l.`profile_uid`) FROM `$TL` l
+            JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
+            WHERE l.`created_at` >= ? AND p.`show_on_board` = 1");
+        $totalStmt->execute([$cutoff]);
+        $total = (int)$totalStmt->fetchColumn();
+
+        $you = null;
+        if ($uid !== null) {
+            $mine = db()->prepare("SELECT
+                SUM(l.`score`) AS s, MAX(l.`score`) AS b,
+                AVG(l.`accuracy`) AS a, COUNT(*) AS c
+                FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
+                WHERE l.`created_at` >= ? AND p.`show_on_board` = 1 AND l.`profile_uid` = ?");
+            $mine->execute([$cutoff, $uid]);
+            $my = $mine->fetch();
+            if ($my && $my['c'] !== null && (int)$my['c'] > 0) {
+                $myVal = match ($sort) {
+                    'best'     => $my['b'],
+                    'accuracy' => $my['a'],
+                    'plays'    => $my['c'],
+                    default    => $my['s'],
+                };
+                $col = match ($sort) {
+                    'best'     => 'b',
+                    'accuracy' => 'a',
+                    'plays'    => 'c',
+                    default    => 's',
+                };
+                $better = db()->prepare("SELECT COUNT(*) + 1 FROM (
+                    SELECT SUM(l2.`score`) AS s, MAX(l2.`score`) AS b,
+                           AVG(l2.`accuracy`) AS a, COUNT(*) AS c
+                    FROM `$TL` l2 JOIN `$TP` p2 ON l2.`profile_uid` = p2.`profile_uid`
+                    WHERE l2.`created_at` >= ? AND p2.`show_on_board` = 1
+                    GROUP BY l2.`profile_uid`) t
+                    WHERE t.`$col` > ?");
+                $better->execute([$cutoff, $myVal]);
+                $rank = (int)$better->fetchColumn();
+                $you = [
+                    'rank'           => $rank,
+                    'total'          => $total,
+                    'percentile_top' => $total > 0 ? round($rank / $total * 100, 1) : null,
+                ];
+            }
+        }
+    }
+
     $r = $offset + 1;
-    foreach ($rows as &$row) { $row['rank'] = $r++; }
-    json(['leaderboard' => $rows]);
+    foreach ($rows as &$row) {
+        $row['rank'] = $r++;
+        // Aggregates may come back as strings depending on the driver.
+        foreach (['total_score','best_score','songs_played','games_played','br_wins'] as $k) {
+            if (isset($row[$k])) $row[$k] = (int)$row[$k];
+        }
+    }
+    json([
+        'window'        => $window,
+        'sort'          => $sort,
+        'total_players' => $total,
+        'leaderboard'   => $rows,
+        'you'           => $you,
+    ]);
 }
 
 function songBoard(string $hash, string $TP, string $TS): void {
@@ -490,22 +716,77 @@ function songBoard(string $hash, string $TP, string $TS): void {
     $hash = clean($hash);
     if (!isValidSongHash($hash)) err('Invalid song_hash');
     $gt    = in_array($_GET['game_type'] ?? 's', ['s','d']) ? $_GET['game_type'] : 's';
+    // R72/B: real difficulty filter — the board shows only entries whose
+    // (best) score was achieved on the selected difficulty. Default 'all'
+    // keeps the pre-v3.6 behaviour.
+    $diff  = in_array($_GET['difficulty'] ?? 'all', ['easy','normal','hard'], true) ? $_GET['difficulty'] : 'all';
     $limit = min((int)($_GET['limit'] ?? 100), MAX_LEADERBOARD_ENTRIES);
     $sql = "SELECT
         s.`profile_uid`, s.`score`, s.`max_score`, s.`accuracy`,
         s.`max_combo`, s.`difficulty`, s.`rating`, s.`played_at`,
-        s.`verified`, s.`fingerprint_version`,
+        s.`verified`, s.`fingerprint_version`, s.`ac_flags`,
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TS` s JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
-        WHERE s.`song_hash` = ? AND s.`game_type` = ? AND p.`show_on_board` = 1
+        WHERE (s.`song_hash` = ? OR s.`song_hash_v2` = ?) AND s.`game_type` = ? AND p.`show_on_board` = 1"
+        . ($diff !== 'all' ? " AND s.`difficulty` = ?" : "") . "
         ORDER BY s.`score` DESC
         LIMIT ?";
-    $stmt = db()->prepare($sql); $stmt->execute([$hash, $gt, $limit]);
+    $params = [$hash, $hash, $gt];
+    if ($diff !== 'all') $params[] = $diff;
+    $params[] = $limit;
+    $stmt = db()->prepare($sql); $stmt->execute($params);
     $rows = $stmt->fetchAll();
     $r = 1;
-    foreach ($rows as &$row) { $row['rank'] = $r++; }
-    json(['song_hash' => $hash, 'game_type' => $gt, 'leaderboard' => $rows]);
+    foreach ($rows as &$row) {
+        $row['rank'] = $r++;
+        // R72/A: expose the soft flags so the UI can badge outliers.
+        if (is_string($row['ac_flags'])) {
+            $row['ac_flags'] = json_decode($row['ac_flags'], true);
+        }
+    }
+    json(['song_hash' => $hash, 'game_type' => $gt, 'difficulty' => $diff, 'leaderboard' => $rows]);
+}
+
+/**
+ * R72/C: song-#1 ("crown") count for a profile. A crown = the profile's
+ * score on a song board (song_hash + game_type) equals that board's best
+ * visible score — ties share the crown, exactly like the displayed
+ * ranking. Opted-out profiles are invisible to the subquery, so their #1
+ * falls to the next visible player (consistent with the song board).
+ */
+function crownsBoard(string $TP, string $TS): void {
+    header('Cache-Control: public, max-age=30');
+    $uid = clean((string)($_GET['uid'] ?? ''));
+    if (!isValidUUID($uid)) err('Missing or invalid uid');
+
+    $p = db()->prepare("SELECT `display_name` FROM `$TP` WHERE `profile_uid` = ? AND `show_on_board` = 1");
+    $p->execute([$uid]);
+    $name = $p->fetchColumn();
+    if ($name === false) err('Profile not found or not visible', 404);
+
+    $sql = "SELECT s.`song_hash`, s.`game_type`, s.`score`, s.`played_at`
+        FROM `$TS` s
+        WHERE s.`profile_uid` = ?
+          AND s.`score` > 0
+          AND s.`score` = (
+              SELECT MAX(s2.`score`) FROM `$TS` s2
+              JOIN `$TP` p2 ON s2.`profile_uid` = p2.`profile_uid`
+              WHERE s2.`song_hash` = s.`song_hash`
+                AND s2.`game_type` = s.`game_type`
+                AND p2.`show_on_board` = 1
+          )
+        ORDER BY s.`played_at` DESC
+        LIMIT 100";
+    $s = db()->prepare($sql);
+    $s->execute([$uid]);
+    $rows = $s->fetchAll();
+    json([
+        'profile_uid'   => $uid,
+        'display_name'  => $name,
+        'crowns'        => count($rows),
+        'songs'         => $rows,
+    ]);
 }
 
 // ============================================================
@@ -670,15 +951,89 @@ function dailyBoard(string $TP, string $TD): void {
     json(['date' => $date, 'leaderboard' => $board]);
 }
 
+/**
+ * R72/C: GET /profiles/{uid}/plays — the most recent online rounds from
+ * the play log (newest first). Only song fingerprints + numbers — the
+ * client maps hashes to local song titles; the server never stores any.
+ * Only visible (show_on_board=1) profiles are exposed.
+ */
+function recentPlays(string $uid, string $TP, string $TL): void {
+    header('Cache-Control: public, max-age=30');
+    if (!isValidUUID($uid)) err('Invalid profile_uid');
+    $p = db()->prepare("SELECT `show_on_board` FROM `$TP` WHERE `profile_uid` = ?");
+    $p->execute([$uid]);
+    $vis = $p->fetchColumn();
+    if ($vis === false) err('Profile not found', 404);
+    if (!(int)$vis) err('Profile not visible', 403);
+
+    $limit = max(1, min((int)($_GET['limit'] ?? 20), 50));
+    $s = db()->prepare("SELECT `song_hash`, `game_type`, `score`, `accuracy`, `difficulty`, `created_at`
+        FROM `$TL` WHERE `profile_uid` = ? ORDER BY `id` DESC LIMIT ?");
+    $s->execute([$uid, $limit]);
+    $rows = $s->fetchAll();
+    foreach ($rows as &$row) {
+        $row['created_at'] = str_replace(' ', 'T', (string)$row['created_at']);
+    }
+    json(['profile_uid' => $uid, 'plays' => $rows]);
+}
+
+// ============================================================
+// BATTLE ROYALE (R72/D: online win counter)
+// ============================================================
+/**
+ * POST /br — submit a Battle-Royale result. BR has no comparable score
+ * scale (rounds × players), so only WINS are counted — br_wins on the
+ * profile doubles as the board column (sort=plays is NOT it; the client
+ * surfaces it as its own stat / the global rows carry br_wins).
+ *
+ * Anti-abuse: (1) the sync_code proves ownership, (2) a 32-hex nonce is
+ * REQUIRED (a replayed request must never increment a counter twice),
+ * (3) two counted wins must be ≥ 120 s apart — a full BR round takes
+ * minutes; the atomic UPDATE enforces the interval without a race.
+ */
+function routeBr(string $method, string $TP): void {
+    if ($method !== 'POST') err('Method not allowed', 405);
+    $d = body();
+    requireFields($d, ['profile_uid', 'sync_code', 'won', 'nonce']);
+    $uid = clean((string)$d['profile_uid']);
+    if (!isValidUUID($uid)) err('Invalid profile_uid');
+
+    requireOwnership($uid, $d, $TP);
+
+    $p = db()->prepare("SELECT `show_on_board` FROM `$TP` WHERE `profile_uid` = ?");
+    $p->execute([$uid]);
+    if (!(int)$p->fetchColumn()) err('Profile opted out');
+
+    // Counter write → nonce is mandatory (see docblock).
+    consumeNonce(clean((string)$d['nonce']), true);
+
+    if (!filter_var($d['won'], FILTER_VALIDATE_BOOLEAN)) {
+        // A loss is accepted (and the nonce burned) but never counted.
+        json(['ok' => true, 'counted' => false]);
+    }
+
+    $upd = db()->prepare("UPDATE `$TP` SET `br_wins` = `br_wins` + 1, `br_wins_at` = NOW()
+        WHERE `profile_uid` = ?
+          AND (`br_wins_at` IS NULL OR `br_wins_at` < (NOW() - INTERVAL 120 SECOND))");
+    $upd->execute([$uid]);
+    $counted = $upd->rowCount() === 1;
+
+    $cur = db()->prepare("SELECT `br_wins` FROM `$TP` WHERE `profile_uid` = ?");
+    $cur->execute([$uid]);
+    json(['ok' => true, 'counted' => $counted, 'br_wins' => (int)$cur->fetchColumn()]);
+}
+
 // ============================================================
 // HELPERS
 // ============================================================
 function songRank(string $TS, string $TP, string $hash, string $gt, int $score): int {
+    // R72/E: dual-read — the board identity is the v1 hash, but a v2-only
+    // lookup must find the same rows.
     $sql = "SELECT COUNT(*)+1 FROM `$TS` s
         JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
-        WHERE s.`song_hash` = ? AND s.`game_type` = ? AND p.`show_on_board` = 1 AND s.`score` > ?";
+        WHERE (s.`song_hash` = ? OR s.`song_hash_v2` = ?) AND s.`game_type` = ? AND p.`show_on_board` = 1 AND s.`score` > ?";
     $stmt = db()->prepare($sql);
-    $stmt->execute([$hash, $gt, $score]);
+    $stmt->execute([$hash, $hash, $gt, $score]);
     return (int)$stmt->fetchColumn();
 }
 

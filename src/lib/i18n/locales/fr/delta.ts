@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Jour suivant",
+    archivePrevDay: "Jour précédent",
+    archiveToday: "Aujourd'hui",
     dualPlayerHint: "Deux joueurs sélectionnés : les défis quotidiens et hebdomadaires peuvent être chantés en duel ou en équipe.",
     filterAll: "Tous",
     modeCompleted: "Terminé",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 Synthèse MIDI",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Général",
+    windowMonth: "Mois",
+    windowWeek: "Semaine",
+    windowLabel: "Période",
+    sortScore: "Points",
+    sortBest: "Meilleur score",
+    sortAccuracy: "Précision",
+    sortPlays: "Chansons",
+    sortLabel: "Trier par",
+    totalPlayers: "{n} joueurs",
+    yourRank: "Votre classement : #{rank} sur {total}",
+    percentileTop: "Top {p}%",
+    noRoundsInWindow: "Vous n'avez pas encore joué de tours en ligne sur cette période.",
+    roundsPlayed: "{n} tours",
+    brWins: "Victoires en Battle Royale",
+  },
   homeScreen: {
     allDailyDone: "Tous les emplacements quotidiens terminés ! 🎉",
     allWeeklyDone: "Tous les emplacements hebdomadaires terminés ! 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Ne s'applique qu'aux tours medley — Aléatoire et Vote jouent des chansons complètes.",
     finalRoundDurationDesc: "Durée du tour final (dernier duel / tours de grande finale).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Statistiques en ligne",
+    loading: "Chargement des données en ligne…",
+    unavailable: "Données en ligne momentanément indisponibles",
+    crowns: "Couronnes par chanson (#1)",
+    brWins: "Victoires BR",
+    topPercent: "Top {p}%",
+    rankOf: "Rang #{rank} sur {total}",
+    notRanked: "Non classé",
+    points: "Points en ligne",
+    crownExample: "p. ex.",
+    recentPlays: "Derniers tours en ligne",
+    noPlays: "Pas encore de tours en ligne.",
+    unknownSong: "Chanson inconnue",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Tous les appariements ont été réglés manuellement — la limite est levée automatiquement. Toute la playlist sera mise en file.",
     noLimitManualOn: "Limite levée manuellement — toute la playlist sera mise en file sans limite par joueur.",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Supprimer définitivement",
     deleteOnlineSuccess: "Données en ligne supprimées. Votre profil est désormais uniquement local.",
     deleteOnlineFailed: "Échec de la suppression des données en ligne",
+    invalidCode: "Veuillez entrer un code de sync valide (8 ou 12 caractères)",
     syncCodeWarning: "Notez ce code ! Sans lui (ou sans un compte en ligne avec mot de passe), votre profil en ligne ne peut pas être récupéré.",
     saveCodeFile: "Enregistrer le code en fichier texte",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Hors ligne — sera renvoyé automatiquement",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Rivaux",
+    add: "Ajouter comme rival",
+    remove: "Retirer le rival",
+    compare: "Comparer avec {name}",
+    compareButton: "Comparer",
+    compareTitle: "Duel : {name}",
+    compareBasis: "Sont comparées les chansons que vous avez jouées vous-même en ligne (200 max.).",
+    compareLoading: "Comparaison des scores…",
+    compareFailed: "Impossible de charger la comparaison",
+    compareNoShared: "Vous n'avez pas encore de chansons en commun avec des scores en ligne.",
+    compareSummary: "{shared} chansons en commun · écart de points {diff}",
+    compareMineOnly: "{n} jouées par vous uniquement",
+    youLead: "Vous menez",
+    tied: "Égalité",
+    rivalLeads: "{name} mène",
+    you: "Vous",
+    unknownSong: "Chanson inconnue",
   },
   settings: {
     onlineDataHint: "Stockage des données : lorsque les fonctions en ligne sont utilisées, le serveur du classement enregistre votre nom, votre couleur, votre pays (facultatif) et vos résultats. Votre consentement sera demandé avant le premier envoi ; vous pouvez tout supprimer à tout moment depuis votre profil (« Supprimer les données en ligne »).",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Rechercher dans la liste …",
     title: "Studio de Métadonnées",
     usageCount: "{n} chansons",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Filtre par difficulté",
+    difficulty_all: "Toutes",
+    difficulty_easy: "Facile",
+    difficulty_normal: "Moyen",
+    difficulty_hard: "Difficile",
   },
   songStart: {
     instrumentalAmount: "Suppression de la voix : {n}%",

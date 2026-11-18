@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Следующий день",
+    archivePrevDay: "Предыдущий день",
+    archiveToday: "Сегодня",
     dualPlayerHint: "Выбрано два игрока: ежедневные и еженедельные задания можно петь дуэлью или командой.",
     filterAll: "Все",
     modeCompleted: "Выполнено",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-синтез",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Всё время",
+    windowMonth: "Месяц",
+    windowWeek: "Неделя",
+    windowLabel: "Период",
+    sortScore: "Очки",
+    sortBest: "Лучший результат",
+    sortAccuracy: "Точность",
+    sortPlays: "Песни",
+    sortLabel: "Сортировка",
+    totalPlayers: "Игроков: {n}",
+    yourRank: "Ваше место: #{rank} из {total}",
+    percentileTop: "Топ {p}%",
+    noRoundsInWindow: "Вы ещё не сыграли ни одного онлайн-раунда за этот период.",
+    roundsPlayed: "Раундов: {n}",
+    brWins: "Победы в Королевской битве",
+  },
   homeScreen: {
     allDailyDone: "Все ежедневные слоты выполнены! 🎉",
     allWeeklyDone: "Все недельные слоты выполнены! 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Действует только для раундов медли — Случайный выбор и Голосование играют полные песни.",
     finalRoundDurationDesc: "Длительность финального раунда (последние дуэли / грандиозный финал).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Онлайн-статистика",
+    loading: "Загружаем онлайн-данные…",
+    unavailable: "Онлайн-данные сейчас недоступны",
+    crowns: "Короны за песни (#1)",
+    brWins: "Победы в BR",
+    topPercent: "Топ {p}%",
+    rankOf: "Место #{rank} из {total}",
+    notRanked: "Нет в рейтинге",
+    points: "Онлайн-очки",
+    crownExample: "напр.",
+    recentPlays: "Недавние онлайн-раунды",
+    noPlays: "Онлайн-раундов пока нет.",
+    unknownSong: "Неизвестная песня",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Все пары назначены вручную — ограничение снято автоматически. В очередь встанет весь плейлист.",
     noLimitManualOn: "Ограничение снято вручную — весь плейлист встанет в очередь без лимита на игрока.",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Удалить навсегда",
     deleteOnlineSuccess: "Онлайн-данные удалены. Ваш профиль теперь только локальный.",
     deleteOnlineFailed: "Не удалось удалить онлайн-данные",
+    invalidCode: "Введите правильный код синхронизации (8 или 12 символов)",
     syncCodeWarning: "Запишите этот код! Без него (или без онлайн-аккаунта с паролем) ваш онлайн-профиль невозможно восстановить.",
     saveCodeFile: "Сохранить код как текстовый файл",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Офлайн — отправка будет повторена автоматически",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Соперники",
+    add: "Добавить в соперники",
+    remove: "Убрать из соперников",
+    compare: "Сравнить с {name}",
+    compareButton: "Сравнить",
+    compareTitle: "Дуэль: {name}",
+    compareBasis: "Сравниваются песни, которые вы сами играли онлайн (макс. 200).",
+    compareLoading: "Сравниваем результаты…",
+    compareFailed: "Не удалось загрузить сравнение",
+    compareNoShared: "У вас пока нет общих песен с онлайн-результатами.",
+    compareSummary: "{shared} общих песен · разница очков {diff}",
+    compareMineOnly: "{n} сыграно только вами",
+    youLead: "Вы лидируете",
+    tied: "Ничья",
+    rivalLeads: "{name} лидирует",
+    you: "Вы",
+    unknownSong: "Неизвестная песня",
   },
   settings: {
     onlineDataHint: "Хранение данных: при использовании онлайн-функций сервер таблицы лидеров сохраняет ваше имя, цвет, необязательную страну и ваши результаты. Перед первой загрузкой будет запрошено согласие; вы можете удалить всё в любой момент в профиле («Удалить онлайн-данные»).",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Поиск по списку …",
     title: "Студия метаданных",
     usageCount: "Песен: {n}",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Фильтр по сложности",
+    difficulty_all: "Все",
+    difficulty_easy: "Легко",
+    difficulty_normal: "Средне",
+    difficulty_hard: "Сложно",
   },
   songStart: {
     instrumentalAmount: "Удаление вокала: {n}%",

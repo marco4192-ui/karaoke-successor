@@ -376,6 +376,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "翌日",
+    archivePrevDay: "前日",
+    archiveToday: "今日",
     dualPlayerHint: "2プレイヤー選択中：デイリーとウィークリーのチャレンジはデュエルまたはチームで歌えます。",
     filterAll: "すべて",
     modeCompleted: "完了済み",
@@ -900,6 +904,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI合成",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "全期間",
+    windowMonth: "月間",
+    windowWeek: "週間",
+    windowLabel: "期間",
+    sortScore: "ポイント",
+    sortBest: "最高スコア",
+    sortAccuracy: "正確さ",
+    sortPlays: "曲数",
+    sortLabel: "並べ替え",
+    totalPlayers: "{n}人のプレイヤー",
+    yourRank: "自分の順位：{total}人中#{rank}位",
+    percentileTop: "上位{p}%",
+    noRoundsInWindow: "この期間ではまだオンラインラウンドをプレイしていません。",
+    roundsPlayed: "{n}ラウンド",
+    brWins: "バトルロイヤル勝利数",
+  },
   homeScreen: {
     allDailyDone: "デイリースロットをすべて完了！ 🎉",
     allWeeklyDone: "ウィークリースロットをすべて完了！ 🎉",
@@ -1033,6 +1055,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "メドレーラウンドにのみ適用 — ランダムと投票はフル尺で曲を再生します。",
     finalRoundDurationDesc: "最終ラウンド（最後のデュエル/グランドフィナーレラウンド）の長さです。",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "オンライン統計",
+    loading: "オンラインデータを読み込み中…",
+    unavailable: "オンラインデータに現在アクセスできません",
+    crowns: "1位獲得曲数（#1）",
+    brWins: "BR勝利数",
+    topPercent: "上位{p}%",
+    rankOf: "{total}人中#{rank}位",
+    notRanked: "ランク外",
+    points: "オンラインポイント",
+    crownExample: "例：",
+    recentPlays: "最近のオンラインラウンド",
+    noPlays: "オンラインラウンドはまだありません。",
+    unknownSong: "曲名不明",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "すべての組み合わせが手動で設定されました — 上限は自動的に解除されます。プレイリスト全体がキューに入ります。",
     noLimitManualOn: "上限を手動で解除 — プレイヤーごとの上限なしでプレイリスト全体がキューに入ります。",
@@ -1068,6 +1106,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "完全に削除",
     deleteOnlineSuccess: "オンラインデータを削除しました。プロフィールは今後ローカルのみです。",
     deleteOnlineFailed: "オンラインデータの削除に失敗しました",
+    invalidCode: "有効な同期コードを入力してください（8文字または12文字）",
     syncCodeWarning: "このコードを書き留めてください！ないと（またはパスワード付きのオンラインアカウントがないと）、オンラインプロフィールは復元できません。",
     saveCodeFile: "コードをテキストファイルとして保存",
   },
@@ -1076,6 +1115,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "オフライン — 自動的に再送信されます",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "ライバル",
+    add: "ライバルに追加",
+    remove: "ライバルから削除",
+    compare: "{name}と比較",
+    compareButton: "比較",
+    compareTitle: "デュエル：{name}",
+    compareBasis: "比較対象は、自分がオンラインでプレイした曲です（最大200曲）。",
+    compareLoading: "スコアを比較中…",
+    compareFailed: "比較を読み込めませんでした",
+    compareNoShared: "オンラインスコアのある共通の曲はまだありません。",
+    compareSummary: "共通曲 {shared}曲・ポイント差 {diff}",
+    compareMineOnly: "{n}曲は自分のみプレイ",
+    youLead: "自分がリード",
+    tied: "引き分け",
+    rivalLeads: "{name}がリード",
+    you: "自分",
+    unknownSong: "曲名不明",
   },
   settings: {
     onlineDataHint: "データ保存：オンライン機能を利用すると、リーダーボードのサーバーに名前・色・任意の国・結果が保存されます。初回アップロードの前に同意を求められます。データはすべて、プロフィールの「オンラインデータを削除」からいつでも削除できます。",
@@ -1227,6 +1286,14 @@ export const deltaTranslations = {
     searchPlaceholder: "リストを検索…",
     title: "メタデータ スタジオ",
     usageCount: "{n}曲",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "難易度フィルター",
+    difficulty_all: "すべて",
+    difficulty_easy: "イージー",
+    difficulty_normal: "ノーマル",
+    difficulty_hard: "ハード",
   },
   songStart: {
     instrumentalAmount: "ボーカル除去: {n}%",

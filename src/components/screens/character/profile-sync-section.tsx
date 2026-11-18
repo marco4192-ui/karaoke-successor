@@ -90,7 +90,9 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   };
 
   const handleDownloadProfile = async () => {
-    if (!inputCode || inputCode.length !== 8) {
+    // R72/A: sync codes are 12 chars for new profiles, 8 chars for legacy
+    // ones — both remain valid.
+    if (!inputCode || (inputCode.length !== 8 && inputCode.length !== 12)) {
       setMessage({ type: 'error', text: t('profileSync.invalidCode') });
       return;
     }
@@ -241,14 +243,14 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
             value={inputCode}
             onChange={(e) => setInputCode(e.target.value.toUpperCase())}
             placeholder={t('profileSync.syncCodePlaceholder')}
-            maxLength={8}
+            maxLength={12}
             className="h-7 w-28 text-xs bg-white/5 border-white/10"
           />
           <Button
             size="sm"
             variant="outline"
             onClick={handleDownloadProfile}
-            disabled={isDownloading || inputCode.length !== 8}
+            disabled={isDownloading || (inputCode.length !== 8 && inputCode.length !== 12)}
             className="h-7 text-xs border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
           >
             {isDownloading ? (

@@ -375,6 +375,10 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
+    // R72: daily archive — online board of any past day
+    archiveNextDay: "Volgende dag",
+    archivePrevDay: "Vorige dag",
+    archiveToday: "Vandaag",
     dualPlayerHint: "Twee spelers geselecteerd: dagelijkse en wekelijkse uitdagingen kunnen als duel of team worden gezongen.",
     filterAll: "Alles",
     modeCompleted: "Voltooid",
@@ -899,6 +903,24 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-synthese",
   },
+  // R72 — highscore screen: time windows, alternative sorts, percentile
+  highscoreScreen: {
+    windowAll: "Algemeen",
+    windowMonth: "Maand",
+    windowWeek: "Week",
+    windowLabel: "Periode",
+    sortScore: "Punten",
+    sortBest: "Beste score",
+    sortAccuracy: "Nauwkeurigheid",
+    sortPlays: "Nummers",
+    sortLabel: "Sorteren op",
+    totalPlayers: "{n} spelers",
+    yourRank: "Je positie: #{rank} van {total}",
+    percentileTop: "Top {p}%",
+    noRoundsInWindow: "Je hebt in deze periode nog geen online rondes gespeeld.",
+    roundsPlayed: "{n} rondes",
+    brWins: "Battle Royale-overwinningen",
+  },
   homeScreen: {
     allDailyDone: "Alle dagelijkse slots voltooid! 🎉",
     allWeeklyDone: "Alle wekelijkse slots voltooid! 🎉",
@@ -1032,6 +1054,22 @@ export const deltaTranslations = {
     brMedleyRoundDurationDesc: "Geldt alleen voor medley-rondes — Willekeurig en Stemmen spelen volledige nummers.",
     finalRoundDurationDesc: "Duur van de laatste ronde (laatste duel / grote finale-rondes).",
   },
+  // R72 — profile: online stats card
+  onlineStats: {
+    title: "Online statistieken",
+    loading: "Online gegevens laden…",
+    unavailable: "Online gegevens momenteel onbereikbaar",
+    crowns: "Nummerkronen (#1)",
+    brWins: "BR-overwinningen",
+    topPercent: "Top {p}%",
+    rankOf: "Positie #{rank} van {total}",
+    notRanked: "Niet gerangschikt",
+    points: "Punten online",
+    crownExample: "bv.",
+    recentPlays: "Recente online rondes",
+    noPlays: "Nog geen online rondes.",
+    unknownSong: "Onbekend nummer",
+  },
   playlistQueueConfig: {
     noLimitAutoOn: "Alle koppelingen zijn handmatig ingesteld — de limiet is automatisch opgeheven. De volledige afspeellijst komt in de wachtrij.",
     noLimitManualOn: "Limiet handmatig opgeheven — de volledige afspeellijst komt zonder spelerslimiet in de wachtrij.",
@@ -1067,6 +1105,7 @@ export const deltaTranslations = {
     deleteOnlineConfirm: "Definitief verwijderen",
     deleteOnlineSuccess: "Online gegevens verwijderd. Je profiel is nu alleen lokaal.",
     deleteOnlineFailed: "Online gegevens verwijderen mislukt",
+    invalidCode: "Voer een geldige sync-code in (8 of 12 tekens)",
     syncCodeWarning: "Schrijf deze code op! Zonder deze code (of een online account met wachtwoord) kan je onlineprofiel niet worden hersteld.",
     saveCodeFile: "Code opslaan als tekstbestand",
   },
@@ -1075,6 +1114,26 @@ export const deltaTranslations = {
   },
   resultsScreen: {
     uploadQueued: "Offline — wordt automatisch opnieuw geprobeerd",
+  },
+  // R72 — rivals: manually picked comparison players on the leaderboard
+  rivals: {
+    title: "Rivalen",
+    add: "Toevoegen als rivaal",
+    remove: "Rivaal verwijderen",
+    compare: "Vergelijken met {name}",
+    compareButton: "Vergelijken",
+    compareTitle: "Duel: {name}",
+    compareBasis: "Vergeleken worden nummers die je zelf online hebt gespeeld (max. 200).",
+    compareLoading: "Scores vergelijken…",
+    compareFailed: "Kon de vergelijking niet laden",
+    compareNoShared: "Jullie hebben nog geen gedeelde nummers met online scores.",
+    compareSummary: "{shared} gedeelde nummers · puntverschil {diff}",
+    compareMineOnly: "{n} alleen door jou gespeeld",
+    youLead: "Jij staat voor",
+    tied: "Gelijkspel",
+    rivalLeads: "{name} staat voor",
+    you: "Jij",
+    unknownSong: "Onbekend nummer",
   },
   settings: {
     onlineDataHint: "Gegevensopslag: wanneer onlinefuncties worden gebruikt, slaat de leaderboardserver je naam, je kleur, je optionele land en je resultaten op. Vóór de eerste upload word je om toestemming gevraagd; je kunt alles altijd verwijderen via je profiel (\"Online gegevens verwijderen\").",
@@ -1226,6 +1285,14 @@ export const deltaTranslations = {
     searchPlaceholder: "Zoek in de lijst …",
     title: "Metadata Studio",
     usageCount: "{n} nummers",
+  },
+  // R72 — song highscore modal: real difficulty filter for the online board
+  songHighscoreModal: {
+    difficultyFilter: "Filter op moeilijkheid",
+    difficulty_all: "Alle",
+    difficulty_easy: "Makkelijk",
+    difficulty_normal: "Gemiddeld",
+    difficulty_hard: "Moeilijk",
   },
   songStart: {
     instrumentalAmount: "Zangverwijdering: {n}%",

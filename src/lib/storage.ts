@@ -91,6 +91,9 @@ export const StorageKeys = {
   LEADERBOARD_CONSENT: 'karaoke-leaderboard-consent',
   /** R69: queued online score submissions for retry after network failures (JSON) */
   SCORE_OUTBOX: 'karaoke-score-outbox',
+  /** R72: local rival list for the leaderboard comparison (JSON — uid/name/
+   *  color only; deliberately NO server-side friend system). */
+  LEADERBOARD_RIVALS: 'karaoke-leaderboard-rivals',
 
   // --- Daily Challenge ---
   CHALLENGE_MODE: 'karaoke-challenge-mode',

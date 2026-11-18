@@ -7,10 +7,13 @@
 import type {
   OnlineProfile, OnlineScoreEntry,
   SubmitScorePayload, SubmitScoreResult, GlobalLeaderboardEntry,
+  GlobalLeaderboardResponse, LeaderboardWindow, LeaderboardSort,
   LeaderboardGameType, ScoreProofPackage,
   ProfileSyncDownload, ProfileSyncUpload,
   SubmitDailyResultPayload, OnlineDailyEntry,
   NoteProofEntry, ScoringMetaForProof,
+  CrownsResponse, OnlinePlayEntry, SubmitBrResultResult,
+  BatchScoresResponse,
 } from '@/lib/leaderboard/types';
 import {
   generateSongHash, generateSongHashV2, songNotesFromSong,
@@ -23,6 +26,16 @@ import type { PlayerProfile, Song, Difficulty, GameMode, HighscoreEntry } from '
 export const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
 // ── Internal helpers ────────────────────────────────────
+
+/** R72/A: fresh replay nonce (32 hex chars from crypto randomness). One
+ *  per WIRE CALL — generated in submitScorePayload/submitBrResult so live
+ *  uploads, outbox retries and consent-delayed uploads can never reuse a
+ *  consumed nonce (the server answers 409 on duplicates). */
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
 
 async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
@@ -254,28 +267,31 @@ async function submitScore(params: {
 /**
  * Low-level score submission with a COMPLETE payload (including proof).
  * Used by submitScore and the R69 outbox flush — no fingerprint logic, no
- * re-registration, just the wire call.
+ * re-registration, just the wire call. R72: a fresh replay nonce is added
+ * per call (see generateNonce).
  */
 async function submitScorePayload(payload: SubmitScorePayload): Promise<SubmitScoreResult> {
   return request<SubmitScoreResult>('/scores', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, nonce: generateNonce() }),
   });
 }
 
-/** Fetch leaderboard for a single song */
+/** Fetch leaderboard for a single song.
+ *  R72/B: `difficulty` is a REAL filter ('all' default = pre-R72 behaviour). */
 async function fetchSongLeaderboard(
   songHash: string,
   gameType: LeaderboardGameType = 's',
-  limit = 100
+  limit = 100,
+  difficulty: 'all' | 'easy' | 'normal' | 'hard' = 'all',
 ): Promise<OnlineScoreEntry[]> {
   const result = await request<{ leaderboard: OnlineScoreEntry[] }>(
-    `/leaderboard/song/${encodeURIComponent(songHash)}?game_type=${gameType}&limit=${limit}`
+    `/leaderboard/song/${encodeURIComponent(songHash)}?game_type=${gameType}&limit=${limit}&difficulty=${difficulty}`
   );
   return result.leaderboard;
 }
 
-/** Fetch global leaderboard */
+/** Fetch global leaderboard (entries only — legacy signature). */
 async function fetchGlobalLeaderboard(
   limit = 100, offset = 0
 ): Promise<GlobalLeaderboardEntry[]> {
@@ -283,6 +299,61 @@ async function fetchGlobalLeaderboard(
     `/leaderboard/global?limit=${limit}&offset=${offset}`
   );
   return result.leaderboard;
+}
+
+/** R72: full global board — time window, alternative sort, total player
+ *  count and the caller's own rank + percentile (pass the profile's
+ *  syncUid || id via opts.uid). */
+async function fetchGlobalBoard(opts?: {
+  window?: LeaderboardWindow;
+  sort?: LeaderboardSort;
+  uid?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<GlobalLeaderboardResponse> {
+  const params = new URLSearchParams({
+    limit: String(opts?.limit ?? 100),
+    offset: String(opts?.offset ?? 0),
+  });
+  if (opts?.window) params.set('window', opts.window);
+  if (opts?.sort) params.set('sort', opts.sort);
+  if (opts?.uid) params.set('uid', opts.uid);
+  return request<GlobalLeaderboardResponse>(`/leaderboard/global?${params.toString()}`);
+}
+
+/** R72/C: song-#1 ("crown") count for a profile (visible profiles only). */
+async function fetchCrowns(uid: string): Promise<CrownsResponse> {
+  return request<CrownsResponse>(`/leaderboard/crowns?uid=${encodeURIComponent(uid)}`);
+}
+
+/** R72: public profile data (no sync_code in the response) — online stats
+ *  card (BR wins, cached all-time totals). */
+async function fetchPublicProfile(uid: string): Promise<OnlineProfile> {
+  return request<OnlineProfile>(`/profiles/${encodeURIComponent(uid)}`);
+}
+
+/** R72/C: the most recent online rounds of a profile (play log, newest
+ *  first). Song hashes only — map them to local titles client-side. */
+async function fetchRecentPlays(uid: string, limit = 20): Promise<OnlinePlayEntry[]> {
+  const result = await request<{ plays: OnlinePlayEntry[]}>(
+    `/profiles/${encodeURIComponent(uid)}/plays?limit=${limit}`
+  );
+  return result.plays;
+}
+
+/** R72/C: batch-fetch the boards of up to 200 song hashes at once (basis of
+ *  the local rival comparison — no server-side friend system by design). */
+async function fetchBatchScores(
+  hashes: string[],
+  gameType: LeaderboardGameType = 's',
+  limit = 1000,
+): Promise<BatchScoresResponse> {
+  if (hashes.length === 0) return {};
+  const joined = hashes.slice(0, 200).map(h => encodeURIComponent(h)).join(',');
+  const result = await request<{ scores: BatchScoresResponse }>(
+    `/scores/batch?hashes=${joined}&game_type=${gameType}&limit=${limit}`
+  );
+  return result.scores;
 }
 
 // ── Daily challenge leaderboard (online board) ───────────
@@ -336,6 +407,50 @@ async function fetchDailyLeaderboard(date?: string): Promise<OnlineDailyEntry[]>
     `/daily?date=${encodeURIComponent(d)}&limit=100`
   );
   return result.leaderboard;
+}
+
+// ── Battle Royale (R72/D: online win counter) ────────────
+
+/**
+ * R72/D: submit a Battle-Royale result. Only wins are counted online
+ * (br_wins counter; BR has no comparable score scale). The server requires
+ * a fresh nonce per request (counter replay protection) and counts at most
+ * one win per 120 s. Fire-and-forget by design — failures are swallowed by
+ * the caller. Returns { sync_code } when a code had to be generated so the
+ * caller can persist it on the profile (same pattern as submitDailyResult).
+ */
+async function submitBrResult(params: {
+  profile: PlayerProfile;
+  won: boolean;
+}): Promise<{ ok: boolean; counted?: boolean; br_wins?: number; sync_code?: string } | null> {
+  const { profile, won } = params;
+  if (profile.storageMode === 'local') return null;
+  let syncCode = profile.syncCode;
+  if (!syncCode) {
+    // Register on the fly so the win has a home on the server
+    const registered = await registerProfile(profile).catch(() => null);
+    syncCode = registered?.sync_code;
+    if (!syncCode) return null;
+  }
+  try {
+    const result = await request<SubmitBrResultResult>('/br', {
+      method: 'POST',
+      body: JSON.stringify({
+        profile_uid: profile.syncUid || profile.id,
+        sync_code: syncCode,
+        won,
+        nonce: generateNonce(),
+      }),
+    });
+    return {
+      ok: result.ok,
+      counted: result.counted,
+      br_wins: result.br_wins,
+      sync_code: profile.syncCode ? undefined : syncCode,
+    };
+  } catch {
+    return null; // non-critical — the local hall of fame already has the win
+  }
 }
 
 // ── Export singleton ────────────────────────────────────
@@ -560,9 +675,17 @@ export const leaderboardService = {
   submitScorePayload,
   fetchSongLeaderboard,
   fetchGlobalLeaderboard,
+  // R72: full global board (windows, sorts, own rank/percentile)
+  fetchGlobalBoard,
+  fetchCrowns,
+  fetchPublicProfile,
+  fetchRecentPlays,
+  fetchBatchScores,
   // Daily challenge online board
   submitDailyResult,
   fetchDailyLeaderboard,
+  // R72: Battle-Royale online win counter
+  submitBrResult,
   // Backward-compatible aliases used by UI components
   getSongLeaderboard: fetchSongLeaderboard,
   getGlobalLeaderboard: fetchGlobalLeaderboard,

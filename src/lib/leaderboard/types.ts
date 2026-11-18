@@ -12,6 +12,14 @@ export type LeaderboardGameType = 's' | 'd';
 // s = single, duel (1v1 competitive)
 // d = duet (vs-mode, each singer gets partial song)
 
+// ── R72: global board time windows + alternative sorts ─────
+/** 'all' = all-time (cached profile stats), 'month'/'week' = calendar
+ *  windows aggregated from the server-side play log (server timezone). */
+export type LeaderboardWindow = 'all' | 'month' | 'week';
+/** score = points (default) | best = single best score | accuracy = Ø
+ *  accuracy | plays = songs played (all-time) / rounds played (windows). */
+export type LeaderboardSort = 'score' | 'best' | 'accuracy' | 'plays';
+
 // ── Profile (server-side representation) ──────────────────
 export interface OnlineProfile {
   profile_uid: string;
@@ -27,6 +35,8 @@ export interface OnlineProfile {
   songs_played: number;
   games_played: number;
   avg_accuracy: number;
+  /** R72: Battle-Royale-Siege (all-time online counter) */
+  br_wins?: number;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +60,9 @@ export interface OnlineScoreEntry {
   verified: boolean;
   /** Fingerprint version used when this score was submitted */
   fingerprint_version: 'v1' | 'v2' | null;
+  /** R72: soft anti-cheat flags — non-empty = statistical outlier, the UI
+   *  badges the entry with a warning marker (never a rejection). */
+  ac_flags?: string[] | null;
 }
 
 // ── Batch response: song_hash → OnlineScoreEntry[] ─────────
@@ -74,6 +87,9 @@ export interface SubmitScorePayload {
   proof?: ScoreProofPackage;
   /** v2 song hash (if v2 fingerprint was used). Server stores both v1 and v2 for lookup. */
   song_hash_v2?: string;
+  /** R72: replay nonce (32 hex chars). Generated per WIRE CALL by the
+   *  service — never persisted in the outbox (a retry needs a fresh one). */
+  nonce?: string;
 }
 
 // ── Submit score response ─────────────────────────────────
@@ -99,6 +115,57 @@ export interface GlobalLeaderboardEntry {
   songs_played: number;
   games_played: number;
   avg_accuracy: number;
+  /** R72: Battle-Royale-Siege (all-time counter, informational on window boards) */
+  br_wins?: number;
+}
+
+/** R72: full GET /leaderboard/global response — window/sort echo, total
+ *  player count and the caller's own rank + percentile (when uid passed). */
+export interface GlobalLeaderboardResponse {
+  window: LeaderboardWindow;
+  sort: LeaderboardSort;
+  total_players: number;
+  leaderboard: GlobalLeaderboardEntry[];
+  you: {
+    rank: number;
+    total: number;
+    /** "Top X %" — rank / total × 100, one decimal */
+    percentile_top: number | null;
+  } | null;
+}
+
+// ── R72/C: song #1 ("crowns") ─────────────────────────────
+export interface CrownsResponse {
+  profile_uid: string;
+  display_name: string;
+  /** Number of song boards (per game type) where the profile holds #1 */
+  crowns: number;
+  songs: Array<{
+    song_hash: string;
+    game_type: LeaderboardGameType;
+    score: number;
+    played_at: string;
+  }>;
+}
+
+// ── R72/C: recent online rounds (play log) ────────────────
+export interface OnlinePlayEntry {
+  song_hash: string;
+  game_type: LeaderboardGameType;
+  score: number;
+  accuracy: number;
+  difficulty: 'easy' | 'normal' | 'hard';
+  created_at: string;
+}
+
+// ── R72/D: Battle-Royale result ──────────────────────────
+export interface SubmitBrResultResult {
+  ok: boolean;
+  /** false = loss (accepted, never counted) or win blocked by the 120 s
+   *  min-interval (double submit / spam) */
+  counted?: boolean;
+  /** The profile's current online BR win count */
+  br_wins?: number;
 }
 
 // ── Profile sync (cross-device backup) ────────────────────

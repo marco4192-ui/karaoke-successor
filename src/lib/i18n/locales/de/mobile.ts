@@ -869,6 +869,10 @@ dailyChallengeScreen: {
   evaluationTeam: '🤝 Team (Durchschnitt)',
   localBoard: 'Lokal',
   onlineBoard: 'Online',
+  // R72: Daily-Archiv (Online-Board beliebiger Tage)
+  archiveToday: 'Heute',
+  archivePrevDay: 'Vorheriger Tag',
+  archiveNextDay: 'Nächster Tag',
   onlineBoardLoading: 'Lade Online-Rangliste…',
   onlineBoardUnavailable: 'Online-Rangliste nicht erreichbar. Prüfe die Leaderboard-Server-Konfiguration (siehe Anleitung).',
   onlineBoardEmpty: 'Noch keine Online-Einträge für heute.',

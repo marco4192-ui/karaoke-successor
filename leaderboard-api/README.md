@@ -52,13 +52,16 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | GET | `/` | API info |
 | POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`, optional `sync_code`). Upserting an existing profile requires its sync_code; new profiles get one generated when omitted. |
 | GET | `/profiles/{uid}` | Public profile data (no sync_code) |
-| PUT | `/profiles/{uid}` | Update settings — requires `sync_code`; all fields expected |
+| GET | `/profiles/{uid}/plays?limit=N` | **v3.6** Recent online rounds (play log, newest first — song hashes only) |
+| PUT | `/profiles/{uid}` | Update settings — requires `sync_code`; all fields expected. **v3.6**: display names are checked against a blocklist (HTTP 422 on hits) |
 | DELETE | `/profiles/{uid}` | Delete profile + scores + daily results + sync snapshot + linked account (DB cascade, GDPR) — requires `sync_code` |
 | PUT | `/profiles/{uid}/sync` | Store private profile sync snapshot — requires `sync_code` |
 | GET | `/profiles/sync/{code}` | Retrieve profile sync snapshot by code |
-| POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code` |
-| GET | `/leaderboard/song/{hash}?game_type=s|d&limit=N` | Per-song Top N |
-| GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
+| POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code`; optional `nonce` (32 hex chars, replay protection) |
+| GET | `/leaderboard/song/{hash}?game_type=s|d&difficulty=all|easy|normal|hard&limit=N` | Per-song Top N — **v3.6**: real difficulty filter, soft-flag badges (`ac_flags` in rows) |
+| GET | `/leaderboard/global?window=all|month|week&sort=score|best|accuracy|plays&uid=…&limit=N&offset=M` | Global player ranking — **v3.6**: time windows (calendar month / ISO week), alternative sorts, `total_players`, own `rank` + `percentile_top` via `uid`, `br_wins` per row |
+| GET | `/leaderboard/crowns?uid=…` | **v3.6** Song-#1 ("crown") count + list for a visible profile |
+| POST | `/br` | **v3.6** Battle-Royale result (`won` true/false) — requires `sync_code` + `nonce` (mandatory, counter replay protection); wins counted at most once per 120 s |
 | POST | `/daily` | Submit daily-challenge result (upsert — best metric wins) — requires profile `sync_code` |
 | GET | `/daily?date=YYYY-MM-DD&limit=N` | Daily-challenge board for a date (all challenge types, ranked per type) |
 | POST | `/auth/register` | Link an e-mail + password account to a profile — requires profile `sync_code`. Returns a one-time `recovery_code`. Re-registering a profile that already has an account REPLACES it (forgot-password rescue, sync_code is the ownership proof). |
@@ -155,6 +158,33 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   entries, so this stays a flag, not a rejection).
 - `played_at` only updates when a submission actually becomes the new best
   (previously every replay of the same song bumped it, even losing ones).
+
+**v3.6.0 (R72) additions:**
+- **Replay nonces**: `POST /scores` accepts an optional `nonce` (32 hex
+  chars, one per wire call — the server stores it in `ks_nonces` and
+  answers `409 Replay detected` on duplicates). `POST /br` REQUIRES it.
+  Old app versions without a nonce still work for scores.
+- **Play log**: every accepted submission appends one row to `ks_play_log`
+  (regardless of personal best) — the basis of the month/week boards and
+  `/profiles/{uid}/plays`. Rows older than 400 days are pruned
+  probabilistically (~1% of submissions trigger a cleanup); nonces after
+  1 day.
+- **Outlier soft-flags**: `near_max_low_accuracy` (score ≥ 9500 with
+  accuracy < 70 is not reachable in the client scoring model) and
+  `new_profile_top10` (profile younger than 24 h instantly landing a Top-10
+  spot on a song board with ≥ 5 entries). Flags are surfaced in the song
+  board / batch rows (`ac_flags`) — the UI badges them, never hides them.
+- **Sync-code entropy**: NEW codes are 12 chars from the unambiguous
+  alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (60 bits; legacy codes were 8
+  chars / 41.5 bits). Existing 8-char codes stay valid — both lengths are
+  accepted everywhere (`isValidSyncCode`).
+- **Dual-read fingerprints**: song board, batch and rank queries match
+  `song_hash = ? OR song_hash_v2 = ?` so future v2-only clients see the
+  same boards.
+- **Display-name blocklist**: register/update reject clearly abusive names
+  (insults/slurs/extremist terms, German + English, leet-normalized,
+  word-boundary matching) with HTTP 422. Extend at runtime via the
+  `KS_NAME_BLOCKLIST` env var (comma-separated) — no code change needed.
 
 ## Daily challenge
 
@@ -296,6 +326,14 @@ never appear on any public leaderboard.
 Profiles are identified by a client-generated UUID — no email, no password,
 no IP stored (rate limiting uses IPs only in temporary files, not the DB).
 
+**v3.6 additions to the data set:** `ks_play_log` (one row per accepted
+score submission: profile, song hash, game type, score, accuracy,
+difficulty, timestamp — the basis of the month/week boards and the recent
+rounds list; pruned after 400 days) and `ks_profiles.br_wins` (BR win
+counter + timestamp of the last counted win). Song titles never leave the
+client — the play log stores fingerprints only, exactly like the score
+boards.
+
 ## Rate limiting
 
 60 requests/minute per IP, file-based (`sys_get_temp_dir()`), enforced in
@@ -303,3 +341,10 @@ no IP stored (rate limiting uses IPs only in temporary files, not the DB).
 with `flock(LOCK_EX)` — concurrent requests used to race past the limit.
 Request bodies are hard-capped at 1.5 MB (the profile-sync snapshot has its
 own tighter 1 MB limit).
+
+**v3.6 — reverse proxies:** by default the limiter uses `REMOTE_ADDR`.
+When the API runs behind a proxy you control, set `KS_TRUST_PROXY_IPS`
+(comma-separated proxy IPs) — then the LAST `X-Forwarded-For` entry (the
+one your proxy appended) becomes the bucket key. Without the env var the
+header is ignored entirely: a client-forged XFF can never dodge or split
+the buckets.

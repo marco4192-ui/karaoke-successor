@@ -34,6 +34,67 @@ define('API_SECRET', $env('KS_API_SECRET'));
 define('RATE_LIMIT_PER_MINUTE', 60);
 define('MAX_LEADERBOARD_ENTRIES', 500);
 
+// ── Reverse proxy / X-Forwarded-For (R72/E) ────────────────
+// Comma-separated list of proxy IPs you CONTROL (e.g. the hosting
+// provider's load balancer). Only when the DIRECT connection comes from
+// one of these IPs does the rate limiter use the LAST X-Forwarded-For
+// entry (the one YOUR proxy appended) instead of REMOTE_ADDR — otherwise
+// all clients would share the proxy's bucket. Leave empty (default) to
+// always use REMOTE_ADDR: safe, no spoofing surface.
+define('TRUST_PROXY_IPS', $env('KS_TRUST_PROXY_IPS'));
+
+// ── Display-name moderation (R72/E) ────────────────────────
+// Clear-case blocklist (insults/slurs/extremist terms, German + English).
+// Matching: case-insensitive, word boundaries, after leet normalization
+// (0→o, 1→i, 3→e, 4→a, 5→s, 7→t, @→a, $→s). Extend for your community via
+// KS_NAME_BLOCKLIST (comma-separated env var / config.local.php constant)
+// — no code change needed. Blocked names are REJECTED with HTTP 422 on
+// register and profile update.
+define('NAME_BLOCKLIST_EXTRA', $env('KS_NAME_BLOCKLIST'));
+function nameBlocklist(): array {
+    $base = [
+        // German
+        'arschloch', 'wichser', 'wixer', 'hurensohn', 'huersohn',
+        'schlampe', 'fotze', 'missgeburt', 'vergewaltiger', 'kinderschlaender',
+        // Extremism (de/en)
+        'hitler', 'nazi', 'neonazi', 'gestapo', 'himmler', 'goebbels',
+        'holocaustleugner', 'kkk', 'whitepower', 'heilhitler',
+        // English
+        'nigger', 'nigga', 'faggot', 'retard', 'rapist', 'pedo',
+        'pedophile', 'cunt', 'whore', 'slut',
+    ];
+    $extra = array_filter(array_map('trim', explode(',', NAME_BLOCKLIST_EXTRA)));
+    return array_values(array_unique(array_merge($base, $extra)));
+}
+
+/**
+ * R72/E: reject clearly abusive display names. Returns the matched term
+ * (for logs) or null when the name is acceptable. Unicode-aware word
+ * boundaries so 'Arsch!loch' normalizes but 'Karlas' does not match
+ * 'karl'… (lookarounds on non-letter/digit).
+ */
+function nameBlockedReason(string $name): ?string {
+    $normalized = mb_strtolower($name);
+    $normalized = str_replace(
+        ['0', '1', '3', '4', '5', '7', '@', '$'],
+        ['o', 'i', 'e', 'a', 's', 't', 'a', 's'],
+        $normalized
+    );
+    foreach (nameBlocklist() as $term) {
+        if ($term === '') continue;
+        $pattern = '/(?<![\p{L}\p{N}])' . preg_quote($term, '/') . '(?![\p{L}\p{N}])/u';
+        if (preg_match($pattern, $normalized) === 1) return $term;
+    }
+    return null;
+}
+
+/** R72/E: err() wrapper for register/update name checks. */
+function assertAcceptableDisplayName(string $name): void {
+    if (nameBlockedReason($name) !== null) {
+        err('display_name contains blocked terms — choose another name', 422);
+    }
+}
+
 // Fail fast with a clear message instead of a fatal PDO error later.
 if (DB_HOST === '' || DB_NAME === '' || DB_USER === '') {
     err('Server misconfiguration: database credentials missing (set KS_DB_* env vars or upload config.local.php).', 500);
@@ -139,6 +200,27 @@ function isValidCountry(?string $c): bool {
     return (bool) preg_match('/^[A-Z]{2}$/', $c);
 }
 
+/**
+ * R72/E: the rate-limit client IP. Behind a controlled reverse proxy
+ * (TRUST_PROXY_IPS) the LAST X-Forwarded-For entry is used — the one the
+ * trusted proxy itself appended. Without a configured trusted proxy the
+ * header is ignored entirely (a client-forged XFF must never dodge or
+ * split the rate-limit buckets).
+ */
+function clientIp(): string {
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    if (TRUST_PROXY_IPS === '') return $remote;
+    $trusted = array_filter(array_map('trim', explode(',', TRUST_PROXY_IPS)));
+    if (!in_array($remote, $trusted, true)) return $remote;
+    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ($xff === '') return $remote;
+    $candidates = array_values(array_filter(
+        array_map('trim', explode(',', $xff)),
+        fn($ip) => (bool) filter_var($ip, FILTER_VALIDATE_IP)
+    ));
+    return $candidates === [] ? $remote : $candidates[count($candidates) - 1];
+}
+
 // ── CORS ───────────────────────────────────────────────────
 header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGINS);
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -150,8 +232,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 // R69: flock(LOCK_EX) around the read-modify-write — concurrent requests
 // used to race on the counter file (two parallel requests both read the
 // same count, both passed the limit).
+// R72/E: clientIp() honors X-Forwarded-For ONLY when the direct peer is a
+// configured trusted proxy (TRUST_PROXY_IPS) — see the comment above.
 (function () {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip = clientIp();
     $file = sys_get_temp_dir() . '/ks_rl_' . md5($ip);
     $now = time();
     $fh = @fopen($file, 'c+');

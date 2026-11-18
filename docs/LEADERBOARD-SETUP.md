@@ -66,9 +66,18 @@ nicht zwingend nötig — die History enthält dann nur noch tote Werte.
 1. Plesk → Datenbanken: MySQL-Datenbank + Benutzer anlegen (oder bestehende
    `k347227_karaoke_leaderboard` weiterverwenden).
 2. `schema.sql` einmalig importieren (phpMyAdmin → Import). Es legt an:
-   `ks_profiles`, `ks_scores` und die Stored Procedure
-   `sp_refresh_profile_stats`.
-3. **Nützlich:** Wenn die PHP-Anwendung auf demselben Webspace liegt wie die
+   `ks_profiles`, `ks_scores`, `ks_profile_sync`, `ks_daily_results`,
+   `ks_accounts`, `ks_play_log` (v3.6), `ks_nonces` (v3.6) und die Stored
+   Procedure `sp_refresh_profile_stats`.
+3. **Bestehende Installation updaten (v3.5 → v3.6, R72):** NICHT das ganze
+   `schema.sql` neu importieren (es enthält `DROP TABLE`-Anweisungen!),
+   sondern nur den kommentierten Migrationsblock „Migration v3.5 → v3.6"
+   am Ende der Datei in phpMyAdmin ausführen. Er legt `ks_play_log` +
+   `ks_nonces` an, fügt `ks_profiles.br_wins`/`br_wins_at` hinzu und weitet
+   `sync_code` auf `VARCHAR(16)` (neue Codes: 12 Zeichen). Wer noch auf
+   ≤ v3.4 steht, führt ZUERST die dortige `recovery_hash`-Migration aus und
+   dann denselben v3.6-Block.
+4. **Nützlich:** Wenn die PHP-Anwendung auf demselben Webspace liegt wie die
    Datenbank, setze `DB_HOST` auf `localhost` statt auf den externen
    MySQL-Hostnamen (`mysqle88c.netcup.net`). Das ist schneller und umgeht
    Probleme mit externem DB-Zugriff.
@@ -102,11 +111,21 @@ Soll die DB-Adresse vom Standard abweichen, zusätzlich definieren:
 `KS_DB_HOST`, `KS_DB_NAME`, `KS_DB_USER`, `KS_DB_PASS`, `KS_API_SECRET` —
 diese haben Vorrang vor `config.local.php`).
 
+**Optionale v3.6-Konfiguration (R72):**
+
+- `KS_TRUST_PROXY_IPS` — Komma-Liste der Proxy-IPs, die DU kontrollierst.
+  Nur wenn die Anfrage DIREKT von einer dieser IPs kommt, nutzt der Rate
+  Limiter den LETZTEN `X-Forwarded-For`-Eintrag statt `REMOTE_ADDR`
+  (sonst teilen sich alle Clients einen Bucket). Ohne Eintrag wird der
+  Header komplett ignoriert — gefälschte XFF können nichts.
+- `KS_NAME_BLOCKLIST` — zusätzliche gesperrte Begriffe für Anzeigenamen
+  (Komma-Liste, wird mit der eingebauten Deutsch/Englisch-Liste vereinigt).
+
 **Funktionscheck** im Browser:
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.5.0",...}
+→ {"name":"Karaoke Leaderboard","version":"3.6.0",...}
 ```
 
 Ein direkter Aufruf von `https://…/leaderboard-api/config.php` muss

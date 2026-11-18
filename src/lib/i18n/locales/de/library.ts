@@ -180,6 +180,12 @@ songHighscoreModal: {
   pts: 'Pkt.',
   verified: 'Verifiziert',
   unverified: 'Unverifiziert',
+  // R72: echter Schwierigkeits-Filter für das Online-Song-Board
+  difficultyFilter: 'Schwierigkeits-Filter',
+  difficulty_all: 'Alle',
+  difficulty_easy: 'Leicht',
+  difficulty_normal: 'Normal',
+  difficulty_hard: 'Schwer',
 },
 songLeaderboardPreview: {
   title: 'Song-Leaderboard',
