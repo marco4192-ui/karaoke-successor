@@ -9,8 +9,20 @@
  * registration). The sync_code also unlocks the profile sync backup and
  * profile deletion.
  *
+ * v3.6.1 (R74): GET /health — deployment diagnostics behind the API key
+ *   (DB connect, 7 tables + required columns incl. fix-ALTERs, stored
+ *   procedure, live board queries with the exact PDO error). Window-board
+ *   GROUP BY widened to the joined ks_profiles columns — MariaDB does not
+ *   detect functional dependencies across joins, so the previous
+ *   `GROUP BY l.profile_uid` alone could fail with ONLY_FULL_GROUP_BY.
+ *
  * Endpoints:
  *   GET    /                          API info
+ *   GET    /health                    Deployment-Diagnose (v3.6.1): DB-Verbindung,
+ *                                     alle 7 Tabellen + Pflicht-Spalten, Stored
+ *                                     Procedure, Live-Board-Queries mit exaktem
+ *                                     PDO-Fehler + fertigen FIX-SQL-Statements.
+ *                                     Wie jeder Endpoint nur mit X-API-Key.
  *   POST   /profiles                  Register / upsert profile (upsert requires sync_code)
  *   GET    /profiles/{uid}            Public profile data (no sync_code in response)
  *   GET    /profiles/{uid}/plays      Recent online rounds (play log, newest first) — R72
@@ -65,7 +77,8 @@ $T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.1', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        'health'      => apiHealth($T_PROFILES, $T_SCORES, $T_DAILY, $T_ACCOUNTS, $T_PLAYLOG, $T_NONCES),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG),
@@ -621,6 +634,12 @@ function globalBoard(string $TP, string $TL): void {
         }
     } else {
         // ── Window board (month/week): aggregate the play log ──
+        // v3.6.1: GROUP BY lists every non-aggregated ks_profiles column.
+        // MySQL 8 derives them from the join on the PK, but MariaDB (netcup!)
+        // has no functional-dependency detection (MDEV-11588) — with
+        // ONLY_FULL_GROUP_BY the old `GROUP BY l.profile_uid` alone was
+        // rejected. Semantics are identical: p.profile_uid is the PK, so
+        // the extra columns can never merge two profiles.
         $sortAlias = match ($sort) {
             'best'     => 'window_best',
             'accuracy' => 'window_avg',
@@ -642,7 +661,8 @@ function globalBoard(string $TP, string $TL): void {
             IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
             FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
             WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
-            GROUP BY l.`profile_uid`
+            GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
+                     p.`br_wins`, p.`show_country`, p.`country_code`
             ORDER BY `$sortAlias` DESC, `window_score` DESC
             LIMIT ? OFFSET ?";
         $stmt = db()->prepare($sql); $stmt->execute([$cutoff, $limit, $offset]);
@@ -1021,6 +1041,302 @@ function routeBr(string $method, string $TP): void {
     $cur = db()->prepare("SELECT `br_wins` FROM `$TP` WHERE `profile_uid` = ?");
     $cur->execute([$uid]);
     json(['ok' => true, 'counted' => $counted, 'br_wins' => (int)$cur->fetchColumn()]);
+}
+
+// ============================================================
+// HEALTH / DIAGNOSTICS (v3.6.1)
+// ============================================================
+/**
+ * GET /health — one-shot deployment diagnostics behind the API key.
+ *
+ * Background: the top-level catch-all only ever says "Database error"
+ * (HTTP 500) — that is correct for the app, but useless for the admin.
+ * After a fresh-install report ("all 7 tables exist, yet the time-window
+ * board 500s"), /health names the exact cause:
+ *
+ *   - DB connection refused (config.local.php credentials after a
+ *     database rebuild / new password)
+ *   - tables created in a DIFFERENT database than DB_NAME points to
+ *   - tables exist, but individual columns are missing (e.g. an old
+ *     ks_profiles without br_wins/br_wins_at from a partial migration)
+ *   - sync_code still CHAR(8) (12-char codes would be rejected/truncated)
+ *   - stored procedure sp_refresh_profile_stats missing (phpMyAdmin
+ *     DELIMITER block skipped) — POST /scores would 500
+ *   - the real board queries (all-time + month + week) executed live,
+ *     with the exact PDO error message if one of them throws
+ *
+ * Every finding comes with a ready-to-run statement in `fixes`.
+ * The response describes the schema, so it must stay behind the key.
+ */
+function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, string $TN): void {
+    header('Cache-Control: no-store');
+    $version = '3.6.1';
+    $problems = [];
+    $fixes    = [];
+
+    // ── 1. DB connection (the /info endpoint never touches the DB, so a
+    //       broken credential pair only shows up here) ─────────────────
+    $dbInfo = null;
+    try {
+        $pdo = db();
+        $dbName = (string)$pdo->query('SELECT DATABASE()')->fetchColumn();
+        $dbInfo = [
+            'connected'     => true,
+            'server'        => (string)$pdo->query('SELECT VERSION()')->fetchColumn(),
+            'database_name' => $dbName,
+            'sql_mode'      => (string)$pdo->query('SELECT @@sql_mode')->fetchColumn(),
+        ];
+    } catch (PDOException $e) {
+        json([
+            'api_version' => $version,
+            'php_version' => PHP_VERSION,
+            'ok'          => false,
+            'database'    => ['connected' => false, 'pdo_error' => $e->getMessage()],
+            'problems'    => [
+                'DB-Verbindung fehlgeschlagen: DB_HOST/DB_NAME/DB_USER/DB_PASS in config.local.php '
+                . 'pruefen (neues DB-Passwort nach dem Wiederaufbau? richtiger Host localhost?). '
+                . 'PDO meldet: ' . $e->getMessage(),
+            ],
+            'fixes' => [],
+        ]);
+    }
+
+    // ── 2. Required tables + columns (column list = everything the API
+    //       actually references in its SQL, with exact ADD COLUMN fixes) ──
+    $T_SYNC = tbl('profile_sync');
+    $spec = [
+        $TP => [
+            'profile_uid'   => 'VARCHAR(36) NOT NULL',
+            'display_name'  => 'VARCHAR(64) NOT NULL',
+            'color'         => "VARCHAR(7) NOT NULL DEFAULT '#8B5CF6'",
+            'country_code'  => 'CHAR(2) NULL DEFAULT NULL',
+            'show_on_board' => 'TINYINT(1) NOT NULL DEFAULT 1',
+            'show_country'  => 'TINYINT(1) NOT NULL DEFAULT 1',
+            'sync_code'     => 'VARCHAR(16) NULL DEFAULT NULL',
+            'br_wins'       => 'INT NOT NULL DEFAULT 0',
+            'br_wins_at'    => 'DATETIME NULL DEFAULT NULL',
+            'total_score'   => 'BIGINT NOT NULL DEFAULT 0',
+            'best_score'    => 'INT NOT NULL DEFAULT 0',
+            'songs_played'  => 'INT NOT NULL DEFAULT 0',
+            'games_played'  => 'INT NOT NULL DEFAULT 0',
+            'avg_accuracy'  => 'DECIMAL(5,2) NOT NULL DEFAULT 0.00',
+            'created_at'    => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+            'updated_at'    => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        ],
+        $TS => [
+            'id'                  => 'BIGINT NOT NULL AUTO_INCREMENT',
+            'profile_uid'         => 'VARCHAR(36) NOT NULL',
+            'song_hash'           => 'VARCHAR(80) NOT NULL',
+            'song_hash_v2'        => 'VARCHAR(80) NULL DEFAULT NULL',
+            'game_type'           => "ENUM('s','d') NOT NULL",
+            'score'               => 'INT NOT NULL',
+            'max_score'           => 'INT NOT NULL DEFAULT 10000',
+            'accuracy'            => 'DECIMAL(5,2) NOT NULL DEFAULT 0.00',
+            'max_combo'           => 'INT NOT NULL DEFAULT 0',
+            'difficulty'          => "ENUM('easy','normal','hard') NOT NULL DEFAULT 'normal'",
+            'rating'              => "ENUM('perfect','excellent','good','okay','poor') NOT NULL DEFAULT 'good'",
+            'notes_hit'           => 'INT NOT NULL DEFAULT 0',
+            'notes_missed'        => 'INT NOT NULL DEFAULT 0',
+            'verified'            => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'ac_flags'            => 'JSON NULL DEFAULT NULL',
+            'ac_reject_reason'    => 'VARCHAR(255) NULL DEFAULT NULL',
+            'fingerprint_version' => "ENUM('v1','v2') NOT NULL DEFAULT 'v1'",
+            'played_at'           => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+            'created_at'          => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        ],
+        $TD => [
+            'id'             => 'BIGINT NOT NULL AUTO_INCREMENT',
+            'profile_uid'    => 'VARCHAR(36) NOT NULL',
+            'challenge_date' => 'DATE NOT NULL',
+            'challenge_type' => 'VARCHAR(40) NOT NULL',
+            'difficulty'     => "VARCHAR(12) NOT NULL DEFAULT 'normal'",
+            'metric_value'   => 'DECIMAL(10,2) NOT NULL',
+            'xp_earned'      => 'INT NOT NULL DEFAULT 0',
+            'created_at'     => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+            'updated_at'     => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        ],
+        $TA => [
+            'id'              => 'BIGINT NOT NULL AUTO_INCREMENT',
+            'email'           => 'VARCHAR(254) NOT NULL',
+            'password_hash'   => 'VARCHAR(255) NOT NULL',
+            'recovery_hash'   => 'VARCHAR(255) NULL DEFAULT NULL',
+            'profile_uid'     => 'VARCHAR(36) NOT NULL',
+            'failed_attempts' => 'INT NOT NULL DEFAULT 0',
+            'locked_until'    => 'DATETIME NULL DEFAULT NULL',
+            'created_at'      => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+            'updated_at'      => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        ],
+        $TL => [
+            'id'          => 'BIGINT NOT NULL AUTO_INCREMENT',
+            'profile_uid' => 'VARCHAR(36) NOT NULL',
+            'song_hash'   => 'VARCHAR(80) NOT NULL',
+            'game_type'   => "ENUM('s','d') NOT NULL",
+            'score'       => 'INT NOT NULL',
+            'accuracy'    => 'DECIMAL(5,2) NOT NULL DEFAULT 0.00',
+            'difficulty'  => "ENUM('easy','normal','hard') NOT NULL DEFAULT 'normal'",
+            'created_at'  => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        ],
+        $TN => [
+            'nonce'      => 'CHAR(32) NOT NULL',
+            'created_at' => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        ],
+        $T_SYNC => [
+            'profile_uid' => 'VARCHAR(36) NOT NULL',
+            'snapshot'    => 'JSON NOT NULL',
+            'scores'      => 'JSON NULL DEFAULT NULL',
+            'updated_at'  => 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        ],
+    ];
+
+    $tablesOut = [];
+    foreach ($spec as $table => $columns) {
+        $entry = ['exists' => false];
+        try {
+            $q = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.TABLES
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?');
+            $q->execute([$table]);
+            $entry['exists'] = ((int)$q->fetchColumn()) === 1;
+
+            if (!$entry['exists']) {
+                $problems[] = "Tabelle `$table` fehlt in Datenbank `$dbName` — "
+                    . 'entweder das komplette schema.sql importieren (leere DB! enthaelt DROP TABLE) '
+                    . 'oder bei einer bestehenden Installation den passenden Migrationsblock aus '
+                    . 'docs/LEADERBOARD-SETUP.md / schema.sql ausfuehren.';
+                $fixes[] = "-- Tabelle $table anlegen: CREATE-Block aus schema.sql (bzw. Migrationsblock v3.5 -> v3.6)";
+                continue;
+            }
+
+            // Columns present? (+ max length where it matters)
+            $q = $pdo->prepare(
+                'SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH
+                   FROM information_schema.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?');
+            $q->execute([$table]);
+            $present = [];
+            foreach ($q->fetchAll() as $c) {
+                $present[$c['COLUMN_NAME']] = $c['CHARACTER_MAXIMUM_LENGTH'];
+            }
+            $missing = [];
+            foreach ($columns as $col => $def) {
+                if (!array_key_exists($col, $present)) {
+                    $missing[] = $col;
+                    $fixes[] = "ALTER TABLE `$table` ADD COLUMN `$col` $def;";
+                }
+            }
+            $entry['missing_columns'] = $missing;
+            if ($missing) {
+                $problems[] = "Tabelle `$table` existiert, aber es fehlen Spalten: "
+                    . implode(', ', $missing) . ' — Statements dazu stehen in `fixes`.';
+            }
+
+            // sync_code must hold 12-char codes since v3.6 (legacy 8 stays valid)
+            if ($table === $TP && array_key_exists('sync_code', $present)
+                && $present['sync_code'] !== null && (int)$present['sync_code'] < 16) {
+                $problems[] = 'ks_profiles.sync_code ist nur ' . $present['sync_code']
+                    . ' Zeichen breit — seit v3.6 sind neue Codes 12 Zeichen (60 Bit Entropie). '
+                    . 'Alte 8-Zeichen-Codes bleiben gueltig, aber Registrierungen mit 12-Zeichen-Code schlagen fehl.';
+                $fixes[] = 'ALTER TABLE `' . $TP . '` MODIFY `sync_code` VARCHAR(16) NULL DEFAULT NULL;';
+            }
+
+            // Readable + row count (cheap full-table probe)
+            $entry['row_count'] = (int)$pdo->query("SELECT COUNT(*) FROM `$table`")->fetchColumn();
+        } catch (PDOException $e) {
+            $entry['error'] = $e->getMessage();
+            $problems[] = "Pruefung von `$table` schlug fehl: " . $e->getMessage();
+        }
+        $tablesOut[$table] = $entry;
+    }
+
+    // ── 3. Stored procedure (missing => POST /scores would 500) ──────
+    $procOk = false;
+    try {
+        $q = $pdo->prepare(
+            "SELECT COUNT(*) FROM information_schema.ROUTINES
+              WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = 'sp_refresh_profile_stats'");
+        $q->execute();
+        $procOk = ((int)$q->fetchColumn()) === 1;
+        if (!$procOk) {
+            $problems[] = 'Stored Procedure `sp_refresh_profile_stats` fehlt — Score-Uploads '
+                . '(POST /scores) wuerden mit 500 fehlschlagen. In phpMyAdmin den Abschnitt '
+                . '"Stored Procedure" aus schema.sql ausfuehren (inkl. DELIMITER-Zeilen).';
+            $fixes[] = "-- sp_refresh_profile_stats anlegen: 'Stored Procedure'-Block aus schema.sql (DELIMITER // ... // DELIMITER ;)";
+        }
+    } catch (PDOException $e) {
+        $problems[] = 'Pruefung der Stored Procedure schlug fehl: ' . $e->getMessage();
+    }
+
+    // ── 4. Live board queries — the exact statements globalBoard() runs,
+    //       so a 500 reproduces HERE with the real MySQL error message ──
+    $queries = [];
+    $probes = [
+        'board_all_time' => "SELECT `profile_uid`,`display_name`,`color`,
+                IF(`show_country`=1,`country_code`,NULL) AS `country_code`,
+                `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`
+            FROM `$TP`
+            WHERE `show_on_board` = 1
+            ORDER BY `total_score` DESC, `total_score` DESC
+            LIMIT 1 OFFSET 0",
+        'board_window_month' => "SELECT
+                l.`profile_uid`,
+                SUM(l.`score`)               AS `total_score`,
+                MAX(l.`score`)               AS `best_score`,
+                COUNT(DISTINCT l.`song_hash`) AS `songs_played`,
+                COUNT(*)                     AS `games_played`,
+                ROUND(AVG(l.`accuracy`), 2)  AS `avg_accuracy`,
+                SUM(l.`score`)               AS `window_score`,
+                p.`display_name`, p.`color`, p.`br_wins`,
+                IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
+            FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
+            WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
+            GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
+                     p.`br_wins`, p.`show_country`, p.`country_code`
+            ORDER BY `window_score` DESC, `window_score` DESC
+            LIMIT 1 OFFSET 0",
+        'board_window_week' => "SELECT
+                l.`profile_uid`,
+                SUM(l.`score`)               AS `total_score`,
+                MAX(l.`score`)               AS `best_score`,
+                COUNT(DISTINCT l.`song_hash`) AS `songs_played`,
+                COUNT(*)                     AS `games_played`,
+                ROUND(AVG(l.`accuracy`), 2)  AS `avg_accuracy`,
+                SUM(l.`score`)               AS `window_score`,
+                p.`display_name`, p.`color`, p.`br_wins`,
+                IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
+            FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
+            WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
+            GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
+                     p.`br_wins`, p.`show_country`, p.`country_code`
+            ORDER BY `window_score` DESC, `window_score` DESC
+            LIMIT 1 OFFSET 0",
+    ];
+    $cutoffs = [
+        'board_all_time'     => [],
+        'board_window_month' => [date('Y-m-01 00:00:00')],
+        'board_window_week'  => [date('Y-m-d 00:00:00', strtotime('-' . ((int)date('N') - 1) . ' days'))],
+    ];
+    foreach ($probes as $name => $sql) {
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($cutoffs[$name]);
+            $queries[$name] = ['ok' => true, 'rows' => count($stmt->fetchAll())];
+        } catch (PDOException $e) {
+            $queries[$name] = ['ok' => false, 'error' => $e->getMessage()];
+            $problems[] = "Query `$name` schlaegt fehl: " . $e->getMessage();
+        }
+    }
+
+    json([
+        'api_version'  => $version,
+        'php_version'  => PHP_VERSION,
+        'ok'           => $problems === [],
+        'database'     => $dbInfo,
+        'tables'       => $tablesOut,
+        'procedure'    => ['sp_refresh_profile_stats' => $procOk],
+        'queries'      => $queries,
+        'problems'     => $problems,
+        'fixes'        => $fixes,
+    ]);
 }
 
 // ============================================================

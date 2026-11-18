@@ -50,6 +50,7 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | API info |
+| GET | `/health` | **v3.6.1** Deployment diagnostics behind the API key: DB connection (+ connected database name), all 7 tables + every column the API references (with copy-paste `ALTER TABLE` fixes), `sync_code` width, stored procedure, and the real board queries executed live — a failing query reports the exact MySQL error. Response: `problems[]` + `fixes[]`. |
 | POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`, optional `sync_code`). Upserting an existing profile requires its sync_code; new profiles get one generated when omitted. |
 | GET | `/profiles/{uid}` | Public profile data (no sync_code) |
 | GET | `/profiles/{uid}/plays?limit=N` | **v3.6** Recent online rounds (play log, newest first — song hashes only) |
@@ -185,6 +186,25 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   (insults/slurs/extremist terms, German + English, leet-normalized,
   word-boundary matching) with HTTP 422. Extend at runtime via the
   `KS_NAME_BLOCKLIST` env var (comma-separated) — no code change needed.
+
+**v3.6.1 (R74) additions:**
+- **`GET /health`** — one-shot deployment diagnostics behind the API key.
+  Checks the DB connection (with the connected database name — catches a
+  wrong `DB_NAME`/credentials after a database rebuild; `/info` keeps
+  working because it never touches the DB), verifies all 7 tables and
+  EVERY column the API references (each missing column produces a
+  ready-to-run `ALTER TABLE … ADD COLUMN` in `fixes[]`), the
+  `sync_code` width (≥ 16), the stored procedure
+  `sp_refresh_profile_stats`, and executes the real all-time + month +
+  week board queries — a failing query reports the exact MySQL error
+  message in `queries.*.error`. Findings are summarized in `problems[]`.
+- **Window-board `GROUP BY` hardened**: the month/week aggregation now
+  groups by the joined `ks_profiles` columns as well. MySQL 8 derives
+  those from the primary-key join, but MariaDB (netcup) has no
+  functional-dependency detection (MDEV-11588) — with
+  `ONLY_FULL_GROUP_BY` enabled the previous `GROUP BY l.profile_uid`
+  alone was rejected. Semantics are unchanged (`p.profile_uid` is the
+  PK, the extra columns can never merge two profiles).
 
 ## Daily challenge
 

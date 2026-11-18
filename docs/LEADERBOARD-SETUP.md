@@ -125,8 +125,13 @@ diese haben Vorrang vor `config.local.php`).
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.6.0",...}
+→ {"name":"Karaoke Leaderboard","version":"3.6.1",...}
 ```
+
+(Ohne `X-API-Key`-Header kommt erwartungsgemäß `401 Unauthorized` — auch das
+ist ein erfolgreicher Check: Routing, PHP und Key-Schutz arbeiten. Das JSON
+sieht man nur mit Header, z. B. per curl — siehe `/health`-Diagnose in
+Abschnitt 6.)
 
 Ein direkter Aufruf von `https://…/leaderboard-api/config.php` muss
 **403 Forbidden** liefern (`.htaccess`).
@@ -406,6 +411,51 @@ Die URL und der API-Key werden zur **Build-Zeit** eingebrannt:
 ---
 
 ## 6. Betrieb & Pflege
+
+### Server-Diagnose: `GET /health` (v3.6.1)
+
+Wenn die App oder der CI-Check („Leaderboard-API Check") meldet, dass ein
+Board nicht lädt, nennt der Server auf dem normalen Weg nur
+`Database error` (absichtlich generisch). Seit API v3.6.1 gibt es
+`GET /health` — ein Endpoint **hinter dem X-API-Key**, der in einem
+einzigen Aufruf prüft:
+
+- DB-Verbindung (Host/Datenbank/User/Passwort aus `config.local.php`),
+  inkl. verbundener Datenbankname und `sql_mode`,
+- alle 7 Tabellen (`ks_profiles`, `ks_scores`, `ks_daily_results`,
+  `ks_accounts`, `ks_play_log`, `ks_nonces`, `ks_profile_sync`) und **alle
+  Spalten, die die API referenziert** — fehlende Spalten erzeugen ein
+  fertig kopierbares `ALTER TABLE … ADD COLUMN …`,
+- `ks_profiles.sync_code`-Breite (≥ 16, sonst funktionieren die neuen
+  12-Zeichen-Codes nicht),
+- die Stored Procedure `sp_refresh_profile_stats` (fehlt sie, schlagen
+  Score-Uploads mit 500 fehl),
+- die **echten Board-Queries** (All-time + Zeitfenster Monat/Woche) live
+  ausgeführt — schlägt eine fehl, steht die exakte MySQL-Fehlermeldung
+  (z. B. `Unknown column 'p.br_wins' …`) in `queries.*.error`,
+- `problems[]` (Klartext-Beschreibungen) und `fixes[]` (SQL zum
+  Copy-Pasten).
+
+Aufruf vom eigenen Rechner (Key = `API_SECRET` aus `config.local.php`):
+
+```bash
+curl -sS -H "X-API-Key: DEIN_API_KEY" \
+  "https://hosting236176.ae88b.netcup.net/leaderboard-api/health" | python3 -m json.tool
+```
+
+Typische Befunde nach einem Datenbank-Neuaufbau:
+
+| `problems[]` sagt … | Bedeutung / Fix |
+|---|---|
+| `DB-Verbindung fehlgeschlagen` | `config.local.php`: `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS` prüfen (neues DB-Passwort? falscher Host?). `/info` funktioniert trotzdem, weil es die DB nie berührt. |
+| `Tabelle ks_play_log fehlt in Datenbank …` | Tabellen wurden in einer **anderen** Datenbank angelegt, als `DB_NAME` sagt — oder der Migrationsblock fehlt. `database_name` oben in der Antwort zeigt, wo die API tatsächlich landet. |
+| `Tabelle ks_profiles existiert, aber es fehlen Spalten: br_wins …` | Alter Tabellenstand (v3.5) — `fixes[]` enthält das fertige `ALTER TABLE`. |
+| `Query board_window_month schlaegt fehl: …` | Die exakte MySQL-Meldung der sonst 500-enden Board-Abfrage. |
+
+Der CI-Job „Leaderboard-API Check" ruft `/health` automatisch mit auf und
+druckt die Diagnose ins Build-Log — auch dort sieht man die Ursache also
+ohne SSH/phpMyAdmin. (Auf Servern < v3.6.1 meldet der Job, dass `/health`
+fehlt — dann `index.php` aktualisieren.)
 
 - **Backups:** Plesk → Datenbank → Export regelmäßig (z. B. wöchentlich).
 - **Fehlerdiagnose:** `config.php` schreibt Fehler absichtlich nicht ins

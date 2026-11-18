@@ -457,7 +457,7 @@ jobs:
     timeout-minutes: 5
     continue-on-error: true
     steps:
-      - name: API-Version + v3.6-Migration prüfen
+      - name: API-Version + Schema-Diagnose (/health)
         env:
           LB_URL: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_URL }}
           LB_KEY: ${{ secrets.NEXT_PUBLIC_LEADERBOARD_API_KEY }}
@@ -483,14 +483,21 @@ jobs:
           echo "--- GET /leaderboard/global?window=month (v3.6: ks_play_log) ---"
           code=$(curl -sS -o /dev/null --max-time 20 -w '%{http_code}' -H "X-API-Key: ${LB_KEY}" "${base}/leaderboard/global?window=month&limit=1" || true)
           echo "HTTP ${code}"
+          echo "--- GET /health (v3.6.1: Schema-Diagnose) ---"
+          health=$(curl -sS --max-time 20 -H "X-API-Key: ${LB_KEY}" "${base}/health" || true)
+          if printf '%s' "${health}" | grep -q '"api_version"'; then
+            printf '%s' "${health}" | python3 -m json.tool 2>/dev/null || printf '%s\n' "${health}"
+          else
+            echo "(kein /health — Server älter als 3.6.1; für die Detail-Diagnose leaderboard-api/index.php v3.6.1 hochladen)"
+          fi
           if [ "${code}" != "200" ]; then
-            echo "::error::Zeitfenster-Board schlägt fehl — Server < 3.6.0 oder Migrationsblock (CREATE ks_play_log/ks_nonces + ALTER ks_profiles) nicht ausgeführt (docs/LEADERBOARD-SETUP.md)"
+            echo "::error::Zeitfenster-Board schlägt fehl — Ursache steht oben in der /health-Diagnose (problems[] + fixes[]). Klassische Ursachen: DB-Credentials/DB_NAME in config.local.php nach DB-Neuaufbau, Tabellen in anderer Datenbank angelegt, fehlende Spalten (z.B. ks_profiles.br_wins) oder Migrationsblock v3.5→v3.6 nicht ausgeführt (docs/LEADERBOARD-SETUP.md)."
             exit 1
           fi
-          if [ "${version:-}" != "3.6.0" ]; then
-            echo "::warning::Server-Version ${version:-?} ≠ 3.6.0 — Redeploy der leaderboard-api-Dateien erforderlich (Zeitfenster/Kronen/BR-Siege inaktiv)"
+          if printf '%s' "${version:-}" | grep -qE '^3\.6\.[0-9]+$'; then
+            echo "OK: Leaderboard v${version} erreichbar und migriert"
           else
-            echo "OK: Leaderboard v3.6.0 erreichbar und migriert"
+            echo "::warning::Server-Version ${version:-?} ist nicht 3.6.x — Redeploy der leaderboard-api-Dateien erforderlich (Zeitfenster/Kronen/BR-Siege inaktiv)"
           fi
 
   # ────────────────────────────────────────────────────────────────────
