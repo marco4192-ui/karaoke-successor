@@ -9,33 +9,40 @@
  *   Linux   → libonnxruntime.so
  *   macOS   → libonnxruntime.dylib
  *
+ * SOURCE (R73): the official NuGet base package «Microsoft.ML.OnnxRuntime».
+ * Microsoft REMOVED the OS binaries from the onnxruntime GitHub release
+ * assets (the URLs that worked on Oct 15 2026 answer HTTP 404 since Nov 18
+ * 2026 — verified from GitHub's own CI runners, for win-x64/osx-* alike).
+ * The NuGet package is the official distribution channel and ships ALL
+ * platforms as plain ZIP members (runtimes/<rid>/native/*).
+ *
+ * VERSION 1.23.2 — the LAST version with macOS Intel (x86_64) binaries.
+ * ONNX Runtime 1.24+ dropped osx-x64 (consistent across NuGet, PyPI and
+ * the pyke CDN). ABI: our `ort` 2.0.0-rc.12 requests C-API version 17
+ * (ONNX ≥ 1.14) by default, which 1.23.2 (API 23) satisfies comfortably.
+ *
  * Usage: node scripts/download-onnxruntime.mjs
- *   or:  node scripts/download-onnxruntime.mjs --version 1.20.0
+ *   or:  node scripts/download-onnxruntime.mjs --version 1.23.2
  *   or:  node scripts/download-onnxruntime.mjs --platform linux --arch arm64
  *   or:  node scripts/download-onnxruntime.mjs --arch universal2   (macOS fat binary)
  *
- * IMPORTANT — `--arch universal2` (macOS only):
- *   Microsoft publishes NO "osx-universal2" release asset (real 404 in CI
- *   against v1.20.0). macOS ships as TWO separate archives (osx-x86_64 and
- *   osx-arm64). This script downloads BOTH and merges them with `lipo` into
- *   one fat dylib — the same pattern the workflow already uses for the
- *   Node.js universal binary. Requires macOS (lipo ships with the Xcode
- *   Command Line Tools), which is guaranteed on the macOS runner.
+ * `--arch universal2` (macOS only): extracts BOTH macOS slices from the
+ * SAME NuGet package (osx-x64 + osx-arm64) and merges them with `lipo`
+ * into one fat dylib — the same pattern the workflow uses for the Node.js
+ * universal binary. Requires macOS (lipo ships with the Xcode Command
+ * Line Tools), which is guaranteed on the macOS runner.
  *
  * Cross-platform: run this ON the target OS right before
  * `node scripts/download-node.mjs` + `bun run tauri:build`.
- *
- * NOTE: The ONNX Runtime version should match the version the `ort` crate
- * expects (ort 2.0.0-rc.x ↔ ONNX Runtime 1.20.x). The C ABI is backward
- * compatible, so slightly newer 1.x releases also work.
  */
 
-import { existsSync, mkdirSync, chmodSync, statSync, rmSync, readdirSync, createWriteStream, realpathSync, copyFileSync } from 'fs';
+import { existsSync, mkdirSync, chmodSync, statSync, rmSync, readFileSync, writeFileSync, createWriteStream, copyFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { platform, arch, tmpdir } from 'os';
 import { get } from 'https';
 import { execSync } from 'child_process';
+import { inflateRawSync } from 'zlib';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -43,7 +50,7 @@ const NATIVE_DIR = join(ROOT, 'src-tauri', 'bundled', 'native');
 
 // Parse CLI args
 const args = process.argv.slice(2);
-let ortVersion = '1.20.0';
+let ortVersion = '1.23.2';
 let targetPlatform = platform() === 'win32' ? 'win' : platform() === 'darwin' ? 'osx' : 'linux';
 let targetArch = arch() === 'x64' ? 'x64' : arch() === 'arm64' ? 'arm64' : 'x64';
 
@@ -53,30 +60,15 @@ for (let i = 0; i < args.length; i++) {
   if (args[i] === '--arch' && args[i + 1]) targetArch = args[++i];
 }
 
-// ONNX Runtime release asset naming
-// (Linux arm64 assets are called "aarch64", macOS assets "osx-<arch>" with
-//  x86_64 spelled with underscore! There is NO "osx-universal2" asset —
-//  `--arch universal2` downloads BOTH macOS archs and lipo-merges them.)
-const assetArch = targetPlatform === 'linux' && targetArch === 'arm64' ? 'aarch64' : targetArch;
-const assetPlatform = targetPlatform === 'win' ? 'win' : targetPlatform === 'osx' ? 'osx' : 'linux';
+// Official NuGet distribution (exact casing matters — some proxies are
+// case-sensitive even though the NuGet spec says IDs are case-insensitive).
+const NUGET_URL = `https://www.nuget.org/api/v2/package/Microsoft.ML.OnnxRuntime/${ortVersion}`;
 
-const URLS = {
-  win: {
-    x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-win-x64-${ortVersion}.zip`,
-    arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-win-arm64-${ortVersion}.zip`,
-  },
-  osx: {
-    // WICHTIG: macOS-Assets heißen "osx-x86_64" (mit Unterstrich), NICHT
-    // "osx-x64" — falscher Name = HTTP 404 (reale CI-Falle, v1.20.0).
-    // Universal2 liefert Microsoft NICHT als Asset: "--arch universal2"
-    // lädt beide nachfolgenden Archs und mergt sie per lipo (siehe main()).
-    x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-x86_64-${ortVersion}.tgz`,
-    arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-osx-arm64-${ortVersion}.tgz`,
-  },
-  linux: {
-    x64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-linux-x64-${ortVersion}.tgz`,
-    arm64: `https://github.com/microsoft/onnxruntime/releases/download/v${ortVersion}/onnxruntime-linux-aarch64-${ortVersion}.tgz`,
-  },
+// NuGet package member paths per platform/arch (runtimes/<rid>/native/<lib>)
+const RID_DIR = {
+  win:   { x64: 'runtimes/win-x64/native/',   arm64: 'runtimes/win-arm64/native/' },
+  osx:   { x64: 'runtimes/osx-x64/native/',   arm64: 'runtimes/osx-arm64/native/' },
+  linux: { x64: 'runtimes/linux-x64/native/', arm64: 'runtimes/linux-arm64/native/' },
 };
 
 // Final library file name per platform (as expected by ort load-dynamic)
@@ -93,7 +85,7 @@ function fail(msg) { console.error(`  [FAIL] ${msg}`); }
 
 function download(url, dest, redirects = 0) {
   return new Promise((resolve, reject) => {
-    if (redirects > 5) { reject(new Error('Too many redirects')); return; }
+    if (redirects > 8) { reject(new Error('Too many redirects')); return; }
     log(`  Downloading: ${url}`);
     get(url, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
@@ -114,69 +106,85 @@ function download(url, dest, redirects = 0) {
   });
 }
 
-function extract(archivePath, destDir) {
-  mkdirSync(destDir, { recursive: true });
-  if (archivePath.endsWith('.tgz')) {
-    // macOS / Linux
-    execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
-  } else {
-    // .zip — Windows 10+ ships bsdtar which handles zip
-    try {
-      execSync(`tar -xf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
-    } catch {
-      // Fallback: PowerShell Expand-Archive
-      execSync(
-        `powershell -NoProfile -Command "Expand-Archive -Force -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}'"`,
-        { stdio: 'inherit' }
-      );
-    }
-  }
-}
-
-/** Download one release archive into the OS temp dir. */
-async function fetchArchive(url) {
-  const archiveName = url.split('/').pop();
-  const archivePath = join(tmpdir(), archiveName);
-  await download(url, archivePath);
-  ok(`Downloaded ${archiveName} (${(statSync(archivePath).size / 1024 / 1024).toFixed(1)} MB)`);
-  return archivePath;
-}
-
 /**
- * Extract an archive and locate the platform library inside it.
- * Returns { extractDir, topDir, realSrc } — realSrc is the symlink-resolved
- * real file (archives store .so/.dylib as a symlink chain .so → .so.1 →
- * .so.1.20.0; Node's copiers mis-handle chained symlinks, so we resolve
- * manually and copy/lipo the real file).
+ * Minimal SELECTIVE zip extractor — no external tools or dependencies
+ * (works identically on Windows/macOS/Linux runners).
+ *
+ * Reads the central directory, inflates only wanted members with
+ * zlib.inflateRawSync (Node builtin). Sizes are taken from the CENTRAL
+ * directory (authoritative even when local headers use data descriptors).
+ * Supports method 0 (stored) and 8 (deflate); rejects zip64 (>4 GB), which
+ * NuGet packages never use for these members.
+ *
+ * Extracted files are written to outDir under a flattened name
+ * ('runtimes/osx-x64/native/libonnxruntime.dylib' →
+ *  'runtimes__osx-x64__native__libonnxruntime.dylib') so members with the
+ * SAME basename (like the two macOS slices) never collide.
+ *
+ * @param {string} zipPath path to the .nupkg (zip) file
+ * @param {(name: string) => boolean} wanted predicate selecting members
+ * @param {string} outDir existing directory to write extracted files into
+ * @returns {Array<{member: string, path: string, size: number}>}
  */
-function extractLib(archivePath, tag, libName) {
-  const extractDir = join(tmpdir(), `onnxruntime-extract-${tag}-${Date.now()}`);
-  log('  Extracting...');
-  extract(archivePath, extractDir);
+function extractZipMembers(zipPath, wanted, outDir) {
+  const buf = readFileSync(zipPath);
 
-  // Archive contains a single top-level dir like onnxruntime-linux-x64-1.20.0/
-  const entries = readdirSync(extractDir).filter(e => e !== '.' && e !== '..');
-  const topDir = entries.length === 1 ? join(extractDir, entries[0]) : extractDir;
+  // 1. Locate End of Central Directory record (scan back over the comment)
+  const scanFrom = Math.max(0, buf.length - 65557);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= scanFrom; i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP: End of Central Directory not found (not a zip file?)');
 
-  const libSrc = join(topDir, 'lib', libName);
-  if (!existsSync(libSrc)) {
-    throw new Error(`Could not find lib/${libName} in extracted archive ${archivePath}`);
+  const entryCount = buf.readUInt16LE(eocd + 10);
+  let off = buf.readUInt32LE(eocd + 16);
+
+  // 2. Walk the central directory, collect wanted members
+  const found = [];
+  for (let e = 0; e < entryCount; e++) {
+    if (buf.readUInt32LE(off) !== 0x02014b50) throw new Error('ZIP: bad central directory entry');
+    const method = buf.readUInt16LE(off + 10);
+    const compSize = buf.readUInt32LE(off + 20);
+    const uncompSize = buf.readUInt32LE(off + 24);
+    const nameLen = buf.readUInt16LE(off + 28);
+    const extraLen = buf.readUInt16LE(off + 30);
+    const commentLen = buf.readUInt16LE(off + 32);
+    const localOff = buf.readUInt32LE(off + 42);
+    const name = buf.toString('utf8', off + 46, off + 46 + nameLen);
+    if (wanted(name) && !name.endsWith('/')) {
+      found.push({ name, method, compSize, uncompSize, localOff });
+    }
+    off += 46 + nameLen + extraLen + commentLen;
   }
-  const realSrc = realpathSync(libSrc);
-  if (!statSync(realSrc).isFile()) {
-    throw new Error(`Resolved ${libName} is not a regular file (got ${realSrc})`);
+
+  // 3. Extract each wanted member
+  const extracted = [];
+  for (const m of found) {
+    if (buf.readUInt32LE(m.localOff) !== 0x04034b50) throw new Error(`ZIP: bad local header for ${m.name}`);
+    if (m.method !== 0 && m.method !== 8) throw new Error(`ZIP: unsupported compression method ${m.method} for ${m.name}`);
+    const lNameLen = buf.readUInt16LE(m.localOff + 26);
+    const lExtraLen = buf.readUInt16LE(m.localOff + 28);
+    const dataStart = m.localOff + 30 + lNameLen + lExtraLen;
+    const comp = buf.subarray(dataStart, dataStart + m.compSize);
+    const data = m.method === 0 ? Buffer.from(comp) : inflateRawSync(comp);
+    if (data.length !== m.uncompSize) throw new Error(`ZIP: size mismatch for ${m.name} (got ${data.length}, expected ${m.uncompSize})`);
+    const flatName = m.name.split('/').join('__');
+    const outPath = join(outDir, flatName);
+    writeFileSync(outPath, data);
+    extracted.push({ member: m.name, path: outPath, size: data.length });
   }
-  return { extractDir, topDir, realSrc };
+  return extracted;
 }
 
 async function main() {
   const isUniversal = targetArch === 'universal2';
 
-  // universal2 = macOS fat binary: needs the two osx archives + lipo.
+  // universal2 = macOS fat binary: needs both osx slices + lipo.
   if (isUniversal) {
     if (targetPlatform !== 'osx') {
       fail(`--arch universal2 is macOS-only (got --platform ${targetPlatform}) —`);
-      fail('it downloads the osx-x86_64 and osx-arm64 archives and merges them with lipo.');
+      fail('it extracts the osx-x64 and osx-arm64 slices and merges them with lipo.');
       process.exit(1);
     }
     if (platform() !== 'darwin') {
@@ -192,21 +200,14 @@ async function main() {
     }
   }
 
-  log(`\n=== Downloading ONNX Runtime v${ortVersion} for ${assetPlatform}-${targetArch}` +
-      `${isUniversal ? ' (osx-x86_64 + osx-arm64 → lipo fat binary)' : ''} ===\n`);
-
-  // Which archive(s) do we need?
-  const jobs = isUniversal
-    ? [
-        { label: 'x86_64', url: URLS.osx.x64 },
-        { label: 'arm64',  url: URLS.osx.arm64 },
-      ]
-    : [ { label: targetArch, url: URLS[targetPlatform]?.[targetArch] } ];
-
-  if (!jobs[0].url) {
+  const ridDir = RID_DIR[targetPlatform]?.[targetArch];
+  if (!ridDir && !isUniversal) {
     fail(`Unsupported platform/arch: ${targetPlatform}-${targetArch}`);
     process.exit(1);
   }
+
+  log(`\n=== Downloading ONNX Runtime v${ortVersion} (NuGet) for ${targetPlatform}-${targetArch}` +
+      `${isUniversal ? ' (osx-x64 + osx-arm64 → lipo fat binary)' : ''} ===\n`);
 
   const libName = LIB_NAME[targetPlatform];
   mkdirSync(NATIVE_DIR, { recursive: true });
@@ -219,46 +220,62 @@ async function main() {
     return;
   }
 
-  const archives = [];
-  const extracts = [];
-  try {
-    for (const j of jobs) {
-      const archivePath = await fetchArchive(j.url);
-      archives.push(archivePath);
-      extracts.push(extractLib(archivePath, j.label, libName));
-    }
+  // Download the NuGet package once (contains ALL platforms)
+  const nupkgPath = join(tmpdir(), `microsoft.ml.onnxruntime.${ortVersion}.nupkg`);
+  await download(NUGET_URL, nupkgPath);
+  ok(`Downloaded nupkg (${(statSync(nupkgPath).size / 1024 / 1024).toFixed(1)} MB)`);
 
+  const extractDir = join(tmpdir(), `onnxruntime-extract-${Date.now()}`);
+  mkdirSync(extractDir, { recursive: true });
+
+  try {
     if (isUniversal) {
-      // Merge both archs into ONE fat dylib (same pattern as the Node.js
-      // universal step in the workflow). Sources are symlink-resolved.
+      // Extract BOTH macOS slices from the same package, then lipo-merge.
+      // Flattened names keep the two same-named dylibs apart (see extractor).
+      const x64Member = `runtimes/osx-x64/native/${libName}`;
+      const arm64Member = `runtimes/osx-arm64/native/${libName}`;
+      const slices = extractZipMembers(
+        nupkgPath,
+        (name) => name === x64Member || name === arm64Member,
+        extractDir
+      );
+      const byMember = new Map(slices.map(s => [s.member, s.path]));
+      const x64Path = byMember.get(x64Member);
+      const arm64Path = byMember.get(arm64Member);
+      if (!x64Path || !arm64Path) {
+        throw new Error(`NuGet package does not contain both macOS slices (osx-x64: ${!!x64Path}, osx-arm64: ${!!arm64Path}) — ` +
+          `ONNX Runtime ${ortVersion} may have dropped macOS Intel; 1.23.2 is the last version with osx-x64`);
+      }
       log('  lipo -create (x86_64 + arm64) …');
-      execSync(`lipo -create "${extracts[0].realSrc}" "${extracts[1].realSrc}" -output "${destLib}"`, { stdio: 'inherit' });
+      execSync(`lipo -create "${x64Path}" "${arm64Path}" -output "${destLib}"`, { stdio: 'inherit' });
       const info = execSync(`lipo -info "${destLib}"`).toString().trim();
       ok(`lipo: ${info}`);
       if (!/x86_64/.test(info) || !/arm64/.test(info)) {
         throw new Error(`lipo result does not contain both architectures: ${info}`);
       }
     } else {
-      copyFileSync(extracts[0].realSrc, destLib);
-    }
-    ok(`Saved ${libName} (${(statSync(destLib).size / 1024 / 1024).toFixed(1)} MB) → ${destLib}`);
-
-    // Also copy provider helper libraries when present (harmless if absent).
-    // macOS archives ship only the dylib symlink chain — providers_shared is
-    // a Windows/Linux thing — so this is skipped for universal2 builds.
-    if (!isUniversal) {
-      const libDir = join(extracts[0].topDir, 'lib');
-      for (const extra of readdirSync(libDir)) {
-        if (extra.includes('providers_shared')) {
-          const extraSrc = join(libDir, extra);
-          const extraReal = existsSync(extraSrc) ? realpathSync(extraSrc) : null;
-          if (extraReal && statSync(extraReal).isFile()) {
-            copyFileSync(extraReal, join(NATIVE_DIR, extra));
-            ok(`Copied ${extra} → ${NATIVE_DIR}`);
-          }
-        }
+      // Single arch: extract the main library + provider helpers if present.
+      const mainMember = `${ridDir}${libName}`;
+      const extracted = extractZipMembers(
+        nupkgPath,
+        // providers_shared runtime helpers yes — but NOT the .lib import
+        // libraries (link-time artifacts, useless for ort load-dynamic).
+        (name) => name === mainMember || (name.startsWith(ridDir) && name.includes('providers_shared') && !name.endsWith('.lib')),
+        extractDir
+      );
+      const main = extracted.find(x => x.member === mainMember);
+      if (!main) {
+        throw new Error(`NuGet package does not contain ${mainMember} — wrong version (${ortVersion}) or platform unsupported`);
+      }
+      copyFileSync(main.path, destLib);
+      for (const extra of extracted) {
+        if (extra === main) continue;
+        const extraName = extra.member.split('/').pop();
+        copyFileSync(extra.path, join(NATIVE_DIR, extraName));
+        ok(`Copied ${extraName} → ${NATIVE_DIR}`);
       }
     }
+    ok(`Saved ${libName} (${(statSync(destLib).size / 1024 / 1024).toFixed(1)} MB) → ${destLib}`);
 
     // Ensure executable bit on Unix (loadable library)
     if (targetPlatform !== 'win') {
@@ -266,12 +283,12 @@ async function main() {
     }
   } finally {
     // Cleanup — best effort, never mask the original error
-    for (const e of extracts) { try { rmSync(e.extractDir, { recursive: true, force: true }); } catch { /* best effort */ } }
-    for (const a of archives) { try { rmSync(a, { force: true }); } catch { /* best effort */ } }
+    try { rmSync(extractDir, { recursive: true, force: true }); } catch { /* best effort */ }
+    try { rmSync(nupkgPath, { force: true }); } catch { /* best effort */ }
   }
 
   log('\n=== Done! ===');
-  log(`  ONNX Runtime saved to: ${NATIVE_DIR}`);
+  log(`  ONNX Runtime ${ortVersion} saved to: ${NATIVE_DIR}`);
   log('  The Tauri build bundles bundled/native/**/* automatically.');
   if (targetPlatform === 'win') {
     log('  Windows note: if a clean install lacks the VC++ Runtime, also place');

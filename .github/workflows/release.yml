@@ -164,29 +164,13 @@ jobs:
       - name: Download ONNX Runtime DLL
         shell: pwsh
         run: |
-          Write-Host "=== Downloading ONNX Runtime 1.24.2 (ort-sys 2.0.0-rc.12 target) ==="
-          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\native" | Out-Null
-          $ortVersion = "1.24.2"
-          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$ortVersion/onnxruntime-win-x64-$ortVersion.zip"
-          $ortZip = "onnxruntime.zip"
-          Write-Host "Downloading from: $ortUrl"
-          Invoke-WebRequest -Uri $ortUrl -OutFile $ortZip -TimeoutSec 300
-          Expand-Archive -Path $ortZip -DestinationPath "onnxruntime-extracted" -Force
-          $ortLibDir = "onnxruntime-extracted\onnxruntime-win-x64-$ortVersion\lib"
-          if (Test-Path "$ortLibDir\onnxruntime.dll") {
-            Copy-Item "$ortLibDir\onnxruntime.dll" "src-tauri\bundled\native\onnxruntime.dll" -Force
-            Write-Host ("  Copied onnxruntime.dll ({0:N2} MB)" -f ((Get-Item "$ortLibDir\onnxruntime.dll").Length / 1MB))
-          } else {
-            Write-Error "onnxruntime.dll not found in extracted archive at $ortLibDir"
+          Write-Host "=== ONNX Runtime via kanonisches Script (NuGet) ==="
+          Write-Host "(GitHub-Release-Assets wurden von Microsoft entfernt — siehe scripts/download-onnxruntime.mjs)"
+          node scripts/download-onnxruntime.mjs --version 1.23.2
+          if (-not (Test-Path "src-tauri\bundled\native\onnxruntime.dll")) {
+            Write-Error "onnxruntime.dll fehlt nach Script-Lauf"
             exit 1
           }
-          foreach ($pDll in @("onnxruntime_providers_shared.dll", "onnxruntime_providers_cuda.dll")) {
-            if (Test-Path "$ortLibDir\$pDll") {
-              Copy-Item "$ortLibDir\$pDll" "src-tauri\bundled\native\$pDll" -Force
-              Write-Host ("  Copied {0} ({1:N2} MB)" -f $pDll, ((Get-Item "$ortLibDir\$pDll").Length / 1MB))
-            }
-          }
-          Remove-Item -Recurse -Force $ortZip, "onnxruntime-extracted" -ErrorAction SilentlyContinue
           Write-Host "ONNX Runtime download complete."
 
       - name: Bundle VC++ Runtime DLLs

@@ -11,10 +11,11 @@
 #              ONNX-Runtime + VC++-Runtime-DLLs im Bundle
 #    macOS   : Universal-Binary (Intel + Apple Silicon). Node.js wird per
 #              lipo zu einem Universal-Binary gemergt; ONNX-Runtime ebenso
-#              (osx-x86_64 + osx-arm64 per lipo — Microsoft bietet KEIN
-#              Universal2-Release-Asset). DMG läuft ab macOS 10.15.
-#              Optional Signing+Notarization via Secrets
-#              (ohne Secrets: unsignierter Build, Gatekeeper-Hinweis)
+#              (NuGet-Paket: osx-x64 + osx-arm64 per lipo — GitHub-Assets
+#              wurden entfernt, 1.23.2 = letzte Version mit Intel-Mac).
+#              DMG läuft ab macOS 10.15. Optional Signing+Notarization
+#              via Secrets (ohne Secrets: unsignierter Build,
+#              Gatekeeper-Hinweis)
 #    Linux   : AppImage mit gebündeltem WebKitGTK (linuxdeploy folgt den
 #              ldd-Abhängigkeiten automatisch) UND GStreamer-Medien-
 #              codecs (bundleMediaFramework + gst-Pakete auf dem Runner);
@@ -79,10 +80,11 @@ concurrency:
 env:
   BUN_VERSION: 'latest'
   NODE_VERSION: '22.14.0'
-  # ONNX Runtime 1.20.0 = exakt die Version, gegen die der `ort`-Crate
-  # 2.0.0-rc.12 gebaut ist (Default in scripts/download-onnxruntime.mjs;
-  # C-ABI-abwärtskompatibel, bei Bedurf hier zentral anheben).
-  ONNX_VERSION: '1.20.0'
+  # ONNX Runtime — Quelle ist das offizielle NuGet-Paket (Microsoft hat die
+  # GitHub-Release-Assets entfernt, siehe scripts/download-onnxruntime.mjs).
+  # 1.23.2 = letzte Version mit macOS-Intel; ort 2.0.0-rc.12 fordert per
+  # Default C-API 17 (ONNX ≥ 1.14) — von 1.23.2 (API 23) komfortabel erfüllt.
+  ONNX_VERSION: '1.23.2'
   RELEASE_VERSION: ${{ github.event.inputs.version || github.ref_name }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
@@ -290,12 +292,12 @@ jobs:
           lipo -info portable-node/bin/node | grep -q arm64
           echo "OK: Node.js ist ein Universal-Binary."
 
-      # ONNX-Runtime: Microsoft bietet KEIN Universal2-Release-Asset (der
-      # URL onnxruntime-osx-universal2-<v>.tgz antwortet real mit 404) —
-      # macOS gibt es nur als getrennte osx-x86_64-/osx-arm64-Archive. Das
-      # Script lädt beide und mergt sie per lipo zu einem Fat-Dylib — dasselbe
-      # Muster wie beim Node-Binary oben. Die Verifikation unten prüft beide
-      # Architekturen im gemergten Dylib.
+      # ONNX-Runtime: Quelle ist das offizielle NuGet-Basispaket (Microsoft
+      # hat die GitHub-Release-Assets Ende 2026 entfernt — der frühere
+      # Universal2-Asset-Download lief am 15.10. noch, 404t seit 18.11.).
+      # Das Script lädt EIN nupkg, extrahiert beide macOS-Slices (osx-x64 +
+      # osx-arm64 — 1.23.2 ist die letzte Version mit Intel-Mac) und mergt
+      # sie per lipo zu einem Fat-Dylib — wie beim Node-Binary oben.
       - name: ONNX Runtime herunterladen (Universal x64+arm64 per lipo)
         run: |
           set -euo pipefail
