@@ -10,10 +10,13 @@ import type {
   LeaderboardGameType, ScoreProofPackage,
   ProfileSyncDownload, ProfileSyncUpload,
   SubmitDailyResultPayload, OnlineDailyEntry,
+  NoteProofEntry, ScoringMetaForProof,
 } from '@/lib/leaderboard/types';
 import {
   generateSongHash, generateSongHashV2, songNotesFromSong,
 } from '@/lib/leaderboard/song-fingerprint';
+import { generateProofPackage } from '@/lib/leaderboard/anti-cheat-proof';
+import { enqueueScore, OfflineQueuedError } from '@/lib/leaderboard/outbox';
 import type { ScoringMetadata } from '@/lib/game/scoring';
 import type { PlayerProfile, Song, Difficulty, GameMode, HighscoreEntry } from '@/types/game';
 
@@ -119,7 +122,14 @@ async function registerProfile(profile: PlayerProfile): Promise<OnlineProfile> {
   });
 }
 
-/** Submit a score for a song (with optional anti-cheat proof) */
+/** Submit a score for a song.
+ *
+ * R69: builds the song fingerprints, the anti-cheat proof (from the given
+ * per-note proof inputs — real gameplay data since R69) and the payload,
+ * then submits. On failure the submission is queued in the offline outbox
+ * (retried at the next game end / window focus) and an OfflineQueuedError
+ * is thrown so the UI can say "queued" instead of "lost".
+ * Set retryOffline:false to get the old fire-and-forget behaviour. */
 async function submitScore(params: {
   profile: PlayerProfile;
   song: Song;
@@ -132,12 +142,15 @@ async function submitScore(params: {
   rating: 'perfect' | 'excellent' | 'great' | 'good' | 'okay' | 'fair' | 'rough' | 'poor';
   notesHit: number;
   notesMissed: number;
-  /** Pre-computed anti-cheat proof package */
-  proof?: ScoreProofPackage;
-  /** Scoring metadata for v2 fingerprint (optional) */
+  /** Per-note proof inputs (real gameplay chain since R69). Omit for
+   *  submissions without a proof (server stores them unverified). */
+  proofInputs?: { scoringMeta: ScoringMetaForProof; noteResults: NoteProofEntry[] };
+  /** Scoring metadata for the v2 fingerprint (optional) */
   scoringMetadata?: ScoringMetadata;
+  /** Queue the submission for retry when the upload fails (default true). */
+  retryOffline?: boolean;
 }): Promise<SubmitScoreResult> {
-  const { profile, song, gameMode, score, maxScore, accuracy, maxCombo, difficulty, rating, notesHit, notesMissed, proof, scoringMetadata } = params;
+  const { profile, song, gameMode, score, maxScore, accuracy, maxCombo, difficulty, rating, notesHit, notesMissed, proofInputs, scoringMetadata, retryOffline = true } = params;
 
   const rawNotes = songNotesFromSong(song);
   const gameType = toGameType(gameMode);
@@ -175,6 +188,23 @@ async function submitScore(params: {
     throw new Error('Profile is not registered for online submissions (missing sync code)');
   }
 
+  // R69: the proof is built HERE from the real per-note inputs — the
+  // fingerprint_version matches the payload (v2 hash present → 'v2').
+  let proof: ScoreProofPackage | undefined;
+  if (proofInputs) {
+    proof = generateProofPackage({
+      scoringMeta: proofInputs.scoringMeta,
+      noteResults: proofInputs.noteResults,
+      score,
+      accuracy,
+      maxCombo,
+      notesHit,
+      notesMissed,
+      difficulty: toApiDifficulty(difficulty),
+      fingerprintVersion: v2Hash ? 'v2' : 'v1',
+    });
+  }
+
   const payload: SubmitScorePayload = {
     profile_uid: profile.syncUid || profile.id,
     sync_code: profile.syncCode,
@@ -190,27 +220,47 @@ async function submitScore(params: {
     notes_missed: notesMissed,
   };
 
-  // Attach proof and v2 hash if available
   if (proof) payload.proof = proof;
   if (v2Hash) payload.song_hash_v2 = v2Hash;
 
-  try {
-    return await request<SubmitScoreResult>('/scores', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+  const queueForRetry = () => {
+    if (!retryOffline) return false;
+    enqueueScore({
+      payload: { ...payload },
+      ...(proofInputs ? { proofInputs } : {}),
     });
+    return true;
+  };
+
+  try {
+    return await submitScorePayload(payload);
   } catch (err) {
     // The profile vanished server-side (fresh server, deleted profile):
     // re-register with our identity + code and retry a single time.
     if (/HTTP 404/.test(err instanceof Error ? err.message : '')) {
-      await registerProfile(profile).catch(() => null);
-      return request<SubmitScoreResult>('/scores', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      try {
+        await registerProfile(profile).catch(() => null);
+        return await submitScorePayload(payload);
+      } catch (retryErr) {
+        if (queueForRetry()) throw new OfflineQueuedError();
+        throw retryErr;
+      }
     }
+    if (queueForRetry()) throw new OfflineQueuedError();
     throw err;
   }
+}
+
+/**
+ * Low-level score submission with a COMPLETE payload (including proof).
+ * Used by submitScore and the R69 outbox flush — no fingerprint logic, no
+ * re-registration, just the wire call.
+ */
+async function submitScorePayload(payload: SubmitScorePayload): Promise<SubmitScoreResult> {
+  return request<SubmitScoreResult>('/scores', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 /** Fetch leaderboard for a single song */
@@ -380,13 +430,17 @@ async function downloadProfileByCode(code: string): Promise<ProfileSyncDownload 
  * the profile on the server first when it has no sync code yet, then
  * creates the account and immediately uploads a first sync snapshot so
  * the very first login on another device already finds data.
- * Returns the sync code when one had to be generated.
+ *
+ * R69: the server returns a ONE-TIME recovery code (shown to the user by
+ * the caller) and — when the profile already had an account — REPLACES it
+ * (the caller must hold the sync_code; that is the forgot-password rescue
+ * path). Returns the sync code when one had to be generated.
  */
 async function registerAccount(params: {
   profile: PlayerProfile;
   email: string;
   password: string;
-}): Promise<{ ok: boolean; sync_code?: string; error?: string }> {
+}): Promise<{ ok: boolean; sync_code?: string; recovery_code?: string; error?: string }> {
   const { profile, email, password } = params;
   let syncCode = profile.syncCode;
   if (!syncCode) {
@@ -395,16 +449,17 @@ async function registerAccount(params: {
     if (!syncCode) return { ok: false, error: 'Profile registration failed' };
   }
   try {
-    await request('/auth/register', {
+    const res = await request<{ ok: boolean; recovery_code?: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, sync_code: syncCode }),
     });
+    // Upload an initial snapshot so the first login elsewhere works — also
+    // on the replace path (the account credentials just changed).
+    await uploadProfile({ ...profile, syncCode }, null).catch(() => null);
+    return { ok: true, sync_code: profile.syncCode ? undefined : syncCode, recovery_code: res.recovery_code };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
-  // Upload an initial snapshot so the first login elsewhere works
-  await uploadProfile({ ...profile, syncCode }, null).catch(() => null);
-  return { ok: true, sync_code: profile.syncCode ? undefined : syncCode };
 }
 
 /**
@@ -413,17 +468,21 @@ async function registerAccount(params: {
  * snapshot exists yet (the caller distinguishes via the hasSnapshot flag
  * of the thrown-free result — invalid login vs. missing snapshot are both
  * surfaced as ok:false with a reason).
+ *
+ * R69: the login response may carry a recovery_code — issued exactly once
+ * for legacy accounts that predate recovery codes (server v3.5.0). The
+ * caller MUST surface it in a save-this-code dialog.
  */
 async function loginWithAccount(
   email: string,
   password: string,
 ): Promise<
-  { ok: true; snapshot: ProfileSyncDownload & { profile: PlayerProfile } }
+  | { ok: true; snapshot: ProfileSyncDownload & { profile: PlayerProfile }; recoveryCode?: string }
   | { ok: false; reason: 'invalid' | 'noSnapshot' }
 > {
-  let login: { profile_uid: string; sync_code: string };
+  let login: { profile_uid: string; sync_code: string; recovery_code?: string };
   try {
-    login = await request<{ profile_uid: string; sync_code: string }>('/auth/login', {
+    login = await request<{ profile_uid: string; sync_code: string; recovery_code?: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -440,7 +499,36 @@ async function loginWithAccount(
     syncUid: login.profile_uid,
     authEmail: email.trim().toLowerCase(),
   };
-  return { ok: true, snapshot: { ...snapshot, profile } };
+  return {
+    ok: true,
+    snapshot: { ...snapshot, profile },
+    ...(login.recovery_code ? { recoveryCode: login.recovery_code } : {}),
+  };
+}
+
+/**
+ * R69: Reset a forgotten password with the one-time recovery code.
+ * On success the server has set the new password AND rotated to a fresh
+ * recovery code — the caller must show it to the user exactly once.
+ */
+async function recoverAccount(
+  email: string,
+  recoveryCode: string,
+  newPassword: string,
+): Promise<{ ok: boolean; recovery_code?: string; error?: string }> {
+  try {
+    const res = await request<{ ok: boolean; recovery_code?: string }>('/auth/recover', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        recovery_code: recoveryCode,
+        new_password: newPassword,
+      }),
+    });
+    return { ok: true, recovery_code: res.recovery_code };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /** Change the password of an online account (requires the current one). */
@@ -469,6 +557,7 @@ export const leaderboardService = {
   testConnectionDetailed,
   registerProfile,
   submitScore,
+  submitScorePayload,
   fetchSongLeaderboard,
   fetchGlobalLeaderboard,
   // Daily challenge online board
@@ -480,10 +569,11 @@ export const leaderboardService = {
   // Profile sync (cross-device backup)
   uploadProfile,
   downloadProfileByCode,
-  // Online accounts (app-only login)
+  // Online accounts (app-only login + R69 recovery)
   registerAccount,
   loginWithAccount,
   changeAccountPassword,
+  recoverAccount,
   // R67: profile token operations (PUT settings / GDPR delete)
   updateProfileSettings,
   deleteProfile,

@@ -161,6 +161,15 @@ function verifyScorePlausibility(
         return ['valid' => false, 'reason' => 'invalid_points_per_tick'];
     }
 
+    // 7b (R69). Combo multiplier bounds: the client's combo system scales
+    // progress from 1x (0-4 combo notes) to 2x (20+). Anything outside
+    // [1, 2] cannot occur in a real proof — old proofs hardcoded 1, new
+    // proofs carry the multiplier the best combo actually reached.
+    $cm = (float)($proof['combo_multiplier'] ?? 0);
+    if ($cm < 1.0 || $cm > 2.0) {
+        return ['valid' => false, 'reason' => 'invalid_combo_multiplier'];
+    }
+
     // 8. High score with no hits is suspicious
     if ($notesHit === 0 && $score > $proofTotalNotes * 5) {
         return ['valid' => false, 'reason' => 'high_score_no_hits'];
@@ -226,6 +235,15 @@ function flagSuspiciousScore(
     $proofAge = time() - (int)($proof['proof_ts'] ?? 0);
     if ($proofAge > 120) { // older than 2 minutes is slightly suspicious
         $flags[] = 'stale_proof';
+    }
+
+    // Flag 6 (R69): chain length below the claimed hit+miss notes. With real
+    // per-note chains (R69) every counted hit/miss is a completed chain
+    // entry, so chain < hit+miss hints at a reconstructed/synthetic proof.
+    // Soft flag only — legacy synthetic proofs cap the chain at 200 entries.
+    $chainLength = (int)($proof['chain_length'] ?? 0);
+    if ($chainLength > 0 && $chainLength < ($notesHit + $notesMissed)) {
+        $flags[] = 'chain_note_mismatch';
     }
 
     return $flags;

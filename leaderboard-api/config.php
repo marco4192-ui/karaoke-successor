@@ -91,6 +91,10 @@ function err(string $msg, int $status = 400): void {
 /** Read JSON body */
 function body(): array {
     $raw = file_get_contents('php://input');
+    // R69: hard size cap — the sync upload enforces its own 1 MB snapshot
+    // limit on top of this; everything larger than 1.5 MB is garbage or an
+    // attack and is rejected before json_decode allocates it.
+    if (strlen($raw) > 1572864) err('Payload too large (max 1.5 MB)', 413);
     $data = json_decode($raw, true);
     if (json_last_error() !== JSON_ERROR_NONE) err('Invalid JSON');
     return $data ?? [];
@@ -143,21 +147,44 @@ header('Access-Control-Max-Age: 86400');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 // ── Rate Limiting (file-based, per IP) ─────────────────────
+// R69: flock(LOCK_EX) around the read-modify-write — concurrent requests
+// used to race on the counter file (two parallel requests both read the
+// same count, both passed the limit).
 (function () {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     $file = sys_get_temp_dir() . '/ks_rl_' . md5($ip);
     $now = time();
-    $data = file_exists($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
-    // Prune entries older than 60s
-    $data = array_filter($data, fn($t) => $t > $now - 60);
-    if (count($data) >= RATE_LIMIT_PER_MINUTE) err('Rate limit exceeded', 429);
-    $data[] = $now;
-    @file_put_contents($file, json_encode(array_values($data)));
+    $fh = @fopen($file, 'c+');
+    if ($fh === false) return; // never hard-fail on limiter I/O issues
+    try {
+        if (!flock($fh, LOCK_EX)) return;
+        $raw = stream_get_contents($fh);
+        $data = $raw === false ? [] : (json_decode($raw, true) ?: []);
+        // Prune entries older than 60s
+        $data = array_filter($data, fn($t) => $t > $now - 60);
+        if (count($data) >= RATE_LIMIT_PER_MINUTE) {
+            flock($fh, LOCK_UN);
+            err('Rate limit exceeded', 429);
+        }
+        $data[] = $now;
+        ftruncate($fh, 0);
+        rewind($fh);
+        fwrite($fh, json_encode(array_values($data)));
+        fflush($fh);
+        flock($fh, LOCK_UN);
+    } finally {
+        fclose($fh);
+    }
 })();
 
-// ── Auth: POST/PUT require API key ────────────────────────
+// ── Auth: EVERY method except CORS preflight requires the API key ──
+// R69: previously only POST/PUT were keyed — DELETE /profiles/{uid} and
+// all GET endpoints (including the sync-snapshot download by code) were
+// reachable without it. The client has always sent the header on every
+// request, so this is a purely server-side hardening. OPTIONS preflights
+// must stay open (they never carry custom headers by spec).
 $method = $_SERVER['REQUEST_METHOD'];
-if (in_array($method, ['POST', 'PUT'])) {
+if ($method !== 'OPTIONS') {
     $key = $_SERVER['HTTP_X_API_KEY'] ?? '';
     if ($key !== API_SECRET) err('Unauthorized', 401);
 }

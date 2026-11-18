@@ -7,6 +7,11 @@
 -- v3.2: App-only online accounts (ks_accounts) added: e-mail + bcrypt
 --       password login to load a profile on another device. There is NO
 --       web login — the API speaks JSON only and requires the X-API-Key.
+-- v3.5: Recovery codes (R69): ks_accounts.recovery_hash stores the bcrypt
+--       hash of a one-time recovery code (shown once at registration or at
+--       the first login on a legacy account). POST /auth/recover resets the
+--       password with it and rotates to a fresh code. POST /auth/register
+--       replaces a profile's account when the sync_code is presented.
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -124,6 +129,9 @@ CREATE TABLE `ks_daily_results` (
 -- Purpose: load an online profile on another device / location.
 --   email: lowercase, unique. Never shown publicly anywhere.
 --   password_hash: bcrypt (password_hash()).
+--   recovery_hash: bcrypt hash of the one-time recovery code (R69, nullable
+--     for accounts created before v3.5 — those get a code issued at their
+--     next successful login).
 --   profile_uid: the linked profile — exactly one account per profile
 --     and one profile per account (both enforced by unique keys).
 --   failed_attempts / locked_until: brute-force lockout
@@ -136,6 +144,7 @@ CREATE TABLE `ks_accounts` (
   `id`              BIGINT       NOT NULL AUTO_INCREMENT,
   `email`           VARCHAR(254) NOT NULL                COMMENT 'Lowercase login e-mail (app-only)',
   `password_hash`   VARCHAR(255) NOT NULL                COMMENT 'bcrypt hash',
+  `recovery_hash`   VARCHAR(255) NULL     DEFAULT NULL   COMMENT 'bcrypt hash of the one-time recovery code (R69; rotated on every use)',
   `profile_uid`     VARCHAR(36)  NOT NULL                COMMENT 'Linked ks_profiles.profile_uid',
   `failed_attempts` INT          NOT NULL DEFAULT 0      COMMENT 'Consecutive failed logins (lockout counter)',
   `locked_until`    DATETIME     NULL     DEFAULT NULL   COMMENT 'Lockout expiry (15 min after 5 fails)',
@@ -226,5 +235,12 @@ DELIMITER ;
 --   UNIQUE KEY `uq_account_profile` (`profile_uid`),
 --   CONSTRAINT `fk_account_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- Migration: Add the recovery-code column to an existing v3.2/v3.4
+-- installation (fresh installs already got it above — run only
+-- ONE of the two, never both):
+-- -----------------------------------------------------------
+-- ALTER TABLE `ks_accounts` ADD COLUMN `recovery_hash` VARCHAR(255) NULL DEFAULT NULL COMMENT 'bcrypt hash of the one-time recovery code (R69; rotated on every use)' AFTER `password_hash`;
 
 SET FOREIGN_KEY_CHECKS = 1;

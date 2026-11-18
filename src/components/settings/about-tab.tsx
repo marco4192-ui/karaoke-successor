@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
-import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { MusicIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
@@ -295,6 +294,9 @@ export function AboutTab({
               disabled={leaderboardStatus?.state === 'testing'}
               onClick={async () => {
                 setLeaderboardStatus({ state: 'testing' });
+                // R69: dynamic import — the leaderboard service (network +
+                // crypto + outbox) no longer lands in the settings bundle.
+                const { leaderboardService } = await import('@/lib/api/leaderboard-service');
                 const result = await leaderboardService.testConnectionDetailed();
                 setLeaderboardStatus(
                   result.ok

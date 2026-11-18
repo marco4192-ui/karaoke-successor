@@ -33,6 +33,19 @@ export interface BlindScoringState {
   blindLastWasMissRef: { current: boolean };
 }
 
+/**
+ * R69: per-note completion data for the online anti-cheat proof chain.
+ * Structural twin of NoteProofEntry (lib/leaderboard/anti-cheat-proof) —
+ * this module must not import leaderboard code, the consumer adapts it.
+ */
+export interface ScoringNoteCompletion {
+  noteIdx: number;
+  ticksHit: number;
+  totalTicks: number;
+  isGolden: boolean;
+  wasPerfect: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Shared scoring pass
 // ---------------------------------------------------------------------------
@@ -51,6 +64,9 @@ export function runScoringPass(
   hasGoldenOnly: boolean,
   comboState: ComboScoringState,
   blindState?: BlindScoringState,
+  /** R69: fired once per completed note — feeds the real anti-cheat proof
+   *  chain (note-proof-collector). Optional; O(1) per note. */
+  onNoteComplete?: (completion: ScoringNoteCompletion) => void,
 ): ScoringPassResult {
   // Batch accumulator
   let scoreDelta = 0;
@@ -220,6 +236,19 @@ export function runScoringPass(
 
           comboUpdate = comboState.comboNotes;
           maxComboUpdate = comboState.maxComboNotes;
+        }
+
+        // R69: hand the REAL per-note completion data to the proof collector
+        // (one call per note — never per frame). Freestyle notes complete
+        // too; they legitimately extend the chain beyond hit+miss counts.
+        if (onNoteComplete) {
+          onNoteComplete({
+            noteIdx: ni,
+            ticksHit: progress.ticksHit,
+            totalTicks: progress.totalTicks,
+            isGolden: progress.isGolden,
+            wasPerfect: progress.wasPerfect,
+          });
         }
 
         // Determine aggregated displayType based on hit ratio

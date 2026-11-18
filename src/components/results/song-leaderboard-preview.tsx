@@ -11,10 +11,10 @@ import { useGameStore } from '@/lib/game/store';
 import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
 
 // ── Compute song hash for a song ──
-function computeSongHash(song: Song): Promise<string | null> {
+function computeSongHash(song: Song, gameType: 's' | 'd' = 's'): Promise<string | null> {
   return import('@/lib/leaderboard/song-fingerprint').then(({ songHashFromSong }) => {
     try {
-      return songHashFromSong(song);
+      return songHashFromSong(song, gameType);
     } catch {
       return null;
     }
@@ -27,6 +27,19 @@ function MiniRank({ index }: { index: number }) {
   if (index === 1) return <span className="text-sm">🥈</span>;
   if (index === 2) return <span className="text-sm">🥉</span>;
   return <span className="text-xs text-white/40 w-5 text-center">#{index + 1}</span>;
+}
+
+// ── Verified badge (R69: same look as the song-highscore modal) ──
+function VerifiedBadge({ verified }: { verified: boolean }) {
+  if (!verified) return null;
+  return (
+    <span
+      className="inline-flex items-center text-[10px] text-green-400 bg-green-500/15 border border-green-500/30 rounded-full px-1.5 py-0.5"
+      title="Verified"
+    >
+      ✓
+    </span>
+  );
 }
 
 // ── Country Flag Helper ──
@@ -44,19 +57,29 @@ interface SongLeaderboardPreviewProps {
   onViewAll: () => void;
   /** R42: compact variant for the one-screen results layout */
   compact?: boolean;
+  /** R69: which board to fetch — 'd' for duet games (the song fingerprint
+   *  includes the game type, duet scores live on a separate board). */
+  gameType?: 's' | 'd';
 }
 
-export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, currentPlayerRank, onViewAll, compact }: SongLeaderboardPreviewProps) {
+export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, currentPlayerRank, onViewAll, compact, gameType = 's' }: SongLeaderboardPreviewProps) {
   const { t } = useTranslation();
   const { onlineEnabled, profiles } = useGameStore();
   const [globalTop3, setGlobalTop3] = useState<OnlineScoreEntry[]>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const hasFetched = useRef(false);
 
-  const localProfileIds = useMemo(() => new Set(profiles.map(p => p.id)), [profiles]);
+  // R69: match online entries against local profiles by id AND server-side
+  // syncUid — profiles imported via sync code or login submit under their
+  // syncUid and were never highlighted before.
+  const localProfileIds = useMemo(
+    () => new Set(profiles.flatMap(p => [p.id, p.syncUid].filter(Boolean) as string[])),
+    [profiles],
+  );
 
   const localTop3 = useMemo(
-    () => songHighscores.sort((a, b) => b.score - a.score).slice(0, 3),
+    // R69: never mutate the prop — sort a copy
+    () => [...songHighscores].sort((a, b) => b.score - a.score).slice(0, 3),
     [songHighscores]
   );
 
@@ -65,16 +88,16 @@ export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, 
     if (!onlineEnabled || !song || hasFetched.current) return;
     hasFetched.current = true;
     setIsLoadingGlobal(true);
-    computeSongHash(song).then(hash => {
+    computeSongHash(song, gameType).then(hash => {
       if (!hash) { setIsLoadingGlobal(false); return; }
       return import('@/lib/api/leaderboard-service').then(({ leaderboardService }) =>
-        leaderboardService.getSongLeaderboard(hash, 's', 3)
+        leaderboardService.getSongLeaderboard(hash, gameType, 3)
       );
     }).then(scores => {
       if (scores) setGlobalTop3(scores);
     }).catch(() => {/* silent */})
       .finally(() => setIsLoadingGlobal(false));
-  }, [song, onlineEnabled]);
+  }, [song, onlineEnabled, gameType]);
 
   useEffect(() => { fetchGlobal(); }, [fetchGlobal]);
 
@@ -119,6 +142,7 @@ export function SongLeaderboardPreview({ songHighscores, song, activeProfileId, 
                       </div>
                       <span className={`flex-1 text-sm truncate ${isLocal ? 'text-cyan-300' : ''}`}>{entry.display_name || 'Unknown'}</span>
                       <CountryFlag code={entry.country_code} show={!!entry.country_code} />
+                      <VerifiedBadge verified={!!entry.verified} />
                       <span className="text-sm font-bold text-cyan-400">{entry.score.toLocaleString()}</span>
                     </div>
                   );

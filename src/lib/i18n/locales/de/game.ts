@@ -202,6 +202,7 @@ resultsScreen: {
   uploadedRank: 'Hochgeladen! Rang #{n}',
   uploadedRankVerified: 'Hochgeladen! Rang #{n} (Verifiziert)',
   uploadFailed: 'Hochladen fehlgeschlagen',
+  uploadQueued: 'Offline — wird automatisch erneut übertragen',
   noResults: 'Keine Ergebnisse verfügbar',
   accuracyLabel: '{n}% Genauigkeit',
   player: 'Spieler',

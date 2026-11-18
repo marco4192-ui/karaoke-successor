@@ -21,9 +21,14 @@
  *   GET    /leaderboard/global        Global player ranking
  *   POST   /daily                     Submit daily-challenge result (requires profile sync_code)
  *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type)
- *   POST   /auth/register             Link an e-mail + password account to a profile (requires profile sync_code)
- *   POST   /auth/login                App-only login: verify e-mail + password, returns the profile's sync_code
+ *   POST   /auth/register             Link an e-mail + password account to a profile (requires profile sync_code).
+ *                                      Returns a one-time recovery code. If the profile already has an account,
+ *                                      a caller holding the sync_code may REPLACE it (forgot-password rescue).
+ *   POST   /auth/login                App-only login: verify e-mail + password, returns the profile's sync_code.
+ *                                      Legacy accounts without a recovery code get one issued (returned once) here.
  *   POST   /auth/password             Change account password (requires current password)
+ *   POST   /auth/recover              Reset a forgotten password with the one-time recovery code
+ *                                      (requires e-mail + recovery code; rotates to a NEW recovery code)
  *
  * Auth notes: accounts exist so a profile can be loaded on another device.
  * There is NO web login: the API returns JSON only, never HTML, uses no
@@ -49,7 +54,7 @@ $T_ACCOUNTS = tbl('accounts');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.4.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.5.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES),
@@ -388,7 +393,9 @@ function submitScore(string $TP, string $TS): void {
             `rating`       = IF(VALUES(`score`) > `score`, VALUES(`rating`), `rating`),
             `notes_hit`    = IF(VALUES(`score`) > `score`, VALUES(`notes_hit`), `notes_hit`),
             `notes_missed` = IF(VALUES(`score`) > `score`, VALUES(`notes_missed`), `notes_missed`),
-            `played_at`    = CURRENT_TIMESTAMP,
+            // R69: played_at marks when this score value was achieved — only
+            // bump it when the submission actually became the new best.
+            `played_at`    = IF(VALUES(`score`) > `score`, CURRENT_TIMESTAMP, `played_at`),
             `verified`     = IF(VALUES(`score`) > `score`, VALUES(`verified`), `verified`),
             `ac_flags`     = IF(VALUES(`score`) > `score`, VALUES(`ac_flags`), `ac_flags`),
             `ac_reject_reason` = IF(VALUES(`score`) > `score`, VALUES(`ac_reject_reason`), `ac_reject_reason`),
@@ -412,6 +419,7 @@ function submitScore(string $TP, string $TS): void {
 }
 
 function batchScores(string $TP, string $TS): void {
+    header('Cache-Control: public, max-age=30');
     $raw = $_GET['hashes'] ?? '';
     if (!$raw) err('Missing hashes parameter');
     $hashes = array_slice(array_unique(explode(',', $raw)), 0, 200);
@@ -457,6 +465,9 @@ function routeLeaderboard(array $parts, string $method, string $TP, string $TS):
 }
 
 function globalBoard(string $TP): void {
+    // R69: boards tolerate a short browser cache — cuts repeated MySQL
+    // queries when several components fetch the same board.
+    header('Cache-Control: public, max-age=30');
     $limit  = min((int)($_GET['limit'] ?? 100), MAX_LEADERBOARD_ENTRIES);
     $offset = (int)($_GET['offset'] ?? 0);
     $sql = "SELECT
@@ -475,6 +486,7 @@ function globalBoard(string $TP): void {
 }
 
 function songBoard(string $hash, string $TP, string $TS): void {
+    header('Cache-Control: public, max-age=30');
     $hash = clean($hash);
     if (!isValidSongHash($hash)) err('Invalid song_hash');
     $gt    = in_array($_GET['game_type'] ?? 's', ['s','d']) ? $_GET['game_type'] : 's';
@@ -507,7 +519,9 @@ function songBoard(string $hash, string $TP, string $TS): void {
  */
 function dailyTypeMeta(): array {
     return [
-        'score'           => ['max' => 100000, 'dir' => 'max'],
+        // R69: 'score'-like metrics come from the standard 10,000-point
+        // scoring model (MAX_POINTS_PER_SONG) — 100000 was pure sandbox.
+        'score'           => ['max' => 10000,  'dir' => 'max'],
         'accuracy'        => ['max' => 100,    'dir' => 'max'],
         'combo'           => ['max' => 5000,   'dir' => 'max'],
         'perfect_notes'   => ['max' => 5000,   'dir' => 'max'],
@@ -523,12 +537,12 @@ function dailyTypeMeta(): array {
         'golden_groove'   => ['max' => 2000,   'dir' => 'max'],
         'precision'       => ['max' => 100,    'dir' => 'max'],
         'flawless_finale' => ['max' => 100,    'dir' => 'max'],
-        'score_sniper'    => ['max' => 100000, 'dir' => 'max'],
+        'score_sniper'    => ['max' => 10000,  'dir' => 'max'],
         'combo_race'      => ['max' => 5000,   'dir' => 'max'],
         'perfect_pitch'   => ['max' => 5000,   'dir' => 'max'],
         'golden_fingers'  => ['max' => 2000,   'dir' => 'max'],
         'steady_hand'     => ['max' => 5000,   'dir' => 'min'],
-        'titan'           => ['max' => 100000, 'dir' => 'max'],
+        'titan'           => ['max' => 10000,  'dir' => 'max'],
     ];
 }
 
@@ -568,7 +582,11 @@ function submitDaily(string $TP, string $TD): void {
     $mv = round((float)$d['metric_value'], 2);
     if ($mv < 0 || $mv > $types[$type]['max']) err("metric_value out of range for challenge_type $type");
 
-    $xp = max(0, min(100000, (int)($d['xp_earned'] ?? 0)));
+    // R69: realistic XP ceiling — the local daily system awards at most
+    // ~54k XP in one day (365-day streak milestone 50000 + challenge/streak/
+    // rank bonuses). 60000 keeps every legitimate value and cuts the old
+    // 100000 sandbox in half.
+    $xp = max(0, min(60000, (int)($d['xp_earned'] ?? 0)));
 
     // Profile must exist, be owned by the caller (sync_code), and opted in
     requireOwnership($uid, $d, $TP);
@@ -596,6 +614,7 @@ function submitDaily(string $TP, string $TD): void {
 }
 
 function dailyBoard(string $TP, string $TD): void {
+    header('Cache-Control: public, max-age=30');
     $date = clean((string)($_GET['date'] ?? date('Y-m-d')));
     if (!isValidDateString($date)) err('Invalid date (YYYY-MM-DD)');
     $limit = max(1, min((int)($_GET['limit'] ?? 100), 100));
@@ -677,6 +696,7 @@ function routeAuth(array $parts, string $method, string $TP, string $TA): void {
     if ($method === 'POST' && $action === 'register') { authRegister($TP, $TA); return; }
     if ($method === 'POST' && $action === 'login')    { authLogin($TP, $TA);    return; }
     if ($method === 'POST' && $action === 'password') { authPassword($TP, $TA); return; }
+    if ($method === 'POST' && $action === 'recover')  { authRecover($TP, $TA);  return; }
     err('Not found', 404);
 }
 
@@ -691,10 +711,80 @@ function assertPasswordPolicy(string $pw): void {
     if ($len < 8 || $len > 128) err('Password must be 8-128 characters');
 }
 
+// Fixed bcrypt hash of an unguessable random string. Verifying against it
+// keeps the timing of "unknown e-mail" answers identical to wrong passwords
+// (blunts user enumeration).
+const AUTH_DUMMY_HASH = '$2y$10$Xk5ZbG9QhU3wJmRtYs8CeOuNqPfLdAzWxVbKnMgSjHqEiCyT1oUa4m';
+
+// ============================================================
+// RECOVERY CODES (R69)
+// ============================================================
+
+/**
+ * Recovery-code alphabet: 32 unambiguous chars (no 0/O, 1/I).
+ * 16 positions → 80 bits of entropy — brute-forcing the code through
+ * /auth/recover is infeasible even without the login lockout.
+ */
+const RECOVERY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const RECOVERY_LENGTH = 16;
+
+/** Generate a fresh recovery code (raw, 16 chars, no separators). */
+function generateRecoveryCode(): string {
+    $code = '';
+    for ($i = 0; $i < RECOVERY_LENGTH; $i++) {
+        $code .= RECOVERY_ALPHABET[random_int(0, strlen(RECOVERY_ALPHABET) - 1)];
+    }
+    return $code;
+}
+
+/** Normalize a user-entered recovery code: strip separators, uppercase. */
+function normalizeRecoveryCode($raw): string {
+    return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)$raw));
+}
+
+// Note: no format pre-check before the bcrypt verify — a fail-fast check on
+// the code format would create a timing side channel that reveals whether an
+// e-mail exists (known account + malformed code answers in ~0 ms, unknown
+// e-mail always pays the dummy bcrypt). password_verify() handles any input.
+
+/** bcrypt-hash a recovery code for storage. */
+function hashRecoveryCode(string $code): string {
+    $h = password_hash($code, PASSWORD_BCRYPT);
+    if ($h === false) err('Could not hash recovery code', 500);
+    return $h;
+}
+
+/** Format a raw code for display: XXXX-XXXX-XXXX-XXXX. */
+function formatRecoveryCode(string $code): string {
+    return implode('-', str_split($code, 4));
+}
+
+/**
+ * Ensure the account has a recovery code. Returns the PLAIN code when one
+ * had to be generated (first issue), or null when a hash already exists
+ * (existing codes are never re-revealed — single display by design).
+ */
+function ensureRecoveryCode(array $acc, string $TA): ?string {
+    if ($acc['recovery_hash'] !== null && $acc['recovery_hash'] !== '') return null;
+    $code = generateRecoveryCode();
+    db()->prepare("UPDATE `$TA` SET `recovery_hash` = ? WHERE `id` = ?")
+        ->execute([hashRecoveryCode($code), $acc['id']]);
+    return $code;
+}
+
 /**
  * POST /auth/register — link an e-mail + password account to a profile.
  * The caller must prove ownership of the profile via its sync_code.
- * Exactly one account per profile and vice versa.
+ *
+ * R69: if the profile ALREADY has a linked account, the caller may replace
+ * it (delete + re-insert) — this is the forgot-password rescue path for
+ * users who saved their sync code but neither the password nor the recovery
+ * code. Replacing stays within the sync_code trust level: anyone holding
+ * the sync_code can already delete the whole profile, so replacing only the
+ * account grants no new capability.
+ *
+ * A one-time recovery code is generated and returned — the client shows it
+ * exactly once; only its bcrypt hash is stored.
  */
 function authRegister(string $TP, string $TA): void {
     $d = body();
@@ -714,27 +804,41 @@ function authRegister(string $TP, string $TA): void {
     $uid = $cur->fetchColumn();
     if ($uid === false || $uid === null) err('Profile not found', 404);
 
-    // One account per e-mail
-    $dup = db()->prepare("SELECT 1 FROM `$TA` WHERE `email` = ?");
+    // One account per e-mail — EXCEPT when that account belongs to the very
+    // profile being re-registered (replace flow re-uses the same e-mail).
+    $dup = db()->prepare("SELECT `profile_uid` FROM `$TA` WHERE `email` = ?");
     $dup->execute([$email]);
-    if ($dup->fetchColumn()) err('E-mail already registered', 409);
+    $dupUid = $dup->fetchColumn();
+    if ($dupUid !== false && $dupUid !== null && $dupUid !== $uid) {
+        err('E-mail already registered', 409);
+    }
 
-    // One account per profile
-    $dup2 = db()->prepare("SELECT 1 FROM `$TA` WHERE `profile_uid` = ?");
+    // One account per profile: on re-register (sync_code proven), the old
+    // account row is replaced. Lockout counters start fresh for the new
+    // credentials — acceptable, the caller holds the sync_code anyway.
+    $dup2 = db()->prepare("SELECT `id` FROM `$TA` WHERE `profile_uid` = ?");
     $dup2->execute([$uid]);
-    if ($dup2->fetchColumn()) err('Profile already linked to an account', 409);
+    $oldAccountId = $dup2->fetchColumn();
+    if ($oldAccountId !== false && $oldAccountId !== null) {
+        db()->prepare("DELETE FROM `$TA` WHERE `id` = ?")->execute([$oldAccountId]);
+    }
 
     $hash = password_hash($pw, PASSWORD_BCRYPT);
     if ($hash === false) err('Could not hash password', 500);
-    db()->prepare("INSERT INTO `$TA` (`email`,`password_hash`,`profile_uid`) VALUES (?,?,?)")
-        ->execute([$email, $hash, $uid]);
-    json(['ok' => true, 'profile_uid' => $uid]);
+    $recoveryCode = generateRecoveryCode();
+    db()->prepare("INSERT INTO `$TA` (`email`,`password_hash`,`recovery_hash`,`profile_uid`) VALUES (?,?,?,?)")
+        ->execute([$email, $hash, hashRecoveryCode($recoveryCode), $uid]);
+    json([
+        'ok'            => true,
+        'profile_uid'   => $uid,
+        'recovery_code' => formatRecoveryCode($recoveryCode),
+    ]);
 }
 
 /** Fetch an account row by e-mail. */
 function fetchAccount(string $email, string $TA): array|null {
     $cur = db()->prepare(
-        "SELECT `id`,`password_hash`,`profile_uid`,`failed_attempts`,`locked_until`
+        "SELECT `id`,`password_hash`,`recovery_hash`,`profile_uid`,`failed_attempts`,`locked_until`
          FROM `$TA` WHERE `email` = ?"
     );
     $cur->execute([$email]);
@@ -765,17 +869,15 @@ function resetFailedLogin(array $acc, string $TA): void {
     }
 }
 
-// Fixed bcrypt hash of an unguessable random string. Verifying against it
-// keeps the timing of "unknown e-mail" answers identical to wrong passwords
-// (blunts user enumeration).
-const AUTH_DUMMY_HASH = '$2y$10$Xk5ZbG9QhU3wJmRtYs8CeOuNqPfLdAzWxVbKnMgSjHqEiCyT1oUa4m';
-
 /**
  * POST /auth/login — verify e-mail + password. On success the profile's
  * sync_code is returned so the client can pull its sync snapshot via the
  * existing GET /profiles/sync/{code} endpoint (same trust level: the
  * password is bound 1:1 to that profile). Responses are deliberately
  * generic to avoid e-mail enumeration.
+ *
+ * R69: accounts created before v3.5.0 have no recovery code — one is
+ * generated and returned here (exactly once) so legacy users can save it.
  */
 function authLogin(string $TP, string $TA): void {
     $d = body();
@@ -804,7 +906,62 @@ function authLogin(string $TP, string $TA): void {
     $code = $cur->fetchColumn();
     if ($code === false || $code === null) err('Profile not found', 404);
 
-    json(['ok' => true, 'profile_uid' => $acc['profile_uid'], 'sync_code' => (string)$code]);
+    $response = ['ok' => true, 'profile_uid' => $acc['profile_uid'], 'sync_code' => (string)$code];
+
+    // R69: legacy account without a stored recovery code → issue one now.
+    // The client surfaces it in a save-this-code dialog. Existing codes are
+    // never re-revealed (ensureRecoveryCode returns null when a hash exists).
+    $issued = ensureRecoveryCode($acc, $TA);
+    if ($issued !== null) $response['recovery_code'] = formatRecoveryCode($issued);
+
+    json($response);
+}
+
+/**
+ * POST /auth/recover — reset a forgotten password with the one-time
+ * recovery code (R69). Requires e-mail + recovery code + new password.
+ *
+ * Flow: verify the recovery code against its bcrypt hash (with the same
+ * lockout counting as login), then set the new password AND rotate to a
+ * fresh recovery code (single-use by design — the used code dies here).
+ * The NEW recovery code is returned so the client can show it once.
+ */
+function authRecover(string $TP, string $TA): void {
+    $d = body();
+    requireFields($d, ['email', 'recovery_code', 'new_password']);
+    $email = normalizeEmail($d['email']);
+    $rc    = normalizeRecoveryCode($d['recovery_code']);
+    $newPw = (string)$d['new_password'];
+    assertPasswordPolicy($newPw);
+
+    $acc = fetchAccount($email, $TA);
+    if ($acc === null) {
+        password_verify($rc, AUTH_DUMMY_HASH); // equalize timing
+        usleep(300000);
+        err('Invalid e-mail or recovery code', 401);
+    }
+    if (isLocked($acc)) {
+        err('Too many failed attempts — try again later', 429);
+    }
+    if ($acc['recovery_hash'] === null || $acc['recovery_hash'] === ''
+        || !password_verify($rc, (string)$acc['recovery_hash'])) {
+        countFailedLogin($acc, $TA);
+        usleep(300000);
+        err('Invalid e-mail or recovery code', 401);
+    }
+    resetFailedLogin($acc, $TA);
+
+    // Set the new password and rotate the recovery code (old one is dead).
+    $newHash = password_hash($newPw, PASSWORD_BCRYPT);
+    if ($newHash === false) err('Could not hash password', 500);
+    $newRecovery = generateRecoveryCode();
+    db()->prepare("UPDATE `$TA` SET `password_hash` = ?, `recovery_hash` = ? WHERE `id` = ?")
+        ->execute([$newHash, hashRecoveryCode($newRecovery), $acc['id']]);
+
+    json([
+        'ok'            => true,
+        'recovery_code' => formatRecoveryCode($newRecovery),
+    ]);
 }
 
 /**

@@ -12,6 +12,7 @@ import { CreateCharacterForm, type CreateProfileOptions } from './character/crea
 import { PlayerProgressionCard } from './character/player-progression-card';
 import { CharacterSettingsCard } from './character/character-settings-card';
 import { OnlineLoginDialog } from './character/online-login-dialog';
+import { RecoveryCodeDialog } from './character/recovery-code-dialog';
 
 export function CharacterScreen() {
   const { t } = useTranslation();
@@ -26,6 +27,8 @@ export function CharacterScreen() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  /** R69: one-time recovery code issued at account registration. */
+  const [registrationRecoveryCode, setRegistrationRecoveryCode] = useState<string | null>(null);
 
   // ── Track which characters are claimed by connected companions ──
   const [claimedProfileIds, setClaimedProfileIds] = useState<Record<string, string>>({});
@@ -106,6 +109,11 @@ export function CharacterScreen() {
               authEmail: options.auth!.email,
             });
             toast({ title: t('profileAuth.registrationSuccessTitle'), description: t('profileAuth.registrationSuccess') });
+            // R69: the server issued a one-time recovery code — show it
+            // immediately (it is never returned again).
+            if (result.recovery_code) {
+              setRegistrationRecoveryCode(result.recovery_code);
+            }
           } else {
             const reason = /already registered/i.test(result.error || '')
               ? t('profileAuth.emailTaken')
@@ -201,6 +209,15 @@ export function CharacterScreen() {
         open={showLoginDialog}
         onOpenChange={setShowLoginDialog}
       />
+
+      {/* R69: one-time recovery code issued at account registration */}
+      {registrationRecoveryCode && (
+        <RecoveryCodeDialog
+          code={registrationRecoveryCode}
+          open
+          onOpenChange={() => setRegistrationRecoveryCode(null)}
+        />
+      )}
 
       {/* Character List */}
       <div className="mb-6" data-testid="profile-list">

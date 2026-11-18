@@ -30,11 +30,13 @@ Copyright-safe: songs are identified only by a SHA-256 fingerprint hash
 
 ## Authentication
 
-All `POST`/`PUT`/`DELETE` requests require the header `X-API-Key` with the
-value of `API_SECRET`. The desktop app ships this key in its client bundle
+**Every request except a CORS preflight requires the header `X-API-Key`** with
+the value of `API_SECRET` (since v3.5.0 — previously only POST/PUT). The
+desktop app ships this key in its client bundle
 (`NEXT_PUBLIC_LEADERBOARD_API_KEY`) — it is therefore **not** a security
-boundary against determined attackers, only a spam deterrent. GET requests
-need no key.
+boundary against determined attackers, only a spam deterrent. The client
+has always sent the header on every request, so the tightening is purely
+server-side.
 
 **Profile ownership:** every write to a profile (score submission, settings
 update, sync snapshot, deletion) additionally requires the profile's
@@ -59,9 +61,11 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | GET | `/leaderboard/global?limit=N&offset=M` | Global player ranking |
 | POST | `/daily` | Submit daily-challenge result (upsert — best metric wins) — requires profile `sync_code` |
 | GET | `/daily?date=YYYY-MM-DD&limit=N` | Daily-challenge board for a date (all challenge types, ranked per type) |
-| POST | `/auth/register` | Link an e-mail + password account to a profile — requires profile `sync_code` |
-| POST | `/auth/login` | App-only login: verify e-mail + password → returns `profile_uid` + `sync_code` |
+| POST | `/auth/register` | Link an e-mail + password account to a profile — requires profile `sync_code`. Returns a one-time `recovery_code`. Re-registering a profile that already has an account REPLACES it (forgot-password rescue, sync_code is the ownership proof). |
+| POST | `/auth/login` | App-only login: verify e-mail + password → returns `profile_uid` + `sync_code` (+ a first-issued `recovery_code` for legacy accounts without one) |
 | POST | `/auth/password` | Change account password — requires `current_password` |
+| POST | `/auth/recover` | Reset a forgotten password with the one-time recovery code (`email` + `recovery_code` + `new_password`) — rotates to a NEW recovery code |
+| GET | `/scores/batch?hashes=..` | Batch-fetch leaderboards for multiple song hashes |
 
 ## Profile sync (cross-device)
 
@@ -139,6 +143,19 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
 `-`. Before v3.4.0 those ~75% of uploads were rejected as
 "Invalid song_hash".
 
+**v3.5.0 (R69) additions:**
+- `combo_multiplier` in the proof is bounds-checked to `[1, 2]` (the client
+  now sends the real multiplier its best combo reached — 1, 1.25, 1.5, 1.75
+  or 2 — instead of the old hardcoded 1; values outside the model's range
+  are rejected as `invalid_combo_multiplier`).
+- The client's proof chain now carries REAL per-note completion data from
+  the scoring pass (previously reconstructed from the claimed sums). A
+  chain shorter than `notes_hit + notes_missed` is soft-flagged as
+  `chain_note_mismatch` (legacy synthetic proofs capped the chain at 200
+  entries, so this stays a flag, not a rejection).
+- `played_at` only updates when a submission actually becomes the new best
+  (previously every replay of the same song bumped it, even losing ones).
+
 ## Daily challenge
 
 The daily-challenge board stores one result per profile, date, and
@@ -176,16 +193,18 @@ GET  /daily?date=2026-09-14&limit=100
                   "created_at": "2026-09-14T18:30:00" } ] }
 ```
 
-Metric bounds per type: `score`/`score_sniper`/`titan` ≤ 100 000,
-`accuracy`-family and `tick_accuracy`-family ≤ 100, combo-family and
-note-count types ≤ 5000, golden-note types ≤ 2000 (values are rounded to
-2 decimals). `difficulty` is informational (default `normal`).
-`xp_earned` is informational and clamped to 0…100 000. The board is
-public (GET needs no API key) and returns all challenge types of that
-date, ranked **within each type** by direction (`metric_value` DESC for
-max types, ASC for the two min types); `limit` (default 100, max 100)
-applies per type. As everywhere else, profiles with `show_on_board = 0`
-are excluded and `country_code` is `null` when `show_country = 0`.
+Metric bounds per type: `score`/`score_sniper`/`titan` ≤ **10 000** (the
+standard scoring model's maximum — tightened in v3.5.0 from the old sandbox
+value 100 000), `accuracy`-family and `tick_accuracy`-family ≤ 100,
+combo-family and note-count types ≤ 5000, golden-note types ≤ 2000 (values
+are rounded to 2 decimals). `difficulty` is informational (default
+`normal`). `xp_earned` is informational and clamped to 0…60 000 (the local
+daily system awards at most ~54k XP in one day — 365-day streak milestone
+50 000 plus bonuses). The board endpoints send
+`Cache-Control: public, max-age=30` (v3.5.0) so repeated views within half
+a minute don't re-hit MySQL. As everywhere else, profiles with
+`show_on_board = 0` are excluded and `country_code` is `null` when
+`show_country = 0`.
 
 ## Online accounts (app-only login)
 
@@ -201,26 +220,58 @@ browser cannot authenticate.
 Security properties:
 
 - Passwords stored as **bcrypt** hashes (`password_hash()`), never in clear text
-- 1 account ↔ 1 profile (both directions unique)
+- 1 account ↔ 1 profile (both directions unique; re-register with the sync_code replaces)
 - Registration requires the profile's `sync_code` (ownership proof)
 - Login responses are generic (`Invalid e-mail or password`) to prevent e-mail enumeration; unknown e-mails run through a dummy bcrypt verify so timing matches
 - Brute-force lockout: 5 consecutive failed logins lock the account for 15 minutes
 - Server rate limit (60 req/min per IP) applies on top
 
+### Recovery (v3.5.0 / R69)
+
+Every account gets a **one-time recovery code** (16 chars from an
+unambiguous 32-char alphabet, ≈80 bits of entropy — displayed as
+`XXXX-XXXX-XXXX-XXXX`). Only its bcrypt hash is stored; the code is shown
+to the user exactly once (at registration, at the first login of a legacy
+account, or after a recovery — which rotates to a fresh code).
+
 ```
 POST /auth/register  { "email": "singer@example.com", "password": "••••••••",
                        "sync_code": "AB12CD34" }
-                    → { "ok": true, "profile_uid": "uuid-v4" }
-                    409 when the e-mail or profile is already linked
+                    → { "ok": true, "profile_uid": "uuid-v4",
+                        "recovery_code": "AB2C-DE4F-GH6I-JK8M" }
+                    Re-registering a linked profile (with its sync_code)
+                    REPLACES the account — the forgot-password rescue for
+                    users who saved the sync code but neither the password
+                    nor the recovery code. Same trust level: a sync_code
+                    holder can already delete the whole profile.
 
 POST /auth/login     { "email": "singer@example.com", "password": "••••••••" }
                     → { "ok": true, "profile_uid": "uuid-v4", "sync_code": "AB12CD34" }
+                    (+ "recovery_code" exactly once for accounts created
+                     before v3.5.0 that had none stored)
                     401 invalid credentials · 429 locked (5 fails = 15 min)
+
+POST /auth/recover   { "email": "singer@example.com",
+                       "recovery_code": "AB2C-DE4F-GH6I-JK8M",
+                       "new_password": "••••••••" }
+                    → { "ok": true, "recovery_code": "NEW-CODE-…" }
+                    Sets the new password AND rotates the recovery code
+                    (single-use: the old code dies here). Same lockout /
+                    timing-equalization as login.
 
 POST /auth/password  { "email": "singer@example.com",
                        "current_password": "••••••••", "new_password": "••••••••" }
                     → { "ok": true }
 ```
+
+**Recovery matrix** (what a user can do when something is lost):
+
+| Lost | Rescue |
+|------|--------|
+| Password, recovery code saved | `POST /auth/recover` (in-app "Forgot password?" form) |
+| Password, no recovery code, but sync code | re-register via `/auth/register` (replaces the account) — in-app "Re-link account" form |
+| Sync code, but account (e-mail + password) | login returns the sync code |
+| Sync code AND no account | **not recoverable** — register a new profile (new identity); old online scores stay under the old name until manual operator deletion (GDPR: `DELETE FROM ks_profiles WHERE profile_uid = '…'` cascades everything) |
 
 After a successful login the client receives the profile's `sync_code` and
 can pull the full profile + highscores snapshot via the existing
@@ -241,4 +292,7 @@ no IP stored (rate limiting uses IPs only in temporary files, not the DB).
 ## Rate limiting
 
 60 requests/minute per IP, file-based (`sys_get_temp_dir()`), enforced in
-`config.php` for every request.
+`config.php` for every request. Since v3.5.0 the counter file is guarded
+with `flock(LOCK_EX)` — concurrent requests used to race past the limit.
+Request bodies are hard-capped at 1.5 MB (the profile-sync snapshot has its
+own tighter 1 MB limit).

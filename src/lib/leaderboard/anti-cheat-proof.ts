@@ -68,7 +68,12 @@ export interface ScoreProofPackage {
   normal_note_ticks: number;
   /** Points per tick (pre-normalized, from ScoringMetadata) */
   points_per_tick: number;
-  /** Combo multiplier for the difficulty used */
+  /**
+   * Combo multiplier reached by the player's best combo (R69: the real value
+   * from calculateComboMultiplier(maxCombo), 1–2 in steps of 0.25 — proofs
+   * built before R69 hardcoded 1). The server bounds-checks it to [1, 2];
+   * it participates in the integrity hash.
+   */
   combo_multiplier: number;
   /** Total number of singable notes in the song */
   total_notes: number;
@@ -364,6 +369,15 @@ export function verifyScorePlausibility(
   // 9. Points per tick plausibility
   if (proof.points_per_tick <= 0 || proof.points_per_tick > 100) {
     return { valid: false, reason: 'invalid_points_per_tick' };
+  }
+
+  // 9a. Combo multiplier bounds (R69, mirrored in anti-cheat.php 7b):
+  // the client's combo system scales progress from 1× (0–4 combo notes) to
+  // 2× (20+) — anything outside [1, 2] cannot occur in a real proof. Old
+  // proofs hardcoded 1; new proofs carry the multiplier the best combo
+  // actually reached (calculateComboMultiplier(maxCombo)).
+  if (proof.combo_multiplier < 1 || proof.combo_multiplier > 2) {
+    return { valid: false, reason: 'invalid_combo_multiplier' };
   }
 
   // 9b. Points per tick must be consistent with the claimed tick counts

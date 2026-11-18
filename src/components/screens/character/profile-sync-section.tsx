@@ -7,6 +7,7 @@ import { CloudUploadIcon, CloudDownloadIcon } from '@/components/icons';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile, HighscoreEntry } from '@/types/game';
+import { RecoveryCodeDialog } from './recovery-code-dialog';
 
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   const { t } = useTranslation();
@@ -134,6 +135,10 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     try {
       const { leaderboardService } = await import('@/lib/api/leaderboard-service');
       await leaderboardService.deleteProfile(profile);
+      // R69: drop any queued score submissions of this profile too —
+      // they would fail against the deleted identity forever.
+      const { clearScoreOutboxForProfile } = await import('@/lib/leaderboard/outbox');
+      clearScoreOutboxForProfile(profile.syncUid || profile.id);
       // Clear the local online linkage — the profile becomes local-only.
       updateProfile(profile.id, {
         syncCode: undefined,
@@ -157,11 +162,19 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   return (
     <div className="space-y-2">
       {profile.syncCode && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-white/50">{t('profileSync.syncCode')}</span>
-          <code className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono">
-            {profile.syncCode}
-          </code>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-white/50">{t('profileSync.syncCode')}</span>
+            <code className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono">
+              {profile.syncCode}
+            </code>
+          </div>
+          {/* R69: the sync code is the ONLY key to this online identity when
+              no account is linked — losing it means losing the online
+              profile. Make that explicit before it happens. */}
+          <p className="text-[10px] leading-relaxed text-amber-300/60">
+            ⚠️ {t('profileSync.syncCodeWarning')}
+          </p>
         </div>
       )}
 
@@ -280,23 +293,36 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
       )}
 
       {profile.authEmail && (
-        <AccountPasswordSection email={profile.authEmail} />
+        <AccountPasswordSection profile={profile} />
       )}
     </div>
   );
 }
 
-/** Change-password UI for profiles linked to an online account. */
-function AccountPasswordSection({ email }: { email: string }) {
+/** Change-password UI for profiles linked to an online account, plus the
+ *  R69 account-relink rescue (forgot password + no recovery code, but the
+ *  sync code is still at hand). */
+function AccountPasswordSection({ profile }: { profile: PlayerProfile }) {
   const { t } = useTranslation();
+  const email = profile.authEmail!;
   const [open, setOpen] = useState(false);
+  const [relinkOpen, setRelinkOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [newPwRepeat, setNewPwRepeat] = useState('');
+  // Relink form (R69): new e-mail + new password, authorized by sync_code
+  const [relinkEmail, setRelinkEmail] = useState('');
+  const [relinkPw, setRelinkPw] = useState('');
+  const [relinkPwRepeat, setRelinkPwRepeat] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isRelinking, setIsRelinking] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  /** R69: recovery code issued by a relink — shown once. */
+  const [relinkRecoveryCode, setRelinkRecoveryCode] = useState<string | null>(null);
 
   const valid = currentPw.length > 0 && newPw.length >= 8 && newPw === newPwRepeat;
+  const relinkEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(relinkEmail.trim());
+  const relinkValid = relinkEmailValid && relinkPw.length >= 8 && relinkPw === relinkPwRepeat && !!profile.syncCode;
 
   const handleChangePassword = async () => {
     if (!valid || isSaving) return;
@@ -320,8 +346,66 @@ function AccountPasswordSection({ email }: { email: string }) {
     }
   };
 
+  /**
+   * R69: account relink — the forgot-password rescue when neither the
+   * password nor the recovery code is available. registerAccount with the
+   * profile's sync_code REPLACES the linked account server-side (same
+   * trust level: the sync_code holder can delete the whole profile
+   * anyway). Returns a fresh recovery code that is shown once.
+   */
+  const handleRelink = async () => {
+    if (!relinkValid || isRelinking) return;
+    setIsRelinking(true);
+    setMsg(null);
+    try {
+      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+      const result = await leaderboardService.registerAccount({
+        profile,
+        email: relinkEmail.trim().toLowerCase(),
+        password: relinkPw,
+      });
+      if (result.ok) {
+        // Persist the new e-mail on the profile (the old one is gone).
+        const { updateProfile } = useGameStore.getState();
+        updateProfile(profile.id, { authEmail: relinkEmail.trim().toLowerCase() });
+        setRelinkEmail('');
+        setRelinkPw('');
+        setRelinkPwRepeat('');
+        if (result.recovery_code) {
+          setRelinkRecoveryCode(result.recovery_code);
+        } else {
+          setMsg({ type: 'success', text: t('profileAuth.relinkSuccess') });
+          setRelinkOpen(false);
+        }
+      } else {
+        const reason = /already registered/i.test(result.error || '')
+          ? t('profileAuth.emailTaken')
+          : t('profileAuth.relinkFailed');
+        setMsg({ type: 'error', text: reason });
+      }
+    } catch {
+      setMsg({ type: 'error', text: t('profileAuth.relinkFailed') });
+    } finally {
+      setIsRelinking(false);
+    }
+  };
+
+  if (relinkRecoveryCode) {
+    return (
+      <RecoveryCodeDialog
+        code={relinkRecoveryCode}
+        open
+        onOpenChange={() => {
+          setRelinkRecoveryCode(null);
+          setRelinkOpen(false);
+          setMsg({ type: 'success', text: t('profileAuth.relinkSuccess') });
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="pt-1">
+    <div className="pt-1 space-y-1">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -329,6 +413,85 @@ function AccountPasswordSection({ email }: { email: string }) {
       >
         🔑 {t('profileAuth.changePassword')}
       </button>
+
+      {/* R69: forgot-password rescue — replace the linked account using the
+          sync code this device still holds (requires profile.syncCode). */}
+      {!relinkOpen && profile.syncCode && (
+        <button
+          type="button"
+          onClick={() => setRelinkOpen(true)}
+          data-testid="relink-account-btn"
+          className="block text-[11px] text-amber-300/70 hover:text-amber-200 transition-colors underline underline-offset-2"
+        >
+          {t('profileAuth.forgotPassword')}
+        </button>
+      )}
+
+      {relinkOpen && (
+        <div
+          className="mt-2 space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-2.5"
+          data-testid="relink-form"
+        >
+          <p className="text-[11px] font-medium text-amber-300">{t('profileAuth.relinkTitle')}</p>
+          <p className="text-[10px] leading-relaxed text-white/50">
+            {t('profileAuth.relinkHint')}
+          </p>
+          <Input
+            type="email"
+            autoComplete="email"
+            placeholder={t('profileAuth.newEmail')}
+            value={relinkEmail}
+            onChange={(e) => setRelinkEmail(e.target.value)}
+            aria-label={t('profileAuth.newEmail')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          <Input
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('profileAuth.newPassword')}
+            value={relinkPw}
+            onChange={(e) => setRelinkPw(e.target.value)}
+            aria-label={t('profileAuth.newPassword')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          <Input
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('profileAuth.passwordRepeat')}
+            value={relinkPwRepeat}
+            onChange={(e) => setRelinkPwRepeat(e.target.value)}
+            aria-label={t('profileAuth.passwordRepeat')}
+            className="h-7 text-xs bg-white/5 border-white/10"
+          />
+          {relinkPw.length > 0 && relinkPw.length < 8 && (
+            <div className="text-[11px] text-red-400">{t('profileAuth.passwordTooShort')}</div>
+          )}
+          {relinkPw.length >= 8 && relinkPwRepeat.length > 0 && relinkPw !== relinkPwRepeat && (
+            <div className="text-[11px] text-red-400">{t('profileAuth.passwordsDontMatch')}</div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRelinkOpen(false)}
+              disabled={isRelinking}
+              className="h-7 text-xs border-white/20 text-white/70 hover:bg-white/10"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => void handleRelink()}
+              disabled={!relinkValid || isRelinking}
+              className="h-7 text-xs bg-amber-600 hover:bg-amber-500"
+              data-testid="relink-submit"
+            >
+              {isRelinking && <div className="w-3 h-3 border border-white/70 border-t-transparent rounded-full animate-spin mr-1" />}
+              {t('profileAuth.relinkButton')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {open && (
         <div className="mt-2 space-y-2 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">

@@ -16,9 +16,12 @@ import {
 } from '@/lib/game/daily-challenge';
 import type { DailySongContext } from '@/lib/game/challenge-pools';
 import { processChallengeModeResult } from '@/lib/game/challenge-mode-progress';
-import { estimatePerfectNotes, calculateScoringMetadata } from '@/lib/game/scoring';
+import { estimatePerfectNotes, calculateScoringMetadata, calculateComboMultiplier } from '@/lib/game/scoring';
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
 import { hasLeaderboardConsent, setLeaderboardConsent } from '@/lib/leaderboard/consent';
+// R69: real per-note proof chain from the scoring pass (tiny module, no
+// crypto/network — static import is deliberate).
+import { takeCollectedNoteProofs } from '@/lib/leaderboard/note-proof-collector';
 import { recordSongPlay } from '@/lib/playlist-manager';
 import { useGameStore } from '@/lib/game/store';
 import type { PlayerProfile, GameResult, Song, GameState, HighscoreEntry, Achievement } from '@/types/game';
@@ -411,8 +414,12 @@ export function usePostGameProcessing({
                 );
                 dailyXPEarned += coopResult.xpEarned;
 
-                // Online daily board: submit the team average (fire-and-forget)
-                if (onlineEnabled && profile.storageMode !== 'local') {
+                // Online daily board: submit the team average (fire-and-forget).
+                // R69: gated on the profile's leaderboard opt-in — the score
+                // upload already respected it, the daily board must too (the
+                // server would reject it anyway; don't put opt-out data on
+                // the wire in the first place).
+                if (onlineEnabled && profile.storageMode !== 'local' && (profile.privacy?.showOnLeaderboard ?? true)) {
                   const type = coopResult.challenge.type;
                   const todayISO = new Date().toISOString().slice(0, 10);
                   onlineDailySubmission = () => {
@@ -435,8 +442,8 @@ export function usePostGameProcessing({
                 const r1 = submitChallengeResult(p1, p1Result, { difficulty: dailyDifficulty, level: freshLevel, slot: dailySlot });
                 dailyXPEarned += r1.xpEarned;
 
-                // Online daily board for P1 (fire-and-forget)
-                if (onlineEnabled && profile.storageMode !== 'local') {
+                // Online daily board for P1 (fire-and-forget, R69 opt-in gate)
+                if (onlineEnabled && profile.storageMode !== 'local' && (profile.privacy?.showOnLeaderboard ?? true)) {
                   const type = r1.challenge.type;
                   const todayISO = new Date().toISOString().slice(0, 10);
                   onlineDailySubmission = () => {
@@ -743,13 +750,12 @@ export function usePostGameProcessing({
           // JSON payload carries. Two former mismatches made every score
           // "unverified":
           //  (a) difficulty: the proof hashed the raw 'medium' while the
-          //      payload carries the API form 'normal' — always map first;
+          //      payload carries the API form 'normal' — the service maps
+          //      BOTH the payload difficulty and the proof via
+          //      toApiDifficulty, so they can never diverge;
           //  (b) accuracy: a raw float (notesHit/totalNotes*100) has up to 17
           //      significant digits in JS but only 14 in PHP — round to 2
           //      decimal places BEFORE hashing AND submitting.
-          const apiDifficulty = gameState.difficulty === 'easy'
-            ? 'easy' as const
-            : gameState.difficulty === 'hard' ? 'hard' as const : 'normal' as const;
           const accuracyForUpload = Math.round(playerResult.accuracy * 100) / 100;
 
           // Real scoring metadata — MUST match what the game scored with
@@ -767,24 +773,28 @@ export function usePostGameProcessing({
           const beatDurationMs = song.bpm ? 15000 / song.bpm : 500;
           const scoringMeta = calculateScoringMetadata(metaNotes, beatDurationMs, gameState.difficulty);
 
-          // Build the anti-cheat proof dynamically to avoid bundling the
-          // module when not needed. Party modes with their own point scale
-          // (isFullScoring === false) submit without a proof — the server
-          // then stores them as unverified.
-          const buildProof = () => import('@/lib/leaderboard/anti-cheat-proof')
-            .then(({ generateProofPackage }) => {
-              if (!scoringMeta.isFullScoring) return undefined;
+          // R69: the REAL per-note proof chain from the scoring pass
+          // (run-scoring-pass → note-proof-collector). Falls back to the
+          // legacy synthetic walk only when nothing was collected (e.g. the
+          // page was reloaded between game end and the results screen).
+          const realNoteResults = takeCollectedNoteProofs();
 
+          /** Build the proof inputs for leaderboardService.submitScore — the
+           *  service generates the proof package (fresh proof_ts, so a
+           *  consent-delayed or outbox-retried upload stays valid). */
+          const buildProofInputs = ():
+            | { scoringMeta: { totalNotes: number; totalNoteTicks: number; goldenNoteTicks: number; normalNoteTicks: number; pointsPerTick: number; comboMultiplier: number }; noteResults: Array<{ noteIdx: number; ticksHit: number; totalTicks: number; isGolden: boolean; wasPerfect: boolean }> }
+            | undefined => {
+            if (!scoringMeta.isFullScoring) return undefined;
+
+            let noteResults = realNoteResults;
+            if (noteResults.length === 0) {
+              // Legacy synthetic fallback — reconstructed from the claimed
+              // sums (pre-R69 behaviour; carries no independent evidence).
               const hitNotes = playerResult.notesHit || 1;
               const missNotes = playerResult.notesMissed || 0;
               const totalNotes = hitNotes + missNotes;
-
-              // Per-note hash chain: synthetic walk over the claimed hit
-              // layout. The chain root cannot be re-verified server-side
-              // (the server never sees per-note results) — it binds the
-              // package together via the integrity hash and provides a
-              // chain length for consistency checks.
-              const noteResults: Array<{noteIdx: number; ticksHit: number; totalTicks: number; isGolden: boolean; wasPerfect: boolean}> = [];
+              noteResults = [];
               for (let i = 0; i < Math.min(totalNotes, 200); i++) {
                 noteResults.push({
                   noteIdx: i,
@@ -794,33 +804,32 @@ export function usePostGameProcessing({
                   wasPerfect: false,
                 });
               }
-              return generateProofPackage({
-                scoringMeta: {
-                  totalNotes: scoringMeta.totalNotes,
-                  totalNoteTicks: scoringMeta.totalNoteTicks,
-                  goldenNoteTicks: scoringMeta.goldenNoteTicks,
-                  normalNoteTicks: scoringMeta.normalNoteTicks,
-                  pointsPerTick: scoringMeta.pointsPerTick,
-                  comboMultiplier: 1,
-                },
-                noteResults,
-                score: playerResult.score,
-                accuracy: accuracyForUpload,
-                maxCombo: playerResult.maxCombo,
-                notesHit: playerResult.notesHit,
-                notesMissed: playerResult.notesMissed,
-                difficulty: apiDifficulty,
-                fingerprintVersion: 'v1',
-              });
-            })
-            .catch(() => undefined); // non-critical, degrade gracefully
+            }
+            return {
+              scoringMeta: {
+                totalNotes: scoringMeta.totalNotes,
+                totalNoteTicks: scoringMeta.totalNoteTicks,
+                goldenNoteTicks: scoringMeta.goldenNoteTicks,
+                normalNoteTicks: scoringMeta.normalNoteTicks,
+                pointsPerTick: scoringMeta.pointsPerTick,
+                // R69: the real multiplier the best combo reached (1–2 in
+                // steps of 0.25) instead of the hardcoded 1.
+                comboMultiplier: calculateComboMultiplier(playerResult.maxCombo),
+              },
+              noteResults,
+            };
+          };
 
           const performUpload = () => {
             setUploadStatus('uploading');
-            return Promise.all([
-              import('@/lib/api/leaderboard-service'),
-              buildProof(),
-            ]).then(([{ leaderboardService }, proof]) => {
+            // R69: give queued submissions from earlier games a chance to go
+            // out first (fire-and-forget — the server upserts by best score,
+            // the order between old and new submissions does not matter).
+            import('@/lib/leaderboard/outbox')
+              .then(({ flushScoreOutbox }) => flushScoreOutbox())
+              .catch(() => { /* non-critical */ });
+            return import('@/lib/api/leaderboard-service')
+              .then(({ leaderboardService }) => {
               // The server requires the profile's sync_code on every score
               // submission. Register once while we don't have a code and
               // persist the code the server generated — later games then
@@ -847,7 +856,7 @@ export function usePostGameProcessing({
                   rating: playerResult.rating,
                   notesHit: playerResult.notesHit,
                   notesMissed: playerResult.notesMissed,
-                  proof,
+                  proofInputs: buildProofInputs(),
                 })
               );
             })
@@ -863,7 +872,13 @@ export function usePostGameProcessing({
               })
               .catch((err) => {
                 setUploadStatus('error');
-                setUploadMessage(err.message || t('resultsScreen.uploadFailed'));
+                // R69: a failed submission is queued for retry (next game
+                // end / window focus) — say so instead of "failed".
+                if (err instanceof Error && err.name === 'OfflineQueuedError') {
+                  setUploadMessage(t('resultsScreen.uploadQueued'));
+                } else {
+                  setUploadMessage(err.message || t('resultsScreen.uploadFailed'));
+                }
               });
           };
 

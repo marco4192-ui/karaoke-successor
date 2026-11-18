@@ -28,7 +28,7 @@ function VerifiedBadge({ verified }: { verified: boolean }) {
 }
 
 // ── Compute song hash for this song (memoized per song) ──
-function useSongHash(song: Song): string | null {
+function useSongHash(song: Song, gameType: 's' | 'd'): string | null {
   const [hash, setHash] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,13 +36,13 @@ function useSongHash(song: Song): string | null {
     import('@/lib/leaderboard/song-fingerprint').then(({ songHashFromSong }) => {
       if (cancelled) return;
       try {
-        setHash(songHashFromSong(song));
+        setHash(songHashFromSong(song, gameType));
       } catch {
         setHash(null);
       }
     });
     return () => { cancelled = true; };
-  }, [song.artist, song.title, song.bpm, song.lyrics]);
+  }, [song, gameType]);
 
   return hash;
 }
@@ -51,10 +51,13 @@ export function SongHighscoreModal({
   song,
   isOpen,
   onClose,
+  gameType = 's',
 }: {
   song: Song;
   isOpen: boolean;
   onClose: () => void;
+  /** R69: 'd' shows the duet board (separate fingerprint → separate board). */
+  gameType?: 's' | 'd';
 }) {
   const { t } = useTranslation();
   const { highscores, onlineEnabled, leaderboardType, setLeaderboardType, profiles } = useGameStore();
@@ -63,7 +66,11 @@ export function SongHighscoreModal({
   const [error, setError] = useState<string | null>(null);
   const [internalTab, setInternalTab] = useState<'local' | 'global'>(leaderboardType);
 
-  const localProfileIds = useMemo(() => new Set(profiles.map(p => p.id)), [profiles]);
+  // R69: match by id AND syncUid (sync/login-imported profiles)
+  const localProfileIds = useMemo(
+    () => new Set(profiles.flatMap(p => [p.id, p.syncUid].filter(Boolean) as string[])),
+    [profiles],
+  );
 
   const localScores = useMemo(() =>
     highscores
@@ -74,7 +81,7 @@ export function SongHighscoreModal({
   );
 
   // Compute the song hash for API calls
-  const songHash = useSongHash(song);
+  const songHash = useSongHash(song, gameType);
 
   // Sync internal tab with global leaderboardType
   useEffect(() => {
@@ -87,14 +94,14 @@ export function SongHighscoreModal({
     setError(null);
 
     import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-      leaderboardService.getSongLeaderboard(songHash, 's' as const, 10)
+      leaderboardService.getSongLeaderboard(songHash, gameType, 10)
         .then((scores) => {
           setGlobalScores(scores);
         })
         .catch((err: Error) => setError(err.message || t('songHighscoreModal.failedToLoad')))
         .finally(() => setIsLoading(false));
     });
-  }, [songHash, t]);
+  }, [songHash, gameType, t]);
 
   // Load global scores when opening or switching to global tab
   useEffect(() => {

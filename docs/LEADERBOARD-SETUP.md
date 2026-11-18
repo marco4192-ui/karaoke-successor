@@ -106,7 +106,7 @@ diese haben Vorrang vor `config.local.php`).
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.4.0",...}
+→ {"name":"Karaoke Leaderboard","version":"3.5.0",...}
 ```
 
 Ein direkter Aufruf von `https://…/leaderboard-api/config.php` muss
@@ -223,12 +223,38 @@ legitim über `notes_hit` liegen (kurze Noten mit 0 getroffenen Ticks zählen
 zur Combo, aber nicht als Hit); Obergrenze ist jetzt die Gesamtnotenzahl
 des Songs (5 % Toleranz).
 
-**Server-Deployment (R67):** API-Version **3.4.0** — `index.php`,
-`anti-cheat.php` UND `config.php` neu hochladen (config.php wegen des
-Song-Hash-Regex). Alte App-Builds behalten ihr altes (kaputtes)
-Hash-Verhalten, ihre Scores bleiben unverified wie vorher bzw. scheitern
-an der Hash-Validierung; keine Migration nötig, erst neue Builds erzeugen
-verifizierbare Proofs.
+**Server-Deployment (R69):** API-Version **3.5.0** — `index.php`,
+`anti-cheat.php`, `config.php` UND die DB-Migration (unten) neu
+hochladen/ausführen. Wer noch auf ≤ 3.3.x steht, lädt einfach alle 3
+PHP-Dateien neu hoch (config.php wegen des Song-Hash-Regex). Alte
+App-Builds behalten ihr altes (kaputtes) Hash-Verhalten, ihre Scores
+bleiben unverified wie vorher; keine Migration der Daten nötig.
+
+**v3.5.0 (R69) Änderungen im Überblick:**
+- **Recovery-Codes:** `/auth/register` liefert einen einmaligen
+  Wiederherstellungs-Code (nur bcrypt-Hash in der DB, Rotation bei jedem
+  Einsatz); NEU `POST /auth/recover` (Passwort-Reset per Code);
+  `/auth/login` stellt Bestandskonten einmalig einen Code aus;
+  `/auth/register` mit `sync_code` ERSETZT ein bestehendes Konto
+  (Forgot-Password-Rettung). Migration: `ALTER TABLE ks_accounts ADD
+  COLUMN recovery_hash VARCHAR(255) NULL` (auch als Kommentar in
+  schema.sql).
+- **API-Key jetzt für JEDEN Request** (vorher nur POST/PUT) — der Client
+  sendet ihn ohnehin immer; reine Server-Härtung.
+- **Daily-Bounds verschärft:** Score-Typen ≤ 10.000 (statt 100.000),
+  XP-Deckel 60.000 (statt 100.000).
+- **played_at-Fix:** Zeitstempel aktualisiert nur noch bei neuem Bestwert.
+- **Rate-Limiter** jetzt flock(LOCK_EX)-gesichert; Request-Body-Hardcap
+  1,5 MB; Board-GETs senden `Cache-Control: public, max-age=30`.
+- **Anti-Cheat:** `combo_multiplier` wird auf [1, 2] geprüft (Client sendet
+  jetzt den echten Combo-Multiplikator statt hartkodiert 1); Chain kürzer
+  als hit+miss wird als `chain_note_mismatch` weich geflaggt (der Client
+  baut die Chain seit R69 aus ECHTEN Per-Noten-Daten des Scoring-Pass).
+- **Client (R69):** Offline-Outbox für fehlgeschlagene Score-Uploads
+  (Retry beim nächsten Spielende/Fenster-Fokus), Duet-Boards in
+  Preview+Modal (game_type 'd'), isLocal-Matching inkl. syncUid,
+  Verified-Badge auch in der Preview, Daily-Upload nur bei
+  Leaderboard-Opt-in.
 
 ### Daily-Challenge-Online-Leaderboard (neu)
 
@@ -292,17 +318,34 @@ Karaoke-App mitbringt. Ein Browser kann sich nicht anmelden.
 
 | Endpoint | Zweck |
 |----------|-------|
-| `POST /auth/register` | Konto an Profil knüpfen (benötigt `sync_code` als Eigentumsnachweis) |
-| `POST /auth/login` | E-Mail + Passwort prüfen → liefert `profile_uid` + `sync_code` |
+| `POST /auth/register` | Konto an Profil knüpfen (benötigt `sync_code` als Eigentumsnachweis) — liefert einmaligen `recovery_code`; erneuter Aufruf mit `sync_code` ERSETZT ein bestehendes Konto |
+| `POST /auth/login` | E-Mail + Passwort prüfen → liefert `profile_uid` + `sync_code` (und einmalig einen `recovery_code` für Bestandskonten) |
 | `POST /auth/password` | Passwort ändern (benötigt aktuelles Passwort) |
+| `POST /auth/recover` | Vergessenes Passwort per Wiederherstellungs-Code zurücksetzen — rotiert zu einem NEUEN Code (einmalig) |
 
 Sicherheit:
 - Passwörter als **bcrypt**-Hashes gespeichert, nie im Klartext
-- 1 Konto ↔ 1 Profil (beidseitig eindeutig)
+- 1 Konto ↔ 1 Profil (beidseitig eindeutig; Neuregistrierung mit sync_code
+  ersetzt das Konto — gleiche Trust-Ebene, der sync_code-Inhaber kann das
+  Profil ohnehin löschen)
 - Generische Fehlermeldungen (`Invalid e-mail or password`) + Dummy-Verify
-  gegen E-Mail-Enumeration
+  gegen E-Mail-Enumeration (auch bei `/auth/recover`)
 - **Brute-Force-Sperre:** 5 Fehlversuche = 15 Minuten gesperrt
 - IP-Rate-Limit (60 Req/min) greift zusätzlich
+
+#### Wiederherstellung (R69) — was tun, wenn etwas verloren geht?
+
+| Verloren | Rettung |
+|---|---|
+| Passwort, Recovery-Code vorhanden | Login-Dialog → „Passwort vergessen?" → E-Mail + Code + neues Passwort (`POST /auth/recover`) — der alte Code verfällt, ein neuer wird EINMALIG angezeigt |
+| Passwort, kein Recovery-Code, aber Sync-Code | Profileinstellungen → „Passwort vergessen?" → Konto neu verknüpfen (`/auth/register` ersetzt das Konto) |
+| Sync-Code, aber Konto vorhanden | Login liefert den Sync-Code zurück |
+| Sync-Code UND kein Konto | **nicht wiederherstellbar** — neues Profil anlegen; alte Online-Scores bleiben bis zur manuellen Löschung durch den Betreiber (DSGVO: `DELETE FROM ks_profiles WHERE profile_uid = '…'`, Cascades räumen alles ab) |
+
+Der Recovery-Code (16 Zeichen, ≈80 Bit Entropie, nur bcrypt-Hash in der DB)
+wird genau EINMAL angezeigt: bei der Registrierung, beim ersten Login eines
+Bestandskontos oder nach jedem Reset (Rotation). In der App warnt außerdem
+ein Hinweis unter dem Sync-Code, ihn zu notieren.
 
 Client-Flow: Registrierung läuft im Hintergrund nach der Profilanlage
 (Toast-Feedback); danach wird automatisch ein erster Sync-Snapshot
@@ -313,6 +356,12 @@ In den Profileinstellungen kann das Passwort jederzeit geändert werden.
 **Server-Migration (einmalig):** Tabelle `ks_accounts` anlegen — entweder
 `schema.sql` komplett neu importieren oder nur den auskommentierten
 `CREATE TABLE IF NOT EXISTS`-Block am Ende der Datei ausführen.
+Bestehende Installationen führen zusätzlich EINMAL den Recovery-Code-Migrate
+aus (auch als Kommentar in schema.sql):
+```sql
+ALTER TABLE `ks_accounts` ADD COLUMN `recovery_hash` VARCHAR(255) NULL
+  DEFAULT NULL AFTER `password_hash`;
+```
 
 ---
 

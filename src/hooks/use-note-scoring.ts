@@ -5,6 +5,10 @@ import { DIFFICULTY_SETTINGS, Note, LyricLine, Player, PitchDetectionResult } fr
 import { NoteProgress, ScoringMetadata, ComboScoringState, createComboScoringState, evaluateTick, type TickNoteKind } from '@/lib/game/scoring';
 import { isFreestyleNote } from '@/types/game';
 import { runScoringPass, BlindScoringState } from '@/lib/game/run-scoring-pass';
+// R69: real per-note proof chain for the online leaderboard. Tiny module
+// (no crypto/network) — static import is deliberate; a dynamic import per
+// completed note is not viable.
+import { beginNoteProofCollection, collectNoteProof } from '@/lib/leaderboard/note-proof-collector';
 import {
   MAX_SAMPLES_PER_NOTE,
   DEFAULT_PLAYER_SCORING_STATE,
@@ -284,6 +288,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   );
 
   // Reset scoring state
+  // Reset all scoring state (called at game start and on restarts).
+  // R69: also start a fresh proof collection — the per-note chain of the
+  // game that is ABOUT to run must not contain completions from a previous
+  // one. The entries are taken by the post-game upload (use-post-game-
+  // processing) when the results screen appears.
   const resetScoring = useCallback(() => {
     setScoreEvents([]);
     setNotePerformance(new Map());
@@ -310,6 +319,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     // Reset visual sampling
     lastVisualSampleTimeRef.current = 0;
     lastVisualSungPitchRef.current = null;
+    // R69: fresh per-note proof collection for the upcoming game
+    beginNoteProofCollection();
   }, []);
 
   // Generic function to check note hits for any player (P2, P3, P4)
@@ -470,6 +481,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
         noteProgressRef.current, lastProcessedNoteRef, 'note',
         hasPerfectOnly, hasGoldenOnly, p1ComboStateRef.current, blindState,
+        // R69: real per-note proof chain — P1 is the player whose result is
+        // uploaded to the online leaderboard (results.players[0]).
+        collectNoteProof,
       );
 
       // P1-specific: record note performance samples for visual display modes

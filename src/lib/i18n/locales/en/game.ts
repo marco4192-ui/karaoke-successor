@@ -216,6 +216,7 @@ export const gameTranslations = {
     uploadedRank: 'Uploaded! Rank #{n}',
     uploadedRankVerified: 'Uploaded! Rank #{n} (Verified)',
     uploadFailed: 'Upload failed',
+    uploadQueued: 'Offline — will be retried automatically',
     noResults: 'No results available',
     accuracyLabel: '{n}% accuracy',
     player: 'Player',

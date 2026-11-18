@@ -89,6 +89,8 @@ export const StorageKeys = {
    *  online leaderboard stores (name, color, optional country, scores).
    *  Value '1' = informed + agreed. Asked again after reset/deletion. */
   LEADERBOARD_CONSENT: 'karaoke-leaderboard-consent',
+  /** R69: queued online score submissions for retry after network failures (JSON) */
+  SCORE_OUTBOX: 'karaoke-score-outbox',
 
   // --- Daily Challenge ---
   CHALLENGE_MODE: 'karaoke-challenge-mode',

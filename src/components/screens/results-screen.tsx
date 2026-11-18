@@ -168,6 +168,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             currentPlayerRank={currentPlayerRank}
             onViewAll={() => setShowHighscoreModal(true)}
             compact
+            gameType={gameState.gameMode === 'duet' ? 'd' : 's'}
           />
         </div>
 
@@ -226,6 +227,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           song={song}
           isOpen={showHighscoreModal}
           onClose={() => setShowHighscoreModal(false)}
+          gameType={gameState.gameMode === 'duet' ? 'd' : 's'}
         />
       )}
 
