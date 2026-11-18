@@ -133,7 +133,7 @@ diese haben Vorrang vor `config.local.php`).
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.6.1",...}
+→ {"name":"Karaoke Leaderboard","version":"3.6.2",...}
 ```
 
 (Ohne `X-API-Key`-Header kommt erwartungsgemäß `401 Unauthorized` — auch das

@@ -988,3 +988,58 @@ Stage Summary:
 - Umgesetzt: Ursache bestätigt (DB_HOST=localhost → Socket → fremde MySQL-Instanz → 1045), Nutzer-Fix validiert (Run grün, /health ok:true), Falle aus SETUP.md/README/index.php-Diagnose entfernt, Vorfall im Worklog dokumentiert.
 - AKTIONEN NUTZER: index.php erneut hochladen (nur kosmetischer Diagnose-Text; optional). Sonst nichts offen.
 - Offen/Risiken: keine neuen. CI läuft wieder vollständig grün (ONNX wie R73b, Leaderboard-Check success).
+
+---
+
+Task ID: R76
+Agent: main (Z.ai Code)
+Task: Nutzer-Anfrage „ein paar Testeinträge ins Leaderboard feuern, damit ich den Gegencheck in der App machen kann" — reproduzierbarer, idempotenter, wieder entfernbarer Test-Seeder über den GitHub-Runner (Sandbox blockt netcup-Direktzugriff; gleicher Kanal wie leaderboard-check).
+
+Work Log:
+- SCRIPTS/SEED-TEST-DATA.MJS + WORKFLOW SEED-TEST-DATA.YML (workflow_dispatch, mode=seed|cleanup, concurrency-locked): feste Test-Cast 5 Profile (TEST Mia/Ben/Luca/Emma/Noah) mit deterministischen UUIDv4 (7e57e57e-…) + 12-Zeichen-Sync-Codes (TESTMIA5X7Q2 usw.) — idempotentes Re-Run (Upsert via fixem sync_code), --cleanup loescht exakt diese 5 Profile per DELETE /profiles/{uid} wieder.
+- SCORES MIT KOMPLETT GUELTIGEN PROOFS (erwartet verified=true OHNE Flags, exakt wie ein echter Client): Integrity-Hash = SHA256 ueber |-Join wie anti-cheat.php recomputeIntegrityHash; frischer proof_ts 25 s; Plausibilitaetsregeln + points_per_tick=7000/ticks aus dem exakten-Dezimal-Ticksatz {200:35,250:28,350:20,400:17.5,500:14,560:12.5}; chain_length=total_notes; combo_multiplier 1.8; KEINE Soft-Flags.
+- SYNTHETISCHE SONG-HASHES (v1:5eed…, nirgendwo in einer echten Bibliothek): Test-Spieler erscheinen auf GLOBAL/MONTH/WOCHE/DAILY, kriegen „Kronen" nur auf eigenen Synthetik-Songs — echte Song-Boards bleiben unverschmutzt. Song_hash-Falle im Vorab-Review gefixt („u" ist kein Hex → d1ce). Dazu Daily-Eintraege (score/accuracy/combo) fuer heute (UTC-Datum <= Serverdatum, keine Future-Dates) und je 1 BR-Sieg fuer Mia+Luca (Nonce Pflicht, 120-s-Intervall; erster Sieg immer gezaehlt da br_wins_at NULL).
+- VERIFIKATIONS-READS am Ende: GET global?window=all|month|week (je 5/5 Test-Spieler gefordert), GET daily (Test-Zeilen), GET crowns fuer Mia; harte In-Script-Assertions (verified, keine Flags, kein verification_note) — sonst exit 1 → CI-Run rot.
+- Run 1 (44403599938, sha 1c2ac105) SCHEITERTE mit 400 Invalid sync_code: TESTMIA/TESTBEN waren 11 Zeichen → R76-FIX (eed1c44d): alle Codes exakt 12 Zeichen + assertValidSyncCode-Guard (fail-fast lokal statt CI-Run verbrennen). Run 2 (44403774652): Profil-Registrierung ok, dann „Database error" (vager Catch-All-Text) im Score-Pfad → R77.
+
+Stage Summary:
+- Umgesetzt: Seeder + Workflow, feste Cast, vollgueltige Proofs, Daily+BR, Cleanup-Modus, Verifikations-Reads mit Assertions. Lint 0 Errors.
+- Offen: Run 2 zeigte „Database error" ohne Detail → Diagnose R77 (Catch-All exakte Meldung + Redeploy noetig).
+
+---
+
+Task ID: R77
+Agent: main (Z.ai Code)
+Task: Seed-Run 2 scheiterte mit vagem „Database error" im POST-/scores-Pfad — Diagnose-Infrastruktur, damit der naechste Lauf die exakte Ursache liefert.
+
+Work Log:
+- CATCH-ALL (444b1ac5): „Database error" allein machte Fresh-Install-Fehler der Schreib-Pipeline undiagnosierbar — der Catch-All nennt jetzt die exakte PDO-Meldung (hinter dem X-API-Key); jede Engine-Fehlermeldung (1064/1449/1370/42S22 …) ist damit eindeutig lesbar.
+- /HEALTH-PROBE „proc_call": CALL sp_refresh_profile_stats mit nicht-matchender UUID (00000000-0000-4000-8000-000000000000; UPDATE betrifft 0 Zeilen, harmlos). Grund: information_schema beweist nur EXISTENZ einer Routine, nicht Ausfuehrbarkeit — DEFINER-/EXECUTE-Fehler (1449/1370) wuerden sonst jeden Score-Upload 500en lassen, ohne dass /health es sieht.
+- Run-2-Analyse: Sync-Codes ok (Fix R76-fix), Profil-Registrierung ok (Schreib-Pipeline an sich funktionerte: ks_profiles-INSERT + Nonce-INSERT kamen durch), dann Database error im Score-Pfad — Verdacht: Stored Procedure. Warte auf Redeploy von index.php, dann Seed-Run 3 mit exakter Meldung.
+- Redeploy durch Nutzer bestaetigt („steht alles") → Seed-Run 3 siehe R78.
+
+Stage Summary:
+- Umgesetzt: Exakte PDO-Meldung im Catch-All, proc_call-Schreibpfad-Probe in /health, Run-Historie dokumentiert (Run 1: 400 sync_code; Run 2: vages Database error).
+- AKTIONEN NUTZER: index.php (v3.6.1+R77) hochladen — erledigt per „steht alles".
+- Offen: Seed-Run 3 — brachte die exakte Meldung, Auswertung in R78.
+
+---
+
+Task ID: R78
+Agent: main (Z.ai Code)
+Task: Nutzer-Bestaetigung „Okay, steht alles." (index.php v3.6.1+R77 redeployt) → Seed-Run 3 anstossen, exakte PDO-Meldung auswerten, Root Cause fixen.
+
+Work Log:
+- SEED-RUN 3 (44405340612, sha 444b1ac5, getriggert per workflow_dispatch-API; Logs ueber GitHub-API): Profil TEST Mia ok, dann POST /scores → 500 mit der EXAKTEN Meldung: „SQLSTATE[42000] 1064 … near '// R69: played_at marks when this score value was achieved — only' at line 13".
+- ROOT CAUSE (CODE-BUG, kein Serverproblem): In index.php sass SEIT R69 ein PHP-'//'-Kommentar INNERHALB des doppelquotierten SQL-Strings des Score-Upserts (ON-DUPLICATE-KEY-UPDATE-Zweig, Zeilen 461/462). In PHP-Anfuehrungszeichen ist '//' literaler Text — MySQL kennt '//' NICHT als Kommentar (nur '-- ', '#', '/* */') → 1064 beim Parsen, bevor irgendetwas geschrieben wird. Das Statement war seit R69 syntaktisch tot; auffallen konnte es erst jetzt, weil der R76-Seeder der ERSTE End-to-End-POST-/scores-Test gegen die Live-DB ist (CI pruefte bisher nur GET-Pfade; alte DB-Daten stammten aus Zeiten vor R69-Deploy bzw. existieren nach dem Rebuild nicht mehr).
+- FIX: Kommentar aus dem String entfernt, als PHP-Kommentar ueber das Statement dokumentiert (+ R78-NOTE am Fundort mit der Bugklassen-Regel „PHP-Kommentare nie im SQL-String").
+- BUGKLASSEN-SCAN (State-Machine mit Kommentar-Handling — Quote-in-Kommentar-Phantomstrings ausgeschlossen): alle 4 PHP-Dateien auf '//' in String-Literalen gescannt. ERGEBNIS: genau 1 weiterer Treffer = /health-fixes[]-HINWEISTEXT „DELIMITER // …" (Diagnose-Message fuer den Admin, wird nie an MySQL geschickt) — harmlos, bleibt. Kein zweiter SQL-Fall.
+- WRITE-PFADE STATISCH GEGEN SCHEMA.SQL VERIFIZIERT (jeder weitere Fund haette einen weiteren Nutzer-Redeploy gekostet): submitDaily-INSERT-Spalten (6/6) + ON-DUP-VALUES()-Sequenz; play_log-INSERT-Spalten + difficulty-Validierung easy|normal|hard passend zum ENUM (kein very_hard-Leak in play_log); br_wins/br_wins_at auf ks_profiles vorhanden; consumeNonce CHAR(32) single-column; Prozedur OHNE DEFINER-Klausel (1449 unwahrscheinlich); Upsert-16-Spalten/16-Placeholder/16-Execute-Params.
+- VERSION 3.6.1→3.6.2 (/info + /health): Redeploy-Beweis. Seeder verlangt v3.6.2 hart (fail-fast mit klarer Meldung „Redeploy vergessen?" statt spaeter 1064-Raetselraten — Bug-nicht-gefixt vs. Redeploy-fehlt sind damit unterscheidbar) + /health-Preflight (soft, proc_call + problems wird geloggt, aeltere Server ueberspringen).
+- DB-ZUSTAND nach den 3 Fehllaufen: nur Mias Profil-Row existiert (Upsert starb beim PARSEN — nichts geschrieben; Nonces wurden zwar verbraucht, sind aber frisch pro Run). Kein Konflikt-Risiko fuer Run 4.
+- VERIFIKATION: node --checkSeeder OK; Balance-Check (State-Machine, nur Code-State) index/anti-cheat/config OK; Scan siehe oben; Doku (SETUP.md Funktionscheck-Beispiel, README v3.6.2-Block) aktualisiert.
+
+Stage Summary:
+- Umgesetzt: Root Cause beseitigt (// im SQL-String, R69), Bugklasse komplett gescannt (1 Treffer, 1 harmlos), alle Write-Pfade statisch gegen Schema verifiziert, Version-Bump als Redeploy-Beweis, Seeder-Preflight verstaerkt, Doku + Worklog (R76/R77 nachgetragen, R78).
+- AKTIONEN NUTZER: index.php (v3.6.2) noch EINMAL hochladen (einzige geaenderte PHP-Datei) — danach Seed-Run 4 (wird automatisch /health proc_call mitliefern).
+- Offen/Risiken: (a) proc_call bliebe als Restrisiko (1449/1370) — /health-Preflight im selben Lauf zeigt es dann mit Fix-Hinweis; (b) 2 vorbestehende Test-Fehler (R64-Liste) unverändert.

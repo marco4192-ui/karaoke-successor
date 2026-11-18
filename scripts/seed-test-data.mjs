@@ -183,6 +183,26 @@ async function main() {
   for (const p of CAST) assertValidSyncCode(p.syncCode); // fail fast, not in CI
   const info = await api('GET', '/info');
   console.log(`Server: ${info.name} v${info.version}`);
+  if (info.version !== '3.6.2') {
+    console.error(`  !! expected server v3.6.2 (R78 upsert fix) — index.php redeploy missing?`);
+    process.exit(1);
+  }
+
+  // Preflight (R78): /health exercises the write path's stored procedure
+  // (proc_call). Non-fatal — soft fetch, an older server just skips it.
+  try {
+    const res = await fetch(`${BASE}/health`, { headers: { 'X-API-Key': KEY } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const h = await res.json();
+    const q = h.queries ?? {};
+    const proc = q.proc_call
+      ? (q.proc_call.ok ? 'ok' : `FAIL: ${q.proc_call.error}`)
+      : 'absent (pre-R77 server)';
+    console.log(`  /health v${h.api_version}: ok=${h.ok}, proc_call=${proc}`);
+    for (const p of h.problems ?? []) console.log(`    problem: ${p}`);
+  } catch {
+    console.log('  /health unavailable (older server) — skipping preflight');
+  }
 
   if (CLEANUP) {
     for (const p of CAST) {

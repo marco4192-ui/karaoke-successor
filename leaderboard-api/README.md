@@ -191,6 +191,15 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   word-boundary matching) with HTTP 422. Extend at runtime via the
   `KS_NAME_BLOCKLIST` env var (comma-separated) — no code change needed.
 
+**v3.6.2 (R78) fix:**
+- **`POST /scores` upsert repaired**: since R69 a PHP `//` comment sat
+  INSIDE the SQL string of the upsert statement. MySQL has no `//`
+  comments (only `-- `, `#`, `/* */`), so the statement failed with
+  error 1064 and every score upload answered HTTP 500. The comment now
+  lives outside the string (PHP comment above the statement). Detected
+  by the first end-to-end seed run once the exact PDO message was
+  exposed by the catch-all.
+
 **v3.6.1 (R74) additions:**
 - **`GET /health`** — one-shot deployment diagnostics behind the API key.
   Checks the DB connection (with the connected database name — catches a

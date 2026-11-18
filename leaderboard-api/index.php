@@ -9,12 +9,19 @@
  * registration). The sync_code also unlocks the profile sync backup and
  * profile deletion.
  *
+ * v3.6.2 (R78): POST /scores upsert repaired — since R69 a PHP '//' comment
+ *   sat INSIDE the SQL string; MySQL has no '//' comments, so the statement
+ *   failed with 1064 and every score upload answered 500. Caught by the
+ *   first end-to-end seed run (R76 seeder) once the exact PDO message was
+ *   exposed (R77 catch-all).
  * v3.6.1 (R74): GET /health — deployment diagnostics behind the API key
  *   (DB connect, 7 tables + required columns incl. fix-ALTERs, stored
  *   procedure, live board queries with the exact PDO error). Window-board
  *   GROUP BY widened to the joined ks_profiles columns — MariaDB does not
  *   detect functional dependencies across joins, so the previous
  *   `GROUP BY l.profile_uid` alone could fail with ONLY_FULL_GROUP_BY.
+ * v3.6.1+R77: the PDO catch-all reports the exact driver message (behind
+ *   the X-API-Key); /health gained the proc_call write-path probe.
  *
  * Endpoints:
  *   GET    /                          API info
@@ -77,7 +84,7 @@ $T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.1', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.2', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'health'      => apiHealth($T_PROFILES, $T_SCORES, $T_DAILY, $T_ACCOUNTS, $T_PLAYLOG, $T_NONCES),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
@@ -445,7 +452,14 @@ function submitScore(string $TP, string $TS, string $TL, string $TN): void {
     $existingScore = $cur->fetchColumn();
     $isNewBest = ($existingScore === false) || ($score > (int)$existingScore);
 
-    // UPSERT: keep higher score
+    // UPSERT: keep higher score. R69: `played_at` marks when this score
+    // value was achieved — only bump it when the submission became the
+    // new best.
+    // R78 NOTE: this explanation used to sit INSIDE the SQL string as
+    // '// ...' lines — MySQL has no '//' comments (only '-- ', '#',
+    // '/* */'), so the whole upsert died with 1064 and every POST /scores
+    // 500ed since R69. PHP comments must never live inside a quoted SQL
+    // string; they now stay outside, above the statement.
     $sql = "INSERT INTO `$TS`
         (`profile_uid`,`song_hash`,`song_hash_v2`,`game_type`,`score`,`max_score`,`accuracy`,`max_combo`,`difficulty`,`rating`,`notes_hit`,`notes_missed`,`verified`,`ac_flags`,`ac_reject_reason`,`fingerprint_version`)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -458,8 +472,6 @@ function submitScore(string $TP, string $TS, string $TL, string $TN): void {
             `rating`       = IF(VALUES(`score`) > `score`, VALUES(`rating`), `rating`),
             `notes_hit`    = IF(VALUES(`score`) > `score`, VALUES(`notes_hit`), `notes_hit`),
             `notes_missed` = IF(VALUES(`score`) > `score`, VALUES(`notes_missed`), `notes_missed`),
-            // R69: played_at marks when this score value was achieved — only
-            // bump it when the submission actually became the new best.
             `played_at`    = IF(VALUES(`score`) > `score`, CURRENT_TIMESTAMP, `played_at`),
             `verified`     = IF(VALUES(`score`) > `score`, VALUES(`verified`), `verified`),
             `ac_flags`     = IF(VALUES(`score`) > `score`, VALUES(`ac_flags`), `ac_flags`),
@@ -1073,7 +1085,7 @@ function routeBr(string $method, string $TP): void {
  */
 function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, string $TN): void {
     header('Cache-Control: no-store');
-    $version = '3.6.1';
+    $version = '3.6.2';
     $problems = [];
     $fixes    = [];
 
