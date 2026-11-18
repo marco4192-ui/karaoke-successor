@@ -56,6 +56,15 @@ async function api(method, path, body) {
 const hex = (n) => randomBytes(n).toString('hex');
 const nowSec = () => Math.floor(Date.now() / 1000);
 
+// Guard: the server accepts exactly 8 or 12 chars A-Z0-9 — fail fast
+// locally instead of burning a CI run on a 400 (happened with an 11-char
+// code in the first attempt).
+function assertValidSyncCode(code) {
+  if (!/^[A-Z0-9]{8}$|^[A-Z0-9]{12}$/.test(code)) {
+    throw new Error(`sync_code '${code}' is not 8/12 chars A-Z0-9`);
+  }
+}
+
 /**
  * Build a complete, valid anti-cheat proof for one score row.
  * tick model: golden songs distribute 70% of 10 000 over the ticks,
@@ -106,7 +115,7 @@ function buildProof({ ticks, golden, notes, hit, miss, combo, score, acc, diff }
 const CAST = [
   {
     uid: '7e57e57e-7e57-4e57-8e57-7e57e57e0001',
-    syncCode: 'TESTMIA7A2B',
+    syncCode: 'TESTMIA5X7Q2',
     name: 'TEST Mia', color: '#FF6B9D', country: 'DE',
     scores: [
       { song: 'v1:5eed5eed5eed5eed', gt: 's', ticks: 400, golden: 100, notes: 180, hit: 172, miss: 8, combo: 155, score: 9250, acc: 94.5, diff: 'normal' },
@@ -121,7 +130,7 @@ const CAST = [
   },
   {
     uid: '7e57e57e-7e57-4e57-8e57-7e57e57e0002',
-    syncCode: 'TESTBEN3C4D',
+    syncCode: 'TESTBEN8W3Y4',
     name: 'TEST Ben', color: '#4ECDC4', country: 'AT',
     scores: [
       { song: 'v1:beef-beef-beef77', gt: 's', ticks: 250, golden: 60, notes: 120, hit: 110, miss: 10, combo: 105, score: 7800, acc: 88.75, diff: 'normal' },
@@ -171,6 +180,7 @@ const CAST = [
 
 async function main() {
   console.log(`Leaderboard test seeder — ${BASE} — mode: ${CLEANUP ? 'CLEANUP' : 'SEED'}`);
+  for (const p of CAST) assertValidSyncCode(p.syncCode); // fail fast, not in CI
   const info = await api('GET', '/info');
   console.log(`Server: ${info.name} v${info.version}`);
 
