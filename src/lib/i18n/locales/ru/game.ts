@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Ваш профиль',
   top100: 'Top 100',
   noSearchResults: 'Игроки по вашему запросу не найдены',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Обновить',
+  refreshTitle: 'Перезагрузить онлайн-таблицы с сервера',
+  lastUpdated: 'Обновлено: {time}',
+  rateLimitWait: 'Достигнут лимит сервера — загрузка автоматически продолжится через мгновение…',
 },
 keyboardShortcuts: {
   esc: 'Пауза / Назад / Выход',

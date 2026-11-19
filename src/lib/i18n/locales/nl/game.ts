@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Je profiel',
   top100: 'Top 100',
   noSearchResults: 'Geen spelers gevonden die aan je zoekopdracht voldoen',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Vernieuwen',
+  refreshTitle: 'Laad de online borden opnieuw van de server',
+  lastUpdated: 'Bijgewerkt: {time}',
+  rateLimitWait: 'Serverlimiet bereikt — het laden gaat automatisch zo verder…',
 },
 keyboardShortcuts: {
   esc: 'Pauzeren / Terug / Afsluiten',

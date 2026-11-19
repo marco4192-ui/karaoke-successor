@@ -2,6 +2,7 @@
 
 /**
  * R81 — Highscores, rebuilt as SONG-based boards.
+ * R84 — Online boards: session-stable, ONE burst, client-side chips.
  *
  * Both tabs list SONGS (rows = library songs; only songs that exist in the
  * local library are eligible — the board can never be inflated with fake
@@ -19,6 +20,19 @@
  * box matching song title, artist or ANY player name on that song's board.
  * Clicking a row opens the SongHighscoreModal drill-down.
  *
+ * R84 (user points 3+4 — rate-limit stability + session cache):
+ *  • The boards live in a MODULE-level session cache (board-cache.ts) —
+ *    navigating away and back no longer re-fetches everything.
+ *  • ONE burst per session: fetched with difficulty='all' + per_difficulty=1
+ *    (server v3.7.2) the boards contain every player's best PER difficulty,
+ *    so the difficulty chips filter CLIENT-side — chip switching costs zero
+ *    requests. Old servers fall back to per-difficulty fetches automatically.
+ *  • Duets: only duet-capable songs get a 'd' board fetch (a solo song can
+ *    never hold duet scores) — roughly halves the request count.
+ *  • Chunks run in ONE sequential queue, paced, with 429 backoff+retry —
+ *    even a huge library loads completely on a strict limiter.
+ *  • Manual refresh button + "last updated" label next to the chips.
+ *
  * Removed with the rebuild: time windows, sorts, total-players, own-rank
  * banner, no-rounds banner, BR chips, All/My-scores filter, the
  * ranking-titles card and the per-row rival toggle (the rival BAR stays —
@@ -26,7 +40,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Angry } from 'lucide-react';
+import { Angry, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,9 +52,18 @@ import type { Song, HighscoreEntry, Difficulty } from '@/types/game';
 import { CountryFlagImage } from '@/components/screens/character/country-picker';
 import type { OnlineScoreEntry, BatchScoresResponse } from '@/lib/leaderboard/types';
 import type { RivalEntry } from '@/lib/leaderboard/rivals';
-import { getAllSongs, filterSongsByMotto } from '@/lib/game/song-library';
+import {
+  boardCacheKey,
+  getCachedGlobalBoards,
+  setCachedGlobalBoards,
+  clearGlobalBoardCache,
+  type GlobalBoardSnapshot,
+  type BoardDifficulty,
+} from '@/lib/leaderboard/board-cache';
+import { getAllSongs, filterSongsByMotto, getLibraryVersion } from '@/lib/game/song-library';
 import { songHashFromSong } from '@/lib/leaderboard/song-fingerprint';
 import { isPartyGameMode } from '@/lib/game/party-modes';
+import { isDuetSong } from '@/components/screens/library/utils';
 import { useMottoParty } from '@/hooks/use-motto-party';
 import type { MottoPartyConfig } from '@/lib/game/motto-party';
 import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
@@ -48,14 +71,25 @@ import { RivalCompareDialog } from './rival-compare-dialog';
 
 // ── Constants & helpers ──────────────────────────────────
 
-/** Difficulty chips — API naming ('normal'; the internal 'medium' maps to it). */
+/** Difficulty chips — API naming ('normal'; the internal 'medium' maps to it).
+ * The chip values are the BoardDifficulty type imported from board-cache. */
 const BOARD_DIFFICULTIES = ['all', 'easy', 'normal', 'hard'] as const;
-type BoardDifficulty = (typeof BOARD_DIFFICULTIES)[number];
 
 /** fetchBatchScores accepts at most 200 hashes per call — chunk the library. */
 const BATCH_HASH_CHUNK_SIZE = 200;
-/** Entries requested per song hash (server dedupes per player). */
-const BATCH_SCORE_LIMIT = 2000;
+/** Entries requested per song hash (server dedupes per player+difficulty).
+ * R84: raised 2000 → 6000 — the per_difficulty boards hold up to 3 rows per
+ * player per song, and the LIMIT applies across the whole 200-hash chunk
+ * (server caps at 10000). */
+const BATCH_SCORE_LIMIT = 6000;
+/** R84: pause between consecutive batch chunks (ms) — keeps the request rate
+ * friendly to the shared-hosting limiter (120/min). */
+const CHUNK_PACE_MS = 120;
+/** R84: backoff after a 429 before retrying the chunk (ms) — the limiter is
+ * a 60-second sliding window; 20s usually frees enough budget. */
+const RATE_LIMIT_BACKOFF_MS = 20_000;
+/** R84: chunk retries on 429 before the load fails for good. */
+const RATE_LIMIT_RETRIES = 2;
 /** Display cap for both boards. */
 const MAX_ROWS = 100;
 
@@ -108,7 +142,7 @@ function CountryFlag({ code, show }: { code: string | null | undefined; show: bo
   if (!code || !show) return null;
   return (
     <span className="inline-flex items-center ml-1" title={code}>
-      <CountryFlagImage code={code} className="h-3.5 w-5" />
+      <CountryFlagImage code={code} className="h-4 w-6 md:h-5 md:w-7" />
     </span>
   );
 }
@@ -159,8 +193,8 @@ function CoverThumb({ song }: { song: Song }) {
 
   if (!src || broken) {
     return (
-      <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-purple-600/60 to-cyan-600/60 flex items-center justify-center shrink-0" aria-hidden>
-        <MusicIcon className="w-5 h-5 text-white/50" />
+      <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl bg-gradient-to-br from-purple-600/60 to-cyan-600/60 flex items-center justify-center shrink-0" aria-hidden>
+        <MusicIcon className="w-7 h-7 md:w-9 md:h-9 text-white/50" />
       </div>
     );
   }
@@ -169,7 +203,7 @@ function CoverThumb({ song }: { song: Song }) {
       src={src}
       alt=""
       onError={() => setBroken(true)}
-      className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shrink-0 border border-white/10"
+      className="w-14 h-14 md:w-20 md:h-20 rounded-xl object-cover shrink-0 border border-white/10 shadow-lg shadow-black/30"
       loading="lazy"
     />
   );
@@ -219,61 +253,67 @@ function SongBoardRow({
       tabIndex={0}
       className={`bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer text-left w-full ${rank < 3 ? 'border-l-4' : ''} ${rank === 0 ? 'border-l-yellow-400' : rank === 1 ? 'border-l-gray-300' : rank === 2 ? 'border-l-orange-400' : ''} ${isOwn ? 'ring-1 ring-cyan-500/40 bg-cyan-500/5' : ''}`}
     >
-      <CardContent className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
+      {/* R84/E (user point 5): the row uses the width properly — bigger medal,
+          cover and avatar, the best player's identity sits right before the
+          score block (fills the ~half-screen gap the old layout left empty). */}
+      <CardContent className="p-3 md:p-5 flex items-center gap-3 md:gap-5">
         {/* Rank medal */}
-        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 ${rank === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-black' : rank === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-black' : rank === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-black' : 'bg-white/10 text-white/60'}`}>
+        <div className={`w-11 h-11 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-lg md:text-2xl flex-shrink-0 ${rank === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-black shadow-lg shadow-yellow-500/20' : rank === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-black' : rank === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-black' : 'bg-white/10 text-white/60'}`}>
           {rank === 0 ? '👑' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `#${rank + 1}`}
         </div>
 
         {/* Song cover (R83/E — visual anchor next to title/artist) */}
         <CoverThumb song={row.song} />
 
-        {/* Best entry's player */}
-        <div
-          className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: playerColor }}
-          title={playerName}
-        >
-          {playerAvatar ? (
-            <img src={playerAvatar} alt={playerName} className="w-full h-full object-cover" />
-          ) : (
-            (playerName?.[0] || '?').toUpperCase()
-          )}
-        </div>
-
         {/* Song */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="font-semibold text-white truncate max-w-full">{row.song.title}</span>
-            <Badge variant="outline" className={`text-xs shrink-0 ${difficulty === 'easy' ? 'border-green-500 text-green-400' : difficulty === 'normal' ? 'border-yellow-500 text-yellow-400' : 'border-red-500 text-red-400'}`}>
+            <span className="font-bold text-base md:text-xl text-white truncate max-w-full">{row.song.title}</span>
+            <Badge variant="outline" className={`text-xs md:text-sm shrink-0 ${difficulty === 'easy' ? 'border-green-500 text-green-400' : difficulty === 'normal' ? 'border-yellow-500 text-yellow-400' : 'border-red-500 text-red-400'}`}>
               {t(`songHighscoreModal.difficulty_${difficulty}`)}
             </Badge>
             {isOnline && (
-              <Badge variant="outline" className={`text-[10px] shrink-0 ${gameType === 'd' ? 'border-purple-500/60 text-purple-300' : 'border-cyan-500/60 text-cyan-300'}`}>
+              <Badge variant="outline" className={`text-[10px] md:text-xs shrink-0 ${gameType === 'd' ? 'border-purple-500/60 text-purple-300' : 'border-cyan-500/60 text-cyan-300'}`}>
                 {gameType === 'd' ? t('highscoreScreen.duoTag') : t('highscoreScreen.soloTag')}
               </Badge>
             )}
             {isOwn && (
-              <Badge variant="outline" className="text-[10px] border-cyan-500/50 text-cyan-400 shrink-0">
+              <Badge variant="outline" className="text-[10px] md:text-xs border-cyan-500/50 text-cyan-400 shrink-0">
                 {t('highscoreScreen.localHighlight')}
               </Badge>
             )}
             {isOnline && <CountryFlag code={countryCode} show={!!countryCode} />}
             {verified && <VerifiedBadge verified />}
           </div>
-          <p className="text-sm text-white/60 truncate">{row.song.artist}</p>
-          <p className="text-xs text-white/40 truncate">{playerName}</p>
+          <p className="text-sm md:text-base text-white/60 truncate">{row.song.artist}</p>
+        </div>
+
+        {/* Best entry's player — moved NEXT TO the score (R84/E): the old
+            layout clustered avatar+cover+initial on the left and left the
+            entire middle of the wide row empty. */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0 min-w-0" title={playerName}>
+          <div
+            className="w-11 h-11 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white font-bold text-base md:text-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/10"
+            style={{ backgroundColor: playerColor }}
+          >
+            {playerAvatar ? (
+              <img src={playerAvatar} alt={playerName} className="w-full h-full object-cover" />
+            ) : (
+              (playerName?.[0] || '?').toUpperCase()
+            )}
+          </div>
+          <span className="text-[10px] md:text-xs text-white/60 max-w-16 md:max-w-24 truncate">{playerName}</span>
         </div>
 
         {/* Headline: the song's best score */}
         <div className="text-right flex-shrink-0">
-          <div className="text-xl md:text-2xl font-bold text-cyan-400" data-testid="entry-headline">
+          <div className="text-xl md:text-4xl font-bold text-cyan-400 leading-tight" data-testid="entry-headline">
             {score.toLocaleString()}
           </div>
-          <div className="text-xs text-white/40">{t('highscoreScreen.bestOf')}</div>
-          <div className="text-sm text-white/60">{t('highscoreScreen.accuracyLabel').replace('{n}', accuracy.toFixed(1))}</div>
+          <div className="text-xs md:text-sm text-white/40">{t('highscoreScreen.bestOf')}</div>
+          <div className="text-sm md:text-base text-white/60">{t('highscoreScreen.accuracyLabel').replace('{n}', accuracy.toFixed(1))}</div>
           {maxCombo != null && (
-            <div className="text-xs text-white/40">{t('highscoreScreen.maxComboLabel').replace('{n}', String(maxCombo))}</div>
+            <div className="text-xs md:text-sm text-white/40">{t('highscoreScreen.maxComboLabel').replace('{n}', String(maxCombo))}</div>
           )}
         </div>
       </CardContent>
@@ -302,17 +342,24 @@ export function HighscoreScreen() {
 
   // ── Global board state ──
   const [globalBoards, setGlobalBoards] = useState<{ s: BatchScoresResponse; d: BatchScoresResponse } | null>(null);
+  /** R84: does the current boards data cover every difficulty (per_difficulty
+   *  fetch, server v3.7.2+)? Then the chips filter client-side. */
+  const [globalPerDiff, setGlobalPerDiff] = useState(false);
+  /** R84: when the boards were fetched — "last updated" label. */
+  const [globalFetchedAt, setGlobalFetchedAt] = useState<number | null>(null);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
+  /** R84: chunk progress while loading (null = not loading a burst). */
+  const [globalProgress, setGlobalProgress] = useState<{ done: number; total: number; retrying: boolean } | null>(null);
 
-  // R83/D: per-difficulty board cache — switching back to a previously
-  // loaded difficulty shows the cached boards INSTANTLY with zero requests
-  // (the raw "Rate limit exceeded" the user saw came from re-fetching every
-  // 200-hash chunk on EACH difficulty switch; the server allows 60 req/min).
-  const globalBoardCache = useRef<Map<BoardDifficulty, { s: BatchScoresResponse; d: BatchScoresResponse }>>(new Map());
-  // R83/D: debounce rapid difficulty switches — clicking through the chips
-  // fires ONE fetch burst for the finally-selected difficulty.
+  // R84: the boards live in the MODULE-level session cache (board-cache.ts)
+  // — they survive navigating away from the Highscores screen. The old
+  // in-component useRef cache died with the component: every revisit
+  // re-fetched every 200-hash chunk and tripped the rate limiter.
+  //
+  // R83/D (kept): debounce rapid difficulty switches — chip surfing fires
+  // ONE fetch burst for the finally-selected difficulty (legacy servers).
   const globalFetchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Drill-down: per-song highscore modal ──
@@ -403,7 +450,13 @@ export function HighscoreScreen() {
       let s: string | null = null;
       let d: string | null = null;
       try { s = songHashFromSong(song, 's'); } catch { /* song without notes — no fingerprint */ }
-      try { d = songHashFromSong(song, 'd'); } catch { /* song without notes — no fingerprint */ }
+      // R84: only duet-capable songs can EVER hold duet scores — the song
+      // start modal auto-resets duet mode on non-duet songs, so a solo song's
+      // 'd' board is always empty. Skipping those hashes roughly halves the
+      // request count (most libraries are mostly solo songs).
+      if (isDuetSong(song)) {
+        try { d = songHashFromSong(song, 'd'); } catch { /* no fingerprint */ }
+      }
       bySong.set(song.id, { s, d });
       if (s) sHashes.push(s);
       if (d) dHashes.push(d);
@@ -412,62 +465,120 @@ export function HighscoreScreen() {
   }, [needGlobalHashes, themeSongs]);
 
   // ── Global fetch: solo + duet boards of every (theme-filtered) song ──
-  // R83/D: cached difficulties resolve instantly (no fetch, no spinner);
-  // uncached ones debounce 400 ms so chip-surfing coalesces into one burst.
+  // R84: ONE burst per session. The boards live in the module-level session
+  // cache (survives screen switches); a per_difficulty fetch (server v3.7.2+)
+  // answers EVERY difficulty chip via client-side filtering, so chip switches
+  // cost zero requests. Legacy servers (< v3.7.2, per_difficulty not echoed)
+  // keep the R83/D behaviour: one cached fetch per difficulty.
   useEffect(() => {
     if (!onlineEnabled || leaderboardType !== 'global' || !hashPlan) return;
     const { sHashes, dHashes } = hashPlan;
     if (sHashes.length === 0 && dHashes.length === 0) {
       // Nothing eligible (empty library or the theme party filters every song out).
       setGlobalBoards({ s: {}, d: {} });
+      setGlobalPerDiff(true);
+      setGlobalFetchedAt(Date.now());
       setIsLoadingGlobal(false);
       setGlobalError(null);
+      setGlobalProgress(null);
       return;
     }
 
-    // Cached boards for this difficulty → show immediately, no requests.
-    const cached = globalBoardCache.current.get(difficulty);
+    // Session cache hit → serve instantly (no fetch, no spinner). A
+    // per_difficulty snapshot answers every chip; a legacy one only the
+    // difficulty it was fetched for.
+    const cacheKey = boardCacheKey(getLibraryVersion(), mottoKey);
+    const cached = getCachedGlobalBoards(cacheKey, difficulty);
     if (cached) {
-      setGlobalBoards(cached);
+      setGlobalBoards({ s: cached.s, d: cached.d });
+      setGlobalPerDiff(cached.perDifficulty);
+      setGlobalFetchedAt(cached.fetchedAt);
       setIsLoadingGlobal(false);
       setGlobalError(null);
+      setGlobalProgress(null);
       return;
     }
 
     let cancelled = false;
     setIsLoadingGlobal(true);
     setGlobalError(null);
+    setGlobalProgress({ done: 0, total: 0, retrying: false });
 
     if (globalFetchDebounce.current) clearTimeout(globalFetchDebounce.current);
     globalFetchDebounce.current = setTimeout(() => {
       if (cancelled) return;
       import('@/lib/api/leaderboard-service')
         .then(async ({ leaderboardService }) => {
-          // ≤200 hashes per call — chunk the library, merge the per-hash boards.
-          const fetchBoard = async (hashes: string[], gameType: 's' | 'd'): Promise<BatchScoresResponse> => {
-            const merged: BatchScoresResponse = {};
-            for (const part of chunk(hashes, BATCH_HASH_CHUNK_SIZE)) {
-              Object.assign(merged, await leaderboardService.fetchBatchScores(part, gameType, BATCH_SCORE_LIMIT, difficulty));
+          // R84: ONE sequential chunk queue (solo chunks, then duet chunks),
+          // paced — the old Promise.all(solo, duet) ran both chunk chains in
+          // parallel. Sequential + pacing keeps the request rate low for the
+          // shared-hosting limiter.
+          const parts: Array<{ hashes: string[]; gameType: 's' | 'd' }> = [
+            ...chunk(sHashes, BATCH_HASH_CHUNK_SIZE).map(hashes => ({ hashes, gameType: 's' as const })),
+            ...chunk(dHashes, BATCH_HASH_CHUNK_SIZE).map(hashes => ({ hashes, gameType: 'd' as const })),
+          ];
+          const total = parts.length;
+          let done = 0;
+
+          const merged: { s: BatchScoresResponse; d: BatchScoresResponse } = { s: {}, d: {} };
+          // Stays true only when EVERY chunk echoes per_difficulty — a v3.7.1
+          // server ignores the param and answers without the flag → legacy
+          // snapshot (per-difficulty fetches on chip switches, like R83/D).
+          let perDiffEcho = difficulty === 'all';
+
+          for (const part of parts) {
+            if (cancelled) return;
+            // R84: 429-aware chunk fetch — the limiter is a 60-second sliding
+            // window; a short backoff lets even a huge library load completely
+            // instead of failing the whole board.
+            let result: Awaited<ReturnType<typeof leaderboardService.fetchBatchScores>> | null = null;
+            for (let attempt = 0; attempt <= RATE_LIMIT_RETRIES; attempt++) {
+              try {
+                result = await leaderboardService.fetchBatchScores(
+                  part.hashes, part.gameType, BATCH_SCORE_LIMIT, difficulty, { perDifficulty: difficulty === 'all' },
+                );
+                break;
+              } catch (err) {
+                const raw = err instanceof Error ? err.message : String(err);
+                if (attempt < RATE_LIMIT_RETRIES && (raw.includes('Rate limit') || raw.includes('429'))) {
+                  setGlobalProgress({ done, total, retrying: true });
+                  await new Promise(r => setTimeout(r, RATE_LIMIT_BACKOFF_MS));
+                  if (cancelled) return;
+                  continue;
+                }
+                throw err;
+              }
             }
-            return merged;
+            if (!result || cancelled) return;
+            perDiffEcho = perDiffEcho && result.perDifficulty;
+            Object.assign(merged[part.gameType], result.scores);
+            done++;
+            setGlobalProgress({ done, total, retrying: false });
+            if (done < total) {
+              await new Promise(r => setTimeout(r, CHUNK_PACE_MS));
+              if (cancelled) return;
+            }
+          }
+
+          const snapshot: GlobalBoardSnapshot = {
+            s: merged.s,
+            d: merged.d,
+            fetchedAt: Date.now(),
+            perDifficulty: perDiffEcho,
+            difficulty,
           };
-          // Solo + duet boards in parallel.
-          const [sBoards, dBoards] = await Promise.all([
-            fetchBoard(sHashes, 's'),
-            fetchBoard(dHashes, 'd'),
-          ]);
-          if (cancelled) return;
-          const boards = { s: sBoards, d: dBoards };
-          globalBoardCache.current.set(difficulty, boards);
-          setGlobalBoards(boards);
+          setCachedGlobalBoards(cacheKey, snapshot);
+          setGlobalBoards({ s: snapshot.s, d: snapshot.d });
+          setGlobalPerDiff(snapshot.perDifficulty);
+          setGlobalFetchedAt(snapshot.fetchedAt);
         })
         .catch((err: unknown) => {
           if (cancelled) return;
           const raw = err instanceof Error ? err.message : String(err);
           let message = raw || 'Failed to load global leaderboard';
           if (raw.includes('Rate limit') || raw.includes('429')) {
-            // R83/D: the shared-hosting API allows 60 requests/min per IP —
-            // surface a friendly, actionable message instead of the raw text.
+            // R83/D: the shared-hosting API rate-limits per minute — surface a
+            // friendly, actionable message instead of the raw text.
             message = t('highscoreScreen.rateLimited');
           } else if (raw.includes('HTTP 500') || raw.includes('500')) {
             message = 'Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.';
@@ -477,7 +588,10 @@ export function HighscoreScreen() {
           setGlobalError(message);
         })
         .finally(() => {
-          if (!cancelled) setIsLoadingGlobal(false);
+          if (!cancelled) {
+            setIsLoadingGlobal(false);
+            setGlobalProgress(null);
+          }
         });
     }, 400);
 
@@ -485,20 +599,29 @@ export function HighscoreScreen() {
       cancelled = true;
       if (globalFetchDebounce.current) { clearTimeout(globalFetchDebounce.current); globalFetchDebounce.current = null; }
     };
-  }, [onlineEnabled, leaderboardType, difficulty, hashPlan, globalRefreshKey, t]);
+  }, [onlineEnabled, leaderboardType, difficulty, hashPlan, globalRefreshKey, mottoKey, t]);
 
   // ── GLOBAL board rows: better of the song's solo/duet best entries ──
   const globalRows = useMemo<GlobalSongRow[]>(() => {
     if (!globalBoards || !hashPlan) return [];
+    // R84: with a per_difficulty snapshot (server v3.7.2+) the chips filter
+    // CLIENT-side — the boards contain every player's best per difficulty,
+    // filtering keeps the score-desc order (entries[0] stays the best).
+    const filterDiff = globalPerDiff && difficulty !== 'all' ? difficulty : null;
     const rows: GlobalSongRow[] = [];
     for (const song of themeSongs) {
       const hashes = hashPlan.bySong.get(song.id);
       if (!hashes) continue;
 
       // Best entry of each board (the per-hash board is score-sorted —
-      // entries[0] is the best; the difficulty filter ran server-side).
-      const sEntries = hashes.s ? globalBoards.s[hashes.s] : undefined;
-      const dEntries = hashes.d ? globalBoards.d[hashes.d] : undefined;
+      // entries[0] is the best; legacy snapshots were difficulty-filtered
+      // server-side, per-difficulty snapshots filter right above).
+      let sEntries = hashes.s ? globalBoards.s[hashes.s] : undefined;
+      let dEntries = hashes.d ? globalBoards.d[hashes.d] : undefined;
+      if (filterDiff) {
+        if (sEntries) sEntries = sEntries.filter(e => e.difficulty === filterDiff);
+        if (dEntries) dEntries = dEntries.filter(e => e.difficulty === filterDiff);
+      }
       const candidates: Array<{ best: OnlineScoreEntry; gameType: 's' | 'd' }> = [];
       if (sEntries && sEntries.length > 0) candidates.push({ best: sEntries[0], gameType: 's' });
       if (dEntries && dEntries.length > 0) candidates.push({ best: dEntries[0], gameType: 'd' });
@@ -515,7 +638,7 @@ export function HighscoreScreen() {
       rows.push({ kind: 'global', song, best: winner.best, gameType: winner.gameType, playerNames: [...names] });
     }
     return rows.sort((a, b) => b.best.score - a.best.score);
-  }, [globalBoards, themeSongs, hashPlan]);
+  }, [globalBoards, globalPerDiff, difficulty, themeSongs, hashPlan]);
 
   // ── Search: song title, artist or ANY player name on the song's board ──
   const activeRows: SongBoardRowData[] = leaderboardType === 'global' ? globalRows : localRows;
@@ -550,9 +673,10 @@ export function HighscoreScreen() {
 
   const retryGlobalLoad = useCallback(() => {
     setGlobalError(null);
-    // R83/D: a manual retry is an explicit refresh request — drop the
-    // per-difficulty caches so the boards are re-fetched from the server.
-    globalBoardCache.current.clear();
+    // R84: the retry (and the manual refresh button) is an explicit refresh
+    // request — drop the session cache so the boards are re-fetched from the
+    // server.
+    clearGlobalBoardCache();
     setGlobalRefreshKey(key => key + 1);
   }, []);
 
@@ -598,7 +722,7 @@ export function HighscoreScreen() {
               type="button"
               onClick={() => setDifficulty(d)}
               data-testid={`board-difficulty-${d}`}
-              className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+              className={`px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-all ${
                 d === 'easy' && difficulty === d ? 'bg-green-500 text-white' :
                 d === 'normal' && difficulty === d ? 'bg-yellow-500 text-black' :
                 d === 'hard' && difficulty === d ? 'bg-red-500 text-white' :
@@ -610,6 +734,29 @@ export function HighscoreScreen() {
             </button>
           ))}
         </div>
+
+        {/* R84 (user point 4): manual refresh + "last updated" for the online
+            boards — the session cache keeps them stable across screen changes,
+            the button is the explicit way to pull fresh data. */}
+        {onlineEnabled && isGlobalTab && !isLoadingGlobal && (
+          <div className="ml-auto flex items-center gap-2">
+            {globalFetchedAt != null && (
+              <span className="text-xs text-white/40 hidden md:inline" data-testid="global-last-updated">
+                {t('highscoreScreen.lastUpdated').replace('{time}', new Date(globalFetchedAt).toLocaleTimeString())}
+              </span>
+            )}
+            <Button
+              onClick={retryGlobalLoad}
+              size="sm"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/15"
+              title={t('highscoreScreen.refreshTitle')}
+              data-testid="global-refresh-button"
+            >
+              <RefreshCw className="w-4 h-4 mr-1.5" />
+              {t('highscoreScreen.refresh')}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Rival bar (R81: on BOTH tabs) */}
@@ -674,11 +821,20 @@ export function HighscoreScreen() {
         )}
       </div>
 
-      {/* Global loading */}
+      {/* Global loading — R84: with chunk progress and a rate-limit hint
+          while the automatic backoff waits (big libraries can pause briefly). */}
       {showGlobalLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mr-3" />
-          <span className="text-white/60">{t('highscoreScreen.loadingGlobal')}</span>
+        <div className="flex flex-col items-center justify-center py-12 gap-2" data-testid="global-loading">
+          <div className="flex items-center">
+            <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mr-3" />
+            <span className="text-white/60">
+              {t('highscoreScreen.loadingGlobal')}
+              {globalProgress && globalProgress.total > 0 ? ` (${globalProgress.done}/${globalProgress.total})` : ''}
+            </span>
+          </div>
+          {globalProgress?.retrying && (
+            <span className="text-xs text-yellow-400/90">{t('highscoreScreen.rateLimitWait')}</span>
+          )}
         </div>
       )}
 
@@ -707,7 +863,7 @@ export function HighscoreScreen() {
 
       {/* Board rows */}
       {!showGlobalLoading && !showGlobalError && visibleRows.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {visibleRows.slice(0, MAX_ROWS).map((row, index) => (
             <SongBoardRow
               key={row.song.id}

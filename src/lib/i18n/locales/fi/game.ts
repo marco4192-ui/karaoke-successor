@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Profiilisi',
   top100: 'Top 100',
   noSearchResults: 'Hakua vastaavia pelaajia ei löytynyt',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Päivitä',
+  refreshTitle: 'Lataa online-listat uudelleen palvelimelta',
+  lastUpdated: 'Päivitetty: {time}',
+  rateLimitWait: 'Palvelimen raja tuli vastaan — lataus jatkuu automaattisesti hetken kuluttua…',
 },
 keyboardShortcuts: {
   esc: 'Tauko / Takaisin / Poistu',

@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Din profil',
   top100: 'Top 100',
   noSearchResults: 'Inga spelare matchade din sökning',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Uppdatera',
+  refreshTitle: 'Ladda om online-tavlorna från servern',
+  lastUpdated: 'Uppdaterad: {time}',
+  rateLimitWait: 'Servergränsen nådd — inläsningen fortsätter automatiskt om en stund…',
 },
 keyboardShortcuts: {
   esc: 'Pausa / Tillbaka / Avsluta',

@@ -9,6 +9,15 @@
  * registration). The sync_code also unlocks the profile sync backup and
  * profile deletion.
  *
+ * v3.7.2 (R84): /scores/batch?per_difficulty=1 — with difficulty='all' the
+ *   per-profile dedup widens to (hash, profile, difficulty): every player
+ *   contributes up to three rows (their best PER difficulty) instead of only
+ *   the overall best. ONE batch burst now carries the data for ALL difficulty
+ *   chips — the client filters locally (previously every chip switch re-fetched
+ *   the whole library in 200-hash chunks; big libraries ran into the rate
+ *   limiter even though the boards were identical data). The response echoes
+ *   per_difficulty:true so old-server setups can fall back to per-difficulty
+ *   fetching (v3.7.1 ignores the unknown param and keeps the old behaviour).
  * v3.7 (R81): SCORE SYSTEM REBUILD.
  *   - Battle-Royale win counter REMOVED (br_wins/br_wins_at columns dropped,
  *     POST /br removed): BR has no comparable score scale — 2-player BR is
@@ -103,7 +112,7 @@ $T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.7.1', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.7.2', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'health'      => apiHealth($T_PROFILES, $T_SCORES, $T_DAILY, $T_ACCOUNTS, $T_PLAYLOG, $T_NONCES),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
@@ -541,6 +550,12 @@ function batchScores(string $TP, string $TS): void {
     // specific difficulty returns each player's best ON THAT difficulty).
     $diff  = in_array($_GET['difficulty'] ?? 'all', ['easy','normal','hard'], true) ? $_GET['difficulty'] : 'all';
     $limit = min((int)($_GET['limit'] ?? 5000), 10000);
+    // R84 (v3.7.2): per_difficulty=1 widens the dedup key below — with
+    // difficulty='all' each profile keeps its best row PER difficulty (up to
+    // 3 rows) instead of only the overall best. One burst then answers every
+    // difficulty chip; the client filters locally. Ignored for specific
+    // difficulties (a single difficulty already dedupes correctly).
+    $perDiff = ($_GET['per_difficulty'] ?? '') === '1' && $diff === 'all';
 
     $ph = implode(',', array_fill(0, count($hashes), '?'));
     // R72/E: dual-read — match v1 (song_hash) OR v2 (song_hash_v2)
@@ -563,9 +578,12 @@ function batchScores(string $TP, string $TS): void {
     // R81: difficulty is part of the best-score key — a profile holds up to
     // three rows per song. Keep only each player's best row per hash (rows
     // arrive score-sorted, so the FIRST row per player is already the max).
+    // R84: with per_difficulty=1 the key widens by the difficulty — each
+    // player keeps their best row PER difficulty (still the first row per
+    // (player, difficulty) after the global score sort).
     $dedup = [];
     foreach ($rows as $row) {
-        $key = $row['song_hash'] . '|' . $row['profile_uid'];
+        $key = $row['song_hash'] . '|' . $row['profile_uid'] . ($perDiff ? '|' . $row['difficulty'] : '');
         if (!isset($dedup[$key])) $dedup[$key] = $row;
     }
     $rows = array_values($dedup);
@@ -580,7 +598,10 @@ function batchScores(string $TP, string $TS): void {
         }
         $result[$h][] = $row;
     }
-    json(['scores' => $result]);
+    // R84: echo the mode so the client can detect v3.7.2 support (an old
+    // server ignores the param and answers without the flag → the client
+    // falls back to per-difficulty fetching).
+    json(['scores' => $result, 'per_difficulty' => $perDiff]);
 }
 
 // ============================================================

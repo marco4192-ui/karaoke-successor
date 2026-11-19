@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: '내 프로필',
   top100: 'Top 100',
   noSearchResults: '검색과 일치하는 플레이어가 없습니다',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: '새로 고침',
+  refreshTitle: '서버에서 온라인 순위판 다시 불러오기',
+  lastUpdated: '업데이트: {time}',
+  rateLimitWait: '서버 제한 도달 — 잠시 후 자동으로 로드가 계속됩니다…',
 },
 keyboardShortcuts: {
   esc: '일시정지 / 뒤로 / 종료',

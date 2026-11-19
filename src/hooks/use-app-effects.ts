@@ -85,12 +85,26 @@ export function useAppEffects() {
     initCompanionHttpsInfo().catch(() => { /* non-critical */ });
   }, []);
 
-  // Load custom songs from IndexedDB on mount
+  // Load custom songs from IndexedDB on mount.
+  // R84 (user point 2): PRELOAD the whole library right after — the heavy
+  // part of the first Library visit (cover URL restore from disk/IndexedDB
+  // for every song) now runs in the background while the user is still on
+  // the home screen. The R41 snapshot makes the later LibraryScreen mount
+  // hit the fast path (instant board, covers already alive) instead of
+  // loading on first visit.
   useEffect(() => {
-    loadCustomSongsFromStorage().catch(err => {
-      // eslint-disable-next-line no-console
-      console.warn('[App] Failed to load custom songs from IndexedDB:', err);
-    });
+    let cancelled = false;
+    loadCustomSongsFromStorage()
+      .then(async () => {
+        if (cancelled) return;
+        const { getAllSongsAsync } = await import('@/lib/game/song-library');
+        await getAllSongsAsync();
+      })
+      .catch(err => {
+        // eslint-disable-next-line no-console
+        console.warn('[App] Library preload failed:', err);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   // R41/P10: Central mic-device watcher — bind the devicechange listener

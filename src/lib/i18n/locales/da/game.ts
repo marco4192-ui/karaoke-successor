@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Din profil',
   top100: 'Top 100',
   noSearchResults: 'Ingen spillere fundet, der matcher din søgning',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Opdater',
+  refreshTitle: 'Genindlæs online-tavlerne fra serveren',
+  lastUpdated: 'Opdateret: {time}',
+  rateLimitWait: 'Servergrænse nået — indlæsningen fortsætter automatisk om et øjeblik…',
 },
 keyboardShortcuts: {
   esc: 'Pause / Tilbage / Afslut',

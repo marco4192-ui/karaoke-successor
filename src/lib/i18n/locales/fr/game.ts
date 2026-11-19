@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'Votre profil',
   top100: 'Top 100',
   noSearchResults: 'Aucun joueur ne correspond à votre recherche',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Actualiser',
+  refreshTitle: 'Recharger les classements en ligne depuis le serveur',
+  lastUpdated: 'Actualisé : {time}',
+  rateLimitWait: 'Limite du serveur atteinte — le chargement reprend automatiquement dans un instant…',
 },
 keyboardShortcuts: {
   esc: 'Pause / Retour / Quitter',

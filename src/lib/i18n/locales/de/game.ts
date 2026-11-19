@@ -295,6 +295,11 @@ highscoreScreen: {
   duoTag: 'Duo',
   themeNoMatches: 'Kein Song der aktuellen Motto-Party hat einen Score.',
   bestOf: 'Bestwert',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: 'Aktualisieren',
+  refreshTitle: 'Online-Bretter neu vom Server laden',
+  lastUpdated: 'Aktualisiert: {time}',
+  rateLimitWait: 'Server-Limit erreicht — das Laden setzt sich gleich automatisch fort…',
 },
 rivals: {
   title: 'Rivalen',

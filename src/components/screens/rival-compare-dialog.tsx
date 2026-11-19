@@ -90,7 +90,9 @@ export function RivalCompareDialog({
         if (!cancelled) { setData({ rows: [], mineOnly: 0, totalMine: 0 }); setIsLoading(false); }
         return;
       }
-      const boards = await leaderboardService.fetchBatchScores(hashes, 's', 2000);
+      // R84: fetchBatchScores returns { scores, perDifficulty } — the rival
+      // comparison wants the plain per-profile best board (difficulty 'all').
+      const boards = (await leaderboardService.fetchBatchScores(hashes, 's', 2000)).scores;
       const wantedHashes = new Set<string>();
       Object.values(boards).forEach(entries => {
         entries.forEach(e => {

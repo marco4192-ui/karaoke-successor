@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: 'あなたのプロファイル',
   top100: 'Top 100',
   noSearchResults: '検索に一致するプレイヤーが見つかりません',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: '更新',
+  refreshTitle: 'オンラインランキングをサーバーから再取得',
+  lastUpdated: '更新: {time}',
+  rateLimitWait: 'サーバー制限に到達 — 少しすると自動的に読み込みを再開します…',
 },
 keyboardShortcuts: {
   esc: '一時停止 / 戻る / 終了',

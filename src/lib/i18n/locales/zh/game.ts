@@ -275,6 +275,11 @@ highscoreScreen: {
   localHighlight: '你的档案',
   top100: 'Top 100',
   noSearchResults: '未找到符合搜索条件的玩家',
+  // R84: session cache — manual refresh, last-updated label, rate-limit hint
+  refresh: '刷新',
+  refreshTitle: '从服务器重新加载在线榜单',
+  lastUpdated: '更新于：{time}',
+  rateLimitWait: '已达到服务器限制 — 稍后将自动继续加载…',
 },
 keyboardShortcuts: {
   esc: '暂停 / 返回 / 退出',

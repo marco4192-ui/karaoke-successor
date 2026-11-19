@@ -346,22 +346,38 @@ async function fetchRecentPlays(uid: string, limit = 20): Promise<OnlinePlayEntr
   return result.plays;
 }
 
+/** Result of a batch fetch — `perDifficulty` echoes the server's
+ *  per_difficulty flag (true only on server v3.7.2+ when requested with
+ *  difficulty='all'; the boards then contain every player's best PER
+ *  difficulty). Old servers ignore the param and answer without the flag. */
+export interface BatchScoresResult {
+  scores: BatchScoresResponse;
+  perDifficulty: boolean;
+}
+
 /** R72/C: batch-fetch the boards of up to 200 song hashes at once (basis of
- *  the local rival comparison — no server-side friend system by design). */
+ *  the local rival comparison — no server-side friend system by design).
+ *
+ *  R84: returns the scores + the server's per_difficulty echo so the caller
+ *  can detect v3.7.2 support. Pass opts.perDifficulty with difficulty='all'
+ *  to request every player's best PER difficulty (up to 3 rows per player
+ *  per song) — one burst then answers every difficulty chip. */
 async function fetchBatchScores(
   hashes: string[],
   gameType: LeaderboardGameType = 's',
   limit = 1000,
-  /** R81: server-side difficulty filter ('all' = each player's overall best,
-   *  server v3.7 dedupes per profile). */
+  /** R81: server-side difficulty filter ('all' = pre-R84 behaviour on old
+   *  servers: each player's overall best, deduped per profile). */
   difficulty: 'all' | 'easy' | 'normal' | 'hard' = 'all',
-): Promise<BatchScoresResponse> {
-  if (hashes.length === 0) return {};
+  opts?: { perDifficulty?: boolean },
+): Promise<BatchScoresResult> {
+  if (hashes.length === 0) return { scores: {}, perDifficulty: false };
   const joined = hashes.slice(0, 200).map(h => encodeURIComponent(h)).join(',');
-  const result = await request<{ scores: BatchScoresResponse }>(
-    `/scores/batch?hashes=${joined}&game_type=${gameType}&limit=${limit}&difficulty=${difficulty}`
+  const perDiffParam = opts?.perDifficulty && difficulty === 'all' ? '&per_difficulty=1' : '';
+  const result = await request<{ scores: BatchScoresResponse; per_difficulty?: boolean }>(
+    `/scores/batch?hashes=${joined}&game_type=${gameType}&limit=${limit}&difficulty=${difficulty}${perDiffParam}`
   );
-  return result.scores;
+  return { scores: result.scores ?? {}, perDifficulty: result.per_difficulty === true };
 }
 
 // ── Daily challenge leaderboard (online board) ───────────

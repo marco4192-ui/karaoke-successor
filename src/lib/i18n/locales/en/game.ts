@@ -311,7 +311,13 @@ export const gameTranslations = {
     soloTag: 'Solo',
     duoTag: 'Duo',
     themeNoMatches: 'No song of the current theme party has a score.',
-    bestOf: 'Best'
+    bestOf: 'Best',
+
+    // R84: session cache — manual refresh, last-updated label, rate-limit hint
+    refresh: 'Refresh',
+    refreshTitle: 'Reload the online boards from the server',
+    lastUpdated: 'Updated: {time}',
+    rateLimitWait: 'Server rate limit reached — the load continues automatically in a moment…',
   },
 
 rivals: {

@@ -208,6 +208,18 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   (scores / daily results / accounts are lost by design; the app
   re-registers on its next game).
 
+**v3.7.2 (R84) fix:**
+- **`GET /scores/batch?per_difficulty=1`**: with `difficulty=all` the
+  per-profile dedup widens to `(song_hash, profile_uid, difficulty)` — every
+  player contributes up to three rows (their best **per difficulty**) instead
+  of only the overall best. One batch burst now carries the data for ALL
+  difficulty chips; the client filters locally (R84 client). Previously every
+  chip switch re-fetched the whole library in 200-hash chunks — big libraries
+  hit the rate limiter even though the boards are the same data. The response
+  echoes `per_difficulty: true` so the client can detect v3.7.2 support and
+  fall back to per-difficulty fetching on old servers (v3.7.1 ignores the
+  unknown param and keeps its behaviour). No DB change — index.php only.
+
 **v3.7.1 (R83) fix:**
 - **Rate limit raised 60 → 120 requests/min per IP**: the v3.7 song-based
   boards fetch the whole library in 200-hash chunks via `/scores/batch` —

@@ -51,6 +51,12 @@ function bumpLibraryVersion(): void {
   libraryVersion++;
 }
 
+/** R84: current library version — the online-board session cache keys on it
+ *  (a library mutation invalidates the fetched boards). */
+export function getLibraryVersion(): number {
+  return libraryVersion;
+}
+
 /** Drop the snapshot so the next getAllSongsAsync() re-restores. */
 export function invalidateLibrarySnapshot(): void {
   librarySnapshot = null;
