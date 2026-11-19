@@ -95,6 +95,17 @@ export default function KaraokeZERO() {
     if (screen !== 'library' && libraryPreselect) setLibraryPreselect(null);
   }, [screen, libraryPreselect]);
 
+  // ── R83/F: Start-song handoff from the Highscores screen ──
+  // The Highscores song modal sets pendingLibrarySong ("Song starten");
+  // the app shell switches to the Library, where LibraryScreen opens the
+  // start dialog for the song automatically (autoStartSong prop) and
+  // clears the handoff again.
+  const pendingLibrarySong = useGameStore(s => s.pendingLibrarySong);
+  const setPendingLibrarySong = useGameStore(s => s.setPendingLibrarySong);
+  useEffect(() => {
+    if (pendingLibrarySong && screen !== 'library') setScreen('library');
+  }, [pendingLibrarySong, screen, setScreen]);
+
   // ── R14 (user request 5): AppData persistence for player data ──
   // In the Tauri build, profiles + highscores are mirrored into the SQLite
   // database in the OS app-data directory — they survive app updates and
@@ -1954,6 +1965,8 @@ export default function KaraokeZERO() {
             }}
             initialGameMode={gameState.gameMode}
             preselectMode={libraryPreselect ?? undefined}
+            autoStartSong={pendingLibrarySong}
+            onAutoStartConsumed={() => setPendingLibrarySong(null)}
             onNavigateToEditor={() => setScreen('editor')}
           />
         )}

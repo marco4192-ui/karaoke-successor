@@ -103,7 +103,7 @@ $T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.7.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.7.1', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'health'      => apiHealth($T_PROFILES, $T_SCORES, $T_DAILY, $T_ACCOUNTS, $T_PLAYLOG, $T_NONCES),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
@@ -1263,7 +1263,7 @@ function recentPlays(string $uid, string $TP, string $TL): void {
  */
 function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, string $TN): void {
     header('Cache-Control: no-store');
-    $version = '3.7.0';
+    $version = '3.7.1';
     $problems = [];
     $fixes    = [];
 

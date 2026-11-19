@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} — Рекорды',
-  local: '🏠 Локальные ({n})',
-  global: '🌍 Глобальные',
+  local: 'Локальные ({n})',
+  global: 'Онлайн',
+  startSong: 'Начать песню',
   loading: 'Загрузка...',
   noGlobal: 'Глобальных рекордов пока нет. Будьте первым!',
   noLocal: 'Локальных рекордов пока нет. Спойте эту песню!',

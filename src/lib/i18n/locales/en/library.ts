@@ -179,8 +179,9 @@ export const libraryTranslations = {
 
   songHighscoreModal: {
     highscores: '{artist} - Highscores',
-    local: '🏠 Local ({n})',
-    global: '🌍 Global',
+    local: 'Local ({n})',
+    global: 'Online',
+    startSong: 'Start song',
     loading: 'Loading...',
     noGlobal: 'No global scores yet. Be the first!',
     noLocal: 'No local scores yet. Play this song!',

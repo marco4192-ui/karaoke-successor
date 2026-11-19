@@ -169,8 +169,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} – Highscores',
-  local: '🏠 Lokal ({n})',
-  global: '🌍 Global',
+  local: 'Lokal ({n})',
+  global: 'Online',
+  startSong: 'Song starten',
   loading: 'Laden...',
   noGlobal: 'Noch keine globalen Scores. Sei der Erste!',
   noLocal: 'Noch keine lokalen Scores. Spiele diesen Song!',

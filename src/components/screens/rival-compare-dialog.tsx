@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { Angry } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -141,7 +142,9 @@ export function RivalCompareDialog({
       <DialogContent className="bg-[rgb(24,24,32)] border-white/15 text-white max-w-lg max-h-[85vh] overflow-hidden flex flex-col" data-testid="rival-compare-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span aria-hidden>⚔️</span>
+            {/* R83: rival symbol = angry face (crossed swords are reserved
+                for duel mode — same convention as the R81 song modal). */}
+            <Angry className="w-5 h-5 text-red-400" aria-hidden />
             {t('rivals.compareTitle').replace('{name}', rival.name)}
           </DialogTitle>
           <DialogDescription className="text-white/60 text-xs">

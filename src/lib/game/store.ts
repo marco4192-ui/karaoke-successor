@@ -39,6 +39,11 @@ interface GameStore {
   leaderboardType: 'local' | 'global';
   onlineEnabled: boolean;
 
+  // R83: Start-song handoff — set by the Highscores screen's song modal
+  // ("Song starten"), consumed by the app shell which switches to the
+  // Library where the SongStartModal opens automatically for this song.
+  pendingLibrarySong: Song | null;
+
   // Actions
   setSong: (_song: Song | null) => void;
   setDifficulty: (_difficulty: Difficulty) => void;
@@ -110,6 +115,9 @@ interface GameStore {
   // Leaderboard actions
   setLeaderboardType: (_type: 'local' | 'global') => void;
   setOnlineEnabled: (_enabled: boolean) => void;
+
+  // R83: Start-song handoff (Highscores → Library)
+  setPendingLibrarySong: (_song: Song | null) => void;
 }
 
 function createDefaultPlayerProfile(overrides: {
@@ -190,6 +198,7 @@ export const useGameStore = create<GameStore>()(
       highscores: [],
       leaderboardType: 'local',
       onlineEnabled: false,
+      pendingLibrarySong: null,
 
       setSong: (song) =>
         set((state) => ({
@@ -615,6 +624,7 @@ export const useGameStore = create<GameStore>()(
 
       // Leaderboard actions
       setLeaderboardType: (type) => set({ leaderboardType: type }),
+      setPendingLibrarySong: (song) => set({ pendingLibrarySong: song }),
       setOnlineEnabled: (enabled) => set({ onlineEnabled: enabled }),
     }),
     {

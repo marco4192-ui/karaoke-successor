@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useGameStore } from '@/lib/game/store';
 import { isPartyGameMode } from '@/lib/game/party-modes';
 import { Song } from '@/types/game';
-import { TrophyIcon } from './constants';
+import { TrophyIcon, PlayIcon } from './constants';
 import { useTranslation } from '@/lib/i18n/translations';
 import { OutlierFlagBadge } from '@/components/results/outlier-badge';
 import type { OnlineScoreEntry } from '@/lib/leaderboard/types';
@@ -64,12 +64,17 @@ export function SongHighscoreModal({
   isOpen,
   onClose,
   gameType = 's',
+  onStartSong,
 }: {
   song: Song;
   isOpen: boolean;
   onClose: () => void;
   /** R69: 'd' shows the duet board (separate fingerprint → separate board). */
   gameType?: 's' | 'd';
+  /** R83/F: optional "start this song now" action. When provided, a
+   *  prominent start button is rendered next to Close (the Library opens
+   *  its start dialog for the song; the Results screen omits the button). */
+  onStartSong?: () => void;
 }) {
   const { t } = useTranslation();
   const { highscores, onlineEnabled, leaderboardType, setLeaderboardType, profiles, gameState } = useGameStore();
@@ -169,9 +174,13 @@ export function SongHighscoreModal({
   }, [songHash, gameType, difficulty, t]);
 
   // Load global scores when opening or switching to global tab / difficulty
+  // (R83/D: debounced 300 ms — rapid difficulty chip surfing coalesces into
+  // a single request instead of one per intermediate click; every request
+  // counts against the server's 60 req/min shared-hosting limit).
   useEffect(() => {
     if (isOpen && onlineEnabled && internalTab === 'global') {
-      loadGlobalScores();
+      const timer = setTimeout(() => loadGlobalScores(), 300);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, onlineEnabled, internalTab, difficulty, loadGlobalScores]);
 
@@ -207,10 +216,13 @@ export function SongHighscoreModal({
         </DialogHeader>
 
         <div className="flex gap-2 mb-4 flex-wrap items-center">
+          {/* R83/A: explicit white labels — the shadcn default text color
+              (primary-foreground) is near-black in dark mode and was
+              unreadable on the translucent tab backgrounds. */}
           <Button
             onClick={() => handleTabSwitch('local')}
             size="sm"
-            className={internalTab === 'local' ? 'bg-cyan-500' : 'bg-white/10'}
+            className={`text-white ${internalTab === 'local' ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}
           >
             {t('songHighscoreModal.local').replace('{n}', String(localScores.length))}
           </Button>
@@ -218,7 +230,7 @@ export function SongHighscoreModal({
             <Button
               onClick={() => handleTabSwitch('global')}
               size="sm"
-              className={internalTab === 'global' ? 'bg-purple-500' : 'bg-white/10'}
+              className={`text-white ${internalTab === 'global' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-white/10 hover:bg-white/20'}`}
             >
               {t('songHighscoreModal.global')}
             </Button>
@@ -425,8 +437,20 @@ export function SongHighscoreModal({
           </div>
         </ScrollArea>
 
-        <div className="pt-4">
-          <Button onClick={onClose} className="w-full bg-white/10 hover:bg-white/20">
+        {/* R83/F: footer — optional start button (when the parent provides a
+            start action) + close. White labels everywhere. */}
+        <div className="pt-4 flex gap-2">
+          {onStartSong && (
+            <Button
+              onClick={onStartSong}
+              className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold"
+              data-testid="modal-start-song"
+            >
+              <PlayIcon className="w-4 h-4 mr-2" />
+              {t('songHighscoreModal.startSong')}
+            </Button>
+          )}
+          <Button onClick={onClose} className={`${onStartSong ? '' : 'w-full '}bg-white/10 hover:bg-white/20 text-white`}>
             {t('songHighscoreModal.close')}
           </Button>
         </div>

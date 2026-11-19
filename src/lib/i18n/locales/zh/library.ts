@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} - 高分榜',
-  local: '🏠 本地 ({n})',
-  global: '🌍 全球',
+  local: '本地 ({n})',
+  global: '在线',
+  startSong: '开始歌曲',
   loading: '加载中...',
   noGlobal: '还没有全球分数，成为第一个！',
   noLocal: '还没有本地分数，演唱这首歌！',

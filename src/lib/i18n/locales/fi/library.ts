@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} - Huipputulokset',
-  local: '🏠 Paikallinen ({n})',
-  global: '🌍 Globaali',
+  local: 'Paikallinen ({n})',
+  global: 'Online',
+  startSong: 'Aloita kappale',
   loading: 'Ladataan...',
   noGlobal: 'Ei globaaleja tuloksia vielä. Ole ensimmäinen!',
   noLocal: 'Ei paikallisia tuloksia vielä. Pelaa tämä kappale!',

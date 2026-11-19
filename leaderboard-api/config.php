@@ -31,7 +31,13 @@ define('DB_PREFIX', 'ks_');
 
 // ── API ───────────────────────────────────────────────────
 define('API_SECRET', $env('KS_API_SECRET'));
-define('RATE_LIMIT_PER_MINUTE', 60);
+// R83: 60 → 120 requests/min per IP. The song-based boards (v3.7) fetch the
+// whole library in 200-hash chunks — a large library legitimately needs
+// ~10-20 requests per board view. 60/min made difficulty switching trip the
+// limiter during normal use (client now also caches per difficulty + debounces,
+// see R83/D). Still protective: the API key + anti-cheat are the real guards,
+// this limiter only shields the shared-hosting MySQL from hammering.
+define('RATE_LIMIT_PER_MINUTE', 120);
 define('MAX_LEADERBOARD_ENTRIES', 500);
 
 // ── Reverse proxy / X-Forwarded-For (R72/E) ────────────────

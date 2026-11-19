@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} - Recordes',
-  local: '🏠 Local ({n})',
-  global: '🌍 Global',
+  local: 'Local ({n})',
+  global: 'Online',
+  startSong: 'Iniciar música',
   loading: 'Carregando...',
   noGlobal: 'Ainda não há pontuações globais. Seja o primeiro!',
   noLocal: 'Ainda não há pontuações locais. Cante esta música!',

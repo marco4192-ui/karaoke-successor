@@ -7,4 +7,4 @@ export { MAX_POINTS_PER_SONG } from '@/lib/game/scoring';
 export { COUNTRY_OPTIONS, getCountryFlag } from '@/components/screens/character/country-options';
 
 // Icons — re-export from canonical icon library to avoid duplicate definitions
-export { TrophyIcon } from '@/components/icons';
+export { TrophyIcon, PlayIcon } from '@/components/icons';

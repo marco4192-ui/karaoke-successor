@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '{artist} - 최고 점수',
-  local: '🏠 로컬 ({n})',
-  global: '🌍 글로벌',
+  local: '로컬 ({n})',
+  global: '온라인',
+  startSong: '노래 시작',
   loading: '불러오는 중...',
   noGlobal: '아직 글로벌 점수가 없습니다. 가장 먼저 도전하세요!',
   noLocal: '아직 로컬 점수가 없습니다. 이 곡을 플레이하세요!',

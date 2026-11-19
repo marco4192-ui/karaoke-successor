@@ -662,7 +662,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           scrolled into view + highlight pulse (see togglePlayer) ── */}
       <div
         ref={tabsRef}
-        className={`flex gap-2 mb-6 flex-wrap scroll-mt-4 rounded-xl transition-all duration-700 ${
+        className={`flex gap-2 mb-6 flex-wrap scroll-mt-28 rounded-xl transition-all duration-700 ${
           tabsHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''
         }`}
         role="tablist"
@@ -836,7 +836,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           </div>
 
           {/* ── STEP 3 · Song wählen — folds out under the slot selection ── */}
-          <div ref={playAreaRef} className="scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="daily-play-area">
+          <div ref={playAreaRef} className="scroll-mt-28 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="daily-play-area">
           <div className="flex items-start gap-3 mb-3" data-testid="daily-step-3">
             <span className="flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-fuchsia-500/20 border border-fuchsia-500 text-fuchsia-300 shrink-0" aria-hidden>3</span>
             <div className="min-w-0 flex-1">
@@ -1224,7 +1224,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             return (
               <div
                 ref={weeklyPlayAreaRef}
-                className="scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300"
+                className="scroll-mt-28 animate-in fade-in slide-in-from-top-2 duration-300"
                 data-testid="weekly-play-area"
               >
                 <div className="flex items-start gap-3 mb-3" data-testid="weekly-step-3">
@@ -1418,7 +1418,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
 
           {/* ── STEP 3 · Song wählen — folds out when a mode is picked ── */}
           {selectedMode && modeSongChoices.length > 0 && (
-            <div ref={modeSongsRef} className="mb-4 scroll-mt-4 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="modes-step-3">
+            <div ref={modeSongsRef} className="mb-4 scroll-mt-28 animate-in fade-in slide-in-from-top-2 duration-300" data-testid="modes-step-3">
               {/* Anchor highlight wrapper — own transition classes so they
                   don't clash with the mount animation on the outer div */}
               <div className={`rounded-xl transition-all duration-700 ${modeSongsHighlighted ? 'ring-2 ring-cyan-400 shadow-[0_0_36px_rgba(34,211,238,0.35)]' : ''}`}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ import { useViralCharts } from '@/hooks/use-viral-charts';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 import { useMottoParty } from '@/hooks/use-motto-party';
 
-export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, onNavigateToEditor, partyPickActive = false }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; /** Start mode preselected from the home "Singen" launcher (session-scoped). */ preselectMode?: 'single' | 'duel' | 'duet'; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; }) {
+export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, onNavigateToEditor, partyPickActive = false, autoStartSong, onAutoStartConsumed }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; /** Start mode preselected from the home "Singen" launcher (session-scoped). */ preselectMode?: 'single' | 'duel' | 'duet'; onNavigateToEditor?: () => void; /** Party pick flow: clicking a song selects it directly (no song-start modal). */ partyPickActive?: boolean; /** R83/F: song handed over from the Highscores screen ("Song starten") — the start dialog opens automatically for it. Consumed once. */ autoStartSong?: Song | null; /** R83/F: called after autoStartSong was consumed (clears the handoff). */ onAutoStartConsumed?: () => void; }) {
   const { t } = useTranslation();
 
   // Core state
@@ -129,6 +129,26 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
 
   // --- Effects ---
   useEffect(() => { initializePlaylists(); setPlaylists(getPlaylists()); }, []);
+
+  // R83/F: Start-song handoff from the Highscores screen — open the start
+  // dialog for the handed-over song (same defaults as a regular song click:
+  // app difficulty, session mode, active profile preselected). Runs once per
+  // handed-over song; the consumer callback clears the store handoff.
+  const autoStartSongIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoStartSong || partyPickActive) return;
+    if (autoStartSongIdRef.current === autoStartSong.id) return; // already consumed
+    autoStartSongIdRef.current = autoStartSong.id;
+    setSelectedSong(autoStartSong);
+    setStartOptions({
+      difficulty: storeDifficulty,
+      mode: sessionPreselect ?? (initialGameMode === 'duel' ? 'duel' : initialGameMode === 'duet' ? 'duet' : 'single'),
+      players: activeProfileId ? [activeProfileId] : [],
+      partyMode: undefined,
+    });
+    setShowSongModal(true);
+    onAutoStartConsumed?.();
+  }, [autoStartSong, partyPickActive, storeDifficulty, sessionPreselect, initialGameMode, activeProfileId, onAutoStartConsumed]);
 
   // Auto-refresh viral charts on first library load (only once)
   const viralInitRef = React.useRef(false);
@@ -448,7 +468,15 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
       )}
 
       {highscoreSong && (
-        <SongHighscoreModal song={highscoreSong} isOpen={showHighscoreModal} onClose={() => { setShowHighscoreModal(false); setHighscoreSong(null); }} />
+        <SongHighscoreModal
+          song={highscoreSong}
+          isOpen={showHighscoreModal}
+          onClose={() => { setShowHighscoreModal(false); setHighscoreSong(null); }}
+          /* R83/F: "Song starten" — the scores modal is always opened FROM
+             the song-start dialog in the Library, so starting = closing the
+             scores overlay and revealing the ready-to-confirm start dialog. */
+          onStartSong={() => { setShowHighscoreModal(false); setHighscoreSong(null); }}
+        />
       )}
 
       <CreatePlaylistModal

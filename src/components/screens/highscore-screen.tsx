@@ -26,13 +26,14 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Angry } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
-import { TrophyIcon } from '@/components/icons';
+import { TrophyIcon, MusicIcon } from '@/components/icons';
 import type { Song, HighscoreEntry, Difficulty } from '@/types/game';
 import { CountryFlagImage } from '@/components/screens/character/country-picker';
 import type { OnlineScoreEntry, BatchScoresResponse } from '@/lib/leaderboard/types';
@@ -121,6 +122,59 @@ function VerifiedBadge({ verified }: { verified: boolean }) {
   );
 }
 
+// ── Cover thumbnail (R83/E) ──────────────────────────────
+
+/**
+ * Best-effort cover thumbnail for a board row. Uses the song's ready
+ * coverImage URL when present; otherwise resolves one lazily from the
+ * media sources (imported songs → media DB, Tauri folder songs → disk).
+ * No retry ladder here (the library grid owns healing) — on any failure
+ * the row simply shows the music-note placeholder.
+ */
+function CoverThumb({ song }: { song: Song }) {
+  const [src, setSrc] = useState<string | null>(song.coverImage ?? null);
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setBroken(false);
+    const resolve = async () => {
+      if (song.coverImage) { if (!cancelled) setSrc(song.coverImage); return; }
+      try {
+        if (song.storedMedia) {
+          const { refreshSongMediaUrl } = await import('@/lib/db/media-db');
+          const url = await refreshSongMediaUrl(song.id, 'cover');
+          if (url && !cancelled) { setSrc(url); return; }
+        }
+        if (song.relativeCoverPath) {
+          const { refreshTauriMediaUrl } = await import('@/lib/file-storage-media');
+          const url = await refreshTauriMediaUrl(song.relativeCoverPath, song.baseFolder);
+          if (url && !cancelled) setSrc(url);
+        }
+      } catch { /* no cover available — placeholder stays */ }
+    };
+    resolve();
+    return () => { cancelled = true; };
+  }, [song.id, song.coverImage, song.storedMedia, song.relativeCoverPath, song.baseFolder]);
+
+  if (!src || broken) {
+    return (
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-purple-600/60 to-cyan-600/60 flex items-center justify-center shrink-0" aria-hidden>
+        <MusicIcon className="w-5 h-5 text-white/50" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setBroken(true)}
+      className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shrink-0 border border-white/10"
+      loading="lazy"
+    />
+  );
+}
+
 // ── Board row ────────────────────────────────────────────
 
 /** One clickable song row — shared by the local and global boards. */
@@ -170,6 +224,9 @@ function SongBoardRow({
         <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 ${rank === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-black' : rank === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-black' : rank === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-black' : 'bg-white/10 text-white/60'}`}>
           {rank === 0 ? '👑' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `#${rank + 1}`}
         </div>
+
+        {/* Song cover (R83/E — visual anchor next to title/artist) */}
+        <CoverThumb song={row.song} />
 
         {/* Best entry's player */}
         <div
@@ -234,6 +291,7 @@ export function HighscoreScreen() {
     onlineEnabled,
     leaderboardType,
     setLeaderboardType,
+    setPendingLibrarySong,
     profiles,
   } = useGameStore();
 
@@ -247,6 +305,15 @@ export function HighscoreScreen() {
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
+
+  // R83/D: per-difficulty board cache — switching back to a previously
+  // loaded difficulty shows the cached boards INSTANTLY with zero requests
+  // (the raw "Rate limit exceeded" the user saw came from re-fetching every
+  // 200-hash chunk on EACH difficulty switch; the server allows 60 req/min).
+  const globalBoardCache = useRef<Map<BoardDifficulty, { s: BatchScoresResponse; d: BatchScoresResponse }>>(new Map());
+  // R83/D: debounce rapid difficulty switches — clicking through the chips
+  // fires ONE fetch burst for the finally-selected difficulty.
+  const globalFetchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Drill-down: per-song highscore modal ──
   const [modalSong, setModalSong] = useState<{ song: Song; gameType: 's' | 'd' } | null>(null);
@@ -345,6 +412,8 @@ export function HighscoreScreen() {
   }, [needGlobalHashes, themeSongs]);
 
   // ── Global fetch: solo + duet boards of every (theme-filtered) song ──
+  // R83/D: cached difficulties resolve instantly (no fetch, no spinner);
+  // uncached ones debounce 400 ms so chip-surfing coalesces into one burst.
   useEffect(() => {
     if (!onlineEnabled || leaderboardType !== 'global' || !hashPlan) return;
     const { sHashes, dHashes } = hashPlan;
@@ -356,45 +425,67 @@ export function HighscoreScreen() {
       return;
     }
 
+    // Cached boards for this difficulty → show immediately, no requests.
+    const cached = globalBoardCache.current.get(difficulty);
+    if (cached) {
+      setGlobalBoards(cached);
+      setIsLoadingGlobal(false);
+      setGlobalError(null);
+      return;
+    }
+
     let cancelled = false;
     setIsLoadingGlobal(true);
     setGlobalError(null);
 
-    import('@/lib/api/leaderboard-service')
-      .then(async ({ leaderboardService }) => {
-        // ≤200 hashes per call — chunk the library, merge the per-hash boards.
-        const fetchBoard = async (hashes: string[], gameType: 's' | 'd'): Promise<BatchScoresResponse> => {
-          const merged: BatchScoresResponse = {};
-          for (const part of chunk(hashes, BATCH_HASH_CHUNK_SIZE)) {
-            Object.assign(merged, await leaderboardService.fetchBatchScores(part, gameType, BATCH_SCORE_LIMIT, difficulty));
+    if (globalFetchDebounce.current) clearTimeout(globalFetchDebounce.current);
+    globalFetchDebounce.current = setTimeout(() => {
+      if (cancelled) return;
+      import('@/lib/api/leaderboard-service')
+        .then(async ({ leaderboardService }) => {
+          // ≤200 hashes per call — chunk the library, merge the per-hash boards.
+          const fetchBoard = async (hashes: string[], gameType: 's' | 'd'): Promise<BatchScoresResponse> => {
+            const merged: BatchScoresResponse = {};
+            for (const part of chunk(hashes, BATCH_HASH_CHUNK_SIZE)) {
+              Object.assign(merged, await leaderboardService.fetchBatchScores(part, gameType, BATCH_SCORE_LIMIT, difficulty));
+            }
+            return merged;
+          };
+          // Solo + duet boards in parallel.
+          const [sBoards, dBoards] = await Promise.all([
+            fetchBoard(sHashes, 's'),
+            fetchBoard(dHashes, 'd'),
+          ]);
+          if (cancelled) return;
+          const boards = { s: sBoards, d: dBoards };
+          globalBoardCache.current.set(difficulty, boards);
+          setGlobalBoards(boards);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          const raw = err instanceof Error ? err.message : String(err);
+          let message = raw || 'Failed to load global leaderboard';
+          if (raw.includes('Rate limit') || raw.includes('429')) {
+            // R83/D: the shared-hosting API allows 60 requests/min per IP —
+            // surface a friendly, actionable message instead of the raw text.
+            message = t('highscoreScreen.rateLimited');
+          } else if (raw.includes('HTTP 500') || raw.includes('500')) {
+            message = 'Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.';
+          } else if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
+            message = 'Network error. Please check your internet connection.';
           }
-          return merged;
-        };
-        // Solo + duet boards in parallel.
-        const [sBoards, dBoards] = await Promise.all([
-          fetchBoard(sHashes, 's'),
-          fetchBoard(dHashes, 'd'),
-        ]);
-        if (cancelled) return;
-        setGlobalBoards({ s: sBoards, d: dBoards });
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        const raw = err instanceof Error ? err.message : String(err);
-        let message = raw || 'Failed to load global leaderboard';
-        if (raw.includes('HTTP 500') || raw.includes('500')) {
-          message = 'Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.';
-        } else if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
-          message = 'Network error. Please check your internet connection.';
-        }
-        setGlobalError(message);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingGlobal(false);
-      });
+          setGlobalError(message);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoadingGlobal(false);
+        });
+    }, 400);
 
-    return () => { cancelled = true; };
-  }, [onlineEnabled, leaderboardType, difficulty, hashPlan, globalRefreshKey]);
+    return () => {
+      cancelled = true;
+      if (globalFetchDebounce.current) { clearTimeout(globalFetchDebounce.current); globalFetchDebounce.current = null; }
+    };
+  }, [onlineEnabled, leaderboardType, difficulty, hashPlan, globalRefreshKey, t]);
 
   // ── GLOBAL board rows: better of the song's solo/duet best entries ──
   const globalRows = useMemo<GlobalSongRow[]>(() => {
@@ -459,6 +550,9 @@ export function HighscoreScreen() {
 
   const retryGlobalLoad = useCallback(() => {
     setGlobalError(null);
+    // R83/D: a manual retry is an explicit refresh request — drop the
+    // per-difficulty caches so the boards are re-fetched from the server.
+    globalBoardCache.current.clear();
     setGlobalRefreshKey(key => key + 1);
   }, []);
 
@@ -473,17 +567,20 @@ export function HighscoreScreen() {
       </div>
 
       {/* Tabs + difficulty chips (shared controls, both tabs) */}
+      {/* R83/A: explicit white label on every button — the shadcn default
+          (text-primary-foreground) renders near-black in dark mode and was
+          unreadable on the translucent tab backgrounds. */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Button
           onClick={() => setLeaderboardType('local')}
-          className={leaderboardType === 'local' ? 'bg-cyan-500' : 'bg-white/10'}
+          className={`text-white ${leaderboardType === 'local' ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}
         >
           {t('highscoreScreen.local')}
         </Button>
         {onlineEnabled && (
           <Button
             onClick={() => setLeaderboardType('global')}
-            className={leaderboardType === 'global' ? 'bg-purple-500' : 'bg-white/10'}
+            className={`text-white ${leaderboardType === 'global' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-white/10 hover:bg-white/20'}`}
           >
             {t('highscoreScreen.global')}
           </Button>
@@ -518,7 +615,9 @@ export function HighscoreScreen() {
       {/* Rival bar (R81: on BOTH tabs) */}
       {rivals.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="rival-bar">
-          <span className="text-xs text-white/40">⚔️ {t('rivals.title')}:</span>
+          {/* R83: Angry icon instead of ⚔️ — crossed swords are reserved for
+              duel mode; the rival symbol is the angry face (R81 convention). */}
+          <span className="inline-flex items-center gap-1 text-xs text-white/40"><Angry className="w-3.5 h-3.5 text-red-400" /> {t('rivals.title')}:</span>
           {rivals.map(r => (
             <span
               key={r.uid}
@@ -589,8 +688,8 @@ export function HighscoreScreen() {
           <CardContent className="py-4 text-center">
             <p className="text-red-400 mb-3">{globalError}</p>
             <div className="flex justify-center gap-2">
-              <Button onClick={retryGlobalLoad} size="sm" className="bg-purple-500 hover:bg-purple-400">{t('highscoreScreen.retry')}</Button>
-              <Button onClick={() => setLeaderboardType('local')} size="sm" className="bg-white/10">{t('highscoreScreen.switchToLocal')}</Button>
+              <Button onClick={retryGlobalLoad} size="sm" className="bg-purple-500 hover:bg-purple-400 text-white">{t('highscoreScreen.retry')}</Button>
+              <Button onClick={() => setLeaderboardType('local')} size="sm" className="bg-white/10 hover:bg-white/20 text-white">{t('highscoreScreen.switchToLocal')}</Button>
             </div>
           </CardContent>
         </Card>
@@ -621,13 +720,16 @@ export function HighscoreScreen() {
         </div>
       )}
 
-      {/* Drill-down: per-song highscore modal */}
+      {/* Drill-down: per-song highscore modal — R83/F: the "Song starten"
+          button hands the song to the Library (opens the start dialog there),
+          so the user never has to search for it manually. */}
       {modalSong && (
         <SongHighscoreModal
           song={modalSong.song}
           isOpen
           onClose={() => setModalSong(null)}
           gameType={modalSong.gameType}
+          onStartSong={() => { setPendingLibrarySong(modalSong.song); setModalSong(null); }}
         />
       )}
 

@@ -208,6 +208,17 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   (scores / daily results / accounts are lost by design; the app
   re-registers on its next game).
 
+**v3.7.1 (R83) fix:**
+- **Rate limit raised 60 → 120 requests/min per IP**: the v3.7 song-based
+  boards fetch the whole library in 200-hash chunks via `/scores/batch` —
+  a large library legitimately needs ~10-20 requests per board view, and
+  60/min made difficulty switching trip the limiter during normal use
+  (the client additionally caches boards per difficulty and debounces
+  rapid difficulty switches since R83). Still protective: the API key +
+  anti-cheat proof are the real guards, the limiter only shields the
+  shared-hosting MySQL from hammering. No DB change — config.php +
+  index.php only.
+
 **v3.6.2 (R78) fix:**
 - **`POST /scores` upsert repaired**: since R69 a PHP `//` comment sat
   INSIDE the SQL string of the upsert statement. MySQL has no `//`
@@ -304,7 +315,7 @@ Security properties:
 - Registration requires the profile's `sync_code` (ownership proof)
 - Login responses are generic (`Invalid e-mail or password`) to prevent e-mail enumeration; unknown e-mails run through a dummy bcrypt verify so timing matches
 - Brute-force lockout: 5 consecutive failed logins lock the account for 15 minutes
-- Server rate limit (60 req/min per IP) applies on top
+- Server rate limit (120 req/min per IP, v3.7.1) applies on top
 
 ### Recovery (v3.5.0 / R69)
 
@@ -385,7 +396,7 @@ fingerprints only, exactly like the score boards.
 
 ## Rate limiting
 
-60 requests/minute per IP, file-based (`sys_get_temp_dir()`), enforced in
+120 requests/minute per IP (v3.7.1), file-based (`sys_get_temp_dir()`), enforced in
 `config.php` for every request. Since v3.5.0 the counter file is guarded
 with `flock(LOCK_EX)` — concurrent requests used to race past the limit.
 Request bodies are hard-capped at 1.5 MB (the profile-sync snapshot has its

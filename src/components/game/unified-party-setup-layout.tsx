@@ -177,8 +177,11 @@ export function GameSidebar({ config }: { config: PartyGameConfig }) {
           </CardContent>
         </Card>
 
-        {/* Companion QR below the game explanation — join without leaving the setup */}
-        <CompanionQrCard />
+        {/* Companion QR below the game explanation — join without leaving the setup.
+            R83/H: ONLY for modes that actually support the companion app.
+            Pass-the-Mic (and Duel) sing exclusively via desktop microphones —
+            a companion QR there is confusing, so it is not rendered. */}
+        {config.supportsCompanionApp && <CompanionQrCard />}
       </div>
     </div>
   );

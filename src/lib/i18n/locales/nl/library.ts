@@ -160,8 +160,9 @@ songCard: {
 },
 songHighscoreModal: {
   highscores: '"{artist} - Highscores"',
-  local: '🏠 Lokaal ({n})',
-  global: '🌍 Wereldwijd',
+  local: 'Lokaal ({n})',
+  global: 'Online',
+  startSong: 'Nummer starten',
   loading: 'Laden...',
   noGlobal: 'Nog geen wereldwijde scores. Wees de eerste!',
   noLocal: 'Nog geen lokale scores. Speel dit nummer!',
