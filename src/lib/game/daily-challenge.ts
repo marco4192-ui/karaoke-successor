@@ -399,12 +399,14 @@ export function getDailyTargetFor(type: string, difficulty: DailyDifficulty, lev
   return target;
 }
 
-/** R81: per-difficulty ceiling for score-metric daily targets. The eased
- * pool values demanded up to 14,300 points on insane — impossible against
- * the 10,000-point scoring model. These caps keep every tier demanding but
- * reachable (insane ≈ near-perfect, easy ≈ solid performance). */
+/** R82: per-difficulty ceiling for score-metric daily targets — the user's
+ * reform ladder (easy 4,500 "leicht schaffbar für gute Sänger" → insane
+ * 9,500). The pool values are already final (challenge-pools.ts exempts
+ * score from easing and shares SCORE_TARGETS across daily + weekly); this
+ * cap remains the safety net that keeps every score target inside the
+ * 10,000-point model's fair band. */
 const SCORE_TARGET_CAP: Record<DailyDifficulty, number> = {
-  easy: 8400, normal: 9000, hard: 9400, very_hard: 9650, insane: 9900,
+  easy: 4500, normal: 6500, hard: 8500, very_hard: 9000, insane: 9500,
 };
 
 /** Outcome of a daily attempt against all difficulty levels. */
